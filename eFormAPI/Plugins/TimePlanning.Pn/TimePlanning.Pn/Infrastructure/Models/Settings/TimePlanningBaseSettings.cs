@@ -24,9 +24,7 @@ SOFTWARE.
 
 namespace TimePlanning.Pn.Infrastructure.Models.Settings
 {
-    using Microting.TimePlanningBase.Infrastructure.Data.Entities;
-
-    public class TimePlanningBaseSettings: PnBase
+    public class TimePlanningBaseSettings
     {
         public int? EformId{ get; set; }
 

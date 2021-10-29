@@ -29,17 +29,17 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
 
     public class TimePlanningConfigurationSeedData : IPluginConfigurationSeedData
     {
-        private const string TagItemsPlanningBaseSettingsName = "TimePlanningBaseSettings";
+        private const string TimePlanningBaseSettingsName = "TimePlanningBaseSettings";
         public PluginConfigurationValue[] Data => new[]
         {
             new PluginConfigurationValue
             {
-                Name = $"{TagItemsPlanningBaseSettingsName}:FolderId",
+                Name = $"{TimePlanningBaseSettingsName}:FolderId",
                 Value = "0"
             },
             new PluginConfigurationValue
             {
-                Name = $"{TagItemsPlanningBaseSettingsName}:EformId",
+                Name = $"{TimePlanningBaseSettingsName}:EformId",
                 Value = "0"
             },
         };
