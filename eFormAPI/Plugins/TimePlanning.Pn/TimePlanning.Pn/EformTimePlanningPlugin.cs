@@ -48,6 +48,7 @@ namespace TimePlanning.Pn
     using Services.RebusService;
     using Services.TimePlannigSettingService;
     using Services.TimePlanningLocalizationService;
+    using Services.TimePlanningPlannigService;
 
     public class EformTimePlanningPlugin : IEformPlugin
     {
@@ -68,6 +69,7 @@ namespace TimePlanning.Pn
         {
             services.AddSingleton<IRebusService, RebusService>();
             services.AddTransient<ITimePlanningLocalizationService, TimePlanningLocalizationService>();
+            services.AddTransient<ITimePlanningPlannigService, TimePlanningPlannigService>();
             services.AddTransient<ISettingService, TimeSettingService>();
             services.AddControllers();
         }
@@ -103,7 +105,7 @@ namespace TimePlanning.Pn
                     builder.MigrationsAssembly(PluginAssembly().FullName);
                 }));
 
-            TimePlanningPnContextFactory contextFactory = new TimePlanningPnContextFactory();
+            var contextFactory = new TimePlanningPnContextFactory();
             var context = contextFactory.CreateDbContext(new[] {connectionString});
             context.Database.Migrate();
 
@@ -115,7 +117,7 @@ namespace TimePlanning.Pn
         {
             var serviceProvider = appBuilder.ApplicationServices;
 
-            string rabbitMqHost = "localhost";
+            var rabbitMqHost = "localhost";
 
             if (_connectionString.Contains("frontend"))
             {
