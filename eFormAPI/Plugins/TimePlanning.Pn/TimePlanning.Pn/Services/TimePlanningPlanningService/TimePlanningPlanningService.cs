@@ -65,7 +65,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
-                var foundWorkers = await _dbContext.PlanRegistrations
+                var timePlannings = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
                     .Where(x => x.AssignedSiteId == model.WorkerId)
@@ -80,9 +80,29 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     })
                     .ToListAsync();
 
+                var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
+
+                if (timePlannings.Count < date)
+                {
+                    var timePlanningForAdd = new List<TimePlanningPlanningModel>();
+                    for (var i = 0; i < date; i++)
+                    {
+                        if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
+                        {
+                            timePlanningForAdd.Add(new TimePlanningPlanningModel
+                            {
+                                Date = model.DateFrom.AddDays(i),
+                                WorkerId = model.WorkerId,
+                            });
+                        }
+                    }
+                    timePlannings.AddRange(timePlanningForAdd);
+                }
+
+                timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
                 return new OperationDataResult<List<TimePlanningPlanningModel>>(
                     true,
-                    foundWorkers);
+                    timePlannings);
             }
             catch (Exception e)
             {
@@ -126,7 +146,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             {
                 var planning = new PlanRegistration
                 {
-                    MessageId = model.MessageId,
+                    MessageId = (int)model.MessageId,
                     PlanText = model.PlanText,
                     AssignedSiteId = model.WorkerId,
                     Date = model.Date,
@@ -155,7 +175,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             try
             {
                 planning.PlanText = model.PlanText;
-                planning.MessageId = model.MessageId;
+                planning.MessageId = (int)model.MessageId;
                 planning.PlanHours = model.PlanHours;
 
                 await planning.Update(_dbContext);

@@ -65,6 +65,6 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
         /// Gets or sets the message identifier.
         /// </summary>
         /// <value>The message identifier.</value>
-        public int MessageId { get; set; }
+        public int? MessageId { get; set; }
     }
 }
