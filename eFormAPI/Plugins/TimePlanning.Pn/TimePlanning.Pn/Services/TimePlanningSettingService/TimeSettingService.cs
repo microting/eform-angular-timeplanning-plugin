@@ -25,11 +25,13 @@ SOFTWARE.
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using Infrastructure.Models.Settings;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using Microting.eForm.Dto;
     using Microting.eForm.Infrastructure.Constants;
     using Microting.eFormApi.BasePn.Abstractions;
     using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
@@ -45,19 +47,22 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
         private readonly TimePlanningPnDbContext _dbContext;
         private readonly IUserService _userService;
         private readonly ITimePlanningLocalizationService _localizationService;
+        private readonly IEFormCoreService _core;
 
         public TimeSettingService(
             IPluginDbOptions<TimePlanningBaseSettings> options,
             TimePlanningPnDbContext dbContext,
             ILogger<TimeSettingService> logger,
             IUserService userService,
-            ITimePlanningLocalizationService localizationService)
+            ITimePlanningLocalizationService localizationService,
+            IEFormCoreService core)
         {
             _options = options;
             _dbContext = dbContext;
             _logger = logger;
             _userService = userService;
             _localizationService = localizationService;
+            _core = core;
         }
 
         public async Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
@@ -172,6 +177,34 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 return new OperationResult(
                     false,
                     _localizationService.GetString("ErrorWhileUpdateSites"));
+            }
+        }
+
+        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableites()
+        {
+            try
+            {
+                var core = await _core.GetCore();
+                var assignedSites = await _dbContext.AssignedSites
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Select(x => x.SiteId)
+                    .ToListAsync();
+
+                var sites = new List<SiteDto>();
+                foreach (var assignedSite in assignedSites)
+                {
+                    sites.Add(await core.SiteRead(assignedSite));
+                }
+
+                return new OperationDataResult<List<SiteDto>>(true, sites);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationDataResult<List<SiteDto>>(
+                    false,
+                    _localizationService.GetString("ErrorWhileObtainingSites"));
             }
         }
     }

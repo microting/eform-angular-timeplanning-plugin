@@ -79,5 +79,13 @@ namespace TimePlanning.Pn.Controllers
         {
             return await _settingService.DeleteSite(siteId);
         }
+
+        [HttpGet]
+        [Route("sites")]
+        [Authorize(Roles = EformRole.Admin)]
+        public async Task<OperationResult> GetAvailableSites()
+        {
+            return await _settingService.GetAvailableites();
+        }
     }
 }

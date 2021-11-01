@@ -24,8 +24,10 @@ SOFTWARE.
 
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Infrastructure.Models.Settings;
+    using Microting.eForm.Dto;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
     public interface ISettingService
@@ -39,5 +41,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
         Task<OperationResult> UpdateFolder(int folderId);
 
         Task<OperationResult> DeleteSite(int siteId);
+
+        Task<OperationDataResult<List<SiteDto>>> GetAvailableites();
     }
 }
