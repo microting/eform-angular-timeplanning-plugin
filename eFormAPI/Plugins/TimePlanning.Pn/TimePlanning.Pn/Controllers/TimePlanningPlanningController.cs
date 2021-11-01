@@ -36,7 +36,7 @@ namespace TimePlanning.Pn.Controllers
         {
             _planningService = planningService;
         }
-        
+
         [HttpPost]
         [Route("index")]
         public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(
@@ -49,18 +49,6 @@ namespace TimePlanning.Pn.Controllers
         public async Task<OperationResult> UpdateCreatePlannings([FromBody] TimePlanningPlanningModel model)
         {
             return await _planningService.UpdateCreatePlanning(model);
-        }
-
-        [HttpDelete]
-        public async Task<OperationResult> DeletePlanning(int id)
-        {
-            return await _planningService.DeletePlanning(id);
-        }
-
-        [HttpGet]
-        public async Task<OperationDataResult<object>> GetPlanning(int id) // todo change object to model
-        {
-            return await _planningService.GetPlanning(id);
         }
     }
 }

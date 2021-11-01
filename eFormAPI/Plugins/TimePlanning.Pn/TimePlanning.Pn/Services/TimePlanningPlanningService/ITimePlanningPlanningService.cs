@@ -34,9 +34,5 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(TimePlanningPlanningRequestModel model);
 
         Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningModel model);
-
-        Task<OperationResult> DeletePlanning(int id);
-
-        Task<OperationDataResult<object>> GetPlanning(int id); // todo object change to model
     }
 }

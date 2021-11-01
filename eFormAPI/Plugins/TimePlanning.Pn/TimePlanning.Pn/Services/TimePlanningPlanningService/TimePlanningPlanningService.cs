@@ -120,25 +120,6 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        public async Task<OperationResult> DeletePlanning(int id)
-        {
-            try
-            {
-                // todo add body
-                return new OperationResult(
-                    true,
-                    _localizationService.GetString("SuccessfullyDeletePlanning"));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
-                return new OperationResult(
-                    false,
-                    _localizationService.GetString("ErrorWhileDeletePlanning"));
-            }
-        }
-
         private async Task<OperationResult> CreatePlanning(TimePlanningPlanningModel model)
         {
             try
@@ -190,25 +171,6 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 return new OperationResult(
                     false,
                     _localizationService.GetString("ErrorWhileUpdatePlanning"));
-            }
-        }
-
-        public async Task<OperationDataResult<object>> GetPlanning(int id)
-        {
-            try
-            {
-                // todo add body
-                return new OperationDataResult<object>(// todo object change to model
-                    true,
-                    new object());// todo change object to model
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
-                return new OperationDataResult<object>(// todo object change to model
-                    false,
-                    _localizationService.GetString("ErrorWhileObtainingPlanning"));
             }
         }
     }
