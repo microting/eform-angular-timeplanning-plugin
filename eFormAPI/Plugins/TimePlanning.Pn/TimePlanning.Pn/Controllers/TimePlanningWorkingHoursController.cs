@@ -44,5 +44,11 @@ namespace TimePlanning.Pn.Controllers
         {
             return await _workingHoursService.Index(model);
         }
+
+        [HttpPut]
+        public async Task<OperationResult> Update([FromBody] TimePlanningWorkingHoursViewModel model)
+        {
+            return await _workingHoursService.CreateUpdate(model);
+        }
     }
 }

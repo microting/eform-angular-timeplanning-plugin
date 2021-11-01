@@ -30,5 +30,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     public interface ITimePlanningWorkingHoursService
     {
         Task<OperationDataResult<List<TimePlanningWorkingHoursViewModel>>> Index(TimePlanningWorkingHoursRequestModel model);
+
+        Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursViewModel model);
     }
 }
