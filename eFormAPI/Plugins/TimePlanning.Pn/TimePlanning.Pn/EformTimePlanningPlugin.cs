@@ -49,6 +49,7 @@ namespace TimePlanning.Pn
     using Services.TimePlanningSettingService;
     using Services.TimePlanningLocalizationService;
     using Services.TimePlanningPlanningService;
+    using Services.TimePlanningWorkingHoursService;
 
     public class EformTimePlanningPlugin : IEformPlugin
     {
@@ -69,6 +70,7 @@ namespace TimePlanning.Pn
             services.AddSingleton<IRebusService, RebusService>();
             services.AddTransient<ITimePlanningLocalizationService, TimePlanningLocalizationService>();
             services.AddTransient<ITimePlanningPlanningService, TimePlanningPlanningService>();
+            services.AddTransient<ITimePlanningWorkingHoursService, TimePlanningWorkingHoursService>();
             services.AddTransient<ISettingService, TimeSettingService>();
             services.AddControllers();
         }

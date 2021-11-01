@@ -64,15 +64,16 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             try
             {
                 var foundWorkers = await _dbContext.PlanRegistrations
-                    .Where(worker => worker.Id == model.WorkerId
-                                     && (worker.Date >= model.DateFrom || worker.Date <= model.DateTo))
-                    .Select(worker => new TimePlanningPlanningViewModel
+                    .Where(pr => pr.Id == model.WorkerId
+                                 && (pr.Date >= model.DateFrom || pr.Date <= model.DateTo))
+                    .Select(pr => new TimePlanningPlanningViewModel
                     {
-                        WeekDay = (int)worker.Date.DayOfWeek,
-                        Date = worker.Date,
-                        PlanText = worker.PlanText,
-                        PlanHours = worker.PlanHours,
-                        MessageId = worker.MessageId,
+                        WorkerId = pr.AssignedSiteId,
+                        WeekDay = (int)pr.Date.DayOfWeek,
+                        Date = pr.Date,
+                        PlanText = pr.PlanText,
+                        PlanHours = pr.PlanHours,
+                        MessageId = pr.MessageId,
                     })
                     .ToListAsync();
 

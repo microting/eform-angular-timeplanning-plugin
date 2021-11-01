@@ -32,6 +32,7 @@
       <Folder Include="Helpers\" />
       <Folder Include="Infrastructure\Consts\" />
       <Folder Include="Messages\" />
+      <Folder Include="Services\TimePlanningWorkingHoursService\" />
     </ItemGroup>
 
     <ItemGroup>
