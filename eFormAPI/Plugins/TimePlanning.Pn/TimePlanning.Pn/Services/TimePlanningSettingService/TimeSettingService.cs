@@ -38,7 +38,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
     using Microting.TimePlanningBase.Infrastructure.Data.Entities;
     using TimePlanningLocalizationService;
 
-    public class TimeSettingService: ISettingService
+    public class TimeSettingService : ISettingService
     {
         private readonly ILogger<TimeSettingService> _logger;
         private readonly IPluginDbOptions<TimePlanningBaseSettings> _options;
@@ -88,19 +88,34 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
         }
 
-        public async Task<OperationResult> UpdateSettings(TimePlanningSettingsModel timePlanningSettingsModel)
+        public async Task<OperationResult> UpdateFolderAndEform(TimePlanningSettingsModel timePlanningSettingsModel)
+        {
+            try
+            {
+                await _options.UpdateDb(settings =>
+                {
+                    settings.EformId = timePlanningSettingsModel.EformId;
+                    settings.FolderId = timePlanningSettingsModel.FolderId;
+                }, _dbContext, _userService.UserId);
+                return new OperationResult(true, _localizationService.GetString("SettingsUpdatedSuccessfuly"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileUpdateSettings"));
+            }
+        }
+
+        public async Task<OperationResult> UpdateSites(TimePlanningSettingsModel timePlanningSettingsModel)
         {
             try
             {
                 var assignedSites = await _dbContext.AssignedSites
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .ToListAsync();
-
-                await _options.UpdateDb(settings =>
-                {
-                    settings.EformId = timePlanningSettingsModel.EformId;
-                    settings.FolderId = timePlanningSettingsModel.FolderId;
-                }, _dbContext, _userService.UserId);
 
                 var assignmentsForCreate = timePlanningSettingsModel.SiteIds.Where(x => !assignedSites.Select(y => y.SiteId).Contains(x)).ToList();
 

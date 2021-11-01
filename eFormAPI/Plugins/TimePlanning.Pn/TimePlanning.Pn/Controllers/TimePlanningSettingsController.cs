@@ -47,9 +47,18 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpPut]
         [Authorize(Roles = EformRole.Admin)]
-        public async Task<OperationResult> UpdateSettings([FromBody] TimePlanningSettingsModel settingsModel)
+        public async Task<OperationResult> UpdateFolderAndEform([FromBody] TimePlanningSettingsModel settingsModel)
         {
-            return await _settingService.UpdateSettings(settingsModel);
+            return await _settingService.UpdateFolderAndEform(settingsModel);
+        }
+
+
+        [HttpPut]
+        [Route("sites")]
+        [Authorize(Roles = EformRole.Admin)]
+        public async Task<OperationResult> UpdateSites([FromBody] TimePlanningSettingsModel settingsModel)
+        {
+            return await _settingService.UpdateSites(settingsModel);
         }
     }
 }
