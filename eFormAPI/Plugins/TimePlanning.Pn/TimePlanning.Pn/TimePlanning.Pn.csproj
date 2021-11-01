@@ -34,4 +34,10 @@
       <Folder Include="Messages\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="Microting.TimePlanningBase">
+        <HintPath>..\..\..\..\..\eform-timeplanning-base\Microting.TimePlanningBase\bin\Debug\net5.0\Microting.TimePlanningBase.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>

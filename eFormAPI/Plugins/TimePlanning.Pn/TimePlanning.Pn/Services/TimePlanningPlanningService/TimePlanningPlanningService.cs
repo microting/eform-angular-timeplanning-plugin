@@ -22,26 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.TimePlanningPlannigService
+namespace TimePlanning.Pn.Services.TimePlanningPlanningService
 {
     using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
     using System.Threading.Tasks;
+    using Infrastructure.Models.Planning;
+    using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microting.eFormApi.BasePn.Abstractions;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
     using Microting.TimePlanningBase.Infrastructure.Data;
     using TimePlanningLocalizationService;
 
-    public class TimePlanningPlannigService : ITimePlanningPlannigService
+    public class TimePlanningPlanningService : ITimePlanningPlanningService
     {
-        private readonly ILogger<TimePlanningPlannigService> _logger;
+        private readonly ILogger<TimePlanningPlanningService> _logger;
         private readonly TimePlanningPnDbContext _dbContext;
         private readonly IUserService _userService;
         private readonly ITimePlanningLocalizationService _localizationService;
         private readonly IEFormCoreService _core;
 
-        public TimePlanningPlannigService(
-            ILogger<TimePlanningPlannigService> logger,
+        public TimePlanningPlanningService(
+            ILogger<TimePlanningPlanningService> logger,
             TimePlanningPnDbContext dbContext,
             IUserService userService,
             ITimePlanningLocalizationService localizationService,
@@ -54,20 +59,32 @@ namespace TimePlanning.Pn.Services.TimePlanningPlannigService
             _core = core;
         }
 
-        public async Task<OperationDataResult<object>> Index() // todo object change to model
+        public async Task<OperationDataResult<List<TimePlanningPlanningViewModel>>> Index(TimePlanningPlanningRequestModel model)
         {
             try
             {
-                // todo add body
-                return new OperationDataResult<object>(// todo object change to model
+                var foundWorkers = await _dbContext.PlanRegistrations
+                    .Where(worker => worker.Id == model.WorkerId
+                                     && (worker.Date >= model.DateFrom || worker.Date <= model.DateTo))
+                    .Select(worker => new TimePlanningPlanningViewModel
+                    {
+                        WeekDay = (int)worker.Date.DayOfWeek,
+                        Date = worker.Date,
+                        PlanText = worker.PlanText,
+                        PlanHours = worker.PlanHours,
+                        MessageId = worker.MessageId,
+                    })
+                    .ToListAsync();
+
+                return new OperationDataResult<List<TimePlanningPlanningViewModel>>(
                     true,
-                    new object());// todo change object to model
+                    foundWorkers);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationDataResult<object>(// todo object change to model
+                return new OperationDataResult<List<TimePlanningPlanningViewModel>>(
                     false,
                     _localizationService.GetString("ErrorWhileObtainingPlannings"));
             }

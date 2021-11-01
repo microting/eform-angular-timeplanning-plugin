@@ -22,21 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.TimePlanningPlannigService
+namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
     using System.Threading.Tasks;
+    using Infrastructure.Models.Settings;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
-    public interface ITimePlanningPlannigService
+    public interface ISettingService
     {
-        Task<OperationDataResult<object>> Index(); // todo object change to model
+        Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings();
 
-        Task<OperationResult> UpdatePlannings();
-
-        Task<OperationResult> DeletePlanning(int id);
-
-        Task<OperationResult> CreatePlanning();
-
-        Task<OperationDataResult<object>> GetPlanning(int id); // todo object change to model
+        Task<OperationResult> UpdateSettings(TimePlanningSettingsModel timePlanningSettingsModel);
     }
 }

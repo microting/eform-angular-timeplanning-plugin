@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.TimePlannigSettingService
+namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
     using System;
     using System.Linq;

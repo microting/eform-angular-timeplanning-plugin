@@ -46,9 +46,9 @@ namespace TimePlanning.Pn
     using Microting.TimePlanningBase.Infrastructure.Data;
     using Microting.TimePlanningBase.Infrastructure.Data.Factories;
     using Services.RebusService;
-    using Services.TimePlannigSettingService;
+    using Services.TimePlanningSettingService;
     using Services.TimePlanningLocalizationService;
-    using Services.TimePlanningPlannigService;
+    using Services.TimePlanningPlanningService;
 
     public class EformTimePlanningPlugin : IEformPlugin
     {
@@ -56,7 +56,6 @@ namespace TimePlanning.Pn
         public string PluginId => "eform-angular-time-planning-plugin";
         public string PluginPath => PluginAssembly().Location;
         public string PluginBaseUrl => "time-planning-pn";
-
         private string _connectionString;
         //private IBus _bus;
 
@@ -69,7 +68,7 @@ namespace TimePlanning.Pn
         {
             services.AddSingleton<IRebusService, RebusService>();
             services.AddTransient<ITimePlanningLocalizationService, TimePlanningLocalizationService>();
-            services.AddTransient<ITimePlanningPlannigService, TimePlanningPlannigService>();
+            services.AddTransient<ITimePlanningPlanningService, TimePlanningPlanningService>();
             services.AddTransient<ISettingService, TimeSettingService>();
             services.AddControllers();
         }

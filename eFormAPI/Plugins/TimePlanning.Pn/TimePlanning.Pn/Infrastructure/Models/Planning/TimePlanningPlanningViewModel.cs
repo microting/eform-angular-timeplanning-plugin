@@ -22,16 +22,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.TimePlannigSettingService
+namespace TimePlanning.Pn.Infrastructure.Models.Planning
 {
-    using System.Threading.Tasks;
-    using Infrastructure.Models.Settings;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+    using System;
 
-    public interface ISettingService
+    /// <summary>
+    /// TimePlanningPlanningViewModel
+    /// </summary>
+    public class TimePlanningPlanningViewModel
     {
-        Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings();
+        /// <summary>
+        /// Gets or sets the week day.
+        /// </summary>
+        /// <value>The week day.</value>
+        public int WeekDay { get; set; }
 
-        Task<OperationResult> UpdateSettings(TimePlanningSettingsModel timePlanningSettingsModel);
+        /// <summary>
+        /// Gets or sets the date.
+        /// </summary>
+        /// <value>The date.</value>
+        public DateTime Date { get; set; }
+
+        /// <summary>
+        /// Gets or sets the plan text.
+        /// </summary>
+        /// <value>The plan text.</value>
+        public string PlanText { get; set; }
+
+        /// <summary>
+        /// Gets or sets the plan hours.
+        /// </summary>
+        /// <value>The plan hours.</value>
+        public double PlanHours { get; set; }
+
+        /// <summary>
+        /// Gets or sets the message identifier.
+        /// </summary>
+        /// <value>The message identifier.</value>
+        public int MessageId { get; set; }
     }
 }

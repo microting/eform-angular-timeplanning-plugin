@@ -20,50 +20,53 @@ SOFTWARE.
 
 namespace TimePlanning.Pn.Controllers
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
+    using Infrastructure.Models.Planning;
     using Microsoft.AspNetCore.Mvc;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
-    using Services.TimePlanningPlannigService;
+    using Services.TimePlanningPlanningService;
 
     [Route("api/time-planning-pn/plannings")]
     public class TimePlanningPlanningController : Controller
     {
-        private readonly ITimePlanningPlannigService _plannigService;
+        private readonly ITimePlanningPlanningService _planningService;
 
-        public TimePlanningPlanningController(ITimePlanningPlannigService plannigService)
+        public TimePlanningPlanningController(ITimePlanningPlanningService planningService)
         {
-            _plannigService = plannigService;
+            _planningService = planningService;
         }
         
         [HttpPost]
         [Route("index")]
-        public async Task<OperationDataResult<object>> Index() // todo change object to model
+        public async Task<OperationDataResult<List<TimePlanningPlanningViewModel>>> Index(
+            [FromBody] TimePlanningPlanningRequestModel model)
         {
-            return await _plannigService.Index();
+            return await _planningService.Index(model);
         }
 
         [HttpPost]
         public async Task<OperationResult> CreatePlanning(/*[FromBody]  todo add model*/)
         {
-            return await _plannigService.CreatePlanning();
+            return await _planningService.CreatePlanning();
         }
 
         [HttpPut]
         public async Task<OperationResult> UpdatePlannings(/*[FromBody]  todo add model*/)
         {
-            return await _plannigService.UpdatePlannings();
+            return await _planningService.UpdatePlannings();
         }
 
         [HttpDelete]
         public async Task<OperationResult> DeletePlanning(int id)
         {
-            return await _plannigService.DeletePlanning(id);
+            return await _planningService.DeletePlanning(id);
         }
 
         [HttpGet]
         public async Task<OperationDataResult<object>> GetPlanning(int id) // todo change object to model
         {
-            return await _plannigService.GetPlanning(id);
+            return await _planningService.GetPlanning(id);
         }
     }
 }

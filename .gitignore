@@ -348,3 +348,4 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+/eFormAPI/eFormAPI.Web/Plugins/TimePlanning/net5.0
