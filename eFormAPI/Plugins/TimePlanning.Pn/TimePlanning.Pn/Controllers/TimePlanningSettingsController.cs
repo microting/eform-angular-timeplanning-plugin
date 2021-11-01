@@ -21,6 +21,7 @@ SOFTWARE.
 namespace TimePlanning.Pn.Controllers
 {
     using System.Threading.Tasks;
+    using Castle.Core;
     using Infrastructure.Models.Settings;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
@@ -46,19 +47,37 @@ namespace TimePlanning.Pn.Controllers
         }
 
         [HttpPut]
+        [Route("folder")]
         [Authorize(Roles = EformRole.Admin)]
-        public async Task<OperationResult> UpdateFolderAndEform([FromBody] TimePlanningSettingsModel settingsModel)
+        public async Task<OperationResult> UpdateFolder([FromBody] int folderId)
         {
-            return await _settingService.UpdateFolderAndEform(settingsModel);
+            return await _settingService.UpdateFolder(folderId);
         }
 
 
         [HttpPut]
         [Route("sites")]
         [Authorize(Roles = EformRole.Admin)]
-        public async Task<OperationResult> UpdateSites([FromBody] TimePlanningSettingsModel settingsModel)
+        public async Task<OperationResult> AddSite([FromBody] int siteId)
         {
-            return await _settingService.UpdateSites(settingsModel);
+            return await _settingService.AddSite(siteId);
+        }
+
+
+        [HttpPut]
+        [Route("eform")]
+        [Authorize(Roles = EformRole.Admin)]
+        public async Task<OperationResult> UpdateEform([FromBody] int eformId)
+        {
+            return await _settingService.UpdateEform(eformId);
+        }
+
+        [HttpDelete]
+        [Route("sites")]
+        [Authorize(Roles = EformRole.Admin)]
+        public async Task<OperationResult> DeleteSite(int siteId)
+        {
+            return await _settingService.DeleteSite(siteId);
         }
     }
 }

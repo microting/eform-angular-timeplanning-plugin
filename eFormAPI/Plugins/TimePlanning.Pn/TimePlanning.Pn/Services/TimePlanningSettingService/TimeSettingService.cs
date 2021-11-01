@@ -66,8 +66,8 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             {
                 var timePlanningSettingsModel = new TimePlanningSettingsModel
                 {
-                    FolderId = _options.Value.FolderId,
-                    EformId = _options.Value.EformId,
+                    FolderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId,
+                    EformId = _options.Value.EformId == 0 ? null : _options.Value.EformId,
                 };
 
                 var assignedSites = await _dbContext.AssignedSites
@@ -75,7 +75,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     .Select(x => x.SiteId)
                     .ToListAsync();
 
-                timePlanningSettingsModel.SiteIds = assignedSites;
+                timePlanningSettingsModel.AssignedSites = assignedSites;
                 return new OperationDataResult<TimePlanningSettingsModel>(true, timePlanningSettingsModel);
             }
             catch (Exception e)
@@ -88,16 +88,15 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
         }
 
-        public async Task<OperationResult> UpdateFolderAndEform(TimePlanningSettingsModel timePlanningSettingsModel)
+        public async Task<OperationResult> UpdateEform(int eformId)
         {
             try
             {
                 await _options.UpdateDb(settings =>
                 {
-                    settings.EformId = timePlanningSettingsModel.EformId;
-                    settings.FolderId = timePlanningSettingsModel.FolderId;
+                    settings.EformId = eformId;
                 }, _dbContext, _userService.UserId);
-                return new OperationResult(true, _localizationService.GetString("SettingsUpdatedSuccessfuly"));
+                return new OperationResult(true, _localizationService.GetString("EformUpdatedSuccessfuly"));
             }
             catch (Exception e)
             {
@@ -105,37 +104,23 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 _logger.LogError(e.Message);
                 return new OperationResult(
                     false,
-                    _localizationService.GetString("ErrorWhileUpdateSettings"));
+                    _localizationService.GetString("ErrorWhileUpdateEform"));
             }
         }
 
-        public async Task<OperationResult> UpdateSites(TimePlanningSettingsModel timePlanningSettingsModel)
+        public async Task<OperationResult> AddSite(int siteId)
         {
             try
             {
-                var assignedSites = await _dbContext.AssignedSites
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .ToListAsync();
-
-                var assignmentsForCreate = timePlanningSettingsModel.SiteIds.Where(x => !assignedSites.Select(y => y.SiteId).Contains(x)).ToList();
-
-                var assignmentsForDelete = assignedSites.Where(x => !timePlanningSettingsModel.SiteIds.Contains(x.SiteId)).ToList();
-
-                foreach (var assignmentSite in assignmentsForCreate.Select(assignmentForCreate => new AssignedSite()
+                var assignmentSite = new AssignedSite
                 {
-                    SiteId = assignmentForCreate,
+                    SiteId = siteId,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId,
-                }))
-                {
-                    await assignmentSite.Create(_dbContext);
-                }
+                };
+                await assignmentSite.Create(_dbContext);
 
-                foreach (var assignmentForDelete in assignmentsForDelete)
-                {
-                    await assignmentForDelete.Delete(_dbContext);
-                }
-                return new OperationResult(true, _localizationService.GetString("SettingsUpdatedSuccessfuly"));
+                return new OperationResult(true, _localizationService.GetString("SitesUpdatedSuccessfuly"));
             }
             catch (Exception e)
             {
@@ -143,7 +128,50 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 _logger.LogError(e.Message);
                 return new OperationResult(
                     false,
-                    _localizationService.GetString("ErrorWhileUpdateSettings"));
+                    _localizationService.GetString("ErrorWhileUpdateSites"));
+            }
+        }
+
+
+        public async Task<OperationResult> UpdateFolder(int folderId)
+        {
+            try
+            {
+                await _options.UpdateDb(settings =>
+                {
+                    settings.FolderId = folderId;
+                }, _dbContext, _userService.UserId);
+                return new OperationResult(true, _localizationService.GetString("FolderUpdatedSuccessfuly"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileUpdateFolder"));
+            }
+        }
+
+        public async Task<OperationResult> DeleteSite(int siteId)
+        {
+            try
+            {
+                var assignedSite = await _dbContext.AssignedSites
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.SiteId == siteId)
+                    .FirstOrDefaultAsync();
+
+                await assignedSite.Delete(_dbContext);
+                return new OperationResult(true, _localizationService.GetString("SitesUpdatedSuccessfuly"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileUpdateSites"));
             }
         }
     }
