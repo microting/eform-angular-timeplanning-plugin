@@ -32,9 +32,11 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
     using Infrastructure.Models.Planning;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using Microting.eForm.Infrastructure.Constants;
     using Microting.eFormApi.BasePn.Abstractions;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
     using Microting.TimePlanningBase.Infrastructure.Data;
+    using Microting.TimePlanningBase.Infrastructure.Data.Entities;
     using TimePlanningLocalizationService;
 
     public class TimePlanningPlanningService : ITimePlanningPlanningService
@@ -59,25 +61,26 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             _core = core;
         }
 
-        public async Task<OperationDataResult<List<TimePlanningPlanningViewModel>>> Index(TimePlanningPlanningRequestModel model)
+        public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(TimePlanningPlanningRequestModel model)
         {
             try
             {
                 var foundWorkers = await _dbContext.PlanRegistrations
-                    .Where(pr => pr.Id == model.WorkerId
-                                 && (pr.Date >= model.DateFrom || pr.Date <= model.DateTo))
-                    .Select(pr => new TimePlanningPlanningViewModel
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
+                    .Where(x => x.AssignedSiteId == model.WorkerId)
+                    .Select(x => new TimePlanningPlanningModel
                     {
-                        WorkerId = pr.AssignedSiteId,
-                        WeekDay = (int)pr.Date.DayOfWeek,
-                        Date = pr.Date,
-                        PlanText = pr.PlanText,
-                        PlanHours = pr.PlanHours,
-                        MessageId = pr.MessageId,
+                        WorkerId = x.AssignedSiteId,
+                        WeekDay = (int)x.Date.DayOfWeek,
+                        Date = x.Date,
+                        PlanText = x.PlanText,
+                        PlanHours = x.PlanHours,
+                        MessageId = x.MessageId,
                     })
                     .ToListAsync();
 
-                return new OperationDataResult<List<TimePlanningPlanningViewModel>>(
+                return new OperationDataResult<List<TimePlanningPlanningModel>>(
                     true,
                     foundWorkers);
             }
@@ -85,20 +88,27 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationDataResult<List<TimePlanningPlanningViewModel>>(
+                return new OperationDataResult<List<TimePlanningPlanningModel>>(
                     false,
                     _localizationService.GetString("ErrorWhileObtainingPlannings"));
             }
         }
 
-        public async Task<OperationResult> UpdatePlannings()
+        public async Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningModel model)
         {
             try
             {
-                // todo add body
-                return new OperationResult(
-                    true,
-                    _localizationService.GetString("SuccessfullyUpdatePlanning"));
+                var planning = await _dbContext.PlanRegistrations
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.AssignedSiteId == model.WorkerId)
+                    .Where(x => x.Date == model.Date)
+                    .FirstOrDefaultAsync();
+                if (planning != null)
+                {
+                    return await UpdatePlanning(planning, model);
+                }
+
+                return await CreatePlanning(model);
             }
             catch (Exception e)
             {
@@ -129,11 +139,22 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        public async Task<OperationResult> CreatePlanning()
+        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningModel model)
         {
             try
             {
-                // todo add body
+                var planning = new PlanRegistration
+                {
+                    MessageId = model.MessageId,
+                    PlanText = model.PlanText,
+                    AssignedSiteId = model.WorkerId,
+                    Date = model.Date,
+                    PlanHours = model.PlanHours,
+                    CreatedByUserId = _userService.UserId,
+                    UpdatedByUserId = _userService.UserId,
+                };
+
+                await planning.Create(_dbContext);
                 return new OperationResult(
                     true,
                     _localizationService.GetString("SuccessfullyCreatePlanning"));
@@ -145,6 +166,30 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 return new OperationResult(
                     false,
                     _localizationService.GetString("ErrorWhileCreatePlanning"));
+            }
+        }
+
+        private async Task<OperationResult> UpdatePlanning(PlanRegistration planning, TimePlanningPlanningModel model)
+        {
+            try
+            {
+                planning.PlanText = model.PlanText;
+                planning.MessageId = model.MessageId;
+                planning.PlanHours = model.PlanHours;
+
+                await planning.Update(_dbContext);
+
+                return new OperationResult(
+                    true,
+                    _localizationService.GetString("SuccessfullyUpdatePlanning"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileUpdatePlanning"));
             }
         }
 

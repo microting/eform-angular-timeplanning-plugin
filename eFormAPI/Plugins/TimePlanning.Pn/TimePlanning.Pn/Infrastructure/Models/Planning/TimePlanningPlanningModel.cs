@@ -1,4 +1,4 @@
-﻿/*
+/*
 The MIT License (MIT)
 
 Copyright (c) 2007 - 2021 Microting A/S
@@ -27,9 +27,9 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
     using System;
 
     /// <summary>
-    /// TimePlanningPlanningViewModel
+    /// TimePlanningPlanningModel
     /// </summary>
-    public class TimePlanningPlanningViewModel
+    public class TimePlanningPlanningModel
     {
         /// <summary>
         /// Gets or sets the worker identifier.

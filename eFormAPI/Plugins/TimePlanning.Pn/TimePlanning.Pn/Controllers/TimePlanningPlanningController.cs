@@ -39,22 +39,16 @@ namespace TimePlanning.Pn.Controllers
         
         [HttpPost]
         [Route("index")]
-        public async Task<OperationDataResult<List<TimePlanningPlanningViewModel>>> Index(
+        public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(
             [FromBody] TimePlanningPlanningRequestModel model)
         {
             return await _planningService.Index(model);
         }
 
-        [HttpPost]
-        public async Task<OperationResult> CreatePlanning(/*[FromBody]  todo add model*/)
-        {
-            return await _planningService.CreatePlanning();
-        }
-
         [HttpPut]
-        public async Task<OperationResult> UpdatePlannings(/*[FromBody]  todo add model*/)
+        public async Task<OperationResult> UpdateCreatePlannings([FromBody] TimePlanningPlanningModel model)
         {
-            return await _planningService.UpdatePlannings();
+            return await _planningService.UpdateCreatePlanning(model);
         }
 
         [HttpDelete]

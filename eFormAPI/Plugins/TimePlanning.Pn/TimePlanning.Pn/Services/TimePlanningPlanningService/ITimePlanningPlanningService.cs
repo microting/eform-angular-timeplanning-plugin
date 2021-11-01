@@ -31,13 +31,11 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
 
     public interface ITimePlanningPlanningService
     {
-        Task<OperationDataResult<List<TimePlanningPlanningViewModel>>> Index(TimePlanningPlanningRequestModel model);
+        Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(TimePlanningPlanningRequestModel model);
 
-        Task<OperationResult> UpdatePlannings();
+        Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningModel model);
 
         Task<OperationResult> DeletePlanning(int id);
-
-        Task<OperationResult> CreatePlanning();
 
         Task<OperationDataResult<object>> GetPlanning(int id); // todo object change to model
     }
