@@ -53,7 +53,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: microting/eform-angular-frontend
-        ref: ${{ steps.extract_branch.outputs.branch }}
+        ref: stable
         path: eform-angular-frontend
     - name: Install dependencies
       run: dotnet restore main/eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.sln
