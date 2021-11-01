@@ -2,22 +2,22 @@
 
 cd ~
 
-rm -fR Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/src/app/plugins/modules/backend-configuration-pn
+rm -fR Documents/workspace/microting/eform-time-planning-plugin/eform-client/src/app/plugins/modules/time-planning-pn
 
-cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/src/app/plugins/modules/backend-configuration-pn Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/src/app/plugins/modules/backend-configuration-pn
+cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/src/app/plugins/modules/time-planning-pn Documents/workspace/microting/eform-time-planning-plugin/eform-client/src/app/plugins/modules/time-planning-pn
 
-rm -fR Documents/workspace/microting/eform-backendconfiguration-plugin/eFormAPI/Plugins/BackendConfiguration.Pn
+rm -fR Documents/workspace/microting/eform-time-planning-plugin/eFormAPI/Plugins/TimePlanning.Pn
 
-cp -a Documents/workspace/microting/eform-angular-frontend/eFormAPI/Plugins/BackendConfiguration.Pn Documents/workspace/microting/eform-backendconfiguration-plugin/eFormAPI/Plugins/BackendConfiguration.Pn
+cp -a Documents/workspace/microting/eform-angular-frontend/eFormAPI/Plugins/TimePlanning.Pn Documents/workspace/microting/eform-time-planning-plugin/eFormAPI/Plugins/TimePlanning.Pn
 
 # Test files rm
-rm -fR Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/e2e/Tests/backend-configuration-settings/
-rm -fR Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/e2e/Tests/backend-configuration-general/
-rm -fR Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/wdio-headless-plugin-step2.conf.js
-rm -fR Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/e2e/Page\ objects/BackendConfiguration
+rm -fR Documents/workspace/microting/eform-time-planning-plugin/eform-client/e2e/Tests/time-planning-settings/
+rm -fR Documents/workspace/microting/eform-time-planning-plugin/eform-client/e2e/Tests/time-planning-general/
+rm -fR Documents/workspace/microting/eform-time-planning-plugin/eform-client/wdio-headless-plugin-step2.conf.js
+rm -fR Documents/workspace/microting/eform-time-planning-plugin/eform-client/e2e/Page\ objects/TimePlanning
 
 # Test files cp
-cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/e2e/Tests/backend-configuration-settings Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/e2e/Tests/backend-configuration-settings
-cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/e2e/Tests/backend-configuration-general Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/e2e/Tests/backend-configuration-general
-cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/wdio-plugin-step2.conf.js Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/wdio-headless-plugin-step2.conf.js
-cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/e2e/Page\ objects/BackendConfiguration Documents/workspace/microting/eform-backendconfiguration-plugin/eform-client/e2e/Page\ objects/BackendConfiguration
+cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/e2e/Tests/time-planning-settings Documents/workspace/microting/eform-time-planning-plugin/eform-client/e2e/Tests/time-planning-settings
+cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/e2e/Tests/time-planning-general Documents/workspace/microting/eform-time-planning-plugin/eform-client/e2e/Tests/time-planning-general
+cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/wdio-plugin-step2.conf.js Documents/workspace/microting/eform-time-planning-plugin/eform-client/wdio-headless-plugin-step2.conf.js
+cp -a Documents/workspace/microting/eform-angular-frontend/eform-client/e2e/Page\ objects/TimePlanning Documents/workspace/microting/eform-time-planning-plugin/eform-client/e2e/Page\ objects/TimePlanning
