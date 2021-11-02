@@ -10,21 +10,7 @@ exports.config = {
     // directory is where your package.json resides, so `wdio` will be called from there.
     //
   specs: [
-      'e2e/Tests/backend-configuration-settings/application-settings.plugins-page.spec.ts',
-      'e2e/Tests/backend-configuration-general/properties/backend-configuration-properties.create.spec.ts',
-      'e2e/Tests/backend-configuration-general/properties/backend-configuration-properties.edit.spec.ts',
-      'e2e/Tests/backend-configuration-general/properties/backend-configuration-properties.delete.spec.ts',
-      'e2e/Tests/backend-configuration-general/properties/backend-configuration-properties.areas.spec.ts',
-      'e2e/Tests/backend-configuration-general/property-workers/backend-configuration-property-workers.create.spec.ts',
-      'e2e/Tests/backend-configuration-general/area-rules/backend-configuration-property-area-rules.t1.spec.ts',
-      'e2e/Tests/backend-configuration-general/area-rules/backend-configuration-property-area-rules.t2.spec.ts',
-      'e2e/Tests/backend-configuration-general/area-rules/backend-configuration-property-area-rules.t3.spec.ts',
-      'e2e/Tests/backend-configuration-general/area-rules/backend-configuration-property-area-rules.t5.spec.ts',
-      'e2e/Tests/backend-configuration-general/planning/backend-configuration-planning.t1.spec.ts',
-      'e2e/Tests/backend-configuration-general/planning/backend-configuration-planning.t2.spec.ts',
-      'e2e/Tests/backend-configuration-general/planning/backend-configuration-planning.t3.spec.ts',
-      'e2e/Tests/backend-configuration-general/planning/backend-configuration-planning.t4.spec.ts',
-      'e2e/Tests/backend-configuration-general/planning/backend-configuration-planning.t5.spec.ts',
+      'e2e/Tests/time-planning-settings/application-settings.plugins-page.spec.ts',
   ],
     suites: {
         settings: [

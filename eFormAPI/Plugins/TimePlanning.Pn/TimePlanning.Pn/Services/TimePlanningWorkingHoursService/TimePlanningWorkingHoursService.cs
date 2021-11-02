@@ -30,6 +30,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     using Microting.eFormApi.BasePn.Abstractions;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
     using Microting.TimePlanningBase.Infrastructure.Data;
+    using Microting.TimePlanningBase.Infrastructure.Data.Entities;
     using TimePlanningLocalizationService;
 
     /// <summary>
@@ -122,5 +123,115 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     _localizationService.GetString("ErrorWhileObtainingPlannings"));
             };
         }
+
+        public async Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursViewModel model)
+        {
+            try
+            {
+                var planning = await _dbContext.PlanRegistrations
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.AssignedSiteId == model.WorkerId)
+                    .Where(x => x.Date == model.Date)
+                    .FirstOrDefaultAsync();
+                if (planning != null)
+                {
+                    return await UpdatePlanning(planning, model);
+                }
+
+                return await CreatePlanning(model);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationDataResult<List<TimePlanningWorkingHoursViewModel>>(
+                    false,
+                    _localizationService.GetString("ErrorWhileCreateUpdatePlannings"));
+            }
+        }
+
+
+
+        private async Task<OperationResult> CreatePlanning(TimePlanningWorkingHoursViewModel model)
+        {
+            try
+            {
+                var planning = new PlanRegistration
+                {
+                    MessageId = model.MessageId,
+                    PlanText = model.PlanText,
+                    AssignedSiteId = model.WorkerId,
+                    Date = model.Date,
+                    PlanHours = model.PlanHours,
+                    CreatedByUserId = _userService.UserId,
+                    UpdatedByUserId = _userService.UserId,
+                    CommentOffice = model.CommentOffice,
+                    CommentOfficeAll = model.CommentOfficeAll,
+                    NettoHours = model.NettoHours,
+                    PaiedOutFlex = model.PaiedOutFlex,
+                    Pause1Id = model.Pause1Id,
+                    Pause2Id = model.Pause1Id,
+                    Start1Id = model.Start1Id,
+                    Start2Id = model.Start2Id,
+                    Stop1Id = model.Stop1Id,
+                    Stop2Id = model.Stop2Id,
+                    Flex = model.Flex,
+                    SumFlex = model.SumFlex,
+                };
+
+                await planning.Create(_dbContext);
+                return new OperationResult(
+                    true,
+                    _localizationService.GetString("SuccessfullyCreatePlanning"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileCreatePlanning"));
+            }
+        }
+
+        private async Task<OperationResult> UpdatePlanning(PlanRegistration planning, TimePlanningWorkingHoursViewModel model)
+        {
+            try
+            {
+                planning.MessageId = model.MessageId;
+                planning.PlanText = model.PlanText;
+                planning.AssignedSiteId = model.WorkerId;
+                planning.Date = model.Date;
+                planning.PlanHours = model.PlanHours;
+                planning.UpdatedByUserId = _userService.UserId;
+                planning.CommentOffice = model.CommentOffice;
+                planning.CommentOfficeAll = model.CommentOfficeAll;
+                planning.NettoHours = model.NettoHours;
+                planning.PaiedOutFlex = model.PaiedOutFlex;
+                planning.Pause1Id = model.Pause1Id;
+                planning.Pause2Id = model.Pause1Id;
+                planning.Start1Id = model.Start1Id;
+                planning.Start2Id = model.Start2Id;
+                planning.Stop1Id = model.Stop1Id;
+                planning.Stop2Id = model.Stop2Id;
+                planning.Flex = model.Flex;
+                planning.SumFlex = model.SumFlex;
+
+                await planning.Update(_dbContext);
+
+                return new OperationResult(
+                    true,
+                    _localizationService.GetString("SuccessfullyUpdatePlanning"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileUpdatePlanning"));
+            }
+        }
+
     }
 }

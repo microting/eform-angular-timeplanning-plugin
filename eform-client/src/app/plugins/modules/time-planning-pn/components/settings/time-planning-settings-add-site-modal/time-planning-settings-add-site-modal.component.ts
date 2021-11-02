@@ -30,7 +30,7 @@ export class TimePlanningSettingsAddSiteModalComponent
 
   ngOnInit(): void {}
 
-  show(sites: SiteNameDto[], assignedSites: SiteNameDto[]) {
+  show(sites: SiteNameDto[], assignedSites: number[]) {
     // Removing assigned sites from all sites by id
     const propEqual = eqBy(prop('siteUId'));
     this.availableSites = symmetricDifferenceWith(

@@ -28,7 +28,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Settings
 
     public class TimePlanningSettingsModel
     {
-        public List<int> SiteIds { get; set; }
+        public List<int> AssignedSites { get; set; }
             = new ();
 
         public int? FolderId { get; set; }

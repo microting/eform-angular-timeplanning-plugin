@@ -1,14 +1,17 @@
-<eform-subheader [title]="'Work orders settings' | translate"></eform-subheader>
+<eform-subheader
+  [forceStaticTitle]="true"
+  [title]="'Time planning settings' | translate"
+></eform-subheader>
 
 <div class="container-fluid">
-  <div class="row p-1 mt-4 table-responsive no-gutters">
+  <div class="row p-1">
     <div class="col-md-3 col-sm-6 col-xs-6" *ngIf="foldersTreeDto.length > 0">
       <div class="md-form" id="folderSelector" (click)="openFoldersModal()">
         <input
           mdbInput
           type="text"
           id="folderSelectorInput"
-          [ngModel]="timePlanningSettingsModel.folderName"
+          [ngModel]="getFolderName()"
           [disabled]="true"
           name="folderSelectorInput"
           class="form-control"
@@ -20,6 +23,23 @@
           >{{ 'Folders' | translate }}</label
         >
       </div>
+    </div>
+    <div class="col-md-3 col-sm-6 col-xs-6 ng-select-wrapper">
+      <ng-select
+        [items]="
+          templatesModel.templates && templatesModel.templates.length
+            ? templatesModel.templates
+            : []
+        "
+        bindLabel="label"
+        [placeholder]="'eForm' | translate"
+        bindValue="id"
+        [typeahead]="typeahead"
+        [ngModel]="timePlanningSettingsModel.eformId"
+        (ngModelChange)="updateEform($event)"
+        id="eformSelector"
+      >
+      </ng-select>
     </div>
   </div>
   <div class="row p-1 table-responsive no-gutters">
@@ -48,22 +68,22 @@
       <tbody id="tableBody">
         <tr
           *ngFor="
-            let siteDto of timePlanningSettingsModel?.assignedSites;
+            let siteDtoId of timePlanningSettingsModel?.assignedSites;
             let i = index
           "
         >
           <td id="workOrderSiteId">
-            {{ siteDto.siteUId }}
+            {{ siteDtoId }}
           </td>
           <td id="workOrderSiteName">
-            {{ siteDto.siteName }}
+            {{ getNameSite(siteDtoId) }}
           </td>
           <td id="workOrderSiteActions">
             <button
               mdbBtn
               class="btn-danger btn-icon mb-2"
               id="removeSiteBtn"
-              (click)="showRemoveSiteModal(siteDto)"
+              (click)="showRemoveSiteModal(siteDtoId)"
               mdbTooltip="{{ 'Remove site' | translate }}"
             >
               <fa-icon icon="trash-alt" [fixedWidth]="true" size="lg"></fa-icon>
@@ -75,7 +95,10 @@
   </div>
   <div
     class="row p-1 my-4 mx-2"
-    *ngIf="timePlanningSettingsModel?.assignedSites.length === 0"
+    *ngIf="
+      !timePlanningSettingsModel?.assignedSites ||
+      timePlanningSettingsModel?.assignedSites.length === 0
+    "
   >
     <span>{{ 'No assigned sites found' | translate }}</span>
   </div>

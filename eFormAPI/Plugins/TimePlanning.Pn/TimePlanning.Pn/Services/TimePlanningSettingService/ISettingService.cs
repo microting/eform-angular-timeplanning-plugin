@@ -24,16 +24,24 @@ SOFTWARE.
 
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Infrastructure.Models.Settings;
+    using Microting.eForm.Dto;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
     public interface ISettingService
     {
         Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings();
 
-        Task<OperationResult> UpdateFolderAndEform(TimePlanningSettingsModel timePlanningSettingsModel);
+        Task<OperationResult> UpdateEform(int eformId);
 
-        Task<OperationResult> UpdateSites(TimePlanningSettingsModel timePlanningSettingsModel);
+        Task<OperationResult> AddSite(int siteId);
+
+        Task<OperationResult> UpdateFolder(int folderId);
+
+        Task<OperationResult> DeleteSite(int siteId);
+
+        Task<OperationDataResult<List<SiteDto>>> GetAvailableites();
     }
 }

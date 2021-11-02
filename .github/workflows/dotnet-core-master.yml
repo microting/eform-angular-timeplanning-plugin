@@ -2,7 +2,7 @@ name: .NET Master
 
 on:
   push:
-    branches: [ master, stable ]
+    branches: [ master, main, stable ]
     paths-ignore:
     - '**.md'
     - '.github/**'
@@ -53,7 +53,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: microting/eform-angular-frontend
-        ref: ${{ steps.extract_branch.outputs.branch }}
+        ref: stable
         path: eform-angular-frontend
     - name: Install dependencies
       run: dotnet restore main/eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.sln
@@ -66,9 +66,9 @@ jobs:
       run: dotnet test --no-restore -c Release -v n main/eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/TimePlanning.Pn.Test.csproj
     - name: Copy dependencies
       run: |
-        cp -av main/eform-client/src/app/plugins/modules/backend-configuration-pn eform-angular-frontend/eform-client/src/app/plugins/modules/backend-configuration-pn
-        cp -av main/eform-client/e2e/Tests/backend-configuration-settings eform-angular-frontend/eform-client/e2e/Tests/backend-configuration-settings
-        cp -av main/eform-client/e2e/Tests/backend-configuration-general eform-angular-frontend/eform-client/e2e/Tests/backend-configuration-general
+        cp -av main/eform-client/src/app/plugins/modules/time-planning-pn eform-angular-frontend/eform-client/src/app/plugins/modules/time-planning-pn
+        cp -av main/eform-client/e2e/Tests/time-planning-settings eform-angular-frontend/eform-client/e2e/Tests/time-planning-settings
+        cp -av main/eform-client/e2e/Tests/time-planning-general eform-angular-frontend/eform-client/e2e/Tests/time-planning-general
         cp -av main/eform-client/e2e/Page\ objects/TimePlanning eform-angular-frontend/eform-client/e2e/Page\ objects/TimePlanning
         cp -av main/eform-client/wdio-headless-plugin-step2.conf.js eform-angular-frontend/eform-client/wdio-headless-plugin-step2.conf.js
         cp -av main/eform-client/wdio-plugin-step2.conf.js eform-angular-frontend/eform-client/wdio-plugin-step2.conf.js

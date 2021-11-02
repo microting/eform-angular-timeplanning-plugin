@@ -1,14 +1,33 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { Subscription } from 'rxjs';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
-import { SitesService, FoldersService } from 'src/app/common/services';
-import { FolderDto, SiteNameDto } from 'src/app/common/models';
+import {
+  SitesService,
+  FoldersService,
+  EFormService,
+} from 'src/app/common/services';
+import {
+  FolderDto,
+  SiteNameDto,
+  TemplateListModel,
+  TemplateRequestModel,
+} from 'src/app/common/models';
 import { composeFolderName } from 'src/app/common/helpers';
-import { TimePlanningSettingsModel } from 'src/app/plugins/modules/time-planning-pn/models';
-import { TimePlanningPnSettingsService } from 'src/app/plugins/modules/time-planning-pn/services';
-import { TimePlanningSettingsFoldersModalComponent } from '../time-planning-settings-folders-modal/time-planning-settings-folders-modal.component';
-import { TimePlanningSettingsAddSiteModalComponent } from '../time-planning-settings-add-site-modal/time-planning-settings-add-site-modal.component';
-import { TimePlanningSettingsRemoveSiteModalComponent } from '../time-planning-settings-remove-site-modal/time-planning-settings-remove-site-modal.component';
+import { TimePlanningSettingsModel } from '../../../models';
+import { TimePlanningPnSettingsService } from '../../../services';
+import {
+  TimePlanningSettingsFoldersModalComponent,
+  TimePlanningSettingsAddSiteModalComponent,
+  TimePlanningSettingsRemoveSiteModalComponent,
+} from '../../../components';
+import { debounceTime, switchMap } from 'rxjs/operators';
 
 @AutoUnsubscribe()
 @Component({
@@ -23,23 +42,40 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   addSiteModal: TimePlanningSettingsAddSiteModalComponent;
   @ViewChild('foldersModal', { static: false })
   foldersModal: TimePlanningSettingsFoldersModalComponent;
-  timePlanningSettingsModel: TimePlanningSettingsModel =
-    new TimePlanningSettingsModel();
+  timePlanningSettingsModel: TimePlanningSettingsModel = new TimePlanningSettingsModel();
   sites: SiteNameDto[] = [];
   foldersTreeDto: FolderDto[] = [];
   foldersDto: FolderDto[] = [];
+  templateRequestModel: TemplateRequestModel = new TemplateRequestModel();
+  typeahead = new EventEmitter<string>();
+  templatesModel: TemplateListModel = new TemplateListModel();
+
   settingsSub$: Subscription;
   sitesSub$: Subscription;
   foldersSubTree$: Subscription;
   foldersSub$: Subscription;
   folderUpdateSub$: Subscription;
-  tasksFolder: boolean;
 
   constructor(
     private settingsService: TimePlanningPnSettingsService,
     private sitesService: SitesService,
+    private eFormService: EFormService,
+    private cd: ChangeDetectorRef,
     private foldersService: FoldersService
-  ) {}
+  ) {
+    this.typeahead
+      .pipe(
+        debounceTime(200),
+        switchMap((term) => {
+          this.templateRequestModel.nameFilter = term;
+          return this.eFormService.getAll(this.templateRequestModel);
+        })
+      )
+      .subscribe((items) => {
+        this.templatesModel = items.model;
+        this.cd.markForCheck();
+      });
+  }
 
   ngOnInit(): void {
     this.getSettings();
@@ -82,8 +118,6 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
       .subscribe((operation) => {
         if (operation && operation.success) {
           this.foldersDto = operation.model;
-          this.setFolderName();
-          this.setFolderTaskName();
         }
       });
   }
@@ -95,35 +129,29 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
     );
   }
 
-  showRemoveSiteModal(selectedSite: SiteNameDto) {
-    this.removeSiteModal.show(selectedSite);
+  showRemoveSiteModal(selectedSiteId: number) {
+    this.removeSiteModal.show(
+      this.sites.find((x) => x.siteUId === selectedSiteId)
+    );
   }
 
   openFoldersModal() {
-    this.tasksFolder = false;
     this.foldersModal.show(this.timePlanningSettingsModel.folderId);
   }
 
   onFolderSelected(folderDto: FolderDto) {
-    this.updateFolder(folderDto.id);
+    if (folderDto) {
+      this.updateFolder(folderDto.id);
+    }
   }
 
-  setFolderTaskName() {
-    this.timePlanningSettingsModel.folderTasksId === null
-      ? (this.timePlanningSettingsModel.folderTasksName = null)
-      : (this.timePlanningSettingsModel.folderTasksName = composeFolderName(
-          this.timePlanningSettingsModel.folderTasksId,
-          this.foldersDto
-        ));
-  }
-
-  setFolderName() {
-    this.timePlanningSettingsModel.folderId === null
-      ? (this.timePlanningSettingsModel.folderName = null)
-      : (this.timePlanningSettingsModel.folderName = composeFolderName(
+  getFolderName(): string {
+    return this.timePlanningSettingsModel.folderId === null
+      ? ''
+      : composeFolderName(
           this.timePlanningSettingsModel.folderId,
           this.foldersDto
-        ));
+        );
   }
 
   updateFolder(folderDtoId: number) {
@@ -134,6 +162,21 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
           this.getSettings();
         }
       });
+  }
+
+  getNameSite(id: number) {
+    const index = this.sites.findIndex((x) => x.siteUId === id);
+    if (index !== -1) {
+      return this.sites[index].siteName;
+    }
+  }
+
+  updateEform(eformId: number) {
+    this.settingsService.updateSettingsEform(eformId).subscribe((operation) => {
+      if (operation && operation.success) {
+        this.getSettings();
+      }
+    });
   }
 
   ngOnDestroy(): void {}
