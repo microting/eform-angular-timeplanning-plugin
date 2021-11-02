@@ -108,9 +108,32 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
 
                 if (model.Sort.ToLower() == "weekday")
                 {
-                    timePlannings = model.IsSortDsc
-                        ? timePlannings.OrderByDescending(x => x.WeekDay).ToList()
-                        : timePlannings.OrderBy(x => x.WeekDay).ToList();
+                    List<TimePlanningPlanningHelperModel> tempResult;
+
+                    if (model.IsSortDsc)
+                    {
+                        tempResult = timePlannings
+                            .Where(x => x.WeekDay == 0)
+                            .OrderByDescending(x => x.WeekDay)
+                            .ThenByDescending(x => x.Date)
+                            .ToList();
+                        tempResult.AddRange(timePlannings
+                            .Where(x => x.WeekDay > 0)
+                            .OrderByDescending(x => x.WeekDay));
+                    }
+                    else
+                    {
+                        tempResult = timePlannings
+                            .Where(x => x.WeekDay > 0)
+                            .OrderBy(x => x.WeekDay)
+                            .ThenBy(x => x.Date)
+                            .ToList();
+                        tempResult.AddRange(timePlannings
+                            .Where(x => x.WeekDay == 0)
+                            .OrderBy(x => x.Date));
+                    }
+
+                    timePlannings = tempResult;
                 }
                 else
                 {
