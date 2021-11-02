@@ -120,7 +120,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     .Select(x => new TimePlanningPlanningModel
                     {
                         WeekDay = x.WeekDay,
-                        Date = x.Date.ToString("dd-MM-yyyy"),
+                        Date = x.Date.ToString("yyyy/MM/dd"),
                         PlanText = x.PlanText,
                         PlanHours = x.PlanHours,
                         MessageId = x.MessageId,
