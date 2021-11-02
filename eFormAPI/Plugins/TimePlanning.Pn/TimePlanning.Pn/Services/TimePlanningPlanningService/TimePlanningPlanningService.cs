@@ -68,14 +68,12 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
-                var dateFrom = DateTime.ParseExact(model.DateFrom, "dd-MM-yyyy", CultureInfo.InvariantCulture);
-                var dateTo = DateTime.ParseExact(model.DateTo, "dd-MM-yyyy", CultureInfo.InvariantCulture);
-
-                Debugger.Break();
+                //var dateFrom = DateTime.ParseExact(model.DateFrom, "dd-MM-yyyy", CultureInfo.InvariantCulture);
+                //var dateTo = DateTime.ParseExact(model.DateTo, "dd-MM-yyyy", CultureInfo.InvariantCulture);
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Date >= dateFrom || x.Date <= dateTo)
+                    .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
                     .Where(x => x.AssignedSiteId == model.SiteId);
                 
                 var timePlannings = await timePlanningRequest
@@ -89,19 +87,19 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     })
                     .ToListAsync();
 
-                var date = (int)(dateTo - dateFrom).TotalDays + 1;
+                var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
                 if (timePlannings.Count < date)
                 {
                     var daysForAdd = new List<TimePlanningPlanningHelperModel>();
                     for (var i = 0; i < date; i++)
                     {
-                        if (timePlannings.All(x => x.Date != dateFrom.AddDays(i)))
+                        if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
                         {
                             daysForAdd.Add(new TimePlanningPlanningHelperModel
                             {
-                                Date = dateFrom.AddDays(i),
-                                WeekDay = (int)dateFrom.AddDays(i).DayOfWeek,
+                                Date = model.DateFrom.AddDays(i),
+                                WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
                             });
                         }
                     }
