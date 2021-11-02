@@ -169,10 +169,14 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             try
             {
                 //var date = DateTime.Parse(model.Date);
-
+                var assignedSiteId = await _dbContext.AssignedSites
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.SiteId == model.SiteId)
+                    .Select(x => x.Id)
+                    .FirstAsync();
                 var planning = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.AssignedSiteId == model.SiteId)
+                    .Where(x => x.AssignedSiteId == assignedSiteId)
                     .Where(x => x.Date == model.Date)
                     .FirstOrDefaultAsync();
                 if (planning != null)
@@ -180,7 +184,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     return await UpdatePlanning(planning, model);
                 }
 
-                return await CreatePlanning(model/*, date*/);
+                return await CreatePlanning(model, assignedSiteId/*, date*/);
             }
             catch (Exception e)
             {
@@ -192,7 +196,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model/*, DateTime date*/)
+        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, int assignedSiteId /*, DateTime date*/)
         {
             try
             {
@@ -200,7 +204,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 {
                     MessageId = (int)model.MessageId,
                     PlanText = model.PlanText,
-                    AssignedSiteId = model.SiteId,
+                    AssignedSiteId = assignedSiteId,
                     Date = model.Date,
                     PlanHours = model.PlanHours,
                     CreatedByUserId = _userService.UserId,
