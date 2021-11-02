@@ -24,6 +24,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     using System.Linq;
     using System.Threading.Tasks;
     using Infrastructure.Models.WorkingHours.Index;
+    using Infrastructure.Models.WorkingHours.UpdateCreate;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microting.eForm.Infrastructure.Constants;
@@ -58,7 +59,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             _core = core;
         }
 
-        public async Task<OperationDataResult<List<TimePlanningWorkingHoursViewModel>>> Index(TimePlanningWorkingHoursRequestModel model)
+        public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model)
         {
             try
             {
@@ -66,24 +67,24 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
                     .Where(x => x.AssignedSiteId == model.WorkerId)
-                    .Select(pr => new TimePlanningWorkingHoursViewModel
+                    .Select(pr => new TimePlanningWorkingHoursModel
                     {
-                        WorkerId = pr.AssignedSiteId,
+                        //WorkerId = pr.AssignedSiteId,
                         WeekDay = (int)pr.Date.DayOfWeek,
                         Date = pr.Date,
                         PlanText = pr.PlanText,
                         PlanHours = pr.PlanHours,
-                        Start1Id = pr.Start1Id,
-                        Stop1Id = pr.Stop1Id,
-                        Pause1Id = pr.Pause1Id,
-                        Start2Id = pr.Start2Id,
-                        Stop2Id = pr.Stop2Id,
-                        Pause2Id = pr.Pause2Id,
+                        Shift1Start = pr.Start1Id,
+                        Shift1Stop = pr.Stop1Id,
+                        Shift1Pause = pr.Pause1Id,
+                        Shift2Start = pr.Start2Id,
+                        Shift2Stop = pr.Stop2Id,
+                        Shift2Pause = pr.Pause2Id,
                         NettoHours = pr.NettoHours,
-                        Flex = pr.Flex,
+                        FlexHours = pr.Flex,
                         SumFlex = pr.SumFlex,
-                        PaiedOutFlex = pr.PaiedOutFlex,
-                        MessageId = pr.MessageId,
+                        PaidOutFlex = pr.PaiedOutFlex,
+                        Message = pr.MessageId,
                         CommentWorker = "",
                         CommentOffice = pr.CommentOffice,
                         CommentOfficeAll = pr.CommentOfficeAll,
@@ -94,23 +95,23 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 if (timePlannings.Count < date)
                 {
-                    var timePlanningForAdd = new List<TimePlanningWorkingHoursViewModel>();
+                    var timePlanningForAdd = new List<TimePlanningWorkingHoursModel>();
                     for (var i = 0; i < date; i++)
                     {
                         if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
                         {
-                            timePlanningForAdd.Add(new TimePlanningWorkingHoursViewModel
+                            timePlanningForAdd.Add(new TimePlanningWorkingHoursModel
                             {
                                 Date = model.DateFrom.AddDays(i),
                                 WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
-                                WorkerId = model.WorkerId,
+                                //WorkerId = model.WorkerId,
                             });
                         }
                     }
                     timePlannings.AddRange(timePlanningForAdd);
                 }
 
-                return new OperationDataResult<List<TimePlanningWorkingHoursViewModel>>(
+                return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                     true,
                     timePlannings);
             }
@@ -118,49 +119,53 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationDataResult<List<TimePlanningWorkingHoursViewModel>>(
+                return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                     false,
                     _localizationService.GetString("ErrorWhileObtainingPlannings"));
             };
         }
 
-        public async Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursViewModel model)
+        public async Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursUpdateCreateModel model)
         {
             try
             {
-                var planning = await _dbContext.PlanRegistrations
+                var plannings = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.AssignedSiteId == model.WorkerId)
-                    .Where(x => x.Date == model.Date)
-                    .FirstOrDefaultAsync();
-                if (planning != null)
+                    .Where(x => x.AssignedSiteId == model.SiteId)
+                    .ToListAsync();
+                foreach (var planning in model.Plannings)
                 {
-                    return await UpdatePlanning(planning, model);
-                }
+                    var planningFomrDb = plannings.FirstOrDefault(x => x.Date == planning.Date);
+                    if (planningFomrDb != null)
+                    {
+                        await UpdatePlanning(planningFomrDb, planning);
+                    }
 
-                return await CreatePlanning(model);
+                    await CreatePlanning(planning, model.SiteId);
+                }
+                return new OperationResult(
+                    true,
+                    _localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationDataResult<List<TimePlanningWorkingHoursViewModel>>(
+                return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                     false,
                     _localizationService.GetString("ErrorWhileCreateUpdatePlannings"));
             }
         }
 
-
-
-        private async Task<OperationResult> CreatePlanning(TimePlanningWorkingHoursViewModel model)
+        private async Task CreatePlanning(TimePlanningWorkingHoursModel model, int siteId)
         {
             try
             {
                 var planning = new PlanRegistration
                 {
-                    MessageId = model.MessageId,
+                    MessageId = model.Message,
                     PlanText = model.PlanText,
-                    AssignedSiteId = model.WorkerId,
+                    AssignedSiteId = siteId,
                     Date = model.Date,
                     PlanHours = model.PlanHours,
                     CreatedByUserId = _userService.UserId,
@@ -168,68 +173,69 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     CommentOffice = model.CommentOffice,
                     CommentOfficeAll = model.CommentOfficeAll,
                     NettoHours = model.NettoHours,
-                    PaiedOutFlex = model.PaiedOutFlex,
-                    Pause1Id = model.Pause1Id,
-                    Pause2Id = model.Pause1Id,
-                    Start1Id = model.Start1Id,
-                    Start2Id = model.Start2Id,
-                    Stop1Id = model.Stop1Id,
-                    Stop2Id = model.Stop2Id,
-                    Flex = model.Flex,
+                    PaiedOutFlex = model.PaidOutFlex,
+                    Pause1Id = model.Shift1Pause,
+                    Pause2Id = model.Shift1Pause,
+                    Start1Id = model.Shift1Start,
+                    Start2Id = model.Shift2Start,
+                    Stop1Id = model.Shift1Stop,
+                    Stop2Id = model.Shift2Stop,
+                    Flex = model.FlexHours,
                     SumFlex = model.SumFlex,
                 };
 
                 await planning.Create(_dbContext);
-                return new OperationResult(
-                    true,
-                    _localizationService.GetString("SuccessfullyCreatePlanning"));
+                //return new OperationResult(
+                //    true,
+                //    _localizationService.GetString("SuccessfullyCreatePlanning"));
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationResult(
-                    false,
-                    _localizationService.GetString("ErrorWhileCreatePlanning"));
+                //return new OperationResult(
+                //    false,
+                //    _localizationService.GetString("ErrorWhileCreatePlanning"));
             }
         }
 
-        private async Task<OperationResult> UpdatePlanning(PlanRegistration planning, TimePlanningWorkingHoursViewModel model)
+        private async Task UpdatePlanning(PlanRegistration planning,
+            TimePlanningWorkingHoursModel model)
         {
             try
             {
-                planning.MessageId = model.MessageId;
+                planning.MessageId = model.Message;
                 planning.PlanText = model.PlanText;
-                planning.AssignedSiteId = model.WorkerId;
+                //planning.AssignedSiteId = siteId;
                 planning.Date = model.Date;
                 planning.PlanHours = model.PlanHours;
                 planning.UpdatedByUserId = _userService.UserId;
                 planning.CommentOffice = model.CommentOffice;
                 planning.CommentOfficeAll = model.CommentOfficeAll;
                 planning.NettoHours = model.NettoHours;
-                planning.PaiedOutFlex = model.PaiedOutFlex;
-                planning.Pause1Id = model.Pause1Id;
-                planning.Pause2Id = model.Pause1Id;
-                planning.Start1Id = model.Start1Id;
-                planning.Start2Id = model.Start2Id;
-                planning.Stop1Id = model.Stop1Id;
-                planning.Stop2Id = model.Stop2Id;
-                planning.Flex = model.Flex;
+                planning.PaiedOutFlex = model.PaidOutFlex;
+                planning.Pause1Id = model.Shift1Pause;
+                planning.Pause2Id = model.Shift1Pause;
+                planning.Start1Id = model.Shift1Start;
+                planning.Start2Id = model.Shift2Start;
+                planning.Stop1Id = model.Shift1Stop;
+                planning.Stop2Id = model.Shift2Stop;
+                planning.Flex = model.FlexHours;
                 planning.SumFlex = model.SumFlex;
 
                 await planning.Update(_dbContext);
 
-                return new OperationResult(
-                    true,
-                    _localizationService.GetString("SuccessfullyUpdatePlanning"));
+                //return new OperationResult(
+                //    true,
+                //    _localizationService.GetString("SuccessfullyUpdatePlanning"));
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationResult(
-                    false,
-                    _localizationService.GetString("ErrorWhileUpdatePlanning"));
+                //return new OperationResult(
+                //    false,
+                //    _localizationService.GetString("ErrorWhileUpdatePlanning"));
             }
         }
 

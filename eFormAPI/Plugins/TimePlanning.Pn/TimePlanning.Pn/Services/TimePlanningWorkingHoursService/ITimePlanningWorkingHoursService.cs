@@ -22,6 +22,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Infrastructure.Models.WorkingHours.Index;
+    using Infrastructure.Models.WorkingHours.UpdateCreate;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
     /// <summary>
@@ -29,8 +30,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     /// </summary>
     public interface ITimePlanningWorkingHoursService
     {
-        Task<OperationDataResult<List<TimePlanningWorkingHoursViewModel>>> Index(TimePlanningWorkingHoursRequestModel model);
+        Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model);
 
-        Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursViewModel model);
+        Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursUpdateCreateModel model);
     }
 }

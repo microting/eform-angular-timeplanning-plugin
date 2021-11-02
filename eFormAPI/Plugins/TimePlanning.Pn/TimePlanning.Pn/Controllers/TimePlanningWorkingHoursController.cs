@@ -23,6 +23,7 @@ namespace TimePlanning.Pn.Controllers
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Infrastructure.Models.WorkingHours.Index;
+    using Infrastructure.Models.WorkingHours.UpdateCreate;
     using Microsoft.AspNetCore.Mvc;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
     using Services.TimePlanningWorkingHoursService;
@@ -39,14 +40,14 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpPost]
         [Route("index")]
-        public async Task<OperationDataResult<List<TimePlanningWorkingHoursViewModel>>> Index(
+        public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(
             [FromBody] TimePlanningWorkingHoursRequestModel model)
         {
             return await _workingHoursService.Index(model);
         }
 
         [HttpPut]
-        public async Task<OperationResult> Update([FromBody] TimePlanningWorkingHoursViewModel model)
+        public async Task<OperationResult> Update([FromBody] TimePlanningWorkingHoursUpdateCreateModel model)
         {
             return await _workingHoursService.CreateUpdate(model);
         }

@@ -76,7 +76,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 var timePlanningRequest = _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date >= dateFrom || x.Date <= dateTo)
-                    .Where(x => x.AssignedSiteId == model.WorkerId);
+                    .Where(x => x.AssignedSiteId == model.SiteId);
                 
                 var timePlannings = await timePlanningRequest
                     .Select(x => new TimePlanningPlanningHelperModel
@@ -110,13 +110,13 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
 
                 if (model.Sort.ToLower() == "weekday")
                 {
-                    timePlannings = model.IsSortDesc
+                    timePlannings = model.IsSortDsc
                         ? timePlannings.OrderByDescending(x => x.WeekDay).ToList()
                         : timePlannings.OrderBy(x => x.WeekDay).ToList();
                 }
                 else
                 {
-                    timePlannings = model.IsSortDesc
+                    timePlannings = model.IsSortDsc
                         ? timePlannings.OrderByDescending(x => x.Date).ToList()
                         : timePlannings.OrderBy(x => x.Date).ToList();
                 }

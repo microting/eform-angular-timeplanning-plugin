@@ -26,7 +26,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
 {
     public class TimePlanningPlanningModel
     {
-        //public int WorkerId { get; set; }
+        //public int SiteId { get; set; }
 
         public int WeekDay { get; set; }
 
