@@ -32,6 +32,7 @@
     <ItemGroup>
       <Folder Include="Helpers\" />
       <Folder Include="Infrastructure\Consts\" />
+      <Folder Include="Infrastructure\Models\Planning\HelperModel\" />
       <Folder Include="Messages\" />
     </ItemGroup>
 

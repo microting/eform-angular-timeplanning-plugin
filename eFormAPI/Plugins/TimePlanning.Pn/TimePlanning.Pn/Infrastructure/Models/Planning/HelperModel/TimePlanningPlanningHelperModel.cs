@@ -1,4 +1,4 @@
-/*
+﻿/*
 The MIT License (MIT)
 
 Copyright (c) 2007 - 2021 Microting A/S
@@ -22,15 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
+namespace TimePlanning.Pn.Infrastructure.Models.Planning.HelperModel
 {
     using System;
 
-    public class TimePlanningPlanningModel
+    public class TimePlanningPlanningHelperModel
     {
         public int WorkerId { get; set; }
         public int WeekDay { get; set; }
-        public string Date { get; set; }
+        public DateTime Date { get; set; }
         public string PlanText { get; set; }
         public double PlanHours { get; set; }
         public int? MessageId { get; set; }

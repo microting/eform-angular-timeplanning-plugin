@@ -27,10 +27,12 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Globalization;
     using System.Linq;
     using System.Threading.Tasks;
     using Extensions;
     using Infrastructure.Models.Planning;
+    using Infrastructure.Models.Planning.HelperModel;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microting.eForm.Infrastructure.Constants;
@@ -66,32 +68,21 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
-                var dateFrom = DateTime.Parse(model.DateFrom);
-                var dateTo = DateTime.Parse(model.DateTo);
+                var dateFrom = DateTime.ParseExact(model.DateFrom, "dd-MM-yyyy", CultureInfo.InvariantCulture);
+                var dateTo = DateTime.ParseExact(model.DateTo, "dd-MM-yyyy", CultureInfo.InvariantCulture);
+
+                Debugger.Break();
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date >= dateFrom || x.Date <= dateTo)
                     .Where(x => x.AssignedSiteId == model.WorkerId);
-
-                if (model.Sort == "WeekDay".ToLower())
-                {
-                    timePlanningRequest = model.IsSortDesc 
-                        ? timePlanningRequest.OrderByDescending(x => x.Date.StartOfWeek(DayOfWeek.Monday))
-                        : timePlanningRequest.OrderBy(x => x.Date.StartOfWeek(DayOfWeek.Monday));
-                }
-                else
-                {
-                    timePlanningRequest = model.IsSortDesc
-                        ? timePlanningRequest.OrderByDescending(x => x.Date)
-                        : timePlanningRequest.OrderBy(x => x.Date);
-                }
                 
                 var timePlannings = await timePlanningRequest
-                    .Select(x => new TimePlanningPlanningModel
+                    .Select(x => new TimePlanningPlanningHelperModel
                     {
                         WeekDay = (int)x.Date.DayOfWeek,
-                        Date = x.Date.ToString("MM-dd-yyyy"),
+                        Date = x.Date,
                         PlanText = x.PlanText,
                         PlanHours = x.PlanHours,
                         MessageId = x.MessageId,
@@ -102,25 +93,48 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
 
                 if (timePlannings.Count < date)
                 {
-                    var timePlanningForAdd = new List<TimePlanningPlanningModel>();
+                    var daysForAdd = new List<TimePlanningPlanningHelperModel>();
                     for (var i = 0; i < date; i++)
                     {
-                        if (timePlannings.All(x => x.Date != dateFrom.AddDays(i).ToString("MM-dd-yyyy")))
+                        if (timePlannings.All(x => x.Date != dateFrom.AddDays(i)))
                         {
-                            timePlanningForAdd.Add(new TimePlanningPlanningModel
+                            daysForAdd.Add(new TimePlanningPlanningHelperModel
                             {
-                                Date = dateFrom.AddDays(i).ToString("MM-dd-yyyy"),
+                                Date = dateFrom.AddDays(i),
                                 WeekDay = (int)dateFrom.AddDays(i).DayOfWeek,
                             });
                         }
                     }
-                    timePlannings.AddRange(timePlanningForAdd);
+                    timePlannings.AddRange(daysForAdd);
                 }
 
-                timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
+                if (model.Sort.ToLower() == "weekday")
+                {
+                    timePlannings = model.IsSortDesc
+                        ? timePlannings.OrderByDescending(x => x.WeekDay).ToList()
+                        : timePlannings.OrderBy(x => x.WeekDay).ToList();
+                }
+                else
+                {
+                    timePlannings = model.IsSortDesc
+                        ? timePlannings.OrderByDescending(x => x.Date).ToList()
+                        : timePlannings.OrderBy(x => x.Date).ToList();
+                }
+
+                var result = timePlannings
+                    .Select(x => new TimePlanningPlanningModel
+                    {
+                        WeekDay = x.WeekDay,
+                        Date = x.Date.ToString("dd-MM-yyyy"),
+                        PlanText = x.PlanText,
+                        PlanHours = x.PlanHours,
+                        MessageId = x.MessageId,
+                    })
+                    .ToList();
+
                 return new OperationDataResult<List<TimePlanningPlanningModel>>(
                     true,
-                    timePlannings);
+                    result);
             }
             catch (Exception e)
             {
