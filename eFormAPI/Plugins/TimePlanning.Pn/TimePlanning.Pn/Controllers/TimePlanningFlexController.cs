@@ -1,18 +1,14 @@
 ﻿/*
 The MIT License (MIT)
-
 Copyright (c) 2007 - 2021 Microting A/S
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,19 +18,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
+namespace TimePlanning.Pn.Controllers
 {
-    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Infrastructure.Models.Flex.Index;
+    using Microsoft.AspNetCore.Mvc;
+    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+    using Services.TimePlanningFlexService;
 
-    /// <summary>
-    /// Class TimePlanningPlanningRequestModel.
-    /// </summary>
-    public class TimePlanningPlanningRequestModel
+    [Route("api/time-planning-pn/flex")]
+    public class TimePlanningFlexController
     {
-        public int WorkerId { get; set; }
-        public string DateFrom { get; set; }
-        public string DateTo { get; set; }
-        public bool IsSortDesc { get; set; }
-        public string Sort { get; set; }
+        private readonly ITimePlanningFlexService _flexService;
+
+        public TimePlanningFlexController(ITimePlanningFlexService flexService)
+        {
+            _flexService = flexService;
+        }
+
+        [HttpPost]
+        [Route("index")]
+        public async Task<OperationDataResult<List<TimePlanningFlexIndexViewModel>>> Index()
+        {
+            return await _flexService.Index();
+        }
     }
 }

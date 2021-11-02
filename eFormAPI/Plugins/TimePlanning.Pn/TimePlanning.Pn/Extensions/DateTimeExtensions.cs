@@ -21,20 +21,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
+namespace TimePlanning.Pn.Extensions
 {
     using System;
 
-    /// <summary>
-    /// Class TimePlanningPlanningRequestModel.
-    /// </summary>
-    public class TimePlanningPlanningRequestModel
+    public static class DateTimeExtensions
     {
-        public int WorkerId { get; set; }
-        public string DateFrom { get; set; }
-        public string DateTo { get; set; }
-        public bool IsSortDesc { get; set; }
-        public string Sort { get; set; }
+        public static DateTime StartOfWeek(this DateTime dt, DayOfWeek startOfWeek)
+        {
+            int diff = (7 + (dt.DayOfWeek - startOfWeek)) % 7;
+            return dt.AddDays(-1 * diff).Date;
+        }
     }
 }

@@ -29,6 +29,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
     using System.Diagnostics;
     using System.Linq;
     using System.Threading.Tasks;
+    using Extensions;
     using Infrastructure.Models.Planning;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
@@ -65,34 +66,51 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
-                var timePlannings = await _dbContext.PlanRegistrations
+                var dateFrom = DateTime.Parse(model.DateFrom);
+                var dateTo = DateTime.Parse(model.DateTo);
+
+                var timePlanningRequest = _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
-                    .Where(x => x.AssignedSiteId == model.WorkerId)
+                    .Where(x => x.Date >= dateFrom || x.Date <= dateTo)
+                    .Where(x => x.AssignedSiteId == model.WorkerId);
+
+                if (model.Sort == "WeekDay".ToLower())
+                {
+                    timePlanningRequest = model.IsSortDesc 
+                        ? timePlanningRequest.OrderByDescending(x => x.Date.StartOfWeek(DayOfWeek.Monday))
+                        : timePlanningRequest.OrderBy(x => x.Date.StartOfWeek(DayOfWeek.Monday));
+                }
+                else
+                {
+                    timePlanningRequest = model.IsSortDesc
+                        ? timePlanningRequest.OrderByDescending(x => x.Date)
+                        : timePlanningRequest.OrderBy(x => x.Date);
+                }
+                
+                var timePlannings = await timePlanningRequest
                     .Select(x => new TimePlanningPlanningModel
                     {
-                        WorkerId = x.AssignedSiteId,
                         WeekDay = (int)x.Date.DayOfWeek,
-                        Date = x.Date,
+                        Date = x.Date.ToString("MM-dd-yyyy"),
                         PlanText = x.PlanText,
                         PlanHours = x.PlanHours,
                         MessageId = x.MessageId,
                     })
                     .ToListAsync();
 
-                var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
+                var date = (int)(dateTo - dateFrom).TotalDays + 1;
 
                 if (timePlannings.Count < date)
                 {
                     var timePlanningForAdd = new List<TimePlanningPlanningModel>();
                     for (var i = 0; i < date; i++)
                     {
-                        if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
+                        if (timePlannings.All(x => x.Date != dateFrom.AddDays(i).ToString("MM-dd-yyyy")))
                         {
                             timePlanningForAdd.Add(new TimePlanningPlanningModel
                             {
-                                Date = model.DateFrom.AddDays(i),
-                                WorkerId = model.WorkerId,
+                                Date = dateFrom.AddDays(i).ToString("MM-dd-yyyy"),
+                                WeekDay = (int)dateFrom.AddDays(i).DayOfWeek,
                             });
                         }
                     }
@@ -118,17 +136,19 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
+                var date = DateTime.Parse(model.Date);
+
                 var planning = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.AssignedSiteId == model.WorkerId)
-                    .Where(x => x.Date == model.Date)
+                    .Where(x => x.Date == date)
                     .FirstOrDefaultAsync();
                 if (planning != null)
                 {
                     return await UpdatePlanning(planning, model);
                 }
 
-                return await CreatePlanning(model);
+                return await CreatePlanning(model, date);
             }
             catch (Exception e)
             {
@@ -140,7 +160,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningModel model)
+        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningModel model, DateTime date)
         {
             try
             {
@@ -149,7 +169,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     MessageId = (int)model.MessageId,
                     PlanText = model.PlanText,
                     AssignedSiteId = model.WorkerId,
-                    Date = model.Date,
+                    Date = date,
                     PlanHours = model.PlanHours,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId,

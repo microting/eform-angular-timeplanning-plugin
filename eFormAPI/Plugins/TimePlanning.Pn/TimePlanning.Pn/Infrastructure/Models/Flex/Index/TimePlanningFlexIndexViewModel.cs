@@ -22,19 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
+namespace TimePlanning.Pn.Infrastructure.Models.Flex.Index
 {
     using System;
+    using Common;
 
     /// <summary>
-    /// Class TimePlanningPlanningRequestModel.
+    /// TimePlanningFlexIndexViewModel
     /// </summary>
-    public class TimePlanningPlanningRequestModel
+    public class TimePlanningFlexIndexViewModel
     {
-        public int WorkerId { get; set; }
-        public string DateFrom { get; set; }
-        public string DateTo { get; set; }
-        public bool IsSortDesc { get; set; }
-        public string Sort { get; set; }
+        public DateTime Date { get; set; }
+        public EnumerableViewModel Worker { get; set; }
+        public double SumFlex { get; set; }
+        public double PaidOutFlex { get; set; }
+        public string CommentWorker { get; set; }
+        public string CommentOffice { get; set; }
+        public string CommentOfficeAll { get; set; }
     }
 }

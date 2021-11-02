@@ -22,19 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
+namespace TimePlanning.Pn.Infrastructure.Models.Common
 {
-    using System;
-
     /// <summary>
-    /// Class TimePlanningPlanningRequestModel.
+    /// EnumerableViewModel
     /// </summary>
-    public class TimePlanningPlanningRequestModel
+    public class EnumerableViewModel
     {
-        public int WorkerId { get; set; }
-        public string DateFrom { get; set; }
-        public string DateTo { get; set; }
-        public bool IsSortDesc { get; set; }
-        public string Sort { get; set; }
+        public int Id { get; set; }
+
+        public string Name { get; set; }
     }
 }

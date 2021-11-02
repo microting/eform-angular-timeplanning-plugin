@@ -21,20 +21,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
+namespace TimePlanning.Pn.Services.TimePlanningFlexService
 {
-    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Infrastructure.Models.Flex.Index;
+    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
     /// <summary>
-    /// Class TimePlanningPlanningRequestModel.
+    /// Interface ITimePlanningFlexService
     /// </summary>
-    public class TimePlanningPlanningRequestModel
+    public interface ITimePlanningFlexService
     {
-        public int WorkerId { get; set; }
-        public string DateFrom { get; set; }
-        public string DateTo { get; set; }
-        public bool IsSortDesc { get; set; }
-        public string Sort { get; set; }
+        Task<OperationDataResult<List<TimePlanningFlexIndexViewModel>>> Index();
     }
 }

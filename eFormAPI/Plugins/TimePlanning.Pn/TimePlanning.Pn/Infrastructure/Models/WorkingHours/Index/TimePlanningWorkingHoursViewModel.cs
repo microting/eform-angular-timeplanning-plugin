@@ -42,6 +42,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
         public double SumFlex { get; set; }
         public double PaiedOutFlex { get; set; }
         public int MessageId { get; set; }
+        public string CommentWorker { get; set; }
         public string CommentOffice { get; set; }
         public string CommentOfficeAll { get; set; }
     }

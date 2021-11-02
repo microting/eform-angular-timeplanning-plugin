@@ -1,14 +1,18 @@
 ﻿/*
 The MIT License (MIT)
+
 Copyright (c) 2007 - 2021 Microting A/S
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,13 +21,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
+
+namespace TimePlanning.Pn.Services.TimePlanningFlexService
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Infrastructure.Models.WorkingHours.Index;
+    using Infrastructure.Models.Common;
+    using Infrastructure.Models.Flex.Index;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microting.eForm.Infrastructure.Constants;
@@ -33,18 +39,18 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     using TimePlanningLocalizationService;
 
     /// <summary>
-    /// TimePlanningWorkingHoursService
+    /// TimePlanningFlexService
     /// </summary>
-    public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
+    public class TimePlanningFlexService : ITimePlanningFlexService
     {
-        private readonly ILogger<TimePlanningWorkingHoursService> _logger;
+        private readonly ILogger<TimePlanningFlexService> _logger;
         private readonly TimePlanningPnDbContext _dbContext;
         private readonly IUserService _userService;
         private readonly ITimePlanningLocalizationService _localizationService;
         private readonly IEFormCoreService _core;
 
-        public TimePlanningWorkingHoursService(
-            ILogger<TimePlanningWorkingHoursService> logger,
+        public TimePlanningFlexService(
+            ILogger<TimePlanningFlexService> logger,
             TimePlanningPnDbContext dbContext,
             IUserService userService,
             ITimePlanningLocalizationService localizationService,
@@ -57,70 +63,61 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             _core = core;
         }
 
-        public async Task<OperationDataResult<List<TimePlanningWorkingHoursViewModel>>> Index(TimePlanningWorkingHoursRequestModel model)
+        public async Task<OperationDataResult<List<TimePlanningFlexIndexViewModel>>> Index()
         {
             try
             {
-                var timePlannings = await _dbContext.PlanRegistrations
+                var core = await _core.GetCore();
+
+                var foundWorkers = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
-                    .Where(x => x.AssignedSiteId == model.WorkerId)
-                    .Select(pr => new TimePlanningWorkingHoursViewModel
+                    .Where(x => x.Date == DateTime.UtcNow.AddDays(-1))
+                    .Select(x => new
                     {
-                        WorkerId = pr.AssignedSiteId,
-                        WeekDay = (int)pr.Date.DayOfWeek,
-                        Date = pr.Date,
-                        PlanText = pr.PlanText,
-                        PlanHours = pr.PlanHours,
-                        Start1Id = pr.Start1Id,
-                        Stop1Id = pr.Stop1Id,
-                        Pause1Id = pr.Pause1Id,
-                        Start2Id = pr.Start2Id,
-                        Stop2Id = pr.Stop2Id,
-                        Pause2Id = pr.Pause2Id,
-                        NettoHours = pr.NettoHours,
-                        Flex = pr.Flex,
-                        SumFlex = pr.SumFlex,
-                        PaiedOutFlex = pr.PaiedOutFlex,
-                        MessageId = pr.MessageId,
+                        Date = x.Date,
+                        SiteId = x.AssignedSiteId,
+                        SumFlex = x.SumFlex,
+                        PaidOutFlex = x.PaiedOutFlex,
                         CommentWorker = "",
-                        CommentOffice = pr.CommentOffice,
-                        CommentOfficeAll = pr.CommentOfficeAll,
+                        CommentOffice = x.CommentOffice,
+                        CommentOfficeAll = x.CommentOfficeAll,
                     })
                     .ToListAsync();
 
-                var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
+                var resultWorkers = new List<TimePlanningFlexIndexViewModel>();
 
-                if (timePlannings.Count < date)
+                foreach (var worker in foundWorkers)
                 {
-                    var timePlanningForAdd = new List<TimePlanningWorkingHoursViewModel>();
-                    for (var i = 0; i < date; i++)
+                    var workerInfo = await core.SiteRead(worker.SiteId);
+
+                    resultWorkers.Add(new TimePlanningFlexIndexViewModel
                     {
-                        if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
+                        Date = worker.Date,
+                        Worker = new EnumerableViewModel
                         {
-                            timePlanningForAdd.Add(new TimePlanningWorkingHoursViewModel
-                            {
-                                Date = model.DateFrom.AddDays(i),
-                                WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
-                                WorkerId = model.WorkerId,
-                            });
-                        }
-                    }
-                    timePlannings.AddRange(timePlanningForAdd);
+                            Id = worker.SiteId,
+                            Name = $"{workerInfo.FirstName} {workerInfo.LastName}",
+                        },
+                        SumFlex = worker.SumFlex,
+                        PaidOutFlex = worker.PaidOutFlex,
+                        CommentWorker = worker.CommentWorker,
+                        CommentOffice = worker.CommentOffice,
+                        CommentOfficeAll = worker.CommentOfficeAll,
+                    });
                 }
 
-                return new OperationDataResult<List<TimePlanningWorkingHoursViewModel>>(
+                return new OperationDataResult<List<TimePlanningFlexIndexViewModel>>(
                     true,
-                    timePlannings);
+                    resultWorkers);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationDataResult<List<TimePlanningWorkingHoursViewModel>>(
+                return new OperationDataResult<List<TimePlanningFlexIndexViewModel>>(
                     false,
                     _localizationService.GetString("ErrorWhileObtainingPlannings"));
-            };
+            }
         }
     }
 }
