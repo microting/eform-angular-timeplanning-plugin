@@ -10,10 +10,14 @@ import { MDBBootstrapModule } from 'angular-bootstrap-md';
 import { EformSharedModule } from 'src/app/common/modules/eform-shared/eform-shared.module';
 import { TimePlanningPnRouting } from './time-planning-pn.routing.module';
 import {
+  TimePlanningsContainerComponent,
   TimePlanningSettingsAddSiteModalComponent,
   TimePlanningSettingsComponent,
   TimePlanningSettingsFoldersModalComponent,
   TimePlanningSettingsRemoveSiteModalComponent,
+  TimePlanningsHeaderComponent,
+  TimePlanningsTableComponent,
+  TimePlanningTableRowComponent,
 } from './components';
 import { TimePlanningPnLayoutComponent } from './layouts';
 import {
@@ -41,6 +45,10 @@ import {
     TimePlanningSettingsAddSiteModalComponent,
     TimePlanningSettingsFoldersModalComponent,
     TimePlanningSettingsRemoveSiteModalComponent,
+    TimePlanningTableRowComponent,
+    TimePlanningsTableComponent,
+    TimePlanningsContainerComponent,
+    TimePlanningsHeaderComponent,
   ],
   providers: [TimePlanningPnSettingsService, TimePlanningPnPlanningsService],
 })

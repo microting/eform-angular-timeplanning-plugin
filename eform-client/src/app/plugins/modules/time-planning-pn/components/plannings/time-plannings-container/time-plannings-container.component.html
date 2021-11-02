@@ -4,10 +4,11 @@
   <app-time-plannings-header
     [timePlanningsRequest]="timePlanningsRequest"
     (filtersChanged)="onTimePlanningsFiltersChanged($event)"
-    [availableWorkers]="availableWorkers"
+    [availableSites]="availableSites"
   ></app-time-plannings-header>
   <app-time-plannings-table
     [timePlannings]="timePlannings"
-    (updateTimePlanning)="onUpdateTimePlanning($event)"
+    (timePlanningChanged)="onUpdateTimePlanning($event)"
+    (sortChanged)="onSortChanged($event)"
   ></app-time-plannings-table>
 </div>

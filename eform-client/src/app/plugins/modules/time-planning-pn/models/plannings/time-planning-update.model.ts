@@ -1,7 +1,7 @@
 import { TimePlanningMessagesEnum } from '../../enums';
 
 export class TimePlanningUpdateModel {
-  workerId: number;
+  siteId: number;
   date: string;
   planText: string;
   planHours: number;

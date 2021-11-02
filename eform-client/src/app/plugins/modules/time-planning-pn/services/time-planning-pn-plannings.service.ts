@@ -11,9 +11,9 @@ import {
 
 export let TimePlanningPnPlanningsMethods = {
   Plannings: 'api/time-planning-pn/plannings',
-  SimplePlannings: 'api/time-planning-pn/plannings/simple',
-  IndexPlannings: 'api/time-planning-pn/plannings/index',
-  SinglePlanning: 'api/time-planning-pn/plannings/single',
+  SimplePlannings: 'api/time-planning-pn/plannings/index',
+  IndexWorkingHours: 'api/time-planning-pn/working-hours/index',
+  WorkingHours: 'api/time-planning-pn/working-hours',
 };
 
 @Injectable({
@@ -22,7 +22,7 @@ export let TimePlanningPnPlanningsMethods = {
 export class TimePlanningPnPlanningsService {
   constructor(private apiBaseService: ApiBaseService) {}
 
-  getSimplePlannings(
+  getPlannings(
     model: TimePlanningsRequestModel
   ): Observable<OperationDataResult<TimePlanningModel[]>> {
     return this.apiBaseService.post(
@@ -31,29 +31,29 @@ export class TimePlanningPnPlanningsService {
     );
   }
 
-  getPlannings(
+  getWorkingHours(
     model: TimePlanningsRequestModel
   ): Observable<OperationDataResult<TimePlanningModel[]>> {
     return this.apiBaseService.post(
-      TimePlanningPnPlanningsMethods.IndexPlannings,
+      TimePlanningPnPlanningsMethods.IndexWorkingHours,
       model
     );
   }
 
-  updateSinglePlanning(
+  updatePlanning(
     model: TimePlanningUpdateModel
   ): Observable<OperationResult> {
     return this.apiBaseService.put(
-      TimePlanningPnPlanningsMethods.SinglePlanning,
+      TimePlanningPnPlanningsMethods.Plannings,
       model
     );
   }
 
-  updatePlannings(
+  updateWorkingHours(
     model: TimePlanningsUpdateModel
   ): Observable<OperationResult> {
     return this.apiBaseService.put(
-      TimePlanningPnPlanningsMethods.Plannings,
+      TimePlanningPnPlanningsMethods.WorkingHours,
       model
     );
   }

@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { OperationDataResult, OperationResult } from 'src/app/common/models';
+import {
+  OperationDataResult,
+  OperationResult,
+  SiteDto,
+} from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
-import { TimePlanningSettingsModel } from 'src/app/plugins/modules/time-planning-pn/models';
+import { TimePlanningSettingsModel } from '../models';
 
 export let TimePlanningSettingsMethods = {
   Settings: 'api/time-planning-pn/settings',
@@ -17,6 +21,10 @@ export class TimePlanningPnSettingsService {
 
   getAllSettings(): Observable<OperationDataResult<TimePlanningSettingsModel>> {
     return this.apiBaseService.get(TimePlanningSettingsMethods.Settings);
+  }
+
+  getAvailableSites(): Observable<OperationDataResult<SiteDto[]>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.SettingsSites);
   }
 
   addSiteToSettings(siteId: number): Observable<OperationResult> {

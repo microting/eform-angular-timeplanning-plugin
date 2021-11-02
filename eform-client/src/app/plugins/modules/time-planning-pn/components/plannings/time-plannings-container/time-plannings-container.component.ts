@@ -2,15 +2,12 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
+import { TimePlanningsStateService } from 'src/app/plugins/modules/time-planning-pn/components/plannings/store';
+import { TimePlanningModel, TimePlanningsRequestModel } from '../../../models';
 import {
   TimePlanningPnPlanningsService,
   TimePlanningPnSettingsService,
 } from '../../../services';
-import {
-  TimePlanningModel,
-  TimePlanningsRequestModel,
-  TimePlanningUpdateModel,
-} from '../../../models';
 
 @AutoUnsubscribe()
 @Component({
@@ -19,35 +16,37 @@ import {
   styleUrls: ['./time-plannings-container.component.scss'],
 })
 export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
-  timePlanningsRequest: TimePlanningsRequestModel =
-    new TimePlanningsRequestModel();
-  availableWorkers: SiteDto[] = [];
+  timePlanningsRequest: TimePlanningsRequestModel;
+  availableSites: SiteDto[] = [];
   timePlannings: TimePlanningModel[] = [];
 
-  getSimpleTimePlannings$: Subscription;
+  getTimePlannings$: Subscription;
   updateTimePlanning$: Subscription;
   getAvailableSites$: Subscription;
 
   constructor(
     private planningsService: TimePlanningPnPlanningsService,
+    private planningsStateService: TimePlanningsStateService,
     private settingsService: TimePlanningPnSettingsService
   ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.getAvailableSites();
+  }
 
   getAvailableSites() {
     this.getAvailableSites$ = this.settingsService
       .getAvailableSites()
       .subscribe((data) => {
         if (data && data.success) {
-          this.availableWorkers = data.model;
+          this.availableSites = data.model;
         }
       });
   }
 
-  onTimePlanningsFiltersChanged(model: TimePlanningsRequestModel) {
-    this.getSimpleTimePlannings$ = this.planningsService
-      .getSimplePlannings(model)
+  getPlannings(model: TimePlanningsRequestModel) {
+    this.getTimePlannings$ = this.planningsStateService
+      .getPlannings(model)
       .subscribe((data) => {
         if (data && data.success) {
           this.timePlannings = data.model;
@@ -55,11 +54,28 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
       });
   }
 
-  onUpdateTimePlanning(model: TimePlanningUpdateModel) {
+  onTimePlanningsFiltersChanged(model: TimePlanningsRequestModel) {
+    this.timePlanningsRequest = { ...model };
+    this.getPlannings(model);
+  }
+
+  onUpdateTimePlanning(model: TimePlanningModel) {
     this.updateTimePlanning$ = this.planningsService
-      .updateSinglePlanning(model)
+      .updatePlanning({
+        siteId: this.timePlanningsRequest.siteId,
+        date: model.date,
+        planText: model.planText,
+        message: model.message,
+        planHours: model.planHours,
+      })
       .subscribe((data) => {});
   }
 
   ngOnDestroy(): void {}
+
+  onSortChanged(sort: string) {
+    if (this.timePlanningsRequest) {
+      this.getPlannings(this.timePlanningsRequest);
+    }
+  }
 }

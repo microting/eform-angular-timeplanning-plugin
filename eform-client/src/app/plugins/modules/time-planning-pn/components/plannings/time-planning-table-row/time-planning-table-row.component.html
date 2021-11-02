@@ -1,0 +1,57 @@
+<tr>
+  <td id="timePlanningWeekDay">
+    {{ daysOfWeek[weekDay] | translate }}
+  </td>
+  <td id="timePlanningDate">
+    {{ date | date: 'YYYY/MM/dd' }}
+  </td>
+  <td id="timePlanningPlanText">
+    <div class="md-form">
+      <input
+        mdbInput
+        class="form-control"
+        required
+        type="text"
+        id="planText"
+        #planTextInput
+        [(ngModel)]="planText"
+      />
+    </div>
+  </td>
+  <td id="timePlanningPlanHours">
+    <div class="md-form">
+      <input
+        mdbInput
+        class="form-control"
+        required
+        type="number"
+        id="planHours"
+        #planHoursInput
+        [(ngModel)]="planHours"
+      />
+    </div>
+  </td>
+  <td id="timePlanningMessage">
+    <ng-select
+      [items]="[
+        { id: messages.DayOff, value: messages[messages.DayOff] | translate },
+        { id: messages.Vacation, value: messages[messages.Vacation] | translate },
+        { id: messages.Sick, value: messages[messages.Sick] | translate },
+        { id: messages.Course, value: messages[messages.Course] | translate },
+        { id: messages.LeaveOfAbsence, value: messages[messages.LeaveOfAbsence] | translate },
+        { id: messages.Care, value: messages[messages.Care] | translate },
+        { id: messages.Children1stSick, value: messages[messages.Children1stSick] | translate },
+        { id: messages.Children2stSick, value: messages[messages.Children2stSick] | translate },
+        { id: messages.TimeOff, value: messages[messages.TimeOff] | translate },
+      ]"
+      (ngModelChange)="changeMessage($event)"
+      [clearable]="false"
+      [ngModel]="message"
+      dropdownPosition="top"
+      [placeholder]="'Number of rows' | translate"
+    >
+    </ng-select>
+
+    {{ messages[message] | translate }}
+  </td>
+</tr>

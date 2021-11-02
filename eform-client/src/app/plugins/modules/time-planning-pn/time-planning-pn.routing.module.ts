@@ -1,8 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard, PermissionGuard } from 'src/app/common/guards';
-import { TimePlanningSettingsComponent } from './components';
-// import { PlanningsContainerComponent } from './components';
+import {
+  TimePlanningsContainerComponent,
+  TimePlanningSettingsComponent,
+} from './components';
 import { TimePlanningPnClaims } from './enums';
 import { TimePlanningPnLayoutComponent } from './layouts';
 
@@ -15,14 +17,14 @@ export const routes: Routes = [
       requiredPermission: TimePlanningPnClaims.accessTimePlanningPlugin,
     },
     children: [
-      // {
-      //   path: 'plannings',
-      //   canActivate: [PermissionGuard],
-      //   data: {
-      //     requiredPermission: TimePlanningPnClaims.getPlannings,
-      //   },
-      //   component: PlanningsContainerComponent,
-      // },
+      {
+        path: 'planning',
+        canActivate: [PermissionGuard],
+        data: {
+          requiredPermission: TimePlanningPnClaims.accessTimePlanningPlugin,
+        },
+        component: TimePlanningsContainerComponent,
+      },
       // {
       //   path: 'working-hours',
       //   canActivate: [AuthGuard],
