@@ -81,6 +81,12 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
     this.getSettings();
   }
 
+  getAllEforms() {
+    this.eFormService.getAll(this.templateRequestModel).subscribe((items) => {
+      this.templatesModel = items.model;
+    });
+  }
+
   getSettings() {
     this.settingsSub$ = this.settingsService
       .getAllSettings()

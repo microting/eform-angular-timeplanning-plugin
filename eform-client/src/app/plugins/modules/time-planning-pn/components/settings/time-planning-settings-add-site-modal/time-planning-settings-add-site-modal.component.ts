@@ -9,7 +9,7 @@ import {
 import { SiteNameDto } from 'src/app/common/models';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
-import { eqBy, prop, symmetricDifferenceWith } from 'ramda';
+// import { eqBy, prop, symmetricDifferenceWith } from 'ramda';
 import { TimePlanningPnSettingsService } from '../../../services';
 
 @AutoUnsubscribe()
@@ -32,12 +32,15 @@ export class TimePlanningSettingsAddSiteModalComponent
 
   show(sites: SiteNameDto[], assignedSites: number[]) {
     // Removing assigned sites from all sites by id
-    const propEqual = eqBy(prop('siteUId'));
-    this.availableSites = symmetricDifferenceWith(
-      propEqual,
-      sites,
-      assignedSites
+    this.availableSites = sites.filter(
+      (x) => !assignedSites.some((y) => y === x.siteUId)
     );
+    // const propEqual = eqBy(prop('siteUId'));
+    // this.availableSites = symmetricDifferenceWith(
+    //   propEqual,
+    //   sites.map((x) => x.siteUId),
+    //   assignedSites
+    // );
     this.frame.show();
   }
 
