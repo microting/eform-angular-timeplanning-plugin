@@ -26,11 +26,8 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Globalization;
     using System.Linq;
     using System.Threading.Tasks;
-    using Extensions;
     using Infrastructure.Models.Planning;
     using Infrastructure.Models.Planning.HelperModel;
     using Microsoft.EntityFrameworkCore;
@@ -148,19 +145,19 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
-                var date = DateTime.Parse(model.Date);
+                //var date = DateTime.Parse(model.Date);
 
                 var planning = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.AssignedSiteId == model.SiteId)
-                    .Where(x => x.Date == date)
+                    .Where(x => x.Date == model.Date)
                     .FirstOrDefaultAsync();
                 if (planning != null)
                 {
                     return await UpdatePlanning(planning, model);
                 }
 
-                return await CreatePlanning(model, date);
+                return await CreatePlanning(model/*, date*/);
             }
             catch (Exception e)
             {
@@ -172,7 +169,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, DateTime date)
+        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model/*, DateTime date*/)
         {
             try
             {
@@ -181,7 +178,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     MessageId = (int)model.MessageId,
                     PlanText = model.PlanText,
                     AssignedSiteId = model.SiteId,
-                    Date = date,
+                    Date = model.Date,
                     PlanHours = model.PlanHours,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId,

@@ -30,7 +30,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
     {
         public int SiteId { get; set; }
 
-        public string Date { get; set; }
+        public DateTime Date { get; set; }
 
         public string PlanText { get; set; }
 
