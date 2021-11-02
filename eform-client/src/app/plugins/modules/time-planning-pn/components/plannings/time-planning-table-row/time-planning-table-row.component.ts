@@ -7,6 +7,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
+import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, last } from 'rxjs/operators';
 import { DaysOfWeekEnum } from 'src/app/common/const';
 import { TimePlanningMessagesEnum } from '../../../enums';
@@ -18,8 +19,6 @@ import { TimePlanningMessagesEnum } from '../../../enums';
   styleUrls: ['./time-planning-table-row.component.scss'],
 })
 export class TimePlanningTableRowComponent implements OnInit, AfterViewInit {
-  @ViewChild('planHoursInput') planHoursInput;
-  @ViewChild('planTextInput') planTextInput;
   @Input() weekDay: number;
   @Input() date: string;
   @Input() planText: string;
@@ -29,6 +28,9 @@ export class TimePlanningTableRowComponent implements OnInit, AfterViewInit {
   @Output() planHoursChanged: EventEmitter<number> = new EventEmitter<number>();
   @Output() planTextChanged: EventEmitter<string> = new EventEmitter<string>();
   @Output() messageChanged: EventEmitter<number> = new EventEmitter<number>();
+
+  planHours$ = new Subject<number>();
+  planText$ = new Subject<string>();
 
   get daysOfWeek() {
     return DaysOfWeekEnum;
@@ -40,23 +42,33 @@ export class TimePlanningTableRowComponent implements OnInit, AfterViewInit {
 
   constructor() {}
 
-  ngAfterViewInit() {
-    this.planHoursInput.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged())
-      .subscribe(() => (value) => {
-        this.planHoursChanged.emit(value);
-      });
+  ngAfterViewInit() {}
 
-    this.planTextInput.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged())
-      .subscribe(() => (value) => {
-        this.planTextChanged.emit(value);
-      });
+  ngOnInit(): void {
+    this.planHours$.pipe(
+      debounceTime(400),
+      distinctUntilChanged()
+    ).subscribe((value: number) => {
+      this.planHoursChanged.emit(value);
+    });
+
+    this.planText$.pipe(
+      debounceTime(400),
+      distinctUntilChanged()
+    ).subscribe((value: string) => {
+      this.planTextChanged.emit(value);
+    });
   }
-
-  ngOnInit(): void {}
 
   changeMessage($event: any) {
     this.messageChanged.emit($event);
+  }
+
+  onPlanHoursChange($event: any) {
+    this.planHours$.next($event);
+  }
+
+  onPlanTextChange($event: any) {
+    this.planText$.next($event);
   }
 }
