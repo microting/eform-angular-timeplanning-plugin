@@ -1,4 +1,4 @@
-﻿/*
+/*
 The MIT License (MIT)
 
 Copyright (c) 2007 - 2021 Microting A/S
@@ -63,7 +63,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             _core = core;
         }
 
-        public async Task<OperationDataResult<List<TimePlanningFlexIndexViewModel>>> Index()
+        public async Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index()
         {
             try
             {
@@ -74,29 +74,29 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                     .Where(x => x.Date == DateTime.UtcNow.AddDays(-1))
                     .Select(x => new
                     {
-                        Date = x.Date,
+                        x.Date,
                         SiteId = x.AssignedSiteId,
-                        SumFlex = x.SumFlex,
+                        x.SumFlex,
                         PaidOutFlex = x.PaiedOutFlex,
                         CommentWorker = "",
-                        CommentOffice = x.CommentOffice,
-                        CommentOfficeAll = x.CommentOfficeAll,
+                        x.CommentOffice,
+                        x.CommentOfficeAll,
                     })
                     .ToListAsync();
 
-                var resultWorkers = new List<TimePlanningFlexIndexViewModel>();
+                var resultWorkers = new List<TimePlanningFlexIndexModel>();
 
                 foreach (var worker in foundWorkers)
                 {
                     var workerInfo = await core.SiteRead(worker.SiteId);
 
-                    resultWorkers.Add(new TimePlanningFlexIndexViewModel
+                    resultWorkers.Add(new TimePlanningFlexIndexModel
                     {
                         Date = worker.Date,
                         Worker = new EnumerableViewModel
                         {
                             Id = worker.SiteId,
-                            Name = $"{workerInfo.FirstName} {workerInfo.LastName}",
+                            Name = workerInfo.SiteName,
                         },
                         SumFlex = worker.SumFlex,
                         PaidOutFlex = worker.PaidOutFlex,
@@ -106,7 +106,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                     });
                 }
 
-                return new OperationDataResult<List<TimePlanningFlexIndexViewModel>>(
+                return new OperationDataResult<List<TimePlanningFlexIndexModel>>(
                     true,
                     resultWorkers);
             }
@@ -114,7 +114,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationDataResult<List<TimePlanningFlexIndexViewModel>>(
+                return new OperationDataResult<List<TimePlanningFlexIndexModel>>(
                     false,
                     _localizationService.GetString("ErrorWhileObtainingPlannings"));
             }

@@ -33,6 +33,6 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
     /// </summary>
     public interface ITimePlanningFlexService
     {
-        Task<OperationDataResult<List<TimePlanningFlexIndexViewModel>>> Index();
+        Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index();
     }
 }

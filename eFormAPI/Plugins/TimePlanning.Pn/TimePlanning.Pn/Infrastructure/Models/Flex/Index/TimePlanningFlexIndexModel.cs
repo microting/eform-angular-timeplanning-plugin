@@ -28,9 +28,9 @@ namespace TimePlanning.Pn.Infrastructure.Models.Flex.Index
     using Common;
 
     /// <summary>
-    /// TimePlanningFlexIndexViewModel
+    /// TimePlanningFlexIndexModel
     /// </summary>
-    public class TimePlanningFlexIndexViewModel
+    public class TimePlanningFlexIndexModel
     {
         public DateTime Date { get; set; }
         public EnumerableViewModel Worker { get; set; }

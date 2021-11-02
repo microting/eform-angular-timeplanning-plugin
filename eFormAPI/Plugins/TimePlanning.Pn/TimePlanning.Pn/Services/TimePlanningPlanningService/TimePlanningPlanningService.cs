@@ -146,7 +146,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        public async Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningModel model)
+        public async Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model)
         {
             try
             {
@@ -154,7 +154,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
 
                 var planning = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.AssignedSiteId == model.WorkerId)
+                    .Where(x => x.AssignedSiteId == model.SiteId)
                     .Where(x => x.Date == date)
                     .FirstOrDefaultAsync();
                 if (planning != null)
@@ -174,7 +174,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningModel model, DateTime date)
+        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, DateTime date)
         {
             try
             {
@@ -182,7 +182,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 {
                     MessageId = (int)model.MessageId,
                     PlanText = model.PlanText,
-                    AssignedSiteId = model.WorkerId,
+                    AssignedSiteId = model.SiteId,
                     Date = date,
                     PlanHours = model.PlanHours,
                     CreatedByUserId = _userService.UserId,
@@ -204,7 +204,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        private async Task<OperationResult> UpdatePlanning(PlanRegistration planning, TimePlanningPlanningModel model)
+        private async Task<OperationResult> UpdatePlanning(PlanRegistration planning, TimePlanningPlanningUpdateModel model)
         {
             try
             {

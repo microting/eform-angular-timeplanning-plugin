@@ -39,7 +39,7 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpPost]
         [Route("index")]
-        public async Task<OperationDataResult<List<TimePlanningFlexIndexViewModel>>> Index()
+        public async Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index()
         {
             return await _flexService.Index();
         }

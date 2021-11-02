@@ -168,14 +168,14 @@ namespace TimePlanning.Pn
                         {
                             new()
                             {
-                                Name = "Planning",
+                                Name = "Plannings",
                                 E2EId = "time-planning-pn-planning",
                                 Link = "/plugins/time-planning-pn/planning",
                                 Type = MenuItemTypeEnum.Link,
                                 Position = 0,
                                 MenuTemplate = new PluginMenuTemplateModel
                                 {
-                                    Name = "Planning",
+                                    Name = "Plannings",
                                     E2EId = "items-planning-pn-plannings",
                                     DefaultLink = "/plugins/items-planning-pn/plannings",
                                     Permissions = new List<PluginMenuTemplatePermissionModel>
@@ -192,13 +192,13 @@ namespace TimePlanning.Pn
                                         new()
                                         {
                                             LocaleName = LocaleNames.English,
-                                            Name = "Planning",
+                                            Name = "Plannings",
                                             Language = LanguageNames.English,
                                         },
                                         new()
                                         {
                                             LocaleName = LocaleNames.German,
-                                            Name = "Planung",
+                                            Name = "Planungs",
                                             Language = LanguageNames.German,
                                         },
                                         new()
@@ -220,13 +220,13 @@ namespace TimePlanning.Pn
                                     new()
                                     {
                                         LocaleName = LocaleNames.English,
-                                        Name = "Planning",
+                                        Name = "Plannings",
                                         Language = LanguageNames.English,
                                     },
                                     new()
                                     {
                                         LocaleName = LocaleNames.German,
-                                        Name = "Planung",
+                                        Name = "Planungs",
                                         Language = LanguageNames.German,
                                     },
                                     new()
@@ -373,7 +373,7 @@ namespace TimePlanning.Pn
                 {
                     new()
                     {
-                        Name = localizationService.GetString("Planning"),
+                        Name = localizationService.GetString("Plannings"),
                         E2EId = "time-planning-pn-planning",
                         Link = "/plugins/time-planning-pn/planning",
                         Guards = new List<string> { TimePlanningClaims.GetPlanning },

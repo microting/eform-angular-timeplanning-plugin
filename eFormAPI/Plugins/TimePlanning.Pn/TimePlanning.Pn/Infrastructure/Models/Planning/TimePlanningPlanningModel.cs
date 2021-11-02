@@ -24,15 +24,18 @@ SOFTWARE.
 
 namespace TimePlanning.Pn.Infrastructure.Models.Planning
 {
-    using System;
-
     public class TimePlanningPlanningModel
     {
-        public int WorkerId { get; set; }
+        //public int WorkerId { get; set; }
+
         public int WeekDay { get; set; }
+
         public string Date { get; set; }
+
         public string PlanText { get; set; }
+
         public double PlanHours { get; set; }
+
         public int? MessageId { get; set; }
     }
 }

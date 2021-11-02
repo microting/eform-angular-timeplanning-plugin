@@ -46,7 +46,7 @@ namespace TimePlanning.Pn.Controllers
         }
 
         [HttpPut]
-        public async Task<OperationResult> UpdateCreatePlannings([FromBody] TimePlanningPlanningModel model)
+        public async Task<OperationResult> UpdateCreatePlannings([FromBody] TimePlanningPlanningUpdateModel model)
         {
             return await _planningService.UpdateCreatePlanning(model);
         }
