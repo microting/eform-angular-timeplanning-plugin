@@ -46,14 +46,14 @@ export class TimePlanningTableRowComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.planHours$.pipe(
-      debounceTime(400),
+      debounceTime(1000),
       distinctUntilChanged()
     ).subscribe((value: number) => {
       this.planHoursChanged.emit(value);
     });
 
     this.planText$.pipe(
-      debounceTime(400),
+      debounceTime(1000),
       distinctUntilChanged()
     ).subscribe((value: string) => {
       this.planTextChanged.emit(value);

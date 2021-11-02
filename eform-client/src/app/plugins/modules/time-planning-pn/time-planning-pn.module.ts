@@ -7,6 +7,7 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { TranslateModule } from '@ngx-translate/core';
 import { MDBBootstrapModule } from 'angular-bootstrap-md';
+import {NgxMaskModule} from 'ngx-mask';
 import { EformSharedModule } from 'src/app/common/modules/eform-shared/eform-shared.module';
 import { TimePlanningPnRouting } from './time-planning-pn.routing.module';
 import {
@@ -38,6 +39,7 @@ import {
     TimePlanningPnRouting,
     ReactiveFormsModule,
     OwlDateTimeModule,
+    NgxMaskModule
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
