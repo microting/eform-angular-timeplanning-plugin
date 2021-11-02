@@ -15,7 +15,7 @@
     ></thead>
     <tbody id="tableBody">
       <ng-container *ngFor="let timePlanning of timePlannings; let i = index">
-        <app-time-planning-table-row
+        <tr time-planning-table-row
           [index]="i"
           [weekDay]="timePlanning.weekDay"
           [date]="timePlanning.date"
@@ -46,7 +46,7 @@
               timePlanning
             )
           "
-        ></app-time-planning-table-row>
+        ></tr>
       </ng-container>
     </tbody>
   </table>

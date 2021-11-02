@@ -12,7 +12,8 @@ import { DaysOfWeekEnum } from 'src/app/common/const';
 import { TimePlanningMessagesEnum } from '../../../enums';
 
 @Component({
-  selector: 'app-time-planning-table-row',
+  // tslint:disable-next-line:component-selector
+  selector: '[time-planning-table-row]',
   templateUrl: './time-planning-table-row.component.html',
   styleUrls: ['./time-planning-table-row.component.scss'],
 })
@@ -41,15 +42,13 @@ export class TimePlanningTableRowComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     this.planHoursInput.valueChanges
-      .pipe(debounceTime(500))
-      .pipe(distinctUntilChanged())
+      .pipe(debounceTime(500), distinctUntilChanged())
       .subscribe(() => (value) => {
         this.planHoursChanged.emit(value);
       });
 
     this.planTextInput.valueChanges
-      .pipe(debounceTime(500))
-      .pipe(distinctUntilChanged())
+      .pipe(debounceTime(500), distinctUntilChanged())
       .subscribe(() => (value) => {
         this.planTextChanged.emit(value);
       });

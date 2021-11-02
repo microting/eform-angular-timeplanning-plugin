@@ -74,6 +74,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {}
 
   onSortChanged(sort: string) {
+    this.planningsStateService.onSortTable(sort);
     if (this.timePlanningsRequest) {
       this.getPlannings(this.timePlanningsRequest);
     }

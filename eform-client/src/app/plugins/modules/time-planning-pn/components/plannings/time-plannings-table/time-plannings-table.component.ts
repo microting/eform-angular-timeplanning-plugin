@@ -15,12 +15,11 @@ export class TimePlanningsTableComponent implements OnInit {
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
 
   tableHeaders: TableHeaderElementModel[] = [
-    { name: 'Day of week', elementId: 'dayOfWeekTableHeader', sortable: true },
+    { name: 'DayOfWeek', elementId: 'dayOfWeekTableHeader', sortable: true },
     { name: 'Date', elementId: 'dateTableHeader', sortable: true },
     { name: 'Plan text', elementId: 'planTextTableHeader', sortable: false },
     { name: 'Plan hours', elementId: 'planHoursTableHeader', sortable: false },
     { name: 'Message', elementId: 'messageTableHeader', sortable: false },
-    { name: 'Actions', elementId: '', sortable: false },
   ];
 
   constructor(public planningsStateService: TimePlanningsStateService) {}
