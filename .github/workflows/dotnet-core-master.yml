@@ -52,7 +52,7 @@ jobs:
     - name: 'Preparing Frontend checkout'
       uses: actions/checkout@v2
       with:
-        repository: microting/eform-angular-frontend
+        repository: Gid733/eform-angular-frontend
         ref: stable
         path: eform-angular-frontend
     - name: Install dependencies
