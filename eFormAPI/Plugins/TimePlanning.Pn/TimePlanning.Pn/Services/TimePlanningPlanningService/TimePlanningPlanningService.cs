@@ -240,6 +240,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 }
                 planning.PlanText = model.PlanText;
                 planning.PlanHours = model.PlanHours;
+                planning.UpdatedByUserId = _userService.UserId;
 
                 await planning.Update(_dbContext);
 

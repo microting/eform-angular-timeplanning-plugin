@@ -1,4 +1,4 @@
-/*
+﻿/*
 The MIT License (MIT)
 
 Copyright (c) 2007 - 2021 Microting A/S
@@ -29,6 +29,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
     using System.Linq;
     using System.Threading.Tasks;
     using Infrastructure.Models.Flex.Index;
+    using Infrastructure.Models.Flex.Update;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microting.eForm.Infrastructure.Constants;
@@ -36,6 +37,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
     using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
     using Microting.TimePlanningBase.Infrastructure.Data;
+    using Microting.TimePlanningBase.Infrastructure.Data.Entities;
     using TimePlanningLocalizationService;
 
     /// <summary>
@@ -69,7 +71,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             {
                 var core = await _core.GetCore();
 
-                var foundWorkers = await _dbContext.PlanRegistrations
+                var planRegistrations = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date == DateTime.UtcNow.AddDays(-1).Date)
                     .Include(x => x.AssignedSite)
@@ -87,23 +89,23 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
 
                 var resultWorkers = new List<TimePlanningFlexIndexModel>();
 
-                foreach (var worker in foundWorkers)
+                foreach (var planRegistration in planRegistrations)
                 {
-                    var workerInfo = await core.SiteRead(worker.SiteId);
+                    var siteDto = await core.SiteRead(planRegistration.SiteId);
 
                     resultWorkers.Add(new TimePlanningFlexIndexModel
                     {
-                        Date = worker.Date,
+                        Date = planRegistration.Date,
                         Worker = new CommonDictionaryModel
                         {
-                            Id = worker.SiteId,
-                            Name = workerInfo.SiteName,
+                            Id = planRegistration.SiteId,
+                            Name = siteDto.SiteName,
                         },
-                        SumFlex = worker.SumFlex,
-                        PaidOutFlex = worker.PaidOutFlex,
-                        CommentWorker = worker.CommentWorker,
-                        CommentOffice = worker.CommentOffice,
-                        CommentOfficeAll = worker.CommentOfficeAll,
+                        SumFlex = planRegistration.SumFlex,
+                        PaidOutFlex = planRegistration.PaidOutFlex,
+                        CommentWorker = planRegistration.CommentWorker,
+                        CommentOffice = planRegistration.CommentOffice,
+                        CommentOfficeAll = planRegistration.CommentOfficeAll,
                     });
                 }
 
@@ -118,6 +120,96 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 return new OperationDataResult<List<TimePlanningFlexIndexModel>>(
                     false,
                     _localizationService.GetString("ErrorWhileObtainingPlannings"));
+            }
+        }
+
+        public async Task<OperationResult> UpdateCreate(TimePlanningFlexUpdateModel model)
+        {
+            try
+            {
+
+                var assignedSiteId = await _dbContext.AssignedSites.Where(x => x.SiteId == model.Worker.Id)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Select(x => x.Id)
+                    .FirstAsync();
+
+                var planRegistration = await _dbContext.PlanRegistrations
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Date == model.Date)
+                    .Where(x => x.AssignedSiteId == assignedSiteId)
+                    .FirstOrDefaultAsync();
+
+                if (planRegistration != null)
+                {
+                    return await UpdatePlanning(planRegistration, model);
+                }
+                return await CreatePlanning(model, assignedSiteId);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileUpdatePlanning"));
+            }
+        }
+
+        private async Task<OperationResult> CreatePlanning(TimePlanningFlexUpdateModel model, int assignedSiteId)
+        {
+            try
+            {
+                var planning = new PlanRegistration
+                {
+                    CommentOffice = model.CommentOffice,
+                    AssignedSiteId = assignedSiteId,
+                    Date = model.Date,
+                    SumFlex = model.SumFlex,
+                    PaiedOutFlex = model.PaidOutFlex,
+                    CommentOfficeAll = model.CommentOfficeAll,
+                    CreatedByUserId = _userService.UserId,
+                    UpdatedByUserId = _userService.UserId,
+                };
+                
+                await planning.Create(_dbContext);
+
+                return new OperationResult(
+                    true,
+                    _localizationService.GetString("SuccessfullyCreatePlanning"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileCreatePlanning"));
+            }
+        }
+
+        private async Task<OperationResult> UpdatePlanning(PlanRegistration planRegistration, TimePlanningFlexUpdateModel model)
+        {
+            try
+            {
+                planRegistration.CommentOffice = model.CommentOffice;
+                planRegistration.CommentOfficeAll = model.CommentOfficeAll;
+                planRegistration.PaiedOutFlex = model.PaidOutFlex;
+                planRegistration.SumFlex = model.SumFlex;
+                planRegistration.UpdatedByUserId = _userService.UserId;
+
+                await planRegistration.Update(_dbContext);
+
+                return new OperationResult(
+                    true,
+                    _localizationService.GetString("SuccessfullyUpdatePlanning"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileUpdatePlanning"));
             }
         }
     }

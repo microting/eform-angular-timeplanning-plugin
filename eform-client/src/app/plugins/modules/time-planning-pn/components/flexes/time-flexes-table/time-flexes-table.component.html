@@ -1,0 +1,27 @@
+<div class="row p-1 table-responsive no-gutters">
+  <table
+    mdbTable
+    striped="true"
+    hover="true"
+    small="true"
+    class="z-depth-1 text-center"
+  >
+    <thead table-headers [tableHeaders]="tableHeaders"></thead>
+    <tbody id="tableBody">
+      <ng-container *ngFor="let flexPlanning of flexPlannings; let i = index">
+        <tr
+          time-flexes-table-row
+          [index]="i"
+          [workerName]="flexPlanning.worker.name"
+          [date]="flexPlanning.date"
+          [sumFlex]="flexPlanning.sumFlex"
+          [paidOutFlex]="flexPlanning.paidOutFlex"
+          [commentOffice]="flexPlanning.commentOffice"
+          [commentWorker]="flexPlanning.commentWorker"
+          [commentOfficeAll]="flexPlanning.commentOfficeAll"
+          (paidOutFlexChanged)="onFlexPlanningChanged($event, flexPlanning)"
+        ></tr>
+      </ng-container>
+    </tbody>
+  </table>
+</div>

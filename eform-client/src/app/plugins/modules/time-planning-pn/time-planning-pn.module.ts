@@ -7,10 +7,13 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { TranslateModule } from '@ngx-translate/core';
 import { MDBBootstrapModule } from 'angular-bootstrap-md';
-import {NgxMaskModule} from 'ngx-mask';
+import { NgxMaskModule } from 'ngx-mask';
 import { EformSharedModule } from 'src/app/common/modules/eform-shared/eform-shared.module';
 import { TimePlanningPnRouting } from './time-planning-pn.routing.module';
 import {
+  TimeFlexesContainerComponent,
+  TimeFlexesTableComponent,
+  TimeFlexesTableRowComponent,
   TimePlanningsContainerComponent,
   TimePlanningSettingsAddSiteModalComponent,
   TimePlanningSettingsComponent,
@@ -39,7 +42,7 @@ import {
     TimePlanningPnRouting,
     ReactiveFormsModule,
     OwlDateTimeModule,
-    NgxMaskModule
+    NgxMaskModule,
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
@@ -51,6 +54,9 @@ import {
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
     TimePlanningsHeaderComponent,
+    TimeFlexesTableComponent,
+    TimeFlexesTableRowComponent,
+    TimeFlexesContainerComponent,
   ],
   providers: [TimePlanningPnSettingsService, TimePlanningPnPlanningsService],
 })

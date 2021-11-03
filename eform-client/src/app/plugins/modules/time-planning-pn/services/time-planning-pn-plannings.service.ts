@@ -3,10 +3,12 @@ import { Observable } from 'rxjs';
 import { OperationDataResult, OperationResult } from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
 import {
+  TimeFlexesModel,
   TimePlanningModel,
   TimePlanningsRequestModel,
   TimePlanningsUpdateModel,
   TimePlanningUpdateModel,
+  TimeFlexesUpdateModel,
 } from '../models';
 
 export let TimePlanningPnPlanningsMethods = {
@@ -14,6 +16,8 @@ export let TimePlanningPnPlanningsMethods = {
   SimplePlannings: 'api/time-planning-pn/plannings/index',
   IndexWorkingHours: 'api/time-planning-pn/working-hours/index',
   WorkingHours: 'api/time-planning-pn/working-hours',
+  IndexFlex: 'api/time-planning-pn/flex/index',
+  Flex: 'api/time-planning-pn/flex',
 };
 
 @Injectable({
@@ -40,9 +44,7 @@ export class TimePlanningPnPlanningsService {
     );
   }
 
-  updatePlanning(
-    model: TimePlanningUpdateModel
-  ): Observable<OperationResult> {
+  updatePlanning(model: TimePlanningUpdateModel): Observable<OperationResult> {
     return this.apiBaseService.put(
       TimePlanningPnPlanningsMethods.Plannings,
       model
@@ -56,5 +58,13 @@ export class TimePlanningPnPlanningsService {
       TimePlanningPnPlanningsMethods.WorkingHours,
       model
     );
+  }
+
+  getFlexes(): Observable<OperationDataResult<TimeFlexesModel[]>> {
+    return this.apiBaseService.get(TimePlanningPnPlanningsMethods.IndexFlex);
+  }
+
+  updateFlexes(model: TimeFlexesUpdateModel): Observable<OperationResult> {
+    return this.apiBaseService.put(TimePlanningPnPlanningsMethods.Flex, model);
   }
 }

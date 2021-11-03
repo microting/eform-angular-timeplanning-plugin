@@ -1,0 +1,71 @@
+<td id="flexPlanningDate">
+  {{ date | date: 'yyyy/MM/dd' }}
+</td>
+<td id="flexPlanningWorkerName">
+  {{ workerName }}
+</td>
+<td id="timePlanningSumFlex">
+  <div class="md-form">
+    <input
+      mdbInput
+      class="form-control"
+      type="text"
+      [step]="0.01"
+      [mask]="'00.00'"
+      id="sumFlex"
+      [disabled]="true"
+      [ngModel]="sumFlex"
+      [dropSpecialCharacters]="false"
+    />
+  </div>
+</td>
+<td id="timePlanningPaidOutFlex">
+  <div class="md-form">
+    <input
+      mdbInput
+      class="form-control"
+      type="text"
+      [step]="0.01"
+      min="0.00"
+      [mask]="'00.00'"
+      id="paidOutFlex"
+      (ngModelChange)="onPaidOutFlexChange($event)"
+      [ngModel]="paidOutFlex"
+      [dropSpecialCharacters]="false"
+    />
+  </div>
+</td>
+<td id="timePlanningCommentWorker">
+  <div class="md-form">
+    <input
+      mdbInput
+      class="form-control"
+      type="text"
+      id="commentWorker"
+      [disabled]="true"
+      [ngModel]="commentWorker"
+    />
+  </div>
+</td>
+<td id="timePlanningCommentOffice">
+  <div class="md-form">
+    <input
+      mdbInput
+      class="form-control"
+      type="text"
+      id="commentOffice"
+      [ngModel]="commentOffice"
+    />
+  </div>
+</td>
+<td id="timePlanningCommentOfficeAll">
+  <div class="md-form">
+    <input
+      mdbInput
+      class="form-control"
+      type="text"
+      id="commentOfficeAll"
+      [ngModel]="commentOfficeAll"
+    />
+  </div>
+</td>

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard, PermissionGuard } from 'src/app/common/guards';
 import {
+  TimeFlexesContainerComponent,
   TimePlanningsContainerComponent,
   TimePlanningSettingsComponent,
 } from './components';
@@ -33,14 +34,11 @@ export const routes: Routes = [
             (m) => m.WorkingHoursModule
           ),
       },
-      // {
-      //   path: 'flex',
-      //   canActivate: [AuthGuard],
-      //   loadChildren: () =>
-      //     import('./modules/area-rules/area-rules.module').then(
-      //       (m) => m.AreaRulesModule
-      //     ),
-      // },
+      {
+        path: 'flex',
+        canActivate: [AuthGuard],
+        component: TimeFlexesContainerComponent,
+      },
       {
         path: 'settings',
         canActivate: [AuthGuard],

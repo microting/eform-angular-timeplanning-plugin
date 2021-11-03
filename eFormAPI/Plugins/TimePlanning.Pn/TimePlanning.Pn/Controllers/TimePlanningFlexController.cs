@@ -23,6 +23,7 @@ namespace TimePlanning.Pn.Controllers
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Infrastructure.Models.Flex.Index;
+    using Infrastructure.Models.Flex.Update;
     using Microsoft.AspNetCore.Mvc;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
     using Services.TimePlanningFlexService;
@@ -42,6 +43,13 @@ namespace TimePlanning.Pn.Controllers
         public async Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index()
         {
             return await _flexService.Index();
+        }
+
+
+        [HttpPut]
+        public async Task<OperationResult> Update(TimePlanningFlexUpdateModel model)
+        {
+            return await _flexService.UpdateCreate(model);
         }
     }
 }
