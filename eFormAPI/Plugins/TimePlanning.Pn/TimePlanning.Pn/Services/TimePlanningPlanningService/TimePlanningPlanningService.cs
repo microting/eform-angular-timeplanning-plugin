@@ -69,9 +69,10 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 //var dateTo = DateTime.ParseExact(model.DateTo, "dd-MM-yyyy", CultureInfo.InvariantCulture);
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
+                    .Include(x => x.AssignedSite)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
-                    .Where(x => x.AssignedSiteId == model.SiteId);
+                    .Where(x => x.AssignedSite.SiteId == model.SiteId);
                 
                 var timePlannings = await timePlanningRequest
                     .Select(x => new TimePlanningPlanningHelperModel
