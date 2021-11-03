@@ -81,7 +81,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                         Date = x.Date,
                         PlanText = x.PlanText,
                         PlanHours = x.PlanHours,
-                        MessageId = x.MessageId,
+                        Message = x.MessageId,
                     })
                     .ToListAsync();
 
@@ -147,7 +147,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                         Date = x.Date.ToString("yyyy/MM/dd"),
                         PlanText = x.PlanText,
                         PlanHours = x.PlanHours,
-                        MessageId = x.MessageId,
+                        Message = x.Message,
                     })
                     .ToList();
 
@@ -169,7 +169,6 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
-                //var date = DateTime.Parse(model.Date);
                 var assignedSiteId = await _dbContext.AssignedSites
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SiteId == model.SiteId)
@@ -185,7 +184,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     return await UpdatePlanning(planning, model);
                 }
 
-                return await CreatePlanning(model, assignedSiteId/*, date*/);
+                return await CreatePlanning(model, assignedSiteId);
             }
             catch (Exception e)
             {
@@ -197,13 +196,12 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, int assignedSiteId /*, DateTime date*/)
+        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, int assignedSiteId)
         {
             try
             {
                 var planning = new PlanRegistration
                 {
-                    MessageId = (int)model.MessageId,
                     PlanText = model.PlanText,
                     AssignedSiteId = assignedSiteId,
                     Date = model.Date,
@@ -212,7 +210,12 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     UpdatedByUserId = _userService.UserId,
                 };
 
+                if (model.Message is not null)
+                {
+                    planning.MessageId = (int)model.Message;
+                }
                 await planning.Create(_dbContext);
+
                 return new OperationResult(
                     true,
                     _localizationService.GetString("SuccessfullyCreatePlanning"));
@@ -231,8 +234,11 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
+                if (model.Message is not null)
+                {
+                    planning.MessageId = (int)model.Message;
+                }
                 planning.PlanText = model.PlanText;
-                planning.MessageId = (int)model.MessageId;
                 planning.PlanHours = model.PlanHours;
 
                 await planning.Update(_dbContext);

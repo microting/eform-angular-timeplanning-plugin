@@ -33,6 +33,6 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning.HelperModel
         public DateTime Date { get; set; }
         public string PlanText { get; set; }
         public double PlanHours { get; set; }
-        public int? MessageId { get; set; }
+        public int? Message { get; set; }
     }
 }

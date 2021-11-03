@@ -36,6 +36,6 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
 
         public double PlanHours { get; set; }
 
-        public int? MessageId { get; set; }
+        public int? Message { get; set; }
     }
 }
