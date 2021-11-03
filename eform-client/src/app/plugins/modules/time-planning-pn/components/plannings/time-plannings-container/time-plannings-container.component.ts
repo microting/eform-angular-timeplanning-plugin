@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
-import { TimePlanningsStateService } from 'src/app/plugins/modules/time-planning-pn/components/plannings/store';
+import { TimePlanningsStateService } from '../store';
 import { TimePlanningModel, TimePlanningsRequestModel } from '../../../models';
 import {
   TimePlanningPnPlanningsService,

@@ -28,13 +28,13 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Infrastructure.Models.Common;
     using Infrastructure.Models.Flex.Index;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microting.eForm.Infrastructure.Constants;
     using Microting.eFormApi.BasePn.Abstractions;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+    using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
     using Microting.TimePlanningBase.Infrastructure.Data;
     using TimePlanningLocalizationService;
 
@@ -71,11 +71,12 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
 
                 var foundWorkers = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Date == DateTime.UtcNow.AddDays(-1))
+                    .Where(x => x.Date == DateTime.UtcNow.AddDays(-1).Date)
+                    .Include(x => x.AssignedSite)
                     .Select(x => new
                     {
                         x.Date,
-                        SiteId = x.AssignedSiteId,
+                        x.AssignedSite.SiteId,
                         x.SumFlex,
                         PaidOutFlex = x.PaiedOutFlex,
                         CommentWorker = "",
@@ -93,7 +94,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                     resultWorkers.Add(new TimePlanningFlexIndexModel
                     {
                         Date = worker.Date,
-                        Worker = new EnumerableViewModel
+                        Worker = new CommonDictionaryModel
                         {
                             Id = worker.SiteId,
                             Name = workerInfo.SiteName,

@@ -46,6 +46,7 @@ namespace TimePlanning.Pn
     using Microting.TimePlanningBase.Infrastructure.Data;
     using Microting.TimePlanningBase.Infrastructure.Data.Factories;
     using Services.RebusService;
+    using Services.TimePlanningFlexService;
     using Services.TimePlanningSettingService;
     using Services.TimePlanningLocalizationService;
     using Services.TimePlanningPlanningService;
@@ -71,6 +72,7 @@ namespace TimePlanning.Pn
             services.AddTransient<ITimePlanningLocalizationService, TimePlanningLocalizationService>();
             services.AddTransient<ITimePlanningPlanningService, TimePlanningPlanningService>();
             services.AddTransient<ITimePlanningWorkingHoursService, TimePlanningWorkingHoursService>();
+            services.AddTransient<ITimePlanningFlexService, TimePlanningFlexService>();
             services.AddTransient<ISettingService, TimeSettingService>();
             services.AddControllers();
         }

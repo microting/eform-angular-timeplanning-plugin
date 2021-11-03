@@ -25,7 +25,7 @@ SOFTWARE.
 namespace TimePlanning.Pn.Infrastructure.Models.Flex.Index
 {
     using System;
-    using Common;
+    using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
 
     /// <summary>
     /// TimePlanningFlexIndexModel
@@ -33,7 +33,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Flex.Index
     public class TimePlanningFlexIndexModel
     {
         public DateTime Date { get; set; }
-        public EnumerableViewModel Worker { get; set; }
+        public CommonDictionaryModel Worker { get; set; }
         public double SumFlex { get; set; }
         public double PaidOutFlex { get; set; }
         public string CommentWorker { get; set; }
