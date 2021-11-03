@@ -25,14 +25,14 @@ export const routes: Routes = [
         },
         component: TimePlanningsContainerComponent,
       },
-      // {
-      //   path: 'working-hours',
-      //   canActivate: [AuthGuard],
-      //   loadChildren: () =>
-      //     import('./modules/property-workers/property-workers.module').then(
-      //       (m) => m.PropertyWorkersModule
-      //     ),
-      // },
+      {
+        path: 'working-hours',
+        canActivate: [AuthGuard],
+        loadChildren: () =>
+          import('./modules/working-hours/working-hours.module').then(
+            (m) => m.WorkingHoursModule
+          ),
+      },
       // {
       //   path: 'flex',
       //   canActivate: [AuthGuard],
