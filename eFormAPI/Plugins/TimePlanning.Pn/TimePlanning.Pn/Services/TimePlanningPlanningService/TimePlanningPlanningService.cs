@@ -103,7 +103,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     timePlannings.AddRange(daysForAdd);
                 }
 
-                if (model.Sort.ToLower() == "weekday")
+                if (model.Sort.ToLower() == "dayofweek")
                 {
                     List<TimePlanningPlanningHelperModel> tempResult;
 
