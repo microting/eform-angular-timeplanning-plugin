@@ -2,23 +2,25 @@ import {
   AfterViewInit,
   Component,
   EventEmitter,
-  Input,
+  Input, OnDestroy,
   OnInit,
   Output,
   ViewChild,
 } from '@angular/core';
+import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, last } from 'rxjs/operators';
 import { DaysOfWeekEnum } from 'src/app/common/const';
 import { TimePlanningMessagesEnum } from '../../../enums';
 
+@AutoUnsubscribe()
 @Component({
   // tslint:disable-next-line:component-selector
   selector: '[time-planning-table-row]',
   templateUrl: './time-planning-table-row.component.html',
   styleUrls: ['./time-planning-table-row.component.scss'],
 })
-export class TimePlanningTableRowComponent implements OnInit, AfterViewInit {
+export class TimePlanningTableRowComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() weekDay: number;
   @Input() date: string;
   @Input() planText: string;
@@ -70,5 +72,8 @@ export class TimePlanningTableRowComponent implements OnInit, AfterViewInit {
 
   onPlanTextChange($event: any) {
     this.planText$.next($event);
+  }
+
+  ngOnDestroy(): void {
   }
 }

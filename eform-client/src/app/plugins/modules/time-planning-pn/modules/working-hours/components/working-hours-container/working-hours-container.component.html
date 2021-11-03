@@ -1,1 +1,13 @@
-<p>working-hours-container works!</p>
+<eform-subheader [title]="'Plannings'"></eform-subheader>
+
+<div class="container-fluid mb-2">
+  <app-working-hours-header
+    [workingHoursRequest]="workingHoursRequest"
+    (filtersChanged)="onWorkingHoursFiltersChanged($event)"
+    [availableSites]="availableSites"
+  ></app-working-hours-header>
+  <app-working-hours-table
+    [workingHours]="workingHours"
+    [workingHoursFormArray]="workingHoursFormArray"
+  ></app-working-hours-table>
+</div>

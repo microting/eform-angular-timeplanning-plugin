@@ -1,1 +1,186 @@
-<p>working-hours-table works!</p>
+<div class="row p-1 table-responsive no-gutters scrollable-xy-block">
+  <table
+    mdbTable
+    striped="true"
+    hover="true"
+    small="true"
+    class="z-depth-1 text-center"
+  >
+    <thead table-headers [tableHeaders]="tableHeaders"></thead>
+    <tbody id="tableBody">
+      <!--    <ng-container *ngFor="let timePlanning of timePlannings; let i = index">-->
+      <!--      <tr time-planning-table-row-->
+      <!--          [index]="i"-->
+      <!--          [weekDay]="timePlanning.weekDay"-->
+      <!--          [date]="timePlanning.date"-->
+      <!--          [message]="timePlanning.message"-->
+      <!--          [planHours]="timePlanning.planHours"-->
+      <!--          [planText]="timePlanning.planText"-->
+      <!--      ></tr>-->
+      <!--    </ng-container>-->
+      <tr
+        *ngFor="
+          let workingHoursForm of workingHoursFormArray.controls;
+          let workingHoursFormIndex = index
+        "
+      >
+        <ng-container [formGroup]="workingHoursForm">
+          <td id="workingHoursWeekDay"></td>
+          <td id="workingHoursDate"></td>
+          <td id="workingHoursPlanText">
+            <div class="md-form hours-text-input">
+              <input
+                mdbInput
+                type="text"
+                id="planTextInput{{ workingHoursFormIndex }}"
+                formControlName="planText"
+                class="form-control"
+              />
+              <label for="planTextInput{{ workingHoursFormIndex }}"></label>
+            </div>
+          </td>
+          <td id="workingHoursPlanHours">
+            <div class="md-form hours-input">
+              <input
+                mdbInput
+                type="text"
+                id="planHoursInput{{ workingHoursFormIndex }}"
+                formControlName="planHours"
+                class="form-control"
+              />
+              <label for="planTextInput{{ workingHoursFormIndex }}"></label>
+            </div>
+          </td>
+          <td id="workingHoursShift1Start">
+            <ng-select
+              [items]="[{ id: 1, value: 1 }]"
+              [appendTo]="'body'"
+              bindValue="value"
+              bindLabel="id"
+              placeholder="Select"
+              formControlName="shift1Start"
+              class="shift-select"
+            >
+            </ng-select>
+          </td>
+          <td id="workingHoursShift1Stop">
+            <ng-select
+              [items]="[{ id: 1, value: 1 }]"
+              [appendTo]="'body'"
+              bindValue="value"
+              bindLabel="id"
+              placeholder="Select"
+              formControlName="shift1Stop"
+              class="shift-select"
+            >
+            </ng-select>
+          </td>
+          <td id="workingHoursShift1Pause">
+            <ng-select
+              [items]="[{ id: 1, value: 1 }]"
+              [appendTo]="'body'"
+              bindValue="value"
+              bindLabel="id"
+              placeholder="Select"
+              formControlName="shift1Pause"
+              class="shift-select"
+            >
+            </ng-select>
+          </td>
+          <td id="workingHoursShift2Start">
+            <ng-select
+              [items]="[{ id: 1, value: 1 }]"
+              [appendTo]="'body'"
+              bindValue="value"
+              bindLabel="id"
+              placeholder="Select"
+              formControlName="shift2Start"
+              class="shift-select"
+            >
+            </ng-select>
+          </td>
+          <td id="workingHoursShift2Stop">
+            <ng-select
+              [items]="[{ id: 1, value: 1 }]"
+              [appendTo]="'body'"
+              bindValue="value"
+              bindLabel="id"
+              placeholder="Select"
+              formControlName="shift2Stop"
+              class="shift-select"
+            >
+            </ng-select>
+          </td>
+          <td id="workingHoursShift2Pause">
+            <ng-select
+              [items]="[{ id: 1, value: 1 }]"
+              [appendTo]="'body'"
+              bindValue="value"
+              bindLabel="id"
+              placeholder="Select"
+              formControlName="shift2Pause"
+              class="shift-select"
+            >
+            </ng-select>
+          </td>
+          <td id="workingHoursNettoHours">
+            <div class="md-form hours-input ">
+              <input
+                mdbInput
+                type="text"
+                id="nettoHoursInput{{ workingHoursFormIndex }}"
+                formControlName="nettoHours"
+                disabled
+                class="form-control"
+              />
+              <label for="nettoHoursInput{{ workingHoursFormIndex }}"></label>
+            </div>
+          </td>
+          <td id="workingHoursFlex">
+            <div class="md-form hours-input ">
+              <input
+                mdbInput
+                type="text"
+                id="flexHoursInput{{ workingHoursFormIndex }}"
+                formControlName="flexHours"
+                disabled
+                class="form-control"
+              />
+              <label for="flexHoursInput{{ workingHoursFormIndex }}"></label>
+            </div>
+          </td>
+          <td id="workingHoursSumFlex">
+            <div class="md-form hours-input ">
+              <input
+                mdbInput
+                type="text"
+                id="sumFlexHoursInput{{ workingHoursFormIndex }}"
+                formControlName="sumFlex"
+                disabled
+                class="form-control"
+              />
+              <label for="sumFlexHoursInput{{ workingHoursFormIndex }}"></label>
+            </div>
+          </td>
+          <td id="workingHoursPaidOutFlex">
+            <div class="md-form hours-input">
+              <input
+                mdbInput
+                type="text"
+                id="paidOutFlexInput{{ workingHoursFormIndex }}"
+                formControlName="paidOutFlex"
+                disabled
+                class="form-control"
+              />
+              <label for="paidOutFlexInput{{ workingHoursFormIndex }}"></label>
+            </div>
+          </td>
+          <td id="workingHoursMessage"></td>
+          <td id="workingHoursCommentWorker"></td>
+          <td id="workingHoursCommentOffice"></td>
+          <td id="workingHoursCommentOfficeAll"></td>
+        </ng-container>
+      </tr>
+    </tbody>
+  </table>
+</div>
