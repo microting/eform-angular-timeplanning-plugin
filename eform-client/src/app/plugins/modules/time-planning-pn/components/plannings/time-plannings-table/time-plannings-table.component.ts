@@ -10,8 +10,8 @@ import { TimePlanningsStateService } from '../store';
 })
 export class TimePlanningsTableComponent implements OnInit {
   @Input() timePlannings: TimePlanningModel[] = [];
-  @Output() timePlanningChanged: EventEmitter<TimePlanningModel> =
-    new EventEmitter<TimePlanningModel>();
+  @Output()
+  timePlanningChanged: EventEmitter<TimePlanningModel> = new EventEmitter<TimePlanningModel>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
 
   tableHeaders: TableHeaderElementModel[] = [
@@ -38,9 +38,9 @@ export class TimePlanningsTableComponent implements OnInit {
   ) {
     this.timePlanningChanged.emit({
       ...timePlanning,
-      planHours,
-      message,
-      planText,
+      planHours: planHours ?? timePlanning.planHours,
+      message: message ?? timePlanning.message,
+      planText: planText ?? timePlanning.planText,
     });
   }
 }

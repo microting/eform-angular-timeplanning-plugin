@@ -1,20 +1,20 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {format} from 'date-fns';
-import {PARSING_DATE_FORMAT} from 'src/app/common/const';
-import {SiteDto} from 'src/app/common/models';
-import {TimePlanningsRequestModel} from '../../../../models';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { format } from 'date-fns';
+import { PARSING_DATE_FORMAT } from 'src/app/common/const';
+import { SiteDto } from 'src/app/common/models';
+import { TimePlanningsRequestModel } from '../../../../models';
 
 @Component({
   selector: 'app-working-hours-header',
   templateUrl: './working-hours-header.component.html',
-  styleUrls: ['./working-hours-header.component.scss']
+  styleUrls: ['./working-hours-header.component.scss'],
 })
 export class WorkingHoursHeaderComponent implements OnInit {
-  @Input() workingHoursRequest: TimePlanningsRequestModel =
-    new TimePlanningsRequestModel();
+  @Input()
+  workingHoursRequest: TimePlanningsRequestModel = new TimePlanningsRequestModel();
   @Input() availableSites: SiteDto[] = [];
-  @Output() filtersChanged: EventEmitter<TimePlanningsRequestModel> =
-    new EventEmitter<TimePlanningsRequestModel>();
+  @Output()
+  filtersChanged: EventEmitter<TimePlanningsRequestModel> = new EventEmitter<TimePlanningsRequestModel>();
 
   dateRange: any;
   siteId: number;
@@ -35,7 +35,6 @@ export class WorkingHoursHeaderComponent implements OnInit {
   }
 
   onSiteChanged(siteId: number) {
-    debugger;
     this.siteId = siteId;
     if (this.dateRange) {
       this.filtersChanged.emit({

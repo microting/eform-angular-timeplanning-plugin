@@ -68,7 +68,11 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
         message: model.message,
         planHours: model.planHours,
       })
-      .subscribe((data) => {});
+      .subscribe((data) => {
+        if (data && data.success) {
+          this.getPlannings(this.timePlanningsRequest);
+        }
+      });
   }
 
   ngOnDestroy(): void {}

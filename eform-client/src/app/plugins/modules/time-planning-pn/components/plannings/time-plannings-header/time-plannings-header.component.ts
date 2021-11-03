@@ -10,11 +10,11 @@ import { TimePlanningsRequestModel } from '../../../models';
   styleUrls: ['./time-plannings-header.component.scss'],
 })
 export class TimePlanningsHeaderComponent implements OnInit {
-  @Input() timePlanningsRequest: TimePlanningsRequestModel =
-    new TimePlanningsRequestModel();
+  @Input()
+  timePlanningsRequest: TimePlanningsRequestModel = new TimePlanningsRequestModel();
   @Input() availableSites: SiteDto[] = [];
-  @Output() filtersChanged: EventEmitter<TimePlanningsRequestModel> =
-    new EventEmitter<TimePlanningsRequestModel>();
+  @Output()
+  filtersChanged: EventEmitter<TimePlanningsRequestModel> = new EventEmitter<TimePlanningsRequestModel>();
 
   dateRange: any;
   siteId: number;
@@ -35,7 +35,6 @@ export class TimePlanningsHeaderComponent implements OnInit {
   }
 
   onSiteChanged(siteId: number) {
-    debugger;
     this.siteId = siteId;
     if (this.dateRange) {
       this.filtersChanged.emit({
