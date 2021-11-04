@@ -103,9 +103,9 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                         },
                         SumFlex = planRegistration.SumFlex,
                         PaidOutFlex = planRegistration.PaidOutFlex,
-                        CommentWorker = planRegistration.CommentWorker,
-                        CommentOffice = planRegistration.CommentOffice,
-                        CommentOfficeAll = planRegistration.CommentOfficeAll,
+                        CommentWorker = planRegistration.CommentWorker ?? "",
+                        CommentOffice = planRegistration.CommentOffice ?? "",
+                        CommentOfficeAll = planRegistration.CommentOfficeAll ?? "",
                     });
                 }
 

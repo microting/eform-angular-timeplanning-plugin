@@ -4,6 +4,7 @@ import { OperationDataResult, OperationResult } from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
 import {
   TimeFlexesModel,
+  TimeFlexesUpdateModel,
   TimePlanningModel,
   TimePlanningsRequestModel,
   TimePlanningsUpdateModel,

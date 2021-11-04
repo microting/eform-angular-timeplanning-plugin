@@ -63,10 +63,25 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         {
             try
             {
-                var timePlannings = await _dbContext.PlanRegistrations
+                var timePlanningRequest = _dbContext.PlanRegistrations
+                    .Include(x => x.AssignedSite)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
-                    .Where(x => x.AssignedSiteId == model.WorkerId)
+                    .Where(x => x.AssignedSite.SiteId == model.SiteId);
+
+                // two dates may be displayed instead of one if the same date is selected.
+                if (model.DateFrom == model.DateTo)
+                {
+                    timePlanningRequest = timePlanningRequest
+                        .Where(x => x.Date == model.DateFrom);
+                }
+                else
+                {
+                    timePlanningRequest = timePlanningRequest
+                        .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo);
+                }
+
+
+                var timePlannings = await timePlanningRequest
                     .Select(pr => new TimePlanningWorkingHoursModel
                     {
                         //WorkerId = pr.AssignedSiteId,

@@ -11,7 +11,7 @@
       class="form-control"
       type="text"
       [step]="0.01"
-      [mask]="'00.00'"
+      [mask]="'0.00'"
       id="sumFlex"
       [disabled]="true"
       [ngModel]="flexPlanning.sumFlex"
@@ -27,7 +27,7 @@
       type="text"
       [step]="0.01"
       min="0.00"
-      [mask]="'00.00'"
+      [mask]="'0.00'"
       id="paidOutFlex"
       (ngModelChange)="onPaidOutFlexChange($event)"
       [ngModel]="flexPlanning.paidOutFlex"
@@ -35,38 +35,46 @@
     />
   </div>
 </td>
-<td id="timePlanningCommentWorker">
-  <div class="md-form">
-    <input
-      mdbInput
-      class="form-control"
-      type="text"
-      id="commentWorker"
-      [disabled]="true"
-      [ngModel]="flexPlanning.commentWorker"
-    />
+<td
+  [mdbPopover]="popTemplateCommentWorker"
+  triggers="hover"
+  placement="left"
+  [mdbPopoverHeader]="'Comment worker' | translate"
+  id="timePlanningCommentWorker"
+>
+  <div id="commentWorker">
+    {{ flexPlanning.commentWorker.slice(0, 20) }}
   </div>
 </td>
-<td id="timePlanningCommentOffice">
-  <div class="md-form">
-    <input
-      mdbInput
-      class="form-control"
-      type="text"
-      id="commentOffice"
-      [ngModel]="flexPlanning.commentOffice"
-      (click)="onCommentOfficeClick()"
-    />
+<td
+  id="timePlanningCommentOffice"
+  (click)="onCommentOfficeClick()"
+  [mdbPopover]="popTemplateCommentOffice"
+  triggers="hover"
+  placement="left"
+  [mdbPopoverHeader]="'Comment office' | translate"
+>
+  <div id="commentOffice">
+    {{ flexPlanning.commentOffice.slice(0, 20) }}
   </div>
 </td>
-<td id="timePlanningCommentOfficeAll">
-  <div class="md-form">
-    <input
-      mdbInput
-      class="form-control"
-      type="text"
-      id="commentOfficeAll"
-      [ngModel]="flexPlanning.commentOfficeAll"
-    />
+<td
+  id="timePlanningCommentOfficeAll"
+  [mdbPopover]="popTemplateCommentAll"
+  triggers="hover"
+  placement="left"
+  [mdbPopoverHeader]="'Comment office all' | translate"
+>
+  <div id="commentOfficeAll">
+    {{ flexPlanning.commentOfficeAll.slice(0, 20) }}
   </div>
 </td>
+<ng-template #popTemplateCommentAll>
+  <div class="text-break">{{ flexPlanning.commentOfficeAll }}</div>
+</ng-template>
+<ng-template #popTemplateCommentWorker>
+  <div class="text-break">{{ flexPlanning.commentWorker }}</div>
+</ng-template>
+<ng-template #popTemplateCommentOffice>
+  <div class="text-break">{{ flexPlanning.commentOffice }}</div>
+</ng-template>
