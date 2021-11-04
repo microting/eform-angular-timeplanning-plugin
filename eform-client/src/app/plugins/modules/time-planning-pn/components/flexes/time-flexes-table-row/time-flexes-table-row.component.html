@@ -1,8 +1,8 @@
 <td id="flexPlanningDate">
-  {{ date | date: 'yyyy/MM/dd' }}
+  {{ flexPlanning.date | date: 'yyyy/MM/dd' }}
 </td>
 <td id="flexPlanningWorkerName">
-  {{ workerName }}
+  {{ flexPlanning.worker.name }}
 </td>
 <td id="timePlanningSumFlex">
   <div class="md-form">
@@ -14,7 +14,7 @@
       [mask]="'00.00'"
       id="sumFlex"
       [disabled]="true"
-      [ngModel]="sumFlex"
+      [ngModel]="flexPlanning.sumFlex"
       [dropSpecialCharacters]="false"
     />
   </div>
@@ -30,7 +30,7 @@
       [mask]="'00.00'"
       id="paidOutFlex"
       (ngModelChange)="onPaidOutFlexChange($event)"
-      [ngModel]="paidOutFlex"
+      [ngModel]="flexPlanning.paidOutFlex"
       [dropSpecialCharacters]="false"
     />
   </div>
@@ -43,7 +43,7 @@
       type="text"
       id="commentWorker"
       [disabled]="true"
-      [ngModel]="commentWorker"
+      [ngModel]="flexPlanning.commentWorker"
     />
   </div>
 </td>
@@ -54,7 +54,8 @@
       class="form-control"
       type="text"
       id="commentOffice"
-      [ngModel]="commentOffice"
+      [ngModel]="flexPlanning.commentOffice"
+      (click)="onCommentOfficeClick()"
     />
   </div>
 </td>
@@ -65,7 +66,7 @@
       class="form-control"
       type="text"
       id="commentOfficeAll"
-      [ngModel]="commentOfficeAll"
+      [ngModel]="flexPlanning.commentOfficeAll"
     />
   </div>
 </td>

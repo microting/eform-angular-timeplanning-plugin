@@ -1,8 +1,7 @@
-import { TimePlanningMessagesEnum } from '../../enums';
 import { CommonDictionaryModel } from 'src/app/common/models';
 
 export class TimeFlexesModel {
-  worker: CommonDictionaryModel;
+  worker: CommonDictionaryModel = new CommonDictionaryModel();
   date: string;
   flexHours: number;
   sumFlex: number;

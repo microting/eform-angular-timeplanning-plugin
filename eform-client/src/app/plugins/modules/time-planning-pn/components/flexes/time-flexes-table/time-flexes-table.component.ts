@@ -1,6 +1,14 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import { TableHeaderElementModel } from 'src/app/common/models';
-import { TimeFlexesModel } from '../../../models';
+import { TimeFlexesModel, TimeFlexesUpdateModel } from '../../../models';
+import { TimeFlexesCommentOfficeUpdateModalComponent } from '../';
 
 @Component({
   selector: 'app-time-flexes-table',
@@ -11,6 +19,8 @@ export class TimeFlexesTableComponent implements OnInit {
   @Input() flexPlannings: TimeFlexesModel[] = [];
   @Output()
   flexPlanningChanged: EventEmitter<TimeFlexesModel> = new EventEmitter<TimeFlexesModel>();
+  @ViewChild('editCommentOffice', { static: false })
+  editCommentOfficeModal: TimeFlexesCommentOfficeUpdateModalComponent;
 
   tableHeaders: TableHeaderElementModel[] = [
     { name: 'Date', sortable: false },
@@ -31,5 +41,9 @@ export class TimeFlexesTableComponent implements OnInit {
       ...flexPlanning,
       paidOutFlex: paidOutFlex ?? flexPlanning.paidOutFlex,
     });
+  }
+
+  onOpenEditCommentOffice(model: TimeFlexesModel) {
+    this.editCommentOfficeModal.show(model);
   }
 }

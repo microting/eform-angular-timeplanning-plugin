@@ -8,7 +8,6 @@ import {
   TimePlanningsRequestModel,
   TimePlanningsUpdateModel,
   TimePlanningUpdateModel,
-  TimeFlexesUpdateModel,
 } from '../models';
 
 export let TimePlanningPnPlanningsMethods = {

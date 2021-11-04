@@ -1,0 +1,66 @@
+<div
+  [config]="{ ignoreBackdropClick: true }"
+  mdbModal
+  class="modal fade"
+  #frame="mdbModal"
+>
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ 'Edit comment office' | translate }}</h3>
+        <button class="close" data-dismiss="modal" (click)="hide()">
+          <span>×</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="container-fluid">
+          <div class="row">
+            {{
+              ('Date' | translate) +
+                ': ' +
+                (timeFlexes.date | date: 'dd/MM/yyyy')
+            }}
+          </div>
+          <div class="row">
+            {{ ('Worker' | translate) + ': ' + timeFlexes.worker.name }}
+          </div>
+          <div class="row">
+            <div class="col">
+              <div class="md-form">
+                <textarea
+                  mdbInput
+                  [(ngModel)]="timeFlexes.commentOffice"
+                  type="text"
+                  id="newPostEmailText"
+                  name="newPostEmailText"
+                  class="md-textarea form-control"
+                ></textarea>
+                <label for="newPostEmailText">{{
+                  'Comment office' | translate
+                }}</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button
+          mdbBtn
+          class="btn-success btn-small-height"
+          (click)="onUpdateFlexPlanning()"
+          id="flexesCommentOfficeEditSaveBtn"
+        >
+          {{ 'Save' | translate }}
+        </button>
+        <button
+          mdbBtn
+          class="btn-accent text-black-50 btn-small-height"
+          (click)="hide()"
+          id="flexesCommentOfficeEditSaveCancelBtn"
+        >
+          {{ 'Cancel' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
