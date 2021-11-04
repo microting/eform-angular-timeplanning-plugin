@@ -1,7 +1,7 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormArray } from '@angular/forms';
-import {TableHeaderElementModel} from 'src/app/common/models';
-import {TimePlanningsStateService} from 'src/app/plugins/modules/time-planning-pn/components/plannings/store';
+import { HOURS_PICKER_ARRAY } from 'src/app/common/const';
+import { TableHeaderElementModel } from 'src/app/common/models';
 import { TimePlanningModel } from '../../../../models';
 
 @Component({
@@ -22,12 +22,36 @@ export class WorkingHoursTableComponent implements OnInit {
     { name: 'Date', elementId: 'dateTableHeader', sortable: false },
     { name: 'Plan text', elementId: 'planTextTableHeader', sortable: false },
     { name: 'Plan hours', elementId: 'planHoursTableHeader', sortable: false },
-    { name: 'Shift 1: Start', elementId: 'shift1StartTableHeader', sortable: false },
-    { name: 'Shift 1: Stop', elementId: 'shift1StopTableHeader', sortable: false },
-    { name: 'Shift 1: Pause', elementId: 'shift1PauseTableHeader', sortable: false },
-    { name: 'Shift 2: Start', elementId: 'shift2StartTableHeader', sortable: false },
-    { name: 'Shift 2: Stop', elementId: 'shift2StopTableHeader', sortable: false },
-    { name: 'Shift 2: Pause', elementId: 'shift2PauseTableHeader', sortable: false },
+    {
+      name: 'Shift 1: Start',
+      elementId: 'shift1StartTableHeader',
+      sortable: false,
+    },
+    {
+      name: 'Shift 1: Stop',
+      elementId: 'shift1StopTableHeader',
+      sortable: false,
+    },
+    {
+      name: 'Shift 1: Pause',
+      elementId: 'shift1PauseTableHeader',
+      sortable: false,
+    },
+    {
+      name: 'Shift 2: Start',
+      elementId: 'shift2StartTableHeader',
+      sortable: false,
+    },
+    {
+      name: 'Shift 2: Stop',
+      elementId: 'shift2StopTableHeader',
+      sortable: false,
+    },
+    {
+      name: 'Shift 2: Pause',
+      elementId: 'shift2PauseTableHeader',
+      sortable: false,
+    },
     { name: 'NettoHours', elementId: 'nettoHoursTableHeader', sortable: false },
     { name: 'Flex', elementId: 'flexTableHeader', sortable: false },
     { name: 'SumFlex', elementId: 'flexTableHeader', sortable: false },
@@ -38,13 +62,9 @@ export class WorkingHoursTableComponent implements OnInit {
     { name: 'CommentOfficeAll', elementId: 'flexTableHeader', sortable: false },
   ];
 
-  constructor(public planningsStateService: TimePlanningsStateService) {}
+  constructor() {}
 
   ngOnInit(): void {}
-
-  sortTable(sort: string) {
-    this.sortChanged.emit(sort);
-  }
 
   // onTimePlanningChanged(
   //   planHours: number,

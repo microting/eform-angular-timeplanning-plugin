@@ -1,0 +1,161 @@
+<ng-container [formGroup]="workingHoursForm">
+  <td id="workingHoursWeekDay">
+    {{ daysOfWeek[workingHoursForm.get('weekDay').value] }}
+  </td>
+  <td id="workingHoursDate">
+    {{ workingHoursForm.get('date').value | date: dateFormat }}
+  </td>
+  <td id="workingHoursPlanText">
+    <div class="md-form hours-text-input">
+      <input
+        mdbInput
+        type="text"
+        id="planTextInput{{ workingHoursFormIndex }}"
+        formControlName="planText"
+        class="form-control"
+      />
+      <label for="planTextInput{{ workingHoursFormIndex }}"></label>
+    </div>
+  </td>
+  <td id="workingHoursPlanHours">
+    <div class="md-form hours-input">
+      <input
+        mdbInput
+        id="planHoursInput{{ workingHoursFormIndex }}"
+        formControlName="planHours"
+        step="0.01"
+        type="number"
+        class="form-control"
+      />
+      <label for="planTextInput{{ workingHoursFormIndex }}"></label>
+    </div>
+  </td>
+  <td id="workingHoursShift1Start">
+    <ng-select
+      [items]="hoursPickerArray"
+      [appendTo]="'body'"
+      bindValue="id"
+      bindLabel="value"
+      placeholder="Select"
+      formControlName="shift1Start"
+      class="shift-select"
+    >
+    </ng-select>
+  </td>
+  <td id="workingHoursShift1Stop">
+    <ng-select
+      [items]="hoursPickerArray"
+      [appendTo]="'body'"
+      bindValue="id"
+      bindLabel="value"
+      placeholder="Select"
+      formControlName="shift1Stop"
+      class="shift-select"
+    >
+    </ng-select>
+  </td>
+  <td id="workingHoursShift1Pause">
+    <ng-select
+      [items]="hoursPickerArray"
+      [appendTo]="'body'"
+      bindValue="id"
+      bindLabel="value"
+      placeholder="Select"
+      formControlName="shift1Pause"
+      class="shift-select"
+    >
+    </ng-select>
+  </td>
+  <td id="workingHoursShift2Start">
+    <ng-select
+      [items]="hoursPickerArray"
+      [appendTo]="'body'"
+      bindValue="id"
+      bindLabel="value"
+      placeholder="Select"
+      formControlName="shift2Start"
+      class="shift-select"
+    >
+    </ng-select>
+  </td>
+  <td id="workingHoursShift2Stop">
+    <ng-select
+      [items]="hoursPickerArray"
+      [appendTo]="'body'"
+      bindValue="id"
+      bindLabel="value"
+      placeholder="Select"
+      formControlName="shift2Stop"
+      class="shift-select"
+    >
+    </ng-select>
+  </td>
+  <td id="workingHoursShift2Pause">
+    <ng-select
+      [items]="hoursPickerArray"
+      [appendTo]="'body'"
+      bindValue="id"
+      bindLabel="value"
+      placeholder="Select"
+      formControlName="shift2Pause"
+      class="shift-select"
+    >
+    </ng-select>
+  </td>
+  <td id="workingHoursNettoHours">
+    <div class="md-form hours-input">
+      <input
+        mdbInput
+        type="text"
+        id="nettoHoursInput{{ workingHoursFormIndex }}"
+        formControlName="nettoHours"
+        disabled
+        class="form-control"
+      />
+      <label for="nettoHoursInput{{ workingHoursFormIndex }}"></label>
+    </div>
+  </td>
+  <td id="workingHoursFlex">
+    <div class="md-form hours-input">
+      <input
+        mdbInput
+        type="text"
+        id="flexHoursInput{{ workingHoursFormIndex }}"
+        formControlName="flexHours"
+        disabled
+        class="form-control"
+      />
+      <label for="flexHoursInput{{ workingHoursFormIndex }}"></label>
+    </div>
+  </td>
+  <td id="workingHoursSumFlex">
+    <div class="md-form hours-input">
+      <input
+        mdbInput
+        type="text"
+        id="sumFlexHoursInput{{ workingHoursFormIndex }}"
+        formControlName="sumFlex"
+        disabled
+        class="form-control"
+      />
+      <label for="sumFlexHoursInput{{ workingHoursFormIndex }}"></label>
+    </div>
+  </td>
+  <td id="workingHoursPaidOutFlex">
+    <div class="md-form hours-input">
+      <input
+        mdbInput
+        type="text"
+        id="paidOutFlexInput{{ workingHoursFormIndex }}"
+        formControlName="paidOutFlex"
+        disabled
+        class="form-control"
+      />
+      <label for="paidOutFlexInput{{ workingHoursFormIndex }}"></label>
+    </div>
+  </td>
+  <td id="workingHoursMessage"></td>
+  <td id="workingHoursCommentWorker"></td>
+  <td id="workingHoursCommentOffice"></td>
+  <td id="workingHoursCommentOfficeAll"></td>
+</ng-container>

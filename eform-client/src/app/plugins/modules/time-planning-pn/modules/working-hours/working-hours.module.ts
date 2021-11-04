@@ -15,6 +15,7 @@ import {
   WorkingHoursHeaderComponent,
   WorkingHoursTableComponent,
 } from './components';
+import { WorkingHoursTableRowComponent } from './components/working-hours-table-row/working-hours-table-row.component';
 
 @NgModule({
   imports: [
@@ -35,6 +36,7 @@ import {
     WorkingHoursContainerComponent,
     WorkingHoursHeaderComponent,
     WorkingHoursTableComponent,
+    WorkingHoursTableRowComponent,
   ],
 })
 export class WorkingHoursModule {}

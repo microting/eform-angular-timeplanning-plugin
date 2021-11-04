@@ -15,6 +15,7 @@ export class WorkingHoursHeaderComponent implements OnInit {
   @Input() availableSites: SiteDto[] = [];
   @Output()
   filtersChanged: EventEmitter<TimePlanningsRequestModel> = new EventEmitter<TimePlanningsRequestModel>();
+  @Output() updateWorkingHours: EventEmitter<void> = new EventEmitter<void>();
 
   dateRange: any;
   siteId: number;
@@ -43,5 +44,9 @@ export class WorkingHoursHeaderComponent implements OnInit {
         dateTo: format(this.dateRange[1], PARSING_DATE_FORMAT),
       });
     }
+  }
+
+  onSaveWorkingHours() {
+    this.updateWorkingHours.emit();
   }
 }

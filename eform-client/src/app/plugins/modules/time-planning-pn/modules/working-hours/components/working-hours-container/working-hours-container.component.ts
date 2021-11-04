@@ -94,7 +94,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
     this.getWorkingHours(model);
   }
 
-  onUpdateTimePlanning() {
+  onUpdateWorkingHours() {
     this.updateWorkingHours$ = this.workingHoursService
       .updateWorkingHours({
         siteId: this.workingHoursRequest.siteId,
