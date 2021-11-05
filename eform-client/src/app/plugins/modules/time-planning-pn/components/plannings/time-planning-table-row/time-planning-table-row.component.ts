@@ -2,12 +2,13 @@ import {
   AfterViewInit,
   Component,
   EventEmitter,
-  Input, OnDestroy,
+  Input,
+  OnDestroy,
   OnInit,
   Output,
   ViewChild,
 } from '@angular/core';
-import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
+import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, last } from 'rxjs/operators';
 import { DaysOfWeekEnum } from 'src/app/common/const';
@@ -22,7 +23,8 @@ import { messages } from '../../../consts/messages';
   templateUrl: './time-planning-table-row.component.html',
   styleUrls: ['./time-planning-table-row.component.scss'],
 })
-export class TimePlanningTableRowComponent implements OnInit, AfterViewInit, OnDestroy {
+export class TimePlanningTableRowComponent
+  implements OnInit, AfterViewInit, OnDestroy {
   @Input() weekDay: number;
   @Input() date: string;
   @Input() planText: string;
@@ -32,6 +34,7 @@ export class TimePlanningTableRowComponent implements OnInit, AfterViewInit, OnD
   @Output() planHoursChanged: EventEmitter<number> = new EventEmitter<number>();
   @Output() planTextChanged: EventEmitter<string> = new EventEmitter<string>();
   @Output() messageChanged: EventEmitter<number> = new EventEmitter<number>();
+  messages: { id: number; value: string }[] = [];
 
   planHours$ = new Subject<number>();
   planText$ = new Subject<string>();
@@ -40,28 +43,24 @@ export class TimePlanningTableRowComponent implements OnInit, AfterViewInit, OnD
     return DaysOfWeekEnum;
   }
 
-  get messages() {
-    return messages(this.translateService);
+  constructor(translateService: TranslateService) {
+    this.messages = messages(translateService);
   }
-
-  constructor(private translateService: TranslateService) {}
 
   ngAfterViewInit() {}
 
   ngOnInit(): void {
-    this.planHours$.pipe(
-      debounceTime(1000),
-      distinctUntilChanged()
-    ).subscribe((value: number) => {
-      this.planHoursChanged.emit(value);
-    });
+    this.planHours$
+      .pipe(debounceTime(1000), distinctUntilChanged())
+      .subscribe((value: number) => {
+        this.planHoursChanged.emit(value);
+      });
 
-    this.planText$.pipe(
-      debounceTime(1000),
-      distinctUntilChanged()
-    ).subscribe((value: string) => {
-      this.planTextChanged.emit(value);
-    });
+    this.planText$
+      .pipe(debounceTime(1000), distinctUntilChanged())
+      .subscribe((value: string) => {
+        this.planTextChanged.emit(value);
+      });
   }
 
   changeMessage($event: any) {
@@ -76,6 +75,5 @@ export class TimePlanningTableRowComponent implements OnInit, AfterViewInit, OnD
     this.planText$.next($event);
   }
 
-  ngOnDestroy(): void {
-  }
+  ngOnDestroy(): void {}
 }
