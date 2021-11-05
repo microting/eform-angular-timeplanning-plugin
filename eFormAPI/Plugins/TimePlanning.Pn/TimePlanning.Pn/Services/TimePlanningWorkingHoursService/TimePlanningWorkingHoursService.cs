@@ -23,12 +23,16 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using eFormCore;
+    using Infrastructure.Models.Settings;
     using Infrastructure.Models.WorkingHours.Index;
     using Infrastructure.Models.WorkingHours.UpdateCreate;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using Microting.eForm.Infrastructure;
     using Microting.eForm.Infrastructure.Constants;
     using Microting.eFormApi.BasePn.Abstractions;
+    using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
     using Microting.TimePlanningBase.Infrastructure.Data;
     using Microting.TimePlanningBase.Infrastructure.Data.Entities;
@@ -39,30 +43,47 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     /// </summary>
     public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
     {
+        private readonly IPluginDbOptions<TimePlanningBaseSettings> _options;
         private readonly ILogger<TimePlanningWorkingHoursService> _logger;
         private readonly TimePlanningPnDbContext _dbContext;
         private readonly IUserService _userService;
         private readonly ITimePlanningLocalizationService _localizationService;
         private readonly IEFormCoreService _core;
+        private readonly Core _sdkCore;
 
         public TimePlanningWorkingHoursService(
             ILogger<TimePlanningWorkingHoursService> logger,
             TimePlanningPnDbContext dbContext,
             IUserService userService,
             ITimePlanningLocalizationService localizationService,
-            IEFormCoreService core)
+            IEFormCoreService core,
+            IPluginDbOptions<TimePlanningBaseSettings> options,
+            Core sdkCore)
         {
             _logger = logger;
             _dbContext = dbContext;
             _userService = userService;
             _localizationService = localizationService;
             _core = core;
+            _options = options;
+            _sdkCore = sdkCore;
         }
 
         public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model)
         {
             try
             {
+                await using MicrotingDbContext sdkDbContext = _sdkCore.DbContextHelper.GetDbContext();
+                var eformId = _options.Value.EformId == 0 ? null : _options.Value.EformId;
+                var caseId = await sdkDbContext.Cases.Where(x => x.WorkerId == model.WorkerId && x.CheckListId == eformId)
+                    .OrderByDescending(x => x.DoneAt)
+                    .Select(x => x.Id)
+                    .FirstOrDefaultAsync();
+                var commentWorker = await sdkDbContext.FieldValues
+                    .Where(x => x.CaseId == caseId)
+                    .Select(x => x.Value)
+                    .LastOrDefaultAsync();
+
                 var timePlannings = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
@@ -85,7 +106,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         SumFlex = pr.SumFlex,
                         PaidOutFlex = pr.PaiedOutFlex,
                         Message = pr.MessageId,
-                        CommentWorker = "",
+                        CommentWorker = commentWorker,
                         CommentOffice = pr.CommentOffice,
                         CommentOfficeAll = pr.CommentOfficeAll,
                     })
