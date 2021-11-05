@@ -1,4 +1,4 @@
-﻿/*
+/*
 The MIT License (MIT)
 Copyright (c) 2007 - 2021 Microting A/S
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -49,7 +49,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         private readonly IUserService _userService;
         private readonly ITimePlanningLocalizationService _localizationService;
         private readonly IEFormCoreService _core;
-        private readonly Core _sdkCore;
 
         public TimePlanningWorkingHoursService(
             ILogger<TimePlanningWorkingHoursService> logger,
@@ -57,8 +56,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             IUserService userService,
             ITimePlanningLocalizationService localizationService,
             IEFormCoreService core,
-            IPluginDbOptions<TimePlanningBaseSettings> options,
-            Core sdkCore)
+            IPluginDbOptions<TimePlanningBaseSettings> options)
         {
             _logger = logger;
             _dbContext = dbContext;
@@ -66,15 +64,14 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             _localizationService = localizationService;
             _core = core;
             _options = options;
-            _sdkCore = sdkCore;
         }
 
         public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model)
         {
             try
             {
-                await using MicrotingDbContext sdkDbContext = _sdkCore.DbContextHelper.GetDbContext();
-                var eformId = _options.Value.EformId == 0 ? null : _options.Value.EformId;
+                var core = await _core.GetCore();
+                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var caseId = await sdkDbContext.Cases
                     .Where(x => x.WorkerId == model.SiteId && x.CheckListId == eformId)
                     .OrderByDescending(x => x.DoneAt)
