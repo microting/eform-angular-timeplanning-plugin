@@ -23,7 +23,8 @@ import {
   styleUrls: ['./working-hours-table-row.component.scss'],
 })
 export class WorkingHoursTableRowComponent
-  implements OnInit, OnDestroy, OnChanges {
+  implements OnInit, OnDestroy, OnChanges
+{
   @Input() workingHoursForm: FormGroup;
   @Input() workingHoursFormIndex: number;
 
@@ -43,14 +44,13 @@ export class WorkingHoursTableRowComponent
 
   constructor() {}
 
-  ngOnInit(): void {
-    this.workingHoursForm.get('sumFlex').disable();
-    this.workingHoursForm.get('paidOutFlex').disable();
-    this.workingHoursForm.get('flexHours').disable();
-    this.workingHoursForm.get('nettoHours').disable();
-  }
+  ngOnInit(): void {}
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void {
+    for (const sub$ of this.subs$) {
+      sub$.unsubscribe();
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes && changes.workingHoursForm) {
@@ -66,7 +66,7 @@ export class WorkingHoursTableRowComponent
       ) {
         const shift1StartSub$ = this.workingHoursForm
           .get('shift1Start')
-          .valueChanges.subscribe(() => {
+          .valueChanges.subscribe((selectedValue) => {
             this.workingHoursForm
               .get('nettoHours')
               .setValue(this.calculateNettoHours().formattedHours);
@@ -169,7 +169,7 @@ export class WorkingHoursTableRowComponent
       }
     }
 
-    nettoMinutes = nettoMinutes * 5;
+    nettoMinutes = nettoMinutes * minutesMultiplier;
 
     const hours = +(nettoMinutes / 60).toFixed(2);
     // const minutes = nettoMinutes % 60;
@@ -191,11 +191,9 @@ export class WorkingHoursTableRowComponent
   }
 
   calculateFlexHours() {
+    debugger;
     const nettoHours = this.workingHoursForm.get('nettoHours').value;
     const planHours = this.workingHoursForm.get('planHours').value;
-
-    if (nettoHours && planHours) {
-      return +(nettoHours - planHours).toFixed(2);
-    }
+    return +(nettoHours - planHours).toFixed(2);
   }
 }

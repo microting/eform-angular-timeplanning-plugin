@@ -1,5 +1,15 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { FormArray } from '@angular/forms';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
+import { FormArray, FormControl, FormGroup } from '@angular/forms';
+import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
+import { Subscription } from 'rxjs';
 import { HOURS_PICKER_ARRAY } from 'src/app/common/const';
 import { TableHeaderElementModel } from 'src/app/common/models';
 import { TimePlanningModel } from '../../../../models';
@@ -9,13 +19,15 @@ import { TimePlanningModel } from '../../../../models';
   templateUrl: './working-hours-table.component.html',
   styleUrls: ['./working-hours-table.component.scss'],
 })
-export class WorkingHoursTableComponent implements OnInit {
+export class WorkingHoursTableComponent implements OnInit, OnChanges {
   @Input() workingHours: TimePlanningModel[] = [];
   @Input() workingHoursFormArray: FormArray = new FormArray([]);
   @Input() timePlannings: TimePlanningModel[] = [];
   @Output()
   timePlanningChanged: EventEmitter<TimePlanningModel> = new EventEmitter<TimePlanningModel>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
+
+  sub$: Subscription;
 
   tableHeaders: TableHeaderElementModel[] = [
     { name: 'DayOfWeek', elementId: 'dayOfWeekTableHeader', sortable: false },
@@ -64,7 +76,29 @@ export class WorkingHoursTableComponent implements OnInit {
 
   constructor() {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // if (this.sub$) {
+    //   this.sub$.unsubscribe();
+    // }
+    // this.sub$ = this.workingHoursFormArray.valueChanges.subscribe(
+    //   (selectedValue) => {
+    //     // this.recalculateSumFlex();
+    //   }
+    // );
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // if (changes && changes.timePlannings) {
+    //   if (this.sub$) {
+    //     this.sub$.unsubscribe();
+    //   }
+    //   this.sub$ = this.workingHoursFormArray.valueChanges.subscribe(
+    //     (selectedValue) => {
+    //       this.recalculateSumFlex();
+    //     }
+    //   );
+    // }
+  }
 
   // onTimePlanningChanged(
   //   planHours: number,

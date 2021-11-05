@@ -30,6 +30,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   getWorkingHours$: Subscription;
   updateWorkingHours$: Subscription;
   getAvailableSites$: Subscription;
+  workingHoursGroupSub$: Subscription[] = [];
 
   constructor(
     private workingHoursService: TimePlanningPnWorkingHoursService,
@@ -77,16 +78,51 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
           shift2Start: new FormControl(x.shift2Start ? x.shift2Start : null),
           shift2Pause: new FormControl(x.shift2Pause ? x.shift2Pause : null),
           shift2Stop: new FormControl(x.shift2Stop ? x.shift2Stop : null),
-          nettoHours: new FormControl(x.nettoHours ? x.nettoHours : 0),
-          flexHours: new FormControl(x.flexHours ? x.flexHours : 0),
-          sumFlex: new FormControl(x.sumFlex ? x.sumFlex : 0),
+          nettoHours: new FormControl({
+            value: x.nettoHours ? x.nettoHours : 0,
+            disabled: true,
+          }),
+          flexHours: new FormControl({
+            value: x.flexHours ? x.flexHours : 0,
+            disabled: true,
+          }),
+          sumFlex: new FormControl({
+            value: x.sumFlex ? x.sumFlex : 0,
+            disabled: true,
+          }),
           paidOutFlex: new FormControl(x.paidOutFlex ? x.paidOutFlex : 0),
-          commentWorker: new FormControl(x.commentWorker ? x.commentWorker : null),
-          commentOffice: new FormControl(x.commentOffice ? x.commentOffice : null),
-          commentOfficeAll: new FormControl(x.commentOfficeAll ? x.commentOfficeAll : null),
+          commentWorker: new FormControl(
+            x.commentWorker ? x.commentWorker : null
+          ),
+          commentOffice: new FormControl(
+            x.commentOffice ? x.commentOffice : null
+          ),
+          commentOfficeAll: new FormControl(
+            x.commentOfficeAll ? x.commentOfficeAll : null
+          ),
         })
       );
     });
+
+    if (this.workingHoursGroupSub$.length > 0) {
+      for (const sub$ of this.workingHoursGroupSub$) {
+        sub$.unsubscribe();
+      }
+    }
+    if (this.workingHoursFormArray.length > 0) {
+      for (const group of this.workingHoursFormArray.controls) {
+        this.workingHoursGroupSub$.push(
+          group.get('flexHours').valueChanges.subscribe(() => {
+            this.recalculateSumFlex();
+          })
+        );
+        this.workingHoursGroupSub$.push(
+          group.get('paidOutFlex').valueChanges.subscribe(() => {
+            this.recalculateSumFlex();
+          })
+        );
+      }
+    }
   }
 
   onWorkingHoursFiltersChanged(model: TimePlanningsRequestModel) {
@@ -108,5 +144,21 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
       });
   }
 
-  ngOnDestroy(): void {}
+  recalculateSumFlex() {
+    debugger;
+    let sumFlex = 0;
+    for (const formGroup of this.workingHoursFormArray.controls) {
+      const flexHours = formGroup.get('flexHours').value;
+      const paidOutFlex = formGroup.get('paidOutFlex').value;
+      sumFlex =
+        sumFlex + (flexHours ? flexHours : 0) - (paidOutFlex ? paidOutFlex : 0);
+      formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
+    }
+  }
+
+  ngOnDestroy(): void {
+    for (const sub$ of this.workingHoursGroupSub$) {
+      sub$.unsubscribe();
+    }
+  }
 }

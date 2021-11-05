@@ -8,16 +8,6 @@
   >
     <thead table-headers [tableHeaders]="tableHeaders"></thead>
     <tbody id="tableBody">
-      <!--    <ng-container *ngFor="let timePlanning of timePlannings; let i = index">-->
-      <!--      <tr time-planning-table-row-->
-      <!--          [index]="i"-->
-      <!--          [weekDay]="timePlanning.weekDay"-->
-      <!--          [date]="timePlanning.date"-->
-      <!--          [message]="timePlanning.message"-->
-      <!--          [planHours]="timePlanning.planHours"-->
-      <!--          [planText]="timePlanning.planText"-->
-      <!--      ></tr>-->
-      <!--    </ng-container>-->
       <ng-container
         *ngFor="
           let workingHoursForm of workingHoursFormArray.controls;
