@@ -31,6 +31,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     using Microsoft.Extensions.Logging;
     using Microting.eForm.Infrastructure;
     using Microting.eForm.Infrastructure.Constants;
+    using Microting.eForm.Infrastructure.Data.Entities;
     using Microting.eFormApi.BasePn.Abstractions;
     using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
@@ -72,16 +73,23 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 var core = await _core.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
-                var eformId = _options.Value.EformId == 0 ? null : _options.Value.EformId;
-                var caseId = await sdkDbContext.Cases
-                    .Where(x => x.WorkerId == model.SiteId && x.CheckListId == eformId)
-                    .OrderByDescending(x => x.DoneAt)
+
+                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId;
+                Site site = await sdkDbContext.Sites.SingleAsync(x => x.MicrotingUid == model.SiteId);
+                Language language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                
+                var caseIds = await sdkDbContext.Cases
+                    .Where(x => x.WorkerId == model.SiteId && x.CheckListId == eFormId)
                     .Select(x => x.Id)
-                    .FirstOrDefaultAsync();
-                var commentWorker = await sdkDbContext.FieldValues
-                    .Where(x => x.CaseId == caseId)
-                    .Select(x => x.Value)
-                    .LastOrDefaultAsync();
+                    .ToListAsync();
+                var fieldValues = await core.Advanced_FieldValueReadList(caseIds, language);
+
+                List<(DateTime, string)> tupleValueList = new ();
+
+                for (int i = 0; i < fieldValues.Count; i += 8)
+                {
+                    tupleValueList.Add(new (DateTime.Parse(fieldValues.First().Value), fieldValues[7].Value));
+                }
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
                     .Include(x => x.AssignedSite)
@@ -99,7 +107,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     timePlanningRequest = timePlanningRequest
                         .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
                 }
-
 
                 var timePlannings = await timePlanningRequest
                     .Select(x => new TimePlanningWorkingHoursModel
@@ -120,11 +127,19 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         SumFlex = x.SumFlex,
                         PaidOutFlex = x.PaiedOutFlex,
                         Message = x.MessageId,
-                        CommentWorker = commentWorker,
-                        CommentOffice = x.CommentOffice ?? "",
-                        CommentOfficeAll = x.CommentOfficeAll ?? "",
+                        CommentWorker = "",
+                        CommentOffice = x.CommentOffice,
+                        CommentOfficeAll = x.CommentOfficeAll,
                     })
                     .ToListAsync();
+
+                foreach (var timePlanning in timePlannings)
+                {
+                    var foundComment = tupleValueList
+                        .Where(x => x.Item1 == timePlanning.Date)
+                        .Select(x => x.Item2).FirstOrDefault();
+                    timePlanning.CommentOffice = foundComment;
+                }
 
                 var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
