@@ -28,15 +28,12 @@ export class WorkingHoursTableRowComponent
   implements OnInit, OnDestroy, OnChanges {
   @Input() workingHoursForm: FormGroup;
   @Input() workingHoursFormIndex: number;
+  messages: { id: number; value: string }[] = [];
 
   subs$: Subscription[] = [];
 
   get hoursPickerArray() {
     return HOURS_PICKER_ARRAY;
-  }
-
-  get messages() {
-    return messages(this.translateService);
   }
 
   get daysOfWeek() {
@@ -47,7 +44,9 @@ export class WorkingHoursTableRowComponent
     return STANDARD_DATE_FORMAT;
   }
 
-  constructor(private translateService: TranslateService) {}
+  constructor(translateService: TranslateService) {
+    this.messages = messages(translateService);
+  }
 
   ngOnInit(): void {}
 
