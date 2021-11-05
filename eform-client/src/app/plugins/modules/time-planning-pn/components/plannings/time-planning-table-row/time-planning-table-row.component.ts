@@ -12,6 +12,8 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, last } from 'rxjs/operators';
 import { DaysOfWeekEnum } from 'src/app/common/const';
 import { TimePlanningMessagesEnum } from '../../../enums';
+import { TranslateService } from '@ngx-translate/core';
+import { messages } from '../../../consts/messages';
 
 @AutoUnsubscribe()
 @Component({
@@ -39,10 +41,10 @@ export class TimePlanningTableRowComponent implements OnInit, AfterViewInit, OnD
   }
 
   get messages() {
-    return TimePlanningMessagesEnum;
+    return messages(this.translateService);
   }
 
-  constructor() {}
+  constructor(private translateService: TranslateService) {}
 
   ngAfterViewInit() {}
 

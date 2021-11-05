@@ -97,32 +97,32 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 else
                 {
                     timePlanningRequest = timePlanningRequest
-                        .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo);
+                        .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
                 }
 
 
                 var timePlannings = await timePlanningRequest
-                    .Select(pr => new TimePlanningWorkingHoursModel
+                    .Select(x => new TimePlanningWorkingHoursModel
                     {
                         //WorkerId = pr.AssignedSiteId,
-                        WeekDay = (int)pr.Date.DayOfWeek,
-                        Date = pr.Date,
-                        PlanText = pr.PlanText,
-                        PlanHours = pr.PlanHours,
-                        Shift1Start = pr.Start1Id,
-                        Shift1Stop = pr.Stop1Id,
-                        Shift1Pause = pr.Pause1Id,
-                        Shift2Start = pr.Start2Id,
-                        Shift2Stop = pr.Stop2Id,
-                        Shift2Pause = pr.Pause2Id,
-                        NettoHours = pr.NettoHours,
-                        FlexHours = pr.Flex,
-                        SumFlex = pr.SumFlex,
-                        PaidOutFlex = pr.PaiedOutFlex,
-                        Message = pr.MessageId,
+                        WeekDay = (int)x.Date.DayOfWeek,
+                        Date = x.Date,
+                        PlanText = x.PlanText,
+                        PlanHours = x.PlanHours,
+                        Shift1Start = x.Start1Id,
+                        Shift1Stop = x.Stop1Id,
+                        Shift1Pause = x.Pause1Id,
+                        Shift2Start = x.Start2Id,
+                        Shift2Stop = x.Stop2Id,
+                        Shift2Pause = x.Pause2Id,
+                        NettoHours = x.NettoHours,
+                        FlexHours = x.Flex,
+                        SumFlex = x.SumFlex,
+                        PaidOutFlex = x.PaiedOutFlex,
+                        Message = x.MessageId,
                         CommentWorker = commentWorker,
-                        CommentOffice = pr.CommentOffice,
-                        CommentOfficeAll = pr.CommentOfficeAll,
+                        CommentOffice = x.CommentOffice ?? "",
+                        CommentOfficeAll = x.CommentOfficeAll ?? "",
                     })
                     .ToListAsync();
 
@@ -145,6 +145,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     }
                     timePlannings.AddRange(timePlanningForAdd);
                 }
+
+                timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
 
                 return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                     true,
@@ -179,8 +181,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     {
                         await UpdatePlanning(planningFomrDb, planning);
                     }
-
-                    await CreatePlanning(planning, assignedSiteId);
+                    else
+                    {
+                        await CreatePlanning(planning, assignedSiteId);
+                    }
                 }
                 return new OperationResult(
                     true,
@@ -213,12 +217,12 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     CommentOfficeAll = model.CommentOfficeAll,
                     NettoHours = model.NettoHours,
                     PaiedOutFlex = model.PaidOutFlex,
-                    Pause1Id = model.Shift1Pause,
-                    Pause2Id = model.Shift1Pause,
-                    Start1Id = model.Shift1Start,
-                    Start2Id = model.Shift2Start,
-                    Stop1Id = model.Shift1Stop,
-                    Stop2Id = model.Shift2Stop,
+                    Pause1Id = model.Shift1Pause ?? 0,
+                    Pause2Id = model.Shift1Pause ?? 0,
+                    Start1Id = model.Shift1Start ?? 0,
+                    Start2Id = model.Shift2Start ?? 0,
+                    Stop1Id = model.Shift1Stop ?? 0,
+                    Stop2Id = model.Shift2Stop ?? 0,
                     Flex = model.FlexHours,
                     SumFlex = model.SumFlex,
                 };
@@ -246,12 +250,12 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.CommentOfficeAll = model.CommentOfficeAll;
                 planRegistration.NettoHours = model.NettoHours;
                 planRegistration.PaiedOutFlex = model.PaidOutFlex;
-                planRegistration.Pause1Id = model.Shift1Pause;
-                planRegistration.Pause2Id = model.Shift1Pause;
-                planRegistration.Start1Id = model.Shift1Start;
-                planRegistration.Start2Id = model.Shift2Start;
-                planRegistration.Stop1Id = model.Shift1Stop;
-                planRegistration.Stop2Id = model.Shift2Stop;
+                planRegistration.Pause1Id = model.Shift1Pause ?? 0;
+                planRegistration.Pause2Id = model.Shift1Pause ?? 0;
+                planRegistration.Start1Id = model.Shift1Start ?? 0;
+                planRegistration.Start2Id = model.Shift2Start ?? 0;
+                planRegistration.Stop1Id = model.Shift1Stop ?? 0;
+                planRegistration.Stop2Id = model.Shift2Stop ?? 0;
                 planRegistration.Flex = model.FlexHours;
                 planRegistration.SumFlex = model.SumFlex;
 

@@ -82,7 +82,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 else
                 {
                     timePlanningRequest = timePlanningRequest
-                        .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo);
+                        .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
                 }
                 
                 var timePlannings = await timePlanningRequest

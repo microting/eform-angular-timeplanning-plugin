@@ -31,12 +31,12 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
         public DateTime Date { get; set; }
         public string PlanText { get; set; }
         public double PlanHours { get; set; }
-        public int Shift1Start { get; set; }
-        public int Shift1Pause { get; set; }
-        public int Shift1Stop { get; set; }
-        public int Shift2Start { get; set; }
-        public int Shift2Pause { get; set; }
-        public int Shift2Stop { get; set; }
+        public int? Shift1Start { get; set; }
+        public int? Shift1Pause { get; set; }
+        public int? Shift1Stop { get; set; }
+        public int? Shift2Start { get; set; }
+        public int? Shift2Pause { get; set; }
+        public int? Shift2Stop { get; set; }
         public double NettoHours { get; set; }
         public double FlexHours { get; set; }
         public double SumFlex { get; set; }

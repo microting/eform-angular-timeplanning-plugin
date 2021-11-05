@@ -14,6 +14,8 @@ import {
   HOURS_PICKER_ARRAY,
   STANDARD_DATE_FORMAT,
 } from 'src/app/common/const';
+import { TranslateService } from '@ngx-translate/core';
+import { messages } from '../../../../consts/messages';
 
 @AutoUnsubscribe()
 @Component({
@@ -23,8 +25,7 @@ import {
   styleUrls: ['./working-hours-table-row.component.scss'],
 })
 export class WorkingHoursTableRowComponent
-  implements OnInit, OnDestroy, OnChanges
-{
+  implements OnInit, OnDestroy, OnChanges {
   @Input() workingHoursForm: FormGroup;
   @Input() workingHoursFormIndex: number;
 
@@ -32,6 +33,10 @@ export class WorkingHoursTableRowComponent
 
   get hoursPickerArray() {
     return HOURS_PICKER_ARRAY;
+  }
+
+  get messages() {
+    return messages(this.translateService);
   }
 
   get daysOfWeek() {
@@ -42,7 +47,7 @@ export class WorkingHoursTableRowComponent
     return STANDARD_DATE_FORMAT;
   }
 
-  constructor() {}
+  constructor(private translateService: TranslateService) {}
 
   ngOnInit(): void {}
 
@@ -195,5 +200,17 @@ export class WorkingHoursTableRowComponent
     const nettoHours = this.workingHoursForm.get('nettoHours').value;
     const planHours = this.workingHoursForm.get('planHours').value;
     return +(nettoHours - planHours).toFixed(2);
+  }
+
+  get commentWorker(): string {
+    return this.workingHoursForm.get('commentWorker').value;
+  }
+
+  get commentOffice(): string {
+    return this.workingHoursForm.get('commentOffice').value;
+  }
+
+  get commentOfficeAll(): string {
+    return this.workingHoursForm.get('commentOfficeAll').value;
   }
 }
