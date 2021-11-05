@@ -72,6 +72,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 var core = await _core.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+                var eformId = _options.Value.EformId == 0 ? null : _options.Value.EformId;
                 var caseId = await sdkDbContext.Cases
                     .Where(x => x.WorkerId == model.SiteId && x.CheckListId == eformId)
                     .OrderByDescending(x => x.DoneAt)
