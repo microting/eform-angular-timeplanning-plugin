@@ -22,6 +22,7 @@ import {
   TimePlanningsHeaderComponent,
   TimePlanningsTableComponent,
   TimePlanningTableRowComponent,
+  TimeFlexesCommentOfficeUpdateModalComponent,
 } from './components';
 import { TimePlanningPnLayoutComponent } from './layouts';
 import {
@@ -57,6 +58,7 @@ import {
     TimeFlexesTableComponent,
     TimeFlexesTableRowComponent,
     TimeFlexesContainerComponent,
+    TimeFlexesCommentOfficeUpdateModalComponent,
   ],
   providers: [TimePlanningPnSettingsService, TimePlanningPnPlanningsService],
 })

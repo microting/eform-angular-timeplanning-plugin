@@ -171,22 +171,22 @@ namespace TimePlanning.Pn
                             new()
                             {
                                 Name = "Plannings",
-                                E2EId = "time-planning-pn-planning",
+                                E2EId = "time-planning-pn-plannings",
                                 Link = "/plugins/time-planning-pn/planning",
                                 Type = MenuItemTypeEnum.Link,
                                 Position = 0,
                                 MenuTemplate = new PluginMenuTemplateModel
                                 {
                                     Name = "Plannings",
-                                    E2EId = "items-planning-pn-plannings",
-                                    DefaultLink = "/plugins/items-planning-pn/plannings",
+                                    E2EId = "time-planning-pn-plannings",
+                                    DefaultLink = "/plugins/time-planning-pn/planning",
                                     Permissions = new List<PluginMenuTemplatePermissionModel>
                                     {
                                         new()
                                         {
                                             ClaimName = TimePlanningClaims.GetPlanning,
                                             PermissionName = "Obtain planning",
-                                            PermissionTypeName = "Planning",
+                                            PermissionTypeName = "Plannings",
                                         },
                                     },
                                     Translations = new List<PluginMenuTranslationModel>
@@ -209,12 +209,6 @@ namespace TimePlanning.Pn
                                             Name = "Planlægning",
                                             Language = LanguageNames.Danish,
                                         },
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.Ukrainian,
-                                            Name = "Планування",
-                                            Language = LanguageNames.Ukrainian,
-                                        }
                                     }
                                 },
                                 Translations = new List<PluginMenuTranslationModel>

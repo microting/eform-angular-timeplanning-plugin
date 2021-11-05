@@ -12,16 +12,16 @@
         <tr
           time-flexes-table-row
           [index]="i"
-          [workerName]="flexPlanning.worker.name"
-          [date]="flexPlanning.date"
-          [sumFlex]="flexPlanning.sumFlex"
-          [paidOutFlex]="flexPlanning.paidOutFlex"
-          [commentOffice]="flexPlanning.commentOffice"
-          [commentWorker]="flexPlanning.commentWorker"
-          [commentOfficeAll]="flexPlanning.commentOfficeAll"
+          [flexPlanning]="flexPlanning"
           (paidOutFlexChanged)="onFlexPlanningChanged($event, flexPlanning)"
+          (openEditCommentOffice)="onOpenEditCommentOffice($event)"
         ></tr>
       </ng-container>
     </tbody>
   </table>
+  <app-time-flexes-comment-office-update-modal
+    #editCommentOffice
+    (commentOfficeUpdate)="onFlexPlanningChanged(null, $event)"
+  >
+  </app-time-flexes-comment-office-update-modal>
 </div>

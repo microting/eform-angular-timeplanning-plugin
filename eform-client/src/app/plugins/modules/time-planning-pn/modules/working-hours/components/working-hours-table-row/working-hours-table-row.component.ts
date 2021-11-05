@@ -23,8 +23,7 @@ import {
   styleUrls: ['./working-hours-table-row.component.scss'],
 })
 export class WorkingHoursTableRowComponent
-  implements OnInit, OnDestroy, OnChanges
-{
+  implements OnInit, OnDestroy, OnChanges {
   @Input() workingHoursForm: FormGroup;
   @Input() workingHoursFormIndex: number;
 
@@ -44,7 +43,12 @@ export class WorkingHoursTableRowComponent
 
   constructor() {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.workingHoursForm.get('sumFlex').disable();
+    this.workingHoursForm.get('paidOutFlex').disable();
+    this.workingHoursForm.get('flexHours').disable();
+    this.workingHoursForm.get('nettoHours').disable();
+  }
 
   ngOnDestroy(): void {}
 
@@ -62,7 +66,7 @@ export class WorkingHoursTableRowComponent
       ) {
         const shift1StartSub$ = this.workingHoursForm
           .get('shift1Start')
-          .valueChanges.subscribe((selectedValue) => {
+          .valueChanges.subscribe(() => {
             this.workingHoursForm
               .get('nettoHours')
               .setValue(this.calculateNettoHours().formattedHours);

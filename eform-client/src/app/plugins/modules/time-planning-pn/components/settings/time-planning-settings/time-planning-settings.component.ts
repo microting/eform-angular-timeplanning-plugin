@@ -79,6 +79,7 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.getSettings();
+    this.getAllEforms();
   }
 
   getAllEforms() {

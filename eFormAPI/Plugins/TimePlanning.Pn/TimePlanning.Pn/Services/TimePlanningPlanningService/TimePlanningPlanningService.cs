@@ -71,8 +71,19 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 var timePlanningRequest = _dbContext.PlanRegistrations
                     .Include(x => x.AssignedSite)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo)
                     .Where(x => x.AssignedSite.SiteId == model.SiteId);
+
+                // two dates may be displayed instead of one if the same date is selected.
+                if (model.DateFrom == model.DateTo)
+                {
+                    timePlanningRequest = timePlanningRequest
+                        .Where(x => x.Date == model.DateFrom);
+                }
+                else
+                {
+                    timePlanningRequest = timePlanningRequest
+                        .Where(x => x.Date >= model.DateFrom || x.Date <= model.DateTo);
+                }
                 
                 var timePlannings = await timePlanningRequest
                     .Select(x => new TimePlanningPlanningHelperModel
@@ -208,12 +219,9 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     PlanHours = model.PlanHours,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId,
+                    MessageId = model.Message,
                 };
-
-                if (model.Message is not null)
-                {
-                    planning.MessageId = (int)model.Message;
-                }
+                
                 await planning.Create(_dbContext);
 
                 return new OperationResult(
@@ -234,10 +242,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
-                if (model.Message is not null)
-                {
-                    planning.MessageId = (int)model.Message;
-                }
+                planning.MessageId = model.Message;
                 planning.PlanText = model.PlanText;
                 planning.PlanHours = model.PlanHours;
                 planning.UpdatedByUserId = _userService.UserId;

@@ -1,4 +1,4 @@
-﻿/*
+/*
 The MIT License (MIT)
 
 Copyright (c) 2007 - 2021 Microting A/S
@@ -103,9 +103,9 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                         },
                         SumFlex = planRegistration.SumFlex,
                         PaidOutFlex = planRegistration.PaidOutFlex,
-                        CommentWorker = planRegistration.CommentWorker,
-                        CommentOffice = planRegistration.CommentOffice,
-                        CommentOfficeAll = planRegistration.CommentOfficeAll,
+                        CommentWorker = planRegistration.CommentWorker ?? "",
+                        CommentOffice = planRegistration.CommentOffice ?? "",
+                        CommentOfficeAll = planRegistration.CommentOfficeAll ?? "",
                     });
                 }
 
@@ -127,7 +127,6 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
         {
             try
             {
-
                 var assignedSiteId = await _dbContext.AssignedSites.Where(x => x.SiteId == model.Worker.Id)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Select(x => x.Id)
@@ -166,7 +165,6 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                     Date = model.Date,
                     SumFlex = model.SumFlex,
                     PaiedOutFlex = model.PaidOutFlex,
-                    CommentOfficeAll = model.CommentOfficeAll,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId,
                 };
@@ -192,7 +190,6 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             try
             {
                 planRegistration.CommentOffice = model.CommentOffice;
-                planRegistration.CommentOfficeAll = model.CommentOfficeAll;
                 planRegistration.PaiedOutFlex = model.PaidOutFlex;
                 planRegistration.SumFlex = model.SumFlex;
                 planRegistration.UpdatedByUserId = _userService.UserId;

@@ -7,8 +7,9 @@ import {
   Output,
 } from '@angular/core';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, last } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { TimePlanningMessagesEnum } from '../../../enums';
+import { TimeFlexesModel } from 'src/app/plugins/modules/time-planning-pn/models';
 
 @Component({
   // tslint:disable-next-line:component-selector
@@ -17,18 +18,13 @@ import { TimePlanningMessagesEnum } from '../../../enums';
   styleUrls: ['./time-flexes-table-row.component.scss'],
 })
 export class TimeFlexesTableRowComponent implements OnInit, AfterViewInit {
-  @Input() date: string;
-  @Input() workerName: string;
-  @Input() paidOutFlex: number;
-  @Input() sumFlex: number;
+  @Input() flexPlanning: TimeFlexesModel = new TimeFlexesModel();
   @Input() index: number;
-  @Input() commentWorker: string;
-  @Input() commentOffice: string;
-  @Input() commentOfficeAll: string;
   @Output()
   paidOutFlexChanged: EventEmitter<number> = new EventEmitter<number>();
   @Output() planTextChanged: EventEmitter<string> = new EventEmitter<string>();
-  @Output() messageChanged: EventEmitter<number> = new EventEmitter<number>();
+  @Output()
+  openEditCommentOffice: EventEmitter<TimeFlexesModel> = new EventEmitter<TimeFlexesModel>();
 
   paidOutFlex$ = new Subject<number>();
 
@@ -50,5 +46,9 @@ export class TimeFlexesTableRowComponent implements OnInit, AfterViewInit {
 
   onPaidOutFlexChange($event: any) {
     this.paidOutFlex$.next($event);
+  }
+
+  onCommentOfficeClick() {
+    this.openEditCommentOffice.emit(this.flexPlanning);
   }
 }

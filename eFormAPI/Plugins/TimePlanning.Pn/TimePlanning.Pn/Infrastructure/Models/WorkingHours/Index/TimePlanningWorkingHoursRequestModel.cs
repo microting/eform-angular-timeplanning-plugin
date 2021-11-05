@@ -27,8 +27,10 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
     /// </summary>
     public class TimePlanningWorkingHoursRequestModel
     {
-        public int WorkerId { get; set; }
+        public int SiteId { get; set; }
+
         public DateTime DateFrom { get; set; }
+
         public DateTime DateTo { get; set; }
     }
 }
