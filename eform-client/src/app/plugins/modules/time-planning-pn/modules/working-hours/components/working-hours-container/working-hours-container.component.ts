@@ -3,14 +3,11 @@ import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
-import { TimePlanningsStateService } from 'src/app/plugins/modules/time-planning-pn/components/plannings/store';
-import { TimePlanningMessagesEnum } from 'src/app/plugins/modules/time-planning-pn/enums';
 import {
   TimePlanningModel,
   TimePlanningsRequestModel,
 } from 'src/app/plugins/modules/time-planning-pn/models';
 import {
-  TimePlanningPnPlanningsService,
   TimePlanningPnSettingsService,
   TimePlanningPnWorkingHoursService,
 } from '../../../../services';
@@ -67,6 +64,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
     workingHours.map((x) => {
       this.workingHoursFormArray.push(
         new FormGroup({
+          workerName: new FormControl(x.workerName),
           weekDay: new FormControl(x.weekDay),
           date: new FormControl(x.date),
           planText: new FormControl(x.planText ? x.planText : null),

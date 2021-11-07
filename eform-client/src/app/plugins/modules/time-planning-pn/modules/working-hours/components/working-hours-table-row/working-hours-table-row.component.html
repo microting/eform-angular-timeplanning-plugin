@@ -180,6 +180,7 @@
     triggers="hover"
     placement="left"
     [mdbPopoverHeader]="'Comment office' | translate"
+    (click)="openEditCommentOfficeModal()"
   >
     {{ commentOffice.slice(0, 20) }}
   </td>
@@ -189,6 +190,7 @@
     triggers="hover"
     placement="left"
     [mdbPopoverHeader]="'Comment office all' | translate"
+    (click)="openEditCommentOfficeAllModal()"
   >
     {{ commentOfficeAll.slice(0, 20) }}
   </td>
@@ -203,3 +205,13 @@
 <ng-template #popTemplateCommentOffice>
   <div class="text-break">{{ commentOffice }}</div>
 </ng-template>
+<app-working-hours-comment-office-update-modal
+  #editCommentOfficeModal
+  [workingHoursForm]="workingHoursForm"
+>
+</app-working-hours-comment-office-update-modal>
+<app-working-hours-comment-office-all-update-modal
+  #editCommentOfficeAllModal
+  [workingHoursForm]="workingHoursForm"
+>
+</app-working-hours-comment-office-all-update-modal>

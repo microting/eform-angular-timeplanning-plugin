@@ -6,5 +6,5 @@ export class TimeFlexesUpdateModel {
   sumFlex: number;
   paidOutFlex: number;
   commentOffice: string;
-  // commentOfficeAll: string;
+  commentOfficeAll: string;
 }

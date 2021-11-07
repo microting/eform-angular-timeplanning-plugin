@@ -7,7 +7,7 @@
   <div class="modal-dialog modal-md">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>{{ 'Edit comment office' | translate }}</h3>
+        <h3>{{ 'Edit comment office all' | translate }}</h3>
         <button class="close" data-dismiss="modal" (click)="hide()">
           <span>×</span>
         </button>
@@ -29,14 +29,14 @@
               <div class="md-form">
                 <textarea
                   mdbInput
-                  [(ngModel)]="timeFlexes.commentOffice"
+                  [(ngModel)]="timeFlexes.commentOfficeAll"
                   type="text"
-                  id="commentOfficeInput"
-                  name="commentOfficeInput"
+                  id="timeFlexesCommentOfficeAllInput"
+                  name="timeFlexesCommentOfficeAllInput"
                   class="md-textarea form-control"
                 ></textarea>
-                <label for="commentOfficeInput">{{
-                  'Comment office' | translate
+                <label for="timeFlexesCommentOfficeAllInput">{{
+                  'Comment office all' | translate
                 }}</label>
               </div>
             </div>
@@ -48,7 +48,7 @@
           mdbBtn
           class="btn-success btn-small-height"
           (click)="onUpdateFlexPlanning()"
-          id="flexesCommentOfficeEditSaveBtn"
+          id="flexesCommentOfficeAllEditSaveBtn"
         >
           {{ 'Save' | translate }}
         </button>
@@ -56,7 +56,7 @@
           mdbBtn
           class="btn-accent text-black-50 btn-small-height"
           (click)="hide()"
-          id="flexesCommentOfficeEditSaveCancelBtn"
+          id="flexesCommentOfficeAllEditSaveCancelBtn"
         >
           {{ 'Cancel' | translate }}
         </button>

@@ -25,11 +25,19 @@ export class TimeFlexesTableRowComponent implements OnInit, AfterViewInit {
   @Output() planTextChanged: EventEmitter<string> = new EventEmitter<string>();
   @Output()
   openEditCommentOffice: EventEmitter<TimeFlexesModel> = new EventEmitter<TimeFlexesModel>();
+  @Output()
+  openEditCommentOfficeAll: EventEmitter<TimeFlexesModel> = new EventEmitter<TimeFlexesModel>();
 
   paidOutFlex$ = new Subject<number>();
 
   get messages() {
     return TimePlanningMessagesEnum;
+  }
+
+  get sumFlex() {
+    return (this.flexPlanning.sumFlex - this.flexPlanning.paidOutFlex).toFixed(
+      2
+    );
   }
 
   constructor() {}
@@ -50,5 +58,9 @@ export class TimeFlexesTableRowComponent implements OnInit, AfterViewInit {
 
   onCommentOfficeClick() {
     this.openEditCommentOffice.emit(this.flexPlanning);
+  }
+
+  onCommentOfficeAllClick() {
+    this.openEditCommentOfficeAll.emit(this.flexPlanning);
   }
 }

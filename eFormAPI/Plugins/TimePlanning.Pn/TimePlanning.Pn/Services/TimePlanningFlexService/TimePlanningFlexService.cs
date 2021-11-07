@@ -161,6 +161,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 var planning = new PlanRegistration
                 {
                     CommentOffice = model.CommentOffice,
+                    CommentOfficeAll = model.CommentOfficeAll,
                     AssignedSiteId = assignedSiteId,
                     Date = model.Date,
                     SumFlex = model.SumFlex,
@@ -189,6 +190,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
         {
             try
             {
+                planRegistration.CommentOfficeAll = model.CommentOfficeAll;
                 planRegistration.CommentOffice = model.CommentOffice;
                 planRegistration.PaiedOutFlex = model.PaidOutFlex;
                 planRegistration.SumFlex = model.SumFlex;

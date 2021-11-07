@@ -38,5 +38,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Flex.Update
         public double PaidOutFlex { get; set; }
 
         public string CommentOffice { get; set; }
+
+        public string CommentOfficeAll { get; set; }
     }
 }

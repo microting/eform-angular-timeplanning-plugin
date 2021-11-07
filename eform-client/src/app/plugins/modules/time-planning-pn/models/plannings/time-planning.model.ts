@@ -1,6 +1,7 @@
 import { TimePlanningMessagesEnum } from '../../enums';
 
 export class TimePlanningModel {
+  workerName: string;
   weekDay: number;
   date: string;
   planText: string;

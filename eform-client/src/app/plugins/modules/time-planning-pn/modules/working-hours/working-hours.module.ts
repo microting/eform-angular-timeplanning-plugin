@@ -13,9 +13,11 @@ import { WorkingHoursRouting } from './working-hours.routing';
 import {
   WorkingHoursContainerComponent,
   WorkingHoursHeaderComponent,
+  WorkingHoursTableRowComponent,
   WorkingHoursTableComponent,
+  WorkingHoursCommentOfficeUpdateModalComponent,
+  WorkingHoursCommentOfficeAllUpdateModalComponent,
 } from './components';
-import { WorkingHoursTableRowComponent } from './components/working-hours-table-row/working-hours-table-row.component';
 
 @NgModule({
   imports: [
@@ -37,6 +39,8 @@ import { WorkingHoursTableRowComponent } from './components/working-hours-table-
     WorkingHoursHeaderComponent,
     WorkingHoursTableComponent,
     WorkingHoursTableRowComponent,
+    WorkingHoursCommentOfficeUpdateModalComponent,
+    WorkingHoursCommentOfficeAllUpdateModalComponent,
   ],
 })
 export class WorkingHoursModule {}

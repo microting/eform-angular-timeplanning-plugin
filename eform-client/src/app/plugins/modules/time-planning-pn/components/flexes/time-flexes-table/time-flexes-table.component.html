@@ -15,6 +15,7 @@
           [flexPlanning]="flexPlanning"
           (paidOutFlexChanged)="onFlexPlanningChanged($event, flexPlanning)"
           (openEditCommentOffice)="onOpenEditCommentOffice($event)"
+          (openEditCommentOfficeAll)="onOpenEditCommentOfficeAll($event)"
         ></tr>
       </ng-container>
     </tbody>
@@ -24,4 +25,9 @@
     (commentOfficeUpdate)="onFlexPlanningChanged(null, $event)"
   >
   </app-time-flexes-comment-office-update-modal>
+  <app-time-flexes-comment-office-all-update-modal
+    #editCommentOfficeAll
+    (commentOfficeAllUpdate)="onFlexPlanningChanged(null, $event)"
+  >
+  </app-time-flexes-comment-office-all-update-modal>
 </div>

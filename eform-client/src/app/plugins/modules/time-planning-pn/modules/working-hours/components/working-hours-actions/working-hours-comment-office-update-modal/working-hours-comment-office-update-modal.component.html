@@ -15,27 +15,23 @@
       <div class="modal-body">
         <div class="container-fluid">
           <div class="row">
-            {{
-              ('Date' | translate) +
-                ': ' +
-                (timeFlexes.date | date: 'dd/MM/yyyy')
-            }}
+            {{ ('Date' | translate) + ': ' + (date | date: 'dd/MM/yyyy') }}
           </div>
           <div class="row">
-            {{ ('Worker' | translate) + ': ' + timeFlexes.worker.name }}
+            {{ ('Worker' | translate) + ': ' + workerName }}
           </div>
           <div class="row">
             <div class="col">
               <div class="md-form">
                 <textarea
                   mdbInput
-                  [(ngModel)]="timeFlexes.commentOffice"
+                  [(ngModel)]="commentOffice"
                   type="text"
-                  id="commentOfficeInput"
-                  name="commentOfficeInput"
+                  id="workingHoursCommentOfficeInput"
+                  name="workingHoursCommentOfficeInput"
                   class="md-textarea form-control"
                 ></textarea>
-                <label for="commentOfficeInput">{{
+                <label for="workingHoursCommentOfficeInput">{{
                   'Comment office' | translate
                 }}</label>
               </div>
@@ -47,7 +43,7 @@
         <button
           mdbBtn
           class="btn-success btn-small-height"
-          (click)="onUpdateFlexPlanning()"
+          (click)="save()"
           id="flexesCommentOfficeEditSaveBtn"
         >
           {{ 'Save' | translate }}

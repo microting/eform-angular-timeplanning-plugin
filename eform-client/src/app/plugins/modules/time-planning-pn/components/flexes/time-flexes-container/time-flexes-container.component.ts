@@ -41,13 +41,7 @@ export class TimeFlexesContainerComponent implements OnInit, OnDestroy {
 
   onUpdateFlexPlanning(model: TimeFlexesUpdateModel) {
     this.updateTimePlanning$ = this.planningsService
-      .updateFlexes({
-        worker: model.worker,
-        date: model.date,
-        sumFlex: model.sumFlex,
-        commentOffice: model.commentOffice,
-        paidOutFlex: model.paidOutFlex,
-      })
+      .updateFlexes(model)
       .subscribe((data) => {
         if (data && data.success) {
           this.getPlannings();

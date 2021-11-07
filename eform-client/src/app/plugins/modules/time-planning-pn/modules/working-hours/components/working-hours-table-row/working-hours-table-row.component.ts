@@ -5,6 +5,7 @@ import {
   OnDestroy,
   OnInit,
   SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
@@ -16,6 +17,10 @@ import {
 } from 'src/app/common/const';
 import { TranslateService } from '@ngx-translate/core';
 import { messages } from '../../../../consts/messages';
+import {
+  WorkingHoursCommentOfficeAllUpdateModalComponent,
+  WorkingHoursCommentOfficeUpdateModalComponent,
+} from '../../components';
 
 @AutoUnsubscribe()
 @Component({
@@ -28,6 +33,10 @@ export class WorkingHoursTableRowComponent
   implements OnInit, OnDestroy, OnChanges {
   @Input() workingHoursForm: FormGroup;
   @Input() workingHoursFormIndex: number;
+  @ViewChild('editCommentOfficeModal')
+  editCommentOfficeModal: WorkingHoursCommentOfficeUpdateModalComponent;
+  @ViewChild('editCommentOfficeAllModal')
+  editCommentOfficeAllModal: WorkingHoursCommentOfficeAllUpdateModalComponent;
   messages: { id: number; value: string }[] = [];
 
   subs$: Subscription[] = [];
@@ -70,7 +79,7 @@ export class WorkingHoursTableRowComponent
       ) {
         const shift1StartSub$ = this.workingHoursForm
           .get('shift1Start')
-          .valueChanges.subscribe((selectedValue) => {
+          .valueChanges.subscribe(() => {
             this.workingHoursForm
               .get('nettoHours')
               .setValue(this.calculateNettoHours().formattedHours);
@@ -211,5 +220,13 @@ export class WorkingHoursTableRowComponent
 
   get commentOfficeAll(): string {
     return this.workingHoursForm.get('commentOfficeAll').value;
+  }
+
+  openEditCommentOfficeModal() {
+    this.editCommentOfficeModal.show();
+  }
+
+  openEditCommentOfficeAllModal() {
+    this.editCommentOfficeAllModal.show();
   }
 }
