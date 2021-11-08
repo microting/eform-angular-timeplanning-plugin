@@ -1,0 +1,14 @@
+<eform-subheader [title]="'Plannings'"></eform-subheader>
+
+<div class="container-fluid">
+  <app-time-plannings-header
+    [timePlanningsRequest]="timePlanningsRequest"
+    (filtersChanged)="onTimePlanningsFiltersChanged($event)"
+    [availableSites]="availableSites"
+  ></app-time-plannings-header>
+  <app-time-plannings-table
+    [timePlannings]="timePlannings"
+    (timePlanningChanged)="onUpdateTimePlanning($event)"
+    (sortChanged)="onSortChanged($event)"
+  ></app-time-plannings-table>
+</div>

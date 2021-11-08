@@ -1,0 +1,25 @@
+<div class="row p-1 table-responsive no-gutters scrollable-xy-block">
+  <table
+    mdbTable
+    striped="true"
+    hover="true"
+    small="true"
+    class="z-depth-1 text-center"
+  >
+    <thead table-headers [tableHeaders]="tableHeaders"></thead>
+    <tbody id="tableBody">
+      <ng-container
+        *ngFor="
+          let workingHoursForm of workingHoursFormArray.controls;
+          let i = index
+        "
+      >
+        <tr
+          working-hours-table-row
+          [workingHoursForm]="workingHoursForm"
+          [workingHoursFormIndex]="i"
+        ></tr>
+      </ng-container>
+    </tbody>
+  </table>
+</div>

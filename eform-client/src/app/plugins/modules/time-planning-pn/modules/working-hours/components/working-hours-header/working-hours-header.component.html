@@ -1,0 +1,43 @@
+<div>
+  <div class="row">
+    <div class="col-md-3 col-sm-6 col-xs-6">
+      <div class="md-form" [owlDateTimeTrigger]="dt1">
+        <input
+          mdbInput
+          [owlDateTime]="dt1"
+          [selectMode]="'range'"
+          [ngModel]="dateRange"
+          (ngModelChange)="updateDateRange($event)"
+          type="text"
+          id="workingHoursRange"
+          class="form-control"
+        />
+        <owl-date-time [pickerType]="'calendar'" #dt1></owl-date-time>
+        <label for="workingHoursRange">{{ 'Date range' | translate }}</label>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 col-xs-6 ng-select-wrapper">
+      <ng-select
+        [items]="availableSites"
+        bindLabel="siteName"
+        [placeholder]="'Worker' | translate"
+        bindValue="siteId"
+        [ngModel]="siteId"
+        (ngModelChange)="onSiteChanged($event)"
+        id="workingHoursSite"
+        [clearable]="false"
+      >
+      </ng-select>
+    </div>
+    <div class="mt-4 pt-1 ml-1" *ngIf="siteId && dateRange">
+      <button
+        mdbBtn
+        id="workingHoursSave"
+        (click)="onSaveWorkingHours()"
+        class="btn-success btn-small-height"
+      >
+        {{ 'Save' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

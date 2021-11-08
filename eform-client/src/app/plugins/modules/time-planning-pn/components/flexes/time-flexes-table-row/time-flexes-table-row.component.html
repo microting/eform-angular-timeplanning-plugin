@@ -1,0 +1,75 @@
+<td id="flexPlanningDate">
+  {{ flexPlanning.date | date: 'yyyy/MM/dd' }}
+</td>
+<td id="flexPlanningWorkerName">
+  {{ flexPlanning.worker.name }}
+</td>
+<td id="timePlanningSumFlex">
+  <div class="md-form">
+    <input
+      mdbInput
+      class="form-control"
+      type="number"
+      id="sumFlex"
+      [disabled]="true"
+      [ngModel]="sumFlex"
+    />
+  </div>
+</td>
+<td id="timePlanningPaidOutFlex">
+  <div class="md-form">
+    <input
+      mdbInput
+      class="form-control"
+      type="number"
+      step="0.01"
+      id="paidOutFlex"
+      (ngModelChange)="onPaidOutFlexChange($event)"
+      [(ngModel)]="flexPlanning.paidOutFlex"
+    />
+  </div>
+</td>
+<td
+  [mdbPopover]="popTemplateCommentWorker"
+  triggers="hover"
+  placement="left"
+  [mdbPopoverHeader]="'Comment worker' | translate"
+  id="timePlanningCommentWorker"
+>
+  <div id="commentWorker">
+    {{ flexPlanning.commentWorker.slice(0, 20) }}
+  </div>
+</td>
+<td
+  id="timePlanningCommentOffice"
+  (click)="onCommentOfficeClick()"
+  [mdbPopover]="popTemplateCommentOffice"
+  triggers="hover"
+  placement="left"
+  [mdbPopoverHeader]="'Comment office' | translate"
+>
+  <div id="commentOffice">
+    {{ flexPlanning.commentOffice.slice(0, 20) }}
+  </div>
+</td>
+<td
+  id="timePlanningCommentOfficeAll"
+  [mdbPopover]="popTemplateCommentAll"
+  triggers="hover"
+  placement="left"
+  [mdbPopoverHeader]="'Comment office all' | translate"
+  (click)="onCommentOfficeAllClick()"
+>
+  <div id="commentOfficeAll">
+    {{ flexPlanning.commentOfficeAll.slice(0, 20) }}
+  </div>
+</td>
+<ng-template #popTemplateCommentAll>
+  <div class="text-break">{{ flexPlanning.commentOfficeAll }}</div>
+</ng-template>
+<ng-template #popTemplateCommentWorker>
+  <div class="text-break">{{ flexPlanning.commentWorker }}</div>
+</ng-template>
+<ng-template #popTemplateCommentOffice>
+  <div class="text-break">{{ flexPlanning.commentOffice }}</div>
+</ng-template>

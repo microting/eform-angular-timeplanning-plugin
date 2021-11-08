@@ -1,0 +1,8 @@
+<eform-subheader></eform-subheader>
+
+<div class="container-fluid">
+  <app-time-flexes-table
+    [flexPlannings]="timePlannings"
+    (flexPlanningChanged)="onUpdateFlexPlanning($event)"
+  ></app-time-flexes-table>
+</div>
