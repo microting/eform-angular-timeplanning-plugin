@@ -74,20 +74,27 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 List<(DateTime, string)> tupleValueList = new();
                 var site = await sdkDbContext.Sites.SingleAsync(x => x.MicrotingUid == model.SiteId);
 
-                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId;
+                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1; // fix correct eform id
                 if (eFormId != null)
                 {
-                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
-
-                    var caseIds = await sdkDbContext.Cases
-                        .Where(x => x.WorkerId == model.SiteId && x.CheckListId == eFormId)
-                        .Select(x => x.Id)
+                    var fieldValuesSdk = await sdkDbContext.FieldValues
+                        .Where(x => x.CheckListId == eFormId)
+                        .Include(x => x.Field)
+                        .ThenInclude(x => x.FieldType)
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Field.FieldType.Type == Constants.FieldTypes.Comment ||
+                                    x.Field.FieldType.Type == Constants.FieldTypes.Date)
+                        .OrderBy(x => x.CaseId)
+                        .Select(x => new { x.Value, x.Field.FieldType.Type })
                         .ToListAsync();
-                    var fieldValues = await core.Advanced_FieldValueReadList(caseIds, language);
 
-                    for (var i = 0; i < fieldValues.Count; i += 8)
+                    for (var i = 1; i < fieldValuesSdk.Count; i += 2)
                     {
-                        tupleValueList.Add(new(DateTime.Parse(fieldValues.First().Value), fieldValues[7].Value));
+                        var dateFromFieldValue = DateTime.Parse(fieldValuesSdk[i].Value);
+                        if (dateFromFieldValue >= model.DateFrom && dateFromFieldValue <= model.DateTo)
+                        {
+                            tupleValueList.Add(new(dateFromFieldValue, fieldValuesSdk[i - 1].Value));
+                        }
                     }
                 }
 
@@ -133,17 +140,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     })
                     .ToListAsync();
 
-                if(tupleValueList.Any())
-                {
-                    foreach (var timePlanning in timePlannings)
-                    {
-                        var foundComment = tupleValueList
-                            .Where(x => x.Item1 == timePlanning.Date)
-                            .Select(x => x.Item2).FirstOrDefault();
-                        timePlanning.CommentOffice = foundComment;
-                    }
-                }
-
                 var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
                 if (timePlannings.Count < date)
@@ -162,6 +158,17 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         }
                     }
                     timePlannings.AddRange(timePlanningForAdd);
+                }
+
+                if (tupleValueList.Any())
+                {
+                    foreach (var timePlanning in timePlannings)
+                    {
+                        var foundComment = tupleValueList
+                            .Where(x => x.Item1 == timePlanning.Date)
+                            .Select(x => x.Item2).FirstOrDefault();
+                        timePlanning.CommentWorker = foundComment;
+                    }
                 }
 
                 timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
