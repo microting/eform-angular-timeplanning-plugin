@@ -21,6 +21,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
     using System.Threading.Tasks;
     using Infrastructure.Models.Settings;
@@ -72,29 +73,59 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
 
                 List<(DateTime, string)> tupleValueList = new();
-                var site = await sdkDbContext.Sites.SingleAsync(x => x.MicrotingUid == model.SiteId);
+                var site = await sdkDbContext.Sites
+                    .Where(x => x.MicrotingUid == model.SiteId)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Name,
+                    })
+                    .FirstOrDefaultAsync();
 
                 var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1; // fix correct eform id
                 if (eFormId != null)
                 {
-                    var fieldValuesSdk = await sdkDbContext.FieldValues
-                        .Where(x => x.CheckListId == eFormId)
-                        .Include(x => x.Field)
-                        .ThenInclude(x => x.FieldType)
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => x.Field.FieldType.Type == Constants.FieldTypes.Comment ||
-                                    x.Field.FieldType.Type == Constants.FieldTypes.Date)
-                        .OrderBy(x => x.CaseId)
-                        .Select(x => new { x.Value, x.Field.FieldType.Type })
+                    var possibleCases = await sdkDbContext.Cases
+                        .Where(x => x.SiteId == site.Id
+                                    && x.CheckListId == eFormId - 1)
+                        .Select(x => x.Id)
                         .ToListAsync();
 
-                    for (var i = 1; i < fieldValuesSdk.Count; i += 2)
+                    var dateTimeRange = new List<string>();
+                    for (int i = 0; i <= (model.DateTo - model.DateFrom).TotalDays; i++)
                     {
-                        var dateFromFieldValue = DateTime.Parse(fieldValuesSdk[i].Value);
-                        if (dateFromFieldValue >= model.DateFrom && dateFromFieldValue <= model.DateTo)
+                        dateTimeRange.Add(model.DateFrom.AddDays(i).ToString("yyyy-MM-dd"));
+                    }
+
+                    var requiredCaseIds = await sdkDbContext.FieldValues
+                        .Include(x => x.Field)
+                        .ThenInclude(x => x.FieldType)
+                        .Where(x => x.CheckListId == eFormId
+                                    && possibleCases.Contains(x.CaseId.Value))
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => dateTimeRange.Contains(x.Value) && x.Field.FieldType.Type == Constants.FieldTypes.Date)
+                        .OrderBy(x => x.CaseId)
+                        .Select(x => x.CaseId)
+                        .ToListAsync();
+
+                    var fieldValuesSdk = await sdkDbContext.FieldValues
+                        .Include(x => x.Field)
+                        .ThenInclude(x => x.FieldType)
+                        .Where(x => x.CheckListId == eFormId
+                                    && requiredCaseIds.Contains(x.CaseId.Value))
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Field.FieldType.Type == Constants.FieldTypes.Comment
+                                    || x.Field.FieldType.Type == Constants.FieldTypes.Date)
+                        .Select(x => new
                         {
-                            tupleValueList.Add(new(dateFromFieldValue, fieldValuesSdk[i - 1].Value));
-                        }
+                            x.Value,
+                            x.Field.FieldType.Type,
+                        })
+                        .ToListAsync();
+
+                    for (var i = 0; i < fieldValuesSdk.Count; i += 2)
+                    {
+                        tupleValueList.Add(new(DateTime.Parse(fieldValuesSdk[i].Value), fieldValuesSdk[i + 1].Value));
                     }
                 }
 
