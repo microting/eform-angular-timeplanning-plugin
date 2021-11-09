@@ -204,7 +204,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     var planningFomrDb = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
                     if (planningFomrDb != null)
                     {
-                        await UpdatePlanning(planningFomrDb, planning);
+                        await UpdatePlanning(planningFomrDb, planning, model.SiteId);
                     }
                     else
                     {
@@ -262,7 +262,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         }
 
         private async Task UpdatePlanning(PlanRegistration planRegistration,
-            TimePlanningWorkingHoursModel model)
+            TimePlanningWorkingHoursModel model,
+            int microtingUid)
         {
             try
             {
@@ -285,6 +286,55 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.SumFlex = model.SumFlex;
 
                 await planRegistration.Update(_dbContext);
+
+                var core = await _core.GetCore();
+                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1;
+                if (eFormId != null)
+                {
+                    var siteId = await sdkDbContext.Sites
+                        .Where(x => x.MicrotingUid == microtingUid)
+                        .Select(x => x.Id)
+                        .FirstOrDefaultAsync();
+
+                    var caseIds = await sdkDbContext.Cases
+                        .Where(x => x.SiteId == siteId && x.CheckListId == eFormId - 1)
+                        .Select(x => x.Id)
+                        .ToListAsync();
+
+                    var fieldValuesSdk = await sdkDbContext.FieldValues
+                        .Where(x => x.CheckListId == eFormId)
+                        .Include(x => x.Field)
+                        .ThenInclude(x => x.FieldType)
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Field.FieldType.Type == Constants.FieldTypes.Comment
+                                    || x.Field.FieldType.Type == Constants.FieldTypes.Date
+                                    || x.Field.FieldType.Type == Constants.FieldTypes.SingleSelect)
+                        .Where(x => caseIds.Contains(x.CaseId.Value))
+                        .OrderBy(x => x.CaseId)
+                        .ThenBy(x => x.Id)
+                        .ToListAsync();
+
+                    for (var i = 0; i < fieldValuesSdk.Count; i += 8)
+                    {
+                        if (DateTime.Parse(fieldValuesSdk[i].Value) == model.Date)
+                        {
+                            fieldValuesSdk[i + 1].Value = model.Shift1Start.ToString();
+                            fieldValuesSdk[i + 2].Value = model.Shift1Pause.ToString();
+                            fieldValuesSdk[i + 3].Value = model.Shift1Stop.ToString();
+                            fieldValuesSdk[i + 4].Value = model.Shift2Start.ToString();
+                            fieldValuesSdk[i + 5].Value = model.Shift2Pause.ToString();
+                            fieldValuesSdk[i + 6].Value = model.Shift2Stop.ToString();
+                            fieldValuesSdk[i + 7].Value = model.CommentWorker;
+
+                            await sdkDbContext.SaveChangesAsync();
+
+                            break;
+                        }
+                    }
+                }
+
             }
             catch (Exception e)
             {
