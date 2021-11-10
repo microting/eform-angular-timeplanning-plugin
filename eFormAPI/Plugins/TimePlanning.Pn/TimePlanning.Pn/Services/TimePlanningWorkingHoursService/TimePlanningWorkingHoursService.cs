@@ -21,6 +21,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
     using System.Threading.Tasks;
     using Infrastructure.Models.Settings;
@@ -72,22 +73,59 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
 
                 List<(DateTime, string)> tupleValueList = new();
-                var site = await sdkDbContext.Sites.SingleAsync(x => x.MicrotingUid == model.SiteId);
+                var site = await sdkDbContext.Sites
+                    .Where(x => x.MicrotingUid == model.SiteId)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Name,
+                    })
+                    .FirstOrDefaultAsync();
 
-                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId;
+                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1; // fix correct eform id
                 if (eFormId != null)
                 {
-                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
-
-                    var caseIds = await sdkDbContext.Cases
-                        .Where(x => x.WorkerId == model.SiteId && x.CheckListId == eFormId)
+                    var possibleCases = await sdkDbContext.Cases
+                        .Where(x => x.SiteId == site.Id
+                                    && x.CheckListId == eFormId - 1)
                         .Select(x => x.Id)
                         .ToListAsync();
-                    var fieldValues = await core.Advanced_FieldValueReadList(caseIds, language);
 
-                    for (var i = 0; i < fieldValues.Count; i += 8)
+                    var dateTimeRange = new List<string>();
+                    for (int i = 0; i <= (model.DateTo - model.DateFrom).TotalDays; i++)
                     {
-                        tupleValueList.Add(new(DateTime.Parse(fieldValues.First().Value), fieldValues[7].Value));
+                        dateTimeRange.Add(model.DateFrom.AddDays(i).ToString("yyyy-MM-dd"));
+                    }
+
+                    var requiredCaseIds = await sdkDbContext.FieldValues
+                        .Include(x => x.Field)
+                        .ThenInclude(x => x.FieldType)
+                        .Where(x => x.CheckListId == eFormId
+                                    && possibleCases.Contains(x.CaseId.Value))
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => dateTimeRange.Contains(x.Value) && x.Field.FieldType.Type == Constants.FieldTypes.Date)
+                        .OrderBy(x => x.CaseId)
+                        .Select(x => x.CaseId)
+                        .ToListAsync();
+
+                    var fieldValuesSdk = await sdkDbContext.FieldValues
+                        .Include(x => x.Field)
+                        .ThenInclude(x => x.FieldType)
+                        .Where(x => x.CheckListId == eFormId
+                                    && requiredCaseIds.Contains(x.CaseId.Value))
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Field.FieldType.Type == Constants.FieldTypes.Comment
+                                    || x.Field.FieldType.Type == Constants.FieldTypes.Date)
+                        .Select(x => new
+                        {
+                            x.Value,
+                            x.Field.FieldType.Type,
+                        })
+                        .ToListAsync();
+
+                    for (var i = 0; i < fieldValuesSdk.Count; i += 2)
+                    {
+                        tupleValueList.Add(new(DateTime.Parse(fieldValuesSdk[i].Value), fieldValuesSdk[i + 1].Value));
                     }
                 }
 
@@ -133,17 +171,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     })
                     .ToListAsync();
 
-                if(tupleValueList.Any())
-                {
-                    foreach (var timePlanning in timePlannings)
-                    {
-                        var foundComment = tupleValueList
-                            .Where(x => x.Item1 == timePlanning.Date)
-                            .Select(x => x.Item2).FirstOrDefault();
-                        timePlanning.CommentOffice = foundComment;
-                    }
-                }
-
                 var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
                 if (timePlannings.Count < date)
@@ -162,6 +189,17 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         }
                     }
                     timePlannings.AddRange(timePlanningForAdd);
+                }
+
+                if (tupleValueList.Any())
+                {
+                    foreach (var timePlanning in timePlannings)
+                    {
+                        var foundComment = tupleValueList
+                            .Where(x => x.Item1 == timePlanning.Date)
+                            .Select(x => x.Item2).FirstOrDefault();
+                        timePlanning.CommentWorker = foundComment;
+                    }
                 }
 
                 timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
@@ -197,7 +235,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     var planningFomrDb = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
                     if (planningFomrDb != null)
                     {
-                        await UpdatePlanning(planningFomrDb, planning);
+                        await UpdatePlanning(planningFomrDb, planning, model.SiteId);
                     }
                     else
                     {
@@ -255,7 +293,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         }
 
         private async Task UpdatePlanning(PlanRegistration planRegistration,
-            TimePlanningWorkingHoursModel model)
+            TimePlanningWorkingHoursModel model,
+            int microtingUid)
         {
             try
             {
@@ -278,6 +317,55 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.SumFlex = model.SumFlex;
 
                 await planRegistration.Update(_dbContext);
+
+                var core = await _core.GetCore();
+                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1;
+                if (eFormId != null)
+                {
+                    var siteId = await sdkDbContext.Sites
+                        .Where(x => x.MicrotingUid == microtingUid)
+                        .Select(x => x.Id)
+                        .FirstOrDefaultAsync();
+
+                    var caseIds = await sdkDbContext.Cases
+                        .Where(x => x.SiteId == siteId && x.CheckListId == eFormId - 1)
+                        .Select(x => x.Id)
+                        .ToListAsync();
+
+                    var fieldValuesSdk = await sdkDbContext.FieldValues
+                        .Where(x => x.CheckListId == eFormId)
+                        .Include(x => x.Field)
+                        .ThenInclude(x => x.FieldType)
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Field.FieldType.Type == Constants.FieldTypes.Comment
+                                    || x.Field.FieldType.Type == Constants.FieldTypes.Date
+                                    || x.Field.FieldType.Type == Constants.FieldTypes.SingleSelect)
+                        .Where(x => caseIds.Contains(x.CaseId.Value))
+                        .OrderBy(x => x.CaseId)
+                        .ThenBy(x => x.Id)
+                        .ToListAsync();
+
+                    for (var i = 0; i < fieldValuesSdk.Count; i += 8)
+                    {
+                        if (DateTime.Parse(fieldValuesSdk[i].Value) == model.Date)
+                        {
+                            fieldValuesSdk[i + 1].Value = model.Shift1Start.ToString();
+                            fieldValuesSdk[i + 2].Value = model.Shift1Pause.ToString();
+                            fieldValuesSdk[i + 3].Value = model.Shift1Stop.ToString();
+                            fieldValuesSdk[i + 4].Value = model.Shift2Start.ToString();
+                            fieldValuesSdk[i + 5].Value = model.Shift2Pause.ToString();
+                            fieldValuesSdk[i + 6].Value = model.Shift2Stop.ToString();
+                            fieldValuesSdk[i + 7].Value = model.CommentWorker;
+
+                            await sdkDbContext.SaveChangesAsync();
+
+                            break;
+                        }
+                    }
+                }
+
             }
             catch (Exception e)
             {
