@@ -303,10 +303,13 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         .FirstOrDefaultAsync();
 
                     var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
-                    var fieldIds = await core.Advanced_TemplateFieldReadAll(eFormId.Value, language);
+/*                    var fieldIds = await sdkDbContext.Fields
+                        .Where(x => x.CheckListId == eFormId)
+                        .Select(x => x.Id)
+                        .ToListAsync();*/
                     var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
                     var newMicrotingUid = await core.CaseCreate(mainElement, "", microtingUid, folderId);
-                    var newCaseId = await sdkDbContext.Cases
+/*                    var newCaseId = await sdkDbContext.Cases
                             .Where(x => x.MicrotingUid == newMicrotingUid)
                             .Select(x => x.Id)
                             .FirstOrDefaultAsync();
@@ -325,7 +328,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[2].Id,
+                                FieldId = fieldIds[2],
                                 Value = planRegistration.Date.ToString("yyyy-MM-dd"),
                                 WorkerId = workerId,
                             },
@@ -333,7 +336,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[3].Id,
+                                FieldId = fieldIds[3],
                                 Value = planRegistration.Start1Id.ToString(),
                                 WorkerId = workerId,
                             },
@@ -341,7 +344,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[4].Id,
+                                FieldId = fieldIds[4],
                                 Value = planRegistration.Pause1Id.ToString(),
                                 WorkerId = workerId,
                             },
@@ -349,7 +352,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[5].Id,
+                                FieldId = fieldIds[5],
                                 Value = planRegistration.Stop1Id.ToString(),
                                 WorkerId = workerId,
                             },
@@ -357,7 +360,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[6].Id,
+                                FieldId = fieldIds[6],
                                 Value = planRegistration.Start2Id.ToString(),
                                 WorkerId = workerId,
                             },
@@ -365,7 +368,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[7].Id,
+                                FieldId = fieldIds[7],
                                 Value = planRegistration.Pause2Id.ToString(),
                                 WorkerId = workerId,
                             },
@@ -373,7 +376,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[8].Id,
+                                FieldId = fieldIds[8],
                                 Value = planRegistration.Stop2Id.ToString(),
                                 WorkerId = workerId,
                             },
@@ -381,7 +384,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[9].Id,
+                                FieldId = fieldIds[9],
                                 Value = commentWorker,
                                 WorkerId = workerId,
                             },
@@ -389,7 +392,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[10].Id,
+                                FieldId = fieldIds[10],
                                 Value = null,
                                 WorkerId = workerId,
                             },
@@ -397,7 +400,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[0].Id,
+                                FieldId = fieldIds[0],
                                 Value = null,
                                 WorkerId = workerId,
                             },
@@ -405,7 +408,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 CaseId = newCaseId,
                                 CheckListId = eFormId,
-                                FieldId = fieldIds[1].Id,
+                                FieldId = fieldIds[1],
                                 Value = null,
                                 WorkerId = workerId,
                             },
@@ -414,7 +417,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     foreach (var fieldValue in newFieldValues)
                     {
                         await fieldValue.Create(sdkDbContext);
-                    }
+                    }*/
                 }
 
             }
@@ -506,15 +509,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 await core.CaseDelete(caseDto.MicrotingUId.Value);
                             }
                         }
-
-                        if (i+11 != fieldValuesSdk.Count)
-                        {
-                            continue;
-                        }
-
-                        var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
-                        var newMicrotingUid = await core.CaseCreate(mainElement, "", microtingUid, folderId);
-
+/*
                         var newCaseId = await sdkDbContext.Cases
                             .Where(x => x.MicrotingUid == newMicrotingUid)
                             .Select(x => x.Id)
@@ -615,8 +610,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         foreach (var fieldValue in newFieldValues)
                         {
                             await fieldValue.Create(sdkDbContext);
-                        }
+                        }*/
                     }
+
+                    var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
+                    await core.CaseCreate(mainElement, "", microtingUid, folderId);
                 }
 
             }
