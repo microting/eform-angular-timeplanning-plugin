@@ -26,7 +26,6 @@ namespace TimePlanning.Pn
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Reflection;
@@ -107,7 +106,6 @@ namespace TimePlanning.Pn
         private static async void SeedEForms(IServiceCollection services)
         {
             var serviceProvider = services.BuildServiceProvider();
-            Debugger.Break();
             var core = await serviceProvider.GetRequiredService<IEFormCoreService>().GetCore();
             var eform = TimePlanningSeedEforms.GetForms().FirstOrDefault();
             var sdkDbContext = core.DbContextHelper.GetDbContext();
