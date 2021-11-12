@@ -26,6 +26,9 @@ namespace TimePlanning.Pn
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
     using System.Reflection;
     using System.Text.RegularExpressions;
     using Infrastructure.Data.Seed;
@@ -36,9 +39,12 @@ namespace TimePlanning.Pn
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microting.eFormApi.BasePn;
+    using Microting.eFormApi.BasePn.Abstractions;
     using Microting.eFormApi.BasePn.Infrastructure.Consts;
+    using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
     using Microting.eFormApi.BasePn.Infrastructure.Database.Extensions;
     using Microting.eFormApi.BasePn.Infrastructure.Helpers;
+    using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
     using Microting.eFormApi.BasePn.Infrastructure.Models.Application;
     using Microting.eFormApi.BasePn.Infrastructure.Models.Application.NavigationMenu;
     using Microting.eFormApi.BasePn.Infrastructure.Settings;
@@ -75,6 +81,7 @@ namespace TimePlanning.Pn
             services.AddTransient<ITimePlanningFlexService, TimePlanningFlexService>();
             services.AddTransient<ISettingService, TimeSettingService>();
             services.AddControllers();
+            SeedEForms(services);
         }
 
         public void AddPluginConfig(IConfigurationBuilder builder, string connectionString)
@@ -97,6 +104,54 @@ namespace TimePlanning.Pn
                 configuration.GetSection("TimePlanningBaseSettings"));
         }
 
+        private static async void SeedEForms(IServiceCollection services)
+        {
+            var serviceProvider = services.BuildServiceProvider();
+            Debugger.Break();
+            var core = await serviceProvider.GetRequiredService<IEFormCoreService>().GetCore();
+            var eform = TimePlanningSeedEforms.GetForms().FirstOrDefault();
+            var sdkDbContext = core.DbContextHelper.GetDbContext();
+            var context = serviceProvider.GetRequiredService<TimePlanningPnDbContext>();
+            var options = serviceProvider.GetRequiredService<IPluginDbOptions<TimePlanningBaseSettings>>();
+            var user = serviceProvider.GetRequiredService<IUserService>();
+            // seed eforms
+            var assembly = Assembly.GetExecutingAssembly();
+
+            var resourceStream = assembly.GetManifestResourceStream($"TimePlanning.Pn.Resources.eForms.{eform.Key}.xml");
+            if (resourceStream == null)
+            {
+                Console.WriteLine(eform.Key);
+            }
+            else
+            {
+                string contents;
+                using (var sr = new StreamReader(resourceStream))
+                {
+                    contents = await sr.ReadToEndAsync();
+                }
+                var newTemplate = await core.TemplateFromXml(contents);
+                var originalId = await sdkDbContext.CheckLists
+                    .Where(x => x.OriginalId == newTemplate.OriginalId)
+                    .Select(x => x.Id)
+                    .FirstOrDefaultAsync();
+                if (originalId == 0)
+                {
+                    int clId = await core.TemplateCreate(newTemplate);
+                    var cl = await sdkDbContext.CheckLists.SingleOrDefaultAsync(x => x.Id == clId);
+                    cl.IsLocked = true;
+                    cl.IsEditable = false;
+                    cl.ReportH1 = eform.Value[0];
+                    cl.ReportH2 = eform.Value[1];
+                    await cl.Update(sdkDbContext);
+                }
+
+                await options.UpdateDb(settings =>
+                {
+                    settings.EformId = originalId;
+                }, context, user.UserId);
+            }
+        }
+
         public void ConfigureDbContext(IServiceCollection services, string connectionString)
         {
             _connectionString = connectionString;
@@ -109,7 +164,7 @@ namespace TimePlanning.Pn
                 }));
 
             var contextFactory = new TimePlanningPnContextFactory();
-            var context = contextFactory.CreateDbContext(new[] {connectionString});
+            var context = contextFactory.CreateDbContext(new[] { connectionString });
             context.Database.Migrate();
 
             // Seed database
