@@ -27,7 +27,6 @@ import {
   TimePlanningSettingsAddSiteModalComponent,
   TimePlanningSettingsRemoveSiteModalComponent,
 } from '../../../components';
-import { debounceTime, switchMap } from 'rxjs/operators';
 
 @AutoUnsubscribe()
 @Component({
@@ -47,8 +46,8 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   foldersTreeDto: FolderDto[] = [];
   foldersDto: FolderDto[] = [];
   templateRequestModel: TemplateRequestModel = new TemplateRequestModel();
-  typeahead = new EventEmitter<string>();
-  templatesModel: TemplateListModel = new TemplateListModel();
+  // typeahead = new EventEmitter<string>();
+  // templatesModel: TemplateListModel = new TemplateListModel();
 
   settingsSub$: Subscription;
   sitesSub$: Subscription;
@@ -63,30 +62,30 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
     private cd: ChangeDetectorRef,
     private foldersService: FoldersService
   ) {
-    this.typeahead
-      .pipe(
-        debounceTime(200),
-        switchMap((term) => {
-          this.templateRequestModel.nameFilter = term;
-          return this.eFormService.getAll(this.templateRequestModel);
-        })
-      )
-      .subscribe((items) => {
-        this.templatesModel = items.model;
-        this.cd.markForCheck();
-      });
+    // this.typeahead
+    //   .pipe(
+    //     debounceTime(200),
+    //     switchMap((term) => {
+    //       this.templateRequestModel.nameFilter = term;
+    //       return this.eFormService.getAll(this.templateRequestModel);
+    //     })
+    //   )
+    //   .subscribe((items) => {
+    //     this.templatesModel = items.model;
+    //     this.cd.markForCheck();
+    //   });
   }
 
   ngOnInit(): void {
     this.getSettings();
-    this.getAllEforms();
+    // this.getAllEforms();
   }
 
-  getAllEforms() {
-    this.eFormService.getAll(this.templateRequestModel).subscribe((items) => {
-      this.templatesModel = items.model;
-    });
-  }
+  // getAllEforms() {
+  //   this.eFormService.getAll(this.templateRequestModel).subscribe((items) => {
+  //     this.templatesModel = items.model;
+  //   });
+  // }
 
   getSettings() {
     this.settingsSub$ = this.settingsService
@@ -178,13 +177,13 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
     }
   }
 
-  updateEform(eformId: number) {
-    this.settingsService.updateSettingsEform(eformId).subscribe((operation) => {
-      if (operation && operation.success) {
-        this.getSettings();
-      }
-    });
-  }
+  // updateEform(eformId: number) {
+  //   this.settingsService.updateSettingsEform(eformId).subscribe((operation) => {
+  //     if (operation && operation.success) {
+  //       this.getSettings();
+  //     }
+  //   });
+  // }
 
   ngOnDestroy(): void {}
 }

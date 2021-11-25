@@ -3,9 +3,6 @@ name: .NET Master
 on:
   push:
     branches: [ master, stable ]
-    paths-ignore:
-    - '**.md'
-    - '.github/**'
 
 jobs:
   build:
@@ -52,7 +49,7 @@ jobs:
     - name: 'Preparing Frontend checkout'
       uses: actions/checkout@v2
       with:
-        repository: Gid733/eform-angular-frontend
+        repository: microting/eform-angular-frontend
         ref: ${{ steps.extract_branch.outputs.branch }}
         path: eform-angular-frontend
     - name: Install dependencies
@@ -97,13 +94,3 @@ jobs:
         cat dotnet_log
         cat eform-angular-frontend/eform-client/npm_log
         mysql -u root --password=secretpassword -e "show databases" -h localhost
-    - name: Notify slack fail
-      if: ${{ failure() }}
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      uses: voxmedia/github-action-slack-notify-build@v1
-      with:
-        message_id: ${{ steps.slack.outputs.message_id }}
-        channel_id: C02EQEMCB08
-        status: FAILED
-        color: danger
