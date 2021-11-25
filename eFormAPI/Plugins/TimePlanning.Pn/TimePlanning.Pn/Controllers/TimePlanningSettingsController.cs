@@ -64,13 +64,13 @@ namespace TimePlanning.Pn.Controllers
         }
 
 
-        [HttpPut]
+/*        [HttpPut]
         [Route("eform")]
         [Authorize(Roles = EformRole.Admin)]
         public async Task<OperationResult> UpdateEform([FromBody] int eformId)
         {
             return await _settingService.UpdateEform(eformId);
-        }
+        }*/
 
         [HttpDelete]
         [Route("sites")]
