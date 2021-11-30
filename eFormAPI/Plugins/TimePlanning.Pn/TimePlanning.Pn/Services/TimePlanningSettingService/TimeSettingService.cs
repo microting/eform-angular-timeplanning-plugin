@@ -124,6 +124,30 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     UpdatedByUserId = _userService.UserId,
                 };
                 await assignmentSite.Create(_dbContext);
+                var option = _options.Value;
+                var newTaskId = option.EformId;
+                var folderId = option.FolderId;
+                var theCore = await _core.GetCore();
+                await using var sdkDbContext = theCore.DbContextHelper.GetDbContext();
+                var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);
+                // if (folder == null)
+                // {
+                //     return new OperationResult(false, _workOrdersLocalizationService.GetString("FolderNotExist"));
+                // }
+                var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
+                // if (site == null)
+                // {
+                //     return new OperationResult(false, _workOrdersLocalizationService.GetString("SiteNotFind"));
+                // }
+                var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                var mainElement = await theCore.ReadeForm((int)newTaskId, language);
+                mainElement.CheckListFolderName = folder.MicrotingUid.ToString();
+                mainElement.EndDate = DateTime.UtcNow.AddYears(10);
+                mainElement.Repeated = 0;
+                mainElement.PushMessageTitle = mainElement.Label;
+                var caseId = await theCore.CaseCreate(mainElement, "", siteId, folderId);
+                assignmentSite.CaseMicrotingUid = caseId;
+                await assignmentSite.Update(_dbContext);
 
                 return new OperationResult(true, _localizationService.GetString("SitesUpdatedSuccessfuly"));
             }
@@ -167,6 +191,8 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     .Where(x => x.SiteId == siteId)
                     .FirstOrDefaultAsync();
 
+                var theCore = await _core.GetCore();
+                await theCore.CaseDelete((int)assignedSite.CaseMicrotingUid);
                 await assignedSite.Delete(_dbContext);
                 return new OperationResult(true, _localizationService.GetString("SitesUpdatedSuccessfuly"));
             }
