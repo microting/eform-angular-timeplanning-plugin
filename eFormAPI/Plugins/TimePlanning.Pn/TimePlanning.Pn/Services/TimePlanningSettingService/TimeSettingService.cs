@@ -145,6 +145,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 mainElement.EndDate = DateTime.UtcNow.AddYears(10);
                 mainElement.Repeated = 0;
                 mainElement.PushMessageTitle = mainElement.Label;
+                mainElement.EnableQuickSync = true;
                 var caseId = await theCore.CaseCreate(mainElement, "", siteId, folderId);
                 assignmentSite.CaseMicrotingUid = caseId;
                 await assignmentSite.Update(_dbContext);

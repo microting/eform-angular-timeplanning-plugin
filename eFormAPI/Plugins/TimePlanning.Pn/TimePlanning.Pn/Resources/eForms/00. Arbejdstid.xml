@@ -50,7 +50,7 @@
           <MinValue>2021-11-02</MinValue>
           <MaxValue>2031-11-02</MaxValue>
           <Value/>
-          <Mandatory>true</Mandatory>
+          <Mandatory>false</Mandatory>
           <ReadOnly>false</ReadOnly>
           <Color>e8eaf6</Color>
         </DataItem>
@@ -59,7 +59,7 @@
           <Label>Vagt 1 Start|Shift 1 Start</Label>
           <Description><![CDATA[]]></Description>
           <DisplayOrder>2</DisplayOrder>
-          <Mandatory>true</Mandatory>
+          <Mandatory>false</Mandatory>
           <KeyValuePairList>
             <KeyValuePair>
               <Key>1</Key>
@@ -1957,7 +1957,7 @@
           <Label>Vagt 1 Slut|Shift 1 Stop</Label>
           <Description><![CDATA[]]></Description>
           <DisplayOrder>4</DisplayOrder>
-          <Mandatory>true</Mandatory>
+          <Mandatory>false</Mandatory>
           <KeyValuePairList>
             <KeyValuePair>
               <Key>1</Key>

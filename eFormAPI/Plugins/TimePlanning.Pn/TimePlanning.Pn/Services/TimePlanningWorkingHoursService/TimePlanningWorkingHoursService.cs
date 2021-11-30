@@ -309,115 +309,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         .ToListAsync();*/
                     var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
                     var newMicrotingUid = await core.CaseCreate(mainElement, "", microtingUid, folderId);
-/*                    var newCaseId = await sdkDbContext.Cases
-                            .Where(x => x.MicrotingUid == newMicrotingUid)
-                            .Select(x => x.Id)
-                            .FirstOrDefaultAsync();
-                    var siteWorkerId = await sdkDbContext.SiteWorkers
-                        .Where(x => x.SiteId == siteInfo.Id)
-                        .Select(x => x.WorkerId)
-                        .FirstOrDefaultAsync();
-                    var workerId = await sdkDbContext.Workers
-                        .Where(x => x.Id == siteWorkerId)
-                        .Select(x => x.Id)
-                        .FirstOrDefaultAsync();
-
-                    var newFieldValues = new List<FieldValue>
-                        {
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[2],
-                                Value = planRegistration.Date.ToString("yyyy-MM-dd"),
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[3],
-                                Value = planRegistration.Start1Id.ToString(),
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[4],
-                                Value = planRegistration.Pause1Id.ToString(),
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[5],
-                                Value = planRegistration.Stop1Id.ToString(),
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[6],
-                                Value = planRegistration.Start2Id.ToString(),
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[7],
-                                Value = planRegistration.Pause2Id.ToString(),
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[8],
-                                Value = planRegistration.Stop2Id.ToString(),
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[9],
-                                Value = commentWorker,
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[10],
-                                Value = null,
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[0],
-                                Value = null,
-                                WorkerId = workerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = eFormId,
-                                FieldId = fieldIds[1],
-                                Value = null,
-                                WorkerId = workerId,
-                            },
-                        };
-
-                    foreach (var fieldValue in newFieldValues)
-                    {
-                        await fieldValue.Create(sdkDbContext);
-                    }*/
                 }
 
             }
@@ -444,7 +335,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.NettoHours = model.NettoHours;
                 planRegistration.PaiedOutFlex = model.PaidOutFlex;
                 planRegistration.Pause1Id = model.Shift1Pause ?? 0;
-                planRegistration.Pause2Id = model.Shift1Pause ?? 0;
+                planRegistration.Pause2Id = model.Shift2Pause ?? 0;
                 planRegistration.Start1Id = model.Shift1Start ?? 0;
                 planRegistration.Start2Id = model.Shift2Start ?? 0;
                 planRegistration.Stop1Id = model.Shift1Stop ?? 0;
@@ -458,164 +349,62 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
 
                 var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
-                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1;
-
-                if (eFormId != null)
-                {
-                    var siteInfo = await sdkDbContext.Sites
-                        .Where(x => x.MicrotingUid == microtingUid)
-                        .Select(x => new
-                        {
-                            x.Id,
-                            x.LanguageId,
-                        })
-                        .FirstOrDefaultAsync();
-
-                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
-
-                    var possibleCases = await sdkDbContext.Cases
-                        .Where(x => x.SiteId == siteInfo.Id && x.CheckListId == eFormId - 1)
-                        .Select(x => x.Id)
-                        .ToListAsync();
-
-                    var requiredCaseIds = await sdkDbContext.FieldValues
-                        .Include(x => x.Field)
-                        .ThenInclude(x => x.FieldType)
-                        .Where(x => x.CheckListId == eFormId
-                                    && possibleCases.Contains(x.CaseId.Value))
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => model.Date.ToString("yyyy-MM-dd") == x.Value && x.Field.FieldType.Type == Constants.FieldTypes.Date)
-                        .OrderBy(x => x.CaseId)
-                        .Select(x => x.CaseId)
-                        .ToListAsync();
-
-                    var fieldValuesSdk = await sdkDbContext.FieldValues
-                        .Where(x => x.CheckListId == eFormId)
-                        .Include(x => x.Field)
-                        .ThenInclude(x => x.FieldType)
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => requiredCaseIds.Contains(x.CaseId.Value))
-                        .OrderBy(x => x.CaseId)
-                        .ThenBy(x => x.Id)
-                        .ToListAsync();
-                    
-                    for (var i = 0; i < fieldValuesSdk.Count; i += 11)
-                    {
-                        if (fieldValuesSdk[i].CaseId != null)
-                        {
-                            var caseDto = await core.CaseLookupCaseId(fieldValuesSdk[i].CaseId.Value);
-                            if (caseDto.MicrotingUId != null)
-                            {
-                                await core.CaseDelete(caseDto.MicrotingUId.Value);
-                            }
-                        }
-/*
-                        var newCaseId = await sdkDbContext.Cases
-                            .Where(x => x.MicrotingUid == newMicrotingUid)
-                            .Select(x => x.Id)
-                            .FirstOrDefaultAsync();
-
-                        var newFieldValues = new List<FieldValue>
-                        {
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i].CheckListId,
-                                FieldId = fieldValuesSdk[i].FieldId,
-                                Value = planRegistration.Date.ToString("yyyy-MM-dd"),
-                                WorkerId = fieldValuesSdk[i].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+1].CheckListId,
-                                FieldId = fieldValuesSdk[i+1].FieldId,
-                                Value = planRegistration.Start1Id.ToString(),
-                                WorkerId = fieldValuesSdk[i+1].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+2].CheckListId,
-                                FieldId = fieldValuesSdk[i+2].FieldId,
-                                Value = planRegistration.Pause1Id.ToString(),
-                                WorkerId = fieldValuesSdk[i+2].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+3].CheckListId,
-                                FieldId = fieldValuesSdk[i+3].FieldId,
-                                Value = planRegistration.Stop1Id.ToString(),
-                                WorkerId = fieldValuesSdk[i+3].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+4].CheckListId,
-                                FieldId = fieldValuesSdk[i+4].FieldId,
-                                Value = planRegistration.Start2Id.ToString(),
-                                WorkerId = fieldValuesSdk[i+4].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+5].CheckListId,
-                                FieldId = fieldValuesSdk[i+5].FieldId,
-                                Value = planRegistration.Pause2Id.ToString(),
-                                WorkerId = fieldValuesSdk[i+5].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+6].CheckListId,
-                                FieldId = fieldValuesSdk[i+6].FieldId,
-                                Value = planRegistration.Stop2Id.ToString(),
-                                WorkerId = fieldValuesSdk[i+6].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+7].CheckListId,
-                                FieldId = fieldValuesSdk[i+7].FieldId,
-                                Value = fieldValuesSdk[i+7].Value,
-                                WorkerId = fieldValuesSdk[i+7].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+8].CheckListId,
-                                FieldId = fieldValuesSdk[i+8].FieldId,
-                                Value = fieldValuesSdk[i+8].Value,
-                                WorkerId = fieldValuesSdk[i+8].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+9].CheckListId,
-                                FieldId = fieldValuesSdk[i+9].FieldId,
-                                Value = fieldValuesSdk[i+9].Value,
-                                WorkerId = fieldValuesSdk[i+9].WorkerId,
-                            },
-                            new FieldValue
-                            {
-                                CaseId = newCaseId,
-                                CheckListId = fieldValuesSdk[i+10].CheckListId,
-                                FieldId = fieldValuesSdk[i+10].FieldId,
-                                Value = fieldValuesSdk[i+10].Value,
-                                WorkerId = fieldValuesSdk[i+10].WorkerId,
-                            },
-                        };
-
-                        foreach (var fieldValue in newFieldValues)
-                        {
-                            await fieldValue.Create(sdkDbContext);
-                        }*/
-                    }
-
-                    var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
-                    await core.CaseCreate(mainElement, "", microtingUid, folderId);
-                }
+                // var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1;
+                //
+                // if (eFormId != null)
+                // {
+                //     var siteInfo = await sdkDbContext.Sites
+                //         .Where(x => x.MicrotingUid == microtingUid)
+                //         .Select(x => new
+                //         {
+                //             x.Id,
+                //             x.LanguageId,
+                //         })
+                //         .FirstOrDefaultAsync();
+                //
+                //     var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
+                //
+                //     var possibleCases = await sdkDbContext.Cases
+                //         .Where(x => x.SiteId == siteInfo.Id && x.CheckListId == eFormId - 1)
+                //         .Select(x => x.Id)
+                //         .ToListAsync();
+                //
+                //     var requiredCaseIds = await sdkDbContext.FieldValues
+                //         .Include(x => x.Field)
+                //         .ThenInclude(x => x.FieldType)
+                //         .Where(x => x.CheckListId == eFormId
+                //                     && possibleCases.Contains(x.CaseId.Value))
+                //         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                //         .Where(x => model.Date.ToString("yyyy-MM-dd") == x.Value && x.Field.FieldType.Type == Constants.FieldTypes.Date)
+                //         .OrderBy(x => x.CaseId)
+                //         .Select(x => x.CaseId)
+                //         .ToListAsync();
+                //
+                //     var fieldValuesSdk = await sdkDbContext.FieldValues
+                //         .Where(x => x.CheckListId == eFormId)
+                //         .Include(x => x.Field)
+                //         .ThenInclude(x => x.FieldType)
+                //         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                //         .Where(x => requiredCaseIds.Contains(x.CaseId.Value))
+                //         .OrderBy(x => x.CaseId)
+                //         .ThenBy(x => x.Id)
+                //         .ToListAsync();
+                //
+                //     for (var i = 0; i < fieldValuesSdk.Count; i += 11)
+                //     {
+                //         if (fieldValuesSdk[i].CaseId != null)
+                //         {
+                //             var caseDto = await core.CaseLookupCaseId(fieldValuesSdk[i].CaseId.Value);
+                //             if (caseDto.MicrotingUId != null)
+                //             {
+                //                 await core.CaseDelete(caseDto.MicrotingUId.Value);
+                //             }
+                //         }
+                //     }
+                //
+                //     var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
+                //     await core.CaseCreate(mainElement, "", microtingUid, folderId);
+                // }
 
             }
             catch (Exception e)
