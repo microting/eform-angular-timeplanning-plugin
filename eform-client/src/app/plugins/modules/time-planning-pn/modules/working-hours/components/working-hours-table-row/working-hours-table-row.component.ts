@@ -176,7 +176,7 @@ export class WorkingHoursTableRowComponent
     }
 
     if (shift2Start && shift2Stop) {
-      nettoMinutes = shift2Stop - shift2Start;
+      nettoMinutes = nettoMinutes + shift2Stop - shift2Start;
       if (shift2Pause) {
         nettoMinutes = nettoMinutes - shift2Pause + offset;
       }
