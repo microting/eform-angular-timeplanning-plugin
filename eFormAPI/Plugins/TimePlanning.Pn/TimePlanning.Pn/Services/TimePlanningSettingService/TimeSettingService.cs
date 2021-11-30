@@ -193,8 +193,13 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     .FirstOrDefaultAsync();
 
                 var theCore = await _core.GetCore();
-                await theCore.CaseDelete((int)assignedSite.CaseMicrotingUid);
-                await assignedSite.Delete(_dbContext);
+                if (assignedSite != null)
+                {
+                    if (assignedSite.CaseMicrotingUid != null)
+                        await theCore.CaseDelete((int)assignedSite.CaseMicrotingUid);
+                    await assignedSite.Delete(_dbContext);
+                }
+
                 return new OperationResult(true, _localizationService.GetString("SitesUpdatedSuccessfuly"));
             }
             catch (Exception e)
