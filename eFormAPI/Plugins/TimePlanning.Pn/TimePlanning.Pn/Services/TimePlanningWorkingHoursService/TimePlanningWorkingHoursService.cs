@@ -116,7 +116,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                         .Where(x => x.Field.FieldType.Type == Constants.FieldTypes.Comment
                                     || x.Field.FieldType.Type == Constants.FieldTypes.Date)
-                        .OrderBy(x => x.CaseId)
+                        .OrderBy(x => x.CaseId).ThenByDescending(x => x.Field.FieldType.Type)
                         .Select(x => new
                         {
                             x.Value,
