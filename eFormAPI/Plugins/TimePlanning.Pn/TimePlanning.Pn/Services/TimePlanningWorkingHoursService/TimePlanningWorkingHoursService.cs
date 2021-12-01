@@ -161,9 +161,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         Shift2Start = x.Start2Id,
                         Shift2Stop = x.Stop2Id,
                         Shift2Pause = x.Pause2Id,
-                        NettoHours = x.NettoHours,
-                        FlexHours = x.Flex,
-                        SumFlex = x.SumFlex,
+                        NettoHours = Math.Round(x.NettoHours,2),
+                        FlexHours = Math.Round(x.Flex,2),
+                        SumFlex = Math.Round(x.SumFlex,2),
                         PaidOutFlex = x.PaiedOutFlex,
                         Message = x.MessageId,
                         CommentWorker = "",
@@ -307,8 +307,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         .Where(x => x.CheckListId == eFormId)
                         .Select(x => x.Id)
                         .ToListAsync();*/
-                    var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
-                    var newMicrotingUid = await core.CaseCreate(mainElement, "", microtingUid, folderId);
+                    // var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
+                    // var newMicrotingUid = await core.CaseCreate(mainElement, "", microtingUid, folderId);
                 }
 
             }
