@@ -59,5 +59,9 @@ export function messages(
         TimePlanningMessagesEnum[TimePlanningMessagesEnum.TimeOff]
       ),
     },
+    {
+      id: TimePlanningMessagesEnum[' '],
+      value: TimePlanningMessagesEnum[TimePlanningMessagesEnum[' ']],
+    },
   ];
 }
