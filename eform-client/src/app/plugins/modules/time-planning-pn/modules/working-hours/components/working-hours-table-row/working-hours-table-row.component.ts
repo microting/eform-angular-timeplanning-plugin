@@ -204,7 +204,6 @@ export class WorkingHoursTableRowComponent
   }
 
   calculateFlexHours() {
-    debugger;
     const nettoHours = this.workingHoursForm.get('nettoHours').value;
     const planHours = this.workingHoursForm.get('planHours').value;
     return +(nettoHours - planHours).toFixed(2);
