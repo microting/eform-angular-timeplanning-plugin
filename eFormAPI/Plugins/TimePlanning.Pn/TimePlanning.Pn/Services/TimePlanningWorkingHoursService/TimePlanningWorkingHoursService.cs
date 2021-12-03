@@ -234,16 +234,37 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     .ToListAsync();
                 foreach (var planning in model.Plannings)
                 {
-                    var planningFomrDb = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
-                    if (planningFomrDb != null)
+                    var planRegistration = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
+                    if (planRegistration != null)
                     {
-                        await UpdatePlanning(planningFomrDb, planning, model.SiteId);
+                        await UpdatePlanning(planRegistration, planning, model.SiteId);
                     }
                     else
                     {
                         await CreatePlanning(planning, model.SiteId, model.SiteId, planning.CommentWorker);
                     }
                 }
+                var core = await _core.GetCore();
+                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+                var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
+                var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
+                var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
+                var eFormId = _options.Value.InfoeFormId;
+
+                var firstDate = model.Plannings.First().Date;
+                var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate
+                                                                         && x.SdkSitId == site.MicrotingUid)
+                    .OrderBy(x => x.Date).ToListAsync();
+                foreach (PlanRegistration planRegistration in list)
+                {
+
+                    Message _message =
+                        await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
+                    Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
+                    planRegistration.StatusCaseId = await planRegistration.DeployResults((int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, _message);
+                    await planRegistration.Update(_dbContext);
+                }
+
                 return new OperationResult(
                     true,
                     _localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
@@ -309,49 +330,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                                        || planRegistration.Start1Id != 0 || planRegistration.Start2Id != 0
                                                        || planRegistration.Stop1Id != 0 || planRegistration.Stop2Id != 0)
                     {
-                        MainElement mainElement = new MainElement
-                        {
-                            Id = 141699,
-                            Repeated = 0,
-                            Label = "eform-angular-installationchecking-plugin-installation",
-                            StartDate = new DateTime(2019, 11, 4),
-                            EndDate = new DateTime(2029, 11, 4),
-                            Language = "da",
-                            MultiApproval = false,
-                            FastNavigation = false,
-                            DisplayOrder = 0,
-                        };
 
-                        var dataItems = new List<DataItem>();
-
-                        dataItems.Add(new None(
-                                371267,
-                                false,
-                                false,
-                                "INFO",
-                                "",
-                                Constants.FieldColors.Yellow,
-                                0,
-                                false
-                            )
-                        );
-                        var dataElement = new DataElement(
-                            141704,
-                            "CompanyName",
-                            0,
-                            "CompanyAddress<br>CompanyAddress2<br>ZipCode<br>CityName<br>Country",
-                            false,
-                            false,
-                            false,
-                            false,
-                            "",
-                            false,
-                            new List<DataItemGroup>(),
-                            dataItems);
-
-                        mainElement.ElementList.Add(dataElement);
-                        planRegistration.StatusCaseId =
-                            (int)await core.CaseCreate(mainElement, "", (int)siteInfo.MicrotingUid, (int)folderId);
 
                     }
 /*                    var fieldIds = await sdkDbContext.Fields
