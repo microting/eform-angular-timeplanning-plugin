@@ -42,6 +42,21 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = $"{TimePlanningBaseSettingsName}:EformId",
                 Value = "0"
             },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:InfoeFormId",
+                Value = "0"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:MaxHistoryDays",
+                Value = "30"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:MaxDaysEditable",
+                Value = "45"
+            },
         };
     }
 }

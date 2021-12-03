@@ -57,7 +57,12 @@ export class WorkingHoursTableRowComponent
     this.messages = messages(translateService);
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    const shouldDisable = this.workingHoursForm.get('isLocked').value;
+    if (shouldDisable) {
+      this.workingHoursForm.disable();
+    }
+  }
 
   ngOnDestroy(): void {
     for (const sub$ of this.subs$) {
