@@ -45,5 +45,6 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
         public string CommentWorker { get; set; }
         public string CommentOffice { get; set; }
         public string CommentOfficeAll { get; set; }
+        public bool IsLocked { get; set; }
     }
 }

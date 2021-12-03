@@ -32,5 +32,9 @@ namespace TimePlanning.Pn.Infrastructure.Models.Settings
 
         public int? InfoeFormId { get; set; }
 
+        public int? MaxHistoryDays { get; set; }
+
+        public int? MaxDaysEditable { get; set; }
+
     }
 }

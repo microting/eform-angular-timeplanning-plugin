@@ -255,71 +255,71 @@ namespace TimePlanning.Pn
                         },
                         ChildItems = new List<PluginMenuItemModel>
                         {
-                            new()
-                            {
-                                Name = "Plannings",
-                                E2EId = "time-planning-pn-plannings",
-                                Link = "/plugins/time-planning-pn/planning",
-                                Type = MenuItemTypeEnum.Link,
-                                Position = 0,
-                                MenuTemplate = new PluginMenuTemplateModel
-                                {
-                                    Name = "Plannings",
-                                    E2EId = "time-planning-pn-plannings",
-                                    DefaultLink = "/plugins/time-planning-pn/planning",
-                                    Permissions = new List<PluginMenuTemplatePermissionModel>
-                                    {
-                                        new()
-                                        {
-                                            ClaimName = TimePlanningClaims.GetPlanning,
-                                            PermissionName = "Obtain planning",
-                                            PermissionTypeName = "Plannings",
-                                        },
-                                    },
-                                    Translations = new List<PluginMenuTranslationModel>
-                                    {
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.English,
-                                            Name = "Plannings",
-                                            Language = LanguageNames.English,
-                                        },
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.German,
-                                            Name = "Planungs",
-                                            Language = LanguageNames.German,
-                                        },
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.Danish,
-                                            Name = "Planlægning",
-                                            Language = LanguageNames.Danish,
-                                        },
-                                    }
-                                },
-                                Translations = new List<PluginMenuTranslationModel>
-                                {
-                                    new()
-                                    {
-                                        LocaleName = LocaleNames.English,
-                                        Name = "Plannings",
-                                        Language = LanguageNames.English,
-                                    },
-                                    new()
-                                    {
-                                        LocaleName = LocaleNames.German,
-                                        Name = "Planungs",
-                                        Language = LanguageNames.German,
-                                    },
-                                    new()
-                                    {
-                                        LocaleName = LocaleNames.Danish,
-                                        Name = "Planlægning",
-                                        Language = LanguageNames.Danish,
-                                    },
-                                }
-                            },
+                            // new()
+                            // {
+                            //     Name = "Plannings",
+                            //     E2EId = "time-planning-pn-plannings",
+                            //     Link = "/plugins/time-planning-pn/planning",
+                            //     Type = MenuItemTypeEnum.Link,
+                            //     Position = 0,
+                            //     MenuTemplate = new PluginMenuTemplateModel
+                            //     {
+                            //         Name = "Plannings",
+                            //         E2EId = "time-planning-pn-plannings",
+                            //         DefaultLink = "/plugins/time-planning-pn/planning",
+                            //         Permissions = new List<PluginMenuTemplatePermissionModel>
+                            //         {
+                            //             new()
+                            //             {
+                            //                 ClaimName = TimePlanningClaims.GetPlanning,
+                            //                 PermissionName = "Obtain planning",
+                            //                 PermissionTypeName = "Plannings",
+                            //             },
+                            //         },
+                            //         Translations = new List<PluginMenuTranslationModel>
+                            //         {
+                            //             new()
+                            //             {
+                            //                 LocaleName = LocaleNames.English,
+                            //                 Name = "Plannings",
+                            //                 Language = LanguageNames.English,
+                            //             },
+                            //             new()
+                            //             {
+                            //                 LocaleName = LocaleNames.German,
+                            //                 Name = "Planungs",
+                            //                 Language = LanguageNames.German,
+                            //             },
+                            //             new()
+                            //             {
+                            //                 LocaleName = LocaleNames.Danish,
+                            //                 Name = "Planlægning",
+                            //                 Language = LanguageNames.Danish,
+                            //             },
+                            //         }
+                            //     },
+                            //     Translations = new List<PluginMenuTranslationModel>
+                            //     {
+                            //         new()
+                            //         {
+                            //             LocaleName = LocaleNames.English,
+                            //             Name = "Plannings",
+                            //             Language = LanguageNames.English,
+                            //         },
+                            //         new()
+                            //         {
+                            //             LocaleName = LocaleNames.German,
+                            //             Name = "Planungs",
+                            //             Language = LanguageNames.German,
+                            //         },
+                            //         new()
+                            //         {
+                            //             LocaleName = LocaleNames.Danish,
+                            //             Name = "Planlægning",
+                            //             Language = LanguageNames.Danish,
+                            //         },
+                            //     }
+                            // },
                             new()
                             {
                                 Name = "Working hours",

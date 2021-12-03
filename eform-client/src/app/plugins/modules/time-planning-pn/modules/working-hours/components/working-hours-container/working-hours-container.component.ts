@@ -64,6 +64,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
     workingHours.map((x) => {
       this.workingHoursFormArray.push(
         new FormGroup({
+          isLocked: new FormControl(x.isLocked),
           workerName: new FormControl(x.workerName),
           weekDay: new FormControl(x.weekDay),
           date: new FormControl(x.date),
@@ -143,7 +144,6 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   }
 
   recalculateSumFlex() {
-    debugger;
     let sumFlex = 0;
     for (const formGroup of this.workingHoursFormArray.controls) {
       const flexHours = formGroup.get('flexHours').value;

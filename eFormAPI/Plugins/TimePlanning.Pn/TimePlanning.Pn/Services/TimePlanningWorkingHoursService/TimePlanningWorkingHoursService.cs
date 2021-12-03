@@ -74,6 +74,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 var core = await _core.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+                var maxDaysEditable = _options.Value.MaxDaysEditable;
 
                 List<(DateTime, string)> tupleValueList = new();
                 var site = await sdkDbContext.Sites
@@ -171,6 +172,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         CommentWorker = "",
                         CommentOffice = x.CommentOffice,
                         CommentOfficeAll = x.CommentOfficeAll,
+                        IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable)
                     })
                     .ToListAsync();
 
@@ -187,6 +189,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 Date = model.DateFrom.AddDays(i),
                                 WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
+                                IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)maxDaysEditable)
                                 //WorkerId = model.WorkerId,
                             });
                         }
@@ -288,7 +291,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
 
                 var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
-                var eFormId = _options.Value.InfoeFormId ;
+                var eFormId = _options.Value.InfoeFormId;
                 if (eFormId != null)
                 {
                     var siteInfo = await sdkDbContext.Sites

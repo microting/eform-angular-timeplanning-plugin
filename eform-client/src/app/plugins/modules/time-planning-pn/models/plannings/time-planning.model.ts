@@ -20,4 +20,5 @@ export class TimePlanningModel {
   commentWorker: string;
   commentOffice: string;
   commentOfficeAll: string;
+  isLocked: boolean;
 }

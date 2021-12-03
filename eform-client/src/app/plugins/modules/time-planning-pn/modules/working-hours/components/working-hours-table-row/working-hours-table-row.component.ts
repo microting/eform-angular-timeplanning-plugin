@@ -57,7 +57,12 @@ export class WorkingHoursTableRowComponent
     this.messages = messages(translateService);
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    const shouldDisable = this.workingHoursForm.get('isLocked').value;
+    if (shouldDisable) {
+      this.workingHoursForm.disable();
+    }
+  }
 
   ngOnDestroy(): void {
     for (const sub$ of this.subs$) {
@@ -204,7 +209,6 @@ export class WorkingHoursTableRowComponent
   }
 
   calculateFlexHours() {
-    debugger;
     const nettoHours = this.workingHoursForm.get('nettoHours').value;
     const planHours = this.workingHoursForm.get('planHours').value;
     return +(nettoHours - planHours).toFixed(2);
