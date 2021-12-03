@@ -8,5 +8,5 @@ export enum TimePlanningMessagesEnum {
   Children1stSick,
   Children2stSick,
   TimeOff,
-  ' ',
+  Blank,
 }
