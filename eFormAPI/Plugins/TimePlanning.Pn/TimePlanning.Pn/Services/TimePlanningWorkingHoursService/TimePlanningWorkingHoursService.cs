@@ -169,7 +169,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         SumFlex = Math.Round(x.SumFlex,2),
                         PaidOutFlex = x.PaiedOutFlex,
                         Message = x.MessageId,
-                        CommentWorker = "",
+                        CommentWorker = x.WorkerComment,
                         CommentOffice = x.CommentOffice,
                         CommentOfficeAll = x.CommentOfficeAll,
                         IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable)
