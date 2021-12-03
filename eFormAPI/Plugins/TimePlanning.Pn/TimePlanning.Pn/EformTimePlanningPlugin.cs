@@ -108,6 +108,7 @@ namespace TimePlanning.Pn
             var serviceProvider = services.BuildServiceProvider();
             var core = await serviceProvider.GetRequiredService<IEFormCoreService>().GetCore();
             var eform = TimePlanningSeedEforms.GetForms().FirstOrDefault();
+            var lasteForm = TimePlanningSeedEforms.GetForms().LastOrDefault();
             var sdkDbContext = core.DbContextHelper.GetDbContext();
             var context = serviceProvider.GetRequiredService<TimePlanningPnDbContext>();
             var options = serviceProvider.GetRequiredService<IPluginDbOptions<TimePlanningBaseSettings>>();
@@ -146,6 +147,39 @@ namespace TimePlanning.Pn
                 await options.UpdateDb(settings =>
                 {
                     settings.EformId = originalId;
+                }, context, user.UserId);
+            }
+            resourceStream = assembly.GetManifestResourceStream($"TimePlanning.Pn.Resources.eForms.{lasteForm.Key}.xml");
+            if (resourceStream == null)
+            {
+                Console.WriteLine(eform.Key);
+            }
+            else
+            {
+                string contents;
+                using (var sr = new StreamReader(resourceStream))
+                {
+                    contents = await sr.ReadToEndAsync();
+                }
+                var newTemplate = await core.TemplateFromXml(contents);
+                var originalId = await sdkDbContext.CheckLists
+                    .Where(x => x.OriginalId == newTemplate.OriginalId)
+                    .Select(x => x.Id)
+                    .FirstOrDefaultAsync();
+                if (originalId == 0)
+                {
+                    int clId = await core.TemplateCreate(newTemplate);
+                    var cl = await sdkDbContext.CheckLists.SingleOrDefaultAsync(x => x.Id == clId);
+                    cl.IsLocked = true;
+                    cl.IsEditable = false;
+                    cl.ReportH1 = eform.Value[0];
+                    cl.ReportH2 = eform.Value[1];
+                    await cl.Update(sdkDbContext);
+                }
+
+                await options.UpdateDb(settings =>
+                {
+                    settings.InfoeFormId = originalId;
                 }, context, user.UserId);
             }
         }

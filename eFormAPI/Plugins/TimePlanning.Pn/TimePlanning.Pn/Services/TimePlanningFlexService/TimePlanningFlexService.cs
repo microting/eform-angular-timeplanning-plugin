@@ -74,11 +74,10 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 var planRegistrations = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date == DateTime.UtcNow.AddDays(-1).Date)
-                    .Include(x => x.AssignedSite)
                     .Select(x => new
                     {
                         x.Date,
-                        x.AssignedSite.SiteId,
+                        x.SdkSitId,
                         x.SumFlex,
                         PaidOutFlex = x.PaiedOutFlex,
                         CommentWorker = "",
@@ -91,14 +90,14 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
 
                 foreach (var planRegistration in planRegistrations)
                 {
-                    var siteDto = await core.SiteRead(planRegistration.SiteId);
+                    var siteDto = await core.SiteRead(planRegistration.SdkSitId);
 
                     resultWorkers.Add(new TimePlanningFlexIndexModel
                     {
                         Date = planRegistration.Date,
                         Worker = new CommonDictionaryModel
                         {
-                            Id = planRegistration.SiteId,
+                            Id = planRegistration.SdkSitId,
                             Name = siteDto.SiteName,
                         },
                         SumFlex = planRegistration.SumFlex,
@@ -127,22 +126,17 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
         {
             try
             {
-                var assignedSiteId = await _dbContext.AssignedSites.Where(x => x.SiteId == model.Worker.Id)
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Select(x => x.Id)
-                    .FirstAsync();
-
                 var planRegistration = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date == model.Date)
-                    .Where(x => x.AssignedSiteId == assignedSiteId)
+                    .Where(x => x.SdkSitId == model.Site.Id)
                     .FirstOrDefaultAsync();
 
                 if (planRegistration != null)
                 {
                     return await UpdatePlanning(planRegistration, model);
                 }
-                return await CreatePlanning(model, assignedSiteId);
+                return await CreatePlanning(model, (int)model.Site.Id);
             }
             catch (Exception e)
             {
@@ -154,7 +148,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             }
         }
 
-        private async Task<OperationResult> CreatePlanning(TimePlanningFlexUpdateModel model, int assignedSiteId)
+        private async Task<OperationResult> CreatePlanning(TimePlanningFlexUpdateModel model, int sdkSiteId)
         {
             try
             {
@@ -162,14 +156,14 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 {
                     CommentOffice = model.CommentOffice,
                     CommentOfficeAll = model.CommentOfficeAll,
-                    AssignedSiteId = assignedSiteId,
+                    SdkSitId = sdkSiteId,
                     Date = model.Date,
                     SumFlex = model.SumFlex,
                     PaiedOutFlex = model.PaidOutFlex,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId,
                 };
-                
+
                 await planning.Create(_dbContext);
 
                 return new OperationResult(
