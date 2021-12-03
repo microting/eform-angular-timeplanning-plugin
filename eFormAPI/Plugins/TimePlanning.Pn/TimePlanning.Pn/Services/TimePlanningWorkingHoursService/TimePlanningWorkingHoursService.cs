@@ -17,6 +17,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+using Microting.eForm.Infrastructure.Models;
+
 namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 {
     using System;
@@ -82,12 +85,12 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     })
                     .FirstOrDefaultAsync();
 
-                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1; // fix correct eform id
+                var eFormId = _options.Value.EformId;
                 if (eFormId != null)
                 {
                     var possibleCases = await sdkDbContext.Cases
                         .Where(x => x.SiteId == site.Id
-                                    && x.CheckListId == eFormId - 1)
+                                    && x.CheckListId == eFormId)
                         .Select(x => x.Id)
                         .ToListAsync();
 
@@ -131,9 +134,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 }
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
-                    .Include(x => x.AssignedSite)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.AssignedSite.SiteId == model.SiteId);
+                    .Where(x => x.SdkSitId == model.SiteId);
 
                 // two dates may be displayed instead of one if the same date is selected.
                 if (model.DateFrom == model.DateTo)
@@ -223,13 +225,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         {
             try
             {
-                var assignedSiteId = await _dbContext.AssignedSites.Where(x => x.SiteId == model.SiteId)
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Select(x => x.Id)
-                    .FirstAsync();
                 var planRegistrations = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.AssignedSiteId == assignedSiteId)
+                    .Where(x => x.SdkSitId == model.SiteId)
                     .ToListAsync();
                 foreach (var planning in model.Plannings)
                 {
@@ -240,7 +238,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     }
                     else
                     {
-                        await CreatePlanning(planning, assignedSiteId, model.SiteId, planning.CommentWorker);
+                        await CreatePlanning(planning, model.SiteId, model.SiteId, planning.CommentWorker);
                     }
                 }
                 return new OperationResult(
@@ -257,7 +255,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
         }
 
-        private async Task CreatePlanning(TimePlanningWorkingHoursModel model, int assignedSiteId, int microtingUid, string commentWorker)
+        private async Task CreatePlanning(TimePlanningWorkingHoursModel model, int sdkSiteId, int microtingUid, string commentWorker)
         {
             try
             {
@@ -265,7 +263,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 {
                     MessageId = model.Message,
                     PlanText = model.PlanText,
-                    AssignedSiteId = assignedSiteId,
+                    SdkSitId = sdkSiteId,
                     Date = model.Date,
                     PlanHours = model.PlanHours,
                     CreatedByUserId = _userService.UserId,
@@ -290,7 +288,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
 
                 var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
-                var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1;
+                var eFormId = _options.Value.InfoeFormId ;
                 if (eFormId != null)
                 {
                     var siteInfo = await sdkDbContext.Sites
@@ -298,11 +296,61 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         .Select(x => new
                         {
                             x.Id,
+                            x.MicrotingUid,
                             x.LanguageId,
                         })
                         .FirstOrDefaultAsync();
 
                     var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
+                    if (planRegistration.Pause1Id != 0 || planRegistration.Pause2Id != 0
+                                                       || planRegistration.Start1Id != 0 || planRegistration.Start2Id != 0
+                                                       || planRegistration.Stop1Id != 0 || planRegistration.Stop2Id != 0)
+                    {
+                        MainElement mainElement = new MainElement
+                        {
+                            Id = 141699,
+                            Repeated = 0,
+                            Label = "eform-angular-installationchecking-plugin-installation",
+                            StartDate = new DateTime(2019, 11, 4),
+                            EndDate = new DateTime(2029, 11, 4),
+                            Language = "da",
+                            MultiApproval = false,
+                            FastNavigation = false,
+                            DisplayOrder = 0,
+                        };
+
+                        var dataItems = new List<DataItem>();
+
+                        dataItems.Add(new None(
+                                371267,
+                                false,
+                                false,
+                                "INFO",
+                                "",
+                                Constants.FieldColors.Yellow,
+                                0,
+                                false
+                            )
+                        );
+                        var dataElement = new DataElement(
+                            141704,
+                            "CompanyName",
+                            0,
+                            "CompanyAddress<br>CompanyAddress2<br>ZipCode<br>CityName<br>Country",
+                            false,
+                            false,
+                            false,
+                            false,
+                            "",
+                            false,
+                            new List<DataItemGroup>(),
+                            dataItems);
+
+                        mainElement.ElementList.Add(dataElement);
+                        planRegistration.StatusCaseId =
+                            (int)await core.CaseCreate(mainElement, "", (int)siteInfo.MicrotingUid, (int)folderId);
+
+                    }
 /*                    var fieldIds = await sdkDbContext.Fields
                         .Where(x => x.CheckListId == eFormId)
                         .Select(x => x.Id)
@@ -349,6 +397,13 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
 
                 var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
+
+                if (planRegistration.Pause1Id != 0 || planRegistration.Pause2Id != 0
+                                                   || planRegistration.Start1Id != 0 || planRegistration.Start2Id != 0
+                                                   || planRegistration.Stop1Id != 0 || planRegistration.Stop2Id != 0)
+                {
+
+                }
                 // var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1;
                 //
                 // if (eFormId != null)

@@ -69,9 +69,8 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                 //var dateTo = DateTime.ParseExact(model.DateTo, "dd-MM-yyyy", CultureInfo.InvariantCulture);
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
-                    .Include(x => x.AssignedSite)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.AssignedSite.SiteId == model.SiteId);
+                    .Where(x => x.SdkSitId == model.SiteId);
 
                 // two dates may be displayed instead of one if the same date is selected.
                 if (model.DateFrom == model.DateTo)
@@ -84,7 +83,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     timePlanningRequest = timePlanningRequest
                         .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
                 }
-                
+
                 var timePlannings = await timePlanningRequest
                     .Select(x => new TimePlanningPlanningHelperModel
                     {
@@ -180,14 +179,9 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         {
             try
             {
-                var assignedSiteId = await _dbContext.AssignedSites
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.SiteId == model.SiteId)
-                    .Select(x => x.Id)
-                    .FirstAsync();
                 var planning = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.AssignedSiteId == assignedSiteId)
+                    .Where(x => x.SdkSitId == model.SiteId)
                     .Where(x => x.Date == model.Date)
                     .FirstOrDefaultAsync();
                 if (planning != null)
@@ -195,7 +189,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     return await UpdatePlanning(planning, model);
                 }
 
-                return await CreatePlanning(model, assignedSiteId);
+                return await CreatePlanning(model, model.SiteId);
             }
             catch (Exception e)
             {
@@ -207,21 +201,21 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
         }
 
-        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, int assignedSiteId)
+        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, int sdkSiteId)
         {
             try
             {
                 var planning = new PlanRegistration
                 {
                     PlanText = model.PlanText,
-                    AssignedSiteId = assignedSiteId,
+                    SdkSitId = sdkSiteId,
                     Date = model.Date,
                     PlanHours = model.PlanHours,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId,
                     MessageId = model.Message,
                 };
-                
+
                 await planning.Create(_dbContext);
 
                 return new OperationResult(

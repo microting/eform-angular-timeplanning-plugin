@@ -73,6 +73,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 {
                     FolderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId,
                     EformId = _options.Value.EformId == 0 ? null : _options.Value.EformId,
+                    InfoeFormId = _options.Value.InfoeFormId == 0 ? null : _options.Value.InfoeFormId,
                 };
 
                 var assignedSites = await _dbContext.AssignedSites
@@ -143,6 +144,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 var mainElement = await theCore.ReadeForm((int)newTaskId, language);
                 mainElement.CheckListFolderName = folder.MicrotingUid.ToString();
                 mainElement.EndDate = DateTime.UtcNow.AddYears(10);
+                mainElement.DisplayOrder = int.MinValue;
                 mainElement.Repeated = 0;
                 mainElement.PushMessageTitle = mainElement.Label;
                 mainElement.EnableQuickSync = true;

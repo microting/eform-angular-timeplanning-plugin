@@ -29,5 +29,8 @@ namespace TimePlanning.Pn.Infrastructure.Models.Settings
         public int? EformId{ get; set; }
 
         public int? FolderId { get; set; }
+
+        public int? InfoeFormId { get; set; }
+
     }
 }

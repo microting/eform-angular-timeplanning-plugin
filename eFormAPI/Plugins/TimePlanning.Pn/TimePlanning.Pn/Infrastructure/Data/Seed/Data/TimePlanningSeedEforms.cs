@@ -37,6 +37,13 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             KeyValuePair<string, List<string>> item = new KeyValuePair<string, List<string>>("00. Arbejdstid", headers);
             theList.Add(item);
 
+            headers = new List<string>
+            {
+                "01. Info eForm","01.01 Info eForm"
+            };
+            item = new KeyValuePair<string, List<string>>("01. Info eForm", headers);
+            theList.Add(item);
+
             return theList;
         }
     }
