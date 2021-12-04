@@ -60,8 +60,8 @@ export function messages(
       ),
     },
     {
-      id: TimePlanningMessagesEnum[' '],
-      value: TimePlanningMessagesEnum[TimePlanningMessagesEnum[' ']],
+      id: TimePlanningMessagesEnum.Blank,
+      value: ' ',
     },
   ];
 }
