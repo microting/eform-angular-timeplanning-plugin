@@ -544,7 +544,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         x++;
                         y = 0;
 
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date.DayOfWeek.ToString();
                         y++;
                         worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
                         y++;
