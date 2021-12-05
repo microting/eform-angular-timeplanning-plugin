@@ -18,6 +18,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System.Text;
+
 namespace TimePlanning.Pn.Controllers
 {
     using System.Collections.Generic;
@@ -50,6 +52,47 @@ namespace TimePlanning.Pn.Controllers
         public async Task<OperationResult> Update([FromBody] TimePlanningWorkingHoursUpdateCreateModel model)
         {
             return await _workingHoursService.CreateUpdate(model);
+        }
+
+        /// <summary>
+        /// Download records export word
+        /// </summary>
+        /// <param name="requestModel">The request model.</param>
+        /// <param name="type">docx or xlsx</param>
+        [HttpGet]
+        [Route("reports/file")]
+        [ProducesResponseType(typeof(string), 400)]
+        public async Task GenerateReportFile(TimePlanningWorkingHoursRequestModel requestModel)
+        {
+            var result = await _workingHoursService.GenerateExcelDashboard(requestModel);
+            const int bufferSize = 4086;
+            byte[] buffer = new byte[bufferSize];
+            Response.OnStarting(async () =>
+            {
+                if (!result.Success)
+                {
+                    Response.ContentLength = result.Message.Length;
+                    Response.ContentType = "text/plain";
+                    Response.StatusCode = 400;
+                    byte[] bytes = Encoding.UTF8.GetBytes(result.Message);
+                    await Response.Body.WriteAsync(bytes, 0, result.Message.Length);
+                    await Response.Body.FlushAsync();
+                }
+                else
+                {
+                    await using var wordStream = result.Model;
+                    int bytesRead;
+                    Response.ContentLength = wordStream.Length;
+                    Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                    while ((bytesRead = wordStream.Read(buffer, 0, buffer.Length)) > 0 &&
+                           !HttpContext.RequestAborted.IsCancellationRequested)
+                    {
+                        await Response.Body.WriteAsync(buffer, 0, bytesRead);
+                        await Response.Body.FlushAsync();
+                    }
+                }
+            });
         }
     }
 }

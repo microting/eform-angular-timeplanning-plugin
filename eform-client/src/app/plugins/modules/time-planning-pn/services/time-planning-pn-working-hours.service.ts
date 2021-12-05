@@ -7,10 +7,13 @@ import {
   TimePlanningsRequestModel,
   WorkingHoursModel,
 } from '../models';
+import {ReportPnGenerateModel} from 'src/app/plugins/modules/items-planning-pn/models';
+import {ItemsPlanningPnReportsMethods} from 'src/app/plugins/modules/items-planning-pn/services';
 
 export let TimePlanningPnWorkingHoursMethods = {
   IndexWorkingHours: 'api/time-planning-pn/working-hours/index',
   WorkingHours: 'api/time-planning-pn/working-hours',
+  Reports: 'api/time-planning-pn/working-hours/reports/file',
 };
 
 @Injectable({
@@ -31,6 +34,13 @@ export class TimePlanningPnWorkingHoursService {
   updateWorkingHours(model: WorkingHoursModel): Observable<OperationResult> {
     return this.apiBaseService.put(
       TimePlanningPnWorkingHoursMethods.WorkingHours,
+      model
+    );
+  }
+
+  downloadReport(model: TimePlanningsRequestModel): Observable<any> {
+    return this.apiBaseService.getBlobData(
+      TimePlanningPnWorkingHoursMethods.Reports,
       model
     );
   }

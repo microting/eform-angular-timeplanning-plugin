@@ -28,6 +28,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   updateWorkingHours$: Subscription;
   getAvailableSites$: Subscription;
   workingHoursGroupSub$: Subscription[] = [];
+  tainted = false;
 
   constructor(
     private workingHoursService: TimePlanningPnWorkingHoursService,
@@ -144,6 +145,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   }
 
   recalculateSumFlex() {
+    this.tainted = true;
     let sumFlex = 0;
     for (const formGroup of this.workingHoursFormArray.controls) {
       const flexHours = formGroup.get('flexHours').value;
