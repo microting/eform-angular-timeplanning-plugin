@@ -7,8 +7,6 @@ import {
   TimePlanningsRequestModel,
   WorkingHoursModel,
 } from '../models';
-import {ReportPnGenerateModel} from 'src/app/plugins/modules/items-planning-pn/models';
-import {ItemsPlanningPnReportsMethods} from 'src/app/plugins/modules/items-planning-pn/services';
 
 export let TimePlanningPnWorkingHoursMethods = {
   IndexWorkingHours: 'api/time-planning-pn/working-hours/index',

@@ -3,7 +3,6 @@ import { format } from 'date-fns';
 import { PARSING_DATE_FORMAT } from 'src/app/common/const';
 import { SiteDto } from 'src/app/common/models';
 import { TimePlanningsRequestModel } from '../../../../models';
-import {ReportPnGenerateModel} from 'src/app/plugins/modules/items-planning-pn/models';
 import {saveAs} from 'file-saver';
 import {ToastrService} from 'ngx-toastr';
 import {TimePlanningPnWorkingHoursService} from 'src/app/plugins/modules/time-planning-pn/services';
