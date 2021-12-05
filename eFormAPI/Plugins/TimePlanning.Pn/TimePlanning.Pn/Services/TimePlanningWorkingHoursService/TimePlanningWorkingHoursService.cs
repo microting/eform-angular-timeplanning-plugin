@@ -18,6 +18,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System.IO;
+using ClosedXML.Excel;
 using Microting.eForm.Infrastructure.Models;
 
 namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
@@ -49,6 +51,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         private readonly ILogger<TimePlanningWorkingHoursService> _logger;
         private readonly TimePlanningPnDbContext _dbContext;
         private readonly IUserService _userService;
+        private readonly IEFormCoreService _coreHelper;
         private readonly ITimePlanningLocalizationService _localizationService;
         private readonly IEFormCoreService _core;
 
@@ -58,7 +61,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             IUserService userService,
             ITimePlanningLocalizationService localizationService,
             IEFormCoreService core,
-            IPluginDbOptions<TimePlanningBaseSettings> options)
+            IPluginDbOptions<TimePlanningBaseSettings> options, IEFormCoreService coreHelper)
         {
             _logger = logger;
             _dbContext = dbContext;
@@ -66,6 +69,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             _localizationService = localizationService;
             _core = core;
             _options = options;
+            _coreHelper = coreHelper;
         }
 
         public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model)
@@ -169,7 +173,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         SumFlex = Math.Round(x.SumFlex,2),
                         PaidOutFlex = x.PaiedOutFlex,
                         Message = x.MessageId,
-                        CommentWorker = x.WorkerComment,
+                        CommentWorker = "",
                         CommentOffice = x.CommentOffice,
                         CommentOfficeAll = x.CommentOfficeAll,
                         IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable)
@@ -451,5 +455,146 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
         }
 
+        public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursRequestModel model)
+        {
+            try
+            {
+                // get core
+                var core = await _coreHelper.GetCore();
+
+                Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
+
+                var timeStamp = $"{DateTime.UtcNow:yyyyMMdd}_{DateTime.UtcNow:hhmmss}";
+
+                var resultDocument = Path.Combine(Path.GetTempPath(), "results",
+                    $"{timeStamp}_.xlsx");
+
+                Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
+
+                IXLWorkbook wb = new XLWorkbook();
+
+                IXLWorksheet worksheet = wb.Worksheets.Add("Dashboard");
+
+                int x = 0;
+                int y = 0;
+
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Day of week");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Date");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Plan text");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Plan hours");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 1 start");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 1 stop");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 1 pause");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 2 start");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 2 stop");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 2 pause");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Netto hours");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Flex");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Sum flex");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Paid out flex");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Message");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Comment worker");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Comment office");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Comment office all");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+
+                var content = await Index(model);
+
+                if (content.Success)
+                {
+                    var rows = content.Model;
+
+                    foreach (TimePlanningWorkingHoursModel timePlanningWorkingHoursModel in rows)
+                    {
+                        x++;
+                        y = 0;
+
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanText;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift1Start;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift1Stop;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift1Pause;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift2Start;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift2Stop;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift2Pause;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.NettoHours;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.FlexHours;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlex;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Message;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
+                    }
+                }
+
+                wb.SaveAs(resultDocument);
+
+                Stream result = File.Open(resultDocument, FileMode.Open);
+                return new OperationDataResult<Stream>(true, result);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationDataResult<Stream>(
+                    false,
+                    _localizationService.GetString("ErrorWhileCreatingWordFile"));
+            }
+        }
     }
 }
