@@ -137,6 +137,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
         plannings: this.workingHoursFormArray.getRawValue(),
       })
       .subscribe((data) => {
+        this.tainted = false;
         // TODO: REMOVE
         // if (data && data.success) {
         //   this.getWorkingHours(this.workingHoursRequest);
