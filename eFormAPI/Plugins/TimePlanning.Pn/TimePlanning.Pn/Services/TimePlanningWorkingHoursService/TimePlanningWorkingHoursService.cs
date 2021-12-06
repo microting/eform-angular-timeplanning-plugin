@@ -265,7 +265,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Message _message =
                         await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
                     Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
-                    planRegistration.StatusCaseId = await planRegistration.DeployResults((int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, _message);
+                    string messageText = _message != null ? _message.Name : "";
+                    planRegistration.StatusCaseId = await planRegistration.DeployResults((int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, messageText);
                     await planRegistration.Update(_dbContext);
                 }
 
