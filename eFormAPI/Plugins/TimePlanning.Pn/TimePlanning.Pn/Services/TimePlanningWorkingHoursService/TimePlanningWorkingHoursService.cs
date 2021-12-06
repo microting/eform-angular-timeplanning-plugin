@@ -461,6 +461,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 // get core
                 var core = await _coreHelper.GetCore();
+                var sdkContext = core.DbContextHelper.GetDbContext();
+                Site site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
 
                 Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
 
@@ -478,6 +480,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 int x = 0;
                 int y = 0;
 
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Worker");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
                 worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Day of week");
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
@@ -535,6 +540,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 var content = await Index(model);
 
+                PlanRegistration plr = new PlanRegistration();
+
                 if (content.Success)
                 {
                     var rows = content.Model;
@@ -544,6 +551,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         x++;
                         y = 0;
 
+                        worksheet.Cell(x + 1, y + 1).Value = site.Name;
+                        y++;
                         worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date.DayOfWeek.ToString();
                         y++;
                         worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
@@ -552,17 +561,17 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         y++;
                         worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
                         y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift1Start;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift1Start > 0 ? (int)timePlanningWorkingHoursModel.Shift1Start - 1 : 0];
                         y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift1Stop;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift1Stop > 0 ? (int)timePlanningWorkingHoursModel.Shift1Stop - 1 : 0];
                         y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift1Pause;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift1Pause > 0 ? (int)timePlanningWorkingHoursModel.Shift1Pause - 1 : 0];
                         y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift2Start;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift2Start > 0 ? (int)timePlanningWorkingHoursModel.Shift2Start - 1 : 0];
                         y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift2Stop;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift2Stop > 0 ? (int)timePlanningWorkingHoursModel.Shift2Stop - 1 : 0];
                         y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Shift2Pause;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift2Pause > 0 ? (int)timePlanningWorkingHoursModel.Shift2Pause - 1 : 0];
                         y++;
                         worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.NettoHours;
                         y++;
