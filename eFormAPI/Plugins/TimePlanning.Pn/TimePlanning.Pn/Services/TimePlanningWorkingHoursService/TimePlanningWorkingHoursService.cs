@@ -18,6 +18,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System.IO;
+using ClosedXML.Excel;
 using Microting.eForm.Infrastructure.Models;
 
 namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
@@ -49,6 +51,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         private readonly ILogger<TimePlanningWorkingHoursService> _logger;
         private readonly TimePlanningPnDbContext _dbContext;
         private readonly IUserService _userService;
+        private readonly IEFormCoreService _coreHelper;
         private readonly ITimePlanningLocalizationService _localizationService;
         private readonly IEFormCoreService _core;
 
@@ -58,7 +61,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             IUserService userService,
             ITimePlanningLocalizationService localizationService,
             IEFormCoreService core,
-            IPluginDbOptions<TimePlanningBaseSettings> options)
+            IPluginDbOptions<TimePlanningBaseSettings> options, IEFormCoreService coreHelper)
         {
             _logger = logger;
             _dbContext = dbContext;
@@ -66,6 +69,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             _localizationService = localizationService;
             _core = core;
             _options = options;
+            _coreHelper = coreHelper;
         }
 
         public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model)
@@ -234,16 +238,38 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     .ToListAsync();
                 foreach (var planning in model.Plannings)
                 {
-                    var planningFomrDb = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
-                    if (planningFomrDb != null)
+                    var planRegistration = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
+                    if (planRegistration != null)
                     {
-                        await UpdatePlanning(planningFomrDb, planning, model.SiteId);
+                        await UpdatePlanning(planRegistration, planning, model.SiteId);
                     }
                     else
                     {
                         await CreatePlanning(planning, model.SiteId, model.SiteId, planning.CommentWorker);
                     }
                 }
+                var core = await _core.GetCore();
+                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+                var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
+                var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
+                var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
+                var eFormId = _options.Value.InfoeFormId;
+
+                var firstDate = model.Plannings.First().Date;
+                var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate
+                                                                         && x.SdkSitId == site.MicrotingUid)
+                    .OrderBy(x => x.Date).ToListAsync();
+                foreach (PlanRegistration planRegistration in list)
+                {
+
+                    Message _message =
+                        await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
+                    Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
+                    string messageText = _message != null ? _message.Name : "";
+                    planRegistration.StatusCaseId = await planRegistration.DeployResults((int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, messageText);
+                    await planRegistration.Update(_dbContext);
+                }
+
                 return new OperationResult(
                     true,
                     _localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
@@ -309,49 +335,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                                        || planRegistration.Start1Id != 0 || planRegistration.Start2Id != 0
                                                        || planRegistration.Stop1Id != 0 || planRegistration.Stop2Id != 0)
                     {
-                        MainElement mainElement = new MainElement
-                        {
-                            Id = 141699,
-                            Repeated = 0,
-                            Label = "eform-angular-installationchecking-plugin-installation",
-                            StartDate = new DateTime(2019, 11, 4),
-                            EndDate = new DateTime(2029, 11, 4),
-                            Language = "da",
-                            MultiApproval = false,
-                            FastNavigation = false,
-                            DisplayOrder = 0,
-                        };
 
-                        var dataItems = new List<DataItem>();
-
-                        dataItems.Add(new None(
-                                371267,
-                                false,
-                                false,
-                                "INFO",
-                                "",
-                                Constants.FieldColors.Yellow,
-                                0,
-                                false
-                            )
-                        );
-                        var dataElement = new DataElement(
-                            141704,
-                            "CompanyName",
-                            0,
-                            "CompanyAddress<br>CompanyAddress2<br>ZipCode<br>CityName<br>Country",
-                            false,
-                            false,
-                            false,
-                            false,
-                            "",
-                            false,
-                            new List<DataItemGroup>(),
-                            dataItems);
-
-                        mainElement.ElementList.Add(dataElement);
-                        planRegistration.StatusCaseId =
-                            (int)await core.CaseCreate(mainElement, "", (int)siteInfo.MicrotingUid, (int)folderId);
 
                     }
 /*                    var fieldIds = await sdkDbContext.Fields
@@ -472,5 +456,155 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
         }
 
+        public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursRequestModel model)
+        {
+            try
+            {
+                // get core
+                var core = await _coreHelper.GetCore();
+                var sdkContext = core.DbContextHelper.GetDbContext();
+                Site site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
+
+                Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
+
+                var timeStamp = $"{DateTime.UtcNow:yyyyMMdd}_{DateTime.UtcNow:hhmmss}";
+
+                var resultDocument = Path.Combine(Path.GetTempPath(), "results",
+                    $"{timeStamp}_.xlsx");
+
+                Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
+
+                IXLWorkbook wb = new XLWorkbook();
+
+                IXLWorksheet worksheet = wb.Worksheets.Add("Dashboard");
+
+                int x = 0;
+                int y = 0;
+
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Worker");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Day of week");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Date");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Plan text");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Plan hours");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 1 start");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 1 stop");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 1 pause");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 2 start");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 2 stop");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 2 pause");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Netto hours");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Flex");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Sum flex");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Paid out flex");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Message");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Comment worker");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Comment office");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Comment office all");
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
+
+                var content = await Index(model);
+
+                PlanRegistration plr = new PlanRegistration();
+
+                if (content.Success)
+                {
+                    var rows = content.Model;
+
+                    foreach (TimePlanningWorkingHoursModel timePlanningWorkingHoursModel in rows)
+                    {
+                        x++;
+                        y = 0;
+
+                        worksheet.Cell(x + 1, y + 1).Value = site.Name;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date.DayOfWeek.ToString();
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanText;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift1Start > 0 ? (int)timePlanningWorkingHoursModel.Shift1Start - 1 : 0];
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift1Stop > 0 ? (int)timePlanningWorkingHoursModel.Shift1Stop - 1 : 0];
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift1Pause > 0 ? (int)timePlanningWorkingHoursModel.Shift1Pause - 1 : 0];
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift2Start > 0 ? (int)timePlanningWorkingHoursModel.Shift2Start - 1 : 0];
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift2Stop > 0 ? (int)timePlanningWorkingHoursModel.Shift2Stop - 1 : 0];
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift2Pause > 0 ? (int)timePlanningWorkingHoursModel.Shift2Pause - 1 : 0];
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.NettoHours;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.FlexHours;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlex;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Message;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice;
+                        y++;
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
+                    }
+                }
+
+                wb.SaveAs(resultDocument);
+
+                Stream result = File.Open(resultDocument, FileMode.Open);
+                return new OperationDataResult<Stream>(true, result);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationDataResult<Stream>(
+                    false,
+                    _localizationService.GetString("ErrorWhileCreatingWordFile"));
+            }
+        }
     }
 }

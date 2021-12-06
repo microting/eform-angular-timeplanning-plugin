@@ -47,5 +47,16 @@
         <fa-icon icon="redo-alt" [fixedWidth]="true"></fa-icon>
       </button>
     </div>
+    <div class="mt-4 pt-1 ml-1" *ngIf="siteId && dateRange">
+      <button
+        *ngIf="!tainted"
+        mdbBtn
+        id="workingHoursExcel"
+        (click)="onDownloadExcelReport()"
+        class="btn-success btn-small-height"
+      >
+        <fa-icon icon="file-excel" size="lg"></fa-icon>
+      </button>
+    </div>
   </div>
 </div>
