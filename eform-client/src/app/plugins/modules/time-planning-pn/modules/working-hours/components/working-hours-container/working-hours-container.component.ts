@@ -156,6 +156,8 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
         sumFlex + (flexHours ? flexHours : 0) - (paidOutFlex ? paidOutFlex : 0);
       formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
     }
+
+    this.tainted = false;
   }
 
   calculateFlexHours(nettoHours: number, planHours: number) {

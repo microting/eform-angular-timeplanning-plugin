@@ -214,6 +214,13 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
 
+                double sumFlex = 0;
+                foreach (TimePlanningWorkingHoursModel timePlanningWorkingHoursModel in timePlannings)
+                {
+                        timePlanningWorkingHoursModel.SumFlex = sumFlex + timePlanningWorkingHoursModel.FlexHours;
+                        sumFlex = timePlanningWorkingHoursModel.SumFlex;
+                }
+
                 return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                     true,
                     timePlannings);
