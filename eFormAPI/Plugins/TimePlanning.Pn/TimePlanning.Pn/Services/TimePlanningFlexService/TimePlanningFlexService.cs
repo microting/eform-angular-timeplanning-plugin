@@ -71,20 +71,38 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             {
                 var core = await _core.GetCore();
 
-                var planRegistrations = await _dbContext.PlanRegistrations
+                var listSiteIds = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Date == DateTime.UtcNow.AddDays(-1).Date)
-                    .Select(x => new
-                    {
-                        x.Date,
-                        x.SdkSitId,
-                        x.SumFlex,
-                        PaidOutFlex = x.PaiedOutFlex,
-                        CommentWorker = "",
-                        x.CommentOffice,
-                        x.CommentOfficeAll,
-                    })
-                    .ToListAsync();
+                    .Select(x => x.SdkSitId).Distinct().ToListAsync();
+
+                List<PlanRegistration> planRegistrations = new List<PlanRegistration>();
+
+                foreach (var listSiteId in listSiteIds)
+                {
+                    var r = await _dbContext.PlanRegistrations
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Date < DateTime.UtcNow.AddDays(-1).Date)
+                        .Where(x => x.SdkSitId == listSiteId)
+                        .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
+
+                    planRegistrations.Add(r);
+                }
+
+                // var planRegistrations = await _dbContext.PlanRegistrations
+                //     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                //     .Where(x => x.Date < DateTime.UtcNow.AddDays(-1).Date)
+                //     .OrderByDescending(x => x.Date)
+                //     .Select(x => new
+                //     {
+                //         x.Date,
+                //         x.SdkSitId,
+                //         x.SumFlex,
+                //         PaidOutFlex = x.PaiedOutFlex,
+                //         CommentWorker = "",
+                //         x.CommentOffice,
+                //         x.CommentOfficeAll,
+                //     })
+                //     .ToListAsync();
 
                 var resultWorkers = new List<TimePlanningFlexIndexModel>();
 
@@ -101,8 +119,8 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                             Name = siteDto.SiteName,
                         },
                         SumFlex = planRegistration.SumFlex,
-                        PaidOutFlex = planRegistration.PaidOutFlex,
-                        CommentWorker = planRegistration.CommentWorker ?? "",
+                        PaidOutFlex = planRegistration.PaiedOutFlex,
+                        CommentWorker = planRegistration.WorkerComment ?? "",
                         CommentOffice = planRegistration.CommentOffice ?? "",
                         CommentOfficeAll = planRegistration.CommentOfficeAll ?? "",
                     });

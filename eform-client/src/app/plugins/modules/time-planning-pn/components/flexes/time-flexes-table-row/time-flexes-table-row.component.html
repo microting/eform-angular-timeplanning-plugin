@@ -1,8 +1,8 @@
 <td id="flexPlanningDate">
   {{ flexPlanning.date | date: 'yyyy/MM/dd' }}
 </td>
-<td id="flexPlanningWorkerName">
-  {{ flexPlanning.site.name }}
+<td id="flexPlanningWorkerName" *ngIf="flexPlanning.worker !== null">
+  {{ flexPlanning.worker.name }}
 </td>
 <td id="timePlanningSumFlex">
   <div class="md-form">
