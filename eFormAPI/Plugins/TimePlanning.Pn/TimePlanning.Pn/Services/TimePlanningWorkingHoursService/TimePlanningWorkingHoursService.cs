@@ -288,6 +288,20 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         {
             try
             {
+                if (model.PlanHours == 0 && string.IsNullOrEmpty(model.PlanText)
+                                         && string.IsNullOrEmpty(model.CommentWorker)
+                                         && string.IsNullOrEmpty(model.CommentOffice)
+                                         && string.IsNullOrEmpty(model.CommentOfficeAll)
+                                         && model.Shift1Start == null
+                                         && model.Shift1Stop == null
+                                         && model.Shift2Start == null
+                                         && model.Shift2Stop == null
+                                         && model.Shift1Pause == null
+                                         && model.Shift2Pause == null
+                                         )
+                {
+                    return;
+                }
                 var planRegistration = new PlanRegistration
                 {
                     MessageId = model.Message,
@@ -313,38 +327,38 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 await planRegistration.Create(_dbContext);
 
-                var core = await _core.GetCore();
-                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+                // var core = await _core.GetCore();
+                // await using var sdkDbContext = core.DbContextHelper.GetDbContext();
 
-                var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
-                var eFormId = _options.Value.InfoeFormId;
-                if (eFormId != null)
-                {
-                    var siteInfo = await sdkDbContext.Sites
-                        .Where(x => x.MicrotingUid == microtingUid)
-                        .Select(x => new
-                        {
-                            x.Id,
-                            x.MicrotingUid,
-                            x.LanguageId,
-                        })
-                        .FirstOrDefaultAsync();
+                // var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
+                // var eFormId = _options.Value.InfoeFormId;
+                // if (eFormId != null)
+                // {
+                    // var siteInfo = await sdkDbContext.Sites
+                    //     .Where(x => x.MicrotingUid == microtingUid)
+                    //     .Select(x => new
+                    //     {
+                    //         x.Id,
+                    //         x.MicrotingUid,
+                    //         x.LanguageId,
+                    //     })
+                    //     .FirstOrDefaultAsync();
 
-                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
-                    if (planRegistration.Pause1Id != 0 || planRegistration.Pause2Id != 0
-                                                       || planRegistration.Start1Id != 0 || planRegistration.Start2Id != 0
-                                                       || planRegistration.Stop1Id != 0 || planRegistration.Stop2Id != 0)
-                    {
-
-
-                    }
+                    // var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
+                    // if (planRegistration.Pause1Id != 0 || planRegistration.Pause2Id != 0
+                    //                                    || planRegistration.Start1Id != 0 || planRegistration.Start2Id != 0
+                    //                                    || planRegistration.Stop1Id != 0 || planRegistration.Stop2Id != 0)
+                    // {
+                    //
+                    //
+                    // }
 /*                    var fieldIds = await sdkDbContext.Fields
                         .Where(x => x.CheckListId == eFormId)
                         .Select(x => x.Id)
                         .ToListAsync();*/
                     // var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
                     // var newMicrotingUid = await core.CaseCreate(mainElement, "", microtingUid, folderId);
-                }
+                // }
 
             }
             catch (Exception e)
