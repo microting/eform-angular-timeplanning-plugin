@@ -48,8 +48,8 @@ export class WorkingHoursHeaderComponent implements OnInit {
 
   onDownloadExcelReport() {
     const model = new TimePlanningsRequestModel();
-    model.dateFrom = format(this.dateRange[0], PARSING_DATE_FORMAT);
-    model.dateTo = format(this.dateRange[1], PARSING_DATE_FORMAT);
+    model.dateFrom = format(this.dateRange[0]._d, PARSING_DATE_FORMAT);
+    model.dateTo = format(this.dateRange[1]._d, PARSING_DATE_FORMAT);
     model.siteId = this.siteId;
     this.downloadReportSub$ = this.workingHoursService
       .downloadReport(model)
