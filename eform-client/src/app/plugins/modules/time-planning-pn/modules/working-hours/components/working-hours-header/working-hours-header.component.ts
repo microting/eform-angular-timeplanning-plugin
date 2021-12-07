@@ -34,24 +34,12 @@ export class WorkingHoursHeaderComponent implements OnInit {
 
   updateDateRange(range: Date[]) {
     this.dateRange = range;
-    if (this.siteId) {
-      this.filtersChanged.emit({
-        siteId: this.siteId,
-        dateFrom: format(range[0], PARSING_DATE_FORMAT),
-        dateTo: format(range[1], PARSING_DATE_FORMAT),
-      });
-    }
+    this.filtersChangedEmmit();
   }
 
   onSiteChanged(siteId: number) {
     this.siteId = siteId;
-    if (this.dateRange) {
-      this.filtersChanged.emit({
-        siteId,
-        dateFrom: format(this.dateRange[0], PARSING_DATE_FORMAT),
-        dateTo: format(this.dateRange[1], PARSING_DATE_FORMAT),
-      });
-    }
+    this.filtersChangedEmmit();
   }
 
   onSaveWorkingHours() {
@@ -73,5 +61,15 @@ export class WorkingHoursHeaderComponent implements OnInit {
           this.toastrService.error('Error downloading report');
         }
       );
+  }
+
+  filtersChangedEmmit(): void {
+    if (this.dateRange && this.siteId) {
+      this.filtersChanged.emit({
+        siteId: this.siteId,
+        dateFrom: format(this.dateRange[0]._d, PARSING_DATE_FORMAT),
+        dateTo: format(this.dateRange[1]._d, PARSING_DATE_FORMAT),
+      });
+    }
   }
 }

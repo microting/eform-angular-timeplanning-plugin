@@ -83,7 +83,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
             disabled: true,
           }),
           flexHours: new FormControl({
-            value: x.flexHours ? x.flexHours : 0,
+            value: this.calculateFlexHours(x.nettoHours, x.planHours),
             disabled: true,
           }),
           sumFlex: new FormControl({
@@ -102,6 +102,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
           ),
         })
       );
+      this.recalculateSumFlex();
     });
 
     if (this.workingHoursGroupSub$.length > 0) {
@@ -156,6 +157,42 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
       formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
     }
   }
+
+  calculateFlexHours(nettoHours: number, planHours: number) {
+    return +(nettoHours - planHours).toFixed(2);
+  }
+
+  // calculateNettoHours(
+  //   shift1Start?: number,
+  //   shift1Stop?: number,
+  //   shift1Pause?: number,
+  //   shift2Start?: number,
+  //   shift2Stop?: number,
+  //   shift2Pause?: number
+  // ): number {
+  //   const offset = 1;
+  //   const minutesMultiplier = 5;
+  //
+  //   let nettoMinutes = 0;
+  //
+  //   if (shift1Start && shift1Stop) {
+  //     nettoMinutes = shift1Stop - shift1Start;
+  //     if (shift1Pause) {
+  //       nettoMinutes = nettoMinutes - shift1Pause + offset;
+  //     }
+  //   }
+  //
+  //   if (shift2Start && shift2Stop) {
+  //     nettoMinutes = nettoMinutes + shift2Stop - shift2Start;
+  //     if (shift2Pause) {
+  //       nettoMinutes = nettoMinutes - shift2Pause + offset;
+  //     }
+  //   }
+  //
+  //   nettoMinutes = nettoMinutes * minutesMultiplier;
+  //
+  //   return +(nettoMinutes / 60).toFixed(2);
+  // }
 
   ngOnDestroy(): void {
     for (const sub$ of this.workingHoursGroupSub$) {

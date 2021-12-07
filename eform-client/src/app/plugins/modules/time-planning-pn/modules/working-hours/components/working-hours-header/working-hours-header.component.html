@@ -38,6 +38,14 @@
       >
         {{ 'Save' | translate }}
       </button>
+      <button
+        mdbBtn
+        id="workingHoursReload"
+        (click)="filtersChangedEmmit()"
+        class="btn-success btn-icon"
+      >
+        <fa-icon icon="redo-alt" [fixedWidth]="true"></fa-icon>
+      </button>
     </div>
     <div class="mt-4 pt-1 ml-1" *ngIf="siteId && dateRange">
       <button

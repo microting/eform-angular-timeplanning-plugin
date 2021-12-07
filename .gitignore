@@ -352,3 +352,4 @@ MigrationBackup/
 
 eform-client/.idea/
 /eFormAPI/eFormAPI.Web/Plugins/TimePlanning.Pn/net5.0
+/eFormAPI/eFormAPI.Web/Plugins/TimePlanning.Pn/net6.0

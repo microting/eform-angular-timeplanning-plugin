@@ -2,7 +2,11 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { OwlDateTimeModule } from '@danielmoncada/angular-datetime-picker';
+import {
+  OwlDateTimeModule,
+  OwlMomentDateTimeModule,
+  OWL_DATE_TIME_FORMATS,
+} from '@danielmoncada/angular-datetime-picker';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { TranslateModule } from '@ngx-translate/core';
@@ -18,6 +22,7 @@ import {
   WorkingHoursCommentOfficeUpdateModalComponent,
   WorkingHoursCommentOfficeAllUpdateModalComponent,
 } from './components';
+import { MY_MOMENT_FORMATS_FOR_TIME_PLANNING } from '../../consts/custom-date-time-adapter';
 
 @NgModule({
   imports: [
@@ -30,9 +35,10 @@ import {
     FontAwesomeModule,
     RouterModule,
     ReactiveFormsModule,
-    OwlDateTimeModule,
     NgxMaskModule,
     WorkingHoursRouting,
+    OwlDateTimeModule,
+    OwlMomentDateTimeModule,
   ],
   declarations: [
     WorkingHoursContainerComponent,
@@ -41,6 +47,12 @@ import {
     WorkingHoursTableRowComponent,
     WorkingHoursCommentOfficeUpdateModalComponent,
     WorkingHoursCommentOfficeAllUpdateModalComponent,
+  ],
+  providers: [
+    {
+      provide: OWL_DATE_TIME_FORMATS,
+      useValue: MY_MOMENT_FORMATS_FOR_TIME_PLANNING,
+    },
   ],
 })
 export class WorkingHoursModule {}
