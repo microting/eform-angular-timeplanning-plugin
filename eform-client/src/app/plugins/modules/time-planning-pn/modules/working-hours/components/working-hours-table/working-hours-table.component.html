@@ -11,7 +11,9 @@
       <ng-container
         *ngFor="
           let workingHoursForm of workingHoursFormArray.controls;
-          let i = index
+          let i = index;
+          first as isFirst;
+          last as isLast
         "
       >
         <tr
@@ -19,6 +21,11 @@
           [workingHoursForm]="workingHoursForm"
           [workingHoursFormIndex]="i"
         ></tr>
+        <tr *ngIf="(i + 1) % 5 === 0 && !isFirst && !isLast">
+          <td *ngFor="let tableHeader of tableHeaders">
+            {{ tableHeader.visibleName || tableHeader.name | translate }}
+          </td>
+        </tr>
       </ng-container>
     </tbody>
   </table>
