@@ -16,6 +16,7 @@
     <tbody id="tableBody">
       <ng-container *ngFor="let timePlanning of timePlannings; let i = index">
         <tr time-planning-table-row
+          [class.background-yellow]="timePlanning.isWeekend"
           [index]="i"
           [weekDay]="timePlanning.weekDay"
           [date]="timePlanning.date"

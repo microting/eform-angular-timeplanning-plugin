@@ -176,7 +176,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         CommentWorker = "",
                         CommentOffice = x.CommentOffice,
                         CommentOfficeAll = x.CommentOfficeAll,
-                        IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable)
+                        IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable),
+                        IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
                     })
                     .ToListAsync();
 
@@ -193,7 +194,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 Date = model.DateFrom.AddDays(i),
                                 WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
-                                IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)maxDaysEditable)
+                                IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)maxDaysEditable),
+                                IsWeekend = model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Saturday
+                                || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday,
                                 //WorkerId = model.WorkerId,
                             });
                         }

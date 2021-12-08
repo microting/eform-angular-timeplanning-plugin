@@ -76,6 +76,10 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges {
 
   constructor() {}
 
+  getIsWeekend(workingHoursModel: FormGroup):boolean {
+    return workingHoursModel.get('isWeekend').value;
+  }
+
   ngOnInit(): void {
     // if (this.sub$) {
     //   this.sub$.unsubscribe();

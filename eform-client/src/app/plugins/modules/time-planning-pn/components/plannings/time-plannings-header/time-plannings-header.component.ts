@@ -23,13 +23,13 @@ export class TimePlanningsHeaderComponent implements OnInit {
 
   ngOnInit(): void {}
 
-  updateDateRange(range: Date[]) {
+  updateDateRange(range: any[]) {
     this.dateRange = range;
     if (this.siteId) {
       this.filtersChanged.emit({
         siteId: this.siteId,
-        dateFrom: format(range[0], PARSING_DATE_FORMAT),
-        dateTo: format(range[1], PARSING_DATE_FORMAT),
+        dateFrom: format(range[0]._d, PARSING_DATE_FORMAT),
+        dateTo: format(range[1]._d, PARSING_DATE_FORMAT),
       });
     }
   }
@@ -39,8 +39,8 @@ export class TimePlanningsHeaderComponent implements OnInit {
     if (this.dateRange) {
       this.filtersChanged.emit({
         siteId,
-        dateFrom: format(this.dateRange[0], PARSING_DATE_FORMAT),
-        dateTo: format(this.dateRange[1], PARSING_DATE_FORMAT),
+        dateFrom: format(this.dateRange[0]._d, PARSING_DATE_FORMAT),
+        dateTo: format(this.dateRange[1]._d, PARSING_DATE_FORMAT),
       });
     }
   }

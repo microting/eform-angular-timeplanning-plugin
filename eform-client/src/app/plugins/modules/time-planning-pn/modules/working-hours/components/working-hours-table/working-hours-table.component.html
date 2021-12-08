@@ -18,6 +18,7 @@
       >
         <tr
           working-hours-table-row
+          [class.background-yellow]="getIsWeekend(workingHoursForm)"
           [workingHoursForm]="workingHoursForm"
           [workingHoursFormIndex]="i"
         ></tr>

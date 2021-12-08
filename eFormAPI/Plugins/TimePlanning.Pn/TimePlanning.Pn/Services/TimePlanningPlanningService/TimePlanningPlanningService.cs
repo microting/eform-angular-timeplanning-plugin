@@ -158,6 +158,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                         PlanText = x.PlanText,
                         PlanHours = x.PlanHours,
                         Message = x.Message,
+                        IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
                     })
                     .ToList();
 

@@ -21,4 +21,5 @@ export class TimePlanningModel {
   commentOffice: string;
   commentOfficeAll: string;
   isLocked: boolean;
+  isWeekend: boolean;
 }
