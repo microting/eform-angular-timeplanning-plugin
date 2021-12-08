@@ -18,6 +18,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System.Globalization;
 using System.IO;
 using ClosedXML.Excel;
 using Microting.eForm.Infrastructure.Models;
@@ -79,7 +80,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var core = await _core.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var maxDaysEditable = _options.Value.MaxDaysEditable;
-
+                var language = await _userService.GetCurrentUserLanguage();
+                CultureInfo ci = new CultureInfo(language.LanguageCode);
                 List<(DateTime, string)> tupleValueList = new();
                 var site = await sdkDbContext.Sites
                     .Where(x => x.MicrotingUid == model.SiteId)

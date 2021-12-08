@@ -1,6 +1,6 @@
 <ng-container [formGroup]="workingHoursForm">
   <td id="workingHoursWeekDay">
-    {{ daysOfWeek[workingHoursForm.get('weekDay').value] }}
+    {{ daysOfWeek[workingHoursForm.get('weekDay').value] | translate }}
   </td>
   <td id="workingHoursDate">
     {{ workingHoursForm.get('date').value | date: dateFormat }}
