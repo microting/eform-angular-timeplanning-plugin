@@ -147,14 +147,14 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 var planRegistration = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date == model.Date)
-                    .Where(x => x.SdkSitId == model.Site.Id)
+                    .Where(x => x.SdkSitId == model.Worker.Id)
                     .FirstOrDefaultAsync();
 
                 if (planRegistration != null)
                 {
                     return await UpdatePlanning(planRegistration, model);
                 }
-                return await CreatePlanning(model, (int)model.Site.Id);
+                return await CreatePlanning(model, (int)model.Worker.Id);
             }
             catch (Exception e)
             {
