@@ -65,6 +65,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
     workingHours.map((x) => {
       this.workingHoursFormArray.push(
         new FormGroup({
+          isWeekend: new FormControl(x.isWeekend),
           isLocked: new FormControl(x.isLocked),
           workerName: new FormControl(x.workerName),
           weekDay: new FormControl(x.weekDay),
