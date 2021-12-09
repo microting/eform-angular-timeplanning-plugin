@@ -22,7 +22,6 @@
       mdbInput
       class="form-control"
       type="number"
-      step="0.01"
       id="paidOutFlex"
       (ngModelChange)="onPaidOutFlexChange($event)"
       [(ngModel)]="flexPlanning.paidOutFlex"
@@ -37,7 +36,7 @@
   id="timePlanningCommentWorker"
 >
   <div id="commentWorker">
-    {{ flexPlanning.commentWorker.slice(0, 20) }}
+    <span [innerHTML]="flexPlanning.commentWorker.slice(0, 20)"></span>
   </div>
 </td>
 <td
@@ -49,7 +48,7 @@
   [mdbPopoverHeader]="'Comment office' | translate"
 >
   <div id="commentOffice">
-    {{ flexPlanning.commentOffice.slice(0, 20) }}
+    <span [innerHTML]="flexPlanning.commentOffice.slice(0, 20)"></span>
   </div>
 </td>
 <td
@@ -61,7 +60,7 @@
   (click)="onCommentOfficeAllClick()"
 >
   <div id="commentOfficeAll">
-    {{ flexPlanning.commentOfficeAll.slice(0, 20) }}
+    <span [innerHTML]="flexPlanning.commentOfficeAll.slice(0, 20)"></span>
   </div>
 </td>
 <ng-template #popTemplateCommentAll>

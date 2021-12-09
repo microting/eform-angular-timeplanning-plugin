@@ -31,7 +31,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Flex.Update
     {
         public DateTime Date { get; set; }
 
-        public CommonDictionaryModel Site { get; set; }
+        public CommonDictionaryModel Worker { get; set; }
 
         public double SumFlex { get; set; }
 

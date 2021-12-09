@@ -1,6 +1,6 @@
 <ng-container [formGroup]="workingHoursForm">
   <td id="workingHoursWeekDay">
-    {{ daysOfWeek[workingHoursForm.get('weekDay').value] }}
+    {{ daysOfWeek[workingHoursForm.get('weekDay').value] | translate }}
   </td>
   <td id="workingHoursDate">
     {{ workingHoursForm.get('date').value | date: dateFormat }}
@@ -172,7 +172,7 @@
     placement="left"
     [mdbPopoverHeader]="'Comment worker' | translate"
   >
-    {{ commentWorker.slice(0, 20) }}
+    <span [innerHTML]="commentWorker.slice(0, 20)"></span>
   </td>
   <td
     id="workingHoursCommentOffice"
@@ -182,7 +182,7 @@
     [mdbPopoverHeader]="'Comment office' | translate"
     (click)="openEditCommentOfficeModal()"
   >
-    {{ commentOffice.slice(0, 20) }}
+    <span [innerHTML]="commentOffice.slice(0, 20)"></span>
   </td>
   <td
     id="workingHoursCommentOfficeAll"
@@ -192,7 +192,7 @@
     [mdbPopoverHeader]="'Comment office all' | translate"
     (click)="openEditCommentOfficeAllModal()"
   >
-    {{ commentOfficeAll.slice(0, 20) }}
+    <span [innerHTML]="commentOfficeAll.slice(0, 20)"></span>
   </td>
 </ng-container>
 
