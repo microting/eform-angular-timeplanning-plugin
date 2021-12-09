@@ -26,8 +26,8 @@
       <PackageReference Include="Magick.NET-Q16-x64" Version="8.4.0" />
       <PackageReference Include="Microting.eForm" Version="5.3.11" />
       <PackageReference Include="Microting.eFormApi.BasePn" Version="3.1.8" />
-      <PackageReference Include="Microting.TimePlanningBase" Version="2.0.8" />
       <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
+      <PackageReference Include="Microting.TimePlanningBase" Version="2.0.14" />
     </ItemGroup>
 
     <ItemGroup>
@@ -35,6 +35,14 @@
       <EmbeddedResource Include="Resources\localization.json" />
       <None Remove="Resources\eForms\01. Info eForm.xml" />
       <EmbeddedResource Include="Resources\eForms\01. Info eForm.xml" />
+      <EmbeddedResource Update="Resources\Translations.resx">
+        <Generator>ResXFileCodeGenerator</Generator>
+        <LastGenOutput>Translations.Designer.cs</LastGenOutput>
+      </EmbeddedResource>
+      <EmbeddedResource Update="Resources\Translations.da.resx">
+        <Generator>ResXFileCodeGenerator</Generator>
+        <LastGenOutput>Translations.da.Designer.cs</LastGenOutput>
+      </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>
