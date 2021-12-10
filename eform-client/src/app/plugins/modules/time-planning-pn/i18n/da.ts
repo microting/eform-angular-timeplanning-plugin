@@ -30,7 +30,13 @@ export const da = {
   Vacation: 'Ferie',
   Sick: 'Syg',
   Course: 'Kursus',
-  LeaveOfAbsence: 'Orlog',
+  LeaveOfAbsence: 'Orlov',
   Children1stSick: 'Barns 1. sygedag',
-  Children2stSick: 'Barns 2. sygedag'
+  Children2stSick: 'Barns 2. sygedag',
+  Worker: 'Medarbejder',
+  'Edit comment office': 'Rediger info kontor',
+  'Edit comment office all': 'Rediger info kontor alle',
+  'Comment worker': 'Info medarbejder',
+  'Comment office': 'Info kontor',
+  'Comment office all': 'Info kontor alle',
 };
