@@ -1,5 +1,31 @@
 # Changelog
 
+## [v1.0.3](https://github.com/microting/eform-angular-timeplanning-plugin/tree/v1.0.3) (2021-12-10)
+
+[Full Changelog](https://github.com/microting/eform-angular-timeplanning-plugin/compare/v1.0.2...v1.0.3)
+
+**Implemented enhancements:**
+
+- Bump Microting.TimePlanningBase from 2.0.14 to 2.0.15 [\#18](https://github.com/microting/eform-angular-timeplanning-plugin/issues/18)
+
+**Merged pull requests:**
+
+- Add headers table in table body on working hours page [\#13](https://github.com/microting/eform-angular-timeplanning-plugin/pull/13) ([sanioooook](https://github.com/sanioooook))
+- Updates [\#12](https://github.com/microting/eform-angular-timeplanning-plugin/pull/12) ([sanioooook](https://github.com/sanioooook))
+
+## [v1.0.2](https://github.com/microting/eform-angular-timeplanning-plugin/tree/v1.0.2) (2021-12-07)
+
+[Full Changelog](https://github.com/microting/eform-angular-timeplanning-plugin/compare/v1.0.1...v1.0.2)
+
+**Implemented enhancements:**
+
+- Bump Microting.TimePlanning from  to  [\#6](https://github.com/microting/eform-angular-timeplanning-plugin/issues/6)
+
+**Merged pull requests:**
+
+- Main [\#7](https://github.com/microting/eform-angular-timeplanning-plugin/pull/7) ([renemadsen](https://github.com/renemadsen))
+- Updated work with cases [\#3](https://github.com/microting/eform-angular-timeplanning-plugin/pull/3) ([Gid733](https://github.com/Gid733))
+
 ## [v1.0.1](https://github.com/microting/eform-angular-timeplanning-plugin/tree/v1.0.1) (2021-11-25)
 
 [Full Changelog](https://github.com/microting/eform-angular-timeplanning-plugin/compare/v1.0.0...v1.0.1)
