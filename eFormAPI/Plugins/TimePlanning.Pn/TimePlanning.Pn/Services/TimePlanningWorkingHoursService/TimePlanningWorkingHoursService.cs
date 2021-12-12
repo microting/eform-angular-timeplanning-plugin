@@ -270,19 +270,23 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
                 var eFormId = _options.Value.InfoeFormId;
 
-                var firstDate = model.Plannings.First().Date;
-                var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate
-                                                                         && x.SdkSitId == site.MicrotingUid)
-                    .OrderBy(x => x.Date).ToListAsync();
-                foreach (PlanRegistration planRegistration in list)
+                if (_options.Value.MaxHistoryDays != null)
                 {
+                    int maxHistoryDaysInd = (int)_options.Value.MaxHistoryDays;
+                    var firstDate = model.Plannings.First(x => x.Date >= DateTime.Now.AddDays(-maxHistoryDaysInd)).Date;
+                    var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate && x.Date <= DateTime.UtcNow
+                            && x.SdkSitId == site.MicrotingUid && x.StatusCaseId != 0)
+                        .OrderBy(x => x.Date).ToListAsync();
+                    foreach (PlanRegistration planRegistration in list)
+                    {
 
-                    Message _message =
-                        await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
-                    Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
-                    string messageText = _message != null ? _message.Name : "";
-                    planRegistration.StatusCaseId = await DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, messageText);
-                    await planRegistration.Update(_dbContext);
+                        Message _message =
+                            await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
+                        Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
+                        string messageText = _message != null ? _message.Name : "";
+                        planRegistration.StatusCaseId = await DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, messageText);
+                        await planRegistration.Update(_dbContext);
+                    }
                 }
 
                 return new OperationResult(
@@ -319,7 +323,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 }
                 var planRegistration = new PlanRegistration
                 {
-                    MessageId = model.Message,
+                    MessageId = model.Message == 0 ? null : model.Message,
                     PlanText = model.PlanText,
                     SdkSitId = sdkSiteId,
                     Date = model.Date,
@@ -355,7 +359,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         {
             try
             {
-                planRegistration.MessageId = model.Message;
+                planRegistration.MessageId = model.Message == 10 ? null : model.Message;
                 planRegistration.PlanText = model.PlanText;
                 planRegistration.Date = model.Date;
                 planRegistration.PlanHours = model.PlanHours;
