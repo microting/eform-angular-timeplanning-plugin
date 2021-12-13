@@ -30,11 +30,10 @@ export class TimeFlexesTableComponent implements OnInit {
   tableHeaders: TableHeaderElementModel[] = [
     { name: 'Date', sortable: false },
     { name: 'Worker', sortable: false },
-    { name: 'Sum flex', sortable: false },
-    { name: 'Paid out flex', sortable: false },
+    { name: 'SumFlex', sortable: false },
+    { name: 'PaidOutFlex', sortable: false },
     { name: 'Comment worker', sortable: false },
     { name: 'Comment office', sortable: false },
-    { name: 'Comment office all', sortable: false },
   ];
 
   constructor() {}
