@@ -20,8 +20,11 @@ SOFTWARE.
 
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using ClosedXML.Excel;
+using Microting.eForm.Dto;
 using Microting.eForm.Infrastructure.Models;
+using TimePlanning.Pn.Resources;
 
 namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 {
@@ -267,19 +270,23 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
                 var eFormId = _options.Value.InfoeFormId;
 
-                var firstDate = model.Plannings.First().Date;
-                var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate
-                                                                         && x.SdkSitId == site.MicrotingUid)
-                    .OrderBy(x => x.Date).ToListAsync();
-                foreach (PlanRegistration planRegistration in list)
+                if (_options.Value.MaxHistoryDays != null)
                 {
+                    int maxHistoryDaysInd = (int)_options.Value.MaxHistoryDays;
+                    var firstDate = model.Plannings.First(x => x.Date >= DateTime.Now.AddDays(-maxHistoryDaysInd)).Date;
+                    var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate && x.Date <= DateTime.UtcNow
+                            && x.SdkSitId == site.MicrotingUid && x.StatusCaseId != 0)
+                        .OrderBy(x => x.Date).ToListAsync();
+                    foreach (PlanRegistration planRegistration in list)
+                    {
 
-                    Message _message =
-                        await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
-                    Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
-                    string messageText = _message != null ? _message.Name : "";
-                    planRegistration.StatusCaseId = await planRegistration.DeployResults((int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, messageText);
-                    await planRegistration.Update(_dbContext);
+                        Message _message =
+                            await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
+                        Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
+                        string messageText = _message != null ? _message.Name : "";
+                        planRegistration.StatusCaseId = await DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, messageText);
+                        await planRegistration.Update(_dbContext);
+                    }
                 }
 
                 return new OperationResult(
@@ -316,7 +323,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 }
                 var planRegistration = new PlanRegistration
                 {
-                    MessageId = model.Message,
+                    MessageId = model.Message == 0 ? null : model.Message,
                     PlanText = model.PlanText,
                     SdkSitId = sdkSiteId,
                     Date = model.Date,
@@ -338,40 +345,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 };
 
                 await planRegistration.Create(_dbContext);
-
-                // var core = await _core.GetCore();
-                // await using var sdkDbContext = core.DbContextHelper.GetDbContext();
-
-                // var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
-                // var eFormId = _options.Value.InfoeFormId;
-                // if (eFormId != null)
-                // {
-                    // var siteInfo = await sdkDbContext.Sites
-                    //     .Where(x => x.MicrotingUid == microtingUid)
-                    //     .Select(x => new
-                    //     {
-                    //         x.Id,
-                    //         x.MicrotingUid,
-                    //         x.LanguageId,
-                    //     })
-                    //     .FirstOrDefaultAsync();
-
-                    // var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
-                    // if (planRegistration.Pause1Id != 0 || planRegistration.Pause2Id != 0
-                    //                                    || planRegistration.Start1Id != 0 || planRegistration.Start2Id != 0
-                    //                                    || planRegistration.Stop1Id != 0 || planRegistration.Stop2Id != 0)
-                    // {
-                    //
-                    //
-                    // }
-/*                    var fieldIds = await sdkDbContext.Fields
-                        .Where(x => x.CheckListId == eFormId)
-                        .Select(x => x.Id)
-                        .ToListAsync();*/
-                    // var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
-                    // var newMicrotingUid = await core.CaseCreate(mainElement, "", microtingUid, folderId);
-                // }
-
             }
             catch (Exception e)
             {
@@ -386,7 +359,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         {
             try
             {
-                planRegistration.MessageId = model.Message;
+                planRegistration.MessageId = model.Message == 10 ? null : model.Message;
                 planRegistration.PlanText = model.PlanText;
                 planRegistration.Date = model.Date;
                 planRegistration.PlanHours = model.PlanHours;
@@ -405,75 +378,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.SumFlex = model.SumFlex;
 
                 await planRegistration.Update(_dbContext);
-
-                var core = await _core.GetCore();
-                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
-
-                var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
-
-                if (planRegistration.Pause1Id != 0 || planRegistration.Pause2Id != 0
-                                                   || planRegistration.Start1Id != 0 || planRegistration.Start2Id != 0
-                                                   || planRegistration.Stop1Id != 0 || planRegistration.Stop2Id != 0)
-                {
-
-                }
-                // var eFormId = _options.Value.EformId == 0 ? null : _options.Value.EformId + 1;
-                //
-                // if (eFormId != null)
-                // {
-                //     var siteInfo = await sdkDbContext.Sites
-                //         .Where(x => x.MicrotingUid == microtingUid)
-                //         .Select(x => new
-                //         {
-                //             x.Id,
-                //             x.LanguageId,
-                //         })
-                //         .FirstOrDefaultAsync();
-                //
-                //     var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
-                //
-                //     var possibleCases = await sdkDbContext.Cases
-                //         .Where(x => x.SiteId == siteInfo.Id && x.CheckListId == eFormId - 1)
-                //         .Select(x => x.Id)
-                //         .ToListAsync();
-                //
-                //     var requiredCaseIds = await sdkDbContext.FieldValues
-                //         .Include(x => x.Field)
-                //         .ThenInclude(x => x.FieldType)
-                //         .Where(x => x.CheckListId == eFormId
-                //                     && possibleCases.Contains(x.CaseId.Value))
-                //         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                //         .Where(x => model.Date.ToString("yyyy-MM-dd") == x.Value && x.Field.FieldType.Type == Constants.FieldTypes.Date)
-                //         .OrderBy(x => x.CaseId)
-                //         .Select(x => x.CaseId)
-                //         .ToListAsync();
-                //
-                //     var fieldValuesSdk = await sdkDbContext.FieldValues
-                //         .Where(x => x.CheckListId == eFormId)
-                //         .Include(x => x.Field)
-                //         .ThenInclude(x => x.FieldType)
-                //         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                //         .Where(x => requiredCaseIds.Contains(x.CaseId.Value))
-                //         .OrderBy(x => x.CaseId)
-                //         .ThenBy(x => x.Id)
-                //         .ToListAsync();
-                //
-                //     for (var i = 0; i < fieldValuesSdk.Count; i += 11)
-                //     {
-                //         if (fieldValuesSdk[i].CaseId != null)
-                //         {
-                //             var caseDto = await core.CaseLookupCaseId(fieldValuesSdk[i].CaseId.Value);
-                //             if (caseDto.MicrotingUId != null)
-                //             {
-                //                 await core.CaseDelete(caseDto.MicrotingUId.Value);
-                //             }
-                //         }
-                //     }
-                //
-                //     var mainElement = await core.ReadeForm(eFormId.Value - 1, language);
-                //     await core.CaseCreate(mainElement, "", microtingUid, folderId);
-                // }
-
             }
             catch (Exception e)
             {
@@ -490,6 +394,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var core = await _coreHelper.GetCore();
                 var sdkContext = core.DbContextHelper.GetDbContext();
                 Site site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
+                var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
+                CultureInfo ci = new CultureInfo(language.LanguageCode);
 
                 Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
 
@@ -507,61 +415,61 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 int x = 0;
                 int y = 0;
 
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Worker");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Worker);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Day of week");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.DayOfWeek);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Date");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Date);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Plan text");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.PlanText);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Plan hours");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.PlanHours);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 1 start");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_1__start);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 1 stop");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_1__end);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 1 pause");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_1__pause);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 2 start");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_2__start);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 2 stop");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_2__end);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Shift 2 pause");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_2__pause);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Netto hours");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.NettoHours);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Flex");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Flex);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Sum flex");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.SumFlex);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Paid out flex");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.PaidOutFlex);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Message");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Message);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Comment worker");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comments);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Comment office");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString("Comment office all");
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office_all);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
 
@@ -575,12 +483,24 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                     foreach (TimePlanningWorkingHoursModel timePlanningWorkingHoursModel in rows)
                     {
+                        Message theMessage =
+                            await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == timePlanningWorkingHoursModel.Message);
+                        string messageText = theMessage != null ? theMessage.EnName : "";
+                        switch (language.LanguageCode)
+                        {
+                            case "da":
+                                messageText = theMessage != null ? theMessage.DaName : "";
+                                break;
+                            case "de":
+                                messageText = theMessage != null ? theMessage.DeName : "";
+                                break;
+                        }
                         x++;
                         y = 0;
 
                         worksheet.Cell(x + 1, y + 1).Value = site.Name;
                         y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date.DayOfWeek.ToString();
+                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date.ToString("dddd", ci);
                         y++;
                         worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
                         y++;
@@ -608,7 +528,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         y++;
                         worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
                         y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Message;
+                        worksheet.Cell(x + 1, y + 1).Value = messageText;
                         y++;
                         worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker;
                         y++;
@@ -631,6 +551,63 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     false,
                     _localizationService.GetString("ErrorWhileCreatingWordFile"));
             }
+        }
+
+        private async Task<int> DeployResults(PlanRegistration planRegistration, int maxHistoryDays, int eFormId, eFormCore.Core core, Site siteInfo, int folderId, string messageText)
+        {
+            if (planRegistration.StatusCaseId != 0)
+            {
+                    await core.CaseDelete(planRegistration.StatusCaseId);
+            }
+            await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+            var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
+            var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);
+            var mainElement = await core.ReadeForm(eFormId, language);
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
+            CultureInfo ci = new CultureInfo(language.LanguageCode);
+            mainElement.Label = planRegistration.Date.ToString("dddd dd. MMM yyyy", ci);
+            mainElement.EndDate = DateTime.UtcNow.AddDays(maxHistoryDays);
+            DateTime startDate = new DateTime(2020, 1, 1);
+            mainElement.DisplayOrder = (startDate - planRegistration.Date).Days;
+            DataElement element = (DataElement)mainElement.ElementList.First();
+            element.Label = mainElement.Label;
+            element.DoneButtonEnabled = false;
+            CDataValue cDataValue = new CDataValue
+            {
+                InderValue = $"<strong>{Translations.NettoHours}: {planRegistration.NettoHours:0.00}</strong><br/>" +
+                             $"{messageText}"
+            };
+            element.Description = cDataValue;
+            DataItem dataItem = element.DataItemList.First();
+            dataItem.Color = Constants.FieldColors.Yellow;
+            dataItem.Label = $"<strong>{Translations.Date}: {planRegistration.Date.ToString("dddd dd. MMM yyyy", ci)}</strong>";
+            cDataValue = new CDataValue
+            {
+                InderValue = $"{Translations.PlanText}: {planRegistration.PlanText}<br/>"+
+                             $"{Translations.PlanHours}: {planRegistration.PlanHours}<br/><br/>" +
+                             $"{Translations.Shift_1__start}: {planRegistration.Options[planRegistration.Start1Id > 0 ? planRegistration.Start1Id - 1 : 0]}<br/>" +
+                             $"{Translations.Shift_1__pause}: {planRegistration.Options[planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0]}<br/>" +
+                             $"{Translations.Shift_1__end}: {planRegistration.Options[planRegistration.Stop1Id > 0 ? planRegistration.Stop1Id - 1 : 0]}<br/><br/>" +
+                             $"{Translations.Shift_2__start}: {planRegistration.Options[planRegistration.Start2Id > 0 ? planRegistration.Start2Id - 1 : 0]}<br/>" +
+                             $"{Translations.Shift_2__pause}: {planRegistration.Options[planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0]}<br/>" +
+                             $"{Translations.Shift_2__end}: {planRegistration.Options[planRegistration.Stop2Id > 0 ? planRegistration.Stop2Id - 1 : 0]}<br/><br/>" +
+                             $"<strong>{Translations.NettoHours}: {planRegistration.NettoHours:0.00}</strong><br/><br/>" +
+                             $"{Translations.Flex}: {planRegistration.Flex:0.00}<br/>" +
+                             $"{Translations.SumFlex}: {planRegistration.SumFlex:0.00}<br/>" +
+                             $"{Translations.PaidOutFlex}: {planRegistration.PaiedOutFlex:0.00}<br/><br/>" +
+                             $"{Translations.Message}: {messageText}<br/><br/>"+
+                             $"<strong>{Translations.Comments}:</strong><br/>" +
+                             $"{planRegistration.WorkerComment}<br/><br/>" +
+                             $"<strong>{Translations.Comment_office}:</strong><br/>" +
+                             $"{planRegistration.CommentOffice}<br/><br/>" +
+                             $"<strong>{Translations.Comment_office_all}:</strong><br/>" +
+                             $"{planRegistration.CommentOffice}<br/>"
+            };
+            dataItem.Description = cDataValue;
+
+            if (folder != null) mainElement.CheckListFolderName = folder.MicrotingUid.ToString();
+
+            return (int)await core.CaseCreate(mainElement, "", (int)siteInfo.MicrotingUid, folderId);
         }
     }
 }

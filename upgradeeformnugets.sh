@@ -7,7 +7,7 @@ if (( "$GIT_STATUS" > 0 )); then
 	cd eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn
   CURRENT_NUMBER_OF_COMMITS=`git log --oneline | wc -l`
 
-	PACKAGES=('Microting.eForm' 'Microting.eFormApi.BasePn' 'Microting.TimePlanning' 'Magick.NET-Q16-x64')
+	PACKAGES=('Microting.eForm' 'Microting.eFormApi.BasePn' 'Microting.TimePlanningBase' 'Magick.NET-Q16-x64')
 	PROJECT_NAME='TimePlanning.Pn.csproj'
 	REPOSITORY='eform-angular-timeplanning-plugin'
 
