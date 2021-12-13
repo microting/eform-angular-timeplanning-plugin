@@ -60,5 +60,10 @@ export class TimeFlexesContainerComponent implements OnInit, OnDestroy {
       });
   }
 
+  resetFlexPlanning(){
+    this.flexesForUpdate = [];
+    this.getPlannings();
+  }
+
   ngOnDestroy(): void {}
 }
