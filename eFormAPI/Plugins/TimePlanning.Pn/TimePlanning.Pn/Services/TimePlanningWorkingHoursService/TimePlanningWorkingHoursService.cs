@@ -612,9 +612,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                              $"<strong>{Translations.Comments}:</strong><br/>" +
                              $"{planRegistration.WorkerComment}<br/><br/>" +
                              $"<strong>{Translations.Comment_office}:</strong><br/>" +
-                             $"{planRegistration.CommentOffice}<br/><br/>" +
-                             $"<strong>{Translations.Comment_office_all}:</strong><br/>" +
-                             $"{planRegistration.CommentOffice}<br/>"
+                             $"{planRegistration.CommentOffice}<br/><br/>" // +
+                             // $"<strong>{Translations.Comment_office_all}:</strong><br/>" +
+                             // $"{planRegistration.CommentOffice}<br/>"
             };
             dataItem.Description = cDataValue;
 
