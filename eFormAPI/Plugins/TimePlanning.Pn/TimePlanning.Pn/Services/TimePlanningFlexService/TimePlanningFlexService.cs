@@ -140,21 +140,29 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             }
         }
 
-        public async Task<OperationResult> UpdateCreate(TimePlanningFlexUpdateModel model)
+        public async Task<OperationResult> UpdateCreate(List<TimePlanningFlexUpdateModel> model)
         {
             try
             {
-                var planRegistration = await _dbContext.PlanRegistrations
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Date == model.Date)
-                    .Where(x => x.SdkSitId == model.Worker.Id)
-                    .FirstOrDefaultAsync();
-
-                if (planRegistration != null)
+                foreach (var updateModel in model)
                 {
-                    return await UpdatePlanning(planRegistration, model);
+                    var planRegistration = await _dbContext.PlanRegistrations
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Date == updateModel.Date)
+                        .Where(x => x.SdkSitId == updateModel.Worker.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (planRegistration != null)
+                    {
+                        await UpdatePlanning(planRegistration, updateModel);
+                    }
+
+                    await CreatePlanning(updateModel, (int)updateModel.Worker.Id);
                 }
-                return await CreatePlanning(model, (int)model.Worker.Id);
+
+                return new OperationResult(
+                    true,
+                    _localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
             }
             catch (Exception e)
             {
@@ -166,62 +174,33 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             }
         }
 
-        private async Task<OperationResult> CreatePlanning(TimePlanningFlexUpdateModel model, int sdkSiteId)
+        private async Task CreatePlanning(TimePlanningFlexUpdateModel model, int sdkSiteId)
         {
-            try
+            var planning = new PlanRegistration
             {
-                var planning = new PlanRegistration
-                {
-                    CommentOffice = model.CommentOffice,
-                    CommentOfficeAll = model.CommentOfficeAll,
-                    SdkSitId = sdkSiteId,
-                    Date = model.Date,
-                    SumFlex = model.SumFlex,
-                    PaiedOutFlex = model.PaidOutFlex,
-                    CreatedByUserId = _userService.UserId,
-                    UpdatedByUserId = _userService.UserId,
-                };
+                CommentOffice = model.CommentOffice,
+                CommentOfficeAll = model.CommentOfficeAll,
+                SdkSitId = sdkSiteId,
+                Date = model.Date,
+                SumFlex = model.SumFlex,
+                PaiedOutFlex = model.PaidOutFlex,
+                CreatedByUserId = _userService.UserId,
+                UpdatedByUserId = _userService.UserId,
+            };
 
-                await planning.Create(_dbContext);
-
-                return new OperationResult(
-                    true,
-                    _localizationService.GetString("SuccessfullyCreatePlanning"));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
-                return new OperationResult(
-                    false,
-                    _localizationService.GetString("ErrorWhileCreatePlanning"));
-            }
+            await planning.Create(_dbContext);
         }
 
-        private async Task<OperationResult> UpdatePlanning(PlanRegistration planRegistration, TimePlanningFlexUpdateModel model)
+        private async Task UpdatePlanning(PlanRegistration planRegistration,
+            TimePlanningFlexUpdateModel model)
         {
-            try
-            {
-                planRegistration.CommentOfficeAll = model.CommentOfficeAll;
-                planRegistration.CommentOffice = model.CommentOffice;
-                planRegistration.PaiedOutFlex = model.PaidOutFlex;
-                planRegistration.SumFlex = model.SumFlex;
-                planRegistration.UpdatedByUserId = _userService.UserId;
+            planRegistration.CommentOfficeAll = model.CommentOfficeAll;
+            planRegistration.CommentOffice = model.CommentOffice;
+            planRegistration.PaiedOutFlex = model.PaidOutFlex;
+            planRegistration.SumFlex = model.SumFlex;
+            planRegistration.UpdatedByUserId = _userService.UserId;
 
-                await planRegistration.Update(_dbContext);
-
-                return new OperationResult(
-                    true,
-                    _localizationService.GetString("SuccessfullyUpdatePlanning"));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
-                return new OperationResult(
-                    false,
-                    _localizationService.GetString("ErrorWhileUpdatePlanning"));
-            }
+            await planRegistration.Update(_dbContext);
         }
     }
 }
