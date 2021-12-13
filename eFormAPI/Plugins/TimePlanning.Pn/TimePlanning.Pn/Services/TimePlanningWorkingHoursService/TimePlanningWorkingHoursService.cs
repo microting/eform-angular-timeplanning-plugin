@@ -178,8 +178,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         SumFlex = Math.Round(x.SumFlex,2),
                         PaidOutFlex = x.PaiedOutFlex,
                         Message = x.MessageId,
-                        CommentWorker = x.WorkerComment,
-                        CommentOffice = x.CommentOffice,
+                        CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
+                        CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
                         CommentOfficeAll = x.CommentOfficeAll,
                         IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable),
                         IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
@@ -266,6 +266,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var core = await _core.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
+                var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
                 var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
                 var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
                 var eFormId = _options.Value.InfoeFormId;
@@ -283,8 +284,20 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         Message _message =
                             await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
                         Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
-                        string messageText = _message != null ? _message.Name : "";
-                        planRegistration.StatusCaseId = await DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, messageText);
+                        string theMessage;
+                        switch (language.LanguageCode)
+                        {
+                            case "da":
+                                theMessage = _message != null ? _message.DaName : "";
+                                break;
+                            case "de":
+                                theMessage = _message != null ? _message.DeName : "";
+                                break;
+                            default:
+                                theMessage = _message != null ? _message.EnName : "";
+                                break;
+                        }
+                        planRegistration.StatusCaseId = await DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, theMessage);
                         await planRegistration.Update(_dbContext);
                     }
                 }
@@ -599,9 +612,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                              $"<strong>{Translations.Comments}:</strong><br/>" +
                              $"{planRegistration.WorkerComment}<br/><br/>" +
                              $"<strong>{Translations.Comment_office}:</strong><br/>" +
-                             $"{planRegistration.CommentOffice}<br/><br/>" +
-                             $"<strong>{Translations.Comment_office_all}:</strong><br/>" +
-                             $"{planRegistration.CommentOffice}<br/>"
+                             $"{planRegistration.CommentOffice}<br/><br/>" // +
+                             // $"<strong>{Translations.Comment_office_all}:</strong><br/>" +
+                             // $"{planRegistration.CommentOffice}<br/>"
             };
             dataItem.Description = cDataValue;
 

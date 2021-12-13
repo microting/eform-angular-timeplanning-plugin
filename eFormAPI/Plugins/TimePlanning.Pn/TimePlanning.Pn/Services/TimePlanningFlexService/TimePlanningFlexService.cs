@@ -120,8 +120,8 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                         },
                         SumFlex = planRegistration.SumFlex,
                         PaidOutFlex = planRegistration.PaiedOutFlex,
-                        CommentWorker = planRegistration.WorkerComment ?? "",
-                        CommentOffice = planRegistration.CommentOffice ?? "",
+                        CommentWorker = planRegistration.WorkerComment.Replace("\r", "<br />") ?? "",
+                        CommentOffice = planRegistration.CommentOffice.Replace("\r", "<br />") ?? "",
                         CommentOfficeAll = planRegistration.CommentOfficeAll ?? "",
                     });
                 }

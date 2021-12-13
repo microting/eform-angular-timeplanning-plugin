@@ -71,7 +71,7 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges {
     { name: 'Message', elementId: 'messageTableHeader', sortable: false },
     { name: 'CommentWorker', elementId: 'flexTableHeader', sortable: false },
     { name: 'CommentOffice', elementId: 'flexTableHeader', sortable: false },
-    { name: 'CommentOfficeAll', elementId: 'flexTableHeader', sortable: false },
+    // { name: 'CommentOfficeAll', elementId: 'flexTableHeader', sortable: false },
   ];
 
   constructor() {}
