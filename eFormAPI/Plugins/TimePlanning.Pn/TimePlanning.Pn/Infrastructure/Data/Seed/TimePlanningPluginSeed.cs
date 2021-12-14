@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+
 namespace TimePlanning.Pn.Infrastructure.Data.Seed
 {
     using System;
@@ -68,8 +70,20 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed
                     WorkflowState = Constants.WorkflowStates.Created,
                     CreatedByUserId = 1
                 });
-            
+
             dbContext.PluginPermissions.AddRange(newPermissions);
+
+            dbContext.SaveChanges();
+
+            var seedMessages = new TimePlanningSeedMessages();
+
+            foreach (Message message in seedMessages.Data)
+            {
+                if (!dbContext.Messages.Any(x => x.Name == message.Name))
+                {
+                    dbContext.Messages.Add(message);
+                }
+            }
 
             dbContext.SaveChanges();
         }
