@@ -608,7 +608,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                              $"{Translations.Flex}: {planRegistration.Flex:0.00}<br/>" +
                              $"{Translations.SumFlex}: {planRegistration.SumFlex:0.00}<br/>" +
                              $"{Translations.PaidOutFlex}: {planRegistration.PaiedOutFlex:0.00}<br/><br/>" +
-                             $"{Translations.Message}: {messageText}<br/><br/>"+
+                             $"<strong>{Translations.Message}:</strong><br/>" +
+                             $"{messageText}<br/><br/>"+
                              $"<strong>{Translations.Comments}:</strong><br/>" +
                              $"{planRegistration.WorkerComment}<br/><br/>" +
                              $"<strong>{Translations.Comment_office}:</strong><br/>" +
