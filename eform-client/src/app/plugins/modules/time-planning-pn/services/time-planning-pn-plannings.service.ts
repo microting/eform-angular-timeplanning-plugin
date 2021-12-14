@@ -64,7 +64,7 @@ export class TimePlanningPnPlanningsService {
     return this.apiBaseService.get(TimePlanningPnPlanningsMethods.IndexFlex);
   }
 
-  updateFlexes(model: TimeFlexesUpdateModel): Observable<OperationResult> {
+  updateFlexes(model: TimeFlexesUpdateModel[]): Observable<OperationResult> {
     return this.apiBaseService.put(TimePlanningPnPlanningsMethods.Flex, model);
   }
 }

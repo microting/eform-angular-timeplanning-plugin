@@ -36,6 +36,6 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
     {
         Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index();
 
-        Task<OperationResult> UpdateCreate(TimePlanningFlexUpdateModel model);
+        Task<OperationResult> UpdateCreate(List<TimePlanningFlexUpdateModel> model);
     }
 }

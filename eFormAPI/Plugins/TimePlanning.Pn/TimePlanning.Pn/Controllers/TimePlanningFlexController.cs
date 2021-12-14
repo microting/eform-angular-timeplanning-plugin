@@ -46,7 +46,7 @@ namespace TimePlanning.Pn.Controllers
         }
 
         [HttpPut]
-        public async Task<OperationResult> Update([FromBody]TimePlanningFlexUpdateModel model)
+        public async Task<OperationResult> Update([FromBody]List<TimePlanningFlexUpdateModel> model)
         {
             return await _flexService.UpdateCreate(model);
         }
