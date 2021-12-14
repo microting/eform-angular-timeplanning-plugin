@@ -10,7 +10,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             {
                 Id = 1,
                 Name = "DayOff",
-                DaName = "Fri",
+                DaName = "Fridag",
                 EnName = "Day off",
                 DeName = "Freier Tag",
             },
