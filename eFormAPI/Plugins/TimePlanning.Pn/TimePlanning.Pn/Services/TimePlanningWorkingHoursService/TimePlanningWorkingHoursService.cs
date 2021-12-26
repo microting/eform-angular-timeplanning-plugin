@@ -93,17 +93,17 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         x.Id,
                         x.Name,
                     })
-                    .FirstOrDefaultAsync();
+                    .FirstAsync();
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    // .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == model.SiteId);
 
                 // two dates may be displayed instead of one if the same date is selected.
                 if (model.DateFrom == model.DateTo)
                 {
                     timePlanningRequest = timePlanningRequest
-                        .Where(x => x.Date == model.DateFrom);
+                        .Where(x => x.Date >= model.DateFrom);
                 }
                 else
                 {
@@ -132,30 +132,55 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         Message = x.MessageId,
                         CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
                         CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
-                        CommentOfficeAll = x.CommentOfficeAll,
+                        // CommentOfficeAll = x.CommentOfficeAll,
                         IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable),
                         IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
                     })
                     .ToListAsync();
 
-                var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
+                var totalDays = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
                 double sumFlex = 0;
-                if (timePlannings.Count == 0)
-                {
-                    var lastPlanning = _dbContext.PlanRegistrations
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => x.SdkSitId == model.SiteId).OrderBy(x => x.Date).LastOrDefault();
-                    if (lastPlanning != null)
-                    {
-                        sumFlex = lastPlanning.SumFlex;
-                    }
-                }
+                var lastPlanning = _dbContext.PlanRegistrations
+                    // .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Date < model.DateFrom)
+                    .Where(x => x.SdkSitId == model.SiteId).OrderBy(x => x.Date).LastOrDefault();
 
-                if (timePlannings.Count < date)
+                var prePlanning = new TimePlanningWorkingHoursModel
+                {
+                    WorkerName = site.Name,
+                    WeekDay = lastPlanning != null ? (int)lastPlanning.Date.DayOfWeek : (int)model.DateFrom.AddDays(-1).DayOfWeek,
+                    Date = lastPlanning?.Date ?? model.DateFrom.AddDays(-1),
+                    PlanText = lastPlanning?.PlanText,
+                    PlanHours = lastPlanning?.PlanHours ?? 0,
+                    Shift1Start = lastPlanning?.Start1Id,
+                    Shift1Stop = lastPlanning?.Stop1Id,
+                    Shift1Pause = lastPlanning?.Pause1Id,
+                    Shift2Start = lastPlanning?.Start2Id,
+                    Shift2Stop = lastPlanning?.Stop2Id,
+                    Shift2Pause = lastPlanning?.Pause2Id,
+                    NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0 ,2),
+                    FlexHours = Math.Round(lastPlanning?.Flex ?? 0 ,2),
+                    SumFlex = lastPlanning?.SumFlex ?? 0,
+                    PaidOutFlex = lastPlanning?.PaiedOutFlex ?? 0,
+                    Message = lastPlanning?.MessageId,
+                    CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
+                    CommentOffice = lastPlanning?.CommentOffice?.Replace("\r", "<br />"),
+                    IsLocked = true,
+                    IsWeekend = lastPlanning != null
+                        ? lastPlanning.Date.DayOfWeek == DayOfWeek.Saturday ||
+                          lastPlanning.Date.DayOfWeek == DayOfWeek.Sunday
+                        : model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Saturday ||
+                          model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Sunday,
+                };
+                sumFlex += lastPlanning?.SumFlex ?? 0 ;
+
+                timePlannings.Add(prePlanning);
+
+                if (timePlannings.Count - 1 < totalDays)
                 {
                     var timePlanningForAdd = new List<TimePlanningWorkingHoursModel>();
-                    for (var i = 0; i < date; i++)
+                    for (var i = 0; i < totalDays; i++)
                     {
                         if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
                         {
@@ -201,7 +226,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             try
             {
                 var planRegistrations = await _dbContext.PlanRegistrations
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    // .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == model.SiteId)
                     .ToListAsync();
                 foreach (var planning in model.Plannings)
@@ -223,6 +248,25 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
                 var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
                 var eFormId = _options.Value.InfoeFormId;
+
+                var lastDate = model.Plannings.Last().Date;
+                var allPlannings = await _dbContext.PlanRegistrations
+                    .Where(x => x.Date >= lastDate)
+                    .Where(x => x.SdkSitId == site.MicrotingUid)
+                    .OrderBy(x => x.Date).ToListAsync();
+
+                double preSumFlex = allPlannings.Any() ? allPlannings.First().SumFlex : 0;
+
+                foreach (PlanRegistration planRegistration in allPlannings)
+                {
+                    if (planRegistration.Date > lastDate)
+                    {
+                        planRegistration.SumFlex = preSumFlex + planRegistration.Flex;
+                        preSumFlex = planRegistration.SumFlex;
+                        await planRegistration.Update(_dbContext);
+                    }
+
+                }
 
                 if (_options.Value.MaxHistoryDays != null)
                 {
@@ -273,20 +317,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         {
             try
             {
-                if (model.PlanHours == 0 && string.IsNullOrEmpty(model.PlanText)
-                                         && string.IsNullOrEmpty(model.CommentWorker)
-                                         && string.IsNullOrEmpty(model.CommentOffice)
-                                         && string.IsNullOrEmpty(model.CommentOfficeAll)
-                                         && model.Shift1Start == null
-                                         && model.Shift1Stop == null
-                                         && model.Shift2Start == null
-                                         && model.Shift2Stop == null
-                                         && model.Shift1Pause == null
-                                         && model.Shift2Pause == null
-                                         )
-                {
-                    return;
-                }
                 var planRegistration = new PlanRegistration
                 {
                     MessageId = model.Message == 0 ? null : model.Message,
@@ -308,6 +338,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Stop2Id = model.Shift2Stop ?? 0,
                     Flex = model.FlexHours,
                     SumFlex = model.SumFlex,
+                    StatusCaseId = 0
                 };
 
                 await planRegistration.Create(_dbContext);

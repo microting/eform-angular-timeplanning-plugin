@@ -1,5 +1,29 @@
 [
   {
+    "Key": "SuccessfullyCreateOrUpdatePlanning",
+    "LocalizedValue": {
+      "da": "Planlægningen er gemt",
+      "de": "Der Zeitplan ist gespeichert",
+      "en-US": "Planning saved"
+    }
+  },
+  {
+    "Key": "ErrorWhileCreateUpdatePlannings",
+    "LocalizedValue": {
+      "da": "Fejl under oprettelse/opdatering af planlægning",
+      "de": "Fehler beim Speichern des Zeitplans",
+      "en-US": "Error while creating/updating planning"
+    }
+  },
+  {
+    "Key": "ErrorWhileObtainingPlannings",
+    "LocalizedValue": {
+      "da": "Fejl under hentning af planlægning",
+      "de": "Fehler beim Laden des Zeitplans",
+      "en-US": "Error while obtaining planning"
+    }
+  },
+  {
     "Key": "",
     "LocalizedValue": {
       "da": "",
