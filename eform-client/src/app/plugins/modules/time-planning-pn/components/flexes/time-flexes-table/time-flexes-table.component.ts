@@ -32,7 +32,7 @@ export class TimeFlexesTableComponent implements OnInit {
     { name: 'Worker', sortable: false },
     { name: 'SumFlex', sortable: false },
     { name: 'PaidOutFlex', sortable: false },
-    { name: 'Comment worker', sortable: false },
+    // { name: 'Comment worker', sortable: false },
     { name: 'Comment office', sortable: false },
   ];
 

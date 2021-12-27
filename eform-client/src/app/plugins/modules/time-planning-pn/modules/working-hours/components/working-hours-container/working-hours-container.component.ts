@@ -103,7 +103,6 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
           ),
         })
       );
-      this.recalculateSumFlex(true);
     });
 
     if (this.workingHoursGroupSub$.length > 0) {
@@ -112,17 +111,16 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
       }
     }
     if (this.workingHoursFormArray.length > 0) {
+      let i = 0;
       for (const group of this.workingHoursFormArray.controls) {
-        this.workingHoursGroupSub$.push(
-          group.get('flexHours').valueChanges.subscribe(() => {
-            this.recalculateSumFlex();
-          })
-        );
-        this.workingHoursGroupSub$.push(
-          group.get('paidOutFlex').valueChanges.subscribe(() => {
-            this.recalculateSumFlex();
-          })
-        );
+        if (i > 0) {
+          this.workingHoursGroupSub$.push(
+            group.get('flexHours').valueChanges.subscribe(() => {
+              this.recalculateSumFlex();
+            })
+          );
+        }
+        i++;
       }
     }
   }
@@ -140,10 +138,6 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
       })
       .subscribe((data) => {
         this.tainted = false;
-        // TODO: REMOVE
-        // if (data && data.success) {
-        //   this.getWorkingHours(this.workingHoursRequest);
-        // }
       });
   }
 
@@ -151,14 +145,18 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
     this.tainted = true;
     let sumFlex = 0;
     for (const formGroup of this.workingHoursFormArray.controls) {
-      const flexHours = formGroup.get('flexHours').value;
-      const paidOutFlex = formGroup.get('paidOutFlex').value;
-      if (initialize) {
-         sumFlex = formGroup.get('sumFlex').value;
+      if (!formGroup.disabled) {
+        const flexHours = formGroup.get('flexHours').value;
+        const paidOutFlex = formGroup.get('paidOutFlex').value;
+        if (initialize) {
+          sumFlex = formGroup.get('sumFlex').value;
+        } else {
+          sumFlex =
+            sumFlex + (flexHours ? flexHours : 0) - (paidOutFlex ? paidOutFlex : 0);
+          formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
+        }
       } else {
-        sumFlex =
-          sumFlex + (flexHours ? flexHours : 0) - (paidOutFlex ? paidOutFlex : 0);
-        formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
+        sumFlex = formGroup.get('sumFlex').value;
       }
     }
     if (initialize) {

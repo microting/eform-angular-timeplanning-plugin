@@ -22,6 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
+using TimePlanning.Pn.Helpers;
+using TimePlanning.Pn.Infrastructure.Models.Settings;
+
 namespace TimePlanning.Pn.Services.TimePlanningFlexService
 {
     using System;
@@ -46,6 +50,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
     public class TimePlanningFlexService : ITimePlanningFlexService
     {
         private readonly ILogger<TimePlanningFlexService> _logger;
+        private readonly IPluginDbOptions<TimePlanningBaseSettings> _options;
         private readonly TimePlanningPnDbContext _dbContext;
         private readonly IUserService _userService;
         private readonly ITimePlanningLocalizationService _localizationService;
@@ -56,13 +61,14 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             TimePlanningPnDbContext dbContext,
             IUserService userService,
             ITimePlanningLocalizationService localizationService,
-            IEFormCoreService core)
+            IEFormCoreService core, IPluginDbOptions<TimePlanningBaseSettings> options)
         {
             _logger = logger;
             _dbContext = dbContext;
             _userService = userService;
             _localizationService = localizationService;
             _core = core;
+            _options = options;
         }
 
         public async Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index()
@@ -81,28 +87,30 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 {
                     var r = await _dbContext.PlanRegistrations
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => x.Date < DateTime.UtcNow.AddDays(-1).Date)
+                        .Where(x => x.Date < DateTime.Now.Date)
                         .Where(x => x.SdkSitId == listSiteId)
                         .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
 
-                    planRegistrations.Add(r);
+                    if (r != null)
+                    {
+                        if (r.Date == DateTime.Now.AddDays(-1).Date)
+                        {
+                            planRegistrations.Add(r);
+                        }
+                        else
+                        {
+                            PlanRegistration planRegistration = new PlanRegistration
+                            {
+                                Date = DateTime.Now.AddDays(-1).Date,
+                                SdkSitId = r.SdkSitId,
+                                SumFlex = r.SumFlex,
+                                PaiedOutFlex = r.PaiedOutFlex,
+                                CommentOffice = r.CommentOffice
+                            };
+                            planRegistrations.Add(planRegistration);
+                        }
+                    }
                 }
-
-                // var planRegistrations = await _dbContext.PlanRegistrations
-                //     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                //     .Where(x => x.Date < DateTime.UtcNow.AddDays(-1).Date)
-                //     .OrderByDescending(x => x.Date)
-                //     .Select(x => new
-                //     {
-                //         x.Date,
-                //         x.SdkSitId,
-                //         x.SumFlex,
-                //         PaidOutFlex = x.PaiedOutFlex,
-                //         CommentWorker = "",
-                //         x.CommentOffice,
-                //         x.CommentOfficeAll,
-                //     })
-                //     .ToListAsync();
 
                 var resultWorkers = new List<TimePlanningFlexIndexModel>();
 
@@ -112,6 +120,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
 
                     resultWorkers.Add(new TimePlanningFlexIndexModel
                     {
+                        SdkSiteId = planRegistration.SdkSitId,
                         Date = planRegistration.Date,
                         Worker = new CommonDictionaryModel
                         {
@@ -120,7 +129,6 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                         },
                         SumFlex = planRegistration.SumFlex,
                         PaidOutFlex = planRegistration.PaiedOutFlex,
-                        CommentWorker = planRegistration.WorkerComment?.Replace("\r", "<br />") ?? "",
                         CommentOffice = planRegistration.CommentOffice?.Replace("\r", "<br />") ?? ""
                     });
                 }
@@ -146,7 +154,6 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 foreach (var updateModel in model)
                 {
                     var planRegistration = await _dbContext.PlanRegistrations
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                         .Where(x => x.Date == updateModel.Date)
                         .Where(x => x.SdkSitId == updateModel.Worker.Id)
                         .FirstOrDefaultAsync();
@@ -154,10 +161,54 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                     if (planRegistration != null)
                     {
                         await UpdatePlanning(planRegistration, updateModel);
+                    } else {
+                        await CreatePlanning(updateModel, (int)updateModel.Worker.Id);
                     }
-
-                    await CreatePlanning(updateModel, (int)updateModel.Worker.Id);
                 }
+
+                var listSiteIds = await _dbContext.PlanRegistrations
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Select(x => x.SdkSitId).Distinct().ToListAsync();
+
+                var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
+                var eFormId = _options.Value.InfoeFormId;
+                var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
+                var core = await _core.GetCore();
+                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+                foreach (int listSiteId in listSiteIds)
+                {
+                    var plannings = await _dbContext.PlanRegistrations
+                        .Where(x => x.StatusCaseId != 0)
+                        .Where(x => x.Date > DateTime.Now.AddDays(-2))
+                        .Where(x => x.SdkSitId == listSiteId)
+                        .ToListAsync();
+
+                    foreach (PlanRegistration planRegistration in plannings)
+                    {
+                        var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == planRegistration.SdkSitId);
+                        var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                        Message _message =
+                            await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
+                        Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
+                        string theMessage;
+                        switch (language.LanguageCode)
+                        {
+                            case "da":
+                                theMessage = _message != null ? _message.DaName : "";
+                                break;
+                            case "de":
+                                theMessage = _message != null ? _message.DeName : "";
+                                break;
+                            default:
+                                theMessage = _message != null ? _message.EnName : "";
+                                break;
+                        }
+                        planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, theMessage);
+                        await planRegistration.Update(_dbContext);
+                    }
+                }
+
+
 
                 return new OperationResult(
                     true,
@@ -181,7 +232,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 CommentOfficeAll = model.CommentOfficeAll,
                 SdkSitId = sdkSiteId,
                 Date = model.Date,
-                SumFlex = model.SumFlex,
+                SumFlex = model.SumFlex - model.PaidOutFlex,
                 PaiedOutFlex = model.PaidOutFlex,
                 CreatedByUserId = _userService.UserId,
                 UpdatedByUserId = _userService.UserId,
@@ -195,8 +246,8 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
         {
             planRegistration.CommentOfficeAll = model.CommentOfficeAll;
             planRegistration.CommentOffice = model.CommentOffice;
+            planRegistration.SumFlex += planRegistration.PaiedOutFlex - model.PaidOutFlex;
             planRegistration.PaiedOutFlex = model.PaidOutFlex;
-            planRegistration.SumFlex = model.SumFlex;
             planRegistration.UpdatedByUserId = _userService.UserId;
 
             await planRegistration.Update(_dbContext);

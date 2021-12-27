@@ -12,7 +12,7 @@
       type="number"
       id="sumFlex"
       [disabled]="true"
-      [ngModel]="sumFlex"
+      [ngModel]="flexPlanning.sumFlex"
     />
   </div>
 </td>
@@ -55,12 +55,12 @@
 <!--    <span [innerHTML]="flexPlanning.commentOfficeAll.slice(0, 20)"></span>-->
 <!--  </div>-->
 <!--</td>-->
-<ng-template #popTemplateCommentAll>
-  <div class="text-break">{{ flexPlanning.commentOfficeAll }}</div>
-</ng-template>
-<ng-template #popTemplateCommentWorker>
-  <div class="text-break">{{ flexPlanning.commentWorker }}</div>
-</ng-template>
+<!--<ng-template #popTemplateCommentAll>-->
+<!--  <div class="text-break">{{ flexPlanning.commentOfficeAll }}</div>-->
+<!--</ng-template>-->
+<!--<ng-template #popTemplateCommentWorker>-->
+<!--  <div class="text-break">{{ flexPlanning.commentWorker }}</div>-->
+<!--</ng-template>-->
 <ng-template #popTemplateCommentOffice>
   <div class="text-break">{{ flexPlanning.commentOffice }}</div>
 </ng-template>

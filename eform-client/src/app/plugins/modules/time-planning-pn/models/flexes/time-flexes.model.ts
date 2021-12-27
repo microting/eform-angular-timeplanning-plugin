@@ -1,6 +1,7 @@
 import { CommonDictionaryModel } from 'src/app/common/models';
 
 export class TimeFlexesModel {
+  sdkSiteId: number;
   worker: CommonDictionaryModel = new CommonDictionaryModel();
   date: string;
   flexHours: number;
