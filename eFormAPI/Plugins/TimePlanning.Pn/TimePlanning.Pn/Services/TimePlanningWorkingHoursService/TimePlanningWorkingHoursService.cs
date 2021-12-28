@@ -374,6 +374,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Stop1Id = model.Shift1Stop ?? 0;
                 planRegistration.Stop2Id = model.Shift2Stop ?? 0;
                 planRegistration.Flex = model.FlexHours;
+                planRegistration.PaiedOutFlex = model.PaidOutFlex;
                 planRegistration.SumFlex = model.SumFlex;
 
                 await planRegistration.Update(_dbContext);

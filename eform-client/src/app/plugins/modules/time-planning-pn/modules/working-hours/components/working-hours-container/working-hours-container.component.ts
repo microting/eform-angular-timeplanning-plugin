@@ -119,6 +119,11 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
               this.recalculateSumFlex();
             })
           );
+          this.workingHoursGroupSub$.push(
+            group.get('paidOutFlex').valueChanges.subscribe(() => {
+              this.recalculateSumFlex();
+            })
+          );
         }
         i++;
       }
