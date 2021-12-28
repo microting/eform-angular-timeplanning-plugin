@@ -54,16 +54,16 @@ export class TimeFlexesTableRowComponent implements OnInit, AfterViewInit {
       });
   }
 
-  onPaidOutFlexChange($event: any) {
-    this.flexPlanning.sumFlex = this.currentSum - $event + this.flexPlanning.paidOutFlex;
-    this.paidOutFlex$.next($event);
-  }
+  // onPaidOutFlexChange($event: any) {
+  //   this.flexPlanning.sumFlex = this.currentSum - $event + this.flexPlanning.paidOutFlex;
+  //   this.paidOutFlex$.next($event);
+  // }
 
   onCommentOfficeClick() {
     this.openEditCommentOffice.emit(this.flexPlanning);
   }
 
-  onCommentOfficeAllClick() {
-    this.openEditCommentOfficeAll.emit(this.flexPlanning);
-  }
+  // onCommentOfficeAllClick() {
+  //   this.openEditCommentOfficeAll.emit(this.flexPlanning);
+  // }
 }
