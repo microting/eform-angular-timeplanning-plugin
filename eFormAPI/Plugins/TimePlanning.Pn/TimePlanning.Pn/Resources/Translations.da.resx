@@ -31,13 +31,13 @@
         <value>Skift 1: pause</value>
     </data>
     <data name="Comment office" xml:space="preserve">
-        <value>Info kontor</value>
+        <value>Fra kontor</value>
     </data>
     <data name="Comment office all" xml:space="preserve">
         <value>Info kontor alle</value>
     </data>
     <data name="Comments" xml:space="preserve">
-        <value>Info medarbejder</value>
+        <value>Fra medarbejder</value>
     </data>
     <data name="Date" xml:space="preserve">
         <value>Dato</value>

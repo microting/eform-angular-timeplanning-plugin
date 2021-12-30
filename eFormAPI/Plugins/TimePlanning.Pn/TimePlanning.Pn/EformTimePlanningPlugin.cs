@@ -249,7 +249,7 @@ namespace TimePlanning.Pn
                             new()
                             {
                                  LocaleName = LocaleNames.Danish,
-                                 Name = "Tidsregistrering",
+                                 Name = "Timeregistrering",
                                  Language = LanguageNames.Danish,
                             },
                         },
@@ -349,7 +349,7 @@ namespace TimePlanning.Pn
                                         new()
                                         {
                                             LocaleName = LocaleNames.Danish,
-                                            Name = "Tidsregistrering",
+                                            Name = "Timeregistrering",
                                             Language = LanguageNames.Danish,
                                         },
                                     }
@@ -371,7 +371,7 @@ namespace TimePlanning.Pn
                                     new()
                                     {
                                         LocaleName = LocaleNames.Danish,
-                                        Name = "Tidsregistrering",
+                                        Name = "Timeregistrering",
                                         Language = LanguageNames.Danish,
                                     },
                                 }

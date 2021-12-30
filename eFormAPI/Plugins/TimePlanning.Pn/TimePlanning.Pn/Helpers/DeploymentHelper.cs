@@ -60,9 +60,9 @@ public class DeploymentHelper
                              $"<strong>{Translations.Message}:</strong><br/>" +
                              $"{messageText}<br/><br/>"+
                              $"<strong>{Translations.Comments}:</strong><br/>" +
-                             $"{planRegistration.WorkerComment}<br/><br/>" +
+                             $"{planRegistration.WorkerComment.Replace("\n", "<br>")}<br/><br/>" +
                              $"<strong>{Translations.Comment_office}:</strong><br/>" +
-                             $"{planRegistration.CommentOffice}<br/><br/>" // +
+                             $"{planRegistration.CommentOffice.Replace("\n", "<br>")}<br/><br/>" // +
                              // $"<strong>{Translations.Comment_office_all}:</strong><br/>" +
                              // $"{planRegistration.CommentOffice}<br/>"
             };

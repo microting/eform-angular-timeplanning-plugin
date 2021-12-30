@@ -469,9 +469,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office_all);
-                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
-                y++;
+                // worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office_all);
+                // worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                // y++;
 
                 var content = await Index(model);
 
@@ -554,11 +554,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = messageText;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker.Replace("<br>", "\n");
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice;
-                            y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice.Replace("<br>", "\n");
+                            // y++;
+                            // worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
                         }
                         firstDone = true;
                     }
