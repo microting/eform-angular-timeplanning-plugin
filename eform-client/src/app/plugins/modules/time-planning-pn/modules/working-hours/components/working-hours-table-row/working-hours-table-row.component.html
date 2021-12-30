@@ -174,7 +174,7 @@
     id="workingHoursCommentOffice"
     (click)="openEditCommentOfficeModal()"
   >
-    <span [innerHTML]="commentOffice"></span>
+    <span [innerHTML]="commentOffice.replace('\n', '<br>')"></span>
   </td>
 <!--  <td-->
 <!--    id="workingHoursCommentOfficeAll"-->
@@ -183,16 +183,6 @@
 <!--    <span [innerHTML]="commentOfficeAll"></span>-->
 <!--  </td>-->
 </ng-container>
-
-<ng-template #popTemplateCommentAll>
-  <div class="text-break"><span [innerHTML]="commentOfficeAll.slice(0, 20)"></span></div>
-</ng-template>
-<ng-template #popTemplateCommentWorker>
-  <div class="text-break"><span [innerHTML]="commentWorker.slice(0, 20)"></span></div>
-</ng-template>
-<ng-template #popTemplateCommentOffice>
-  <div class="text-break"><span [innerHTML]="commentOffice.slice(0, 20)"></span></div>
-</ng-template>
 <app-working-hours-comment-office-update-modal
   #editCommentOfficeModal
   [workingHoursForm]="workingHoursForm"
