@@ -554,9 +554,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = messageText;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker.Replace("<br>", "\n");
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker?.Replace("<br>", "\n");
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice.Replace("<br>", "\n");
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice?.Replace("<br>", "\n");
                             // y++;
                             // worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
                         }
