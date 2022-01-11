@@ -202,6 +202,17 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     await assignedSite.Delete(_dbContext);
                 }
 
+                var registrations = await _dbContext.PlanRegistrations
+                    .Where(x => x.StatusCaseId != 0)
+                    .ToListAsync();
+
+                foreach (PlanRegistration planRegistration in registrations)
+                {
+                    await theCore.CaseDelete(planRegistration.StatusCaseId);
+                    planRegistration.StatusCaseId = 0;
+                    await planRegistration.Update(_dbContext);
+                }
+
                 return new OperationResult(true, _localizationService.GetString("SitesUpdatedSuccessfuly"));
             }
             catch (Exception e)
