@@ -76,6 +76,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             try
             {
                 var core = await _core.GetCore();
+                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
 
                 var listSiteIds = await _dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -116,7 +117,12 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
 
                 foreach (var planRegistration in planRegistrations)
                 {
-                    var siteDto = await core.SiteRead(planRegistration.SdkSitId);
+
+                    var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.Id == planRegistration.SdkSitId && x.WorkflowState != Constants.WorkflowStates.Removed);
+                    if (site == null)
+                    {
+                        continue;
+                    }
 
                     resultWorkers.Add(new TimePlanningFlexIndexModel
                     {
@@ -125,7 +131,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                         Worker = new CommonDictionaryModel
                         {
                             Id = planRegistration.SdkSitId,
-                            Name = siteDto.SiteName,
+                            Name = site.Name,
                         },
                         SumFlex = planRegistration.SumFlex,
                         PaidOutFlex = planRegistration.PaiedOutFlex,
