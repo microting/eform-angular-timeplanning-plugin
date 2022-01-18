@@ -104,7 +104,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                             {
                                 Date = DateTime.Now.AddDays(-1).Date,
                                 SdkSitId = r.SdkSitId,
-                                SumFlex = r.SumFlex,
+                                SumFlex = Math.Round(r.SumFlex, 2),
                                 PaiedOutFlex = r.PaiedOutFlex,
                                 CommentOffice = r.CommentOffice
                             };
@@ -118,7 +118,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 foreach (var planRegistration in planRegistrations)
                 {
 
-                    var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.Id == planRegistration.SdkSitId && x.WorkflowState != Constants.WorkflowStates.Removed);
+                    var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == planRegistration.SdkSitId && x.WorkflowState != Constants.WorkflowStates.Removed);
                     if (site == null)
                     {
                         continue;
@@ -133,7 +133,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                             Id = planRegistration.SdkSitId,
                             Name = site.Name,
                         },
-                        SumFlex = planRegistration.SumFlex,
+                        SumFlex = Math.Round(planRegistration.SumFlex, 2),
                         PaidOutFlex = planRegistration.PaiedOutFlex,
                         CommentOffice = planRegistration.CommentOffice?.Replace("\r", "<br />") ?? ""
                     });
