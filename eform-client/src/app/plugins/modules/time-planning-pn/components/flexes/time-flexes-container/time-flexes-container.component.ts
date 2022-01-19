@@ -41,16 +41,16 @@ export class TimeFlexesContainerComponent implements OnInit, OnDestroy {
   }
 
   onUpdateFlexPlanning(model: TimeFlexesUpdateModel) {
-    const indexForUpdate = this.flexesForUpdate.findIndex(x => x.date === model.date);
-    this.timePlannings[this.timePlannings.findIndex(x => x.date === model.date)] = model as TimeFlexesModel;
-    if(indexForUpdate === -1){
+    const indexForUpdate = this.flexesForUpdate.findIndex(x => x.sdkSiteId === model.sdkSiteId);
+    this.timePlannings[this.timePlannings.findIndex(x => x.sdkSiteId === model.sdkSiteId)] = model as TimeFlexesModel;
+    if (indexForUpdate === -1) {
       this.flexesForUpdate.push(model);
     } else {
       this.flexesForUpdate[indexForUpdate] = model;
     }
   }
 
-  saveFlexPlanning(){
+  saveFlexPlanning() {
     this.updateTimePlanning$ = this.planningsService
       .updateFlexes(this.flexesForUpdate)
       .subscribe((data) => {
@@ -60,7 +60,7 @@ export class TimeFlexesContainerComponent implements OnInit, OnDestroy {
       });
   }
 
-  resetFlexPlanning(){
+  resetFlexPlanning() {
     this.flexesForUpdate = [];
     this.getPlannings();
   }

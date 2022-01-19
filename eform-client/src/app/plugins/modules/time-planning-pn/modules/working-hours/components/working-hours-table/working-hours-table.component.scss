@@ -1,3 +1,9 @@
-.background-yellow{
-    background-color: var(--yellow) !important;
+.background-yellow {
+  background-color: var(--yellow-300) !important;
+  color: var(black-900) !important;
+}
+
+.background-powder {
+  background-color: var(--powder-300) !important;
+  color: var(black-900) !important;
 }

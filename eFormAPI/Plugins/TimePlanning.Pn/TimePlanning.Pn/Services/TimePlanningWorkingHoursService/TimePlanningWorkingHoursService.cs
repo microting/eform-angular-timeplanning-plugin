@@ -24,6 +24,7 @@ using System.Threading;
 using ClosedXML.Excel;
 using Microting.eForm.Dto;
 using Microting.eForm.Infrastructure.Models;
+using TimePlanning.Pn.Helpers;
 using TimePlanning.Pn.Resources;
 
 namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
@@ -93,58 +94,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         x.Id,
                         x.Name,
                     })
-                    .FirstOrDefaultAsync();
-
-                var eFormId = _options.Value.EformId;
-                if (eFormId != null)
-                {
-                    var possibleCases = await sdkDbContext.Cases
-                        .Where(x => x.SiteId == site.Id
-                                    && x.CheckListId == eFormId)
-                        .Select(x => x.Id)
-                        .ToListAsync();
-
-                    var dateTimeRange = new List<string>();
-                    for (int i = 0; i <= (model.DateTo - model.DateFrom).TotalDays; i++)
-                    {
-                        dateTimeRange.Add(model.DateFrom.AddDays(i).ToString("yyyy-MM-dd"));
-                    }
-
-                    var requiredCaseIds = await sdkDbContext.FieldValues
-                        .Include(x => x.Field)
-                        .ThenInclude(x => x.FieldType)
-                        .Where(x => x.CheckListId == eFormId
-                                    && possibleCases.Contains(x.CaseId.Value))
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => dateTimeRange.Contains(x.Value) && x.Field.FieldType.Type == Constants.FieldTypes.Date)
-                        .OrderBy(x => x.CaseId)
-                        .Select(x => x.CaseId)
-                        .ToListAsync();
-
-                    var fieldValuesSdk = await sdkDbContext.FieldValues
-                        .Include(x => x.Field)
-                        .ThenInclude(x => x.FieldType)
-                        .Where(x => x.CheckListId == eFormId
-                                    && requiredCaseIds.Contains(x.CaseId.Value))
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => x.Field.FieldType.Type == Constants.FieldTypes.Comment
-                                    || x.Field.FieldType.Type == Constants.FieldTypes.Date)
-                        .OrderBy(x => x.CaseId).ThenByDescending(x => x.Field.FieldType.Type)
-                        .Select(x => new
-                        {
-                            x.Value,
-                            x.Field.FieldType.Type,
-                        })
-                        .ToListAsync();
-
-                    for (var i = 0; i < fieldValuesSdk.Count; i += 2)
-                    {
-                        tupleValueList.Add(new(DateTime.Parse(fieldValuesSdk[i].Value), fieldValuesSdk[i + 1].Value));
-                    }
-                }
+                    .FirstAsync();
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == model.SiteId);
 
                 // two dates may be displayed instead of one if the same date is selected.
@@ -180,18 +132,53 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         Message = x.MessageId,
                         CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
                         CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
-                        CommentOfficeAll = x.CommentOfficeAll,
+                        // CommentOfficeAll = x.CommentOfficeAll,
                         IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable),
                         IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
                     })
                     .ToListAsync();
 
-                var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
+                var totalDays = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
-                if (timePlannings.Count < date)
+                double sumFlex = 0;
+                var lastPlanning = _dbContext.PlanRegistrations
+                    .Where(x => x.Date < model.DateFrom)
+                    .Where(x => x.SdkSitId == model.SiteId).OrderBy(x => x.Date).LastOrDefault();
+
+                var prePlanning = new TimePlanningWorkingHoursModel
+                {
+                    WorkerName = site.Name,
+                    WeekDay = lastPlanning != null ? (int)lastPlanning.Date.DayOfWeek : (int)model.DateFrom.AddDays(-1).DayOfWeek,
+                    Date = lastPlanning?.Date ?? model.DateFrom.AddDays(-1),
+                    PlanText = lastPlanning?.PlanText,
+                    PlanHours = lastPlanning?.PlanHours ?? 0,
+                    Shift1Start = lastPlanning?.Start1Id,
+                    Shift1Stop = lastPlanning?.Stop1Id,
+                    Shift1Pause = lastPlanning?.Pause1Id,
+                    Shift2Start = lastPlanning?.Start2Id,
+                    Shift2Stop = lastPlanning?.Stop2Id,
+                    Shift2Pause = lastPlanning?.Pause2Id,
+                    NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0 ,2),
+                    FlexHours = Math.Round(lastPlanning?.Flex ?? 0 ,2),
+                    SumFlex = lastPlanning?.SumFlex ?? 0,
+                    PaidOutFlex = lastPlanning?.PaiedOutFlex ?? 0,
+                    Message = lastPlanning?.MessageId,
+                    CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
+                    CommentOffice = lastPlanning?.CommentOffice?.Replace("\r", "<br />"),
+                    IsLocked = true,
+                    IsWeekend = lastPlanning != null
+                        ? lastPlanning.Date.DayOfWeek == DayOfWeek.Saturday ||
+                          lastPlanning.Date.DayOfWeek == DayOfWeek.Sunday
+                        : model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Saturday ||
+                          model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Sunday,
+                };
+
+                timePlannings.Add(prePlanning);
+
+                if (timePlannings.Count - 1 < totalDays)
                 {
                     var timePlanningForAdd = new List<TimePlanningWorkingHoursModel>();
-                    for (var i = 0; i < date; i++)
+                    for (var i = 0; i < totalDays; i++)
                     {
                         if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
                         {
@@ -209,24 +196,18 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     timePlannings.AddRange(timePlanningForAdd);
                 }
 
-                if (tupleValueList.Any())
-                {
-                    foreach (var timePlanning in timePlannings)
-                    {
-                        var foundComment = tupleValueList
-                            .Where(x => x.Item1 == timePlanning.Date)
-                            .Select(x => x.Item2).FirstOrDefault();
-                        timePlanning.CommentWorker = foundComment;
-                    }
-                }
-
                 timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
 
-                double sumFlex = 0;
+                int j = 0;
                 foreach (TimePlanningWorkingHoursModel timePlanningWorkingHoursModel in timePlannings)
                 {
-                        timePlanningWorkingHoursModel.SumFlex = sumFlex + timePlanningWorkingHoursModel.FlexHours;
-                        sumFlex = timePlanningWorkingHoursModel.SumFlex;
+                    if (j > 0)
+                    {
+                        timePlanningWorkingHoursModel.SumFlex = Math.Round(sumFlex + timePlanningWorkingHoursModel.FlexHours - timePlanningWorkingHoursModel.PaidOutFlex, 2);
+                    }
+
+                    j++;
+                    sumFlex = timePlanningWorkingHoursModel.SumFlex;
                 }
 
                 return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
@@ -248,7 +229,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             try
             {
                 var planRegistrations = await _dbContext.PlanRegistrations
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == model.SiteId)
                     .ToListAsync();
                 foreach (var planning in model.Plannings)
@@ -270,6 +250,25 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
                 var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
                 var eFormId = _options.Value.InfoeFormId;
+
+                var lastDate = model.Plannings.Last().Date;
+                var allPlannings = await _dbContext.PlanRegistrations
+                    .Where(x => x.Date >= lastDate)
+                    .Where(x => x.SdkSitId == site.MicrotingUid)
+                    .OrderBy(x => x.Date).ToListAsync();
+
+                double preSumFlex = allPlannings.Any() ? allPlannings.First().SumFlex : 0;
+
+                foreach (PlanRegistration planRegistration in allPlannings)
+                {
+                    if (planRegistration.Date > lastDate)
+                    {
+                        planRegistration.SumFlex = preSumFlex + planRegistration.Flex;
+                        preSumFlex = planRegistration.SumFlex;
+                        await planRegistration.Update(_dbContext);
+                    }
+
+                }
 
                 if (_options.Value.MaxHistoryDays != null)
                 {
@@ -297,7 +296,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 theMessage = _message != null ? _message.EnName : "";
                                 break;
                         }
-                        planRegistration.StatusCaseId = await DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, theMessage);
+                        planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, theMessage);
                         await planRegistration.Update(_dbContext);
                     }
                 }
@@ -320,20 +319,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         {
             try
             {
-                if (model.PlanHours == 0 && string.IsNullOrEmpty(model.PlanText)
-                                         && string.IsNullOrEmpty(model.CommentWorker)
-                                         && string.IsNullOrEmpty(model.CommentOffice)
-                                         && string.IsNullOrEmpty(model.CommentOfficeAll)
-                                         && model.Shift1Start == null
-                                         && model.Shift1Stop == null
-                                         && model.Shift2Start == null
-                                         && model.Shift2Stop == null
-                                         && model.Shift1Pause == null
-                                         && model.Shift2Pause == null
-                                         )
-                {
-                    return;
-                }
                 var planRegistration = new PlanRegistration
                 {
                     MessageId = model.Message == 0 ? null : model.Message,
@@ -355,6 +340,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Stop2Id = model.Shift2Stop ?? 0,
                     Flex = model.FlexHours,
                     SumFlex = model.SumFlex,
+                    StatusCaseId = 0
                 };
 
                 await planRegistration.Create(_dbContext);
@@ -388,6 +374,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Stop1Id = model.Shift1Stop ?? 0;
                 planRegistration.Stop2Id = model.Shift2Stop ?? 0;
                 planRegistration.Flex = model.FlexHours;
+                planRegistration.PaiedOutFlex = model.PaidOutFlex;
                 planRegistration.SumFlex = model.SumFlex;
 
                 await planRegistration.Update(_dbContext);
@@ -482,9 +469,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office_all);
-                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
-                y++;
+                // worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office_all);
+                // worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                // y++;
 
                 var content = await Index(model);
 
@@ -494,60 +481,86 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 {
                     var rows = content.Model;
 
+                    bool firstDone = false;
                     foreach (TimePlanningWorkingHoursModel timePlanningWorkingHoursModel in rows)
                     {
-                        Message theMessage =
-                            await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == timePlanningWorkingHoursModel.Message);
-                        string messageText = theMessage != null ? theMessage.EnName : "";
-                        switch (language.LanguageCode)
+                        if (firstDone)
                         {
-                            case "da":
-                                messageText = theMessage != null ? theMessage.DaName : "";
-                                break;
-                            case "de":
-                                messageText = theMessage != null ? theMessage.DeName : "";
-                                break;
-                        }
-                        x++;
-                        y = 0;
+                            Message theMessage =
+                                await _dbContext.Messages.SingleOrDefaultAsync(x =>
+                                    x.Id == timePlanningWorkingHoursModel.Message);
+                            string messageText = theMessage != null ? theMessage.EnName : "";
+                            switch (language.LanguageCode)
+                            {
+                                case "da":
+                                    messageText = theMessage != null ? theMessage.DaName : "";
+                                    break;
+                                case "de":
+                                    messageText = theMessage != null ? theMessage.DeName : "";
+                                    break;
+                            }
 
-                        worksheet.Cell(x + 1, y + 1).Value = site.Name;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date.ToString("dddd", ci);
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanText;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift1Start > 0 ? (int)timePlanningWorkingHoursModel.Shift1Start - 1 : 0];
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift1Stop > 0 ? (int)timePlanningWorkingHoursModel.Shift1Stop - 1 : 0];
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift1Pause > 0 ? (int)timePlanningWorkingHoursModel.Shift1Pause - 1 : 0];
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift2Start > 0 ? (int)timePlanningWorkingHoursModel.Shift2Start - 1 : 0];
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift2Stop > 0 ? (int)timePlanningWorkingHoursModel.Shift2Stop - 1 : 0];
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = plr.Options[timePlanningWorkingHoursModel.Shift2Pause > 0 ? (int)timePlanningWorkingHoursModel.Shift2Pause - 1 : 0];
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.NettoHours;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.FlexHours;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlex;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = messageText;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice;
-                        y++;
-                        worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
+                            x++;
+                            y = 0;
+
+                            worksheet.Cell(x + 1, y + 1).Value = site.Name;
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value =
+                                timePlanningWorkingHoursModel.Date.ToString("dddd", ci);
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanText;
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                timePlanningWorkingHoursModel.Shift1Start > 0
+                                    ? (int) timePlanningWorkingHoursModel.Shift1Start - 1
+                                    : 0];
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                timePlanningWorkingHoursModel.Shift1Stop > 0
+                                    ? (int) timePlanningWorkingHoursModel.Shift1Stop - 1
+                                    : 0];
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                timePlanningWorkingHoursModel.Shift1Pause > 0
+                                    ? (int) timePlanningWorkingHoursModel.Shift1Pause - 1
+                                    : 0];
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                timePlanningWorkingHoursModel.Shift2Start > 0
+                                    ? (int) timePlanningWorkingHoursModel.Shift2Start - 1
+                                    : 0];
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                timePlanningWorkingHoursModel.Shift2Stop > 0
+                                    ? (int) timePlanningWorkingHoursModel.Shift2Stop - 1
+                                    : 0];
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                timePlanningWorkingHoursModel.Shift2Pause > 0
+                                    ? (int) timePlanningWorkingHoursModel.Shift2Pause - 1
+                                    : 0];
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.NettoHours;
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.FlexHours;
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlex;
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = messageText;
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker?.Replace("<br>", "\n");
+                            y++;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice?.Replace("<br>", "\n");
+                            // y++;
+                            // worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
+                        }
+                        firstDone = true;
                     }
                 }
 
@@ -566,62 +579,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
         }
 
-        private async Task<int> DeployResults(PlanRegistration planRegistration, int maxHistoryDays, int eFormId, eFormCore.Core core, Site siteInfo, int folderId, string messageText)
-        {
-            if (planRegistration.StatusCaseId != 0)
-            {
-                    await core.CaseDelete(planRegistration.StatusCaseId);
-            }
-            await using var sdkDbContext = core.DbContextHelper.GetDbContext();
-            var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
-            var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);
-            var mainElement = await core.ReadeForm(eFormId, language);
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
-            CultureInfo ci = new CultureInfo(language.LanguageCode);
-            mainElement.Label = planRegistration.Date.ToString("dddd dd. MMM yyyy", ci);
-            mainElement.EndDate = DateTime.UtcNow.AddDays(maxHistoryDays);
-            DateTime startDate = new DateTime(2020, 1, 1);
-            mainElement.DisplayOrder = (startDate - planRegistration.Date).Days;
-            DataElement element = (DataElement)mainElement.ElementList.First();
-            element.Label = mainElement.Label;
-            element.DoneButtonEnabled = false;
-            CDataValue cDataValue = new CDataValue
-            {
-                InderValue = $"<strong>{Translations.NettoHours}: {planRegistration.NettoHours:0.00}</strong><br/>" +
-                             $"{messageText}"
-            };
-            element.Description = cDataValue;
-            DataItem dataItem = element.DataItemList.First();
-            dataItem.Color = Constants.FieldColors.Yellow;
-            dataItem.Label = $"<strong>{Translations.Date}: {planRegistration.Date.ToString("dddd dd. MMM yyyy", ci)}</strong>";
-            cDataValue = new CDataValue
-            {
-                InderValue = $"{Translations.PlanText}: {planRegistration.PlanText}<br/>"+
-                             $"{Translations.PlanHours}: {planRegistration.PlanHours}<br/><br/>" +
-                             $"{Translations.Shift_1__start}: {planRegistration.Options[planRegistration.Start1Id > 0 ? planRegistration.Start1Id - 1 : 0]}<br/>" +
-                             $"{Translations.Shift_1__pause}: {planRegistration.Options[planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0]}<br/>" +
-                             $"{Translations.Shift_1__end}: {planRegistration.Options[planRegistration.Stop1Id > 0 ? planRegistration.Stop1Id - 1 : 0]}<br/><br/>" +
-                             $"{Translations.Shift_2__start}: {planRegistration.Options[planRegistration.Start2Id > 0 ? planRegistration.Start2Id - 1 : 0]}<br/>" +
-                             $"{Translations.Shift_2__pause}: {planRegistration.Options[planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0]}<br/>" +
-                             $"{Translations.Shift_2__end}: {planRegistration.Options[planRegistration.Stop2Id > 0 ? planRegistration.Stop2Id - 1 : 0]}<br/><br/>" +
-                             $"<strong>{Translations.NettoHours}: {planRegistration.NettoHours:0.00}</strong><br/><br/>" +
-                             $"{Translations.Flex}: {planRegistration.Flex:0.00}<br/>" +
-                             $"{Translations.SumFlex}: {planRegistration.SumFlex:0.00}<br/>" +
-                             $"{Translations.PaidOutFlex}: {planRegistration.PaiedOutFlex:0.00}<br/><br/>" +
-                             $"<strong>{Translations.Message}:</strong><br/>" +
-                             $"{messageText}<br/><br/>"+
-                             $"<strong>{Translations.Comments}:</strong><br/>" +
-                             $"{planRegistration.WorkerComment}<br/><br/>" +
-                             $"<strong>{Translations.Comment_office}:</strong><br/>" +
-                             $"{planRegistration.CommentOffice}<br/><br/>" // +
-                             // $"<strong>{Translations.Comment_office_all}:</strong><br/>" +
-                             // $"{planRegistration.CommentOffice}<br/>"
-            };
-            dataItem.Description = cDataValue;
 
-            if (folder != null) mainElement.CheckListFolderName = folder.MicrotingUid.ToString();
-
-            return (int)await core.CaseCreate(mainElement, "", (int)siteInfo.MicrotingUid, folderId);
-        }
     }
 }

@@ -29,22 +29,24 @@ export class TimeFlexesTableRowComponent implements OnInit, AfterViewInit {
   openEditCommentOfficeAll: EventEmitter<TimeFlexesModel> = new EventEmitter<TimeFlexesModel>();
 
   paidOutFlex$ = new Subject<number>();
+  currentSum: number;
 
   get messages() {
     return TimePlanningMessagesEnum;
   }
 
-  get sumFlex() {
-    return (this.flexPlanning.sumFlex - this.flexPlanning.paidOutFlex).toFixed(
-      2
-    );
-  }
+  // get sumFlex() {
+  //   return (this.flexPlanning.sumFlex - this.flexPlanning.paidOutFlex).toFixed(
+  //     2
+  //   );
+  // }
 
   constructor() {}
 
   ngAfterViewInit() {}
 
   ngOnInit(): void {
+    this.currentSum = this.flexPlanning.sumFlex;
     this.paidOutFlex$
       .pipe(debounceTime(1000), distinctUntilChanged())
       .subscribe((value: number) => {
@@ -52,15 +54,16 @@ export class TimeFlexesTableRowComponent implements OnInit, AfterViewInit {
       });
   }
 
-  onPaidOutFlexChange($event: any) {
-    this.paidOutFlex$.next($event);
-  }
+  // onPaidOutFlexChange($event: any) {
+  //   this.flexPlanning.sumFlex = this.currentSum - $event + this.flexPlanning.paidOutFlex;
+  //   this.paidOutFlex$.next($event);
+  // }
 
   onCommentOfficeClick() {
     this.openEditCommentOffice.emit(this.flexPlanning);
   }
 
-  onCommentOfficeAllClick() {
-    this.openEditCommentOfficeAll.emit(this.flexPlanning);
-  }
+  // onCommentOfficeAllClick() {
+  //   this.openEditCommentOfficeAll.emit(this.flexPlanning);
+  // }
 }

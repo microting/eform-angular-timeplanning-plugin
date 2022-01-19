@@ -12,29 +12,34 @@
       type="number"
       id="sumFlex"
       [disabled]="true"
-      [ngModel]="sumFlex"
+      [ngModel]="flexPlanning.sumFlex"
     />
   </div>
 </td>
-<td id="timePlanningPaidOutFlex">
-  <div class="md-form">
-    <input
-      mdbInput
-      class="form-control"
-      type="number"
-      id="paidOutFlex"
-      (ngModelChange)="onPaidOutFlexChange($event)"
-      [(ngModel)]="flexPlanning.paidOutFlex"
-    />
-  </div>
-</td>
-<td
-  id="timePlanningCommentWorker"
->
-  <div id="commentWorker">
-    <span [innerHTML]="flexPlanning.commentWorker"></span>
-  </div>
-</td>
+<!--<td id="timePlanningPaidOutFlex">-->
+<!--  <div class="md-form">-->
+<!--    <input-->
+<!--      mdbInput-->
+<!--      class="form-control"-->
+<!--      type="number"-->
+<!--      id="paidOutFlex"-->
+<!--      (ngModelChange)="onPaidOutFlexChange($event)"-->
+<!--      [(ngModel)]="flexPlanning.paidOutFlex"-->
+<!--    />-->
+<!--  </div>-->
+<!--</td>-->
+<!--<td-->
+<!--  id="timePlanningCommentWorker"-->
+<!--&gt;-->
+<!--  <div id="commentWorker">-->
+<!--    <input-->
+<!--      mdbInput-->
+<!--      class="form-control"-->
+<!--      type="text"-->
+<!--      [ngModel]="flexPlanning.commentWorker"-->
+<!--    />-->
+<!--  </div>-->
+<!--</td>-->
 <td
   id="timePlanningCommentOffice"
   (click)="onCommentOfficeClick()"
@@ -55,12 +60,12 @@
 <!--    <span [innerHTML]="flexPlanning.commentOfficeAll.slice(0, 20)"></span>-->
 <!--  </div>-->
 <!--</td>-->
-<ng-template #popTemplateCommentAll>
-  <div class="text-break">{{ flexPlanning.commentOfficeAll }}</div>
-</ng-template>
-<ng-template #popTemplateCommentWorker>
-  <div class="text-break">{{ flexPlanning.commentWorker }}</div>
-</ng-template>
+<!--<ng-template #popTemplateCommentAll>-->
+<!--  <div class="text-break">{{ flexPlanning.commentOfficeAll }}</div>-->
+<!--</ng-template>-->
+<!--<ng-template #popTemplateCommentWorker>-->
+<!--  <div class="text-break">{{ flexPlanning.commentWorker }}</div>-->
+<!--</ng-template>-->
 <ng-template #popTemplateCommentOffice>
   <div class="text-break">{{ flexPlanning.commentOffice }}</div>
 </ng-template>
