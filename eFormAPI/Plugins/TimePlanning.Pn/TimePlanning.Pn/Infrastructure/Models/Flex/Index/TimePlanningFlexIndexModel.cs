@@ -32,12 +32,11 @@ namespace TimePlanning.Pn.Infrastructure.Models.Flex.Index
     /// </summary>
     public class TimePlanningFlexIndexModel
     {
+        public int SdkSiteId { get; set; }
         public DateTime Date { get; set; }
         public CommonDictionaryModel Worker { get; set; }
         public double SumFlex { get; set; }
         public double PaidOutFlex { get; set; }
-        public string CommentWorker { get; set; }
         public string CommentOffice { get; set; }
-        public string CommentOfficeAll { get; set; }
     }
 }

@@ -36,7 +36,7 @@
       [appendTo]="'body'"
       bindValue="id"
       bindLabel="value"
-      placeholder="Select"
+      placeholder="{{'Select' | translate}}"
       formControlName="shift1Start"
       class="shift-select"
     >
@@ -48,7 +48,7 @@
       [appendTo]="'body'"
       bindValue="id"
       bindLabel="value"
-      placeholder="Select"
+      placeholder="{{'Select' | translate}}"
       formControlName="shift1Stop"
       class="shift-select"
     >
@@ -60,7 +60,7 @@
       [appendTo]="'body'"
       bindValue="id"
       bindLabel="value"
-      placeholder="Select"
+      placeholder="{{'Select' | translate}}"
       formControlName="shift1Pause"
       class="shift-select"
     >
@@ -72,7 +72,7 @@
       [appendTo]="'body'"
       bindValue="id"
       bindLabel="value"
-      placeholder="Select"
+      placeholder="{{'Select' | translate}}"
       formControlName="shift2Start"
       class="shift-select"
     >
@@ -84,7 +84,7 @@
       [appendTo]="'body'"
       bindValue="id"
       bindLabel="value"
-      placeholder="Select"
+      placeholder="{{'Select' | translate}}"
       formControlName="shift2Stop"
       class="shift-select"
     >
@@ -96,7 +96,7 @@
       [appendTo]="'body'"
       bindValue="id"
       bindLabel="value"
-      placeholder="Select"
+      placeholder="{{'Select' | translate}}"
       formControlName="shift2Pause"
       class="shift-select"
     >
@@ -146,7 +146,6 @@
         id="paidOutFlexInput{{ workingHoursFormIndex }}"
         formControlName="paidOutFlex"
         class="form-control"
-        disabled
       />
       <label for="paidOutFlexInput{{ workingHoursFormIndex }}"></label>
     </div>
@@ -175,7 +174,7 @@
     id="workingHoursCommentOffice"
     (click)="openEditCommentOfficeModal()"
   >
-    <span [innerHTML]="commentOffice"></span>
+    <span [innerHTML]="commentOffice.replace('\n', '<br>')"></span>
   </td>
 <!--  <td-->
 <!--    id="workingHoursCommentOfficeAll"-->
@@ -184,16 +183,6 @@
 <!--    <span [innerHTML]="commentOfficeAll"></span>-->
 <!--  </td>-->
 </ng-container>
-
-<ng-template #popTemplateCommentAll>
-  <div class="text-break"><span [innerHTML]="commentOfficeAll.slice(0, 20)"></span></div>
-</ng-template>
-<ng-template #popTemplateCommentWorker>
-  <div class="text-break"><span [innerHTML]="commentWorker.slice(0, 20)"></span></div>
-</ng-template>
-<ng-template #popTemplateCommentOffice>
-  <div class="text-break"><span [innerHTML]="commentOffice.slice(0, 20)"></span></div>
-</ng-template>
 <app-working-hours-comment-office-update-modal
   #editCommentOfficeModal
   [workingHoursForm]="workingHoursForm"

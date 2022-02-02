@@ -7,7 +7,7 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
-import { FormArray, FormControl, FormGroup } from '@angular/forms';
+import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
 import { HOURS_PICKER_ARRAY } from 'src/app/common/const';
@@ -76,8 +76,16 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges {
 
   constructor() {}
 
-  getIsWeekend(workingHoursModel: FormGroup):boolean {
-    return workingHoursModel.get('isWeekend').value;
+  getIsWeekend(workingHoursModel: AbstractControl): boolean {
+    if (workingHoursModel != null) {
+      return workingHoursModel.get('isWeekend').value;
+    }
+  }
+
+  getIsLocked(workingHoursModel: AbstractControl): boolean {
+    if (workingHoursModel != null) {
+      return workingHoursModel.disabled;
+    }
   }
 
   ngOnInit(): void {

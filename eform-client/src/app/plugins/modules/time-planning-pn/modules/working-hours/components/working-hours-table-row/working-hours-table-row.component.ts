@@ -146,6 +146,14 @@ export class WorkingHoursTableRowComponent
               .setValue(this.calculateFlexHours());
           });
 
+        const planTextSub$ = this.workingHoursForm
+          .get('planText')
+          .valueChanges.subscribe(() => {
+            this.workingHoursForm
+              .get('nettoHours')
+              .setValue(this.calculateNettoHours().formattedHours);
+          });
+
         this.subs$ = [
           shift1StartSub$,
           shift1StopSub$,
@@ -155,6 +163,7 @@ export class WorkingHoursTableRowComponent
           shift2PauseSub$,
           flexHoursSub$,
           planHoursSub$,
+          planTextSub$
         ];
       }
     }
