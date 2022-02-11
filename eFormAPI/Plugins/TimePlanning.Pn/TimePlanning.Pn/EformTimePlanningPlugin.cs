@@ -136,12 +136,13 @@ namespace TimePlanning.Pn
                 if (originalId == 0)
                 {
                     int clId = await core.TemplateCreate(newTemplate);
-                    var cl = await sdkDbContext.CheckLists.SingleOrDefaultAsync(x => x.Id == clId);
+                    var cl = await sdkDbContext.CheckLists.SingleAsync(x => x.Id == clId);
                     cl.IsLocked = true;
                     cl.IsEditable = false;
                     cl.ReportH1 = eform.Value[0];
                     cl.ReportH2 = eform.Value[1];
                     await cl.Update(sdkDbContext);
+                    originalId = cl.Id;
                 }
 
                 await options.UpdateDb(settings =>
@@ -169,12 +170,13 @@ namespace TimePlanning.Pn
                 if (originalId == 0)
                 {
                     int clId = await core.TemplateCreate(newTemplate);
-                    var cl = await sdkDbContext.CheckLists.SingleOrDefaultAsync(x => x.Id == clId);
+                    var cl = await sdkDbContext.CheckLists.SingleAsync(x => x.Id == clId);
                     cl.IsLocked = true;
                     cl.IsEditable = false;
                     cl.ReportH1 = eform.Value[0];
                     cl.ReportH2 = eform.Value[1];
                     await cl.Update(sdkDbContext);
+                    originalId = cl.Id;
                 }
 
                 await options.UpdateDb(settings =>
