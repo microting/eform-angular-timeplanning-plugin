@@ -22,7 +22,7 @@ import {
   WorkingHoursCommentOfficeUpdateModalComponent,
   WorkingHoursCommentOfficeAllUpdateModalComponent,
 } from './components';
-import { MY_MOMENT_FORMATS_FOR_TIME_PLANNING } from '../../consts/custom-date-time-adapter';
+import { MY_MOMENT_FORMATS_FOR_WORKING_HOURS } from '../../consts/custom-date-time-adapter-for-working-hours';
 
 @NgModule({
   imports: [
@@ -51,7 +51,7 @@ import { MY_MOMENT_FORMATS_FOR_TIME_PLANNING } from '../../consts/custom-date-ti
   providers: [
     {
       provide: OWL_DATE_TIME_FORMATS,
-      useValue: MY_MOMENT_FORMATS_FOR_TIME_PLANNING,
+      useValue: MY_MOMENT_FORMATS_FOR_WORKING_HOURS,
     },
   ],
 })

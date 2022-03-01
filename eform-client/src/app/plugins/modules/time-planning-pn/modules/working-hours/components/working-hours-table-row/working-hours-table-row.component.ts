@@ -13,7 +13,7 @@ import { Subscription } from 'rxjs';
 import {
   DaysOfWeekEnum,
   HOURS_PICKER_ARRAY,
-  STANDARD_DATE_FORMAT,
+  STANDARD_DANISH_DATE_FORMAT,
 } from 'src/app/common/const';
 import { TranslateService } from '@ngx-translate/core';
 import { messages } from '../../../../consts/messages';
@@ -50,7 +50,7 @@ export class WorkingHoursTableRowComponent
   }
 
   get dateFormat() {
-    return STANDARD_DATE_FORMAT;
+    return STANDARD_DANISH_DATE_FORMAT;
   }
 
   constructor(translateService: TranslateService) {
