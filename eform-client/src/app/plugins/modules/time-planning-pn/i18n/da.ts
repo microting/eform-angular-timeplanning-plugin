@@ -36,8 +36,8 @@ export const da = {
   Worker: 'Medarbejder',
   'Edit comment office': 'Rediger info kontor',
   'Edit comment office all': 'Rediger info kontor alle',
-  'Comment worker': 'Fra medarbejder',
-  'Comment office': 'Fra kontor',
+  'Comment worker': 'Besked medarbejder',
+  'Comment office': 'Besked kontor',
   'Comment office all': 'Info kontor alle',
   Select: 'Vælg',
 };
