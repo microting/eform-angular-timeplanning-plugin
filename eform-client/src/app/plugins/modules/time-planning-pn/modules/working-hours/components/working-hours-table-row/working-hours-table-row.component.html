@@ -174,7 +174,15 @@
     id="workingHoursCommentOffice"
     (click)="openEditCommentOfficeModal()"
   >
-    <span [innerHTML]="commentOffice.replace('\n', '<br>')"></span>
+    <div class="md-form" [formGroup]="workingHoursForm">
+      <input
+        mdbInput
+        class="form-control"
+        type="text"
+        [disabled]="true"
+        formControlName="commentOffice"
+      />
+    </div>
   </td>
 <!--  <td-->
 <!--    id="workingHoursCommentOfficeAll"-->

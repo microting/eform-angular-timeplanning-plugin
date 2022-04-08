@@ -227,19 +227,19 @@ export class WorkingHoursTableRowComponent
     return this.workingHoursForm.get('commentWorker').value;
   }
 
-  get commentOffice(): string {
-    return this.workingHoursForm.get('commentOffice').value;
-  }
+  // get commentOffice(): string {
+  //   return this.workingHoursForm.get('commentOffice').value;
+  // }
 
-  get commentOfficeAll(): string {
-    return this.workingHoursForm.get('commentOfficeAll').value;
-  }
+  // get commentOfficeAll(): string {
+  //   return this.workingHoursForm.get('commentOfficeAll').value;
+  // }
 
   openEditCommentOfficeModal() {
     this.editCommentOfficeModal.show();
   }
 
-  openEditCommentOfficeAllModal() {
+/*  openEditCommentOfficeAllModal() {
     this.editCommentOfficeAllModal.show();
-  }
+  }*/
 }

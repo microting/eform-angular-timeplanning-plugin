@@ -92,14 +92,20 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
             disabled: true,
           }),
           paidOutFlex: new FormControl(x.paidOutFlex ? x.paidOutFlex : 0),
-          commentWorker: new FormControl(
-            x.commentWorker ? x.commentWorker : ''
+          commentWorker: new FormControl({
+            value: x.commentWorker ? x.commentWorker : '',
+            disabled: true,
+            }
           ),
-          commentOffice: new FormControl(
-            x.commentOffice ? x.commentOffice : ''
+          commentOffice: new FormControl({
+            value: x.commentOffice ? x.commentOffice : '',
+            disabled: true,
+            }
           ),
-          commentOfficeAll: new FormControl(
-            x.commentOfficeAll ? x.commentOfficeAll : ''
+          commentOfficeAll: new FormControl({
+            value: x.commentOfficeAll ? x.commentOfficeAll : '',
+            disabled: true,
+            }
           ),
         })
       );
