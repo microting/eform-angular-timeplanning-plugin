@@ -16,56 +16,63 @@
     />
   </div>
 </td>
-<!--<td id="timePlanningPaidOutFlex">-->
-<!--  <div class="md-form">-->
-<!--    <input-->
-<!--      mdbInput-->
-<!--      class="form-control"-->
-<!--      type="number"-->
-<!--      id="paidOutFlex"-->
-<!--      (ngModelChange)="onPaidOutFlexChange($event)"-->
-<!--      [(ngModel)]="flexPlanning.paidOutFlex"-->
-<!--    />-->
-<!--  </div>-->
-<!--</td>-->
-<!--<td-->
-<!--  id="timePlanningCommentWorker"-->
-<!--&gt;-->
-<!--  <div id="commentWorker">-->
-<!--    <input-->
-<!--      mdbInput-->
-<!--      class="form-control"-->
-<!--      type="text"-->
-<!--      [ngModel]="flexPlanning.commentWorker"-->
-<!--    />-->
-<!--  </div>-->
-<!--</td>-->
+<!--<td id="timePlanningPaidOutFlex">
+  <div class="md-form">
+    <input
+      mdbInput
+      class="form-control"
+      type="number"
+      id="paidOutFlex"
+      (ngModelChange)="onPaidOutFlexChange($event)"
+      [(ngModel)]="flexPlanning.paidOutFlex"
+    />
+  </div>
+</td>
+<td
+  id="timePlanningCommentWorker"
+>
+  <div id="commentWorker">
+    <input
+      mdbInput
+      class="form-control"
+      type="text"
+      [ngModel]="flexPlanning.commentWorker"
+    />
+  </div>
+</td>-->
 <td
   id="timePlanningCommentOffice"
   (click)="onCommentOfficeClick()"
 >
-  <div id="commentOffice">
-    <span [innerHTML]="flexPlanning.commentOffice"></span>
+  <div class="md-form">
+    <input
+      mdbInput
+      class="form-control"
+      type="text"
+      id="commentOffice"
+      [disabled]="true"
+      [ngModel]="flexPlanning.commentOffice.slice(0, 20) + '...'"
+    />
   </div>
 </td>
-<!--<td-->
-<!--  id="timePlanningCommentOfficeAll"-->
-<!--  [mdbPopover]="popTemplateCommentAll"-->
-<!--  triggers="hover"-->
-<!--  placement="left"-->
-<!--  [mdbPopoverHeader]="'Comment office all' | translate"-->
-<!--  (click)="onCommentOfficeAllClick()"-->
-<!--&gt;-->
-<!--  <div id="commentOfficeAll">-->
-<!--    <span [innerHTML]="flexPlanning.commentOfficeAll.slice(0, 20)"></span>-->
-<!--  </div>-->
-<!--</td>-->
-<!--<ng-template #popTemplateCommentAll>-->
-<!--  <div class="text-break">{{ flexPlanning.commentOfficeAll }}</div>-->
-<!--</ng-template>-->
-<!--<ng-template #popTemplateCommentWorker>-->
-<!--  <div class="text-break">{{ flexPlanning.commentWorker }}</div>-->
-<!--</ng-template>-->
+<!--<td
+  id="timePlanningCommentOfficeAll"
+  [mdbPopover]="popTemplateCommentAll"
+  triggers="hover"
+  placement="left"
+  [mdbPopoverHeader]="'Comment office all' | translate"
+  (click)="onCommentOfficeAllClick()"
+>
+  <div id="commentOfficeAll">
+    <span [innerHTML]="flexPlanning.commentOfficeAll.slice(0, 20)"></span>
+  </div>
+</td>
+<ng-template #popTemplateCommentAll>
+  <div class="text-break">{{ flexPlanning.commentOfficeAll }}</div>
+</ng-template>
+<ng-template #popTemplateCommentWorker>
+  <div class="text-break">{{ flexPlanning.commentWorker }}</div>
+</ng-template>-->
 <ng-template #popTemplateCommentOffice>
   <div class="text-break">{{ flexPlanning.commentOffice }}</div>
 </ng-template>
