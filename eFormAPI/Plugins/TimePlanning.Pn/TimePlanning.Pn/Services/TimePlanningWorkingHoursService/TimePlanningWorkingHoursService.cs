@@ -278,7 +278,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         preSumFlexStart = planRegistration.SumFlexEnd;
                         await planRegistration.Update(_dbContext);
                     }
-
                 }
 
                 if (_options.Value.MaxHistoryDays != null)
@@ -350,10 +349,22 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Stop1Id = model.Shift1Stop ?? 0,
                     Stop2Id = model.Shift2Stop ?? 0,
                     Flex = model.FlexHours,
-                    SumFlexStart = model.SumFlexStart,
-                    SumFlexEnd = model.SumFlexEnd,
                     StatusCaseId = 0
                 };
+
+                var preTimePlanning =
+                    await _dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
+                        && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date).FirstOrDefaultAsync();
+                if (preTimePlanning != null)
+                {
+                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                }
+                else
+                {
+                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = 0;
+                }
 
                 await planRegistration.Create(_dbContext);
             }
@@ -387,8 +398,19 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Stop2Id = model.Shift2Stop ?? 0;
                 planRegistration.Flex = model.FlexHours;
                 planRegistration.PaiedOutFlex = model.PaidOutFlex;
-                planRegistration.SumFlexStart = model.SumFlexStart;
-                planRegistration.SumFlexEnd = model.SumFlexEnd;
+                var preTimePlanning =
+                    await _dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
+                        && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date).FirstOrDefaultAsync();
+                if (preTimePlanning != null)
+                {
+                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                }
+                else
+                {
+                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = 0;
+                }
 
                 await planRegistration.Update(_dbContext);
             }
