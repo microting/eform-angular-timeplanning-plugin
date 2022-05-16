@@ -127,7 +127,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         Shift2Pause = x.Pause2Id,
                         NettoHours = Math.Round(x.NettoHours,2),
                         FlexHours = Math.Round(x.Flex,2),
-                        SumFlex = Math.Round(x.SumFlex,2),
+                        SumFlexStart = Math.Round(x.SumFlexStart,2),
                         PaidOutFlex = x.PaiedOutFlex,
                         Message = x.MessageId,
                         CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
@@ -140,7 +140,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 var totalDays = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
-                double sumFlex = 0;
                 var lastPlanning = _dbContext.PlanRegistrations
                     .Where(x => x.Date < model.DateFrom)
                     .Where(x => x.SdkSitId == model.SiteId).OrderBy(x => x.Date).LastOrDefault();
@@ -160,7 +159,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Shift2Pause = lastPlanning?.Pause2Id,
                     NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0 ,2),
                     FlexHours = Math.Round(lastPlanning?.Flex ?? 0 ,2),
-                    SumFlex = lastPlanning?.SumFlex ?? 0,
+                    SumFlexStart= lastPlanning?.SumFlexStart ?? 0,
                     PaidOutFlex = lastPlanning?.PaiedOutFlex ?? 0,
                     Message = lastPlanning?.MessageId,
                     CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
@@ -199,15 +198,23 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
 
                 int j = 0;
+                double sumFlexEnd = 0;
+                double SumFlexStart= 0;
                 foreach (TimePlanningWorkingHoursModel timePlanningWorkingHoursModel in timePlannings)
                 {
-                    if (j > 0)
+                    if (j == 0)
                     {
-                        timePlanningWorkingHoursModel.SumFlex = Math.Round(sumFlex + timePlanningWorkingHoursModel.FlexHours - timePlanningWorkingHoursModel.PaidOutFlex, 2);
+                        timePlanningWorkingHoursModel.SumFlexStart = Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
+                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours - timePlanningWorkingHoursModel.PaidOutFlex, 2);
+                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                     }
-
+                    else
+                    {
+                        timePlanningWorkingHoursModel.SumFlexStart = sumFlexEnd;
+                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours - timePlanningWorkingHoursModel.PaidOutFlex, 2);
+                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                    }
                     j++;
-                    sumFlex = timePlanningWorkingHoursModel.SumFlex;
                 }
 
                 return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
@@ -231,17 +238,20 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var planRegistrations = await _dbContext.PlanRegistrations
                     .Where(x => x.SdkSitId == model.SiteId)
                     .ToListAsync();
+                var first = true;
                 foreach (var planning in model.Plannings)
                 {
                     var planRegistration = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
                     if (planRegistration != null)
                     {
-                        await UpdatePlanning(planRegistration, planning, model.SiteId);
+                        await UpdatePlanning(first, planRegistration, planning, model.SiteId);
                     }
                     else
                     {
-                        await CreatePlanning(planning, model.SiteId, model.SiteId, planning.CommentWorker);
+                        await CreatePlanning(first, planning, model.SiteId, model.SiteId, planning.CommentWorker);
                     }
+
+                    first = false;
                 }
                 var core = await _core.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
@@ -257,14 +267,15 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     .Where(x => x.SdkSitId == site.MicrotingUid)
                     .OrderBy(x => x.Date).ToListAsync();
 
-                double preSumFlex = allPlannings.Any() ? allPlannings.First().SumFlex : 0;
+                double preSumFlexStart = allPlannings.Any() ? allPlannings.First().SumFlexEnd : 0;
 
                 foreach (PlanRegistration planRegistration in allPlannings)
                 {
                     if (planRegistration.Date > lastDate)
                     {
-                        planRegistration.SumFlex = preSumFlex + planRegistration.Flex;
-                        preSumFlex = planRegistration.SumFlex;
+                        planRegistration.SumFlexStart = preSumFlexStart;
+                        planRegistration.SumFlexEnd = preSumFlexStart + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                        preSumFlexStart = planRegistration.SumFlexEnd;
                         await planRegistration.Update(_dbContext);
                     }
 
@@ -315,7 +326,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
         }
 
-        private async Task CreatePlanning(TimePlanningWorkingHoursModel model, int sdkSiteId, int microtingUid, string commentWorker)
+        private async Task CreatePlanning(bool first, TimePlanningWorkingHoursModel model, int sdkSiteId, int microtingUid, string commentWorker)
         {
             try
             {
@@ -339,7 +350,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Stop1Id = model.Shift1Stop ?? 0,
                     Stop2Id = model.Shift2Stop ?? 0,
                     Flex = model.FlexHours,
-                    SumFlex = model.SumFlex,
+                    SumFlexStart = model.SumFlexStart,
+                    SumFlexEnd = model.SumFlexEnd,
                     StatusCaseId = 0
                 };
 
@@ -352,7 +364,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
         }
 
-        private async Task UpdatePlanning(PlanRegistration planRegistration,
+        private async Task UpdatePlanning(bool first, PlanRegistration planRegistration,
             TimePlanningWorkingHoursModel model,
             int microtingUid)
         {
@@ -375,7 +387,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Stop2Id = model.Shift2Stop ?? 0;
                 planRegistration.Flex = model.FlexHours;
                 planRegistration.PaiedOutFlex = model.PaidOutFlex;
-                planRegistration.SumFlex = model.SumFlex;
+                planRegistration.SumFlexStart = model.SumFlexStart;
+                planRegistration.SumFlexEnd = model.SumFlexEnd;
 
                 await planRegistration.Update(_dbContext);
             }
@@ -454,7 +467,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Flex);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
-                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.SumFlex);
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.SumFlexStart);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
                 worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.PaidOutFlex);
@@ -548,7 +561,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.FlexHours;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlex;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexStart;
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
                             y++;

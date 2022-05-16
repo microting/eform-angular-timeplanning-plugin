@@ -39,7 +39,8 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
         public int? Shift2Stop { get; set; }
         public double NettoHours { get; set; }
         public double FlexHours { get; set; }
-        public double SumFlex { get; set; }
+        public double SumFlexStart { get; set; }
+        public double SumFlexEnd { get; set; }
         public double PaidOutFlex { get; set; }
         public int? Message { get; set; }
         public string CommentWorker { get; set; }

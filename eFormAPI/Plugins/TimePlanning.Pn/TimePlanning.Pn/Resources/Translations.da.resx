@@ -3,7 +3,7 @@
 <root>
     <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
         <xsd:element name="root" msdata:IsDataSet="true">
-            
+
         </xsd:element>
     </xsd:schema>
     <resheader name="resmimetype">
@@ -66,13 +66,16 @@
     <data name="Shift 2: start" xml:space="preserve">
         <value>Skift 2: start</value>
     </data>
-    <data name="SumFlex" xml:space="preserve">
-        <value>Flex sum</value>
+    <data name="SumFlexEnd" xml:space="preserve">
+        <value>Flex sum end</value>
     </data>
     <data name="Worker" xml:space="preserve">
         <value>Medarbejeder</value>
     </data>
     <data name="DayOfWeek" xml:space="preserve">
         <value>Ugedag</value>
+    </data>
+    <data name="SumFlexStart" xml:space="preserve">
+        <value>Flex sum start</value>
     </data>
 </root>

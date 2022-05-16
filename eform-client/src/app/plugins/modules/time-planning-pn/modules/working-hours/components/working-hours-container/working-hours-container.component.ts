@@ -88,7 +88,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
             disabled: true,
           }),
           sumFlex: new FormControl({
-            value: x.sumFlex ? x.sumFlex : 0,
+            value: x.sumFlexStart ? x.sumFlexStart : 0,
             disabled: true,
           }),
           paidOutFlex: new FormControl(x.paidOutFlex ? x.paidOutFlex : 0),
@@ -167,7 +167,9 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
           formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
         }
       } else {
+        const paidOutFlex = formGroup.get('paidOutFlex').value;
         sumFlex = formGroup.get('sumFlex').value;
+        sumFlex = sumFlex  - (paidOutFlex ? paidOutFlex : 0);
       }
     }
     if (initialize) {
