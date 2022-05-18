@@ -88,7 +88,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
             disabled: true,
           }),
           sumFlex: new FormControl({
-            value: x.sumFlexStart ? x.sumFlexStart : 0,
+            value: x.sumFlexEnd ? x.sumFlexEnd : 0,
             disabled: true,
           }),
           paidOutFlex: new FormControl(x.paidOutFlex ? x.paidOutFlex : 0),
