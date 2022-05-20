@@ -55,7 +55,7 @@ public class DeploymentHelper
                              $"{Translations.Shift_2__end}: {planRegistration.Options[planRegistration.Stop2Id > 0 ? planRegistration.Stop2Id - 1 : 0]}<br/><br/>" +
                              $"<strong>{Translations.NettoHours}: {planRegistration.NettoHours:0.00}</strong><br/><br/>" +
                              $"{Translations.Flex}: {planRegistration.Flex:0.00}<br/>" +
-                             $"{Translations.SumFlexStart}: {planRegistration.SumFlexStart:0.00}<br/>" +
+                             $"{Translations.SumFlexStart}: {planRegistration.SumFlexEnd:0.00}<br/>" +
                              $"{Translations.PaidOutFlex}: {planRegistration.PaiedOutFlex:0.00}<br/><br/>" +
                              $"<strong>{Translations.Message}:</strong><br/>" +
                              $"{messageText}<br/><br/>"+
