@@ -260,15 +260,15 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
                 var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
                 var eFormId = _options.Value.InfoeFormId;
-                
+
                 var lastDate = model.Plannings.Last().Date;
                 var allPlannings = await _dbContext.PlanRegistrations
                     .Where(x => x.Date >= lastDate)
                     .Where(x => x.SdkSitId == site.MicrotingUid)
                     .OrderBy(x => x.Date).ToListAsync();
-                
+
                 double preSumFlexStart = allPlannings.Any() ? allPlannings.First().SumFlexEnd : 0;
-                
+
                 foreach (PlanRegistration planRegistration in allPlannings)
                 {
                     if (planRegistration.Date > lastDate)
@@ -421,6 +421,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
         }
 
+        // Lene Plov
+        // Dorth Smith
+        // Majbrit skovgård
+        // Emma Pedersen -17,16 Sandheden er 6,33 pr. 9/6/2022
+
         public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursRequestModel model)
         {
             try
@@ -545,7 +550,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanText;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanText; // TODO plan text
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
                             y++;
@@ -583,7 +588,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.FlexHours;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexStart;
+                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexEnd;
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
                             y++;
@@ -600,6 +605,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 }
 
                 wb.SaveAs(resultDocument);
+                // TODO check adjustment for width of text for row 0
 
                 Stream result = File.Open(resultDocument, FileMode.Open);
                 return new OperationDataResult<Stream>(true, result);
