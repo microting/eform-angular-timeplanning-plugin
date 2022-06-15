@@ -70,7 +70,7 @@
         <value>Flex sum end</value>
     </data>
     <data name="Worker" xml:space="preserve">
-        <value>Medarbejeder</value>
+        <value>Medarbejder</value>
     </data>
     <data name="DayOfWeek" xml:space="preserve">
         <value>Ugedag</value>
