@@ -186,6 +186,8 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                                 && x.SdkSitId == assignedSite.SiteId)
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
+
+                        //
                         if (preTimePlanning != null)
                         {
                             timePlanning.SumFlexEnd = preTimePlanning.SumFlexEnd + timePlanning.Flex - timePlanning.PaiedOutFlex;
