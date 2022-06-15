@@ -286,7 +286,11 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 var sites = new List<SiteDto>();
                 foreach (var assignedSite in assignedSites)
                 {
-                    sites.Add(await core.SiteRead(assignedSite));
+                    var site = await core.SiteRead(assignedSite);
+                    if (site != null)
+                    {
+                        sites.Add(site);   
+                    }
                 }
 
                 return new OperationDataResult<List<SiteDto>>(true, sites);

@@ -34,7 +34,7 @@ export class TimePlanningSettingsRemoveSiteModalComponent implements OnInit, OnD
 
   removeSite() {
     this.removeSub$ = this.settingsService
-      .removeSiteFromSettings(this.selectedSite.siteUId)
+      .removeSiteFromSettings(this.selectedSite.id)
       .subscribe((data) => {
         this.siteRemoved.emit();
         this.frame.hide();
