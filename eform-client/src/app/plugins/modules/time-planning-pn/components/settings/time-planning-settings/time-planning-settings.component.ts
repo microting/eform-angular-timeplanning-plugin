@@ -136,9 +136,19 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   }
 
   showRemoveSiteModal(selectedSiteId: number) {
-    this.removeSiteModal.show(
-      this.sites.find((x) => x.siteUId === selectedSiteId)
-    );
+    let index = this.sites.findIndex((x) => x.siteUId === selectedSiteId);
+    if (index !== -1) {
+      this.removeSiteModal.show(
+        this.sites[index]
+      );
+    } else {
+      index = this.sites.findIndex((x) => x.id === selectedSiteId);
+      this.removeSiteModal.show(
+        this.sites[index]
+      );
+    }
+
+
   }
 
   openFoldersModal() {
@@ -171,7 +181,11 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   }
 
   getNameSite(id: number) {
-    const index = this.sites.findIndex((x) => x.siteUId === id);
+    let index = this.sites.findIndex((x) => x.siteUId === id);
+    if (index !== -1) {
+      return this.sites[index].siteName;
+    }
+    index = this.sites.findIndex((x) => x.id === id);
     if (index !== -1) {
       return this.sites[index].siteName;
     }
