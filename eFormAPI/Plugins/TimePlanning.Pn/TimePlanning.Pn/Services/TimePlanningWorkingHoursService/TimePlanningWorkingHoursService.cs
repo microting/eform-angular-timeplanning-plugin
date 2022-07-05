@@ -285,7 +285,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     int maxHistoryDaysInd = (int)_options.Value.MaxHistoryDays;
                     var firstDate = model.Plannings.First(x => x.Date >= DateTime.Now.AddDays(-maxHistoryDaysInd)).Date;
                     var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate && x.Date <= DateTime.UtcNow
-                            && x.SdkSitId == site.MicrotingUid && x.StatusCaseId != 0)
+                            && x.SdkSitId == site.MicrotingUid && x.DataFromDevice)
                         .OrderBy(x => x.Date).ToListAsync();
                     foreach (PlanRegistration planRegistration in list)
                     {

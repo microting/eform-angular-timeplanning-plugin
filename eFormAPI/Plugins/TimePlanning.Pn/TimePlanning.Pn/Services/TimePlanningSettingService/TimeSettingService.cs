@@ -131,15 +131,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 var theCore = await _core.GetCore();
                 await using var sdkDbContext = theCore.DbContextHelper.GetDbContext();
                 var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);
-                // if (folder == null)
-                // {
-                //     return new OperationResult(false, _workOrdersLocalizationService.GetString("FolderNotExist"));
-                // }
                 var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
-                // if (site == null)
-                // {
-                //     return new OperationResult(false, _workOrdersLocalizationService.GetString("SiteNotFind"));
-                // }
                 var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
                 var mainElement = await theCore.ReadeForm((int)newTaskId, language);
                 mainElement.CheckListFolderName = folder.MicrotingUid.ToString();
@@ -151,56 +143,6 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 var caseId = await theCore.CaseCreate(mainElement, "", siteId, folderId);
                 assignmentSite.CaseMicrotingUid = caseId;
                 await assignmentSite.Update(_dbContext);
-
-                var minutesMultiplier = 5;
-
-                var assignedSites = await _dbContext.AssignedSites
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .ToListAsync();
-                foreach (var assignedSite in assignedSites)
-                {
-                    var timePlannings = await _dbContext.PlanRegistrations
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => x.SdkSitId == assignedSite.SiteId)
-                        .OrderBy(x => x.Date)
-                        .ToListAsync();
-
-                    foreach (var timePlanning in timePlannings)
-                    {
-                        double nettoMinutes = 0;
-
-                        nettoMinutes = timePlanning.Stop1Id - timePlanning.Start1Id;
-                        nettoMinutes = nettoMinutes - (timePlanning.Pause1Id > 0 ? timePlanning.Pause1Id - 1 : 0);
-                        nettoMinutes = nettoMinutes + timePlanning.Stop2Id - timePlanning.Start2Id;
-                        nettoMinutes = nettoMinutes - (timePlanning.Pause2Id > 0 ? timePlanning.Pause2Id - 1 : 0);
-
-                        nettoMinutes = nettoMinutes * minutesMultiplier;
-
-                        double hours = nettoMinutes / 60;
-                        timePlanning.NettoHours = hours;
-                        timePlanning.Flex = hours - timePlanning.PlanHours;
-
-                        var preTimePlanning =
-                            await _dbContext.PlanRegistrations.AsNoTracking()
-                                .Where(x => x.Date < timePlanning.Date
-                                && x.SdkSitId == assignedSite.SiteId)
-                                .OrderByDescending(x => x.Date)
-                                .FirstOrDefaultAsync();
-
-                        //
-                        if (preTimePlanning != null)
-                        {
-                            timePlanning.SumFlexEnd = preTimePlanning.SumFlexEnd + timePlanning.Flex - timePlanning.PaiedOutFlex;
-                            timePlanning.SumFlexStart = preTimePlanning.SumFlexEnd;
-                        }
-                        else
-                        {
-                            timePlanning.SumFlexEnd = timePlanning.Flex - timePlanning.PaiedOutFlex;
-                            timePlanning.SumFlexStart = 0;
-                        }
-                        await timePlanning.Update(_dbContext);
-                    }
-                }
 
                 return new OperationResult(true, _localizationService.GetString("SitesUpdatedSuccessfuly"));
             }
