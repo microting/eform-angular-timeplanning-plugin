@@ -204,7 +204,7 @@ namespace TimePlanning.Pn
 
             if (folderId is 0)
             {
-                var timeFolder = await sdkDbContext.FolderTranslations.FirstOrDefaultAsync(x => x.Name == "Timeregistrering").ConfigureAwait(false);
+                var timeFolder = await sdkDbContext.FolderTranslations.FirstOrDefaultAsync(x => x.Name == "Tidsregistrering").ConfigureAwait(false);
                 if (timeFolder != null)
                 {
                     await options.UpdateDb(settings =>
