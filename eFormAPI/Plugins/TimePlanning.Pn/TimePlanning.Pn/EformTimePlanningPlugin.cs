@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using Microting.eForm.Infrastructure.Constants;
 using Microting.eForm.Infrastructure.Models;
 
 namespace TimePlanning.Pn
@@ -204,7 +205,9 @@ namespace TimePlanning.Pn
 
             if (folderId is 0)
             {
-                var timeFolder = await sdkDbContext.FolderTranslations.FirstOrDefaultAsync(x => x.Name == "Tidsregistrering").ConfigureAwait(false);
+                var timeFolder = await sdkDbContext.FolderTranslations.FirstOrDefaultAsync(x =>
+                    x.WorkflowState != Constants.WorkflowStates.Removed
+                    && x.Name == "Tidsregistrering").ConfigureAwait(false);
                 if (timeFolder != null)
                 {
                     await options.UpdateDb(settings =>
@@ -220,24 +223,28 @@ namespace TimePlanning.Pn
                     {
                         new()
                         {
-                            Name = "Timeregistrering",
-                            LanguageId = 1
+                            Name = "Tidsregistrering",
+                            LanguageId = 1,
+                            Description = ""
                         },
                         new()
                         {
                             Name = "Time registration",
-                            LanguageId = 2
+                            LanguageId = 2,
+                            Description = ""
                         },
                         new()
                         {
                             Name = "Zeiterfassung",
-                            LanguageId = 3
+                            LanguageId = 3,
+                            Description = ""
                         },
                         new()
                         {
                             Name = "Реєстрація часу",
-                            LanguageId = 4
-                        }
+                            LanguageId = 4,
+                            Description = ""
+                        },
                     };
 
                     var res = await core.FolderCreate(translations, null).ConfigureAwait(false);
