@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using Microting.eForm.Infrastructure.Models;
+
 namespace TimePlanning.Pn
 {
     using System;
@@ -183,6 +185,70 @@ namespace TimePlanning.Pn
                 {
                     settings.InfoeFormId = originalId;
                 }, context, user.UserId);
+            }
+
+            var newTaskId = options.Value.EformId;
+            if (newTaskId is 0)
+            {
+                var clt = await sdkDbContext.CheckListTranslations
+                    .FirstAsync(x => x.Text == "00. Arbejdstid").ConfigureAwait(false);
+                await options.UpdateDb(settings =>
+                    {
+                        settings.EformId = clt.CheckListId;
+                    },
+                    context,
+                    user.UserId);
+
+            }
+            var folderId = options.Value.FolderId;
+
+            if (folderId is 0)
+            {
+                var timeFolder = await sdkDbContext.FolderTranslations.FirstOrDefaultAsync(x => x.Name == "Timeregistrering").ConfigureAwait(false);
+                if (timeFolder != null)
+                {
+                    await options.UpdateDb(settings =>
+                        {
+                            settings.FolderId = timeFolder.FolderId;
+                        },
+                        context,
+                        user.UserId);
+                }
+                else
+                {
+                    var translations = new List<CommonTranslationsModel>()
+                    {
+                        new()
+                        {
+                            Name = "Timeregistrering",
+                            LanguageId = 1
+                        },
+                        new()
+                        {
+                            Name = "Time registration",
+                            LanguageId = 2
+                        },
+                        new()
+                        {
+                            Name = "Zeiterfassung",
+                            LanguageId = 3
+                        },
+                        new()
+                        {
+                            Name = "Реєстрація часу",
+                            LanguageId = 4
+                        }
+                    };
+
+                    var res = await core.FolderCreate(translations, null).ConfigureAwait(false);
+
+                    await options.UpdateDb(settings =>
+                        {
+                            settings.FolderId = res;
+                        },
+                        context,
+                        user.UserId);
+                }
             }
         }
 
