@@ -88,6 +88,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 CultureInfo ci = new CultureInfo(language.LanguageCode);
                 List<(DateTime, string)> tupleValueList = new();
                 var site = await sdkDbContext.Sites
+                    .AsNoTracking()
                     .Where(x => x.MicrotingUid == model.SiteId)
                     .Select(x => new
                     {
@@ -97,6 +98,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     .FirstAsync();
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
+                    .AsNoTracking()
                     .Where(x => x.SdkSitId == model.SiteId);
 
                 // two dates may be displayed instead of one if the same date is selected.
@@ -141,6 +143,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var totalDays = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
                 var lastPlanning = _dbContext.PlanRegistrations
+                    .AsNoTracking()
                     .Where(x => x.Date < model.DateFrom)
                     .Where(x => x.SdkSitId == model.SiteId).OrderBy(x => x.Date).LastOrDefault();
 

@@ -42,6 +42,6 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
 
         Task<OperationResult> DeleteSite(int siteId);
 
-        Task<OperationDataResult<List<SiteDto>>> GetAvailableites();
+        Task<OperationDataResult<List<SiteDto>>> GetAvailableSites();
     }
 }

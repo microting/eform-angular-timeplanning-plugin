@@ -217,12 +217,13 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
         }
 
-        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableites()
+        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableSites()
         {
             try
             {
                 var core = await _core.GetCore();
                 var assignedSites = await _dbContext.AssignedSites
+                    .AsNoTracking()
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Select(x => x.SiteId)
                     .ToListAsync();
@@ -233,9 +234,11 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     var site = await core.SiteRead(assignedSite);
                     if (site != null)
                     {
-                        sites.Add(site);   
+                        sites.Add(site);
                     }
                 }
+
+                sites = sites.OrderBy(x => x.SiteName).ToList();
 
                 return new OperationDataResult<List<SiteDto>>(true, sites);
             }

@@ -85,7 +85,7 @@ namespace TimePlanning.Pn.Controllers
         [Authorize(Roles = EformRole.Admin)]
         public async Task<OperationResult> GetAvailableSites()
         {
-            return await _settingService.GetAvailableites();
+            return await _settingService.GetAvailableSites();
         }
     }
 }
