@@ -28,7 +28,8 @@ public class DeploymentHelper
             Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
             CultureInfo ci = new CultureInfo(language.LanguageCode);
             mainElement.Label = planRegistration.Date.ToString("dddd dd. MMM yyyy", ci);
-            mainElement.EndDate = DateTime.UtcNow.AddDays(maxHistoryDays);
+            mainElement.EndDate = planRegistration.Date.AddDays(maxHistoryDays);
+            mainElement.StartDate = planRegistration.Date.AddDays(-1).ToUniversalTime();
             DateTime startDate = new DateTime(2020, 1, 1);
             mainElement.DisplayOrder = (startDate - planRegistration.Date).Days;
             DataElement element = (DataElement)mainElement.ElementList.First();
@@ -55,7 +56,7 @@ public class DeploymentHelper
                              $"{Translations.Shift_2__end}: {planRegistration.Options[planRegistration.Stop2Id > 0 ? planRegistration.Stop2Id - 1 : 0]}<br/><br/>" +
                              $"<strong>{Translations.NettoHours}: {planRegistration.NettoHours:0.00}</strong><br/><br/>" +
                              $"{Translations.Flex}: {planRegistration.Flex:0.00}<br/>" +
-                             $"{Translations.SumFlex}: {planRegistration.SumFlex:0.00}<br/>" +
+                             $"{Translations.SumFlexStart}: {planRegistration.SumFlexEnd:0.00}<br/>" +
                              $"{Translations.PaidOutFlex}: {planRegistration.PaiedOutFlex:0.00}<br/><br/>" +
                              $"<strong>{Translations.Message}:</strong><br/>" +
                              $"{messageText}<br/><br/>"+

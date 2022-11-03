@@ -18,6 +18,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using Microting.TimePlanningBase.Infrastructure.Const;
+
 namespace TimePlanning.Pn.Controllers
 {
     using System.Threading.Tasks;
@@ -74,7 +76,7 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpDelete]
         [Route("sites")]
-        [Authorize(Roles = EformRole.Admin)]
+        [Authorize(Roles = EformRole.User)]
         public async Task<OperationResult> DeleteSite(int siteId)
         {
             return await _settingService.DeleteSite(siteId);
@@ -82,10 +84,10 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpGet]
         [Route("sites")]
-        [Authorize(Roles = EformRole.Admin)]
+        [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
         public async Task<OperationResult> GetAvailableSites()
         {
-            return await _settingService.GetAvailableites();
+            return await _settingService.GetAvailableSites();
         }
     }
 }

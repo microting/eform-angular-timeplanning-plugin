@@ -131,15 +131,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 var theCore = await _core.GetCore();
                 await using var sdkDbContext = theCore.DbContextHelper.GetDbContext();
                 var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);
-                // if (folder == null)
-                // {
-                //     return new OperationResult(false, _workOrdersLocalizationService.GetString("FolderNotExist"));
-                // }
                 var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
-                // if (site == null)
-                // {
-                //     return new OperationResult(false, _workOrdersLocalizationService.GetString("SiteNotFind"));
-                // }
                 var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
                 var mainElement = await theCore.ReadeForm((int)newTaskId, language);
                 mainElement.CheckListFolderName = folder.MicrotingUid.ToString();
@@ -225,12 +217,13 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
         }
 
-        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableites()
+        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableSites()
         {
             try
             {
                 var core = await _core.GetCore();
                 var assignedSites = await _dbContext.AssignedSites
+                    .AsNoTracking()
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Select(x => x.SiteId)
                     .ToListAsync();
@@ -238,8 +231,14 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 var sites = new List<SiteDto>();
                 foreach (var assignedSite in assignedSites)
                 {
-                    sites.Add(await core.SiteRead(assignedSite));
+                    var site = await core.SiteRead(assignedSite);
+                    if (site != null)
+                    {
+                        sites.Add(site);
+                    }
                 }
+
+                sites = sites.OrderBy(x => x.SiteName).ToList();
 
                 return new OperationDataResult<List<SiteDto>>(true, sites);
             }

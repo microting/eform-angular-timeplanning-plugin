@@ -15,7 +15,8 @@ export class TimePlanningModel {
   shift2Stop: number;
   nettoHours: number;
   flexHours: number;
-  sumFlex: number;
+  sumFlexStart: number;
+  sumFlexEnd: number;
   paidOutFlex: number;
   commentWorker: string;
   commentOffice: string;

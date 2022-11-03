@@ -3,7 +3,7 @@
 <root>
     <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
         <xsd:element name="root" msdata:IsDataSet="true">
-            
+
         </xsd:element>
     </xsd:schema>
     <resheader name="resmimetype">
@@ -48,7 +48,10 @@
     <data name="Flex" xml:space="preserve">
         <value>Flex</value>
     </data>
-    <data name="SumFlex" xml:space="preserve">
+    <data name="SumFlexStart" xml:space="preserve">
+        <value>Flex sum</value>
+    </data>
+    <data name="SumFlexEnd" xml:space="preserve">
         <value>Flex sum</value>
     </data>
     <data name="PaidOutFlex" xml:space="preserve">

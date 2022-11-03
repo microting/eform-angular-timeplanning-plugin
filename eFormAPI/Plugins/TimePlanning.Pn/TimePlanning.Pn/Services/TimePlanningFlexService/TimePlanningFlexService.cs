@@ -104,7 +104,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                             {
                                 Date = DateTime.Now.AddDays(-1).Date,
                                 SdkSitId = r.SdkSitId,
-                                SumFlex = Math.Round(r.SumFlex, 2),
+                                SumFlexEnd = Math.Round(r.SumFlexEnd, 2),
                                 PaiedOutFlex = r.PaiedOutFlex,
                                 CommentOffice = r.CommentOffice
                             };
@@ -133,7 +133,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                             Id = planRegistration.SdkSitId,
                             Name = site.Name,
                         },
-                        SumFlex = Math.Round(planRegistration.SumFlex, 2),
+                        SumFlex = Math.Round(planRegistration.SumFlexEnd, 2),
                         PaidOutFlex = planRegistration.PaiedOutFlex,
                         CommentOffice = planRegistration.CommentOffice?.Replace("\r", "<br />") ?? ""
                     });
@@ -238,7 +238,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 CommentOfficeAll = model.CommentOfficeAll,
                 SdkSitId = sdkSiteId,
                 Date = model.Date,
-                SumFlex = model.SumFlex - model.PaidOutFlex,
+                SumFlexEnd = model.SumFlexStart - model.PaidOutFlex,
                 PaiedOutFlex = model.PaidOutFlex,
                 CreatedByUserId = _userService.UserId,
                 UpdatedByUserId = _userService.UserId,
@@ -252,7 +252,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
         {
             planRegistration.CommentOfficeAll = model.CommentOfficeAll;
             planRegistration.CommentOffice = model.CommentOffice;
-            planRegistration.SumFlex += planRegistration.PaiedOutFlex - model.PaidOutFlex;
+            planRegistration.SumFlexEnd += planRegistration.PaiedOutFlex - model.PaidOutFlex;
             planRegistration.PaiedOutFlex = model.PaidOutFlex;
             planRegistration.UpdatedByUserId = _userService.UserId;
 

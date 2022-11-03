@@ -33,7 +33,9 @@ namespace TimePlanning.Pn.Infrastructure.Models.Flex.Update
 
         public CommonDictionaryModel Worker { get; set; }
 
-        public double SumFlex { get; set; }
+        public double SumFlexStart { get; set; }
+
+        public double SumFlexEnd { get; set; }
 
         public double PaidOutFlex { get; set; }
 

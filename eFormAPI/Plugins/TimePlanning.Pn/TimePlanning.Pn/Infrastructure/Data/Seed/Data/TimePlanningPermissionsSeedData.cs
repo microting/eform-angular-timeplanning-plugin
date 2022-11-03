@@ -34,23 +34,8 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
         {
             new PluginPermission
             {
-                PermissionName = "Access ItemsPlanning Plugin",
+                PermissionName = "Access Time Plannings Plugin",
                 ClaimName = TimePlanningClaims.AccessTimePlanningPlugin
-            },
-            new PluginPermission
-            {
-                PermissionName = "Create Notification Rules",
-                ClaimName = TimePlanningClaims.CreatePlanning
-            },
-            new PluginPermission
-            {
-                PermissionName = "Edit Planning",
-                ClaimName = TimePlanningClaims.EditPlanning
-            },
-            new PluginPermission
-            {
-                PermissionName = "Obtain plannings",
-                ClaimName = TimePlanningClaims.GetPlanning
             },
             new PluginPermission
             {
