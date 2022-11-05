@@ -45,12 +45,12 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   messages: { id: number; value: string }[] = [];
 
   get columns() {
-    return this.tableHeaders1.map(x => x.field);
+    return this.tableHeaders.map(x => x.field);
   }
 
   subs$: Subscription[] = [];
 
-  tableHeaders1: MtxGridColumn[] = [];
+  tableHeaders: MtxGridColumn[] = [];
 
   constructor(
     private translateService: TranslateService,
@@ -77,7 +77,7 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   }
 
   ngOnInit(): void {
-    this.tableHeaders1 = [
+    this.tableHeaders = [
       {
         header: this.translateService.stream('DayOfWeek'),
         field: 'weekDay',
