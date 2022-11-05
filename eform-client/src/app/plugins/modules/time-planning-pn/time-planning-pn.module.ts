@@ -13,11 +13,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MDBBootstrapModule } from 'angular-bootstrap-md';
 import { NgxMaskModule } from 'ngx-mask';
 import { EformSharedModule } from 'src/app/common/modules/eform-shared/eform-shared.module';
-import { TimePlanningPnRouting } from './time-planning-pn.routing.module';
+import { TimePlanningPnRouting } from './time-planning-pn.routing';
 import {
-  TimeFlexesContainerComponent,
-  TimeFlexesTableComponent,
-  TimeFlexesTableRowComponent,
   TimePlanningsContainerComponent,
   TimePlanningSettingsAddSiteModalComponent,
   TimePlanningSettingsComponent,
@@ -26,8 +23,6 @@ import {
   TimePlanningsHeaderComponent,
   TimePlanningsTableComponent,
   TimePlanningTableRowComponent,
-  TimeFlexesCommentOfficeUpdateModalComponent,
-  TimeFlexesCommentOfficeAllUpdateModalComponent,
 } from './components';
 import { TimePlanningPnLayoutComponent } from './layouts';
 import {
@@ -62,11 +57,6 @@ import { MY_MOMENT_FORMATS_FOR_TIME_PLANNING } from './consts/custom-date-time-a
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
     TimePlanningsHeaderComponent,
-    TimeFlexesTableComponent,
-    TimeFlexesTableRowComponent,
-    TimeFlexesContainerComponent,
-    TimeFlexesCommentOfficeUpdateModalComponent,
-    TimeFlexesCommentOfficeAllUpdateModalComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,
