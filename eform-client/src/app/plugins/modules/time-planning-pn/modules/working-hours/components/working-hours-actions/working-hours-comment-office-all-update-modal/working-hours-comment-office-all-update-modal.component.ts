@@ -1,6 +1,7 @@
-import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
-import { FormGroup } from '@angular/forms';
+import {Component, Inject, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
+import {FormGroup} from '@angular/forms';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
 @AutoUnsubscribe()
 @Component({
@@ -10,13 +11,17 @@ import { FormGroup } from '@angular/forms';
 })
 export class WorkingHoursCommentOfficeAllUpdateModalComponent
   implements OnInit, OnDestroy {
-  @ViewChild('frame', { static: false }) frame;
-  @Input() workingHoursForm: FormGroup;
   commentOfficeAll: string;
 
-  constructor() {}
+  constructor(
+    public dialogRef: MatDialogRef<WorkingHoursCommentOfficeAllUpdateModalComponent>,
+    @Inject(MAT_DIALOG_DATA) public workingHoursForm: FormGroup,
+  ) {
+    this.commentOfficeAll = this.workingHoursForm.get('commentOfficeAll').value;
+  }
 
-  ngOnInit() {}
+  ngOnInit() {
+  }
 
   get date(): Date {
     return this.workingHoursForm.get('date').value;
@@ -24,11 +29,6 @@ export class WorkingHoursCommentOfficeAllUpdateModalComponent
 
   get workerName(): string {
     return this.workingHoursForm.get('workerName').value;
-  }
-
-  show(): void {
-    this.commentOfficeAll = this.workingHoursForm.get('commentOfficeAll').value;
-    this.frame.show();
   }
 
   save() {
@@ -39,8 +39,9 @@ export class WorkingHoursCommentOfficeAllUpdateModalComponent
   }
 
   hide() {
-    this.frame.hide();
+    this.dialogRef.close();
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void {
+  }
 }

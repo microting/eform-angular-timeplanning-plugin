@@ -1,62 +1,34 @@
-<div
-  [config]="{ ignoreBackdropClick: true }"
-  mdbModal
-  class="modal fade"
-  #frame="mdbModal"
->
-  <div class="modal-dialog modal-md">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>{{ 'Edit comment office' | translate }}</h3>
-        <button class="close" data-dismiss="modal" (click)="hide()">
-          <span>×</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="container-fluid">
-          <div class="row">
-            {{ ('Date' | translate) + ': ' + (date | date: 'dd/MM/yyyy') }}
-          </div>
-          <div class="row">
-            {{ ('Worker' | translate) + ': ' + workerName }}
-          </div>
-          <div class="row">
-            <div class="col">
-              <div class="md-form">
-                <textarea
-                  mdbInput
-                  [(ngModel)]="commentOffice"
-                  type="text"
-                  id="workingHoursCommentOfficeInput"
-                  name="workingHoursCommentOfficeInput"
-                  class="md-textarea form-control"
-                ></textarea>
-                <label for="workingHoursCommentOfficeInput">{{
-                  'Comment office' | translate
-                }}</label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button
-          mdbBtn
-          class="btn-success btn-small-height"
-          (click)="save()"
-          id="flexesCommentOfficeEditSaveBtn"
-        >
-          {{ 'OK' | translate }}
-        </button>
-        <button
-          mdbBtn
-          class="btn-accent text-black-50 btn-small-height"
-          (click)="hide()"
-          id="flexesCommentOfficeEditSaveCancelBtn"
-        >
-          {{ 'Cancel' | translate }}
-        </button>
-      </div>
-    </div>
+<h3 mat-dialog-title>{{ 'Edit comment office' | translate }}</h3>
+<div mat-dialog-content>
+  <div class="d-flex flex-column">
+    <div>{{ ('Date' | translate) + ': ' + (date | date: 'dd/MM/yyyy') }}</div>
+    <div>{{ ('Worker' | translate) + ': ' + workerName }}</div>
+    <mat-form-field>
+      <mat-label>{{ 'Comment office' | translate }}</mat-label>
+      <textarea
+        matInput
+        [(ngModel)]="commentOffice"
+        type="text"
+        id="workingHoursCommentOfficeInput"
+        name="workingHoursCommentOfficeInput"
+      ></textarea>
+    </mat-form-field>
   </div>
+</div>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+  <button
+    mat-raised-button
+    color="accent"
+    (click)="save()"
+    id="flexesCommentOfficeEditSaveBtn"
+  >
+    {{'OK' | translate}}
+  </button>
+  <button
+    mat-raised-button
+    (click)="hide()"
+    id="flexesCommentOfficeEditSaveCancelBtn"
+  >
+    {{'Cancel' | translate}}
+  </button>
 </div>
