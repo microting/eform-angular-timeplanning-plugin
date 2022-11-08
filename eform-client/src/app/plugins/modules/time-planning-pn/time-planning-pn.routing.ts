@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard, PermissionGuard } from 'src/app/common/guards';
 import {
-  TimeFlexesContainerComponent,
   TimePlanningsContainerComponent,
   TimePlanningSettingsComponent,
 } from './components';
@@ -37,7 +36,10 @@ export const routes: Routes = [
       {
         path: 'flex',
         canActivate: [AuthGuard],
-        component: TimeFlexesContainerComponent,
+        loadChildren: () =>
+          import('./modules/flexes/flex.module').then(
+            (m) => m.FlexModule
+          ),
       },
       {
         path: 'settings',

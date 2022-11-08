@@ -11,23 +11,21 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {TranslateModule} from '@ngx-translate/core';
 import {NgxMaskModule} from 'ngx-mask';
 import {EformSharedModule} from 'src/app/common/modules/eform-shared/eform-shared.module';
-import {WorkingHoursRouting} from './working-hours.routing';
+import {FlexRouting} from './flex.routing';
 import {
-  WorkingHoursContainerComponent,
-  WorkingHoursHeaderComponent,
-  WorkingHoursTableComponent,
-  WorkingHoursCommentOfficeUpdateModalComponent,
-  WorkingHoursCommentOfficeAllUpdateModalComponent,
+  TimeFlexesCommentOfficeAllUpdateModalComponent,
+  TimeFlexesCommentOfficeUpdateModalComponent,
+  TimeFlexesContainerComponent,
+  TimeFlexesTableComponent,
 } from './components';
 import {MY_MOMENT_FORMATS_FOR_WORKING_HOURS} from '../../consts/custom-date-time-adapter-for-working-hours';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
-import {MtxSelectModule} from '@ng-matero/extensions/select';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
-import {MatTableModule} from '@angular/material/table';
 import {MatDialogModule} from '@angular/material/dialog';
+import {MatTooltipModule} from '@angular/material/tooltip';
 
 @NgModule({
   imports: [
@@ -39,24 +37,22 @@ import {MatDialogModule} from '@angular/material/dialog';
     RouterModule,
     ReactiveFormsModule,
     NgxMaskModule,
-    WorkingHoursRouting,
+    FlexRouting,
     OwlDateTimeModule,
     OwlMomentDateTimeModule,
     MtxGridModule,
     MatFormFieldModule,
     MatInputModule,
-    MtxSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatTableModule,
     MatDialogModule,
+    MatTooltipModule,
   ],
   declarations: [
-    WorkingHoursContainerComponent,
-    WorkingHoursHeaderComponent,
-    WorkingHoursTableComponent,
-    WorkingHoursCommentOfficeUpdateModalComponent,
-    WorkingHoursCommentOfficeAllUpdateModalComponent,
+    TimeFlexesCommentOfficeAllUpdateModalComponent,
+    TimeFlexesCommentOfficeUpdateModalComponent,
+    TimeFlexesContainerComponent,
+    TimeFlexesTableComponent,
   ],
   providers: [
     {
@@ -65,5 +61,5 @@ import {MatDialogModule} from '@angular/material/dialog';
     },
   ],
 })
-export class WorkingHoursModule {
+export class FlexModule {
 }

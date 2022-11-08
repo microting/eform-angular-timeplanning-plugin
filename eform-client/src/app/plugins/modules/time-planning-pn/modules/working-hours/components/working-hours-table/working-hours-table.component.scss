@@ -1,9 +1,11 @@
-.background-yellow {
-  background-color: var(--yellow-300) !important;
-  color: var(black-900) !important;
+.shift-select {
+  min-width: 100px;
 }
 
-.background-powder {
-  background-color: var(--powder-300) !important;
-  color: var(black-900) !important;
+.hours-input {
+  width: 80px;
+}
+
+.hours-text-input {
+  width: 120px;
 }

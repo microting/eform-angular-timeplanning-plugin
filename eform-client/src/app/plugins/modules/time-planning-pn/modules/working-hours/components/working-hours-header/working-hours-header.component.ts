@@ -1,12 +1,15 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { format } from 'date-fns';
-import { PARSING_DATE_FORMAT } from 'src/app/common/const';
-import { SiteDto } from 'src/app/common/models';
-import { TimePlanningsRequestModel } from '../../../../models';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {format} from 'date-fns';
+import {ExcelIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
+import {SiteDto} from 'src/app/common/models';
+import {TimePlanningsRequestModel} from '../../../../models';
 import {saveAs} from 'file-saver';
 import {ToastrService} from 'ngx-toastr';
-import {TimePlanningPnWorkingHoursService} from 'src/app/plugins/modules/time-planning-pn/services';
+import {TimePlanningPnWorkingHoursService} from '../../../../services';
 import {Subscription} from 'rxjs';
+import {MatIconRegistry} from '@angular/material/icon';
+import {DomSanitizer} from '@angular/platform-browser';
+import {catchError} from 'rxjs/operators';
 
 @Component({
   selector: 'app-working-hours-header',
@@ -28,9 +31,15 @@ export class WorkingHoursHeaderComponent implements OnInit {
 
   constructor(
     private toastrService: ToastrService,
-    private workingHoursService: TimePlanningPnWorkingHoursService) {}
+    private workingHoursService: TimePlanningPnWorkingHoursService,
+    iconRegistry: MatIconRegistry,
+    sanitizer: DomSanitizer,
+  ) {
+    iconRegistry.addSvgIconLiteral('file-excel', sanitizer.bypassSecurityTrustHtml(ExcelIcon));
+  }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+  }
 
   updateDateRange(range: Date[]) {
     this.dateRange = range;
@@ -53,13 +62,15 @@ export class WorkingHoursHeaderComponent implements OnInit {
     model.siteId = this.siteId;
     this.downloadReportSub$ = this.workingHoursService
       .downloadReport(model)
+      .pipe(catchError(
+        (error, caught) => {
+          this.toastrService.error('Error downloading report');
+          return caught;
+        }))
       .subscribe(
         (data) => {
           saveAs(data, model.dateFrom + '_' + model.dateTo + '_report.xlsx');
         },
-        (_) => {
-          this.toastrService.error('Error downloading report');
-        }
       );
   }
 
