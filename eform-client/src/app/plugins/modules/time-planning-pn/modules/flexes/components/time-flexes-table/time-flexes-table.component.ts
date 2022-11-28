@@ -32,7 +32,7 @@ export class TimeFlexesTableComponent implements OnInit, OnDestroy {
   editCommentOfficeModal: TimeFlexesCommentOfficeUpdateModalComponent;
 
   tableHeaders: MtxGridColumn[] = [
-    {header: this.translateService.stream('Date'), field: 'date', type: 'date', typeParameter: {format: 'yyyy/MM/dd'}},
+    {header: this.translateService.stream('Date'), field: 'date', type: 'date', typeParameter: {format: 'dd.MM.yyyy'}},
     {
       header: this.translateService.stream('Worker'),
       field: 'worker',
