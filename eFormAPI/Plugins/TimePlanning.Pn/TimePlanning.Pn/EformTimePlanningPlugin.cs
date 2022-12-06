@@ -134,6 +134,7 @@ namespace TimePlanning.Pn
                 var newTemplate = await core.TemplateFromXml(contents);
                 var originalId = await sdkDbContext.CheckLists
                     .Where(x => x.OriginalId == newTemplate.OriginalId)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Select(x => x.Id)
                     .FirstOrDefaultAsync();
                 if (originalId == 0)
