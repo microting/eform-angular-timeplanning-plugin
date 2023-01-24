@@ -265,7 +265,7 @@ namespace TimePlanning.Pn
             _connectionString = connectionString;
             services.AddDbContext<TimePlanningPnDbContext>(o =>
                 o.UseMySql(connectionString, new MariaDbServerVersion(
-                    new Version(10, 4, 0)), mySqlOptionsAction: builder =>
+                    ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
                 {
                     builder.EnableRetryOnFailure();
                     builder.MigrationsAssembly(PluginAssembly().FullName);
