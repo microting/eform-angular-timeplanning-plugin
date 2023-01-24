@@ -281,18 +281,18 @@ namespace TimePlanning.Pn
 
         public void Configure(IApplicationBuilder appBuilder)
         {
-            var serviceProvider = appBuilder.ApplicationServices;
+            // var serviceProvider = appBuilder.ApplicationServices;
 
-            var rabbitMqHost = "localhost";
-
-            if (_connectionString.Contains("frontend"))
-            {
-                var dbPrefix = Regex.Match(_connectionString, @"atabase=(\d*)_").Groups[1].Value;
-                rabbitMqHost = $"frontend-{dbPrefix}-rabbitmq";
-            }
-
-            var rebusService = serviceProvider.GetService<IRebusService>();
-            rebusService.Start(_connectionString, "admin", "password", rabbitMqHost);
+            // var rabbitMqHost = "localhost";
+            //
+            // if (_connectionString.Contains("frontend"))
+            // {
+            //     var dbPrefix = Regex.Match(_connectionString, @"atabase=(\d*)_").Groups[1].Value;
+            //     rabbitMqHost = $"frontend-{dbPrefix}-rabbitmq";
+            // }
+            //
+            // var rebusService = serviceProvider.GetService<IRebusService>();
+            // rebusService.Start(_connectionString, "admin", "password", rabbitMqHost).GetAwaiter().GetResult();
 
             //_bus = rebusService.GetBus();
         }
