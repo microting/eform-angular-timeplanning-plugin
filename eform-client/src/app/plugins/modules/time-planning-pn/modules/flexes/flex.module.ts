@@ -7,7 +7,6 @@ import {
   OwlMomentDateTimeModule,
   OWL_DATE_TIME_FORMATS,
 } from '@danielmoncada/angular-datetime-picker';
-import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {TranslateModule} from '@ngx-translate/core';
 import {NgxMaskModule} from 'ngx-mask';
 import {EformSharedModule} from 'src/app/common/modules/eform-shared/eform-shared.module';
@@ -33,7 +32,6 @@ import {MatTooltipModule} from '@angular/material/tooltip';
     TranslateModule,
     FormsModule,
     EformSharedModule,
-    FontAwesomeModule,
     RouterModule,
     ReactiveFormsModule,
     NgxMaskModule,

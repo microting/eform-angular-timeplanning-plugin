@@ -7,19 +7,13 @@ import {
   OwlMomentDateTimeModule,
   OWL_DATE_TIME_FORMATS,
 } from '@danielmoncada/angular-datetime-picker';
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { TranslateModule } from '@ngx-translate/core';
-import { MDBBootstrapModule } from 'angular-bootstrap-md';
 import { NgxMaskModule } from 'ngx-mask';
 import { EformSharedModule } from 'src/app/common/modules/eform-shared/eform-shared.module';
 import { TimePlanningPnRouting } from './time-planning-pn.routing';
 import {
   TimePlanningsContainerComponent,
-  TimePlanningSettingsAddSiteModalComponent,
-  TimePlanningSettingsComponent,
-  TimePlanningSettingsFoldersModalComponent,
-  TimePlanningSettingsRemoveSiteModalComponent,
   TimePlanningsHeaderComponent,
   TimePlanningsTableComponent,
   TimePlanningTableRowComponent,
@@ -34,12 +28,10 @@ import { MY_MOMENT_FORMATS_FOR_TIME_PLANNING } from './consts/custom-date-time-a
 @NgModule({
   imports: [
     CommonModule,
-    MDBBootstrapModule,
     TranslateModule,
     FormsModule,
     NgSelectModule,
     EformSharedModule,
-    FontAwesomeModule,
     RouterModule,
     TimePlanningPnRouting,
     ReactiveFormsModule,
@@ -49,10 +41,6 @@ import { MY_MOMENT_FORMATS_FOR_TIME_PLANNING } from './consts/custom-date-time-a
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
-    TimePlanningSettingsComponent,
-    TimePlanningSettingsAddSiteModalComponent,
-    TimePlanningSettingsFoldersModalComponent,
-    TimePlanningSettingsRemoveSiteModalComponent,
     TimePlanningTableRowComponent,
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,

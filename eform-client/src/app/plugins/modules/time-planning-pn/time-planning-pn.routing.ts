@@ -3,7 +3,6 @@ import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard, PermissionGuard } from 'src/app/common/guards';
 import {
   TimePlanningsContainerComponent,
-  TimePlanningSettingsComponent,
 } from './components';
 import { TimePlanningPnClaims } from './enums';
 import { TimePlanningPnLayoutComponent } from './layouts';
@@ -40,11 +39,6 @@ export const routes: Routes = [
           import('./modules/flexes/flex.module').then(
             (m) => m.FlexModule
           ),
-      },
-      {
-        path: 'settings',
-        canActivate: [AuthGuard],
-        component: TimePlanningSettingsComponent,
       },
     ],
   },
