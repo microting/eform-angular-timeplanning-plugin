@@ -1,15 +1,11 @@
-<eform-subheader [title]="'Plannings'"></eform-subheader>
+<eform-new-subheader [title]="'Plannings'"></eform-new-subheader>
 
-<div class="container-fluid mb-2">
-  <app-working-hours-header
-    [workingHoursRequest]="workingHoursRequest"
-    (filtersChanged)="onWorkingHoursFiltersChanged($event)"
-    (updateWorkingHours)="onUpdateWorkingHours()"
-    [tainted]="tainted"
-    [availableSites]="availableSites"
-  ></app-working-hours-header>
-  <app-working-hours-table
-    [workingHours]="workingHours"
-    [workingHoursFormArray]="workingHoursFormArray"
-  ></app-working-hours-table>
-</div>
+<app-working-hours-table
+  [workingHours]="workingHours"
+  [workingHoursFormArray]="workingHoursFormArray"
+  [workingHoursRequest]="workingHoursRequest"
+  (filtersChanged)="onWorkingHoursFiltersChanged($event)"
+  (updateWorkingHours)="onUpdateWorkingHours()"
+  [tainted]="tainted"
+  [availableSites]="availableSites"
+></app-working-hours-table>

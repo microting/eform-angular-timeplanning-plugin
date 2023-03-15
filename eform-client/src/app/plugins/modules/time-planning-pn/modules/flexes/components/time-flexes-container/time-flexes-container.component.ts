@@ -6,8 +6,8 @@ import {
   TimeFlexesModel,
   TimePlanningsRequestModel,
   TimeFlexesUpdateModel,
-} from '../../../models';
-import { TimePlanningPnPlanningsService } from '../../../services';
+} from '../../../../models';
+import { TimePlanningPnPlanningsService } from '../../../../services';
 
 @AutoUnsubscribe()
 @Component({

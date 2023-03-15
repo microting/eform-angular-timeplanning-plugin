@@ -50,7 +50,6 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   }
 
   getWorkingHours(model: TimePlanningsRequestModel) {
-    this.workingHoursFormArray.clear();
     this.getWorkingHours$ = this.workingHoursService
       .getWorkingHours(model)
       .subscribe((data) => {
@@ -62,8 +61,10 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   }
 
   initializeWorkingHoursFormArray(workingHours: TimePlanningModel[]) {
+    this.workingHoursFormArray.clear();
     workingHours.map((x) => {
-      this.workingHoursFormArray.push(
+      this.workingHoursFormArray.controls = [
+        ...this.workingHoursFormArray.controls,
         new FormGroup({
           isWeekend: new FormControl(x.isWeekend),
           isLocked: new FormControl(x.isLocked),
@@ -93,22 +94,22 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
           }),
           paidOutFlex: new FormControl(x.paidOutFlex ? x.paidOutFlex : 0),
           commentWorker: new FormControl({
-            value: x.commentWorker ? x.commentWorker : '',
-            disabled: true,
+              value: x.commentWorker ? x.commentWorker : '',
+              disabled: true,
             }
           ),
           commentOffice: new FormControl({
-            value: x.commentOffice ? x.commentOffice : '',
-            disabled: true,
+              value: x.commentOffice ? x.commentOffice : '',
+              disabled: true,
             }
           ),
           commentOfficeAll: new FormControl({
-            value: x.commentOfficeAll ? x.commentOfficeAll : '',
-            disabled: true,
+              value: x.commentOfficeAll ? x.commentOfficeAll : '',
+              disabled: true,
             }
           ),
-        })
-      );
+        }),
+      ];
     });
 
     if (this.workingHoursGroupSub$.length > 0) {

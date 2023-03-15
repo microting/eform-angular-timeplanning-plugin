@@ -1,34 +1,75 @@
-<div class="row p-1 table-responsive no-gutters scrollable-xy-block">
-  <table
-    mdbTable
-    striped="true"
-    hover="true"
-    small="true"
-    class="z-depth-1 text-center"
+<ng-template #toolbarTpl>
+  <app-working-hours-header
+    [workingHoursRequest]="workingHoursRequest"
+    [tainted]="tainted"
+    [availableSites]="availableSites"
+    (filtersChanged)="filtersChanged.emit($event)"
+    (updateWorkingHours)="updateWorkingHours.emit()"
+  ></app-working-hours-header>
+</ng-template>
+
+<mtx-grid
+  [data]="workingHoursFormArray.controls"
+  [columns]="tableHeaders"
+  [showPaginator]="false"
+  [pageOnFront]="false"
+  [rowStriped]="true"
+  [showToolbar]="true"
+  [showColumnMenuButton]="false"
+  [toolbarTemplate]="toolbarTpl">
+  <ng-template matRowDef [matRowDefColumns]="columns" let-row let-index="index" let-col="colDef">
+    <tr
+      mat-row
+      [class.background-powder]="getIsLocked(row)"
+      [class.background-yellow]="getIsWeekend(row)"
+    ></tr>
+  </ng-template>
+</mtx-grid>
+
+<ng-template #shiftSelectorTpl let-row let-index="index" let-col="colDef">
+  <mat-form-field [formGroup]="row">
+    <mtx-select
+      [items]="hoursPickerArray"
+      [appendTo]="'body'"
+      bindValue="id"
+      bindLabel="value"
+      placeholder="{{'Select' | translate}}"
+      [formControlName]="col.field"
+      class="shift-select"
+    ></mtx-select>
+  </mat-form-field>
+</ng-template>
+
+<ng-template #inputTextTpl let-row let-index="index" let-col="colDef">
+  <mat-form-field
+    [formGroup]="row"
+    (click)="col.field === 'commentOffice' ? openEditCommentOfficeModal(row) : undefined"
   >
-    <thead table-headers [tableHeaders]="tableHeaders"></thead>
-    <tbody id="tableBody">
-      <ng-container
-        *ngFor="
-          let workingHoursForm of workingHoursFormArray.controls;
-          let i = index;
-          first as isFirst;
-          last as isLast
-        "
-      >
-        <tr
-          working-hours-table-row
-          [class.background-powder]="getIsLocked(workingHoursForm)"
-          [class.background-yellow]="getIsWeekend(workingHoursForm)"
-          [workingHoursForm]="workingHoursForm"
-          [workingHoursFormIndex]="i"
-        ></tr>
-        <tr *ngIf="(i + 1) % 5 === 0 && !isFirst && !isLast">
-          <td *ngFor="let tableHeader of tableHeaders">
-            {{ tableHeader.visibleName || tableHeader.name | translate }}
-          </td>
-        </tr>
-      </ng-container>
-    </tbody>
-  </table>
-</div>
+    <input
+      matInput
+      type="text"
+      [formControlName]="col.field"
+    >
+  </mat-form-field>
+</ng-template>
+
+<ng-template #inputNumberTpl let-row let-index="index" let-col="colDef">
+  <mat-form-field class="hours-input" [formGroup]="row">
+    <input matInput type="number" step="0.05" id="planHoursInput" [formControlName]="col.field">
+  </mat-form-field>
+</ng-template>
+
+<ng-template #messageSelectorTpl let-row let-index="index" let-col="colDef">
+  <mat-form-field style="min-width: 160px" [formGroup]="row">
+    <mtx-select
+      [appendTo]="'body'"
+      [items]="messages"
+      bindLabel="value"
+      bindValue="id"
+      [clearable]="false"
+      formControlName="{{col.field}}"
+      dropdownPosition="top"
+      [placeholder]="'Message' | translate"
+    ></mtx-select>
+  </mat-form-field>
+</ng-template>

@@ -134,6 +134,7 @@ namespace TimePlanning.Pn
                 var newTemplate = await core.TemplateFromXml(contents);
                 var originalId = await sdkDbContext.CheckLists
                     .Where(x => x.OriginalId == newTemplate.OriginalId)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Select(x => x.Id)
                     .FirstOrDefaultAsync();
                 if (originalId == 0)
@@ -264,7 +265,7 @@ namespace TimePlanning.Pn
             _connectionString = connectionString;
             services.AddDbContext<TimePlanningPnDbContext>(o =>
                 o.UseMySql(connectionString, new MariaDbServerVersion(
-                    new Version(10, 4, 0)), mySqlOptionsAction: builder =>
+                    ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
                 {
                     builder.EnableRetryOnFailure();
                     builder.MigrationsAssembly(PluginAssembly().FullName);
@@ -280,18 +281,18 @@ namespace TimePlanning.Pn
 
         public void Configure(IApplicationBuilder appBuilder)
         {
-            var serviceProvider = appBuilder.ApplicationServices;
+            // var serviceProvider = appBuilder.ApplicationServices;
 
-            var rabbitMqHost = "localhost";
-
-            if (_connectionString.Contains("frontend"))
-            {
-                var dbPrefix = Regex.Match(_connectionString, @"atabase=(\d*)_").Groups[1].Value;
-                rabbitMqHost = $"frontend-{dbPrefix}-rabbitmq";
-            }
-
-            var rebusService = serviceProvider.GetService<IRebusService>();
-            rebusService.Start(_connectionString, "admin", "password", rabbitMqHost);
+            // var rabbitMqHost = "localhost";
+            //
+            // if (_connectionString.Contains("frontend"))
+            // {
+            //     var dbPrefix = Regex.Match(_connectionString, @"atabase=(\d*)_").Groups[1].Value;
+            //     rabbitMqHost = $"frontend-{dbPrefix}-rabbitmq";
+            // }
+            //
+            // var rebusService = serviceProvider.GetService<IRebusService>();
+            // rebusService.Start(_connectionString, "admin", "password", rabbitMqHost).GetAwaiter().GetResult();
 
             //_bus = rebusService.GetBus();
         }

@@ -1,62 +1,57 @@
-<div>
-  <div class="row">
-    <div class="col-md-3 col-sm-6 col-xs-6">
-      <div class="md-form" [owlDateTimeTrigger]="dt1">
-        <input
-          mdbInput
-          [owlDateTime]="dt1"
-          [selectMode]="'range'"
-          [ngModel]="dateRange"
-          (ngModelChange)="updateDateRange($event)"
-          type="text"
-          id="workingHoursRange"
-          class="form-control"
-        />
-        <owl-date-time [pickerType]="'calendar'" #dt1></owl-date-time>
-        <label for="workingHoursRange">{{ 'Date range' | translate }}</label>
-      </div>
-    </div>
-    <div class="col-md-3 col-sm-6 col-xs-6 ng-select-wrapper">
-      <ng-select
+<div class="d-flex flex-row justify-content-start flex-nowrap">
+  <div class="d-flex flex-column mr-2 ml-2">
+    <mat-form-field [owlDateTimeTrigger]="dt1">
+      <mat-label>{{ 'Date range' | translate }}</mat-label>
+      <input
+        matInput
+        [owlDateTime]="dt1"
+        [selectMode]="'range'"
+        [ngModel]="dateRange"
+        (ngModelChange)="updateDateRange($event)"
+        type="text"
+        id="workingHoursRange"
+      />
+      <owl-date-time [pickerType]="'calendar'" #dt1></owl-date-time>
+    </mat-form-field>
+  </div>
+  <div class="d-flex flex-column mr-2 ml-2">
+    <mat-form-field>
+      <mat-label>{{ 'Worker' | translate }}</mat-label>
+      <mtx-select
         [items]="availableSites"
         bindLabel="siteName"
-        [placeholder]="'Worker' | translate"
         bindValue="siteId"
         [ngModel]="siteId"
         (ngModelChange)="onSiteChanged($event)"
-        id="workingHoursSite"
-        [clearable]="false"
-      >
-      </ng-select>
-    </div>
-    <div class="mt-4 pt-1 ml-1" *ngIf="siteId && dateRange">
-      <button
-        mdbBtn
-        id="workingHoursSave"
-        (click)="onSaveWorkingHours()"
-        class="btn-success btn-small-height"
-      >
-        {{ 'Save' | translate }}
-      </button>
-      <button
-        mdbBtn
-        id="workingHoursReload"
-        (click)="filtersChangedEmmit()"
-        class="btn-success btn-icon"
-      >
-        <fa-icon icon="redo-alt" [fixedWidth]="true"></fa-icon>
-      </button>
-    </div>
-    <div class="mt-4 pt-1 ml-1" *ngIf="siteId && dateRange">
-      <button
-        *ngIf="!tainted"
-        mdbBtn
-        id="workingHoursExcel"
-        (click)="onDownloadExcelReport()"
-        class="btn-success btn-small-height"
-      >
-        <fa-icon icon="file-excel" size="lg"></fa-icon>
-      </button>
-    </div>
+        id="workingHoursSite">
+      </mtx-select>
+    </mat-form-field>
+  </div>
+  <div class="d-flex align-items-center mr-2 ml-2" *ngIf="siteId && dateRange">
+    <button
+      mat-raised-button
+      id="workingHoursSave"
+      (click)="onSaveWorkingHours()"
+      color="accent"
+    >
+      {{ 'Save' | translate }}
+    </button>
+    <button
+      mat-icon-button
+      id="workingHoursReload"
+      (click)="filtersChangedEmmit()"
+      color="accent"
+    >
+      <mat-icon>restart_alt</mat-icon>
+    </button>
+    <button
+      *ngIf="!tainted"
+      mat-icon-button
+      id="workingHoursExcel"
+      (click)="onDownloadExcelReport()"
+      color="accent"
+    >
+      <mat-icon svgIcon="file-excel"></mat-icon>
+    </button>
   </div>
 </div>

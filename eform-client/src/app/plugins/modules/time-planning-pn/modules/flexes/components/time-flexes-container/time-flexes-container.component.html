@@ -1,0 +1,22 @@
+<eform-new-subheader>
+  <button
+    mat-icon-button
+    id="resetBtn"
+    (click)="resetFlexPlanning()"
+    color="accent"
+    matTooltip="{{ 'Reset' | translate }}"
+  >
+    <mat-icon>restart_alt</mat-icon>
+  </button>
+  <button
+    mat-raised-button
+    id="flexPlanningSaveBtn"
+    (click)="saveFlexPlanning()"
+    color="accent"
+  >{{ 'Save' | translate }}</button>
+</eform-new-subheader>
+
+<app-time-flexes-table
+  [flexPlannings]="timePlannings"
+  (flexPlanningChanged)="onUpdateFlexPlanning($event)"
+></app-time-flexes-table>
