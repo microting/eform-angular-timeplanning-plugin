@@ -73,7 +73,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 {
                     FolderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId,
                     EformId = _options.Value.EformId == 0 ? null : _options.Value.EformId,
-                    InfoeFormId = _options.Value.InfoeFormId == 0 ? null : _options.Value.InfoeFormId,
+                    InfoeFormId = _options.Value.InfoeFormId == 0 ? null : _options.Value.InfoeFormId
                 };
 
                 var assignedSites = await _dbContext.AssignedSites
@@ -122,7 +122,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 {
                     SiteId = siteId,
                     CreatedByUserId = _userService.UserId,
-                    UpdatedByUserId = _userService.UserId,
+                    UpdatedByUserId = _userService.UserId
                 };
                 await assignmentSite.Create(_dbContext);
                 var option = _options.Value;

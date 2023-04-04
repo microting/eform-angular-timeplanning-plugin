@@ -93,7 +93,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     .Select(x => new
                     {
                         x.Id,
-                        x.Name,
+                        x.Name
                     })
                     .FirstAsync();
 
@@ -136,7 +136,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
                         // CommentOfficeAll = x.CommentOfficeAll,
                         IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable),
-                        IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
+                        IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
                     })
                     .ToListAsync();
 
@@ -172,7 +172,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         ? lastPlanning.Date.DayOfWeek == DayOfWeek.Saturday ||
                           lastPlanning.Date.DayOfWeek == DayOfWeek.Sunday
                         : model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Saturday ||
-                          model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Sunday,
+                          model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Sunday
                 };
 
                 timePlannings.Add(prePlanning);
@@ -190,7 +190,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
                                 IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)maxDaysEditable),
                                 IsWeekend = model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Saturday
-                                || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday,
+                                || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday
                                 //WorkerId = model.WorkerId,
                             });
                         }

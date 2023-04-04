@@ -56,7 +56,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             {
                 Name = $"{TimePlanningBaseSettingsName}:MaxDaysEditable",
                 Value = "45"
-            },
+            }
         };
     }
 }

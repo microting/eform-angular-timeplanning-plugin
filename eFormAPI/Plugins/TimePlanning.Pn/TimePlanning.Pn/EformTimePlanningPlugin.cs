@@ -245,7 +245,7 @@ namespace TimePlanning.Pn
                             Name = "Реєстрація часу",
                             LanguageId = 4,
                             Description = ""
-                        },
+                        }
                     };
 
                     var res = await core.FolderCreate(translations, null).ConfigureAwait(false);
@@ -314,20 +314,20 @@ namespace TimePlanning.Pn
                             {
                                  LocaleName = LocaleNames.English,
                                  Name = "Time Planning",
-                                 Language = LanguageNames.English,
+                                 Language = LanguageNames.English
                             },
                             new()
                             {
                                  LocaleName = LocaleNames.German,
                                  Name = "Time Planning",
-                                 Language = LanguageNames.German,
+                                 Language = LanguageNames.German
                             },
                             new()
                             {
                                  LocaleName = LocaleNames.Danish,
                                  Name = "Timeregistrering",
-                                 Language = LanguageNames.Danish,
-                            },
+                                 Language = LanguageNames.Danish
+                            }
                         },
                         ChildItems = new List<PluginMenuItemModel>
                         {
@@ -414,20 +414,20 @@ namespace TimePlanning.Pn
                                         {
                                             LocaleName = LocaleNames.English,
                                             Name = "Working hours",
-                                            Language = LanguageNames.English,
+                                            Language = LanguageNames.English
                                         },
                                         new()
                                         {
                                             LocaleName = LocaleNames.German,
                                             Name = "Working hours",
-                                            Language = LanguageNames.German,
+                                            Language = LanguageNames.German
                                         },
                                         new()
                                         {
                                             LocaleName = LocaleNames.Danish,
                                             Name = "Timeregistrering",
-                                            Language = LanguageNames.Danish,
-                                        },
+                                            Language = LanguageNames.Danish
+                                        }
                                     }
                                 },
                                 Translations = new List<PluginMenuTranslationModel>
@@ -436,20 +436,20 @@ namespace TimePlanning.Pn
                                     {
                                         LocaleName = LocaleNames.English,
                                         Name = "Working hours",
-                                        Language = LanguageNames.English,
+                                        Language = LanguageNames.English
                                     },
                                     new()
                                     {
                                         LocaleName = LocaleNames.German,
                                         Name = "Working hours",
-                                        Language = LanguageNames.German,
+                                        Language = LanguageNames.German
                                     },
                                     new()
                                     {
                                         LocaleName = LocaleNames.Danish,
                                         Name = "Timeregistrering",
-                                        Language = LanguageNames.Danish,
-                                    },
+                                        Language = LanguageNames.Danish
+                                    }
                                 }
                             },
                             new()
@@ -471,20 +471,20 @@ namespace TimePlanning.Pn
                                         {
                                             LocaleName = LocaleNames.English,
                                             Name = "Flex",
-                                            Language = LanguageNames.English,
+                                            Language = LanguageNames.English
                                         },
                                         new()
                                         {
                                             LocaleName = LocaleNames.German,
                                             Name = "Flex",
-                                            Language = LanguageNames.German,
+                                            Language = LanguageNames.German
                                         },
                                         new()
                                         {
                                             LocaleName = LocaleNames.Danish,
                                             Name = "Flex",
-                                            Language = LanguageNames.Danish,
-                                        },
+                                            Language = LanguageNames.Danish
+                                        }
                                     }
                                 },
                                 Translations = new List<PluginMenuTranslationModel>
@@ -493,20 +493,20 @@ namespace TimePlanning.Pn
                                     {
                                         LocaleName = LocaleNames.English,
                                         Name = "Flex",
-                                        Language = LanguageNames.English,
+                                        Language = LanguageNames.English
                                     },
                                     new()
                                     {
                                         LocaleName = LocaleNames.German,
                                         Name = "Flex",
-                                        Language = LanguageNames.German,
+                                        Language = LanguageNames.German
                                     },
                                     new()
                                     {
                                         LocaleName = LocaleNames.Danish,
                                         Name = "Flex",
-                                        Language = LanguageNames.Danish,
-                                    },
+                                        Language = LanguageNames.Danish
+                                    }
                                 }
                             }
                         }
@@ -536,7 +536,7 @@ namespace TimePlanning.Pn
                         E2EId = "time-planning-pn-planning",
                         Link = "/plugins/time-planning-pn/planning",
                         Guards = new List<string> { TimePlanningClaims.GetPlanning },
-                        Position = 0,
+                        Position = 0
                     },
                     new()
                     {
@@ -544,7 +544,7 @@ namespace TimePlanning.Pn
                         E2EId = "time-planning-pn-working-hours",
                         Link = "/plugins/time-planning-pn/working-hours",
                         Guards = new List<string> { TimePlanningClaims.GetWorkingHours },
-                        Position = 1,
+                        Position = 1
                     },
                     new()
                     {
@@ -552,7 +552,7 @@ namespace TimePlanning.Pn
                         E2EId = "time-planning-pn-flex",
                         Link = "/plugins/time-planning-pn/flex",
                         Position = 2,
-                        Guards = new List<string> { TimePlanningClaims.GetFlex },
+                        Guards = new List<string> { TimePlanningClaims.GetFlex }
                     }
                 }
             });
