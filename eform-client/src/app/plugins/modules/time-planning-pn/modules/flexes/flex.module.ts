@@ -4,7 +4,6 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {RouterModule} from '@angular/router';
 import {
   OwlDateTimeModule,
-  OwlMomentDateTimeModule,
   OWL_DATE_TIME_FORMATS,
 } from '@danielmoncada/angular-datetime-picker';
 import {TranslateModule} from '@ngx-translate/core';
@@ -37,7 +36,6 @@ import {MatTooltipModule} from '@angular/material/tooltip';
     NgxMaskModule,
     FlexRouting,
     OwlDateTimeModule,
-    OwlMomentDateTimeModule,
     MtxGridModule,
     MatFormFieldModule,
     MatInputModule,

@@ -4,7 +4,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import {
   OwlDateTimeModule,
-  OwlMomentDateTimeModule,
   OWL_DATE_TIME_FORMATS,
 } from '@danielmoncada/angular-datetime-picker';
 import { NgSelectModule } from '@ng-select/ng-select';
@@ -37,7 +36,6 @@ import { MY_MOMENT_FORMATS_FOR_TIME_PLANNING } from './consts/custom-date-time-a
     ReactiveFormsModule,
     NgxMaskModule,
     OwlDateTimeModule,
-    OwlMomentDateTimeModule,
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
