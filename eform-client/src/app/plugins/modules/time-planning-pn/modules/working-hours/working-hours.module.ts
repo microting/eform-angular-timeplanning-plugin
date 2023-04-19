@@ -7,7 +7,7 @@ import {
   OWL_DATE_TIME_FORMATS,
 } from '@danielmoncada/angular-datetime-picker';
 import {TranslateModule} from '@ngx-translate/core';
-import {NgxMaskModule} from 'ngx-mask';
+// import {NgxMaskModule} from 'ngx-mask';
 import {EformSharedModule} from 'src/app/common/modules/eform-shared/eform-shared.module';
 import {WorkingHoursRouting} from './working-hours.routing';
 import {
@@ -35,7 +35,7 @@ import {MatDialogModule} from '@angular/material/dialog';
     EformSharedModule,
     RouterModule,
     ReactiveFormsModule,
-    NgxMaskModule,
+    //NgxMaskModule,
     WorkingHoursRouting,
     OwlDateTimeModule,
     MtxGridModule,

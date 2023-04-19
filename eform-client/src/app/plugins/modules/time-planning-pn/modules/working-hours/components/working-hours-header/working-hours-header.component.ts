@@ -57,8 +57,10 @@ export class WorkingHoursHeaderComponent implements OnInit {
 
   onDownloadExcelReport() {
     const model = new TimePlanningsRequestModel();
-    model.dateFrom = format(this.dateRange[0]._d, PARSING_DATE_FORMAT);
-    model.dateTo = format(this.dateRange[1]._d, PARSING_DATE_FORMAT);
+    //model.dateFrom = format(this.dateRange[0]._d, PARSING_DATE_FORMAT);
+    model.dateFrom = this.dateRange[0];
+    //model.dateTo = format(this.dateRange[1]._d, PARSING_DATE_FORMAT);
+    model.dateTo = this.dateRange[1];
     model.siteId = this.siteId;
     this.downloadReportSub$ = this.workingHoursService
       .downloadReport(model)
@@ -78,8 +80,10 @@ export class WorkingHoursHeaderComponent implements OnInit {
     if (this.dateRange && this.siteId) {
       this.filtersChanged.emit({
         siteId: this.siteId,
-        dateFrom: format(this.dateRange[0]._d, PARSING_DATE_FORMAT),
-        dateTo: format(this.dateRange[1]._d, PARSING_DATE_FORMAT),
+        dateFrom: this.dateRange[0],
+        //dateFrom: format(this.dateRange[0]._d, PARSING_DATE_FORMAT),
+        dateTo: this.dateRange[1],
+        //dateTo: format(this.dateRange[1]._d, PARSING_DATE_FORMAT),
       });
     }
   }
