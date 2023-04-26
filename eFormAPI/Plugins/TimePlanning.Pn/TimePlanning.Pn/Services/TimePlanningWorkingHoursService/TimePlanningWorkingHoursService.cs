@@ -99,6 +99,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
                     .AsNoTracking()
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == model.SiteId);
 
                 // two dates may be displayed instead of one if the same date is selected.
