@@ -241,6 +241,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 var planRegistrations = await _dbContext.PlanRegistrations
                     .Where(x => x.SdkSitId == model.SiteId)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .ToListAsync();
                 var first = true;
                 foreach (var planning in model.Plannings)
@@ -252,7 +253,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     }
                     else
                     {
-                        await CreatePlanning(first, planning, model.SiteId, model.SiteId, planning.CommentWorker);
+                        if (!first)
+                        {
+                            await CreatePlanning(first, planning, model.SiteId, model.SiteId, planning.CommentWorker);
+                        }
                     }
 
                     first = false;
