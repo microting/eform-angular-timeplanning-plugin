@@ -61,6 +61,11 @@ export class WorkingHoursHeaderComponent implements OnInit {
     model.dateFrom = this.dateRange[0];
     //model.dateTo = format(this.dateRange[1]._d, PARSING_DATE_FORMAT);
     model.dateTo = this.dateRange[1];
+
+    // @ts-ignore
+    model.dateFrom = format(model.dateFrom, 'yyyy-MM-dd');
+    // @ts-ignore
+    model.dateTo = format(model.dateTo, 'yyyy-MM-dd');
     model.siteId = this.siteId;
     this.downloadReportSub$ = this.workingHoursService
       .downloadReport(model)
