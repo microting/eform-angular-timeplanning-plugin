@@ -248,6 +248,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var first = true;
                 foreach (var planning in model.Plannings)
                 {
+                    planning.Date = new DateTime(planning.Date.Year, planning.Date.Month, planning.Date.Day, 0, 0, 0);
                     var planRegistration = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
                     if (planRegistration != null)
                     {
