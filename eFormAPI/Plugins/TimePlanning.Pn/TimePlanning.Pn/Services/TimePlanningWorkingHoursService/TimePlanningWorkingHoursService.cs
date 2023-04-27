@@ -81,6 +81,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         {
             try
             {
+                model.DateFrom = new DateTime(model.DateFrom.Year, model.DateFrom.Month, model.DateFrom.Day, 0, 0, 0);
+                model.DateTo = new DateTime(model.DateTo.Year, model.DateTo.Month, model.DateTo.Day, 0, 0, 0);
                 var core = await _core.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var maxDaysEditable = _options.Value.MaxDaysEditable;
