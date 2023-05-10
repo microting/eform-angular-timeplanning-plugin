@@ -118,6 +118,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
       }
     }
     if (this.workingHoursFormArray.length > 0) {
+      this.tainted = false;
       let i = 0;
       for (const group of this.workingHoursFormArray.controls) {
         if (i > 0) {
@@ -156,18 +157,23 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   recalculateSumFlex(initialize = false) {
     this.tainted = true;
     let sumFlex = 0;
+    let isFirst = true;
     for (const formGroup of this.workingHoursFormArray.controls) {
-      if (!formGroup.disabled) {
+      if (!isFirst) {
         const flexHours = formGroup.get('flexHours').value;
         const paidOutFlex = formGroup.get('paidOutFlex').value;
         if (initialize) {
           sumFlex = formGroup.get('sumFlex').value;
         } else {
-          sumFlex =
-            sumFlex + (flexHours ? flexHours : 0) - (paidOutFlex ? paidOutFlex : 0);
-          formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
+          sumFlex = sumFlex + (flexHours ? flexHours : 0) - (paidOutFlex ? paidOutFlex : 0);
+          if (formGroup.get('sumFlex').value !== sumFlex) {
+            formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
+          } else {
+            this.tainted = false;
+          }
         }
       } else {
+        isFirst = false;
         const paidOutFlex = formGroup.get('paidOutFlex').value;
         sumFlex = formGroup.get('sumFlex').value;
         sumFlex = sumFlex  - (paidOutFlex ? paidOutFlex : 0);
