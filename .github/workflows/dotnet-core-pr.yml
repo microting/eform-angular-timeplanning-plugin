@@ -42,6 +42,10 @@ jobs:
   pn-test:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test: [a]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -110,7 +114,7 @@ jobs:
         working-directory: eform-angular-frontend/eform-client
     - name: Change rabbitmq hostname
       run: docker exec -i mariadbtest mysql -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
-    - name: a test
+    - name: ${{matrix.test}} test
       continue-on-error: true
       uses: cypress-io/github-action@v4
       with:
@@ -119,11 +123,11 @@ jobs:
         wait-on-timeout: 120
         browser: chrome
         record: false
-        spec: cypress/e2e/plugins/time-planning-pn/a/*
+        spec: cypress/e2e/plugins/items-planning-pn/${{matrix.test}}/*
         config-file: cypress.config.ts
         working-directory: eform-angular-frontend/eform-client
     - name: Plugin testing
-      run: cd eform-angular-frontend/eform-client && npm run testheadlessplugin
+      run: cd eform-angular-frontend/eform-client && npm run testheadlessplugin2${{matrix.test}}
     - name: Stop the newly build Docker container
       run: docker stop my-container
     - name: Get standard output
