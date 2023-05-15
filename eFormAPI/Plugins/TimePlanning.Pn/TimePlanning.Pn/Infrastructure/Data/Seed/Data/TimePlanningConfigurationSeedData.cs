@@ -57,6 +57,11 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = $"{TimePlanningBaseSettingsName}:MaxDaysEditable",
                 Value = "45"
             },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:SiteIdsForCheck",
+                Value = ""
+            }
         };
     }
 }

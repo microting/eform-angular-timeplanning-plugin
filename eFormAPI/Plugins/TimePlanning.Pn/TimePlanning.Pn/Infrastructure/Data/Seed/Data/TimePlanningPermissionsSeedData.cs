@@ -46,7 +46,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             {
                 PermissionName = "Obtain working hours",
                 ClaimName = TimePlanningClaims.GetWorkingHours
-            },
+            }
         };
     }
 }

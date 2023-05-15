@@ -81,6 +81,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         {
             try
             {
+                model.DateFrom = new DateTime(model.DateFrom.Year, model.DateFrom.Month, model.DateFrom.Day, 0, 0, 0);
+                model.DateTo = new DateTime(model.DateTo.Year, model.DateTo.Month, model.DateTo.Day, 0, 0, 0);
                 var core = await _core.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var maxDaysEditable = _options.Value.MaxDaysEditable;
@@ -93,12 +95,13 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     .Select(x => new
                     {
                         x.Id,
-                        x.Name,
+                        x.Name
                     })
                     .FirstAsync();
 
                 var timePlanningRequest = _dbContext.PlanRegistrations
                     .AsNoTracking()
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == model.SiteId);
 
                 // two dates may be displayed instead of one if the same date is selected.
@@ -136,7 +139,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
                         // CommentOfficeAll = x.CommentOfficeAll,
                         IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable),
-                        IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
+                        IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
                     })
                     .ToListAsync();
 
@@ -172,7 +175,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         ? lastPlanning.Date.DayOfWeek == DayOfWeek.Saturday ||
                           lastPlanning.Date.DayOfWeek == DayOfWeek.Sunday
                         : model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Saturday ||
-                          model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Sunday,
+                          model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Sunday
                 };
 
                 timePlannings.Add(prePlanning);
@@ -190,7 +193,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
                                 IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)maxDaysEditable),
                                 IsWeekend = model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Saturday
-                                || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday,
+                                || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday
                                 //WorkerId = model.WorkerId,
                             });
                         }
@@ -240,10 +243,12 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 var planRegistrations = await _dbContext.PlanRegistrations
                     .Where(x => x.SdkSitId == model.SiteId)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .ToListAsync();
                 var first = true;
                 foreach (var planning in model.Plannings)
                 {
+                    planning.Date = new DateTime(planning.Date.Year, planning.Date.Month, planning.Date.Day, 0, 0, 0);
                     var planRegistration = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
                     if (planRegistration != null)
                     {
@@ -251,7 +256,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     }
                     else
                     {
-                        await CreatePlanning(first, planning, model.SiteId, model.SiteId, planning.CommentWorker);
+                        if (!first)
+                        {
+                            await CreatePlanning(first, planning, model.SiteId, model.SiteId, planning.CommentWorker);
+                        }
                     }
 
                     first = false;

@@ -131,7 +131,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                         Worker = new CommonDictionaryModel
                         {
                             Id = planRegistration.SdkSitId,
-                            Name = site.Name,
+                            Name = site.Name
                         },
                         SumFlex = Math.Round(planRegistration.SumFlexEnd, 2),
                         PaidOutFlex = planRegistration.PaiedOutFlex,
@@ -241,7 +241,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                 SumFlexEnd = model.SumFlexStart - model.PaidOutFlex,
                 PaiedOutFlex = model.PaidOutFlex,
                 CreatedByUserId = _userService.UserId,
-                UpdatedByUserId = _userService.UserId,
+                UpdatedByUserId = _userService.UserId
             };
 
             await planning.Create(_dbContext);

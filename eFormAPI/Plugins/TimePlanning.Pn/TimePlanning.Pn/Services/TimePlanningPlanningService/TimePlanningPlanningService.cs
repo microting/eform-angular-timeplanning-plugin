@@ -91,7 +91,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                         Date = x.Date,
                         PlanText = x.PlanText,
                         PlanHours = x.PlanHours,
-                        Message = x.MessageId,
+                        Message = x.MessageId
                     })
                     .ToListAsync();
 
@@ -107,7 +107,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                             daysForAdd.Add(new TimePlanningPlanningHelperModel
                             {
                                 Date = model.DateFrom.AddDays(i),
-                                WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
+                                WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek
                             });
                         }
                     }
@@ -158,7 +158,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                         PlanText = x.PlanText,
                         PlanHours = x.PlanHours,
                         Message = x.Message,
-                        IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
+                        IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
                     })
                     .ToList();
 
@@ -214,7 +214,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
                     PlanHours = model.PlanHours,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId,
-                    MessageId = model.Message,
+                    MessageId = model.Message
                 };
 
                 await planning.Create(_dbContext);

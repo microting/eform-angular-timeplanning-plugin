@@ -21,6 +21,10 @@ public class DeploymentHelper
             {
                     await core.CaseDelete(planRegistration.StatusCaseId);
             }
+            if (planRegistration.WorkflowState == Constants.WorkflowStates.Removed)
+            {
+                return 0;
+            }
             await using var sdkDbContext = core.DbContextHelper.GetDbContext();
             var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == siteInfo.LanguageId);
             var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);

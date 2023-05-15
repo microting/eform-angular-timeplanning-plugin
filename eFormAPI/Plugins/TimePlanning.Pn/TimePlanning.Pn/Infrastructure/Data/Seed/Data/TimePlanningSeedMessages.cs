@@ -12,7 +12,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = "DayOff",
                 DaName = "Fridag",
                 EnName = "Day off",
-                DeName = "Freier Tag",
+                DeName = "Freier Tag"
             },
             new Message
             {
@@ -20,7 +20,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = "Vacation",
                 DaName = "Ferie",
                 EnName = "Vacation",
-                DeName = "Urlaub",
+                DeName = "Urlaub"
             },
             new Message
             {
@@ -28,7 +28,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = "Sick",
                 DaName = "Syg",
                 EnName = "Sick",
-                DeName = "Krank",
+                DeName = "Krank"
             },
             new Message
             {
@@ -36,7 +36,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = "Course",
                 DaName = "Kursus",
                 EnName = "Course",
-                DeName = "Kurs",
+                DeName = "Kurs"
             },
             new Message
             {
@@ -44,7 +44,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = "LeaveOfAbsence",
                 DaName = "Orlov",
                 EnName = "Leave of absence",
-                DeName = "Urlaub",
+                DeName = "Urlaub"
             },
             new Message
             {
@@ -52,7 +52,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = "Children1stSick",
                 DaName = "Barn 1. sygedag",
                 EnName = "Children 1st sick",
-                DeName = "1. Krankheitstag der Kinder",
+                DeName = "1. Krankheitstag der Kinder"
             },
             new Message
             {
@@ -60,7 +60,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = "Children2ndSick",
                 DaName = "Barn 2. sygedag",
                 EnName = "Children 2nd sick",
-                DeName = "2. Krankheitstag der Kinder",
+                DeName = "2. Krankheitstag der Kinder"
             }
         };
     }
