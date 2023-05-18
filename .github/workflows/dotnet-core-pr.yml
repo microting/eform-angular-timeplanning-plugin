@@ -134,7 +134,7 @@ jobs:
         wait-on-timeout: 120
         browser: chrome
         record: false
-        spec: cypress/e2e/plugins/items-planning-pn/${{matrix.test}}/*
+        spec: cypress/e2e/plugins/time-planning-pn/${{matrix.test}}/*
         config-file: cypress.config.ts
         working-directory: eform-angular-frontend/eform-client
     - name: Stop the newly build Docker container
