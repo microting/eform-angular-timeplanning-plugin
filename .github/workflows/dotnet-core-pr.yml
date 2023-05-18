@@ -89,6 +89,8 @@ jobs:
         cp -av eform-angular-timeplanning-plugin/eform-client/wdio-plugin-step2.conf.ts  eform-angular-frontend/eform-client/wdio-plugin-step2.conf.ts 
         mkdir -p eform-angular-frontend/eFormAPI/eFormAPI.Web/Plugins
         mkdir -p eform-angular-frontend/eform-client/cypress/e2e/plugins/
+        mkdir -p eform-angular-frontend/eform-client/cypress/fixtures/
+        cp -av eform-angular-timeplanning-plugin/eform-client/cypress/fixtures eform-angular-frontend/eform-client/cypress/fixtures
         cp -av eform-angular-timeplanning-plugin/eform-client/cypress/e2e/plugins/time-planning-pn eform-angular-frontend/eform-client/cypress/e2e/plugins/time-planning-pn
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
     - name: yarn install
