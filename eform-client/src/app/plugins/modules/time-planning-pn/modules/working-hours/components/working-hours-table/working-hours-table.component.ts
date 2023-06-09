@@ -86,7 +86,7 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
       {
         header: this.translateService.stream('Date'),
         field: 'date',
-        formatter: (row: FormGroup) => `${format(parseISO(row.get('date').value), STANDARD_DANISH_DATE_FORMAT.replace('YYYY', 'yyyy'))}`,
+        formatter: (row: FormGroup) => `${format(row.get('date').value, STANDARD_DANISH_DATE_FORMAT.replace('YYYY', 'yyyy'))}`,
       },
       {header: this.translateService.stream('Plan text'), field: 'planText', cellTemplate: this.inputTextTpl},
       {header: this.translateService.stream('Plan hours'), field: 'planHours', cellTemplate: this.inputNumberTpl},
