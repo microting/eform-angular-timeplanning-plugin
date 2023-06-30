@@ -10,6 +10,7 @@ import {Subscription} from 'rxjs';
 import {MatIconRegistry} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
 import {catchError} from 'rxjs/operators';
+import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 
 @Component({
   selector: 'app-working-hours-header',
@@ -25,8 +26,10 @@ export class WorkingHoursHeaderComponent implements OnInit {
   filtersChanged: EventEmitter<TimePlanningsRequestModel> = new EventEmitter<TimePlanningsRequestModel>();
   @Output() updateWorkingHours: EventEmitter<void> = new EventEmitter<void>();
 
-  dateRange: any;
   siteId: number;
+
+  dateFrom: Date = null;
+  dateTo: Date = null;
   downloadReportSub$: Subscription;
 
   constructor(
@@ -41,11 +44,6 @@ export class WorkingHoursHeaderComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  updateDateRange(range: Date[]) {
-    this.dateRange = range;
-    this.filtersChangedEmmit();
-  }
-
   onSiteChanged(siteId: number) {
     this.siteId = siteId;
     this.filtersChangedEmmit();
@@ -56,17 +54,11 @@ export class WorkingHoursHeaderComponent implements OnInit {
   }
 
   onDownloadExcelReport() {
-    const model = new TimePlanningsRequestModel();
-    //model.dateFrom = format(this.dateRange[0]._d, PARSING_DATE_FORMAT);
-    model.dateFrom = this.dateRange[0];
-    //model.dateTo = format(this.dateRange[1]._d, PARSING_DATE_FORMAT);
-    model.dateTo = this.dateRange[1];
-
-    // @ts-ignore
-    model.dateFrom = format(model.dateFrom, 'yyyy-MM-dd');
-    // @ts-ignore
-    model.dateTo = format(model.dateTo, 'yyyy-MM-dd');
-    model.siteId = this.siteId;
+    const model: TimePlanningsRequestModel = {
+      dateFrom: format(this.dateFrom, 'yyyy-MM-dd'),
+      dateTo: format(this.dateTo, 'yyyy-MM-dd'),
+      siteId: this.siteId,
+    };
     this.downloadReportSub$ = this.workingHoursService
       .downloadReport(model)
       .pipe(catchError(
@@ -82,14 +74,21 @@ export class WorkingHoursHeaderComponent implements OnInit {
   }
 
   filtersChangedEmmit(): void {
-    if (this.dateRange && this.siteId) {
+    if (this.dateFrom && this.dateTo && this.siteId) {
       this.filtersChanged.emit({
         siteId: this.siteId,
-        dateFrom: this.dateRange[0],
-        //dateFrom: format(this.dateRange[0]._d, PARSING_DATE_FORMAT),
-        dateTo: this.dateRange[1],
-        //dateTo: format(this.dateRange[1]._d, PARSING_DATE_FORMAT),
+        dateFrom: format(this.dateFrom, PARSING_DATE_FORMAT),
+        dateTo: format(this.dateTo, PARSING_DATE_FORMAT),
       });
     }
+  }
+
+  updateDateFrom(dateFrom: MatDatepickerInputEvent<any, any>) {
+    this.dateFrom = dateFrom.value;
+  }
+
+  updateDateTo(dateTo: MatDatepickerInputEvent<any, any>) {
+    this.dateTo = dateTo.value;
+    this.filtersChangedEmmit();
   }
 }

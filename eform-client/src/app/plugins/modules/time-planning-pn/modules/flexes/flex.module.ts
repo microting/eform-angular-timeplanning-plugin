@@ -2,12 +2,7 @@ import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {RouterModule} from '@angular/router';
-import {
-  OwlDateTimeModule,
-  OWL_DATE_TIME_FORMATS,
-} from '@danielmoncada/angular-datetime-picker';
 import {TranslateModule} from '@ngx-translate/core';
-import {NgxMaskModule} from 'ngx-mask';
 import {EformSharedModule} from 'src/app/common/modules/eform-shared/eform-shared.module';
 import {FlexRouting} from './flex.routing';
 import {
@@ -16,7 +11,6 @@ import {
   TimeFlexesContainerComponent,
   TimeFlexesTableComponent,
 } from './components';
-import {MY_MOMENT_FORMATS_FOR_WORKING_HOURS} from '../../consts/custom-date-time-adapter-for-working-hours';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
@@ -33,9 +27,7 @@ import {MatTooltipModule} from '@angular/material/tooltip';
     EformSharedModule,
     RouterModule,
     ReactiveFormsModule,
-    NgxMaskModule,
     FlexRouting,
-    OwlDateTimeModule,
     MtxGridModule,
     MatFormFieldModule,
     MatInputModule,
@@ -51,10 +43,6 @@ import {MatTooltipModule} from '@angular/material/tooltip';
     TimeFlexesTableComponent,
   ],
   providers: [
-    {
-      provide: OWL_DATE_TIME_FORMATS,
-      useValue: MY_MOMENT_FORMATS_FOR_WORKING_HOURS,
-    },
   ],
 })
 export class FlexModule {
