@@ -16,14 +16,14 @@ export const routes: Routes = [
       requiredPermission: TimePlanningPnClaims.accessTimePlanningPlugin,
     },
     children: [
-      {
+/*      {
         path: 'planning',
         canActivate: [PermissionGuard],
         data: {
           requiredPermission: TimePlanningPnClaims.accessTimePlanningPlugin,
         },
         component: TimePlanningsContainerComponent,
-      },
+      },*/
       {
         path: 'working-hours',
         canActivate: [AuthGuard],

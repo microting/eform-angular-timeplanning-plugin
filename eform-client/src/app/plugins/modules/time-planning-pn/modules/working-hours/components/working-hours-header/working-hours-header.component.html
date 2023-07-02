@@ -1,17 +1,13 @@
 <div class="d-flex flex-row justify-content-start flex-nowrap">
   <div class="d-flex flex-column mr-2 ml-2">
-    <mat-form-field [owlDateTimeTrigger]="dt1">
+    <mat-form-field>
       <mat-label>{{ 'Date range' | translate }}</mat-label>
-      <input
-        matInput
-        [owlDateTime]="dt1"
-        [selectMode]="'range'"
-        [ngModel]="dateRange"
-        (ngModelChange)="updateDateRange($event)"
-        type="text"
-        id="workingHoursRange"
-      />
-      <owl-date-time [pickerType]="'calendar'" #dt1></owl-date-time>
+      <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
+      <mat-date-range-input [rangePicker]="picker" (click)="picker.open()">
+        <input [value]="dateFrom" (dateChange)="updateDateFrom($event)" (dateInput)="updateDateFrom($event)" matStartDate class="workingHoursRange">
+        <input [value]="dateTo" (dateChange)="updateDateTo($event)" (dateInput)="updateDateTo($event)" matEndDate class="workingHoursRange">
+      </mat-date-range-input>
+      <mat-date-range-picker #picker></mat-date-range-picker>
     </mat-form-field>
   </div>
   <div class="d-flex flex-column mr-2 ml-2" style="min-width: 25em">
@@ -27,7 +23,7 @@
       </mtx-select>
     </mat-form-field>
   </div>
-  <div class="d-flex align-items-center mr-2 ml-2" *ngIf="siteId && dateRange">
+  <div class="d-flex align-items-center mr-2 ml-2" *ngIf="siteId && dateFrom && dateTo">
     <button
       mat-raised-button
       id="workingHoursSave"
