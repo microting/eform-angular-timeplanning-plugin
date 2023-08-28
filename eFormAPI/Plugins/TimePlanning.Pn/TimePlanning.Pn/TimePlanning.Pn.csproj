@@ -27,7 +27,7 @@
       <PackageReference Include="Microting.eForm" Version="7.0.65" />
       <PackageReference Include="Microting.eFormApi.BasePn" Version="7.0.55" />
       <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
-      <PackageReference Include="Microting.TimePlanningBase" Version="7.0.51" />
+      <PackageReference Include="Microting.TimePlanningBase" Version="7.0.52" />
     </ItemGroup>
 
     <ItemGroup>
