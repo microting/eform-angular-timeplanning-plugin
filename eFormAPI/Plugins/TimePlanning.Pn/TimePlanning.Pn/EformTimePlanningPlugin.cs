@@ -145,8 +145,18 @@ namespace TimePlanning.Pn
                     cl.IsEditable = false;
                     cl.ReportH1 = eform.Value[0];
                     cl.ReportH2 = eform.Value[1];
+                    cl.IsHidden = true;
                     await cl.Update(sdkDbContext);
                     originalId = cl.Id;
+                }
+                else
+                {
+                    var cl = await sdkDbContext.CheckLists.SingleAsync(x => x.Id == originalId);
+                    if (!cl.IsHidden)
+                    {
+                        cl.IsHidden = true;
+                        await cl.Update(sdkDbContext);
+                    }
                 }
 
                 await options.UpdateDb(settings =>
@@ -177,10 +187,20 @@ namespace TimePlanning.Pn
                     var cl = await sdkDbContext.CheckLists.SingleAsync(x => x.Id == clId);
                     cl.IsLocked = true;
                     cl.IsEditable = false;
+                    cl.IsHidden = true;
                     cl.ReportH1 = eform.Value[0];
                     cl.ReportH2 = eform.Value[1];
                     await cl.Update(sdkDbContext);
                     originalId = cl.Id;
+                }
+                else
+                {
+                    var cl = await sdkDbContext.CheckLists.SingleAsync(x => x.Id == originalId);
+                    if (!cl.IsHidden)
+                    {
+                        cl.IsHidden = true;
+                        await cl.Update(sdkDbContext);
+                    }
                 }
 
                 await options.UpdateDb(settings =>
