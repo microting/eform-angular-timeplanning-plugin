@@ -7,12 +7,12 @@ import {TranslateModule} from '@ngx-translate/core';
 import {NgxMaskModule} from 'ngx-mask';
 import {EformSharedModule} from 'src/app/common/modules/eform-shared/eform-shared.module';
 import {TimePlanningPnRouting} from './time-planning-pn.routing';
-import {
-  TimePlanningsContainerComponent,
-  TimePlanningsHeaderComponent,
-  TimePlanningsTableComponent,
-  TimePlanningTableRowComponent,
-} from './components';
+// import {
+//   TimePlanningsContainerComponent,
+//   TimePlanningsHeaderComponent,
+//   TimePlanningsTableComponent,
+//   TimePlanningTableRowComponent,
+// } from './components';
 import {TimePlanningPnLayoutComponent} from './layouts';
 import {
   TimePlanningPnPlanningsService,
@@ -33,10 +33,10 @@ import {
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
-    TimePlanningTableRowComponent,
-    TimePlanningsTableComponent,
-    TimePlanningsContainerComponent,
-    TimePlanningsHeaderComponent,
+    // TimePlanningTableRowComponent,
+    // TimePlanningsTableComponent,
+    // TimePlanningsContainerComponent,
+    // TimePlanningsHeaderComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,
