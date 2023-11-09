@@ -21,12 +21,9 @@ export class TimePlanningPnLayoutComponent
   ngOnInit() {}
 
   ngAfterContentInit() {
-  //   TODO: Fix this
-  //   this.selectCurrentUserLocale$.subscribe((locale) => {
-  //     this.setLocale(locale);
-  //   });
-  //   const lang = this.authStateService.currentUserLocale;
-  //   const i18n = translates[lang];
-  //   this.translateService.setTranslation(lang, i18n, true);
+    this.selectCurrentUserLocale$.subscribe((locale) => {
+      const i18n = translates[locale];
+      this.translateService.setTranslation(locale, i18n, true);
+    });
   }
 }
