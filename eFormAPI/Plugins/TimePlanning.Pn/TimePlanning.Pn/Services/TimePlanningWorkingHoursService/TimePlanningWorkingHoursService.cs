@@ -275,6 +275,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var lastDate = model.Plannings.Last().Date;
                 var allPlannings = await _dbContext.PlanRegistrations
                     .Where(x => x.Date >= lastDate)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == site.MicrotingUid)
                     .OrderBy(x => x.Date).ToListAsync();
 
@@ -301,23 +302,23 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     foreach (PlanRegistration planRegistration in list)
                     {
 
-                        Message _message =
+                        Message message =
                             await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
                         Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
                         string theMessage;
                         switch (language.LanguageCode)
                         {
                             case "da":
-                                theMessage = _message != null ? _message.DaName : "";
+                                theMessage = message != null ? message.DaName : "";
                                 break;
                             case "de":
-                                theMessage = _message != null ? _message.DeName : "";
+                                theMessage = message != null ? message.DeName : "";
                                 break;
                             default:
-                                theMessage = _message != null ? _message.EnName : "";
+                                theMessage = message != null ? message.EnName : "";
                                 break;
                         }
-                        planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, theMessage);
+                        planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,(int)maxHistoryDays!, (int)eFormId!, core, site, (int)folderId!, theMessage);
                         await planRegistration.Update(_dbContext);
                     }
                 }
@@ -410,8 +411,12 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Flex = model.FlexHours;
                 planRegistration.PaiedOutFlex = model.PaidOutFlex;
                 var preTimePlanning =
-                    await _dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
-                        && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date).FirstOrDefaultAsync();
+                    await _dbContext.PlanRegistrations.AsNoTracking()
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Date < planRegistration.Date
+                        && x.SdkSitId == planRegistration.SdkSitId)
+                        .OrderByDescending(x => x.Date)
+                        .FirstOrDefaultAsync();
                 if (preTimePlanning != null)
                 {
                     planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
