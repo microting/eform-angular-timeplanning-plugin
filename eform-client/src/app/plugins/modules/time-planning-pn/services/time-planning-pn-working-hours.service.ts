@@ -6,12 +6,14 @@ import {
   TimePlanningModel,
   TimePlanningsRequestModel,
   WorkingHoursModel,
+  TimePlanningsReportAllWorkersDownloadRequestModel
 } from '../models';
 
 export let TimePlanningPnWorkingHoursMethods = {
   IndexWorkingHours: 'api/time-planning-pn/working-hours/index',
   WorkingHours: 'api/time-planning-pn/working-hours',
   Reports: 'api/time-planning-pn/working-hours/reports/file',
+  ReportsAllWorkers: 'api/time-planning-pn/working-hours/reports/file-all-workers',
 };
 
 @Injectable({
@@ -39,6 +41,13 @@ export class TimePlanningPnWorkingHoursService {
   downloadReport(model: TimePlanningsRequestModel): Observable<any> {
     return this.apiBaseService.getBlobData(
       TimePlanningPnWorkingHoursMethods.Reports,
+      model
+    );
+  }
+
+  downloadReportAllWorkers(model: TimePlanningsReportAllWorkersDownloadRequestModel): Observable<any> {
+    return this.apiBaseService.getBlobData(
+      TimePlanningPnWorkingHoursMethods.ReportsAllWorkers,
       model
     );
   }
