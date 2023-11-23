@@ -8,11 +8,11 @@ import {
   Output,
   SimpleChanges, TemplateRef, ViewChild,
 } from '@angular/core';
-import {AbstractControl, FormArray, FormGroup} from '@angular/forms';
+import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {Observable, Subscription} from 'rxjs';
 import {SiteDto, TableHeaderElementModel} from 'src/app/common/models';
 import {TimePlanningModel, TimePlanningsRequestModel} from '../../../../models';
-import {MtxGridColumn} from '@ng-matero/extensions/grid';
+import {MtxGridColumn, MtxGridRowClassFormatter} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
 import {DaysOfWeekEnum, HOURS_PICKER_ARRAY, STANDARD_DANISH_DATE_FORMAT} from 'src/app/common/const';
 import { messages } from '../../../../consts/messages';
@@ -80,11 +80,13 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
     this.tableHeaders = [
       {
         header: this.translateService.stream('DayOfWeek'),
+        pinned: 'left',
         field: 'weekDay',
         formatter: (row: FormGroup) => this.translateService.instant(DaysOfWeekEnum[row.get('weekDay').value])
       },
       {
         header: this.translateService.stream('Date'),
+        pinned: 'left',
         field: 'date',
         formatter: (row: FormGroup) => `${format(row.get('date').value, STANDARD_DANISH_DATE_FORMAT.replace('YYYY', 'yyyy'))}`,
       },
@@ -109,6 +111,11 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
       {header: this.translateService.stream('CommentOffice'), field: 'commentOffice', cellTemplate: this.inputTextTpl,},
     ];
   }
+
+  rowClassFormatter: MtxGridRowClassFormatter = {
+    'background-powder': (data: FormControl, index) => data.get('isLocked').value === true,
+    'background-yellow': (data: FormControl, index) => data.get('isWeekend').value === true,
+  };
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes && changes.workingHours) {

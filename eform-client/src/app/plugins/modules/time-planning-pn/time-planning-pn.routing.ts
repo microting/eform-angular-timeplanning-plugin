@@ -1,9 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard, PermissionGuard } from 'src/app/common/guards';
-import {
-  TimePlanningsContainerComponent,
-} from './components';
 import { TimePlanningPnClaims } from './enums';
 import { TimePlanningPnLayoutComponent } from './layouts';
 
