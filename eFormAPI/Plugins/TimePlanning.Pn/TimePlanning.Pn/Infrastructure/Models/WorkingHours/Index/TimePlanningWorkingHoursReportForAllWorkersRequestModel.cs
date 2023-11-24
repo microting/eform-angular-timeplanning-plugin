@@ -1,6 +1,6 @@
 ﻿/*
 The MIT License (MIT)
-Copyright (c) 2007 - 2021 Microting A/S
+Copyright (c) 2007 - 2023 Microting A/S
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -18,28 +18,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-using System.IO;
-
-namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
+namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.WorkingHours.Index;
-    using Infrastructure.Models.WorkingHours.UpdateCreate;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+    using System;
 
-    /// <summary>
-    /// Interface ITimePlanningWorkingHoursService
-    /// </summary>
-    public interface ITimePlanningWorkingHoursService
+    public class TimePlanningWorkingHoursReportForAllWorkersRequestModel
     {
-        Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model);
+        public DateTime DateFrom { get; set; }
 
-        Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursUpdateCreateModel model);
-
-        Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursRequestModel model);
-
-        Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursReportForAllWorkersRequestModel model);
-
+        public DateTime DateTo { get; set; }
     }
 }

@@ -87,7 +87,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var maxDaysEditable = _options.Value.MaxDaysEditable;
                 var language = await _userService.GetCurrentUserLanguage();
-                CultureInfo ci = new CultureInfo(language.LanguageCode);
+                var ci = new CultureInfo(language.LanguageCode);
                 List<(DateTime, string)> tupleValueList = new();
                 var site = await sdkDbContext.Sites
                     .AsNoTracking()
@@ -203,10 +203,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
 
-                int j = 0;
+                var j = 0;
                 double sumFlexEnd = 0;
                 double SumFlexStart= 0;
-                foreach (TimePlanningWorkingHoursModel timePlanningWorkingHoursModel in timePlannings)
+                foreach (var timePlanningWorkingHoursModel in timePlannings)
                 {
                     if (j == 0)
                     {
@@ -279,9 +279,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     .Where(x => x.SdkSitId == site.MicrotingUid)
                     .OrderBy(x => x.Date).ToListAsync();
 
-                double preSumFlexStart = allPlannings.Any() ? allPlannings.First().SumFlexEnd : 0;
+                var preSumFlexStart = allPlannings.Any() ? allPlannings.First().SumFlexEnd : 0;
 
-                foreach (PlanRegistration planRegistration in allPlannings)
+                foreach (var planRegistration in allPlannings)
                 {
                     if (planRegistration.Date > lastDate)
                     {
@@ -294,15 +294,15 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 if (_options.Value.MaxHistoryDays != null)
                 {
-                    int maxHistoryDaysInd = (int)_options.Value.MaxHistoryDays;
+                    var maxHistoryDaysInd = (int)_options.Value.MaxHistoryDays;
                     var firstDate = model.Plannings.First(x => x.Date >= DateTime.Now.AddDays(-maxHistoryDaysInd)).Date;
                     var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate && x.Date <= DateTime.UtcNow
                             && x.SdkSitId == site.MicrotingUid && x.DataFromDevice)
                         .OrderBy(x => x.Date).ToListAsync();
-                    foreach (PlanRegistration planRegistration in list)
+                    foreach (var planRegistration in list)
                     {
 
-                        Message message =
+                        var message =
                             await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
                         Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
                         string theMessage;
@@ -449,11 +449,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 // get core
                 var core = await _coreHelper.GetCore();
                 var sdkContext = core.DbContextHelper.GetDbContext();
-                Site site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
+                var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
                 var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
 
                 Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
-                CultureInfo ci = new CultureInfo(language.LanguageCode);
+                var ci = new CultureInfo(language.LanguageCode);
 
                 Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
 
@@ -466,10 +466,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 IXLWorkbook wb = new XLWorkbook();
 
-                IXLWorksheet worksheet = wb.Worksheets.Add("Dashboard");
+                var worksheet = wb.Worksheets.Add("Dashboard");
 
-                int x = 0;
-                int y = 0;
+                var x = 0;
+                var y = 0;
 
                 worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Worker);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
@@ -531,21 +531,21 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 var content = await Index(model);
 
-                PlanRegistration plr = new PlanRegistration();
+                var plr = new PlanRegistration();
 
                 if (content.Success)
                 {
                     var rows = content.Model;
 
-                    bool firstDone = false;
-                    foreach (TimePlanningWorkingHoursModel timePlanningWorkingHoursModel in rows)
+                    var firstDone = false;
+                    foreach (var timePlanningWorkingHoursModel in rows)
                     {
                         if (firstDone)
                         {
-                            Message theMessage =
+                            var theMessage =
                                 await _dbContext.Messages.SingleOrDefaultAsync(x =>
                                     x.Id == timePlanningWorkingHoursModel.Message);
-                            string messageText = theMessage != null ? theMessage.EnName : "";
+                            var messageText = theMessage != null ? theMessage.EnName : "";
                             switch (language.LanguageCode)
                             {
                                 case "da":
@@ -619,6 +619,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         firstDone = true;
                     }
                 }
+                worksheet.RangeUsed().SetAutoFilter();
 
                 wb.SaveAs(resultDocument);
                 // TODO check adjustment for width of text for row 0
@@ -637,5 +638,207 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         }
 
 
+        public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursReportForAllWorkersRequestModel model)
+        {
+            try
+            {
+                var siteIds = await _dbContext.AssignedSites
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Select(x => x.SiteId)
+                    .ToListAsync();
+                // get core
+                var core = await _coreHelper.GetCore();
+                var sdkContext = core.DbContextHelper.GetDbContext();
+
+                Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
+
+                var timeStamp = $"{DateTime.UtcNow:yyyyMMdd}_{DateTime.UtcNow:hhmmss}";
+
+                var resultDocument = Path.Combine(Path.GetTempPath(), "results",
+                    $"{timeStamp}_.xlsx");
+
+                Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
+
+                IXLWorkbook wb = new XLWorkbook();
+
+                foreach (var siteId in siteIds)
+                {
+                    var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
+                    var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+
+                    Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
+                    var ci = new CultureInfo(language.LanguageCode);
+                    var worksheet = wb.Worksheets.Add(site.Name);
+
+                    var x = 0;
+                    var y = 0;
+
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Worker);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.DayOfWeek);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Date);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.PlanText);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.PlanHours);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_1__start);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_1__end);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_1__pause);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_2__start);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_2__end);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Shift_2__pause);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.NettoHours);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Flex);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.SumFlexStart);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.PaidOutFlex);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Message);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comments);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    // y++;
+                    // worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Comment_office_all);
+                    // worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    // y++;
+
+                    var content = await Index(new TimePlanningWorkingHoursRequestModel{DateFrom = model.DateFrom, DateTo = model.DateTo, SiteId = siteId});
+
+                    var plr = new PlanRegistration();
+
+                    if (content.Success)
+                    {
+                        var rows = content.Model;
+
+                        var firstDone = false;
+                        foreach (var timePlanningWorkingHoursModel in rows)
+                        {
+                            if (firstDone)
+                            {
+                                var theMessage =
+                                    await _dbContext.Messages.SingleOrDefaultAsync(x =>
+                                        x.Id == timePlanningWorkingHoursModel.Message);
+                                var messageText = theMessage != null ? theMessage.EnName : "";
+                                switch (language.LanguageCode)
+                                {
+                                    case "da":
+                                        messageText = theMessage != null ? theMessage.DaName : "";
+                                        break;
+                                    case "de":
+                                        messageText = theMessage != null ? theMessage.DeName : "";
+                                        break;
+                                }
+
+                                x++;
+                                y = 0;
+
+                                worksheet.Cell(x + 1, y + 1).Value = site.Name;
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value =
+                                    timePlanningWorkingHoursModel.Date.ToString("dddd", ci);
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanText; // TODO plan text
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                    timePlanningWorkingHoursModel.Shift1Start > 0
+                                        ? (int)timePlanningWorkingHoursModel.Shift1Start - 1
+                                        : 0];
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                    timePlanningWorkingHoursModel.Shift1Stop > 0
+                                        ? (int)timePlanningWorkingHoursModel.Shift1Stop - 1
+                                        : 0];
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                    timePlanningWorkingHoursModel.Shift1Pause > 0
+                                        ? (int)timePlanningWorkingHoursModel.Shift1Pause - 1
+                                        : 0];
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                    timePlanningWorkingHoursModel.Shift2Start > 0
+                                        ? (int)timePlanningWorkingHoursModel.Shift2Start - 1
+                                        : 0];
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                    timePlanningWorkingHoursModel.Shift2Stop > 0
+                                        ? (int)timePlanningWorkingHoursModel.Shift2Stop - 1
+                                        : 0];
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = plr.Options[
+                                    timePlanningWorkingHoursModel.Shift2Pause > 0
+                                        ? (int)timePlanningWorkingHoursModel.Shift2Pause - 1
+                                        : 0];
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.NettoHours;
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.FlexHours;
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexEnd;
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = messageText;
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker?.Replace("<br>", "\n");
+                                y++;
+                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice?.Replace("<br>", "\n");
+                                // y++;
+                                // worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
+                            }
+                            firstDone = true;
+                        }
+                    }
+
+                    worksheet.RangeUsed().SetAutoFilter();
+                }
+
+                wb.SaveAs(resultDocument);
+                // TODO check adjustment for width of text for row 0
+
+                Stream result = File.Open(resultDocument, FileMode.Open);
+                return new OperationDataResult<Stream>(true, result);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationDataResult<Stream>(
+                    false,
+                    _localizationService.GetString("ErrorWhileCreatingWordFile"));
+            }
+        }
     }
 }

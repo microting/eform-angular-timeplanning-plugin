@@ -2,7 +2,7 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {format} from 'date-fns';
 import {ExcelIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {SiteDto} from 'src/app/common/models';
-import {TimePlanningsRequestModel} from '../../../../models';
+import {TimePlanningsReportAllWorkersDownloadRequestModel, TimePlanningsRequestModel} from '../../../../models';
 import {saveAs} from 'file-saver';
 import {ToastrService} from 'ngx-toastr';
 import {TimePlanningPnWorkingHoursService} from '../../../../services';
@@ -90,5 +90,24 @@ export class WorkingHoursHeaderComponent implements OnInit {
   updateDateTo(dateTo: MatDatepickerInputEvent<any, any>) {
     this.dateTo = dateTo.value;
     this.filtersChangedEmmit();
+  }
+
+  onDownloadExcelReportAllWorkers() {
+    const model: TimePlanningsReportAllWorkersDownloadRequestModel = {
+      dateFrom: format(this.dateFrom, 'yyyy-MM-dd'),
+      dateTo: format(this.dateTo, 'yyyy-MM-dd'),
+    };
+    this.downloadReportSub$ = this.workingHoursService
+      .downloadReportAllWorkers(model)
+      .pipe(catchError(
+        (caught) => {
+          this.toastrService.error('Error downloading report');
+          return caught;
+        }))
+      .subscribe(
+        (data) => {
+          saveAs(data, model.dateFrom + '_' + model.dateTo + '_AllWorkersReport.xlsx');
+        },
+      );
   }
 }

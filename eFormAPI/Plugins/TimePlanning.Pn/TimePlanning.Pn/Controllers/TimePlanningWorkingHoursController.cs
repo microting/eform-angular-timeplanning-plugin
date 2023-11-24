@@ -58,7 +58,6 @@ namespace TimePlanning.Pn.Controllers
         /// Download records export word
         /// </summary>
         /// <param name="requestModel">The request model.</param>
-        /// <param name="type">docx or xlsx</param>
         [HttpGet]
         [Route("reports/file")]
         [ProducesResponseType(typeof(string), 400)]
@@ -75,6 +74,47 @@ namespace TimePlanning.Pn.Controllers
                     Response.ContentType = "text/plain";
                     Response.StatusCode = 400;
                     byte[] bytes = Encoding.UTF8.GetBytes(result.Message);
+                    await Response.Body.WriteAsync(bytes, 0, result.Message.Length);
+                    await Response.Body.FlushAsync();
+                }
+                else
+                {
+                    await using var wordStream = result.Model;
+                    int bytesRead;
+                    Response.ContentLength = wordStream.Length;
+                    Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                    while ((bytesRead = wordStream.Read(buffer, 0, buffer.Length)) > 0 &&
+                           !HttpContext.RequestAborted.IsCancellationRequested)
+                    {
+                        await Response.Body.WriteAsync(buffer, 0, bytesRead);
+                        await Response.Body.FlushAsync();
+                    }
+                }
+            });
+        }
+
+
+        /// <summary>
+        /// Download records export word
+        /// </summary>
+        /// <param name="requestModel">The request model.</param>
+        [HttpGet]
+        [Route("reports/file-all-workers")]
+        [ProducesResponseType(typeof(string), 400)]
+        public async Task GenerateReportFileByAllWorkers(TimePlanningWorkingHoursReportForAllWorkersRequestModel requestModel)
+        {
+            var result = await _workingHoursService.GenerateExcelDashboard(requestModel);
+            const int bufferSize = 4086;
+            var buffer = new byte[bufferSize];
+            Response.OnStarting(async () =>
+            {
+                if (!result.Success)
+                {
+                    Response.ContentLength = result.Message.Length;
+                    Response.ContentType = "text/plain";
+                    Response.StatusCode = 400;
+                    var bytes = Encoding.UTF8.GetBytes(result.Message);
                     await Response.Body.WriteAsync(bytes, 0, result.Message.Length);
                     await Response.Body.FlushAsync();
                 }

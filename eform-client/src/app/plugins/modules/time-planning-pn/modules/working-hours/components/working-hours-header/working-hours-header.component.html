@@ -37,6 +37,7 @@
       id="workingHoursReload"
       (click)="filtersChangedEmmit()"
       color="accent"
+      [matTooltip]="'Reload table' | translate"
     >
       <mat-icon>restart_alt</mat-icon>
     </button>
@@ -46,6 +47,18 @@
       id="workingHoursExcel"
       (click)="onDownloadExcelReport()"
       color="accent"
+      [matTooltip]="'Download Excel' | translate"
+    >
+      <mat-icon>download</mat-icon>
+    </button>
+  </div>
+  <div class="d-flex align-items-center mr-2 ml-2" *ngIf="!siteId && dateFrom && dateTo">
+    <button
+      mat-icon-button
+      id="workingHoursExcelAllWorkers"
+      (click)="onDownloadExcelReportAllWorkers()"
+      color="accent"
+      [matTooltip]="'Download Excel(all workers)' | translate"
     >
       <mat-icon>download</mat-icon>
     </button>

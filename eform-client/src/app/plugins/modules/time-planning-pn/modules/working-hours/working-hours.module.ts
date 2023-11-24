@@ -21,6 +21,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatTableModule} from '@angular/material/table';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatDatepickerModule} from '@angular/material/datepicker';
+import {MatTooltipModule} from '@angular/material/tooltip';
 
 @NgModule({
   imports: [
@@ -40,6 +41,7 @@ import {MatDatepickerModule} from '@angular/material/datepicker';
     MatTableModule,
     MatDialogModule,
     MatDatepickerModule,
+    MatTooltipModule,
   ],
   declarations: [
     WorkingHoursContainerComponent,
