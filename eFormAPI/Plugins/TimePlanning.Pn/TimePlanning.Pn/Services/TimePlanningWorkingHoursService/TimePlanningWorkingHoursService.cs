@@ -664,6 +664,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 foreach (var siteId in siteIds)
                 {
                     var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
+                    if (site.WorkflowState == Constants.WorkflowStates.Removed)
+                    {
+                        continue;
+                    }
                     var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
 
                     Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
