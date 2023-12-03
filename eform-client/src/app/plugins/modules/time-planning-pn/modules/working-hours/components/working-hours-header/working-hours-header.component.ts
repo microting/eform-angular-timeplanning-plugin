@@ -74,7 +74,7 @@ export class WorkingHoursHeaderComponent implements OnInit {
   }
 
   filtersChangedEmmit(): void {
-    if (this.dateFrom && this.dateTo && this.siteId) {
+    if (this.dateFrom && this.dateTo && this.siteId !== undefined) {
       this.filtersChanged.emit({
         siteId: this.siteId,
         dateFrom: format(this.dateFrom, PARSING_DATE_FORMAT),

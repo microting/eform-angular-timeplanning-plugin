@@ -24,6 +24,7 @@ using System.Threading;
 using ClosedXML.Excel;
 using Microting.eForm.Dto;
 using Microting.eForm.Infrastructure.Models;
+using Sentry;
 using TimePlanning.Pn.Helpers;
 using TimePlanning.Pn.Resources;
 
@@ -645,6 +646,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var siteIds = await _dbContext.AssignedSites
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Select(x => x.SiteId)
+                    //.Distinct()
                     .ToListAsync();
                 // get core
                 var core = await _coreHelper.GetCore();
@@ -839,6 +841,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
+                SentrySdk.CaptureException(e);
                 return new OperationDataResult<Stream>(
                     false,
                     _localizationService.GetString("ErrorWhileCreatingWordFile"));
