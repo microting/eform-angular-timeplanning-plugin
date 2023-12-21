@@ -11,6 +11,13 @@ import {MatIconRegistry} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
 import {catchError} from 'rxjs/operators';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
+import {EformsBulkImportModalComponent, EformUploadZipModalComponent} from "src/app/modules/eforms/components";
+import {dialogConfigHelper} from "src/app/common/helpers";
+import {MatDialog} from "@angular/material/dialog";
+import {Overlay} from "@angular/cdk/overlay";
+import {
+  WorkingHoursUploadModalComponent
+} from "src/app/plugins/modules/time-planning-pn/modules/working-hours/components";
 
 @Component({
   selector: 'app-working-hours-header',
@@ -25,6 +32,7 @@ export class WorkingHoursHeaderComponent implements OnInit {
   @Output()
   filtersChanged: EventEmitter<TimePlanningsRequestModel> = new EventEmitter<TimePlanningsRequestModel>();
   @Output() updateWorkingHours: EventEmitter<void> = new EventEmitter<void>();
+  eformUploadZipModalComponentAfterClosedSub$: Subscription;
 
   siteId: number;
 
@@ -37,6 +45,8 @@ export class WorkingHoursHeaderComponent implements OnInit {
     private workingHoursService: TimePlanningPnWorkingHoursService,
     iconRegistry: MatIconRegistry,
     sanitizer: DomSanitizer,
+    public dialog: MatDialog,
+    private overlay: Overlay,
   ) {
     iconRegistry.addSvgIconLiteral('file-excel', sanitizer.bypassSecurityTrustHtml(ExcelIcon));
   }
@@ -109,5 +119,15 @@ export class WorkingHoursHeaderComponent implements OnInit {
           saveAs(data, model.dateFrom + '_' + model.dateTo + '_AllWorkersReport.xlsx');
         },
       );
+  }
+
+  openEformsImportModal() {
+    this.eformUploadZipModalComponentAfterClosedSub$ = this.dialog.open(WorkingHoursUploadModalComponent, {
+      ...dialogConfigHelper(this.overlay), minWidth: 400,
+    }).afterClosed().subscribe(data => data ? undefined : undefined);
+    // this.eformsBulkImportModalAfterClosedSub$ = this.dialog.open(EformsBulkImportModalComponent, {
+    //   ...dialogConfigHelper(this.overlay, this.availableTags),
+    //   minWidth: 400,
+    // }).afterClosed().subscribe(data => data ? this.loadAllTags() : undefined);
   }
 }

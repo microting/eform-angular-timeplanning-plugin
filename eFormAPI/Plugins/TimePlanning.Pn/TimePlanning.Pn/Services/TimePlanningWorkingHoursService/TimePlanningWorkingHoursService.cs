@@ -22,8 +22,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using ClosedXML.Excel;
-using Microting.eForm.Dto;
-using Microting.eForm.Infrastructure.Models;
+using Microsoft.AspNetCore.Http;
 using Sentry;
 using TimePlanning.Pn.Helpers;
 using TimePlanning.Pn.Resources;
@@ -40,7 +39,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microting.eForm.Infrastructure.Constants;
-    using Microting.eForm.Infrastructure.Data.Entities;
     using Microting.eFormApi.BasePn.Abstractions;
     using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
@@ -846,6 +844,136 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     false,
                     _localizationService.GetString("ErrorWhileCreatingWordFile"));
             }
+        }
+
+        public async Task<OperationResult> Import(IFormFile file)
+        {
+
+            // file is a excel file and each sheet corresponds to a site in the SDK
+            // each row is a day and column E is the date
+            // column F is the plan text
+            // column G is the plan hours
+            // only import if the date is not in the past
+
+            // get core
+            var core = await _coreHelper.GetCore();
+            var sdkContext = core.DbContextHelper.GetDbContext();
+            // open file
+            // loop through sheets
+            // get site
+            // loop through rows
+            // get date
+            // get plan text
+            // get plan hours
+            // check if date is in the past
+            using (var stream = new MemoryStream())
+            {
+                await file.CopyToAsync(stream);
+                using (var package = new XLWorkbook(stream))
+                {
+                    var sheets = package.Worksheets;
+                    foreach (var sheet in sheets)
+                    {
+                        var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.Name == sheet.Name);
+                        if (site == null)
+                        {
+                            continue;
+                        }
+
+                        var rows = sheet.RangeUsed()
+                            .RowsUsed();
+                        foreach (var row in rows)
+                        {
+                            // skip first row
+                            if (row.RowNumber() == 1)
+                            {
+                                continue;
+                            }
+                            var date = row.Cell(5).Value;
+                            var planText = row.Cell(6).Value;
+                            var planHours = row.Cell(7).Value;
+                            // if (date == null || planText == null || planHours == null)
+                            // {
+                            //     continue;
+                            // }
+                            var dateValue = DateTime.Parse(date.ToString());
+                            if (dateValue < DateTime.Now)
+                            {
+                                continue;
+                            }
+
+                            var preTimePlanning =
+                                await _dbContext.PlanRegistrations.AsNoTracking()
+                                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                    .Where(x => x.Date < dateValue
+                                                && x.SdkSitId == (int)site.MicrotingUid!)
+                                    .OrderByDescending(x => x.Date)
+                                    .FirstOrDefaultAsync();
+                            var planRegistration = await _dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
+                                x.Date == dateValue && x.SdkSitId == site.MicrotingUid);
+                            if (planRegistration == null)
+                            {
+                                planRegistration = new PlanRegistration
+                                {
+                                    Date = dateValue,
+                                    PlanText = planText.ToString(),
+                                    PlanHours = string.IsNullOrEmpty(planHours.ToString()) ? 0 : double.Parse(planHours.ToString()),
+                                    SdkSitId = (int)site.MicrotingUid!,
+                                    CreatedByUserId = _userService.UserId,
+                                    UpdatedByUserId = _userService.UserId,
+                                    NettoHours = 0,
+                                    PaiedOutFlex = 0,
+                                    Pause1Id = 0,
+                                    Pause2Id = 0,
+                                    Start1Id = 0,
+                                    Start2Id = 0,
+                                    Stop1Id = 0,
+                                    Stop2Id = 0,
+                                    Flex = 0,
+                                    StatusCaseId = 0
+                                };
+                                if (preTimePlanning != null)
+                                {
+                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                                    planRegistration.Flex = -planRegistration.PlanHours;
+                                }
+                                else
+                                {
+                                    planRegistration.Flex = -planRegistration.PlanHours;
+                                    planRegistration.SumFlexEnd = planRegistration.PlanHours;
+                                    planRegistration.SumFlexStart = 0;
+                                }
+                                await planRegistration.Create(_dbContext);
+                            }
+                            else
+                            {
+                                planRegistration.PlanText = planText.ToString();
+                                planRegistration.PlanHours = string.IsNullOrEmpty(planHours.ToString())
+                                    ? 0
+                                    : double.Parse(planHours.ToString());
+                                planRegistration.UpdatedByUserId = _userService.UserId;
+
+                                if (preTimePlanning != null)
+                                {
+                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.PlanHours - planRegistration.NettoHours - planRegistration.PaiedOutFlex;
+                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                }
+                                else
+                                {
+                                    planRegistration.SumFlexEnd = planRegistration.PlanHours - planRegistration.NettoHours - planRegistration.PaiedOutFlex;
+                                    planRegistration.SumFlexStart = 0;
+                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                }
+                                await planRegistration.Update(_dbContext);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return new OperationResult(true, "Imported");
         }
     }
 }

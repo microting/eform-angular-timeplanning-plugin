@@ -52,4 +52,10 @@
       <Folder Include="Messages\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="EPPlus.Core">
+        <HintPath>..\..\..\..\..\..\..\..\.nuget\packages\epplus.core\1.5.4\lib\netstandard2.0\EPPlus.Core.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>
