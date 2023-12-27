@@ -2,7 +2,7 @@ name: .NET Master
 
 on:
   pull_request:
-    branches: [ master, stable ]
+    branches: [ master, stable, angular15 ]
 
 jobs:
   build:
