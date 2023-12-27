@@ -4,7 +4,6 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {RouterModule} from '@angular/router';
 import {NgSelectModule} from '@ng-select/ng-select';
 import {TranslateModule} from '@ngx-translate/core';
-import {NgxMaskModule} from 'ngx-mask';
 import {EformSharedModule} from 'src/app/common/modules/eform-shared/eform-shared.module';
 import {TimePlanningPnRouting} from './time-planning-pn.routing';
 // import {
@@ -29,7 +28,6 @@ import {
     RouterModule,
     TimePlanningPnRouting,
     ReactiveFormsModule,
-    NgxMaskModule,
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
