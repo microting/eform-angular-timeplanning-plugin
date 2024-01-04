@@ -60,7 +60,7 @@ jobs:
       with:
         name: time-planning-container
     - run: docker load -i time-planning-container.tar
-    - name: Create docker network 🖧
+    - name: Create docker network
       run: docker network create --driver bridge --attachable data
     - name: Start MariaDB
       run: |
@@ -168,7 +168,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Create docker network 🖧
+    - name: Create docker network
       run: docker network create --driver bridge --attachable data
     - name: Start MariaDB
       run: |
@@ -183,7 +183,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 7.0.x
+        dotnet-version: 8.0.x
     - name: Build
       run: dotnet build eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.sln
     - name: Unit Tests
