@@ -9,6 +9,7 @@
 </ng-template>
 
 <mtx-grid
+  id="time-planning-pn-working-hours-grid"
   [data]="workingHoursFormArray.controls"
   [columns]="tableHeaders"
   [showPaginator]="false"
@@ -24,7 +25,7 @@
 </mtx-grid>
 
 <ng-template #shiftSelectorTpl let-row let-index="index" let-col="colDef">
-  <mat-form-field [formGroup]="row">
+  <mat-form-field [formGroup]="row" style="width: 50%;">
     <mtx-select
       [items]="hoursPickerArray"
       [appendTo]="'body'"
@@ -51,7 +52,7 @@
 </ng-template>
 
 <ng-template #inputNumberTpl let-row let-index="index" let-col="colDef">
-  <mat-form-field class="hours-input" [formGroup]="row">
+  <mat-form-field class="hours-input" [formGroup]="row" style="background-color: transparent !important;">
     <input matInput type="number" step="0.05" id="planHoursInput" [formControlName]="col.field">
   </mat-form-field>
 </ng-template>

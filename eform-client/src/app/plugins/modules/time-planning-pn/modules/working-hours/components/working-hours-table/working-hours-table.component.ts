@@ -6,7 +6,7 @@ import {
   OnChanges, OnDestroy,
   OnInit,
   Output,
-  SimpleChanges, TemplateRef, ViewChild,
+  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
 } from '@angular/core';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {Observable, Subscription} from 'rxjs';
@@ -25,7 +25,8 @@ import {dialogConfigHelper} from 'src/app/common/helpers';
 @Component({
   selector: 'app-working-hours-table',
   templateUrl: './working-hours-table.component.html',
-  styleUrls: ['./working-hours-table.component.scss'],
+  styleUrls: ['./working-hours-table.component.css'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('shiftSelectorTpl', {static: true}) shiftSelectorTpl!: TemplateRef<any>;
