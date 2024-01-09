@@ -1,7 +1,8 @@
 import loginPage from '../../../Login.page';
 import timePlanningWorkingHoursPage from '../TimePlanningWorkingHours.page';
-import {selectDateRangeOnDatePicker, selectValueInNgSelector} from '../../../helper-functions';
-import path from 'path';
+import {selectDateRangeOnNewDatePicker, selectValueInNgSelector} from '../../../helper-functions';
+import path = require('path');
+
 import {read} from 'xlsx';
 
 const dateRange = {
@@ -24,13 +25,15 @@ describe('Time planning plugin working hours export', () => {
   });
   it('should enabled Time registration plugin', () => {
     timePlanningWorkingHoursPage.workingHoursRange().click();
-    selectDateRangeOnDatePicker(
+    selectDateRangeOnNewDatePicker(
       dateRange.yearFrom, dateRange.monthFrom, dateRange.dayFrom,
       dateRange.yearTo, dateRange.monthTo, dateRange.dayTo); // select date range
     selectValueInNgSelector('#workingHoursSite', 'o p', true);// select worker
 
     cy.log('**GENERATE EXCEL REPORT**');
+    cy.intercept('GET', '**').as('getData');
     timePlanningWorkingHoursPage.workingHoursExcel().click();
+    cy.wait('@getData');
     const downloadedExcelFilename = path.join(downloadsFolder, `${fileNameExcelReport}.xlsx`);
     const fixturesExcelFilename = path.join(<string>fixturesFolder, `${fileNameExcelReport}.xlsx`);
     cy.readFile(fixturesExcelFilename, 'binary').then((file1Content) => {

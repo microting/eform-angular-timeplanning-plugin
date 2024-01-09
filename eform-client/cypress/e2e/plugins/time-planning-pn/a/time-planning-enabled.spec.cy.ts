@@ -13,7 +13,7 @@ describe('Enable Backend Config plugin', () => {
   it('should enabled Time registration plugin', () => {
     const pluginName = 'Microting Time Planning Plugin';
     pluginPage.enablePluginByName(pluginName);
-    const row = cy.contains('.mat-row', pluginName).first();
+    const row = cy.contains('.mat-mdc-row', pluginName).first();
     row.find('.mat-column-actions button')
       .should('contain.text', 'toggle_on'); // plugin is enabled
   });

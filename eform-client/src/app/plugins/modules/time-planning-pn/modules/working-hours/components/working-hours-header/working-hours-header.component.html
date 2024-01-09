@@ -1,6 +1,6 @@
 <div class="d-flex flex-row justify-content-start flex-nowrap">
   <div class="d-flex flex-column mr-2 ml-2">
-    <mat-form-field>
+    <mat-form-field id="workingHoursRange">
       <mat-label>{{ 'Date range' | translate }}</mat-label>
       <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
       <mat-date-range-input [rangePicker]="picker" (click)="picker.open()">
