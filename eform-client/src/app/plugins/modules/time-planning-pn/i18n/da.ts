@@ -40,6 +40,9 @@ export const da = {
   'Comment office': 'Besked kontor',
   'Comment office all': 'Info kontor alle',
   Select: 'Vælg',
-  'Upload working hours plan': 'Upload arbejdstidsplan',
-  'Select period and worker to show plan': 'Vælg periode og arbejder for at vise planen',
+  'Select period and worker to show plan': 'Vælg periode og medarbejder for at vise timeoversigt',
+  'Import work plan': 'Importer arbejdsplan',
+  'Download Excel (all workers)': 'Download Excel (alle medarbejdere)',
+  'Save': 'Gem',
+  'Reload table': 'Genindlæs tabel',
 };

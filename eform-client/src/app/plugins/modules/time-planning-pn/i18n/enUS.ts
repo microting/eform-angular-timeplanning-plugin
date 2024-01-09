@@ -40,6 +40,9 @@ export const enUS = {
   'Comment office': 'Message office',
   'Comment office all': 'Info office all',
   Select: 'Select',
-  'Upload working hours plan': 'Upload working hours plan',
   'Select period and worker to show plan': 'Select period and worker to show plan',
+  'Import work plan': 'Import work plan',
+  'Download Excel (all workers)': 'Download Excel (all workers)',
+  'Save': 'Save',
+  'Reload table': 'Reload table',
 };
