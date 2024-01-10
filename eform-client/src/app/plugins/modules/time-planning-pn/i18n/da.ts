@@ -1,6 +1,6 @@
 export const da = {
   Actions: 'Handlinger',
-  'Working hours': 'Tidsregistrering',
+  'Working hours': 'Timeregistrering',
   'Date range': 'Periode',
   DayOfWeek: 'Ugedag',
   'Plan text': 'Plan tekst',
