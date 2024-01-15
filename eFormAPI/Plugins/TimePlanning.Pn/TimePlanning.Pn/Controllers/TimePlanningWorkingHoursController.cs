@@ -19,6 +19,8 @@ SOFTWARE.
 */
 
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using TimePlanning.Pn.Infrastructure.Models.WorkingHours;
 
 namespace TimePlanning.Pn.Controllers
 {
@@ -133,6 +135,13 @@ namespace TimePlanning.Pn.Controllers
                     }
                 }
             });
+        }
+
+        [HttpPost]
+        [Route("reports/import")]
+        public async Task<OperationResult> Import(WorkingHourUploadModel workingHourUploadModel)
+        {
+            return await _workingHoursService.Import(workingHourUploadModel.File);
         }
     }
 }

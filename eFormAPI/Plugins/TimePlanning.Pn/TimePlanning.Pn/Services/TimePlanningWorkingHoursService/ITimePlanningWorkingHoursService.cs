@@ -19,6 +19,7 @@ SOFTWARE.
 */
 
 using System.IO;
+using Microsoft.AspNetCore.Http;
 
 namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 {
@@ -41,5 +42,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
         Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursReportForAllWorkersRequestModel model);
 
+        Task<OperationResult> Import(IFormFile file);
     }
 }

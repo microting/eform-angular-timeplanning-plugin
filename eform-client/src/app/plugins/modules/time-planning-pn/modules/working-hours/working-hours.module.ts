@@ -10,7 +10,7 @@ import {
   WorkingHoursHeaderComponent,
   WorkingHoursTableComponent,
   WorkingHoursCommentOfficeUpdateModalComponent,
-  WorkingHoursCommentOfficeAllUpdateModalComponent,
+  WorkingHoursCommentOfficeAllUpdateModalComponent, WorkingHoursUploadModalComponent,
 } from './components';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -22,6 +22,7 @@ import {MatTableModule} from '@angular/material/table';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatTooltipModule} from '@angular/material/tooltip';
+import {FileUploadModule} from "ng2-file-upload";
 
 @NgModule({
   imports: [
@@ -42,6 +43,7 @@ import {MatTooltipModule} from '@angular/material/tooltip';
     MatDialogModule,
     MatDatepickerModule,
     MatTooltipModule,
+    FileUploadModule,
   ],
   declarations: [
     WorkingHoursContainerComponent,
@@ -49,6 +51,7 @@ import {MatTooltipModule} from '@angular/material/tooltip';
     WorkingHoursTableComponent,
     WorkingHoursCommentOfficeUpdateModalComponent,
     WorkingHoursCommentOfficeAllUpdateModalComponent,
+    WorkingHoursUploadModalComponent,
   ],
   providers: [
   ],

@@ -1,0 +1,50 @@
+<h3 mat-dialog-title>{{'Upload working hours plan' | translate}}</h3>
+<div mat-dialog-content class="d-flex flex-column align-items-start">
+  <button
+    mat-raised-button
+    color="primary"
+    *ngIf="workingHoursFileUploader?.queue?.length == 0"
+    (click)="zipInput.click()"
+  >
+    {{'Choose file' | translate}}
+  </button>
+  <button
+    mat-raised-button
+    color="warn"
+    *ngIf="workingHoursFileUploader?.queue?.length > 0"
+    (click)="zipInput.click()"
+  >
+    {{'Pending' | translate}}
+  </button>
+  <input
+    class="input-invisible"
+    type="file"
+    ng2FileSelect
+    [uploader]="workingHoursFileUploader"
+    #zipInput
+    id="zipInput"/>
+  <div class="d-flex flex-column" style="width: 100%">
+    {{'Uploading progress:' | translate }}
+    <div class="progress">
+      <div class="progress-bar" role="progressbar"
+           [ngStyle]="{ 'width': workingHoursFileUploader?.queue?.length !== 0 ? workingHoursFileUploader.progress + '%' : '' }">
+      </div>
+    </div>
+  </div>
+</div>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+  <button
+    mat-raised-button
+    color="accent"
+    (click)="uploadTemplateZIP()"
+    [disabled]="workingHoursFileUploader?.queue?.length == 0"
+  >
+    {{'Upload' | translate}}
+  </button>
+  <button
+    mat-raised-button
+    (click)="hideZipModal()"
+  >
+    {{'Close' | translate}}
+  </button>
+</div>

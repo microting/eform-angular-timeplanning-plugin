@@ -50,14 +50,20 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   }
 
   getWorkingHours(model: TimePlanningsRequestModel) {
-    this.getWorkingHours$ = this.workingHoursService
-      .getWorkingHours(model)
-      .subscribe((data) => {
-        if (data && data.success) {
-          this.workingHours = data.model;
-          this.initializeWorkingHoursFormArray(data.model);
-        }
-      });
+    if (model.siteId === undefined || model.siteId === null) {
+      this.workingHours = [];
+      this.workingHoursFormArray = new FormArray([]);
+      //this.initializeWorkingHoursFormArray([]);
+    } else {
+      this.getWorkingHours$ = this.workingHoursService
+        .getWorkingHours(model)
+        .subscribe((data) => {
+          if (data && data.success) {
+            this.workingHours = data.model;
+            this.initializeWorkingHoursFormArray(data.model);
+          }
+        });
+    }
   }
 
   initializeWorkingHoursFormArray(workingHours: TimePlanningModel[]) {
