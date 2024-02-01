@@ -1,29 +1,26 @@
-import { AfterContentInit, Component, OnInit } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
-import { translates } from './../i18n/translates';
-import { AuthStateService } from 'src/app/common/store';
-import {Store} from '@ngrx/store';
-import {selectCurrentUserLocale} from 'src/app/state/auth/auth.selector';
+import {AfterContentInit, Component, OnInit} from '@angular/core';
+import {TranslateService} from '@ngx-translate/core';
+import {translates} from './../i18n/translates';
 
 @Component({
   selector: 'app-time-planning-pn-layout',
-  template: `<router-outlet></router-outlet>`,
+  template: `
+    <router-outlet></router-outlet>`,
 })
 export class TimePlanningPnLayoutComponent
   implements AfterContentInit, OnInit {
-  private selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
-  constructor(
-    private store: Store,
-    private translateService: TranslateService,
-    private authStateService: AuthStateService
-  ) {}
 
-  ngOnInit() {}
+  constructor(
+    private translateService: TranslateService,
+  ) {
+  }
+
+  ngOnInit() {
+    Object.keys(translates).forEach(locale => {
+      this.translateService.setTranslation(locale, translates[locale], true);
+    });
+  }
 
   ngAfterContentInit() {
-    this.selectCurrentUserLocale$.subscribe((locale) => {
-      const i18n = translates[locale];
-      this.translateService.setTranslation(locale, i18n, true);
-    });
   }
 }
