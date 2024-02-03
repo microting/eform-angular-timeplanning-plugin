@@ -1,29 +1,40 @@
-import { AfterContentInit, Component, OnInit } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
-import { translates } from './../i18n/translates';
-import { AuthStateService } from 'src/app/common/store';
+import {AfterContentInit, Component, OnInit} from '@angular/core';
+import {TranslateService} from '@ngx-translate/core';
+import {translates} from './../i18n/translates';
 import {Store} from '@ngrx/store';
-import {selectCurrentUserLocale} from 'src/app/state/auth/auth.selector';
+import {addPluginToVisited, selectPluginsVisitedPlugins} from 'src/app/state';
+import {take} from 'rxjs';
 
 @Component({
   selector: 'app-time-planning-pn-layout',
-  template: `<router-outlet></router-outlet>`,
+  template: `
+    <router-outlet></router-outlet>`,
 })
-export class TimePlanningPnLayoutComponent
-  implements AfterContentInit, OnInit {
-  private selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
-  constructor(
-    private store: Store,
-    private translateService: TranslateService,
-    private authStateService: AuthStateService
-  ) {}
+export class TimePlanningPnLayoutComponent implements AfterContentInit, OnInit {
+  private pluginName = 'time-planning';
 
-  ngOnInit() {}
+  constructor(
+    private translateService: TranslateService,
+    store: Store
+  ) {
+    store.select(selectPluginsVisitedPlugins)
+      .pipe(take(1))
+      .subscribe(x => {
+        // check current plugin in activated plugin
+        if (x.findIndex(y => y === this.pluginName) === -1) {
+          // add all plugin translates one time
+          Object.keys(translates).forEach(locale => {
+            this.translateService.setTranslation(locale, translates[locale], true);
+          });
+          // add plugin to visited plugins
+          store.dispatch(addPluginToVisited(this.pluginName));
+        }
+      });
+  }
+
+  ngOnInit() {
+  }
 
   ngAfterContentInit() {
-    this.selectCurrentUserLocale$.subscribe((locale) => {
-      const i18n = translates[locale];
-      this.translateService.setTranslation(locale, i18n, true);
-    });
   }
 }

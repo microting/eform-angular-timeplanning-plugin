@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   Component,
   EventEmitter,
   Input,
@@ -9,19 +8,23 @@ import {
   SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
 } from '@angular/core';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
-import {Observable, Subscription} from 'rxjs';
-import {SiteDto, TableHeaderElementModel} from 'src/app/common/models';
+import {Subscription} from 'rxjs';
+import {SiteDto} from 'src/app/common/models';
 import {TimePlanningModel, TimePlanningsRequestModel} from '../../../../models';
 import {MtxGridColumn, MtxGridRowClassFormatter} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
 import {DaysOfWeekEnum, HOURS_PICKER_ARRAY, STANDARD_DANISH_DATE_FORMAT} from 'src/app/common/const';
-import { messages } from '../../../../consts/messages';
-import {format, parseISO} from 'date-fns'
+import {messages} from '../../../../consts/messages';
+import {format} from 'date-fns';
 import {MatDialog} from '@angular/material/dialog';
 import {Overlay} from '@angular/cdk/overlay';
-import {WorkingHoursCommentOfficeUpdateModalComponent} from 'src/app/plugins/modules/time-planning-pn/modules/working-hours/components';
+import {WorkingHoursCommentOfficeUpdateModalComponent} from '../';
 import {dialogConfigHelper} from 'src/app/common/helpers';
+import {selectCurrentUserLocale} from 'src/app/state';
+import {Store} from '@ngrx/store';
+import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
 
+@AutoUnsubscribe()
 @Component({
   selector: 'app-working-hours-table',
   templateUrl: './working-hours-table.component.html',
@@ -44,6 +47,8 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   @Output() filtersChanged: EventEmitter<TimePlanningsRequestModel> = new EventEmitter<TimePlanningsRequestModel>();
   @Output() updateWorkingHours: EventEmitter<void> = new EventEmitter<void>();
   messages: { id: number; value: string }[] = [];
+  private selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
+  selectCurrentUserLocaleSub$: Subscription;
 
   get columns() {
     return this.tableHeaders.map(x => x.field);
@@ -57,8 +62,9 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
     private translateService: TranslateService,
     private dialog: MatDialog,
     private overlay: Overlay,
+    private store: Store,
   ) {
-    this.messages = messages(translateService);
+    this.selectCurrentUserLocaleSub$ = this.selectCurrentUserLocale$.subscribe(() => this.messages = messages(translateService));
   }
 
   getIsWeekend(workingHoursModel: AbstractControl): boolean {
