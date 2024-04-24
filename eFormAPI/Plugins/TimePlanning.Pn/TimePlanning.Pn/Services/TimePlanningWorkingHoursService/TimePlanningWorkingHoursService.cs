@@ -941,7 +941,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 else
                                 {
                                     planRegistration.Flex = -planRegistration.PlanHours;
-                                    planRegistration.SumFlexEnd = planRegistration.PlanHours;
+                                    planRegistration.SumFlexEnd = planRegistration.Flex;
                                     planRegistration.SumFlexStart = 0;
                                 }
                                 await planRegistration.Create(_dbContext);
