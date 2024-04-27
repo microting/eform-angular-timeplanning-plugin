@@ -21,14 +21,18 @@ describe('Time planning plugin working hours export', () => {
   beforeEach(() => {
     cy.visit('http://localhost:4200');
     loginPage.login();
+    cy.intercept('GET', '/api/time-planning-pn/settings/sites').as('getData');
     timePlanningWorkingHoursPage.goToWorkingHours();
+    cy.wait('@getData');
   });
   it('should enabled Time registration plugin', () => {
     timePlanningWorkingHoursPage.workingHoursRange().click();
     selectDateRangeOnNewDatePicker(
       dateRange.yearFrom, dateRange.monthFrom, dateRange.dayFrom,
       dateRange.yearTo, dateRange.monthTo, dateRange.dayTo); // select date range
+    cy.intercept('POST', '/api/time-planning-pn/working-hours/index').as('postData');
     selectValueInNgSelector('#workingHoursSite', 'o p', true);// select worker
+    cy.wait('@postData');
 
     cy.log('**GENERATE EXCEL REPORT**');
     cy.intercept('GET', '**').as('getData');
