@@ -55,23 +55,20 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         private readonly ILogger<TimePlanningWorkingHoursService> _logger;
         private readonly TimePlanningPnDbContext _dbContext;
         private readonly IUserService _userService;
-        private readonly IEFormCoreService _coreHelper;
         private readonly ITimePlanningLocalizationService _localizationService;
-        private readonly IEFormCoreService _core;
+        private readonly IEFormCoreService _coreHelper;
 
         public TimePlanningWorkingHoursService(
             ILogger<TimePlanningWorkingHoursService> logger,
             TimePlanningPnDbContext dbContext,
             IUserService userService,
             ITimePlanningLocalizationService localizationService,
-            IEFormCoreService core,
             IPluginDbOptions<TimePlanningBaseSettings> options, IEFormCoreService coreHelper)
         {
             _logger = logger;
             _dbContext = dbContext;
             _userService = userService;
             _localizationService = localizationService;
-            _core = core;
             _options = options;
             _coreHelper = coreHelper;
         }
@@ -82,7 +79,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 model.DateFrom = new DateTime(model.DateFrom.Year, model.DateFrom.Month, model.DateFrom.Day, 0, 0, 0);
                 model.DateTo = new DateTime(model.DateTo.Year, model.DateTo.Month, model.DateTo.Day, 0, 0, 0);
-                var core = await _core.GetCore();
+                var core = await _coreHelper.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var maxDaysEditable = _options.Value.MaxDaysEditable;
                 var language = await _userService.GetCurrentUserLanguage();
@@ -263,7 +260,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                     first = false;
                 }
-                var core = await _core.GetCore();
+                var core = await _coreHelper.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
                 var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
