@@ -273,7 +273,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     .Where(x => x.Date >= lastDate)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == site.MicrotingUid)
-                    .OrderBy(x => x.Date).ToListAsync();
+                    .OrderBy(x => x.Date)
+                    .Take(365)
+                    .ToListAsync();
 
                 var preSumFlexStart = allPlannings.Any() ? allPlannings.First().SumFlexEnd : 0;
 
