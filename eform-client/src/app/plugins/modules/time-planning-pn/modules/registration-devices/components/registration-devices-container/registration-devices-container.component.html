@@ -1,0 +1,16 @@
+<eform-new-subheader>
+  <button
+    mat-raised-button
+    color="accent"
+    id="registrationDeviceCreateBtn"
+  >
+    {{ 'Create registration device' | translate }}
+  </button>
+</eform-new-subheader>
+
+<app-registration-devices-table
+  [registrationDevices]="registrationDevices"
+  (filtersChanged)="onRegistrationDevicesFiltersChanged($event)"
+  (updateRegistrationDevices)="onUpdateRegistrationDevices()"
+  [tainted]="tainted"></app-registration-devices-table>
+

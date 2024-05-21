@@ -22,7 +22,7 @@ import {MatTableModule} from '@angular/material/table';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {FileUploadModule} from "ng2-file-upload";
+import {FileUploadModule} from 'ng2-file-upload';
 
 @NgModule({
   imports: [

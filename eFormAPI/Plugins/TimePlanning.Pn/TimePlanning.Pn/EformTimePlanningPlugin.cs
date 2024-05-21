@@ -511,6 +511,63 @@ namespace TimePlanning.Pn
                                         Language = LanguageNames.Danish
                                     }
                                 }
+                            },
+                            new()
+                            {
+                                Name = "RegistrationDevice",
+                                E2EId = "time-planning-pn-registration-devices",
+                                Link = "/plugins/time-planning-pn/registration-devices",
+                                Type = MenuItemTypeEnum.Link,
+                                Position = 2,
+                                MenuTemplate = new PluginMenuTemplateModel
+                                {
+                                    Name = "RegistrationDevice",
+                                    E2EId = "time-planning-pn-registration-devices",
+                                    DefaultLink = "/plugins/time-planning-pn/registration-devices",
+                                    Permissions = new List<PluginMenuTemplatePermissionModel>(),
+                                    Translations = new List<PluginMenuTranslationModel>
+                                    {
+                                        new()
+                                        {
+                                            LocaleName = LocaleNames.English,
+                                            Name = "Registration devices",
+                                            Language = LanguageNames.English
+                                        },
+                                        new()
+                                        {
+                                            LocaleName = LocaleNames.German,
+                                            Name = "Registrierungsgeräte",
+                                            Language = LanguageNames.German
+                                        },
+                                        new()
+                                        {
+                                            LocaleName = LocaleNames.Danish,
+                                            Name = "Registreringsenheder",
+                                            Language = LanguageNames.Danish
+                                        }
+                                    }
+                                },
+                                Translations = new List<PluginMenuTranslationModel>
+                                {
+                                    new()
+                                    {
+                                        LocaleName = LocaleNames.English,
+                                        Name = "Registration devices",
+                                        Language = LanguageNames.English
+                                    },
+                                    new()
+                                    {
+                                        LocaleName = LocaleNames.German,
+                                        Name = "Registrierungsgeräte",
+                                        Language = LanguageNames.German
+                                    },
+                                    new()
+                                    {
+                                        LocaleName = LocaleNames.Danish,
+                                        Name = "Registreringsenheder",
+                                        Language = LanguageNames.Danish
+                                    }
+                                }
                             }
                         }
                     }

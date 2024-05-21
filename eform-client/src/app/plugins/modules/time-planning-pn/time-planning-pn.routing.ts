@@ -37,6 +37,14 @@ export const routes: Routes = [
             (m) => m.FlexModule
           ),
       },
+      {
+        path: 'registration-devices',
+        canActivate: [AuthGuard],
+        loadChildren: () =>
+          import('./modules/registration-devices/registration-devices.module').then(
+            (m) => m.RegistrationDevicesModule
+          ),
+      },
     ],
   },
 ];

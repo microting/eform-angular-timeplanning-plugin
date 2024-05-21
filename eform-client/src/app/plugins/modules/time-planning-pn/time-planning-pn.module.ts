@@ -14,7 +14,7 @@ import {TimePlanningPnRouting} from './time-planning-pn.routing';
 // } from './components';
 import {TimePlanningPnLayoutComponent} from './layouts';
 import {
-  TimePlanningPnPlanningsService,
+  TimePlanningPnPlanningsService, TimePlanningPnRegistrationDevicesService,
   TimePlanningPnSettingsService,
 } from './services';
 
@@ -39,6 +39,7 @@ import {
   providers: [
     TimePlanningPnSettingsService,
     TimePlanningPnPlanningsService,
+    TimePlanningPnRegistrationDevicesService
   ],
 })
 export class TimePlanningPnModule {
