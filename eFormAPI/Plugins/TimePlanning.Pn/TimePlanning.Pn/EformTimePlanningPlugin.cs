@@ -341,7 +341,9 @@ namespace TimePlanning.Pn
 
             var contextFactory = new TimePlanningPnContextFactory();
             var context = contextFactory.CreateDbContext(new[] { connectionString });
+            Console.WriteLine("Starting to migrate TimePlanningPnDbContext to latest version");
             context.Database.Migrate();
+            Console.WriteLine("TimePlanningPnDbContext migrated to latest version");
 
             // Seed database
             SeedDatabase(connectionString);
