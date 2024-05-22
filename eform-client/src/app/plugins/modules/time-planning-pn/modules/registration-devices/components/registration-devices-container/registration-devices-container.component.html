@@ -3,6 +3,7 @@
     mat-raised-button
     color="accent"
     id="registrationDeviceCreateBtn"
+    (click)="openCreateModal()"
   >
     {{ 'Create registration device' | translate }}
   </button>
@@ -13,4 +14,3 @@
   (filtersChanged)="onRegistrationDevicesFiltersChanged($event)"
   (updateRegistrationDevices)="onUpdateRegistrationDevices()"
   [tainted]="tainted"></app-registration-devices-table>
-

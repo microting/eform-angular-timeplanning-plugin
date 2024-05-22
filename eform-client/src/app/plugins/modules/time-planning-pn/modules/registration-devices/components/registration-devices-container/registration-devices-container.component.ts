@@ -3,6 +3,12 @@ import {
   TimePlanningPnRegistrationDevicesService
 } from '../../../../services/time-planning-pn-registration-devices.service';
 import {Subscription} from 'rxjs';
+import {MatDialog} from '@angular/material/dialog';
+import {Overlay} from '@angular/cdk/overlay';
+import {dialogConfigHelper} from 'src/app/common/helpers';
+import {
+  RegistrationDevicesCreateComponent
+} from '../index';
 
 @Component({
   selector: 'app-registration-devices-container',
@@ -12,7 +18,10 @@ export class RegistrationDevicesContainerComponent implements OnInit {
   tainted: any;
   registrationDevices: any;
   getRegistrationDevices$: Subscription;
+  createRegistrationDevicesComponentAfterClosedSub$: Subscription;
   constructor(
+    public dialog: MatDialog,
+    private overlay: Overlay,
     private registrationDevicesService: TimePlanningPnRegistrationDevicesService,
   ) {
   }
@@ -34,5 +43,14 @@ export class RegistrationDevicesContainerComponent implements OnInit {
       }
     }
     );
+  }
+
+  openCreateModal() {
+    this.createRegistrationDevicesComponentAfterClosedSub$ = this.dialog.open(RegistrationDevicesCreateComponent,
+      dialogConfigHelper(this.overlay)).afterClosed().subscribe((data) => {
+      if (data) {
+        this.getRegistrationDevices();
+      }
+    });
   }
 }

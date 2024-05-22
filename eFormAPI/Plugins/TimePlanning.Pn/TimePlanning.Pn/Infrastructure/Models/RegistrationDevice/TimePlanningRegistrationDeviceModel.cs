@@ -1,8 +1,9 @@
+using Microting.eForm.Infrastructure.Data.Entities;
+
 namespace TimePlanning.Pn.Infrastructure.Models.RegistrationDevice;
 
-public class TimePlanningRegistrationDeviceModel
+public class TimePlanningRegistrationDeviceModel : BaseEntity
 {
-    public int Id { get; set; }
     public string SoftwareVersion { get; set; }
     public string Model { get; set; }
     public string Manufacturer { get; set; }

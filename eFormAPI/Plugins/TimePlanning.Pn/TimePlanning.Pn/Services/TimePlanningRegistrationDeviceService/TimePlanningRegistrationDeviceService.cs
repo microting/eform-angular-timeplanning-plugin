@@ -41,6 +41,8 @@ public class TimePlanningRegistrationDeviceService(
                 LastKnownLocation = x.LastKnownLocation,
                 OtpEnabled = x.OtpEnabled,
                 OtpCode = x.OtpCode,
+                CreatedAt = x.CreatedAt,
+                UpdatedAt = x.UpdatedAt
             }).ToListAsync());
         }
         catch (Exception e)

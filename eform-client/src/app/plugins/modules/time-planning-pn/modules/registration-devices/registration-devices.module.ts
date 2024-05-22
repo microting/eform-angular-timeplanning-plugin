@@ -1,6 +1,9 @@
 import {NgModule} from '@angular/core';
 import {
   RegistrationDevicesContainerComponent,
+  RegistrationDevicesCreateComponent,
+  RegistrationDevicesDeleteComponent,
+  RegistrationDevicesOtpCodeComponent,
   RegistrationDevicesTableComponent
 } from './components';
 import {AsyncPipe, NgIf} from '@angular/common';
@@ -10,7 +13,8 @@ import {TranslateModule} from '@ngx-translate/core';
 import {
   RegistrationDevicesRouting
 } from './registration-devices.routing';
-import {MtxGrid} from "@ng-matero/extensions/grid";
+import {MtxGrid} from '@ng-matero/extensions/grid';
+import {MatDialogActions, MatDialogContent, MatDialogTitle} from "@angular/material/dialog";
 
 @NgModule({
   imports: [
@@ -20,11 +24,17 @@ import {MtxGrid} from "@ng-matero/extensions/grid";
     NgIf,
     TranslateModule,
     RegistrationDevicesRouting,
-    MtxGrid
+    MtxGrid,
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions
   ],
   declarations: [
     RegistrationDevicesTableComponent,
-    RegistrationDevicesContainerComponent
+    RegistrationDevicesContainerComponent,
+    RegistrationDevicesCreateComponent,
+    RegistrationDevicesDeleteComponent,
+    RegistrationDevicesOtpCodeComponent
   ],
   providers: [],
 })

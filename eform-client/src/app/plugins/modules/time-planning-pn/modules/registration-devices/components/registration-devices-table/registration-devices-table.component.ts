@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {MtxGridColumn} from "@ng-matero/extensions/grid";
-import {TranslateService} from "@ngx-translate/core";
+import {MtxGridColumn} from '@ng-matero/extensions/grid';
+import {TranslateService} from '@ngx-translate/core';
 
 @Component({
   selector: 'app-registration-devices-table',
@@ -23,8 +23,8 @@ export class RegistrationDevicesTableComponent implements OnInit {
   ngOnInit(): void {
     this._tableHeaders = [
       {header: this.translateService.stream('Id'), field: 'id'},
-      {header: this.translateService.stream('Created at'), field: 'createdAt'},
-      {header: this.translateService.stream('Updated at'), field: 'updatedAt'},
+      {header: this.translateService.stream('Created at'), field: 'createdAt', type: 'date', typeParameter: {format: 'dd.MM.y HH:mm:ss'}},
+      {header: this.translateService.stream('Updated at'), field: 'updatedAt', type: 'date', typeParameter: {format: 'dd.MM.y HH:mm:ss'}},
       {header: this.translateService.stream('Manufacturer'), field: 'manufacturer'},
       {header: this.translateService.stream('Model'), field: 'model'},
       {header: this.translateService.stream('OS version'), field: 'osVersion'},
