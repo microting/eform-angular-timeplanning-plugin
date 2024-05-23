@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microting.eForm.Dto;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
@@ -19,7 +20,7 @@ namespace TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
 public class TimePlanningRegistrationDeviceService(
     ILogger<TimePlanningRegistrationDeviceService> logger,
     TimePlanningPnDbContext dbContext,
-    IUserService userService,
+    IUserService userService, IEFormCoreService _core,
     ITimePlanningLocalizationService localizationService)
     : ITimePlanningRegistrationDeviceService
 {
@@ -28,6 +29,8 @@ public class TimePlanningRegistrationDeviceService(
     {
         try
         {
+            var core = await _core.GetCore();
+            var customerNo = await core.GetSdkSetting(Settings.customerNo);
             var registrationDevicesQuery = dbContext.RegistrationDevices.Where(x => x.WorkflowState != Constants.WorkflowStates.Removed);
 
             return new OperationDataResult<List<TimePlanningRegistrationDeviceModel>>(true, await registrationDevicesQuery.Select(x => new TimePlanningRegistrationDeviceModel
@@ -40,7 +43,7 @@ public class TimePlanningRegistrationDeviceService(
                 LastIp = x.LastIp,
                 LastKnownLocation = x.LastKnownLocation,
                 OtpEnabled = x.OtpEnabled,
-                OtpCode = x.OtpCode,
+                OtpCode = $"{customerNo} / {x.OtpCode}",
                 CreatedAt = x.CreatedAt,
                 UpdatedAt = x.UpdatedAt
             }).ToListAsync());
@@ -79,6 +82,15 @@ public class TimePlanningRegistrationDeviceService(
 
     public async Task<OperationResult> Activate(TimePlanningRegistrationDeviceActivateModel model)
     {
+        var core = await _core.GetCore();
+        var customerNo = await core.GetSdkSetting(Settings.customerNo);
+
+        if (model.CustomerNo.ToString() != customerNo)
+        {
+            return new OperationResult(false,
+                localizationService.GetString("CustomerNoMismatch"));
+        }
+
         var registrationDevice = await dbContext.RegistrationDevices
             .Where(x => x.OtpCode == model.OtCode && x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync();

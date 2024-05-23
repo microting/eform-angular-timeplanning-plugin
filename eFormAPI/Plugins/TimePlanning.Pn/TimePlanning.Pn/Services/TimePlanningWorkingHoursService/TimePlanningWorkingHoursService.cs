@@ -974,5 +974,52 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
             return new OperationResult(true, "Imported");
         }
+
+        public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(DateTime dateTime, string token)
+        {
+            if (token != null)
+            {
+                var registrationDevice = await _dbContext.RegistrationDevices
+                    .Where(x => x.Token == token).FirstOrDefaultAsync();
+                if (registrationDevice == null)
+                {
+                    return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found", null);
+                }
+            }
+
+            var planRegistration = await _dbContext.PlanRegistrations
+                .Where(x => x.Date == dateTime)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync();
+
+            if (planRegistration == null)
+            {
+                return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Plan registration not found", null);
+            }
+
+            var timePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
+            {
+                Date = planRegistration.Date,
+                PlanText = planRegistration.PlanText,
+                PlanHours = planRegistration.PlanHours,
+                Shift1Start = planRegistration.Start1Id,
+                Shift1Stop = planRegistration.Stop1Id,
+                Shift1Pause = planRegistration.Pause1Id,
+                Shift2Start = planRegistration.Start2Id,
+                Shift2Stop = planRegistration.Stop2Id,
+                Shift2Pause = planRegistration.Pause2Id,
+                NettoHours = planRegistration.NettoHours,
+                FlexHours = planRegistration.Flex,
+                SumFlexStart = planRegistration.SumFlexStart,
+                SumFlexEnd = planRegistration.SumFlexEnd,
+                PaidOutFlex = planRegistration.PaiedOutFlex,
+                Message = planRegistration.MessageId,
+                CommentWorker = planRegistration.WorkerComment,
+                CommentOffice = planRegistration.CommentOffice,
+                CommentOfficeAll = planRegistration.CommentOfficeAll
+            };
+
+            return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found", timePlanningWorkingHoursModel);
+        }
     }
 }

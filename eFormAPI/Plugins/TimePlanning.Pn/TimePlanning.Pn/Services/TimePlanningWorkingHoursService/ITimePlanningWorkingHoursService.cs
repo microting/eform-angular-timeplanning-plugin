@@ -18,6 +18,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System;
 using System.IO;
 using Microsoft.AspNetCore.Http;
 
@@ -43,5 +44,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursReportForAllWorkersRequestModel model);
 
         Task<OperationResult> Import(IFormFile file);
+        Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(DateTime dateTime, string token);
     }
 }

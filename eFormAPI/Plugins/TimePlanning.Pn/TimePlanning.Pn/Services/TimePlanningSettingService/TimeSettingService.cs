@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using JetBrains.Annotations;
+
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
     using System;
@@ -217,10 +219,22 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
         }
 
-        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableSites()
+        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableSites([CanBeNull] string token)
         {
             try
             {
+                if (token != null)
+                {
+                    var registrationDevice = await _dbContext.RegistrationDevices
+                        .Where(x => x.Token == token).FirstOrDefaultAsync();
+                    if (registrationDevice == null)
+                    {
+                        return new OperationDataResult<List<SiteDto>>(
+                            false,
+                            _localizationService.GetString("ErrorWhileObtainingSites"));
+                    }
+                }
+
                 var core = await _core.GetCore();
                 var assignedSites = await _dbContext.AssignedSites
                     .AsNoTracking()

@@ -18,6 +18,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours;
@@ -48,6 +49,13 @@ namespace TimePlanning.Pn.Controllers
             [FromBody] TimePlanningWorkingHoursRequestModel model)
         {
             return await _workingHoursService.Index(model);
+        }
+
+        [HttpGet]
+        [Route("read")]
+        public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(DateTime dateTime, string token)
+        {
+            return await _workingHoursService.Read(dateTime, token);
         }
 
         [HttpPut]

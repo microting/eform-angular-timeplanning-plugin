@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using JetBrains.Annotations;
+
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
     using System.Collections.Generic;
@@ -42,6 +44,6 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
 
         Task<OperationResult> DeleteSite(int siteId);
 
-        Task<OperationDataResult<List<SiteDto>>> GetAvailableSites();
+        Task<OperationDataResult<List<SiteDto>>> GetAvailableSites([CanBeNull] string token);
     }
 }

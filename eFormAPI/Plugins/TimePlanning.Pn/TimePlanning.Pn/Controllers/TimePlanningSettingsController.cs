@@ -87,7 +87,14 @@ namespace TimePlanning.Pn.Controllers
         [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
         public async Task<OperationResult> GetAvailableSites()
         {
-            return await _settingService.GetAvailableSites();
+            return await _settingService.GetAvailableSites(null);
+        }
+
+        [HttpGet]
+        [Route("registration-sites")]
+        public async Task<OperationResult> RegistrationSites(string token)
+        {
+            return await _settingService.GetAvailableSites(token);
         }
     }
 }
