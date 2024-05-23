@@ -73,7 +73,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             _coreHelper = coreHelper;
         }
 
-        public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model)
+        public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(
+            TimePlanningWorkingHoursRequestModel model)
         {
             try
             {
@@ -126,9 +127,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         Shift2Start = x.Start2Id,
                         Shift2Stop = x.Stop2Id,
                         Shift2Pause = x.Pause2Id,
-                        NettoHours = Math.Round(x.NettoHours,2),
-                        FlexHours = Math.Round(x.Flex,2),
-                        SumFlexStart = Math.Round(x.SumFlexStart,2),
+                        NettoHours = Math.Round(x.NettoHours, 2),
+                        FlexHours = Math.Round(x.Flex, 2),
+                        SumFlexStart = Math.Round(x.SumFlexStart, 2),
                         PaidOutFlex = x.PaiedOutFlex,
                         Message = x.MessageId,
                         CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
@@ -149,7 +150,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var prePlanning = new TimePlanningWorkingHoursModel
                 {
                     WorkerName = site.Name,
-                    WeekDay = lastPlanning != null ? (int)lastPlanning.Date.DayOfWeek : (int)model.DateFrom.AddDays(-1).DayOfWeek,
+                    WeekDay = lastPlanning != null
+                        ? (int)lastPlanning.Date.DayOfWeek
+                        : (int)model.DateFrom.AddDays(-1).DayOfWeek,
                     Date = lastPlanning?.Date ?? model.DateFrom.AddDays(-1),
                     PlanText = lastPlanning?.PlanText,
                     PlanHours = lastPlanning?.PlanHours ?? 0,
@@ -159,9 +162,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Shift2Start = lastPlanning?.Start2Id,
                     Shift2Stop = lastPlanning?.Stop2Id,
                     Shift2Pause = lastPlanning?.Pause2Id,
-                    NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0 ,2),
-                    FlexHours = Math.Round(lastPlanning?.Flex ?? 0 ,2),
-                    SumFlexStart= lastPlanning?.SumFlexStart ?? 0,
+                    NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0, 2),
+                    FlexHours = Math.Round(lastPlanning?.Flex ?? 0, 2),
+                    SumFlexStart = lastPlanning?.SumFlexStart ?? 0,
                     PaidOutFlex = lastPlanning?.PaiedOutFlex ?? 0,
                     Message = lastPlanning?.MessageId,
                     CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
@@ -189,11 +192,12 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
                                 IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)maxDaysEditable),
                                 IsWeekend = model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Saturday
-                                || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday
+                                            || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday
                                 //WorkerId = model.WorkerId,
                             });
                         }
                     }
+
                     timePlannings.AddRange(timePlanningForAdd);
                 }
 
@@ -201,21 +205,27 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 var j = 0;
                 double sumFlexEnd = 0;
-                double SumFlexStart= 0;
+                double SumFlexStart = 0;
                 foreach (var timePlanningWorkingHoursModel in timePlannings)
                 {
                     if (j == 0)
                     {
-                        timePlanningWorkingHoursModel.SumFlexStart = Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
-                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours - timePlanningWorkingHoursModel.PaidOutFlex, 2);
+                        timePlanningWorkingHoursModel.SumFlexStart =
+                            Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
+                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
+                            timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
+                            timePlanningWorkingHoursModel.PaidOutFlex, 2);
                         sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                     }
                     else
                     {
                         timePlanningWorkingHoursModel.SumFlexStart = sumFlexEnd;
-                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours - timePlanningWorkingHoursModel.PaidOutFlex, 2);
+                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
+                            timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
+                            timePlanningWorkingHoursModel.PaidOutFlex, 2);
                         sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                     }
+
                     j++;
                 }
 
@@ -260,6 +270,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                     first = false;
                 }
+
                 var core = await _coreHelper.GetCore();
                 await using var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
@@ -284,7 +295,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     if (planRegistration.Date > lastDate)
                     {
                         planRegistration.SumFlexStart = preSumFlexStart;
-                        planRegistration.SumFlexEnd = preSumFlexStart + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                        planRegistration.SumFlexEnd =
+                            preSumFlexStart + planRegistration.Flex - planRegistration.PaiedOutFlex;
                         preSumFlexStart = planRegistration.SumFlexEnd;
                         await planRegistration.Update(_dbContext);
                     }
@@ -294,15 +306,18 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 {
                     var maxHistoryDaysInd = (int)_options.Value.MaxHistoryDays;
                     var firstDate = model.Plannings.First(x => x.Date >= DateTime.Now.AddDays(-maxHistoryDaysInd)).Date;
-                    var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate && x.Date <= DateTime.UtcNow
-                            && x.SdkSitId == site.MicrotingUid && x.DataFromDevice)
+                    var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate &&
+                                                                             x.Date <= DateTime.UtcNow
+                                                                             && x.SdkSitId == site.MicrotingUid &&
+                                                                             x.DataFromDevice)
                         .OrderBy(x => x.Date).ToListAsync();
                     foreach (var planRegistration in list)
                     {
 
                         var message =
                             await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
-                        Console.WriteLine($"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
+                        Console.WriteLine(
+                            $"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
                         string theMessage;
                         switch (language.LanguageCode)
                         {
@@ -316,7 +331,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 theMessage = message != null ? message.EnName : "";
                                 break;
                         }
-                        planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,(int)maxHistoryDays!, (int)eFormId!, core, site, (int)folderId!, theMessage);
+
+                        planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,
+                            (int)maxHistoryDays!, (int)eFormId!, core, site, (int)folderId!, theMessage);
                         await planRegistration.Update(_dbContext);
                     }
                 }
@@ -335,7 +352,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
         }
 
-        private async Task CreatePlanning(bool first, TimePlanningWorkingHoursModel model, int sdkSiteId, int microtingUid, string commentWorker)
+        private async Task CreatePlanning(bool first, TimePlanningWorkingHoursModel model, int sdkSiteId,
+            int microtingUid, string commentWorker)
         {
             try
             {
@@ -364,11 +382,13 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 var preTimePlanning =
                     await _dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
-                        && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date).FirstOrDefaultAsync();
+                            && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date)
+                        .FirstOrDefaultAsync();
                 if (preTimePlanning != null)
                 {
                     planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
+                                                  planRegistration.PaiedOutFlex;
                 }
                 else
                 {
@@ -412,13 +432,14 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     await _dbContext.PlanRegistrations.AsNoTracking()
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                         .Where(x => x.Date < planRegistration.Date
-                        && x.SdkSitId == planRegistration.SdkSitId)
+                                    && x.SdkSitId == planRegistration.SdkSitId)
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
                 if (preTimePlanning != null)
                 {
                     planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
+                                                  planRegistration.PaiedOutFlex;
                 }
                 else
                 {
@@ -440,7 +461,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         // Majbrit skovgård
         // Emma Pedersen -17,16 Sandheden er 6,33 pr. 9/6/2022
 
-        public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursRequestModel model)
+        public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(
+            TimePlanningWorkingHoursRequestModel model)
         {
             try
             {
@@ -564,38 +586,39 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanText; // TODO plan text
+                            worksheet.Cell(x + 1, y + 1).Value =
+                                timePlanningWorkingHoursModel.PlanText; // TODO plan text
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = plr.Options[
                                 timePlanningWorkingHoursModel.Shift1Start > 0
-                                    ? (int) timePlanningWorkingHoursModel.Shift1Start - 1
+                                    ? (int)timePlanningWorkingHoursModel.Shift1Start - 1
                                     : 0];
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = plr.Options[
                                 timePlanningWorkingHoursModel.Shift1Stop > 0
-                                    ? (int) timePlanningWorkingHoursModel.Shift1Stop - 1
+                                    ? (int)timePlanningWorkingHoursModel.Shift1Stop - 1
                                     : 0];
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = plr.Options[
                                 timePlanningWorkingHoursModel.Shift1Pause > 0
-                                    ? (int) timePlanningWorkingHoursModel.Shift1Pause - 1
+                                    ? (int)timePlanningWorkingHoursModel.Shift1Pause - 1
                                     : 0];
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = plr.Options[
                                 timePlanningWorkingHoursModel.Shift2Start > 0
-                                    ? (int) timePlanningWorkingHoursModel.Shift2Start - 1
+                                    ? (int)timePlanningWorkingHoursModel.Shift2Start - 1
                                     : 0];
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = plr.Options[
                                 timePlanningWorkingHoursModel.Shift2Stop > 0
-                                    ? (int) timePlanningWorkingHoursModel.Shift2Stop - 1
+                                    ? (int)timePlanningWorkingHoursModel.Shift2Stop - 1
                                     : 0];
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = plr.Options[
                                 timePlanningWorkingHoursModel.Shift2Pause > 0
-                                    ? (int) timePlanningWorkingHoursModel.Shift2Pause - 1
+                                    ? (int)timePlanningWorkingHoursModel.Shift2Pause - 1
                                     : 0];
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.NettoHours;
@@ -608,15 +631,19 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = messageText;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker?.Replace("<br>", "\n");
+                            worksheet.Cell(x + 1, y + 1).Value =
+                                timePlanningWorkingHoursModel.CommentWorker?.Replace("<br>", "\n");
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice?.Replace("<br>", "\n");
+                            worksheet.Cell(x + 1, y + 1).Value =
+                                timePlanningWorkingHoursModel.CommentOffice?.Replace("<br>", "\n");
                             // y++;
                             // worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
                         }
+
                         firstDone = true;
                     }
                 }
+
                 worksheet.RangeUsed().SetAutoFilter();
 
                 wb.SaveAs(resultDocument);
@@ -636,7 +663,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         }
 
 
-        public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursReportForAllWorkersRequestModel model)
+        public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(
+            TimePlanningWorkingHoursReportForAllWorkersRequestModel model)
         {
             try
             {
@@ -667,6 +695,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     {
                         continue;
                     }
+
                     var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
 
                     Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
@@ -734,7 +763,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     // worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                     // y++;
 
-                    var content = await Index(new TimePlanningWorkingHoursRequestModel{DateFrom = model.DateFrom, DateTo = model.DateTo, SiteId = siteId});
+                    var content = await Index(new TimePlanningWorkingHoursRequestModel
+                        { DateFrom = model.DateFrom, DateTo = model.DateTo, SiteId = siteId });
 
                     var plr = new PlanRegistration();
 
@@ -771,7 +801,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.Date;
                                 y++;
-                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanText; // TODO plan text
+                                worksheet.Cell(x + 1, y + 1).Value =
+                                    timePlanningWorkingHoursModel.PlanText; // TODO plan text
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
                                 y++;
@@ -815,12 +846,15 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = messageText;
                                 y++;
-                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentWorker?.Replace("<br>", "\n");
+                                worksheet.Cell(x + 1, y + 1).Value =
+                                    timePlanningWorkingHoursModel.CommentWorker?.Replace("<br>", "\n");
                                 y++;
-                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOffice?.Replace("<br>", "\n");
+                                worksheet.Cell(x + 1, y + 1).Value =
+                                    timePlanningWorkingHoursModel.CommentOffice?.Replace("<br>", "\n");
                                 // y++;
                                 // worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.CommentOfficeAll;
                             }
+
                             firstDone = true;
                         }
                     }
@@ -888,6 +922,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 continue;
                             }
+
                             var date = row.Cell(5).Value;
                             var planText = row.Cell(6).Value;
                             var planHours = row.Cell(7).Value;
@@ -916,7 +951,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 {
                                     Date = dateValue,
                                     PlanText = planText.ToString(),
-                                    PlanHours = string.IsNullOrEmpty(planHours.ToString()) ? 0 : double.Parse(planHours.ToString()),
+                                    PlanHours = string.IsNullOrEmpty(planHours.ToString())
+                                        ? 0
+                                        : double.Parse(planHours.ToString()),
                                     SdkSitId = (int)site.MicrotingUid!,
                                     CreatedByUserId = _userService.UserId,
                                     UpdatedByUserId = _userService.UserId,
@@ -934,7 +971,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 if (preTimePlanning != null)
                                 {
                                     planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
+                                                                  planRegistration.PaiedOutFlex;
                                     planRegistration.Flex = -planRegistration.PlanHours;
                                 }
                                 else
@@ -943,6 +981,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                     planRegistration.SumFlexEnd = planRegistration.Flex;
                                     planRegistration.SumFlexStart = 0;
                                 }
+
                                 await planRegistration.Create(_dbContext);
                             }
                             else
@@ -956,15 +995,21 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 if (preTimePlanning != null)
                                 {
                                     planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.PlanHours - planRegistration.NettoHours - planRegistration.PaiedOutFlex;
+                                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd +
+                                                                  planRegistration.PlanHours -
+                                                                  planRegistration.NettoHours -
+                                                                  planRegistration.PaiedOutFlex;
                                     planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                                 }
                                 else
                                 {
-                                    planRegistration.SumFlexEnd = planRegistration.PlanHours - planRegistration.NettoHours - planRegistration.PaiedOutFlex;
+                                    planRegistration.SumFlexEnd = planRegistration.PlanHours -
+                                                                  planRegistration.NettoHours -
+                                                                  planRegistration.PaiedOutFlex;
                                     planRegistration.SumFlexStart = 0;
                                     planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                                 }
+
                                 await planRegistration.Update(_dbContext);
                             }
                         }
@@ -994,7 +1039,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
             if (planRegistration == null)
             {
-                return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Plan registration not found", null);
+                return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Plan registration not found",
+                    null);
             }
 
             var timePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
@@ -1019,7 +1065,72 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 CommentOfficeAll = planRegistration.CommentOfficeAll
             };
 
-            return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found", timePlanningWorkingHoursModel);
+            return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
+                timePlanningWorkingHoursModel);
+        }
+
+        public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursModel model, string token)
+        {
+            if (token != null)
+            {
+                var registrationDevice = await _dbContext.RegistrationDevices
+                    .Where(x => x.Token == token).FirstOrDefaultAsync();
+                if (registrationDevice == null)
+                {
+                    return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found", null);
+                }
+            }
+
+            var planRegistration = await _dbContext.PlanRegistrations
+                .Where(x => x.Date == model.Date)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync();
+
+            if (planRegistration == null)
+            {
+                planRegistration = new PlanRegistration
+                {
+                    MessageId = model.Message == 10 ? null : model.Message,
+                    PlanText = model.PlanText,
+                    Date = model.Date,
+                    PlanHours = model.PlanHours,
+                    UpdatedByUserId = _userService.UserId,
+                    CommentOffice = model.CommentOffice,
+                    CommentOfficeAll = model.CommentOfficeAll,
+                    NettoHours = model.NettoHours,
+                    PaiedOutFlex = model.PaidOutFlex,
+                    Pause1Id = model.Shift1Pause ?? 0,
+                    Pause2Id = model.Shift2Pause ?? 0,
+                    Start1Id = model.Shift1Start ?? 0,
+                    Start2Id = model.Shift2Start ?? 0,
+                    Stop1Id = model.Shift1Stop ?? 0,
+                    Stop2Id = model.Shift2Stop ?? 0,
+                    Flex = model.FlexHours,
+                };
+
+                await planRegistration.Create(_dbContext).ConfigureAwait(false);
+            }
+            else
+            {
+                planRegistration.MessageId = model.Message == 10 ? null : model.Message;
+                planRegistration.PlanText = model.PlanText;
+                planRegistration.PlanHours = model.PlanHours;
+                planRegistration.UpdatedByUserId = _userService.UserId;
+                planRegistration.CommentOffice = model.CommentOffice;
+                planRegistration.CommentOfficeAll = model.CommentOfficeAll;
+                planRegistration.NettoHours = model.NettoHours;
+                planRegistration.PaiedOutFlex = model.PaidOutFlex;
+                planRegistration.Pause1Id = model.Shift1Pause ?? 0;
+                planRegistration.Pause2Id = model.Shift2Pause ?? 0;
+                planRegistration.Start1Id = model.Shift1Start ?? 0;
+                planRegistration.Start2Id = model.Shift2Start ?? 0;
+                planRegistration.Stop1Id = model.Shift1Stop ?? 0;
+                planRegistration.Stop2Id = model.Shift2Stop ?? 0;
+                planRegistration.Flex = model.FlexHours;
+                await planRegistration.Update(_dbContext).ConfigureAwait(false);
+            }
+
+            return new OperationResult(true);
         }
     }
 }

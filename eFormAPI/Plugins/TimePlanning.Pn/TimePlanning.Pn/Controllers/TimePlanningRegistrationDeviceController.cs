@@ -46,7 +46,7 @@ public class TimePlanningRegistrationDeviceController : Controller
 
     [HttpPost]
     [Route("activate")]
-    public async Task<OperationResult> Activate([FromBody] TimePlanningRegistrationDeviceActivateModel model)
+    public async Task<OperationResult> Activate([FromForm] TimePlanningRegistrationDeviceActivateModel model)
     {
         return await _registrationDeviceService.Activate(model);
     }

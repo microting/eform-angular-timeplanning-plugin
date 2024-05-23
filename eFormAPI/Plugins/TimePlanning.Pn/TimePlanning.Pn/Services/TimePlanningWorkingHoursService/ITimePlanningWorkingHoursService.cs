@@ -45,5 +45,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
         Task<OperationResult> Import(IFormFile file);
         Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(DateTime dateTime, string token);
+        Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursModel model, string token);
     }
 }

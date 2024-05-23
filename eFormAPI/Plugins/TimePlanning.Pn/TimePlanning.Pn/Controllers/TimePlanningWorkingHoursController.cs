@@ -64,6 +64,13 @@ namespace TimePlanning.Pn.Controllers
             return await _workingHoursService.CreateUpdate(model);
         }
 
+        [HttpPut]
+        [Route("update")]
+        public async Task<OperationResult> UpdateWorkingHour([FromForm] TimePlanningWorkingHoursModel model, string token)
+        {
+            return await _workingHoursService.UpdateWorkingHour(model, token);
+        }
+
         /// <summary>
         /// Download records export word
         /// </summary>
