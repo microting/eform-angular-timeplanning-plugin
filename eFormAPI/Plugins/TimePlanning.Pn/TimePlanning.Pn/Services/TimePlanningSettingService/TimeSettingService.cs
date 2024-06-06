@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#nullable enable
 using JetBrains.Annotations;
 
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
@@ -219,7 +220,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
         }
 
-        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableSites([CanBeNull] string token)
+        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableSites(string? token)
         {
             try
             {

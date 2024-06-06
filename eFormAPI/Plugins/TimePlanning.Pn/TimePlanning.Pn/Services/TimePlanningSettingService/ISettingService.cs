@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#nullable enable
 using JetBrains.Annotations;
 
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
@@ -44,6 +45,6 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
 
         Task<OperationResult> DeleteSite(int siteId);
 
-        Task<OperationDataResult<List<SiteDto>>> GetAvailableSites([CanBeNull] string token);
+        Task<OperationDataResult<List<SiteDto>>> GetAvailableSites(string? token);
     }
 }
