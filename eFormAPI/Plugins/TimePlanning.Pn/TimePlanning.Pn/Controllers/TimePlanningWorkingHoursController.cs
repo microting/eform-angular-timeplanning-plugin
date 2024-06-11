@@ -53,9 +53,9 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpGet]
         [Route("read")]
-        public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(DateTime dateTime, string token)
+        public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token)
         {
-            return await _workingHoursService.Read(dateTime, token);
+            return await _workingHoursService.Read(sdkSiteId, dateTime, token);
         }
 
         [HttpPut]
@@ -66,9 +66,9 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpPut]
         [Route("update")]
-        public async Task<OperationResult> UpdateWorkingHour([FromForm] TimePlanningWorkingHoursModel model, string token)
+        public async Task<OperationResult> UpdateWorkingHour(int sdkSiteId, [FromForm] TimePlanningWorkingHoursModel model, string token)
         {
-            return await _workingHoursService.UpdateWorkingHour(model, token);
+            return await _workingHoursService.UpdateWorkingHour(sdkSiteId, model, token);
         }
 
         /// <summary>

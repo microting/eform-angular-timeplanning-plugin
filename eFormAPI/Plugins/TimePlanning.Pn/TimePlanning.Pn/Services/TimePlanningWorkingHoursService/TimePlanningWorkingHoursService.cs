@@ -1020,7 +1020,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             return new OperationResult(true, "Imported");
         }
 
-        public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(DateTime dateTime, string token)
+        public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token)
         {
             if (token != null)
             {
@@ -1034,6 +1034,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
             var planRegistration = await _dbContext.PlanRegistrations
                 .Where(x => x.Date == dateTime)
+                .Where(x => x.SdkSitId == sdkSiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync();
 
@@ -1069,7 +1070,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 timePlanningWorkingHoursModel);
         }
 
-        public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursModel model, string token)
+        public async Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursModel model, string token)
         {
             if (token != null)
             {
@@ -1083,6 +1084,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
             var planRegistration = await _dbContext.PlanRegistrations
                 .Where(x => x.Date == model.Date)
+                .Where(x => x.SdkSitId == sdkSiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync();
 
@@ -1090,43 +1092,94 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 planRegistration = new PlanRegistration
                 {
-                    MessageId = model.Message == 10 ? null : model.Message,
-                    PlanText = model.PlanText,
+                    MessageId = null,
+                    PlanText = "",
                     Date = model.Date,
-                    PlanHours = model.PlanHours,
+                    PlanHours = 0,
                     UpdatedByUserId = _userService.UserId,
-                    CommentOffice = model.CommentOffice,
-                    CommentOfficeAll = model.CommentOfficeAll,
-                    NettoHours = model.NettoHours,
-                    PaiedOutFlex = model.PaidOutFlex,
+                    CommentOffice = "",
+                    CommentOfficeAll = "",
+                    NettoHours = 0,
+                    PaiedOutFlex = 0,
                     Pause1Id = model.Shift1Pause ?? 0,
                     Pause2Id = model.Shift2Pause ?? 0,
                     Start1Id = model.Shift1Start ?? 0,
                     Start2Id = model.Shift2Start ?? 0,
                     Stop1Id = model.Shift1Stop ?? 0,
                     Stop2Id = model.Shift2Stop ?? 0,
-                    Flex = model.FlexHours,
+                    Flex = 0,
+                    WorkerComment = model.CommentWorker
                 };
+
+                var minutesMultiplier = 5;
+
+                double nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
+                nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
+                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
+                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+
+                nettoMinutes *= minutesMultiplier;
+
+                double hours = nettoMinutes / 60;
+                planRegistration.NettoHours = hours;
+                planRegistration.Flex = hours - planRegistration.PlanHours;
+                var preTimePlanning =
+                    await _dbContext.PlanRegistrations.AsNoTracking()
+                        .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSiteId)
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
+                if (preTimePlanning != null)
+                {
+                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                }
+                else
+                {
+                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = 0;
+                }
 
                 await planRegistration.Create(_dbContext).ConfigureAwait(false);
             }
             else
             {
-                planRegistration.MessageId = model.Message == 10 ? null : model.Message;
-                planRegistration.PlanText = model.PlanText;
-                planRegistration.PlanHours = model.PlanHours;
                 planRegistration.UpdatedByUserId = _userService.UserId;
-                planRegistration.CommentOffice = model.CommentOffice;
-                planRegistration.CommentOfficeAll = model.CommentOfficeAll;
-                planRegistration.NettoHours = model.NettoHours;
-                planRegistration.PaiedOutFlex = model.PaidOutFlex;
                 planRegistration.Pause1Id = model.Shift1Pause ?? 0;
                 planRegistration.Pause2Id = model.Shift2Pause ?? 0;
                 planRegistration.Start1Id = model.Shift1Start ?? 0;
                 planRegistration.Start2Id = model.Shift2Start ?? 0;
                 planRegistration.Stop1Id = model.Shift1Stop ?? 0;
                 planRegistration.Stop2Id = model.Shift2Stop ?? 0;
-                planRegistration.Flex = model.FlexHours;
+                planRegistration.WorkerComment = model.CommentWorker;
+
+                var minutesMultiplier = 5;
+
+                double nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
+                nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
+                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
+                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+
+                nettoMinutes *= minutesMultiplier;
+
+                double hours = nettoMinutes / 60;
+                planRegistration.NettoHours = hours;
+                planRegistration.Flex = hours - planRegistration.PlanHours;
+                var preTimePlanning =
+                    await _dbContext.PlanRegistrations.AsNoTracking()
+                        .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSiteId)
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
+                if (preTimePlanning != null)
+                {
+                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                }
+                else
+                {
+                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = 0;
+                }
+
                 await planRegistration.Update(_dbContext).ConfigureAwait(false);
             }
 

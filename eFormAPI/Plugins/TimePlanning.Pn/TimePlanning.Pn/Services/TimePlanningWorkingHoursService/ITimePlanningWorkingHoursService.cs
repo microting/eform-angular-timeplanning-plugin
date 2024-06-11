@@ -44,7 +44,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursReportForAllWorkersRequestModel model);
 
         Task<OperationResult> Import(IFormFile file);
-        Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(DateTime dateTime, string token);
-        Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursModel model, string token);
+        Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token);
+        Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursModel model, string token);
     }
 }
