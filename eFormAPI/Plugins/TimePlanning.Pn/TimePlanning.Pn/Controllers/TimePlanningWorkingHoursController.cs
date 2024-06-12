@@ -66,7 +66,7 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpPut]
         [Route("update")]
-        public async Task<OperationResult> UpdateWorkingHour(int sdkSiteId, [FromForm] TimePlanningWorkingHoursUpdateModel model, string token)
+        public async Task<OperationResult> UpdateWorkingHour([FromForm] int sdkSiteId, [FromForm] TimePlanningWorkingHoursUpdateModel model, [FromForm] string token)
         {
             return await _workingHoursService.UpdateWorkingHour(sdkSiteId, model, token);
         }

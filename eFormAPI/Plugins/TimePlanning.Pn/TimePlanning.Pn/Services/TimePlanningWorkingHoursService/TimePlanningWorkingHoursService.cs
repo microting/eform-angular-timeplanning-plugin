@@ -1081,9 +1081,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found", null);
                 }
             }
+            var todayAtMidnight = DateTime.UtcNow.Date;
 
             var planRegistration = await _dbContext.PlanRegistrations
-                .Where(x => x.Date == model.Date)
+                .Where(x => x.Date == todayAtMidnight)
                 .Where(x => x.SdkSitId == sdkSiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync();
@@ -1108,7 +1109,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Stop1Id = model.Shift1Stop ?? 0,
                     Stop2Id = model.Shift2Stop ?? 0,
                     Flex = 0,
-                    WorkerComment = model.CommentWorker
+                    WorkerComment = model.CommentWorker,
+                    SdkSitId = sdkSiteId
                 };
 
                 var minutesMultiplier = 5;
