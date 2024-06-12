@@ -1070,7 +1070,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 timePlanningWorkingHoursModel);
         }
 
-        public async Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursModel model, string token)
+        public async Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursUpdateModel model, string token)
         {
             if (token != null)
             {

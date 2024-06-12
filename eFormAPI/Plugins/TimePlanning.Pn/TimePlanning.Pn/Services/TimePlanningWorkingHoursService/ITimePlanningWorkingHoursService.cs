@@ -45,6 +45,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
         Task<OperationResult> Import(IFormFile file);
         Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token);
-        Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursModel model, string token);
+        Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursUpdateModel model, string token);
     }
 }
