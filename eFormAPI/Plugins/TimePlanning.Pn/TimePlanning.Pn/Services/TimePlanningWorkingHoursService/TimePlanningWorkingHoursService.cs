@@ -1108,9 +1108,18 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Start2Id = model.Shift2Start ?? 0,
                     Stop1Id = model.Shift1Stop ?? 0,
                     Stop2Id = model.Shift2Stop ?? 0,
+                    Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt) ? null : DateTime.Parse(model.Start1StartedAt),
+                    Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt) ? null : DateTime.Parse(model.Stop1StoppedAt),
+                    Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt) ? null : DateTime.Parse(model.Pause1StartedAt),
+                    Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt) ? null : DateTime.Parse(model.Pause1StoppedAt),
+                    Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt) ? null : DateTime.Parse(model.Start2StartedAt),
+                    Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt) ? null : DateTime.Parse(model.Stop2StoppedAt),
+                    Pause2StartedAt = string.IsNullOrEmpty(model.Pause2StartedAt) ? null : DateTime.Parse(model.Pause2StartedAt),
+                    Pause2StoppedAt = string.IsNullOrEmpty(model.Pause2StoppedAt) ? null : DateTime.Parse(model.Pause2StoppedAt),
                     Flex = 0,
                     WorkerComment = model.CommentWorker,
-                    SdkSitId = sdkSiteId
+                    SdkSitId = sdkSiteId,
+                    RegistrationDeviceId = planRegistration.Id
                 };
 
                 var minutesMultiplier = 5;
@@ -1153,6 +1162,32 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Stop1Id = model.Shift1Stop ?? 0;
                 planRegistration.Stop2Id = model.Shift2Stop ?? 0;
                 planRegistration.WorkerComment = model.CommentWorker;
+                planRegistration.RegistrationDeviceId = planRegistration.Id;
+
+                planRegistration.Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start1StartedAt);
+                planRegistration.Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop1StoppedAt);
+                planRegistration.Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause1StartedAt);
+                planRegistration.Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause1StoppedAt);
+                planRegistration.Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start2StartedAt);
+                planRegistration.Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop2StoppedAt);
+                planRegistration.Pause2StartedAt = string.IsNullOrEmpty(model.Pause2StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause2StartedAt);
+                planRegistration.Pause2StoppedAt = string.IsNullOrEmpty(model.Pause2StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause2StoppedAt);
 
                 var minutesMultiplier = 5;
 

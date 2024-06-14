@@ -12,4 +12,20 @@ public class TimePlanningWorkingHoursUpdateModel
     public int? Shift2Pause { get; set; }
     public int? Shift2Stop { get; set; }
     public string CommentWorker { get; set; }
+
+    public string Start1StartedAt { get; set; }
+
+    public string Stop1StoppedAt { get; set; }
+
+    public string Pause1StartedAt { get; set; }
+
+    public string Pause1StoppedAt { get; set; }
+
+    public string Start2StartedAt { get; set; }
+
+    public string Stop2StoppedAt { get; set; }
+
+    public string Pause2StartedAt { get; set; }
+
+    public string Pause2StoppedAt { get; set; }
 }
