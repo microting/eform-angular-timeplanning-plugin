@@ -1072,15 +1072,19 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
         public async Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursUpdateModel model, string token)
         {
-            if (token != null)
+
+            if (token == null)
             {
-                var registrationDevice = await _dbContext.RegistrationDevices
-                    .Where(x => x.Token == token).FirstOrDefaultAsync();
-                if (registrationDevice == null)
-                {
-                    return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found", null);
-                }
+                return new OperationResult(false, "Token not found");
             }
+
+            var registrationDevice = await _dbContext.RegistrationDevices
+                .Where(x => x.Token == token).FirstOrDefaultAsync();
+            if (registrationDevice == null)
+            {
+                return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found", null);
+            }
+
             var todayAtMidnight = DateTime.UtcNow.Date;
 
             var planRegistration = await _dbContext.PlanRegistrations
@@ -1119,7 +1123,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Flex = 0,
                     WorkerComment = model.CommentWorker,
                     SdkSitId = sdkSiteId,
-                    RegistrationDeviceId = planRegistration.Id
+                    RegistrationDeviceId = registrationDevice.Id
                 };
 
                 var minutesMultiplier = 5;
@@ -1162,7 +1166,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Stop1Id = model.Shift1Stop ?? 0;
                 planRegistration.Stop2Id = model.Shift2Stop ?? 0;
                 planRegistration.WorkerComment = model.CommentWorker;
-                planRegistration.RegistrationDeviceId = planRegistration.Id;
+                planRegistration.RegistrationDeviceId = registrationDevice.Id;
 
                 planRegistration.Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
                     ? null
