@@ -220,7 +220,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
         }
 
-        public async Task<OperationDataResult<List<SiteDto>>> GetAvailableSites(string? token)
+        public async Task<OperationDataResult<List<Infrastructure.Models.Settings.SiteDto>>> GetAvailableSites(string? token)
         {
             try
             {
@@ -230,38 +230,59 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                         .Where(x => x.Token == token).FirstOrDefaultAsync();
                     if (registrationDevice == null)
                     {
-                        return new OperationDataResult<List<SiteDto>>(
+                        return new OperationDataResult<List<Infrastructure.Models.Settings.SiteDto>>(
                             false,
                             _localizationService.GetString("ErrorWhileObtainingSites"));
                     }
                 }
 
                 var core = await _core.GetCore();
+                var sdkDbContext = core.DbContextHelper.GetDbContext();
                 var assignedSites = await _dbContext.AssignedSites
                     .AsNoTracking()
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Select(x => x.SiteId)
                     .ToListAsync();
 
-                var sites = new List<SiteDto>();
+                var sites = new List<Infrastructure.Models.Settings.SiteDto>();
                 foreach (var assignedSite in assignedSites)
                 {
                     var site = await core.SiteRead(assignedSite);
                     if (site != null)
                     {
-                        sites.Add(site);
+                        var worker = await sdkDbContext.Workers
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.MicrotingUid == site.WorkerUid)
+                            .FirstOrDefaultAsync();
+                        if (worker != null)
+                        {
+                            var newSite = new Infrastructure.Models.Settings.SiteDto
+                            {
+                                SiteId = site.SiteId,
+                                SiteName = site.SiteName,
+                                FirstName = worker.FirstName,
+                                LastName = worker.LastName,
+                                CustomerNo = site.CustomerNo,
+                                OtpCode = site.OtpCode,
+                                UnitId = site.UnitId,
+                                WorkerUid = site.WorkerUid,
+                                Email = worker.Email,
+                                PinCode = worker.PinCode
+                            };
+                            sites.Add(newSite);
+                        }
                     }
                 }
 
                 sites = sites.OrderBy(x => x.SiteName).ToList();
 
-                return new OperationDataResult<List<SiteDto>>(true, sites);
+                return new OperationDataResult<List<Infrastructure.Models.Settings.SiteDto>>(true, sites);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationDataResult<List<SiteDto>>(
+                return new OperationDataResult<List<Infrastructure.Models.Settings.SiteDto>>(
                     false,
                     _localizationService.GetString("ErrorWhileObtainingSites"));
             }
