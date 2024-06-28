@@ -245,6 +245,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
         public async Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursUpdateCreateModel model)
         {
+
+            var registrationDevices = await _dbContext.RegistrationDevices
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .ToListAsync().ConfigureAwait(false);
+
             try
             {
                 var planRegistrations = await _dbContext.PlanRegistrations
@@ -332,8 +337,12 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 break;
                         }
 
-                        planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,
-                            (int)maxHistoryDays!, (int)eFormId!, core, site, (int)folderId!, theMessage);
+                        if (!registrationDevices.Any())
+                        {
+                            planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,
+                                (int)maxHistoryDays!, (int)eFormId!, core, site, (int)folderId!, theMessage);
+                        }
+
                         await planRegistration.Update(_dbContext);
                     }
                 }

@@ -282,6 +282,37 @@ namespace TimePlanning.Pn
                         user.UserId);
                 }
             }
+
+            var registrationDevices = await context.RegistrationDevices
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .ToListAsync().ConfigureAwait(false);
+
+            if (registrationDevices.Any())
+            {
+                var assignmentForDeletes = await context.AssignedSites.Where(x =>
+                    x.WorkflowState != Constants.WorkflowStates.Removed).ToListAsync().ConfigureAwait(false);
+
+                foreach (var assignmentForDelete in assignmentForDeletes)
+                {
+                    //await assignmentForDelete.Delete(timePlanningDbContext).ConfigureAwait(false);
+                    if (assignmentForDelete.CaseMicrotingUid != null)
+                    {
+                        await core.CaseDelete((int)assignmentForDelete.CaseMicrotingUid).ConfigureAwait(false);
+                    }
+                }
+
+                var planRegistrations = await context.PlanRegistrations
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed).ToListAsync()
+                    .ConfigureAwait(false);
+
+                foreach (var planRegistration in planRegistrations)
+                {
+                    if (planRegistration.StatusCaseId != 0)
+                    {
+                        await core.CaseDelete(planRegistration.StatusCaseId).ConfigureAwait(false);
+                    }
+                }
+            }
         }
 
         public void ConfigureDbContext(IServiceCollection services, string connectionString)
