@@ -337,11 +337,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 break;
                         }
 
-                        if (!registrationDevices.Any())
-                        {
+                        // if (!registrationDevices.Any())
+                        // {
                             planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,
                                 (int)maxHistoryDays!, (int)eFormId!, core, site, (int)folderId!, theMessage);
-                        }
+                        //}
 
                         await planRegistration.Update(_dbContext);
                     }
