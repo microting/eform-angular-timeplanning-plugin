@@ -48,5 +48,13 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
         public string CommentOfficeAll { get; set; }
         public bool IsLocked { get; set; }
         public bool IsWeekend { get; set; }
+        public DateTime? Start1StartedAt { get; set; }
+        public DateTime? Stop1StoppedAt { get; set; }
+        public DateTime? Pause1StartedAt { get; set; }
+        public DateTime? Pause1StoppedAt { get; set; }
+        public DateTime? Start2StartedAt { get; set; }
+        public DateTime? Stop2StoppedAt { get; set; }
+        public DateTime? Pause2StartedAt { get; set; }
+        public DateTime? Pause2StoppedAt { get; set; }
     }
 }

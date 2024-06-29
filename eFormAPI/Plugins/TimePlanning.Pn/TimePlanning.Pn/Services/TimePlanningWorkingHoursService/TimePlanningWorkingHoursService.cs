@@ -1049,8 +1049,32 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
             if (planRegistration == null)
             {
-                return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Plan registration not found",
-                    null);
+                var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
+                {
+                    Date = dateTime,
+                    PlanText = "",
+                    PlanHours = 0,
+                    Shift1Start = 0,
+                    Shift1Stop = 0,
+                    Shift1Pause = 0,
+                    Shift2Start = 0,
+                    Shift2Stop = 0,
+                    Shift2Pause = 0,
+                    NettoHours = 0,
+                    FlexHours = 0,
+                    SumFlexStart = 0,
+                    SumFlexEnd = 0,
+                    PaidOutFlex = 0,
+                    Message = 0,
+                    CommentWorker = "",
+                    CommentOffice = "",
+                    CommentOfficeAll = ""
+                };
+
+                return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
+                    newTimePlanningWorkingHoursModel);
+                // return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Plan registration not found",
+                //     null);
             }
 
             var timePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
@@ -1072,7 +1096,15 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 Message = planRegistration.MessageId,
                 CommentWorker = planRegistration.WorkerComment,
                 CommentOffice = planRegistration.CommentOffice,
-                CommentOfficeAll = planRegistration.CommentOfficeAll
+                CommentOfficeAll = planRegistration.CommentOfficeAll,
+                Start1StartedAt = planRegistration.Start1StartedAt,
+                Stop1StoppedAt = planRegistration.Stop1StoppedAt,
+                Pause1StartedAt = planRegistration.Pause1StartedAt,
+                Pause1StoppedAt = planRegistration.Pause1StoppedAt,
+                Start2StartedAt = planRegistration.Start2StartedAt,
+                Stop2StoppedAt = planRegistration.Stop2StoppedAt,
+                Pause2StartedAt = planRegistration.Pause2StartedAt,
+                Pause2StoppedAt = planRegistration.Pause2StoppedAt
             };
 
             return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
