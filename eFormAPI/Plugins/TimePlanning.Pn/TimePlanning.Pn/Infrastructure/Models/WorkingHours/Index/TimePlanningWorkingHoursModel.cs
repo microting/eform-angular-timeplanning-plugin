@@ -26,6 +26,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
     /// </summary>
     public class TimePlanningWorkingHoursModel
     {
+        public int SdkSiteId { get; set; }
         public string WorkerName { get; set; }
         public int WeekDay { get; set; }
         public DateTime Date { get; set; }

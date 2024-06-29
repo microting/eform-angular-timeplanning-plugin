@@ -1051,6 +1051,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
                 {
+                    SdkSiteId = sdkSiteId,
                     Date = dateTime,
                     PlanText = "",
                     PlanHours = 0,
@@ -1079,6 +1080,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
             var timePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
             {
+                SdkSiteId = sdkSiteId,
                 Date = planRegistration.Date,
                 PlanText = planRegistration.PlanText,
                 PlanHours = planRegistration.PlanHours,
