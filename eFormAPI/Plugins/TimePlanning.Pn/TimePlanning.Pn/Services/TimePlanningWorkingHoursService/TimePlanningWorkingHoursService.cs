@@ -1040,9 +1040,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found", null);
                 }
             }
+            var today = DateTime.Now;
+            var midnight = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
 
             var planRegistration = await _dbContext.PlanRegistrations
-                .Where(x => x.Date == dateTime)
+                .Where(x => x.Date == midnight)
                 .Where(x => x.SdkSitId == sdkSiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync();
@@ -1052,7 +1054,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
                 {
                     SdkSiteId = sdkSiteId,
-                    Date = dateTime,
+                    Date = midnight,
                     PlanText = "",
                     PlanHours = 0,
                     Shift1Start = 0,
