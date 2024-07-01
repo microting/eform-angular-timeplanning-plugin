@@ -78,4 +78,7 @@
     <data name="DayOfWeek" xml:space="preserve">
         <value>Day of week</value>
     </data>
+    <data name="Employee no" xml:space="preserve">
+        <value>Employee no</value>
+    </data>
 </root>

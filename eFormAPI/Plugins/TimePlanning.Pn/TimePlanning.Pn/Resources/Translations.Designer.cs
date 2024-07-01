@@ -9,21 +9,21 @@
 
 namespace TimePlanning.Pn.Resources {
     using System;
-
-
+    
+    
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Translations {
-
+        
         private static System.Resources.ResourceManager resourceMan;
-
+        
         private static System.Globalization.CultureInfo resourceCulture;
-
+        
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal Translations() {
         }
-
+        
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
         internal static System.Resources.ResourceManager ResourceManager {
             get {
@@ -34,7 +34,7 @@ namespace TimePlanning.Pn.Resources {
                 return resourceMan;
             }
         }
-
+        
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
         internal static System.Globalization.CultureInfo Culture {
             get {
@@ -44,124 +44,130 @@ namespace TimePlanning.Pn.Resources {
                 resourceCulture = value;
             }
         }
-
+        
         internal static string Shift_1__start {
             get {
                 return ResourceManager.GetString("Shift 1: start", resourceCulture);
             }
         }
-
+        
         internal static string PlanText {
             get {
                 return ResourceManager.GetString("PlanText", resourceCulture);
             }
         }
-
+        
         internal static string PlanHours {
             get {
                 return ResourceManager.GetString("PlanHours", resourceCulture);
             }
         }
-
+        
         internal static string Shift_1__pause {
             get {
                 return ResourceManager.GetString("Shift 1: pause", resourceCulture);
             }
         }
-
+        
         internal static string Shift_1__end {
             get {
                 return ResourceManager.GetString("Shift 1: end", resourceCulture);
             }
         }
-
+        
         internal static string Shift_2__start {
             get {
                 return ResourceManager.GetString("Shift 2: start", resourceCulture);
             }
         }
-
+        
         internal static string Shift_2__pause {
             get {
                 return ResourceManager.GetString("Shift 2: pause", resourceCulture);
             }
         }
-
+        
         internal static string Shift_2__end {
             get {
                 return ResourceManager.GetString("Shift 2: end", resourceCulture);
             }
         }
-
+        
         internal static string NettoHours {
             get {
                 return ResourceManager.GetString("NettoHours", resourceCulture);
             }
         }
-
+        
         internal static string Flex {
             get {
                 return ResourceManager.GetString("Flex", resourceCulture);
             }
         }
-
+        
         internal static string SumFlexStart {
             get {
                 return ResourceManager.GetString("SumFlexStart", resourceCulture);
             }
         }
-
+        
         internal static string SumFlexEnd {
             get {
                 return ResourceManager.GetString("SumFlexEnd", resourceCulture);
             }
         }
-
+        
         internal static string PaidOutFlex {
             get {
                 return ResourceManager.GetString("PaidOutFlex", resourceCulture);
             }
         }
-
+        
         internal static string Message {
             get {
                 return ResourceManager.GetString("Message", resourceCulture);
             }
         }
-
+        
         internal static string Comments {
             get {
                 return ResourceManager.GetString("Comments", resourceCulture);
             }
         }
-
+        
         internal static string Comment_office {
             get {
                 return ResourceManager.GetString("Comment office", resourceCulture);
             }
         }
-
+        
         internal static string Comment_office_all {
             get {
                 return ResourceManager.GetString("Comment office all", resourceCulture);
             }
         }
-
+        
         internal static string Date {
             get {
                 return ResourceManager.GetString("Date", resourceCulture);
             }
         }
-
+        
         internal static string Worker {
             get {
                 return ResourceManager.GetString("Worker", resourceCulture);
             }
         }
-
+        
         internal static string DayOfWeek {
             get {
                 return ResourceManager.GetString("DayOfWeek", resourceCulture);
+            }
+        }
+        
+        internal static string Employee_no {
+            get {
+                return ResourceManager.GetString("Employee no", resourceCulture);
             }
         }
     }

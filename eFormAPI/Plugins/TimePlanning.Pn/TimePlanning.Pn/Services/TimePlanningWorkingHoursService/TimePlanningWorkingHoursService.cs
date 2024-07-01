@@ -479,6 +479,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var core = await _coreHelper.GetCore();
                 var sdkContext = core.DbContextHelper.GetDbContext();
                 var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
+                var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
+                var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
                 var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
 
                 Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
@@ -500,6 +502,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 var x = 0;
                 var y = 0;
 
+                worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Employee_no);
+                worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                y++;
                 worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Worker);
                 worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                 y++;
@@ -588,6 +593,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             x++;
                             y = 0;
 
+                            worksheet.Cell(x + 1, y + 1).Value = worker.EmployeeNo;
+                            y++;
                             worksheet.Cell(x + 1, y + 1).Value = site.Name;
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value =
@@ -704,6 +711,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     {
                         continue;
                     }
+                    var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
+                    var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
 
                     var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
 
@@ -714,6 +723,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     var x = 0;
                     var y = 0;
 
+                    worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Employee_no);
+                    worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
+                    y++;
                     worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Worker);
                     worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
                     y++;
@@ -803,6 +815,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 x++;
                                 y = 0;
 
+                                worksheet.Cell(x + 1, y + 1).Value = worker.EmployeeNo;
+                                y++;
                                 worksheet.Cell(x + 1, y + 1).Value = site.Name;
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value =

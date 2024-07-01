@@ -78,4 +78,7 @@
     <data name="SumFlexStart" xml:space="preserve">
         <value>Flex sum</value>
     </data>
+    <data name="Employee no" xml:space="preserve">
+        <value>Medarbejder nr.</value>
+    </data>
 </root>
