@@ -6,12 +6,13 @@ import {
   TimePlanningModel,
   TimePlanningsRequestModel,
   WorkingHoursModel,
-  TimePlanningsReportAllWorkersDownloadRequestModel
+  TimePlanningsReportAllWorkersDownloadRequestModel, WorkingHourModel
 } from '../models';
 
 export let TimePlanningPnWorkingHoursMethods = {
   IndexWorkingHours: 'api/time-planning-pn/working-hours/index',
   WorkingHours: 'api/time-planning-pn/working-hours',
+  WorkingHourReadSimple: 'api/time-planning-pn/working-hours/read-simple',
   Reports: 'api/time-planning-pn/working-hours/reports/file',
   ReportsAllWorkers: 'api/time-planning-pn/working-hours/reports/file-all-workers',
 };
@@ -28,6 +29,12 @@ export class TimePlanningPnWorkingHoursService {
     return this.apiBaseService.post(
       TimePlanningPnWorkingHoursMethods.IndexWorkingHours,
       model
+    );
+  }
+
+  getWorkingHourReadSimple(dateTime: Date): Observable<OperationDataResult<WorkingHourModel>> {
+    return this.apiBaseService.get(
+      TimePlanningPnWorkingHoursMethods.WorkingHourReadSimple, {dateTime: dateTime.toISOString()}
     );
   }
 

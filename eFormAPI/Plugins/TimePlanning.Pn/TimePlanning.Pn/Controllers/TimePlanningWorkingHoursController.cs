@@ -20,6 +20,7 @@ SOFTWARE.
 
 using System;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours;
 
@@ -33,6 +34,7 @@ namespace TimePlanning.Pn.Controllers
     using Microting.eFormApi.BasePn.Infrastructure.Models.API;
     using Services.TimePlanningWorkingHoursService;
 
+    [Authorize]
     [Route("api/time-planning-pn/working-hours")]
     public class TimePlanningWorkingHoursController : Controller
     {
@@ -53,9 +55,17 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpGet]
         [Route("read")]
+        [AllowAnonymous]
         public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token)
         {
             return await _workingHoursService.Read(sdkSiteId, dateTime, token);
+        }
+
+        [HttpGet]
+        [Route("read-simple")]
+        public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> Read(DateTime dateTime)
+        {
+            return await _workingHoursService.ReadSimple(dateTime);
         }
 
         [HttpPut]
@@ -66,6 +76,7 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpPut]
         [Route("update")]
+        [AllowAnonymous]
         public async Task<OperationResult> UpdateWorkingHour([FromForm] int sdkSiteId, [FromForm] TimePlanningWorkingHoursUpdateModel model, [FromForm] string token)
         {
             return await _workingHoursService.UpdateWorkingHour(sdkSiteId, model, token);

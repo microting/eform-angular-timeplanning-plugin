@@ -465,11 +465,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
         }
 
-        // Lene Plov
-        // Dorth Smith
-        // Majbrit skovgård
-        // Emma Pedersen -17,16 Sandheden er 6,33 pr. 9/6/2022
-
         public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(
             TimePlanningWorkingHoursRequestModel model)
         {
@@ -1041,6 +1036,101 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             }
 
             return new OperationResult(true, "Imported");
+        }
+
+        public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime)
+        {
+            var currentUser = await _userService.GetCurrentUserAsync();
+            var fullName = currentUser.FirstName + " " + currentUser.LastName;
+            var core = await _coreHelper.GetCore();
+            var sdkContext = core.DbContextHelper.GetDbContext();
+            var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x => x.Name == fullName && x.WorkflowState != Constants.WorkflowStates.Removed);
+
+            if (sdkSite == null)
+            {
+                return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(false, "Site not found", null);
+            }
+
+            var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
+
+            var planRegistration = await _dbContext.PlanRegistrations
+                .Where(x => x.Date == midnight)
+                .Where(x => x.SdkSitId == sdkSite.MicrotingUid)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync();
+
+            if (planRegistration == null)
+            {
+                var preTimePlanning = await _dbContext.PlanRegistrations.AsNoTracking()
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Date < midnight
+                                && x.SdkSitId == sdkSite.MicrotingUid)
+                    .OrderByDescending(x => x.Date)
+                    .FirstOrDefaultAsync();
+                if (preTimePlanning != null)
+                {
+                    var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHourSimpleModel
+                    {
+                        PlanText = "",
+                        PlanHours = 0,
+                        NettoHours = 0,
+                        FlexHours = 0,
+                        SumFlexStart = Math.Round(preTimePlanning.SumFlexEnd, 2),
+                        SumFlexEnd = Math.Round(preTimePlanning.SumFlexEnd, 2),
+                        PaidOutFlex = 0,
+                        Message = 0,
+                        CommentWorker = "",
+                        CommentOffice = "",
+                    };
+
+                    return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, "Plan registration found",
+                        newTimePlanningWorkingHoursModel);
+                }
+                else
+                {
+                    var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHourSimpleModel
+                    {
+                        PlanText = "",
+                        PlanHours = 0,
+                        NettoHours = 0,
+                        FlexHours = 0,
+                        SumFlexStart = 0,
+                        SumFlexEnd = 0,
+                        PaidOutFlex = 0,
+                        Message = 0,
+                        CommentWorker = "",
+                        CommentOffice = "",
+                    };
+
+                    return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, "Plan registration found",
+                        newTimePlanningWorkingHoursModel);
+                }
+            }
+
+            var timePlanningWorkingHoursModel = new TimePlanningWorkingHourSimpleModel
+            {
+                PlanText = planRegistration.PlanText,
+                PlanHours = planRegistration.PlanHours,
+                NettoHours = Math.Round(planRegistration.NettoHours,2),
+                FlexHours = Math.Round(planRegistration.Flex,2),
+                SumFlexStart = Math.Round(planRegistration.SumFlexStart,2),
+                SumFlexEnd = Math.Round(planRegistration.SumFlexEnd,2),
+                PaidOutFlex = planRegistration.PaiedOutFlex,
+                Message = planRegistration.MessageId,
+                CommentWorker = planRegistration.WorkerComment,
+                CommentOffice = planRegistration.CommentOffice,
+                Start1StartedAt = planRegistration.Start1StartedAt,
+                Stop1StoppedAt = planRegistration.Stop1StoppedAt,
+                Pause1StartedAt = planRegistration.Pause1StartedAt,
+                Pause1StoppedAt = planRegistration.Pause1StoppedAt,
+                Start2StartedAt = planRegistration.Start2StartedAt,
+                Stop2StoppedAt = planRegistration.Stop2StoppedAt,
+                Pause2StartedAt = planRegistration.Pause2StartedAt,
+                Pause2StoppedAt = planRegistration.Pause2StoppedAt
+            };
+
+            return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, "Plan registration found",
+                timePlanningWorkingHoursModel);
         }
 
         public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token)

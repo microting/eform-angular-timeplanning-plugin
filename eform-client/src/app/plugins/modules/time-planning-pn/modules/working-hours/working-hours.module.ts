@@ -10,7 +10,9 @@ import {
   WorkingHoursHeaderComponent,
   WorkingHoursTableComponent,
   WorkingHoursCommentOfficeUpdateModalComponent,
-  WorkingHoursCommentOfficeAllUpdateModalComponent, WorkingHoursUploadModalComponent,
+  WorkingHoursCommentOfficeAllUpdateModalComponent,
+  WorkingHoursUploadModalComponent,
+  MobileWorkingHoursComponent,
 } from './components';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -46,6 +48,7 @@ import {FileUploadModule} from 'ng2-file-upload';
     FileUploadModule,
   ],
   declarations: [
+    MobileWorkingHoursComponent,
     WorkingHoursContainerComponent,
     WorkingHoursHeaderComponent,
     WorkingHoursTableComponent,
