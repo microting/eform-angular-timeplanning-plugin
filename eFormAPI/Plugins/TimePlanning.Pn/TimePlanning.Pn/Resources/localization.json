@@ -30,5 +30,13 @@
       "de": "",
       "en-US": ""
     }
+  },
+  {
+    "Key": "PlanRegistrationLoaded",
+    "LocalizedValue": {
+      "da": "Registrering hentet",
+      "de": "Planung geladen",
+      "en-US": "Plan registration loaded"
+    }
   }
 ]

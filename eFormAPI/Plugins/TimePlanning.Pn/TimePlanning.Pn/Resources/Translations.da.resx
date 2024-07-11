@@ -81,4 +81,7 @@
     <data name="Employee no" xml:space="preserve">
         <value>Medarbejder nr.</value>
     </data>
+    <data name="PlanRegistrationFound" xml:space="preserve">
+        <value>Registrering hentet</value>
+    </data>
 </root>

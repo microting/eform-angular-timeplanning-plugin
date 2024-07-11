@@ -1083,7 +1083,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         CommentOffice = "",
                     };
 
-                    return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, "Plan registration found",
+                    return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, _localizationService.GetString("PlanRegistrationLoaded"),
                         newTimePlanningWorkingHoursModel);
                 }
                 else
@@ -1102,7 +1102,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         CommentOffice = "",
                     };
 
-                    return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, "Plan registration found",
+                    return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, _localizationService.GetString("PlanRegistrationLoaded"),
                         newTimePlanningWorkingHoursModel);
                 }
             }
@@ -1129,7 +1129,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 Pause2StoppedAt = planRegistration.Pause2StoppedAt
             };
 
-            return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, "Plan registration found",
+            return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, _localizationService.GetString("PlanRegistrationLoaded"),
                 timePlanningWorkingHoursModel);
         }
 

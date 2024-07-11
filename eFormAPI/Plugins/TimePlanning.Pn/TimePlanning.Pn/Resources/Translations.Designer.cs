@@ -170,5 +170,11 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("Employee no", resourceCulture);
             }
         }
+
+        internal static string PlanRegistrationFound {
+            get {
+                return ResourceManager.GetString("PlanRegistrationFound", resourceCulture);
+            }
+        }
     }
 }
