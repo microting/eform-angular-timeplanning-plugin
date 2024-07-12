@@ -104,16 +104,8 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
               disabled: true,
             }
           ),
-          commentOffice: new FormControl({
-              value: x.commentOffice ? x.commentOffice : '',
-              disabled: true,
-            }
-          ),
-          commentOfficeAll: new FormControl({
-              value: x.commentOfficeAll ? x.commentOfficeAll : '',
-              disabled: true,
-            }
-          ),
+          commentOffice: new FormControl(x.commentOffice ? x.commentOffice : ''),
+          commentOfficeAll: new FormControl(x.commentOfficeAll ? x.commentOfficeAll : ''),
         }),
       ];
     });

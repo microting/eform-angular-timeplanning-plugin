@@ -115,7 +115,7 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
         field: 'commentWorker',
         formatter: (row: FormGroup) => row.get('commentWorker').value
       },
-      {header: this.translateService.stream('CommentOffice'), field: 'commentOffice', cellTemplate: this.inputTextTpl,},
+      {header: this.translateService.stream('CommentOffice'), field: 'commentOffice', cellTemplate: this.inputTextTpl},
     ];
   }
 
@@ -226,7 +226,7 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   }
 
   openEditCommentOfficeModal(row: FormGroup) {
-    this.dialog.open(WorkingHoursCommentOfficeUpdateModalComponent, {...dialogConfigHelper(this.overlay, row)});
+    this.dialog.open(WorkingHoursCommentOfficeUpdateModalComponent, {...dialogConfigHelper(this.overlay, row), minWidth: 400});
   }
 
   calculateNettoHours(workingHoursForm: AbstractControl): { formattedHours: number; rawMinutes: number } {
