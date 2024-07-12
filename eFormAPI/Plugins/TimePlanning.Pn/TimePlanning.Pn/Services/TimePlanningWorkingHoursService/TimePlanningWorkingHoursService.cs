@@ -699,13 +699,30 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 IXLWorkbook wb = new XLWorkbook();
 
+                var totalWorksheet = wb.Worksheets.Add("Total");
+                totalWorksheet.Cell(1, 1).Value = _localizationService.GetString(Translations.Employee_no);
+                totalWorksheet.Cell(1, 1).Style.Font.Bold = true;
+                totalWorksheet.Cell(1, 2).Value = _localizationService.GetString(Translations.Worker);
+                totalWorksheet.Cell(1, 2).Style.Font.Bold = true;
+                totalWorksheet.Cell(1, 3).Value = _localizationService.GetString(Translations.PlanHours);
+                totalWorksheet.Cell(1, 3).Style.Font.Bold = true;
+                totalWorksheet.Cell(1, 4).Value = _localizationService.GetString(Translations.NettoHours);
+                totalWorksheet.Cell(1, 4).Style.Font.Bold = true;
+                totalWorksheet.Cell(1, 5).Value = _localizationService.GetString(Translations.SumFlexStart);
+                totalWorksheet.Cell(1, 5).Style.Font.Bold = true;
+
+                var z = 1;
                 foreach (var siteId in siteIds)
                 {
+                    var totalPlannedHours = 0.0;
+                    var totalNettoHours = 0.0;
+                    var totalSumFlexStart = 0.0;
                     var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
                     if (site.WorkflowState == Constants.WorkflowStates.Removed)
                     {
                         continue;
                     }
+                    z++;
                     var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
                     var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
 
@@ -717,6 +734,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                     var x = 0;
                     var y = 0;
+
+                    totalWorksheet.Cell(z, 1).Value = worker.EmployeeNo;
+                    totalWorksheet.Cell(z, 2).Value = site.Name;
 
                     worksheet.Cell(x + 1, y + 1).Value = _localizationService.GetString(Translations.Employee_no);
                     worksheet.Cell(x + 1, y + 1).Style.Font.Bold = true;
@@ -786,6 +806,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                     if (content.Success)
                     {
+
                         var rows = content.Model;
 
                         var firstDone = false;
@@ -823,6 +844,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                     timePlanningWorkingHoursModel.PlanText; // TODO plan text
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PlanHours;
+                                totalPlannedHours += timePlanningWorkingHoursModel.PlanHours;
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = plr.Options[
                                     timePlanningWorkingHoursModel.Shift1Start > 0
@@ -855,10 +877,12 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                         : 0];
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.NettoHours;
+                                totalNettoHours += timePlanningWorkingHoursModel.NettoHours;
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.FlexHours;
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexEnd;
+                                totalSumFlexStart = timePlanningWorkingHoursModel.SumFlexEnd;
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
                                 y++;
@@ -875,6 +899,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                             firstDone = true;
                         }
+
+
+                        totalWorksheet.Cell(z, 3).Value = totalPlannedHours;
+                        totalWorksheet.Cell(z, 4).Value = totalNettoHours;
+                        totalWorksheet.Cell(z, 5).Value = totalSumFlexStart;
                     }
 
                     worksheet.RangeUsed().SetAutoFilter();
