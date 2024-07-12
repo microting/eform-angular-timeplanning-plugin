@@ -1078,7 +1078,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         SumFlexStart = Math.Round(preTimePlanning.SumFlexEnd, 2),
                         SumFlexEnd = Math.Round(preTimePlanning.SumFlexEnd, 2),
                         PaidOutFlex = 0,
-                        Message = 0,
                         CommentWorker = "",
                         CommentOffice = "",
                     };
@@ -1097,7 +1096,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         SumFlexStart = 0,
                         SumFlexEnd = 0,
                         PaidOutFlex = 0,
-                        Message = 0,
                         CommentWorker = "",
                         CommentOffice = "",
                     };
@@ -1116,7 +1114,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 SumFlexStart = Math.Round(planRegistration.SumFlexStart,2),
                 SumFlexEnd = Math.Round(planRegistration.SumFlexEnd,2),
                 PaidOutFlex = planRegistration.PaiedOutFlex,
-                Message = planRegistration.MessageId,
                 CommentWorker = planRegistration.WorkerComment,
                 CommentOffice = planRegistration.CommentOffice,
                 Start1StartedAt = planRegistration.Start1StartedAt,

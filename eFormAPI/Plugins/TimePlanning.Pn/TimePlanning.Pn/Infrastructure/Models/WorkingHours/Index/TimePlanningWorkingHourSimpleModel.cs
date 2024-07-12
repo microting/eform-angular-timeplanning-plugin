@@ -33,7 +33,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
         public double SumFlexStart { get; set; }
         public double SumFlexEnd { get; set; }
         public double PaidOutFlex { get; set; }
-        public int? Message { get; set; }
+        public string Message { get; set; }
         public string CommentWorker { get; set; }
         public string CommentOffice { get; set; }
         public DateTime? Start1StartedAt { get; set; }
