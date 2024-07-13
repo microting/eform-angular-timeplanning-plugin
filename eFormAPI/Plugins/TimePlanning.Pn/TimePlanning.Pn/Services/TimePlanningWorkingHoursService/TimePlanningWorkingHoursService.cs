@@ -24,7 +24,6 @@ using System.Threading;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using Sentry;
-using TimePlanning.Pn.Helpers;
 using TimePlanning.Pn.Resources;
 
 namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
@@ -336,12 +335,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 theMessage = message != null ? message.EnName : "";
                                 break;
                         }
-
-                        // if (!registrationDevices.Any())
-                        // {
-                            planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,
-                                (int)maxHistoryDays!, (int)eFormId!, core, site, (int)folderId!, theMessage);
-                        //}
 
                         await planRegistration.Update(_dbContext);
                     }

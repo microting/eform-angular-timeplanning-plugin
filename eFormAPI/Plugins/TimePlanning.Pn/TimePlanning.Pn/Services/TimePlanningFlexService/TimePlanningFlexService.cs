@@ -23,7 +23,6 @@ SOFTWARE.
 */
 
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
-using TimePlanning.Pn.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 
 namespace TimePlanning.Pn.Services.TimePlanningFlexService
@@ -209,7 +208,6 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
                                 theMessage = _message != null ? _message.EnName : "";
                                 break;
                         }
-                        planRegistration.StatusCaseId = await new DeploymentHelper().DeployResults(planRegistration,(int)maxHistoryDays, (int)eFormId, core, site, (int)folderId, theMessage);
                         await planRegistration.Update(_dbContext);
                     }
                 }
