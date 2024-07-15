@@ -28,7 +28,7 @@
       <PackageReference Include="Microting.eFormApi.BasePn" Version="8.0.34" />
       <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
       <PackageReference Include="Microting.TimePlanningBase" Version="8.0.24" />
-      <PackageReference Include="Sentry" Version="4.8.1" />
+      <PackageReference Include="Sentry" Version="4.9.0" />
     </ItemGroup>
 
     <ItemGroup>
