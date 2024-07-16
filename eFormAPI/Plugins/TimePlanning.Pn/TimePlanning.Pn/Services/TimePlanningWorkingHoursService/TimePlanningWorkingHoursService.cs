@@ -1097,8 +1097,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         PlanHours = 0,
                         NettoHours = 0,
                         FlexHours = 0,
-                        SumFlexStart = Math.Round(preTimePlanning.SumFlexEnd, 2),
-                        SumFlexEnd = Math.Round(preTimePlanning.SumFlexEnd, 2),
+                        SumFlexStart = Math.Round(preTimePlanning.SumFlexEnd, 2).ToString(CultureInfo.InvariantCulture),
+                        SumFlexEnd = Math.Round(preTimePlanning.SumFlexEnd, 2).ToString(CultureInfo.InvariantCulture),
                         PaidOutFlex = 0,
                         CommentWorker = "",
                         CommentOffice = "",
@@ -1115,8 +1115,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         PlanHours = 0,
                         NettoHours = 0,
                         FlexHours = 0,
-                        SumFlexStart = 0,
-                        SumFlexEnd = 0,
+                        SumFlexStart = "0",
+                        SumFlexEnd = "0",
                         PaidOutFlex = 0,
                         CommentWorker = "",
                         CommentOffice = "",
@@ -1131,26 +1131,45 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             {
                 PlanText = planRegistration.PlanText,
                 PlanHours = planRegistration.PlanHours,
-                NettoHours = Math.Round(planRegistration.NettoHours,2),
-                FlexHours = Math.Round(planRegistration.Flex,2),
-                SumFlexStart = Math.Round(planRegistration.SumFlexStart,2),
-                SumFlexEnd = Math.Round(planRegistration.SumFlexEnd,2),
+                NettoHours = Math.Round(planRegistration.NettoHours, 2),
+                FlexHours = Math.Round(planRegistration.Flex, 2),
+                SumFlexStart = Math.Round(planRegistration.SumFlexStart, 2).ToString(CultureInfo.InvariantCulture),
+                SumFlexEnd = Math.Round(planRegistration.SumFlexEnd, 2).ToString(CultureInfo.InvariantCulture),
                 PaidOutFlex = planRegistration.PaiedOutFlex,
                 CommentWorker = planRegistration.WorkerComment,
                 CommentOffice = planRegistration.CommentOffice,
-                Start1StartedAt = planRegistration.Start1StartedAt,
-                Stop1StoppedAt = planRegistration.Stop1StoppedAt,
-                Pause1StartedAt = planRegistration.Pause1StartedAt,
-                Pause1StoppedAt = planRegistration.Pause1StoppedAt,
-                Start2StartedAt = planRegistration.Start2StartedAt,
-                Stop2StoppedAt = planRegistration.Stop2StoppedAt,
-                Pause2StartedAt = planRegistration.Pause2StartedAt,
-                Pause2StoppedAt = planRegistration.Pause2StoppedAt
+                Start1StartedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Start1StartedAt),
+                Stop1StoppedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Stop1StoppedAt),
+                Pause1StartedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Pause1StartedAt),
+                Pause1StoppedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Pause1StoppedAt),
+                Start2StartedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Start2StartedAt),
+                Stop2StoppedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Stop2StoppedAt),
+                Pause2StartedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Pause2StartedAt),
+                Pause2StoppedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Pause2StoppedAt)
             };
+
 
             return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true, _localizationService.GetString("PlanRegistrationLoaded"),
                 timePlanningWorkingHoursModel);
         }
+
+        private static string? RoundDownToNearestFiveMinutesAndFormat(DateTime? dateTime)
+        {
+            if (!dateTime.HasValue)
+            {
+                return null;
+            }
+
+            int minutes = dateTime.Value.Minute;
+            int minutesToSubtract = minutes % 5;
+            DateTime roundedDateTime = dateTime.Value.AddMinutes(-minutesToSubtract)
+                .AddSeconds(-dateTime.Value.Second)
+                .AddMilliseconds(-dateTime.Value.Millisecond);
+            return roundedDateTime.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);
+        }
+
+
+
 
         public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token)
         {

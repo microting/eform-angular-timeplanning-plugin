@@ -17,6 +17,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+#nullable enable
 namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
 {
     using System;
@@ -30,19 +32,19 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
         public double PlanHours { get; set; }
         public double NettoHours { get; set; }
         public double FlexHours { get; set; }
-        public double SumFlexStart { get; set; }
-        public double SumFlexEnd { get; set; }
+        public string SumFlexStart { get; set; }
+        public string SumFlexEnd { get; set; }
         public double PaidOutFlex { get; set; }
         public string Message { get; set; }
         public string CommentWorker { get; set; }
         public string CommentOffice { get; set; }
-        public DateTime? Start1StartedAt { get; set; }
-        public DateTime? Stop1StoppedAt { get; set; }
-        public DateTime? Pause1StartedAt { get; set; }
-        public DateTime? Pause1StoppedAt { get; set; }
-        public DateTime? Start2StartedAt { get; set; }
-        public DateTime? Stop2StoppedAt { get; set; }
-        public DateTime? Pause2StartedAt { get; set; }
-        public DateTime? Pause2StoppedAt { get; set; }
+        public string? Start1StartedAt { get; set; }
+        public string? Stop1StoppedAt { get; set; }
+        public string? Pause1StartedAt { get; set; }
+        public string? Pause1StoppedAt { get; set; }
+        public string? Start2StartedAt { get; set; }
+        public string? Stop2StoppedAt { get; set; }
+        public string? Pause2StartedAt { get; set; }
+        public string? Pause2StoppedAt { get; set; }
     }
 }
