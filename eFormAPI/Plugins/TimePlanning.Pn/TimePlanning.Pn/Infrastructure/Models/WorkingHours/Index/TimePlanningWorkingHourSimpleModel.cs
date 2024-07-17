@@ -28,6 +28,9 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
     /// </summary>
     public class TimePlanningWorkingHourSimpleModel
     {
+        public string Date { get; set; }
+        public string YesterDay { get; set; }
+        public string Worker { get; set; }
         public string PlanText { get; set; }
         public double PlanHours { get; set; }
         public double NettoHours { get; set; }

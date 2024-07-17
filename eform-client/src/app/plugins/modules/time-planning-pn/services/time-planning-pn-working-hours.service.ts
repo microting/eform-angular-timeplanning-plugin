@@ -32,9 +32,9 @@ export class TimePlanningPnWorkingHoursService {
     );
   }
 
-  getWorkingHourReadSimple(dateTime: Date): Observable<OperationDataResult<WorkingHourModel>> {
+  getWorkingHourReadSimple(dateTime: string): Observable<OperationDataResult<WorkingHourModel>> {
     return this.apiBaseService.get(
-      TimePlanningPnWorkingHoursMethods.WorkingHourReadSimple, {dateTime: dateTime.toISOString()}
+      TimePlanningPnWorkingHoursMethods.WorkingHourReadSimple, {dateTime: dateTime}
     );
   }
 

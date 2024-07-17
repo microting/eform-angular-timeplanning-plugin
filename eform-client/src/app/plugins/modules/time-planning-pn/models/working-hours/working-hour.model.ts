@@ -1,4 +1,5 @@
 export class WorkingHourModel {
+  workerName: string;
   planText: string;
   planHours: string;
   nettoHours: number;
@@ -17,4 +18,6 @@ export class WorkingHourModel {
   pause2StartedAt: string;
   pause2StoppedAt: string;
   stop2StoppedAt: string;
+  date: string;
+  yesterDay: string;
 }

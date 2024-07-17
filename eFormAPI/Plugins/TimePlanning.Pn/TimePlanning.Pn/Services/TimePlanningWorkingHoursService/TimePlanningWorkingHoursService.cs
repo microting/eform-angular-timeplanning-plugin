@@ -18,6 +18,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#nullable enable
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -1093,6 +1094,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 {
                     var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHourSimpleModel
                     {
+                        Date = midnight.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+                        YesterDay = midnight.AddDays(-1).ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+                        Worker = sdkSite.Name,
                         PlanText = "",
                         PlanHours = 0,
                         NettoHours = 0,
@@ -1111,6 +1115,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 {
                     var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHourSimpleModel
                     {
+                        Date = midnight.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+                        YesterDay = midnight.AddDays(-1).ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+                        Worker = sdkSite.Name,
                         PlanText = "",
                         PlanHours = 0,
                         NettoHours = 0,
@@ -1129,6 +1136,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
             var timePlanningWorkingHoursModel = new TimePlanningWorkingHourSimpleModel
             {
+                Date = midnight.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+                YesterDay = midnight.AddDays(-1).ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+                Worker = sdkSite.Name,
                 PlanText = planRegistration.PlanText,
                 PlanHours = planRegistration.PlanHours,
                 NettoHours = Math.Round(planRegistration.NettoHours, 2),
