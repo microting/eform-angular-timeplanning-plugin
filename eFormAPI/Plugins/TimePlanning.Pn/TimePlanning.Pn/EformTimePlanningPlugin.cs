@@ -207,6 +207,13 @@ namespace TimePlanning.Pn
                     }
                 }
 
+                var field = await sdkDbContext.Fields.FirstOrDefaultAsync(x => x.OriginalId == "373285");
+                if (field != null)
+                {
+                    field.Mandatory = 1;
+                    await field.Update(sdkDbContext);
+                }
+
                 await options.UpdateDb(settings =>
                 {
                     settings.InfoeFormId = originalId;
