@@ -112,6 +112,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     timePlanningRequest = timePlanningRequest
                         .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
                 }
+                var dateTime = DateTime.Now;
+                var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
 
                 var timePlannings = await timePlanningRequest
                     .Select(x => new TimePlanningWorkingHoursModel
@@ -135,7 +137,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
                         CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
                         // CommentOfficeAll = x.CommentOfficeAll,
-                        IsLocked = x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable),
+                        IsLocked = (x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable) || x.Date == midnight),
                         IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
                     })
                     .ToListAsync();
@@ -190,7 +192,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             {
                                 Date = model.DateFrom.AddDays(i),
                                 WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
-                                IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)maxDaysEditable),
+                                IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)maxDaysEditable) || model.DateFrom.AddDays(i) == midnight,
                                 IsWeekend = model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Saturday
                                             || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday
                                 //WorkerId = model.WorkerId,
@@ -358,53 +360,59 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         private async Task CreatePlanning(bool first, TimePlanningWorkingHoursModel model, int sdkSiteId,
             int microtingUid, string commentWorker)
         {
-            try
-            {
-                var planRegistration = new PlanRegistration
-                {
-                    MessageId = model.Message == 0 ? null : model.Message,
-                    PlanText = model.PlanText,
-                    SdkSitId = sdkSiteId,
-                    Date = model.Date,
-                    PlanHours = model.PlanHours,
-                    CreatedByUserId = _userService.UserId,
-                    UpdatedByUserId = _userService.UserId,
-                    CommentOffice = model.CommentOffice,
-                    CommentOfficeAll = model.CommentOfficeAll,
-                    NettoHours = model.NettoHours,
-                    PaiedOutFlex = model.PaidOutFlex,
-                    Pause1Id = model.Shift1Pause ?? 0,
-                    Pause2Id = model.Shift1Pause ?? 0,
-                    Start1Id = model.Shift1Start ?? 0,
-                    Start2Id = model.Shift2Start ?? 0,
-                    Stop1Id = model.Shift1Stop ?? 0,
-                    Stop2Id = model.Shift2Stop ?? 0,
-                    Flex = model.FlexHours,
-                    StatusCaseId = 0
-                };
+            var dateTime = DateTime.Now;
+            var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
 
-                var preTimePlanning =
-                    await _dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
-                            && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date)
-                        .FirstOrDefaultAsync();
-                if (preTimePlanning != null)
-                {
-                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
-                                                  planRegistration.PaiedOutFlex;
-                }
-                else
-                {
-                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = 0;
-                }
-
-                await planRegistration.Create(_dbContext);
-            }
-            catch (Exception e)
+            if (model.Date != midnight)
             {
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
+                try
+                {
+                    var planRegistration = new PlanRegistration
+                    {
+                        MessageId = model.Message == 0 ? null : model.Message,
+                        PlanText = model.PlanText,
+                        SdkSitId = sdkSiteId,
+                        Date = model.Date,
+                        PlanHours = model.PlanHours,
+                        CreatedByUserId = _userService.UserId,
+                        UpdatedByUserId = _userService.UserId,
+                        CommentOffice = model.CommentOffice,
+                        CommentOfficeAll = model.CommentOfficeAll,
+                        NettoHours = model.NettoHours,
+                        PaiedOutFlex = model.PaidOutFlex,
+                        Pause1Id = model.Shift1Pause ?? 0,
+                        Pause2Id = model.Shift1Pause ?? 0,
+                        Start1Id = model.Shift1Start ?? 0,
+                        Start2Id = model.Shift2Start ?? 0,
+                        Stop1Id = model.Shift1Stop ?? 0,
+                        Stop2Id = model.Shift2Stop ?? 0,
+                        Flex = model.FlexHours,
+                        StatusCaseId = 0
+                    };
+
+                    var preTimePlanning =
+                        await _dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
+                                && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date)
+                            .FirstOrDefaultAsync();
+                    if (preTimePlanning != null)
+                    {
+                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                        planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
+                                                      planRegistration.PaiedOutFlex;
+                    }
+                    else
+                    {
+                        planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                        planRegistration.SumFlexStart = 0;
+                    }
+
+                    await planRegistration.Create(_dbContext);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    _logger.LogError(e.Message);
+                }
             }
         }
 
@@ -412,7 +420,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
             TimePlanningWorkingHoursModel model,
             int microtingUid)
         {
-            try
+            var dateTime = DateTime.Now;
+            var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
+
+            if (planRegistration.Date != midnight)
             {
                 planRegistration.MessageId = model.Message == 10 ? null : model.Message;
                 planRegistration.PlanText = model.PlanText;
@@ -431,32 +442,28 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Stop2Id = model.Shift2Stop ?? 0;
                 planRegistration.Flex = model.FlexHours;
                 planRegistration.PaiedOutFlex = model.PaidOutFlex;
-                var preTimePlanning =
-                    await _dbContext.PlanRegistrations.AsNoTracking()
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => x.Date < planRegistration.Date
-                                    && x.SdkSitId == planRegistration.SdkSitId)
-                        .OrderByDescending(x => x.Date)
-                        .FirstOrDefaultAsync();
-                if (preTimePlanning != null)
-                {
-                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
-                                                  planRegistration.PaiedOutFlex;
-                }
-                else
-                {
-                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = 0;
-                }
+            }
 
-                await planRegistration.Update(_dbContext);
-            }
-            catch (Exception e)
+            var preTimePlanning =
+                await _dbContext.PlanRegistrations.AsNoTracking()
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Date < planRegistration.Date
+                                && x.SdkSitId == planRegistration.SdkSitId)
+                    .OrderByDescending(x => x.Date)
+                    .FirstOrDefaultAsync();
+            if (preTimePlanning != null)
             {
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
+                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
+                                              planRegistration.PaiedOutFlex;
             }
+            else
+            {
+                planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                planRegistration.SumFlexStart = 0;
+            }
+
+            await planRegistration.Update(_dbContext);
         }
 
         public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(
