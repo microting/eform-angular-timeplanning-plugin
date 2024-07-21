@@ -69,4 +69,7 @@ export const hrHR = {
   Backward: 'Unazad',
   Forward: 'Naprijed',
   Back: 'leđa',
+  worker: 'Radnik',
+  pause1TotalTime: 'Ukupno vrijeme pauze u 1. smjeni',
+  pause2TotalTime: 'Ukupno vrijeme pauze u 2. smjeni',
 };

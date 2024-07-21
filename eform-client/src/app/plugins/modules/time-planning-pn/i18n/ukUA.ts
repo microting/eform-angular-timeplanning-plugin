@@ -69,4 +69,7 @@ export const ukUA = {
   Backward: 'Назад',
   Forward: 'вперед',
   Back: 'Назад',
+  worker: 'робітник',
+  pause1TotalTime: 'Загальний час паузи 1-ї зміни',
+  pause2TotalTime: 'Загальний час паузи 2-ї зміни',
 };

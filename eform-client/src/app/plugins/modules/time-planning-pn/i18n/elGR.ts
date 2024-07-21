@@ -69,4 +69,7 @@ export const elGR = {
   Backward: 'Οπισθοδρομικός',
   Forward: 'Προς τα εμπρός',
   Back: 'Πίσω',
+  worker: 'Εργάτης',
+  pause1TotalTime: 'Συνολικός χρόνος παύσης 1ης βάρδιας',
+  pause2TotalTime: 'Συνολικός χρόνος παύσης 2ης βάρδιας',
 };

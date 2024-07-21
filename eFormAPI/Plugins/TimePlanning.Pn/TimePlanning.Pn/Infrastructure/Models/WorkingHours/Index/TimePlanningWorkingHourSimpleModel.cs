@@ -45,9 +45,11 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
         public string? Stop1StoppedAt { get; set; }
         public string? Pause1StartedAt { get; set; }
         public string? Pause1StoppedAt { get; set; }
+        public string? Pause1TotalTime { get; set; }
         public string? Start2StartedAt { get; set; }
         public string? Stop2StoppedAt { get; set; }
         public string? Pause2StartedAt { get; set; }
         public string? Pause2StoppedAt { get; set; }
+        public string? Pause2TotalTime { get; set; }
     }
 }

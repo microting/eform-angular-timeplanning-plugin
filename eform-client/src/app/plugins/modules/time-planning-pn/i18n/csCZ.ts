@@ -69,4 +69,7 @@ export const csCZ = {
   Backward: 'Zpátky',
   Forward: 'Vpřed',
   Back: 'Zadní',
+  worker: 'Pracovník',
+  pause1TotalTime: 'Celková doba pauzy 1. směny',
+  pause2TotalTime: 'Celková doba pauzy 2. směny',
 };

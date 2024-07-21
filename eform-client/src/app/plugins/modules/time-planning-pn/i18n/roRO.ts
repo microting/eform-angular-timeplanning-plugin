@@ -69,4 +69,7 @@ export const roRO = {
   Backward: 'Înapoi',
   Forward: 'Redirecţiona',
   Back: 'Înapoi',
+  worker: 'Muncitor',
+  pause1TotalTime: 'Timpul total de pauză pentru primul schimb',
+  pause2TotalTime: 'Timpul total de pauză al schimbului 2',
 };

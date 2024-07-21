@@ -69,4 +69,7 @@ export const svSE = {
   Backward: 'Bakåt',
   Forward: 'Fram',
   Back: 'Tillbaka',
+  worker: 'Arbetstagare',
+  pause1TotalTime: '1:a skiftets totala paustid',
+  pause2TotalTime: '2:a skiftets totala paustid',
 };

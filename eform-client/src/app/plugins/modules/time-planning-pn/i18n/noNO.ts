@@ -69,4 +69,7 @@ export const noNO = {
   Backward: 'Bakover',
   Forward: 'Framover',
   Back: 'Tilbake',
+  worker: 'Arbeider',
+  pause1TotalTime: '1. skift total pausetid',
+  pause2TotalTime: '2. skift total pausetid',
 };

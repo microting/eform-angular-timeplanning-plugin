@@ -68,4 +68,6 @@ export const da = {
   Backward: 'Baglæns',
   Forward: 'Frem',
   Back: 'Tilbage',
+  pause1TotalTime: '1. skift samlet pausetid',
+  pause2TotalTime: '2. skift samlet pausetid',
 };

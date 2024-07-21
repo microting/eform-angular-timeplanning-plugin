@@ -69,4 +69,7 @@ export const etET = {
   Backward: 'Tagurpidi',
   Forward: 'Edasi',
   Back: 'tagasi',
+  worker: 'Tööline',
+  pause1TotalTime: '1. vahetuse pausi koguaeg',
+  pause2TotalTime: '2. vahetuse kogu pausiaeg',
 };

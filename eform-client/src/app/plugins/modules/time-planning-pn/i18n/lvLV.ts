@@ -69,4 +69,7 @@ export const lvLV = {
   Backward: 'Atpakaļ',
   Forward: 'Uz priekšu',
   Back: 'Atpakaļ',
+  worker: 'Strādnieks',
+  pause1TotalTime: '1. maiņas kopējais pauzes laiks',
+  pause2TotalTime: '2. maiņas kopējais pauzes laiks',
 };

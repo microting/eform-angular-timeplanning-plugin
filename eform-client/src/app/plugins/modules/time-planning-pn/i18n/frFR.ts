@@ -69,4 +69,7 @@ export const frFR = {
   Backward: 'En arrière',
   Forward: 'Avant',
   Back: 'Dos',
+  worker: 'Ouvrier',
+  pause1TotalTime: 'Temps de pause total du 1er quart de travail',
+  pause2TotalTime: 'Temps de pause total de la 2ème équipe',
 };

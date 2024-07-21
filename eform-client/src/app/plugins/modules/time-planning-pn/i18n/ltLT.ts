@@ -69,4 +69,7 @@ export const ltLT = {
   Backward: 'Atgal',
   Forward: 'Persiųsti',
   Back: 'Atgal',
+  worker: 'Darbininkas',
+  pause1TotalTime: '1 pamainos bendras pauzės laikas',
+  pause2TotalTime: '2 pamainos bendras pauzės laikas',
 };

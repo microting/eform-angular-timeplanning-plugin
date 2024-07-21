@@ -69,4 +69,7 @@ export const huHU = {
   Backward: 'Hátrafelé',
   Forward: 'Előre',
   Back: 'Vissza',
+  worker: 'Munkás',
+  pause1TotalTime: '1. műszak teljes szünetidő',
+  pause2TotalTime: '2. műszak teljes szünetidő',
 };

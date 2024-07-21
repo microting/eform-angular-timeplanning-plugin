@@ -69,4 +69,7 @@ export const nlNL = {
   Backward: 'Achteruit',
   Forward: 'Vooruit',
   Back: 'Rug',
+  worker: 'Werknemer',
+  pause1TotalTime: 'Totale pauzetijd 1e ploeg',
+  pause2TotalTime: 'Totale pauzetijd 2e ploeg',
 };

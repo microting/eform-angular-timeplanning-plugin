@@ -69,4 +69,7 @@ export const ptPT = {
   Backward: 'Para trás',
   Forward: 'Avançar',
   Back: 'Voltar',
+  worker: 'Trabalhador',
+  pause1TotalTime: 'Tempo total de pausa do 1º turno',
+  pause2TotalTime: 'Tempo total de pausa do 2º turno',
 };

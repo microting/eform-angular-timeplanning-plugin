@@ -69,4 +69,7 @@ export const deDE = {
   Backward: 'Rückwärts',
   Forward: 'Nach vorne',
   Back: 'Zurück',
+  worker: 'Arbeiter',
+  pause1TotalTime: '1. Schicht Gesamtpausenzeit',
+  pause2TotalTime: '2. Schicht Gesamtpausenzeit',
 };

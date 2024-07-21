@@ -69,4 +69,7 @@ export const itIT = {
   Backward: 'Indietro',
   Forward: 'Inoltrare',
   Back: 'Indietro',
+  worker: 'Lavoratore',
+  pause1TotalTime: 'Tempo pausa totale 1° turno',
+  pause2TotalTime: 'Tempo di pausa totale del 2° turno',
 };

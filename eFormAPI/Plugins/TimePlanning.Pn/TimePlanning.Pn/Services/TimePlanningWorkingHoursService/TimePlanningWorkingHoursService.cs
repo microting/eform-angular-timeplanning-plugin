@@ -1155,14 +1155,12 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 PaidOutFlex = planRegistration.PaiedOutFlex,
                 CommentWorker = planRegistration.WorkerComment,
                 CommentOffice = planRegistration.CommentOffice,
-                Start1StartedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Start1StartedAt),
-                Stop1StoppedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Stop1StoppedAt),
-                Pause1StartedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Pause1StartedAt),
-                Pause1StoppedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Pause1StoppedAt),
-                Start2StartedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Start2StartedAt),
-                Stop2StoppedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Stop2StoppedAt),
-                Pause2StartedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Pause2StartedAt),
-                Pause2StoppedAt = RoundDownToNearestFiveMinutesAndFormat(planRegistration.Pause2StoppedAt)
+                Start1StartedAt = RoundDownToNearestFiveMinutesAndFormat(midnight, planRegistration.Start1Id),
+                Stop1StoppedAt = RoundDownToNearestFiveMinutesAndFormat(midnight, planRegistration.Stop1Id),
+                Pause1TotalTime = RoundDownToNearestFiveMinutesAndFormat(midnight, planRegistration.Pause1Id),
+                Start2StartedAt = RoundDownToNearestFiveMinutesAndFormat(midnight, planRegistration.Start2Id),
+                Stop2StoppedAt = RoundDownToNearestFiveMinutesAndFormat(midnight, planRegistration.Stop2Id),
+                Pause2TotalTime = RoundDownToNearestFiveMinutesAndFormat(midnight, planRegistration.Pause2Id)
             };
 
 
@@ -1170,23 +1168,15 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 timePlanningWorkingHoursModel);
         }
 
-        private static string? RoundDownToNearestFiveMinutesAndFormat(DateTime? dateTime)
+        private static string? RoundDownToNearestFiveMinutesAndFormat(DateTime date, int minutesToAdd)
         {
-            if (!dateTime.HasValue)
+            if (minutesToAdd == 0)
             {
                 return null;
             }
-
-            int minutes = dateTime.Value.Minute;
-            int minutesToSubtract = minutes % 5;
-            DateTime roundedDateTime = dateTime.Value.AddMinutes(-minutesToSubtract)
-                .AddSeconds(-dateTime.Value.Second)
-                .AddMilliseconds(-dateTime.Value.Millisecond);
-            return roundedDateTime.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);
+            var roundedDateTime = date.AddMinutes((minutesToAdd - 1) * 5);
+            return roundedDateTime.ToString("HH:mm", CultureInfo.InvariantCulture);
         }
-
-
-
 
         public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token)
         {

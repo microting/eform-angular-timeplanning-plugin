@@ -69,4 +69,7 @@ export const plPL = {
   Backward: 'Do tyłu',
   Forward: 'Do przodu',
   Back: 'Z powrotem',
+  worker: 'Pracownik',
+  pause1TotalTime: 'Całkowity czas przerwy na 1. zmianie',
+  pause2TotalTime: 'Całkowity czas przerwy na 2. zmianie',
 };

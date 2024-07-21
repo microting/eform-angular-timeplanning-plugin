@@ -69,4 +69,7 @@ export const esES = {
   Backward: 'Hacia atrás',
   Forward: 'Adelante',
   Back: 'Atrás',
+  worker: 'Obrero',
+  pause1TotalTime: 'Tiempo total de pausa del 1er turno',
+  pause2TotalTime: 'Tiempo total de pausa del segundo turno',
 };

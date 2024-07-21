@@ -68,4 +68,6 @@ export const enUS = {
   'Back': 'Back',
   'Backward': 'Backward',
   'Forward': 'Forward',
+  'pause1TotalTime': '1st shift total pause time',
+  'pause2TotalTime': '2nd shift total pause time',
 };
