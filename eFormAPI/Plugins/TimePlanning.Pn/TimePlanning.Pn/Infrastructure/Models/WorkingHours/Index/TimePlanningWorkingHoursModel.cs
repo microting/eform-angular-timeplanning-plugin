@@ -161,5 +161,9 @@ namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
         public DateTime? Pause202StartedAt { get; set; }
 
         public DateTime? Pause202StoppedAt { get; set; }
+
+        public int Shift1PauseNumber { get; set; }
+
+        public int Shift2PauseNumber { get; set; }
     }
 }

@@ -132,4 +132,8 @@ public class TimePlanningWorkingHoursUpdateModel
     public string Pause202StartedAt { get; set; }
 
     public string Pause202StoppedAt { get; set; }
+
+    public int Shift1PauseNumber { get; set; }
+
+    public int Shift2PauseNumber { get; set; }
 }

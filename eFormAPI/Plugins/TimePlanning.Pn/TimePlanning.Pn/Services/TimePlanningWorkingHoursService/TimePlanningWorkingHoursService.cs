@@ -1220,7 +1220,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Message = 0,
                     CommentWorker = "",
                     CommentOffice = "",
-                    CommentOfficeAll = ""
+                    CommentOfficeAll = "",
+                    Shift1PauseNumber = 0,
+                    Shift2PauseNumber = 0,
                 };
 
                 return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
@@ -1310,6 +1312,8 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 Pause201StoppedAt = planRegistration.Pause201StoppedAt,
                 Pause202StartedAt = planRegistration.Pause202StartedAt,
                 Pause202StoppedAt = planRegistration.Pause202StoppedAt,
+                Shift1PauseNumber = planRegistration.Shift1PauseNumber,
+                Shift2PauseNumber = planRegistration.Shift2PauseNumber
             };
 
             return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
@@ -1422,7 +1426,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     Flex = 0,
                     WorkerComment = model.CommentWorker,
                     SdkSitId = sdkSiteId,
-                    RegistrationDeviceId = registrationDevice.Id
+                    RegistrationDeviceId = registrationDevice.Id,
+                    Shift1PauseNumber = model.Shift1PauseNumber,
+                    Shift2PauseNumber = model.Shift2PauseNumber,
                 };
 
                 var minutesMultiplier = 5;
@@ -1649,6 +1655,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Pause202StoppedAt = string.IsNullOrEmpty(model.Pause202StoppedAt)
                     ? null
                     : DateTime.Parse(model.Pause202StoppedAt);
+
+                planRegistration.Shift1PauseNumber = model.Shift1PauseNumber;
+                planRegistration.Shift2PauseNumber = model.Shift2PauseNumber;
 
                 var minutesMultiplier = 5;
 
