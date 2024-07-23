@@ -381,7 +381,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         NettoHours = model.NettoHours,
                         PaiedOutFlex = model.PaidOutFlex,
                         Pause1Id = model.Shift1Pause ?? 0,
-                        Pause2Id = model.Shift1Pause ?? 0,
+                        Pause2Id = model.Shift2Pause ?? 0,
                         Start1Id = model.Shift1Start ?? 0,
                         Start2Id = model.Shift2Start ?? 0,
                         Stop1Id = model.Shift1Stop ?? 0,
