@@ -72,4 +72,5 @@ export const deDE = {
   worker: 'Arbeiter',
   pause1TotalTime: '1. Schicht Gesamtpausenzeit',
   pause2TotalTime: '2. Schicht Gesamtpausenzeit',
+  Timer: 'Timer',
 };

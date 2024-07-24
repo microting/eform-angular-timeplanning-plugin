@@ -72,4 +72,5 @@ export const esES = {
   worker: 'Obrero',
   pause1TotalTime: 'Tiempo total de pausa del 1er turno',
   pause2TotalTime: 'Tiempo total de pausa del segundo turno',
+  Timer: 'Temporizador',
 };

@@ -72,4 +72,5 @@ export const itIT = {
   worker: 'Lavoratore',
   pause1TotalTime: 'Tempo pausa totale 1° turno',
   pause2TotalTime: 'Tempo di pausa totale del 2° turno',
+  Timer: 'Timer',
 };

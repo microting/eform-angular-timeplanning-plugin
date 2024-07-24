@@ -72,4 +72,5 @@ export const isIS = {
   worker: 'Vinnumaður',
   pause1TotalTime: 'Heildarhlé 1. vakt',
   pause2TotalTime: 'Heildarhlé á 2. vakt',
+  Timer: 'Tímamælir',
 };

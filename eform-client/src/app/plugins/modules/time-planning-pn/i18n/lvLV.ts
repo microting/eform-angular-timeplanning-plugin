@@ -72,4 +72,5 @@ export const lvLV = {
   worker: 'Strādnieks',
   pause1TotalTime: '1. maiņas kopējais pauzes laiks',
   pause2TotalTime: '2. maiņas kopējais pauzes laiks',
+  Timer: 'Taimeris',
 };

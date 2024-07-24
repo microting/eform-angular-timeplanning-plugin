@@ -72,4 +72,5 @@ export const bgBG = {
   worker: 'работник',
   pause1TotalTime: 'Общо време на пауза за 1-ва смяна',
   pause2TotalTime: 'Общо време на пауза за 2-ра смяна',
+  Timer: 'Таймер',
 };

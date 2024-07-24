@@ -70,4 +70,5 @@ export const enUS = {
   'Forward': 'Forward',
   'pause1TotalTime': '1st shift total pause time',
   'pause2TotalTime': '2nd shift total pause time',
+  'Timer': 'Timer',
 };

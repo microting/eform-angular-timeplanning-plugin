@@ -3,6 +3,9 @@ import {WorkingHourModel} from 'src/app/plugins/modules/time-planning-pn/models'
 import {TimePlanningPnWorkingHoursService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {format} from 'date-fns';
 import {PARSING_DATE_FORMAT} from 'src/app/common/const';
+import {take} from "rxjs";
+import {TitleService} from "src/app/common/services";
+import {TranslateService} from "@ngx-translate/core";
 @Component({
   selector: 'app-mobile-working-hours',
   templateUrl: './mobile-working-hours.component.html',
@@ -17,6 +20,8 @@ export class MobileWorkingHoursComponent implements OnInit, OnDestroy {
   yesterday: Date = new Date(this.selectedDate.setDate(this.selectedDate.getDate() - 1));
 
   constructor(
+    private titleService: TitleService,
+    private translateService: TranslateService,
     private workingHoursService: TimePlanningPnWorkingHoursService) {
   }
 
@@ -30,6 +35,7 @@ export class MobileWorkingHoursComponent implements OnInit, OnDestroy {
         this.workingHourModel = data.model;
       }
     });
+    this.translateService.get('Timer').pipe(take(1)).subscribe(translate => this.titleService.setTitle(translate));
   }
 
   goBackward() {

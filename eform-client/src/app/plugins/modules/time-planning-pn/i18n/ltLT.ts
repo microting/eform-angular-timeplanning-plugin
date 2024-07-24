@@ -72,4 +72,5 @@ export const ltLT = {
   worker: 'Darbininkas',
   pause1TotalTime: '1 pamainos bendras pauzės laikas',
   pause2TotalTime: '2 pamainos bendras pauzės laikas',
+  Timer: 'Laikmatis',
 };

@@ -72,4 +72,5 @@ export const etET = {
   worker: 'Tööline',
   pause1TotalTime: '1. vahetuse pausi koguaeg',
   pause2TotalTime: '2. vahetuse kogu pausiaeg',
+  Timer: 'Taimer',
 };

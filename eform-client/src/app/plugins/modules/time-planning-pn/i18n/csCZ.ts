@@ -72,4 +72,5 @@ export const csCZ = {
   worker: 'Pracovník',
   pause1TotalTime: 'Celková doba pauzy 1. směny',
   pause2TotalTime: 'Celková doba pauzy 2. směny',
+  Timer: 'Časovač',
 };

@@ -72,4 +72,5 @@ export const svSE = {
   worker: 'Arbetstagare',
   pause1TotalTime: '1:a skiftets totala paustid',
   pause2TotalTime: '2:a skiftets totala paustid',
+  Timer: 'Timer',
 };

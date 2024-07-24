@@ -72,4 +72,5 @@ export const elGR = {
   worker: 'Εργάτης',
   pause1TotalTime: 'Συνολικός χρόνος παύσης 1ης βάρδιας',
   pause2TotalTime: 'Συνολικός χρόνος παύσης 2ης βάρδιας',
+  Timer: 'Μετρών την ώραν',
 };

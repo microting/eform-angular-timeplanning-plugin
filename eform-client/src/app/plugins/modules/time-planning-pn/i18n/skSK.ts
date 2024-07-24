@@ -72,4 +72,5 @@ export const skSK = {
   worker: 'Pracovník',
   pause1TotalTime: '1. zmena celkový čas prestávky',
   pause2TotalTime: '2. zmena celkový čas prestávky',
+  Timer: 'Časovač',
 };

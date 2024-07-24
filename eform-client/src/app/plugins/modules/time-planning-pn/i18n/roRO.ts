@@ -72,4 +72,5 @@ export const roRO = {
   worker: 'Muncitor',
   pause1TotalTime: 'Timpul total de pauză pentru primul schimb',
   pause2TotalTime: 'Timpul total de pauză al schimbului 2',
+  Timer: 'Temporizator',
 };
