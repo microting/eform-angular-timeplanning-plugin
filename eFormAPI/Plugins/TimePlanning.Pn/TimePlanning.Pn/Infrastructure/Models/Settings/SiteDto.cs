@@ -48,6 +48,8 @@ public class SiteDto
 
     public string PinCode { get; set; }
 
+    public string DefaultLanguage { get; set; }
+
     // convert eForm.Core.SiteDto to TimePlanning.Pn.Infrastructure.Models.Settings.SiteDto
     public static implicit operator SiteDto(Microting.eForm.Dto.SiteDto model)
     {
