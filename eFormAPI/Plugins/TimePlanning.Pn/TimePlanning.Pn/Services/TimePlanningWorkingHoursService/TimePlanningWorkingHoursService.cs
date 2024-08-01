@@ -955,7 +955,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     var sheets = package.Worksheets;
                     foreach (var sheet in sheets)
                     {
-                        var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.Name == sheet.Name);
+                        var site = await sdkContext.Sites.FirstOrDefaultAsync(x => x.Name == sheet.Name);
                         if (site == null)
                         {
                             continue;
@@ -971,15 +971,15 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 continue;
                             }
 
-                            var date = row.Cell(5).Value;
-                            var planText = row.Cell(6).Value;
-                            var planHours = row.Cell(7).Value;
+                            var date = row.Cell(1).Value;
+                            var planHours = row.Cell(2).Value;
+                            var planText = row.Cell(3).Value;
                             // if (date == null || planText == null || planHours == null)
                             // {
                             //     continue;
                             // }
                             var dateValue = DateTime.Parse(date.ToString());
-                            if (dateValue < DateTime.Now)
+                            if (dateValue < DateTime.Now.AddDays(-1))
                             {
                                 continue;
                             }
