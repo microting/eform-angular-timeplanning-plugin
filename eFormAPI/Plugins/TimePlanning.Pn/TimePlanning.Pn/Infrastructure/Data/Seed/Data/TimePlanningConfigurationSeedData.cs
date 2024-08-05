@@ -61,6 +61,16 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             {
                 Name = $"{TimePlanningBaseSettingsName}:SiteIdsForCheck",
                 Value = ""
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:AllowUsersToUpdateTimeRegistrations",
+                Value = "0"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:DateOfBlockingUserUpdateTimeRegistrations",
+                Value = "20"
             }
         };
     }

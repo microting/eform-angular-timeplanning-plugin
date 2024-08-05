@@ -247,27 +247,34 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 var sites = new List<Infrastructure.Models.Settings.SiteDto>();
                 foreach (var assignedSite in assignedSites)
                 {
-                    var site = await core.SiteRead(assignedSite);
-                    if (site != null)
+                    var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == assignedSite && x.WorkflowState != Constants.WorkflowStates.Removed);
+                    if (site == null) continue;
                     {
+                        var siteWorker = await sdkDbContext.SiteWorkers
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.SiteId == site.Id)
+                            .FirstAsync();
                         var worker = await sdkDbContext.Workers
                             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                            .Where(x => x.MicrotingUid == site.WorkerUid)
+                            .Where(x => x.Id == siteWorker.WorkerId)
                             .FirstOrDefaultAsync();
+                        var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
+                        var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
                         if (worker != null)
                         {
                             var newSite = new Infrastructure.Models.Settings.SiteDto
                             {
-                                SiteId = site.SiteId,
-                                SiteName = site.SiteName,
+                                SiteId = (int)site.MicrotingUid!,
+                                SiteName = site.Name,
                                 FirstName = worker.FirstName,
                                 LastName = worker.LastName,
-                                CustomerNo = site.CustomerNo,
-                                OtpCode = site.OtpCode,
-                                UnitId = site.UnitId,
-                                WorkerUid = site.WorkerUid,
+                                CustomerNo = unit!.CustomerNo,
+                                OtpCode = unit.OtpCode,
+                                UnitId = unit.MicrotingUid,
+                                WorkerUid = worker.MicrotingUid,
                                 Email = worker.Email,
-                                PinCode = worker.PinCode
+                                PinCode = worker.PinCode,
+                                DefaultLanguage = language.LanguageCode
                             };
                             sites.Add(newSite);
                         }

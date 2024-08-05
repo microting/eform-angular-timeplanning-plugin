@@ -24,10 +24,10 @@
     <ItemGroup>
       <PackageReference Include="ClosedXML" Version="0.102.3" />
       <PackageReference Include="ExcelDataReader" Version="3.7.0" />
-      <PackageReference Include="Microting.eForm" Version="8.0.41" />
-      <PackageReference Include="Microting.eFormApi.BasePn" Version="8.0.39" />
+      <PackageReference Include="Microting.eForm" Version="8.0.43" />
+      <PackageReference Include="Microting.eFormApi.BasePn" Version="8.0.41" />
       <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
-      <PackageReference Include="Microting.TimePlanningBase" Version="8.0.36" />
+      <PackageReference Include="Microting.TimePlanningBase" Version="8.0.38" />
       <PackageReference Include="Sentry" Version="4.9.0" />
     </ItemGroup>
 
