@@ -278,8 +278,8 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   }
 
   calculateFlexHours(workingHoursForm: AbstractControl) {
-    const nettoHours = workingHoursForm.get('nettoHours').value;
-    const planHours = workingHoursForm.get('planHours').value;
+    const nettoHours = workingHoursForm.get('nettoHours').value.replace(',', '.');
+    const planHours = workingHoursForm.get('planHours').value.replace(',', '.');
     return +(nettoHours - planHours).toFixed(2);
   }
 
