@@ -132,7 +132,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         NettoHours = Math.Round(x.NettoHours, 2),
                         FlexHours = Math.Round(x.Flex, 2),
                         SumFlexStart = Math.Round(x.SumFlexStart, 2),
-                        PaidOutFlex = x.PaiedOutFlex.ToString(),
+                        PaidOutFlex = x.PaiedOutFlex.ToString().Replace(",", "."),
                         Message = x.MessageId,
                         CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
                         CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
@@ -167,7 +167,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0, 2),
                     FlexHours = Math.Round(lastPlanning?.Flex ?? 0, 2),
                     SumFlexStart = lastPlanning?.SumFlexStart ?? 0,
-                    PaidOutFlex = lastPlanning?.PaiedOutFlex.ToString() ?? "0",
+                    PaidOutFlex = lastPlanning?.PaiedOutFlex.ToString().Replace(",", ".") ?? "0",
                     Message = lastPlanning?.MessageId,
                     CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
                     CommentOffice = lastPlanning?.CommentOffice?.Replace("\r", "<br />"),
@@ -216,15 +216,26 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
                         timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
                             timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
-                            double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", ".")), 2);
+                            (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                ? 0
+                                : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."))), 2);
                         sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                     }
                     else
                     {
                         timePlanningWorkingHoursModel.SumFlexStart = sumFlexEnd;
-                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
-                            timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
-                            double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", ".")), 2);
+                        try
+                        {
+                            timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
+                                timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
+                                (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                    ? 0
+                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."))), 2);
+                        } catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            _logger.LogError(e.Message);
+                        }
                         sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                     }
 
@@ -638,7 +649,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexEnd;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = double.Parse(timePlanningWorkingHoursModel.PaidOutFlex);
+                            worksheet.Cell(x + 1, y + 1).Value =
+                                string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                    ? 0
+                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex);
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = messageText;
                             y++;
@@ -884,7 +898,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexEnd;
                                 totalSumFlexStart = timePlanningWorkingHoursModel.SumFlexEnd;
                                 y++;
-                                worksheet.Cell(x + 1, y + 1).Value = double.Parse(timePlanningWorkingHoursModel.PaidOutFlex);
+                                worksheet.Cell(x + 1, y + 1).Value =
+                                    string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                        ? 0
+                                        : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex);
+
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = messageText;
                                 y++;
