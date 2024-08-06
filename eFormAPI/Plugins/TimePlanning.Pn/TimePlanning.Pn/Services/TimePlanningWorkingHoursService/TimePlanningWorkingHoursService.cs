@@ -444,7 +444,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.CommentOffice = model.CommentOffice;
                 planRegistration.CommentOfficeAll = model.CommentOfficeAll;
                 planRegistration.NettoHours = model.NettoHours;
-                planRegistration.PaiedOutFlex = string.IsNullOrEmpty(model.PaidOutFlex) ? 0 : double.Parse(model.PaidOutFlex);
+                planRegistration.PaiedOutFlex = string.IsNullOrEmpty(model.PaidOutFlex) ? 0 : double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture);
                 planRegistration.Pause1Id = model.Shift1Pause ?? 0;
                 planRegistration.Pause2Id = model.Shift2Pause ?? 0;
                 planRegistration.Start1Id = model.Shift1Start ?? 0;
