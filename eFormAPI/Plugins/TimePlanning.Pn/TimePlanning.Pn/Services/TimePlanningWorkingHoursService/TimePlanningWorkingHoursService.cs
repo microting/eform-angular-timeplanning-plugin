@@ -638,7 +638,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexEnd;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
+                            worksheet.Cell(x + 1, y + 1).Value = double.Parse(timePlanningWorkingHoursModel.PaidOutFlex);
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = messageText;
                             y++;
@@ -884,7 +884,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexEnd;
                                 totalSumFlexStart = timePlanningWorkingHoursModel.SumFlexEnd;
                                 y++;
-                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
+                                worksheet.Cell(x + 1, y + 1).Value = double.Parse(timePlanningWorkingHoursModel.PaidOutFlex);
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = messageText;
                                 y++;
