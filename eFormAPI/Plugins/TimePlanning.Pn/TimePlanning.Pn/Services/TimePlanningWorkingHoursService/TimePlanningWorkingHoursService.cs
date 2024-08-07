@@ -1088,10 +1088,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime)
         {
             var currentUser = await _userService.GetCurrentUserAsync();
-            var fullName = currentUser.FirstName + " " + currentUser.LastName;
+            var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
             var core = await _coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
-            var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x => x.Name == fullName && x.WorkflowState != Constants.WorkflowStates.Removed);
+            var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", "") && x.WorkflowState != Constants.WorkflowStates.Removed);
 
             if (sdkSite == null)
             {
