@@ -218,7 +218,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
                             (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
                                 ? 0
-                                : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."))), 2);
+                                : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)), 2);
                         sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                     }
                     else
@@ -230,7 +230,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
                                 (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
                                     ? 0
-                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."))), 2);
+                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)), 2);
                         } catch (Exception e)
                         {
                             Console.WriteLine(e);
@@ -390,7 +390,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         CommentOffice = model.CommentOffice,
                         CommentOfficeAll = model.CommentOfficeAll,
                         NettoHours = model.NettoHours,
-                        PaiedOutFlex = double.Parse(model.PaidOutFlex),
+                        PaiedOutFlex = double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture),
                         Pause1Id = model.Shift1Pause ?? 0,
                         Pause2Id = model.Shift2Pause ?? 0,
                         Start1Id = model.Shift1Start ?? 0,
@@ -652,7 +652,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             worksheet.Cell(x + 1, y + 1).Value =
                                 string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
                                     ? 0
-                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex);
+                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex, CultureInfo.InvariantCulture);
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = messageText;
                             y++;
@@ -901,7 +901,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 worksheet.Cell(x + 1, y + 1).Value =
                                     string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
                                         ? 0
-                                        : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex);
+                                        : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex, CultureInfo.InvariantCulture);
 
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = messageText;
