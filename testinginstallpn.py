@@ -13,8 +13,9 @@ replacements = [
     (r"// INSERT ROUTES HERE", "  {\n// INSERT ROUTES HERE"),
     (r"// INSERT ROUTES HERE", "    path: 'time-planning-pn',\n// INSERT ROUTES HERE"),
     (r"// INSERT ROUTES HERE", "    loadChildren: () => import('./modules/time-planning-pn/time-planning-pn.module')\n// INSERT ROUTES HERE"),
-    (r"// INSERT ROUTES HERE", "      .then(m => m.TimePlanningPnModule)\n// INSERT ROUTES HERE"),]
+    (r"// INSERT ROUTES HERE", "      .then(m => m.TimePlanningPnModule)\n// INSERT ROUTES HERE"),
     (r"// INSERT ROUTES HERE", "  },\n// INSERT ROUTES HERE"),
+    ]
 
 # Apply each replacement in sequence
 for pattern, replacement in replacements:
