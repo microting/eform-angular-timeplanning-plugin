@@ -10,12 +10,11 @@ with open(file_path, "r") as file:
 
 # Define the replacements
 replacements = [
-    (r"INSERT ROUTES HERE", "  },\nINSERT ROUTES HERE"),
-    (r"INSERT ROUTES HERE", "      .then(m => m.TimePlanningPnModule)\nINSERT ROUTES HERE"),
-    (r"INSERT ROUTES HERE", "    loadChildren: () => import('./modules/time-planning-pn/time-planning-pn.module')\nINSERT ROUTES HERE"),
-    (r"INSERT ROUTES HERE", "    path: 'time-planning-pn',\nINSERT ROUTES HERE"),
     (r"INSERT ROUTES HERE", "  {\nINSERT ROUTES HERE"),
-]
+    (r"INSERT ROUTES HERE", "    path: 'time-planning-pn',\nINSERT ROUTES HERE"),
+    (r"INSERT ROUTES HERE", "    loadChildren: () => import('./modules/time-planning-pn/time-planning-pn.module')\nINSERT ROUTES HERE"),
+    (r"INSERT ROUTES HERE", "      .then(m => m.TimePlanningPnModule)\nINSERT ROUTES HERE"),]
+    (r"INSERT ROUTES HERE", "  },\nINSERT ROUTES HERE"),
 
 # Apply each replacement in sequence
 for pattern, replacement in replacements:
