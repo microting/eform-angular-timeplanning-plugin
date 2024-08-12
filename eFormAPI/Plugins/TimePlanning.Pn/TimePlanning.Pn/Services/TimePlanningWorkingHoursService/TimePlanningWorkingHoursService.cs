@@ -132,7 +132,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         NettoHours = Math.Round(x.NettoHours, 2),
                         FlexHours = Math.Round(x.Flex, 2),
                         SumFlexStart = Math.Round(x.SumFlexStart, 2),
-                        PaidOutFlex = x.PaiedOutFlex,
+                        PaidOutFlex = x.PaiedOutFlex.ToString().Replace(",", "."),
                         Message = x.MessageId,
                         CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
                         CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
@@ -167,7 +167,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0, 2),
                     FlexHours = Math.Round(lastPlanning?.Flex ?? 0, 2),
                     SumFlexStart = lastPlanning?.SumFlexStart ?? 0,
-                    PaidOutFlex = lastPlanning?.PaiedOutFlex ?? 0,
+                    PaidOutFlex = lastPlanning?.PaiedOutFlex.ToString().Replace(",", ".") ?? "0",
                     Message = lastPlanning?.MessageId,
                     CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
                     CommentOffice = lastPlanning?.CommentOffice?.Replace("\r", "<br />"),
@@ -207,7 +207,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
                 var j = 0;
                 double sumFlexEnd = 0;
-                double SumFlexStart = 0;
+                //double SumFlexStart = 0;
                 foreach (var timePlanningWorkingHoursModel in timePlannings)
                 {
                     if (j == 0)
@@ -216,15 +216,26 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
                         timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
                             timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
-                            timePlanningWorkingHoursModel.PaidOutFlex, 2);
+                            (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                ? 0
+                                : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)), 2);
                         sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                     }
                     else
                     {
                         timePlanningWorkingHoursModel.SumFlexStart = sumFlexEnd;
-                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
-                            timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
-                            timePlanningWorkingHoursModel.PaidOutFlex, 2);
+                        try
+                        {
+                            timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
+                                timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
+                                (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                    ? 0
+                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)), 2);
+                        } catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            _logger.LogError(e.Message);
+                        }
                         sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                     }
 
@@ -248,9 +259,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         public async Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursUpdateCreateModel model)
         {
 
-            var registrationDevices = await _dbContext.RegistrationDevices
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .ToListAsync().ConfigureAwait(false);
+            // var registrationDevices = await _dbContext.RegistrationDevices
+            //     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            //     .ToListAsync().ConfigureAwait(false);
 
             try
             {
@@ -278,70 +289,70 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     first = false;
                 }
 
-                var core = await _coreHelper.GetCore();
-                await using var sdkDbContext = core.DbContextHelper.GetDbContext();
-                var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
-                var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
-                var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
-                var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
-                var eFormId = _options.Value.InfoeFormId;
+                //var core = await _coreHelper.GetCore();
+                //await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+                //var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
+                //var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                // var folderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId;
+                // var maxHistoryDays = _options.Value.MaxHistoryDays == 0 ? null : _options.Value.MaxHistoryDays;
+                // var eFormId = _options.Value.InfoeFormId;
 
-                var lastDate = model.Plannings.Last().Date;
-                var allPlannings = await _dbContext.PlanRegistrations
-                    .Where(x => x.Date >= lastDate)
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.SdkSitId == site.MicrotingUid)
-                    .OrderBy(x => x.Date)
-                    .Take(365)
-                    .ToListAsync();
+                //var lastDate = model.Plannings.Last().Date;
+                // var allPlannings = await _dbContext.PlanRegistrations
+                //     .Where(x => x.Date >= lastDate)
+                //     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                //     .Where(x => x.SdkSitId == site!.MicrotingUid)
+                //     .OrderBy(x => x.Date)
+                //     .Take(365)
+                //     .ToListAsync();
+                //
+                // var preSumFlexStart = allPlannings.Any() ? allPlannings.First().SumFlexEnd : 0;
+                //
+                // foreach (var planRegistration in allPlannings)
+                // {
+                //     if (planRegistration.Date > lastDate)
+                //     {
+                //         planRegistration.SumFlexStart = preSumFlexStart;
+                //         planRegistration.SumFlexEnd =
+                //             preSumFlexStart + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                //         preSumFlexStart = planRegistration.SumFlexEnd;
+                //         await planRegistration.Update(_dbContext);
+                //     }
+                // }
 
-                var preSumFlexStart = allPlannings.Any() ? allPlannings.First().SumFlexEnd : 0;
-
-                foreach (var planRegistration in allPlannings)
-                {
-                    if (planRegistration.Date > lastDate)
-                    {
-                        planRegistration.SumFlexStart = preSumFlexStart;
-                        planRegistration.SumFlexEnd =
-                            preSumFlexStart + planRegistration.Flex - planRegistration.PaiedOutFlex;
-                        preSumFlexStart = planRegistration.SumFlexEnd;
-                        await planRegistration.Update(_dbContext);
-                    }
-                }
-
-                if (_options.Value.MaxHistoryDays != null)
-                {
-                    var maxHistoryDaysInd = (int)_options.Value.MaxHistoryDays;
-                    var firstDate = model.Plannings.First(x => x.Date >= DateTime.Now.AddDays(-maxHistoryDaysInd)).Date;
-                    var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate &&
-                                                                             x.Date <= DateTime.UtcNow
-                                                                             && x.SdkSitId == site.MicrotingUid &&
-                                                                             x.DataFromDevice)
-                        .OrderBy(x => x.Date).ToListAsync();
-                    foreach (var planRegistration in list)
-                    {
-
-                        var message =
-                            await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
-                        Console.WriteLine(
-                            $"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
-                        string theMessage;
-                        switch (language.LanguageCode)
-                        {
-                            case "da":
-                                theMessage = message != null ? message.DaName : "";
-                                break;
-                            case "de":
-                                theMessage = message != null ? message.DeName : "";
-                                break;
-                            default:
-                                theMessage = message != null ? message.EnName : "";
-                                break;
-                        }
-
-                        await planRegistration.Update(_dbContext);
-                    }
-                }
+                // if (_options.Value.MaxHistoryDays != null)
+                // {
+                //     var maxHistoryDaysInd = (int)_options.Value.MaxHistoryDays;
+                //     var firstDate = model.Plannings.First(x => x.Date >= DateTime.Now.AddDays(-maxHistoryDaysInd)).Date;
+                //     var list = await _dbContext.PlanRegistrations.Where(x => x.Date >= firstDate &&
+                //                                                              x.Date <= DateTime.UtcNow
+                //                                                              && x.SdkSitId == site.MicrotingUid &&
+                //                                                              x.DataFromDevice)
+                //         .OrderBy(x => x.Date).ToListAsync();
+                //     foreach (var planRegistration in list)
+                //     {
+                //
+                //         var message =
+                //             await _dbContext.Messages.SingleOrDefaultAsync(x => x.Id == planRegistration.MessageId);
+                //         Console.WriteLine(
+                //             $"Updating planRegistration {planRegistration.Id} for date {planRegistration.Date}");
+                //         // string theMessage;
+                //         // switch (language.LanguageCode)
+                //         // {
+                //         //     case "da":
+                //         //         theMessage = message != null ? message.DaName : "";
+                //         //         break;
+                //         //     case "de":
+                //         //         theMessage = message != null ? message.DeName : "";
+                //         //         break;
+                //         //     default:
+                //         //         theMessage = message != null ? message.EnName : "";
+                //         //         break;
+                //         // }
+                //
+                //         await planRegistration.Update(_dbContext);
+                //     }
+                // }
 
                 return new OperationResult(
                     true,
@@ -379,7 +390,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                         CommentOffice = model.CommentOffice,
                         CommentOfficeAll = model.CommentOfficeAll,
                         NettoHours = model.NettoHours,
-                        PaiedOutFlex = model.PaidOutFlex,
+                        PaiedOutFlex = double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture),
                         Pause1Id = model.Shift1Pause ?? 0,
                         Pause2Id = model.Shift2Pause ?? 0,
                         Start1Id = model.Shift1Start ?? 0,
@@ -433,7 +444,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.CommentOffice = model.CommentOffice;
                 planRegistration.CommentOfficeAll = model.CommentOfficeAll;
                 planRegistration.NettoHours = model.NettoHours;
-                planRegistration.PaiedOutFlex = model.PaidOutFlex;
+                planRegistration.PaiedOutFlex = string.IsNullOrEmpty(model.PaidOutFlex) ? 0 : double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture);
                 planRegistration.Pause1Id = model.Shift1Pause ?? 0;
                 planRegistration.Pause2Id = model.Shift2Pause ?? 0;
                 planRegistration.Start1Id = model.Shift1Start ?? 0;
@@ -441,7 +452,6 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 planRegistration.Stop1Id = model.Shift1Stop ?? 0;
                 planRegistration.Stop2Id = model.Shift2Stop ?? 0;
                 planRegistration.Flex = model.FlexHours;
-                planRegistration.PaiedOutFlex = model.PaidOutFlex;
             }
 
             var preTimePlanning =
@@ -639,7 +649,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexEnd;
                             y++;
-                            worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
+                            worksheet.Cell(x + 1, y + 1).Value =
+                                string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                    ? 0
+                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex, CultureInfo.InvariantCulture);
                             y++;
                             worksheet.Cell(x + 1, y + 1).Value = messageText;
                             y++;
@@ -885,7 +898,11 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.SumFlexEnd;
                                 totalSumFlexStart = timePlanningWorkingHoursModel.SumFlexEnd;
                                 y++;
-                                worksheet.Cell(x + 1, y + 1).Value = timePlanningWorkingHoursModel.PaidOutFlex;
+                                worksheet.Cell(x + 1, y + 1).Value =
+                                    string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                        ? 0
+                                        : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex, CultureInfo.InvariantCulture);
+
                                 y++;
                                 worksheet.Cell(x + 1, y + 1).Value = messageText;
                                 y++;
@@ -1071,10 +1088,10 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime)
         {
             var currentUser = await _userService.GetCurrentUserAsync();
-            var fullName = currentUser.FirstName + " " + currentUser.LastName;
+            var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
             var core = await _coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
-            var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x => x.Name == fullName && x.WorkflowState != Constants.WorkflowStates.Removed);
+            var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", "") && x.WorkflowState != Constants.WorkflowStates.Removed);
 
             if (sdkSite == null)
             {
@@ -1216,7 +1233,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                     FlexHours = 0,
                     SumFlexStart = 0,
                     SumFlexEnd = 0,
-                    PaidOutFlex = 0,
+                    PaidOutFlex = "0",
                     Message = 0,
                     CommentWorker = "",
                     CommentOffice = "",
@@ -1247,7 +1264,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                 FlexHours = planRegistration.Flex,
                 SumFlexStart = planRegistration.SumFlexStart,
                 SumFlexEnd = planRegistration.SumFlexEnd,
-                PaidOutFlex = planRegistration.PaiedOutFlex,
+                PaidOutFlex = planRegistration.PaiedOutFlex.ToString(),
                 Message = planRegistration.MessageId,
                 CommentWorker = planRegistration.WorkerComment,
                 CommentOffice = planRegistration.CommentOffice,

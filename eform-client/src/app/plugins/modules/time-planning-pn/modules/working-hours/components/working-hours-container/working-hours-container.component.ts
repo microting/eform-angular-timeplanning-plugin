@@ -159,7 +159,11 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
     for (const formGroup of this.workingHoursFormArray.controls) {
       if (!isFirst) {
         const flexHours = formGroup.get('flexHours').value;
-        const paidOutFlex = formGroup.get('paidOutFlex').value;
+        let paidOutFlex = formGroup.get('paidOutFlex').value;
+        if (typeof paidOutFlex === 'string') {
+          paidOutFlex = paidOutFlex.replace(',', '.');
+          //formGroup.setValue({ paidOutFlex: paidOutFlex });
+        }
         if (initialize) {
           sumFlex = formGroup.get('sumFlex').value;
         } else {
