@@ -1018,7 +1018,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                     PlanText = planText.ToString(),
                                     PlanHours = string.IsNullOrEmpty(planHours.ToString())
                                         ? 0
-                                        : double.Parse(planHours.ToString()),
+                                        : double.Parse(planHours.ToString(), CultureInfo.InvariantCulture),
                                     SdkSitId = (int)site.MicrotingUid!,
                                     CreatedByUserId = _userService.UserId,
                                     UpdatedByUserId = _userService.UserId,
@@ -1054,7 +1054,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 planRegistration.PlanText = planText.ToString();
                                 planRegistration.PlanHours = string.IsNullOrEmpty(planHours.ToString())
                                     ? 0
-                                    : double.Parse(planHours.ToString());
+                                    : double.Parse(planHours.ToString(), CultureInfo.InvariantCulture);
                                 planRegistration.UpdatedByUserId = _userService.UserId;
 
                                 if (preTimePlanning != null)
