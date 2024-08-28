@@ -61,6 +61,10 @@ export class WorkingHoursUploadModalComponent implements OnInit {
 
   uploadTemplateZIP() {
     this.workingHoursFileUploader.queue[0].upload();
+    this.dialogRef.close(true);
+    this.toastrService.success(
+      this.translateService.instant('File has been uploaded successfully, processing file can take a while, depending on the number of records')
+    );
   }
 
   hideZipModal(result = false) {

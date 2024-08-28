@@ -946,24 +946,9 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
 
         public async Task<OperationResult> Import(IFormFile file)
         {
-
-            // file is a excel file and each sheet corresponds to a site in the SDK
-            // each row is a day and column E is the date
-            // column F is the plan text
-            // column G is the plan hours
-            // only import if the date is not in the past
-
             // get core
             var core = await _coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
-            // open file
-            // loop through sheets
-            // get site
-            // loop through rows
-            // get date
-            // get plan text
-            // get plan hours
-            // check if date is in the past
             using (var stream = new MemoryStream())
             {
                 await file.CopyToAsync(stream);
