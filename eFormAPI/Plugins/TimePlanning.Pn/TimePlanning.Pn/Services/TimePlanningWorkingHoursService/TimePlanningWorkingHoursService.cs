@@ -989,7 +989,22 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             }
 
                             var date = row.Cell(1).Value;
-                            var planHours = row.Cell(2).Value;
+                            var planHours = row.Cell(2).Value.ToString();
+                            double parsedPlanHours = 0;
+                            if (planHours.Contains(","))
+                            {
+                                Console.WriteLine("found comma");
+                                planHours = planHours.Replace(",", ".");
+                            }
+
+                            if (string.IsNullOrEmpty(planHours))
+                            {
+                                planHours = "0";
+                            }
+
+                            parsedPlanHours = double.Parse(planHours, NumberStyles.AllowDecimalPoint,
+                                NumberFormatInfo.InvariantInfo);
+
                             var planText = row.Cell(3).Value;
                             // if (date == null || planText == null || planHours == null)
                             // {
@@ -1016,9 +1031,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                                 {
                                     Date = dateValue,
                                     PlanText = planText.ToString(),
-                                    PlanHours = string.IsNullOrEmpty(planHours.ToString())
-                                        ? 0
-                                        : double.Parse(planHours.ToString(), CultureInfo.InvariantCulture),
+                                    PlanHours = parsedPlanHours,
                                     SdkSitId = (int)site.MicrotingUid!,
                                     CreatedByUserId = _userService.UserId,
                                     UpdatedByUserId = _userService.UserId,
@@ -1052,9 +1065,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             else
                             {
                                 planRegistration.PlanText = planText.ToString();
-                                planRegistration.PlanHours = string.IsNullOrEmpty(planHours.ToString())
-                                    ? 0
-                                    : double.Parse(planHours.ToString(), CultureInfo.InvariantCulture);
+                                planRegistration.PlanHours = parsedPlanHours;
                                 planRegistration.UpdatedByUserId = _userService.UserId;
 
                                 if (preTimePlanning != null)
