@@ -991,7 +991,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
                             var date = row.Cell(1).Value;
                             var planHours = row.Cell(2).Value.ToString();
                             double parsedPlanHours = 0;
-                            if (planHours.Contains(","))
+                            if (planHours.Contains(','))
                             {
                                 Console.WriteLine("found comma");
                                 planHours = planHours.Replace(",", ".");
