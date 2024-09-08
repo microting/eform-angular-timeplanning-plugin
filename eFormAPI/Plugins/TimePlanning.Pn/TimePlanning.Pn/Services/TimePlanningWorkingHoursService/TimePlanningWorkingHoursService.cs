@@ -28,6 +28,7 @@ using Microsoft.AspNetCore.Http;
 using TimePlanning.Pn.Resources;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using Microting.eForm.Infrastructure.Data.Entities;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
 
@@ -1184,12 +1185,10 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             DataType = new EnumValue<CellValues>(dataType)
         };
 
-    public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(
-        TimePlanningWorkingHoursRequestModel model)
+    public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursRequestModel model)
     {
         try
         {
-            // get core
             var core = await _coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
             var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
@@ -1197,30 +1196,35 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
             var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
 
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
-            var ci = new CultureInfo(language.LanguageCode);
-
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo(language.LanguageCode);
+            var culture = new CultureInfo(language.LanguageCode);
             Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
-            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd}_{DateTime.UtcNow:hhmmss}";
+
+            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
-            // Create a SpreadsheetDocument
+            // Create a spreadsheet document by OpenXml
             using (var spreadsheetDocument =
                    SpreadsheetDocument.Create(resultDocument, SpreadsheetDocumentType.Workbook))
             {
-                // Add a WorkbookPart
-                var workbookPart = spreadsheetDocument.AddWorkbookPart();
+                WorkbookPart workbookPart = spreadsheetDocument.AddWorkbookPart();
                 workbookPart.Workbook = new Workbook();
 
-                // Add a WorksheetPart
-                var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-                worksheetPart.Worksheet = new Worksheet(new SheetData());
+                // Add a worksheet
+                WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+
+                // Stylesheet with bold font and date format
+                var stylesPart = workbookPart.AddNewPart<WorkbookStylesPart>();
+                stylesPart.Stylesheet = CreateStylesheet();
+                stylesPart.Stylesheet.Save();
+
+                var sheetData = new SheetData();
+                worksheetPart.Worksheet = new Worksheet(sheetData);
 
                 // Add Sheets to the Workbook
-                var sheets = spreadsheetDocument.WorkbookPart.Workbook.AppendChild(new Sheets());
+                Sheets sheets = spreadsheetDocument.WorkbookPart.Workbook.AppendChild(new Sheets());
 
-                // Append a new worksheet and associate it with the workbook
-                var sheet = new Sheet
+                Sheet sheet = new Sheet()
                 {
                     Id = spreadsheetDocument.WorkbookPart.GetIdOfPart(worksheetPart),
                     SheetId = 1,
@@ -1228,59 +1232,301 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 };
                 sheets.Append(sheet);
 
-                var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
-
-                // Add headers
+                // Add header row
                 var headerRow = new Row();
-                headerRow.Append(
-                    ConstructCell(_localizationService.GetString(Translations.Employee_no), CellValues.String),
-                    ConstructCell(_localizationService.GetString(Translations.Worker), CellValues.String),
-                    ConstructCell(_localizationService.GetString(Translations.DayOfWeek), CellValues.String),
-                    ConstructCell(_localizationService.GetString(Translations.Date), CellValues.String),
-                    ConstructCell(_localizationService.GetString(Translations.PlanText), CellValues.String),
-                    ConstructCell(_localizationService.GetString(Translations.PlanHours), CellValues.String)
-                    // Add more as needed
-                );
-                sheetData.Append(headerRow);
+                AddHeaderCells(headerRow);
+                sheetData.AppendChild(headerRow);
 
-                // Add data rows
+                // Fetch data
                 var content = await Index(model);
-                if (content.Success)
+                if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
+
+                var timePlannings = content.Model;
+                var plr = new PlanRegistration();
+
+                // Fill data
+                int rowIndex = 2;
+                foreach (var planning in timePlannings)
                 {
-                    var rows = content.Model;
-                    var rowIndex = 1;
-                    foreach (var timePlanningWorkingHoursModel in rows)
-                    {
-                        rowIndex++;
-                        var row = new Row();
-                        row.Append(
-                            ConstructCell(worker.EmployeeNo, CellValues.String),
-                            ConstructCell(site.Name, CellValues.String),
-                            ConstructCell(timePlanningWorkingHoursModel.Date.ToString("dddd", ci), CellValues.String),
-                            ConstructCell(timePlanningWorkingHoursModel.Date.ToString("yyyy-MM-dd", ci),
-                                CellValues.String),
-                            ConstructCell(timePlanningWorkingHoursModel.PlanText, CellValues.String),
-                            ConstructCell(timePlanningWorkingHoursModel.PlanHours.ToString(), CellValues.Number)
-                            // Add more as needed
-                        );
-                        sheetData.Append(row);
-                    }
+                    var dataRow = new Row() { RowIndex = (uint)rowIndex };
+                    FillDataRow(dataRow, worker, site, culture, planning, plr, language);
+                    sheetData.AppendChild(dataRow);
+                    rowIndex++;
                 }
+
+                // Add table definition
+                ApplyTableFormatting(worksheetPart, sheetData, rowIndex - 1);
 
                 workbookPart.Workbook.Save();
             }
 
-            Stream result = File.Open(resultDocument, FileMode.Open);
-            return new OperationDataResult<Stream>(true, result);
+            // Return the Excel file as a Stream
+            return new OperationDataResult<Stream>(true, File.Open(resultDocument, FileMode.Open));
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Console.WriteLine(e);
-            _logger.LogError(e.Message);
-            return new OperationDataResult<Stream>(
-                false,
+            _logger.LogError(ex.Message);
+            return new OperationDataResult<Stream>(false,
                 _localizationService.GetString("ErrorWhileCreatingExcelFile"));
         }
+    }
+
+    private void AddHeaderCells(Row headerRow)
+    {
+        var headers = new[]
+        {
+            Translations.Employee_no,
+            Translations.Worker,
+            Translations.DayOfWeek,
+            Translations.Date,
+            Translations.PlanText,
+            Translations.PlanHours,
+            Translations.Shift_1__start,
+            Translations.Shift_1__end,
+            Translations.Shift_1__pause,
+            Translations.Shift_2__start,
+            Translations.Shift_2__end,
+            Translations.Shift_2__pause,
+            Translations.NettoHours,
+            Translations.Flex,
+            Translations.SumFlexStart,
+            Translations.PaidOutFlex,
+            Translations.Message,
+            Translations.Comments,
+            Translations.Comment_office
+        };
+
+        foreach (var header in headers)
+        {
+            var cell = new Cell()
+            {
+                CellValue = new CellValue(_localizationService.GetString(header)),
+                DataType = CellValues.String,
+                StyleIndex = 1 // Bold header style
+            };
+            headerRow.Append(cell);
+        }
+    }
+
+// Table formatting function
+    private void ApplyTableFormatting(WorksheetPart worksheetPart, SheetData sheetData, int totalRows)
+    {
+        // Define the range of the table (A1 to last column and row)
+        string tableRange = $"A1:T{totalRows}"; // Adjust "T" depending on the number of columns
+
+        // Add a TableDefinitionPart to the worksheet part
+        TableDefinitionPart tableDefinitionPart = worksheetPart.AddNewPart<TableDefinitionPart>();
+
+        Table table = new Table
+        {
+            Id = 1,
+            Name = "DataTable",
+            DisplayName = "DataTable",
+            Reference = tableRange,
+            TotalsRowShown = false,
+            HeaderRowCount = 1,
+            // Define AutoFilter
+            AutoFilter = new AutoFilter() { Reference = tableRange } // Header row
+        };
+
+        // Define table columns (you need to adjust the number of columns here based on your actual table)
+        TableColumns
+            tableColumns = new TableColumns() { Count = 19 }; // Update this count to match the number of columns
+        tableColumns.Append(new TableColumn() { Id = 1, Name = "Employee No" });
+        tableColumns.Append(new TableColumn() { Id = 2, Name = "Worker" });
+        tableColumns.Append(new TableColumn() { Id = 3, Name = "DayOfWeek" });
+        tableColumns.Append(new TableColumn() { Id = 4, Name = "Date" });
+        tableColumns.Append(new TableColumn() { Id = 5, Name = "PlanText" });
+        tableColumns.Append(new TableColumn() { Id = 6, Name = "PlanHours" });
+        tableColumns.Append(new TableColumn() { Id = 7, Name = "Shift 1 Start" });
+        tableColumns.Append(new TableColumn() { Id = 8, Name = "Shift 1 End" });
+        tableColumns.Append(new TableColumn() { Id = 9, Name = "Shift 1 Pause" });
+        tableColumns.Append(new TableColumn() { Id = 10, Name = "Shift 2 Start" });
+        tableColumns.Append(new TableColumn() { Id = 11, Name = "Shift 2 End" });
+        tableColumns.Append(new TableColumn() { Id = 12, Name = "Shift 2 Pause" });
+        tableColumns.Append(new TableColumn() { Id = 13, Name = "NettoHours" });
+        tableColumns.Append(new TableColumn() { Id = 14, Name = "Flex" });
+        tableColumns.Append(new TableColumn() { Id = 15, Name = "SumFlexStart" });
+        tableColumns.Append(new TableColumn() { Id = 16, Name = "PaidOutFlex" });
+        tableColumns.Append(new TableColumn() { Id = 17, Name = "Message" });
+        tableColumns.Append(new TableColumn() { Id = 18, Name = "Comments" });
+        tableColumns.Append(new TableColumn() { Id = 19, Name = "Comment Office" });
+        table.Append(tableColumns);
+
+        // Define the TableStyle
+        TableStyleInfo tableStyle = new TableStyleInfo()
+        {
+            Name = "TableStyleMedium9", // Predefined table style in Excel
+            ShowFirstColumn = false,
+            ShowLastColumn = false,
+            ShowRowStripes = true, // Alternate row shading
+            ShowColumnStripes = false // No column shading
+        };
+        table.Append(tableStyle);
+
+        tableDefinitionPart.Table = table;
+        table.Save();
+
+        // Reference the table in the worksheet
+        worksheetPart.Worksheet.InsertBefore(
+            new TableParts(new TablePart() { Id = worksheetPart.GetIdOfPart(tableDefinitionPart) }),
+            worksheetPart.Worksheet.Elements<SheetData>().First());
+
+        worksheetPart.Worksheet.Save();
+    }
+
+
+
+// Date formatting function
+// private Cell CreateDateCell(DateTime dateValue)
+// {
+//     return new Cell()
+//     {
+//         CellValue = new CellValue(dateValue.ToOADate().ToString(CultureInfo.InvariantCulture)), // Excel stores dates as OLE Automation date values
+//         DataType = CellValues.Number,
+//         StyleIndex = 3 // Assuming style index 3 refers to date formatting
+//     };
+// }
+
+
+    private void FillDataRow(Row dataRow, Worker worker, Site site, CultureInfo culture,
+        TimePlanningWorkingHoursModel planning, PlanRegistration plr, Language language)
+    {
+        dataRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
+        dataRow.Append(CreateCell(site.Name));
+        dataRow.Append(CreateCell(planning.Date.ToString("dddd", culture)));
+        dataRow.Append(CreateDateCell(planning.Date));
+        dataRow.Append(CreateCell(planning.PlanText));
+        dataRow.Append(CreateCell(planning.PlanHours.ToString()));
+        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start)));
+        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Stop)));
+        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Pause)));
+        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start)));
+        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop)));
+        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Pause)));
+        dataRow.Append(CreateNumericCell(planning.NettoHours));
+        dataRow.Append(CreateNumericCell(planning.FlexHours));
+        dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
+        dataRow.Append(CreateNumericCell(string.IsNullOrEmpty(planning.PaidOutFlex)
+            ? 0
+            : double.Parse(planning.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)));
+        dataRow.Append(CreateCell(GetMessageText(planning.Message, language)));
+        dataRow.Append(CreateCell(planning.CommentWorker?.Replace("<br>", "\n")));
+        dataRow.Append(CreateCell(planning.CommentOffice?.Replace("<br>", "\n")));
+    }
+
+    private Stylesheet CreateStylesheet()
+    {
+        return new Stylesheet(
+            new Fonts(
+                new Font( // Default font
+                    new FontSize() { Val = 11 }
+                ),
+                new Font( // Bold font
+                    new Bold(),
+                    new FontSize() { Val = 11 }
+                )
+            ),
+            new Fills(
+                new Fill(new PatternFill() { PatternType = PatternValues.None }),
+                new Fill(new PatternFill() { PatternType = PatternValues.Gray125 })
+            ),
+            new Borders(
+                new Border() // Default border
+            ),
+            new CellFormats(
+                new CellFormat(), // Default cell format
+                new CellFormat { FontId = 1, ApplyFont = true }, // Bold cell format
+                new CellFormat { NumberFormatId = 14, ApplyNumberFormat = true }, // Date format
+                new CellFormat
+                    { NumberFormatId = 22, ApplyNumberFormat = true } // Date-time format (dd.MM.yyyy HH:mm:ss)
+            ),
+            new NumberingFormats( // Custom number format for date
+                new NumberingFormat()
+                {
+                    NumberFormatId = 164, // Number format IDs between 164 and 255 are custom
+                    FormatCode = "dd/MM/yyyy"
+                }
+            )
+        );
+    }
+
+    private Cell CreateBoldCell(string value)
+    {
+        return new Cell()
+        {
+            CellValue = new CellValue(value),
+            DataType = CellValues.String,
+            StyleIndex = 1 // This references the bold cell format
+        };
+    }
+
+    private Cell CreateCell(string value)
+    {
+        return new Cell()
+        {
+            CellValue = new CellValue(value),
+            DataType = CellValues.String // Explicitly setting the data type to string
+        };
+    }
+
+    private Cell CreateCell(string value, CellValues dataType)
+    {
+        return new Cell()
+        {
+            CellValue = new CellValue(value),
+            DataType = dataType
+        };
+    }
+
+    private Cell CreateNumericCell(double value)
+    {
+        return new Cell()
+        {
+            CellValue = new CellValue(value.ToString(CultureInfo.InvariantCulture)),
+            DataType = CellValues.Number
+        };
+    }
+
+    private Cell CreateBooleanCell(bool value)
+    {
+        return new Cell()
+        {
+            CellValue = new CellValue(value ? "1" : "0"),
+            DataType = CellValues.Boolean
+        };
+    }
+
+    private Cell CreateDateCell(DateTime dateValue)
+    {
+        return new Cell()
+        {
+            CellValue = new CellValue(dateValue.ToOADate()
+                .ToString(CultureInfo.InvariantCulture)), // Excel stores dates as OLE Automation date values
+            DataType = CellValues.Number, // Excel treats dates as numbers
+            StyleIndex = 2 // Assuming StyleIndex 2 corresponds to the date format in the stylesheet
+        };
+    }
+
+
+    private string GetShiftTime(PlanRegistration plr, int? shift)
+    {
+        return shift > 0 ? plr.Options[(int)shift - 1] : "00:00";
+    }
+
+    private string GetMessageText(int? messageId, Language language)
+    {
+        if (messageId == null) return string.Empty;
+
+        var message = _dbContext.Messages.SingleOrDefault(x => x.Id == messageId);
+        return message == null
+            ? string.Empty
+            : language.LanguageCode switch
+            {
+                "da" => message.DaName,
+                "de" => message.DeName,
+                _ => message.EnName
+            };
     }
 
     public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(
@@ -1293,85 +1539,61 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 .Select(x => x.SiteId)
                 .ToListAsync();
 
-            // Get core
             var core = await _coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
-
             Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
-            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd}_{DateTime.UtcNow:hhmmss}";
+            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
             using (var spreadsheetDocument =
                    SpreadsheetDocument.Create(resultDocument, SpreadsheetDocumentType.Workbook))
             {
-                var workbookPart = spreadsheetDocument.AddWorkbookPart();
+                WorkbookPart workbookPart = spreadsheetDocument.AddWorkbookPart();
                 workbookPart.Workbook = new Workbook();
-                var sheets = spreadsheetDocument.WorkbookPart.Workbook.AppendChild(new Sheets());
 
-                var totalWorksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-                totalWorksheetPart.Worksheet = new Worksheet(new SheetData());
-                var totalSheetData = totalWorksheetPart.Worksheet.GetFirstChild<SheetData>();
-                sheets.Append(new Sheet
-                {
-                    Id = workbookPart.GetIdOfPart(totalWorksheetPart),
-                    SheetId = 1,
-                    Name = "Total"
-                });
+                // Add Sheets
+                Sheets sheets = workbookPart.Workbook.AppendChild(new Sheets());
 
-                // Add headers to the "Total" sheet
+                // Create Total sheet
+                WorksheetPart totalSheetPart = workbookPart.AddNewPart<WorksheetPart>();
+                totalSheetPart.Worksheet = new Worksheet(new SheetData());
+                Sheet totalSheet = new Sheet()
+                    { Id = workbookPart.GetIdOfPart(totalSheetPart), SheetId = 1, Name = "Total" };
+                sheets.Append(totalSheet);
+                var totalSheetData = totalSheetPart.Worksheet.GetFirstChild<SheetData>();
                 var totalHeaderRow = new Row();
-                totalHeaderRow.Append(
-                    ConstructCell(_localizationService.GetString(Translations.Employee_no), CellValues.String),
-                    ConstructCell(_localizationService.GetString(Translations.Worker), CellValues.String),
-                    ConstructCell(_localizationService.GetString(Translations.PlanHours), CellValues.Number),
-                    ConstructCell(_localizationService.GetString(Translations.NettoHours), CellValues.Number),
-                    ConstructCell(_localizationService.GetString(Translations.SumFlexStart), CellValues.Number)
-                );
-                totalSheetData.Append(totalHeaderRow);
+                AddTotalHeaderCells(totalHeaderRow);
+                totalSheetData.AppendChild(totalHeaderRow);
 
-                var rowIndex = 1;
+                // Fill each site’s worksheet
+                var rowCounter = 2;
                 foreach (var siteId in siteIds)
                 {
                     var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
-                    if (site == null || site.WorkflowState == Constants.WorkflowStates.Removed)
-                    {
-                        continue;
-                    }
+                    if (site == null || site.WorkflowState == Constants.WorkflowStates.Removed) continue;
 
-                    rowIndex++;
                     var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
                     var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
-
                     var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
-                    Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language.LanguageCode);
-                    var ci = new CultureInfo(language.LanguageCode);
+                    Thread.CurrentThread.CurrentUICulture = new CultureInfo(language.LanguageCode);
 
+                    // Add new sheet for the site
                     var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
                     worksheetPart.Worksheet = new Worksheet(new SheetData());
-                    var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
-
-                    var sheet = new Sheet
+                    var sheet = new Sheet()
                     {
-                        Id = workbookPart.GetIdOfPart(worksheetPart),
-                        SheetId = (uint)(rowIndex + 1),
+                        Id = workbookPart.GetIdOfPart(worksheetPart), SheetId = (uint)(sheets.Count() + 1),
                         Name = site.Name
                     };
                     sheets.Append(sheet);
+                    var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
 
-                    // Add headers to site-specific sheet
-                    var siteHeaderRow = new Row();
-                    siteHeaderRow.Append(
-                        ConstructCell(_localizationService.GetString(Translations.Employee_no), CellValues.String),
-                        ConstructCell(_localizationService.GetString(Translations.Worker), CellValues.String),
-                        ConstructCell(_localizationService.GetString(Translations.DayOfWeek), CellValues.String),
-                        ConstructCell(_localizationService.GetString(Translations.Date), CellValues.String),
-                        ConstructCell(_localizationService.GetString(Translations.PlanText), CellValues.String),
-                        ConstructCell(_localizationService.GetString(Translations.PlanHours), CellValues.Number)
-                        // Add more as needed
-                    );
-                    sheetData.Append(siteHeaderRow);
+                    // Add headers to the sheet
+                    var headerRow = new Row();
+                    AddHeaderCells(headerRow);
+                    sheetData.AppendChild(headerRow);
 
-                    // Add content rows
+                    // Fetch the planning data for the site
                     var content = await Index(new TimePlanningWorkingHoursRequestModel
                     {
                         DateFrom = model.DateFrom,
@@ -1379,45 +1601,64 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                         SiteId = siteId
                     });
 
-                    if (content.Success)
+                    if (!content.Success) continue;
+
+                    // Fill the data for the site sheet
+                    var plr = new PlanRegistration();
+                    var rowIndex = 2;
+                    foreach (var planning in content.Model)
                     {
-                        var rows = content.Model;
-                        foreach (var timePlanningWorkingHoursModel in rows)
-                        {
-                            var row = new Row();
-                            row.Append(
-                                ConstructCell(worker.EmployeeNo, CellValues.String),
-                                ConstructCell(site.Name, CellValues.String),
-                                ConstructCell(timePlanningWorkingHoursModel.Date.ToString("dddd", ci),
-                                    CellValues.String),
-                                ConstructCell(timePlanningWorkingHoursModel.Date.ToString("yyyy-MM-dd", ci),
-                                    CellValues.String),
-                                ConstructCell(timePlanningWorkingHoursModel.PlanText, CellValues.String),
-                                ConstructCell(timePlanningWorkingHoursModel.PlanHours.ToString(), CellValues.Number)
-                                // Add more as needed
-                            );
-                            sheetData.Append(row);
-                        }
+                        var dataRow = new Row() { RowIndex = (uint)rowIndex };
+                        FillDataRow(dataRow, worker, site, new CultureInfo(language.LanguageCode), planning, plr,
+                            language);
+                        sheetData.AppendChild(dataRow);
+                        rowIndex++;
                     }
 
-                    worksheetPart.Worksheet.Save();
+                    // Fill total sheet
+                    var totalRow = new Row() { RowIndex = (uint)rowCounter };
+                    totalRow.Append(CreateCell(worker.EmployeeNo.ToString()));
+                    totalRow.Append(CreateCell(site.Name));
+                    totalRow.Append(CreateCell(content.Model.Sum(x => x.PlanHours).ToString()));
+                    totalRow.Append(CreateCell(content.Model.Sum(x => x.NettoHours).ToString()));
+                    totalRow.Append(CreateCell(content.Model.Last().SumFlexEnd.ToString()));
+                    totalSheetData.AppendChild(totalRow);
+                    rowCounter++;
                 }
 
                 workbookPart.Workbook.Save();
             }
 
-            Stream result = File.Open(resultDocument, FileMode.Open);
-            return new OperationDataResult<Stream>(true, result);
+            // Return the Excel file as a Stream
+            return new OperationDataResult<Stream>(true, File.Open(resultDocument, FileMode.Open));
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Console.WriteLine(e);
-            _logger.LogError(e.Message);
-            return new OperationDataResult<Stream>(
-                false,
+            _logger.LogError(ex.Message);
+            return new OperationDataResult<Stream>(false,
                 _localizationService.GetString("ErrorWhileCreatingExcelFile"));
         }
     }
+
+    private void AddTotalHeaderCells(Row headerRow)
+    {
+        var headers = new[]
+        {
+            Translations.Employee_no,
+            Translations.Worker,
+            Translations.PlanHours,
+            Translations.NettoHours,
+            Translations.SumFlexStart
+        };
+
+        foreach (var header in headers)
+        {
+            var cell = new Cell()
+                { CellValue = new CellValue(_localizationService.GetString(header)), DataType = CellValues.String };
+            headerRow.Append(cell);
+        }
+    }
+
 
     public async Task<OperationResult> Import(IFormFile file)
     {
