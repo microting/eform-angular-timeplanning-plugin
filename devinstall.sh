@@ -26,3 +26,4 @@ cp -av Documents/workspace/microting/eform-angular-timeplanning-plugin/eform-cli
 cp -av Documents/workspace/microting/eform-angular-timeplanning-plugin/eform-client/e2e/Page\ objects/TimePlanning Documents/workspace/microting/eform-angular-frontend/eform-client/e2e/Page\ objects/TimePlanning
 cp -av Documents/workspace/microting/eform-angular-timeplanning-plugin/eform-client/wdio-headless-plugin-step2.conf.ts Documents/workspace/microting/eform-angular-frontend/eform-client/wdio-headless-plugin-step2a.conf.ts
 cp -av Documents/workspace/microting/eform-angular-timeplanning-plugin/eform-client/cypress/e2e/plugins/time-planning-pn Documents/workspace/microting/eform-angular-frontend/eform-client/cypress/e2e/plugins/time-planning-pn
+cp -av Documents/workspace/microting/eform-angular-timeplanning-plugin/eform-client/cypress/fixtures Documents/workspace/microting/eform-angular-frontend/eform-client/cypress
