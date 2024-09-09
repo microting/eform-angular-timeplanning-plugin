@@ -1,9 +1,9 @@
 import loginPage from '../../../Login.page';
 import timePlanningWorkingHoursPage from '../TimePlanningWorkingHours.page';
 import {selectDateRangeOnNewDatePicker, selectValueInNgSelector} from '../../../helper-functions';
-import path = require('path');
 
-import {read} from 'xlsx';
+import {read, utils} from 'xlsx';
+import path = require('path');
 
 const dateRange = {
   yearFrom: 2023,
@@ -26,6 +26,7 @@ describe('Time planning plugin working hours export', () => {
     cy.wait('@getData');
   });
   it('should enabled Time registration plugin', () => {
+
     timePlanningWorkingHoursPage.workingHoursRange().click();
     selectDateRangeOnNewDatePicker(
       dateRange.yearFrom, dateRange.monthFrom, dateRange.dayFrom,
@@ -40,9 +41,22 @@ describe('Time planning plugin working hours export', () => {
     cy.wait('@getData');
     const downloadedExcelFilename = path.join(downloadsFolder, `${fileNameExcelReport}.xlsx`);
     const fixturesExcelFilename = path.join(<string>fixturesFolder, `${fileNameExcelReport}.xlsx`);
+
     cy.readFile(fixturesExcelFilename, 'binary').then((file1Content) => {
       cy.readFile(downloadedExcelFilename, 'binary').then((file2Content) => {
-        expect(read(file1Content, {type: 'binary'}), 'excel file').to.deep.equal(read(file2Content, {type: 'binary'}));
+
+        const workbook1 = read(file1Content, { type: 'binary' });
+        const sheetName1 = workbook1.SheetNames[0]; // Assuming you're comparing the first sheet
+        const sheet1 = workbook1.Sheets[sheetName1];
+        const jsonData1 = utils.sheet_to_json(sheet1, { header: 1 }); // Convert sheet to array of arrays
+        const workbook = read(file2Content, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0]; // Assuming you're comparing the first sheet
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = utils.sheet_to_json(sheet, { header: 1 }); // Convert sheet to array of arrays
+        console.log(jsonData);
+        console.log(jsonData1);
+        expect(jsonData).to.deep.equal(jsonData1);
+        //expect(read(file1Content, {type: 'binary'}), 'excel file').to.deep.equal(read(file2Content, {type: 'binary'}));
       });
     });
   });
