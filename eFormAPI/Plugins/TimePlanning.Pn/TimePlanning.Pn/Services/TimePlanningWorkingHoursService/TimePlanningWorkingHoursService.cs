@@ -1758,13 +1758,13 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                         }
 
                         // Extract cell values
-                        var dateCell = row.Elements<Cell>().ElementAt(0); // First column
-                        var planHoursCell = row.Elements<Cell>().ElementAt(1); // Second column
-                        var planTextCell = row.Elements<Cell>().ElementAt(2); // Third column
+                        // var dateCell = row.Elements<Cell>().ElementAt(0); // First column
+                        // var planHoursCell = row.Elements<Cell>().ElementAt(1); // Second column
+                        // var planTextCell = row.Elements<Cell>().ElementAt(2); // Third column
 
-                        var date = GetCellValue(workbookPart, dateCell);
-                        var planHours = GetCellValue(workbookPart, planHoursCell);
-                        var planText = GetCellValue(workbookPart, planTextCell);
+                        var date = GetCellValue(workbookPart, row, 1);
+                        var planHours = GetCellValue(workbookPart, row, 2);
+                        var planText = GetCellValue(workbookPart, row, 3);
 
                         if (string.IsNullOrEmpty(planHours))
                         {
@@ -1781,6 +1781,10 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                             NumberFormatInfo.InvariantInfo);
 
                         // Parse date and validate
+                        if (!DateTime.TryParse(date, out _))
+                        {
+                            continue;
+                        }
                         var dateValue = DateTime.Parse(date);
                         if (dateValue < DateTime.Now.AddDays(-1))
                         {
@@ -1866,24 +1870,93 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         return new OperationResult(true, "Imported");
     }
 
-    private string GetCellValue(WorkbookPart workbookPart, Cell cell)
+private string GetCellValue(WorkbookPart workbookPart, Row row, int columnIndex)
+{
+    // Get the column letter for the given columnIndex (e.g., A, B, C)
+    var columnLetter = GetColumnLetter(columnIndex);
+
+    // Create the cell reference (e.g., A1, B1, C1)
+    var cellReference = columnLetter + row.RowIndex;
+
+    // Find the cell with the matching CellReference
+    var cell = row.Elements<Cell>().FirstOrDefault(c => c.CellReference.Value == cellReference);
+
+    if (cell == null || cell.CellValue == null)
     {
-        if (cell == null || cell.CellValue == null)
-        {
-            return string.Empty;
-        }
-
-        var value = cell.CellValue.InnerText;
-
-        // If the cell has a shared string index, look up the actual value from the shared string table
-        if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
-        {
-            return workbookPart.SharedStringTablePart.SharedStringTable
-                .Elements<SharedStringItem>()
-                .ElementAt(int.Parse(value)).InnerText;
-        }
-
-        return value;
+        return string.Empty; // Handle empty or missing cells
     }
+
+    // Check if the cell is using a Shared String Table
+    if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
+    {
+        var sharedStringTablePart = workbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
+        if (sharedStringTablePart != null)
+        {
+            var sharedStringTable = sharedStringTablePart.SharedStringTable;
+            return sharedStringTable.ElementAt(int.Parse(cell.CellValue.Text)).InnerText;
+        }
+    }
+
+    // Check if the cell has a StyleIndex (to determine if it's a date)
+    if (cell.StyleIndex != null)
+    {
+        var stylesPart = workbookPart.WorkbookStylesPart;
+        var cellFormat = stylesPart.Stylesheet.CellFormats.ElementAt((int)cell.StyleIndex.Value) as CellFormat;
+        var isDate = IsDateFormat(stylesPart, cellFormat);
+
+        // If it's a date format, interpret the numeric value as a date
+        if (isDate && double.TryParse(cell.CellValue.Text, out var oaDate))
+        {
+            var dateValue = DateTime.FromOADate(oaDate);
+            return dateValue.ToString("dd.MM.yyyy"); // Format as a date
+        }
+    }
+
+    // Handle other numbers or strings
+    return cell.CellValue.Text;
+}
+
+private bool IsDateFormat(WorkbookStylesPart stylesPart, CellFormat cellFormat)
+{
+    if (cellFormat == null || cellFormat.NumberFormatId == null)
+    {
+        return false;
+    }
+
+    // Check if the format ID is a known date format in Excel
+    var dateFormatIds = new HashSet<uint> { 14, 15, 16, 17, 22, 164 }; // Common Excel date format IDs
+
+    if (dateFormatIds.Contains(cellFormat.NumberFormatId.Value))
+    {
+        return true;
+    }
+
+    // Look for custom number formats defined in the workbook
+    var numberFormats = stylesPart.Stylesheet.NumberingFormats?.Elements<NumberingFormat>();
+    if (numberFormats != null)
+    {
+        var format = numberFormats.FirstOrDefault(nf => nf.NumberFormatId.Value == cellFormat.NumberFormatId.Value);
+        if (format != null && format.FormatCode != null)
+        {
+            // Check if the custom format code looks like a date format
+            var formatCode = format.FormatCode.Value.ToLower();
+            return formatCode.Contains("m") || formatCode.Contains("d") || formatCode.Contains("y");
+        }
+    }
+
+    return false;
+}
+
+private string GetColumnLetter(int columnIndex)
+{
+    string columnLetter = "";
+    while (columnIndex > 0)
+    {
+        int modulo = (columnIndex - 1) % 26;
+        columnLetter = Convert.ToChar(65 + modulo) + columnLetter;
+        columnIndex = (columnIndex - modulo) / 26;
+    }
+    return columnLetter;
+}
 
 }
