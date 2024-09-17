@@ -38,7 +38,7 @@ jobs:
       run: |-
         docker tag microtingas/time-planning-container:latest microtingas/time-planning-container:latest
     - run: docker save microtingas/time-planning-container:latest -o time-planning-container.tar
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: time-planning-container
         path: time-planning-container.tar
