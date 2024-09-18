@@ -22,12 +22,14 @@ SOFTWARE.
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading;
 using DocumentFormat.OpenXml;
 using Microsoft.AspNetCore.Http;
 using TimePlanning.Pn.Resources;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Validation;
 using Microting.eForm.Infrastructure.Data.Entities;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
@@ -1202,10 +1204,10 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
             // Create a spreadsheet document by OpenXml
-            using (var spreadsheetDocument =
+            using (var excel =
                    SpreadsheetDocument.Create(resultDocument, SpreadsheetDocumentType.Workbook))
             {
-                WorkbookPart workbookPart = spreadsheetDocument.AddWorkbookPart();
+                WorkbookPart workbookPart = excel.AddWorkbookPart();
                 workbookPart.Workbook = new Workbook();
 
                 // Add a worksheet
@@ -1220,11 +1222,11 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 worksheetPart.Worksheet = new Worksheet(sheetData);
 
                 // Add Sheets to the Workbook
-                Sheets sheets = spreadsheetDocument.WorkbookPart.Workbook.AppendChild(new Sheets());
+                Sheets sheets = workbookPart.Workbook.AppendChild(new Sheets());
 
                 Sheet sheet = new Sheet()
                 {
-                    Id = spreadsheetDocument.WorkbookPart.GetIdOfPart(worksheetPart),
+                    Id = workbookPart.GetIdOfPart(worksheetPart),
                     SheetId = 1,
                     Name = "Dashboard"
                 };
@@ -1253,10 +1255,13 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 }
 
                 // Add table definition
-                ApplyTableFormatting((uint)(sheets.Count() + 1), worksheetPart, sheetData, rowIndex - 1);
+                //ApplyTableFormatting((uint)(sheets.Count() + 1), worksheetPart, sheetData, rowIndex - 1);
 
                 workbookPart.Workbook.Save();
+                // validate the document
+
             }
+            ValidateExcel(resultDocument);
 
             // Return the Excel file as a Stream
             return new OperationDataResult<Stream>(true, File.Open(resultDocument, FileMode.Open));
@@ -1457,38 +1462,51 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
     private Stylesheet CreateStylesheet()
     {
         return new Stylesheet(
+            new NumberingFormats( // Custom number format for date
+                new NumberingFormat
+                {
+                    NumberFormatId = 164, // Custom NumberFormatId for date format
+                    FormatCode = "dd/MM/yyyy"
+                }
+            ),
             new Fonts(
                 new Font( // Default font
-                    new FontSize() { Val = 11 }
+                    new FontSize { Val = 11 },
+                    new Color { Rgb = new HexBinaryValue { Value = "FF000000" } }, // Black color
+                    new FontName { Val = "Calibri" }
                 ),
                 new Font( // Bold font
                     new Bold(),
-                    new FontSize() { Val = 11 }
+                    new FontSize { Val = 11 },
+                    new Color { Rgb = new HexBinaryValue { Value = "FF000000" } }, // Black color
+                    new FontName { Val = "Calibri" }
                 )
             ),
             new Fills(
-                new Fill(new PatternFill() { PatternType = PatternValues.None }),
-                new Fill(new PatternFill() { PatternType = PatternValues.Gray125 })
+                new Fill(new PatternFill { PatternType = PatternValues.None }), // Default fill
+                new Fill(new PatternFill { PatternType = PatternValues.Gray125 }) // Gray fill
             ),
             new Borders(
-                new Border() // Default border
+                new Border( // Default border
+                    new LeftBorder(),
+                    new RightBorder(),
+                    new TopBorder(),
+                    new BottomBorder(),
+                    new DiagonalBorder()
+                )
+            ),
+            new CellStyleFormats(
+                new CellFormat() // Default cell style format
             ),
             new CellFormats(
                 new CellFormat(), // Default cell format
-                new CellFormat { FontId = 1, ApplyFont = true }, // Bold cell format
-                new CellFormat { NumberFormatId = 14, ApplyNumberFormat = true }, // Date format
-                new CellFormat
-                    { NumberFormatId = 22, ApplyNumberFormat = true } // Date-time format (dd.MM.yyyy HH:mm:ss)
-            ),
-            new NumberingFormats( // Custom number format for date
-                new NumberingFormat()
-                {
-                    NumberFormatId = 164, // Number format IDs between 164 and 255 are custom
-                    FormatCode = "dd/MM/yyyy"
-                }
+                new CellFormat { FontId = 1, ApplyFont = true }, // Bold font cell format
+                new CellFormat { NumberFormatId = 164, ApplyNumberFormat = true }, // Date format
+                new CellFormat { NumberFormatId = 22, ApplyNumberFormat = true } // Date-time format (dd.MM.yyyy HH:mm:ss)
             )
         );
     }
+
 
     private Cell CreateBoldCell(string value)
     {
@@ -1568,6 +1586,34 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             };
     }
 
+    private void ValidateExcel(string fileName)
+    {
+        try
+        {
+            var validator = new OpenXmlValidator();
+            int count = 0;
+            StringBuilder sb = new StringBuilder();
+            var doc = SpreadsheetDocument.Open(fileName, true);
+            foreach (ValidationErrorInfo error in validator.Validate(doc))
+            {
+
+                count++;
+                sb.Append(("Error Count : " + count) + "\r\n");
+                sb.Append(("Description : " + error.Description) + "\r\n");
+                sb.Append(("Path: " + error.Path.XPath) + "\r\n");
+                sb.Append(("Part: " + error.Part.Uri) + "\r\n");
+                sb.Append("\r\n-------------------------------------------------\r\n");
+            }
+            sb.Append(("Total Errors in file: " + count));
+            doc.Dispose();
+            throw new Exception(sb.ToString());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+        }
+    }
+
     public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(
         TimePlanningWorkingHoursReportForAllWorkersRequestModel model)
     {
@@ -1584,10 +1630,10 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
-            using (var spreadsheetDocument =
+            using (var excel =
                    SpreadsheetDocument.Create(resultDocument, SpreadsheetDocumentType.Workbook))
             {
-                WorkbookPart workbookPart = spreadsheetDocument.AddWorkbookPart();
+                WorkbookPart workbookPart = excel.AddWorkbookPart();
                 workbookPart.Workbook = new Workbook();
 
                 // Add Sheets
@@ -1665,7 +1711,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                     }
 
                     // Add table formatting
-                    ApplyTableFormatting((uint)(sheets.Count() + 1), worksheetPart, sheetData, rowIndex - 1);
+                    //ApplyTableFormatting((uint)(sheets.Count() + 1), worksheetPart, sheetData, rowIndex - 1);
 
                     // Fill total sheet
                     var totalRow = new Row() { RowIndex = (uint)rowCounter };
@@ -1681,10 +1727,12 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 }
 
                 // Apply table formatting to the total sheet
-                ApplyTableFormattingTotalSheet((uint)700, totalSheetPart, totalSheetData, rowCounter - 1);
+                //ApplyTableFormattingTotalSheet((uint)700, totalSheetPart, totalSheetData, rowCounter - 1);
 
                 workbookPart.Workbook.Save();
             }
+
+            ValidateExcel(resultDocument);
 
             // Return the Excel file as a Stream
             return new OperationDataResult<Stream>(true, File.Open(resultDocument, FileMode.Open));
