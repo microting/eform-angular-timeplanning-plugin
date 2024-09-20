@@ -157,6 +157,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
     let sumFlex = 0;
     let isFirst = true;
     for (const formGroup of this.workingHoursFormArray.controls) {
+      const isLocked = formGroup.get('isLocked').value;
       if (!isFirst) {
         const flexHours = formGroup.get('flexHours').value;
         let paidOutFlex = formGroup.get('paidOutFlex').value;
@@ -176,9 +177,14 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
         }
       } else {
         isFirst = false;
-        const paidOutFlex = formGroup.get('paidOutFlex').value;
-        sumFlex = formGroup.get('sumFlex').value;
-        sumFlex = sumFlex  - (paidOutFlex ? paidOutFlex : 0);
+        if (isLocked !== true)
+        {
+          const paidOutFlex = formGroup.get('paidOutFlex').value;
+          sumFlex = formGroup.get('sumFlex').value;
+          sumFlex = sumFlex - (paidOutFlex ? paidOutFlex : 0);
+        } else {
+          sumFlex = formGroup.get('sumFlex').value;
+        }
       }
     }
     if (initialize) {
