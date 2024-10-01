@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
@@ -79,7 +80,7 @@ namespace TimePlanning.Pn.Infrastructure.Helpers
         }
 
         // Generates content of workbookPart1.
-        public static void GenerateWorkbookPart1Content(WorkbookPart workbookPart1, string sheetName)
+        public static void GenerateWorkbookPart1Content(WorkbookPart workbookPart1, List<KeyValuePair<string, string>> sheets)
         {
             Workbook workbook1 = new Workbook(){ MCAttributes = new MarkupCompatibilityAttributes(){ Ignorable = "x15 xr xr6 xr10 xr2" }  };
             workbook1.AddNamespaceDeclaration("r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
@@ -112,24 +113,25 @@ namespace TimePlanning.Pn.Infrastructure.Helpers
             bookViews1.Append(workbookView1);
 
             Sheets sheets1 = new Sheets();
-            Sheet sheet1 = new Sheet(){ Name = sheetName, SheetId = (UInt32Value)1U, Id = "rId1" };
+            UInt32Value sheetIncrement = 1;
+            var sheetId = 1U;
+            foreach (KeyValuePair<string,string> keyValuePair in sheets)
+            {
+                Sheet sheet1 = new Sheet(){ Name = keyValuePair.Key, SheetId = sheetId, Id = keyValuePair.Value };
+                sheets1.Append(sheet1);
+                sheetId += sheetIncrement;
+            }
+            // Sheet sheet1 = new Sheet(){ Name = sheetName, SheetId = (UInt32Value)1U, Id = sheetId };
 
-            sheets1.Append(sheet1);
-
-            DefinedNames definedNames1 = new DefinedNames();
-            DefinedName definedName1 = new DefinedName(){ Name = "_xlnm._FilterDatabase", LocalSheetId = (UInt32Value)0U, Hidden = true };
-            definedName1.Text = $"{sheetName}!$A$1:$S$3";
-
-            definedNames1.Append(definedName1);
-            CalculationProperties calculationProperties1 = new CalculationProperties(){ CalculationId = (UInt32Value)0U };
+            // sheets1.Append(sheet1);
+            //CalculationProperties calculationProperties1 = new CalculationProperties(){ CalculationId = (UInt32Value)0U };
 
             workbook1.Append(fileVersion1);
             workbook1.Append(workbookProperties1);
             workbook1.Append(alternateContent1);
             workbook1.Append(bookViews1);
             workbook1.Append(sheets1);
-            workbook1.Append(definedNames1);
-            workbook1.Append(calculationProperties1);
+            //workbook1.Append(calculationProperties1);
 
             workbookPart1.Workbook = workbook1;
         }

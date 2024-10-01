@@ -269,10 +269,6 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
 
     public async Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursUpdateCreateModel model)
     {
-        // var registrationDevices = await _dbContext.RegistrationDevices
-        //     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-        //     .ToListAsync().ConfigureAwait(false);
-
         try
         {
             var planRegistrations = await _dbContext.PlanRegistrations
@@ -1178,14 +1174,6 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         return new OperationResult(true);
     }
 
-    // Utility method for constructing OpenXml cells
-    private static Cell ConstructCell(string value, CellValues dataType) =>
-        new Cell
-        {
-            CellValue = new CellValue(value),
-            DataType = new EnumValue<CellValues>(dataType)
-        };
-
     public async Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursRequestModel model)
     {
         try
@@ -1204,14 +1192,11 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
             var filePath = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
-            using(SpreadsheetDocument document = SpreadsheetDocument.Create(filePath, SpreadsheetDocumentType.Workbook))
+            using (SpreadsheetDocument
+                   document = SpreadsheetDocument.Create(filePath, SpreadsheetDocumentType.Workbook))
             {
-                //GeneratedClass.CreatePackage(resultDocument);
-                ExtendedFilePropertiesPart extendedFilePropertiesPart1 = document.AddNewPart<ExtendedFilePropertiesPart>("rId3");
-                OpenXMLHelper.GenerateExtendedFilePropertiesPart1Content(extendedFilePropertiesPart1, "Dashboard");
-
                 WorkbookPart workbookPart1 = document.AddWorkbookPart();
-                OpenXMLHelper.GenerateWorkbookPart1Content(workbookPart1, "Dashboard");
+                OpenXMLHelper.GenerateWorkbookPart1Content(workbookPart1, [new("Dashboard", "rId1")]);
 
                 WorkbookStylesPart workbookStylesPart1 = workbookPart1.AddNewPart<WorkbookStylesPart>("rId3");
                 OpenXMLHelper.GenerateWorkbookStylesPart1Content(workbookStylesPart1);
@@ -1250,66 +1235,80 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 }
                 //GeneratedClass.GenerateWorksheetPart1Content(worksheetPart1, headerStrings);
 
-                Worksheet worksheet1 = new Worksheet(){ MCAttributes = new MarkupCompatibilityAttributes(){ Ignorable = "x14ac xr xr2 xr3" }  };
-            worksheet1.AddNamespaceDeclaration("r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
-            worksheet1.AddNamespaceDeclaration("mc", "http://schemas.openxmlformats.org/markup-compatibility/2006");
-            worksheet1.AddNamespaceDeclaration("x14ac", "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac");
-            worksheet1.AddNamespaceDeclaration("xr", "http://schemas.microsoft.com/office/spreadsheetml/2014/revision");
-            worksheet1.AddNamespaceDeclaration("xr2", "http://schemas.microsoft.com/office/spreadsheetml/2015/revision2");
-            worksheet1.AddNamespaceDeclaration("xr3", "http://schemas.microsoft.com/office/spreadsheetml/2016/revision3");
-            worksheet1.SetAttribute(new OpenXmlAttribute("xr", "uid", "http://schemas.microsoft.com/office/spreadsheetml/2014/revision", "{00000000-0001-0000-0000-000000000000}"));
+                Worksheet worksheet1 = new Worksheet()
+                    { MCAttributes = new MarkupCompatibilityAttributes() { Ignorable = "x14ac xr xr2 xr3" } };
+                worksheet1.AddNamespaceDeclaration("r",
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+                worksheet1.AddNamespaceDeclaration("mc", "http://schemas.openxmlformats.org/markup-compatibility/2006");
+                worksheet1.AddNamespaceDeclaration("x14ac",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac");
+                worksheet1.AddNamespaceDeclaration("xr",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2014/revision");
+                worksheet1.AddNamespaceDeclaration("xr2",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2015/revision2");
+                worksheet1.AddNamespaceDeclaration("xr3",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2016/revision3");
+                worksheet1.SetAttribute(new OpenXmlAttribute("xr", "uid",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
+                    "{00000000-0001-0000-0000-000000000000}"));
 
-            SheetFormatProperties sheetFormatProperties1 = new SheetFormatProperties(){ DefaultRowHeight = 15D, DyDescent = 0.25D };
+                SheetFormatProperties sheetFormatProperties1 = new SheetFormatProperties()
+                    { DefaultRowHeight = 15D, DyDescent = 0.25D };
 
-            SheetData sheetData1 = new SheetData();
+                SheetData sheetData1 = new SheetData();
 
-            Row row1 = new Row(){ RowIndex = (UInt32Value)1U, Spans = new ListValue<StringValue>() { InnerText = "1:19" }, DyDescent = 0.25D };
-
-            foreach (var header in headerStrings)
-            {
-                var cell = new Cell()
+                Row row1 = new Row()
                 {
-                    CellValue = new CellValue(header),
-                    DataType = CellValues.String,
-                    StyleIndex = (UInt32Value)1U
+                    RowIndex = (UInt32Value)1U, Spans = new ListValue<StringValue>() { InnerText = "1:19" },
+                    DyDescent = 0.25D
                 };
-                row1.Append(cell);
+
+                foreach (var header in headerStrings)
+                {
+                    var cell = new Cell()
+                    {
+                        CellValue = new CellValue(header),
+                        DataType = CellValues.String,
+                        StyleIndex = (UInt32Value)1U
+                    };
+                    row1.Append(cell);
+                }
+
+                sheetData1.Append(row1);
+
+                // Fetch data
+                var content = await Index(model);
+                if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
+
+                var timePlannings = content.Model;
+                var plr = new PlanRegistration();
+
+                // Fill data
+                int rowIndex = 2;
+                foreach (var planning in timePlannings)
+                {
+                    var dataRow = new Row() { RowIndex = (uint)rowIndex };
+                    FillDataRow(dataRow, worker, site, culture, planning, plr, language);
+                    sheetData1.Append(dataRow);
+                    rowIndex++;
+                }
+
+                var columnLetter = GetColumnLetter(headers.Length);
+                AutoFilter autoFilter1 = new AutoFilter() { Reference = $"A1:{columnLetter}{rowIndex}" };
+                autoFilter1.SetAttribute(new OpenXmlAttribute("xr", "uid",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
+                    "{00000000-0001-0000-0000-000000000000}"));
+                PageMargins pageMargins1 = new PageMargins()
+                    { Left = 0.7D, Right = 0.7D, Top = 0.75D, Bottom = 0.75D, Header = 0.3D, Footer = 0.3D };
+
+                worksheet1.Append(sheetFormatProperties1);
+                worksheet1.Append(sheetData1);
+                worksheet1.Append(autoFilter1);
+                worksheet1.Append(pageMargins1);
+
+                worksheetPart1.Worksheet = worksheet1;
+
             }
-
-            sheetData1.Append(row1);
-
-            // Fetch data
-            var content = await Index(model);
-            if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
-
-            var timePlannings = content.Model;
-            var plr = new PlanRegistration();
-
-            // Fill data
-            int rowIndex = 2;
-            foreach (var planning in timePlannings)
-            {
-                var dataRow = new Row() { RowIndex = (uint)rowIndex };
-                FillDataRow(dataRow, worker, site, culture, planning, plr, language);
-                sheetData1.Append(dataRow);
-                rowIndex++;
-            }
-
-            var columnLetter = GetColumnLetter(headers.Length);
-            AutoFilter autoFilter1 = new AutoFilter(){ Reference = $"A1:{columnLetter}{rowIndex}" };
-            autoFilter1.SetAttribute(new OpenXmlAttribute("xr", "uid", "http://schemas.microsoft.com/office/spreadsheetml/2014/revision", "{00000000-0001-0000-0000-000000000000}"));
-            PageMargins pageMargins1 = new PageMargins(){ Left = 0.7D, Right = 0.7D, Top = 0.75D, Bottom = 0.75D, Header = 0.3D, Footer = 0.3D };
-
-            worksheet1.Append(sheetFormatProperties1);
-            worksheet1.Append(sheetData1);
-            worksheet1.Append(autoFilter1);
-            worksheet1.Append(pageMargins1);
-
-            worksheetPart1.Worksheet = worksheet1;
-
-            //GeneratedClass.SetPackageProperties(document);
-            }
-
 
             ValidateExcel(filePath);
 
@@ -1322,165 +1321,6 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             return new OperationDataResult<Stream>(false,
                 _localizationService.GetString("ErrorWhileCreatingExcelFile"));
         }
-    }
-
-    private void AddHeaderCells(Row headerRow)
-    {
-        var headers = new[]
-        {
-            Translations.Employee_no,
-            Translations.Worker,
-            Translations.DayOfWeek,
-            Translations.Date,
-            Translations.PlanText,
-            Translations.PlanHours,
-            Translations.Shift_1__start,
-            Translations.Shift_1__end,
-            Translations.Shift_1__pause,
-            Translations.Shift_2__start,
-            Translations.Shift_2__end,
-            Translations.Shift_2__pause,
-            Translations.NettoHours,
-            Translations.Flex,
-            Translations.SumFlexStart,
-            Translations.PaidOutFlex,
-            Translations.Message,
-            Translations.Comments,
-            Translations.Comment_office
-        };
-
-        foreach (var header in headers)
-        {
-            var cell = new Cell()
-            {
-                CellValue = new CellValue(_localizationService.GetString(header)),
-                DataType = CellValues.String,
-                StyleIndex = 1 // Bold header style
-            };
-            headerRow.Append(cell);
-        }
-    }
-
-// Table formatting function
-    private void ApplyTableFormatting(UInt32Value? id, WorksheetPart worksheetPart, SheetData sheetData, int totalRows)
-    {
-        // Define the range of the table (A1 to last column and row)
-        string tableRange = $"A1:S{totalRows}"; // Adjust "T" depending on the number of columns
-
-        // Add a TableDefinitionPart to the worksheet part
-        TableDefinitionPart tableDefinitionPart = worksheetPart.AddNewPart<TableDefinitionPart>();
-
-        Table table = new Table
-        {
-            Id = id,
-            Name = "DataTable",
-            DisplayName = "DataTable",
-            Reference = tableRange,
-            TotalsRowShown = false,
-            HeaderRowCount = 1,
-            // Define AutoFilter
-            AutoFilter = new AutoFilter() { Reference = tableRange } // Header row
-        };
-
-        // Define table columns (you need to adjust the number of columns here based on your actual table)
-        TableColumns
-            tableColumns = new TableColumns() { Count = 19 }; // Update this count to match the number of columns
-        tableColumns.Append(new TableColumn() { Id = 1, Name = "Employee No" });
-        tableColumns.Append(new TableColumn() { Id = 2, Name = "Worker" });
-        tableColumns.Append(new TableColumn() { Id = 3, Name = "DayOfWeek" });
-        tableColumns.Append(new TableColumn() { Id = 4, Name = "Date" });
-        tableColumns.Append(new TableColumn() { Id = 5, Name = "PlanText" });
-        tableColumns.Append(new TableColumn() { Id = 6, Name = "PlanHours" });
-        tableColumns.Append(new TableColumn() { Id = 7, Name = "Shift 1 Start" });
-        tableColumns.Append(new TableColumn() { Id = 8, Name = "Shift 1 End" });
-        tableColumns.Append(new TableColumn() { Id = 9, Name = "Shift 1 Pause" });
-        tableColumns.Append(new TableColumn() { Id = 10, Name = "Shift 2 Start" });
-        tableColumns.Append(new TableColumn() { Id = 11, Name = "Shift 2 End" });
-        tableColumns.Append(new TableColumn() { Id = 12, Name = "Shift 2 Pause" });
-        tableColumns.Append(new TableColumn() { Id = 13, Name = "NettoHours" });
-        tableColumns.Append(new TableColumn() { Id = 14, Name = "Flex" });
-        tableColumns.Append(new TableColumn() { Id = 15, Name = "SumFlexStart" });
-        tableColumns.Append(new TableColumn() { Id = 16, Name = "PaidOutFlex" });
-        tableColumns.Append(new TableColumn() { Id = 17, Name = "Message" });
-        tableColumns.Append(new TableColumn() { Id = 18, Name = "Comments" });
-        tableColumns.Append(new TableColumn() { Id = 19, Name = "Comment Office" });
-        table.Append(tableColumns);
-
-        // Define the TableStyle
-        TableStyleInfo tableStyle = new TableStyleInfo()
-        {
-            Name = "TableStyleMedium9", // Predefined table style in Excel
-            ShowFirstColumn = false,
-            ShowLastColumn = false,
-            ShowRowStripes = true, // Alternate row shading
-            ShowColumnStripes = false // No column shading
-        };
-        table.Append(tableStyle);
-
-        tableDefinitionPart.Table = table;
-        table.Save();
-
-        // Reference the table in the worksheet
-        worksheetPart.Worksheet.InsertBefore(
-            new TableParts(new TablePart() { Id = worksheetPart.GetIdOfPart(tableDefinitionPart) }),
-            worksheetPart.Worksheet.Elements<SheetData>().First());
-
-        worksheetPart.Worksheet.Save();
-    }
-
-
-    private void ApplyTableFormattingTotalSheet(UInt32Value? id, WorksheetPart worksheetPart, SheetData sheetData,
-        int totalRows)
-    {
-        // Define the range of the table (A1 to last column and row)
-        string tableRange = $"A1:E{totalRows}"; // Adjust "T" depending on the number of columns
-
-        // Add a TableDefinitionPart to the worksheet part
-        TableDefinitionPart tableDefinitionPart = worksheetPart.AddNewPart<TableDefinitionPart>();
-
-        Table table = new Table
-        {
-            Id = id,
-            Name = "DataTable",
-            DisplayName = "DataTable",
-            Reference = tableRange,
-            TotalsRowShown = false,
-            HeaderRowCount = 1,
-            // Define AutoFilter
-            AutoFilter = new AutoFilter() { Reference = tableRange } // Header row
-        };
-
-        // Define table columns (you need to adjust the number of columns here based on your actual table)
-        TableColumns
-            tableColumns = new TableColumns() { Count = 6 }; // Update this count to match the number of columns
-        tableColumns.Append(new TableColumn() { Id = 1, Name = "Employee No" });
-        tableColumns.Append(new TableColumn() { Id = 2, Name = "Worker" });
-        tableColumns.Append(new TableColumn() { Id = 3, Name = "PlanHours" });
-        tableColumns.Append(new TableColumn() { Id = 4, Name = "NettoHours" });
-        tableColumns.Append(new TableColumn() { Id = 5, Name = "Flex" });
-        tableColumns.Append(new TableColumn() { Id = 6, Name = "SumFlexStart" });
-        table.Append(tableColumns);
-
-        // Define the TableStyle
-        TableStyleInfo tableStyle = new TableStyleInfo()
-        {
-            Name = "TableStyleMedium9", // Predefined table style in Excel
-            ShowFirstColumn = false,
-            ShowLastColumn = false,
-            ShowRowStripes = true, // Alternate row shading
-            ShowColumnStripes = false // No column shading
-        };
-        table.Append(tableStyle);
-
-        tableDefinitionPart.Table = table;
-        table.Save();
-
-        // Reference the table in the worksheet
-        worksheetPart.Worksheet.InsertBefore(
-            new TableParts(new TablePart() { Id = worksheetPart.GetIdOfPart(tableDefinitionPart) }),
-            worksheetPart.Worksheet.Elements<SheetData>().First());
-
-        worksheetPart.Worksheet.Save();
     }
 
     private void FillDataRow(Row dataRow, Worker worker, Site site, CultureInfo culture,
@@ -1509,65 +1349,6 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         dataRow.Append(CreateCell(planning.CommentOffice?.Replace("<br>", "\n")));
     }
 
-    private Stylesheet CreateStylesheet()
-    {
-        return new Stylesheet(
-            new NumberingFormats( // Custom number format for date
-                new NumberingFormat
-                {
-                    NumberFormatId = 164, // Custom NumberFormatId for date format
-                    FormatCode = "dd/MM/yyyy"
-                }
-            ),
-            new Fonts(
-                new Font( // Default font
-                    new FontSize { Val = 11 },
-                    new Color { Rgb = new HexBinaryValue { Value = "FF000000" } }, // Black color
-                    new FontName { Val = "Calibri" }
-                ),
-                new Font( // Bold font
-                    new Bold(),
-                    new FontSize { Val = 11 },
-                    new Color { Rgb = new HexBinaryValue { Value = "FF000000" } }, // Black color
-                    new FontName { Val = "Calibri" }
-                )
-            ),
-            new Fills(
-                new Fill(new PatternFill { PatternType = PatternValues.None }), // Default fill
-                new Fill(new PatternFill { PatternType = PatternValues.Gray125 }) // Gray fill
-            ),
-            new Borders(
-                new Border( // Default border
-                    new LeftBorder(),
-                    new RightBorder(),
-                    new TopBorder(),
-                    new BottomBorder(),
-                    new DiagonalBorder()
-                )
-            ),
-            new CellStyleFormats(
-                new CellFormat() // Default cell style format
-            ),
-            new CellFormats(
-                new CellFormat(), // Default cell format
-                new CellFormat { FontId = 1, ApplyFont = true }, // Bold font cell format
-                new CellFormat { NumberFormatId = 164, ApplyNumberFormat = true }, // Date format
-                new CellFormat { NumberFormatId = 22, ApplyNumberFormat = true } // Date-time format (dd.MM.yyyy HH:mm:ss)
-            )
-        );
-    }
-
-
-    private Cell CreateBoldCell(string value)
-    {
-        return new Cell()
-        {
-            CellValue = new CellValue(value),
-            DataType = CellValues.String,
-            StyleIndex = 1 // This references the bold cell format
-        };
-    }
-
     private Cell CreateCell(string value)
     {
         return new Cell()
@@ -1577,30 +1358,12 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         };
     }
 
-    private Cell CreateCell(string value, CellValues dataType)
-    {
-        return new Cell()
-        {
-            CellValue = new CellValue(value),
-            DataType = dataType
-        };
-    }
-
     private Cell CreateNumericCell(double value)
     {
         return new Cell()
         {
             CellValue = new CellValue(value.ToString(CultureInfo.InvariantCulture)),
             DataType = CellValues.Number
-        };
-    }
-
-    private Cell CreateBooleanCell(bool value)
-    {
-        return new Cell()
-        {
-            CellValue = new CellValue(value ? "1" : "0"),
-            DataType = CellValues.Boolean
         };
     }
 
@@ -1654,6 +1417,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 sb.Append(("Part: " + error.Part.Uri) + "\r\n");
                 sb.Append("\r\n-------------------------------------------------\r\n");
             }
+
             sb.Append(("Total Errors in file: " + count));
             doc.Dispose();
             throw new Exception(sb.ToString());
@@ -1680,106 +1444,245 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
-            using (var excel =
+            using (var document =
                    SpreadsheetDocument.Create(resultDocument, SpreadsheetDocumentType.Workbook))
             {
-                WorkbookPart workbookPart = excel.AddWorkbookPart();
-                workbookPart.Workbook = new Workbook();
+                var siteIdCount = siteIds.Count;
 
-                // Add Sheets
-                Sheets sheets = workbookPart.Workbook.AppendChild(new Sheets());
+                var worksheetNames = new List<KeyValuePair<string, string>>();
+                worksheetNames.Add(
+                    new KeyValuePair<string, string>("Total", "rId1"));
 
-                // Stylesheet with bold font and date format, only added once to the WorkbookPart
-                var stylesPart = workbookPart.AddNewPart<WorkbookStylesPart>();
-                stylesPart.Stylesheet = CreateStylesheet(); // You already have this function to create the stylesheet
-                stylesPart.Stylesheet.Save();
-
-                // Create Total sheet
-                WorksheetPart totalSheetPart = workbookPart.AddNewPart<WorksheetPart>();
-                totalSheetPart.Worksheet = new Worksheet(new SheetData());
-                Sheet totalSheet = new Sheet()
+                for (int i = 0; i < siteIdCount; i++)
                 {
-                    Id = workbookPart.GetIdOfPart(totalSheetPart),
-                    SheetId = 1,
-                    Name = "Total"
+                    var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteIds[i]);
+                    worksheetNames.Add(
+                        new KeyValuePair<string, string>($"{site.Name}", $"rId{i + 2}"));
+                }
+
+                WorkbookPart workbookPart1 = document.AddWorkbookPart();
+                OpenXMLHelper.GenerateWorkbookPart1Content(workbookPart1, worksheetNames);
+
+                WorkbookStylesPart workbookStylesPart1 =
+                    workbookPart1.AddNewPart<WorkbookStylesPart>($"rId{siteIdCount + 3}");
+                OpenXMLHelper.GenerateWorkbookStylesPart1Content(workbookStylesPart1);
+
+                ThemePart themePart1 = workbookPart1.AddNewPart<ThemePart>($"rId{siteIdCount + 2}");
+                OpenXMLHelper.GenerateThemePart1Content(themePart1);
+
+                #region TotalSheetSetup
+
+                WorksheetPart totalWorksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId1");
+                var totalHeaders = new[]
+                {
+                    Translations.Employee_no,
+                    Translations.Worker,
+                    Translations.PlanHours,
+                    Translations.NettoHours,
+                    Translations.SumFlexStart
                 };
-                sheets.Append(totalSheet);
-                var totalSheetData = totalSheetPart.Worksheet.GetFirstChild<SheetData>();
-                var totalHeaderRow = new Row();
-                AddTotalHeaderCells(totalHeaderRow);
-                totalSheetData.AppendChild(totalHeaderRow);
-
-                // Fill each site’s worksheet
-                var rowCounter = 2;
-                foreach (var siteId in siteIds)
+                List<string> totalHeaderStrings = new List<string>();
+                foreach (var header in totalHeaders)
                 {
-                    var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
-                    if (site == null || site.WorkflowState == Constants.WorkflowStates.Removed) continue;
+                    totalHeaderStrings.Add(_localizationService.GetString(header));
+                }
 
+                Worksheet totalWorksheet1 = new Worksheet()
+                    { MCAttributes = new MarkupCompatibilityAttributes() { Ignorable = "x14ac xr xr2 xr3" } };
+                totalWorksheet1.AddNamespaceDeclaration("r",
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+                totalWorksheet1.AddNamespaceDeclaration("mc",
+                    "http://schemas.openxmlformats.org/markup-compatibility/2006");
+                totalWorksheet1.AddNamespaceDeclaration("x14ac",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac");
+                totalWorksheet1.AddNamespaceDeclaration("xr",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2014/revision");
+                totalWorksheet1.AddNamespaceDeclaration("xr2",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2015/revision2");
+                totalWorksheet1.AddNamespaceDeclaration("xr3",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2016/revision3");
+                totalWorksheet1.SetAttribute(new OpenXmlAttribute("xr", "uid",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
+                    "{00000000-0001-0000-0000-000000000000}"));
+
+                SheetFormatProperties totalSheetFormatProperties1 = new SheetFormatProperties()
+                    { DefaultRowHeight = 15D, DyDescent = 0.25D };
+
+                SheetData totalSheetData1 = new SheetData();
+
+                Row totalRow1 = new Row()
+                {
+                    RowIndex = (UInt32Value)1U, Spans = new ListValue<StringValue>() { InnerText = "1:19" },
+                    DyDescent = 0.25D
+                };
+
+                foreach (var totalHeader in totalHeaderStrings)
+                {
+                    var cell = new Cell()
+                    {
+                        CellValue = new CellValue(totalHeader),
+                        DataType = CellValues.String,
+                        StyleIndex = (UInt32Value)1U
+                    };
+                    totalRow1.Append(cell);
+                }
+
+                totalSheetData1.Append(totalRow1);
+
+                var totalRowIndex = 2;
+
+                #endregion
+
+                for (int i = 0; i < siteIdCount; i++)
+                {
+                    var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteIds[i]);
                     var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
                     var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
                     var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
-                    Thread.CurrentThread.CurrentUICulture = new CultureInfo(language.LanguageCode);
 
-                    // Add new sheet for the site
-                    var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-                    worksheetPart.Worksheet = new Worksheet(new SheetData());
-                    var sheet = new Sheet()
+                    var culture = new CultureInfo(language.LanguageCode);
+                    WorksheetPart worksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId{i + 2}");
+
+                    var headers = new[]
                     {
-                        Id = workbookPart.GetIdOfPart(worksheetPart),
-                        SheetId = (uint)(sheets.Count() + 1),
-                        Name = site.Name
+                        Translations.Employee_no,
+                        Translations.Worker,
+                        Translations.DayOfWeek,
+                        Translations.Date,
+                        Translations.PlanText,
+                        Translations.PlanHours,
+                        Translations.Shift_1__start,
+                        Translations.Shift_1__end,
+                        Translations.Shift_1__pause,
+                        Translations.Shift_2__start,
+                        Translations.Shift_2__end,
+                        Translations.Shift_2__pause,
+                        Translations.NettoHours,
+                        Translations.Flex,
+                        Translations.SumFlexStart,
+                        Translations.PaidOutFlex,
+                        Translations.Message,
+                        Translations.Comments,
+                        Translations.Comment_office
                     };
-                    sheets.Append(sheet);
-                    var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
+                    List<string> headerStrings = new List<string>();
+                    foreach (var header in headers)
+                    {
+                        headerStrings.Add(_localizationService.GetString(header));
+                    }
 
-                    // Add headers to the sheet
-                    var headerRow = new Row();
-                    AddHeaderCells(headerRow);
-                    sheetData.AppendChild(headerRow);
+                    Worksheet worksheet1 = new Worksheet()
+                        { MCAttributes = new MarkupCompatibilityAttributes() { Ignorable = "x14ac xr xr2 xr3" } };
+                    worksheet1.AddNamespaceDeclaration("r",
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+                    worksheet1.AddNamespaceDeclaration("mc",
+                        "http://schemas.openxmlformats.org/markup-compatibility/2006");
+                    worksheet1.AddNamespaceDeclaration("x14ac",
+                        "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac");
+                    worksheet1.AddNamespaceDeclaration("xr",
+                        "http://schemas.microsoft.com/office/spreadsheetml/2014/revision");
+                    worksheet1.AddNamespaceDeclaration("xr2",
+                        "http://schemas.microsoft.com/office/spreadsheetml/2015/revision2");
+                    worksheet1.AddNamespaceDeclaration("xr3",
+                        "http://schemas.microsoft.com/office/spreadsheetml/2016/revision3");
+                    worksheet1.SetAttribute(new OpenXmlAttribute("xr", "uid",
+                        "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
+                        "{00000000-0001-0000-0000-000000000000}"));
 
-                    // Fetch the planning data for the site
+                    SheetFormatProperties sheetFormatProperties1 = new SheetFormatProperties()
+                        { DefaultRowHeight = 15D, DyDescent = 0.25D };
+
+                    SheetData sheetData1 = new SheetData();
+
+                    Row row1 = new Row()
+                    {
+                        RowIndex = (UInt32Value)1U, Spans = new ListValue<StringValue>() { InnerText = "1:19" },
+                        DyDescent = 0.25D
+                    };
+
+                    foreach (var header in headerStrings)
+                    {
+                        var cell = new Cell()
+                        {
+                            CellValue = new CellValue(header),
+                            DataType = CellValues.String,
+                            StyleIndex = (UInt32Value)1U
+                        };
+                        row1.Append(cell);
+                    }
+
+                    sheetData1.Append(row1);
+
+                    // Fetch data
                     var content = await Index(new TimePlanningWorkingHoursRequestModel
                     {
                         DateFrom = model.DateFrom,
                         DateTo = model.DateTo,
-                        SiteId = siteId
+                        SiteId = (int)site!.MicrotingUid!
                     });
+                    if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
 
-                    if (!content.Success) continue;
-
-                    // Fill the data for the site sheet
+                    var timePlannings = content.Model;
                     var plr = new PlanRegistration();
-                    var rowIndex = 2;
-                    foreach (var planning in content.Model)
+
+                    // Fill data
+                    int rowIndex = 2;
+                    foreach (var planning in timePlannings)
                     {
                         var dataRow = new Row() { RowIndex = (uint)rowIndex };
-                        FillDataRow(dataRow, worker, site, new CultureInfo(language.LanguageCode), planning, plr,
-                            language);
-                        sheetData.AppendChild(dataRow);
+                        FillDataRow(dataRow, worker, site, culture, planning, plr, language);
+                        sheetData1.Append(dataRow);
                         rowIndex++;
                     }
 
-                    // Add table formatting
-                    //ApplyTableFormatting((uint)(sheets.Count() + 1), worksheetPart, sheetData, rowIndex - 1);
+                    var columnLetter = GetColumnLetter(headers.Length);
+                    AutoFilter autoFilter1 = new AutoFilter() { Reference = $"A1:{columnLetter}{rowIndex}" };
+                    autoFilter1.SetAttribute(new OpenXmlAttribute("xr", "uid",
+                        "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
+                        "{00000000-0001-0000-0000-000000000000}"));
+                    PageMargins pageMargins1 = new PageMargins()
+                        { Left = 0.7D, Right = 0.7D, Top = 0.75D, Bottom = 0.75D, Header = 0.3D, Footer = 0.3D };
 
-                    // Fill total sheet
-                    var totalRow = new Row() { RowIndex = (uint)rowCounter };
+                    worksheet1.Append(sheetFormatProperties1);
+                    worksheet1.Append(sheetData1);
+                    worksheet1.Append(autoFilter1);
+                    worksheet1.Append(pageMargins1);
 
+                    worksheetPart1.Worksheet = worksheet1;
+
+                    #region TotalSheetFillData
+
+                    var totalRow = new Row() { RowIndex = (uint)totalRowIndex };
                     totalRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
                     totalRow.Append(CreateCell(site.Name));
-                    totalRow.Append(CreateCell(content.Model.Sum(x => x.PlanHours).ToString()));
-                    totalRow.Append(CreateCell(content.Model.Sum(x => x.NettoHours).ToString()));
-                    totalRow.Append(CreateCell(content.Model.Last().SumFlexEnd.ToString()));
-                    totalSheetData.AppendChild(totalRow);
+                    totalRow.Append(CreateNumericCell(content.Model.Sum(x => x.PlanHours)));
+                    totalRow.Append(CreateNumericCell(content.Model.Sum(x => x.NettoHours)));
+                    totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
+                    totalSheetData1.Append(totalRow);
+                    totalRowIndex++;
 
-                    rowCounter++;
+                    #endregion
+
                 }
 
-                // Apply table formatting to the total sheet
-                //ApplyTableFormattingTotalSheet((uint)700, totalSheetPart, totalSheetData, rowCounter - 1);
+                #region TotalSheetFinalize
 
-                workbookPart.Workbook.Save();
+                var totalColumnLetter = GetColumnLetter(totalHeaders.Length);
+                AutoFilter totalAutoFilter1 = new AutoFilter() { Reference = $"A1:{totalColumnLetter}{totalRowIndex}" };
+                totalAutoFilter1.SetAttribute(new OpenXmlAttribute("xr", "uid",
+                    "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
+                    "{00000000-0001-0000-0000-000000000000}"));
+                PageMargins totalPageMargins1 = new PageMargins()
+                    { Left = 0.7D, Right = 0.7D, Top = 0.75D, Bottom = 0.75D, Header = 0.3D, Footer = 0.3D };
+
+                totalWorksheet1.Append(totalSheetFormatProperties1);
+                totalWorksheet1.Append(totalSheetData1);
+                totalWorksheet1.Append(totalAutoFilter1);
+                totalWorksheet1.Append(totalPageMargins1);
+
+                totalWorksheetPart1.Worksheet = totalWorksheet1;
+
+                #endregion
             }
 
             ValidateExcel(resultDocument);
@@ -1792,30 +1695,6 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             _logger.LogError(ex.Message);
             return new OperationDataResult<Stream>(false,
                 _localizationService.GetString("ErrorWhileCreatingExcelFile"));
-        }
-    }
-
-
-    private void AddTotalHeaderCells(Row headerRow)
-    {
-        var headers = new[]
-        {
-            Translations.Employee_no,
-            Translations.Worker,
-            Translations.PlanHours,
-            Translations.NettoHours,
-            Translations.SumFlexStart
-        };
-
-        foreach (var header in headers)
-        {
-            var cell = new Cell()
-            {
-                CellValue = new CellValue(_localizationService.GetString(header)),
-                DataType = CellValues.String,
-                StyleIndex = 1 // Bold header style
-            };
-            headerRow.Append(cell);
         }
     }
 
@@ -1883,6 +1762,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                         {
                             continue;
                         }
+
                         var dateValue = DateTime.Parse(date);
                         if (dateValue < DateTime.Now.AddDays(-1))
                         {
@@ -1968,93 +1848,94 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         return new OperationResult(true, "Imported");
     }
 
-private string GetCellValue(WorkbookPart workbookPart, Row row, int columnIndex)
-{
-    // Get the column letter for the given columnIndex (e.g., A, B, C)
-    var columnLetter = GetColumnLetter(columnIndex);
-
-    // Create the cell reference (e.g., A1, B1, C1)
-    var cellReference = columnLetter + row.RowIndex;
-
-    // Find the cell with the matching CellReference
-    var cell = row.Elements<Cell>().FirstOrDefault(c => c.CellReference.Value == cellReference);
-
-    if (cell == null || cell.CellValue == null)
+    private string GetCellValue(WorkbookPart workbookPart, Row row, int columnIndex)
     {
-        return string.Empty; // Handle empty or missing cells
-    }
+        // Get the column letter for the given columnIndex (e.g., A, B, C)
+        var columnLetter = GetColumnLetter(columnIndex);
 
-    // Check if the cell is using a Shared String Table
-    if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
-    {
-        var sharedStringTablePart = workbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
-        if (sharedStringTablePart != null)
+        // Create the cell reference (e.g., A1, B1, C1)
+        var cellReference = columnLetter + row.RowIndex;
+
+        // Find the cell with the matching CellReference
+        var cell = row.Elements<Cell>().FirstOrDefault(c => c.CellReference.Value == cellReference);
+
+        if (cell == null || cell.CellValue == null)
         {
-            var sharedStringTable = sharedStringTablePart.SharedStringTable;
-            return sharedStringTable.ElementAt(int.Parse(cell.CellValue.Text)).InnerText;
+            return string.Empty; // Handle empty or missing cells
         }
-    }
 
-    // Check if the cell has a StyleIndex (to determine if it's a date)
-    if (cell.StyleIndex != null)
-    {
-        var stylesPart = workbookPart.WorkbookStylesPart;
-        var cellFormat = stylesPart.Stylesheet.CellFormats.ElementAt((int)cell.StyleIndex.Value) as CellFormat;
-        var isDate = IsDateFormat(stylesPart, cellFormat);
-
-        // If it's a date format, interpret the numeric value as a date
-        if (isDate && double.TryParse(cell.CellValue.Text, out var oaDate))
+        // Check if the cell is using a Shared String Table
+        if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
         {
-            var dateValue = DateTime.FromOADate(oaDate);
-            return dateValue.ToString("dd.MM.yyyy"); // Format as a date
+            var sharedStringTablePart = workbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
+            if (sharedStringTablePart != null)
+            {
+                var sharedStringTable = sharedStringTablePart.SharedStringTable;
+                return sharedStringTable.ElementAt(int.Parse(cell.CellValue.Text)).InnerText;
+            }
         }
+
+        // Check if the cell has a StyleIndex (to determine if it's a date)
+        if (cell.StyleIndex != null)
+        {
+            var stylesPart = workbookPart.WorkbookStylesPart;
+            var cellFormat = stylesPart.Stylesheet.CellFormats.ElementAt((int)cell.StyleIndex.Value) as CellFormat;
+            var isDate = IsDateFormat(stylesPart, cellFormat);
+
+            // If it's a date format, interpret the numeric value as a date
+            if (isDate && double.TryParse(cell.CellValue.Text, out var oaDate))
+            {
+                var dateValue = DateTime.FromOADate(oaDate);
+                return dateValue.ToString("dd.MM.yyyy"); // Format as a date
+            }
+        }
+
+        // Handle other numbers or strings
+        return cell.CellValue.Text;
     }
 
-    // Handle other numbers or strings
-    return cell.CellValue.Text;
-}
-
-private bool IsDateFormat(WorkbookStylesPart stylesPart, CellFormat cellFormat)
-{
-    if (cellFormat == null || cellFormat.NumberFormatId == null)
+    private bool IsDateFormat(WorkbookStylesPart stylesPart, CellFormat cellFormat)
     {
+        if (cellFormat == null || cellFormat.NumberFormatId == null)
+        {
+            return false;
+        }
+
+        // Check if the format ID is a known date format in Excel
+        var dateFormatIds = new HashSet<uint> { 14, 15, 16, 17, 22, 164 }; // Common Excel date format IDs
+
+        if (dateFormatIds.Contains(cellFormat.NumberFormatId.Value))
+        {
+            return true;
+        }
+
+        // Look for custom number formats defined in the workbook
+        var numberFormats = stylesPart.Stylesheet.NumberingFormats?.Elements<NumberingFormat>();
+        if (numberFormats != null)
+        {
+            var format = numberFormats.FirstOrDefault(nf => nf.NumberFormatId.Value == cellFormat.NumberFormatId.Value);
+            if (format != null && format.FormatCode != null)
+            {
+                // Check if the custom format code looks like a date format
+                var formatCode = format.FormatCode.Value.ToLower();
+                return formatCode.Contains("m") || formatCode.Contains("d") || formatCode.Contains("y");
+            }
+        }
+
         return false;
     }
 
-    // Check if the format ID is a known date format in Excel
-    var dateFormatIds = new HashSet<uint> { 14, 15, 16, 17, 22, 164 }; // Common Excel date format IDs
-
-    if (dateFormatIds.Contains(cellFormat.NumberFormatId.Value))
+    private string GetColumnLetter(int columnIndex)
     {
-        return true;
-    }
-
-    // Look for custom number formats defined in the workbook
-    var numberFormats = stylesPart.Stylesheet.NumberingFormats?.Elements<NumberingFormat>();
-    if (numberFormats != null)
-    {
-        var format = numberFormats.FirstOrDefault(nf => nf.NumberFormatId.Value == cellFormat.NumberFormatId.Value);
-        if (format != null && format.FormatCode != null)
+        string columnLetter = "";
+        while (columnIndex > 0)
         {
-            // Check if the custom format code looks like a date format
-            var formatCode = format.FormatCode.Value.ToLower();
-            return formatCode.Contains("m") || formatCode.Contains("d") || formatCode.Contains("y");
+            int modulo = (columnIndex - 1) % 26;
+            columnLetter = Convert.ToChar(65 + modulo) + columnLetter;
+            columnIndex = (columnIndex - modulo) / 26;
         }
-    }
 
-    return false;
-}
-
-private string GetColumnLetter(int columnIndex)
-{
-    string columnLetter = "";
-    while (columnIndex > 0)
-    {
-        int modulo = (columnIndex - 1) % 26;
-        columnLetter = Convert.ToChar(65 + modulo) + columnLetter;
-        columnIndex = (columnIndex - modulo) / 26;
+        return columnLetter;
     }
-    return columnLetter;
-}
 
 }
