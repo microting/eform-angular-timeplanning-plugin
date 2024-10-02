@@ -32,6 +32,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Validation;
 using Microting.eForm.Infrastructure.Data.Entities;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
 
@@ -1418,12 +1419,14 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 sb.Append("\r\n-------------------------------------------------\r\n");
             }
 
+            if (count <= 0) return;
             sb.Append(("Total Errors in file: " + count));
             doc.Dispose();
             throw new Exception(sb.ToString());
         }
         catch (Exception ex)
         {
+            SentrySdk.CaptureException(ex);
             _logger.LogError(ex.Message);
         }
     }
@@ -1459,7 +1462,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                     var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteIds[i] && x.WorkflowState != Constants.WorkflowStates.Removed);
                     if (site == null) continue;
                     worksheetNames.Add(
-                        new KeyValuePair<string, string>($"{site.Name}", $"rId{i + 2}"));
+                        new KeyValuePair<string, string>($"{site.Name.Substring(0, Math.Min(31, site.Name.Length))}", $"rId{i + 2}"));
                 }
 
                 WorkbookPart workbookPart1 = document.AddWorkbookPart();

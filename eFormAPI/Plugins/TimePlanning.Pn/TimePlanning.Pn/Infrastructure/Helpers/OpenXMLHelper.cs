@@ -15,70 +15,6 @@ namespace TimePlanning.Pn.Infrastructure.Helpers
     public static class OpenXMLHelper
     {
 
-        // Generates content of extendedFilePropertiesPart1.
-        public static void GenerateExtendedFilePropertiesPart1Content(ExtendedFilePropertiesPart extendedFilePropertiesPart1, string sheetName)
-        {
-            Ap.Properties properties1 = new Ap.Properties();
-            properties1.AddNamespaceDeclaration("vt", "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes");
-            Ap.Application application1 = new Ap.Application();
-            application1.Text = "Microsoft Excel";
-            Ap.DocumentSecurity documentSecurity1 = new Ap.DocumentSecurity();
-            documentSecurity1.Text = "0";
-            Ap.ScaleCrop scaleCrop1 = new Ap.ScaleCrop();
-            scaleCrop1.Text = "false";
-
-            Ap.HeadingPairs headingPairs1 = new Ap.HeadingPairs();
-
-            Vt.VTVector vTVector1 = new Vt.VTVector(){ BaseType = Vt.VectorBaseValues.Variant, Size = (UInt32Value)2U };
-
-            Vt.Variant variant1 = new Vt.Variant();
-            Vt.VTLPSTR vTLPSTR1 = new Vt.VTLPSTR();
-            vTLPSTR1.Text = "Worksheets";
-
-            variant1.Append(vTLPSTR1);
-
-            Vt.Variant variant2 = new Vt.Variant();
-            Vt.VTInt32 vTInt321 = new Vt.VTInt32();
-            vTInt321.Text = "1";
-
-            variant2.Append(vTInt321);
-
-            vTVector1.Append(variant1);
-            vTVector1.Append(variant2);
-
-            headingPairs1.Append(vTVector1);
-
-            Ap.TitlesOfParts titlesOfParts1 = new Ap.TitlesOfParts();
-
-            Vt.VTVector vTVector2 = new Vt.VTVector(){ BaseType = Vt.VectorBaseValues.Lpstr, Size = (UInt32Value)1U };
-            Vt.VTLPSTR vTLPSTR2 = new Vt.VTLPSTR();
-            vTLPSTR2.Text = sheetName;
-
-            vTVector2.Append(vTLPSTR2);
-
-            titlesOfParts1.Append(vTVector2);
-            Ap.LinksUpToDate linksUpToDate1 = new Ap.LinksUpToDate();
-            linksUpToDate1.Text = "false";
-            Ap.SharedDocument sharedDocument1 = new Ap.SharedDocument();
-            sharedDocument1.Text = "false";
-            Ap.HyperlinksChanged hyperlinksChanged1 = new Ap.HyperlinksChanged();
-            hyperlinksChanged1.Text = "false";
-            Ap.ApplicationVersion applicationVersion1 = new Ap.ApplicationVersion();
-            applicationVersion1.Text = "16.0300";
-
-            properties1.Append(application1);
-            properties1.Append(documentSecurity1);
-            properties1.Append(scaleCrop1);
-            properties1.Append(headingPairs1);
-            properties1.Append(titlesOfParts1);
-            properties1.Append(linksUpToDate1);
-            properties1.Append(sharedDocument1);
-            properties1.Append(hyperlinksChanged1);
-            properties1.Append(applicationVersion1);
-
-            extendedFilePropertiesPart1.Properties = properties1;
-        }
-
         // Generates content of workbookPart1.
         public static void GenerateWorkbookPart1Content(WorkbookPart workbookPart1, List<KeyValuePair<string, string>> sheets)
         {
@@ -93,18 +29,6 @@ namespace TimePlanning.Pn.Infrastructure.Helpers
             FileVersion fileVersion1 = new FileVersion(){ ApplicationName = "xl", LastEdited = "7", LowestEdited = "7", BuildVersion = "27928" };
             WorkbookProperties workbookProperties1 = new WorkbookProperties(){ DefaultThemeVersion = (UInt32Value)202300U };
 
-            AlternateContent alternateContent1 = new AlternateContent();
-            alternateContent1.AddNamespaceDeclaration("mc", "http://schemas.openxmlformats.org/markup-compatibility/2006");
-
-            AlternateContentChoice alternateContentChoice1 = new AlternateContentChoice(){ Requires = "x15" };
-
-            X15ac.AbsolutePath absolutePath1 = new X15ac.AbsolutePath(){ Url = "G:\\" };
-            absolutePath1.AddNamespaceDeclaration("x15ac", "http://schemas.microsoft.com/office/spreadsheetml/2010/11/ac");
-
-            alternateContentChoice1.Append(absolutePath1);
-
-            alternateContent1.Append(alternateContentChoice1);
-            
             BookViews bookViews1 = new BookViews();
 
             WorkbookView workbookView1 = new WorkbookView(){ XWindow = -120, YWindow = -120, WindowWidth = (UInt32Value)28890U, WindowHeight = (UInt32Value)13455U };
@@ -121,17 +45,11 @@ namespace TimePlanning.Pn.Infrastructure.Helpers
                 sheets1.Append(sheet1);
                 sheetId += sheetIncrement;
             }
-            // Sheet sheet1 = new Sheet(){ Name = sheetName, SheetId = (UInt32Value)1U, Id = sheetId };
-
-            // sheets1.Append(sheet1);
-            //CalculationProperties calculationProperties1 = new CalculationProperties(){ CalculationId = (UInt32Value)0U };
 
             workbook1.Append(fileVersion1);
             workbook1.Append(workbookProperties1);
-            workbook1.Append(alternateContent1);
             workbook1.Append(bookViews1);
             workbook1.Append(sheets1);
-            //workbook1.Append(calculationProperties1);
 
             workbookPart1.Workbook = workbook1;
         }
