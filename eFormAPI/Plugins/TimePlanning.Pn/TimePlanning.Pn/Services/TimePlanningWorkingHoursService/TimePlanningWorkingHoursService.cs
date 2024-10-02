@@ -1419,9 +1419,9 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 sb.Append("\r\n-------------------------------------------------\r\n");
             }
 
+            doc.Dispose();
             if (count <= 0) return;
             sb.Append(("Total Errors in file: " + count));
-            doc.Dispose();
             throw new Exception(sb.ToString());
         }
         catch (Exception ex)
