@@ -55,30 +55,15 @@ using TimePlanningLocalizationService;
 /// <summary>
 /// TimePlanningWorkingHoursService
 /// </summary>
-public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
+public class TimePlanningWorkingHoursService(
+    ILogger<TimePlanningWorkingHoursService> logger,
+    TimePlanningPnDbContext dbContext,
+    IUserService userService,
+    ITimePlanningLocalizationService localizationService,
+    IPluginDbOptions<TimePlanningBaseSettings> options,
+    IEFormCoreService coreHelper)
+    : ITimePlanningWorkingHoursService
 {
-    private readonly IPluginDbOptions<TimePlanningBaseSettings> _options;
-    private readonly ILogger<TimePlanningWorkingHoursService> _logger;
-    private readonly TimePlanningPnDbContext _dbContext;
-    private readonly IUserService _userService;
-    private readonly ITimePlanningLocalizationService _localizationService;
-    private readonly IEFormCoreService _coreHelper;
-
-    public TimePlanningWorkingHoursService(
-        ILogger<TimePlanningWorkingHoursService> logger,
-        TimePlanningPnDbContext dbContext,
-        IUserService userService,
-        ITimePlanningLocalizationService localizationService,
-        IPluginDbOptions<TimePlanningBaseSettings> options, IEFormCoreService coreHelper)
-    {
-        _logger = logger;
-        _dbContext = dbContext;
-        _userService = userService;
-        _localizationService = localizationService;
-        _options = options;
-        _coreHelper = coreHelper;
-    }
-
     public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(
         TimePlanningWorkingHoursRequestModel model)
     {
@@ -86,10 +71,10 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         {
             model.DateFrom = new DateTime(model.DateFrom.Year, model.DateFrom.Month, model.DateFrom.Day, 0, 0, 0);
             model.DateTo = new DateTime(model.DateTo.Year, model.DateTo.Month, model.DateTo.Day, 0, 0, 0);
-            var core = await _coreHelper.GetCore();
+            var core = await coreHelper.GetCore();
             await using var sdkDbContext = core.DbContextHelper.GetDbContext();
-            var maxDaysEditable = _options.Value.MaxDaysEditable;
-            var language = await _userService.GetCurrentUserLanguage();
+            var maxDaysEditable = options.Value.MaxDaysEditable;
+            var language = await userService.GetCurrentUserLanguage();
             var ci = new CultureInfo(language.LanguageCode);
             List<(DateTime, string)> tupleValueList = new();
             var site = await sdkDbContext.Sites
@@ -102,7 +87,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 })
                 .FirstAsync();
 
-            var timePlanningRequest = _dbContext.PlanRegistrations
+            var timePlanningRequest = dbContext.PlanRegistrations
                 .AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SdkSitId == model.SiteId);
@@ -151,7 +136,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
 
             var totalDays = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
-            var lastPlanning = _dbContext.PlanRegistrations
+            var lastPlanning = dbContext.PlanRegistrations
                 .AsNoTracking()
                 .Where(x => x.Date < model.DateFrom)
                 .Where(x => x.SdkSitId == model.SiteId).OrderBy(x => x.Date).LastOrDefault();
@@ -245,7 +230,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                     catch (Exception e)
                     {
                         Console.WriteLine(e);
-                        _logger.LogError(e.Message);
+                        logger.LogError(e.Message);
                     }
 
                     sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
@@ -261,10 +246,10 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         catch (Exception e)
         {
             Console.WriteLine(e);
-            _logger.LogError(e.Message);
+            logger.LogError(e.Message);
             return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                 false,
-                _localizationService.GetString("ErrorWhileObtainingPlannings"));
+                localizationService.GetString("ErrorWhileObtainingPlannings"));
         }
     }
 
@@ -272,7 +257,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
     {
         try
         {
-            var planRegistrations = await _dbContext.PlanRegistrations
+            var planRegistrations = await dbContext.PlanRegistrations
                 .Where(x => x.SdkSitId == model.SiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync();
@@ -298,15 +283,15 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
 
             return new OperationResult(
                 true,
-                _localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
+                localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
-            _logger.LogError(e.Message);
+            logger.LogError(e.Message);
             return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                 false,
-                _localizationService.GetString("ErrorWhileCreateUpdatePlannings"));
+                localizationService.GetString("ErrorWhileCreateUpdatePlannings"));
         }
     }
 
@@ -327,8 +312,8 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                     SdkSitId = sdkSiteId,
                     Date = model.Date,
                     PlanHours = model.PlanHours,
-                    CreatedByUserId = _userService.UserId,
-                    UpdatedByUserId = _userService.UserId,
+                    CreatedByUserId = userService.UserId,
+                    UpdatedByUserId = userService.UserId,
                     CommentOffice = model.CommentOffice,
                     CommentOfficeAll = model.CommentOfficeAll,
                     NettoHours = model.NettoHours,
@@ -344,7 +329,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 };
 
                 var preTimePlanning =
-                    await _dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
+                    await dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
                             && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
                 if (preTimePlanning != null)
@@ -359,12 +344,12 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                     planRegistration.SumFlexStart = 0;
                 }
 
-                await planRegistration.Create(_dbContext);
+                await planRegistration.Create(dbContext);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                _logger.LogError(e.Message);
+                logger.LogError(e.Message);
             }
         }
     }
@@ -382,7 +367,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             planRegistration.PlanText = model.PlanText;
             planRegistration.Date = model.Date;
             planRegistration.PlanHours = model.PlanHours;
-            planRegistration.UpdatedByUserId = _userService.UserId;
+            planRegistration.UpdatedByUserId = userService.UserId;
             planRegistration.CommentOffice = model.CommentOffice;
             planRegistration.CommentOfficeAll = model.CommentOfficeAll;
             planRegistration.NettoHours = model.NettoHours;
@@ -399,7 +384,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         }
 
         var preTimePlanning =
-            await _dbContext.PlanRegistrations.AsNoTracking()
+            await dbContext.PlanRegistrations.AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Date < planRegistration.Date
                             && x.SdkSitId == planRegistration.SdkSitId)
@@ -417,14 +402,14 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             planRegistration.SumFlexStart = 0;
         }
 
-        await planRegistration.Update(_dbContext);
+        await planRegistration.Update(dbContext);
     }
 
     public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime)
     {
-        var currentUser = await _userService.GetCurrentUserAsync();
+        var currentUser = await userService.GetCurrentUserAsync();
         var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-        var core = await _coreHelper.GetCore();
+        var core = await coreHelper.GetCore();
         var sdkContext = core.DbContextHelper.GetDbContext();
         var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
             x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
@@ -437,7 +422,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
 
         var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
 
-        var planRegistration = await _dbContext.PlanRegistrations
+        var planRegistration = await dbContext.PlanRegistrations
             .Where(x => x.Date == midnight)
             .Where(x => x.SdkSitId == sdkSite.MicrotingUid)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -445,7 +430,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
 
         if (planRegistration == null)
         {
-            var preTimePlanning = await _dbContext.PlanRegistrations.AsNoTracking()
+            var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Date < midnight
                             && x.SdkSitId == sdkSite.MicrotingUid)
@@ -470,7 +455,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 };
 
                 return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true,
-                    _localizationService.GetString("PlanRegistrationLoaded"),
+                    localizationService.GetString("PlanRegistrationLoaded"),
                     newTimePlanningWorkingHoursModel);
             }
             else
@@ -492,7 +477,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 };
 
                 return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true,
-                    _localizationService.GetString("PlanRegistrationLoaded"),
+                    localizationService.GetString("PlanRegistrationLoaded"),
                     newTimePlanningWorkingHoursModel);
             }
         }
@@ -521,7 +506,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
 
 
         return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true,
-            _localizationService.GetString("PlanRegistrationLoaded"),
+            localizationService.GetString("PlanRegistrationLoaded"),
             timePlanningWorkingHoursModel);
     }
 
@@ -541,7 +526,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
     {
         if (token != null)
         {
-            var registrationDevice = await _dbContext.RegistrationDevices
+            var registrationDevice = await dbContext.RegistrationDevices
                 .Where(x => x.Token == token).FirstOrDefaultAsync();
             if (registrationDevice == null)
             {
@@ -552,7 +537,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         var today = DateTime.Now;
         var midnight = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
 
-        var planRegistration = await _dbContext.PlanRegistrations
+        var planRegistration = await dbContext.PlanRegistrations
             .Where(x => x.Date == midnight)
             .Where(x => x.SdkSitId == sdkSiteId)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -688,7 +673,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             return new OperationResult(false, "Token not found");
         }
 
-        var registrationDevice = await _dbContext.RegistrationDevices
+        var registrationDevice = await dbContext.RegistrationDevices
             .Where(x => x.Token == token).FirstOrDefaultAsync();
         if (registrationDevice == null)
         {
@@ -697,7 +682,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
 
         var todayAtMidnight = DateTime.UtcNow.Date;
 
-        var planRegistration = await _dbContext.PlanRegistrations
+        var planRegistration = await dbContext.PlanRegistrations
             .Where(x => x.Date == todayAtMidnight)
             .Where(x => x.SdkSitId == sdkSiteId)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -711,7 +696,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 PlanText = "",
                 Date = model.Date,
                 PlanHours = 0,
-                UpdatedByUserId = _userService.UserId,
+                UpdatedByUserId = userService.UserId,
                 CommentOffice = "",
                 CommentOfficeAll = "",
                 NettoHours = 0,
@@ -924,7 +909,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             planRegistration.NettoHours = hours;
             planRegistration.Flex = hours - planRegistration.PlanHours;
             var preTimePlanning =
-                await _dbContext.PlanRegistrations.AsNoTracking()
+                await dbContext.PlanRegistrations.AsNoTracking()
                     .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSiteId)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
@@ -940,11 +925,11 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 planRegistration.SumFlexStart = 0;
             }
 
-            await planRegistration.Create(_dbContext).ConfigureAwait(false);
+            await planRegistration.Create(dbContext).ConfigureAwait(false);
         }
         else
         {
-            planRegistration.UpdatedByUserId = _userService.UserId;
+            planRegistration.UpdatedByUserId = userService.UserId;
             planRegistration.Pause1Id = model.Shift1Pause ?? 0;
             planRegistration.Pause2Id = model.Shift2Pause ?? 0;
             planRegistration.Start1Id = model.Shift1Start ?? 0;
@@ -1153,7 +1138,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
             planRegistration.NettoHours = hours;
             planRegistration.Flex = hours - planRegistration.PlanHours;
             var preTimePlanning =
-                await _dbContext.PlanRegistrations.AsNoTracking()
+                await dbContext.PlanRegistrations.AsNoTracking()
                     .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSiteId)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
@@ -1169,7 +1154,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 planRegistration.SumFlexStart = 0;
             }
 
-            await planRegistration.Update(_dbContext).ConfigureAwait(false);
+            await planRegistration.Update(dbContext).ConfigureAwait(false);
         }
 
         return new OperationResult(true);
@@ -1179,7 +1164,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
     {
         try
         {
-            var core = await _coreHelper.GetCore();
+            var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
             var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
             var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
@@ -1232,9 +1217,8 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 List<string> headerStrings = new List<string>();
                 foreach (var header in headers)
                 {
-                    headerStrings.Add(_localizationService.GetString(header));
+                    headerStrings.Add(localizationService.GetString(header));
                 }
-                //GeneratedClass.GenerateWorksheetPart1Content(worksheetPart1, headerStrings);
 
                 Worksheet worksheet1 = new Worksheet()
                     { MCAttributes = new MarkupCompatibilityAttributes() { Ignorable = "x14ac xr xr2 xr3" } };
@@ -1318,9 +1302,9 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            logger.LogError(ex.Message);
             return new OperationDataResult<Stream>(false,
-                _localizationService.GetString("ErrorWhileCreatingExcelFile"));
+                localizationService.GetString("ErrorWhileCreatingExcelFile"));
         }
     }
 
@@ -1332,7 +1316,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         dataRow.Append(CreateCell(planning.Date.ToString("dddd", culture)));
         dataRow.Append(CreateDateCell(planning.Date));
         dataRow.Append(CreateCell(planning.PlanText));
-        dataRow.Append(CreateCell(planning.PlanHours.ToString()));
+        dataRow.Append(CreateNumericCell(planning.PlanHours));
         dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start)));
         dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Stop)));
         dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Pause)));
@@ -1382,14 +1366,14 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
 
     private string GetShiftTime(PlanRegistration plr, int? shift)
     {
-        return shift > 0 ? plr.Options[(int)shift - 1] : "00:00";
+        return shift > 0 ? plr.Options[(int)shift - 1] : "";
     }
 
     private string GetMessageText(int? messageId, Language language)
     {
         if (messageId == null) return string.Empty;
 
-        var message = _dbContext.Messages.SingleOrDefault(x => x.Id == messageId);
+        var message = dbContext.Messages.SingleOrDefault(x => x.Id == messageId);
         return message == null
             ? string.Empty
             : language.LanguageCode switch
@@ -1427,7 +1411,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         catch (Exception ex)
         {
             SentrySdk.CaptureException(ex);
-            _logger.LogError(ex.Message);
+            logger.LogError(ex.Message);
         }
     }
 
@@ -1436,13 +1420,13 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
     {
         try
         {
-            var siteIds = await _dbContext.AssignedSites
+            var siteIds = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Select(x => x.SiteId)
                 .Distinct()
                 .ToListAsync();
 
-            var core = await _coreHelper.GetCore();
+            var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
             Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
             var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
@@ -1489,7 +1473,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                 List<string> totalHeaderStrings = new List<string>();
                 foreach (var header in totalHeaders)
                 {
-                    totalHeaderStrings.Add(_localizationService.GetString(header));
+                    totalHeaderStrings.Add(localizationService.GetString(header));
                 }
 
                 Worksheet totalWorksheet1 = new Worksheet()
@@ -1574,7 +1558,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                     List<string> headerStrings = new List<string>();
                     foreach (var header in headers)
                     {
-                        headerStrings.Add(_localizationService.GetString(header));
+                        headerStrings.Add(localizationService.GetString(header));
                     }
 
                     Worksheet worksheet1 = new Worksheet()
@@ -1698,16 +1682,16 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            logger.LogError(ex.Message);
             return new OperationDataResult<Stream>(false,
-                _localizationService.GetString("ErrorWhileCreatingExcelFile"));
+                localizationService.GetString("ErrorWhileCreatingExcelFile"));
         }
     }
 
     public async Task<OperationResult> Import(IFormFile file)
     {
         // Get core
-        var core = await _coreHelper.GetCore();
+        var core = await coreHelper.GetCore();
         var sdkContext = core.DbContextHelper.GetDbContext();
 
         using (var stream = new MemoryStream())
@@ -1775,13 +1759,13 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                             continue;
                         }
 
-                        var preTimePlanning = await _dbContext.PlanRegistrations.AsNoTracking()
+                        var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
                             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                             .Where(x => x.Date < dateValue && x.SdkSitId == (int)site.MicrotingUid!)
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
-                        var planRegistration = await _dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
+                        var planRegistration = await dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
                             x.Date == dateValue && x.SdkSitId == site.MicrotingUid);
 
                         if (planRegistration == null)
@@ -1792,8 +1776,8 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                                 PlanText = planText,
                                 PlanHours = parsedPlanHours,
                                 SdkSitId = (int)site.MicrotingUid!,
-                                CreatedByUserId = _userService.UserId,
-                                UpdatedByUserId = _userService.UserId,
+                                CreatedByUserId = userService.UserId,
+                                UpdatedByUserId = userService.UserId,
                                 NettoHours = 0,
                                 PaiedOutFlex = 0,
                                 Pause1Id = 0,
@@ -1820,13 +1804,13 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                                 planRegistration.SumFlexStart = 0;
                             }
 
-                            await planRegistration.Create(_dbContext);
+                            await planRegistration.Create(dbContext);
                         }
                         else
                         {
                             planRegistration.PlanText = planText;
                             planRegistration.PlanHours = parsedPlanHours;
-                            planRegistration.UpdatedByUserId = _userService.UserId;
+                            planRegistration.UpdatedByUserId = userService.UserId;
 
                             if (preTimePlanning != null)
                             {
@@ -1844,7 +1828,7 @@ public class TimePlanningWorkingHoursService : ITimePlanningWorkingHoursService
                                 planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                             }
 
-                            await planRegistration.Update(_dbContext);
+                            await planRegistration.Update(dbContext);
                         }
                     }
                 }
