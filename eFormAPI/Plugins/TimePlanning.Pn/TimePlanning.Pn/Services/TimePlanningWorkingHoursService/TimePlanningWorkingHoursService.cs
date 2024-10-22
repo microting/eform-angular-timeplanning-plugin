@@ -281,6 +281,48 @@ public class TimePlanningWorkingHoursService(
                 first = false;
             }
 
+            // Check if there are any plannings after the last planning in the model
+            var lastPlanning = model.Plannings
+                .OrderByDescending(x => x.Date)
+                .FirstOrDefault();
+            if (lastPlanning != null)
+            {
+                lastPlanning.Date = new DateTime(lastPlanning.Date.Year, lastPlanning.Date.Month, lastPlanning.Date.Day, 0, 0, 0);
+                var planRegistrationsAfterLastPlanning = planRegistrations
+                    .Where(x => x.Date > lastPlanning.Date)
+                    .Where(x => x.Date < DateTime.Now.AddDays(180))
+                    .ToList();
+                foreach (var planRegistration in planRegistrationsAfterLastPlanning)
+                {
+                    var preTimePlanning =
+                        await dbContext.PlanRegistrations.AsNoTracking()
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.Date < planRegistration.Date
+                                        && x.SdkSitId == planRegistration.SdkSitId)
+                            .OrderByDescending(x => x.Date)
+                            .FirstOrDefaultAsync();
+
+                    if (preTimePlanning != null)
+                    {
+                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                        planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.PlanHours -
+                                                      planRegistration.NettoHours -
+                                                      planRegistration.PaiedOutFlex;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                    }
+                    else
+                    {
+                        planRegistration.SumFlexEnd = planRegistration.PlanHours - planRegistration.NettoHours -
+                                                      planRegistration.PaiedOutFlex;
+                        planRegistration.SumFlexStart = 0;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                    }
+
+                    await planRegistration.Update(dbContext);
+                }
+            }
+
+
             return new OperationResult(
                 true,
                 localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
@@ -1755,6 +1797,11 @@ public class TimePlanningWorkingHoursService(
 
                         var dateValue = DateTime.Parse(date);
                         if (dateValue < DateTime.Now.AddDays(-1))
+                        {
+                            continue;
+                        }
+
+                        if (dateValue > DateTime.Now.AddDays(180))
                         {
                             continue;
                         }
