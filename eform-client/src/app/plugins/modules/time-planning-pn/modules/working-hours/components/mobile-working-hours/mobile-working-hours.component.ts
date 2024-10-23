@@ -58,6 +58,12 @@ export class MobileWorkingHoursComponent implements OnInit, OnDestroy {
       });
   }
 
+
+  isToday(): boolean {
+    const today = new Date();
+    return this.selectedDate.toDateString() === today.toDateString();
+  }
+
   get workingHourData() {
     return Object.entries(this.workingHourModel)
       .filter(([key, value]) => value !== null && value !== undefined && value !== '' && key !== 'date' && key !== 'yesterDay')
