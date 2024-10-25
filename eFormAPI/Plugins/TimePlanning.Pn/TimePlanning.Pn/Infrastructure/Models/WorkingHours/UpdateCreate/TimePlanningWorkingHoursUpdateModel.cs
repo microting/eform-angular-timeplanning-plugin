@@ -136,4 +136,12 @@ public class TimePlanningWorkingHoursUpdateModel
     public int Shift1PauseNumber { get; set; }
 
     public int Shift2PauseNumber { get; set; }
+
+    public string? SoftwareVersion { get; set; }
+
+    public string? Model { get; set; }
+
+    public string? Manufacturer { get; set; }
+
+    public string? OsVersion { get; set; }
 }

@@ -721,6 +721,12 @@ public class TimePlanningWorkingHoursService(
         {
             return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
         }
+        registrationDevice.OsVersion = model.OsVersion;
+        registrationDevice.Model = model.Model;
+        registrationDevice.Manufacturer = model.Manufacturer;
+        registrationDevice.SoftwareVersion = model.SoftwareVersion;
+
+        await registrationDevice.Update(dbContext);
 
         var todayAtMidnight = DateTime.UtcNow.Date;
 
