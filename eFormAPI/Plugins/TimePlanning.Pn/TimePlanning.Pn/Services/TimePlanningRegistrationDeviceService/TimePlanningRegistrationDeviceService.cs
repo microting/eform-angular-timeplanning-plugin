@@ -45,7 +45,9 @@ public class TimePlanningRegistrationDeviceService(
                 OtpEnabled = x.OtpEnabled,
                 OtpCode = $"{customerNo} / {x.OtpCode}",
                 CreatedAt = x.CreatedAt,
-                UpdatedAt = x.UpdatedAt
+                UpdatedAt = x.UpdatedAt,
+                Name = x.Name,
+                Description = x.Description
             }).ToListAsync());
         }
         catch (Exception e)
@@ -68,7 +70,7 @@ public class TimePlanningRegistrationDeviceService(
                 Manufacturer = x.Manufacturer,
                 OsVersion = x.OsVersion,
                 LastIp = x.LastIp,
-                LastKnownLocation = x.LastKnownLocation
+                LastKnownLocation = x.LastKnownLocation,
             }).FirstOrDefaultAsync();
 
         if (registrationDevice == null)
@@ -102,6 +104,7 @@ public class TimePlanningRegistrationDeviceService(
         }
 
         registrationDevice.OtpEnabled = false;
+        registrationDevice.OtpCode = null;
         await registrationDevice.GenerateToken(dbContext);
 
         var registrationDeviceAuth = new TimePlanningRegistrationDeviceAuthModel
@@ -142,6 +145,12 @@ public class TimePlanningRegistrationDeviceService(
         }
 
         registrationDevice.UpdatedByUserId = userService.UserId;
+        if (model.OtpEnabled)
+        {
+            await registrationDevice.GenerateOtp(dbContext);
+        }
+        registrationDevice.Name = model.Name;
+        registrationDevice.Description = model.Description;
 
         await registrationDevice.GenerateOtp(dbContext);
 

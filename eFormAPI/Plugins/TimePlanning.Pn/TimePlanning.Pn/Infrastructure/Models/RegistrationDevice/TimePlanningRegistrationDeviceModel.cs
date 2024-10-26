@@ -12,4 +12,6 @@ public class TimePlanningRegistrationDeviceModel : BaseEntity
     public string LastKnownLocation { get; set; }
     public bool OtpEnabled { get; set; }
     public string OtpCode { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
 }

@@ -1,5 +1,6 @@
 <mtx-grid
   [data]="registrationDevices"
+  [cellTemplate]="{manufacturer: nanufacturerTpl, customerOtp: customerOtpTpl}"
   [showPaginator]="false"
   [pageOnFront]="false"
   [rowStriped]="true"
@@ -9,3 +10,29 @@
   [columns]="tableHeaders"
   noResultText="{{'No registration devices found' | translate}}"
 ></mtx-grid>
+
+<ng-template #customerOtpTpl let-row>
+  <ng-container *ngIf="row.customerNo && row.otpCode">
+    {{ row.customerNo }} / {{ row.otpCode }}
+  </ng-container>
+  <ng-container *ngIf="row.otpCode === 0 || row.otpCode === null">
+    <button
+      class="reportCaseUnarchive"
+      mat-icon-button
+      color="warn"
+      matTooltip="{{ 'New OTP' | translate }}"
+      (click)="openOtpModal(row)"
+    >
+      <mat-icon>key</mat-icon>
+    </button>
+  </ng-container>
+  <ng-container *ngIf="!row.unitId"> N/A</ng-container>
+</ng-template>
+
+<ng-template #nanufacturerTpl let-row>
+  <ng-container *ngIf="row.osVersion !== null">
+    <div class="manufacturer" id="manufacturer-{{row.id}}">
+      {{row.model}} ({{row.osVersion}})
+    </div>
+  </ng-container>
+</ng-template>
