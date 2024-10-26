@@ -1,7 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
-import {DeviceUserModel} from 'src/app/plugins/modules/backend-configuration-pn/models';
 
 @Component({
   selector: 'app-registration-devices-table',
@@ -44,7 +43,7 @@ export class RegistrationDevicesTableComponent implements OnInit {
     ];
   }
 
-  openOtpModal(siteDto: DeviceUserModel) {
+  openOtpModal(siteDto: any) {
     if (!siteDto.unitId) {
       return;
     }
