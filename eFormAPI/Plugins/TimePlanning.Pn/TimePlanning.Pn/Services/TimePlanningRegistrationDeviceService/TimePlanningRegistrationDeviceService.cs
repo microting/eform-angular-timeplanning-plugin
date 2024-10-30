@@ -43,7 +43,8 @@ public class TimePlanningRegistrationDeviceService(
                 LastIp = x.LastIp,
                 LastKnownLocation = x.LastKnownLocation,
                 OtpEnabled = x.OtpEnabled,
-                OtpCode = $"{customerNo} / {x.OtpCode}",
+                CustomerNo = customerNo,
+                OtpCode = x.OtpCode,
                 CreatedAt = x.CreatedAt,
                 UpdatedAt = x.UpdatedAt,
                 Name = x.Name,
@@ -145,17 +146,49 @@ public class TimePlanningRegistrationDeviceService(
         }
 
         registrationDevice.UpdatedByUserId = userService.UserId;
-        if (model.OtpEnabled)
-        {
-            await registrationDevice.GenerateOtp(dbContext);
-        }
         registrationDevice.Name = model.Name;
         registrationDevice.Description = model.Description;
 
-        await registrationDevice.GenerateOtp(dbContext);
-
         return new OperationResult(true,
             localizationService.GetString("RegistrationDeviceUpdatedSuccessfully"));
+    }
+
+    public async Task<OperationDataResult<TimePlanningRegistrationDeviceModel>> RequestOtp(int id)
+    {
+        var registrationDevice = await dbContext.RegistrationDevices
+            .Where(x => x.Id == id && x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync();
+
+        if (registrationDevice == null)
+        {
+            return new OperationDataResult<TimePlanningRegistrationDeviceModel>(false,
+                localizationService.GetString("RegistrationDeviceNotFound"));
+        }
+
+        await registrationDevice.GenerateOtp(dbContext);
+
+        var core = await _core.GetCore();
+        var customerNo = await core.GetSdkSetting(Settings.customerNo);
+        var registrationDeviceModel = new TimePlanningRegistrationDeviceModel
+        {
+            Id = registrationDevice.Id,
+            SoftwareVersion = registrationDevice.SoftwareVersion,
+            Model = registrationDevice.Model,
+            Manufacturer = registrationDevice.Manufacturer,
+            OsVersion = registrationDevice.OsVersion,
+            LastIp = registrationDevice.LastIp,
+            LastKnownLocation = registrationDevice.LastKnownLocation,
+            OtpEnabled = registrationDevice.OtpEnabled,
+            CustomerNo = customerNo,
+            OtpCode = registrationDevice.OtpCode,
+            CreatedAt = registrationDevice.CreatedAt,
+            UpdatedAt = registrationDevice.UpdatedAt,
+            Name = registrationDevice.Name,
+            Description = registrationDevice.Description
+        };
+
+        return new OperationDataResult<TimePlanningRegistrationDeviceModel>(true,
+            localizationService.GetString("RegistrationDeviceOtpRequestedSuccessfully"), registrationDeviceModel);
     }
 
     public async Task<OperationResult> Delete(int id)

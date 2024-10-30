@@ -1,6 +1,6 @@
 <mtx-grid
   [data]="registrationDevices"
-  [cellTemplate]="{manufacturer: nanufacturerTpl, customerOtp: customerOtpTpl}"
+  [cellTemplate]="{manufacturer: nanufacturerTpl, otpCode: customerOtpTpl}"
   [showPaginator]="false"
   [pageOnFront]="false"
   [rowStriped]="true"
@@ -12,10 +12,10 @@
 ></mtx-grid>
 
 <ng-template #customerOtpTpl let-row>
-  <ng-container *ngIf="row.customerNo && row.otpCode">
+  <ng-container *ngIf="row.otpEnabled">
     {{ row.customerNo }} / {{ row.otpCode }}
   </ng-container>
-  <ng-container *ngIf="row.otpCode === 0 || row.otpCode === null">
+  <ng-container *ngIf="!row.otpEnabled">
     <button
       class="reportCaseUnarchive"
       mat-icon-button
@@ -26,7 +26,6 @@
       <mat-icon>key</mat-icon>
     </button>
   </ng-container>
-  <ng-container *ngIf="!row.unitId"> N/A</ng-container>
 </ng-template>
 
 <ng-template #nanufacturerTpl let-row>

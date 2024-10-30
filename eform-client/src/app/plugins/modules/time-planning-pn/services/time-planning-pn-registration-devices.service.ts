@@ -11,7 +11,7 @@ export let TimePlanningPnRegistrationDevicesMethods = {
   Create: 'api/time-planning-pn/registration-device',
   Update: 'api/time-planning-pn/registration-device',
   Delete: 'api/time-planning-pn/registration-device',
-  Get: 'api/time-planning-pn/registration-device'
+  RequestOtp: 'api/time-planning-pn/registration-device/request-otp'
 };
 @Injectable({
     providedIn: 'root'
@@ -33,5 +33,9 @@ export class TimePlanningPnRegistrationDevicesService {
 
   deleteRegistrationDevice(model: any) {
     return this.apiBaseService.delete(TimePlanningPnRegistrationDevicesMethods.Delete + '/' + model);
+  }
+
+  requestOtp(id: number): Observable<OperationDataResult<TimePlanningRegistrationDeviceModel>> {
+    return this.apiBaseService.get(TimePlanningPnRegistrationDevicesMethods.RequestOtp + '/' + id);
   }
 }

@@ -31,6 +31,7 @@ export class RegistrationDevicesContainerComponent implements OnInit {
   }
 
   onUpdateRegistrationDevices() {
+    this.getRegistrationDevices();
   }
 
   onRegistrationDevicesFiltersChanged($event: unknown) {

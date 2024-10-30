@@ -31,17 +31,16 @@ public class TimePlanningRegistrationDeviceController : Controller
         return await _registrationDeviceService.Create(model);
     }
 
-    [HttpGet]
-    [Route("{id}")]
-    public async Task<OperationDataResult<TimePlanningRegistrationDeviceModel>> Read(int id)
-    {
-        return await _registrationDeviceService.Read(id);
-    }
-
     [HttpPut]
     public async Task<OperationResult> Update([FromBody] TimePlanningRegistrationDeviceUpdateModel model)
     {
         return await _registrationDeviceService.Update(model);
+    }
+
+    [HttpDelete]
+    public async Task<OperationResult> Delete(int id)
+    {
+        return await _registrationDeviceService.Delete(id);
     }
 
     [HttpPost]
@@ -51,10 +50,11 @@ public class TimePlanningRegistrationDeviceController : Controller
         return await _registrationDeviceService.Activate(model);
     }
 
-    [HttpDelete]
-    public async Task<OperationResult> Delete(int id)
+    [HttpGet]
+    [Route("request-otp/{id}")]
+    public async Task<OperationDataResult<TimePlanningRegistrationDeviceModel>> RequestOtp(int id)
     {
-        return await _registrationDeviceService.Delete(id);
+        return await _registrationDeviceService.RequestOtp(id);
     }
 
 }

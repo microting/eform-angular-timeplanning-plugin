@@ -1,6 +1,14 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
+import {TimePlanningRegistrationDeviceModel} from '../../../../../../modules/time-planning-pn/models';
+import {Subscription} from 'rxjs';
+import {
+  RegistrationDevicesOtpCodeComponent
+} from '../../../../modules/registration-devices/components';
+import {MatDialog} from '@angular/material/dialog';
+import {dialogConfigHelper} from 'src/app/common/helpers';
+import {Overlay} from '@angular/cdk/overlay';
 
 @Component({
   selector: 'app-registration-devices-table',
@@ -11,12 +19,15 @@ export class RegistrationDevicesTableComponent implements OnInit {
     return this._tableHeaders;
   }
 
-  @Output() filtersChanged = new EventEmitter<unknown>();
+  @Output() filtersChanged = new EventEmitter<void>();
   @Input() registrationDevices!: any;
-  @Output() updateRegistrationDevices = new EventEmitter<unknown>();
+  @Output() updateRegistrationDevices = new EventEmitter<void>();
   @Input() tainted!: any;
+  registrationDeviceOtpCodeComponentAfterClosedSub$: Subscription;
   private _tableHeaders: MtxGridColumn[];
   constructor(
+    private dialog: MatDialog,
+    private overlay: Overlay,
     private translateService: TranslateService) {
   }
 
@@ -43,10 +54,13 @@ export class RegistrationDevicesTableComponent implements OnInit {
     ];
   }
 
-  openOtpModal(siteDto: any) {
-    if (!siteDto.unitId) {
+  openOtpModal(registrationDeviceModel: TimePlanningRegistrationDeviceModel) {
+    if (!registrationDeviceModel.id) {
       return;
     }
+    this.registrationDeviceOtpCodeComponentAfterClosedSub$ = this.dialog.open(RegistrationDevicesOtpCodeComponent,
+      {...dialogConfigHelper(this.overlay, registrationDeviceModel)})
+      .afterClosed().subscribe(data => data ? this.updateRegistrationDevices.emit() : undefined);
     // this.propertyWorkerOtpModalComponentAfterClosedSub$ = this.dialog.open(PropertyWorkerOtpModalComponent,
     //   {...dialogConfigHelper(this.overlay, siteDto)})
     //   .afterClosed().subscribe(data => data ? this.updateTable.emit() : undefined);

@@ -10,4 +10,5 @@ export class TimePlanningRegistrationDeviceModel {
   lastKnownLocation: string;
   otpEnabled: boolean;
   otpCode: string;
+  customerNo: string;
 }
