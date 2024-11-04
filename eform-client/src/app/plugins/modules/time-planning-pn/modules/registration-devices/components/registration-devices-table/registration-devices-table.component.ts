@@ -4,6 +4,7 @@ import {TranslateService} from '@ngx-translate/core';
 import {TimePlanningRegistrationDeviceModel} from '../../../../../../modules/time-planning-pn/models';
 import {Subscription} from 'rxjs';
 import {
+  RegistrationDevicesEditModalComponent,
   RegistrationDevicesOtpCodeComponent
 } from '../../../../modules/registration-devices/components';
 import {MatDialog} from '@angular/material/dialog';
@@ -24,6 +25,8 @@ export class RegistrationDevicesTableComponent implements OnInit {
   @Output() updateRegistrationDevices = new EventEmitter<void>();
   @Input() tainted!: any;
   registrationDeviceOtpCodeComponentAfterClosedSub$: Subscription;
+  registrationDeviceEditModalComponentAfterClosedSub$: Subscription;
+  registrationDeviceDeleteModalComponentAfterClosedSub$: Subscription
   private _tableHeaders: MtxGridColumn[];
   constructor(
     private dialog: MatDialog,
@@ -69,4 +72,22 @@ export class RegistrationDevicesTableComponent implements OnInit {
     //   .afterClosed().subscribe(data => data ? this.updateTable.emit() : undefined);
   }
 
+  openEditModal(row: TimePlanningRegistrationDeviceModel) {
+    const selectedRegistrationDevice = {...row};
+    this.registrationDeviceEditModalComponentAfterClosedSub$ = this.dialog.open(RegistrationDevicesEditModalComponent,
+      {
+        ...dialogConfigHelper(this.overlay, {
+          selectedRegistrationDevice: selectedRegistrationDevice
+        })
+      })
+      .afterClosed().subscribe(data => data ? this.updateRegistrationDevices.emit() : undefined);
+
+  }
+
+  openDeleteRegistrationDeviceModal(row: TimePlanningRegistrationDeviceModel) {
+    // const selectedRegistrationDevice = {...row};
+    // this.registrationDeviceDeleteModalComponentAfterClosedSub$ = this.dialog.open(RegistrationDevicesDeleteModalComponent,
+    //   {...dialogConfigHelper(this.overlay, selectedRegistrationDevice)})
+    //   .afterClosed().subscribe(data => data ? this.updateRegistrationDevices.emit() : undefined);
+  }
 }

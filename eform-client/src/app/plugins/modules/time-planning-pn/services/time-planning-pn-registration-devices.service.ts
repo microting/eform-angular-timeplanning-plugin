@@ -5,7 +5,7 @@ import {
   TimePlanningRegistrationDeviceModel
 } from '../models/registration-devices/time-planning-registration-device.model';
 import {OperationDataResult} from 'src/app/common/models';
-import {TimePlanningRegistrationDeviceCreateModel} from "src/app/plugins/modules/time-planning-pn/models";
+import {TimePlanningRegistrationDeviceCreateModel} from '../../../modules/time-planning-pn/models';
 
 export let TimePlanningPnRegistrationDevicesMethods = {
   Index: 'api/time-planning-pn/registration-device/index',

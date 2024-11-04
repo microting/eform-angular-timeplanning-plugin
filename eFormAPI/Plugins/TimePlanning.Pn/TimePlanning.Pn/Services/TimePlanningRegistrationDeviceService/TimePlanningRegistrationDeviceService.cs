@@ -151,6 +151,8 @@ public class TimePlanningRegistrationDeviceService(
         registrationDevice.Name = model.Name;
         registrationDevice.Description = model.Description;
 
+        await registrationDevice.Update(dbContext);
+
         return new OperationResult(true,
             localizationService.GetString("RegistrationDeviceUpdatedSuccessfully"));
     }

@@ -1,8 +1,8 @@
 import {NgModule} from '@angular/core';
 import {
   RegistrationDevicesContainerComponent,
-  RegistrationDevicesCreateEditModalComponent,
-  RegistrationDevicesDeleteComponent,
+  RegistrationDevicesCreateModalComponent,
+  RegistrationDevicesDeleteComponent, RegistrationDevicesEditModalComponent,
   RegistrationDevicesOtpCodeComponent,
   RegistrationDevicesTableComponent
 } from './components';
@@ -17,9 +17,9 @@ import {MtxGrid} from '@ng-matero/extensions/grid';
 import {MatDialogActions, MatDialogContent, MatDialogTitle} from '@angular/material/dialog';
 import {MatIcon} from '@angular/material/icon';
 import {MatTooltip} from '@angular/material/tooltip';
-import {FormsModule} from "@angular/forms";
-import {MatFormField, MatLabel} from "@angular/material/form-field";
-import {MatInput} from "@angular/material/input";
+import {FormsModule} from '@angular/forms';
+import {MatFormField, MatLabel} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
 
 @NgModule({
   imports: [
@@ -44,7 +44,8 @@ import {MatInput} from "@angular/material/input";
   declarations: [
     RegistrationDevicesTableComponent,
     RegistrationDevicesContainerComponent,
-    RegistrationDevicesCreateEditModalComponent,
+    RegistrationDevicesCreateModalComponent,
+    RegistrationDevicesEditModalComponent,
     RegistrationDevicesDeleteComponent,
     RegistrationDevicesOtpCodeComponent
   ],
