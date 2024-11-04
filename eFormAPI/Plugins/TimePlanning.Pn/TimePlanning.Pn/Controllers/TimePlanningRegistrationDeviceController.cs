@@ -38,6 +38,7 @@ public class TimePlanningRegistrationDeviceController : Controller
     }
 
     [HttpDelete]
+    [Route("delete/{id}")]
     public async Task<OperationResult> Delete(int id)
     {
         return await _registrationDeviceService.Delete(id);

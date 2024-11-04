@@ -2,7 +2,7 @@ import {NgModule} from '@angular/core';
 import {
   RegistrationDevicesContainerComponent,
   RegistrationDevicesCreateModalComponent,
-  RegistrationDevicesDeleteComponent, RegistrationDevicesEditModalComponent,
+  RegistrationDevicesDeleteModalComponent, RegistrationDevicesEditModalComponent,
   RegistrationDevicesOtpCodeComponent,
   RegistrationDevicesTableComponent
 } from './components';
@@ -46,7 +46,7 @@ import {MatInput} from '@angular/material/input';
     RegistrationDevicesContainerComponent,
     RegistrationDevicesCreateModalComponent,
     RegistrationDevicesEditModalComponent,
-    RegistrationDevicesDeleteComponent,
+    RegistrationDevicesDeleteModalComponent,
     RegistrationDevicesOtpCodeComponent
   ],
   providers: [],

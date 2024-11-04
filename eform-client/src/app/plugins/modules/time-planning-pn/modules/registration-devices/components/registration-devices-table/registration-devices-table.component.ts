@@ -4,6 +4,7 @@ import {TranslateService} from '@ngx-translate/core';
 import {TimePlanningRegistrationDeviceModel} from '../../../../../../modules/time-planning-pn/models';
 import {Subscription} from 'rxjs';
 import {
+  RegistrationDevicesDeleteModalComponent,
   RegistrationDevicesEditModalComponent,
   RegistrationDevicesOtpCodeComponent
 } from '../../../../modules/registration-devices/components';
@@ -85,9 +86,13 @@ export class RegistrationDevicesTableComponent implements OnInit {
   }
 
   openDeleteRegistrationDeviceModal(row: TimePlanningRegistrationDeviceModel) {
-    // const selectedRegistrationDevice = {...row};
-    // this.registrationDeviceDeleteModalComponentAfterClosedSub$ = this.dialog.open(RegistrationDevicesDeleteModalComponent,
-    //   {...dialogConfigHelper(this.overlay, selectedRegistrationDevice)})
-    //   .afterClosed().subscribe(data => data ? this.updateRegistrationDevices.emit() : undefined);
+    const selectedRegistrationDevice = {...row};
+    this.registrationDeviceDeleteModalComponentAfterClosedSub$ = this.dialog.open(RegistrationDevicesDeleteModalComponent,
+      {
+        ...dialogConfigHelper(this.overlay, {
+          selectedRegistrationDevice: selectedRegistrationDevice
+        })
+      })
+      .afterClosed().subscribe(data => data ? this.updateRegistrationDevices.emit() : undefined);
   }
 }
