@@ -531,10 +531,10 @@ public class TimePlanningWorkingHoursService(
             Worker = sdkSite.Name,
             PlanText = planRegistration.PlanText,
             PlanHours = planRegistration.PlanHours,
-            NettoHours = Math.Round(planRegistration.NettoHours, 2),
-            FlexHours = Math.Round(planRegistration.Flex, 2),
-            SumFlexStart = planRegistration.SumFlexStart == 0 ? "0" : Math.Round(planRegistration.SumFlexStart * -1, 2).ToString(CultureInfo.InvariantCulture),
-            SumFlexEnd = planRegistration.SumFlexEnd == 0 ? "0" : Math.Round(planRegistration.SumFlexEnd * -1, 2).ToString(CultureInfo.InvariantCulture),
+            NettoHours = RoundToTwoDecimalPlaces(planRegistration.NettoHours),
+            FlexHours = RoundToTwoDecimalPlaces(planRegistration.Flex),
+            SumFlexStart = planRegistration.SumFlexStart == 0 ? "0" : RoundToTwoDecimalPlaces(planRegistration.SumFlexStart).ToString(CultureInfo.InvariantCulture),
+            SumFlexEnd = planRegistration.SumFlexEnd == 0 ? "0" : RoundToTwoDecimalPlaces(planRegistration.SumFlexEnd).ToString(CultureInfo.InvariantCulture),
             PaidOutFlex = planRegistration.PaiedOutFlex,
             CommentWorker = planRegistration.WorkerComment,
             CommentOffice = planRegistration.CommentOffice,
@@ -546,10 +546,15 @@ public class TimePlanningWorkingHoursService(
             Pause2TotalTime = RoundDownToNearestFiveMinutesAndFormat(midnight, planRegistration.Pause2Id)
         };
 
-
         return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true,
             localizationService.GetString("PlanRegistrationLoaded"),
             timePlanningWorkingHoursModel);
+    }
+
+    private static double RoundToTwoDecimalPlaces(double value)
+    {
+        double roundedValue = Math.Round(value, 2);
+        return roundedValue == -0 ? 0 : roundedValue;
     }
 
     private static string? RoundDownToNearestFiveMinutesAndFormat(DateTime date, int minutesToAdd)
