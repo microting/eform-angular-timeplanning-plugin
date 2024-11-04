@@ -5,6 +5,7 @@ import {
   TimePlanningRegistrationDeviceModel
 } from '../models/registration-devices/time-planning-registration-device.model';
 import {OperationDataResult} from 'src/app/common/models';
+import {TimePlanningRegistrationDeviceCreateModel} from "src/app/plugins/modules/time-planning-pn/models";
 
 export let TimePlanningPnRegistrationDevicesMethods = {
   Index: 'api/time-planning-pn/registration-device/index',
@@ -23,7 +24,7 @@ export class TimePlanningPnRegistrationDevicesService {
     return this.apiBaseService.post(TimePlanningPnRegistrationDevicesMethods.Index, model);
   }
 
-  createRegistrationDevice(model: any) {
+  createRegistrationDevice(model: TimePlanningRegistrationDeviceCreateModel) {
     return this.apiBaseService.post(TimePlanningPnRegistrationDevicesMethods.Create, model);
   }
 

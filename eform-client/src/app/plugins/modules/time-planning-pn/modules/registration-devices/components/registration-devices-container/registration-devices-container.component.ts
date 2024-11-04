@@ -7,7 +7,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {Overlay} from '@angular/cdk/overlay';
 import {dialogConfigHelper} from 'src/app/common/helpers';
 import {
-  RegistrationDevicesCreateComponent
+  RegistrationDevicesCreateEditModalComponent
 } from '../index';
 
 @Component({
@@ -47,7 +47,7 @@ export class RegistrationDevicesContainerComponent implements OnInit {
   }
 
   openCreateModal() {
-    this.createRegistrationDevicesComponentAfterClosedSub$ = this.dialog.open(RegistrationDevicesCreateComponent,
+    this.createRegistrationDevicesComponentAfterClosedSub$ = this.dialog.open(RegistrationDevicesCreateEditModalComponent,
       dialogConfigHelper(this.overlay)).afterClosed().subscribe((data) => {
       if (data) {
         this.getRegistrationDevices();

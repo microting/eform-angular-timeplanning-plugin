@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
 import {
   RegistrationDevicesContainerComponent,
-  RegistrationDevicesCreateComponent,
+  RegistrationDevicesCreateEditModalComponent,
   RegistrationDevicesDeleteComponent,
   RegistrationDevicesOtpCodeComponent,
   RegistrationDevicesTableComponent
@@ -14,30 +14,37 @@ import {
   RegistrationDevicesRouting
 } from './registration-devices.routing';
 import {MtxGrid} from '@ng-matero/extensions/grid';
-import {MatDialogActions, MatDialogContent, MatDialogTitle} from "@angular/material/dialog";
-import {MatIcon} from "@angular/material/icon";
-import {MatTooltip} from "@angular/material/tooltip";
+import {MatDialogActions, MatDialogContent, MatDialogTitle} from '@angular/material/dialog';
+import {MatIcon} from '@angular/material/icon';
+import {MatTooltip} from '@angular/material/tooltip';
+import {FormsModule} from "@angular/forms";
+import {MatFormField, MatLabel} from "@angular/material/form-field";
+import {MatInput} from "@angular/material/input";
 
 @NgModule({
-    imports: [
-        AsyncPipe,
-        EformSharedModule,
-        MatButton,
-        NgIf,
-        TranslateModule,
-        RegistrationDevicesRouting,
-        MtxGrid,
-        MatDialogTitle,
-        MatDialogContent,
-        MatDialogActions,
-        MatIcon,
-        MatIconButton,
-        MatTooltip
-    ],
+  imports: [
+    AsyncPipe,
+    EformSharedModule,
+    MatButton,
+    NgIf,
+    TranslateModule,
+    RegistrationDevicesRouting,
+    MtxGrid,
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions,
+    MatIcon,
+    MatIconButton,
+    MatTooltip,
+    FormsModule,
+    MatFormField,
+    MatInput,
+    MatLabel
+  ],
   declarations: [
     RegistrationDevicesTableComponent,
     RegistrationDevicesContainerComponent,
-    RegistrationDevicesCreateComponent,
+    RegistrationDevicesCreateEditModalComponent,
     RegistrationDevicesDeleteComponent,
     RegistrationDevicesOtpCodeComponent
   ],

@@ -1,0 +1,41 @@
+<h3 mat-dialog-title>{{ 'Create registration device' | translate}}</h3>
+<div mat-dialog-content>
+  <div class="d-flex flex-column">
+    <mat-form-field>
+      <mat-label>{{'Name' | translate }}</mat-label>
+      <input
+        matInput
+        [(ngModel)]="selectedRegistrationDevice.name"
+        required
+        type="text"
+        id="firstName"
+        name="userName">
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>{{'Description' | translate }}</mat-label>
+      <input
+        matInput
+        [(ngModel)]="selectedRegistrationDevice.description"
+        type="text"
+        name="email"
+        id="lastName"
+        required>
+    </mat-form-field>
+</div>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+  <button
+    mat-raised-button
+    color="accent"
+    (click)="createRegistrationDevice()"
+    id="{{'registrationDeviceSaveBtn'}}"
+  >
+    {{'Create' | translate}}
+  </button>
+  <button
+    mat-raised-button
+    id="{{'registrationDeviceCancelCreateBtn'}}"
+    (click)="hide()"
+  >
+    {{'Cancel' | translate}}
+  </button>
+</div>

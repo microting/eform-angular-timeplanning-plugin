@@ -50,7 +50,10 @@ export class RegistrationDevicesTableComponent implements OnInit {
       // {header: this.translateService.stream('Software version'), field: 'softwareVersion'},
       {header: this.translateService.stream('Last IP'), field: 'lastIp'},
       {header: this.translateService.stream('Customer no & OTP'), field: 'otpCode'},
-      {header: this.translateService.stream('Actions'), field: 'actions'},
+      {
+        width: '160px',
+        pinned: 'right',
+        header: this.translateService.stream('Actions'), field: 'actions'},
     ];
   }
 

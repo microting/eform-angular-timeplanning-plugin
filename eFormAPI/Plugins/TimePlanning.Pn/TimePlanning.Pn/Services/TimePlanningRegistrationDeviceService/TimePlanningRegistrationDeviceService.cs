@@ -122,7 +122,9 @@ public class TimePlanningRegistrationDeviceService(
         var registrationDevice = new RegistrationDevice
         {
             CreatedByUserId = userService.UserId,
-            UpdatedByUserId = userService.UserId
+            UpdatedByUserId = userService.UserId,
+            Name = model.Name,
+            Description = model.Description
         };
 
         await registrationDevice.Create(dbContext);

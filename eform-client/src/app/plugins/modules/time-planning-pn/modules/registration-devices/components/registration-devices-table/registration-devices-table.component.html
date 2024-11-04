@@ -1,6 +1,7 @@
 <mtx-grid
   [data]="registrationDevices"
-  [cellTemplate]="{manufacturer: nanufacturerTpl, otpCode: customerOtpTpl}"
+  [cellTemplate]="{manufacturer: nanufacturerTpl, otpCode: customerOtpTpl,
+    actions: actionsTpl}"
   [showPaginator]="false"
   [pageOnFront]="false"
   [rowStriped]="true"
@@ -34,4 +35,27 @@
       {{row.model}} ({{row.osVersion}})
     </div>
   </ng-container>
+</ng-template>
+
+
+<ng-template #actionsTpl let-row let-i="index">
+  <div class="">
+<!--    <button-->
+<!--      mat-icon-button-->
+<!--      matTooltip="{{ 'Edit registration device' | translate }}"-->
+<!--      id="editRegistrationDeviceUserBtn-{{i}}"-->
+<!--      (click)="openEditModal(row)"-->
+<!--    >-->
+<!--      <mat-icon>edit</mat-icon>-->
+<!--    </button>-->
+<!--    <button-->
+<!--      mat-icon-button-->
+<!--      color="warn"-->
+<!--      matTooltip="{{ 'Delete registration device' | translate }}"-->
+<!--      id="deleteRegistrationDeviceUserBtn-{{i}}"-->
+<!--      (click)="openDeleteRegistrationDeviceModal(row)"-->
+<!--    >-->
+<!--      <mat-icon>delete</mat-icon>-->
+<!--    </button>-->
+  </div>
 </ng-template>

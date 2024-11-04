@@ -11,4 +11,6 @@ export class TimePlanningRegistrationDeviceModel {
   otpEnabled: boolean;
   otpCode: string;
   customerNo: string;
+  name: string;
+  description: string;
 }
