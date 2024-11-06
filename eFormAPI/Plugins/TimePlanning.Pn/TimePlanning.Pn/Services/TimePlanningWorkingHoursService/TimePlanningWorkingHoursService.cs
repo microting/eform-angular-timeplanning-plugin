@@ -305,14 +305,14 @@ public class TimePlanningWorkingHoursService(
                     if (preTimePlanning != null)
                     {
                         planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                        planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.PlanHours -
-                                                      planRegistration.NettoHours -
+                        planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                                      planRegistration.PlanHours -
                                                       planRegistration.PaiedOutFlex;
                         planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                     }
                     else
                     {
-                        planRegistration.SumFlexEnd = planRegistration.PlanHours - planRegistration.NettoHours -
+                        planRegistration.SumFlexEnd = planRegistration.NettoHours - planRegistration.PlanHours -
                                                       planRegistration.PaiedOutFlex;
                         planRegistration.SumFlexStart = 0;
                         planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
