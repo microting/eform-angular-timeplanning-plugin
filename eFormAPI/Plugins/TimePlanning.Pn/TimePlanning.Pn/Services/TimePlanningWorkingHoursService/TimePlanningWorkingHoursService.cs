@@ -230,8 +230,8 @@ public class TimePlanningWorkingHoursService(
                     catch (Exception e)
                     {
                         SentrySdk.CaptureException(e);
-                        Console.WriteLine(e);
                         logger.LogError(e.Message);
+                        logger.LogTrace(e.StackTrace);
                     }
 
                     sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
@@ -247,8 +247,8 @@ public class TimePlanningWorkingHoursService(
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
-            Console.WriteLine(e);
             logger.LogError(e.Message);
+            logger.LogTrace(e.StackTrace);
             return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                 false,
                 localizationService.GetString("ErrorWhileObtainingPlannings"));
@@ -289,7 +289,8 @@ public class TimePlanningWorkingHoursService(
                 .FirstOrDefault();
             if (lastPlanning != null)
             {
-                lastPlanning.Date = new DateTime(lastPlanning.Date.Year, lastPlanning.Date.Month, lastPlanning.Date.Day, 0, 0, 0);
+                lastPlanning.Date = new DateTime(lastPlanning.Date.Year, lastPlanning.Date.Month, lastPlanning.Date.Day,
+                    0, 0, 0);
                 var planRegistrationsAfterLastPlanning = planRegistrations
                     .Where(x => x.Date > lastPlanning.Date)
                     .Where(x => x.Date < DateTime.Now.AddDays(180))
@@ -332,8 +333,8 @@ public class TimePlanningWorkingHoursService(
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
-            Console.WriteLine(e);
             logger.LogError(e.Message);
+            logger.LogTrace(e.StackTrace);
             return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                 false,
                 localizationService.GetString("ErrorWhileCreateUpdatePlannings"));
@@ -394,8 +395,8 @@ public class TimePlanningWorkingHoursService(
             catch (Exception e)
             {
                 SentrySdk.CaptureException(e);
-                Console.WriteLine(e);
                 logger.LogError(e.Message);
+                logger.LogTrace(e.StackTrace);
             }
         }
     }
@@ -537,8 +538,12 @@ public class TimePlanningWorkingHoursService(
             PlanHours = planRegistration.PlanHours,
             NettoHours = RoundToTwoDecimalPlaces(planRegistration.NettoHours),
             FlexHours = RoundToTwoDecimalPlaces(planRegistration.Flex),
-            SumFlexStart = planRegistration.SumFlexStart == 0 ? "0" : RoundToTwoDecimalPlaces(planRegistration.SumFlexStart).ToString(CultureInfo.InvariantCulture),
-            SumFlexEnd = planRegistration.SumFlexEnd == 0 ? "0" : RoundToTwoDecimalPlaces(planRegistration.SumFlexEnd).ToString(CultureInfo.InvariantCulture),
+            SumFlexStart = planRegistration.SumFlexStart == 0
+                ? "0"
+                : RoundToTwoDecimalPlaces(planRegistration.SumFlexStart).ToString(CultureInfo.InvariantCulture),
+            SumFlexEnd = planRegistration.SumFlexEnd == 0
+                ? "0"
+                : RoundToTwoDecimalPlaces(planRegistration.SumFlexEnd).ToString(CultureInfo.InvariantCulture),
             PaidOutFlex = planRegistration.PaiedOutFlex,
             CommentWorker = planRegistration.WorkerComment,
             CommentOffice = planRegistration.CommentOffice,
@@ -730,6 +735,7 @@ public class TimePlanningWorkingHoursService(
         {
             return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
         }
+
         registrationDevice.OsVersion = model.OsVersion;
         registrationDevice.Model = model.Model;
         registrationDevice.Manufacturer = model.Manufacturer;
@@ -1501,10 +1507,12 @@ public class TimePlanningWorkingHoursService(
 
                 for (int i = 0; i < siteIdCount; i++)
                 {
-                    var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteIds[i] && x.WorkflowState != Constants.WorkflowStates.Removed);
+                    var site = await sdkContext.Sites.SingleOrDefaultAsync(x =>
+                        x.MicrotingUid == siteIds[i] && x.WorkflowState != Constants.WorkflowStates.Removed);
                     if (site == null) continue;
                     worksheetNames.Add(
-                        new KeyValuePair<string, string>($"{site.Name.Substring(0, Math.Min(31, site.Name.Length))}", $"rId{i + 2}"));
+                        new KeyValuePair<string, string>($"{site.Name.Substring(0, Math.Min(31, site.Name.Length))}",
+                            $"rId{i + 2}"));
                 }
 
                 WorkbookPart workbookPart1 = document.AddWorkbookPart();
@@ -1582,7 +1590,8 @@ public class TimePlanningWorkingHoursService(
 
                 for (int i = 0; i < siteIdCount; i++)
                 {
-                    var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteIds[i] && x.WorkflowState != Constants.WorkflowStates.Removed);
+                    var site = await sdkContext.Sites.SingleOrDefaultAsync(x =>
+                        x.MicrotingUid == siteIds[i] && x.WorkflowState != Constants.WorkflowStates.Removed);
                     if (site == null) continue;
                     var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
                     var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
@@ -1991,5 +2000,4 @@ public class TimePlanningWorkingHoursService(
 
         return columnLetter;
     }
-
 }

@@ -21,7 +21,8 @@ namespace TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
 public class TimePlanningRegistrationDeviceService(
     ILogger<TimePlanningRegistrationDeviceService> logger,
     TimePlanningPnDbContext dbContext,
-    IUserService userService, IEFormCoreService _core,
+    IUserService userService,
+    IEFormCoreService coreService,
     ITimePlanningLocalizationService localizationService)
     : ITimePlanningRegistrationDeviceService
 {
@@ -30,32 +31,35 @@ public class TimePlanningRegistrationDeviceService(
     {
         try
         {
-            var core = await _core.GetCore();
+            var core = await coreService.GetCore();
             var customerNo = await core.GetSdkSetting(Settings.customerNo);
-            var registrationDevicesQuery = dbContext.RegistrationDevices.Where(x => x.WorkflowState != Constants.WorkflowStates.Removed);
+            var registrationDevicesQuery =
+                dbContext.RegistrationDevices.Where(x => x.WorkflowState != Constants.WorkflowStates.Removed);
 
-            return new OperationDataResult<List<TimePlanningRegistrationDeviceModel>>(true, await registrationDevicesQuery.Select(x => new TimePlanningRegistrationDeviceModel
-            {
-                Id = x.Id,
-                SoftwareVersion = x.SoftwareVersion,
-                Model = x.Model,
-                Manufacturer = x.Manufacturer,
-                OsVersion = x.OsVersion,
-                LastIp = x.LastIp,
-                LastKnownLocation = x.LastKnownLocation,
-                OtpEnabled = x.OtpEnabled,
-                CustomerNo = customerNo,
-                OtpCode = x.OtpCode,
-                CreatedAt = x.CreatedAt,
-                UpdatedAt = x.UpdatedAt,
-                Name = x.Name,
-                Description = x.Description
-            }).ToListAsync());
+            return new OperationDataResult<List<TimePlanningRegistrationDeviceModel>>(true,
+                await registrationDevicesQuery.Select(x => new TimePlanningRegistrationDeviceModel
+                {
+                    Id = x.Id,
+                    SoftwareVersion = x.SoftwareVersion,
+                    Model = x.Model,
+                    Manufacturer = x.Manufacturer,
+                    OsVersion = x.OsVersion,
+                    LastIp = x.LastIp,
+                    LastKnownLocation = x.LastKnownLocation,
+                    OtpEnabled = x.OtpEnabled,
+                    CustomerNo = customerNo,
+                    OtpCode = x.OtpCode,
+                    CreatedAt = x.CreatedAt,
+                    UpdatedAt = x.UpdatedAt,
+                    Name = x.Name,
+                    Description = x.Description
+                }).ToListAsync());
         }
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
-            logger.LogError(e, e.Message);
+            logger.LogError(e.Message);
+            logger.LogTrace(e.StackTrace);
             return new OperationDataResult<List<TimePlanningRegistrationDeviceModel>>(false,
                 localizationService.GetString("ErrorObtainingRegistrationDevices"));
         }
@@ -87,7 +91,7 @@ public class TimePlanningRegistrationDeviceService(
 
     public async Task<OperationResult> Activate(TimePlanningRegistrationDeviceActivateModel model)
     {
-        var core = await _core.GetCore();
+        var core = await coreService.GetCore();
         var customerNo = await core.GetSdkSetting(Settings.customerNo);
 
         if (model.CustomerNo.ToString() != customerNo)
@@ -173,7 +177,7 @@ public class TimePlanningRegistrationDeviceService(
 
         await registrationDevice.GenerateOtp(dbContext);
 
-        var core = await _core.GetCore();
+        var core = await coreService.GetCore();
         var customerNo = await core.GetSdkSetting(Settings.customerNo);
         var registrationDeviceModel = new TimePlanningRegistrationDeviceModel
         {

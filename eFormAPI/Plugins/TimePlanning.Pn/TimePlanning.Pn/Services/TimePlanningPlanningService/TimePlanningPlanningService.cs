@@ -24,244 +24,229 @@ SOFTWARE.
 
 using Sentry;
 
-namespace TimePlanning.Pn.Services.TimePlanningPlanningService
+namespace TimePlanning.Pn.Services.TimePlanningPlanningService;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Infrastructure.Models.Planning;
+using Infrastructure.Models.Planning.HelperModel;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microting.eForm.Infrastructure.Constants;
+using Microting.eFormApi.BasePn.Abstractions;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Microting.TimePlanningBase.Infrastructure.Data;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using TimePlanningLocalizationService;
+
+public class TimePlanningPlanningService(
+    ILogger<TimePlanningPlanningService> logger,
+    TimePlanningPnDbContext dbContext,
+    IUserService userService,
+    ITimePlanningLocalizationService localizationService,
+    IEFormCoreService core)
+    : ITimePlanningPlanningService
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.Planning;
-    using Infrastructure.Models.Planning.HelperModel;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
-    using Microting.eForm.Infrastructure.Constants;
-    using Microting.eFormApi.BasePn.Abstractions;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
-    using Microting.TimePlanningBase.Infrastructure.Data;
-    using Microting.TimePlanningBase.Infrastructure.Data.Entities;
-    using TimePlanningLocalizationService;
-
-    public class TimePlanningPlanningService : ITimePlanningPlanningService
+    public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(
+        TimePlanningPlanningRequestModel model)
     {
-        private readonly ILogger<TimePlanningPlanningService> _logger;
-        private readonly TimePlanningPnDbContext _dbContext;
-        private readonly IUserService _userService;
-        private readonly ITimePlanningLocalizationService _localizationService;
-        private readonly IEFormCoreService _core;
-
-        public TimePlanningPlanningService(
-            ILogger<TimePlanningPlanningService> logger,
-            TimePlanningPnDbContext dbContext,
-            IUserService userService,
-            ITimePlanningLocalizationService localizationService,
-            IEFormCoreService core)
+        try
         {
-            _logger = logger;
-            _dbContext = dbContext;
-            _userService = userService;
-            _localizationService = localizationService;
-            _core = core;
-        }
+            var timePlanningRequest = dbContext.PlanRegistrations
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.SdkSitId == model.SiteId);
 
-        public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(TimePlanningPlanningRequestModel model)
-        {
-            try
+            // two dates may be displayed instead of one if the same date is selected.
+            if (model.DateFrom == model.DateTo)
             {
-                //var dateFrom = DateTime.ParseExact(model.DateFrom, "dd-MM-yyyy", CultureInfo.InvariantCulture);
-                //var dateTo = DateTime.ParseExact(model.DateTo, "dd-MM-yyyy", CultureInfo.InvariantCulture);
+                timePlanningRequest = timePlanningRequest
+                    .Where(x => x.Date == model.DateFrom);
+            }
+            else
+            {
+                timePlanningRequest = timePlanningRequest
+                    .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
+            }
 
-                var timePlanningRequest = _dbContext.PlanRegistrations
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.SdkSitId == model.SiteId);
-
-                // two dates may be displayed instead of one if the same date is selected.
-                if (model.DateFrom == model.DateTo)
+            var timePlannings = await timePlanningRequest
+                .Select(x => new TimePlanningPlanningHelperModel
                 {
-                    timePlanningRequest = timePlanningRequest
-                        .Where(x => x.Date == model.DateFrom);
-                }
-                else
-                {
-                    timePlanningRequest = timePlanningRequest
-                        .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
-                }
+                    WeekDay = (int)x.Date.DayOfWeek,
+                    Date = x.Date,
+                    PlanText = x.PlanText,
+                    PlanHours = x.PlanHours,
+                    Message = x.MessageId
+                })
+                .ToListAsync();
 
-                var timePlannings = await timePlanningRequest
-                    .Select(x => new TimePlanningPlanningHelperModel
+            var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
+
+            if (timePlannings.Count < date)
+            {
+                var daysForAdd = new List<TimePlanningPlanningHelperModel>();
+                for (var i = 0; i < date; i++)
+                {
+                    if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
                     {
-                        WeekDay = (int)x.Date.DayOfWeek,
-                        Date = x.Date,
-                        PlanText = x.PlanText,
-                        PlanHours = x.PlanHours,
-                        Message = x.MessageId
-                    })
-                    .ToListAsync();
-
-                var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
-
-                if (timePlannings.Count < date)
-                {
-                    var daysForAdd = new List<TimePlanningPlanningHelperModel>();
-                    for (var i = 0; i < date; i++)
-                    {
-                        if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
+                        daysForAdd.Add(new TimePlanningPlanningHelperModel
                         {
-                            daysForAdd.Add(new TimePlanningPlanningHelperModel
-                            {
-                                Date = model.DateFrom.AddDays(i),
-                                WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek
-                            });
-                        }
+                            Date = model.DateFrom.AddDays(i),
+                            WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek
+                        });
                     }
-                    timePlannings.AddRange(daysForAdd);
                 }
 
-                if (model.Sort.ToLower() == "dayofweek")
+                timePlannings.AddRange(daysForAdd);
+            }
+
+            if (model.Sort.ToLower() == "dayofweek")
+            {
+                List<TimePlanningPlanningHelperModel> tempResult;
+
+                if (model.IsSortDsc)
                 {
-                    List<TimePlanningPlanningHelperModel> tempResult;
-
-                    if (model.IsSortDsc)
-                    {
-                        tempResult = timePlannings
-                            .Where(x => x.WeekDay == 0)
-                            .OrderByDescending(x => x.WeekDay)
-                            .ThenByDescending(x => x.Date)
-                            .ToList();
-                        tempResult.AddRange(timePlannings
-                            .Where(x => x.WeekDay > 0)
-                            .OrderByDescending(x => x.WeekDay));
-                    }
-                    else
-                    {
-                        tempResult = timePlannings
-                            .Where(x => x.WeekDay > 0)
-                            .OrderBy(x => x.WeekDay)
-                            .ThenBy(x => x.Date)
-                            .ToList();
-                        tempResult.AddRange(timePlannings
-                            .Where(x => x.WeekDay == 0)
-                            .OrderBy(x => x.Date));
-                    }
-
-                    timePlannings = tempResult;
+                    tempResult = timePlannings
+                        .Where(x => x.WeekDay == 0)
+                        .OrderByDescending(x => x.WeekDay)
+                        .ThenByDescending(x => x.Date)
+                        .ToList();
+                    tempResult.AddRange(timePlannings
+                        .Where(x => x.WeekDay > 0)
+                        .OrderByDescending(x => x.WeekDay));
                 }
                 else
                 {
-                    timePlannings = model.IsSortDsc
-                        ? timePlannings.OrderByDescending(x => x.Date).ToList()
-                        : timePlannings.OrderBy(x => x.Date).ToList();
+                    tempResult = timePlannings
+                        .Where(x => x.WeekDay > 0)
+                        .OrderBy(x => x.WeekDay)
+                        .ThenBy(x => x.Date)
+                        .ToList();
+                    tempResult.AddRange(timePlannings
+                        .Where(x => x.WeekDay == 0)
+                        .OrderBy(x => x.Date));
                 }
 
-                var result = timePlannings
-                    .Select(x => new TimePlanningPlanningModel
-                    {
-                        WeekDay = x.WeekDay,
-                        Date = x.Date.ToString("yyyy/MM/dd"),
-                        PlanText = x.PlanText,
-                        PlanHours = x.PlanHours,
-                        Message = x.Message,
-                        IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
-                    })
-                    .ToList();
-
-                return new OperationDataResult<List<TimePlanningPlanningModel>>(
-                    true,
-                    result);
+                timePlannings = tempResult;
             }
-            catch (Exception e)
+            else
             {
-                SentrySdk.CaptureException(e);
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
-                return new OperationDataResult<List<TimePlanningPlanningModel>>(
-                    false,
-                    _localizationService.GetString("ErrorWhileObtainingPlannings"));
+                timePlannings = model.IsSortDsc
+                    ? timePlannings.OrderByDescending(x => x.Date).ToList()
+                    : timePlannings.OrderBy(x => x.Date).ToList();
             }
-        }
 
-        public async Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model)
-        {
-            try
-            {
-                var planning = await _dbContext.PlanRegistrations
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.SdkSitId == model.SiteId)
-                    .Where(x => x.Date == model.Date)
-                    .FirstOrDefaultAsync();
-                if (planning != null)
+            var result = timePlannings
+                .Select(x => new TimePlanningPlanningModel
                 {
-                    return await UpdatePlanning(planning, model);
-                }
+                    WeekDay = x.WeekDay,
+                    Date = x.Date.ToString("yyyy/MM/dd"),
+                    PlanText = x.PlanText,
+                    PlanHours = x.PlanHours,
+                    Message = x.Message,
+                    IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
+                })
+                .ToList();
 
-                return await CreatePlanning(model, model.SiteId);
-            }
-            catch (Exception e)
-            {
-                SentrySdk.CaptureException(e);
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
-                return new OperationResult(
-                    false,
-                    _localizationService.GetString("ErrorWhileUpdatePlanning"));
-            }
+            return new OperationDataResult<List<TimePlanningPlanningModel>>(
+                true,
+                result);
         }
-
-        private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, int sdkSiteId)
+        catch (Exception e)
         {
-            try
-            {
-                var planning = new PlanRegistration
-                {
-                    PlanText = model.PlanText,
-                    SdkSitId = sdkSiteId,
-                    Date = model.Date,
-                    PlanHours = model.PlanHours,
-                    CreatedByUserId = _userService.UserId,
-                    UpdatedByUserId = _userService.UserId,
-                    MessageId = model.Message
-                };
-
-                await planning.Create(_dbContext);
-
-                return new OperationResult(
-                    true,
-                    _localizationService.GetString("SuccessfullyCreatePlanning"));
-            }
-            catch (Exception e)
-            {
-                SentrySdk.CaptureException(e);
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
-                return new OperationResult(
-                    false,
-                    _localizationService.GetString("ErrorWhileCreatePlanning"));
-            }
+            SentrySdk.CaptureException(e);
+            logger.LogError(e.Message);
+            logger.LogTrace(e.StackTrace);
+            return new OperationDataResult<List<TimePlanningPlanningModel>>(
+                false,
+                localizationService.GetString("ErrorWhileObtainingPlannings"));
         }
+    }
 
-        private async Task<OperationResult> UpdatePlanning(PlanRegistration planning, TimePlanningPlanningUpdateModel model)
+    public async Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model)
+    {
+        try
         {
-            try
+            var planning = await dbContext.PlanRegistrations
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.SdkSitId == model.SiteId)
+                .Where(x => x.Date == model.Date)
+                .FirstOrDefaultAsync();
+            if (planning != null)
             {
-                planning.MessageId = model.Message;
-                planning.PlanText = model.PlanText;
-                planning.PlanHours = model.PlanHours;
-                planning.UpdatedByUserId = _userService.UserId;
-
-                await planning.Update(_dbContext);
-
-                return new OperationResult(
-                    true,
-                    _localizationService.GetString("SuccessfullyUpdatePlanning"));
+                return await UpdatePlanning(planning, model);
             }
-            catch (Exception e)
+
+            return await CreatePlanning(model, model.SiteId);
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            logger.LogError(e.Message);
+            logger.LogTrace(e.StackTrace);
+            return new OperationResult(
+                false,
+                localizationService.GetString("ErrorWhileUpdatePlanning"));
+        }
+    }
+
+    private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, int sdkSiteId)
+    {
+        try
+        {
+            var planning = new PlanRegistration
             {
-                SentrySdk.CaptureException(e);
-                Console.WriteLine(e);
-                _logger.LogError(e.Message);
-                return new OperationResult(
-                    false,
-                    _localizationService.GetString("ErrorWhileUpdatePlanning"));
-            }
+                PlanText = model.PlanText,
+                SdkSitId = sdkSiteId,
+                Date = model.Date,
+                PlanHours = model.PlanHours,
+                CreatedByUserId = userService.UserId,
+                UpdatedByUserId = userService.UserId,
+                MessageId = model.Message
+            };
+
+            await planning.Create(dbContext);
+
+            return new OperationResult(
+                true,
+                localizationService.GetString("SuccessfullyCreatePlanning"));
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            logger.LogError(e.Message);
+            logger.LogTrace(e.StackTrace);
+            return new OperationResult(
+                false,
+                localizationService.GetString("ErrorWhileCreatePlanning"));
+        }
+    }
+
+    private async Task<OperationResult> UpdatePlanning(PlanRegistration planning,
+        TimePlanningPlanningUpdateModel model)
+    {
+        try
+        {
+            planning.MessageId = model.Message;
+            planning.PlanText = model.PlanText;
+            planning.PlanHours = model.PlanHours;
+            planning.UpdatedByUserId = userService.UserId;
+
+            await planning.Update(dbContext);
+
+            return new OperationResult(
+                true,
+                localizationService.GetString("SuccessfullyUpdatePlanning"));
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            logger.LogError(e.Message);
+            logger.LogTrace(e.StackTrace);
+            return new OperationResult(
+                false,
+                localizationService.GetString("ErrorWhileUpdatePlanning"));
         }
     }
 }
