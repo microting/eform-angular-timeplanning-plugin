@@ -229,6 +229,7 @@ public class TimePlanningWorkingHoursService(
                     }
                     catch (Exception e)
                     {
+                        SentrySdk.CaptureException(e);
                         Console.WriteLine(e);
                         logger.LogError(e.Message);
                     }
@@ -245,6 +246,7 @@ public class TimePlanningWorkingHoursService(
         }
         catch (Exception e)
         {
+            SentrySdk.CaptureException(e);
             Console.WriteLine(e);
             logger.LogError(e.Message);
             return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
@@ -329,6 +331,7 @@ public class TimePlanningWorkingHoursService(
         }
         catch (Exception e)
         {
+            SentrySdk.CaptureException(e);
             Console.WriteLine(e);
             logger.LogError(e.Message);
             return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
@@ -390,6 +393,7 @@ public class TimePlanningWorkingHoursService(
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 logger.LogError(e.Message);
             }
@@ -1355,6 +1359,7 @@ public class TimePlanningWorkingHoursService(
         }
         catch (Exception ex)
         {
+            SentrySdk.CaptureException(ex);
             logger.LogError(ex.Message);
             return new OperationDataResult<Stream>(false,
                 localizationService.GetString("ErrorWhileCreatingExcelFile"));
@@ -1735,6 +1740,7 @@ public class TimePlanningWorkingHoursService(
         }
         catch (Exception ex)
         {
+            SentrySdk.CaptureException(ex);
             logger.LogError(ex.Message);
             return new OperationDataResult<Stream>(false,
                 localizationService.GetString("ErrorWhileCreatingExcelFile"));

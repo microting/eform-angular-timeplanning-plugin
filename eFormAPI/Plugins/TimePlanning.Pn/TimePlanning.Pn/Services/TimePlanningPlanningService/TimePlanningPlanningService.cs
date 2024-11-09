@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using Sentry;
+
 namespace TimePlanning.Pn.Services.TimePlanningPlanningService
 {
     using System;
@@ -168,6 +170,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationDataResult<List<TimePlanningPlanningModel>>(
@@ -194,6 +197,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationResult(
@@ -225,6 +229,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationResult(
@@ -250,6 +255,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationResult(

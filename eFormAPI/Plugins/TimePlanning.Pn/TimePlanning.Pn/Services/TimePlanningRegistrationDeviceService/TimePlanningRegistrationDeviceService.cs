@@ -12,6 +12,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Microting.TimePlanningBase.Infrastructure.Data.Models;
+using Sentry;
 using TimePlanning.Pn.Infrastructure.Models.RegistrationDevice;
 using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 
@@ -53,6 +54,7 @@ public class TimePlanningRegistrationDeviceService(
         }
         catch (Exception e)
         {
+            SentrySdk.CaptureException(e);
             logger.LogError(e, e.Message);
             return new OperationDataResult<List<TimePlanningRegistrationDeviceModel>>(false,
                 localizationService.GetString("ErrorObtainingRegistrationDevices"));

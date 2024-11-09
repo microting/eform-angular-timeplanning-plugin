@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
+using Sentry;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 
 namespace TimePlanning.Pn.Services.TimePlanningFlexService
@@ -144,6 +145,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationDataResult<List<TimePlanningFlexIndexModel>>(
@@ -220,6 +222,7 @@ namespace TimePlanning.Pn.Services.TimePlanningFlexService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationResult(

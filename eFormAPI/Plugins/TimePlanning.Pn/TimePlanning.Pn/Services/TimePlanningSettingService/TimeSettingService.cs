@@ -24,6 +24,7 @@ SOFTWARE.
 
 #nullable enable
 using JetBrains.Annotations;
+using Sentry;
 
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
@@ -89,6 +90,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationDataResult<TimePlanningSettingsModel>(
@@ -109,6 +111,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationResult(
@@ -151,6 +154,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationResult(
@@ -172,6 +176,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationResult(
@@ -212,6 +217,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationResult(
@@ -287,6 +293,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
                 return new OperationDataResult<List<Infrastructure.Models.Settings.SiteDto>>(
