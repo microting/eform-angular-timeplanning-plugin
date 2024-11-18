@@ -48,5 +48,7 @@ namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
         Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursUpdateModel model, string token);
 
         Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime);
+
+        Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate, DateTime endDate);
     }
 }

@@ -22,6 +22,7 @@ using System;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours;
 
 namespace TimePlanning.Pn.Controllers
@@ -66,6 +67,13 @@ namespace TimePlanning.Pn.Controllers
         public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> Read(DateTime dateTime)
         {
             return await _workingHoursService.ReadSimple(dateTime);
+        }
+
+        [HttpGet]
+        [Route("calculate-hours-summary")]
+        public async Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate, DateTime endDate)
+        {
+            return await _workingHoursService.CalculateHoursSummary(startDate, endDate);
         }
 
         [HttpPut]

@@ -560,6 +560,58 @@ public class TimePlanningWorkingHoursService(
             timePlanningWorkingHoursModel);
     }
 
+    public async Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate,
+        DateTime endDate)
+    {
+        try
+        {
+            // Adjust startDate to 00:00:00 and endDate to 23:59:59
+            startDate = new DateTime(startDate.Year, startDate.Month, startDate.Day, 0, 0, 0);
+            endDate = new DateTime(endDate.Year, endDate.Month, endDate.Day, 23, 59, 59);
+
+            var core = await coreHelper.GetCore();
+            var sdkContext = core.DbContextHelper.GetDbContext();
+            var currentUser = await userService.GetCurrentUserAsync();
+            var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
+            var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
+                x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
+                x.WorkflowState != Constants.WorkflowStates.Removed);
+
+            if (sdkSite == null)
+            {
+                return new OperationDataResult<TimePlanningHoursSummaryModel>(false, "Site not found", null);
+            }
+
+            var planRegistrations = await dbContext.PlanRegistrations
+                .Where(x => x.Date >= startDate && x.Date <= endDate)
+                .Where(x => x.SdkSitId == sdkSite.MicrotingUid)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .ToListAsync();
+
+            var totalPlanHours = planRegistrations.Sum(x => x.PlanHours);
+            var totalNettoHours = planRegistrations.Sum(x => x.NettoHours);
+            var difference = totalNettoHours - totalPlanHours;
+
+            var summary = new TimePlanningHoursSummaryModel
+            {
+                TotalPlanHours = totalPlanHours,
+                TotalNettoHours = totalNettoHours,
+                Difference = difference
+            };
+
+            return new OperationDataResult<TimePlanningHoursSummaryModel>(true, summary);
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            logger.LogError(e.Message);
+            logger.LogTrace(e.StackTrace);
+            return new OperationDataResult<TimePlanningHoursSummaryModel>(false,
+                "Error while calculating hours summary");
+        }
+    }
+
+
     private static double RoundToTwoDecimalPlaces(double value)
     {
         double roundedValue = Math.Round(value, 2);
