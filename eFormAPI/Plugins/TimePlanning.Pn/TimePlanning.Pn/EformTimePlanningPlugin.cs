@@ -251,30 +251,33 @@ namespace TimePlanning.Pn
                 }
                 else
                 {
+                    var languages = sdkDbContext.Languages
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .ToList();
                     var translations = new List<CommonTranslationsModel>()
                     {
                         new()
                         {
                             Name = "Tidsregistrering",
-                            LanguageId = 1,
+                            LanguageId = languages.Where(x => x.LanguageCode == "da").Select(x => x.Id).First(),
                             Description = ""
                         },
                         new()
                         {
                             Name = "Time registration",
-                            LanguageId = 2,
+                            LanguageId = languages.Where(x => x.LanguageCode == "en-US").Select(x => x.Id).First(),
                             Description = ""
                         },
                         new()
                         {
                             Name = "Zeiterfassung",
-                            LanguageId = 3,
+                            LanguageId = languages.Where(x => x.LanguageCode == "de-DE").Select(x => x.Id).First(),
                             Description = ""
                         },
                         new()
                         {
                             Name = "Реєстрація часу",
-                            LanguageId = 4,
+                            LanguageId = languages.Where(x => x.LanguageCode == "uk-UA").Select(x => x.Id).First(),
                             Description = ""
                         }
                     };
