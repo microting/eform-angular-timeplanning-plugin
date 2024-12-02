@@ -1810,156 +1810,166 @@ public class TimePlanningWorkingHoursService(
 
     public async Task<OperationResult> Import(IFormFile file)
     {
-        // Get core
-        var core = await coreHelper.GetCore();
-        var sdkContext = core.DbContextHelper.GetDbContext();
-
-        using (var stream = new MemoryStream())
+        try
         {
-            await file.CopyToAsync(stream);
+            // Get core
+            var core = await coreHelper.GetCore();
+            var sdkContext = core.DbContextHelper.GetDbContext();
 
-            // Open the Excel document using OpenXML
-            using (var spreadsheetDocument = SpreadsheetDocument.Open(stream, false))
+            using (var stream = new MemoryStream())
             {
-                var workbookPart = spreadsheetDocument.WorkbookPart;
-                var sheets = workbookPart.Workbook.Sheets;
+                await file.CopyToAsync(stream);
 
-                foreach (Sheet sheet in sheets)
+                // Open the Excel document using OpenXML
+                using (var spreadsheetDocument = SpreadsheetDocument.Open(stream, false))
                 {
-                    var site = await sdkContext.Sites.FirstOrDefaultAsync(x => x.Name == sheet.Name);
-                    if (site == null)
+                    var workbookPart = spreadsheetDocument.WorkbookPart;
+                    var sheets = workbookPart.Workbook.Sheets;
+
+                    foreach (Sheet sheet in sheets)
                     {
-                        continue;
-                    }
-
-                    var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
-                    var sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
-
-                    var rows = sheetData.Elements<Row>();
-                    foreach (var row in rows)
-                    {
-                        // Skip header row
-                        if (row.RowIndex == 1)
+                        var site = await sdkContext.Sites.FirstOrDefaultAsync(x => x.Name.Replace(" ", "").ToLower() == sheet.Name.Value.Replace(" ", "").ToLower());
+                        if (site == null)
                         {
                             continue;
                         }
 
-                        // Extract cell values
-                        // var dateCell = row.Elements<Cell>().ElementAt(0); // First column
-                        // var planHoursCell = row.Elements<Cell>().ElementAt(1); // Second column
-                        // var planTextCell = row.Elements<Cell>().ElementAt(2); // Third column
+                        var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
+                        var sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
 
-                        var date = GetCellValue(workbookPart, row, 1);
-                        var planHours = GetCellValue(workbookPart, row, 2);
-                        var planText = GetCellValue(workbookPart, row, 3);
-
-                        if (string.IsNullOrEmpty(planHours))
+                        var rows = sheetData.Elements<Row>();
+                        foreach (var row in rows)
                         {
-                            planHours = "0";
-                        }
-
-                        // Replace comma with dot if needed
-                        if (planHours.Contains(','))
-                        {
-                            planHours = planHours.Replace(",", ".");
-                        }
-
-                        double parsedPlanHours = double.Parse(planHours, NumberStyles.AllowDecimalPoint,
-                            NumberFormatInfo.InvariantInfo);
-
-                        // Parse date and validate
-                        if (!DateTime.TryParse(date, out _))
-                        {
-                            continue;
-                        }
-
-                        var dateValue = DateTime.Parse(date);
-                        if (dateValue < DateTime.Now.AddDays(-1))
-                        {
-                            continue;
-                        }
-
-                        if (dateValue > DateTime.Now.AddDays(180))
-                        {
-                            continue;
-                        }
-
-                        var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
-                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                            .Where(x => x.Date < dateValue && x.SdkSitId == (int)site.MicrotingUid!)
-                            .OrderByDescending(x => x.Date)
-                            .FirstOrDefaultAsync();
-
-                        var planRegistration = await dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
-                            x.Date == dateValue && x.SdkSitId == site.MicrotingUid);
-
-                        if (planRegistration == null)
-                        {
-                            planRegistration = new PlanRegistration
+                            // Skip header row
+                            if (row.RowIndex == 1)
                             {
-                                Date = dateValue,
-                                PlanText = planText,
-                                PlanHours = parsedPlanHours,
-                                SdkSitId = (int)site.MicrotingUid!,
-                                CreatedByUserId = userService.UserId,
-                                UpdatedByUserId = userService.UserId,
-                                NettoHours = 0,
-                                PaiedOutFlex = 0,
-                                Pause1Id = 0,
-                                Pause2Id = 0,
-                                Start1Id = 0,
-                                Start2Id = 0,
-                                Stop1Id = 0,
-                                Stop2Id = 0,
-                                Flex = 0,
-                                StatusCaseId = 0
-                            };
+                                continue;
+                            }
 
-                            if (preTimePlanning != null)
+                            // Extract cell values
+                            // var dateCell = row.Elements<Cell>().ElementAt(0); // First column
+                            // var planHoursCell = row.Elements<Cell>().ElementAt(1); // Second column
+                            // var planTextCell = row.Elements<Cell>().ElementAt(2); // Third column
+
+                            var date = GetCellValue(workbookPart, row, 1);
+                            var planHours = GetCellValue(workbookPart, row, 2);
+                            var planText = GetCellValue(workbookPart, row, 3);
+
+                            if (string.IsNullOrEmpty(planHours))
                             {
-                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
-                                                              planRegistration.PaiedOutFlex;
-                                planRegistration.Flex = -planRegistration.PlanHours;
+                                planHours = "0";
+                            }
+
+                            // Replace comma with dot if needed
+                            if (planHours.Contains(','))
+                            {
+                                planHours = planHours.Replace(",", ".");
+                            }
+
+                            double parsedPlanHours = double.Parse(planHours, NumberStyles.AllowDecimalPoint,
+                                NumberFormatInfo.InvariantInfo);
+
+                            // Parse date and validate
+                            if (!DateTime.TryParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture,
+                                    DateTimeStyles.None, out var _))
+                            {
+                                continue;
+                            }
+
+                            var dateValue = DateTime.ParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture);                            if (dateValue < DateTime.Now.AddDays(-1))
+                            {
+                                continue;
+                            }
+
+                            if (dateValue > DateTime.Now.AddDays(180))
+                            {
+                                continue;
+                            }
+
+                            var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
+                                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                .Where(x => x.Date < dateValue && x.SdkSitId == (int)site.MicrotingUid!)
+                                .OrderByDescending(x => x.Date)
+                                .FirstOrDefaultAsync();
+
+                            var planRegistration = await dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
+                                x.Date == dateValue && x.SdkSitId == site.MicrotingUid);
+
+                            if (planRegistration == null)
+                            {
+                                planRegistration = new PlanRegistration
+                                {
+                                    Date = dateValue,
+                                    PlanText = planText,
+                                    PlanHours = parsedPlanHours,
+                                    SdkSitId = (int)site.MicrotingUid!,
+                                    CreatedByUserId = userService.UserId,
+                                    UpdatedByUserId = userService.UserId,
+                                    NettoHours = 0,
+                                    PaiedOutFlex = 0,
+                                    Pause1Id = 0,
+                                    Pause2Id = 0,
+                                    Start1Id = 0,
+                                    Start2Id = 0,
+                                    Stop1Id = 0,
+                                    Stop2Id = 0,
+                                    Flex = 0,
+                                    StatusCaseId = 0
+                                };
+
+                                if (preTimePlanning != null)
+                                {
+                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
+                                                                  planRegistration.PaiedOutFlex;
+                                    planRegistration.Flex = -planRegistration.PlanHours;
+                                }
+                                else
+                                {
+                                    planRegistration.Flex = -planRegistration.PlanHours;
+                                    planRegistration.SumFlexEnd = planRegistration.Flex;
+                                    planRegistration.SumFlexStart = 0;
+                                }
+
+                                await planRegistration.Create(dbContext);
                             }
                             else
                             {
-                                planRegistration.Flex = -planRegistration.PlanHours;
-                                planRegistration.SumFlexEnd = planRegistration.Flex;
-                                planRegistration.SumFlexStart = 0;
-                            }
+                                planRegistration.PlanText = planText;
+                                planRegistration.PlanHours = parsedPlanHours;
+                                planRegistration.UpdatedByUserId = userService.UserId;
 
-                            await planRegistration.Create(dbContext);
-                        }
-                        else
-                        {
-                            planRegistration.PlanText = planText;
-                            planRegistration.PlanHours = parsedPlanHours;
-                            planRegistration.UpdatedByUserId = userService.UserId;
+                                if (preTimePlanning != null)
+                                {
+                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                    planRegistration.SumFlexEnd =
+                                        preTimePlanning.SumFlexEnd + planRegistration.PlanHours -
+                                        planRegistration.NettoHours -
+                                        planRegistration.PaiedOutFlex;
+                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                }
+                                else
+                                {
+                                    planRegistration.SumFlexEnd =
+                                        planRegistration.PlanHours - planRegistration.NettoHours -
+                                        planRegistration.PaiedOutFlex;
+                                    planRegistration.SumFlexStart = 0;
+                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                }
 
-                            if (preTimePlanning != null)
-                            {
-                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.PlanHours -
-                                                              planRegistration.NettoHours -
-                                                              planRegistration.PaiedOutFlex;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                await planRegistration.Update(dbContext);
                             }
-                            else
-                            {
-                                planRegistration.SumFlexEnd = planRegistration.PlanHours - planRegistration.NettoHours -
-                                                              planRegistration.PaiedOutFlex;
-                                planRegistration.SumFlexStart = 0;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                            }
-
-                            await planRegistration.Update(dbContext);
                         }
                     }
                 }
             }
         }
-
+        catch (Exception ex)
+        {
+            SentrySdk.CaptureException(ex);
+            logger.LogError(ex.Message);
+            return new OperationResult(false, ex.Message);
+        }
         return new OperationResult(true, "Imported");
     }
 
