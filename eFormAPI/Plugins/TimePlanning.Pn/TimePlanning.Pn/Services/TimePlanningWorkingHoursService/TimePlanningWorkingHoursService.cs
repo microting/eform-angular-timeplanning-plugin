@@ -61,7 +61,7 @@ public class TimePlanningWorkingHoursService(
     TimePlanningPnDbContext dbContext,
     IUserService userService,
     ITimePlanningLocalizationService localizationService,
-    BaseDbContext _baseDbContext,
+    BaseDbContext baseDbContext,
     IPluginDbOptions<TimePlanningBaseSettings> options,
     IEFormCoreService coreHelper)
     : ITimePlanningWorkingHoursService
@@ -457,7 +457,7 @@ public class TimePlanningWorkingHoursService(
     public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
     {
         var currentUserAsync = await userService.GetCurrentUserAsync();
-        var currentUser = _baseDbContext.Users
+        var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
         var core = await coreHelper.GetCore();
@@ -565,7 +565,7 @@ public class TimePlanningWorkingHoursService(
             currentUser.TimeRegistrationManufacturer = manufacturer;
             currentUser.TimeRegistrationSoftwareVersion = softwareVersion;
             currentUser.TimeRegistrationOsVersion = osVersion;
-            await _baseDbContext.SaveChangesAsync();
+            await baseDbContext.SaveChangesAsync();
         }
 
         return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true,
@@ -585,7 +585,7 @@ public class TimePlanningWorkingHoursService(
             var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
             var currentUserAsync = await userService.GetCurrentUserAsync();
-            var currentUser = _baseDbContext.Users
+            var currentUser = baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
             var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
             var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
@@ -620,7 +620,7 @@ public class TimePlanningWorkingHoursService(
                 currentUser.TimeRegistrationManufacturer = manufacturer;
                 currentUser.TimeRegistrationSoftwareVersion = softwareVersion;
                 currentUser.TimeRegistrationOsVersion = osVersion;
-                await _baseDbContext.SaveChangesAsync();
+                await baseDbContext.SaveChangesAsync();
             }
 
             return new OperationDataResult<TimePlanningHoursSummaryModel>(true, summary);
@@ -1797,8 +1797,8 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateDateCell(model.DateTo));
                     totalRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
                     totalRow.Append(CreateCell(site.Name));
-                    totalRow.Append(CreateNumericCell(content.Model.Sum(x => x.PlanHours)));
-                    totalRow.Append(CreateNumericCell(content.Model.Sum(x => x.NettoHours)));
+                    totalRow.Append(CreateNumericCell(content.Model.Skip(1).ToList().Sum(x => x.PlanHours)));
+                    totalRow.Append(CreateNumericCell(content.Model.Skip(1).ToList().Sum(x => x.NettoHours)));
                     totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
                     totalSheetData1.Append(totalRow);
                     totalRowIndex++;

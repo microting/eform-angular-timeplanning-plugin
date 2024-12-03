@@ -374,7 +374,7 @@ namespace TimePlanning.Pn
 
 
             var frontendBaseConnectionString = connectionString.Replace(
-                "eform-backend-configuration-plugin",
+                "eform-angular-time-planning-plugin",
                 "Angular");
 
             _connectionString = connectionString;
