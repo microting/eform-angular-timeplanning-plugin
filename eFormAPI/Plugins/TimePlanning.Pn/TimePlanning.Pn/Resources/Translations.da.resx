@@ -84,4 +84,10 @@
     <data name="PlanRegistrationFound" xml:space="preserve">
         <value>Registrering hentet</value>
     </data>
+    <data name="From" xml:space="preserve">
+        <value>Fra</value>
+    </data>
+    <data name="To" xml:space="preserve">
+        <value>Til</value>
+    </data>
 </root>

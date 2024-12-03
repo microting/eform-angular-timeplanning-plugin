@@ -158,22 +158,34 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("DayOfWeek", resourceCulture);
             }
         }
-
+        
         internal static string SumFlexStart {
             get {
                 return ResourceManager.GetString("SumFlexStart", resourceCulture);
             }
         }
-
+        
         internal static string Employee_no {
             get {
                 return ResourceManager.GetString("Employee no", resourceCulture);
             }
         }
-
+        
         internal static string PlanRegistrationFound {
             get {
                 return ResourceManager.GetString("PlanRegistrationFound", resourceCulture);
+            }
+        }
+        
+        internal static string From {
+            get {
+                return ResourceManager.GetString("From", resourceCulture);
+            }
+        }
+        
+        internal static string To {
+            get {
+                return ResourceManager.GetString("To", resourceCulture);
             }
         }
     }

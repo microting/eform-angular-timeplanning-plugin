@@ -1380,7 +1380,10 @@ public class TimePlanningWorkingHoursService(
                 var content = await Index(model);
                 if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
 
-                var timePlannings = content.Model;
+                // remove the first entry from the content.Model
+                var timePlannings = content.Model.Skip(1).ToList();
+
+                //var timePlannings = content.Model;
                 var plr = new PlanRegistration();
 
                 // Fill data
@@ -1582,6 +1585,8 @@ public class TimePlanningWorkingHoursService(
                 WorksheetPart totalWorksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId1");
                 var totalHeaders = new[]
                 {
+                    Translations.From,
+                    Translations.To,
                     Translations.Employee_no,
                     Translations.Worker,
                     Translations.PlanHours,
@@ -1731,7 +1736,9 @@ public class TimePlanningWorkingHoursService(
                     });
                     if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
 
-                    var timePlannings = content.Model;
+                    //var timePlannings = content.Model;
+
+                    var timePlannings = content.Model.Skip(1).ToList();
                     var plr = new PlanRegistration();
 
                     // Fill data
@@ -1762,6 +1769,8 @@ public class TimePlanningWorkingHoursService(
                     #region TotalSheetFillData
 
                     var totalRow = new Row() { RowIndex = (uint)totalRowIndex };
+                    totalRow.Append(CreateDateCell(model.DateFrom));
+                    totalRow.Append(CreateDateCell(model.DateTo));
                     totalRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
                     totalRow.Append(CreateCell(site.Name));
                     totalRow.Append(CreateNumericCell(content.Model.Sum(x => x.PlanHours)));
