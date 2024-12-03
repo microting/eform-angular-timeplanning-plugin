@@ -24,6 +24,7 @@ SOFTWARE.
 
 using System.Runtime.InteropServices;
 using Microting.eForm.Infrastructure.Models;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Sentry;
 using TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
@@ -371,10 +372,24 @@ namespace TimePlanning.Pn
                 });
             }
 
+
+            var frontendBaseConnectionString = connectionString.Replace(
+                "eform-backend-configuration-plugin",
+                "Angular");
+
             _connectionString = connectionString;
             services.AddDbContext<TimePlanningPnDbContext>(o =>
                 o.UseMySql(connectionString, new MariaDbServerVersion(
                     ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
+                {
+                    builder.EnableRetryOnFailure();
+                    builder.MigrationsAssembly(PluginAssembly().FullName);
+                }));
+            
+
+            services.AddDbContext<BaseDbContext>(
+                o => o.UseMySql(frontendBaseConnectionString, new MariaDbServerVersion(
+                    ServerVersion.AutoDetect(frontendBaseConnectionString)), mySqlOptionsAction: builder =>
                 {
                     builder.EnableRetryOnFailure();
                     builder.MigrationsAssembly(PluginAssembly().FullName);

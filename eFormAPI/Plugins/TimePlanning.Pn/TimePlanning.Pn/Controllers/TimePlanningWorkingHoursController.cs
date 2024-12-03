@@ -64,16 +64,16 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpGet]
         [Route("read-simple")]
-        public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> Read(DateTime dateTime)
+        public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> Read(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
         {
-            return await _workingHoursService.ReadSimple(dateTime);
+            return await _workingHoursService.ReadSimple(dateTime, softwareVersion, model, manufacturer, osVersion);
         }
 
         [HttpGet]
         [Route("calculate-hours-summary")]
-        public async Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate, DateTime endDate)
+        public async Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate, DateTime endDate, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
         {
-            return await _workingHoursService.CalculateHoursSummary(startDate, endDate);
+            return await _workingHoursService.CalculateHoursSummary(startDate, endDate, softwareVersion, model, manufacturer, osVersion);
         }
 
         [HttpPut]

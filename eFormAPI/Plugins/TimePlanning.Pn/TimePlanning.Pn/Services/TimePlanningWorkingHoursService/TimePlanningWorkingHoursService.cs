@@ -31,6 +31,7 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Validation;
 using Microting.eForm.Infrastructure.Data.Entities;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
@@ -60,6 +61,7 @@ public class TimePlanningWorkingHoursService(
     TimePlanningPnDbContext dbContext,
     IUserService userService,
     ITimePlanningLocalizationService localizationService,
+    BaseDbContext _baseDbContext,
     IPluginDbOptions<TimePlanningBaseSettings> options,
     IEFormCoreService coreHelper)
     : ITimePlanningWorkingHoursService
@@ -452,9 +454,11 @@ public class TimePlanningWorkingHoursService(
         await planRegistration.Update(dbContext);
     }
 
-    public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime)
+    public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
     {
-        var currentUser = await userService.GetCurrentUserAsync();
+        var currentUserAsync = await userService.GetCurrentUserAsync();
+        var currentUser = _baseDbContext.Users
+            .Single(x => x.Id == currentUserAsync.Id);
         var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
         var core = await coreHelper.GetCore();
         var sdkContext = core.DbContextHelper.GetDbContext();
@@ -555,13 +559,22 @@ public class TimePlanningWorkingHoursService(
             Pause2TotalTime = RoundDownToNearestFiveMinutesAndFormat(midnight, planRegistration.Pause2Id)
         };
 
+        if (model != null)
+        {
+            currentUser.TimeRegistrationModel = model;
+            currentUser.TimeRegistrationManufacturer = manufacturer;
+            currentUser.TimeRegistrationSoftwareVersion = softwareVersion;
+            currentUser.TimeRegistrationOsVersion = osVersion;
+            await _baseDbContext.SaveChangesAsync();
+        }
+
         return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(true,
             localizationService.GetString("PlanRegistrationLoaded"),
             timePlanningWorkingHoursModel);
     }
 
     public async Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate,
-        DateTime endDate)
+        DateTime endDate, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
     {
         try
         {
@@ -571,7 +584,9 @@ public class TimePlanningWorkingHoursService(
 
             var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
-            var currentUser = await userService.GetCurrentUserAsync();
+            var currentUserAsync = await userService.GetCurrentUserAsync();
+            var currentUser = _baseDbContext.Users
+                .Single(x => x.Id == currentUserAsync.Id);
             var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
             var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
                 x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
@@ -598,6 +613,15 @@ public class TimePlanningWorkingHoursService(
                 TotalNettoHours = totalNettoHours,
                 Difference = difference
             };
+
+            if (model != null)
+            {
+                currentUser.TimeRegistrationModel = model;
+                currentUser.TimeRegistrationManufacturer = manufacturer;
+                currentUser.TimeRegistrationSoftwareVersion = softwareVersion;
+                currentUser.TimeRegistrationOsVersion = osVersion;
+                await _baseDbContext.SaveChangesAsync();
+            }
 
             return new OperationDataResult<TimePlanningHoursSummaryModel>(true, summary);
         }
