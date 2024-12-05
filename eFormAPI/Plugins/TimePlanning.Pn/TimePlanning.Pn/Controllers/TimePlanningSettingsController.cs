@@ -49,6 +49,13 @@ namespace TimePlanning.Pn.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = EformRole.Admin)]
+        public async Task<OperationResult> UpdateSettings([FromBody] TimePlanningSettingsModel timePlanningSettingsModel)
+        {
+            return await _settingService.UpdateSettings(timePlanningSettingsModel);
+        }
+
+        [HttpPut]
         [Route("folder")]
         [Authorize(Roles = EformRole.Admin)]
         public async Task<OperationResult> UpdateFolder([FromBody] int folderId)

@@ -28,13 +28,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Settings
 
     public class TimePlanningSettingsModel
     {
-        public List<int> AssignedSites { get; set; }
-            = new ();
-
-        public int? FolderId { get; set; }
-
-        public int? EformId { get; set; }
-
-        public int? InfoeFormId { get; set; }
+        public string GoogleApiKey { get; set; }
+        public string GoogleSheetId { get; set; }
     }
 }

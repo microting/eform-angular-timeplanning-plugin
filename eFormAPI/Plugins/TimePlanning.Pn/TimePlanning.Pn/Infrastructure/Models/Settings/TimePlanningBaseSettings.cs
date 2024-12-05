@@ -35,6 +35,8 @@ namespace TimePlanning.Pn.Infrastructure.Models.Settings
         public int? MaxHistoryDays { get; set; }
 
         public int? MaxDaysEditable { get; set; }
+        public string GoogleApiKey { get; set; }
+        public string GoogleSheetId { get; set; }
 
     }
 }

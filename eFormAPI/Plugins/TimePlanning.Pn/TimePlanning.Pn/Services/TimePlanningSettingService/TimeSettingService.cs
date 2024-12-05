@@ -75,17 +75,11 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             {
                 var timePlanningSettingsModel = new TimePlanningSettingsModel
                 {
-                    FolderId = _options.Value.FolderId == 0 ? null : _options.Value.FolderId,
-                    EformId = _options.Value.EformId == 0 ? null : _options.Value.EformId,
-                    InfoeFormId = _options.Value.InfoeFormId == 0 ? null : _options.Value.InfoeFormId
+                    GoogleApiKey = _options.Value.GoogleApiKey,
+                    GoogleSheetId = _options.Value.GoogleSheetId
                 };
 
-                var assignedSites = await _dbContext.AssignedSites
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Select(x => x.SiteId)
-                    .ToListAsync();
-
-                timePlanningSettingsModel.AssignedSites = assignedSites;
+                //timePlanningSettingsModel.AssignedSites = assignedSites;
                 return new OperationDataResult<TimePlanningSettingsModel>(true, timePlanningSettingsModel);
             }
             catch (Exception e)
@@ -96,6 +90,28 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 return new OperationDataResult<TimePlanningSettingsModel>(
                     false,
                     _localizationService.GetString("ErrorWhileObtainingSettings"));
+            }
+        }
+
+        public async Task<OperationResult> UpdateSettings(TimePlanningSettingsModel timePlanningSettingsModel)
+        {
+            try
+            {
+                await _options.UpdateDb(settings =>
+                {
+                    settings.GoogleApiKey = timePlanningSettingsModel.GoogleApiKey;
+                    settings.GoogleSheetId = timePlanningSettingsModel.GoogleSheetId;
+                }, _dbContext, _userService.UserId);
+                return new OperationResult(true, _localizationService.GetString("SettingsUpdatedSuccessfuly"));
+            }
+            catch (Exception e)
+            {
+                SentrySdk.CaptureException(e);
+                Console.WriteLine(e);
+                _logger.LogError(e.Message);
+                return new OperationResult(
+                    false,
+                    _localizationService.GetString("ErrorWhileUpdateSettings"));
             }
         }
 

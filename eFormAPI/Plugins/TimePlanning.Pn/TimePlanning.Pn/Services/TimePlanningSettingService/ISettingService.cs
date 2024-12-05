@@ -37,6 +37,8 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
     {
         Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings();
 
+        Task<OperationResult> UpdateSettings(TimePlanningSettingsModel timePlanningSettingsModel);
+
         Task<OperationResult> UpdateEform(int eformId);
 
         Task<OperationResult> AddSite(int siteId);
