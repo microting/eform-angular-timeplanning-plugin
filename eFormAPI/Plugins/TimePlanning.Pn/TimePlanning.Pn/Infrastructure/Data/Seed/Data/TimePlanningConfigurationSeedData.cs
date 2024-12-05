@@ -71,6 +71,16 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             {
                 Name = $"{TimePlanningBaseSettingsName}:DateOfBlockingUserUpdateTimeRegistrations",
                 Value = "20"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:GoogleApiKey",
+                Value = ""
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:GoogleSheetId",
+                Value = ""
             }
         };
     }
