@@ -97,6 +97,13 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
         {
             try
             {
+                // check if the google sheets id is the entire url with gid or anything else than the id, if so, extract the id
+                if (timePlanningSettingsModel.GoogleSheetId.Contains("https://docs.google.com/spreadsheets/d/"))
+                {
+                    var split = timePlanningSettingsModel.GoogleSheetId.Split("/");
+                    timePlanningSettingsModel.GoogleSheetId = split[5];
+                }
+
                 await _options.UpdateDb(settings =>
                 {
                     settings.GoogleApiKey = timePlanningSettingsModel.GoogleApiKey;

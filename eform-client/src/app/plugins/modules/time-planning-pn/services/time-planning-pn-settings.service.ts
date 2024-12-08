@@ -23,6 +23,13 @@ export class TimePlanningPnSettingsService {
     return this.apiBaseService.get(TimePlanningSettingsMethods.Settings);
   }
 
+  updateSettings(model: TimePlanningSettingsModel): Observable<OperationResult> {
+    return this.apiBaseService.put(
+      TimePlanningSettingsMethods.Settings,
+      model
+    );
+  }
+
   getAvailableSites(): Observable<OperationDataResult<SiteDto[]>> {
     return this.apiBaseService.get(TimePlanningSettingsMethods.SettingsSites);
   }

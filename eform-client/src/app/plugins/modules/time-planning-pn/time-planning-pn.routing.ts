@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard, PermissionGuard } from 'src/app/common/guards';
 import { TimePlanningPnClaims } from './enums';
 import { TimePlanningPnLayoutComponent } from './layouts';
+import {TimePlanningSettingsComponent} from './components';
 
 export const routes: Routes = [
   {
@@ -45,6 +46,11 @@ export const routes: Routes = [
             (m) => m.RegistrationDevicesModule
           ),
       },
+      {
+        path: 'settings',
+        canActivate: [AuthGuard],
+        component: TimePlanningSettingsComponent,
+      }
     ],
   },
 ];

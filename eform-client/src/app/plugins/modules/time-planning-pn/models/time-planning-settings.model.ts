@@ -1,5 +1,4 @@
 export class TimePlanningSettingsModel {
-  folderId?: number;
-  eformId?: number;
-  assignedSites: number[] = [];
+  googleApiKey?: string;
+  googleSheetId?: string;
 }

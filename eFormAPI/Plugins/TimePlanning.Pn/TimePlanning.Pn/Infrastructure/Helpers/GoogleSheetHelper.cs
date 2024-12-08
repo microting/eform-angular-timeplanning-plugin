@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using eFormCore;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microting.eForm;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
@@ -18,8 +20,8 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 
 public class GoogleSheetHelper
 {
-    public static async Task PushToGoogleSheet(IPluginDbOptions<TimePlanningBaseSettings> options,
-        IEFormCoreService coreHelper, TimePlanningPnDbContext dbContext, ILogger logger)
+    public static async Task PushToGoogleSheet(string googleSheetId,
+        Core core, TimePlanningPnDbContext dbContext, ILogger logger)
     {
         var privateKeyId = Environment.GetEnvironmentVariable("PRIVATE_KEY_ID");
         if (string.IsNullOrEmpty(privateKeyId))
@@ -28,10 +30,9 @@ public class GoogleSheetHelper
         }
 
         var applicationName = "Google Sheets API Integration";
-        var spreadsheetId = options.Value.GoogleSheetId;
         var sheetName = "PlanTimer";
 
-        var core = await coreHelper.GetCore();
+        //var core = await coreHelper.GetCore();
         await using var sdkDbContext = core.DbContextHelper.GetDbContext();
 
         var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY"); // Replace with your private key
@@ -66,7 +67,7 @@ public class GoogleSheetHelper
 
         try
         {
-            var headerRequest = service.Spreadsheets.Values.Get(spreadsheetId, $"{sheetName}!A1:1");
+            var headerRequest = service.Spreadsheets.Values.Get(googleSheetId, $"{sheetName}!A1:1");
             var headerResponse = await headerRequest.ExecuteAsync();
             var existingHeaders = headerResponse.Values?.FirstOrDefault() ?? new List<object>();
 
@@ -111,7 +112,7 @@ public class GoogleSheetHelper
                     Values = new List<IList<object>> { newHeaders.Cast<object>().ToList() }
                 };
                 var updateHeaderRequest =
-                    service.Spreadsheets.Values.Update(updateRequest, spreadsheetId, $"{sheetName}!A1:{columnLetter}1");
+                    service.Spreadsheets.Values.Update(updateRequest, googleSheetId, $"{sheetName}!A1:{columnLetter}1");
                 updateHeaderRequest.ValueInputOption =
                     SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
                 await updateHeaderRequest.ExecuteAsync();
@@ -119,9 +120,28 @@ public class GoogleSheetHelper
                 logger.LogInformation("Headers updated successfully.");
             }
 
-            AutoAdjustColumnWidths(service, spreadsheetId, sheetName, logger);
+            AutoAdjustColumnWidths(service, googleSheetId, sheetName, logger);
 
-            SetAlternatingColumnColors(service, spreadsheetId, 0, newHeaders.Count, logger);
+            try
+            {
+                // ... existing code ...
+
+                var sheet = service.Spreadsheets.Get(googleSheetId).Execute().Sheets
+                    .FirstOrDefault(s => s.Properties.Title == sheetName);
+                if (sheet == null) throw new Exception($"Sheet '{sheetName}' not found.");
+
+                var sheetId = sheet.Properties.SheetId;
+
+                // ... existing code ...
+
+                SetAlternatingColumnColors(service, googleSheetId, sheetId!.Value, newHeaders.Count, logger);
+
+                logger.LogInformation("Headers are already up-to-date.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"An error occurred: {ex.Message}");
+            }
 
             logger.LogInformation("Headers are already up-to-date.");
         }
@@ -183,17 +203,19 @@ public class GoogleSheetHelper
         return columnLetter;
     }
 
-    static void SetAlternatingColumnColors(SheetsService service, string spreadsheetId, int sheetId, int columnCount, ILogger logger)
+    static void SetAlternatingColumnColors(SheetsService service, string spreadsheetId, int sheetId, int columnCount,
+        ILogger logger)
     {
         var requests = new List<Request>();
 
-        for (int i = 3; i < columnCount; i++) // Start from column D (index 3)
+        for (int i = 3; i < columnCount; i += 2) // Start from column D (index 3) and increment by 2
         {
-            var color = (i % 2 == 0)
-                ? new Color { Red = 1, Green = 1, Blue = 1 }
-                : new Color { Red = 0.9f, Green = 0.9f, Blue = 0.9f };
+            var color1 = new Color { Red = 1, Green = 1, Blue = 1 };
+            var color2 = new Color { Red = 0.9f, Green = 0.9f, Blue = 0.9f };
 
-            var updateCellsRequest = new Request
+            var color = ((i / 2) % 2 == 0) ? color1 : color2;
+
+            var updateCellsRequest1 = new Request
             {
                 RepeatCell = new RepeatCellRequest
                 {
@@ -214,7 +236,29 @@ public class GoogleSheetHelper
                 }
             };
 
-            requests.Add(updateCellsRequest);
+            var updateCellsRequest2 = new Request
+            {
+                RepeatCell = new RepeatCellRequest
+                {
+                    Range = new GridRange
+                    {
+                        SheetId = sheetId,
+                        StartColumnIndex = i + 1,
+                        EndColumnIndex = i + 2
+                    },
+                    Cell = new CellData
+                    {
+                        UserEnteredFormat = new CellFormat
+                        {
+                            BackgroundColor = color
+                        }
+                    },
+                    Fields = "userEnteredFormat.backgroundColor"
+                }
+            };
+
+            requests.Add(updateCellsRequest1);
+            requests.Add(updateCellsRequest2);
         }
 
         var batchUpdateRequest = new BatchUpdateSpreadsheetRequest
@@ -226,4 +270,6 @@ public class GoogleSheetHelper
 
         logger.LogInformation("Alternating column colors set successfully.");
     }
+
+
 }
