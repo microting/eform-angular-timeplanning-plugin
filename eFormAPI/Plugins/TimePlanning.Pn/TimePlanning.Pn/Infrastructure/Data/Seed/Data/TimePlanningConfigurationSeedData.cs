@@ -81,6 +81,11 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             {
                 Name = $"{TimePlanningBaseSettingsName}:GoogleSheetId",
                 Value = ""
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:GoogleSheetLastModified",
+                Value = ""
             }
         };
     }

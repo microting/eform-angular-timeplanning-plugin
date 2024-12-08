@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System;
+
 namespace TimePlanning.Pn.Infrastructure.Models.Settings
 {
     public class TimePlanningBaseSettings
@@ -37,6 +39,6 @@ namespace TimePlanning.Pn.Infrastructure.Models.Settings
         public int? MaxDaysEditable { get; set; }
         public string GoogleApiKey { get; set; }
         public string GoogleSheetId { get; set; }
-
+        public string GoogleSheetLastModified { get; set; }
     }
 }
