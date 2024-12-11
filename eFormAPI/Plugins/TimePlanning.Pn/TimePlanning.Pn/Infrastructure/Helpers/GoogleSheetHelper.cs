@@ -20,10 +20,11 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 
 public class GoogleSheetHelper
 {
-    public static async Task PushToGoogleSheet(string googleSheetId,
-        Core core, TimePlanningPnDbContext dbContext, ILogger logger)
+    public static async Task PushToGoogleSheet(Core core, TimePlanningPnDbContext dbContext, ILogger logger)
     {
         var privateKeyId = Environment.GetEnvironmentVariable("PRIVATE_KEY_ID");
+        var googleSheetId = dbContext.PluginConfigurationValues
+            .Single(x => x.Name == "TimePlanningBaseSettings:GoogleSheetId").Value;
         if (string.IsNullOrEmpty(privateKeyId))
         {
             return;
@@ -270,6 +271,4 @@ public class GoogleSheetHelper
 
         logger.LogInformation("Alternating column colors set successfully.");
     }
-
-
 }

@@ -25,6 +25,7 @@ SOFTWARE.
 #nullable enable
 using JetBrains.Annotations;
 using Sentry;
+using TimePlanning.Pn.Infrastructure.Helpers;
 
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
@@ -109,6 +110,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     settings.GoogleApiKey = timePlanningSettingsModel.GoogleApiKey;
                     settings.GoogleSheetId = timePlanningSettingsModel.GoogleSheetId;
                 }, _dbContext, _userService.UserId);
+                await GoogleSheetHelper.PushToGoogleSheet(await _core.GetCore(), _dbContext, _logger);
                 return new OperationResult(true, _localizationService.GetString("SettingsUpdatedSuccessfuly"));
             }
             catch (Exception e)
