@@ -18,6 +18,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System.Collections.Generic;
 using Microting.TimePlanningBase.Infrastructure.Const;
 
 namespace TimePlanning.Pn.Controllers
@@ -92,14 +93,14 @@ namespace TimePlanning.Pn.Controllers
         [HttpGet]
         [Route("sites")]
         [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
-        public async Task<OperationResult> GetAvailableSites()
+        public async Task<OperationDataResult<List<Site>>> GetAvailableSites()
         {
             return await _settingService.GetAvailableSites(null);
         }
 
         [HttpGet]
         [Route("registration-sites")]
-        public async Task<OperationResult> RegistrationSites(string token)
+        public async Task<OperationDataResult<List<Site>>> RegistrationSites(string token)
         {
             return await _settingService.GetAvailableSites(token);
         }

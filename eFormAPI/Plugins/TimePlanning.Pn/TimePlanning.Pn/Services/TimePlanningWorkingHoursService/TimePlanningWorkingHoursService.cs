@@ -1451,7 +1451,7 @@ public class TimePlanningWorkingHoursService(
         }
     }
 
-    private void FillDataRow(Row dataRow, Worker worker, Site site, CultureInfo culture,
+    private void FillDataRow(Row dataRow, Worker worker, Microting.eForm.Infrastructure.Data.Entities.Site site, CultureInfo culture,
         TimePlanningWorkingHoursModel planning, PlanRegistration plr, Language language)
     {
         dataRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));

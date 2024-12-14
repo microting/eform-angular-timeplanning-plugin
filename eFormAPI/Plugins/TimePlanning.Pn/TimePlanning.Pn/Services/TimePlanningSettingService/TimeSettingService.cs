@@ -251,7 +251,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
         }
 
-        public async Task<OperationDataResult<List<Infrastructure.Models.Settings.SiteDto>>> GetAvailableSites(string? token)
+        public async Task<OperationDataResult<List<Site>>> GetAvailableSites(string? token)
         {
             try
             {
@@ -261,7 +261,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                         .Where(x => x.Token == token).FirstOrDefaultAsync();
                     if (registrationDevice == null)
                     {
-                        return new OperationDataResult<List<Infrastructure.Models.Settings.SiteDto>>(
+                        return new OperationDataResult<List<Site>>(
                             false,
                             _localizationService.GetString("ErrorWhileObtainingSites"));
                     }
@@ -275,7 +275,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     .Select(x => x.SiteId)
                     .ToListAsync();
 
-                var sites = new List<Infrastructure.Models.Settings.SiteDto>();
+                var sites = new List<Site>();
                 foreach (var assignedSite in assignedSites)
                 {
                     var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == assignedSite && x.WorkflowState != Constants.WorkflowStates.Removed);
@@ -293,7 +293,40 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                         var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
                         if (worker != null)
                         {
-                            var newSite = new Infrastructure.Models.Settings.SiteDto
+                            var planRegistrationForToday = await _dbContext.PlanRegistrations
+                                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                .Where(x => x.SdkSitId == site.Id)
+                                .Where(x => x.Date.Date == DateTime.UtcNow.Date)
+                                .FirstOrDefaultAsync();
+                            var hoursStarted = false;
+                            var pauseStarted = false;
+                            if (planRegistrationForToday != null)
+                            {
+                                hoursStarted =
+                                    planRegistrationForToday is { Start1StartedAt: not null, Stop1StoppedAt: null } or
+                                        { Start2StartedAt: not null, Stop2StoppedAt: null };
+                                pauseStarted =
+                                    planRegistrationForToday is { Pause1StartedAt: not null, Pause1StoppedAt: null } or
+                                        { Pause2StartedAt: not null, Pause2StoppedAt: null } or
+                                        { Pause13StartedAt: not null, Pause13StoppedAt: null } or
+                                        { Pause14StartedAt: not null, Pause14StoppedAt: null } or
+                                        { Pause15StartedAt: not null, Pause15StoppedAt: null } or
+                                        { Pause16StartedAt: not null, Pause16StoppedAt: null } or
+                                        { Pause17StartedAt: not null, Pause17StoppedAt: null } or
+                                        { Pause18StartedAt: not null, Pause18StoppedAt: null } or
+                                        { Pause19StartedAt: not null, Pause19StoppedAt: null } or
+                                        { Pause20StartedAt: not null, Pause20StoppedAt: null } or
+                                        { Pause21StartedAt: not null, Pause21StoppedAt: null } or
+                                        { Pause22StartedAt: not null, Pause22StoppedAt: null } or
+                                        { Pause23StartedAt: not null, Pause23StoppedAt: null } or
+                                        { Pause24StartedAt: not null, Pause24StoppedAt: null } or
+                                        { Pause25StartedAt: not null, Pause25StoppedAt: null } or
+                                        { Pause26StartedAt: not null, Pause26StoppedAt: null } or
+                                        { Pause27StartedAt: not null, Pause27StoppedAt: null } or
+                                        { Pause28StartedAt: not null, Pause28StoppedAt: null } or
+                                        { Pause29StartedAt: not null, Pause29StoppedAt: null };
+                            }
+                            var newSite = new Site
                             {
                                 SiteId = (int)site.MicrotingUid!,
                                 SiteName = site.Name,
@@ -305,7 +338,9 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                                 WorkerUid = worker.MicrotingUid,
                                 Email = worker.Email,
                                 PinCode = worker.PinCode,
-                                DefaultLanguage = language.LanguageCode
+                                DefaultLanguage = language.LanguageCode,
+                                HoursStarted = hoursStarted,
+                                PauseStarted = pauseStarted
                             };
                             sites.Add(newSite);
                         }
@@ -314,14 +349,14 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
 
                 sites = sites.OrderBy(x => x.SiteName).ToList();
 
-                return new OperationDataResult<List<Infrastructure.Models.Settings.SiteDto>>(true, sites);
+                return new OperationDataResult<List<Site>>(true, sites);
             }
             catch (Exception e)
             {
                 SentrySdk.CaptureException(e);
                 Console.WriteLine(e);
                 _logger.LogError(e.Message);
-                return new OperationDataResult<List<Infrastructure.Models.Settings.SiteDto>>(
+                return new OperationDataResult<List<Site>>(
                     false,
                     _localizationService.GetString("ErrorWhileObtainingSites"));
             }
