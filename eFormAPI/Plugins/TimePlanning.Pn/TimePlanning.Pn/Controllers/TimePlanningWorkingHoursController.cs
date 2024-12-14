@@ -23,6 +23,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using TimePlanning.Pn.Extensions;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours;
 
 namespace TimePlanning.Pn.Controllers
@@ -85,9 +86,9 @@ namespace TimePlanning.Pn.Controllers
         [HttpPut]
         [Route("update")]
         [AllowAnonymous]
-        public async Task<OperationResult> UpdateWorkingHour([FromForm] int sdkSiteId, [FromForm] TimePlanningWorkingHoursUpdateModel model, [FromForm] string token)
+        public async Task<OperationResult> UpdateWorkingHour([FromForm] int sdkSiteId, [FromForm] TimePlanningWorkingHoursUpdateModel obj, [FromForm] string token)
         {
-            return await _workingHoursService.UpdateWorkingHour(sdkSiteId, model, token);
+            return await _workingHoursService.UpdateWorkingHour(sdkSiteId, obj, token);
         }
 
         /// <summary>
