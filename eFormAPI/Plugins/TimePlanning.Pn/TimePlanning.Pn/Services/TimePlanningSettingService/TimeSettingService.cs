@@ -263,7 +263,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     {
                         return new OperationDataResult<List<Site>>(
                             false,
-                            _localizationService.GetString("ErrorWhileObtainingSites"));
+                            "Token not found");
                     }
                 }
 
@@ -293,10 +293,13 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                         var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
                         if (worker != null)
                         {
+
+                            var today = DateTime.UtcNow.Date;
+                            var midnight = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
                             var planRegistrationForToday = await _dbContext.PlanRegistrations
                                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                .Where(x => x.SdkSitId == site.Id)
-                                .Where(x => x.Date.Date == DateTime.UtcNow.Date)
+                                .Where(x => x.SdkSitId == site.MicrotingUid)
+                                .Where(x => x.Date == midnight)
                                 .FirstOrDefaultAsync();
                             var hoursStarted = false;
                             var pauseStarted = false;
@@ -307,7 +310,9 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                                         { Start2StartedAt: not null, Stop2StoppedAt: null };
                                 pauseStarted =
                                     planRegistrationForToday is { Pause1StartedAt: not null, Pause1StoppedAt: null } or
-                                        { Pause2StartedAt: not null, Pause2StoppedAt: null } or
+                                        { Pause10StartedAt: not null, Pause10StoppedAt: null } or
+                                        { Pause11StartedAt: not null, Pause11StoppedAt: null } or
+                                        { Pause12StartedAt: not null, Pause12StoppedAt: null } or
                                         { Pause13StartedAt: not null, Pause13StoppedAt: null } or
                                         { Pause14StartedAt: not null, Pause14StoppedAt: null } or
                                         { Pause15StartedAt: not null, Pause15StoppedAt: null } or
@@ -315,6 +320,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                                         { Pause17StartedAt: not null, Pause17StoppedAt: null } or
                                         { Pause18StartedAt: not null, Pause18StoppedAt: null } or
                                         { Pause19StartedAt: not null, Pause19StoppedAt: null } or
+                                        { Pause2StartedAt: not null, Pause2StoppedAt: null } or
                                         { Pause20StartedAt: not null, Pause20StoppedAt: null } or
                                         { Pause21StartedAt: not null, Pause21StoppedAt: null } or
                                         { Pause22StartedAt: not null, Pause22StoppedAt: null } or

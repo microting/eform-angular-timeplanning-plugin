@@ -188,5 +188,11 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("To", resourceCulture);
             }
         }
+        
+        internal static string TokenNotFound {
+            get {
+                return ResourceManager.GetString("TokenNotFound", resourceCulture);
+            }
+        }
     }
 }
