@@ -381,6 +381,7 @@ namespace TimePlanning.Pn
                 {
                     builder.EnableRetryOnFailure();
                     builder.MigrationsAssembly(PluginAssembly().FullName);
+                    builder.TranslateParameterizedCollectionsToConstants();
                 }));
             
 
@@ -390,6 +391,7 @@ namespace TimePlanning.Pn
                 {
                     builder.EnableRetryOnFailure();
                     builder.MigrationsAssembly(PluginAssembly().FullName);
+                    builder.TranslateParameterizedCollectionsToConstants();
                 }));
 
             var contextFactory = new TimePlanningPnContextFactory();
