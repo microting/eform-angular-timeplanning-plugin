@@ -347,9 +347,6 @@ namespace TimePlanning.Pn
                 // This option is recommended for client applications only. It ensures all threads use the same global scope.
                 // If you're writing a background service of any kind, you should remove this.
                 options.IsGlobalModeEnabled = true;
-
-                // This option will enable Sentry's tracing features. You still need to start transactions and spans.
-                options.EnableTracing = true;
             });
 
             string pattern = @"Database=(\d+)_eform-angular-time-planning-plugin;";
