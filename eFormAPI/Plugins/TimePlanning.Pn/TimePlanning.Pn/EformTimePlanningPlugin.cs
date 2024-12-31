@@ -47,7 +47,6 @@ namespace TimePlanning.Pn
     using Microting.eFormApi.BasePn;
     using Microting.eFormApi.BasePn.Abstractions;
     using Microting.eFormApi.BasePn.Infrastructure.Consts;
-    using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
     using Microting.eFormApi.BasePn.Infrastructure.Database.Extensions;
     using Microting.eFormApi.BasePn.Infrastructure.Helpers;
     using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
@@ -57,7 +56,6 @@ namespace TimePlanning.Pn
     using Microting.TimePlanningBase.Infrastructure.Const;
     using Microting.TimePlanningBase.Infrastructure.Data;
     using Microting.TimePlanningBase.Infrastructure.Data.Factories;
-    using Services.RebusService;
     using Services.TimePlanningFlexService;
     using Services.TimePlanningSettingService;
     using Services.TimePlanningLocalizationService;
@@ -80,7 +78,6 @@ namespace TimePlanning.Pn
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IRebusService, RebusService>();
             services.AddTransient<ITimePlanningLocalizationService, TimePlanningLocalizationService>();
             services.AddTransient<ITimePlanningPlanningService, TimePlanningPlanningService>();
             services.AddTransient<ITimePlanningWorkingHoursService, TimePlanningWorkingHoursService>();
@@ -406,20 +403,6 @@ namespace TimePlanning.Pn
 
         public void Configure(IApplicationBuilder appBuilder)
         {
-            // var serviceProvider = appBuilder.ApplicationServices;
-
-            // var rabbitMqHost = "localhost";
-            //
-            // if (_connectionString.Contains("frontend"))
-            // {
-            //     var dbPrefix = Regex.Match(_connectionString, @"atabase=(\d*)_").Groups[1].Value;
-            //     rabbitMqHost = $"frontend-{dbPrefix}-rabbitmq";
-            // }
-            //
-            // var rebusService = serviceProvider.GetService<IRebusService>();
-            // rebusService.Start(_connectionString, "admin", "password", rabbitMqHost).GetAwaiter().GetResult();
-
-            //_bus = rebusService.GetBus();
         }
 
         public List<PluginMenuItemModel> GetNavigationMenu(IServiceProvider serviceProvider)
