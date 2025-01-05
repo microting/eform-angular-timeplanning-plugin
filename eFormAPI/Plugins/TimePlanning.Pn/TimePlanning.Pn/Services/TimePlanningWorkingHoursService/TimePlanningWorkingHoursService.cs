@@ -1308,7 +1308,7 @@ public class TimePlanningWorkingHoursService(
             var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
             var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
             var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
-            var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+            var language = await userService.GetCurrentUserLanguage();
 
             Thread.CurrentThread.CurrentUICulture = new CultureInfo(language.LanguageCode);
             var culture = new CultureInfo(language.LanguageCode);
@@ -1676,7 +1676,7 @@ public class TimePlanningWorkingHoursService(
                     if (site == null) continue;
                     var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
                     var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
-                    var language = await sdkContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                    var language = await userService.GetCurrentUserLanguage();
 
                     var culture = new CultureInfo(language.LanguageCode);
                     WorksheetPart worksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId{i + 2}");
