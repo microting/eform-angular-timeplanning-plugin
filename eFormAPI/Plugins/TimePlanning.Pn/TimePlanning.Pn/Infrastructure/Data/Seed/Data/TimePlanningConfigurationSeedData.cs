@@ -86,7 +86,82 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             {
                 Name = $"{TimePlanningBaseSettingsName}:GoogleSheetLastModified",
                 Value = ""
-            }
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:MondayBreakMinutesDivider",
+                Value = "180"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:MondayBreakMinutesPrDivider",
+                Value = "30"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:TuesdayBreakMinutesDivider",
+                Value = "180"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:TuesdayBreakMinutesPrDivider",
+                Value = "30"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:WednesdayBreakMinutesDivider",
+                Value = "180"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:WednesdayBreakMinutesPrDivider",
+                Value = "30"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:ThursdayBreakMinutesDivider",
+                Value = "180"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:ThursdayBreakMinutesPrDivider",
+                Value = "30"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:FridayBreakMinutesDivider",
+                Value = "180"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:FridayBreakMinutesPrDivider",
+                Value = "30"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:SaturdayBreakMinutesDivider",
+                Value = "120"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:SaturdayBreakMinutesPrDivider",
+                Value = "30"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesDivider",
+                Value = "120"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesPrDivider",
+                Value = "30"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:AutoBreakCalculationActive",
+                Value = "0"
+            },
         };
     }
 }

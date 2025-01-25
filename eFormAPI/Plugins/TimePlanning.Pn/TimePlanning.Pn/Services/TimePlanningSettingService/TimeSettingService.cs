@@ -76,8 +76,23 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             {
                 var timePlanningSettingsModel = new TimePlanningSettingsModel
                 {
-                    GoogleApiKey = _options.Value.GoogleApiKey,
-                    GoogleSheetId = _options.Value.GoogleSheetId
+                    //GoogleApiKey = _options.Value.GoogleApiKey,
+                    GoogleSheetId = _options.Value.GoogleSheetId,
+                    MondayBreakMinutesDivider = _options.Value.MondayBreakMinutesDivider,
+                    MondayBreakMinutesPrDivider = _options.Value.MondayBreakMinutesPrDivider,
+                    TuesdayBreakMinutesDivider = _options.Value.TuesdayBreakMinutesDivider,
+                    TuesdayBreakMinutesPrDivider = _options.Value.TuesdayBreakMinutesPrDivider,
+                    WednesdayBreakMinutesDivider = _options.Value.WednesdayBreakMinutesDivider,
+                    WednesdayBreakMinutesPrDivider = _options.Value.WednesdayBreakMinutesPrDivider,
+                    ThursdayBreakMinutesDivider = _options.Value.ThursdayBreakMinutesDivider,
+                    ThursdayBreakMinutesPrDivider = _options.Value.ThursdayBreakMinutesPrDivider,
+                    FridayBreakMinutesDivider = _options.Value.FridayBreakMinutesDivider,
+                    FridayBreakMinutesPrDivider = _options.Value.FridayBreakMinutesPrDivider,
+                    SaturdayBreakMinutesDivider = _options.Value.SaturdayBreakMinutesDivider,
+                    SaturdayBreakMinutesPrDivider = _options.Value.SaturdayBreakMinutesPrDivider,
+                    SundayBreakMinutesDivider = _options.Value.SundayBreakMinutesDivider,
+                    SundayBreakMinutesPrDivider = _options.Value.SundayBreakMinutesPrDivider,
+                    AutoBreakCalculationActive = _options.Value.AutoBreakCalculationActive == "1"
                 };
 
                 //timePlanningSettingsModel.AssignedSites = assignedSites;
@@ -107,8 +122,23 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
 
                 await _options.UpdateDb(settings =>
                 {
-                    settings.GoogleApiKey = timePlanningSettingsModel.GoogleApiKey;
+                    //settings.GoogleApiKey = timePlanningSettingsModel.GoogleApiKey;
                     settings.GoogleSheetId = timePlanningSettingsModel.GoogleSheetId;
+                    settings.MondayBreakMinutesDivider = timePlanningSettingsModel.MondayBreakMinutesDivider;
+                    settings.MondayBreakMinutesPrDivider = timePlanningSettingsModel.MondayBreakMinutesPrDivider;
+                    settings.TuesdayBreakMinutesDivider = timePlanningSettingsModel.TuesdayBreakMinutesDivider;
+                    settings.TuesdayBreakMinutesPrDivider = timePlanningSettingsModel.TuesdayBreakMinutesPrDivider;
+                    settings.WednesdayBreakMinutesDivider = timePlanningSettingsModel.WednesdayBreakMinutesDivider;
+                    settings.WednesdayBreakMinutesPrDivider = timePlanningSettingsModel.WednesdayBreakMinutesPrDivider;
+                    settings.ThursdayBreakMinutesDivider = timePlanningSettingsModel.ThursdayBreakMinutesDivider;
+                    settings.ThursdayBreakMinutesPrDivider = timePlanningSettingsModel.ThursdayBreakMinutesPrDivider;
+                    settings.FridayBreakMinutesDivider = timePlanningSettingsModel.FridayBreakMinutesDivider;
+                    settings.FridayBreakMinutesPrDivider = timePlanningSettingsModel.FridayBreakMinutesPrDivider;
+                    settings.SaturdayBreakMinutesDivider = timePlanningSettingsModel.SaturdayBreakMinutesDivider;
+                    settings.SaturdayBreakMinutesPrDivider = timePlanningSettingsModel.SaturdayBreakMinutesPrDivider;
+                    settings.SundayBreakMinutesDivider = timePlanningSettingsModel.SundayBreakMinutesDivider;
+                    settings.SundayBreakMinutesPrDivider = timePlanningSettingsModel.SundayBreakMinutesPrDivider;
+                    settings.AutoBreakCalculationActive = timePlanningSettingsModel.AutoBreakCalculationActive ? "1" : "0";
                 }, _dbContext, _userService.UserId);
                 await GoogleSheetHelper.PushToGoogleSheet(await _core.GetCore(), _dbContext, _logger);
                 return new OperationResult(true, _localizationService.GetString("SettingsUpdatedSuccessfuly"));
