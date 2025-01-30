@@ -141,6 +141,12 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     settings.AutoBreakCalculationActive = timePlanningSettingsModel.AutoBreakCalculationActive ? "1" : "0";
                 }, _dbContext, _userService.UserId);
                 await GoogleSheetHelper.PushToGoogleSheet(await _core.GetCore(), _dbContext, _logger);
+
+                if (timePlanningSettingsModel.ForceLoadAllPlanningsFromGoogleSheet)
+                {
+                    await GoogleSheetHelper.PullEverythingFromGoogleSheet(await _core.GetCore(), _dbContext, _logger);
+                }
+
                 return new OperationResult(true, _localizationService.GetString("SettingsUpdatedSuccessfuly"));
             }
             catch (Exception e)

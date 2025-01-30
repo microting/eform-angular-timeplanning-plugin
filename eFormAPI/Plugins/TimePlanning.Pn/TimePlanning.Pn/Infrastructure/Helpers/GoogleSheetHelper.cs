@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using eFormCore;
@@ -14,6 +15,7 @@ using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.TimePlanningBase.Infrastructure.Data;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 
 namespace TimePlanning.Pn.Infrastructure.Helpers;
@@ -150,6 +152,215 @@ public class GoogleSheetHelper
         {
             logger.LogError($"An error occurred: {ex.Message}");
         }
+    }
+
+    public static async Task PullEverythingFromGoogleSheet(Core core, TimePlanningPnDbContext dbContext, ILogger logger)
+    {
+        var privateKeyId = Environment.GetEnvironmentVariable("PRIVATE_KEY_ID");
+        var googleSheetId = dbContext.PluginConfigurationValues
+            .Single(x => x.Name == "TimePlanningBaseSettings:GoogleSheetId").Value;
+        if (string.IsNullOrEmpty(privateKeyId))
+        {
+            return;
+        }
+
+        var applicationName = "Google Sheets API Integration";
+        var sheetName = "PlanTimer";
+
+        //var core = await coreHelper.GetCore();
+        await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY"); // Replace with your private key
+        var clientEmail = Environment.GetEnvironmentVariable("CLIENT_EMAIL"); // Replace with your client email
+        var projectId = Environment.GetEnvironmentVariable("PROJECT_ID"); // Replace with your project ID
+        var clientId = Environment.GetEnvironmentVariable("CLIENT_ID"); // Replace with your client ID
+
+        // Construct the JSON for the service account credentials
+        string serviceAccountJson = $@"
+        {{
+          ""type"": ""service_account"",
+          ""project_id"": ""{projectId}"",
+          ""private_key_id"": ""{privateKeyId}"",
+          ""private_key"": ""{privateKey}"",
+          ""client_email"": ""{clientEmail}"",
+          ""client_id"": ""{clientId}"",
+          ""auth_uri"": ""https://accounts.google.com/o/oauth2/auth"",
+          ""token_uri"": ""https://oauth2.googleapis.com/token"",
+          ""auth_provider_x509_cert_url"": ""https://www.googleapis.com/oauth2/v1/certs"",
+          ""client_x509_cert_url"": ""https://www.googleapis.com/robot/v1/metadata/x509/{clientEmail}""
+        }}";
+
+        // Authenticate using the dynamically constructed JSON
+        var credential = GoogleCredential.FromJson(serviceAccountJson)
+            .CreateScoped(SheetsService.Scope.Spreadsheets);
+
+        var service = new SheetsService(new BaseClientService.Initializer
+        {
+            HttpClientInitializer = credential,
+            ApplicationName = applicationName
+        });
+
+        var range = $"PlanTimer";
+                var request =
+                    service.Spreadsheets.Values.Get(googleSheetId, range);
+
+                // Fetch the data from the sheet
+                var response = await request.ExecuteAsync();
+                var values = response.Values;
+
+                var headerRows = values?.FirstOrDefault();
+                if (values is {Count: > 0})
+                {
+                    // Skip the header row (first row)
+                    for (var i = 1; i < values.Count; i++)
+                    {
+                        var row = values[i];
+                        // Process each row
+                        string date = row[0].ToString();
+
+                        // Process the dato as date
+
+                        // Parse date and validate
+                        if (!DateTime.TryParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture,
+                                DateTimeStyles.None, out var _))
+                        {
+                            continue;
+                        }
+
+                        var dateValue = DateTime.ParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+                        Console.WriteLine($"Processing date: {dateValue}");
+
+                        if (dateValue > DateTime.Now.AddDays(180))
+                        {
+                            continue;
+                        }
+
+                        // Iterate over each pair of columns starting from the fourth column
+                        for (int j = 3; j < row.Count; j += 2)
+                        {
+                            string siteName = headerRows[j].ToString().Split('-').Last().Trim();
+                            var site = await sdkDbContext.Sites
+                                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                .FirstOrDefaultAsync(x =>
+                                    x.Name.Replace(" ", "").ToLower() == siteName.Replace(" ", "").ToLower());
+                            if (site == null)
+                            {
+                                continue;
+                            }
+
+                            var planHours = row.Count > j ? row[j].ToString() : string.Empty;
+                            var planText = row.Count > j + 1 ? row[j + 1].ToString() : string.Empty;
+
+                            if (string.IsNullOrEmpty(planHours))
+                            {
+                                planHours = "0";
+                            }
+
+                            // Replace comma with dot if needed
+                            if (planHours.Contains(','))
+                            {
+                                planHours = planHours.Replace(",", ".");
+                            }
+
+                            double parsedPlanHours = double.Parse(planHours, NumberStyles.AllowDecimalPoint,
+                                NumberFormatInfo.InvariantInfo);
+
+                            var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
+                                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                .Where(x => x.Date < dateValue && x.SdkSitId == (int) site.MicrotingUid!)
+                                .OrderByDescending(x => x.Date)
+                                .FirstOrDefaultAsync();
+
+                            var midnight = new DateTime(dateValue.Year, dateValue.Month, dateValue.Day, 0, 0, 0);
+
+                            var planRegistration = await dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
+                                x.Date == midnight && x.SdkSitId == site.MicrotingUid);
+
+                            if (planRegistration == null)
+                            {
+                                planRegistration = new PlanRegistration
+                                {
+                                    Date = midnight,
+                                    PlanText = planText,
+                                    PlanHours = parsedPlanHours,
+                                    SdkSitId = (int) site.MicrotingUid!,
+                                    CreatedByUserId = 1,
+                                    UpdatedByUserId = 1,
+                                    NettoHours = 0,
+                                    PaiedOutFlex = 0,
+                                    Pause1Id = 0,
+                                    Pause2Id = 0,
+                                    Start1Id = 0,
+                                    Start2Id = 0,
+                                    Stop1Id = 0,
+                                    Stop2Id = 0,
+                                    Flex = 0,
+                                    StatusCaseId = 0
+                                };
+
+                                if (preTimePlanning != null)
+                                {
+                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
+                                                                  planRegistration.PaiedOutFlex;
+                                    planRegistration.Flex = -planRegistration.PlanHours;
+                                }
+                                else
+                                {
+                                    planRegistration.Flex = -planRegistration.PlanHours;
+                                    planRegistration.SumFlexEnd = planRegistration.Flex;
+                                    planRegistration.SumFlexStart = 0;
+                                }
+
+                                await planRegistration.Create(dbContext);
+                            }
+                            else
+                            {
+                                // print to console if the current PlanText is different from the one in the database
+                                if (planRegistration.PlanText != planText)
+                                {
+                                    Console.WriteLine(
+                                        $"PlanText for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanText} to {planText}");
+                                }
+
+                                planRegistration.PlanText = planText;
+                                // print to console if the current PlanHours is different from the one in the database
+                                if (planRegistration.PlanHours != parsedPlanHours)
+                                {
+                                    Console.WriteLine(
+                                        $"PlanHours for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanHours} to {parsedPlanHours}");
+                                }
+
+                                planRegistration.PlanHours = parsedPlanHours;
+                                planRegistration.UpdatedByUserId = 1;
+
+                                if (preTimePlanning != null)
+                                {
+                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                    planRegistration.SumFlexEnd =
+                                        preTimePlanning.SumFlexEnd + planRegistration.PlanHours -
+                                        planRegistration.NettoHours -
+                                        planRegistration.PaiedOutFlex;
+                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                }
+                                else
+                                {
+                                    planRegistration.SumFlexEnd =
+                                        planRegistration.PlanHours - planRegistration.NettoHours -
+                                        planRegistration.PaiedOutFlex;
+                                    planRegistration.SumFlexStart = 0;
+                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                }
+
+                                await planRegistration.Update(dbContext);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No data found.");
+                }
     }
 
     static void AutoAdjustColumnWidths(SheetsService service, string spreadsheetId, string sheetName, ILogger logger)

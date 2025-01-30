@@ -15,4 +15,5 @@ export class TimePlanningSettingsModel {
   sundayBreakMinutesDivider: string;
   sundayBreakMinutesPrDivider: string;
   autoBreakCalculationActive: boolean;
+  forceLoadAllPlanningsFromGoogleSheet: boolean;
 }

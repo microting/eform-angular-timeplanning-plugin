@@ -44,5 +44,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Settings
         public string SundayBreakMinutesDivider { get; set; }
         public string SundayBreakMinutesPrDivider { get; set; }
         public bool AutoBreakCalculationActive { get; set; }
+
+        public bool ForceLoadAllPlanningsFromGoogleSheet { get; set; }
     }
 }
