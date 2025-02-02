@@ -238,11 +238,13 @@ public class GoogleSheetHelper
                         // Iterate over each pair of columns starting from the fourth column
                         for (int j = 3; j < row.Count; j += 2)
                         {
-                            string siteName = headerRows[j].ToString().Split('-').Last().Trim();
+
+                            string siteName = headerRows[j].ToString().Split(" - ").First().ToLower().Replace(" ", "").Trim();
+                            Console.WriteLine($"Processing site: {siteName}");
                             var site = await sdkDbContext.Sites
                                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                                 .FirstOrDefaultAsync(x =>
-                                    x.Name.Replace(" ", "").ToLower() == siteName.Replace(" ", "").ToLower());
+                                    x.Name.Replace(" ", "").ToLower() == siteName);
                             if (site == null)
                             {
                                 continue;
