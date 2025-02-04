@@ -162,6 +162,41 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = $"{TimePlanningBaseSettingsName}:AutoBreakCalculationActive",
                 Value = "0"
             },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:MondayBreakMinutesUpperLimit",
+                Value = "60"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:TuesdayBreakMinutesUpperLimit",
+                Value = "60"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:WednesdayBreakMinutesUpperLimit",
+                Value = "60"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:ThursdayBreakMinutesUpperLimit",
+                Value = "60"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:FridayBreakMinutesUpperLimit",
+                Value = "60"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:SaturdayBreakMinutesUpperLimit",
+                Value = "60"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesUpperLimit",
+                Value = "60"
+            },
         };
     }
 }
