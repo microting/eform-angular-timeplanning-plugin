@@ -55,5 +55,12 @@ namespace TimePlanning.Pn.Infrastructure.Models.Settings
         public string SundayBreakMinutesDivider { get; set; }
         public string SundayBreakMinutesPrDivider { get; set; }
         public string AutoBreakCalculationActive { get; set; }
+        public string MondayBreakMinutesUpperLimit { get; set; }
+        public string TuesdayBreakMinutesUpperLimit { get; set; }
+        public string WednesdayBreakMinutesUpperLimit { get; set; }
+        public string ThursdayBreakMinutesUpperLimit { get; set; }
+        public string FridayBreakMinutesUpperLimit { get; set; }
+        public string SaturdayBreakMinutesUpperLimit { get; set; }
+        public string SundayBreakMinutesUpperLimit { get; set; }
     }
 }

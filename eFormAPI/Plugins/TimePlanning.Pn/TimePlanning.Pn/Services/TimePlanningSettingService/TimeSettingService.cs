@@ -78,21 +78,28 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 {
                     //GoogleApiKey = _options.Value.GoogleApiKey,
                     GoogleSheetId = _options.Value.GoogleSheetId,
-                    MondayBreakMinutesDivider = _options.Value.MondayBreakMinutesDivider,
-                    MondayBreakMinutesPrDivider = _options.Value.MondayBreakMinutesPrDivider,
-                    TuesdayBreakMinutesDivider = _options.Value.TuesdayBreakMinutesDivider,
-                    TuesdayBreakMinutesPrDivider = _options.Value.TuesdayBreakMinutesPrDivider,
-                    WednesdayBreakMinutesDivider = _options.Value.WednesdayBreakMinutesDivider,
-                    WednesdayBreakMinutesPrDivider = _options.Value.WednesdayBreakMinutesPrDivider,
-                    ThursdayBreakMinutesDivider = _options.Value.ThursdayBreakMinutesDivider,
-                    ThursdayBreakMinutesPrDivider = _options.Value.ThursdayBreakMinutesPrDivider,
-                    FridayBreakMinutesDivider = _options.Value.FridayBreakMinutesDivider,
-                    FridayBreakMinutesPrDivider = _options.Value.FridayBreakMinutesPrDivider,
-                    SaturdayBreakMinutesDivider = _options.Value.SaturdayBreakMinutesDivider,
-                    SaturdayBreakMinutesPrDivider = _options.Value.SaturdayBreakMinutesPrDivider,
-                    SundayBreakMinutesDivider = _options.Value.SundayBreakMinutesDivider,
-                    SundayBreakMinutesPrDivider = _options.Value.SundayBreakMinutesPrDivider,
-                    AutoBreakCalculationActive = _options.Value.AutoBreakCalculationActive == "1"
+                    MondayBreakMinutesDivider = int.Parse(_options.Value.MondayBreakMinutesDivider),
+                    MondayBreakMinutesPrDivider = int.Parse(_options.Value.MondayBreakMinutesPrDivider),
+                    TuesdayBreakMinutesDivider = int.Parse(_options.Value.TuesdayBreakMinutesDivider),
+                    TuesdayBreakMinutesPrDivider = int.Parse(_options.Value.TuesdayBreakMinutesPrDivider),
+                    WednesdayBreakMinutesDivider = int.Parse(_options.Value.WednesdayBreakMinutesDivider),
+                    WednesdayBreakMinutesPrDivider = int.Parse(_options.Value.WednesdayBreakMinutesPrDivider),
+                    ThursdayBreakMinutesDivider = int.Parse(_options.Value.ThursdayBreakMinutesDivider),
+                    ThursdayBreakMinutesPrDivider = int.Parse(_options.Value.ThursdayBreakMinutesPrDivider),
+                    FridayBreakMinutesDivider = int.Parse(_options.Value.FridayBreakMinutesDivider),
+                    FridayBreakMinutesPrDivider = int.Parse(_options.Value.FridayBreakMinutesPrDivider),
+                    SaturdayBreakMinutesDivider = int.Parse(_options.Value.SaturdayBreakMinutesDivider),
+                    SaturdayBreakMinutesPrDivider = int.Parse(_options.Value.SaturdayBreakMinutesPrDivider),
+                    SundayBreakMinutesDivider = int.Parse(_options.Value.SundayBreakMinutesDivider),
+                    SundayBreakMinutesPrDivider = int.Parse(_options.Value.SundayBreakMinutesPrDivider),
+                    AutoBreakCalculationActive = _options.Value.AutoBreakCalculationActive == "1",
+                    MondayBreakMinutesUpperLimit = int.Parse(_options.Value.MondayBreakMinutesUpperLimit),
+                    TuesdayBreakMinutesUpperLimit = int.Parse(_options.Value.TuesdayBreakMinutesUpperLimit),
+                    WednesdayBreakMinutesUpperLimit = int.Parse(_options.Value.WednesdayBreakMinutesUpperLimit),
+                    ThursdayBreakMinutesUpperLimit = int.Parse(_options.Value.ThursdayBreakMinutesUpperLimit),
+                    FridayBreakMinutesUpperLimit = int.Parse(_options.Value.FridayBreakMinutesUpperLimit),
+                    SaturdayBreakMinutesUpperLimit = int.Parse(_options.Value.SaturdayBreakMinutesUpperLimit),
+                    SundayBreakMinutesUpperLimit = int.Parse(_options.Value.SundayBreakMinutesUpperLimit)
                 };
 
                 //timePlanningSettingsModel.AssignedSites = assignedSites;
@@ -124,21 +131,28 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                 {
                     //settings.GoogleApiKey = timePlanningSettingsModel.GoogleApiKey;
                     settings.GoogleSheetId = timePlanningSettingsModel.GoogleSheetId;
-                    settings.MondayBreakMinutesDivider = timePlanningSettingsModel.MondayBreakMinutesDivider;
-                    settings.MondayBreakMinutesPrDivider = timePlanningSettingsModel.MondayBreakMinutesPrDivider;
-                    settings.TuesdayBreakMinutesDivider = timePlanningSettingsModel.TuesdayBreakMinutesDivider;
-                    settings.TuesdayBreakMinutesPrDivider = timePlanningSettingsModel.TuesdayBreakMinutesPrDivider;
-                    settings.WednesdayBreakMinutesDivider = timePlanningSettingsModel.WednesdayBreakMinutesDivider;
-                    settings.WednesdayBreakMinutesPrDivider = timePlanningSettingsModel.WednesdayBreakMinutesPrDivider;
-                    settings.ThursdayBreakMinutesDivider = timePlanningSettingsModel.ThursdayBreakMinutesDivider;
-                    settings.ThursdayBreakMinutesPrDivider = timePlanningSettingsModel.ThursdayBreakMinutesPrDivider;
-                    settings.FridayBreakMinutesDivider = timePlanningSettingsModel.FridayBreakMinutesDivider;
-                    settings.FridayBreakMinutesPrDivider = timePlanningSettingsModel.FridayBreakMinutesPrDivider;
-                    settings.SaturdayBreakMinutesDivider = timePlanningSettingsModel.SaturdayBreakMinutesDivider;
-                    settings.SaturdayBreakMinutesPrDivider = timePlanningSettingsModel.SaturdayBreakMinutesPrDivider;
-                    settings.SundayBreakMinutesDivider = timePlanningSettingsModel.SundayBreakMinutesDivider;
-                    settings.SundayBreakMinutesPrDivider = timePlanningSettingsModel.SundayBreakMinutesPrDivider;
+                    settings.MondayBreakMinutesDivider = timePlanningSettingsModel.MondayBreakMinutesDivider.ToString();
+                    settings.MondayBreakMinutesPrDivider = timePlanningSettingsModel.MondayBreakMinutesPrDivider.ToString();
+                    settings.TuesdayBreakMinutesDivider = timePlanningSettingsModel.TuesdayBreakMinutesDivider.ToString();
+                    settings.TuesdayBreakMinutesPrDivider = timePlanningSettingsModel.TuesdayBreakMinutesPrDivider.ToString();
+                    settings.WednesdayBreakMinutesDivider = timePlanningSettingsModel.WednesdayBreakMinutesDivider.ToString();
+                    settings.WednesdayBreakMinutesPrDivider = timePlanningSettingsModel.WednesdayBreakMinutesPrDivider.ToString();
+                    settings.ThursdayBreakMinutesDivider = timePlanningSettingsModel.ThursdayBreakMinutesDivider.ToString();
+                    settings.ThursdayBreakMinutesPrDivider = timePlanningSettingsModel.ThursdayBreakMinutesPrDivider.ToString();
+                    settings.FridayBreakMinutesDivider = timePlanningSettingsModel.FridayBreakMinutesDivider.ToString();
+                    settings.FridayBreakMinutesPrDivider = timePlanningSettingsModel.FridayBreakMinutesPrDivider.ToString();
+                    settings.SaturdayBreakMinutesDivider = timePlanningSettingsModel.SaturdayBreakMinutesDivider.ToString();
+                    settings.SaturdayBreakMinutesPrDivider = timePlanningSettingsModel.SaturdayBreakMinutesPrDivider.ToString();
+                    settings.SundayBreakMinutesDivider = timePlanningSettingsModel.SundayBreakMinutesDivider.ToString();
+                    settings.SundayBreakMinutesPrDivider = timePlanningSettingsModel.SundayBreakMinutesPrDivider.ToString();
                     settings.AutoBreakCalculationActive = timePlanningSettingsModel.AutoBreakCalculationActive ? "1" : "0";
+                    settings.MondayBreakMinutesUpperLimit = timePlanningSettingsModel.MondayBreakMinutesUpperLimit.ToString();
+                    settings.TuesdayBreakMinutesUpperLimit = timePlanningSettingsModel.TuesdayBreakMinutesUpperLimit.ToString();
+                    settings.WednesdayBreakMinutesUpperLimit = timePlanningSettingsModel.WednesdayBreakMinutesUpperLimit.ToString();
+                    settings.ThursdayBreakMinutesUpperLimit = timePlanningSettingsModel.ThursdayBreakMinutesUpperLimit.ToString();
+                    settings.FridayBreakMinutesUpperLimit = timePlanningSettingsModel.FridayBreakMinutesUpperLimit.ToString();
+                    settings.SaturdayBreakMinutesUpperLimit = timePlanningSettingsModel.SaturdayBreakMinutesUpperLimit.ToString();
+                    settings.SundayBreakMinutesUpperLimit = timePlanningSettingsModel.SundayBreakMinutesUpperLimit.ToString();
                 }, _dbContext, _userService.UserId);
                 await GoogleSheetHelper.PushToGoogleSheet(await _core.GetCore(), _dbContext, _logger);
 

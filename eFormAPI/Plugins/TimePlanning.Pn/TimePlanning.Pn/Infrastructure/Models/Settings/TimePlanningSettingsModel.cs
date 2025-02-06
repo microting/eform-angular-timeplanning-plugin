@@ -29,22 +29,28 @@ namespace TimePlanning.Pn.Infrastructure.Models.Settings
     public class TimePlanningSettingsModel
     {
         public string GoogleSheetId { get; set; }
-        public string MondayBreakMinutesDivider { get; set; }
-        public string MondayBreakMinutesPrDivider { get; set; }
-        public string TuesdayBreakMinutesDivider { get; set; }
-        public string TuesdayBreakMinutesPrDivider { get; set; }
-        public string WednesdayBreakMinutesDivider { get; set; }
-        public string WednesdayBreakMinutesPrDivider { get; set; }
-        public string ThursdayBreakMinutesDivider { get; set; }
-        public string ThursdayBreakMinutesPrDivider { get; set; }
-        public string FridayBreakMinutesDivider { get; set; }
-        public string FridayBreakMinutesPrDivider { get; set; }
-        public string SaturdayBreakMinutesDivider { get; set; }
-        public string SaturdayBreakMinutesPrDivider { get; set; }
-        public string SundayBreakMinutesDivider { get; set; }
-        public string SundayBreakMinutesPrDivider { get; set; }
+        public int MondayBreakMinutesDivider { get; set; }
+        public int MondayBreakMinutesPrDivider { get; set; }
+        public int TuesdayBreakMinutesDivider { get; set; }
+        public int TuesdayBreakMinutesPrDivider { get; set; }
+        public int WednesdayBreakMinutesDivider { get; set; }
+        public int WednesdayBreakMinutesPrDivider { get; set; }
+        public int ThursdayBreakMinutesDivider { get; set; }
+        public int ThursdayBreakMinutesPrDivider { get; set; }
+        public int FridayBreakMinutesDivider { get; set; }
+        public int FridayBreakMinutesPrDivider { get; set; }
+        public int SaturdayBreakMinutesDivider { get; set; }
+        public int SaturdayBreakMinutesPrDivider { get; set; }
+        public int SundayBreakMinutesDivider { get; set; }
+        public int SundayBreakMinutesPrDivider { get; set; }
         public bool AutoBreakCalculationActive { get; set; }
-
         public bool ForceLoadAllPlanningsFromGoogleSheet { get; set; }
+        public int MondayBreakMinutesUpperLimit { get; set; }
+        public int TuesdayBreakMinutesUpperLimit { get; set; }
+        public int WednesdayBreakMinutesUpperLimit { get; set; }
+        public int ThursdayBreakMinutesUpperLimit { get; set; }
+        public int FridayBreakMinutesUpperLimit { get; set; }
+        public int SaturdayBreakMinutesUpperLimit { get; set; }
+        public int SundayBreakMinutesUpperLimit { get; set; }
     }
 }

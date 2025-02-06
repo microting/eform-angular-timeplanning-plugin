@@ -66,7 +66,7 @@
                 matInput
                 id="mondayBreakMinutesDivider"
                 name="mondayBreakMinutesDivider"
-                [ngModel]="settingsModel.mondayBreakMinutesDivider"
+                [(ngModel)]="settingsModel.mondayBreakMinutesDivider"
                 [readonly]="!settingsModel.autoBreakCalculationActive"
               >
             </mat-form-field>
@@ -77,7 +77,18 @@
                 matInput
                 id="mondayBreakMinutesPrDivider"
                 name="mondayBreakMinutesPrDivider"
-                [ngModel]="settingsModel.mondayBreakMinutesPrDivider"
+                [(ngModel)]="settingsModel.mondayBreakMinutesPrDivider"
+                [readonly]="!settingsModel.autoBreakCalculationActive"
+              >
+            </mat-form-field>
+            <mat-form-field class="p-2">
+              <mat-label>{{'Monday break upper limit' | translate}}</mat-label>
+              <input
+                type="number"
+                matInput
+                id="mondayBreakMinutesUpperLimit"
+                name="mondayBreakMinutesUpperLimit"
+                [(ngModel)]="settingsModel.mondayBreakMinutesUpperLimit"
                 [readonly]="!settingsModel.autoBreakCalculationActive"
               >
             </mat-form-field>
@@ -90,7 +101,7 @@
               matInput
               id="tuesdayBreakMinutesDivider"
               name="tuesdayBreakMinutesDivider"
-              [ngModel]="settingsModel.tuesdayBreakMinutesDivider"
+              [(ngModel)]="settingsModel.tuesdayBreakMinutesDivider"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -101,7 +112,18 @@
               matInput
               id="tuesdayBreakMinutesPrDivider"
               name="tuesdayBreakMinutesPrDivider"
-              [ngModel]="settingsModel.tuesdayBreakMinutesPrDivider"
+              [(ngModel)]="settingsModel.tuesdayBreakMinutesPrDivider"
+              [readonly]="!settingsModel.autoBreakCalculationActive"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-2">
+            <mat-label>{{'Tuesday break upper limit' | translate}}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="tuesdayBreakMinutesUpperLimit"
+              name="tuesdayBreakMinutesUpperLimit"
+              [(ngModel)]="settingsModel.tuesdayBreakMinutesUpperLimit"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -114,7 +136,7 @@
               matInput
               id="wednesdayBreakMinutesDivider"
               name="wednesdayBreakMinutesDivider"
-              [ngModel]="settingsModel.wednesdayBreakMinutesDivider"
+              [(ngModel)]="settingsModel.wednesdayBreakMinutesDivider"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -125,7 +147,18 @@
               matInput
               id="wednesdayBreakMinutesPrDivider"
               name="wednesdayBreakMinutesPrDivider"
-              [ngModel]="settingsModel.wednesdayBreakMinutesPrDivider"
+              [(ngModel)]="settingsModel.wednesdayBreakMinutesPrDivider"
+              [readonly]="!settingsModel.autoBreakCalculationActive"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-2">
+            <mat-label>{{'Wednesday break upper limit' | translate}}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="wednesdayBreakMinutesUpperLimit"
+              name="wednesdayBreakMinutesUpperLimit"
+              [(ngModel)]="settingsModel.wednesdayBreakMinutesUpperLimit"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -138,7 +171,7 @@
               matInput
               id="thursdayBreakMinutesDivider"
               name="thursdayBreakMinutesDivider"
-              [ngModel]="settingsModel.thursdayBreakMinutesDivider"
+              [(ngModel)]="settingsModel.thursdayBreakMinutesDivider"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -149,7 +182,18 @@
               matInput
               id="thursdayBreakMinutesPrDivider"
               name="thursdayBreakMinutesPrDivider"
-              [ngModel]="settingsModel.thursdayBreakMinutesPrDivider"
+              [(ngModel)]="settingsModel.thursdayBreakMinutesPrDivider"
+              [readonly]="!settingsModel.autoBreakCalculationActive"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-2">
+            <mat-label>{{'Thursday break upper limit' | translate}}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="thursdayBreakMinutesUpperLimit"
+              name="thursdayBreakMinutesUpperLimit"
+              [(ngModel)]="settingsModel.thursdayBreakMinutesUpperLimit"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -162,7 +206,7 @@
               matInput
               id="fridayBreakMinutesDivider"
               name="fridayBreakMinutesDivider"
-              [ngModel]="settingsModel.fridayBreakMinutesDivider"
+              [(ngModel)]="settingsModel.fridayBreakMinutesDivider"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -173,7 +217,18 @@
               matInput
               id="fridayBreakMinutesPrDivider"
               name="fridayBreakMinutesPrDivider"
-              [ngModel]="settingsModel.fridayBreakMinutesPrDivider"
+              [(ngModel)]="settingsModel.fridayBreakMinutesPrDivider"
+              [readonly]="!settingsModel.autoBreakCalculationActive"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-2">
+            <mat-label>{{'Friday break upper limit' | translate}}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="fridayBreakMinutesUpperLimit"
+              name="fridayBreakMinutesUpperLimit"
+              [(ngModel)]="settingsModel.fridayBreakMinutesUpperLimit"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -186,7 +241,7 @@
               matInput
               id="saturdayBreakMinutesDivider"
               name="saturdayBreakMinutesDivider"
-              [ngModel]="settingsModel.saturdayBreakMinutesDivider"
+              [(ngModel)]="settingsModel.saturdayBreakMinutesDivider"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -197,7 +252,18 @@
               matInput
               id="saturdayBreakMinutesPrDivider"
               name="saturdayBreakMinutesPrDivider"
-              [ngModel]="settingsModel.saturdayBreakMinutesPrDivider"
+              [(ngModel)]="settingsModel.saturdayBreakMinutesPrDivider"
+              [readonly]="!settingsModel.autoBreakCalculationActive"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-2">
+            <mat-label>{{'Saturday break upper limit' | translate}}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="saturdayBreakMinutesUpperLimit"
+              name="saturdayBreakMinutesUpperLimit"
+              [(ngModel)]="settingsModel.saturdayBreakMinutesUpperLimit"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -210,7 +276,7 @@
               matInput
               id="sundayBreakMinutesDivider"
               name="sundayBreakMinutesDivider"
-              [ngModel]="settingsModel.sundayBreakMinutesDivider"
+              [(ngModel)]="settingsModel.sundayBreakMinutesDivider"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
@@ -221,7 +287,18 @@
               matInput
               id="sundayBreakMinutesPrDivider"
               name="sundayBreakMinutesPrDivider"
-              [ngModel]="settingsModel.sundayBreakMinutesPrDivider"
+              [(ngModel)]="settingsModel.sundayBreakMinutesPrDivider"
+              [readonly]="!settingsModel.autoBreakCalculationActive"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-2">
+            <mat-label>{{'Sunday break upper limit' | translate}}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="sundayBreakMinutesUpperLimit"
+              name="sundayBreakMinutesUpperLimit"
+              [(ngModel)]="settingsModel.sundayBreakMinutesUpperLimit"
               [readonly]="!settingsModel.autoBreakCalculationActive"
             >
           </mat-form-field>
