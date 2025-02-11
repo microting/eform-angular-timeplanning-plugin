@@ -13,8 +13,9 @@ import {dialogConfigHelper} from 'src/app/common/helpers';
 import {Overlay} from '@angular/cdk/overlay';
 
 @Component({
-  selector: 'app-registration-devices-table',
-  templateUrl: './registration-devices-table.component.html',
+    selector: 'app-registration-devices-table',
+    templateUrl: './registration-devices-table.component.html',
+    standalone: false
 })
 export class RegistrationDevicesTableComponent implements OnInit {
   get tableHeaders(): MtxGridColumn[] {

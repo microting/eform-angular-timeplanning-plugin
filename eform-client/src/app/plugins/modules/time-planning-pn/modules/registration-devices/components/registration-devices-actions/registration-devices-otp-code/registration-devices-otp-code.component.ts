@@ -6,8 +6,9 @@ import {TimePlanningPnRegistrationDevicesService} from '../../../../../services'
 
 
 @Component({
-  selector: 'app-registration-devices-otp-code',
-  templateUrl: './registration-devices-otp-code.component.html'
+    selector: 'app-registration-devices-otp-code',
+    templateUrl: './registration-devices-otp-code.component.html',
+    standalone: false
 })
 export class RegistrationDevicesOtpCodeComponent implements OnInit {
   constructor(

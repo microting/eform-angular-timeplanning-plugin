@@ -4,9 +4,11 @@ import {TimePlanningPnRegistrationDevicesService} from '../../../../../services/
 import {TimePlanningRegistrationDeviceModel} from '../../../../../../../modules/time-planning-pn/models';
 
 @Component({
-  selector: 'app-registration-devices-create-modal',
-  templateUrl: './registration-devices-create-modal.component.html'
-  // styleUrls: ['./registration-devices-create.component.scss']
+    selector: 'app-registration-devices-create-modal',
+    templateUrl: './registration-devices-create-modal.component.html'
+    // styleUrls: ['./registration-devices-create.component.scss']
+    ,
+    standalone: false
 })
 export class RegistrationDevicesCreateModalComponent implements OnInit {
   selectedRegistrationDevice: TimePlanningRegistrationDeviceModel = new TimePlanningRegistrationDeviceModel();

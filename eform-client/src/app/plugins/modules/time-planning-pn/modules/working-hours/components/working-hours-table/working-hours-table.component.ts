@@ -26,10 +26,11 @@ import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
 
 @AutoUnsubscribe()
 @Component({
-  selector: 'app-working-hours-table',
-  templateUrl: './working-hours-table.component.html',
-  styleUrls: ['./working-hours-table.component.css'],
-  encapsulation: ViewEncapsulation.None,
+    selector: 'app-working-hours-table',
+    templateUrl: './working-hours-table.component.html',
+    styleUrls: ['./working-hours-table.component.css'],
+    encapsulation: ViewEncapsulation.None,
+    standalone: false
 })
 export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('shiftSelectorTpl', {static: true}) shiftSelectorTpl!: TemplateRef<any>;

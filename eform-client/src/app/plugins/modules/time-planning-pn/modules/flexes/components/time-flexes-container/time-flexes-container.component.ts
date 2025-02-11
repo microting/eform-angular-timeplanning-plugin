@@ -11,9 +11,10 @@ import { TimePlanningPnPlanningsService } from '../../../../services';
 
 @AutoUnsubscribe()
 @Component({
-  selector: 'app-time-flexes-container',
-  templateUrl: './time-flexes-container.component.html',
-  styleUrls: ['./time-flexes-container.component.scss'],
+    selector: 'app-time-flexes-container',
+    templateUrl: './time-flexes-container.component.html',
+    styleUrls: ['./time-flexes-container.component.scss'],
+    standalone: false
 })
 export class TimeFlexesContainerComponent implements OnInit, OnDestroy {
   timePlanningsRequest: TimePlanningsRequestModel;

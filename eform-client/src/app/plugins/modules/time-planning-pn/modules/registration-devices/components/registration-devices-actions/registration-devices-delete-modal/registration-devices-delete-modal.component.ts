@@ -4,9 +4,11 @@ import {TimePlanningPnRegistrationDevicesService} from 'src/app/plugins/modules/
 import {TimePlanningRegistrationDeviceModel} from 'src/app/plugins/modules/time-planning-pn/models';
 
 @Component({
-  selector: 'app-registration-devices-delete-modal',
-  templateUrl: './registration-devices-delete-modal.component.html'
-  // styleUrls: ['./registration-devices-delete.component.scss']
+    selector: 'app-registration-devices-delete-modal',
+    templateUrl: './registration-devices-delete-modal.component.html'
+    // styleUrls: ['./registration-devices-delete.component.scss']
+    ,
+    standalone: false
 })
 export class RegistrationDevicesDeleteModalComponent implements OnInit {
   selectedRegistrationDevice: TimePlanningRegistrationDeviceModel = new TimePlanningRegistrationDeviceModel();

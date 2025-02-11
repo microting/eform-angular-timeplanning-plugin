@@ -20,9 +20,10 @@ import {
 } from "src/app/plugins/modules/time-planning-pn/modules/working-hours/components";
 
 @Component({
-  selector: 'app-working-hours-header',
-  templateUrl: './working-hours-header.component.html',
-  styleUrls: ['./working-hours-header.component.scss'],
+    selector: 'app-working-hours-header',
+    templateUrl: './working-hours-header.component.html',
+    styleUrls: ['./working-hours-header.component.scss'],
+    standalone: false
 })
 export class WorkingHoursHeaderComponent implements OnInit {
   @Input()

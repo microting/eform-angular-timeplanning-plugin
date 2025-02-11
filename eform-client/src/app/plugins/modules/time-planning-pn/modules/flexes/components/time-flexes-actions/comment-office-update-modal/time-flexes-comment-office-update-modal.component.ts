@@ -10,9 +10,10 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
 @AutoUnsubscribe()
 @Component({
-  selector: 'app-time-flexes-comment-office-update-modal',
-  templateUrl: './time-flexes-comment-office-update-modal.component.html',
-  styleUrls: ['./time-flexes-comment-office-update-modal.component.scss'],
+    selector: 'app-time-flexes-comment-office-update-modal',
+    templateUrl: './time-flexes-comment-office-update-modal.component.html',
+    styleUrls: ['./time-flexes-comment-office-update-modal.component.scss'],
+    standalone: false
 })
 export class TimeFlexesCommentOfficeUpdateModalComponent implements OnInit, OnDestroy {
   timeFlexes: TimeFlexesModel = new TimeFlexesModel();

@@ -14,9 +14,10 @@ import {
 
 @AutoUnsubscribe()
 @Component({
-  selector: 'app-working-hours-container',
-  templateUrl: './working-hours-container.component.html',
-  styleUrls: ['./working-hours-container.component.scss'],
+    selector: 'app-working-hours-container',
+    templateUrl: './working-hours-container.component.html',
+    styleUrls: ['./working-hours-container.component.scss'],
+    standalone: false
 })
 export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   workingHoursFormArray: FormArray = new FormArray([]);

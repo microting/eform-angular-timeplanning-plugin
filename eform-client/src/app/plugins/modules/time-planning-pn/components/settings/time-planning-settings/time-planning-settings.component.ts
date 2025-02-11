@@ -4,9 +4,10 @@ import {TimePlanningPnSettingsService} from '../../../services';
 import {TimePlanningSettingsModel} from '../../../models';
 
 @Component({
-  selector: 'app-time-planning-settings',
-  templateUrl: './time-planning-settings.component.html',
-  styleUrls: ['./time-planning-settings.component.scss']
+    selector: 'app-time-planning-settings',
+    templateUrl: './time-planning-settings.component.html',
+    styleUrls: ['./time-planning-settings.component.scss'],
+    standalone: false
 })
 export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   getSettings$: Subscription;

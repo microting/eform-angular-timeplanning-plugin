@@ -6,9 +6,10 @@ import {addPluginToVisited, selectPluginsVisitedPlugins} from 'src/app/state';
 import {take} from 'rxjs';
 
 @Component({
-  selector: 'app-time-planning-pn-layout',
-  template: `
+    selector: 'app-time-planning-pn-layout',
+    template: `
     <router-outlet></router-outlet>`,
+    standalone: false
 })
 export class TimePlanningPnLayoutComponent implements AfterContentInit, OnInit {
   private pluginName = 'time-planning';

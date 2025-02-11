@@ -9,9 +9,10 @@ import {selectBearerToken} from 'src/app/state/auth/auth.selector';
 import {Store} from '@ngrx/store';
 
 @Component({
-  selector: 'app-working-hours-upload-modal',
-  templateUrl: './working-hours-upload-modal.component.html',
-  styleUrls: ['./working-hours-upload-modal.component.scss'],
+    selector: 'app-working-hours-upload-modal',
+    templateUrl: './working-hours-upload-modal.component.html',
+    styleUrls: ['./working-hours-upload-modal.component.scss'],
+    standalone: false
 })
 export class WorkingHoursUploadModalComponent implements OnInit {
   workingHoursFileUploader: FileUploader;

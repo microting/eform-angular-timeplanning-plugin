@@ -21,9 +21,10 @@ import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
 
 @AutoUnsubscribe()
 @Component({
-  selector: 'app-time-flexes-table',
-  templateUrl: './time-flexes-table.component.html',
-  styleUrls: ['./time-flexes-table.component.scss'],
+    selector: 'app-time-flexes-table',
+    templateUrl: './time-flexes-table.component.html',
+    styleUrls: ['./time-flexes-table.component.scss'],
+    standalone: false
 })
 export class TimeFlexesTableComponent implements OnInit, OnDestroy {
   @Input() flexPlannings: TimeFlexesModel[] = [];

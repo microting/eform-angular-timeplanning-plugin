@@ -7,9 +7,10 @@ import {take} from "rxjs";
 import {TitleService} from "src/app/common/services";
 import {TranslateService} from "@ngx-translate/core";
 @Component({
-  selector: 'app-mobile-working-hours',
-  templateUrl: './mobile-working-hours.component.html',
-  styleUrls: ['./mobile-working-hours.component.scss'],
+    selector: 'app-mobile-working-hours',
+    templateUrl: './mobile-working-hours.component.html',
+    styleUrls: ['./mobile-working-hours.component.scss'],
+    standalone: false
 })
 export class MobileWorkingHoursComponent implements OnInit, OnDestroy {
   displayedColumns: string[] = ['property', 'value'];

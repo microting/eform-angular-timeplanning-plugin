@@ -11,8 +11,9 @@ import {
 } from '../index';
 
 @Component({
-  selector: 'app-registration-devices-container',
-  templateUrl: './registration-devices-container.component.html',
+    selector: 'app-registration-devices-container',
+    templateUrl: './registration-devices-container.component.html',
+    standalone: false
 })
 export class RegistrationDevicesContainerComponent implements OnInit {
   tainted: any;

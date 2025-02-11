@@ -5,9 +5,10 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
 @AutoUnsubscribe()
 @Component({
-  selector: 'app-working-hours-comment-office-update-modal',
-  templateUrl: './working-hours-comment-office-update-modal.component.html',
-  styleUrls: ['./working-hours-comment-office-update-modal.component.scss'],
+    selector: 'app-working-hours-comment-office-update-modal',
+    templateUrl: './working-hours-comment-office-update-modal.component.html',
+    styleUrls: ['./working-hours-comment-office-update-modal.component.scss'],
+    standalone: false
 })
 export class WorkingHoursCommentOfficeUpdateModalComponent
   implements OnInit, OnDestroy {
