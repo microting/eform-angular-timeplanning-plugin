@@ -31,7 +31,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure.Models.Planning;
-using Infrastructure.Models.Planning.HelperModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
@@ -54,100 +53,103 @@ public class TimePlanningPlanningService(
     {
         try
         {
-            var timePlanningRequest = dbContext.PlanRegistrations
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.SdkSitId == model.SiteId);
+            //         var timePlanningRequest = dbContext.PlanRegistrations
+            //             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed);
+            //             //.Where(x => x.SdkSitId == model.SiteId);
+            //
+            //         // two dates may be displayed instead of one if the same date is selected.
+            //         if (model.DateFrom == model.DateTo)
+            //         {
+            //             timePlanningRequest = timePlanningRequest
+            //                 .Where(x => x.Date == model.DateFrom);
+            //         }
+            //         else
+            //         {
+            //             timePlanningRequest = timePlanningRequest
+            //                 .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
+            //         }
+            //
+            //         var timePlannings = await timePlanningRequest
+            //             .Select(x => new TimePlanningPlanningHelperModel
+            //             {
+            //                 WeekDay = (int)x.Date.DayOfWeek,
+            //                 Date = x.Date,
+            //                 PlanText = x.PlanText,
+            //                 PlanHours = x.PlanHours,
+            //                 Message = x.MessageId
+            //             })
+            //             .ToListAsync();
+            //
+            //         var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
+            //
+            //         if (timePlannings.Count < date)
+            //         {
+            //             var daysForAdd = new List<TimePlanningPlanningHelperModel>();
+            //             for (var i = 0; i < date; i++)
+            //             {
+            //                 if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
+            //                 {
+            //                     daysForAdd.Add(new TimePlanningPlanningHelperModel
+            //                     {
+            //                         Date = model.DateFrom.AddDays(i),
+            //                         WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek
+            //                     });
+            //                 }
+            //             }
+            //
+            //             timePlannings.AddRange(daysForAdd);
+            //         }
+            //
+            //         if (model.Sort.ToLower() == "dayofweek")
+            //         {
+            //             List<TimePlanningPlanningHelperModel> tempResult;
+            //
+            //             if (model.IsSortDsc)
+            //             {
+            //                 tempResult = timePlannings
+            //                     .Where(x => x.WeekDay == 0)
+            //                     .OrderByDescending(x => x.WeekDay)
+            //                     .ThenByDescending(x => x.Date)
+            //                     .ToList();
+            //                 tempResult.AddRange(timePlannings
+            //                     .Where(x => x.WeekDay > 0)
+            //                     .OrderByDescending(x => x.WeekDay));
+            //             }
+            //             else
+            //             {
+            //                 tempResult = timePlannings
+            //                     .Where(x => x.WeekDay > 0)
+            //                     .OrderBy(x => x.WeekDay)
+            //                     .ThenBy(x => x.Date)
+            //                     .ToList();
+            //                 tempResult.AddRange(timePlannings
+            //                     .Where(x => x.WeekDay == 0)
+            //                     .OrderBy(x => x.Date));
+            //             }
+            //
+            //             timePlannings = tempResult;
+            //         }
+            //         else
+            //         {
+            //             timePlannings = model.IsSortDsc
+            //                 ? timePlannings.OrderByDescending(x => x.Date).ToList()
+            //                 : timePlannings.OrderBy(x => x.Date).ToList();
+            //         }
+            //
+            //         var result = timePlannings
+            //             .Select(x => new TimePlanningPlanningModel
+            //             {
+            //                 WeekDay = x.WeekDay,
+            //                 Date = x.Date.ToString("yyyy/MM/dd"),
+            //                 PlanText = x.PlanText,
+            //                 PlanHours = x.PlanHours,
+            //                 Message = x.Message,
+            //                 IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
+            //             })
+            //             .ToList();
+            //
 
-            // two dates may be displayed instead of one if the same date is selected.
-            if (model.DateFrom == model.DateTo)
-            {
-                timePlanningRequest = timePlanningRequest
-                    .Where(x => x.Date == model.DateFrom);
-            }
-            else
-            {
-                timePlanningRequest = timePlanningRequest
-                    .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
-            }
-
-            var timePlannings = await timePlanningRequest
-                .Select(x => new TimePlanningPlanningHelperModel
-                {
-                    WeekDay = (int)x.Date.DayOfWeek,
-                    Date = x.Date,
-                    PlanText = x.PlanText,
-                    PlanHours = x.PlanHours,
-                    Message = x.MessageId
-                })
-                .ToListAsync();
-
-            var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
-
-            if (timePlannings.Count < date)
-            {
-                var daysForAdd = new List<TimePlanningPlanningHelperModel>();
-                for (var i = 0; i < date; i++)
-                {
-                    if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
-                    {
-                        daysForAdd.Add(new TimePlanningPlanningHelperModel
-                        {
-                            Date = model.DateFrom.AddDays(i),
-                            WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek
-                        });
-                    }
-                }
-
-                timePlannings.AddRange(daysForAdd);
-            }
-
-            if (model.Sort.ToLower() == "dayofweek")
-            {
-                List<TimePlanningPlanningHelperModel> tempResult;
-
-                if (model.IsSortDsc)
-                {
-                    tempResult = timePlannings
-                        .Where(x => x.WeekDay == 0)
-                        .OrderByDescending(x => x.WeekDay)
-                        .ThenByDescending(x => x.Date)
-                        .ToList();
-                    tempResult.AddRange(timePlannings
-                        .Where(x => x.WeekDay > 0)
-                        .OrderByDescending(x => x.WeekDay));
-                }
-                else
-                {
-                    tempResult = timePlannings
-                        .Where(x => x.WeekDay > 0)
-                        .OrderBy(x => x.WeekDay)
-                        .ThenBy(x => x.Date)
-                        .ToList();
-                    tempResult.AddRange(timePlannings
-                        .Where(x => x.WeekDay == 0)
-                        .OrderBy(x => x.Date));
-                }
-
-                timePlannings = tempResult;
-            }
-            else
-            {
-                timePlannings = model.IsSortDsc
-                    ? timePlannings.OrderByDescending(x => x.Date).ToList()
-                    : timePlannings.OrderBy(x => x.Date).ToList();
-            }
-
-            var result = timePlannings
-                .Select(x => new TimePlanningPlanningModel
-                {
-                    WeekDay = x.WeekDay,
-                    Date = x.Date.ToString("yyyy/MM/dd"),
-                    PlanText = x.PlanText,
-                    PlanHours = x.PlanHours,
-                    Message = x.Message,
-                    IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
-                })
-                .ToList();
+            var result = new List<TimePlanningPlanningModel>();
 
             return new OperationDataResult<List<TimePlanningPlanningModel>>(
                 true,
@@ -163,90 +165,90 @@ public class TimePlanningPlanningService(
                 localizationService.GetString("ErrorWhileObtainingPlannings"));
         }
     }
-
-    public async Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model)
-    {
-        try
-        {
-            var planning = await dbContext.PlanRegistrations
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.SdkSitId == model.SiteId)
-                .Where(x => x.Date == model.Date)
-                .FirstOrDefaultAsync();
-            if (planning != null)
-            {
-                return await UpdatePlanning(planning, model);
-            }
-
-            return await CreatePlanning(model, model.SiteId);
-        }
-        catch (Exception e)
-        {
-            SentrySdk.CaptureException(e);
-            logger.LogError(e.Message);
-            logger.LogTrace(e.StackTrace);
-            return new OperationResult(
-                false,
-                localizationService.GetString("ErrorWhileUpdatePlanning"));
-        }
-    }
-
-    private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, int sdkSiteId)
-    {
-        try
-        {
-            var planning = new PlanRegistration
-            {
-                PlanText = model.PlanText,
-                SdkSitId = sdkSiteId,
-                Date = model.Date,
-                PlanHours = model.PlanHours,
-                CreatedByUserId = userService.UserId,
-                UpdatedByUserId = userService.UserId,
-                MessageId = model.Message
-            };
-
-            await planning.Create(dbContext);
-
-            return new OperationResult(
-                true,
-                localizationService.GetString("SuccessfullyCreatePlanning"));
-        }
-        catch (Exception e)
-        {
-            SentrySdk.CaptureException(e);
-            logger.LogError(e.Message);
-            logger.LogTrace(e.StackTrace);
-            return new OperationResult(
-                false,
-                localizationService.GetString("ErrorWhileCreatePlanning"));
-        }
-    }
-
-    private async Task<OperationResult> UpdatePlanning(PlanRegistration planning,
-        TimePlanningPlanningUpdateModel model)
-    {
-        try
-        {
-            planning.MessageId = model.Message;
-            planning.PlanText = model.PlanText;
-            planning.PlanHours = model.PlanHours;
-            planning.UpdatedByUserId = userService.UserId;
-
-            await planning.Update(dbContext);
-
-            return new OperationResult(
-                true,
-                localizationService.GetString("SuccessfullyUpdatePlanning"));
-        }
-        catch (Exception e)
-        {
-            SentrySdk.CaptureException(e);
-            logger.LogError(e.Message);
-            logger.LogTrace(e.StackTrace);
-            return new OperationResult(
-                false,
-                localizationService.GetString("ErrorWhileUpdatePlanning"));
-        }
-    }
+    //
+    // public async Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model)
+    // {
+    //     try
+    //     {
+    //         var planning = await dbContext.PlanRegistrations
+    //             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+    //             .Where(x => x.SdkSitId == model.SiteId)
+    //             .Where(x => x.Date == model.Date)
+    //             .FirstOrDefaultAsync();
+    //         if (planning != null)
+    //         {
+    //             return await UpdatePlanning(planning, model);
+    //         }
+    //
+    //         return await CreatePlanning(model, model.SiteId);
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         SentrySdk.CaptureException(e);
+    //         logger.LogError(e.Message);
+    //         logger.LogTrace(e.StackTrace);
+    //         return new OperationResult(
+    //             false,
+    //             localizationService.GetString("ErrorWhileUpdatePlanning"));
+    //     }
+    // }
+    //
+    // private async Task<OperationResult> CreatePlanning(TimePlanningPlanningUpdateModel model, int sdkSiteId)
+    // {
+    //     try
+    //     {
+    //         var planning = new PlanRegistration
+    //         {
+    //             PlanText = model.PlanText,
+    //             SdkSitId = sdkSiteId,
+    //             Date = model.Date,
+    //             PlanHours = model.PlanHours,
+    //             CreatedByUserId = userService.UserId,
+    //             UpdatedByUserId = userService.UserId,
+    //             MessageId = model.Message
+    //         };
+    //
+    //         await planning.Create(dbContext);
+    //
+    //         return new OperationResult(
+    //             true,
+    //             localizationService.GetString("SuccessfullyCreatePlanning"));
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         SentrySdk.CaptureException(e);
+    //         logger.LogError(e.Message);
+    //         logger.LogTrace(e.StackTrace);
+    //         return new OperationResult(
+    //             false,
+    //             localizationService.GetString("ErrorWhileCreatePlanning"));
+    //     }
+    // }
+    //
+    // private async Task<OperationResult> UpdatePlanning(PlanRegistration planning,
+    //     TimePlanningPlanningUpdateModel model)
+    // {
+    //     try
+    //     {
+    //         planning.MessageId = model.Message;
+    //         planning.PlanText = model.PlanText;
+    //         planning.PlanHours = model.PlanHours;
+    //         planning.UpdatedByUserId = userService.UserId;
+    //
+    //         await planning.Update(dbContext);
+    //
+    //         return new OperationResult(
+    //             true,
+    //             localizationService.GetString("SuccessfullyUpdatePlanning"));
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         SentrySdk.CaptureException(e);
+    //         logger.LogError(e.Message);
+    //         logger.LogTrace(e.StackTrace);
+    //         return new OperationResult(
+    //             false,
+    //             localizationService.GetString("ErrorWhileUpdatePlanning"));
+    //     }
+    // }
 }

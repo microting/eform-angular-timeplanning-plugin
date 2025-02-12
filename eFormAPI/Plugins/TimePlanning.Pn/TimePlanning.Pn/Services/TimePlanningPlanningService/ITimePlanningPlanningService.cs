@@ -32,7 +32,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
     public interface ITimePlanningPlanningService
     {
         Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(TimePlanningPlanningRequestModel model);
-
-        Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model);
+        //
+        // Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model);
     }
 }

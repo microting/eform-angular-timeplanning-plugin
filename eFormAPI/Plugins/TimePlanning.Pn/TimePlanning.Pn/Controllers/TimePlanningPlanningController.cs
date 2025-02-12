@@ -28,14 +28,9 @@ namespace TimePlanning.Pn.Controllers
     using Services.TimePlanningPlanningService;
 
     [Route("api/time-planning-pn/plannings")]
-    public class TimePlanningPlanningController : Controller
+    public class TimePlanningPlanningController(ITimePlanningPlanningService planningService) : Controller
     {
-        private readonly ITimePlanningPlanningService _planningService;
-
-        public TimePlanningPlanningController(ITimePlanningPlanningService planningService)
-        {
-            _planningService = planningService;
-        }
+        private readonly ITimePlanningPlanningService _planningService = planningService;
 
         [HttpPost]
         [Route("index")]
@@ -44,11 +39,11 @@ namespace TimePlanning.Pn.Controllers
         {
             return await _planningService.Index(model);
         }
-
-        [HttpPut]
-        public async Task<OperationResult> UpdateCreatePlannings([FromBody] TimePlanningPlanningUpdateModel model)
-        {
-            return await _planningService.UpdateCreatePlanning(model);
-        }
+        //
+        // [HttpPut]
+        // public async Task<OperationResult> UpdateCreatePlannings([FromBody] TimePlanningPlanningUpdateModel model)
+        // {
+        //     return await _planningService.UpdateCreatePlanning(model);
+        // }
     }
 }
