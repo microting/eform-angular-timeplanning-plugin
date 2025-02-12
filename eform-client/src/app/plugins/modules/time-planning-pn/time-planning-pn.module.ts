@@ -17,7 +17,7 @@ import {
   TimePlanningPnPlanningsService, TimePlanningPnRegistrationDevicesService,
   TimePlanningPnSettingsService,
 } from './services';
-import {TimePlanningSettingsComponent} from './components';
+import {TimePlanningsContainerComponent, TimePlanningSettingsComponent} from './components';
 import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
@@ -45,10 +45,10 @@ import {MatSlideToggle} from '@angular/material/slide-toggle';
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
-    TimePlanningSettingsComponent
+    TimePlanningSettingsComponent,
     // TimePlanningTableRowComponent,
     // TimePlanningsTableComponent,
-    // TimePlanningsContainerComponent,
+    TimePlanningsContainerComponent,
     // TimePlanningsHeaderComponent,
   ],
   providers: [
