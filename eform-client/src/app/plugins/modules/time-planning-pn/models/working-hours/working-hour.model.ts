@@ -1,23 +1,26 @@
+import {TimePlanningMessagesEnum} from '../../enums';
+
 export class WorkingHourModel {
   workerName: string;
+  weekDay: number;
+  date: string;
   planText: string;
-  planHours: string;
+  planHours: number;
+  message: TimePlanningMessagesEnum;
+  shift1Start: number;
+  shift1Pause: number;
+  shift1Stop: number;
+  shift2Start: number;
+  shift2Pause: number;
+  shift2Stop: number;
   nettoHours: number;
   flexHours: number;
   sumFlexStart: number;
   sumFlexEnd: number;
   paidOutFlex: number;
-  message: string;
-  commentWorker: string
+  commentWorker: string;
   commentOffice: string;
-  start1StartedAt: string;
-  pause1StartedAt: string;
-  pause1StoppedAt: string;
-  stop1StoppedAt: string;
-  start2StartedAt: string;
-  pause2StartedAt: string;
-  pause2StoppedAt: string;
-  stop2StoppedAt: string;
-  date: string;
-  yesterDay: string;
+  commentOfficeAll: string;
+  isLocked: boolean;
+  isWeekend: boolean;
 }

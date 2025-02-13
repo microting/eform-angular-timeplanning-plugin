@@ -7,7 +7,7 @@ import {
   TimePlanningsRequestModel,
   TimeFlexesUpdateModel,
 } from '../../../../models';
-import { TimePlanningPnPlanningsService } from '../../../../services';
+import { TimePlanningPnFlexesService } from '../../../../services';
 
 @AutoUnsubscribe()
 @Component({
@@ -25,7 +25,7 @@ export class TimeFlexesContainerComponent implements OnInit, OnDestroy {
   getTimePlannings$: Subscription;
   updateTimePlanning$: Subscription;
 
-  constructor(private planningsService: TimePlanningPnPlanningsService) {}
+  constructor(private planningsService: TimePlanningPnFlexesService) {}
 
   ngOnInit(): void {
     this.getPlannings();

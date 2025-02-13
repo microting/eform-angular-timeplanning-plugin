@@ -19,6 +19,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
   timePlannings: TimePlanningModel[] = [];
+  selectedDate: Date = new Date();
 
   getTimePlannings$: Subscription;
   updateTimePlanning$: Subscription;
@@ -33,5 +34,22 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+  }
+
+  goBackward() {
+
+  }
+
+  updateSelectedDate() {
+
+  }
+
+  goForward() {
+
+  }
+
+  isToday(): boolean {
+    const today = new Date();
+    return this.selectedDate.toDateString() === today.toDateString();
   }
 }

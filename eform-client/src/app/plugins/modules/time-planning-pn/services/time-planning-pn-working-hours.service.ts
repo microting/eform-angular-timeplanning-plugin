@@ -3,10 +3,10 @@ import { Observable } from 'rxjs';
 import { OperationDataResult, OperationResult } from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
 import {
-  TimePlanningModel,
-  TimePlanningsRequestModel,
   WorkingHoursModel,
-  TimePlanningsReportAllWorkersDownloadRequestModel, WorkingHourModel
+  WorkingHourRequestModel,
+  WorkingHourModel,
+  TimePlanningsReportAllWorkersDownloadRequestModel
 } from '../models';
 
 export let TimePlanningPnWorkingHoursMethods = {
@@ -24,8 +24,8 @@ export class TimePlanningPnWorkingHoursService {
   constructor(private apiBaseService: ApiBaseService) {}
 
   getWorkingHours(
-    model: TimePlanningsRequestModel
-  ): Observable<OperationDataResult<TimePlanningModel[]>> {
+    model: WorkingHourRequestModel
+  ): Observable<OperationDataResult<WorkingHourModel[]>> {
     return this.apiBaseService.post(
       TimePlanningPnWorkingHoursMethods.IndexWorkingHours,
       model
@@ -45,7 +45,7 @@ export class TimePlanningPnWorkingHoursService {
     );
   }
 
-  downloadReport(model: TimePlanningsRequestModel): Observable<any> {
+  downloadReport(model: WorkingHourRequestModel): Observable<any> {
     return this.apiBaseService.getBlobData(
       TimePlanningPnWorkingHoursMethods.Reports,
       model

@@ -10,7 +10,6 @@ import {
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {Subscription} from 'rxjs';
 import {SiteDto} from 'src/app/common/models';
-import {TimePlanningModel, TimePlanningsRequestModel} from '../../../../models';
 import {MtxGridColumn, MtxGridRowClassFormatter} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
 import {DaysOfWeekEnum, HOURS_PICKER_ARRAY, STANDARD_DANISH_DATE_FORMAT} from 'src/app/common/const';
@@ -23,6 +22,10 @@ import {dialogConfigHelper} from 'src/app/common/helpers';
 import {selectCurrentUserLocale} from 'src/app/state';
 import {Store} from '@ngrx/store';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
+import {
+  WorkingHourModel,
+  WorkingHourRequestModel
+} from '../../../../models';
 
 @AutoUnsubscribe()
 @Component({
@@ -37,15 +40,15 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   @ViewChild('inputTextTpl', {static: true}) inputTextTpl!: TemplateRef<any>;
   @ViewChild('inputNumberTpl', {static: true}) inputNumberTpl!: TemplateRef<any>;
   @ViewChild('messageSelectorTpl', {static: true}) messageSelectorTpl!: TemplateRef<any>;
-  @Input() workingHours: TimePlanningModel[] = [];
+  @Input() workingHours: WorkingHourModel[] = [];
   @Input() workingHoursFormArray: FormArray = new FormArray([]);
-  @Input() timePlannings: TimePlanningModel[] = [];
-  @Input() workingHoursRequest: TimePlanningsRequestModel;
+  @Input() timePlannings: WorkingHourModel[] = [];
+  @Input() workingHoursRequest: WorkingHourRequestModel;
   @Input() tainted: boolean;
   @Input() availableSites: SiteDto[] = [];
-  @Output() timePlanningChanged: EventEmitter<TimePlanningModel> = new EventEmitter<TimePlanningModel>();
+  @Output() timePlanningChanged: EventEmitter<WorkingHourModel> = new EventEmitter<WorkingHourModel>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
-  @Output() filtersChanged: EventEmitter<TimePlanningsRequestModel> = new EventEmitter<TimePlanningsRequestModel>();
+  @Output() filtersChanged: EventEmitter<WorkingHourRequestModel> = new EventEmitter<WorkingHourRequestModel>();
   @Output() updateWorkingHours: EventEmitter<void> = new EventEmitter<void>();
   messages: { id: number; value: string }[] = [];
   private selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);

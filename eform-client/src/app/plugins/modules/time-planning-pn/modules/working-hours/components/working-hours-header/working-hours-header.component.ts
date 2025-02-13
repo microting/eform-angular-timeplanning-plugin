@@ -2,7 +2,7 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {format} from 'date-fns';
 import {ExcelIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {SiteDto} from 'src/app/common/models';
-import {TimePlanningsReportAllWorkersDownloadRequestModel, TimePlanningsRequestModel} from '../../../../models';
+import {TimePlanningsReportAllWorkersDownloadRequestModel} from '../../../../models';
 import {saveAs} from 'file-saver';
 import {ToastrService} from 'ngx-toastr';
 import {TimePlanningPnWorkingHoursService} from '../../../../services';
@@ -11,13 +11,15 @@ import {MatIconRegistry} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
 import {catchError} from 'rxjs/operators';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
-import {EformsBulkImportModalComponent, EformUploadZipModalComponent} from "src/app/modules/eforms/components";
-import {dialogConfigHelper} from "src/app/common/helpers";
-import {MatDialog} from "@angular/material/dialog";
-import {Overlay} from "@angular/cdk/overlay";
+import {dialogConfigHelper} from 'src/app/common/helpers';
+import {MatDialog} from '@angular/material/dialog';
+import {Overlay} from '@angular/cdk/overlay';
 import {
   WorkingHoursUploadModalComponent
-} from "src/app/plugins/modules/time-planning-pn/modules/working-hours/components";
+} from 'src/app/plugins/modules/time-planning-pn/modules/working-hours/components';
+import {
+  WorkingHourRequestModel
+} from '../../../../models';
 
 @Component({
     selector: 'app-working-hours-header',
@@ -27,11 +29,11 @@ import {
 })
 export class WorkingHoursHeaderComponent implements OnInit {
   @Input()
-  workingHoursRequest: TimePlanningsRequestModel = new TimePlanningsRequestModel();
+  workingHoursRequest: WorkingHourRequestModel = new WorkingHourRequestModel();
   @Input() availableSites: SiteDto[] = [];
   @Input() tainted = false;
   @Output()
-  filtersChanged: EventEmitter<TimePlanningsRequestModel> = new EventEmitter<TimePlanningsRequestModel>();
+  filtersChanged: EventEmitter<WorkingHourRequestModel> = new EventEmitter<WorkingHourRequestModel>();
   @Output() updateWorkingHours: EventEmitter<void> = new EventEmitter<void>();
   eformUploadZipModalComponentAfterClosedSub$: Subscription;
 
@@ -65,7 +67,7 @@ export class WorkingHoursHeaderComponent implements OnInit {
   }
 
   onDownloadExcelReport() {
-    const model: TimePlanningsRequestModel = {
+    const model: WorkingHourRequestModel = {
       dateFrom: format(this.dateFrom, 'yyyy-MM-dd'),
       dateTo: format(this.dateTo, 'yyyy-MM-dd'),
       siteId: this.siteId,

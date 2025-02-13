@@ -4,13 +4,10 @@ import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
 import {
-  TimePlanningModel,
-  TimePlanningsRequestModel,
-} from 'src/app/plugins/modules/time-planning-pn/models';
-import {
   TimePlanningPnSettingsService,
   TimePlanningPnWorkingHoursService,
 } from '../../../../services';
+import {WorkingHourRequestModel, WorkingHourModel} from '../../../../models';
 
 @AutoUnsubscribe()
 @Component({
@@ -21,9 +18,9 @@ import {
 })
 export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   workingHoursFormArray: FormArray = new FormArray([]);
-  workingHoursRequest: TimePlanningsRequestModel;
+  workingHoursRequest: WorkingHourRequestModel;
   availableSites: SiteDto[] = [];
-  workingHours: TimePlanningModel[] = [];
+  workingHours: WorkingHourModel[] = [];
 
   getWorkingHours$: Subscription;
   updateWorkingHours$: Subscription;
@@ -50,7 +47,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
       });
   }
 
-  getWorkingHours(model: TimePlanningsRequestModel) {
+  getWorkingHours(model: WorkingHourRequestModel) {
     if (model.siteId === undefined || model.siteId === null) {
       this.workingHours = [];
       this.workingHoursFormArray = new FormArray([]);
@@ -67,7 +64,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
     }
   }
 
-  initializeWorkingHoursFormArray(workingHours: TimePlanningModel[]) {
+  initializeWorkingHoursFormArray(workingHours: WorkingHourModel[]) {
     this.workingHoursFormArray.clear();
     workingHours.map((x) => {
       this.workingHoursFormArray.controls = [
@@ -137,7 +134,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
     }
   }
 
-  onWorkingHoursFiltersChanged(model: TimePlanningsRequestModel) {
+  onWorkingHoursFiltersChanged(model: WorkingHourRequestModel) {
     this.workingHoursRequest = { ...model };
     this.getWorkingHours(model);
   }

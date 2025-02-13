@@ -16,8 +16,6 @@ export let TimePlanningPnPlanningsMethods = {
   SimplePlannings: 'api/time-planning-pn/plannings/index',
   IndexWorkingHours: 'api/time-planning-pn/working-hours/index',
   WorkingHours: 'api/time-planning-pn/working-hours',
-  IndexFlex: 'api/time-planning-pn/flex/index',
-  Flex: 'api/time-planning-pn/flex',
 };
 
 @Injectable({
@@ -35,36 +33,28 @@ export class TimePlanningPnPlanningsService {
     );
   }
 
-  getWorkingHours(
-    model: TimePlanningsRequestModel
-  ): Observable<OperationDataResult<TimePlanningModel[]>> {
-    return this.apiBaseService.post(
-      TimePlanningPnPlanningsMethods.IndexWorkingHours,
-      model
-    );
-  }
-
-  updatePlanning(model: TimePlanningUpdateModel): Observable<OperationResult> {
-    return this.apiBaseService.put(
-      TimePlanningPnPlanningsMethods.Plannings,
-      model
-    );
-  }
-
-  updateWorkingHours(
-    model: TimePlanningsUpdateModel
-  ): Observable<OperationResult> {
-    return this.apiBaseService.put(
-      TimePlanningPnPlanningsMethods.WorkingHours,
-      model
-    );
-  }
-
-  getFlexes(): Observable<OperationDataResult<TimeFlexesModel[]>> {
-    return this.apiBaseService.get(TimePlanningPnPlanningsMethods.IndexFlex);
-  }
-
-  updateFlexes(model: TimeFlexesUpdateModel[]): Observable<OperationResult> {
-    return this.apiBaseService.put(TimePlanningPnPlanningsMethods.Flex, model);
-  }
+  // getWorkingHours(
+  //   model: TimePlanningsRequestModel
+  // ): Observable<OperationDataResult<TimePlanningModel[]>> {
+  //   return this.apiBaseService.post(
+  //     TimePlanningPnPlanningsMethods.IndexWorkingHours,
+  //     model
+  //   );
+  // }
+  //
+  // updatePlanning(model: TimePlanningUpdateModel): Observable<OperationResult> {
+  //   return this.apiBaseService.put(
+  //     TimePlanningPnPlanningsMethods.Plannings,
+  //     model
+  //   );
+  // }
+  //
+  // updateWorkingHours(
+  //   model: TimePlanningsUpdateModel
+  // ): Observable<OperationResult> {
+  //   return this.apiBaseService.put(
+  //     TimePlanningPnPlanningsMethods.WorkingHours,
+  //     model
+  //   );
+  // }
 }
