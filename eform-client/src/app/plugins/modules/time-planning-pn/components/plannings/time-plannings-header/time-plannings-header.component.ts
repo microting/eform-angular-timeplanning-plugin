@@ -22,26 +22,4 @@ export class TimePlanningsHeaderComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {}
-
-  updateDateRange(range: any[]) {
-    this.dateRange = range;
-    if (this.siteId) {
-      this.filtersChanged.emit({
-        siteId: this.siteId,
-        dateFrom: format(range[0]._d, PARSING_DATE_FORMAT),
-        dateTo: format(range[1]._d, PARSING_DATE_FORMAT),
-      });
-    }
-  }
-
-  onSiteChanged(siteId: number) {
-    this.siteId = siteId;
-    if (this.dateRange) {
-      this.filtersChanged.emit({
-        siteId,
-        dateFrom: format(this.dateRange[0]._d, PARSING_DATE_FORMAT),
-        dateTo: format(this.dateRange[1]._d, PARSING_DATE_FORMAT),
-      });
-    }
-  }
 }

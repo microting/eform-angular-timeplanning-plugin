@@ -18,13 +18,14 @@ import {
   TimePlanningPnSettingsService,
   TimePlanningPnFlexesService
 } from './services';
-import {TimePlanningsContainerComponent, TimePlanningSettingsComponent} from './components';
+import {TimePlanningsContainerComponent, TimePlanningSettingsComponent, TimePlanningsTableComponent} from './components';
 import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
 import {MatFormField, MatLabel, MatSuffix} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
 import {MatButton} from '@angular/material/button';
 import {MatSlideToggle} from '@angular/material/slide-toggle';
-import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from "@angular/material/datepicker";
+import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
+import {MtxGrid} from "@ng-matero/extensions/grid";
 
 @NgModule({
   imports: [
@@ -47,13 +48,14 @@ import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from "@angular/m
     MatDatepicker,
     MatDatepickerInput,
     MatDatepickerToggle,
-    MatSuffix
+    MatSuffix,
+    MtxGrid
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
     TimePlanningSettingsComponent,
     // TimePlanningTableRowComponent,
-    // TimePlanningsTableComponent,
+    TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
     // TimePlanningsHeaderComponent,
   ],

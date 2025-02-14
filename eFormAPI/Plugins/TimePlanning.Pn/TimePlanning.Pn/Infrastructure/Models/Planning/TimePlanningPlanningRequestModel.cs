@@ -31,14 +31,9 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
     /// </summary>
     public class TimePlanningPlanningRequestModel
     {
-        public int SiteId { get; set; }
-
-        public DateTime DateFrom { get; set; }
-
-        public DateTime DateTo { get; set; }
-
+        public DateTime? DateFrom { get; set; }
+        public DateTime? DateTo { get; set; }
         public bool IsSortDsc { get; set; }
-
         public string Sort { get; set; }
     }
 }

@@ -53,103 +53,92 @@ public class TimePlanningPlanningService(
     {
         try
         {
-            //         var timePlanningRequest = dbContext.PlanRegistrations
-            //             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed);
-            //             //.Where(x => x.SdkSitId == model.SiteId);
-            //
-            //         // two dates may be displayed instead of one if the same date is selected.
-            //         if (model.DateFrom == model.DateTo)
-            //         {
-            //             timePlanningRequest = timePlanningRequest
-            //                 .Where(x => x.Date == model.DateFrom);
-            //         }
-            //         else
-            //         {
-            //             timePlanningRequest = timePlanningRequest
-            //                 .Where(x => x.Date >= model.DateFrom && x.Date <= model.DateTo);
-            //         }
-            //
-            //         var timePlannings = await timePlanningRequest
-            //             .Select(x => new TimePlanningPlanningHelperModel
-            //             {
-            //                 WeekDay = (int)x.Date.DayOfWeek,
-            //                 Date = x.Date,
-            //                 PlanText = x.PlanText,
-            //                 PlanHours = x.PlanHours,
-            //                 Message = x.MessageId
-            //             })
-            //             .ToListAsync();
-            //
-            //         var date = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
-            //
-            //         if (timePlannings.Count < date)
-            //         {
-            //             var daysForAdd = new List<TimePlanningPlanningHelperModel>();
-            //             for (var i = 0; i < date; i++)
-            //             {
-            //                 if (timePlannings.All(x => x.Date != model.DateFrom.AddDays(i)))
-            //                 {
-            //                     daysForAdd.Add(new TimePlanningPlanningHelperModel
-            //                     {
-            //                         Date = model.DateFrom.AddDays(i),
-            //                         WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek
-            //                     });
-            //                 }
-            //             }
-            //
-            //             timePlannings.AddRange(daysForAdd);
-            //         }
-            //
-            //         if (model.Sort.ToLower() == "dayofweek")
-            //         {
-            //             List<TimePlanningPlanningHelperModel> tempResult;
-            //
-            //             if (model.IsSortDsc)
-            //             {
-            //                 tempResult = timePlannings
-            //                     .Where(x => x.WeekDay == 0)
-            //                     .OrderByDescending(x => x.WeekDay)
-            //                     .ThenByDescending(x => x.Date)
-            //                     .ToList();
-            //                 tempResult.AddRange(timePlannings
-            //                     .Where(x => x.WeekDay > 0)
-            //                     .OrderByDescending(x => x.WeekDay));
-            //             }
-            //             else
-            //             {
-            //                 tempResult = timePlannings
-            //                     .Where(x => x.WeekDay > 0)
-            //                     .OrderBy(x => x.WeekDay)
-            //                     .ThenBy(x => x.Date)
-            //                     .ToList();
-            //                 tempResult.AddRange(timePlannings
-            //                     .Where(x => x.WeekDay == 0)
-            //                     .OrderBy(x => x.Date));
-            //             }
-            //
-            //             timePlannings = tempResult;
-            //         }
-            //         else
-            //         {
-            //             timePlannings = model.IsSortDsc
-            //                 ? timePlannings.OrderByDescending(x => x.Date).ToList()
-            //                 : timePlannings.OrderBy(x => x.Date).ToList();
-            //         }
-            //
-            //         var result = timePlannings
-            //             .Select(x => new TimePlanningPlanningModel
-            //             {
-            //                 WeekDay = x.WeekDay,
-            //                 Date = x.Date.ToString("yyyy/MM/dd"),
-            //                 PlanText = x.PlanText,
-            //                 PlanHours = x.PlanHours,
-            //                 Message = x.Message,
-            //                 IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
-            //             })
-            //             .ToList();
-            //
-
+            var sdkCore = await core.GetCore();
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
             var result = new List<TimePlanningPlanningModel>();
+            var assignedSites =
+                await dbContext.AssignedSites.Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .ToListAsync().ConfigureAwait(false);
+            var datesInPeriod = new List<DateTime>();
+            var date = model.DateFrom;
+            while (date <= model.DateTo)
+            {
+                datesInPeriod.Add(date.Value);
+                date = date.Value.AddDays(1);
+            }
+            foreach (var assignedSite in assignedSites)
+            {
+                var site = await sdkDbContext.Sites
+                    .Where(x => x.MicrotingUid == assignedSite.SiteId)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .FirstOrDefaultAsync().ConfigureAwait(false);
+                if (site == null)
+                {
+                    continue;
+                }
+                var siteModel = new TimePlanningPlanningModel
+                {
+                    SiteId = assignedSite.SiteId,
+                    SiteName = site.Name,
+                    PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
+                };
+
+                var planningsInPeriod = await dbContext.PlanRegistrations
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.SdkSitId == assignedSite.SiteId)
+                    .Where(x => x.Date >= model.DateFrom)
+                    .Where(x => x.Date <= model.DateTo)
+                    .OrderBy(x => x.Date)
+                    .ToListAsync().ConfigureAwait(false);
+                foreach (var planning in planningsInPeriod)
+                {
+                    var planningModel = new TimePlanningPlanningPrDayModel
+                    {
+                        SiteName = site.Name,
+                        Date = planning.Date,
+                        PlanText = planning.PlanText,
+                        PlanHours = planning.PlanHours,
+                        Message = planning.MessageId,
+                        SiteId = assignedSite.SiteId,
+                        WeekDay = planning.Date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)planning.Date.DayOfWeek,
+                        ActualHours = planning.NettoHours,
+                        Difference = planning.NettoHours - planning.PlanHours,
+                        PlanHoursMatched = Math.Abs(planning.NettoHours - planning.PlanHours) < 0.00,
+                        WorkDayStarted = planning.Start1Id != 0,
+                        WorkDayEnded = planning.Stop1Id != 0 && planning.Stop2Id != 0
+
+                    };
+                    siteModel.PlanningPrDayModels.Add(planningModel);
+                }
+
+                // check if there are any dates in the period that are not in the plannings
+                // if not, then add a new planning with default values
+                foreach (var dateInPeriod in datesInPeriod)
+                {
+                    if (siteModel.PlanningPrDayModels.All(x => x.Date != dateInPeriod))
+                    {
+                        var planningModel = new TimePlanningPlanningPrDayModel
+                        {
+                            SiteName = site.Name,
+                            Date = dateInPeriod,
+                            PlanText = "",
+                            PlanHours = 0,
+                            Message = null,
+                            SiteId = assignedSite.SiteId,
+                            WeekDay = dateInPeriod.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)dateInPeriod.DayOfWeek,
+                            ActualHours = 0,
+                            Difference = 0,
+                            PlanHoursMatched = true
+                        };
+                        siteModel.PlanningPrDayModels.Add(planningModel);
+                    }
+                }
+
+
+                result.Add(siteModel);
+            }
+
+
 
             return new OperationDataResult<List<TimePlanningPlanningModel>>(
                 true,

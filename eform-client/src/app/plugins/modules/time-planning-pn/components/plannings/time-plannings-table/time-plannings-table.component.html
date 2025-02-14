@@ -1,54 +1,21 @@
-<div class="row p-1 table-responsive no-gutters">
-  <table
-    mdbTable
-    striped="true"
-    hover="true"
-    small="true"
-    class="z-depth-1 text-center"
-  >
+<mtx-grid
+  id="main-header-text"
+  [data]="timePlannings"
+  [columns]="tableHeaders"
+  [showPaginator]="false"
+  [pageOnFront]="false"
+  [rowStriped]="false"
+  [showToolbar]="false"
+>
+</mtx-grid>
 
-    <thead
-      table-headers
-      [tableHeaders]="tableHeaders"
-      (sortChanged)="sortTable($event)"
-      [sort]="planningsStateService.getSort() | async"
-    ></thead>
-    <tbody id="tableBody">
-      <ng-container *ngFor="let timePlanning of timePlannings; let i = index">
-        <tr time-planning-table-row
-          [class.background-yellow]="timePlanning.isWeekend"
-          [index]="i"
-          [weekDay]="timePlanning.weekDay"
-          [date]="timePlanning.date"
-          [message]="timePlanning.message"
-          [planHours]="timePlanning.planHours"
-          [planText]="timePlanning.planText"
-          (messageChanged)="
-            onTimePlanningChanged(
-              timePlanning.planHours,
-              timePlanning.planText,
-              $event,
-              timePlanning
-            )
-          "
-          (planHoursChanged)="
-            onTimePlanningChanged(
-              $event,
-              timePlanning.planText,
-              timePlanning.message,
-              timePlanning
-            )
-          "
-          (planTextChanged)="
-            onTimePlanningChanged(
-              timePlanning.planHours,
-              $event,
-              timePlanning.message,
-              timePlanning
-            )
-          "
-        ></tr>
-      </ng-container>
-    </tbody>
-  </table>
-</div>
+<ng-template #firstColumnTemplate let-row let-col="colDef">
+  <div class="first-column">
+    {{ row[col.field] }}
+  </div>
+</ng-template>
+
+<ng-template #dayColumnTemplate let-row let-col="colDef">
+  <div class="plan-text"><strong>{{ row.planningPrDayModels[col.field]?.planText }}</strong></div>
+  <div class="plan-hours">{{ row.planningPrDayModels[col.field]?.planHours }}</div>
+</ng-template>

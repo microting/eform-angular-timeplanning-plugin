@@ -29,6 +29,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
     public class TimePlanningPlanningPrDayModel
     {
         public int SiteId { get; set; }
+        public string SiteName { get; set; }
         public int WeekDay { get; set; }
         public DateTime Date { get; set; }
         public string PlanText { get; set; }
