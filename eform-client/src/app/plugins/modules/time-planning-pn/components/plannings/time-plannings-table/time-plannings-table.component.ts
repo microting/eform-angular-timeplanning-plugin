@@ -48,42 +48,49 @@ export class TimePlanningsTableComponent implements OnInit {
         header: this.translateService.stream('Monday'),
         field: '0',
         sortable: false,
+        class: (row: any) => this.getCellClass(row, '0'),
       },
       {
         cellTemplate: this.dayColumnTemplate,
         header: this.translateService.stream('Tuesday'),
         field: '1',
         sortable: false,
+        class: (row: any) => this.getCellClass(row, '1'),
       },
       {
         cellTemplate: this.dayColumnTemplate,
         header: this.translateService.stream('Wednesday'),
         field: '2',
         sortable: false,
+        class: (row: any) => this.getCellClass(row, '2'),
       },
       {
         cellTemplate: this.dayColumnTemplate,
         header: this.translateService.stream('Thursday'),
         field: '3',
         sortable: false,
+        class: (row: any) => this.getCellClass(row, '3'),
       },
       {
         cellTemplate: this.dayColumnTemplate,
         header: this.translateService.stream('Friday'),
         field: '4',
         sortable: false,
+        class: (row: any) => this.getCellClass(row, '4'),
       },
       {
         cellTemplate: this.dayColumnTemplate,
         header: this.translateService.stream('Saturday'),
         field: '5',
         sortable: false,
+        class: (row: any) => this.getCellClass(row, '5'),
       },
       {
         cellTemplate: this.dayColumnTemplate,
         header: this.translateService.stream('Sunday'),
         field: '6',
         sortable: false,
+        class: (row: any) => this.getCellClass(row, '6'),
       },
     ];
   }
@@ -105,8 +112,14 @@ export class TimePlanningsTableComponent implements OnInit {
   //     planText: planText ?? timePlanning.planText,
   //   });
   // }
-  getCellTemplate(col: MtxGridColumn): TemplateRef<any> {
-    return col.field === 'siteName' ? this.firstColumnTemplate : this.dayColumnTemplate;
+
+  getCellClass(row: any, field: string): string {
+    const planHours = row.planningPrDayModels[field]?.planHours;
+    const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
+    if (planHours > 0) {
+      return workDayStarted ? 'green-background' : 'grey-background';
+    }
+    return '';
   }
 
   protected readonly JSON = JSON;

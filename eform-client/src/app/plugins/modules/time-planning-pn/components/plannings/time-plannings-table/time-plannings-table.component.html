@@ -17,5 +17,5 @@
 
 <ng-template #dayColumnTemplate let-row let-col="colDef">
   <div class="plan-text"><strong>{{ row.planningPrDayModels[col.field]?.planText }}</strong></div>
-  <div class="plan-hours">{{ row.planningPrDayModels[col.field]?.planHours }}</div>
+  <div class="plan-hours" *ngIf="row.planningPrDayModels[col.field]?.planHours !== 0">{{ row.planningPrDayModels[col.field]?.planHours }}</div>
 </ng-template>
