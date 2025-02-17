@@ -41,5 +41,16 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
         public bool WorkDayStarted { get; set; }
         public bool WorkDayEnded { get; set; }
         public bool PlanHoursMatched { get; set; }
+        public int PlannedStartOfShift1 { get; set; }
+        public int PlannedEndOfShift1 { get; set; }
+        public int PlannedBreakOfShift1 { get; set; }
+        public int PlannedStartOfShift2 { get; set; }
+        public int PlannedEndOfShift2 { get; set; }
+        public int PlannedBreakOfShift2 { get; set; }
+        public bool IsDoubleShift { get; set; }
+        public bool OnVacation { get; set; }
+        public bool Sick { get; set; }
+        public bool OtherAllowedAbsence { get; set; }
+        public bool AbsenceWithoutPermission { get; set; }
     }
 }

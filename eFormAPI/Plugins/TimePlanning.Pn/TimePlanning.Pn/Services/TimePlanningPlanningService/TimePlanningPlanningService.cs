@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System.Text.RegularExpressions;
 using Sentry;
 
 namespace TimePlanning.Pn.Services.TimePlanningPlanningService;
@@ -105,9 +106,69 @@ public class TimePlanningPlanningService(
                         Difference = planning.NettoHours - planning.PlanHours,
                         PlanHoursMatched = Math.Abs(planning.NettoHours - planning.PlanHours) < 0.00,
                         WorkDayStarted = planning.Start1Id != 0,
-                        WorkDayEnded = planning.Stop1Id != 0 && planning.Stop2Id != 0
+                        WorkDayEnded = planning.Stop1Id != 0 || (planning.Start2Id != 0 && planning.Stop2Id != 0),
+                        PlannedStartOfShift1 = planning.PlannedStartOfShift1,
+                        PlannedEndOfShift1 = planning.PlannedEndOfShift1,
+                        PlannedBreakOfShift1 = planning.PlannedBreakOfShift1,
+                        PlannedStartOfShift2 = planning.PlannedStartOfShift2,
+                        PlannedEndOfShift2 = planning.PlannedEndOfShift2,
+                        PlannedBreakOfShift2 = planning.PlannedBreakOfShift2,
+                        IsDoubleShift = planning.IsDoubleShift,
+                        OnVacation = planning.OnVacation,
+                        Sick = planning.Sick,
+                        OtherAllowedAbsence = planning.OtherAllowedAbsence,
+                        AbsenceWithoutPermission = planning.AbsenceWithoutPermission
 
                     };
+                    try
+                    {
+                        if (planning.PlannedStartOfShift1 == 0 && !string.IsNullOrEmpty(planning.PlanText) &&
+                            planning.PlanHours > 0)
+                        {
+                            // split the planText by this regex (.*)-(.*)\/(.*)
+                            // the parts are in hours, so we need to multiply by 60 to get minutes and can be like 7.30 or 7:30 so it can be 7.5, 7:30, 7½ and they are all the same
+                            // so we parse the first part and multiply by 60 and just add the second part
+                            // the last part is the break in minutes and can be ¾ or ½
+                            var regex = new Regex(@"(.*)-(.*)\/(.*)");
+                            var match = regex.Match(planning.PlanText);
+                            var firstPart = match.Groups[1].Value;
+                            var firstPartSplit =
+                                firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                            var firstPartHours = int.Parse(firstPartSplit[0]);
+                            var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                            var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                            var secondPart = match.Groups[2].Value;
+                            var secondPartSplit =
+                                secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                            var secondPartHours = int.Parse(secondPartSplit[0]);
+                            var secondPartMinutes = secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                            var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                            var breakPart = match.Groups[3].Value;
+                            var breakPartMinutes = breakPart switch
+                            {
+                                "¾" => 45,
+                                "½" => 30,
+                                "1" => 60,
+                                _ => 0
+                            };
+                            planning.PlannedStartOfShift1 = firstPartTotalMinutes;
+                            planningModel.PlannedStartOfShift1 = planning.PlannedStartOfShift1;
+                            planning.PlannedEndOfShift1 = secondPartTotalMinutes;
+                            planningModel.PlannedEndOfShift1 = planning.PlannedEndOfShift1;
+                            planning.PlannedBreakOfShift1 = breakPartMinutes;
+                            planningModel.PlannedBreakOfShift1 = planning.PlannedBreakOfShift1;
+                            await planning.Update(dbContext).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        logger.LogError($"Could not parse PlanText for planning with id: {planning.Id} the PlanText was: {planning.PlanText}");
+                        SentrySdk.CaptureMessage($"Could not parse PlanText for planning with id: {planning.Id} the PlanText was: {planning.PlanText}");
+                        //SentrySdk.CaptureException(e);
+                        logger.LogError(e.Message);
+                        logger.LogTrace(e.StackTrace);
+                    }
+
                     siteModel.PlanningPrDayModels.Add(planningModel);
                 }
 

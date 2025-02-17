@@ -116,8 +116,27 @@ export class TimePlanningsTableComponent implements OnInit {
   getCellClass(row: any, field: string): string {
     const planHours = row.planningPrDayModels[field]?.planHours;
     const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
-    if (planHours > 0) {
-      return workDayStarted ? 'green-background' : 'grey-background';
+    const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+    if (planHours > 0 ) {
+      if (workDayStarted) {
+        return workDayEnded ? 'green-background' : 'white-background';
+      } else {
+        return 'grey-background';
+      }
+    }
+    return '';
+  }
+
+  getCellTextColor(row: any, field: string): string {
+    const planHours = row.planningPrDayModels[field]?.planHours;
+    const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
+    const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+    if (planHours > 0 ) {
+      if (workDayStarted) {
+        return workDayEnded ? 'black-text' : 'green-text';
+      } else {
+        return 'black-text';
+      }
     }
     return '';
   }
