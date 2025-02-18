@@ -25,7 +25,7 @@ import {MatInput} from '@angular/material/input';
 import {MatButton} from '@angular/material/button';
 import {MatSlideToggle} from '@angular/material/slide-toggle';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
-import {MtxGrid} from "@ng-matero/extensions/grid";
+import {MtxGrid} from '@ng-matero/extensions/grid';
 
 @NgModule({
   imports: [

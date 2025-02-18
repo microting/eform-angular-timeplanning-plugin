@@ -7,7 +7,7 @@ import {FormGroup} from '@angular/forms';
 import {DaysOfWeekEnum} from 'src/app/common/const';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {MatDialog} from '@angular/material/dialog';
-import {AssignedSiteDialogComponent} from '../';
+import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -158,6 +158,13 @@ export class TimePlanningsTableComponent implements OnInit {
           data: result.model
         });
       }
+    });
+  }
+
+  onDayColumnClick(row: any, field: string): void {
+    const cellData = row.planningPrDayModels[field];
+    this.dialog.open(WorkdayEntityDialogComponent, {
+      data: cellData
     });
   }
 }

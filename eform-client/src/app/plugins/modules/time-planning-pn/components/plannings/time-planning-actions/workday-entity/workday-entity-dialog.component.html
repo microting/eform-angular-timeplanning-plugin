@@ -1,0 +1,30 @@
+<!-- src/app/plugins/modules/time-planning-pn/components/plannings/time-planning-actions/workday-entity/workday-entity-dialog.component.html -->
+<div mat-dialog-title>{{ data.siteName }} - {{ datePipe.transform(data.date, 'dd.MM.yyyy') }}</div><div mat-dialog-content>
+  <p><strong>{{ 'Plan Text:' | translate }}</strong> {{ data.planText }}</p>
+  <p><strong>{{ 'Plan Hours:' | translate }}</strong> {{ data.planHours }}</p>
+  <p><strong>{{ 'Planned start of 1st shift' | translate }}</strong> {{ convertMinutesToTime(data.plannedStartOfShift1) }}</p>
+  <p><strong>{{ 'Planned end of 1st shift' | translate }}</strong> {{ convertMinutesToTime(data.plannedEndOfShift1) }}</p>
+  <p><strong>{{ 'Planned break 1st shift' | translate }}</strong> {{ convertMinutesToTime(data.plannedBreakOfShift1) }}</p>
+  <ng-container *ngIf="data.plannedStartOfShift2 != 0">
+    <p><strong>{{ 'Planned start of 2nd shift' | translate }}</strong> {{ convertMinutesToTime(data.plannedStartOfShift2) }}</p>
+    <p><strong>{{ 'Planned end of 2nd shift' | translate }}</strong> {{ convertMinutesToTime(data.plannedEndOfShift2) }}</p>
+    <p><strong>{{ 'Planned break 2nd shift' | translate }}</strong> {{ convertMinutesToTime(data.plannedBreakOfShift2) }}</p>
+  </ng-container>
+
+  <mat-checkbox [(ngModel)]="data.onVacation" (change)="onCheckboxChange('onVacation')">{{ 'Vacation' | translate }}</mat-checkbox>
+  <mat-checkbox [(ngModel)]="data.sick" (change)="onCheckboxChange('sick')">{{ 'Sick' | translate }}</mat-checkbox>
+  <mat-checkbox [(ngModel)]="data.otherAllowedAbsence" (change)="onCheckboxChange('otherAllowedAbsence')">{{ 'Other allowed absence' | translate }}</mat-checkbox>
+  <mat-checkbox [(ngModel)]="data.absenceWithoutPermission" (change)="onCheckboxChange('absenceWithoutPermission')">{{ 'Absence without permission' | translate }}</mat-checkbox>
+  <!-- Add more fields as needed -->
+</div>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+  <button mat-raised-button mat-dialog-close>
+    {{'Cancel' | translate}}
+  </button>
+  <button
+    mat-raised-button
+    color="accent"
+    [mat-dialog-close]="data">
+    {{'Save' | translate}}
+  </button>
+</div>
