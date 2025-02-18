@@ -168,4 +168,14 @@ export class TimePlanningsTableComponent implements OnInit {
       data: cellData
     });
   }
+
+  convertMinutesToTime(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${this.padZero(hours)}:${this.padZero(mins)}`;
+  }
+
+  private padZero(num: number): string {
+    return num < 10 ? '0' + num : num.toString();
+  }
 }
