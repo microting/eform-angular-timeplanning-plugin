@@ -199,7 +199,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
         {
             try
             {
-                var assignmentSite = new AssignedSite
+                var assignmentSite = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite
                 {
                     SiteId = siteId,
                     CreatedByUserId = _userService.UserId,
@@ -418,24 +418,34 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
             }
         }
 
-        public async Task<OperationDataResult<AssignedSite>> GetAssignedSite(int siteId)
+        public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSite(int siteId)
         {
-            var site = await _dbContext.AssignedSites
+            Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await _dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync(x => x.SiteId == siteId);
+            if (dbAssignedSite == null)
+            {
+                return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
+            }
+
+            var core = await _core.GetCore();
+            var sdkDbContext = core.DbContextHelper.GetDbContext();
+            var site = await sdkDbContext.Sites.FirstOrDefaultAsync(x => x.MicrotingUid == siteId);
+
             if (site == null)
             {
-                return new OperationDataResult<AssignedSite>(false, "Site not found");
+                return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
             }
 
             var autoBreakCalculationActive = _options.Value.AutoBreakCalculationActive == "1";
-            site.AutoBreakCalculationActive = autoBreakCalculationActive;
+            dbAssignedSite.AutoBreakCalculationActive = autoBreakCalculationActive;
+            dbAssignedSite.SiteName = site.Name;
 
-            return new OperationDataResult<AssignedSite>(true, site);
+            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
 
         }
 
-        public Task<OperationResult> UpdateAssignedSite(AssignedSite site)
+        public Task<OperationResult> UpdateAssignedSite(Infrastructure.Models.Settings.AssignedSite site)
         {
             throw new NotImplementedException();
         }

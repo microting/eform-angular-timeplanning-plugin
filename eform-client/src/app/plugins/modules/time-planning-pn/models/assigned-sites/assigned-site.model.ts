@@ -1,5 +1,7 @@
 export class AssignedSiteModel {
+  id: number;
   siteId: number;
+  siteName: string;
   caseMicrotingUid: number;
   startMonday: number;
   endMonday: number;

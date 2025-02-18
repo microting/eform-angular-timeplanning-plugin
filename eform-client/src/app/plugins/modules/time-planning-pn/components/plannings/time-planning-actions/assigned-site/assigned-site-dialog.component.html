@@ -1,6 +1,5 @@
-<div mat-dialog-title>Assigned Site Details</div>
+<div mat-dialog-title>{{ data.siteName }}</div>
 <div mat-dialog-content>
-  <p><strong>Site ID:</strong> {{ data.siteId }}</p>
   <!-- Add more fields as needed -->
   <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
     <div class="d-flex flex-row">
