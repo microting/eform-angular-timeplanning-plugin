@@ -1,4 +1,5 @@
 export class PlanningPrDayModel {
+  id: number;
   siteName: string;
   siteId: number;
   weekDay: number;
@@ -23,4 +24,8 @@ export class PlanningPrDayModel {
   sick: boolean;
   otherAllowedAbsence: boolean;
   absenceWithoutPermission: boolean;
+  start1StartedAt: string;
+  stop1StoppedAt: string;
+  start2StartedAt: string;
+  stop2StoppedAt: string;
 }

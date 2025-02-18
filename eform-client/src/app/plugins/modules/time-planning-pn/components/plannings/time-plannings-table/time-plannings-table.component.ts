@@ -124,7 +124,7 @@ export class TimePlanningsTableComponent implements OnInit {
     const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
     if (planHours > 0 ) {
       if (workDayStarted) {
-        console.log('getCellClass', row, field, planHours, workDayStarted, workDayEnded);
+        //console.log('getCellClass', row, field, planHours, workDayStarted, workDayEnded);
         return workDayEnded ? 'green-background' : 'white-background';
       } else {
         return 'grey-background';
@@ -139,7 +139,7 @@ export class TimePlanningsTableComponent implements OnInit {
     const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
     if (planHours > 0 ) {
       if (workDayStarted) {
-        console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
+        //console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
         return workDayEnded ? 'black-text' : 'green-text';
       } else {
         return 'black-text';

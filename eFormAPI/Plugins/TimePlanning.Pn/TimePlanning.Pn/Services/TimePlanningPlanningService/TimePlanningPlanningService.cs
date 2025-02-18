@@ -93,10 +93,13 @@ public class TimePlanningPlanningService(
                     .ToListAsync().ConfigureAwait(false);
                 foreach (var planning in planningsInPeriod)
                 {
+                    var midnight = new DateTime(planning.Date.Year, planning.Date.Month, planning.Date.Day, 0, 0, 0);
+
                     var planningModel = new TimePlanningPlanningPrDayModel
                     {
+                        Id = planning.Id,
                         SiteName = site.Name,
-                        Date = planning.Date,
+                        Date = midnight,
                         PlanText = planning.PlanText,
                         PlanHours = planning.PlanHours,
                         Message = planning.MessageId,
@@ -117,8 +120,15 @@ public class TimePlanningPlanningService(
                         OnVacation = planning.OnVacation,
                         Sick = planning.Sick,
                         OtherAllowedAbsence = planning.OtherAllowedAbsence,
-                        AbsenceWithoutPermission = planning.AbsenceWithoutPermission
-
+                        AbsenceWithoutPermission = planning.AbsenceWithoutPermission,
+                        Start1StartedAt = (planning.Start1Id == 0 ? null : midnight.AddMinutes(
+                            (planning.Start1Id * 5) - 5)),
+                        Stop1StoppedAt = (planning.Stop1Id == 0 ? null : midnight.AddMinutes(
+                            (planning.Stop1Id * 5) - 5)),
+                        Start2StartedAt = (planning.Start2Id == 0 ? null : midnight.AddMinutes(
+                            (planning.Start2Id * 5) - 5)),
+                        Stop2StoppedAt = (planning.Stop2Id == 0 ? null : midnight.AddMinutes(
+                            (planning.Stop2Id * 5) - 5)),
                     };
                     try
                     {

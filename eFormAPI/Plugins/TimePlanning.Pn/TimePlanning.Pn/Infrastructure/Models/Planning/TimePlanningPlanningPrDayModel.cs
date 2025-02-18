@@ -28,6 +28,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
 {
     public class TimePlanningPlanningPrDayModel
     {
+        public int Id { get; set; }
         public int SiteId { get; set; }
         public string SiteName { get; set; }
         public int WeekDay { get; set; }
@@ -52,5 +53,10 @@ namespace TimePlanning.Pn.Infrastructure.Models.Planning
         public bool Sick { get; set; }
         public bool OtherAllowedAbsence { get; set; }
         public bool AbsenceWithoutPermission { get; set; }
+
+        public DateTime? Start1StartedAt { get; set; }
+        public DateTime? Stop1StoppedAt { get; set; }
+        public DateTime? Start2StartedAt { get; set; }
+        public DateTime? Stop2StoppedAt { get; set; }
     }
 }
