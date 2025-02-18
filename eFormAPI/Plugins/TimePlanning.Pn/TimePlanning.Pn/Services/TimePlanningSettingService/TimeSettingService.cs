@@ -417,5 +417,27 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
                     _localizationService.GetString("ErrorWhileObtainingSites"));
             }
         }
+
+        public async Task<OperationDataResult<AssignedSite>> GetAssignedSite(int siteId)
+        {
+            var site = await _dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.SiteId == siteId);
+            if (site == null)
+            {
+                return new OperationDataResult<AssignedSite>(false, "Site not found");
+            }
+
+            var autoBreakCalculationActive = _options.Value.AutoBreakCalculationActive == "1";
+            site.AutoBreakCalculationActive = autoBreakCalculationActive;
+
+            return new OperationDataResult<AssignedSite>(true, site);
+
+        }
+
+        public Task<OperationResult> UpdateAssignedSite(AssignedSite site)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

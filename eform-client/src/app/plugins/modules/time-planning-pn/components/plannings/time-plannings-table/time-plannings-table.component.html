@@ -10,7 +10,7 @@
 </mtx-grid>
 
 <ng-template #firstColumnTemplate let-row let-col="colDef">
-  <div class="first-column">
+  <div class="first-column" (click)="onFirstColumnClick(row)">
     {{ row[col.field] }}
   </div>
 </ng-template>

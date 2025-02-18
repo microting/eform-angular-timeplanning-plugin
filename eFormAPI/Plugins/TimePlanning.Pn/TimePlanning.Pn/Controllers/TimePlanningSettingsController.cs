@@ -20,6 +20,7 @@ SOFTWARE.
 
 using System.Collections.Generic;
 using Microting.TimePlanningBase.Infrastructure.Const;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 
 namespace TimePlanning.Pn.Controllers
 {
@@ -103,6 +104,22 @@ namespace TimePlanning.Pn.Controllers
         public async Task<OperationDataResult<List<Site>>> RegistrationSites(string token)
         {
             return await _settingService.GetAvailableSites(token);
+        }
+
+        [HttpGet]
+        [Route("assigned-sites")]
+        [Authorize(Roles = EformRole.Admin)]
+        public async Task<OperationDataResult<AssignedSite>> GetAssignedSite(int siteId)
+        {
+            return await _settingService.GetAssignedSite(siteId);
+        }
+
+        [HttpPut]
+        [Route("assigned-sites")]
+        [Authorize(Roles = EformRole.Admin)]
+        public async Task<OperationResult> UpdateAssignedSite([FromBody] AssignedSite site)
+        {
+            return await _settingService.UpdateAssignedSite(site);
         }
     }
 }

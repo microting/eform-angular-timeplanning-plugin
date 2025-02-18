@@ -24,6 +24,7 @@ SOFTWARE.
 
 #nullable enable
 using JetBrains.Annotations;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 
 namespace TimePlanning.Pn.Services.TimePlanningSettingService
 {
@@ -48,5 +49,7 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
         Task<OperationResult> DeleteSite(int siteId);
 
         Task<OperationDataResult<List<Site>>> GetAvailableSites(string? token);
+        Task<OperationDataResult<AssignedSite>> GetAssignedSite(int siteId);
+        Task<OperationResult> UpdateAssignedSite(AssignedSite site);
     }
 }

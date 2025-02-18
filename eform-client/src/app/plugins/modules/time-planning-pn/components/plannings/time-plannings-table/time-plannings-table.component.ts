@@ -5,6 +5,9 @@ import {MtxGrid, MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
 import {FormGroup} from '@angular/forms';
 import {DaysOfWeekEnum} from 'src/app/common/const';
+import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
+import {MatDialog} from '@angular/material/dialog';
+import {AssignedSiteDialogComponent} from '../';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -31,6 +34,8 @@ export class TimePlanningsTableComponent implements OnInit {
   //];
 
   constructor(
+    private timePlanningPnSettingsService: TimePlanningPnSettingsService,
+    private dialog: MatDialog,
     private translateService: TranslateService,
     ) {}
 
@@ -119,6 +124,7 @@ export class TimePlanningsTableComponent implements OnInit {
     const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
     if (planHours > 0 ) {
       if (workDayStarted) {
+        console.log('getCellClass', row, field, planHours, workDayStarted, workDayEnded);
         return workDayEnded ? 'green-background' : 'white-background';
       } else {
         return 'grey-background';
@@ -133,6 +139,7 @@ export class TimePlanningsTableComponent implements OnInit {
     const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
     if (planHours > 0 ) {
       if (workDayStarted) {
+        console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
         return workDayEnded ? 'black-text' : 'green-text';
       } else {
         return 'black-text';
@@ -142,4 +149,15 @@ export class TimePlanningsTableComponent implements OnInit {
   }
 
   protected readonly JSON = JSON;
+
+  onFirstColumnClick(row: any): void {
+    const siteId = row.siteId; // Adjust this according to your data structure
+    this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
+      if (result && result.success) {
+        this.dialog.open(AssignedSiteDialogComponent, {
+          data: result.model
+        });
+      }
+    });
+  }
 }

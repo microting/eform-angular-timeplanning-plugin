@@ -6,13 +6,17 @@ import {
   SiteDto,
 } from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
-import { TimePlanningSettingsModel } from '../models';
+import { TimePlanningSettingsModel,
+  AssignedSiteModel,
+  AssignedSiteUpdateModel } from '../models';
 
 export let TimePlanningSettingsMethods = {
   Settings: 'api/time-planning-pn/settings',
   SettingsSites: 'api/time-planning-pn/settings/sites',
   SettingsFolder: 'api/time-planning-pn/settings/folder',
   SettingsEform: 'api/time-planning-pn/settings/eform',
+  GetAssignedSites: 'api/time-planning-pn/settings/assigned-sites',
+  UpdateAssignedSites: 'api/time-planning-pn/settings/assigned-sites',
 };
 
 @Injectable()
@@ -59,6 +63,17 @@ export class TimePlanningPnSettingsService {
     return this.apiBaseService.put(
       TimePlanningSettingsMethods.SettingsEform,
       eformId
+    );
+  }
+
+  getAssignedSite(siteId: number): Observable<OperationDataResult<AssignedSiteModel[]>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.GetAssignedSites + '?siteId=' + siteId);
+  }
+
+  updateAssignedSites(model: AssignedSiteUpdateModel[]): Observable<OperationResult> {
+    return this.apiBaseService.put(
+      TimePlanningSettingsMethods.UpdateAssignedSites,
+      model
     );
   }
 }
