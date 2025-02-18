@@ -8,6 +8,7 @@ import {DaysOfWeekEnum} from 'src/app/common/const';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {MatDialog} from '@angular/material/dialog';
 import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
+import {DatePipe} from "@angular/common";
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -36,7 +37,7 @@ export class TimePlanningsTableComponent implements OnInit {
   constructor(
     private timePlanningPnSettingsService: TimePlanningPnSettingsService,
     private dialog: MatDialog,
-    private translateService: TranslateService,
+    private translateService: TranslateService, protected datePipe: DatePipe
     ) {}
 
   ngOnInit(): void {
@@ -139,8 +140,8 @@ export class TimePlanningsTableComponent implements OnInit {
     const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
     if (planHours > 0 ) {
       if (workDayStarted) {
-        //console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
-        return workDayEnded ? 'black-text' : 'green-text';
+        console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
+        return workDayEnded ? 'white-text' : 'green-text';
       } else {
         return 'black-text';
       }

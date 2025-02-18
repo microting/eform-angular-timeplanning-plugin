@@ -16,6 +16,8 @@
 </ng-template>
 
 <ng-template #dayColumnTemplate let-row let-col="colDef">
-  <div class="plan-text" (click)="onDayColumnClick(row, col.field)"><strong style="color: {{getCellTextColor(row, col.field)}};">{{ row.planningPrDayModels[col.field]?.planText }}</strong></div>
-  <div class="plan-hours" *ngIf="row.planningPrDayModels[col.field]?.planHours !== 0" (click)="onDayColumnClick(row, col.field)">{{ row.planningPrDayModels[col.field]?.planHours }}</div>
+  <div class="plan-text" (click)="onDayColumnClick(row, col.field)"><strong class="{{getCellTextColor(row, col.field)}}">{{ row.planningPrDayModels[col.field]?.planText }}</strong></div>
+<!--  <div class="plan-hours {{getCellTextColor(row, col.field)}}" *ngIf="row.planningPrDayModels[col.field]?.planHours !== 0" (click)="onDayColumnClick(row, col.field)">{{ row.planningPrDayModels[col.field]?.planHours }}</div>-->
+  <div class="plan-text {{getCellTextColor(row, col.field)}}" (click)="onDayColumnClick(row, col.field)" *ngIf="row.planningPrDayModels[col.field]?.start1StartedAt !== null">{{ datePipe.transform(row.planningPrDayModels[col.field]?.start1StartedAt, 'HH:mm', 'UTC') }} - {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop1StoppedAt, 'HH:mm', 'UTC') }}</div>
+  <div class="plan-text {{getCellTextColor(row, col.field)}}" (click)="onDayColumnClick(row, col.field)" *ngIf="row.planningPrDayModels[col.field]?.start2StartedAt !== null">{{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }} - {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }}</div>
 </ng-template>

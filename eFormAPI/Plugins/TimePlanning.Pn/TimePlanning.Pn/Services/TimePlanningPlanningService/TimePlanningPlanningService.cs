@@ -141,6 +141,11 @@ public class TimePlanningPlanningService(
                             // the last part is the break in minutes and can be ¾ or ½
                             var regex = new Regex(@"(.*)-(.*)\/(.*)");
                             var match = regex.Match(planning.PlanText);
+                            if (match.Captures.Count == 0)
+                            {
+                                regex = new Regex(@"(.*)-(.*)");
+                                match = regex.Match(planning.PlanText);
+                            }
                             var firstPart = match.Groups[1].Value;
                             var firstPartSplit =
                                 firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
@@ -153,20 +158,26 @@ public class TimePlanningPlanningService(
                             var secondPartHours = int.Parse(secondPartSplit[0]);
                             var secondPartMinutes = secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
                             var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                            var breakPart = match.Groups[3].Value;
-                            var breakPartMinutes = breakPart switch
-                            {
-                                "¾" => 45,
-                                "½" => 30,
-                                "1" => 60,
-                                _ => 0
-                            };
                             planning.PlannedStartOfShift1 = firstPartTotalMinutes;
                             planningModel.PlannedStartOfShift1 = planning.PlannedStartOfShift1;
                             planning.PlannedEndOfShift1 = secondPartTotalMinutes;
                             planningModel.PlannedEndOfShift1 = planning.PlannedEndOfShift1;
-                            planning.PlannedBreakOfShift1 = breakPartMinutes;
-                            planningModel.PlannedBreakOfShift1 = planning.PlannedBreakOfShift1;
+
+                            if (match.Groups.Count == 4)
+                            {
+                                var breakPart = match.Groups[3].Value;
+                                var breakPartMinutes = breakPart switch
+                                {
+                                    "¾" => 45,
+                                    "½" => 30,
+                                    "1" => 60,
+                                    _ => 0
+                                };
+
+                                planning.PlannedBreakOfShift1 = breakPartMinutes;
+                                planningModel.PlannedBreakOfShift1 = planning.PlannedBreakOfShift1;
+                            }
+
                             await planning.Update(dbContext).ConfigureAwait(false);
                         }
                     }
