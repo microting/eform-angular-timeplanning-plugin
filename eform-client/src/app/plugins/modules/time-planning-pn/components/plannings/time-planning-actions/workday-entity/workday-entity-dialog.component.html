@@ -2,53 +2,20 @@
 <div mat-dialog-title>{{ data.siteName }} - {{ datePipe.transform(data.date, 'dd.MM.yyyy HH:mm') }} ({{data.id}})</div><div mat-dialog-content>
   <table>
     <tr>
-      <th>{{ 'Planned start of 1st shift' | translate }}</th>
-      <th>{{ 'Start 1 Started At' | translate }}</th>
+      <th>{{ 'Shift' | translate }}</th>
+      <th>{{ 'Planned' | translate }}</th>
+      <th>{{ 'Actual' | translate }}</th>
     </tr>
     <tr>
-      <td>{{ convertMinutesToTime(data.plannedStartOfShift1) }}</td>
-      <td>{{ datePipe.transform(data.start1StartedAt, 'HH:mm', 'UTC') }}</td>
-    </tr>
-    <tr>
-      <th>{{ 'Planned end of 1st shift' | translate }}</th>
-      <th>{{ 'End 1 Ended At' | translate }}</th>
-    </tr>
-    <tr>
-      <td>{{ convertMinutesToTime(data.plannedEndOfShift1) }}</td>
-      <td>{{ datePipe.transform(data.stop1StoppedAt, 'HH:mm', 'UTC') }}</td>
-    </tr>
-    <tr>
-      <th>{{ 'Planned break 1st shift' | translate }}</th>
-      <th>{{ 'Break 1 Break At' | translate }}</th>
-    </tr>
-    <tr>
-      <td>{{ convertMinutesToTime(data.plannedBreakOfShift1) }}</td>
-      <td></td>
+      <td>{{ '1st' | translate }}</td>
+      <td>{{ convertMinutesToTime(data.plannedStartOfShift1) }} - {{ convertMinutesToTime(data.plannedEndOfShift1) }} / {{ convertMinutesToTime(data.plannedBreakOfShift1) }}</td>
+      <td>{{ datePipe.transform(data.start1StartedAt, 'HH:mm', 'UTC') }} - {{ datePipe.transform(data.stop1StoppedAt, 'HH:mm', 'UTC') }}</td>
     </tr>
     <ng-container *ngIf="data.plannedStartOfShift2 != 0">
       <tr>
-        <th>{{ 'Planned start of 2nd shift' | translate }}</th>
-        <th>{{ 'Start 2 Started At' | translate }}</th>
-      </tr>
-      <tr>
-        <td>{{ convertMinutesToTime(data.plannedStartOfShift2) }}</td>
-        <td>{{ data.start2StartedAt }}</td>
-      </tr>
-      <tr>
-        <th>{{ 'Planned end of 2nd shift' | translate }}</th>
-        <th>{{ 'End 2 Ended At' | translate }}</th>
-      </tr>
-      <tr>
-        <td>{{ convertMinutesToTime(data.plannedEndOfShift2) }}</td>
-        <td>{{ data.stop2StoppedAt }}</td>
-      </tr>
-      <tr>
-        <th>{{ 'Planned break 2nd shift' | translate }}</th>
-        <th>{{ 'Break 2 Break At' | translate }}</th>
-      </tr>
-      <tr>
-        <td>{{ convertMinutesToTime(data.plannedBreakOfShift2) }}</td>
-        <td></td>
+        <td>{{ '2nd' | translate }}</td>
+        <td>{{ convertMinutesToTime(data.plannedStartOfShift2) }} - {{ convertMinutesToTime(data.plannedEndOfShift2) }} / {{ convertMinutesToTime(data.plannedBreakOfShift2) }}</td>
+        <td>{{ datePipe.transform(data.start2StartedAt, 'HH:mm', 'UTC') }} - {{ datePipe.transform(data.stop2StoppedAt, 'HH:mm', 'UTC') }}</td>
       </tr>
     </ng-container>
   </table>

@@ -43,6 +43,12 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
   protected readonly JSON = JSON;
 
+  columns = [
+    { header: 'Shift', field: 'shift' },
+    { header: 'Planned', field: 'planned' },
+    { header: 'Actual', field: 'actual' }
+  ];
+
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
   }

@@ -1,15 +1,11 @@
 import {Component, EventEmitter, Input, OnInit, Output, TemplateRef, ViewChild, ViewEncapsulation} from '@angular/core';
-import { TableHeaderElementModel } from 'src/app/common/models';
 import { TimePlanningModel } from '../../../models';
 import {MtxGrid, MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
-import {FormGroup} from '@angular/forms';
-import {DaysOfWeekEnum} from 'src/app/common/const';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {MatDialog} from '@angular/material/dialog';
 import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
 import {DatePipe} from '@angular/common';
-import {DashboardChartDataSingleModel} from 'src/app/plugins/modules/insight-dashboard-pn/models';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -40,7 +36,8 @@ export class TimePlanningsTableComponent implements OnInit {
   constructor(
     private timePlanningPnSettingsService: TimePlanningPnSettingsService,
     private dialog: MatDialog,
-    private translateService: TranslateService, protected datePipe: DatePipe
+    private translateService: TranslateService,
+    protected datePipe: DatePipe
     ) {}
 
   ngOnInit(): void {
