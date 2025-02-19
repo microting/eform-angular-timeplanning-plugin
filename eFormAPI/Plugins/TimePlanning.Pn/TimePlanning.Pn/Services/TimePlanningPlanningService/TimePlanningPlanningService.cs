@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 using System.Text.RegularExpressions;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Sentry;
 
 namespace TimePlanning.Pn.Services.TimePlanningPlanningService;
@@ -46,6 +47,7 @@ public class TimePlanningPlanningService(
     TimePlanningPnDbContext dbContext,
     IUserService userService,
     ITimePlanningLocalizationService localizationService,
+    BaseDbContext baseDbContext,
     IEFormCoreService core)
     : ITimePlanningPlanningService
 {
@@ -83,6 +85,16 @@ public class TimePlanningPlanningService(
                     SiteName = site.Name,
                     PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
                 };
+
+                // do a lookup in the baseDbContext.Users where the concat string of FirstName and LastName toLowerCase() is equal to the site.Name toLowerCase()
+                // if we find a user, we take the user.EmailSha256 and set the siteModel.AvatarUrl to the gravatar url with the sha256
+                var user = await baseDbContext.Users
+                    .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+                    .FirstOrDefaultAsync().ConfigureAwait(false);
+                if (user != null)
+                {
+                    siteModel.AvatarUrl = $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+                }
 
                 var planningsInPeriod = await dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
