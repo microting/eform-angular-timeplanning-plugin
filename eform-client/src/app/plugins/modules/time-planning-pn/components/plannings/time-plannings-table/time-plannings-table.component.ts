@@ -162,7 +162,8 @@ export class TimePlanningsTableComponent implements OnInit {
     this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
       if (result && result.success) {
         this.dialog.open(AssignedSiteDialogComponent, {
-          data: result.model
+          data: result.model,
+          minWidth: '50%',
         });
       }
     });

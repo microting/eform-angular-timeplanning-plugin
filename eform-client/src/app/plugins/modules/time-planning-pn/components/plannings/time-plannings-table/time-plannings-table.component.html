@@ -12,9 +12,16 @@
 <ng-template #firstColumnTemplate let-row let-col="colDef">
   <div class="first-column" (click)="onFirstColumnClick(row)">
     <div class="progress-container">
-      <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
-        <div class="avatar" [style.background-image]="'url(' + row['avatarUrl'] + ')'"></div>
-      </div>
+      <ng-container *ngIf="row['avatarUrl'] === null">
+        <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+          <div class="avatar" [style.background-image]="'url(https://www.gravatar.com/avatar/?d=retro&s=32)'"></div>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="row['avatarUrl'] !== null">
+        <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+          <div class="avatar" [style.background-image]="'url(' + row['avatarUrl'] + ')'"></div>
+        </div>
+      </ng-container>
       <br>
       <div class="hours-info">
         <strong>{{ row[col.field] }}</strong>
