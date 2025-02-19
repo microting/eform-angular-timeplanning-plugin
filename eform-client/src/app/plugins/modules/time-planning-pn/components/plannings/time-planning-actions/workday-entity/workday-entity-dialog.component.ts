@@ -62,13 +62,13 @@ export class WorkdayEntityDialogComponent implements OnInit {
   shift1Data = {
     shift: this.translateService.instant('1st'),
     planned: `${this.convertMinutesToTime(this.data.plannedStartOfShift1)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift1)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift1)}`,
-    actual: `${this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC')}`
+    actual: this.data.start1StartedAt !== null ? `${this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC')}` : ''
   };
 
   shift2Data = {
     shift: this.translateService.instant('2nd'),
     planned: `${this.convertMinutesToTime(this.data.plannedStartOfShift2)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift2)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift2)}`,
-    actual: `${this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC')}`
+    actual: this.data.start2StartedAt !== null ? `${this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC')}` : ''
   };
 
   convertMinutesToTime(minutes: number): string {
