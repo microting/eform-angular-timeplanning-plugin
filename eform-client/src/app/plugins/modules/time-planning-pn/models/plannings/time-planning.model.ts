@@ -6,4 +6,9 @@ export class TimePlanningModel {
   siteName: string;
   avatarUrl: string;
   planningPrDayModels: PlanningPrDayModel[] = [];
+  plannedHours: number;
+  plannedMinutes: number;
+  currentWorkedHours: number;
+  currentWorkedMinutes: number;
+  percentageCompleted: number;
 }

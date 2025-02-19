@@ -22,18 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
-{
-    using System;
+namespace TimePlanning.Pn.Infrastructure.Models.Planning;
 
-    /// <summary>
-    /// Class TimePlanningPlanningRequestModel.
-    /// </summary>
-    public class TimePlanningPlanningRequestModel
-    {
-        public DateTime? DateFrom { get; set; }
-        public DateTime? DateTo { get; set; }
-        public bool IsSortDsc { get; set; }
-        public string Sort { get; set; }
-    }
+using System;
+
+/// <summary>
+/// Class TimePlanningPlanningRequestModel.
+/// </summary>
+public class TimePlanningPlanningRequestModel
+{
+    public DateTime? DateFrom { get; set; }
+    public DateTime? DateTo { get; set; }
+    public bool IsSortDsc { get; set; }
+    public string Sort { get; set; }
 }

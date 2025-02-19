@@ -91,6 +91,16 @@ public class TimePlanningPlanningService(
                     .Where(x => x.Date <= model.DateTo)
                     .OrderBy(x => x.Date)
                     .ToListAsync().ConfigureAwait(false);
+                
+                var plannedTotalHours = planningsInPeriod.Sum(x => x.PlanHours);
+                var nettoHoursTotal = planningsInPeriod.Sum(x => x.NettoHours);
+                
+                siteModel.PlannedHours = (int)plannedTotalHours;
+                siteModel.PlannedMinutes = (int)((plannedTotalHours - siteModel.PlannedHours) * 60);
+                siteModel.CurrentWorkedHours = (int)nettoHoursTotal;
+                siteModel.CurrentWorkedMinutes = (int)((nettoHoursTotal - siteModel.CurrentWorkedHours) * 60);
+                siteModel.PercentageCompleted = (int)(nettoHoursTotal / plannedTotalHours * 100);
+                
                 foreach (var planning in planningsInPeriod)
                 {
                     var midnight = new DateTime(planning.Date.Year, planning.Date.Month, planning.Date.Day, 0, 0, 0);

@@ -24,39 +24,37 @@ SOFTWARE.
 
 using System;
 
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
-{
-    public class TimePlanningPlanningPrDayModel
-    {
-        public int Id { get; set; }
-        public int SiteId { get; set; }
-        public string SiteName { get; set; }
-        public int WeekDay { get; set; }
-        public DateTime Date { get; set; }
-        public string PlanText { get; set; }
-        public double PlanHours { get; set; }
-        public double ActualHours { get; set; }
-        public double Difference { get; set; }
-        public double PauseMinutes { get; set; }
-        public int? Message { get; set; }
-        public bool WorkDayStarted { get; set; }
-        public bool WorkDayEnded { get; set; }
-        public bool PlanHoursMatched { get; set; }
-        public int PlannedStartOfShift1 { get; set; }
-        public int PlannedEndOfShift1 { get; set; }
-        public int PlannedBreakOfShift1 { get; set; }
-        public int PlannedStartOfShift2 { get; set; }
-        public int PlannedEndOfShift2 { get; set; }
-        public int PlannedBreakOfShift2 { get; set; }
-        public bool IsDoubleShift { get; set; }
-        public bool OnVacation { get; set; }
-        public bool Sick { get; set; }
-        public bool OtherAllowedAbsence { get; set; }
-        public bool AbsenceWithoutPermission { get; set; }
+namespace TimePlanning.Pn.Infrastructure.Models.Planning;
 
-        public DateTime? Start1StartedAt { get; set; }
-        public DateTime? Stop1StoppedAt { get; set; }
-        public DateTime? Start2StartedAt { get; set; }
-        public DateTime? Stop2StoppedAt { get; set; }
-    }
+public class TimePlanningPlanningPrDayModel
+{
+    public int Id { get; set; }
+    public int SiteId { get; set; }
+    public string SiteName { get; set; }
+    public int WeekDay { get; set; }
+    public DateTime Date { get; set; }
+    public string PlanText { get; set; }
+    public double PlanHours { get; set; }
+    public double ActualHours { get; set; }
+    public double Difference { get; set; }
+    public double PauseMinutes { get; set; }
+    public int? Message { get; set; }
+    public bool WorkDayStarted { get; set; }
+    public bool WorkDayEnded { get; set; }
+    public bool PlanHoursMatched { get; set; }
+    public int PlannedStartOfShift1 { get; set; }
+    public int PlannedEndOfShift1 { get; set; }
+    public int PlannedBreakOfShift1 { get; set; }
+    public int PlannedStartOfShift2 { get; set; }
+    public int PlannedEndOfShift2 { get; set; }
+    public int PlannedBreakOfShift2 { get; set; }
+    public bool IsDoubleShift { get; set; }
+    public bool OnVacation { get; set; }
+    public bool Sick { get; set; }
+    public bool OtherAllowedAbsence { get; set; }
+    public bool AbsenceWithoutPermission { get; set; }
+    public DateTime? Start1StartedAt { get; set; }
+    public DateTime? Stop1StoppedAt { get; set; }
+    public DateTime? Start2StartedAt { get; set; }
+    public DateTime? Stop2StoppedAt { get; set; }
 }

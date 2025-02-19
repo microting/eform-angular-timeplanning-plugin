@@ -24,16 +24,17 @@ SOFTWARE.
 
 using System.Collections.Generic;
 
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
+namespace TimePlanning.Pn.Infrastructure.Models.Planning;
+
+public class TimePlanningPlanningModel
 {
-    public class TimePlanningPlanningModel
-    {
-        public int SiteId { get; set; }
-
-        public string SiteName { get; set; }
-
-        public string AvatarUrl { get; set; }
-
-        public List<TimePlanningPlanningPrDayModel> PlanningPrDayModels { get; set; }
-    }
+    public int SiteId { get; set; }
+    public string SiteName { get; set; }
+    public string AvatarUrl { get; set; }
+    public int PlannedHours { get; set; }
+    public int PlannedMinutes { get; set; }
+    public int CurrentWorkedHours { get; set; }
+    public int CurrentWorkedMinutes { get; set; }
+    public int PercentageCompleted { get; set; }
+    public List<TimePlanningPlanningPrDayModel> PlanningPrDayModels { get; set; }
 }

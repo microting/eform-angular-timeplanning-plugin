@@ -8,7 +8,8 @@ import {DaysOfWeekEnum} from 'src/app/common/const';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {MatDialog} from '@angular/material/dialog';
 import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
-import {DatePipe} from "@angular/common";
+import {DatePipe} from '@angular/common';
+import {DashboardChartDataSingleModel} from 'src/app/plugins/modules/insight-dashboard-pn/models';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -16,6 +17,8 @@ import {DatePipe} from "@angular/common";
   styleUrls: ['./time-plannings-table.component.scss'],
   encapsulation: ViewEncapsulation.None,
   standalone: false
+
+
 })
 export class TimePlanningsTableComponent implements OnInit {
   @Input() timePlannings: TimePlanningModel[] = [];
@@ -120,18 +123,24 @@ export class TimePlanningsTableComponent implements OnInit {
   // }
 
   getCellClass(row: any, field: string): string {
-    const planHours = row.planningPrDayModels[field]?.planHours;
-    const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
-    const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
-    if (planHours > 0 ) {
-      if (workDayStarted) {
-        //console.log('getCellClass', row, field, planHours, workDayStarted, workDayEnded);
-        return workDayEnded ? 'green-background' : 'white-background';
+    try {
+      const planHours = row.planningPrDayModels[field]?.planHours;
+      const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
+      const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+      if (planHours > 0) {
+        if (workDayStarted) {
+          //console.log('getCellClass', row, field, planHours, workDayStarted, workDayEnded);
+          return workDayEnded ? 'green-background' : 'white-background';
+        } else {
+          return 'grey-background';
+        }
       } else {
-        return 'grey-background';
+        return 'white-background';
       }
+    } catch (e) {
+      //console.error(e);
+      return '';
     }
-    return '';
   }
 
   getCellTextColor(row: any, field: string): string {
@@ -140,7 +149,7 @@ export class TimePlanningsTableComponent implements OnInit {
     const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
     if (planHours > 0 ) {
       if (workDayStarted) {
-        console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
+        //console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
         return workDayEnded ? 'white-text' : 'green-text';
       } else {
         return 'black-text';
@@ -175,7 +184,7 @@ export class TimePlanningsTableComponent implements OnInit {
     return `${this.padZero(hours)}:${this.padZero(mins)}`;
   }
 
-  private padZero(num: number): string {
+  padZero(num: number): string {
     return num < 10 ? '0' + num : num.toString();
   }
 }
