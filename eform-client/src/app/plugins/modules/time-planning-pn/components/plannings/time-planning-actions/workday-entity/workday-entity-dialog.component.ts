@@ -8,7 +8,7 @@ import {
   MatDialogTitle
 } from '@angular/material/dialog';
 import {MatButton} from '@angular/material/button';
-import {TranslatePipe} from '@ngx-translate/core';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {DatePipe, NgForOf, NgIf} from '@angular/common';
 import {PlanningPrDayModel} from 'src/app/plugins/modules/time-planning-pn/models';
 import {MatCheckbox} from '@angular/material/checkbox';
@@ -17,6 +17,7 @@ import {TimePlanningMessagesEnum} from 'src/app/plugins/modules/time-planning-pn
 import {
   PlanningPrDayUpdateModel
 } from "src/app/plugins/modules/time-planning-pn/models/plannings/planning-pr-day-update.model";
+import {MtxGrid} from "@ng-matero/extensions/grid";
 
 @Component({
   selector: 'app-workday-entity-dialog',
@@ -31,7 +32,8 @@ import {
     MatCheckbox,
     FormsModule,
     NgForOf,
-    NgIf
+    NgIf,
+    MtxGrid
   ],
   styleUrls: ['./workday-entity-dialog.component.scss']
 })
@@ -39,19 +41,35 @@ export class WorkdayEntityDialogComponent implements OnInit {
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   workdayEntityUpdate: EventEmitter<PlanningPrDayUpdateModel> = new EventEmitter<PlanningPrDayUpdateModel>();
   enumKeys: string[];
-  constructor(@Inject(MAT_DIALOG_DATA) public data: PlanningPrDayModel, protected datePipe: DatePipe) {}
+  constructor(
+    @Inject(MAT_DIALOG_DATA) public data: PlanningPrDayModel,
+    protected datePipe: DatePipe,
+    private translateService: TranslateService,
+  ) {}
 
   protected readonly JSON = JSON;
-
-  columns = [
-    { header: 'Shift', field: 'shift' },
-    { header: 'Planned', field: 'planned' },
-    { header: 'Actual', field: 'actual' }
-  ];
 
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
   }
+
+  columns = [
+    { header: this.translateService.stream('Shift'), field: 'shift' },
+    { header: this.translateService.stream('Planned'), field: 'planned' },
+    { header: this.translateService.stream('Actual'), field: 'actual' }
+  ];
+
+  shift1Data = {
+    shift: this.translateService.instant('1st'),
+    planned: `${this.convertMinutesToTime(this.data.plannedStartOfShift1)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift1)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift1)}`,
+    actual: `${this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC')}`
+  };
+
+  shift2Data = {
+    shift: this.translateService.instant('2nd'),
+    planned: `${this.convertMinutesToTime(this.data.plannedStartOfShift2)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift2)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift2)}`,
+    actual: `${this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC')}`
+  };
 
   convertMinutesToTime(minutes: number): string {
     const hours = Math.floor(minutes / 60);

@@ -126,7 +126,7 @@ public class TimePlanningPlanningService(
                         PlannedStartOfShift2 = planning.PlannedStartOfShift2,
                         PlannedEndOfShift2 = planning.PlannedEndOfShift2,
                         PlannedBreakOfShift2 = planning.PlannedBreakOfShift2,
-                        IsDoubleShift = planning.IsDoubleShift,
+                        IsDoubleShift = planning.Start2StartedAt != planning.Stop2StoppedAt,
                         OnVacation = planning.OnVacation,
                         Sick = planning.Sick,
                         OtherAllowedAbsence = planning.OtherAllowedAbsence,
