@@ -86,8 +86,10 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
 
   formatDateRange(): string {
     const options = { year: 'numeric', month: 'numeric', day: 'numeric' } as const;
-    const from = this.dateFrom.toLocaleDateString(undefined, options);
-    const to = this.dateTo.toLocaleDateString(undefined, options);
+    //const from = this.dateFrom.toLocaleDateString(undefined, options);
+    const from = format(this.dateFrom, 'dd.MM.yyyy');
+    //const to = this.dateTo.toLocaleDateString(undefined, options);
+    const to = format(this.dateTo, 'dd.MM.yyyy');
     return `${from} - ${to}`;
   }
 }
