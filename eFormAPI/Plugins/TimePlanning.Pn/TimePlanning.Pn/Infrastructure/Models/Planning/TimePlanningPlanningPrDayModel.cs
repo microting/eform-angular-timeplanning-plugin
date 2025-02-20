@@ -57,4 +57,7 @@ public class TimePlanningPlanningPrDayModel
     public DateTime? Stop1StoppedAt { get; set; }
     public DateTime? Start2StartedAt { get; set; }
     public DateTime? Stop2StoppedAt { get; set; }
+
+    public int Break1Shift { get; set; }
+    public int Break2shift { get; set; }
 }

@@ -148,7 +148,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         this.dialog.open(AssignedSiteDialogComponent, {
           data: result.model,
           minWidth: '50%',
-        });
+        })
+          .afterClosed().subscribe(data => data ? this.updateTableHeaders() : undefined);
       }
     });
   }

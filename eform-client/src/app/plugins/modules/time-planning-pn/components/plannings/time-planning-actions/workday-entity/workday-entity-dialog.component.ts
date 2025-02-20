@@ -18,6 +18,7 @@ import {
   PlanningPrDayUpdateModel
 } from "src/app/plugins/modules/time-planning-pn/models/plannings/planning-pr-day-update.model";
 import {MtxGrid} from "@ng-matero/extensions/grid";
+import {TimePlanningPnPlanningsService} from "src/app/plugins/modules/time-planning-pn/services";
 
 @Component({
   selector: 'app-workday-entity-dialog',
@@ -42,6 +43,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   workdayEntityUpdate: EventEmitter<PlanningPrDayUpdateModel> = new EventEmitter<PlanningPrDayUpdateModel>();
   enumKeys: string[];
   constructor(
+    private planningsService: TimePlanningPnPlanningsService,
     @Inject(MAT_DIALOG_DATA) public data: PlanningPrDayModel,
     protected datePipe: DatePipe,
     private translateService: TranslateService,
@@ -51,6 +53,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
+    this.data[this.enumKeys[this.data.message - 1]] = true;
   }
 
   columns = [
@@ -61,7 +64,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
   shift1Data = {
     shift: this.translateService.instant('1st'),
-    planned: `${this.convertMinutesToTime(this.data.plannedStartOfShift1)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift1)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift1)}`,
+    planned: this.data.plannedStartOfShift1 !== this.data.plannedEndOfShift1 ? `${this.convertMinutesToTime(this.data.plannedStartOfShift1)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift1)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift1)}` : '',
     actual: this.data.start1StartedAt !== null ? `${this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC')}` : ''
   };
 
@@ -82,13 +85,19 @@ export class WorkdayEntityDialogComponent implements OnInit {
   }
 
   onCheckboxChange(selectedOption: TimePlanningMessagesEnum): void {
-    this.data.message = selectedOption;
-    this.enumKeys.forEach(key => {
-      this.data[key] = selectedOption === TimePlanningMessagesEnum[key as keyof typeof TimePlanningMessagesEnum];
-    });
+    if (selectedOption !== this.data.message) {
+      this.data.message = selectedOption;
+      this.enumKeys.forEach(key => {
+        this.data[key] = selectedOption === TimePlanningMessagesEnum[key as keyof typeof TimePlanningMessagesEnum];
+      });
+    }
+    else {
+      this.data.message = null;
+    }
   }
 
   onUpdateWorkDayEntity() {
-
+    this.planningsService.updatePlanning(this.data, this.data.id).subscribe();
+    this.workdayEntityUpdate.emit(this.data);
   }
 }

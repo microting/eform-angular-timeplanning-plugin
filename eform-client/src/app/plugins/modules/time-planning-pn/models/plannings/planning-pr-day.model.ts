@@ -28,4 +28,6 @@ export class PlanningPrDayModel {
   stop1StoppedAt: string;
   start2StartedAt: string;
   stop2StoppedAt: string;
+  break1Shift: number;
+  break2Shift: number;
 }

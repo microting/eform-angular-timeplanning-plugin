@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { OperationDataResult, OperationResult } from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
 import {
+  PlanningPrDayModel,
   TimeFlexesModel,
   TimeFlexesUpdateModel,
   TimePlanningModel,
@@ -22,7 +23,8 @@ export let TimePlanningPnPlanningsMethods = {
   providedIn: 'root',
 })
 export class TimePlanningPnPlanningsService {
-  constructor(private apiBaseService: ApiBaseService) {}
+  constructor(private apiBaseService: ApiBaseService) {
+  }
 
   getPlannings(
     model: TimePlanningsRequestModel
@@ -33,28 +35,12 @@ export class TimePlanningPnPlanningsService {
     );
   }
 
-  // getWorkingHours(
-  //   model: TimePlanningsRequestModel
-  // ): Observable<OperationDataResult<TimePlanningModel[]>> {
-  //   return this.apiBaseService.post(
-  //     TimePlanningPnPlanningsMethods.IndexWorkingHours,
-  //     model
-  //   );
-  // }
-  //
-  // updatePlanning(model: TimePlanningUpdateModel): Observable<OperationResult> {
-  //   return this.apiBaseService.put(
-  //     TimePlanningPnPlanningsMethods.Plannings,
-  //     model
-  //   );
-  // }
-  //
-  // updateWorkingHours(
-  //   model: TimePlanningsUpdateModel
-  // ): Observable<OperationResult> {
-  //   return this.apiBaseService.put(
-  //     TimePlanningPnPlanningsMethods.WorkingHours,
-  //     model
-  //   );
-  // }
+  updatePlanning(
+    model: PlanningPrDayModel, id: number
+  ): Observable<OperationResult> {
+    return this.apiBaseService.put(
+      TimePlanningPnPlanningsMethods.Plannings + '/' + id,
+      model
+    );
+  }
 }

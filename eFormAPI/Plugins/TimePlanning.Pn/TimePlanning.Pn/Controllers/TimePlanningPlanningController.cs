@@ -39,11 +39,12 @@ namespace TimePlanning.Pn.Controllers
         {
             return await _planningService.Index(model);
         }
-        //
-        // [HttpPut]
-        // public async Task<OperationResult> UpdateCreatePlannings([FromBody] TimePlanningPlanningUpdateModel model)
-        // {
-        //     return await _planningService.UpdateCreatePlanning(model);
-        // }
+
+        [HttpPut]
+        [Route("{id}")]
+        public async Task<OperationResult> Update(int id, [FromBody] TimePlanningPlanningPrDayModel model)
+        {
+            return await _planningService.Update(id, model);
+        }
     }
 }

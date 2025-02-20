@@ -151,6 +151,8 @@ public class TimePlanningPlanningService(
                             (planning.Start2Id * 5) - 5)),
                         Stop2StoppedAt = (planning.Stop2Id == 0 ? null : midnight.AddMinutes(
                             (planning.Stop2Id * 5) - 5)),
+                        Break2shift = planning.Pause1Id,
+                        Break1Shift = planning.Pause2Id
                     };
                     try
                     {
@@ -256,6 +258,40 @@ public class TimePlanningPlanningService(
             return new OperationDataResult<List<TimePlanningPlanningModel>>(
                 false,
                 localizationService.GetString("ErrorWhileObtainingPlannings"));
+        }
+    }
+
+    public async Task<OperationResult> Update(int id, TimePlanningPlanningPrDayModel model)
+    {
+        try
+        {
+            var planning = dbContext.PlanRegistrations
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Id == id)
+                .FirstOrDefault();
+
+            if (planning == null)
+            {
+                return new OperationResult(
+                    false,
+                    localizationService.GetString("PlanningNotFound"));
+            }
+
+            planning.MessageId = model.Message;
+            await planning.Update(dbContext).ConfigureAwait(false);
+
+            return new OperationResult(
+                true,
+                localizationService.GetString("SuccessfullyUpdatedPlanning"));
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            logger.LogError(e.Message);
+            logger.LogTrace(e.StackTrace);
+            return new OperationResult(
+                false,
+                localizationService.GetString("ErrorWhileUpdatingPlanning"));
         }
     }
     //

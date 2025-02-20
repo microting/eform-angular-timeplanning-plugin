@@ -1,24 +1,5 @@
 <!-- src/app/plugins/modules/time-planning-pn/components/plannings/time-planning-actions/workday-entity/workday-entity-dialog.component.html -->
 <div mat-dialog-title>{{ data.siteName }} - {{ datePipe.transform(data.date, 'dd.MM.yyyy') }} ({{data.id}})</div><div mat-dialog-content>
-<!--  <table>-->
-<!--    <tr>-->
-<!--      <th>{{ 'Shift' | translate }}</th>-->
-<!--      <th>{{ 'Planned' | translate }}</th>-->
-<!--      <th>{{ 'Actual' | translate }}</th>-->
-<!--    </tr>-->
-<!--    <tr>-->
-<!--      <td>{{ '1st' | translate }}</td>-->
-<!--      <td>{{ convertMinutesToTime(data.plannedStartOfShift1) }} - {{ convertMinutesToTime(data.plannedEndOfShift1) }} / {{ convertMinutesToTime(data.plannedBreakOfShift1) }}</td>-->
-<!--      <td>{{ datePipe.transform(data.start1StartedAt, 'HH:mm', 'UTC') }} - {{ datePipe.transform(data.stop1StoppedAt, 'HH:mm', 'UTC') }}</td>-->
-<!--    </tr>-->
-<!--    <ng-container *ngIf="data.plannedStartOfShift2 != 0">-->
-<!--      <tr>-->
-<!--        <td>{{ '2nd' | translate }}</td>-->
-<!--        <td>{{ convertMinutesToTime(data.plannedStartOfShift2) }} - {{ convertMinutesToTime(data.plannedEndOfShift2) }} / {{ convertMinutesToTime(data.plannedBreakOfShift2) }}</td>-->
-<!--        <td>{{ datePipe.transform(data.start2StartedAt, 'HH:mm', 'UTC') }} - {{ datePipe.transform(data.stop2StoppedAt, 'HH:mm', 'UTC') }}</td>-->
-<!--      </tr>-->
-<!--    </ng-container>-->
-<!--  </table>-->
 
   <mtx-grid
     [columns]="columns"
@@ -34,15 +15,8 @@
     </mtx-grid>
   </ng-container>
 
-
-
   <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>
   <p><strong>{{ 'Plan hours' | translate }}:</strong> {{ data.planHours }}</p>
-
-<!--  <mat-checkbox [(ngModel)]="data.onVacation" (change)="onCheckboxChange('onVacation')">{{ 'Vacation' | translate }}</mat-checkbox>-->
-<!--  <mat-checkbox [(ngModel)]="data.sick" (change)="onCheckboxChange('sick')">{{ 'Sick' | translate }}</mat-checkbox>-->
-<!--  <mat-checkbox [(ngModel)]="data.otherAllowedAbsence" (change)="onCheckboxChange('otherAllowedAbsence')">{{ 'Other allowed absence' | translate }}</mat-checkbox>-->
-<!--  <mat-checkbox [(ngModel)]="data.absenceWithoutPermission" (change)="onCheckboxChange('absenceWithoutPermission')">{{ 'Absence without permission' | translate }}</mat-checkbox>-->
   <ng-container *ngFor="let key of enumKeys">
     <ng-container *ngIf="key !== 'Blank' && key !== 'Care' && key !== 'TimeOff'">
       <mat-checkbox [(ngModel)]="data[key]" (change)="onCheckboxChange(TimePlanningMessagesEnum[key])">
