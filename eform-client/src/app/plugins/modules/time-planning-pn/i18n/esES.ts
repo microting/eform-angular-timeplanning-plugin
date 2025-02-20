@@ -74,4 +74,12 @@ export const esES = {
   pause2TotalTime: 'Tiempo total de pausa del segundo turno',
   Timer: 'Temporizador',
   Today: 'Hoy',
+  'Workday shift': 'Turno de jornada laboral',
+  Planned: 'Planificado',
+  Actual: 'Actual',
+  '1st': '1º',
+  '2nd': '2do',
+  '3rd': '3º',
+  '4th': '4to',
+  '5th': '5º',
 };

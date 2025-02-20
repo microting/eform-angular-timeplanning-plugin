@@ -74,4 +74,12 @@ export const nlNL = {
   pause2TotalTime: 'Totale pauzetijd 2e ploeg',
   Timer: 'Timer',
   Today: 'Vandaag',
+  'Workday shift': 'Werkdagdienst',
+  Planned: 'Gepland',
+  Actual: 'Actueel',
+  '1st': '1e',
+  '2nd': '2e',
+  '3rd': '3e',
+  '4th': '4e',
+  '5th': '5e',
 };

@@ -74,4 +74,12 @@ export const isIS = {
   pause2TotalTime: 'Heildarhlé á 2. vakt',
   Timer: 'Tímamælir',
   Today: 'Í dag',
+  'Workday shift': 'Vinnudagsvakt',
+  Planned: 'Skipulagður',
+  Actual: 'Raunverulegt',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3ja',
+  '4th': '4',
+  '5th': '5',
 };

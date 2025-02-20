@@ -74,4 +74,12 @@ export const frFR = {
   pause2TotalTime: 'Temps de pause total de la 2ème équipe',
   Timer: 'Minuteur',
   Today: 'Aujourd&#39;hui',
+  'Workday shift': 'Quart de travail de jour',
+  Planned: 'Prévu',
+  Actual: 'Réel',
+  '1st': '1er',
+  '2nd': '2ème',
+  '3rd': '3ème',
+  '4th': '4ème',
+  '5th': '5ème',
 };

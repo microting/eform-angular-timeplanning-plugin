@@ -72,4 +72,12 @@ export const enUS = {
   'pause2TotalTime': '2nd shift total pause time',
   'Timer': 'Timer',
   'Today': 'Today',
+  'Workday shift': 'Workday shift',
+  'Planned': 'Planned',
+  'Actual': 'Actual',
+  '1st': '1st',
+  '2nd': '2nd',
+  '3rd': '3rd',
+  '4th': '4th',
+  '5th': '5th',
 };

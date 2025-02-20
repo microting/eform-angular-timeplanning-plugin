@@ -74,4 +74,12 @@ export const ltLT = {
   pause2TotalTime: '2 pamainos bendras pauzės laikas',
   Timer: 'Laikmatis',
   Today: 'Šiandien',
+  'Workday shift': 'Darbo dienos pamaina',
+  Planned: 'Planuojama',
+  Actual: 'Faktinis',
+  '1st': '1-oji',
+  '2nd': '2-oji',
+  '3rd': '3',
+  '4th': '4-oji',
+  '5th': '5-oji',
 };

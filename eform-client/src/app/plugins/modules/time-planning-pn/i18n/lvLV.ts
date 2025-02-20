@@ -74,4 +74,12 @@ export const lvLV = {
   pause2TotalTime: '2. maiņas kopējais pauzes laiks',
   Timer: 'Taimeris',
   Today: 'Šodien',
+  'Workday shift': 'Darba dienas maiņa',
+  Planned: 'Plānots',
+  Actual: 'Faktiskais',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };

@@ -74,4 +74,12 @@ export const etET = {
   pause2TotalTime: '2. vahetuse kogu pausiaeg',
   Timer: 'Taimer',
   Today: 'Täna',
+  'Workday shift': 'Tööpäeva vahetus',
+  Planned: 'Plaanitud',
+  Actual: 'Tegelik',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };

@@ -74,4 +74,12 @@ export const csCZ = {
   pause2TotalTime: 'Celková doba pauzy 2. směny',
   Timer: 'Časovač',
   Today: 'Dnes',
+  'Workday shift': 'Pracovní směna',
+  Planned: 'Plánováno',
+  Actual: 'Aktuální',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };

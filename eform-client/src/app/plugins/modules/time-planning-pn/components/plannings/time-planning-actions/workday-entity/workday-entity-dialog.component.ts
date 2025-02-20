@@ -54,7 +54,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   }
 
   columns = [
-    { header: this.translateService.stream('Shift'), field: 'shift' },
+    { header: this.translateService.stream('Workday shift'), field: 'shift' },
     { header: this.translateService.stream('Planned'), field: 'planned' },
     { header: this.translateService.stream('Actual'), field: 'actual' }
   ];

@@ -36,15 +36,15 @@
 
 
 
-  <p><strong>{{ 'Plan Text:' | translate }}</strong> {{ data.planText }}</p>
-  <p><strong>{{ 'Plan Hours:' | translate }}</strong> {{ data.planHours }}</p>
+  <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>
+  <p><strong>{{ 'Plan hours' | translate }}:</strong> {{ data.planHours }}</p>
 
 <!--  <mat-checkbox [(ngModel)]="data.onVacation" (change)="onCheckboxChange('onVacation')">{{ 'Vacation' | translate }}</mat-checkbox>-->
 <!--  <mat-checkbox [(ngModel)]="data.sick" (change)="onCheckboxChange('sick')">{{ 'Sick' | translate }}</mat-checkbox>-->
 <!--  <mat-checkbox [(ngModel)]="data.otherAllowedAbsence" (change)="onCheckboxChange('otherAllowedAbsence')">{{ 'Other allowed absence' | translate }}</mat-checkbox>-->
 <!--  <mat-checkbox [(ngModel)]="data.absenceWithoutPermission" (change)="onCheckboxChange('absenceWithoutPermission')">{{ 'Absence without permission' | translate }}</mat-checkbox>-->
   <ng-container *ngFor="let key of enumKeys">
-    <ng-container *ngIf="key !== 'Blank'">
+    <ng-container *ngIf="key !== 'Blank' && key !== 'Care' && key !== 'TimeOff'">
       <mat-checkbox [(ngModel)]="data[key]" (change)="onCheckboxChange(TimePlanningMessagesEnum[key])">
         {{ key | translate }}
       </mat-checkbox>

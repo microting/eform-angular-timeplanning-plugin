@@ -74,4 +74,12 @@ export const noNO = {
   pause2TotalTime: '2. skift total pausetid',
   Timer: 'Timer',
   Today: 'I dag',
+  'Workday shift': 'Arbeidsdagsskift',
+  Planned: 'Planlagt',
+  Actual: 'Faktisk',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };

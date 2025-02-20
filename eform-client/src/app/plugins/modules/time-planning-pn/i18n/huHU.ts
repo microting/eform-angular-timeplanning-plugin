@@ -74,4 +74,12 @@ export const huHU = {
   pause2TotalTime: '2. műszak teljes szünetidő',
   Timer: 'Időzítő',
   Today: 'Ma',
+  'Workday shift': 'Munkanapi műszak',
+  Planned: 'Tervezett',
+  Actual: 'Tényleges',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };

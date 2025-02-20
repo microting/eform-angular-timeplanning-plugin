@@ -74,4 +74,12 @@ export const plPL = {
   pause2TotalTime: 'Całkowity czas przerwy na 2. zmianie',
   Timer: 'Regulator czasowy',
   Today: 'Dzisiaj',
+  'Workday shift': 'Zmiana dnia roboczego',
+  Planned: 'Planowany',
+  Actual: 'Rzeczywisty',
+  '1st': '1.',
+  '2nd': '2.',
+  '3rd': '3.',
+  '4th': '4.',
+  '5th': '5.',
 };

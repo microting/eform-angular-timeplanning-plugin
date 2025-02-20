@@ -74,4 +74,12 @@ export const ptPT = {
   pause2TotalTime: 'Tempo total de pausa do 2º turno',
   Timer: 'Cronômetro',
   Today: 'Hoje',
+  'Workday shift': 'Turno de trabalho',
+  Planned: 'Planejado',
+  Actual: 'Real',
+  '1st': '1º',
+  '2nd': '2º',
+  '3rd': '3º',
+  '4th': '4º',
+  '5th': '5º',
 };

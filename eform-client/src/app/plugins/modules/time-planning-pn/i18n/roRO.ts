@@ -74,4 +74,12 @@ export const roRO = {
   pause2TotalTime: 'Timpul total de pauză al schimbului 2',
   Timer: 'Temporizator',
   Today: 'Astăzi',
+  'Workday shift': 'Schimb de lucru',
+  Planned: 'Planificat',
+  Actual: 'Real',
+  '1st': '1',
+  '2nd': 'al 2-lea',
+  '3rd': 'al 3-lea',
+  '4th': 'al 4-lea',
+  '5th': 'al 5-lea',
 };

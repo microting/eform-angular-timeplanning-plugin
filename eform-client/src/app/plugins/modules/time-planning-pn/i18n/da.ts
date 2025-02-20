@@ -72,4 +72,12 @@ export const da = {
   pause2TotalTime: '2. skift samlet pausetid',
   Timer: 'Timer',
   Today: 'I dag',
+  'Workday shift': 'Arbejdsdag vagt',
+  Planned: 'Planlagt',
+  Actual: 'Faktisk',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };

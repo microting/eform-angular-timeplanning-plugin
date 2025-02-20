@@ -74,4 +74,12 @@ export const hrHR = {
   pause2TotalTime: 'Ukupno vrijeme pauze u 2. smjeni',
   Timer: 'Odbrojavanje vremena',
   Today: 'Danas',
+  'Workday shift': 'Radna smjena',
+  Planned: 'Planirano',
+  Actual: 'Stvarno',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };

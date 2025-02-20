@@ -74,4 +74,12 @@ export const svSE = {
   pause2TotalTime: '2:a skiftets totala paustid',
   Timer: 'Timer',
   Today: 'I dag',
+  'Workday shift': 'Arbetsdagsskift',
+  Planned: 'Planerad',
+  Actual: 'Faktisk',
+  '1st': '1:a',
+  '2nd': '2:a',
+  '3rd': '3:a',
+  '4th': '4:a',
+  '5th': '5:a',
 };

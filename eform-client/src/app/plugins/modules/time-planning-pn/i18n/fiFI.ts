@@ -74,4 +74,12 @@ export const fiFI = {
   pause2TotalTime: '2. vuoron kokonaistaukoaika',
   Timer: 'Ajastin',
   Today: 'Tänään',
+  'Workday shift': 'Työpäivävuoro',
+  Planned: 'Suunniteltu',
+  Actual: 'Todellinen',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };

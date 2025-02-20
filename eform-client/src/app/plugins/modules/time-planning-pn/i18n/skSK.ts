@@ -74,4 +74,12 @@ export const skSK = {
   pause2TotalTime: '2. zmena celkový čas prestávky',
   Timer: 'Časovač',
   Today: 'Dnes',
+  'Workday shift': 'Pracovná zmena',
+  Planned: 'Plánované',
+  Actual: 'Skutočné',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };

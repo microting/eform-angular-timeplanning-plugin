@@ -74,4 +74,12 @@ export const deDE = {
   pause2TotalTime: '2. Schicht Gesamtpausenzeit',
   Timer: 'Timer',
   Today: 'Heute',
+  'Workday shift': 'Arbeitstagschicht',
+  Planned: 'Geplant',
+  Actual: 'Tatsächlich',
+  '1st': '1. Platz',
+  '2nd': '2. Platz',
+  '3rd': '3. Platz',
+  '4th': '4. Platz',
+  '5th': '5. Platz',
 };

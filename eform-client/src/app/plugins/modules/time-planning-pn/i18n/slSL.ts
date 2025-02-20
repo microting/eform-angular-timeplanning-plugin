@@ -74,4 +74,12 @@ export const slSL = {
   pause2TotalTime: 'Skupni čas premora v 2. izmeni',
   Timer: 'Časovnik',
   Today: 'Danes',
+  'Workday shift': 'Delovna izmena',
+  Planned: 'Načrtovano',
+  Actual: 'Dejansko',
+  '1st': '1',
+  '2nd': '2',
+  '3rd': '3',
+  '4th': '4',
+  '5th': '5',
 };
