@@ -73,4 +73,5 @@ export const noNO = {
   pause1TotalTime: '1. skift total pausetid',
   pause2TotalTime: '2. skift total pausetid',
   Timer: 'Timer',
+  Today: 'I dag',
 };

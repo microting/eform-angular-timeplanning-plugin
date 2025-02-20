@@ -73,4 +73,5 @@ export const ukUA = {
   pause1TotalTime: 'Загальний час паузи 1-ї зміни',
   pause2TotalTime: 'Загальний час паузи 2-ї зміни',
   Timer: 'Таймер',
+  Today: 'Сьогодні',
 };

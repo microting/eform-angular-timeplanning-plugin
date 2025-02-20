@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
-import { Subscription } from 'rxjs';
+import {Subscription, take} from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
 import { TimePlanningModel, TimePlanningsRequestModel } from '../../../models';
 import {
@@ -9,6 +9,8 @@ import {
 } from '../../../services';
 import {startOfWeek, endOfWeek, format} from 'date-fns';
 import {PARSING_DATE_FORMAT} from 'src/app/common/const';
+import {Store} from "@ngrx/store";
+import {selectCurrentUserLocale} from "src/app/state";
 
 @AutoUnsubscribe()
 @Component({
@@ -28,14 +30,20 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   getTimePlannings$: Subscription;
   updateTimePlanning$: Subscription;
   getAvailableSites$: Subscription;
+  public selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
+  locale: string;
 
   constructor(
+    private store: Store,
     private planningsService: TimePlanningPnPlanningsService,
     private settingsService: TimePlanningPnSettingsService
   ) {}
 
   ngOnInit(): void {
-    this.getPlannings();
+    this.selectCurrentUserLocale$.pipe(take(1)).subscribe((locale) => {
+      this.locale = locale;
+      this.getPlannings();
+    });
   }
 
   getPlannings() {
@@ -77,7 +85,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   formatDateRange(): string {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' } as const;
+    const options = { year: 'numeric', month: 'numeric', day: 'numeric' } as const;
     const from = this.dateFrom.toLocaleDateString(undefined, options);
     const to = this.dateTo.toLocaleDateString(undefined, options);
     return `${from} - ${to}`;

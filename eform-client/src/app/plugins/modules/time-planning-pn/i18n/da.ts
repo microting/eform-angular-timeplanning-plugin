@@ -71,4 +71,5 @@ export const da = {
   pause1TotalTime: '1. skift samlet pausetid',
   pause2TotalTime: '2. skift samlet pausetid',
   Timer: 'Timer',
+  Today: 'I dag',
 };

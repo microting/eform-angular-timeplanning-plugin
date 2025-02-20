@@ -73,4 +73,5 @@ export const nlNL = {
   pause1TotalTime: 'Totale pauzetijd 1e ploeg',
   pause2TotalTime: 'Totale pauzetijd 2e ploeg',
   Timer: 'Timer',
+  Today: 'Vandaag',
 };

@@ -73,4 +73,5 @@ export const fiFI = {
   pause1TotalTime: '1. vuoron kokonaistaukoaika',
   pause2TotalTime: '2. vuoron kokonaistaukoaika',
   Timer: 'Ajastin',
+  Today: 'Tänään',
 };

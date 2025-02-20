@@ -73,4 +73,5 @@ export const itIT = {
   pause1TotalTime: 'Tempo pausa totale 1° turno',
   pause2TotalTime: 'Tempo di pausa totale del 2° turno',
   Timer: 'Timer',
+  Today: 'Oggi',
 };

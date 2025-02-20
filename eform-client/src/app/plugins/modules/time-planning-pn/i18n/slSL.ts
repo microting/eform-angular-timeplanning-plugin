@@ -73,4 +73,5 @@ export const slSL = {
   pause1TotalTime: 'Skupni čas premora v 1. izmeni',
   pause2TotalTime: 'Skupni čas premora v 2. izmeni',
   Timer: 'Časovnik',
+  Today: 'Danes',
 };

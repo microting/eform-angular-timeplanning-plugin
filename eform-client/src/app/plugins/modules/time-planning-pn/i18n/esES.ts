@@ -73,4 +73,5 @@ export const esES = {
   pause1TotalTime: 'Tiempo total de pausa del 1er turno',
   pause2TotalTime: 'Tiempo total de pausa del segundo turno',
   Timer: 'Temporizador',
+  Today: 'Hoy',
 };

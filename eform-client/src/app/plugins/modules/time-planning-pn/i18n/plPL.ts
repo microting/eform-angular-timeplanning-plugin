@@ -73,4 +73,5 @@ export const plPL = {
   pause1TotalTime: 'Całkowity czas przerwy na 1. zmianie',
   pause2TotalTime: 'Całkowity czas przerwy na 2. zmianie',
   Timer: 'Regulator czasowy',
+  Today: 'Dzisiaj',
 };

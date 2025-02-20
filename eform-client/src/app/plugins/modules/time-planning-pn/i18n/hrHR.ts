@@ -73,4 +73,5 @@ export const hrHR = {
   pause1TotalTime: 'Ukupno vrijeme pauze u 1. smjeni',
   pause2TotalTime: 'Ukupno vrijeme pauze u 2. smjeni',
   Timer: 'Odbrojavanje vremena',
+  Today: 'Danas',
 };

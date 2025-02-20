@@ -73,4 +73,5 @@ export const isIS = {
   pause1TotalTime: 'Heildarhlé 1. vakt',
   pause2TotalTime: 'Heildarhlé á 2. vakt',
   Timer: 'Tímamælir',
+  Today: 'Í dag',
 };

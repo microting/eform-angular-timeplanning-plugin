@@ -1,4 +1,5 @@
-import {Component, EventEmitter, Input, OnInit, Output, TemplateRef, ViewChild, ViewEncapsulation} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output,
+  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation} from '@angular/core';
 import { TimePlanningModel } from '../../../models';
 import {MtxGrid, MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
@@ -16,31 +17,46 @@ import {DatePipe} from '@angular/common';
 
 
 })
-export class TimePlanningsTableComponent implements OnInit {
+export class TimePlanningsTableComponent implements OnInit, OnChanges {
   @Input() timePlannings: TimePlanningModel[] = [];
-  @Output()
-  timePlanningChanged: EventEmitter<TimePlanningModel> = new EventEmitter<TimePlanningModel>();
+  @Input() dateFrom!: Date;
+  @Input() dateTo!: Date;
+  @Output() timePlanningChanged: EventEmitter<TimePlanningModel> = new EventEmitter<TimePlanningModel>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
   tableHeaders: MtxGridColumn[] = [];
 
   @ViewChild('firstColumnTemplate', { static: true }) firstColumnTemplate!: TemplateRef<any>;
   @ViewChild('dayColumnTemplate', { static: true }) dayColumnTemplate!: TemplateRef<any>;
-  //tableHeaders: TableHeaderElementModel[] = [
-    // { name: 'DayOfWeek', elementId: 'dayOfWeekTableHeader', sortable: true },
-    // { name: 'Date', elementId: 'dateTableHeader', sortable: true },
-    // { name: 'Plan text', elementId: 'planTextTableHeader', sortable: false },
-    // { name: 'Plan hours', elementId: 'planHoursTableHeader', sortable: false },
-    // { name: 'Message', elementId: 'messageTableHeader', sortable: false },
-  //];
 
   constructor(
     private timePlanningPnSettingsService: TimePlanningPnSettingsService,
     private dialog: MatDialog,
     private translateService: TranslateService,
-    protected datePipe: DatePipe
+    protected datePipe: DatePipe,
+    private cdr: ChangeDetectorRef
     ) {}
 
   ngOnInit(): void {
+    this.updateTableHeaders();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.dateFrom || changes.dateTo) {
+      this.dateFrom = changes.dateFrom.currentValue;
+      this.dateTo = changes.dateTo.currentValue;
+      this.updateTableHeaders();
+    }
+  }
+
+  private updateTableHeaders(): void {
+    this.tableHeaders = [];
+    this.cdr.detectChanges();
+    const startDate = new Date(this.dateFrom);
+    const endDate = new Date(this.dateTo);
+    const today = new Date();
+    const daysCount = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+    let todayTranslated = this.translateService.stream('Today');
+
     this.tableHeaders = [
       {
         cellTemplate: this.firstColumnTemplate,
@@ -49,57 +65,25 @@ export class TimePlanningsTableComponent implements OnInit {
         field: 'siteName',
         sortable: true,
       },
-      {
-        cellTemplate: this.dayColumnTemplate,
-        header: this.translateService.stream('Monday'),
-        field: '0',
-        sortable: false,
-        class: (row: any) => this.getCellClass(row, '0'),
-      },
-      {
-        cellTemplate: this.dayColumnTemplate,
-        header: this.translateService.stream('Tuesday'),
-        field: '1',
-        sortable: false,
-        class: (row: any) => this.getCellClass(row, '1'),
-      },
-      {
-        cellTemplate: this.dayColumnTemplate,
-        header: this.translateService.stream('Wednesday'),
-        field: '2',
-        sortable: false,
-        class: (row: any) => this.getCellClass(row, '2'),
-      },
-      {
-        cellTemplate: this.dayColumnTemplate,
-        header: this.translateService.stream('Thursday'),
-        field: '3',
-        sortable: false,
-        class: (row: any) => this.getCellClass(row, '3'),
-      },
-      {
-        cellTemplate: this.dayColumnTemplate,
-        header: this.translateService.stream('Friday'),
-        field: '4',
-        sortable: false,
-        class: (row: any) => this.getCellClass(row, '4'),
-      },
-      {
-        cellTemplate: this.dayColumnTemplate,
-        header: this.translateService.stream('Saturday'),
-        field: '5',
-        sortable: false,
-        class: (row: any) => this.getCellClass(row, '5'),
-      },
-      {
-        cellTemplate: this.dayColumnTemplate,
-        header: this.translateService.stream('Sunday'),
-        field: '6',
-        sortable: false,
-        class: (row: any) => this.getCellClass(row, '6'),
-      },
+      ...Array.from({ length: daysCount }).map((_, index) => {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + index);
+        const isToday = currentDate.toDateString() === today.toDateString();
+        const formattedDate = isToday
+          ? todayTranslated
+          : this.datePipe.transform(currentDate, 'dd/MM', undefined);
+        return {
+          cellTemplate: this.dayColumnTemplate,
+          header: formattedDate,
+          field: index.toString(),
+          sortable: false,
+          class: (row: any) => this.getCellClass(row, index.toString()),
+        };
+      }),
     ];
+    this.cdr.detectChanges();
   }
+
 
   // sortTable(sort: string) {
   //   this.sortChanged.emit(sort);
