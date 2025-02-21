@@ -93,7 +93,13 @@ public class TimePlanningPlanningService(
                     .FirstOrDefaultAsync().ConfigureAwait(false);
                 if (user != null)
                 {
-                    siteModel.AvatarUrl = $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+                    if (user.ProfilePictureSnapshot != null)
+                    {
+                        siteModel.AvatarUrl = $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}";
+                    } else
+                    {
+                        siteModel.AvatarUrl = $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+                    }
                 }
 
                 var planningsInPeriod = await dbContext.PlanRegistrations
