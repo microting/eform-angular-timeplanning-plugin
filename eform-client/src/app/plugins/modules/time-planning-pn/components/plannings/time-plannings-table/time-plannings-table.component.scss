@@ -65,3 +65,19 @@
 .hours-info {
   margin-left: 10px; /* Adjust the margin as needed */
 }
+
+.plan-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px;
+}
+
+.plan-content {
+  flex-grow: 1;
+}
+
+.plan-icons {
+  display: flex;
+  gap: 8px;
+}

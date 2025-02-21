@@ -40,10 +40,43 @@
 </ng-template>
 
 <ng-template #dayColumnTemplate let-row let-col="colDef">
-  <div class="plan-text" (click)="onDayColumnClick(row, col.field)" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>
-  <div class="plan-text" (click)="onDayColumnClick(row, col.field)" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0"><strong class="{{getCellTextColor(row, col.field)}}">{{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} - {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift1) }} / {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}</strong></div>
-  <div class="plan-text" (click)="onDayColumnClick(row, col.field)" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift2 !== 0"><strong class="{{getCellTextColor(row, col.field)}}">{{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift2) }} - {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift2) }} / {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift2) }}</strong></div>
-<!--  <div class="plan-hours {{getCellTextColor(row, col.field)}}" *ngIf="row.planningPrDayModels[col.field]?.planHours !== 0" (click)="onDayColumnClick(row, col.field)">{{ row.planningPrDayModels[col.field]?.planHours }}</div>-->
-  <div class="plan-text {{getCellTextColor(row, col.field)}}" (click)="onDayColumnClick(row, col.field)" *ngIf="row.planningPrDayModels[col.field]?.start1StartedAt !== null">{{ datePipe.transform(row.planningPrDayModels[col.field]?.start1StartedAt, 'HH:mm', 'UTC') }} - {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop1StoppedAt, 'HH:mm', 'UTC') }}</div>
-  <div class="plan-text {{getCellTextColor(row, col.field)}}" (click)="onDayColumnClick(row, col.field)" *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift">{{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }} - {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }}</div>
+  <div class="plan-container" (click)="onDayColumnClick(row, col.field)">
+    <!-- Left Content -->
+    <div class="plan-content">
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0">
+        <strong class="{{ getCellTextColor(row, col.field) }}">
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift1) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}
+        </strong>
+      </div>
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift2 !== 0">
+        <strong class="{{ getCellTextColor(row, col.field) }}">
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift2) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift2) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift2) }}
+        </strong>
+      </div>
+      <div class="plan-text {{ getCellTextColor(row, col.field) }}"
+           *ngIf="row.planningPrDayModels[col.field]?.start1StartedAt !== null">
+        {{ datePipe.transform(row.planningPrDayModels[col.field]?.start1StartedAt, 'HH:mm', 'UTC') }} -
+        {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop1StoppedAt, 'HH:mm', 'UTC') }}
+      </div>
+      <div class="plan-text {{ getCellTextColor(row, col.field) }}"
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift">
+        {{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }} -
+        {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }}
+      </div>
+    </div>
+
+    <!-- Right Icons -->
+    <div class="plan-icons">
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 2" color="primary">flight</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 3 || row.planningPrDayModels[col.field]?.message === 7 || row.planningPrDayModels[col.field]?.message === 8" color="warn">sick</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 1" color="primary">event_busy</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 4" color="primary">school</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 5" color="primary">event_busy</mat-icon>
+    </div>
+  </div>
 </ng-template>

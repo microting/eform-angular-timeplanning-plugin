@@ -27,6 +27,7 @@ import {MatSlideToggle} from '@angular/material/slide-toggle';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 import {MtxGrid} from '@ng-matero/extensions/grid';
 import {NgxChartsModule} from "@swimlane/ngx-charts";
+import {MatIcon} from "@angular/material/icon";
 
 @NgModule({
     imports: [
@@ -51,7 +52,8 @@ import {NgxChartsModule} from "@swimlane/ngx-charts";
         MatDatepickerToggle,
         MatSuffix,
         MtxGrid,
-        NgxChartsModule
+        NgxChartsModule,
+        MatIcon
     ],
   declarations: [
     TimePlanningPnLayoutComponent,
