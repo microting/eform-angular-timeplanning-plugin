@@ -20,6 +20,8 @@ import {
 import {MtxGrid} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService} from '../../../../services';
 import * as R from 'ramda';
+import {MatFormField, MatLabel} from "@angular/material/form-field";
+import {MatInput} from "@angular/material/input";
 
 @Component({
   selector: 'app-workday-entity-dialog',
@@ -35,7 +37,10 @@ import * as R from 'ramda';
     FormsModule,
     NgForOf,
     NgIf,
-    MtxGrid
+    MtxGrid,
+    MatFormField,
+    MatInput,
+    MatLabel
   ],
   styleUrls: ['./workday-entity-dialog.component.scss']
 })

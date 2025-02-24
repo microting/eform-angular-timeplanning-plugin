@@ -16,7 +16,18 @@
   </ng-container>
 
   <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>
-  <p><strong>{{ 'Plan hours' | translate }}:</strong> {{ data.planHours }}</p>
+
+  <mat-form-field class="pr-2">
+    <mat-label>{{ 'Plan hours' | translate }}</mat-label>
+    <input
+      type="number"
+      matInput
+      id="planHours"
+      name="planHours"
+      [(ngModel)]="data.planHours"
+    >
+  </mat-form-field>
+<!--  <p><strong>{{ 'Plan hours' | translate }}:</strong> {{ data.planHours }}</p>-->
   <ng-container *ngFor="let key of enumKeys">
     <ng-container *ngIf="key !== 'Blank' && key !== 'Care' && key !== 'TimeOff'">
       <mat-checkbox [(ngModel)]="data[key]" (change)="onCheckboxChange(TimePlanningMessagesEnum[key])">

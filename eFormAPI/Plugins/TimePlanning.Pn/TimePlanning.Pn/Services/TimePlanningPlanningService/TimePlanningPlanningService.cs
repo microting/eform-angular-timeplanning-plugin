@@ -284,7 +284,47 @@ public class TimePlanningPlanningService(
             }
 
             planning.MessageId = model.Message;
+            planning.PlanHours = model.PlanHours;
+
+            var preTimePlanning =
+                await dbContext.PlanRegistrations.AsNoTracking()
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Date < planning.Date
+                                && x.SdkSitId == planning.SdkSitId)
+                    .OrderByDescending(x => x.Date)
+                    .FirstOrDefaultAsync();
+
+
+            planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
+                                  planning.PlanHours -
+                                  planning.PaiedOutFlex;
+            planning.Flex = planning.NettoHours - planning.PlanHours;
             await planning.Update(dbContext).ConfigureAwait(false);
+
+            var planningsAfterThisPlanning = dbContext.PlanRegistrations
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.SdkSitId == planning.SdkSitId)
+                .Where(x => x.Date > planning.Date)
+                .OrderBy(x => x.Date)
+                .ToList();
+
+            foreach (var planningAfterThisPlanning in planningsAfterThisPlanning)
+            {
+                var preTimePlanningAfterThisPlanning =
+                    await dbContext.PlanRegistrations.AsNoTracking()
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Date < planningAfterThisPlanning.Date
+                                    && x.SdkSitId == planningAfterThisPlanning.SdkSitId)
+                        .OrderByDescending(x => x.Date)
+                        .FirstOrDefaultAsync();
+
+                planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                       planningAfterThisPlanning.NettoHours -
+                                                       planningAfterThisPlanning.PlanHours -
+                                                       planningAfterThisPlanning.PaiedOutFlex;
+                planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                await planningAfterThisPlanning.Update(dbContext).ConfigureAwait(false);
+            }
 
             return new OperationResult(
                 true,
