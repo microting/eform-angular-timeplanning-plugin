@@ -10,15 +10,16 @@ import {
 import {MatButton} from '@angular/material/button';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {DatePipe, NgForOf, NgIf} from '@angular/common';
-import {PlanningPrDayModel} from 'src/app/plugins/modules/time-planning-pn/models';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {FormsModule} from '@angular/forms';
-import {TimePlanningMessagesEnum} from 'src/app/plugins/modules/time-planning-pn/enums';
+import {TimePlanningMessagesEnum} from '../../../../enums';
 import {
+  PlanningPrDayModel,
   PlanningPrDayUpdateModel
-} from "src/app/plugins/modules/time-planning-pn/models/plannings/planning-pr-day-update.model";
-import {MtxGrid} from "@ng-matero/extensions/grid";
-import {TimePlanningPnPlanningsService} from "src/app/plugins/modules/time-planning-pn/services";
+} from '../../../../models';
+import {MtxGrid} from '@ng-matero/extensions/grid';
+import {TimePlanningPnPlanningsService} from '../../../../services';
+import * as R from 'ramda';
 
 @Component({
   selector: 'app-workday-entity-dialog',
@@ -42,6 +43,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   workdayEntityUpdate: EventEmitter<PlanningPrDayUpdateModel> = new EventEmitter<PlanningPrDayUpdateModel>();
   enumKeys: string[];
+  originalData: PlanningPrDayModel;
   constructor(
     private planningsService: TimePlanningPnPlanningsService,
     @Inject(MAT_DIALOG_DATA) public data: PlanningPrDayModel,
@@ -52,6 +54,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   protected readonly JSON = JSON;
 
   ngOnInit(): void {
+    this.originalData = R.clone(this.data);
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.data[this.enumKeys[this.data.message - 1]] = true;
   }
@@ -99,5 +102,12 @@ export class WorkdayEntityDialogComponent implements OnInit {
   onUpdateWorkDayEntity() {
     this.planningsService.updatePlanning(this.data, this.data.id).subscribe();
     this.workdayEntityUpdate.emit(this.data);
+  }
+
+  onCancel() {
+    this.data.message = this.originalData.message;
+    this.enumKeys.forEach(key => {
+      this.data[key] = this.originalData[key];
+    });
   }
 }

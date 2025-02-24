@@ -27,7 +27,8 @@
   <!-- Add more fields as needed -->
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
-  <button mat-raised-button mat-dialog-close>
+  <button mat-raised-button mat-dialog-close
+          (click)="onCancel()">
     {{'Cancel' | translate}}
   </button>
   <button
