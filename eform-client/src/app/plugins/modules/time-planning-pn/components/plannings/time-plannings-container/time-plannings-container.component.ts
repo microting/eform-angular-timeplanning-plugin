@@ -9,8 +9,8 @@ import {
 } from '../../../services';
 import {startOfWeek, endOfWeek, format} from 'date-fns';
 import {PARSING_DATE_FORMAT} from 'src/app/common/const';
-import {Store} from "@ngrx/store";
-import {selectCurrentUserLocale} from "src/app/state";
+import {Store} from '@ngrx/store';
+import {selectCurrentUserLocale} from 'src/app/state';
 
 @AutoUnsubscribe()
 @Component({
