@@ -149,7 +149,9 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
           data: result.model,
           minWidth: '50%',
         })
-          .afterClosed().subscribe(data => data ? this.updateTableHeaders() : undefined);
+          .afterClosed().subscribe(data => {
+          }
+        );
       }
     });
   }
@@ -158,6 +160,10 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     const cellData = row.planningPrDayModels[field];
     this.dialog.open(WorkdayEntityDialogComponent, {
       data: cellData
+    }).afterClosed().subscribe((data) => {
+      if (data) {
+        this.timePlanningChanged.emit(data);
+      }
     });
   }
 

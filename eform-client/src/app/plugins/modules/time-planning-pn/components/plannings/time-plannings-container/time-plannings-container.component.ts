@@ -92,4 +92,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     const to = format(this.dateTo, 'dd.MM.yyyy');
     return `${from} - ${to}`;
   }
+
+  onTimePlanningChanged($event: TimePlanningModel) {
+    this.getPlannings();
+  }
 }
