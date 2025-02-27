@@ -95,15 +95,12 @@
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row">
           <mat-form-field class="p-1">
-            <mat-label>{{ 'Start at' | translate }}</mat-label>
+            <mat-label>{{ 'Monday' | translate }}</mat-label>
             <input
               matInput
-              [matTimepicker]="startMondayPicker"
-              [(ngModel)]="data.startMonday"
-              (ngModelChange)="onTimeChange($event, 'startMonday')"
-            >
-            <mat-timepicker-toggle matSuffix [for]="startMondayPicker"></mat-timepicker-toggle>
-            <mat-timepicker #startMondayPicker></mat-timepicker>
+              type="text"
+              readonly
+              disabled>
           </mat-form-field>
           <mat-form-field class="p-1">
             <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>

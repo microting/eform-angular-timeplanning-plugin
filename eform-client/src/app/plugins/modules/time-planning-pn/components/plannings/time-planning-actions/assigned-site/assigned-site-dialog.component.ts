@@ -16,7 +16,6 @@ import {selectCurrentUserIsAdmin} from 'src/app/state';
 import {Store} from '@ngrx/store';
 import {AsyncPipe, NgIf} from '@angular/common';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
-import {MatTimepicker, MatTimepickerInput, MatTimepickerToggle} from "@angular/material/timepicker";
 
 @Component({
   selector: 'app-assigned-site-dialog',
@@ -36,9 +35,6 @@ import {MatTimepicker, MatTimepickerInput, MatTimepickerToggle} from "@angular/m
     NgIf,
     MatTab,
     MatTabGroup,
-    MatTimepickerToggle,
-    MatTimepicker,
-    MatTimepickerInput
   ],
   styleUrls: ['./assigned-site-dialog.component.scss']
 })
