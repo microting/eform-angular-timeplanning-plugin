@@ -1,39 +1,840 @@
 <div mat-dialog-title>{{ data.siteName }}</div>
 <div mat-dialog-content>
-  <!-- Add more fields as needed -->
-  <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
-    <div class="d-flex flex-row">
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Monday start at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="startMonday"
-          name="startMonday"
-          [(ngModel)]="data.startMonday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Monday end at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="endMonday"
-          name="endMonday"
-          [(ngModel)]="data.endMonday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Monday break time in minutes' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="breakMonday"
-          name="breakMonday"
-          [(ngModel)]="data.breakMonday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+
+  <mat-tab-group>
+    <mat-tab label="{{'General' | translate }}">
+    </mat-tab>
+    <mat-tab label="{{'Plan hours' | translate }}">
+      <div class="d-flex flex-row">
+        <mat-form-field class="p-1">
+          <mat-label>{{ 'Monday plan hours' | translate }}</mat-label>
+          <input
+            type="number"
+            matInput
+            id="mondayPlanHours"
+            name="mondayPlanHours"
+            [(ngModel)]="data.mondayPlanHours"
+          >
+        </mat-form-field>
+      </div>
+      <div class="d-flex flex-row">
+        <mat-form-field class="p-1">
+          <mat-label>{{ 'Tuesday plan hours' | translate }}</mat-label>
+          <input
+            type="number"
+            matInput
+            id="tuesdayPlanHours"
+            name="tuesdayPlanHours"
+            [(ngModel)]="data.tuesdayPlanHours"
+          >
+        </mat-form-field>
+      </div>
+      <div class="d-flex flex-row">
+        <mat-form-field class="p-1">
+          <mat-label>{{ 'Wednesday plan hours' | translate }}</mat-label>
+          <input
+            type="number"
+            matInput
+            id="wednesdayPlanHours"
+            name="wednesdayPlanHours"
+            [(ngModel)]="data.wednesdayPlanHours"
+          >
+        </mat-form-field>
+      </div>
+      <div class="d-flex flex-row">
+        <mat-form-field class="p-1">
+          <mat-label>{{ 'Thursday plan hours' | translate }}</mat-label>
+          <input
+            type="number"
+            matInput
+            id="thursdayPlanHours"
+            name="thursdayPlanHours"
+            [(ngModel)]="data.thursdayPlanHours"
+          >
+        </mat-form-field>
+      </div>
+      <div class="d-flex flex-row">
+        <mat-form-field class="p-1">
+          <mat-label>{{ 'Friday plan hours' | translate }}</mat-label>
+          <input
+            type="number"
+            matInput
+            id="fridayPlanHours"
+            name="fridayPlanHours"
+            [(ngModel)]="data.fridayPlanHours"
+          >
+        </mat-form-field>
+      </div>
+      <div class="d-flex flex-row">
+        <mat-form-field class="p-1">
+          <mat-label>{{ 'Saturday plan hours' | translate }}</mat-label>
+          <input
+            type="number"
+            matInput
+            id="saturdayPlanHours"
+            name="saturdayPlanHours"
+            [(ngModel)]="data.saturdayPlanHours"
+          >
+        </mat-form-field>
+      </div>
+      <div class="d-flex flex-row">
+        <mat-form-field class="p-1">
+          <mat-label>{{ 'Sunday plan hours' | translate }}</mat-label>
+          <input
+            type="number"
+            matInput
+            id="sundayPlanHours"
+            name="sundayPlanHours"
+            [(ngModel)]="data.sundayPlanHours"
+          >
+        </mat-form-field>
+      </div>
+    </mat-tab>
+    <mat-tab label="{{'1st shift' | translate }}">
+      <!-- Add more fields as needed -->
+      <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at' | translate }}</mat-label>
+            <input
+              matInput
+              [matTimepicker]="startMondayPicker"
+              [(ngModel)]="data.startMonday"
+              (ngModelChange)="onTimeChange($event, 'startMonday')"
+            >
+            <mat-timepicker-toggle matSuffix [for]="startMondayPicker"></mat-timepicker-toggle>
+            <mat-timepicker #startMondayPicker></mat-timepicker>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startMonday"
+              name="startMonday"
+              [(ngModel)]="data.startMonday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endMonday"
+              name="endMonday"
+              [(ngModel)]="data.endMonday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakMonday"
+              name="breakMonday"
+              [(ngModel)]="data.breakMonday"
+            >
+          </mat-form-field>
+          <!-- a field that calculates the total hours, start to end minus break time -->
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="mondayCalculatedHours"
+              name="mondayCalculatedHours"
+              [(ngModel)]="data.mondayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Tuesday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startTuesday"
+              name="startTuesday"
+              [(ngModel)]="data.startTuesday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endTuesday"
+              name="endTuesday"
+              [(ngModel)]="data.endTuesday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakTuesday"
+              name="breakTuesday"
+              [(ngModel)]="data.breakTuesday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="tuesdayCalculatedHours"
+              name="tuesdayCalculatedHours"
+              [(ngModel)]="data.tuesdayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Wednesday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startWednesday"
+              name="startWednesday"
+              [(ngModel)]="data.startWednesday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endWednesday"
+              name="endWednesday"
+              [(ngModel)]="data.endWednesday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakWednesday"
+              name="breakWednesday"
+              [(ngModel)]="data.breakWednesday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="wednesdayCalculatedHours"
+              name="wednesdayCalculatedHours"
+              [(ngModel)]="data.wednesdayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Thursday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startThursday"
+              name="startThursday"
+              [(ngModel)]="data.startThursday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endThursday"
+              name="endThursday"
+              [(ngModel)]="data.endThursday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakThursday"
+              name="breakThursday"
+              [(ngModel)]="data.breakThursday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="thursdayCalculatedHours"
+              name="thursdayCalculatedHours"
+              [(ngModel)]="data.thursdayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Friday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startFriday"
+              name="startFriday"
+              [(ngModel)]="data.startFriday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endFriday"
+              name="endFriday"
+              [(ngModel)]="data.endFriday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakFriday"
+              name="breakFriday"
+              [(ngModel)]="data.breakFriday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="fridayCalculatedHours"
+              name="fridayCalculatedHours"
+              [(ngModel)]="data.fridayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Saturday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startSaturday"
+              name="startSaturday"
+              [(ngModel)]="data.startSaturday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endSaturday"
+              name="endSaturday"
+              [(ngModel)]="data.endSaturday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakSaturday"
+              name="breakSaturday"
+              [(ngModel)]="data.breakSaturday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="saturdayCalculatedHours"
+              name="saturdayCalculatedHours"
+              [(ngModel)]="data.saturdayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Sunday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startSunday"
+              name="startSunday"
+              [(ngModel)]="data.startSunday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endSunday"
+              name="endSunday"
+              [(ngModel)]="data.endSunday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakSunday"
+              name="breakSunday"
+              [(ngModel)]="data.breakSunday"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="sundayCalculatedHours"
+              name="sundayCalculatedHours"
+              [(ngModel)]="data.sundayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+      </ng-container>
+    </mat-tab>
+    <mat-tab label="{{ '2nd shift' | translate }}">
+      <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Monday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startMonday2NdShift"
+              name="startMonday2NdShift"
+              [(ngModel)]="data.startMonday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endMonday2NdShift"
+              name="endMonday2NdShift"
+              [(ngModel)]="data.endMonday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakMonday2NdShift"
+              name="breakMonday2NdShift"
+              [(ngModel)]="data.breakMonday2NdShift"
+            >
+          </mat-form-field>
+          <!-- a field that calculates the total hours, start to end minus break time -->
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="mondayCalculatedHours2"
+              name="mondayCalculatedHours2"
+              [(ngModel)]="data.mondayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Tuesday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startTuesday2NdShift"
+              name="startTuesday2NdShift"
+              [(ngModel)]="data.startTuesday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endTuesday2NdShift"
+              name="endTuesday2NdShift"
+              [(ngModel)]="data.endTuesday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakTuesday2NdShift"
+              name="breakTuesday2NdShift"
+              [(ngModel)]="data.breakTuesday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="tuesdayCalculatedHours2"
+              name="tuesdayCalculatedHours2"
+              [(ngModel)]="data.tuesdayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Wednesday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startWednesday2NdShift"
+              name="startWednesday2NdShift"
+              [(ngModel)]="data.startWednesday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endWednesday2NdShift"
+              name="endWednesday2NdShift"
+              [(ngModel)]="data.endWednesday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakWednesday2NdShift"
+              name="breakWednesday2NdShift"
+              [(ngModel)]="data.breakWednesday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="wednesdayCalculatedHours2"
+              name="wednesdayCalculatedHours2"
+              [(ngModel)]="data.wednesdayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Thursday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startThursday2NdShift"
+              name="startThursday2NdShift"
+              [(ngModel)]="data.startThursday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endThursday2NdShift"
+              name="endThursday2NdShift"
+              [(ngModel)]="data.endThursday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakThursday2NdShift"
+              name="breakThursday2NdShift"
+              [(ngModel)]="data.breakThursday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="thursdayCalculatedHours2"
+              name="thursdayCalculatedHours2"
+              [(ngModel)]="data.thursdayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Friday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startFriday2NdShift"
+              name="startFriday2NdShift"
+              [(ngModel)]="data.startFriday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endFriday2NdShift"
+              name="endFriday2NdShift"
+              [(ngModel)]="data.endFriday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakFriday2NdShift"
+              name="breakFriday2NdShift"
+              [(ngModel)]="data.breakFriday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="fridayCalculatedHours2"
+              name="fridayCalculatedHours2"
+              [(ngModel)]="data.fridayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Saturday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startSaturday2NdShift"
+              name="startSaturday2NdShift"
+              [(ngModel)]="data.startSaturday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endSaturday2NdShift"
+              name="endSaturday2NdShift"
+              [(ngModel)]="data.endSaturday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakSaturday2NdShift"
+              name="breakSaturday2NdShift"
+              [(ngModel)]="data.breakSaturday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="saturdayCalculatedHours2"
+              name="saturdayCalculatedHours2"
+              [(ngModel)]="data.saturdayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Sunday' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              readonly
+              disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="startSunday2NdShift"
+              name="startSunday2NdShift"
+              [(ngModel)]="data.startSunday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="endSunday2NdShift"
+              name="endSunday2NdShift"
+              [(ngModel)]="data.endSunday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Break time in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              id="breakSunday2NdShift"
+              name="breakSunday2NdShift"
+              [(ngModel)]="data.breakSunday2NdShift"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              id="sundayCalculatedHours2"
+              name="sundayCalculatedHours2"
+              [(ngModel)]="data.sundayCalculatedHours"
+              readonly
+              disabled
+            >
+          </mat-form-field>
+        </div>
+      </ng-container>
+    </mat-tab>
+    <mat-tab label="{{ 'Auto break calculation settings' | translate }}" *ngIf="data.autoBreakCalculationActive">
+
+      <mat-form-field class="p-1">
         <mat-label>{{ 'Monday break time divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -43,7 +844,7 @@
           [(ngModel)]="data.mondayBreakMinutesDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Monday break time pr divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -53,7 +854,7 @@
           [(ngModel)]="data.mondayBreakMinutesPrDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Monday break upper limit' | translate }}</mat-label>
         <input
           type="number"
@@ -63,39 +864,8 @@
           [(ngModel)]="data.mondayBreakMinutesUpperLimit"
         >
       </mat-form-field>
-    </div>
-    <div class="d-flex flex-row">
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Tuesday start at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="startTuesday"
-          name="startTuesday"
-          [(ngModel)]="data.startTuesday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Tuesday end at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="endTuesday"
-          name="endTuesday"
-          [(ngModel)]="data.endTuesday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Tuesday break time in minutes' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="breakTuesday"
-          name="breakTuesday"
-          [(ngModel)]="data.breakTuesday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Tuesday break time divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -105,7 +875,7 @@
           [(ngModel)]="data.tuesdayBreakMinutesDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Tuesday break time pr divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -115,7 +885,7 @@
           [(ngModel)]="data.tuesdayBreakMinutesPrDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Tuesday break upper limit' | translate }}</mat-label>
         <input
           type="number"
@@ -125,39 +895,8 @@
           [(ngModel)]="data.tuesdayBreakMinutesUpperLimit"
         >
       </mat-form-field>
-    </div>
-    <div class="d-flex flex-row">
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Wednesday start at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="startWednesday"
-          name="startWednesday"
-          [(ngModel)]="data.startWednesday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Wednesday end at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="endWednesday"
-          name="endWednesday"
-          [(ngModel)]="data.endWednesday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Wednesday break time in minutes' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="breakWednesday"
-          name="breakWednesday"
-          [(ngModel)]="data.breakWednesday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Wednesday break time divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -167,7 +906,7 @@
           [(ngModel)]="data.wednesdayBreakMinutesDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Wednesday break time pr divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -177,7 +916,7 @@
           [(ngModel)]="data.wednesdayBreakMinutesPrDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Wednesday break upper limit' | translate }}</mat-label>
         <input
           type="number"
@@ -187,39 +926,8 @@
           [(ngModel)]="data.wednesdayBreakMinutesUpperLimit"
         >
       </mat-form-field>
-    </div>
-    <div class="d-flex flex-row">
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Thursday start at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="startThursday"
-          name="startThursday"
-          [(ngModel)]="data.startThursday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Thursday end at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="endThursday"
-          name="endThursday"
-          [(ngModel)]="data.endThursday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Thursday break time in minutes' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="breakThursday"
-          name="breakThursday"
-          [(ngModel)]="data.breakThursday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Thursday break time divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -229,7 +937,7 @@
           [(ngModel)]="data.thursdayBreakMinutesDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Thursday break time pr divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -239,7 +947,7 @@
           [(ngModel)]="data.thursdayBreakMinutesPrDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Thursday break upper limit' | translate }}</mat-label>
         <input
           type="number"
@@ -249,39 +957,8 @@
           [(ngModel)]="data.thursdayBreakMinutesUpperLimit"
         >
       </mat-form-field>
-    </div>
-    <div class="d-flex flex-row">
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Friday start at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="startFriday"
-          name="startFriday"
-          [(ngModel)]="data.startFriday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Friday end at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="endFriday"
-          name="endFriday"
-          [(ngModel)]="data.endFriday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Friday break time in minutes' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="breakFriday"
-          name="breakFriday"
-          [(ngModel)]="data.breakFriday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Friday break time divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -291,7 +968,7 @@
           [(ngModel)]="data.fridayBreakMinutesDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Friday break time pr divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -301,7 +978,7 @@
           [(ngModel)]="data.fridayBreakMinutesPrDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Friday break upper limit' | translate }}</mat-label>
         <input
           type="number"
@@ -311,39 +988,8 @@
           [(ngModel)]="data.fridayBreakMinutesUpperLimit"
         >
       </mat-form-field>
-    </div>
-    <div class="d-flex flex-row">
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Saturday start at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="startSaturday"
-          name="startSaturday"
-          [(ngModel)]="data.startSaturday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Saturday end at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="endSaturday"
-          name="endSaturday"
-          [(ngModel)]="data.endSaturday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Saturday break time in minutes' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="breakSaturday"
-          name="breakSaturday"
-          [(ngModel)]="data.breakSaturday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Saturday break time divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -353,7 +999,7 @@
           [(ngModel)]="data.saturdayBreakMinutesDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Saturday break time pr divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -363,7 +1009,7 @@
           [(ngModel)]="data.saturdayBreakMinutesPrDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Saturday break upper limit' | translate }}</mat-label>
         <input
           type="number"
@@ -373,39 +1019,8 @@
           [(ngModel)]="data.saturdayBreakMinutesUpperLimit"
         >
       </mat-form-field>
-    </div>
-    <div class="d-flex flex-row">
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Sunday start at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="startSunday"
-          name="startSunday"
-          [(ngModel)]="data.startSunday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Sunday end at' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="endSunday"
-          name="endSunday"
-          [(ngModel)]="data.endSunday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2">
-        <mat-label>{{ 'Sunday break time in minutes' | translate }}</mat-label>
-        <input
-          type="number"
-          matInput
-          id="breakSunday"
-          name="breakSunday"
-          [(ngModel)]="data.breakSunday"
-        >
-      </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Sunday break time divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -415,7 +1030,7 @@
           [(ngModel)]="data.sundayBreakMinutesDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Sunday break time pr divider in minutes' | translate }}</mat-label>
         <input
           type="number"
@@ -425,7 +1040,7 @@
           [(ngModel)]="data.sundayBreakMinutesPrDivider"
         >
       </mat-form-field>
-      <mat-form-field class="pr-2" *ngIf="data.autoBreakCalculationActive">
+      <mat-form-field class="p-1" *ngIf="data.autoBreakCalculationActive">
         <mat-label>{{ 'Sunday break upper limit' | translate }}</mat-label>
         <input
           type="number"
@@ -435,17 +1050,17 @@
           [(ngModel)]="data.sundayBreakMinutesUpperLimit"
         >
       </mat-form-field>
-    </div>
-  </ng-container>
+    </mat-tab>
+  </mat-tab-group>
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
   <button mat-raised-button mat-dialog-close>
-    {{'Cancel' | translate}}
+    {{ 'Cancel' | translate }}
   </button>
   <button
     mat-raised-button
     color="accent"
     [mat-dialog-close]="data">
-    {{'Save' | translate}}
+    {{ 'Save' | translate }}
   </button>
 </div>

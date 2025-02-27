@@ -135,4 +135,18 @@ export class AssignedSiteModel {
   startSunday5ThShift: number;
   endSunday5ThShift: number;
   breakSunday5ThShift: number;
+  mondayPlanHours: number;
+  tuesdayPlanHours: number;
+  wednesdayPlanHours: number;
+  thursdayPlanHours: number;
+  fridayPlanHours: number;
+  saturdayPlanHours: number;
+  sundayPlanHours: number;
+  mondayCalculatedHours: string;
+  tuesdayCalculatedHours: string;
+  wednesdayCalculatedHours: string;
+  thursdayCalculatedHours: string;
+  fridayCalculatedHours: string;
+  saturdayCalculatedHours: string;
+  sundayCalculatedHours: string;
 }
