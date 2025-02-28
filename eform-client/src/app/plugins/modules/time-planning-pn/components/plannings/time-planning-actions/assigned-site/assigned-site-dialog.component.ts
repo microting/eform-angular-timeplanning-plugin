@@ -14,8 +14,9 @@ import {MatInput} from '@angular/material/input';
 import {TranslatePipe} from '@ngx-translate/core';
 import {selectCurrentUserIsAdmin} from 'src/app/state';
 import {Store} from '@ngrx/store';
-import {AsyncPipe, NgIf} from '@angular/common';
+import {AsyncPipe, NgForOf, NgIf} from '@angular/common';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
+import {NgxMaskDirective} from "ngx-mask";
 
 @Component({
   selector: 'app-assigned-site-dialog',
@@ -35,6 +36,8 @@ import {MatTab, MatTabGroup} from '@angular/material/tabs';
     NgIf,
     MatTab,
     MatTabGroup,
+    NgForOf,
+    NgxMaskDirective,
   ],
   styleUrls: ['./assigned-site-dialog.component.scss']
 })
@@ -50,8 +53,8 @@ export class AssignedSiteDialogComponent implements DoCheck {
 
   ngDoCheck(): void {
     if (this.hasDataChanged()) {
-      this.calculateHours();
-      this.previousData = { ...this.data };
+      // this.calculateHours();
+      // this.previousData = { ...this.data };
     }
   }
 
@@ -82,5 +85,22 @@ export class AssignedSiteDialogComponent implements DoCheck {
     const time = event.split(':');
     const minutes = (+time[0] * 60) + (+time[1]);
     this.data[field] = minutes;
+  }
+
+  getConvertedValue(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${this.padZero(hours)}:${this.padZero(mins)}`;
+  }
+
+  setMinutes(event: any, field: string): void {
+    const [hours, mins] = event.target.value.split(':').map(Number);
+    this.data[field] = (hours * 60) + mins;
+    this.calculateHours();
+    this.previousData = { ...this.data };
+  }
+
+  private padZero(num: number): string {
+    return num < 10 ? `0${num}` : `${num}`;
   }
 }
