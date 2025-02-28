@@ -82,4 +82,13 @@ export const roRO = {
   '3rd': 'al 3-lea',
   '4th': 'al 4-lea',
   '5th': 'al 5-lea',
+  'Start at': 'Începe la',
+  'End at': 'Se încheie la',
+  'Break time': 'Timp de pauză',
+  'Calculated hours': 'Ore calculate',
+  '1st shift': '1-a tură',
+  '2nd shift': 'al 2-lea schimb',
+  '3rd shift': 'al 3-lea schimb',
+  '4th shift': 'al 4-lea schimb',
+  '5th shift': 'al 5-lea schimb',
 };

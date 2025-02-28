@@ -82,4 +82,13 @@ export const frFR = {
   '3rd': '3ème',
   '4th': '4ème',
   '5th': '5ème',
+  'Start at': 'Commencer à',
+  'End at': 'Fin à',
+  'Break time': 'Pause',
+  'Calculated hours': 'Heures calculées',
+  '1st shift': '1er quart de travail',
+  '2nd shift': '2e quart de travail',
+  '3rd shift': '3e quart de travail',
+  '4th shift': '4e quart de travail',
+  '5th shift': '5e quart de travail',
 };

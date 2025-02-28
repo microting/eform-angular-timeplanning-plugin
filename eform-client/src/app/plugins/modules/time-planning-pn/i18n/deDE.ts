@@ -82,4 +82,13 @@ export const deDE = {
   '3rd': '3. Platz',
   '4th': '4. Platz',
   '5th': '5. Platz',
+  'Start at': 'Beginnen Sie bei',
+  'End at': 'Ende bei',
+  'Break time': 'Pausenzeit',
+  'Calculated hours': 'Berechnete Stunden',
+  '1st shift': '1. Schicht',
+  '2nd shift': '2. Schicht',
+  '3rd shift': '3. Schicht',
+  '4th shift': '4. Schicht',
+  '5th shift': '5. Schicht',
 };

@@ -80,4 +80,13 @@ export const da = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Start kl',
+  'End at': 'Slut kl',
+  'Break time': 'Pause tid',
+  'Calculated hours': 'Beregnet timer',
+  '1st shift': '1. skift',
+  '2nd shift': '2. skift',
+  '3rd shift': '3. skift',
+  '4th shift': '4. skift',
+  '5th shift': '5. skift',
 };

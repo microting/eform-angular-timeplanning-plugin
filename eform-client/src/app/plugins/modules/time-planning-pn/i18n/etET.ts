@@ -82,4 +82,13 @@ export const etET = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Algus kell',
+  'End at': 'Lõpp kell',
+  'Break time': 'Vaheaeg',
+  'Calculated hours': 'Arvestuslikud tunnid',
+  '1st shift': '1. vahetus',
+  '2nd shift': '2. vahetus',
+  '3rd shift': '3. vahetus',
+  '4th shift': '4. vahetus',
+  '5th shift': '5. vahetus',
 };

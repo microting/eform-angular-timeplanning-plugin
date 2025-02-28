@@ -82,4 +82,13 @@ export const huHU = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Kezdje:',
+  'End at': 'Vége:',
+  'Break time': 'Szünetidő',
+  'Calculated hours': 'Számított óra',
+  '1st shift': '1. műszak',
+  '2nd shift': '2. műszak',
+  '3rd shift': '3. műszak',
+  '4th shift': '4. műszak',
+  '5th shift': '5. műszak',
 };

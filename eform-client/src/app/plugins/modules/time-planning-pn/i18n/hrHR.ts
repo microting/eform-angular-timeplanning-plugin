@@ -82,4 +82,13 @@ export const hrHR = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Počnite u',
+  'End at': 'Kraj u',
+  'Break time': 'Vrijeme pauze',
+  'Calculated hours': 'Obračunati sati',
+  '1st shift': '1. smjena',
+  '2nd shift': '2. smjena',
+  '3rd shift': '3. smjena',
+  '4th shift': '4. smjena',
+  '5th shift': '5. smjena',
 };

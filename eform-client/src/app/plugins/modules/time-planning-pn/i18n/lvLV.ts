@@ -82,4 +82,13 @@ export const lvLV = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Sākums plkst',
+  'End at': 'Beigas plkst',
+  'Break time': 'Pārtraukuma laiks',
+  'Calculated hours': 'Aprēķinātās stundas',
+  '1st shift': '1. maiņa',
+  '2nd shift': '2. maiņa',
+  '3rd shift': '3. maiņa',
+  '4th shift': '4. maiņa',
+  '5th shift': '5. maiņa',
 };

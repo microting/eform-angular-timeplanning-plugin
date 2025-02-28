@@ -82,4 +82,13 @@ export const ukUA = {
   '3rd': '3-й',
   '4th': '4-й',
   '5th': '5-й',
+  'Start at': 'Початок о',
+  'End at': 'Кінець о',
+  'Break time': 'Час перерви',
+  'Calculated hours': 'Розраховані години',
+  '1st shift': '1 зміна',
+  '2nd shift': '2 зміна',
+  '3rd shift': '3 зміна',
+  '4th shift': '4 зміна',
+  '5th shift': '5-та зміна',
 };

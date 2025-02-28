@@ -82,4 +82,13 @@ export const ltLT = {
   '3rd': '3',
   '4th': '4-oji',
   '5th': '5-oji',
+  'Start at': 'Pradėkite nuo',
+  'End at': 'Pabaiga val',
+  'Break time': 'Pertraukos laikas',
+  'Calculated hours': 'Apskaičiuotos valandos',
+  '1st shift': '1 pamaina',
+  '2nd shift': '2 pamaina',
+  '3rd shift': '3 pamaina',
+  '4th shift': '4 pamaina',
+  '5th shift': '5 pamaina',
 };

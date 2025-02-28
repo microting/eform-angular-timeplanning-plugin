@@ -82,4 +82,13 @@ export const itIT = {
   '3rd': '3°',
   '4th': '4°',
   '5th': '5°',
+  'Start at': 'Inizia a',
+  'End at': 'Termina a',
+  'Break time': 'Tempo di pausa',
+  'Calculated hours': 'Ore calcolate',
+  '1st shift': '1° turno',
+  '2nd shift': '2° turno',
+  '3rd shift': '3° turno',
+  '4th shift': '4° turno',
+  '5th shift': '5° turno',
 };

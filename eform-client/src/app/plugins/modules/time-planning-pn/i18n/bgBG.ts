@@ -82,4 +82,13 @@ export const bgBG = {
   '3rd': '3-то',
   '4th': '4-ти',
   '5th': '5-ти',
+  'Start at': 'Започнете от',
+  'End at': 'Край на',
+  'Break time': 'Време за почивка',
+  'Calculated hours': 'Изчислени часове',
+  '1st shift': '1-ва смяна',
+  '2nd shift': '2-ра смяна',
+  '3rd shift': '3-та смяна',
+  '4th shift': '4-та смяна',
+  '5th shift': '5-та смяна',
 };

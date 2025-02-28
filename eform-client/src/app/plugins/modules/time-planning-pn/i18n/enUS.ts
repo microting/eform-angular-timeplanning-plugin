@@ -80,4 +80,13 @@ export const enUS = {
   '3rd': '3rd',
   '4th': '4th',
   '5th': '5th',
+  'Start at': 'Start at',
+  'End at': 'End at',
+  'Break time': 'Break time',
+  'Calculated hours': 'Calculated hours',
+  '1st shift': '1st shift',
+  '2nd shift': '2nd shift',
+  '3rd shift': '3rd shift',
+  '4th shift': '4th shift',
+  '5th shift': '5th shift',
 };

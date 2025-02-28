@@ -82,4 +82,13 @@ export const elGR = {
   '3rd': '3η',
   '4th': '4η',
   '5th': '5η',
+  'Start at': 'Ξεκινήστε στο',
+  'End at': 'Τέλος στο',
+  'Break time': 'Ώρα διαλείμματος',
+  'Calculated hours': 'Υπολογισμένες ώρες',
+  '1st shift': '1η βάρδια',
+  '2nd shift': '2η βάρδια',
+  '3rd shift': '3η βάρδια',
+  '4th shift': '4η βάρδια',
+  '5th shift': '5η βάρδια',
 };

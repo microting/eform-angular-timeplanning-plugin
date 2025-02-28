@@ -82,4 +82,13 @@ export const plPL = {
   '3rd': '3.',
   '4th': '4.',
   '5th': '5.',
+  'Start at': 'Zacznij od',
+  'End at': 'Zakończyć o',
+  'Break time': 'Czas przerwy',
+  'Calculated hours': 'Obliczone godziny',
+  '1st shift': '1 zmiana',
+  '2nd shift': '2 zmiana',
+  '3rd shift': '3 zmiana',
+  '4th shift': '4 zmiana',
+  '5th shift': '5 zmiana',
 };

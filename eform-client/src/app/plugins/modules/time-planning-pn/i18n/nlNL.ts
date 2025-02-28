@@ -82,4 +82,13 @@ export const nlNL = {
   '3rd': '3e',
   '4th': '4e',
   '5th': '5e',
+  'Start at': 'Begin bij',
+  'End at': 'Einde bij',
+  'Break time': 'Pauzetijd',
+  'Calculated hours': 'Berekende uren',
+  '1st shift': '1e dienst',
+  '2nd shift': '2e dienst',
+  '3rd shift': '3e dienst',
+  '4th shift': '4e dienst',
+  '5th shift': '5e dienst',
 };

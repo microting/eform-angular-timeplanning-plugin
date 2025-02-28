@@ -82,4 +82,13 @@ export const esES = {
   '3rd': '3º',
   '4th': '4to',
   '5th': '5º',
+  'Start at': 'Empezar en',
+  'End at': 'Finalizar en',
+  'Break time': 'Tiempo de descanso',
+  'Calculated hours': 'Horas calculadas',
+  '1st shift': '1er turno',
+  '2nd shift': '2do turno',
+  '3rd shift': '3er turno',
+  '4th shift': '4to turno',
+  '5th shift': '5to turno',
 };

@@ -82,4 +82,13 @@ export const ptPT = {
   '3rd': '3º',
   '4th': '4º',
   '5th': '5º',
+  'Start at': 'Começar em',
+  'End at': 'Fim em',
+  'Break time': 'Hora do intervalo',
+  'Calculated hours': 'Horas calculadas',
+  '1st shift': '1º turno',
+  '2nd shift': '2º turno',
+  '3rd shift': '3º turno',
+  '4th shift': '4º turno',
+  '5th shift': '5º turno',
 };

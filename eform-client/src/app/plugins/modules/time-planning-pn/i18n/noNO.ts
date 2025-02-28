@@ -82,4 +82,13 @@ export const noNO = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Start kl',
+  'End at': 'Slutt kl',
+  'Break time': 'Pausetid',
+  'Calculated hours': 'Beregnede timer',
+  '1st shift': '1. skift',
+  '2nd shift': '2. skift',
+  '3rd shift': '3. skift',
+  '4th shift': '4. skift',
+  '5th shift': '5. skift',
 };

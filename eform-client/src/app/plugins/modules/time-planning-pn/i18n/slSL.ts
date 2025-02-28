@@ -82,4 +82,13 @@ export const slSL = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Začnite pri',
+  'End at': 'Konec ob',
+  'Break time': 'Čas odmora',
+  'Calculated hours': 'Izračunane ure',
+  '1st shift': '1. izmena',
+  '2nd shift': '2. izmena',
+  '3rd shift': '3. izmena',
+  '4th shift': '4. izmena',
+  '5th shift': '5. izmena',
 };

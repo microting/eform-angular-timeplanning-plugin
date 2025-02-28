@@ -82,4 +82,13 @@ export const fiFI = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Aloita klo',
+  'End at': 'Loppu klo',
+  'Break time': 'Taukoaika',
+  'Calculated hours': 'Lasketut tunnit',
+  '1st shift': '1. vuoro',
+  '2nd shift': '2. vuoro',
+  '3rd shift': '3. vuoro',
+  '4th shift': '4. vuoro',
+  '5th shift': '5. vuoro',
 };

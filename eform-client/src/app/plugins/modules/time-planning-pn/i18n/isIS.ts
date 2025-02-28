@@ -82,4 +82,13 @@ export const isIS = {
   '3rd': '3ja',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Byrja kl',
+  'End at': 'Lokið kl',
+  'Break time': 'Hlé tími',
+  'Calculated hours': 'Reiknaðar klukkustundir',
+  '1st shift': '1. vakt',
+  '2nd shift': '2. vakt',
+  '3rd shift': '3ja vakt',
+  '4th shift': '4. vakt',
+  '5th shift': '5. vakt',
 };

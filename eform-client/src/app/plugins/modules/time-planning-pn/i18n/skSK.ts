@@ -82,4 +82,13 @@ export const skSK = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Začnite o',
+  'End at': 'Koniec o',
+  'Break time': 'Prestávka',
+  'Calculated hours': 'Vypočítané hodiny',
+  '1st shift': '1. zmena',
+  '2nd shift': '2. zmena',
+  '3rd shift': '3. zmena',
+  '4th shift': '4. zmena',
+  '5th shift': '5. zmena',
 };

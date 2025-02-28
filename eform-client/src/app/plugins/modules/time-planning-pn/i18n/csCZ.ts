@@ -82,4 +82,13 @@ export const csCZ = {
   '3rd': '3',
   '4th': '4',
   '5th': '5',
+  'Start at': 'Začátek v',
+  'End at': 'Konec v',
+  'Break time': 'Přestávka',
+  'Calculated hours': 'Vypočítané hodiny',
+  '1st shift': '1. směna',
+  '2nd shift': '2. směna',
+  '3rd shift': '3. směna',
+  '4th shift': '4. směna',
+  '5th shift': '5. směna',
 };

@@ -82,4 +82,13 @@ export const svSE = {
   '3rd': '3:a',
   '4th': '4:a',
   '5th': '5:a',
+  'Start at': 'Börja kl',
+  'End at': 'Slutar kl',
+  'Break time': 'Paustid',
+  'Calculated hours': 'Beräknade timmar',
+  '1st shift': '1:a skiftet',
+  '2nd shift': '2:a skiftet',
+  '3rd shift': '3:e skiftet',
+  '4th shift': '4:e skiftet',
+  '5th shift': '5:e skiftet',
 };
