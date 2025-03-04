@@ -16,7 +16,9 @@ import {selectCurrentUserIsAdmin} from 'src/app/state';
 import {Store} from '@ngrx/store';
 import {AsyncPipe, NgForOf, NgIf} from '@angular/common';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
-import {NgxMaskDirective} from "ngx-mask";
+import {NgxMaskDirective} from 'ngx-mask';
+import {MatCheckbox} from '@angular/material/checkbox';
+import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
 
 @Component({
   selector: 'app-assigned-site-dialog',
@@ -38,6 +40,7 @@ import {NgxMaskDirective} from "ngx-mask";
     MatTabGroup,
     NgForOf,
     NgxMaskDirective,
+    MatCheckbox,
   ],
   styleUrls: ['./assigned-site-dialog.component.scss']
 })
@@ -47,8 +50,10 @@ export class AssignedSiteDialogComponent implements DoCheck {
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: AssignedSiteModel,
+    private timePlanningPnSettingsService: TimePlanningPnSettingsService,
     private authStore: Store) {
     this.previousData = { ...data };
+    this.calculateHours();
   }
 
   ngDoCheck(): void {
@@ -87,10 +92,14 @@ export class AssignedSiteDialogComponent implements DoCheck {
     this.data[field] = minutes;
   }
 
-  getConvertedValue(minutes: number): string {
+  getConvertedValue(minutes: number, compareMinutes?: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${this.padZero(hours)}:${this.padZero(mins)}`;
+    let result = `${this.padZero(hours)}:${this.padZero(mins)}`;
+    if (result === '00:00' && (compareMinutes === 0 || compareMinutes === undefined || compareMinutes === null)) {
+      result = '';
+    }
+    return result;
   }
 
   setMinutes(event: any, field: string): void {
@@ -102,5 +111,13 @@ export class AssignedSiteDialogComponent implements DoCheck {
 
   private padZero(num: number): string {
     return num < 10 ? `0${num}` : `${num}`;
+  }
+
+  updateAssignedSite() {
+    this.timePlanningPnSettingsService.updateAssignedSite(this.data).subscribe(result => {
+      if (result && result.success) {
+        //this.workdayEntityUpdate.emit(this.data);
+      }
+    });
   }
 }

@@ -139,6 +139,10 @@ public class AssignedSite
     public int? EndSunday5ThShift { get; set; }
     public int? BreakSunday5ThShift { get; set; }
 
+    public bool UseGoogleSheetAsDefault { get; set; } = true;
+
+    public bool UseOnlyPlanHours { get; set; }
+
     // implicit conversion from Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite to AssignedSite
     public static implicit operator AssignedSite(
         Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite model)
@@ -280,7 +284,9 @@ public class AssignedSite
             BreakSaturday5ThShift = model.BreakSaturday5ThShift,
             StartSunday5ThShift = model.StartSunday5ThShift,
             EndSunday5ThShift = model.EndSunday5ThShift,
-            BreakSunday5ThShift = model.BreakSunday5ThShift
+            BreakSunday5ThShift = model.BreakSunday5ThShift,
+            UseGoogleSheetAsDefault = model.UseGoogleSheetAsDefault,
+            UseOnlyPlanHours = model.UseOnlyPlanHours
         };
     }
 }

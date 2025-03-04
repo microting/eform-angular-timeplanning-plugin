@@ -16,7 +16,7 @@ export let TimePlanningSettingsMethods = {
   SettingsFolder: 'api/time-planning-pn/settings/folder',
   SettingsEform: 'api/time-planning-pn/settings/eform',
   GetAssignedSites: 'api/time-planning-pn/settings/assigned-sites',
-  UpdateAssignedSites: 'api/time-planning-pn/settings/assigned-sites',
+  UpdateAssignedSite: 'api/time-planning-pn/settings/assigned-site',
 };
 
 @Injectable()
@@ -70,9 +70,9 @@ export class TimePlanningPnSettingsService {
     return this.apiBaseService.get(TimePlanningSettingsMethods.GetAssignedSites + '?siteId=' + siteId);
   }
 
-  updateAssignedSites(model: AssignedSiteUpdateModel[]): Observable<OperationResult> {
+  updateAssignedSite(model: AssignedSiteModel): Observable<OperationResult> {
     return this.apiBaseService.put(
-      TimePlanningSettingsMethods.UpdateAssignedSites,
+      TimePlanningSettingsMethods.UpdateAssignedSite,
       model
     );
   }

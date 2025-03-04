@@ -115,7 +115,7 @@ namespace TimePlanning.Pn.Controllers
         }
 
         [HttpPut]
-        [Route("assigned-sites")]
+        [Route("assigned-site")]
         [Authorize(Roles = EformRole.Admin)]
         public async Task<OperationResult> UpdateAssignedSite([FromBody] AssignedSite site)
         {

@@ -149,4 +149,6 @@ export class AssignedSiteModel {
   fridayCalculatedHours: string;
   saturdayCalculatedHours: string;
   sundayCalculatedHours: string;
+  useGoogleSheetAsDefault: boolean;
+  useOnlyPlanHours: boolean;
 }
