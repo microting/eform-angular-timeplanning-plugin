@@ -134,25 +134,37 @@ public class TimeSettingService : ISettingService
                 settings.MondayBreakMinutesDivider = timePlanningSettingsModel.MondayBreakMinutesDivider.ToString();
                 settings.MondayBreakMinutesPrDivider = timePlanningSettingsModel.MondayBreakMinutesPrDivider.ToString();
                 settings.TuesdayBreakMinutesDivider = timePlanningSettingsModel.TuesdayBreakMinutesDivider.ToString();
-                settings.TuesdayBreakMinutesPrDivider = timePlanningSettingsModel.TuesdayBreakMinutesPrDivider.ToString();
-                settings.WednesdayBreakMinutesDivider = timePlanningSettingsModel.WednesdayBreakMinutesDivider.ToString();
-                settings.WednesdayBreakMinutesPrDivider = timePlanningSettingsModel.WednesdayBreakMinutesPrDivider.ToString();
+                settings.TuesdayBreakMinutesPrDivider =
+                    timePlanningSettingsModel.TuesdayBreakMinutesPrDivider.ToString();
+                settings.WednesdayBreakMinutesDivider =
+                    timePlanningSettingsModel.WednesdayBreakMinutesDivider.ToString();
+                settings.WednesdayBreakMinutesPrDivider =
+                    timePlanningSettingsModel.WednesdayBreakMinutesPrDivider.ToString();
                 settings.ThursdayBreakMinutesDivider = timePlanningSettingsModel.ThursdayBreakMinutesDivider.ToString();
-                settings.ThursdayBreakMinutesPrDivider = timePlanningSettingsModel.ThursdayBreakMinutesPrDivider.ToString();
+                settings.ThursdayBreakMinutesPrDivider =
+                    timePlanningSettingsModel.ThursdayBreakMinutesPrDivider.ToString();
                 settings.FridayBreakMinutesDivider = timePlanningSettingsModel.FridayBreakMinutesDivider.ToString();
                 settings.FridayBreakMinutesPrDivider = timePlanningSettingsModel.FridayBreakMinutesPrDivider.ToString();
                 settings.SaturdayBreakMinutesDivider = timePlanningSettingsModel.SaturdayBreakMinutesDivider.ToString();
-                settings.SaturdayBreakMinutesPrDivider = timePlanningSettingsModel.SaturdayBreakMinutesPrDivider.ToString();
+                settings.SaturdayBreakMinutesPrDivider =
+                    timePlanningSettingsModel.SaturdayBreakMinutesPrDivider.ToString();
                 settings.SundayBreakMinutesDivider = timePlanningSettingsModel.SundayBreakMinutesDivider.ToString();
                 settings.SundayBreakMinutesPrDivider = timePlanningSettingsModel.SundayBreakMinutesPrDivider.ToString();
                 settings.AutoBreakCalculationActive = timePlanningSettingsModel.AutoBreakCalculationActive ? "1" : "0";
-                settings.MondayBreakMinutesUpperLimit = timePlanningSettingsModel.MondayBreakMinutesUpperLimit.ToString();
-                settings.TuesdayBreakMinutesUpperLimit = timePlanningSettingsModel.TuesdayBreakMinutesUpperLimit.ToString();
-                settings.WednesdayBreakMinutesUpperLimit = timePlanningSettingsModel.WednesdayBreakMinutesUpperLimit.ToString();
-                settings.ThursdayBreakMinutesUpperLimit = timePlanningSettingsModel.ThursdayBreakMinutesUpperLimit.ToString();
-                settings.FridayBreakMinutesUpperLimit = timePlanningSettingsModel.FridayBreakMinutesUpperLimit.ToString();
-                settings.SaturdayBreakMinutesUpperLimit = timePlanningSettingsModel.SaturdayBreakMinutesUpperLimit.ToString();
-                settings.SundayBreakMinutesUpperLimit = timePlanningSettingsModel.SundayBreakMinutesUpperLimit.ToString();
+                settings.MondayBreakMinutesUpperLimit =
+                    timePlanningSettingsModel.MondayBreakMinutesUpperLimit.ToString();
+                settings.TuesdayBreakMinutesUpperLimit =
+                    timePlanningSettingsModel.TuesdayBreakMinutesUpperLimit.ToString();
+                settings.WednesdayBreakMinutesUpperLimit =
+                    timePlanningSettingsModel.WednesdayBreakMinutesUpperLimit.ToString();
+                settings.ThursdayBreakMinutesUpperLimit =
+                    timePlanningSettingsModel.ThursdayBreakMinutesUpperLimit.ToString();
+                settings.FridayBreakMinutesUpperLimit =
+                    timePlanningSettingsModel.FridayBreakMinutesUpperLimit.ToString();
+                settings.SaturdayBreakMinutesUpperLimit =
+                    timePlanningSettingsModel.SaturdayBreakMinutesUpperLimit.ToString();
+                settings.SundayBreakMinutesUpperLimit =
+                    timePlanningSettingsModel.SundayBreakMinutesUpperLimit.ToString();
             }, _dbContext, _userService.UserId);
             await GoogleSheetHelper.PushToGoogleSheet(await _core.GetCore(), _dbContext, _logger);
 
@@ -178,10 +190,7 @@ public class TimeSettingService : ISettingService
     {
         try
         {
-            await _options.UpdateDb(settings =>
-            {
-                settings.EformId = eformId;
-            }, _dbContext, _userService.UserId);
+            await _options.UpdateDb(settings => { settings.EformId = eformId; }, _dbContext, _userService.UserId);
             return new OperationResult(true, _localizationService.GetString("EformUpdatedSuccessfuly"));
         }
         catch (Exception e)
@@ -243,10 +252,7 @@ public class TimeSettingService : ISettingService
     {
         try
         {
-            await _options.UpdateDb(settings =>
-            {
-                settings.FolderId = folderId;
-            }, _dbContext, _userService.UserId);
+            await _options.UpdateDb(settings => { settings.FolderId = folderId; }, _dbContext, _userService.UserId);
             return new OperationResult(true, _localizationService.GetString("FolderUpdatedSuccessfuly"));
         }
         catch (Exception e)
@@ -328,7 +334,8 @@ public class TimeSettingService : ISettingService
             var sites = new List<Site>();
             foreach (var assignedSite in assignedSites)
             {
-                var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == assignedSite && x.WorkflowState != Constants.WorkflowStates.Removed);
+                var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
+                    x.MicrotingUid == assignedSite && x.WorkflowState != Constants.WorkflowStates.Removed);
                 if (site == null) continue;
                 {
                     var siteWorker = await sdkDbContext.SiteWorkers
@@ -382,6 +389,7 @@ public class TimeSettingService : ISettingService
                                     { Pause28StartedAt: not null, Pause28StoppedAt: null } or
                                     { Pause29StartedAt: not null, Pause29StoppedAt: null };
                         }
+
                         var newSite = new Site
                         {
                             SiteId = (int)site.MicrotingUid!,
@@ -528,6 +536,13 @@ public class TimeSettingService : ISettingService
         dbAssignedSite.FridayBreakMinutesUpperLimit = site.FridayBreakMinutesUpperLimit;
         dbAssignedSite.SaturdayBreakMinutesUpperLimit = site.SaturdayBreakMinutesUpperLimit;
         dbAssignedSite.SundayBreakMinutesUpperLimit = site.SundayBreakMinutesUpperLimit;
+        dbAssignedSite.MondayPlanHours = site.MondayPlanHours;
+        dbAssignedSite.TuesdayPlanHours = site.TuesdayPlanHours;
+        dbAssignedSite.WednesdayPlanHours = site.WednesdayPlanHours;
+        dbAssignedSite.ThursdayPlanHours = site.ThursdayPlanHours;
+        dbAssignedSite.FridayPlanHours = site.FridayPlanHours;
+        dbAssignedSite.SaturdayPlanHours = site.SaturdayPlanHours;
+        dbAssignedSite.SundayPlanHours = site.SundayPlanHours;
 
         await dbAssignedSite.Update(_dbContext);
 
@@ -555,22 +570,34 @@ public class TimeSettingService : ISettingService
 
                     await newPlanRegistration.Create(_dbContext);
                 }
-            }
-
-            if (planRegistrationsFromTodayAndForward.Count < 30)
+            } else
             {
-                var lastDate = planRegistrationsFromTodayAndForward.Max(x => x.Date);
-                for (int i = 1; i < planRegistrationsFromTodayAndForward.Count; i++)
+                if (planRegistrationsFromTodayAndForward.Count < 30)
                 {
-                    var newPlanRegistration = new PlanRegistration
+                    // we need to fill all the gaps from today and forward with a new planning
+                    var datesInPeriod = planRegistrationsFromTodayAndForward.Select(x => x.Date).ToList();
+                    var missingDates = new List<DateTime>();
+                    for (int i = 0; i < 30; i++)
                     {
-                        Date = lastDate.AddDays(i),
-                        SdkSitId = siteId,
-                        CreatedByUserId = _userService.UserId,
-                        UpdatedByUserId = _userService.UserId
-                    };
+                        var date = midnight.AddDays(i);
+                        if (!datesInPeriod.Contains(date))
+                        {
+                            missingDates.Add(date);
+                        }
+                    }
 
-                    await newPlanRegistration.Create(_dbContext);
+                    foreach (var missingDate in missingDates)
+                    {
+                        var newPlanRegistration = new PlanRegistration
+                        {
+                            Date = missingDate,
+                            SdkSitId = siteId,
+                            CreatedByUserId = _userService.UserId,
+                            UpdatedByUserId = _userService.UserId
+                        };
+
+                        await newPlanRegistration.Create(_dbContext);
+                    }
                 }
             }
 
@@ -583,13 +610,12 @@ public class TimeSettingService : ISettingService
             foreach (var planRegistration in planRegistrationsFromTodayAndForward)
             {
                 var dayOfWeek = planRegistration.Date.DayOfWeek;
-                var innerMidnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month, planRegistration.Date.Day, 0, 0, 0);
-
-                //var dayOfWeek = newPlanRegistration.Date.DayOfWeek;
-
-                    switch (dayOfWeek)
-                    {
-                        case DayOfWeek.Monday:
+                switch (dayOfWeek)
+                {
+                    case DayOfWeek.Monday:
+                        planRegistration.PlanHours = dbAssignedSite.MondayPlanHours != 0 ? (double)dbAssignedSite.MondayPlanHours / 60 : 0;
+                        if (!dbAssignedSite.UseOnlyPlanHours)
+                        {
                             planRegistration.PlannedStartOfShift1 = dbAssignedSite.StartMonday ?? 0;
                             planRegistration.PlannedEndOfShift1 = dbAssignedSite.EndMonday ?? 0;
                             planRegistration.PlannedBreakOfShift1 = dbAssignedSite.BreakMonday ?? 0;
@@ -605,8 +631,13 @@ public class TimeSettingService : ISettingService
                             planRegistration.PlannedStartOfShift5 = dbAssignedSite.StartMonday5ThShift ?? 0;
                             planRegistration.PlannedEndOfShift5 = dbAssignedSite.EndMonday5ThShift ?? 0;
                             planRegistration.PlannedBreakOfShift5 = dbAssignedSite.BreakMonday5ThShift ?? 0;
-                            break;
-                        case DayOfWeek.Tuesday:
+                        }
+
+                        break;
+                    case DayOfWeek.Tuesday:
+                        planRegistration.PlanHours = dbAssignedSite.TuesdayPlanHours != 0 ? (double)dbAssignedSite.TuesdayPlanHours / 60 : 0;
+                        if (!dbAssignedSite.UseOnlyPlanHours)
+                        {
                             planRegistration.PlannedStartOfShift1 = dbAssignedSite.StartTuesday ?? 0;
                             planRegistration.PlannedEndOfShift1 = dbAssignedSite.EndTuesday ?? 0;
                             planRegistration.PlannedBreakOfShift1 = dbAssignedSite.BreakTuesday ?? 0;
@@ -622,8 +653,13 @@ public class TimeSettingService : ISettingService
                             planRegistration.PlannedStartOfShift5 = dbAssignedSite.StartTuesday5ThShift ?? 0;
                             planRegistration.PlannedEndOfShift5 = dbAssignedSite.EndTuesday5ThShift ?? 0;
                             planRegistration.PlannedBreakOfShift5 = dbAssignedSite.BreakTuesday5ThShift ?? 0;
-                            break;
-                        case DayOfWeek.Wednesday:
+                        }
+
+                        break;
+                    case DayOfWeek.Wednesday:
+                        planRegistration.PlanHours = dbAssignedSite.WednesdayPlanHours != 0 ? (double)dbAssignedSite.WednesdayPlanHours / 60 : 0;
+                        if (!dbAssignedSite.UseOnlyPlanHours)
+                        {
                             planRegistration.PlannedStartOfShift1 = dbAssignedSite.StartWednesday ?? 0;
                             planRegistration.PlannedEndOfShift1 = dbAssignedSite.EndWednesday ?? 0;
                             planRegistration.PlannedBreakOfShift1 = dbAssignedSite.BreakWednesday ?? 0;
@@ -639,8 +675,13 @@ public class TimeSettingService : ISettingService
                             planRegistration.PlannedStartOfShift5 = dbAssignedSite.StartWednesday5ThShift ?? 0;
                             planRegistration.PlannedEndOfShift5 = dbAssignedSite.EndWednesday5ThShift ?? 0;
                             planRegistration.PlannedBreakOfShift5 = dbAssignedSite.BreakWednesday5ThShift ?? 0;
-                            break;
-                        case DayOfWeek.Thursday:
+                        }
+
+                        break;
+                    case DayOfWeek.Thursday:
+                        planRegistration.PlanHours = dbAssignedSite.ThursdayPlanHours != 0 ? (double)dbAssignedSite.ThursdayPlanHours / 60 : 0;
+                        if (!dbAssignedSite.UseOnlyPlanHours)
+                        {
                             planRegistration.PlannedStartOfShift1 = dbAssignedSite.StartThursday ?? 0;
                             planRegistration.PlannedEndOfShift1 = dbAssignedSite.EndThursday ?? 0;
                             planRegistration.PlannedBreakOfShift1 = dbAssignedSite.BreakThursday ?? 0;
@@ -656,8 +697,13 @@ public class TimeSettingService : ISettingService
                             planRegistration.PlannedStartOfShift5 = dbAssignedSite.StartThursday5ThShift ?? 0;
                             planRegistration.PlannedEndOfShift5 = dbAssignedSite.EndThursday5ThShift ?? 0;
                             planRegistration.PlannedBreakOfShift5 = dbAssignedSite.BreakThursday5ThShift ?? 0;
-                            break;
-                        case DayOfWeek.Friday:
+                        }
+
+                        break;
+                    case DayOfWeek.Friday:
+                        planRegistration.PlanHours = dbAssignedSite.FridayPlanHours != 0 ? (double)dbAssignedSite.FridayPlanHours / 60 : 0;
+                        if (!dbAssignedSite.UseOnlyPlanHours)
+                        {
                             planRegistration.PlannedStartOfShift1 = dbAssignedSite.StartFriday ?? 0;
                             planRegistration.PlannedEndOfShift1 = dbAssignedSite.EndFriday ?? 0;
                             planRegistration.PlannedBreakOfShift1 = dbAssignedSite.BreakFriday ?? 0;
@@ -673,8 +719,13 @@ public class TimeSettingService : ISettingService
                             planRegistration.PlannedStartOfShift5 = dbAssignedSite.StartFriday5ThShift ?? 0;
                             planRegistration.PlannedEndOfShift5 = dbAssignedSite.EndFriday5ThShift ?? 0;
                             planRegistration.PlannedBreakOfShift5 = dbAssignedSite.BreakFriday5ThShift ?? 0;
-                            break;
-                        case DayOfWeek.Saturday:
+                        }
+
+                        break;
+                    case DayOfWeek.Saturday:
+                        planRegistration.PlanHours = dbAssignedSite.SaturdayPlanHours != 0 ? (double)dbAssignedSite.SaturdayPlanHours / 60 : 0;
+                        if (!dbAssignedSite.UseOnlyPlanHours)
+                        {
                             planRegistration.PlannedStartOfShift1 = dbAssignedSite.StartSaturday ?? 0;
                             planRegistration.PlannedEndOfShift1 = dbAssignedSite.EndSaturday ?? 0;
                             planRegistration.PlannedBreakOfShift1 = dbAssignedSite.BreakSaturday ?? 0;
@@ -690,8 +741,13 @@ public class TimeSettingService : ISettingService
                             planRegistration.PlannedStartOfShift5 = dbAssignedSite.StartSaturday5ThShift ?? 0;
                             planRegistration.PlannedEndOfShift5 = dbAssignedSite.EndSaturday5ThShift ?? 0;
                             planRegistration.PlannedBreakOfShift5 = dbAssignedSite.BreakSaturday5ThShift ?? 0;
-                            break;
-                        case DayOfWeek.Sunday:
+                        }
+
+                        break;
+                    case DayOfWeek.Sunday:
+                        planRegistration.PlanHours = dbAssignedSite.SundayPlanHours != 0 ? (double)dbAssignedSite.SundayPlanHours / 60 : 0;
+                        if (!dbAssignedSite.UseOnlyPlanHours)
+                        {
                             planRegistration.PlannedStartOfShift1 = dbAssignedSite.StartSunday ?? 0;
                             planRegistration.PlannedEndOfShift1 = dbAssignedSite.EndSunday ?? 0;
                             planRegistration.PlannedBreakOfShift1 = dbAssignedSite.BreakSunday ?? 0;
@@ -707,11 +763,12 @@ public class TimeSettingService : ISettingService
                             planRegistration.PlannedStartOfShift5 = dbAssignedSite.StartSunday5ThShift ?? 0;
                             planRegistration.PlannedEndOfShift5 = dbAssignedSite.EndSunday5ThShift ?? 0;
                             planRegistration.PlannedBreakOfShift5 = dbAssignedSite.BreakSunday5ThShift ?? 0;
-                            break;
-                    }
+                        }
 
-                    await planRegistration.Update(_dbContext);
+                        break;
+                }
 
+                await planRegistration.Update(_dbContext);
             }
 
         }
