@@ -1,4 +1,4 @@
-import { Component, DoCheck, Inject, OnChanges, SimpleChanges } from '@angular/core';
+import {Component, DoCheck, EventEmitter, Inject, OnChanges, SimpleChanges} from '@angular/core';
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
@@ -47,6 +47,7 @@ import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planni
 export class AssignedSiteDialogComponent implements DoCheck {
   public selectCurrentUserIsAdmin$ = this.authStore.select(selectCurrentUserIsAdmin);
   private previousData: AssignedSiteModel;
+  assignedSiteUpdate: EventEmitter<AssignedSiteModel> = new EventEmitter<AssignedSiteModel>();
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: AssignedSiteModel,
@@ -68,15 +69,23 @@ export class AssignedSiteDialogComponent implements DoCheck {
   }
 
   calculateHours(): void {
+    // eslint-disable-next-line max-len
     this.data.mondayCalculatedHours = this.calculateDayHours(this.data.startMonday, this.data.endMonday, this.data.breakMonday, this.data.startMonday2NdShift, this.data.endMonday2NdShift, this.data.breakMonday2NdShift);
+    // eslint-disable-next-line max-len
     this.data.tuesdayCalculatedHours = this.calculateDayHours(this.data.startTuesday, this.data.endTuesday, this.data.breakTuesday, this.data.startTuesday2NdShift, this.data.endTuesday2NdShift, this.data.breakTuesday2NdShift);
+    // eslint-disable-next-line max-len
     this.data.wednesdayCalculatedHours = this.calculateDayHours(this.data.startWednesday, this.data.endWednesday, this.data.breakWednesday, this.data.startWednesday2NdShift, this.data.endWednesday2NdShift, this.data.breakWednesday2NdShift);
+    // eslint-disable-next-line max-len
     this.data.thursdayCalculatedHours = this.calculateDayHours(this.data.startThursday, this.data.endThursday, this.data.breakThursday, this.data.startThursday2NdShift, this.data.endThursday2NdShift, this.data.breakThursday2NdShift);
+    // eslint-disable-next-line max-len
     this.data.fridayCalculatedHours = this.calculateDayHours(this.data.startFriday, this.data.endFriday, this.data.breakFriday, this.data.startFriday2NdShift, this.data.endFriday2NdShift, this.data.breakFriday2NdShift);
+    // eslint-disable-next-line max-len
     this.data.saturdayCalculatedHours = this.calculateDayHours(this.data.startSaturday, this.data.endSaturday, this.data.breakSaturday, this.data.startSaturday2NdShift, this.data.endSaturday2NdShift, this.data.breakSaturday2NdShift);
+    // eslint-disable-next-line max-len
     this.data.sundayCalculatedHours = this.calculateDayHours(this.data.startSunday, this.data.endSunday, this.data.breakSunday, this.data.startSunday2NdShift, this.data.endSunday2NdShift, this.data.breakSunday2NdShift);
   }
 
+  // eslint-disable-next-line max-len
   calculateDayHours(start: number, end: number, breakTime: number, start2NdShift: number, end2NdShift: number, break2NdShift: number): string {
     let timeInMinutes = (end - start - breakTime) / 60;
     let timeInMinutes2NdShift = (end2NdShift - start2NdShift - break2NdShift) / 60;
@@ -114,21 +123,48 @@ export class AssignedSiteDialogComponent implements DoCheck {
   }
 
   updateAssignedSite() {
-    this.data.mondayPlanHours = this.data.startMonday && this.data.endMonday ? this.data.endMonday - this.data.startMonday - this.data.breakMonday : 0;
-    this.data.mondayPlanHours += this.data.startMonday2NdShift && this.data.endMonday2NdShift ? this.data.endMonday2NdShift - this.data.startMonday2NdShift - this.data.breakMonday2NdShift : 0;
-    this.data.tuesdayPlanHours = this.data.startTuesday && this.data.endTuesday ? this.data.endTuesday - this.data.startTuesday - this.data.breakTuesday : 0;
-    this.data.tuesdayPlanHours += this.data.startTuesday2NdShift && this.data.endTuesday2NdShift ? this.data.endTuesday2NdShift - this.data.startTuesday2NdShift - this.data.breakTuesday2NdShift : 0;
-    this.data.wednesdayPlanHours = this.data.startWednesday && this.data.endWednesday ? this.data.endWednesday - this.data.startWednesday - this.data.breakWednesday : 0;
-    this.data.wednesdayPlanHours += this.data.startWednesday2NdShift && this.data.endWednesday2NdShift ? this.data.endWednesday2NdShift - this.data.startWednesday2NdShift - this.data.breakWednesday2NdShift : 0;
-    this.data.thursdayPlanHours = this.data.startThursday && this.data.endThursday ? this.data.endThursday - this.data.startThursday - this.data.breakThursday : 0;
-    this.data.thursdayPlanHours += this.data.startThursday2NdShift && this.data.endThursday2NdShift ? this.data.endThursday2NdShift - this.data.startThursday2NdShift - this.data.breakThursday2NdShift : 0;
-    this.data.fridayPlanHours = this.data.startFriday && this.data.endFriday ? this.data.endFriday - this.data.startFriday - this.data.breakFriday : 0;
-    this.data.fridayPlanHours += this.data.startFriday2NdShift && this.data.endFriday2NdShift ? this.data.endFriday2NdShift - this.data.startFriday2NdShift - this.data.breakFriday2NdShift : 0;
-    this.data.saturdayPlanHours = this.data.startSaturday && this.data.endSaturday ? this.data.endSaturday - this.data.startSaturday - this.data.breakSaturday : 0;
-    this.data.saturdayPlanHours += this.data.startSaturday2NdShift && this.data.endSaturday2NdShift ? this.data.endSaturday2NdShift - this.data.startSaturday2NdShift - this.data.breakSaturday2NdShift : 0;
-    this.data.sundayPlanHours = this.data.startSunday && this.data.endSunday ? this.data.endSunday - this.data.startSunday - this.data.breakSunday : 0;
-    this.data.sundayPlanHours += this.data.startSunday2NdShift && this.data.endSunday2NdShift ? this.data.endSunday2NdShift - this.data.startSunday2NdShift - this.data.breakSunday2NdShift : 0;
-    debugger;
+    this.data.mondayPlanHours = this.data.startMonday && this.data.endMonday
+      ? this.data.endMonday - this.data.startMonday - this.data.breakMonday
+      : 0;
+    this.data.mondayPlanHours += this.data.startMonday2NdShift && this.data.endMonday2NdShift
+      ? this.data.endMonday2NdShift - this.data.startMonday2NdShift - this.data.breakMonday2NdShift
+      : 0;
+    this.data.tuesdayPlanHours = this.data.startTuesday && this.data.endTuesday
+      ? this.data.endTuesday - this.data.startTuesday - this.data.breakTuesday
+      : 0;
+    this.data.tuesdayPlanHours += this.data.startTuesday2NdShift && this.data.endTuesday2NdShift
+      ? this.data.endTuesday2NdShift - this.data.startTuesday2NdShift - this.data.breakTuesday2NdShift
+      : 0;
+    this.data.wednesdayPlanHours = this.data.startWednesday && this.data.endWednesday
+      ? this.data.endWednesday - this.data.startWednesday - this.data.breakWednesday
+      : 0;
+    this.data.wednesdayPlanHours += this.data.startWednesday2NdShift && this.data.endWednesday2NdShift
+      ? this.data.endWednesday2NdShift - this.data.startWednesday2NdShift - this.data.breakWednesday2NdShift
+      : 0;
+    this.data.thursdayPlanHours = this.data.startThursday && this.data.endThursday
+      ? this.data.endThursday - this.data.startThursday - this.data.breakThursday
+      : 0;
+    this.data.thursdayPlanHours += this.data.startThursday2NdShift && this.data.endThursday2NdShift
+      ? this.data.endThursday2NdShift - this.data.startThursday2NdShift - this.data.breakThursday2NdShift
+      : 0;
+    this.data.fridayPlanHours = this.data.startFriday && this.data.endFriday
+      ? this.data.endFriday - this.data.startFriday - this.data.breakFriday
+      : 0;
+    this.data.fridayPlanHours += this.data.startFriday2NdShift && this.data.endFriday2NdShift
+      ? this.data.endFriday2NdShift - this.data.startFriday2NdShift - this.data.breakFriday2NdShift
+      : 0;
+    this.data.saturdayPlanHours = this.data.startSaturday && this.data.endSaturday
+      ? this.data.endSaturday - this.data.startSaturday - this.data.breakSaturday
+      : 0;
+    this.data.saturdayPlanHours += this.data.startSaturday2NdShift && this.data.endSaturday2NdShift
+      ? this.data.endSaturday2NdShift - this.data.startSaturday2NdShift - this.data.breakSaturday2NdShift
+      : 0;
+    this.data.sundayPlanHours = this.data.startSunday && this.data.endSunday
+      ? this.data.endSunday - this.data.startSunday - this.data.breakSunday
+      : 0;
+    this.data.sundayPlanHours += this.data.startSunday2NdShift && this.data.endSunday2NdShift
+      ? this.data.endSunday2NdShift - this.data.startSunday2NdShift - this.data.breakSunday2NdShift
+      : 0;
     this.timePlanningPnSettingsService.updateAssignedSite(this.data).subscribe(result => {
       if (result && result.success) {
         //this.workdayEntityUpdate.emit(this.data);

@@ -247,7 +247,6 @@ public class TimeSettingService : ISettingService
         }
     }
 
-
     public async Task<OperationResult> UpdateFolder(int folderId)
     {
         try
@@ -553,6 +552,7 @@ public class TimeSettingService : ISettingService
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SdkSitId == siteId)
                 .Where(x => x.Date >= midnight)
+                .OrderBy(x => x.Date)
                 .ToListAsync();
 
             if (planRegistrationsFromTodayAndForward.Count == 0)
@@ -605,6 +605,7 @@ public class TimeSettingService : ISettingService
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SdkSitId == siteId)
                 .Where(x => x.Date >= midnight)
+                .OrderBy(x => x.Date)
                 .ToListAsync();
 
             foreach (var planRegistration in planRegistrationsFromTodayAndForward)

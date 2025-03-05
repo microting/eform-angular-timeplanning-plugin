@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output,
   SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation} from '@angular/core';
-import { TimePlanningModel } from '../../../models';
+import {AssignedSiteModel, TimePlanningModel} from '../../../models';
 import {MtxGrid, MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
@@ -22,6 +22,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   @Input() dateFrom!: Date;
   @Input() dateTo!: Date;
   @Output() timePlanningChanged: EventEmitter<TimePlanningModel> = new EventEmitter<TimePlanningModel>();
+  @Output() assignedSiteChanged: EventEmitter<AssignedSiteModel> = new EventEmitter<AssignedSiteModel>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
   tableHeaders: MtxGridColumn[] = [];
 
@@ -149,9 +150,11 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
           data: result.model,
           minWidth: '50%',
         })
-          .afterClosed().subscribe(data => {
+          .afterClosed().subscribe((data) => {
+          if (data) {
+            this.assignedSiteChanged.emit(data);
           }
-        );
+        });
       }
     });
   }

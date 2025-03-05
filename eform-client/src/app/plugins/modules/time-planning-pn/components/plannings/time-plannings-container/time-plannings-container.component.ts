@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import {Subscription, take} from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
-import { TimePlanningModel, TimePlanningsRequestModel } from '../../../models';
+import {AssignedSiteModel, TimePlanningModel, TimePlanningsRequestModel} from '../../../models';
 import {
   TimePlanningPnPlanningsService,
   TimePlanningPnSettingsService,
@@ -94,6 +94,10 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   onTimePlanningChanged($event: TimePlanningModel) {
+    this.getPlannings();
+  }
+
+  onAssignedSiteChanged($event: AssignedSiteModel) {
     this.getPlannings();
   }
 }
