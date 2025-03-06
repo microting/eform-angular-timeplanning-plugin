@@ -24,6 +24,7 @@ SOFTWARE.
 
 #nullable enable
 using JetBrains.Annotations;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
 
@@ -53,6 +54,7 @@ public class TimeSettingService : ISettingService
     private readonly IUserService _userService;
     private readonly ITimePlanningLocalizationService _localizationService;
     private readonly IEFormCoreService _core;
+    private readonly BaseDbContext _baseDbContext;
 
     public TimeSettingService(
         IPluginDbOptions<TimePlanningBaseSettings> options,
@@ -60,6 +62,7 @@ public class TimeSettingService : ISettingService
         ILogger<TimeSettingService> logger,
         IUserService userService,
         ITimePlanningLocalizationService localizationService,
+        BaseDbContext baseDbContext,
         IEFormCoreService core)
     {
         _options = options;
@@ -68,6 +71,7 @@ public class TimeSettingService : ISettingService
         _userService = userService;
         _localizationService = localizationService;
         _core = core;
+        _baseDbContext = baseDbContext;
     }
 
     public async Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
@@ -450,6 +454,30 @@ public class TimeSettingService : ISettingService
 
         return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
 
+    }
+
+    public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSiteByCurrentUserName()
+    {
+        var core = await _core.GetCore();
+        var sdkContext = core.DbContextHelper.GetDbContext();
+        var currentUserAsync = await _userService.GetCurrentUserAsync();
+        var currentUser = _baseDbContext.Users
+            .Single(x => x.Id == currentUserAsync.Id);
+        var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
+        var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
+            x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
+            x.WorkflowState != Constants.WorkflowStates.Removed);
+
+        if (sdkSite == null)
+        {
+            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
+        }
+
+        var dbAssignedSite = await _dbContext.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
+
+        return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
     }
 
     public async Task<OperationResult> UpdateAssignedSite(Infrastructure.Models.Settings.AssignedSite site)

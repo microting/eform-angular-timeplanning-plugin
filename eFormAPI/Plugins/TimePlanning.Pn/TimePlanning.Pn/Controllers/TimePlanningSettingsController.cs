@@ -114,6 +114,13 @@ namespace TimePlanning.Pn.Controllers
             return await _settingService.GetAssignedSite(siteId);
         }
 
+        [HttpGet]
+        [Route("assigned-site")]
+        public async Task<OperationDataResult<AssignedSite>> GetAssignedSiteByCurrentUserName()
+        {
+            return await _settingService.GetAssignedSiteByCurrentUserName();
+        }
+
         [HttpPut]
         [Route("assigned-site")]
         [Authorize(Roles = EformRole.Admin)]
