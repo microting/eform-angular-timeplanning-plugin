@@ -46,5 +46,12 @@ namespace TimePlanning.Pn.Controllers
         {
             return await _planningService.Update(id, model);
         }
+        
+        [HttpGet]
+        [Route("get-by-user")]
+        public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(TimePlanningPlanningRequestModel model)
+        {
+            return await _planningService.IndexByCurrentUserNam(model);
+        }
     }
 }

@@ -35,5 +35,6 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService
         //
         // Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model);
         Task<OperationResult> Update(int id, TimePlanningPlanningPrDayModel model);
+        Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(TimePlanningPlanningRequestModel model);
     }
 }
