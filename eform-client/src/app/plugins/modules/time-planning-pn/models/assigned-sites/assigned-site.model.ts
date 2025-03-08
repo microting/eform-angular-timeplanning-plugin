@@ -151,4 +151,5 @@ export class AssignedSiteModel {
   sundayCalculatedHours: string;
   useGoogleSheetAsDefault: boolean;
   useOnlyPlanHours: boolean;
+  usePunchClock: boolean;
 }

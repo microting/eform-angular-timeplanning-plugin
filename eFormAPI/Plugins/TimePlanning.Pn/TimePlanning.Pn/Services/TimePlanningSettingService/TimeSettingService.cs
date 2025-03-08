@@ -498,6 +498,7 @@ public class TimeSettingService : ISettingService
         dbAssignedSite.AllowAcceptOfPlannedHours = site.AllowAcceptOfPlannedHours;
         dbAssignedSite.Resigned = site.Resigned;
         dbAssignedSite.UseOneMinuteIntervals = site.UseOneMinuteIntervals;
+        dbAssignedSite.UsePunchClock = site.UsePunchClock;
 
 
         dbAssignedSite.StartMonday = site.StartMonday;
