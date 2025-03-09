@@ -920,10 +920,9 @@ public class TimePlanningPlanningService(
             siteModel.PlanningPrDayModels.Add(planningModel);
         }
 
-        if (model.IsSortDsc)
-        {
-            siteModel.PlanningPrDayModels = siteModel.PlanningPrDayModels.OrderByDescending(x => x.Date).ToList();
-        }
+        siteModel.PlanningPrDayModels = model.IsSortDsc
+            ? siteModel.PlanningPrDayModels.OrderByDescending(x => x.Date).ToList()
+            : siteModel.PlanningPrDayModels.OrderBy(x => x.Date).ToList();
 
         return new OperationDataResult<TimePlanningPlanningModel>(
             true,
