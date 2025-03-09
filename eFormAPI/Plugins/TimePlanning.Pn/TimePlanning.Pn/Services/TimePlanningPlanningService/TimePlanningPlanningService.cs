@@ -902,6 +902,7 @@ public class TimePlanningPlanningService(
                 planningModel.PlannedBreakOfShift1 = planRegistration.PlannedBreakOfShift1;
                 planningModel.PlannedStartOfShift1 = planRegistration.PlannedStartOfShift1;
                 planningModel.PlannedEndOfShift1 = planRegistration.PlannedEndOfShift1;
+                planningModel.PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) < 0.00;
             }
             catch (Exception e)
             {
