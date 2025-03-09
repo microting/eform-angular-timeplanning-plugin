@@ -171,7 +171,7 @@ public class TimePlanningPlanningService(
                         WeekDay = planRegistration.Date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)planRegistration.Date.DayOfWeek,
                         ActualHours = planRegistration.NettoHours,
                         Difference = planRegistration.NettoHours - planRegistration.PlanHours,
-                        PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) < 0.00,
+                        PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) <= 0.00,
                         WorkDayStarted = planRegistration.Start1Id != 0,
                         WorkDayEnded = planRegistration.Stop1Id != 0 || (planRegistration.Start2Id != 0 && planRegistration.Stop2Id != 0),
                         PlannedStartOfShift1 = planRegistration.PlannedStartOfShift1,
@@ -459,6 +459,8 @@ public class TimePlanningPlanningService(
                         planningModel.PlannedBreakOfShift1 = planRegistration.PlannedBreakOfShift1;
                         planningModel.PlannedStartOfShift1 = planRegistration.PlannedStartOfShift1;
                         planningModel.PlannedEndOfShift1 = planRegistration.PlannedEndOfShift1;
+                        planningModel.PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) <= 0.00;
+
                     }
                     catch (Exception e)
                     {
@@ -603,7 +605,7 @@ public class TimePlanningPlanningService(
                     planRegistration.Date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)planRegistration.Date.DayOfWeek,
                 ActualHours = planRegistration.NettoHours,
                 Difference = planRegistration.NettoHours - planRegistration.PlanHours,
-                PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) < 0.00,
+                PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) <= 0.00,
                 WorkDayStarted = planRegistration.Start1Id != 0,
                 WorkDayEnded = planRegistration.Stop1Id != 0 ||
                                (planRegistration.Start2Id != 0 && planRegistration.Stop2Id != 0),
@@ -902,7 +904,7 @@ public class TimePlanningPlanningService(
                 planningModel.PlannedBreakOfShift1 = planRegistration.PlannedBreakOfShift1;
                 planningModel.PlannedStartOfShift1 = planRegistration.PlannedStartOfShift1;
                 planningModel.PlannedEndOfShift1 = planRegistration.PlannedEndOfShift1;
-                planningModel.PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) < 0.00;
+                planningModel.PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) <= 0.00;
             }
             catch (Exception e)
             {
