@@ -538,7 +538,7 @@ public class TimePlanningPlanningService(
             .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
             .Where(x => x.Date >= model.DateFrom)
             .Where(x => x.Date <= model.DateTo)
-            .OrderBy(x => x.Date)
+            .OrderByDescending(x => x.Date)
             .ToListAsync().ConfigureAwait(false);
 
         var datesInPlannings = planningsInPeriod.Select(x => x.Date).ToList();
@@ -572,7 +572,7 @@ public class TimePlanningPlanningService(
                 .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
                 .Where(x => x.Date >= model.DateFrom)
                 .Where(x => x.Date <= model.DateTo)
-                .OrderBy(x => x.Date)
+                .OrderByDescending(x => x.Date)
                 .ToListAsync().ConfigureAwait(false);
         }
 
@@ -916,6 +916,8 @@ public class TimePlanningPlanningService(
 
             siteModel.PlanningPrDayModels.Add(planningModel);
         }
+
+        siteModel.PlanningPrDayModels= siteModel.PlanningPrDayModels.OrderByDescending(x => x.Date).ToList();
 
         return new OperationDataResult<TimePlanningPlanningModel>(
             true,
