@@ -94,13 +94,9 @@ public class TimePlanningPlanningService(
                     .FirstOrDefaultAsync().ConfigureAwait(false);
                 if (user != null)
                 {
-                    if (user.ProfilePictureSnapshot != null)
-                    {
-                        siteModel.AvatarUrl = $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}";
-                    } else
-                    {
-                        siteModel.AvatarUrl = $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
-                    }
+                    siteModel.AvatarUrl = user.ProfilePictureSnapshot != null
+                        ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
+                        : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
                 }
 
                 var planningsInPeriod = await dbContext.PlanRegistrations
@@ -578,6 +574,16 @@ public class TimePlanningPlanningService(
             SiteName = sdkSite.Name,
             PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
         };
+
+        var user = await baseDbContext.Users
+            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == sdkSite.Name.Replace(" ", "").ToLower())
+            .FirstOrDefaultAsync().ConfigureAwait(false);
+        if (user != null)
+        {
+            siteModel.AvatarUrl = user.ProfilePictureSnapshot != null
+                ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
+                : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+        }
 
         var planningsInPeriod = await dbContext.PlanRegistrations
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
