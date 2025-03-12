@@ -1,19 +1,23 @@
 <!-- src/app/plugins/modules/time-planning-pn/components/plannings/time-planning-actions/workday-entity/workday-entity-dialog.component.html -->
 <div mat-dialog-title>{{ data.siteName }} - {{ datePipe.transform(data.date, 'dd.MM.yyyy') }} ({{data.id}})</div><div mat-dialog-content>
-
+<br>
   <mtx-grid
     [columns]="columns"
-    [data]="[shift1Data]"
-    [showPaginator]="false">
+    [data]="shiftData"
+    [showPaginator]="false"
+    [pageOnFront]="false"
+    [rowStriped]="true"
+    [showToolbar]="false"
+    [showColumnMenuButton]="false">
   </mtx-grid>
 
-  <ng-container *ngIf="data.isDoubleShift">
-    <mtx-grid
-      [columns]="columns"
-      [data]="[shift2Data]"
-      [showPaginator]="false">
-    </mtx-grid>
-  </ng-container>
+<!--  <ng-container *ngIf="data.isDoubleShift">-->
+<!--    <mtx-grid-->
+<!--      [columns]="columns"-->
+<!--      [data]="[shift2Data]"-->
+<!--      [showPaginator]="false">-->
+<!--    </mtx-grid>-->
+<!--  </ng-container>-->
 
   <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>
 

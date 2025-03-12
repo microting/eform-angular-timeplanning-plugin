@@ -70,17 +70,20 @@ export class WorkdayEntityDialogComponent implements OnInit {
     { header: this.translateService.stream('Actual'), field: 'actual' }
   ];
 
+
+  shift2Data = {
+    shift: this.translateService.instant('2nd'),
+    planned: this.data.plannedStartOfShift1 !== this.data.plannedEndOfShift1 && this.data.plannedEndOfShift2 !== 0 ? `${this.convertMinutesToTime(this.data.plannedStartOfShift2)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift2)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift2)}` : '',
+    actual: this.data.start2StartedAt !== null ? `${this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC')} - ${this.data.stop2StoppedAt != null ? this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC') : '???'}` : ''
+  };
+
   shift1Data = {
     shift: this.translateService.instant('1st'),
     planned: this.data.plannedStartOfShift1 !== this.data.plannedEndOfShift1 ? `${this.convertMinutesToTime(this.data.plannedStartOfShift1)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift1)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift1)}` : '',
     actual: this.data.start1StartedAt !== null ? `${this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC')}` : ''
   };
 
-  shift2Data = {
-    shift: this.translateService.instant('2nd'),
-    planned: `${this.convertMinutesToTime(this.data.plannedStartOfShift2)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift2)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift2)}`,
-    actual: this.data.start2StartedAt !== null ? `${this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC')}` : ''
-  };
+  shiftData = (this.data.isDoubleShift ? [this.shift1Data, this.shift2Data] : [this.shift1Data]);
 
   convertMinutesToTime(minutes: number): string {
     const hours = Math.floor(minutes / 60);

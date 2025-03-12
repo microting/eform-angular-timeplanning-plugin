@@ -129,12 +129,14 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     const planHours = row.planningPrDayModels[field]?.planHours;
     const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
     const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+    const isInOlderThanToday = new Date(row.planningPrDayModels[field]?.date) < new Date();
     if (planHours > 0 ) {
       if (workDayStarted) {
         //console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
         return workDayEnded ? 'white-text' : 'green-text';
       } else {
-        return 'black-text';
+        debugger;
+        return isInOlderThanToday ? 'red-text' : 'black-text';
       }
     }
     return '';
