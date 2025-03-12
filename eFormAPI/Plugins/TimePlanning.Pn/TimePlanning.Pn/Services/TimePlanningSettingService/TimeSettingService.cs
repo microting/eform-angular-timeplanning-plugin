@@ -369,7 +369,8 @@ public class TimeSettingService : ISettingService
                                 planRegistrationForToday is { Start1StartedAt: not null, Stop1StoppedAt: null } or
                                     { Start2StartedAt: not null, Stop2StoppedAt: null };
                             pauseStarted =
-                                planRegistrationForToday is { Pause1StartedAt: not null, Pause1StoppedAt: null } or
+                                planRegistrationForToday is
+                                    { Pause1StartedAt: not null, Pause1StoppedAt: null } or
                                     { Pause10StartedAt: not null, Pause10StoppedAt: null } or
                                     { Pause11StartedAt: not null, Pause11StoppedAt: null } or
                                     { Pause12StartedAt: not null, Pause12StoppedAt: null } or
@@ -380,6 +381,9 @@ public class TimeSettingService : ISettingService
                                     { Pause17StartedAt: not null, Pause17StoppedAt: null } or
                                     { Pause18StartedAt: not null, Pause18StoppedAt: null } or
                                     { Pause19StartedAt: not null, Pause19StoppedAt: null } or
+                                    { Pause100StartedAt: not null, Pause100StoppedAt: null } or
+                                    { Pause101StartedAt: not null, Pause101StoppedAt: null } or
+                                    { Pause102StartedAt: not null, Pause102StoppedAt: null } or
                                     { Pause2StartedAt: not null, Pause2StoppedAt: null } or
                                     { Pause20StartedAt: not null, Pause20StoppedAt: null } or
                                     { Pause21StartedAt: not null, Pause21StoppedAt: null } or
@@ -390,7 +394,10 @@ public class TimeSettingService : ISettingService
                                     { Pause26StartedAt: not null, Pause26StoppedAt: null } or
                                     { Pause27StartedAt: not null, Pause27StoppedAt: null } or
                                     { Pause28StartedAt: not null, Pause28StoppedAt: null } or
-                                    { Pause29StartedAt: not null, Pause29StoppedAt: null };
+                                    { Pause29StartedAt: not null, Pause29StoppedAt: null } or
+                                    { Pause200StartedAt: not null, Pause200StoppedAt: null } or
+                                    { Pause201StartedAt: not null, Pause201StoppedAt: null } or
+                                    { Pause202StartedAt: not null, Pause202StoppedAt: null };
                         }
 
                         var newSite = new Site
