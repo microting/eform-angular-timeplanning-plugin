@@ -189,8 +189,9 @@ public class TimePlanningPlanningService(
                             (planRegistration.Start2Id * 5) - 5)),
                         Stop2StoppedAt = (planRegistration.Stop2Id == 0 ? null : midnight.AddMinutes(
                             (planRegistration.Stop2Id * 5) - 5)),
-                        Break2shift = planRegistration.Pause1Id,
-                        Break1Shift = planRegistration.Pause2Id
+                        Break1Shift = planRegistration.Pause1Id,
+                        Break2Shift = planRegistration.Pause2Id,
+                        PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5
                     };
                     try
                     {
@@ -686,8 +687,9 @@ public class TimePlanningPlanningService(
                     ? null
                     : midnight.AddMinutes(
                         (planRegistration.Stop2Id * 5) - 5)),
-                Break2shift = planRegistration.Pause1Id,
-                Break1Shift = planRegistration.Pause2Id
+                Break1Shift = planRegistration.Pause1Id,
+                Break2Shift = planRegistration.Pause2Id,
+                PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5
             };
             try
             {

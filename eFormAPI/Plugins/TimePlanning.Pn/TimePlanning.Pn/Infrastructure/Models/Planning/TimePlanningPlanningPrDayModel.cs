@@ -59,5 +59,5 @@ public class TimePlanningPlanningPrDayModel
     public DateTime? Stop2StoppedAt { get; set; }
 
     public int Break1Shift { get; set; }
-    public int Break2shift { get; set; }
+    public int Break2Shift { get; set; }
 }
