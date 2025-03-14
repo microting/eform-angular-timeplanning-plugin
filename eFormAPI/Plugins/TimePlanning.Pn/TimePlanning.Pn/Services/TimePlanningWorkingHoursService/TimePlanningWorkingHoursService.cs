@@ -1039,8 +1039,12 @@ public class TimePlanningWorkingHoursService(
 
             double nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
             nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
-            nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
-            nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+
+            if (planRegistration.Stop2Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
+                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+            }
 
             nettoMinutes *= minutesMultiplier;
 
