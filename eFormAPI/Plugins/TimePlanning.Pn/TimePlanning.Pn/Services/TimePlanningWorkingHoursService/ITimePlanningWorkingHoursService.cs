@@ -22,34 +22,26 @@ using System;
 using System.IO;
 using Microsoft.AspNetCore.Http;
 
-namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService
+namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Infrastructure.Models.WorkingHours.Index;
+using Infrastructure.Models.WorkingHours.UpdateCreate;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+
+/// <summary>
+/// Interface ITimePlanningWorkingHoursService
+/// </summary>
+public interface ITimePlanningWorkingHoursService
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.WorkingHours.Index;
-    using Infrastructure.Models.WorkingHours.UpdateCreate;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
-
-    /// <summary>
-    /// Interface ITimePlanningWorkingHoursService
-    /// </summary>
-    public interface ITimePlanningWorkingHoursService
-    {
-        Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model);
-
-        Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursUpdateCreateModel model);
-
-        Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursRequestModel model);
-
-        Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursReportForAllWorkersRequestModel model);
-
-        Task<OperationResult> Import(IFormFile file);
-        Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token);
-        Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursUpdateModel model, string token);
-        Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model);
-
-        Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion);
-
-        Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate, DateTime endDate, string? softwareVersion, string? model, string? manufacturer, string? osVersion);
-    }
+    Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(TimePlanningWorkingHoursRequestModel model);
+    Task<OperationResult> CreateUpdate(TimePlanningWorkingHoursUpdateCreateModel model);
+    Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursRequestModel model);
+    Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursReportForAllWorkersRequestModel model);
+    Task<OperationResult> Import(IFormFile file);
+    Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token);
+    Task<OperationResult> UpdateWorkingHour(int? sdkSiteId, TimePlanningWorkingHoursUpdateModel model, string token);
+    Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion);
+    Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate, DateTime endDate, string? softwareVersion, string? model, string? manufacturer, string? osVersion);
 }

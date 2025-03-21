@@ -1305,12 +1305,13 @@ public class TimePlanningWorkingHoursService(
         return new OperationResult(true);
     }
 
-    public async Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursUpdateModel model,
+    public async Task<OperationResult> UpdateWorkingHour(int? sdkSiteId, TimePlanningWorkingHoursUpdateModel model,
         string? token)
     {
-        if (token == null)
+        if (token == null && sdkSiteId == null)
         {
-            return new OperationResult(false, "Token not found");
+            return await UpdateWorkingHour(model).ConfigureAwait(false);
+            //return new OperationResult(false, "Token not found");
         }
 
         var registrationDevice = await dbContext.RegistrationDevices
@@ -1537,7 +1538,7 @@ public class TimePlanningWorkingHoursService(
                     : DateTime.Parse(model.Pause202StoppedAt),
                 Flex = 0,
                 WorkerComment = model.CommentWorker,
-                SdkSitId = sdkSiteId,
+                SdkSitId = sdkSiteId!.Value,
                 RegistrationDeviceId = registrationDevice.Id,
                 Shift1PauseNumber = model.Shift1PauseNumber,
                 Shift2PauseNumber = model.Shift2PauseNumber,

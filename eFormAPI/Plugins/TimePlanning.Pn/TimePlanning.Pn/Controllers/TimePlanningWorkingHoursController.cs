@@ -86,16 +86,9 @@ namespace TimePlanning.Pn.Controllers
         [HttpPut]
         [Route("update")]
         [AllowAnonymous]
-        public async Task<OperationResult> UpdateWorkingHour([FromForm] int sdkSiteId, [FromForm] TimePlanningWorkingHoursUpdateModel obj, [FromForm] string token)
+        public async Task<OperationResult> UpdateWorkingHour([FromForm] int? sdkSiteId, [FromForm] TimePlanningWorkingHoursUpdateModel obj, [FromForm] string token)
         {
             return await _workingHoursService.UpdateWorkingHour(sdkSiteId, obj, token);
-        }
-
-        [HttpPut]
-        [Route("update")]
-        public async Task<OperationResult> UpdateWorkingHour([FromForm] TimePlanningWorkingHoursUpdateModel obj)
-        {
-            return await _workingHoursService.UpdateWorkingHour(obj);
         }
 
         /// <summary>
