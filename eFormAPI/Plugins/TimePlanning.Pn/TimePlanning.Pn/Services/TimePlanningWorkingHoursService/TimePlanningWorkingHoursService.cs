@@ -797,8 +797,516 @@ public class TimePlanningWorkingHoursService(
             timePlanningWorkingHoursModel);
     }
 
+    public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
+    {
+        var sdkCore = await coreHelper.GetCore();
+        var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+        var currentUserAsync = await userService.GetCurrentUserAsync();
+        var currentUser = baseDbContext.Users
+            .Single(x => x.Id == currentUserAsync.Id);
+        var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
+        var sdkSite = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
+            x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
+            x.WorkflowState != Constants.WorkflowStates.Removed);
+
+        if (sdkSite == null)
+        {
+            return new OperationResult(
+                false,
+                localizationService.GetString("SiteNotFound"));
+        }
+
+        var dbAssignedSite = await dbContext.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
+
+        var todayAtMidnight = DateTime.UtcNow.Date;
+
+        var planRegistration = await dbContext.PlanRegistrations
+            .Where(x => x.Date == todayAtMidnight)
+            .Where(x => x.SdkSitId == sdkSite.MicrotingUid)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync();
+
+        if (planRegistration == null)
+        {
+            planRegistration = new PlanRegistration
+            {
+                MessageId = null,
+                PlanText = "",
+                Date = model.Date,
+                PlanHours = 0,
+                UpdatedByUserId = userService.UserId,
+                CommentOffice = "",
+                CommentOfficeAll = "",
+                NettoHours = 0,
+                PaiedOutFlex = 0,
+                Pause1Id = model.Shift1Pause ?? 0,
+                Pause2Id = model.Shift2Pause ?? 0,
+                Start1Id = model.Shift1Start ?? 0,
+                Start2Id = model.Shift2Start ?? 0,
+                Stop1Id = model.Shift1Stop ?? 0,
+                Stop2Id = model.Shift2Stop ?? 0,
+                Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start1StartedAt),
+                Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop1StoppedAt),
+                Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause1StartedAt),
+                Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause1StoppedAt),
+                Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start2StartedAt),
+                Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop2StoppedAt),
+                Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause10StartedAt),
+                Pause10StoppedAt = string.IsNullOrEmpty(model.Pause10StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause10StoppedAt),
+                Pause11StartedAt = string.IsNullOrEmpty(model.Pause11StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause11StartedAt),
+                Pause11StoppedAt = string.IsNullOrEmpty(model.Pause11StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause11StoppedAt),
+                Pause12StartedAt = string.IsNullOrEmpty(model.Pause12StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause12StartedAt),
+                Pause12StoppedAt = string.IsNullOrEmpty(model.Pause12StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause12StoppedAt),
+                Pause13StartedAt = string.IsNullOrEmpty(model.Pause13StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause13StartedAt),
+                Pause13StoppedAt = string.IsNullOrEmpty(model.Pause13StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause13StoppedAt),
+                Pause14StartedAt = string.IsNullOrEmpty(model.Pause14StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause14StartedAt),
+                Pause14StoppedAt = string.IsNullOrEmpty(model.Pause14StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause14StoppedAt),
+                Pause15StartedAt = string.IsNullOrEmpty(model.Pause15StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause15StartedAt),
+                Pause15StoppedAt = string.IsNullOrEmpty(model.Pause15StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause15StoppedAt),
+                Pause16StartedAt = string.IsNullOrEmpty(model.Pause16StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause16StartedAt),
+                Pause16StoppedAt = string.IsNullOrEmpty(model.Pause16StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause16StoppedAt),
+                Pause17StartedAt = string.IsNullOrEmpty(model.Pause17StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause17StartedAt),
+                Pause17StoppedAt = string.IsNullOrEmpty(model.Pause17StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause17StoppedAt),
+                Pause18StartedAt = string.IsNullOrEmpty(model.Pause18StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause18StartedAt),
+                Pause18StoppedAt = string.IsNullOrEmpty(model.Pause18StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause18StoppedAt),
+                Pause19StartedAt = string.IsNullOrEmpty(model.Pause19StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause19StartedAt),
+                Pause19StoppedAt = string.IsNullOrEmpty(model.Pause19StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause19StoppedAt),
+                Pause100StartedAt = string.IsNullOrEmpty(model.Pause100StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause100StartedAt),
+                Pause100StoppedAt = string.IsNullOrEmpty(model.Pause100StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause100StoppedAt),
+                Pause101StartedAt = string.IsNullOrEmpty(model.Pause101StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause101StartedAt),
+                Pause101StoppedAt = string.IsNullOrEmpty(model.Pause101StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause101StoppedAt),
+                Pause102StartedAt = string.IsNullOrEmpty(model.Pause102StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause102StartedAt),
+                Pause102StoppedAt = string.IsNullOrEmpty(model.Pause102StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause102StoppedAt),
+
+                Pause2StartedAt = string.IsNullOrEmpty(model.Pause2StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause2StartedAt),
+                Pause2StoppedAt = string.IsNullOrEmpty(model.Pause2StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause2StoppedAt),
+                Pause20StartedAt = string.IsNullOrEmpty(model.Pause20StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause20StartedAt),
+                Pause20StoppedAt = string.IsNullOrEmpty(model.Pause20StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause20StoppedAt),
+                Pause21StartedAt = string.IsNullOrEmpty(model.Pause21StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause21StartedAt),
+                Pause21StoppedAt = string.IsNullOrEmpty(model.Pause21StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause21StoppedAt),
+                Pause22StartedAt = string.IsNullOrEmpty(model.Pause22StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause22StartedAt),
+                Pause22StoppedAt = string.IsNullOrEmpty(model.Pause22StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause22StoppedAt),
+                Pause23StartedAt = string.IsNullOrEmpty(model.Pause23StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause23StartedAt),
+                Pause23StoppedAt = string.IsNullOrEmpty(model.Pause23StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause23StoppedAt),
+                Pause24StartedAt = string.IsNullOrEmpty(model.Pause24StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause24StartedAt),
+                Pause24StoppedAt = string.IsNullOrEmpty(model.Pause24StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause24StoppedAt),
+                Pause25StartedAt = string.IsNullOrEmpty(model.Pause25StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause25StartedAt),
+                Pause25StoppedAt = string.IsNullOrEmpty(model.Pause25StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause25StoppedAt),
+                Pause26StartedAt = string.IsNullOrEmpty(model.Pause26StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause26StartedAt),
+                Pause26StoppedAt = string.IsNullOrEmpty(model.Pause26StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause26StoppedAt),
+                Pause27StartedAt = string.IsNullOrEmpty(model.Pause27StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause27StartedAt),
+                Pause27StoppedAt = string.IsNullOrEmpty(model.Pause27StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause27StoppedAt),
+                Pause28StartedAt = string.IsNullOrEmpty(model.Pause28StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause28StartedAt),
+                Pause28StoppedAt = string.IsNullOrEmpty(model.Pause28StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause28StoppedAt),
+                Pause29StartedAt = string.IsNullOrEmpty(model.Pause29StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause29StartedAt),
+                Pause29StoppedAt = string.IsNullOrEmpty(model.Pause29StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause29StoppedAt),
+                Pause200StartedAt = string.IsNullOrEmpty(model.Pause200StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause200StartedAt),
+                Pause200StoppedAt = string.IsNullOrEmpty(model.Pause200StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause200StoppedAt),
+                Pause201StartedAt = string.IsNullOrEmpty(model.Pause201StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause201StartedAt),
+                Pause201StoppedAt = string.IsNullOrEmpty(model.Pause201StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause201StoppedAt),
+                Pause202StartedAt = string.IsNullOrEmpty(model.Pause202StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause202StartedAt),
+                Pause202StoppedAt = string.IsNullOrEmpty(model.Pause202StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause202StoppedAt),
+                Flex = 0,
+                WorkerComment = model.CommentWorker,
+                SdkSitId = (int)sdkSite.MicrotingUid,
+                Shift1PauseNumber = model.Shift1PauseNumber,
+                Shift2PauseNumber = model.Shift2PauseNumber,
+            };
+
+            var minutesMultiplier = 5;
+
+            double nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
+            nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
+
+            if (planRegistration.Stop2Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
+                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+            }
+
+            nettoMinutes *= minutesMultiplier;
+
+            double hours = nettoMinutes / 60;
+            planRegistration.NettoHours = hours;
+            planRegistration.Flex = hours - planRegistration.PlanHours;
+            var preTimePlanning =
+                await dbContext.PlanRegistrations.AsNoTracking()
+                    .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSite.MicrotingUid)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
+            if (preTimePlanning != null)
+            {
+                planRegistration.SumFlexEnd =
+                    preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+            }
+            else
+            {
+                planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                planRegistration.SumFlexStart = 0;
+            }
+
+            await planRegistration.Create(dbContext).ConfigureAwait(false);
+        }
+        else
+        {
+            planRegistration.UpdatedByUserId = userService.UserId;
+            planRegistration.Pause1Id = model.Shift1Pause ?? 0;
+            planRegistration.Pause2Id = model.Shift2Pause ?? 0;
+            planRegistration.Start1Id = model.Shift1Start ?? 0;
+            planRegistration.Start2Id = model.Shift2Start ?? 0;
+            planRegistration.Stop1Id = model.Shift1Stop ?? 0;
+            planRegistration.Stop2Id = model.Shift2Stop ?? 0;
+            planRegistration.WorkerComment = model.CommentWorker;
+
+            planRegistration.Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
+                ? null
+                : DateTime.Parse(model.Start1StartedAt);
+            planRegistration.Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt)
+                ? null
+                : DateTime.Parse(model.Stop1StoppedAt);
+            planRegistration.Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause1StartedAt);
+            planRegistration.Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause1StoppedAt);
+            planRegistration.Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt)
+                ? null
+                : DateTime.Parse(model.Start2StartedAt);
+            planRegistration.Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
+                ? null
+                : DateTime.Parse(model.Stop2StoppedAt);
+
+            planRegistration.Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause10StartedAt);
+            planRegistration.Pause10StoppedAt = string.IsNullOrEmpty(model.Pause10StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause10StoppedAt);
+            planRegistration.Pause11StartedAt = string.IsNullOrEmpty(model.Pause11StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause11StartedAt);
+            planRegistration.Pause11StoppedAt = string.IsNullOrEmpty(model.Pause11StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause11StoppedAt);
+            planRegistration.Pause12StartedAt = string.IsNullOrEmpty(model.Pause12StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause12StartedAt);
+            planRegistration.Pause12StoppedAt = string.IsNullOrEmpty(model.Pause12StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause12StoppedAt);
+            planRegistration.Pause13StartedAt = string.IsNullOrEmpty(model.Pause13StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause13StartedAt);
+            planRegistration.Pause13StoppedAt = string.IsNullOrEmpty(model.Pause13StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause13StoppedAt);
+            planRegistration.Pause14StartedAt = string.IsNullOrEmpty(model.Pause14StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause14StartedAt);
+            planRegistration.Pause14StoppedAt = string.IsNullOrEmpty(model.Pause14StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause14StoppedAt);
+            planRegistration.Pause15StartedAt = string.IsNullOrEmpty(model.Pause15StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause15StartedAt);
+            planRegistration.Pause15StoppedAt = string.IsNullOrEmpty(model.Pause15StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause15StoppedAt);
+            planRegistration.Pause16StartedAt = string.IsNullOrEmpty(model.Pause16StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause16StartedAt);
+            planRegistration.Pause16StoppedAt = string.IsNullOrEmpty(model.Pause16StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause16StoppedAt);
+            planRegistration.Pause17StartedAt = string.IsNullOrEmpty(model.Pause17StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause17StartedAt);
+            planRegistration.Pause17StoppedAt = string.IsNullOrEmpty(model.Pause17StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause17StoppedAt);
+            planRegistration.Pause18StartedAt = string.IsNullOrEmpty(model.Pause18StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause18StartedAt);
+            planRegistration.Pause18StoppedAt = string.IsNullOrEmpty(model.Pause18StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause18StoppedAt);
+            planRegistration.Pause19StartedAt = string.IsNullOrEmpty(model.Pause19StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause19StartedAt);
+            planRegistration.Pause19StoppedAt = string.IsNullOrEmpty(model.Pause19StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause19StoppedAt);
+            planRegistration.Pause100StartedAt = string.IsNullOrEmpty(model.Pause100StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause100StartedAt);
+            planRegistration.Pause100StoppedAt = string.IsNullOrEmpty(model.Pause100StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause100StoppedAt);
+            planRegistration.Pause101StartedAt = string.IsNullOrEmpty(model.Pause101StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause101StartedAt);
+            planRegistration.Pause101StoppedAt = string.IsNullOrEmpty(model.Pause101StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause101StoppedAt);
+            planRegistration.Pause102StartedAt = string.IsNullOrEmpty(model.Pause102StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause102StartedAt);
+            planRegistration.Pause102StoppedAt = string.IsNullOrEmpty(model.Pause102StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause102StoppedAt);
+
+            planRegistration.Pause2StartedAt = string.IsNullOrEmpty(model.Pause2StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause2StartedAt);
+            planRegistration.Pause2StoppedAt = string.IsNullOrEmpty(model.Pause2StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause2StoppedAt);
+            planRegistration.Pause20StartedAt = string.IsNullOrEmpty(model.Pause20StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause20StartedAt);
+            planRegistration.Pause20StoppedAt = string.IsNullOrEmpty(model.Pause20StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause20StoppedAt);
+            planRegistration.Pause21StartedAt = string.IsNullOrEmpty(model.Pause21StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause21StartedAt);
+            planRegistration.Pause21StoppedAt = string.IsNullOrEmpty(model.Pause21StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause21StoppedAt);
+            planRegistration.Pause22StartedAt = string.IsNullOrEmpty(model.Pause22StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause22StartedAt);
+            planRegistration.Pause22StoppedAt = string.IsNullOrEmpty(model.Pause22StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause22StoppedAt);
+            planRegistration.Pause23StartedAt = string.IsNullOrEmpty(model.Pause23StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause23StartedAt);
+            planRegistration.Pause23StoppedAt = string.IsNullOrEmpty(model.Pause23StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause23StoppedAt);
+            planRegistration.Pause24StartedAt = string.IsNullOrEmpty(model.Pause24StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause24StartedAt);
+            planRegistration.Pause24StoppedAt = string.IsNullOrEmpty(model.Pause24StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause24StoppedAt);
+            planRegistration.Pause25StartedAt = string.IsNullOrEmpty(model.Pause25StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause25StartedAt);
+            planRegistration.Pause25StoppedAt = string.IsNullOrEmpty(model.Pause25StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause25StoppedAt);
+            planRegistration.Pause26StartedAt = string.IsNullOrEmpty(model.Pause26StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause26StartedAt);
+            planRegistration.Pause26StoppedAt = string.IsNullOrEmpty(model.Pause26StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause26StoppedAt);
+            planRegistration.Pause27StartedAt = string.IsNullOrEmpty(model.Pause27StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause27StartedAt);
+            planRegistration.Pause27StoppedAt = string.IsNullOrEmpty(model.Pause27StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause27StoppedAt);
+            planRegistration.Pause28StartedAt = string.IsNullOrEmpty(model.Pause28StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause28StartedAt);
+            planRegistration.Pause28StoppedAt = string.IsNullOrEmpty(model.Pause28StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause28StoppedAt);
+            planRegistration.Pause29StartedAt = string.IsNullOrEmpty(model.Pause29StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause29StartedAt);
+            planRegistration.Pause29StoppedAt = string.IsNullOrEmpty(model.Pause29StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause29StoppedAt);
+            planRegistration.Pause200StartedAt = string.IsNullOrEmpty(model.Pause200StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause200StartedAt);
+            planRegistration.Pause200StoppedAt = string.IsNullOrEmpty(model.Pause200StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause200StoppedAt);
+            planRegistration.Pause201StartedAt = string.IsNullOrEmpty(model.Pause201StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause201StartedAt);
+            planRegistration.Pause201StoppedAt = string.IsNullOrEmpty(model.Pause201StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause201StoppedAt);
+            planRegistration.Pause202StartedAt = string.IsNullOrEmpty(model.Pause202StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause202StartedAt);
+            planRegistration.Pause202StoppedAt = string.IsNullOrEmpty(model.Pause202StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause202StoppedAt);
+
+            planRegistration.Shift1PauseNumber = model.Shift1PauseNumber;
+            planRegistration.Shift2PauseNumber = model.Shift2PauseNumber;
+
+            var minutesMultiplier = 5;
+
+            double nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
+            nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
+            if (planRegistration.Stop2Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
+                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+            }
+
+            nettoMinutes *= minutesMultiplier;
+
+            double hours = nettoMinutes / 60;
+            planRegistration.NettoHours = hours;
+            planRegistration.Flex = hours - planRegistration.PlanHours;
+            var preTimePlanning =
+                await dbContext.PlanRegistrations.AsNoTracking()
+                    .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSite.MicrotingUid)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
+            if (preTimePlanning != null)
+            {
+                planRegistration.SumFlexEnd =
+                    preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+            }
+            else
+            {
+                planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                planRegistration.SumFlexStart = 0;
+            }
+
+            await planRegistration.Update(dbContext).ConfigureAwait(false);
+        }
+
+        return new OperationResult(true);
+    }
+
     public async Task<OperationResult> UpdateWorkingHour(int sdkSiteId, TimePlanningWorkingHoursUpdateModel model,
-        string token)
+        string? token)
     {
         if (token == null)
         {

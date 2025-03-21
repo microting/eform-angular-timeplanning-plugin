@@ -91,6 +91,13 @@ namespace TimePlanning.Pn.Controllers
             return await _workingHoursService.UpdateWorkingHour(sdkSiteId, obj, token);
         }
 
+        [HttpPut]
+        [Route("update")]
+        public async Task<OperationResult> UpdateWorkingHour([FromForm] TimePlanningWorkingHoursUpdateModel obj)
+        {
+            return await _workingHoursService.UpdateWorkingHour(obj);
+        }
+
         /// <summary>
         /// Download records export word
         /// </summary>
