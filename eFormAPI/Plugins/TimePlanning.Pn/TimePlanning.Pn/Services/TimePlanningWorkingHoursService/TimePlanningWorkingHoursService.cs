@@ -1038,18 +1038,13 @@ public class TimePlanningWorkingHoursService(
             var minutesMultiplier = 5;
             double nettoMinutes = 0;
 
-            if (planRegistration.Stop1Id != 0)
+            if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {
                 nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
                 nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
             }
 
-            if (planRegistration.Stop2Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
-                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
-            }
-            if (planRegistration.Stop2Id != 0)
+            if (planRegistration.Stop2Id >= planRegistration.Start2Id && planRegistration.Stop2Id != 0)
             {
                 nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
                 nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
@@ -1277,10 +1272,15 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Shift2PauseNumber = model.Shift2PauseNumber;
 
             var minutesMultiplier = 5;
+            double nettoMinutes = 0;
 
-            double nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
-            nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
-            if (planRegistration.Stop2Id != 0)
+            if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
+            {
+                nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
+                nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop2Id >= planRegistration.Start2Id && planRegistration.Stop2Id != 0)
             {
                 nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
                 nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
@@ -1556,13 +1556,13 @@ public class TimePlanningWorkingHoursService(
             var minutesMultiplier = 5;
             double nettoMinutes = 0;
 
-            if (planRegistration.Stop1Id != 0)
+            if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {
                 nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
                 nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
             }
 
-            if (planRegistration.Stop2Id != 0)
+            if (planRegistration.Stop2Id >= planRegistration.Start2Id && planRegistration.Stop2Id != 0)
             {
                 nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
                 nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
@@ -1791,10 +1791,15 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Shift2PauseNumber = model.Shift2PauseNumber;
 
             var minutesMultiplier = 5;
+            double nettoMinutes = 0;
 
-            double nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
-            nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
-            if (planRegistration.Stop2Id != 0)
+            if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
+            {
+                nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
+                nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop2Id >= planRegistration.Start2Id && planRegistration.Stop2Id != 0)
             {
                 nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
                 nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
