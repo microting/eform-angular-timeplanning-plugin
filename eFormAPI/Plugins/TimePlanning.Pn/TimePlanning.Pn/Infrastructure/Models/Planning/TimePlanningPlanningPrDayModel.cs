@@ -60,4 +60,6 @@ public class TimePlanningPlanningPrDayModel
 
     public int Break1Shift { get; set; }
     public int Break2Shift { get; set; }
+    public string CommentOffice { get; set; }
+    public string WorkerComment { get; set; }
 }

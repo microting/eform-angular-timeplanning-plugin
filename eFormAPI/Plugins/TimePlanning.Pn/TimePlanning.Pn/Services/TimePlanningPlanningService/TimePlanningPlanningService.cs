@@ -497,6 +497,8 @@ public class TimePlanningPlanningService(
                             }
                         }
 
+                        planningModel.CommentOffice = planRegistration.CommentOffice;
+                        planningModel.WorkerComment = planRegistration.WorkerComment;
                         planningModel.PlannedBreakOfShift1 = planRegistration.PlannedBreakOfShift1;
                         planningModel.PlannedStartOfShift1 = planRegistration.PlannedStartOfShift1;
                         planningModel.PlannedEndOfShift1 = planRegistration.PlannedEndOfShift1;
@@ -956,6 +958,8 @@ public class TimePlanningPlanningService(
                     }
                 }
 
+                planningModel.CommentOffice = planRegistration.CommentOffice;
+                planningModel.WorkerComment = planRegistration.WorkerComment;
                 planningModel.PlannedBreakOfShift1 = planRegistration.PlannedBreakOfShift1;
                 planningModel.PlannedStartOfShift1 = planRegistration.PlannedStartOfShift1;
                 planningModel.PlannedEndOfShift1 = planRegistration.PlannedEndOfShift1;
