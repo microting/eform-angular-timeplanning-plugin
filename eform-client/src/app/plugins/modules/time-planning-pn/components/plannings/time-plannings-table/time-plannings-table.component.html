@@ -43,7 +43,7 @@
   <div class="plan-container" (click)="onDayColumnClick(row, col.field)">
     <!-- Left Content -->
     <div class="plan-content">
-      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>
+      <!--<div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>-->
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0">
         <strong class="{{ getCellTextColor(row, col.field) }}">
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
@@ -68,15 +68,22 @@
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }} -
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }}
       </div>
+      <div class="plan-text">
+        <p>
+          {{row.planningPrDayModels[col.field]?.workerComment}}
+          {{row.planningPrDayModels[col.field]?.commentOffice}}
+        </p>
+
+      </div>
     </div>
 
     <!-- Right Icons -->
     <div class="plan-icons">
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 2" color="primary">flight</mat-icon>
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 3 || row.planningPrDayModels[col.field]?.message === 7 || row.planningPrDayModels[col.field]?.message === 8" color="warn">sick</mat-icon>
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 1" color="primary">event_busy</mat-icon>
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 4" color="primary">school</mat-icon>
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 5" color="primary">event_busy</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 2" class="blue-text">flight</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 3 || row.planningPrDayModels[col.field]?.message === 7 || row.planningPrDayModels[col.field]?.message === 8" class="red-text">sick</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 1" class="blue-text">event_busy</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 4" class="blue-text">school</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 5" class="blue-text">event_busy</mat-icon>
     </div>
   </div>
 </ng-template>

@@ -1,10 +1,22 @@
 //.background-yellow{background-color: var(--yellow) !important;}
 .grey-background {
-  background-color: lightgrey !important;
+  background-color: #f3f4f6 !important;
+  border-right: 5px solid white !important;
+  padding-right: 5px !important;
+  border-bottom: 1px solid white !important;
+}
+
+.white-background {
+  border-right: 5px solid white !important;
+  margin-right: 5px !important;
+  border-bottom: 1px solid white !important;
 }
 
 .green-background {
-  background-color: green !important;
+  background-color: #0bbe60 !important;
+  border-bottom: 1px solid white !important;
+  border-right: 5px solid white !important;
+  margin-right: 5px !important;
 }
 
 .black-text {
@@ -20,7 +32,11 @@
 }
 
 .red-text {
-  color: red !important;
+  color: #da4259 !important;
+}
+
+.blue-text {
+  color: #007bff !important;
 }
 
 .progress-circle {
@@ -29,8 +45,8 @@
   height: 50px;
   border-radius: 50%;
   background: conic-gradient(
-    green 0%,
-    green calc(var(--percentage) * 1%),
+    #0bbe60 0%,
+    #0bbe60 calc(var(--percentage) * 1%),
     lightgrey calc(var(--percentage) * 1%),
     lightgrey 100%
   );
@@ -75,6 +91,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 4px;
+  min-width: 100px; /* Adjust the value as needed */
 }
 
 .plan-content {
