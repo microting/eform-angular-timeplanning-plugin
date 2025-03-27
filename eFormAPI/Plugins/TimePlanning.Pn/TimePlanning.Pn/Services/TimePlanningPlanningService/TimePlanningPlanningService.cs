@@ -311,48 +311,52 @@ public class TimePlanningPlanningService(
                             if (planRegistration.PlannedStartOfShift1 == 0 && !string.IsNullOrEmpty(planRegistration.PlanText) &&
                                 planRegistration.PlanHours > 0)
                             {
-                                // split the planText by this regex (.*)-(.*)\/(.*)
-                                // the parts are in hours, so we need to multiply by 60 to get minutes and can be like 7.30 or 7:30 so it can be 7.5, 7:30, 7½ and they are all the same
-                                // so we parse the first part and multiply by 60 and just add the second part
-                                // the last part is the break in minutes and can be ¾ or ½
-                                var regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                var match = regex.Match(planRegistration.PlanText);
-                                if (match.Captures.Count == 0)
+                                if (planRegistration.Date > DateTime.Now)
                                 {
-                                    regex = new Regex(@"(.*)-(.*)");
-                                    match = regex.Match(planRegistration.PlanText);
-                                }
-
-                                var firstPart = match.Groups[1].Value;
-                                var firstPartSplit =
-                                    firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                var firstPartHours = int.Parse(firstPartSplit[0]);
-                                var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                var secondPart = match.Groups[2].Value;
-                                var secondPartSplit =
-                                    secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                var secondPartHours = int.Parse(secondPartSplit[0]);
-                                var secondPartMinutes = secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
-                                planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
-
-                                if (match.Groups.Count == 4)
-                                {
-                                    var breakPart = match.Groups[3].Value;
-                                    var breakPartMinutes = breakPart switch
+                                    // split the planText by this regex (.*)-(.*)\/(.*)
+                                    // the parts are in hours, so we need to multiply by 60 to get minutes and can be like 7.30 or 7:30 so it can be 7.5, 7:30, 7½ and they are all the same
+                                    // so we parse the first part and multiply by 60 and just add the second part
+                                    // the last part is the break in minutes and can be ¾ or ½
+                                    var regex = new Regex(@"(.*)-(.*)\/(.*)");
+                                    var match = regex.Match(planRegistration.PlanText);
+                                    if (match.Captures.Count == 0)
                                     {
-                                        "¾" => 45,
-                                        "½" => 30,
-                                        "1" => 60,
-                                        _ => 0
-                                    };
+                                        regex = new Regex(@"(.*)-(.*)");
+                                        match = regex.Match(planRegistration.PlanText);
+                                    }
 
-                                    planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                                    var firstPart = match.Groups[1].Value;
+                                    var firstPartSplit =
+                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var firstPartHours = int.Parse(firstPartSplit[0]);
+                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                    var secondPart = match.Groups[2].Value;
+                                    var secondPartSplit =
+                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var secondPartHours = int.Parse(secondPartSplit[0]);
+                                    var secondPartMinutes =
+                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                    planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
+                                    planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
+
+                                    if (match.Groups.Count == 4)
+                                    {
+                                        var breakPart = match.Groups[3].Value;
+                                        var breakPartMinutes = breakPart switch
+                                        {
+                                            "¾" => 45,
+                                            "½" => 30,
+                                            "1" => 60,
+                                            _ => 0
+                                        };
+
+                                        planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                                    }
+
+                                    await planRegistration.Update(dbContext).ConfigureAwait(false);
                                 }
-
-                                await planRegistration.Update(dbContext).ConfigureAwait(false);
                             }
                         }
                         else
@@ -915,48 +919,51 @@ public class TimePlanningPlanningService(
                         !string.IsNullOrEmpty(planRegistration.PlanText) &&
                         planRegistration.PlanHours > 0)
                     {
-                        // split the planText by this regex (.*)-(.*)\/(.*)
-                        // the parts are in hours, so we need to multiply by 60 to get minutes and can be like 7.30 or 7:30 so it can be 7.5, 7:30, 7½ and they are all the same
-                        // so we parse the first part and multiply by 60 and just add the second part
-                        // the last part is the break in minutes and can be ¾ or ½
-                        var regex = new Regex(@"(.*)-(.*)\/(.*)");
-                        var match = regex.Match(planRegistration.PlanText);
-                        if (match.Captures.Count == 0)
+                        if (planRegistration.Date > DateTime.Now)
                         {
-                            regex = new Regex(@"(.*)-(.*)");
-                            match = regex.Match(planRegistration.PlanText);
-                        }
-
-                        var firstPart = match.Groups[1].Value;
-                        var firstPartSplit =
-                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                        var firstPartHours = int.Parse(firstPartSplit[0]);
-                        var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                        var secondPart = match.Groups[2].Value;
-                        var secondPartSplit =
-                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                        var secondPartHours = int.Parse(secondPartSplit[0]);
-                        var secondPartMinutes = secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                        planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
-                        planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
-
-                        if (match.Groups.Count == 4)
-                        {
-                            var breakPart = match.Groups[3].Value;
-                            var breakPartMinutes = breakPart switch
+                            // split the planText by this regex (.*)-(.*)\/(.*)
+                            // the parts are in hours, so we need to multiply by 60 to get minutes and can be like 7.30 or 7:30 so it can be 7.5, 7:30, 7½ and they are all the same
+                            // so we parse the first part and multiply by 60 and just add the second part
+                            // the last part is the break in minutes and can be ¾ or ½
+                            var regex = new Regex(@"(.*)-(.*)\/(.*)");
+                            var match = regex.Match(planRegistration.PlanText);
+                            if (match.Captures.Count == 0)
                             {
-                                "¾" => 45,
-                                "½" => 30,
-                                "1" => 60,
-                                _ => 0
-                            };
+                                regex = new Regex(@"(.*)-(.*)");
+                                match = regex.Match(planRegistration.PlanText);
+                            }
 
-                            planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                            var firstPart = match.Groups[1].Value;
+                            var firstPartSplit =
+                                firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                            var firstPartHours = int.Parse(firstPartSplit[0]);
+                            var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                            var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                            var secondPart = match.Groups[2].Value;
+                            var secondPartSplit =
+                                secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                            var secondPartHours = int.Parse(secondPartSplit[0]);
+                            var secondPartMinutes = secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                            var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                            planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
+                            planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
+
+                            if (match.Groups.Count == 4)
+                            {
+                                var breakPart = match.Groups[3].Value;
+                                var breakPartMinutes = breakPart switch
+                                {
+                                    "¾" => 45,
+                                    "½" => 30,
+                                    "1" => 60,
+                                    _ => 0
+                                };
+
+                                planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                            }
+
+                            await planRegistration.Update(dbContext).ConfigureAwait(false);
                         }
-
-                        await planRegistration.Update(dbContext).ConfigureAwait(false);
                     }
                 }
                 else

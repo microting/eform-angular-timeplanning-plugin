@@ -117,7 +117,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
           return 'grey-background';
         }
       } else {
-        return 'white-background';
+        return workDayStarted ? 'grey-background' : 'white-background';
       }
     } catch (e) {
       //console.error(e);
@@ -135,7 +135,6 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         //console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
         return workDayEnded ? 'white-text' : 'green-text';
       } else {
-        debugger;
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }
     }
@@ -176,6 +175,20 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${this.padZero(hours)}:${this.padZero(mins)}`;
+  }
+
+  convertHoursToTime(hours: number): string {
+    const totalMinutes = Math.floor(hours * 60)
+    const hrs = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return `${this.padZero(hrs)}:${this.padZero(mins)}`;
+  }
+
+  convertHoursToTimeWithTranslations(hours: number): string {
+    const totalMinutes = Math.floor(hours * 60)
+    const hrs = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return `${this.padZero(hrs)} ${this.translateService.instant('hours')} ${this.padZero(mins)} ${this.translateService.instant('minutes')}`;
   }
 
   padZero(num: number): string {

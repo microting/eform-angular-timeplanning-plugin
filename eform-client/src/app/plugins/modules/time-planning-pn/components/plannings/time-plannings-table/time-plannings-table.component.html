@@ -26,11 +26,11 @@
       <div class="hours-info">
         <strong>{{ row[col.field] }}</strong>
         <div *ngIf="row['plannedHours'] !== 0">
-          {{ padZero(row['plannedHours']) }}{{'h' | translate}} {{ padZero(row['plannedMinutes']) }}{{'m' | translate}}
+          {{ padZero(row['plannedHours']) }}:{{ padZero(row['plannedMinutes']) }}
 
           <ng-container *ngIf="row['currentWorkedHours'] !== 0">
             (
-            {{ padZero(row['currentWorkedHours']) }}{{'h' | translate}} {{ padZero(row['currentWorkedMinutes']) }}{{'m' | translate}}
+            {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
             )
           </ng-container>
         </div>
@@ -56,6 +56,11 @@
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift2) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift2) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift2) }}
+        </strong>
+      </div>
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.planHours !== 0">
+        <strong class="{{ getCellTextColor(row, col.field) }}">
+          {{ convertHoursToTime(row.planningPrDayModels[col.field]?.planHours) }}
         </strong>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
