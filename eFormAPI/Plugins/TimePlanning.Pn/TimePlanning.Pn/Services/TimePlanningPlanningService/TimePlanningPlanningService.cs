@@ -198,7 +198,7 @@ public class TimePlanningPlanningService(
                         WeekDay =
                             planRegistration.Date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)planRegistration.Date.DayOfWeek,
                         ActualHours = planRegistration.NettoHours,
-                        Difference = planRegistration.NettoHours - planRegistration.PlanHours,
+                        Difference = planRegistration.Flex,
                         PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) <= 0.00,
                         WorkDayStarted = planRegistration.Start1Id != 0,
                         WorkDayEnded = planRegistration.Stop1Id != 0 ||
@@ -805,7 +805,7 @@ public class TimePlanningPlanningService(
                 WeekDay =
                     planRegistration.Date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)planRegistration.Date.DayOfWeek,
                 ActualHours = planRegistration.NettoHours,
-                Difference = planRegistration.NettoHours - planRegistration.PlanHours,
+                Difference = planRegistration.Flex,
                 PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) <= 0.00,
                 WorkDayStarted = planRegistration.Start1Id != 0,
                 WorkDayEnded = planRegistration.Stop1Id != 0 ||
