@@ -62,9 +62,11 @@ public class TimePlanningPlanningService(
             var assignedSites =
                 await dbContext.AssignedSites.Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .ToListAsync().ConfigureAwait(false);
+            var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
+            var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
+            var todayMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
             var datesInPeriod = new List<DateTime>();
             var date = model.DateFrom;
-            var midnightOfDateFrom = new DateTime(date.Value.Year, date.Value.Month, date.Value.Day, 0, 0, 0);
             while (date <= model.DateTo)
             {
                 datesInPeriod.Add(date.Value);
@@ -102,8 +104,8 @@ public class TimePlanningPlanningService(
                 var planningsInPeriod = await dbContext.PlanRegistrations
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
-                    .Where(x => x.Date >= model.DateFrom)
-                    .Where(x => x.Date <= model.DateTo)
+                    .Where(x => x.Date >= midnightOfDateFrom)
+                    .Where(x => x.Date <= midnightOfDateTo)
                     .OrderBy(x => x.Date)
                     .ToListAsync().ConfigureAwait(false);
 
@@ -120,14 +122,6 @@ public class TimePlanningPlanningService(
 
                 foreach (var missingDate in missingDates)
                 {
-                    var preTimePlanning =
-                        await dbContext.PlanRegistrations.AsNoTracking()
-                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                            .Where(x => x.Date < missingDate
-                                        && x.SdkSitId == dbAssignedSite.SiteId)
-                            .OrderByDescending(x => x.Date)
-                            .FirstOrDefaultAsync();
-
                     var newPlanRegistration = new PlanRegistration
                     {
                         Date = missingDate,
@@ -136,20 +130,33 @@ public class TimePlanningPlanningService(
                         UpdatedByUserId = userService.UserId
                     };
 
-                    if (preTimePlanning != null)
+                    if (missingDate.Date <= todayMidnight)
                     {
-                        newPlanRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                        newPlanRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + newPlanRegistration.NettoHours -
-                                                         newPlanRegistration.PlanHours -
-                                                         newPlanRegistration.PaiedOutFlex;
-                        newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
-                    }
-                    else
-                    {
-                        newPlanRegistration.SumFlexEnd = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours -
-                                                         newPlanRegistration.PaiedOutFlex;
-                        newPlanRegistration.SumFlexStart = 0;
-                        newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+                        var preTimePlanning =
+                            await dbContext.PlanRegistrations.AsNoTracking()
+                                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                .Where(x => x.Date < missingDate
+                                            && x.SdkSitId == dbAssignedSite.SiteId)
+                                .OrderByDescending(x => x.Date)
+                                .FirstOrDefaultAsync();
+
+                        if (preTimePlanning != null)
+                        {
+                            newPlanRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            newPlanRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + newPlanRegistration.NettoHours -
+                                newPlanRegistration.PlanHours -
+                                newPlanRegistration.PaiedOutFlex;
+                            newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+                        }
+                        else
+                        {
+                            newPlanRegistration.SumFlexEnd =
+                                newPlanRegistration.NettoHours - newPlanRegistration.PlanHours -
+                                newPlanRegistration.PaiedOutFlex;
+                            newPlanRegistration.SumFlexStart = 0;
+                            newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+                        }
                     }
 
                     await newPlanRegistration.Create(dbContext);
@@ -160,8 +167,8 @@ public class TimePlanningPlanningService(
                     planningsInPeriod = await dbContext.PlanRegistrations
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                         .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
-                        .Where(x => x.Date >= model.DateFrom)
-                        .Where(x => x.Date <= model.DateTo)
+                        .Where(x => x.Date >= midnightOfDateFrom)
+                        .Where(x => x.Date <= midnightOfDateTo)
                         .OrderBy(x => x.Date)
                         .ToListAsync().ConfigureAwait(false);
                 }
@@ -667,8 +674,10 @@ public class TimePlanningPlanningService(
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
 
         var datesInPeriod = new List<DateTime>();
+        var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
+        var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
+        var todayMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
         var date = model.DateFrom;
-        var midnightOfDateFrom = new DateTime(date!.Value.Year, date.Value.Month, date.Value.Day, 0, 0, 0);
         while (date <= model.DateTo)
         {
             datesInPeriod.Add(date.Value);
@@ -695,8 +704,8 @@ public class TimePlanningPlanningService(
         var planningsInPeriod = await dbContext.PlanRegistrations
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
-            .Where(x => x.Date >= model.DateFrom)
-            .Where(x => x.Date <= model.DateTo)
+            .Where(x => x.Date >= midnightOfDateFrom)
+            .Where(x => x.Date <= midnightOfDateTo)
             .OrderByDescending(x => x.Date)
             .ToListAsync().ConfigureAwait(false);
 
@@ -713,14 +722,6 @@ public class TimePlanningPlanningService(
 
         foreach (var missingDate in missingDates)
         {
-            var preTimePlanning =
-                await dbContext.PlanRegistrations.AsNoTracking()
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Date < missingDate
-                                && x.SdkSitId == dbAssignedSite.SiteId)
-                    .OrderByDescending(x => x.Date)
-                    .FirstOrDefaultAsync();
-
             var newPlanRegistration = new PlanRegistration
             {
                 Date = missingDate,
@@ -729,20 +730,31 @@ public class TimePlanningPlanningService(
                 UpdatedByUserId = userService.UserId
             };
 
-            if (preTimePlanning != null)
+            if (missingDate.Date <= todayMidnight)
             {
-                newPlanRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                newPlanRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + newPlanRegistration.NettoHours -
-                                                 newPlanRegistration.PlanHours -
-                                                 newPlanRegistration.PaiedOutFlex;
-                newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
-            }
-            else
-            {
-                newPlanRegistration.SumFlexEnd = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours -
-                                                 newPlanRegistration.PaiedOutFlex;
-                newPlanRegistration.SumFlexStart = 0;
-                newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+                var preTimePlanning =
+                    await dbContext.PlanRegistrations.AsNoTracking()
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Date < missingDate
+                                    && x.SdkSitId == dbAssignedSite.SiteId)
+                        .OrderByDescending(x => x.Date)
+                        .FirstOrDefaultAsync();
+
+                if (preTimePlanning != null)
+                {
+                    newPlanRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                    newPlanRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + newPlanRegistration.NettoHours -
+                                                     newPlanRegistration.PlanHours -
+                                                     newPlanRegistration.PaiedOutFlex;
+                    newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+                }
+                else
+                {
+                    newPlanRegistration.SumFlexEnd = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours -
+                                                     newPlanRegistration.PaiedOutFlex;
+                    newPlanRegistration.SumFlexStart = 0;
+                    newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+                }
             }
 
             await newPlanRegistration.Create(dbContext);
@@ -753,8 +765,8 @@ public class TimePlanningPlanningService(
             planningsInPeriod = await dbContext.PlanRegistrations
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
-                .Where(x => x.Date >= model.DateFrom)
-                .Where(x => x.Date <= model.DateTo)
+                .Where(x => x.Date >= midnightOfDateFrom)
+                .Where(x => x.Date <= midnightOfDateTo)
                 .OrderByDescending(x => x.Date)
                 .ToListAsync().ConfigureAwait(false);
         }
