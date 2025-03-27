@@ -614,7 +614,6 @@ public class TimePlanningPlanningService(
                         planningModel.PlannedStartOfShift1 = planRegistration.PlannedStartOfShift1;
                         planningModel.PlannedEndOfShift1 = planRegistration.PlannedEndOfShift1;
                         planningModel.PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) <= 0.00;
-
                     }
                     catch (Exception e)
                     {
@@ -626,6 +625,11 @@ public class TimePlanningPlanningService(
                     }
 
                     siteModel.PlanningPrDayModels.Add(planningModel);
+
+                    foreach (var entity in planningsInPeriod)
+                    {
+                        dbContext.Entry(entity).State = EntityState.Detached;
+                    }
                 }
 
                 result.Add(siteModel);
@@ -1187,6 +1191,11 @@ public class TimePlanningPlanningService(
             }
 
             siteModel.PlanningPrDayModels.Add(planningModel);
+
+            foreach (var entity in planningsInPeriod)
+            {
+                dbContext.Entry(entity).State = EntityState.Detached;
+            }
         }
 
         siteModel.PlanningPrDayModels = model.IsSortDsc
