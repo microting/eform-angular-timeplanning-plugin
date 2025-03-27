@@ -120,6 +120,14 @@ public class TimePlanningPlanningService(
 
                 foreach (var missingDate in missingDates)
                 {
+                    var preTimePlanning =
+                        await dbContext.PlanRegistrations.AsNoTracking()
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.Date < missingDate
+                                        && x.SdkSitId == dbAssignedSite.SiteId)
+                            .OrderByDescending(x => x.Date)
+                            .FirstOrDefaultAsync();
+
                     var newPlanRegistration = new PlanRegistration
                     {
                         Date = missingDate,
@@ -127,6 +135,22 @@ public class TimePlanningPlanningService(
                         CreatedByUserId = userService.UserId,
                         UpdatedByUserId = userService.UserId
                     };
+
+                    if (preTimePlanning != null)
+                    {
+                        newPlanRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                        newPlanRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + newPlanRegistration.NettoHours -
+                                                         newPlanRegistration.PlanHours -
+                                                         newPlanRegistration.PaiedOutFlex;
+                        newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+                    }
+                    else
+                    {
+                        newPlanRegistration.SumFlexEnd = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours -
+                                                         newPlanRegistration.PaiedOutFlex;
+                        newPlanRegistration.SumFlexStart = 0;
+                        newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+                    }
 
                     await newPlanRegistration.Create(dbContext);
                 }
@@ -164,12 +188,14 @@ public class TimePlanningPlanningService(
                         PlanHours = planRegistration.PlanHours,
                         Message = planRegistration.MessageId,
                         SiteId = dbAssignedSite.SiteId,
-                        WeekDay = planRegistration.Date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)planRegistration.Date.DayOfWeek,
+                        WeekDay =
+                            planRegistration.Date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)planRegistration.Date.DayOfWeek,
                         ActualHours = planRegistration.NettoHours,
                         Difference = planRegistration.NettoHours - planRegistration.PlanHours,
                         PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) <= 0.00,
                         WorkDayStarted = planRegistration.Start1Id != 0,
-                        WorkDayEnded = planRegistration.Stop1Id != 0 || (planRegistration.Start2Id != 0 && planRegistration.Stop2Id != 0),
+                        WorkDayEnded = planRegistration.Stop1Id != 0 ||
+                                       (planRegistration.Start2Id != 0 && planRegistration.Stop2Id != 0),
                         PlannedStartOfShift1 = planRegistration.PlannedStartOfShift1,
                         PlannedEndOfShift1 = planRegistration.PlannedEndOfShift1,
                         PlannedBreakOfShift1 = planRegistration.PlannedBreakOfShift1,
@@ -181,17 +207,95 @@ public class TimePlanningPlanningService(
                         Sick = planRegistration.Sick,
                         OtherAllowedAbsence = planRegistration.OtherAllowedAbsence,
                         AbsenceWithoutPermission = planRegistration.AbsenceWithoutPermission,
-                        Start1StartedAt = (planRegistration.Start1Id == 0 ? null : midnight.AddMinutes(
-                            (planRegistration.Start1Id * 5) - 5)),
-                        Stop1StoppedAt = (planRegistration.Stop1Id == 0 ? null : midnight.AddMinutes(
-                            (planRegistration.Stop1Id * 5) - 5)),
-                        Start2StartedAt = (planRegistration.Start2Id == 0 ? null : midnight.AddMinutes(
-                            (planRegistration.Start2Id * 5) - 5)),
-                        Stop2StoppedAt = (planRegistration.Stop2Id == 0 ? null : midnight.AddMinutes(
-                            (planRegistration.Stop2Id * 5) - 5)),
+                        Start1StartedAt = dbAssignedSite.UseOneMinuteIntervals
+                            ? planRegistration.Start1StartedAt
+                            : (planRegistration.Start1Id == 0
+                                ? null
+                                : midnight.AddMinutes(
+                                    (planRegistration.Start1Id * 5) - 5)),
+                        Stop1StoppedAt = dbAssignedSite.UseOneMinuteIntervals
+                            ? planRegistration.Stop1StoppedAt
+                            : (planRegistration.Stop1Id == 0
+                                ? null
+                                : midnight.AddMinutes(
+                                    (planRegistration.Stop1Id * 5) - 5)),
+                        Start2StartedAt = dbAssignedSite.UseOneMinuteIntervals
+                            ? planRegistration.Start2StartedAt
+                            : (planRegistration.Start2Id == 0
+                                ? null
+                                : midnight.AddMinutes(
+                                    (planRegistration.Start2Id * 5) - 5)),
+                        Stop2StoppedAt = dbAssignedSite.UseOneMinuteIntervals
+                            ? planRegistration.Stop2StoppedAt
+                            : (planRegistration.Stop2Id == 0
+                                ? null
+                                : midnight.AddMinutes(
+                                    (planRegistration.Stop2Id * 5) - 5)),
                         Break1Shift = planRegistration.Pause1Id,
                         Break2Shift = planRegistration.Pause2Id,
-                        PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5
+                        PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5,
+                        CommentOffice = planRegistration.CommentOffice,
+                        WorkerComment = planRegistration.WorkerComment,
+                        SumFlexStart = planRegistration.SumFlexStart,
+                        SumFlexEnd = planRegistration.SumFlexEnd,
+                        PaidOutFlex = planRegistration.PaiedOutFlex,
+                        Pause1StartedAt = planRegistration.Pause1StartedAt,
+                        Pause1StoppedAt = planRegistration.Pause1StoppedAt,
+                        Pause2StartedAt = planRegistration.Pause2StartedAt,
+                        Pause2StoppedAt = planRegistration.Pause2StoppedAt,
+                        Pause10StartedAt = planRegistration.Pause10StartedAt,
+                        Pause10StoppedAt = planRegistration.Pause10StoppedAt,
+                        Pause11StartedAt = planRegistration.Pause11StartedAt,
+                        Pause11StoppedAt = planRegistration.Pause11StoppedAt,
+                        Pause12StartedAt = planRegistration.Pause12StartedAt,
+                        Pause12StoppedAt = planRegistration.Pause12StoppedAt,
+                        Pause13StartedAt = planRegistration.Pause13StartedAt,
+                        Pause13StoppedAt = planRegistration.Pause13StoppedAt,
+                        Pause14StartedAt = planRegistration.Pause14StartedAt,
+                        Pause14StoppedAt = planRegistration.Pause14StoppedAt,
+                        Pause15StartedAt = planRegistration.Pause15StartedAt,
+                        Pause15StoppedAt = planRegistration.Pause15StoppedAt,
+                        Pause16StartedAt = planRegistration.Pause16StartedAt,
+                        Pause16StoppedAt = planRegistration.Pause16StoppedAt,
+                        Pause17StartedAt = planRegistration.Pause17StartedAt,
+                        Pause17StoppedAt = planRegistration.Pause17StoppedAt,
+                        Pause18StartedAt = planRegistration.Pause18StartedAt,
+                        Pause18StoppedAt = planRegistration.Pause18StoppedAt,
+                        Pause19StartedAt = planRegistration.Pause19StartedAt,
+                        Pause19StoppedAt = planRegistration.Pause19StoppedAt,
+                        Pause20StartedAt = planRegistration.Pause20StartedAt,
+                        Pause20StoppedAt = planRegistration.Pause20StoppedAt,
+                        Pause21StartedAt = planRegistration.Pause21StartedAt,
+                        Pause21StoppedAt = planRegistration.Pause21StoppedAt,
+                        Pause22StartedAt = planRegistration.Pause22StartedAt,
+                        Pause22StoppedAt = planRegistration.Pause22StoppedAt,
+                        Pause23StartedAt = planRegistration.Pause23StartedAt,
+                        Pause23StoppedAt = planRegistration.Pause23StoppedAt,
+                        Pause24StartedAt = planRegistration.Pause24StartedAt,
+                        Pause24StoppedAt = planRegistration.Pause24StoppedAt,
+                        Pause25StartedAt = planRegistration.Pause25StartedAt,
+                        Pause25StoppedAt = planRegistration.Pause25StoppedAt,
+                        Pause26StartedAt = planRegistration.Pause26StartedAt,
+                        Pause26StoppedAt = planRegistration.Pause26StoppedAt,
+                        Pause27StartedAt = planRegistration.Pause27StartedAt,
+                        Pause27StoppedAt = planRegistration.Pause27StoppedAt,
+                        Pause28StartedAt = planRegistration.Pause28StartedAt,
+                        Pause28StoppedAt = planRegistration.Pause28StoppedAt,
+                        Pause29StartedAt = planRegistration.Pause29StartedAt,
+                        Pause29StoppedAt = planRegistration.Pause29StoppedAt,
+                        Pause100StartedAt = planRegistration.Pause100StartedAt,
+                        Pause100StoppedAt = planRegistration.Pause100StoppedAt,
+                        Pause101StartedAt = planRegistration.Pause101StartedAt,
+                        Pause101StoppedAt = planRegistration.Pause101StoppedAt,
+                        Pause102StartedAt = planRegistration.Pause102StartedAt,
+                        Pause102StoppedAt = planRegistration.Pause102StoppedAt,
+                        Pause200StartedAt = planRegistration.Pause200StartedAt,
+                        Pause200StoppedAt = planRegistration.Pause200StoppedAt,
+                        Pause201StartedAt = planRegistration.Pause201StartedAt,
+                        Pause201StoppedAt = planRegistration.Pause201StoppedAt,
+                        Pause202StartedAt = planRegistration.Pause202StartedAt,
+                        Pause202StoppedAt = planRegistration.Pause202StoppedAt,
+
                     };
                     try
                     {
@@ -609,6 +713,14 @@ public class TimePlanningPlanningService(
 
         foreach (var missingDate in missingDates)
         {
+            var preTimePlanning =
+                await dbContext.PlanRegistrations.AsNoTracking()
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Date < missingDate
+                                && x.SdkSitId == dbAssignedSite.SiteId)
+                    .OrderByDescending(x => x.Date)
+                    .FirstOrDefaultAsync();
+
             var newPlanRegistration = new PlanRegistration
             {
                 Date = missingDate,
@@ -616,6 +728,22 @@ public class TimePlanningPlanningService(
                 CreatedByUserId = userService.UserId,
                 UpdatedByUserId = userService.UserId
             };
+
+            if (preTimePlanning != null)
+            {
+                newPlanRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                newPlanRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + newPlanRegistration.NettoHours -
+                                                 newPlanRegistration.PlanHours -
+                                                 newPlanRegistration.PaiedOutFlex;
+                newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+            }
+            else
+            {
+                newPlanRegistration.SumFlexEnd = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours -
+                                                 newPlanRegistration.PaiedOutFlex;
+                newPlanRegistration.SumFlexStart = 0;
+                newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
+            }
 
             await newPlanRegistration.Create(dbContext);
         }
@@ -673,25 +801,95 @@ public class TimePlanningPlanningService(
                 Sick = planRegistration.Sick,
                 OtherAllowedAbsence = planRegistration.OtherAllowedAbsence,
                 AbsenceWithoutPermission = planRegistration.AbsenceWithoutPermission,
-                Start1StartedAt = (planRegistration.Start1Id == 0
-                    ? null
-                    : midnight.AddMinutes(
-                        (planRegistration.Start1Id * 5) - 5)),
-                Stop1StoppedAt = (planRegistration.Stop1Id == 0
-                    ? null
-                    : midnight.AddMinutes(
-                        (planRegistration.Stop1Id * 5) - 5)),
-                Start2StartedAt = (planRegistration.Start2Id == 0
-                    ? null
-                    : midnight.AddMinutes(
-                        (planRegistration.Start2Id * 5) - 5)),
-                Stop2StoppedAt = (planRegistration.Stop2Id == 0
-                    ? null
-                    : midnight.AddMinutes(
-                        (planRegistration.Stop2Id * 5) - 5)),
+                Start1StartedAt = dbAssignedSite.UseOneMinuteIntervals
+                    ? planRegistration.Start1StartedAt
+                    : (planRegistration.Start1Id == 0
+                        ? null
+                        : midnight.AddMinutes(
+                            (planRegistration.Start1Id * 5) - 5)),
+                Stop1StoppedAt = dbAssignedSite.UseOneMinuteIntervals
+                    ? planRegistration.Stop1StoppedAt
+                    : (planRegistration.Stop1Id == 0
+                        ? null
+                        : midnight.AddMinutes(
+                            (planRegistration.Stop1Id * 5) - 5)),
+                Start2StartedAt = dbAssignedSite.UseOneMinuteIntervals
+                    ? planRegistration.Start2StartedAt
+                    : (planRegistration.Start2Id == 0
+                        ? null
+                        : midnight.AddMinutes(
+                            (planRegistration.Start2Id * 5) - 5)),
+                Stop2StoppedAt = dbAssignedSite.UseOneMinuteIntervals
+                    ? planRegistration.Stop2StoppedAt
+                    : (planRegistration.Stop2Id == 0
+                        ? null
+                        : midnight.AddMinutes(
+                            (planRegistration.Stop2Id * 5) - 5)),
                 Break1Shift = planRegistration.Pause1Id,
                 Break2Shift = planRegistration.Pause2Id,
-                PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5
+                PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5,
+                CommentOffice = planRegistration.CommentOffice,
+                WorkerComment = planRegistration.WorkerComment,
+                SumFlexStart = planRegistration.SumFlexStart,
+                SumFlexEnd = planRegistration.SumFlexEnd,
+                PaidOutFlex = planRegistration.PaiedOutFlex,
+                Pause1StartedAt = planRegistration.Pause1StartedAt,
+                Pause1StoppedAt = planRegistration.Pause1StoppedAt,
+                Pause2StartedAt = planRegistration.Pause2StartedAt,
+                Pause2StoppedAt = planRegistration.Pause2StoppedAt,
+                Pause10StartedAt = planRegistration.Pause10StartedAt,
+                Pause10StoppedAt = planRegistration.Pause10StoppedAt,
+                Pause11StartedAt = planRegistration.Pause11StartedAt,
+                Pause11StoppedAt = planRegistration.Pause11StoppedAt,
+                Pause12StartedAt = planRegistration.Pause12StartedAt,
+                Pause12StoppedAt = planRegistration.Pause12StoppedAt,
+                Pause13StartedAt = planRegistration.Pause13StartedAt,
+                Pause13StoppedAt = planRegistration.Pause13StoppedAt,
+                Pause14StartedAt = planRegistration.Pause14StartedAt,
+                Pause14StoppedAt = planRegistration.Pause14StoppedAt,
+                Pause15StartedAt = planRegistration.Pause15StartedAt,
+                Pause15StoppedAt = planRegistration.Pause15StoppedAt,
+                Pause16StartedAt = planRegistration.Pause16StartedAt,
+                Pause16StoppedAt = planRegistration.Pause16StoppedAt,
+                Pause17StartedAt = planRegistration.Pause17StartedAt,
+                Pause17StoppedAt = planRegistration.Pause17StoppedAt,
+                Pause18StartedAt = planRegistration.Pause18StartedAt,
+                Pause18StoppedAt = planRegistration.Pause18StoppedAt,
+                Pause19StartedAt = planRegistration.Pause19StartedAt,
+                Pause19StoppedAt = planRegistration.Pause19StoppedAt,
+                Pause20StartedAt = planRegistration.Pause20StartedAt,
+                Pause20StoppedAt = planRegistration.Pause20StoppedAt,
+                Pause21StartedAt = planRegistration.Pause21StartedAt,
+                Pause21StoppedAt = planRegistration.Pause21StoppedAt,
+                Pause22StartedAt = planRegistration.Pause22StartedAt,
+                Pause22StoppedAt = planRegistration.Pause22StoppedAt,
+                Pause23StartedAt = planRegistration.Pause23StartedAt,
+                Pause23StoppedAt = planRegistration.Pause23StoppedAt,
+                Pause24StartedAt = planRegistration.Pause24StartedAt,
+                Pause24StoppedAt = planRegistration.Pause24StoppedAt,
+                Pause25StartedAt = planRegistration.Pause25StartedAt,
+                Pause25StoppedAt = planRegistration.Pause25StoppedAt,
+                Pause26StartedAt = planRegistration.Pause26StartedAt,
+                Pause26StoppedAt = planRegistration.Pause26StoppedAt,
+                Pause27StartedAt = planRegistration.Pause27StartedAt,
+                Pause27StoppedAt = planRegistration.Pause27StoppedAt,
+                Pause28StartedAt = planRegistration.Pause28StartedAt,
+                Pause28StoppedAt = planRegistration.Pause28StoppedAt,
+                Pause29StartedAt = planRegistration.Pause29StartedAt,
+                Pause29StoppedAt = planRegistration.Pause29StoppedAt,
+                Pause100StartedAt = planRegistration.Pause100StartedAt,
+                Pause100StoppedAt = planRegistration.Pause100StoppedAt,
+                Pause101StartedAt = planRegistration.Pause101StartedAt,
+                Pause101StoppedAt = planRegistration.Pause101StoppedAt,
+                Pause102StartedAt = planRegistration.Pause102StartedAt,
+                Pause102StoppedAt = planRegistration.Pause102StoppedAt,
+                Pause200StartedAt = planRegistration.Pause200StartedAt,
+                Pause200StoppedAt = planRegistration.Pause200StoppedAt,
+                Pause201StartedAt = planRegistration.Pause201StartedAt,
+                Pause201StoppedAt = planRegistration.Pause201StoppedAt,
+                Pause202StartedAt = planRegistration.Pause202StartedAt,
+                Pause202StoppedAt = planRegistration.Pause202StoppedAt,
+
             };
             try
             {
