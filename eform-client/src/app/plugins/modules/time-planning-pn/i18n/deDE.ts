@@ -91,4 +91,5 @@ export const deDE = {
   '3rd shift': '3. Schicht',
   '4th shift': '4. Schicht',
   '5th shift': '5. Schicht',
+  'Flex balance to date': 'Bisheriges Flex-Guthaben',
 };

@@ -91,4 +91,5 @@ export const plPL = {
   '3rd shift': '3 zmiana',
   '4th shift': '4 zmiana',
   '5th shift': '5 zmiana',
+  'Flex balance to date': 'Elastyczna równowaga do tej pory',
 };

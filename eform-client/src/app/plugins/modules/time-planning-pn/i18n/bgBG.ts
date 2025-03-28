@@ -91,4 +91,5 @@ export const bgBG = {
   '3rd shift': '3-та смяна',
   '4th shift': '4-та смяна',
   '5th shift': '5-та смяна',
+  'Flex balance to date': 'Гъвкав баланс към момента',
 };

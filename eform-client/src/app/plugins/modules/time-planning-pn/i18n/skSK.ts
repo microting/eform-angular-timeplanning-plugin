@@ -91,4 +91,5 @@ export const skSK = {
   '3rd shift': '3. zmena',
   '4th shift': '4. zmena',
   '5th shift': '5. zmena',
+  'Flex balance to date': 'Flexibilný zostatok k dnešnému dňu',
 };

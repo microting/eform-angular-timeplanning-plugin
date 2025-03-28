@@ -91,4 +91,5 @@ export const roRO = {
   '3rd shift': 'al 3-lea schimb',
   '4th shift': 'al 4-lea schimb',
   '5th shift': 'al 5-lea schimb',
+  'Flex balance to date': 'Sold flexibil până în prezent',
 };

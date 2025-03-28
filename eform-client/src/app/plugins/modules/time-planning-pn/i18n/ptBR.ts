@@ -91,4 +91,5 @@ export const ptBR = {
   '3rd shift': '3º turno',
   '4th shift': '4º turno',
   '5th shift': '5º turno',
+  'Flex balance to date': 'Saldo flexível até o momento',
 };

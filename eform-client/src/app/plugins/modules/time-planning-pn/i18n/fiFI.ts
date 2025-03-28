@@ -91,4 +91,5 @@ export const fiFI = {
   '3rd shift': '3. vuoro',
   '4th shift': '4. vuoro',
   '5th shift': '5. vuoro',
+  'Flex balance to date': 'Joustava saldo tähän mennessä',
 };

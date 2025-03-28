@@ -86,12 +86,12 @@
       </div>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null">
         <div class="{{ getCellTextColor(row, col.field) }}">
-          <strong>{{ row['siteName'] }}:</strong> {{row.planningPrDayModels[col.field]?.workerComment}}
+          <strong>{{ 'CommentWorker' | translate }}:</strong> {{row.planningPrDayModels[col.field]?.workerComment}}
         </div>
       </div>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.commentOffice !== null && row.planningPrDayModels[col.field]?.commentOffice !== ''">
         <div class="{{ getCellTextColor(row, col.field) }}">
-          <strong>{{ 'Message' | translate}}:</strong> {{row.planningPrDayModels[col.field]?.commentOffice}}
+          <strong>{{ 'CommentOffice' | translate}}:</strong> {{row.planningPrDayModels[col.field]?.commentOffice}}
         </div>
       </div>
     </div>

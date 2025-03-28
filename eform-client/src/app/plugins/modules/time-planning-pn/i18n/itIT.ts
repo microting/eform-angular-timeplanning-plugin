@@ -91,4 +91,5 @@ export const itIT = {
   '3rd shift': '3° turno',
   '4th shift': '4° turno',
   '5th shift': '5° turno',
+  'Flex balance to date': 'Saldo flessibile fino ad oggi',
 };

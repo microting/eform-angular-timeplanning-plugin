@@ -91,4 +91,5 @@ export const ltLT = {
   '3rd shift': '3 pamaina',
   '4th shift': '4 pamaina',
   '5th shift': '5 pamaina',
+  'Flex balance to date': 'Lankstus balansas iki šiol',
 };

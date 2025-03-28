@@ -91,4 +91,5 @@ export const lvLV = {
   '3rd shift': '3. maiņa',
   '4th shift': '4. maiņa',
   '5th shift': '5. maiņa',
+  'Flex balance to date': 'Elastīgs atlikums līdz šim',
 };

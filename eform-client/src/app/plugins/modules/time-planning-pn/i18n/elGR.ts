@@ -91,4 +91,5 @@ export const elGR = {
   '3rd shift': '3η βάρδια',
   '4th shift': '4η βάρδια',
   '5th shift': '5η βάρδια',
+  'Flex balance to date': 'Flex υπόλοιπο μέχρι σήμερα',
 };

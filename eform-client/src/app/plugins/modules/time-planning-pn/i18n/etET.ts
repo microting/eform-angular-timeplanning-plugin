@@ -91,4 +91,5 @@ export const etET = {
   '3rd shift': '3. vahetus',
   '4th shift': '4. vahetus',
   '5th shift': '5. vahetus',
+  'Flex balance to date': 'Paindlik saldo praeguseks',
 };

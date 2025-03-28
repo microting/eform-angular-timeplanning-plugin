@@ -91,4 +91,5 @@ export const isIS = {
   '3rd shift': '3ja vakt',
   '4th shift': '4. vakt',
   '5th shift': '5. vakt',
+  'Flex balance to date': 'Flex jafnvægi til þessa',
 };
