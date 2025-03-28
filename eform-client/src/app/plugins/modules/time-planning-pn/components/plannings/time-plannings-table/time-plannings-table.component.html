@@ -74,7 +74,7 @@
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }}
       </div>
       <div class="plan-text">
-        <p>
+        <p class="{{ getCellTextColor(row, col.field) }}">
           {{row.planningPrDayModels[col.field]?.workerComment}}
           {{row.planningPrDayModels[col.field]?.commentOffice}}
         </p>

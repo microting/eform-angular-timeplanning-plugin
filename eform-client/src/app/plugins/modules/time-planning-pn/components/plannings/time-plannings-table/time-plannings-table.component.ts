@@ -138,7 +138,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }
     }
-    return '';
+    return 'black-text';
   }
 
   protected readonly JSON = JSON;
