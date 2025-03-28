@@ -33,6 +33,12 @@
             {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
             )
           </ng-container>
+        </div><div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0">
+          <ng-container *ngIf="row['currentWorkedHours'] !== 0">
+            (
+            {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+            )
+          </ng-container>
         </div>
       </div>
     </div>
@@ -73,12 +79,20 @@
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }} -
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }}
       </div>
-      <div class="plan-text">
-        <p class="{{ getCellTextColor(row, col.field) }}">
-          {{row.planningPrDayModels[col.field]?.workerComment}}
-          {{row.planningPrDayModels[col.field]?.commentOffice}}
-        </p>
-
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
+        <div class="{{ getCellTextColorForDay(row, col.field) }}">
+          <strong>{{ 'Flex balance to date' | translate}}: {{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>
+        </div>
+      </div>
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null">
+        <div class="{{ getCellTextColor(row, col.field) }}">
+          <strong>{{ row['siteName'] }}:</strong> {{row.planningPrDayModels[col.field]?.workerComment}}
+        </div>
+      </div>
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.commentOffice !== null && row.planningPrDayModels[col.field]?.commentOffice !== ''">
+        <div class="{{ getCellTextColor(row, col.field) }}">
+          <strong>{{ 'Message' | translate}}:</strong> {{row.planningPrDayModels[col.field]?.commentOffice}}
+        </div>
       </div>
     </div>
 

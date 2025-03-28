@@ -141,6 +141,22 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     return 'black-text';
   }
 
+  getCellTextColorForDay(row: any, field: string): string {
+    const sumFlexEnd = row.planningPrDayModels[field]?.sumFlexEnd;
+    const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
+    const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+    const isInOlderThanToday = new Date(row.planningPrDayModels[field]?.date) < new Date();
+    if (sumFlexEnd >= 0) {
+      if (workDayStarted) {
+        //console.log('getCellTextColorForDay', row, field, planHours, workDayStarted, workDayEnded);
+        return workDayEnded ? 'black-text' : 'green-text';
+      } else {
+        return isInOlderThanToday ? 'red-text' : 'black-text';
+      }
+    }
+    return 'red-text';
+  }
+
   protected readonly JSON = JSON;
 
   onFirstColumnClick(row: any): void {
@@ -178,9 +194,17 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   }
 
   convertHoursToTime(hours: number): string {
+    const isNegative = hours < 0;
+    if (hours < 0) {
+      hours = Math.abs(hours);
+    }
     const totalMinutes = Math.floor(hours * 60)
     const hrs = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
+    let mins = totalMinutes % 60;
+    if (isNegative) {
+      // return '${padZero(hrs)}:${padZero(60 - mins)}';
+      return `-${hrs}:${this.padZero(mins)}`;
+    }
     return `${this.padZero(hrs)}:${this.padZero(mins)}`;
   }
 
