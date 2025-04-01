@@ -12,9 +12,72 @@
   </mtx-grid>
 
 <ng-template #plannedColumnTemplate let-row let-col="colDef">
-  <div>{{ row['plannedStart'] }}</div>
-  <div>{{ row['plannedEnd'] }}</div>
-  <div>{{ row['plannedBreak'] }}</div>
+  <ng-container *ngIf="row['shift'] === '1'">
+    <mat-form-field>
+    <input
+      matInput
+      [ngxTimepicker]="plannedPicker"
+           [format]="24"
+           [(ngModel)]="plannedStartOfShift1"
+      readonly
+            [max]="plannedEndOfShift1"
+           [value]="plannedStartOfShift1"
+    >
+    <ngx-material-timepicker #plannedPicker
+                            [format]="24"
+                             [defaultTime]="plannedStartOfShift1"
+                             [minutesGap]="5"></ngx-material-timepicker>
+    </mat-form-field>
+    <mat-form-field>
+    <input
+      matInput
+      [ngxTimepicker]="plannedPicker2"
+           [format]="24"
+           [(ngModel)]="plannedEndOfShift1"
+      readonly
+            [min]="plannedStartOfShift1"
+            [max]="plannedStartOfShift2 === '00:00' ? '23:55' : plannedStartOfShift2"
+           [value]="plannedEndOfShift1">
+    <ngx-material-timepicker #plannedPicker2
+                            [format]="24"
+                             [defaultTime]="plannedEndOfShift1"
+                             [minutesGap]="5"></ngx-material-timepicker>
+    </mat-form-field>
+  </ng-container>
+  <ng-container *ngIf="row['shift'] === '2'">
+    <mat-form-field>
+    <input
+      matInput
+      [ngxTimepicker]="plannedPicker3"
+      readonly
+           [format]="24"
+           [(ngModel)]="plannedStartOfShift2"
+            [min]="plannedEndOfShift1"
+            [max]="plannedEndOfShift2 === '00:00' ? '23:55' : plannedEndOfShift2"
+           [value]="plannedStartOfShift2">
+    <ngx-material-timepicker #plannedPicker3
+                            [format]="24"
+                             [defaultTime]="plannedStartOfShift2"
+                             [minutesGap]="5"></ngx-material-timepicker>
+    </mat-form-field>
+
+    <mat-form-field>
+    <input
+      matInput
+      [disabled]="plannedStartOfShift2 === '00:00'"
+      readonly
+      [ngxTimepicker]="plannedPicker4"
+           [format]="24"
+           [(ngModel)]="plannedEndOfShift2"
+            [min]="plannedStartOfShift2 === '00:00' ? plannedEndOfShift1 : plannedStartOfShift2"
+           [value]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2">
+    <ngx-material-timepicker #plannedPicker4
+                            [format]="24"
+                             [defaultTime]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2"
+                             [minutesGap]="5"></ngx-material-timepicker>
+    </mat-form-field>
+  </ng-container>
+
 </ng-template>
 
 <ng-template #actualColumnTemplate let-row let-col="colDef">
@@ -22,6 +85,7 @@
     <mat-form-field>
     <input
       matInput
+      readonly
       [ngxTimepicker]="picker"
            [format]="24"
            [(ngModel)]="start1StartedAt"
@@ -38,6 +102,7 @@
     <mat-form-field>
     <input
       matInput
+      readonly
       [ngxTimepicker]="picker2"
            [format]="24"
            [(ngModel)]="stop1StoppedAt"
@@ -54,6 +119,7 @@
     <mat-form-field>
     <input
       matInput
+      readonly
       [ngxTimepicker]="picker3"
            [format]="24"
            [(ngModel)]="start2StartedAt"
@@ -69,6 +135,7 @@
     <mat-form-field>
     <input
       matInput
+      readonly
       [ngxTimepicker]="picker4"
            [format]="24"
            [(ngModel)]="stop2StoppedAt"
