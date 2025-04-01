@@ -86,6 +86,7 @@
     <input
       matInput
       readonly
+      [disabled]="isInTheFuture"
       [ngxTimepicker]="picker"
            [format]="24"
            [(ngModel)]="start1StartedAt"
@@ -103,6 +104,7 @@
     <input
       matInput
       readonly
+      [disabled]="isInTheFuture"
       [ngxTimepicker]="picker2"
            [format]="24"
            [(ngModel)]="stop1StoppedAt"
@@ -120,6 +122,7 @@
     <input
       matInput
       readonly
+      [disabled]="isInTheFuture"
       [ngxTimepicker]="picker3"
            [format]="24"
            [(ngModel)]="start2StartedAt"
@@ -136,6 +139,7 @@
     <input
       matInput
       readonly
+      [disabled]="isInTheFuture"
       [ngxTimepicker]="picker4"
            [format]="24"
            [(ngModel)]="stop2StoppedAt"
@@ -149,7 +153,7 @@
   </ng-container>
 </ng-template>
 
-  <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>
+<!--  <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>-->
 
   <mat-form-field class="pr-2">
     <mat-label>{{ 'Plan hours' | translate }}</mat-label>
