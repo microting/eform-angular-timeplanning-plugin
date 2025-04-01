@@ -52,6 +52,19 @@ export class WorkdayEntityDialogComponent implements OnInit {
   enumKeys: string[];
   originalData: PlanningPrDayModel;
   tableHeaders: MtxGridColumn[] = [];
+  shiftData: any[] = [];
+  plannedStartOfShift1: string;
+  plannedEndOfShift1: string;
+  plannedBreakOfShift1: string;
+  plannedStartOfShift2: string;
+  plannedEndOfShift2: string;
+  plannedBreakOfShift2: string;
+  start1StartedAt: string;
+  stop1StoppedAt: string;
+  break1Shift: string;
+  start2StartedAt: string;
+  stop2StoppedAt: string;
+  break2Shift: string;
   @ViewChild('plannedColumnTemplate', { static: true }) plannedColumnTemplate!: TemplateRef<any>;
   @ViewChild('actualColumnTemplate', { static: true }) actualColumnTemplate!: TemplateRef<any>;
   constructor(
@@ -67,6 +80,18 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.originalData = R.clone(this.data);
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.data[this.enumKeys[this.data.message - 1]] = true;
+    this.plannedStartOfShift1 = this.convertMinutesToTime(this.data.plannedStartOfShift1);
+    this.plannedEndOfShift1 = this.convertMinutesToTime(this.data.plannedEndOfShift1);
+    this.plannedBreakOfShift1 = this.convertMinutesToTime(this.data.plannedBreakOfShift1);
+    this.plannedStartOfShift2 = this.convertMinutesToTime(this.data.plannedStartOfShift2);
+    this.plannedEndOfShift2 = this.convertMinutesToTime(this.data.plannedEndOfShift2);
+    this.plannedBreakOfShift2 = this.convertMinutesToTime(this.data.plannedBreakOfShift2);
+    this.start1StartedAt = this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')
+    this.stop1StoppedAt =  this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC');
+    this.break1Shift = this.convertMinutesToTime(this.data.break1Shift);
+    this.start2StartedAt = this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC');
+    this.stop2StoppedAt = this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC');
+    this.break2Shift = this.convertMinutesToTime(this.data.break2Shift);
     //this.tableHeaders = [];
 
     this.tableHeaders = [
@@ -84,6 +109,38 @@ export class WorkdayEntityDialogComponent implements OnInit {
         sortable: false,
       },
     ];
+
+
+
+    let shift2Data = {
+      shift: this.translateService.instant('2nd'),
+      plannedStart: this.plannedStartOfShift2,
+      plannedEnd: this.plannedEndOfShift2,
+      plannedBreak: this.plannedBreakOfShift2,
+      actualStart: this.start2StartedAt,
+      actualEnd: this.stop2StoppedAt,
+      actualBreak: this.break2Shift,
+      // eslint-disable-next-line max-len
+      //planned: this.data.plannedStartOfShift1 !== this.data.plannedEndOfShift1 && this.data.plannedEndOfShift2 !== 0 ? `${this.convertMinutesToTime(this.data.plannedStartOfShift2)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift2)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift2)}` : '',
+      // eslint-disable-next-line max-len
+      //actual: this.data.start2StartedAt !== null ? `${this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC')} - ${this.data.stop2StoppedAt != null ? this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC') : ''}` : ''
+    };
+
+    let shift1Data = {
+      shift: this.translateService.instant('1st'),
+      plannedStart: this.plannedStartOfShift1,
+      plannedEnd: this.plannedEndOfShift1,
+      plannedBreak: this.plannedBreakOfShift1,
+      actualStart: this.start1StartedAt,
+      actualEnd: this.stop1StoppedAt,
+      actualBreak: this.break1Shift,
+      // eslint-disable-next-line max-len
+      //planned: this.data.plannedStartOfShift1 !== this.data.plannedEndOfShift1 ? `${this.convertMinutesToTime(this.data.plannedStartOfShift1)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift1)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift1)}` : '',
+      // eslint-disable-next-line max-len
+      //actual: this.data.start1StartedAt !== null ? `${this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC')}` : ''
+    };
+
+    this.shiftData = (this.data.isDoubleShift ? [shift1Data, shift2Data] : [shift1Data]);
   }
 
   // columns = [
@@ -93,33 +150,6 @@ export class WorkdayEntityDialogComponent implements OnInit {
   //   { header: this.translateService.stream('Actual'), field: 'actual',
   //     cellTemplate: this.actualColumnTemplate, },
   // ];
-
-
-  shift2Data = {
-    shift: this.translateService.instant('2nd'),
-    plannedStart: this.data.plannedStartOfShift2,
-    plannedEnd: this.data.plannedEndOfShift2,
-    plannedBreak: this.data.plannedBreakOfShift2,
-    actualStart: this.data.start2StartedAt,
-    actualEnd: this.data.stop2StoppedAt,
-    actualBreak: this.data.break2Shift,
-    //planned: this.data.plannedStartOfShift1 !== this.data.plannedEndOfShift1 && this.data.plannedEndOfShift2 !== 0 ? `${this.convertMinutesToTime(this.data.plannedStartOfShift2)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift2)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift2)}` : '',
-    //actual: this.data.start2StartedAt !== null ? `${this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC')} - ${this.data.stop2StoppedAt != null ? this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC') : ''}` : ''
-  };
-
-  shift1Data = {
-    shift: this.translateService.instant('1st'),
-    plannedStart: this.data.plannedStartOfShift1,
-    plannedEnd: this.data.plannedEndOfShift1,
-    plannedBreak: this.data.plannedBreakOfShift1,
-    actualStart: this.data.start1StartedAt,
-    actualEnd: this.data.stop1StoppedAt,
-    actualBreak: this.data.break1Shift,
-    //planned: this.data.plannedStartOfShift1 !== this.data.plannedEndOfShift1 ? `${this.convertMinutesToTime(this.data.plannedStartOfShift1)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift1)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift1)}` : '',
-    //actual: this.data.start1StartedAt !== null ? `${this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC')}` : ''
-  };
-
-  shiftData = (this.data.isDoubleShift ? [this.shift1Data, this.shift2Data] : [this.shift1Data]);
 
   convertMinutesToTime(minutes: number): string {
     const hours = Math.floor(minutes / 60);

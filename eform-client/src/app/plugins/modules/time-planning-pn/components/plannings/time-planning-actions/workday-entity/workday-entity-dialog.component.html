@@ -18,24 +18,69 @@
 </ng-template>
 
 <ng-template #actualColumnTemplate let-row let-col="colDef">
-  <input [ngxTimepicker]="picker"
-         format="24"
-         [(ngModel)]="row['actualStart']"
-         value="{{ row['actualStart'] }}"
-  >
-  <ngx-material-timepicker #picker></ngx-material-timepicker>
-  <div>{{ row['actualStart'] }}</div>
-  <div>{{ row['actualEnd'] }}</div>
-  <div>{{ row['actualBreak'] }}</div>
-</ng-template>
+  <ng-container *ngIf="row['shift'] === '1'">
+    <mat-form-field>
+    <input
+      matInput
+      [ngxTimepicker]="picker"
+           [format]="24"
+           [(ngModel)]="start1StartedAt"
+            [max]="stop1StoppedAt"
+           [value]="start1StartedAt"
+    >
+    <ngx-material-timepicker #picker
+                            [format]="24"
+                             [defaultTime]="start1StartedAt"
+                             [minutesGap]="5"
+    ></ngx-material-timepicker>
+    </mat-form-field>
 
-<!--  <ng-container *ngIf="data.isDoubleShift">-->
-<!--    <mtx-grid-->
-<!--      [columns]="columns"-->
-<!--      [data]="[shift2Data]"-->
-<!--      [showPaginator]="false">-->
-<!--    </mtx-grid>-->
-<!--  </ng-container>-->
+    <mat-form-field>
+    <input
+      matInput
+      [ngxTimepicker]="picker2"
+           [format]="24"
+           [(ngModel)]="stop1StoppedAt"
+            [min]="start1StartedAt"
+            [max]="start2StartedAt"
+           [value]="stop1StoppedAt">
+    <ngx-material-timepicker #picker2
+                            [format]="24"
+                             [defaultTime]="stop1StoppedAt"
+                             [minutesGap]="5"></ngx-material-timepicker>
+    </mat-form-field>
+  </ng-container>
+  <ng-container *ngIf="row['shift'] === '2'">
+    <mat-form-field>
+    <input
+      matInput
+      [ngxTimepicker]="picker3"
+           [format]="24"
+           [(ngModel)]="start2StartedAt"
+            [min]="stop1StoppedAt"
+            [max]="stop2StoppedAt"
+           [value]="start2StartedAt">
+    <ngx-material-timepicker #picker3
+                            [format]="24"
+                             [defaultTime]="start2StartedAt"
+                             [minutesGap]="5"></ngx-material-timepicker>
+    </mat-form-field>
+
+    <mat-form-field>
+    <input
+      matInput
+      [ngxTimepicker]="picker4"
+           [format]="24"
+           [(ngModel)]="stop2StoppedAt"
+            [min]="start2StartedAt"
+           [value]="stop2StoppedAt">
+    <ngx-material-timepicker #picker4
+                            [format]="24"
+                             [defaultTime]="stop2StoppedAt"
+                             [minutesGap]="5"></ngx-material-timepicker>
+    </mat-form-field>
+  </ng-container>
+</ng-template>
 
   <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>
 
