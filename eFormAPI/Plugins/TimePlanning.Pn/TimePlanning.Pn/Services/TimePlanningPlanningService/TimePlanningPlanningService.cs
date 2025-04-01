@@ -1222,8 +1222,7 @@ public class TimePlanningPlanningService(
         {
             var planning = dbContext.PlanRegistrations
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.Id == id)
-                .FirstOrDefault();
+                .FirstOrDefault(x => x.Id == id);
 
             if (planning == null)
             {
@@ -1232,8 +1231,40 @@ public class TimePlanningPlanningService(
                     localizationService.GetString("PlanningNotFound"));
             }
 
+            planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
+            //planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
+            planning.PlannedEndOfShift1 = model.PlannedEndOfShift1;
+            planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
+            // planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
+            planning.PlannedEndOfShift2 = model.PlannedEndOfShift2;
+
+            planning.Start1Id = model.Start1Id ?? 0;
+            planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;
+            planning.Stop1Id = model.Stop1Id ?? 0;
+            planning.Start2Id = model.Start2Id ?? 0;
+            planning.Pause2Id = model.Pause2Id ?? planning.Pause2Id;
+            planning.Stop2Id = model.Stop2Id ?? 0;
             planning.MessageId = model.Message;
             planning.PlanHours = model.PlanHours;
+            var minutesMultiplier = 5;
+            double nettoMinutes = 0;
+
+            if (planning.Stop1Id >= planning.Start1Id && planning.Stop1Id != 0)
+            {
+                nettoMinutes = planning.Stop1Id - planning.Start1Id;
+                nettoMinutes -= planning.Pause1Id > 0 ? planning.Pause1Id - 1 : 0;
+            }
+
+            if (planning.Stop2Id >= planning.Start2Id && planning.Stop2Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planning.Stop2Id - planning.Start2Id;
+                nettoMinutes -= planning.Pause2Id > 0 ? planning.Pause2Id - 1 : 0;
+            }
+
+            nettoMinutes *= minutesMultiplier;
+
+            double hours = nettoMinutes / 60;
+            planning.NettoHours = hours;
 
             var preTimePlanning =
                 await dbContext.PlanRegistrations.AsNoTracking()

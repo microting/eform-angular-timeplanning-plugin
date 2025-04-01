@@ -57,10 +57,35 @@ public class TimePlanningPlanningPrDayModel
     public DateTime? Stop1StoppedAt { get; set; }
     public DateTime? Start2StartedAt { get; set; }
     public DateTime? Stop2StoppedAt { get; set; }
-    public int Start1Id { get; set; }
-    public int Stop1Id { get; set; }
-    public int Start2Id { get; set; }
-    public int Stop2Id { get; set; }
+    public int? Start1Id { get; set; }
+
+    public int? Stop1Id { get; set; }
+
+    public int? Pause1Id { get; set; }
+
+    public int? Start2Id { get; set; }
+
+    public int? Stop2Id { get; set; }
+
+    public int? Pause2Id { get; set; }
+
+    public int? Start3Id { get; set; }
+
+    public int? Stop3Id { get; set; }
+
+    public int? Pause3Id { get; set; }
+
+    public int? Start4Id { get; set; }
+
+    public int? Stop4Id { get; set; }
+
+    public int? Pause4Id { get; set; }
+
+    public int? Start5Id { get; set; }
+
+    public int? Stop5Id { get; set; }
+
+    public int? Pause5Id { get; set; }
     public int Break1Shift { get; set; }
     public int Break2Shift { get; set; }
     public string CommentOffice { get; set; }

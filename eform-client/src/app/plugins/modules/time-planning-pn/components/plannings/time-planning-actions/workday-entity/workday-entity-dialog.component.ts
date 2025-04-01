@@ -176,8 +176,44 @@ export class WorkdayEntityDialogComponent implements OnInit {
   }
 
   onUpdateWorkDayEntity() {
+    this.data.plannedStartOfShift1 = this.convertTimeToMinutes(this.plannedStartOfShift1);
+    this.data.plannedEndOfShift1 = this.convertTimeToMinutes(this.plannedEndOfShift1);
+    // this.data.plannedBreakOfShift1 = this.convertTimeToMinutes(this.plannedBreakOfShift1);
+    this.data.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
+    this.data.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
+    // this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
+    this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
+    this.data.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
+    this.data.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
+    this.data.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
+    // this.data.start1StartedAt = this.convertTimeToDateTimeOfToday(this.start1StartedAt);
+    // this.data.stop1StoppedAt = this.convertTimeToDateTimeOfToday(this.stop1StoppedAt);
+    // this.data.break1Shift = this.convertTimeToMinutes(this.break1Shift);
+    // this.data.start2StartedAt = this.convertTimeToDateTimeOfToday(this.start2StartedAt);
+    // this.data.stop2StoppedAt = this.convertTimeToDateTimeOfToday(this.stop2StoppedAt);
     this.planningsService.updatePlanning(this.data, this.data.id).subscribe();
     this.workdayEntityUpdate.emit(this.data);
+  }
+
+  convertTimeToDateTimeOfToday(hourMinutes: string): string {
+    const today = new Date();
+    const [hours, minutes] = hourMinutes.split(':');
+    today.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+    return today.toISOString();
+    }
+
+  convertTimeToMinutes(plannedStartOfShift1: string, isFiveNumberIntervals: boolean = false): number {
+    const parts = plannedStartOfShift1.split(':');
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    if (isFiveNumberIntervals) {
+      const result = ((hours * 60 + minutes) / 5);
+      if (result !== 0) {
+        return result + 1
+      }
+      return 0;
+    }
+    return hours * 60 + minutes;
   }
 
   onCancel() {

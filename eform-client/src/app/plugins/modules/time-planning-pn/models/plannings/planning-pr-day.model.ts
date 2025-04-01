@@ -91,4 +91,19 @@ export class PlanningPrDayModel {
   pause201StoppedAt: string;
   pause202StartedAt: string;
   pause202StoppedAt: string;
+  start1Id: number;
+  stop1Id: number;
+  pause1Id: number;
+  start2Id: number;
+  stop2Id: number;
+  pause2Id: number;
+  start3Id: number;
+  stop3Id: number;
+  pause3Id: number;
+  start4Id: number;
+  stop4Id: number;
+  pause4Id: number;
+  start5Id: number;
+  stop5Id: number;
+  pause5Id: number;
 }
