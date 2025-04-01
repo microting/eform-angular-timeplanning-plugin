@@ -1,6 +1,6 @@
 <!-- src/app/plugins/modules/time-planning-pn/components/plannings/time-planning-actions/workday-entity/workday-entity-dialog.component.html -->
 <div mat-dialog-title>{{ data.siteName }} - {{ datePipe.transform(data.date, 'dd.MM.yyyy') }} ({{data.id}})</div><div mat-dialog-content>
-<br>
+  <br>
   <mtx-grid
     [columns]="tableHeaders"
     [data]="shiftData"
@@ -11,150 +11,220 @@
     [showColumnMenuButton]="false">
   </mtx-grid>
 
-<ng-template #plannedColumnTemplate let-row let-col="colDef">
-  <ng-container *ngIf="row['shift'] === '1'">
-    <mat-form-field>
-    <input
-      matInput
-      [ngxTimepicker]="plannedPicker"
-           [format]="24"
-           [(ngModel)]="plannedStartOfShift1"
-      readonly
-            [max]="plannedEndOfShift1"
-           [value]="plannedStartOfShift1"
-    >
-    <ngx-material-timepicker #plannedPicker
-                            [format]="24"
-                             [defaultTime]="plannedStartOfShift1"
-                             [minutesGap]="5"></ngx-material-timepicker>
-    </mat-form-field>
-    <mat-form-field>
-    <input
-      matInput
-      [ngxTimepicker]="plannedPicker2"
-           [format]="24"
-           [(ngModel)]="plannedEndOfShift1"
-      readonly
-            [min]="plannedStartOfShift1"
-            [max]="plannedStartOfShift2 === '00:00' ? '23:55' : plannedStartOfShift2"
-           [value]="plannedEndOfShift1">
-    <ngx-material-timepicker #plannedPicker2
-                            [format]="24"
-                             [defaultTime]="plannedEndOfShift1"
-                             [minutesGap]="5"></ngx-material-timepicker>
-    </mat-form-field>
-  </ng-container>
-  <ng-container *ngIf="row['shift'] === '2'">
-    <mat-form-field>
-    <input
-      matInput
-      [ngxTimepicker]="plannedPicker3"
-      readonly
-           [format]="24"
-           [(ngModel)]="plannedStartOfShift2"
-            [min]="plannedEndOfShift1"
-            [max]="plannedEndOfShift2 === '00:00' ? '23:55' : plannedEndOfShift2"
-           [value]="plannedStartOfShift2">
-    <ngx-material-timepicker #plannedPicker3
-                            [format]="24"
-                             [defaultTime]="plannedStartOfShift2"
-                             [minutesGap]="5"></ngx-material-timepicker>
-    </mat-form-field>
+  <ng-template #plannedColumnTemplate let-row let-col="colDef">
+    <ng-container *ngIf="row['shift'] === '1'">
+      <mat-form-field>
+        <mat-label>{{'Start' | translate}}</mat-label>
+        <input
+          matInput
+          [ngxTimepicker]="plannedPicker"
+          [format]="24"
+          [(ngModel)]="plannedStartOfShift1"
+          readonly
+          [max]="plannedEndOfShift1"
+          [value]="plannedStartOfShift1"
+        >
+        <ngx-material-timepicker #plannedPicker
+                                 [format]="24"
+                                 [defaultTime]="plannedStartOfShift1"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{'Pause' | translate}}</mat-label>
+        <input
+          matInput
+          [ngxTimepicker]="plannedPause1Picker"
+          [format]="24"
+          [(ngModel)]="plannedBreakOfShift1"
+          readonly
+          [value]="plannedBreakOfShift1"
+        >
+        <ngx-material-timepicker #plannedPause1Picker
+                                 [format]="24"
+                                 [defaultTime]="plannedBreakOfShift1"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{'Stop' | translate}}</mat-label>
+        <input
+          matInput
+          [ngxTimepicker]="plannedPicker2"
+          [format]="24"
+          [(ngModel)]="plannedEndOfShift1"
+          readonly
+          [min]="plannedStartOfShift1"
+          [max]="plannedStartOfShift2 === '00:00' ? '23:55' : plannedStartOfShift2"
+          [value]="plannedEndOfShift1">
+        <ngx-material-timepicker #plannedPicker2
+                                 [format]="24"
+                                 [defaultTime]="plannedEndOfShift1"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+    </ng-container>
+    <ng-container *ngIf="row['shift'] === '2'">
+      <mat-form-field>
+        <mat-label>{{'Start' | translate}}</mat-label>
+        <input
+          matInput
+          [ngxTimepicker]="plannedPicker3"
+          readonly
+          [format]="24"
+          [(ngModel)]="plannedStartOfShift2"
+          [min]="plannedEndOfShift1"
+          [max]="plannedEndOfShift2 === '00:00' ? '23:55' : plannedEndOfShift2"
+          [value]="plannedStartOfShift2">
+        <ngx-material-timepicker #plannedPicker3
+                                 [format]="24"
+                                 [defaultTime]="plannedStartOfShift2"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{'Pause' | translate}}</mat-label>
+        <input
+          matInput
+          [ngxTimepicker]="plannedPause2Picker"
+          [format]="24"
+          [(ngModel)]="plannedBreakOfShift2"
+          readonly
+          [value]="plannedBreakOfShift2"
+        >
+        <ngx-material-timepicker #plannedPause2Picker
+                                 [format]="24"
+                                 [defaultTime]="plannedBreakOfShift2"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
 
-    <mat-form-field>
-    <input
-      matInput
-      [disabled]="plannedStartOfShift2 === '00:00'"
-      readonly
-      [ngxTimepicker]="plannedPicker4"
-           [format]="24"
-           [(ngModel)]="plannedEndOfShift2"
-            [min]="plannedStartOfShift2 === '00:00' ? plannedEndOfShift1 : plannedStartOfShift2"
-           [value]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2">
-    <ngx-material-timepicker #plannedPicker4
-                            [format]="24"
-                             [defaultTime]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2"
-                             [minutesGap]="5"></ngx-material-timepicker>
-    </mat-form-field>
-  </ng-container>
+      <mat-form-field>
+        <mat-label>{{'Stop' | translate}}</mat-label>
+        <input
+          matInput
+          [disabled]="plannedStartOfShift2 === '00:00'"
+          readonly
+          [ngxTimepicker]="plannedPicker4"
+          [format]="24"
+          [(ngModel)]="plannedEndOfShift2"
+          [min]="plannedStartOfShift2 === '00:00' ? plannedEndOfShift1 : plannedStartOfShift2"
+          [value]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2">
+        <ngx-material-timepicker #plannedPicker4
+                                 [format]="24"
+                                 [defaultTime]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+    </ng-container>
 
-</ng-template>
+  </ng-template>
 
-<ng-template #actualColumnTemplate let-row let-col="colDef">
-  <ng-container *ngIf="row['shift'] === '1'">
-    <mat-form-field>
-    <input
-      matInput
-      readonly
-      [disabled]="isInTheFuture"
-      [ngxTimepicker]="picker"
-           [format]="24"
-           [(ngModel)]="start1StartedAt"
-            [max]="stop1StoppedAt"
-           [value]="start1StartedAt"
-    >
-    <ngx-material-timepicker #picker
-                            [format]="24"
-                             [defaultTime]="start1StartedAt"
-                             [minutesGap]="5"
-    ></ngx-material-timepicker>
-    </mat-form-field>
+  <ng-template #actualColumnTemplate let-row let-col="colDef">
+    <ng-container *ngIf="row['shift'] === '1'">
+      <mat-form-field>
+        <mat-label>{{'Start' | translate}}</mat-label>
+        <input
+          matInput
+          readonly
+          [disabled]="isInTheFuture"
+          [ngxTimepicker]="picker"
+          [format]="24"
+          [(ngModel)]="start1StartedAt"
+          [max]="stop1StoppedAt"
+          [value]="start1StartedAt"
+        >
+        <ngx-material-timepicker #picker
+                                 [format]="24"
+                                 [defaultTime]="start1StartedAt"
+                                 [minutesGap]="5"
+        ></ngx-material-timepicker>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{'Pause' | translate}}</mat-label>
+        <input
+          matInput
+          [disabled]="isInTheFuture"
+          [ngxTimepicker]="pause1IdPicker"
+          [format]="24"
+          [(ngModel)]="pause1Id"
+          readonly
+          [value]="pause1Id"
+        >
+        <ngx-material-timepicker #pause1IdPicker
+                                 [format]="24"
+                                 [defaultTime]="pause1Id"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
 
-    <mat-form-field>
-    <input
-      matInput
-      readonly
-      [disabled]="isInTheFuture"
-      [ngxTimepicker]="picker2"
-           [format]="24"
-           [(ngModel)]="stop1StoppedAt"
-            [min]="start1StartedAt"
-            [max]="start2StartedAt"
-           [value]="stop1StoppedAt">
-    <ngx-material-timepicker #picker2
-                            [format]="24"
-                             [defaultTime]="stop1StoppedAt"
-                             [minutesGap]="5"></ngx-material-timepicker>
-    </mat-form-field>
-  </ng-container>
-  <ng-container *ngIf="row['shift'] === '2'">
-    <mat-form-field>
-    <input
-      matInput
-      readonly
-      [disabled]="isInTheFuture"
-      [ngxTimepicker]="picker3"
-           [format]="24"
-           [(ngModel)]="start2StartedAt"
-            [min]="stop1StoppedAt"
-            [max]="stop2StoppedAt"
-           [value]="start2StartedAt">
-    <ngx-material-timepicker #picker3
-                            [format]="24"
-                             [defaultTime]="start2StartedAt"
-                             [minutesGap]="5"></ngx-material-timepicker>
-    </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{'Stop' | translate}}</mat-label>
+        <input
+          matInput
+          readonly
+          [disabled]="isInTheFuture"
+          [ngxTimepicker]="picker2"
+          [format]="24"
+          [(ngModel)]="stop1StoppedAt"
+          [min]="start1StartedAt"
+          [max]="start2StartedAt"
+          [value]="stop1StoppedAt">
+        <ngx-material-timepicker #picker2
+                                 [format]="24"
+                                 [defaultTime]="stop1StoppedAt"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+    </ng-container>
+    <ng-container *ngIf="row['shift'] === '2'">
+      <mat-form-field>
+        <mat-label>{{'Start' | translate}}</mat-label>
+        <input
+          matInput
+          readonly
+          [disabled]="isInTheFuture"
+          [ngxTimepicker]="picker3"
+          [format]="24"
+          [(ngModel)]="start2StartedAt"
+          [min]="stop1StoppedAt"
+          [max]="stop2StoppedAt"
+          [value]="start2StartedAt">
+        <ngx-material-timepicker #picker3
+                                 [format]="24"
+                                 [defaultTime]="start2StartedAt"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{'Pause' | translate}}</mat-label>
+        <input
+          matInput
+          [disabled]="isInTheFuture"
+          [ngxTimepicker]="pause2IdPicker"
+          [format]="24"
+          [(ngModel)]="pause2Id"
+          readonly
+          [value]="pause2Id"
+        >
+        <ngx-material-timepicker #pause2IdPicker
+                                 [format]="24"
+                                 [defaultTime]="pause2Id"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
 
-    <mat-form-field>
-    <input
-      matInput
-      readonly
-      [disabled]="isInTheFuture"
-      [ngxTimepicker]="picker4"
-           [format]="24"
-           [(ngModel)]="stop2StoppedAt"
-            [min]="start2StartedAt"
-           [value]="stop2StoppedAt">
-    <ngx-material-timepicker #picker4
-                            [format]="24"
-                             [defaultTime]="stop2StoppedAt"
-                             [minutesGap]="5"></ngx-material-timepicker>
-    </mat-form-field>
-  </ng-container>
-</ng-template>
+      <mat-form-field>
+        <mat-label>{{'Stop' | translate}}</mat-label>
+        <input
+          matInput
+          readonly
+          [disabled]="isInTheFuture"
+          [ngxTimepicker]="picker4"
+          [format]="24"
+          [(ngModel)]="stop2StoppedAt"
+          [min]="start2StartedAt"
+          [value]="stop2StoppedAt">
+        <ngx-material-timepicker #picker4
+                                 [format]="24"
+                                 [defaultTime]="stop2StoppedAt"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+    </ng-container>
+  </ng-template>
 
-<!--  <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>-->
-
+  <!--  <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>-->
+  <br>
   <mat-form-field class="pr-2">
     <mat-label>{{ 'Plan hours' | translate }}</mat-label>
     <input
@@ -165,7 +235,8 @@
       [(ngModel)]="data.planHours"
     >
   </mat-form-field>
-<!--  <p><strong>{{ 'Plan hours' | translate }}:</strong> {{ data.planHours }}</p>-->
+  <br>
+  <!--  <p><strong>{{ 'Plan hours' | translate }}:</strong> {{ data.planHours }}</p>-->
   <ng-container *ngFor="let key of enumKeys">
     <ng-container *ngIf="key !== 'Blank' && key !== 'Care' && key !== 'TimeOff'">
       <mat-checkbox [(ngModel)]="data[key]" (change)="onCheckboxChange(TimePlanningMessagesEnum[key])">

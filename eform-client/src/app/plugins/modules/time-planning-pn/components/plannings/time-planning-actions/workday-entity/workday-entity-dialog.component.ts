@@ -61,10 +61,10 @@ export class WorkdayEntityDialogComponent implements OnInit {
   plannedBreakOfShift2: string;
   start1StartedAt: string;
   stop1StoppedAt: string;
-  break1Shift: string;
+  pause1Id: string;
   start2StartedAt: string;
   stop2StoppedAt: string;
-  break2Shift: string;
+  pause2Id: string;
   isInTheFuture: boolean = false;
   @ViewChild('plannedColumnTemplate', { static: true }) plannedColumnTemplate!: TemplateRef<any>;
   @ViewChild('actualColumnTemplate', { static: true }) actualColumnTemplate!: TemplateRef<any>;
@@ -89,10 +89,10 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.plannedBreakOfShift2 = this.convertMinutesToTime(this.data.plannedBreakOfShift2);
     this.start1StartedAt = this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')
     this.stop1StoppedAt =  this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC');
-    this.break1Shift = this.convertMinutesToTime(this.data.break1Shift);
+    this.pause1Id = this.convertMinutesToTime(this.data.pause1Id * 5);
     this.start2StartedAt = this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC');
     this.stop2StoppedAt = this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC');
-    this.break2Shift = this.convertMinutesToTime(this.data.break2Shift);
+    this.pause2Id = this.convertMinutesToTime(this.data.pause2Id * 5);
     this.isInTheFuture = Date.parse(this.data.date) > Date.now();
     //this.tableHeaders = [];
 
@@ -100,13 +100,13 @@ export class WorkdayEntityDialogComponent implements OnInit {
       { header: this.translateService.stream('Workday shift'), field: 'shift' },
       {
         cellTemplate: this.plannedColumnTemplate,
-        header: this.translateService.stream('Planned'),
+        header: this.translateService.stream('Planned working hours'),
         field: 'plannedStart',
         sortable: false,
       },
       {
         cellTemplate: this.actualColumnTemplate,
-        header: this.translateService.stream('Actual'),
+        header: this.translateService.stream('Working hours'),
         field: 'actualStart',
         sortable: false,
       },
@@ -121,7 +121,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
       plannedBreak: this.plannedBreakOfShift2,
       actualStart: this.start2StartedAt,
       actualEnd: this.stop2StoppedAt,
-      actualBreak: this.break2Shift,
+      actualBreak: this.pause2Id,
       // eslint-disable-next-line max-len
       //planned: this.data.plannedStartOfShift1 !== this.data.plannedEndOfShift1 && this.data.plannedEndOfShift2 !== 0 ? `${this.convertMinutesToTime(this.data.plannedStartOfShift2)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift2)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift2)}` : '',
       // eslint-disable-next-line max-len
@@ -135,7 +135,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
       plannedBreak: this.plannedBreakOfShift1,
       actualStart: this.start1StartedAt,
       actualEnd: this.stop1StoppedAt,
-      actualBreak: this.break1Shift,
+      actualBreak: this.pause1Id,
       // eslint-disable-next-line max-len
       //planned: this.data.plannedStartOfShift1 !== this.data.plannedEndOfShift1 ? `${this.convertMinutesToTime(this.data.plannedStartOfShift1)} - ${this.convertMinutesToTime(this.data.plannedEndOfShift1)} / ${this.convertMinutesToTime(this.data.plannedBreakOfShift1)}` : '',
       // eslint-disable-next-line max-len
@@ -178,13 +178,15 @@ export class WorkdayEntityDialogComponent implements OnInit {
   onUpdateWorkDayEntity() {
     this.data.plannedStartOfShift1 = this.convertTimeToMinutes(this.plannedStartOfShift1);
     this.data.plannedEndOfShift1 = this.convertTimeToMinutes(this.plannedEndOfShift1);
-    // this.data.plannedBreakOfShift1 = this.convertTimeToMinutes(this.plannedBreakOfShift1);
+    this.data.plannedBreakOfShift1 = this.convertTimeToMinutes(this.plannedBreakOfShift1);
     this.data.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
     this.data.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
-    // this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
+    this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
     this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
+    this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id);
     this.data.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
     this.data.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
+    this.data.pause2Id = this.convertTimeToMinutes(this.pause2Id);
     this.data.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
     // this.data.start1StartedAt = this.convertTimeToDateTimeOfToday(this.start1StartedAt);
     // this.data.stop1StoppedAt = this.convertTimeToDateTimeOfToday(this.stop1StoppedAt);

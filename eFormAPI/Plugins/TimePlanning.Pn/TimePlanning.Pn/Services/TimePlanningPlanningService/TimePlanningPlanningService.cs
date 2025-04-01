@@ -240,6 +240,11 @@ public class TimePlanningPlanningService(
                                     (planRegistration.Stop2Id * 5) - 5)),
                         Break1Shift = planRegistration.Pause1Id,
                         Break2Shift = planRegistration.Pause2Id,
+                        Pause1Id = planRegistration.Pause1Id,
+                        Pause2Id = planRegistration.Pause2Id,
+                        Pause3Id = planRegistration.Pause3Id,
+                        Pause4Id = planRegistration.Pause4Id,
+                        Pause5Id = planRegistration.Pause5Id,
                         PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5,
                         CommentOffice = planRegistration.CommentOffice,
                         WorkerComment = planRegistration.WorkerComment,
@@ -847,6 +852,11 @@ public class TimePlanningPlanningService(
                             (planRegistration.Stop2Id * 5) - 5)),
                 Break1Shift = planRegistration.Pause1Id,
                 Break2Shift = planRegistration.Pause2Id,
+                Pause1Id = planRegistration.Pause1Id,
+                Pause2Id = planRegistration.Pause2Id,
+                Pause3Id = planRegistration.Pause3Id,
+                Pause4Id = planRegistration.Pause4Id,
+                Pause5Id = planRegistration.Pause5Id,
                 PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5,
                 CommentOffice = planRegistration.CommentOffice,
                 WorkerComment = planRegistration.WorkerComment,
@@ -1230,12 +1240,16 @@ public class TimePlanningPlanningService(
                     false,
                     localizationService.GetString("PlanningNotFound"));
             }
-
+            
+            var assignedSite = await dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstAsync(x => x.SiteId == planning.SdkSitId);
+            
             planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
-            //planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
+            planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
             planning.PlannedEndOfShift1 = model.PlannedEndOfShift1;
             planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
-            // planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
+            planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
             planning.PlannedEndOfShift2 = model.PlannedEndOfShift2;
 
             planning.Start1Id = model.Start1Id ?? 0;
@@ -1245,7 +1259,42 @@ public class TimePlanningPlanningService(
             planning.Pause2Id = model.Pause2Id ?? planning.Pause2Id;
             planning.Stop2Id = model.Stop2Id ?? 0;
             planning.MessageId = model.Message;
-            planning.PlanHours = model.PlanHours;
+
+            if (!assignedSite.UseOnlyPlanHours)
+            {
+                double minutesPlanned = 0;
+                if (planning.PlannedStartOfShift1 != 0 && planning.PlannedEndOfShift1 != 0)
+                {
+                    minutesPlanned += planning.PlannedEndOfShift1 - planning.PlannedStartOfShift1 - planning.PlannedBreakOfShift1;
+                }
+                if (planning.PlannedStartOfShift2 != 0 && planning.PlannedEndOfShift2 != 0)
+                {
+                    minutesPlanned += planning.PlannedEndOfShift2 - planning.PlannedStartOfShift2 - planning.PlannedBreakOfShift2;
+                }
+                if (planning.PlannedStartOfShift3 != 0 && planning.PlannedEndOfShift3 != 0)
+                {
+                    minutesPlanned += planning.PlannedEndOfShift3 - planning.PlannedStartOfShift3 - planning.PlannedBreakOfShift3;
+                }
+                if (planning.PlannedStartOfShift4 != 0 && planning.PlannedEndOfShift4 != 0)
+                {
+                    minutesPlanned += planning.PlannedEndOfShift4 - planning.PlannedStartOfShift4 - planning.PlannedBreakOfShift4;
+                }
+                if (planning.PlannedStartOfShift5 != 0 && planning.PlannedEndOfShift5 != 0)
+                {
+                    minutesPlanned += planning.PlannedEndOfShift5 - planning.PlannedStartOfShift5 - planning.PlannedBreakOfShift5;
+                }
+                if (planning.MessageId == null)
+                {
+                    planning.PlanHours = minutesPlanned != 0 ? minutesPlanned / 60 : 0;
+                }
+                else
+                {
+                    planning.PlanHours = model.PlanHours;
+                }
+            } else {
+                planning.PlanHours = model.PlanHours;
+            }
+            
             var minutesMultiplier = 5;
             double nettoMinutes = 0;
 
