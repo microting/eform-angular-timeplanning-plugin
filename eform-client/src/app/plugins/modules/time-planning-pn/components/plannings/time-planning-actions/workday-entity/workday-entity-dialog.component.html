@@ -2,7 +2,7 @@
 <div mat-dialog-title>{{ data.siteName }} - {{ datePipe.transform(data.date, 'dd.MM.yyyy') }} ({{data.id}})</div><div mat-dialog-content>
 <br>
   <mtx-grid
-    [columns]="columns"
+    [columns]="tableHeaders"
     [data]="shiftData"
     [showPaginator]="false"
     [pageOnFront]="false"
@@ -10,6 +10,24 @@
     [showToolbar]="false"
     [showColumnMenuButton]="false">
   </mtx-grid>
+
+<ng-template #plannedColumnTemplate let-row let-col="colDef">
+  <div>{{ row['plannedStart'] }}</div>
+  <div>{{ row['plannedEnd'] }}</div>
+  <div>{{ row['plannedBreak'] }}</div>
+</ng-template>
+
+<ng-template #actualColumnTemplate let-row let-col="colDef">
+  <input [ngxTimepicker]="picker"
+         format="24"
+         [(ngModel)]="row['actualStart']"
+         value="{{ row['actualStart'] }}"
+  >
+  <ngx-material-timepicker #picker></ngx-material-timepicker>
+  <div>{{ row['actualStart'] }}</div>
+  <div>{{ row['actualEnd'] }}</div>
+  <div>{{ row['actualBreak'] }}</div>
+</ng-template>
 
 <!--  <ng-container *ngIf="data.isDoubleShift">-->
 <!--    <mtx-grid-->
