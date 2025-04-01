@@ -183,10 +183,10 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
     this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
     this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
-    this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id);
+    this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id, true);
     this.data.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
     this.data.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
-    this.data.pause2Id = this.convertTimeToMinutes(this.pause2Id);
+    this.data.pause2Id = this.convertTimeToMinutes(this.pause2Id, true);
     this.data.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
     // this.data.start1StartedAt = this.convertTimeToDateTimeOfToday(this.start1StartedAt);
     // this.data.stop1StoppedAt = this.convertTimeToDateTimeOfToday(this.stop1StoppedAt);
