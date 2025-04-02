@@ -316,7 +316,7 @@ public class TimePlanningPlanningService(
                             if (planRegistration.PlannedStartOfShift1 == 0 && !string.IsNullOrEmpty(planRegistration.PlanText) &&
                                 planRegistration.PlanHours > 0)
                             {
-                                if (planRegistration.Date > DateTime.Now)
+                                if (planRegistration.Date > DateTime.Now && !planRegistration.PlanChangedByAdmin)
                                 {
                                     // split the planText by this regex (.*)-(.*)\/(.*)
                                     // the parts are in hours, so we need to multiply by 60 to get minutes and can be like 7.30 or 7:30 so it can be 7.5, 7:30, 7½ and they are all the same
@@ -366,7 +366,7 @@ public class TimePlanningPlanningService(
                         }
                         else
                         {
-                            if (planRegistration.Date > DateTime.Now)
+                            if (planRegistration.Date > DateTime.Now && !planRegistration.PlanChangedByAdmin)
                             {
                                 var dayOfWeek = planRegistration.Date.DayOfWeek;
                                 switch (dayOfWeek)
@@ -929,7 +929,7 @@ public class TimePlanningPlanningService(
                         !string.IsNullOrEmpty(planRegistration.PlanText) &&
                         planRegistration.PlanHours > 0)
                     {
-                        if (planRegistration.Date > DateTime.Now)
+                        if (planRegistration.Date > DateTime.Now && !planRegistration.PlanChangedByAdmin)
                         {
                             // split the planText by this regex (.*)-(.*)\/(.*)
                             // the parts are in hours, so we need to multiply by 60 to get minutes and can be like 7.30 or 7:30 so it can be 7.5, 7:30, 7½ and they are all the same
@@ -978,7 +978,7 @@ public class TimePlanningPlanningService(
                 }
                 else
                 {
-                    if (planRegistration.Date > DateTime.Now)
+                    if (planRegistration.Date > DateTime.Now && !planRegistration.PlanChangedByAdmin)
                     {
                         var dayOfWeek = planRegistration.Date.DayOfWeek;
                         switch (dayOfWeek)
@@ -1251,6 +1251,7 @@ public class TimePlanningPlanningService(
             planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
             planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
             planning.PlannedEndOfShift2 = model.PlannedEndOfShift2;
+            planning.PlanChangedByAdmin = true;
 
             planning.Start1Id = model.Start1Id ?? 0;
             planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;
