@@ -245,7 +245,7 @@ public class TimePlanningPlanningService(
                         Pause3Id = planRegistration.Pause3Id,
                         Pause4Id = planRegistration.Pause4Id,
                         Pause5Id = planRegistration.Pause5Id,
-                        PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5,
+                        PauseMinutes = planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id * 5 - 5 + planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id * 5 - 5 : 0 : planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id * 5 - 5 : 0,
                         CommentOffice = planRegistration.CommentOffice,
                         WorkerComment = planRegistration.WorkerComment,
                         SumFlexStart = planRegistration.SumFlexStart,
@@ -661,7 +661,6 @@ public class TimePlanningPlanningService(
         }
     }
 
-
     public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(
         TimePlanningPlanningRequestModel model)
     {
@@ -857,7 +856,7 @@ public class TimePlanningPlanningService(
                 Pause3Id = planRegistration.Pause3Id,
                 Pause4Id = planRegistration.Pause4Id,
                 Pause5Id = planRegistration.Pause5Id,
-                PauseMinutes = planRegistration.Pause1Id * 5 + planRegistration.Pause2Id * 5,
+                PauseMinutes = planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id * 5 - 5 + planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id * 5 - 5 : 0 : planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id * 5 - 5 : 0,
                 CommentOffice = planRegistration.CommentOffice,
                 WorkerComment = planRegistration.WorkerComment,
                 SumFlexStart = planRegistration.SumFlexStart,
