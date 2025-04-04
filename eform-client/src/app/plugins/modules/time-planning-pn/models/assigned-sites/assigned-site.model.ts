@@ -51,6 +51,7 @@ export class AssignedSiteModel {
   allowAcceptOfPlannedHours: boolean;
   allowEditOfRegistrations: boolean;
   allowPersonalTimeRegistration: boolean;
+  useDetailedPauseEditing: boolean;
   startMonday2NdShift: number;
   endMonday2NdShift: number;
   breakMonday2NdShift: number;

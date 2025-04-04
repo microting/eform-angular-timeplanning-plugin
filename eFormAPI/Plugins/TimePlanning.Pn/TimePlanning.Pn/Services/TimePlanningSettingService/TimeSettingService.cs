@@ -440,6 +440,7 @@ public class TimeSettingService : ISettingService
     {
         Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await _dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SiteId == siteId);
         if (dbAssignedSite == null)
         {
@@ -482,6 +483,7 @@ public class TimeSettingService : ISettingService
 
         var dbAssignedSite = await _dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
 
         return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
@@ -506,7 +508,7 @@ public class TimeSettingService : ISettingService
         dbAssignedSite.Resigned = site.Resigned;
         dbAssignedSite.UseOneMinuteIntervals = site.UseOneMinuteIntervals;
         dbAssignedSite.UsePunchClock = site.UsePunchClock;
-
+        dbAssignedSite.UseDetailedPauseEditing = site.UseDetailedPauseEditing;
 
         dbAssignedSite.StartMonday = site.StartMonday;
         dbAssignedSite.StartTuesday = site.StartTuesday;
