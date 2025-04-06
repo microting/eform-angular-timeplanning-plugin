@@ -209,7 +209,6 @@ public class TimePlanningPlanningService(
                         PlannedStartOfShift2 = planRegistration.PlannedStartOfShift2,
                         PlannedEndOfShift2 = planRegistration.PlannedEndOfShift2,
                         PlannedBreakOfShift2 = planRegistration.PlannedBreakOfShift2,
-                        IsDoubleShift = planRegistration.Start2StartedAt != planRegistration.Stop2StoppedAt,
                         OnVacation = planRegistration.OnVacation,
                         Sick = planRegistration.Sick,
                         OtherAllowedAbsence = planRegistration.OtherAllowedAbsence,
@@ -240,11 +239,11 @@ public class TimePlanningPlanningService(
                                     (planRegistration.Stop2Id * 5) - 5)),
                         Break1Shift = planRegistration.Pause1Id,
                         Break2Shift = planRegistration.Pause2Id,
-                        Pause1Id = planRegistration.Pause1Id,
-                        Pause2Id = planRegistration.Pause2Id,
-                        Pause3Id = planRegistration.Pause3Id,
-                        Pause4Id = planRegistration.Pause4Id,
-                        Pause5Id = planRegistration.Pause5Id,
+                        Pause1Id = planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0,
+                        Pause2Id = planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0,
+                        Pause3Id = planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0,
+                        Pause4Id = planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0,
+                        Pause5Id = planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0,
                         PauseMinutes = planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id * 5 - 5 +
                                                                        (planRegistration.Pause2Id > 0
                                                                            ? planRegistration.Pause2Id * 5 - 5
@@ -310,8 +309,10 @@ public class TimePlanningPlanningService(
                         Pause201StoppedAt = planRegistration.Pause201StoppedAt,
                         Pause202StartedAt = planRegistration.Pause202StartedAt,
                         Pause202StoppedAt = planRegistration.Pause202StoppedAt,
-
                     };
+
+                    planningModel.IsDoubleShift = planningModel.Start2StartedAt != planningModel.Stop2StoppedAt;
+
                     try
                     {
                         if (dbAssignedSite.UseGoogleSheetAsDefault)
@@ -823,7 +824,6 @@ public class TimePlanningPlanningService(
                 PlannedStartOfShift2 = planRegistration.PlannedStartOfShift2,
                 PlannedEndOfShift2 = planRegistration.PlannedEndOfShift2,
                 PlannedBreakOfShift2 = planRegistration.PlannedBreakOfShift2,
-                IsDoubleShift = planRegistration.Start2StartedAt != planRegistration.Stop2StoppedAt,
                 OnVacation = planRegistration.OnVacation,
                 Sick = planRegistration.Sick,
                 OtherAllowedAbsence = planRegistration.OtherAllowedAbsence,
@@ -924,8 +924,10 @@ public class TimePlanningPlanningService(
                 Pause201StoppedAt = planRegistration.Pause201StoppedAt,
                 Pause202StartedAt = planRegistration.Pause202StartedAt,
                 Pause202StoppedAt = planRegistration.Pause202StoppedAt,
-
             };
+
+            planningModel.IsDoubleShift = planningModel.Start2StartedAt != planningModel.Stop2StoppedAt;
+
             try
             {
                 if (dbAssignedSite.UseGoogleSheetAsDefault)
