@@ -1257,6 +1257,7 @@ public class TimePlanningPlanningService(
             planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
             planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
             planning.PlannedEndOfShift2 = model.PlannedEndOfShift2;
+            planning.CommentOffice = model.CommentOffice;
             
             if (!planning.PlanChangedByAdmin)
             {
@@ -1876,6 +1877,7 @@ public class TimePlanningPlanningService(
             planning.Stop1Id = model.Stop1Id ?? 0;
             planning.Start2Id = model.Start2Id ?? 0;
             planning.Stop2Id = model.Stop2Id ?? 0;
+            planning.WorkerComment = model.WorkerComment;
 
             var minutesMultiplier = 5;
             double nettoMinutes = 0;
