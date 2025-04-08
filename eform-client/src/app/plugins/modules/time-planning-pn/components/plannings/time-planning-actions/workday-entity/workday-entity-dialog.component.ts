@@ -66,6 +66,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   stop2StoppedAt: string;
   pause2Id: string;
   isInTheFuture: boolean = false;
+  date: any;
   @ViewChild('plannedColumnTemplate', { static: true }) plannedColumnTemplate!: TemplateRef<any>;
   @ViewChild('actualColumnTemplate', { static: true }) actualColumnTemplate!: TemplateRef<any>;
   constructor(
@@ -94,6 +95,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.stop2StoppedAt = this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC');
     this.pause2Id = this.convertMinutesToTime(this.data.pause2Id * 5);
     this.isInTheFuture = Date.parse(this.data.date) > Date.now();
+    this.date = Date.parse(this.data.date);
     //this.tableHeaders = [];
 
     this.tableHeaders = [
