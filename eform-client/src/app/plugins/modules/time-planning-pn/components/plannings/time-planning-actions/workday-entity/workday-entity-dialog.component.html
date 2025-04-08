@@ -142,7 +142,7 @@
         <mat-label>{{'Pause' | translate}}</mat-label>
         <input
           matInput
-          [disabled]="isInTheFuture || start1StartedAt === null && stop1StoppedAt === null"
+          [disabled]="isInTheFuture || start1StartedAt === null || stop1StoppedAt === null"
           [ngxTimepicker]="pause1IdPicker"
           [format]="24"
           [(ngModel)]="pause1Id"
@@ -195,7 +195,7 @@
         <mat-label>{{'Pause' | translate}}</mat-label>
         <input
           matInput
-          [disabled]="isInTheFuture || start2StartedAt === null && stop1StoppedAt === null"
+          [disabled]="isInTheFuture || start2StartedAt === null || stop2StoppedAt === null"
           [ngxTimepicker]="pause2IdPicker"
           [format]="24"
           [(ngModel)]="pause2Id"
