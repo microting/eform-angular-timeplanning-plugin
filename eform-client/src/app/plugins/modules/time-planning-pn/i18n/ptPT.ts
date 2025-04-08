@@ -92,4 +92,7 @@ export const ptPT = {
   '4th shift': '4º turno',
   '5th shift': '5º turno',
   'Flex balance to date': 'Saldo flexível até o momento',
+  TimeOff: 'Tempo livre',
+  Shift: 'Mudança',
+  Registered: 'Registrado',
 };

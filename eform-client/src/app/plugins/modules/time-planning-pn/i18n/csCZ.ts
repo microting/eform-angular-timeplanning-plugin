@@ -92,4 +92,7 @@ export const csCZ = {
   '4th shift': '4. směna',
   '5th shift': '5. směna',
   'Flex balance to date': 'Flexibilní zůstatek k dnešnímu dni',
+  TimeOff: 'Volno',
+  Shift: 'Posun',
+  Registered: 'Registrovaný',
 };

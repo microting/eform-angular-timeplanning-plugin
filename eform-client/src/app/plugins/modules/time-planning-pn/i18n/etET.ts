@@ -92,4 +92,7 @@ export const etET = {
   '4th shift': '4. vahetus',
   '5th shift': '5. vahetus',
   'Flex balance to date': 'Paindlik saldo praeguseks',
+  TimeOff: 'Vaba aeg',
+  Shift: 'Shift',
+  Registered: 'Registreeritud',
 };

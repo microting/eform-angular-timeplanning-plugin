@@ -90,4 +90,7 @@ export const da = {
   '4th shift': '4. skift',
   '5th shift': '5. skift',
   'Flex balance to date': 'Flex saldo til dato',
+  TimeOff: 'Fritid',
+  Shift: 'Skift',
+  Registered: 'Registreret',
 };

@@ -92,4 +92,7 @@ export const esES = {
   '4th shift': '4to turno',
   '5th shift': '5to turno',
   'Flex balance to date': 'Saldo flexible hasta la fecha',
+  TimeOff: 'Tiempo libre',
+  Shift: 'Cambio',
+  Registered: 'Registrado',
 };

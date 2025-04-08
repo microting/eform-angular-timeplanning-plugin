@@ -92,4 +92,7 @@ export const hrHR = {
   '4th shift': '4. smjena',
   '5th shift': '5. smjena',
   'Flex balance to date': 'Flex stanje do danas',
+  TimeOff: 'Slobodno vrijeme',
+  Shift: 'Shift',
+  Registered: 'Registriran',
 };

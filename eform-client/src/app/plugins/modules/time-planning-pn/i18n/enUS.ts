@@ -90,4 +90,7 @@ export const enUS = {
   '4th shift': '4th shift',
   '5th shift': '5th shift',
   'Flex balance to date': 'Flex balance to date',
+  'TimeOff': 'Time off',
+  'Shift': 'Shift',
+  'Registered': 'Registered'
 };

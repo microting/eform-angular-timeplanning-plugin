@@ -92,4 +92,7 @@ export const nlNL = {
   '4th shift': '4e dienst',
   '5th shift': '5e dienst',
   'Flex balance to date': 'Flexibel saldo tot nu toe',
+  TimeOff: 'Vrije tijd',
+  Shift: 'Verschuiving',
+  Registered: 'Geregistreerd',
 };

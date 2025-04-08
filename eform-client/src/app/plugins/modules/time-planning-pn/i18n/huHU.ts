@@ -92,4 +92,7 @@ export const huHU = {
   '4th shift': '4. műszak',
   '5th shift': '5. műszak',
   'Flex balance to date': 'Flex egyenleg a mai napig',
+  TimeOff: 'Szabadidő',
+  Shift: 'Váltás',
+  Registered: 'Bejegyzett',
 };

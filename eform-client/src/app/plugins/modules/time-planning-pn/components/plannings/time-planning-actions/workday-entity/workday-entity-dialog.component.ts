@@ -97,16 +97,17 @@ export class WorkdayEntityDialogComponent implements OnInit {
     //this.tableHeaders = [];
 
     this.tableHeaders = [
-      { header: this.translateService.stream('Workday shift'), field: 'shift' },
+      { header: this.translateService.stream('Shift'), field: 'shift',
+        pinned: 'left'},
       {
         cellTemplate: this.plannedColumnTemplate,
-        header: this.translateService.stream('Planned working hours'),
+        header: this.translateService.stream('Planned'),
         field: 'plannedStart',
         sortable: false,
       },
       {
         cellTemplate: this.actualColumnTemplate,
-        header: this.translateService.stream('Working hours'),
+        header: this.translateService.stream('Registered'),
         field: 'actualStart',
         sortable: false,
       },
@@ -142,7 +143,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
       //actual: this.data.start1StartedAt !== null ? `${this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')} - ${this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC')}` : ''
     };
 
-    this.shiftData = (this.data.isDoubleShift ? [shift1Data, shift2Data] : [shift1Data]);
+    // this.shiftData = (this.data.isDoubleShift ? [shift1Data, shift2Data] : [shift1Data]);
+    this.shiftData = [shift1Data, shift2Data];
   }
 
   // columns = [
@@ -193,8 +195,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // this.data.break1Shift = this.convertTimeToMinutes(this.break1Shift);
     // this.data.start2StartedAt = this.convertTimeToDateTimeOfToday(this.start2StartedAt);
     // this.data.stop2StoppedAt = this.convertTimeToDateTimeOfToday(this.stop2StoppedAt);
-    this.planningsService.updatePlanning(this.data, this.data.id).subscribe();
-    this.workdayEntityUpdate.emit(this.data);
+    this.planningsService.updatePlanning(this.data, this.data.id).subscribe(
+      () => {
+        this.workdayEntityUpdate.emit(this.data);
+      }
+    );
   }
 
   convertTimeToDateTimeOfToday(hourMinutes: string): string {
@@ -204,8 +209,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
     return today.toISOString();
     }
 
-  convertTimeToMinutes(plannedStartOfShift1: string, isFiveNumberIntervals: boolean = false): number {
-    const parts = plannedStartOfShift1.split(':');
+  convertTimeToMinutes(timeStamp: string, isFiveNumberIntervals: boolean = false): number {
+    if (timeStamp === '' || timeStamp === null) {
+      return null;
+    }
+    const parts = timeStamp.split(':');
     const hours = parseInt(parts[0], 10);
     const minutes = parseInt(parts[1], 10);
     if (isFiveNumberIntervals) {

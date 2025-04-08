@@ -57,13 +57,6 @@
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}
         </strong>
       </div>
-      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift2 !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}">
-          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift2) }} -
-          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift2) }} /
-          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift2) }}
-        </strong>
-      </div>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.planHours !== 0">
         <strong class="{{ getCellTextColor(row, col.field) }}">
           {{ convertHoursToTime(row.planningPrDayModels[col.field]?.planHours) }}
@@ -73,6 +66,13 @@
            *ngIf="row.planningPrDayModels[col.field]?.start1StartedAt !== null">
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.start1StartedAt, 'HH:mm', 'UTC') }} -
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop1StoppedAt, 'HH:mm', 'UTC') }}
+      </div>
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift2 !== 0">
+        <strong class="{{ getCellTextColor(row, col.field) }}">
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift2) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift2) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift2) }}
+        </strong>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift">
@@ -103,6 +103,7 @@
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 1" class="blue-text">event_busy</mat-icon>
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 4" class="blue-text">school</mat-icon>
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 5" class="blue-text">event_busy</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 9" class="blue-text">outdoor_grill</mat-icon>
     </div>
   </div>
 </ng-template>

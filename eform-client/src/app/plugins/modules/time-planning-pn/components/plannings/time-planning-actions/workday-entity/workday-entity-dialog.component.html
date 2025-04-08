@@ -236,14 +236,26 @@
     >
   </mat-form-field>
   <br>
-  <!--  <p><strong>{{ 'Plan hours' | translate }}:</strong> {{ data.planHours }}</p>-->
+  <p *ngIf="data.workerComment"><strong>{{ 'CommentWorker' | translate }}:</strong> {{ data.workerComment }}</p>
   <ng-container *ngFor="let key of enumKeys">
-    <ng-container *ngIf="key !== 'Blank' && key !== 'Care' && key !== 'TimeOff'">
+    <ng-container *ngIf="key !== 'Blank' && key !== 'Care'">
       <mat-checkbox [(ngModel)]="data[key]" (change)="onCheckboxChange(TimePlanningMessagesEnum[key])">
         {{ key | translate }}
       </mat-checkbox>
     </ng-container>
   </ng-container>
+  <br>
+  <mat-form-field class="pr-2">
+    <mat-label>{{ 'CommentOffice' | translate }}</mat-label>
+    <input
+      type="text"
+      matInput
+      id="CommentOffice"
+      name="CommentOffice"
+      [(ngModel)]="data.commentOffice"
+    >
+  </mat-form-field>
+  <br>
   <!-- Add more fields as needed -->
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">

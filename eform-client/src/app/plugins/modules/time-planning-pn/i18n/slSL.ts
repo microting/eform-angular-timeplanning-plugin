@@ -92,4 +92,7 @@ export const slSL = {
   '4th shift': '4. izmena',
   '5th shift': '5. izmena',
   'Flex balance to date': 'Prilagodljivo stanje do danes',
+  TimeOff: 'prosti čas',
+  Shift: 'Shift',
+  Registered: 'Registriran',
 };

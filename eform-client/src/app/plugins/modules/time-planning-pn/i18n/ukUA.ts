@@ -92,4 +92,7 @@ export const ukUA = {
   '4th shift': '4 зміна',
   '5th shift': '5-та зміна',
   'Flex balance to date': 'Гнучкий баланс на сьогоднішній день',
+  TimeOff: 'Відпустка',
+  Shift: 'Shift',
+  Registered: 'Зареєстрований',
 };

@@ -92,4 +92,7 @@ export const bgBG = {
   '4th shift': '4-та смяна',
   '5th shift': '5-та смяна',
   'Flex balance to date': 'Гъвкав баланс към момента',
+  TimeOff: 'Свободно време',
+  Shift: 'Shift',
+  Registered: 'Регистриран',
 };

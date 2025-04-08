@@ -92,4 +92,7 @@ export const noNO = {
   '4th shift': '4. skift',
   '5th shift': '5. skift',
   'Flex balance to date': 'Flex-saldo til dags dato',
+  TimeOff: 'Fritid',
+  Shift: 'Skifte',
+  Registered: 'Registrert',
 };

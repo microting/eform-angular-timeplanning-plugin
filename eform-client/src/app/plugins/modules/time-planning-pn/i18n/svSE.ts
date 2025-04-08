@@ -92,4 +92,7 @@ export const svSE = {
   '4th shift': '4:e skiftet',
   '5th shift': '5:e skiftet',
   'Flex balance to date': 'Flexsaldo hittills',
+  TimeOff: 'Ledig',
+  Shift: 'Flytta',
+  Registered: 'Registrerad',
 };

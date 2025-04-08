@@ -92,4 +92,7 @@ export const frFR = {
   '4th shift': '4e quart de travail',
   '5th shift': '5e quart de travail',
   'Flex balance to date': 'Solde flexible à ce jour',
+  TimeOff: 'Congés',
+  Shift: 'Changement',
+  Registered: 'Inscrit',
 };

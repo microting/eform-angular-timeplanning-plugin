@@ -197,6 +197,11 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesUpperLimit",
                 Value = "60"
             },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:DayOfPayment",
+                Value = "20"
+            },
         };
     }
 }

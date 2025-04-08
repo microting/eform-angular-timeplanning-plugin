@@ -61,6 +61,14 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
                 DaName = "Barn 2. sygedag",
                 EnName = "Children 2nd sick",
                 DeName = "2. Krankheitstag der Kinder"
+            },
+            new Message
+            {
+                Id = 9,
+                Name = "TimeOff",
+                DaName = "Ferie fridag",
+                EnName = "Holiday day off",
+                DeName = "Feiertagsfreier Tag"
             }
         };
     }

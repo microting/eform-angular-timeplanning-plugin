@@ -92,4 +92,7 @@ export const ltLT = {
   '4th shift': '4 pamaina',
   '5th shift': '5 pamaina',
   'Flex balance to date': 'Lankstus balansas iki šiol',
+  TimeOff: 'Laisvas laikas',
+  Shift: 'Shift',
+  Registered: 'Registruotas',
 };
