@@ -38,6 +38,8 @@
           [format]="24"
           [(ngModel)]="plannedBreakOfShift1"
           readonly
+          [min]="'00:00'"
+          [max]="getMaxDifference(plannedStartOfShift1, plannedEndOfShift1)"
           [value]="plannedBreakOfShift1"
         >
         <ngx-material-timepicker #plannedPause1Picker
@@ -90,6 +92,8 @@
           [format]="24"
           [(ngModel)]="plannedBreakOfShift2"
           readonly
+          [min]="'00:00'"
+          [max]="getMaxDifference(plannedStartOfShift2, plannedEndOfShift2)"
           [value]="plannedBreakOfShift2"
         >
         <ngx-material-timepicker #plannedPause2Picker
@@ -147,6 +151,8 @@
           [format]="24"
           [(ngModel)]="pause1Id"
           readonly
+          [min]="'00:00'"
+          [max]="getMaxDifference(start1StartedAt, stop1StoppedAt)"
           [value]="pause1Id"
         >
         <ngx-material-timepicker #pause1IdPicker
@@ -200,7 +206,8 @@
           [format]="24"
           [(ngModel)]="pause2Id"
           readonly
-          [min]="date"
+          [min]="'00:00'"
+          [max]="getMaxDifference(start2StartedAt, stop2StoppedAt)"
           [value]="pause2Id"
         >
         <ngx-material-timepicker #pause2IdPicker

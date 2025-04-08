@@ -66,6 +66,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
   stop2StoppedAt: string;
   pause2Id: string;
   isInTheFuture: boolean = false;
+  maxPause1Id: number = 0;
+  maxPause2Id: number = 0;
   date: any;
   @ViewChild('plannedColumnTemplate', { static: true }) plannedColumnTemplate!: TemplateRef<any>;
   @ViewChild('actualColumnTemplate', { static: true }) actualColumnTemplate!: TemplateRef<any>;
@@ -202,6 +204,18 @@ export class WorkdayEntityDialogComponent implements OnInit {
         this.workdayEntityUpdate.emit(this.data);
       }
     );
+  }
+
+  getMaxDifference(start: string, end: string): string {
+    const startTime = this.convertTimeToMinutes(start);
+    const endTime = this.convertTimeToMinutes(end);
+    const diff = endTime - startTime;
+    if (diff < 0) {
+      return '00:00';
+    }
+    const hours = Math.floor(diff / 60);
+    const minutes = diff % 60;
+    return `${hours}:${minutes}`;
   }
 
   convertTimeToDateTimeOfToday(hourMinutes: string): string {
