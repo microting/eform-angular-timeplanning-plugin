@@ -68,6 +68,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   isInTheFuture: boolean = false;
   maxPause1Id: number = 0;
   maxPause2Id: number = 0;
+  todaysFlex: number = 0;
   date: any;
   @ViewChild('plannedColumnTemplate', { static: true }) plannedColumnTemplate!: TemplateRef<any>;
   @ViewChild('actualColumnTemplate', { static: true }) actualColumnTemplate!: TemplateRef<any>;
@@ -97,6 +98,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.stop2StoppedAt = this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC');
     this.pause2Id = this.convertMinutesToTime(this.data.pause2Id * 5);
     this.isInTheFuture = Date.parse(this.data.date) > Date.now();
+    this.todaysFlex = this.data.actualHours - this.data.planHours;
     this.date = Date.parse(this.data.date);
     //this.tableHeaders = [];
 
@@ -188,6 +190,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
     this.data.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
     this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
+    debugger;
     this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
     this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id, true);
     this.data.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
@@ -242,10 +245,65 @@ export class WorkdayEntityDialogComponent implements OnInit {
     return hours * 60 + minutes;
   }
 
+  convertHoursToTime(hours: number): string {
+    const isNegative = hours < 0;
+    if (hours < 0) {
+      hours = Math.abs(hours);
+    }
+    const totalMinutes = Math.floor(hours * 60)
+    const hrs = Math.floor(totalMinutes / 60);
+    let mins = totalMinutes % 60;
+    if (isNegative) {
+      // return '${padZero(hrs)}:${padZero(60 - mins)}';
+      return `-${hrs}:${this.padZero(mins)}`;
+    }
+    return `${this.padZero(hrs)}:${this.padZero(mins)}`;
+  }
+
   onCancel() {
     this.data.message = this.originalData.message;
     this.enumKeys.forEach(key => {
       this.data[key] = this.originalData[key];
     });
+  }
+
+  calculatePlanHours() {
+    this.data.plannedStartOfShift1 = this.convertTimeToMinutes(this.plannedStartOfShift1);
+    this.data.plannedEndOfShift1 = this.convertTimeToMinutes(this.plannedEndOfShift1);
+    this.data.plannedBreakOfShift1 = this.convertTimeToMinutes(this.plannedBreakOfShift1);
+    this.data.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
+    this.data.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
+    this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
+    let plannedTimeInMinutes = this.data.plannedEndOfShift1 - this.data.plannedStartOfShift1 - this.data.plannedBreakOfShift1;
+    if (this.data.plannedEndOfShift2 !== 0) {
+      let timeInMinutes2NdShift = this.data.plannedEndOfShift2 - this.data.plannedStartOfShift2 - this.data.plannedBreakOfShift2;
+      plannedTimeInMinutes += timeInMinutes2NdShift;
+    }
+    const plannedHours = Math.floor(plannedTimeInMinutes);
+    const plannedMinutes = Math.round((plannedTimeInMinutes - plannedHours) * 60);
+    this.data.planHours = plannedTimeInMinutes / 60;
+
+    this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
+    this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id, true);
+    this.data.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
+    this.data.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
+    this.data.pause2Id = this.convertTimeToMinutes(this.pause2Id, true);
+    this.data.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
+
+    let actualTimeInMinutes = this.data.stop1Id - this.data.pause1Id - this.data.start1Id;
+    if (this.data.stop2Id !== 0) {
+      let timeInMinutes2NdShift = this.data.stop2Id - this.data.pause2Id - this.data.start2Id;
+      actualTimeInMinutes += timeInMinutes2NdShift;
+    }
+    if (actualTimeInMinutes !== 0) {
+      actualTimeInMinutes *= 5;
+    }
+    const actualHours = Math.floor(actualTimeInMinutes);
+    const actualMinutes = Math.round((actualTimeInMinutes - actualHours) * 60);
+    this.data.actualHours = actualTimeInMinutes / 60;
+
+    debugger;
+    this.todaysFlex = this.data.actualHours - this.data.planHours;
+    this.data.sumFlexEnd = this.data.sumFlexStart + this.data.actualHours - this.data.planHours - this.data.paidOutFlex;
   }
 }

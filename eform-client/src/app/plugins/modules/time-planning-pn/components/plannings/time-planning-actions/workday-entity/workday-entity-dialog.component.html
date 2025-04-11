@@ -25,6 +25,7 @@
           [value]="plannedStartOfShift1"
         >
         <ngx-material-timepicker #plannedPicker
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="plannedStartOfShift1"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -43,6 +44,7 @@
           [value]="plannedBreakOfShift1"
         >
         <ngx-material-timepicker #plannedPause1Picker
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="plannedBreakOfShift1"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -60,6 +62,7 @@
           [max]="plannedStartOfShift2 === '00:00' ? '23:55' : plannedStartOfShift2"
           [value]="plannedEndOfShift1">
         <ngx-material-timepicker #plannedPicker2
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="plannedEndOfShift1"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -79,6 +82,7 @@
           [max]="plannedEndOfShift2 === '00:00' ? '23:55' : plannedEndOfShift2"
           [value]="plannedStartOfShift2">
         <ngx-material-timepicker #plannedPicker3
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="plannedStartOfShift2"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -97,6 +101,7 @@
           [value]="plannedBreakOfShift2"
         >
         <ngx-material-timepicker #plannedPause2Picker
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="plannedBreakOfShift2"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -114,6 +119,7 @@
           [min]="plannedStartOfShift2 === '00:00' ? plannedEndOfShift1 : plannedStartOfShift2"
           [value]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2">
         <ngx-material-timepicker #plannedPicker4
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -137,6 +143,7 @@
           [value]="start1StartedAt"
         >
         <ngx-material-timepicker #picker
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="start1StartedAt"
                                  [minutesGap]="5"
@@ -156,6 +163,7 @@
           [value]="pause1Id"
         >
         <ngx-material-timepicker #pause1IdPicker
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="pause1Id"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -174,6 +182,7 @@
           [max]="start2StartedAt"
           [value]="stop1StoppedAt">
         <ngx-material-timepicker #picker2
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="stop1StoppedAt"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -193,6 +202,7 @@
           [max]="stop2StoppedAt"
           [value]="start2StartedAt">
         <ngx-material-timepicker #picker3
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="start2StartedAt"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -211,6 +221,7 @@
           [value]="pause2Id"
         >
         <ngx-material-timepicker #pause2IdPicker
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="pause2Id"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -228,6 +239,7 @@
           [min]="start2StartedAt"
           [value]="stop2StoppedAt">
         <ngx-material-timepicker #picker4
+                                 (closed)="calculatePlanHours()"
                                  [format]="24"
                                  [defaultTime]="stop2StoppedAt"
                                  [minutesGap]="5"></ngx-material-timepicker>
@@ -236,17 +248,82 @@
   </ng-template>
 
   <!--  <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>-->
-  <br>
-  <mat-form-field class="pr-2">
+<!--  <br>-->
+<!--  <mat-form-field class="pr-2">-->
+<!--    <mat-label>{{ 'Flex balance at start of day' | translate }}</mat-label>-->
+<!--    <input-->
+<!--      type="text"-->
+<!--      matInput-->
+<!--      id="flexToDate"-->
+<!--      name="flexToDate"-->
+<!--      readonly="readonly"-->
+<!--      disabled-->
+<!--      [value]="convertHoursToTime(data.sumFlexStart)"-->
+<!--    >-->
+<!--  </mat-form-field>-->
+  <br><mat-form-field class="pr-2">
     <mat-label>{{ 'Plan hours' | translate }}</mat-label>
     <input
       type="number"
       matInput
       id="planHours"
       name="planHours"
+      [disabled]="isInTheFuture || data.message === null"
       [(ngModel)]="data.planHours"
     >
   </mat-form-field>
+  <br>
+  <mat-form-field class="pr-2">
+    <mat-label>{{ 'NettoHours' | translate }}</mat-label>
+    <input
+      type="text"
+      matInput
+      id="nettoHours"
+      name="nettoHours"
+      readonly="readonly"
+      disabled
+      [value]="convertHoursToTime(data.actualHours)"
+    >
+  </mat-form-field>
+  <br>
+  <mat-form-field class="pr-2">
+    <mat-label>{{ 'Flex' | translate }}</mat-label>
+    <input
+      type="text"
+      matInput
+      id="todaysFlex"
+      name="todaysFlex"
+      readonly="readonly"
+      disabled
+      [value]="convertHoursToTime(todaysFlex)"
+    >
+  </mat-form-field>
+  <br>
+  <mat-form-field class="pr-2">
+    <mat-label>{{ 'PaidOutFlex' | translate }}</mat-label>
+    <input
+      type="number"
+      matInput
+      id="paidOutFlex"
+      name="paidOutFlex"
+      (change)="calculatePlanHours()"
+      [(ngModel)]="data.paidOutFlex"
+    >
+  </mat-form-field>
+  <br>
+  <mat-form-field class="pr-2">
+    <mat-label>{{ 'SumFlex' | translate }}</mat-label>
+    <input
+      type="text"
+      matInput
+      id="flexIncludingToday"
+      name="flexIncludingToday"
+      readonly="readonly"
+      disabled
+      [value]="convertHoursToTime(data.sumFlexEnd)"
+    >
+  </mat-form-field>
+  <br>
   <br>
   <p *ngIf="data.workerComment"><strong>{{ 'CommentWorker' | translate }}:</strong> {{ data.workerComment }}</p>
   <ng-container *ngFor="let key of enumKeys">
@@ -256,6 +333,7 @@
       </mat-checkbox>
     </ng-container>
   </ng-container>
+  <br>
   <br>
   <mat-form-field class="pr-2">
     <mat-label>{{ 'CommentOffice' | translate }}</mat-label>

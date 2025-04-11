@@ -1454,6 +1454,7 @@ public class TimePlanningPlanningService(
             planning.Start2Id = model.Start2Id ?? 0;
             planning.Stop2Id = model.Stop2Id ?? 0;
             planning.MessageId = model.Message;
+            planning.PaiedOutFlex = model.PaidOutFlex;
 
             if (!assignedSite.UseOnlyPlanHours)
             {
