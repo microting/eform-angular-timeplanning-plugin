@@ -181,6 +181,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     this.dialog.open(WorkdayEntityDialogComponent, {
       data: cellData
     }).afterClosed().subscribe((data) => {
+      debugger;
       if (data) {
         this.timePlanningChanged.emit(data);
       }
@@ -218,4 +219,6 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   padZero(num: number): string {
     return num < 10 ? '0' + num : num.toString();
   }
+
+  protected readonly Date = Date;
 }

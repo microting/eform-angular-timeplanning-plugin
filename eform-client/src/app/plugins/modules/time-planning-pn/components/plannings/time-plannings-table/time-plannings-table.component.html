@@ -79,11 +79,13 @@
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }} -
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }}
       </div>
-      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
-        <div class="{{ getCellTextColorForDay(row, col.field) }}">
-          <strong>{{ 'Flex balance to date' | translate}}: {{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>
+      <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
+        <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
+          <div class="{{ getCellTextColorForDay(row, col.field) }}">
+            <strong>{{ 'Flex balance to date' | translate}}: {{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>
+          </div>
         </div>
-      </div>
+      </ng-container>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null">
         <div class="{{ getCellTextColor(row, col.field) }}">
           <strong>{{ 'CommentWorker' | translate }}:</strong> {{row.planningPrDayModels[col.field]?.workerComment}}

@@ -248,19 +248,19 @@
   </ng-template>
 
   <!--  <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>-->
-<!--  <br>-->
-<!--  <mat-form-field class="pr-2">-->
-<!--    <mat-label>{{ 'Flex balance at start of day' | translate }}</mat-label>-->
-<!--    <input-->
-<!--      type="text"-->
-<!--      matInput-->
-<!--      id="flexToDate"-->
-<!--      name="flexToDate"-->
-<!--      readonly="readonly"-->
-<!--      disabled-->
-<!--      [value]="convertHoursToTime(data.sumFlexStart)"-->
-<!--    >-->
-<!--  </mat-form-field>-->
+  <br>
+  <mat-form-field class="pr-2">
+    <mat-label>{{ 'Flex balance at start of day' | translate }}</mat-label>
+    <input
+      type="text"
+      matInput
+      id="flexToDate"
+      name="flexToDate"
+      readonly="readonly"
+      disabled
+      [value]="data.sumFlexStart.toFixed(2)"
+    >
+  </mat-form-field>
   <br><mat-form-field class="pr-2">
     <mat-label>{{ 'Plan hours' | translate }}</mat-label>
     <input
@@ -320,7 +320,7 @@
       name="flexIncludingToday"
       readonly="readonly"
       disabled
-      [value]="convertHoursToTime(data.sumFlexEnd)"
+      [value]="data.sumFlexEnd.toFixed(2)"
     >
   </mat-form-field>
   <br>

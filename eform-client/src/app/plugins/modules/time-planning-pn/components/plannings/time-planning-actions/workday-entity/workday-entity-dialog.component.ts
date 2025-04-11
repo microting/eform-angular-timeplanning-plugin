@@ -22,7 +22,7 @@ import {TimePlanningPnPlanningsService} from '../../../../services';
 import * as R from 'ramda';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
-import {NgxMaterialTimepickerModule} from "ngx-material-timepicker";
+import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
 
 @Component({
   selector: 'app-workday-entity-dialog',
@@ -190,13 +190,13 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
     this.data.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
     this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
-    debugger;
     this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
     this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id, true);
     this.data.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
     this.data.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
     this.data.pause2Id = this.convertTimeToMinutes(this.pause2Id, true);
     this.data.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
+    this.data.paidOutFlex = this.data.paidOutFlex === null ? 0 : this.data.paidOutFlex;
     // this.data.start1StartedAt = this.convertTimeToDateTimeOfToday(this.start1StartedAt);
     // this.data.stop1StoppedAt = this.convertTimeToDateTimeOfToday(this.stop1StoppedAt);
     // this.data.break1Shift = this.convertTimeToMinutes(this.break1Shift);
@@ -279,8 +279,6 @@ export class WorkdayEntityDialogComponent implements OnInit {
       let timeInMinutes2NdShift = this.data.plannedEndOfShift2 - this.data.plannedStartOfShift2 - this.data.plannedBreakOfShift2;
       plannedTimeInMinutes += timeInMinutes2NdShift;
     }
-    const plannedHours = Math.floor(plannedTimeInMinutes);
-    const plannedMinutes = Math.round((plannedTimeInMinutes - plannedHours) * 60);
     this.data.planHours = plannedTimeInMinutes / 60;
 
     this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
@@ -296,13 +294,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
       actualTimeInMinutes += timeInMinutes2NdShift;
     }
     if (actualTimeInMinutes !== 0) {
+      actualTimeInMinutes += 1;
       actualTimeInMinutes *= 5;
     }
-    const actualHours = Math.floor(actualTimeInMinutes);
-    const actualMinutes = Math.round((actualTimeInMinutes - actualHours) * 60);
     this.data.actualHours = actualTimeInMinutes / 60;
 
-    debugger;
     this.todaysFlex = this.data.actualHours - this.data.planHours;
     this.data.sumFlexEnd = this.data.sumFlexStart + this.data.actualHours - this.data.planHours - this.data.paidOutFlex;
   }

@@ -1519,7 +1519,7 @@ public class TimePlanningPlanningService(
                     .OrderByDescending(x => x.Date)
                     .FirstOrDefaultAsync();
 
-
+            planning.SumFlexStart = preTimePlanning.SumFlexEnd;
             planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
                                   planning.PlanHours -
                                   planning.PaiedOutFlex;
@@ -1543,6 +1543,7 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
+                planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
                 planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
                                                        planningAfterThisPlanning.NettoHours -
                                                        planningAfterThisPlanning.PlanHours -
@@ -1908,7 +1909,7 @@ public class TimePlanningPlanningService(
                     .OrderByDescending(x => x.Date)
                     .FirstOrDefaultAsync();
 
-
+            planning.SumFlexStart = preTimePlanning.SumFlexEnd;
             planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
                                   planning.PlanHours -
                                   planning.PaiedOutFlex;
@@ -1932,6 +1933,7 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
+                planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
                 planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
                                                        planningAfterThisPlanning.NettoHours -
                                                        planningAfterThisPlanning.PlanHours -
