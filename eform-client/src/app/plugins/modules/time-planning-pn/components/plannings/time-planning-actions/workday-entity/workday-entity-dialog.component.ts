@@ -7,7 +7,7 @@ import {
   MatDialogContent,
   MatDialogTitle
 } from '@angular/material/dialog';
-import {MatButton} from '@angular/material/button';
+import {MatButton, MatIconButton} from '@angular/material/button';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {DatePipe, NgForOf, NgIf} from '@angular/common';
 import {MatCheckbox} from '@angular/material/checkbox';
@@ -23,6 +23,7 @@ import * as R from 'ramda';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
 import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
+import {MatIcon} from "@angular/material/icon";
 
 @Component({
   selector: 'app-workday-entity-dialog',
@@ -42,7 +43,9 @@ import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
     MatFormField,
     MatInput,
     MatLabel,
-    NgxMaterialTimepickerModule
+    NgxMaterialTimepickerModule,
+    MatIconButton,
+    MatIcon
   ],
   styleUrls: ['./workday-entity-dialog.component.scss']
 })
@@ -183,6 +186,78 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
   }
 
+  resetPlannedTimes(number: number) {
+    switch (number) {
+      case 1:
+        this.plannedStartOfShift1 = '00:00';
+        this.plannedBreakOfShift1 = '00:00';
+        this.plannedEndOfShift1= '00:00';
+        this.plannedStartOfShift2= '00:00';
+        this.plannedBreakOfShift2= '00:00';
+        this.plannedEndOfShift2= '00:00';
+        break;
+      case 2:
+        this.plannedBreakOfShift1= '00:00';
+        break;
+      case 3:
+        this.plannedBreakOfShift1= '00:00';
+        this.plannedEndOfShift1= '00:00';
+        this.plannedStartOfShift2= '00:00';
+        this.plannedBreakOfShift2= '00:00';
+        this.plannedEndOfShift2= '00:00';
+        break;
+      case 4:
+        this.plannedStartOfShift2= '00:00';
+        this.plannedBreakOfShift2= '00:00';
+        this.plannedEndOfShift2= '00:00';
+        break;
+      case 5:
+        this.plannedBreakOfShift2= '00:00';
+        break;
+      case 6:
+        this.plannedBreakOfShift2= '00:00';
+        this.plannedEndOfShift2= '00:00';
+        break;
+    }
+    this.calculatePlanHours();
+  }
+
+  resetActualTimes(number: number) {
+    switch (number) {
+      case 1:
+        this.start1StartedAt  = null;
+        this.pause1Id  = null;
+        this.stop1StoppedAt  = null;
+        this.start2StartedAt  = null;
+        this.pause2Id  = null;
+        this.stop2StoppedAt  = null;
+        break;
+      case 2:
+        this.pause1Id  = null;
+        break;
+      case 3:
+        this.pause1Id  = null;
+        this.stop1StoppedAt  = null;
+        this.start2StartedAt  = null;
+        this.pause2Id  = null;
+        this.stop2StoppedAt  = null;
+        break;
+      case 4:
+        this.start2StartedAt  = null;
+        this.pause2Id  = null;
+        this.stop2StoppedAt  = null;
+        break;
+      case 5:
+        this.pause2Id  = null;
+        break;
+      case 6:
+        this.pause2Id  = null;
+        this.stop2StoppedAt = null;
+        break;
+    }
+    this.calculatePlanHours();
+  }
+
   onUpdateWorkDayEntity() {
     this.data.plannedStartOfShift1 = this.convertTimeToMinutes(this.plannedStartOfShift1);
     this.data.plannedEndOfShift1 = this.convertTimeToMinutes(this.plannedEndOfShift1);
@@ -274,7 +349,10 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
     this.data.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
     this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
-    let plannedTimeInMinutes = this.data.plannedEndOfShift1 - this.data.plannedStartOfShift1 - this.data.plannedBreakOfShift1;
+    let plannedTimeInMinutes = 0;
+    if (this.data.plannedEndOfShift1 !== 0) {
+      plannedTimeInMinutes = this.data.plannedEndOfShift1 - this.data.plannedStartOfShift1 - this.data.plannedBreakOfShift1;
+    }
     if (this.data.plannedEndOfShift2 !== 0) {
       let timeInMinutes2NdShift = this.data.plannedEndOfShift2 - this.data.plannedStartOfShift2 - this.data.plannedBreakOfShift2;
       plannedTimeInMinutes += timeInMinutes2NdShift;
@@ -282,19 +360,28 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.planHours = plannedTimeInMinutes / 60;
 
     this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
-    this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id, true);
+    this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id, true) === 0 ? null : this.convertTimeToMinutes(this.pause1Id, true);
+    if (this.data.pause1Id > 0) {
+      this.data.pause1Id -= 1;
+    }
     this.data.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
     this.data.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
-    this.data.pause2Id = this.convertTimeToMinutes(this.pause2Id, true);
+    this.data.pause2Id = this.convertTimeToMinutes(this.pause2Id, true) === 0 ? null : this.convertTimeToMinutes(this.pause2Id, true);
+    if (this.data.pause2Id > 0) {
+      this.data.pause2Id -= 1;
+    }
     this.data.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
 
-    let actualTimeInMinutes = this.data.stop1Id - this.data.pause1Id - this.data.start1Id;
-    if (this.data.stop2Id !== 0) {
+    let actualTimeInMinutes = 0;
+    if (this.data.stop1Id !== null) {
+      actualTimeInMinutes = this.data.stop1Id - this.data.pause1Id - this.data.start1Id;
+    }
+    if (this.data.stop2Id !== null) {
       let timeInMinutes2NdShift = this.data.stop2Id - this.data.pause2Id - this.data.start2Id;
       actualTimeInMinutes += timeInMinutes2NdShift;
     }
     if (actualTimeInMinutes !== 0) {
-      actualTimeInMinutes += 1;
+      // actualTimeInMinutes += 1;
       actualTimeInMinutes *= 5;
     }
     this.data.actualHours = actualTimeInMinutes / 60;

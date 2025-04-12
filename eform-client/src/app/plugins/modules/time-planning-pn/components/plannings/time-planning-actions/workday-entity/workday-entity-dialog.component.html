@@ -13,123 +13,171 @@
 
   <ng-template #plannedColumnTemplate let-row let-col="colDef">
     <ng-container *ngIf="row['shift'] === '1'">
-      <mat-form-field>
-        <mat-label>{{'Start' | translate}}</mat-label>
-        <input
-          matInput
-          [ngxTimepicker]="plannedPicker"
-          [format]="24"
-          [(ngModel)]="plannedStartOfShift1"
-          readonly
-          [max]="plannedEndOfShift1"
-          [value]="plannedStartOfShift1"
-        >
-        <ngx-material-timepicker #plannedPicker
-                                 (closed)="calculatePlanHours()"
-                                 [format]="24"
-                                 [defaultTime]="plannedStartOfShift1"
-                                 [minutesGap]="5"></ngx-material-timepicker>
-      </mat-form-field>
-      <mat-form-field>
-        <mat-label>{{'Pause' | translate}}</mat-label>
-        <input
-          matInput
-          [ngxTimepicker]="plannedPause1Picker"
-          [disabled]="plannedStartOfShift1 === '00:00' || plannedEndOfShift1 === '00:00'"
-          [format]="24"
-          [(ngModel)]="plannedBreakOfShift1"
-          readonly
-          [min]="'00:00'"
-          [max]="getMaxDifference(plannedStartOfShift1, plannedEndOfShift1)"
-          [value]="plannedBreakOfShift1"
-        >
-        <ngx-material-timepicker #plannedPause1Picker
-                                 (closed)="calculatePlanHours()"
-                                 [format]="24"
-                                 [defaultTime]="plannedBreakOfShift1"
-                                 [minutesGap]="5"></ngx-material-timepicker>
-      </mat-form-field>
-      <mat-form-field>
-        <mat-label>{{'Stop' | translate}}</mat-label>
-        <input
-          matInput
-          [ngxTimepicker]="plannedPicker2"
-          [disabled]="plannedStartOfShift1 === '00:00'"
-          [format]="24"
-          [(ngModel)]="plannedEndOfShift1"
-          readonly
-          [min]="plannedStartOfShift1"
-          [max]="plannedStartOfShift2 === '00:00' ? '23:55' : plannedStartOfShift2"
-          [value]="plannedEndOfShift1">
-        <ngx-material-timepicker #plannedPicker2
-                                 (closed)="calculatePlanHours()"
-                                 [format]="24"
-                                 [defaultTime]="plannedEndOfShift1"
-                                 [minutesGap]="5"></ngx-material-timepicker>
-      </mat-form-field>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{'Start' | translate}}</mat-label>
+          <input
+            matInput
+            [ngxTimepicker]="plannedPicker"
+            [format]="24"
+            [(ngModel)]="plannedStartOfShift1"
+            readonly
+            [max]="plannedEndOfShift1"
+            [value]="plannedStartOfShift1"
+          >
+          <ngx-material-timepicker #plannedPicker
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="plannedStartOfShift1"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetPlannedTimes(1)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{'Pause' | translate}}</mat-label>
+          <input
+            matInput
+            [ngxTimepicker]="plannedPause1Picker"
+            [disabled]="plannedStartOfShift1 === '00:00' || plannedEndOfShift1 === '00:00'"
+            [format]="24"
+            [(ngModel)]="plannedBreakOfShift1"
+            readonly
+            [min]="'00:00'"
+            [max]="getMaxDifference(plannedStartOfShift1, plannedEndOfShift1)"
+            [value]="plannedBreakOfShift1"
+          >
+          <ngx-material-timepicker #plannedPause1Picker
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="plannedBreakOfShift1"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetPlannedTimes(2)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{'Stop' | translate}}</mat-label>
+          <input
+            matInput
+            [ngxTimepicker]="plannedPicker2"
+            [disabled]="plannedStartOfShift1 === '00:00'"
+            [format]="24"
+            [(ngModel)]="plannedEndOfShift1"
+            readonly
+            [min]="plannedStartOfShift1"
+            [max]="plannedStartOfShift2 === '00:00' ? '23:55' : plannedStartOfShift2"
+            [value]="plannedEndOfShift1">
+          <ngx-material-timepicker #plannedPicker2
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="plannedEndOfShift1"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetPlannedTimes(3)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
     </ng-container>
     <ng-container *ngIf="row['shift'] === '2'">
-      <mat-form-field>
-        <mat-label>{{'Start' | translate}}</mat-label>
-        <input
-          matInput
-          [ngxTimepicker]="plannedPicker3"
-          [disabled]="plannedEndOfShift1 === '00:00'"
-          readonly
-          [format]="24"
-          [(ngModel)]="plannedStartOfShift2"
-          [min]="plannedEndOfShift1"
-          [max]="plannedEndOfShift2 === '00:00' ? '23:55' : plannedEndOfShift2"
-          [value]="plannedStartOfShift2">
-        <ngx-material-timepicker #plannedPicker3
-                                 (closed)="calculatePlanHours()"
-                                 [format]="24"
-                                 [defaultTime]="plannedStartOfShift2"
-                                 [minutesGap]="5"></ngx-material-timepicker>
-      </mat-form-field>
-      <mat-form-field>
-        <mat-label>{{'Pause' | translate}}</mat-label>
-        <input
-          matInput
-          [disabled]="plannedStartOfShift2 === '00:00' || plannedEndOfShift2 === '00:00'"
-          [ngxTimepicker]="plannedPause2Picker"
-          [format]="24"
-          [(ngModel)]="plannedBreakOfShift2"
-          readonly
-          [min]="'00:00'"
-          [max]="getMaxDifference(plannedStartOfShift2, plannedEndOfShift2)"
-          [value]="plannedBreakOfShift2"
-        >
-        <ngx-material-timepicker #plannedPause2Picker
-                                 (closed)="calculatePlanHours()"
-                                 [format]="24"
-                                 [defaultTime]="plannedBreakOfShift2"
-                                 [minutesGap]="5"></ngx-material-timepicker>
-      </mat-form-field>
-
-      <mat-form-field>
-        <mat-label>{{'Stop' | translate}}</mat-label>
-        <input
-          matInput
-          [disabled]="plannedStartOfShift2 === '00:00'"
-          readonly
-          [ngxTimepicker]="plannedPicker4"
-          [format]="24"
-          [(ngModel)]="plannedEndOfShift2"
-          [min]="plannedStartOfShift2 === '00:00' ? plannedEndOfShift1 : plannedStartOfShift2"
-          [value]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2">
-        <ngx-material-timepicker #plannedPicker4
-                                 (closed)="calculatePlanHours()"
-                                 [format]="24"
-                                 [defaultTime]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2"
-                                 [minutesGap]="5"></ngx-material-timepicker>
-      </mat-form-field>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{'Start' | translate}}</mat-label>
+          <input
+            matInput
+            [ngxTimepicker]="plannedPicker3"
+            [disabled]="plannedEndOfShift1 === '00:00'"
+            readonly
+            [format]="24"
+            [(ngModel)]="plannedStartOfShift2"
+            [min]="plannedEndOfShift1"
+            [max]="plannedEndOfShift2 === '00:00' ? '23:55' : plannedEndOfShift2"
+            [value]="plannedStartOfShift2">
+          <ngx-material-timepicker #plannedPicker3
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="plannedStartOfShift2"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetPlannedTimes(4)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{'Pause' | translate}}</mat-label>
+          <input
+            matInput
+            [disabled]="plannedStartOfShift2 === '00:00' || plannedEndOfShift2 === '00:00'"
+            [ngxTimepicker]="plannedPause2Picker"
+            [format]="24"
+            [(ngModel)]="plannedBreakOfShift2"
+            readonly
+            [min]="'00:00'"
+            [max]="getMaxDifference(plannedStartOfShift2, plannedEndOfShift2)"
+            [value]="plannedBreakOfShift2"
+          >
+          <ngx-material-timepicker #plannedPause2Picker
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="plannedBreakOfShift2"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetPlannedTimes(5)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{'Stop' | translate}}</mat-label>
+          <input
+            matInput
+            [disabled]="plannedStartOfShift2 === '00:00'"
+            readonly
+            [ngxTimepicker]="plannedPicker4"
+            [format]="24"
+            [(ngModel)]="plannedEndOfShift2"
+            [min]="plannedStartOfShift2 === '00:00' ? plannedEndOfShift1 : plannedStartOfShift2"
+            [value]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2">
+          <ngx-material-timepicker #plannedPicker4
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetPlannedTimes(6)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
     </ng-container>
 
   </ng-template>
 
   <ng-template #actualColumnTemplate let-row let-col="colDef">
     <ng-container *ngIf="row['shift'] === '1'">
+      <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Start' | translate}}</mat-label>
         <input
@@ -149,6 +197,14 @@
                                  [minutesGap]="5"
         ></ngx-material-timepicker>
       </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(1)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Pause' | translate}}</mat-label>
         <input
@@ -168,7 +224,14 @@
                                  [defaultTime]="pause1Id"
                                  [minutesGap]="5"></ngx-material-timepicker>
       </mat-form-field>
-
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(2)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Stop' | translate}}</mat-label>
         <input
@@ -187,8 +250,16 @@
                                  [defaultTime]="stop1StoppedAt"
                                  [minutesGap]="5"></ngx-material-timepicker>
       </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(3)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
     </ng-container>
     <ng-container *ngIf="row['shift'] === '2'">
+      <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Start' | translate}}</mat-label>
         <input
@@ -207,6 +278,14 @@
                                  [defaultTime]="start2StartedAt"
                                  [minutesGap]="5"></ngx-material-timepicker>
       </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(4)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Pause' | translate}}</mat-label>
         <input
@@ -226,7 +305,14 @@
                                  [defaultTime]="pause2Id"
                                  [minutesGap]="5"></ngx-material-timepicker>
       </mat-form-field>
-
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(5)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Stop' | translate}}</mat-label>
         <input
@@ -244,6 +330,13 @@
                                  [defaultTime]="stop2StoppedAt"
                                  [minutesGap]="5"></ngx-material-timepicker>
       </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(6)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
     </ng-container>
   </ng-template>
 
@@ -262,16 +355,16 @@
     >
   </mat-form-field>
   <br><mat-form-field class="pr-2">
-    <mat-label>{{ 'Plan hours' | translate }}</mat-label>
-    <input
-      type="number"
-      matInput
-      id="planHours"
-      name="planHours"
-      [disabled]="isInTheFuture || data.message === null"
-      [(ngModel)]="data.planHours"
-    >
-  </mat-form-field>
+  <mat-label>{{ 'Plan hours' | translate }}</mat-label>
+  <input
+    type="number"
+    matInput
+    id="planHours"
+    name="planHours"
+    [disabled]="isInTheFuture || data.message === null"
+    [(ngModel)]="data.planHours"
+  >
+</mat-form-field>
   <br>
   <mat-form-field class="pr-2">
     <mat-label>{{ 'NettoHours' | translate }}</mat-label>
