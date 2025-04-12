@@ -363,6 +363,7 @@
     name="planHours"
     [disabled]="isInTheFuture || data.message === null"
     [(ngModel)]="data.planHours"
+    (change)="calculatePlanHours()"
   >
 </mat-form-field>
   <br>

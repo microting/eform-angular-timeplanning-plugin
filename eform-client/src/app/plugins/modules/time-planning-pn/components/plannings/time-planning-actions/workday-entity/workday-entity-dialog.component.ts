@@ -183,6 +183,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
     else {
       this.data.message = null;
+      this.calculatePlanHours();
     }
   }
 
@@ -357,7 +358,9 @@ export class WorkdayEntityDialogComponent implements OnInit {
       let timeInMinutes2NdShift = this.data.plannedEndOfShift2 - this.data.plannedStartOfShift2 - this.data.plannedBreakOfShift2;
       plannedTimeInMinutes += timeInMinutes2NdShift;
     }
-    this.data.planHours = plannedTimeInMinutes / 60;
+    if (this.data.message === null) {
+      this.data.planHours = plannedTimeInMinutes / 60;
+    }
 
     this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
     this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id, true) === 0 ? null : this.convertTimeToMinutes(this.pause1Id, true);
