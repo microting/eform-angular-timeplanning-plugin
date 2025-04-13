@@ -6,7 +6,7 @@ import {
   MatDialogContent,
   MatDialogTitle
 } from '@angular/material/dialog';
-import { AssignedSiteModel } from '../../../../models';
+import {AssignedSiteModel} from '../../../../models';
 import {MatButton} from '@angular/material/button';
 import {FormsModule} from '@angular/forms';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
@@ -46,14 +46,15 @@ import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planni
 })
 export class AssignedSiteDialogComponent implements DoCheck {
   public selectCurrentUserIsAdmin$ = this.authStore.select(selectCurrentUserIsAdmin);
-  private previousData: AssignedSiteModel;
   assignedSiteUpdate: EventEmitter<AssignedSiteModel> = new EventEmitter<AssignedSiteModel>();
+  private previousData: AssignedSiteModel;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: AssignedSiteModel,
     private timePlanningPnSettingsService: TimePlanningPnSettingsService,
-    private authStore: Store) {
-    this.previousData = { ...data };
+    private authStore: Store
+  ) {
+    this.previousData = {...data};
     this.calculateHours();
   }
 
@@ -69,24 +70,65 @@ export class AssignedSiteDialogComponent implements DoCheck {
   }
 
   calculateHours(): void {
-    // eslint-disable-next-line max-len
-    this.data.mondayCalculatedHours = this.calculateDayHours(this.data.startMonday, this.data.endMonday, this.data.breakMonday, this.data.startMonday2NdShift, this.data.endMonday2NdShift, this.data.breakMonday2NdShift);
-    // eslint-disable-next-line max-len
-    this.data.tuesdayCalculatedHours = this.calculateDayHours(this.data.startTuesday, this.data.endTuesday, this.data.breakTuesday, this.data.startTuesday2NdShift, this.data.endTuesday2NdShift, this.data.breakTuesday2NdShift);
-    // eslint-disable-next-line max-len
-    this.data.wednesdayCalculatedHours = this.calculateDayHours(this.data.startWednesday, this.data.endWednesday, this.data.breakWednesday, this.data.startWednesday2NdShift, this.data.endWednesday2NdShift, this.data.breakWednesday2NdShift);
-    // eslint-disable-next-line max-len
-    this.data.thursdayCalculatedHours = this.calculateDayHours(this.data.startThursday, this.data.endThursday, this.data.breakThursday, this.data.startThursday2NdShift, this.data.endThursday2NdShift, this.data.breakThursday2NdShift);
-    // eslint-disable-next-line max-len
-    this.data.fridayCalculatedHours = this.calculateDayHours(this.data.startFriday, this.data.endFriday, this.data.breakFriday, this.data.startFriday2NdShift, this.data.endFriday2NdShift, this.data.breakFriday2NdShift);
-    // eslint-disable-next-line max-len
-    this.data.saturdayCalculatedHours = this.calculateDayHours(this.data.startSaturday, this.data.endSaturday, this.data.breakSaturday, this.data.startSaturday2NdShift, this.data.endSaturday2NdShift, this.data.breakSaturday2NdShift);
-    // eslint-disable-next-line max-len
-    this.data.sundayCalculatedHours = this.calculateDayHours(this.data.startSunday, this.data.endSunday, this.data.breakSunday, this.data.startSunday2NdShift, this.data.endSunday2NdShift, this.data.breakSunday2NdShift);
+    this.data.mondayCalculatedHours = this.calculateDayHours(
+      this.data.startMonday,
+      this.data.endMonday,
+      this.data.breakMonday,
+      this.data.startMonday2NdShift,
+      this.data.endMonday2NdShift,
+      this.data.breakMonday2NdShift);
+    this.data.tuesdayCalculatedHours = this.calculateDayHours(
+      this.data.startTuesday,
+      this.data.endTuesday,
+      this.data.breakTuesday,
+      this.data.startTuesday2NdShift,
+      this.data.endTuesday2NdShift,
+      this.data.breakTuesday2NdShift);
+    this.data.wednesdayCalculatedHours = this.calculateDayHours(
+      this.data.startWednesday,
+      this.data.endWednesday,
+      this.data.breakWednesday,
+      this.data.startWednesday2NdShift,
+      this.data.endWednesday2NdShift,
+      this.data.breakWednesday2NdShift);
+    this.data.thursdayCalculatedHours = this.calculateDayHours(
+      this.data.startThursday,
+      this.data.endThursday,
+      this.data.breakThursday,
+      this.data.startThursday2NdShift,
+      this.data.endThursday2NdShift,
+      this.data.breakThursday2NdShift);
+    this.data.fridayCalculatedHours = this.calculateDayHours(
+      this.data.startFriday,
+      this.data.endFriday,
+      this.data.breakFriday,
+      this.data.startFriday2NdShift,
+      this.data.endFriday2NdShift,
+      this.data.breakFriday2NdShift);
+    this.data.saturdayCalculatedHours = this.calculateDayHours(
+      this.data.startSaturday,
+      this.data.endSaturday,
+      this.data.breakSaturday,
+      this.data.startSaturday2NdShift,
+      this.data.endSaturday2NdShift,
+      this.data.breakSaturday2NdShift);
+    this.data.sundayCalculatedHours = this.calculateDayHours(
+      this.data.startSunday,
+      this.data.endSunday,
+      this.data.breakSunday,
+      this.data.startSunday2NdShift,
+      this.data.endSunday2NdShift,
+      this.data.breakSunday2NdShift);
   }
 
-  // eslint-disable-next-line max-len
-  calculateDayHours(start: number, end: number, breakTime: number, start2NdShift: number, end2NdShift: number, break2NdShift: number): string {
+  calculateDayHours(
+    start: number,
+    end: number,
+    breakTime: number,
+    start2NdShift: number,
+    end2NdShift: number,
+    break2NdShift: number
+  ): string {
     let timeInMinutes = (end - start - breakTime) / 60;
     let timeInMinutes2NdShift = (end2NdShift - start2NdShift - break2NdShift) / 60;
     timeInMinutes += timeInMinutes2NdShift;
@@ -115,11 +157,7 @@ export class AssignedSiteDialogComponent implements DoCheck {
     const [hours, mins] = event.target.value.split(':').map(Number);
     this.data[field] = (hours * 60) + mins;
     this.calculateHours();
-    this.previousData = { ...this.data };
-  }
-
-  private padZero(num: number): string {
-    return num < 10 ? `0${num}` : `${num}`;
+    this.previousData = {...this.data};
   }
 
   updateAssignedSite() {
@@ -170,5 +208,9 @@ export class AssignedSiteDialogComponent implements DoCheck {
         //this.workdayEntityUpdate.emit(this.data);
       }
     });
+  }
+
+  private padZero(num: number): string {
+    return num < 10 ? `0${num}` : `${num}`;
   }
 }
