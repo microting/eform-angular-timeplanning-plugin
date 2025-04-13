@@ -7,6 +7,7 @@ import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planni
 import {MatDialog} from '@angular/material/dialog';
 import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
 import {DatePipe} from '@angular/common';
+import * as R from "ramda";
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -177,12 +178,17 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   }
 
   onDayColumnClick(row: any, field: string): void {
-    const cellData = row.planningPrDayModels[field];
-    this.dialog.open(WorkdayEntityDialogComponent, {
-      data: cellData
-    }).afterClosed().subscribe((data) => {
-      if (data) {
-        this.timePlanningChanged.emit(data);
+    const siteId = row.siteId;
+    const cellData =  R.clone(row.planningPrDayModels[field]);
+    this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
+      if (result && result.success) {
+        this.dialog.open(WorkdayEntityDialogComponent, {
+          data: {planningPrDayModels: cellData, site: result.model},
+        }).afterClosed().subscribe((data) => {
+          if (data) {
+            this.timePlanningChanged.emit(data);
+          }
+        });
       }
     });
   }

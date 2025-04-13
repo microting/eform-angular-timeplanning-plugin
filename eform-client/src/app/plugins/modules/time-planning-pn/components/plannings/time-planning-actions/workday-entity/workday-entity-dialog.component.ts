@@ -14,6 +14,7 @@ import {MatCheckbox} from '@angular/material/checkbox';
 import {FormsModule} from '@angular/forms';
 import {TimePlanningMessagesEnum} from '../../../../enums';
 import {
+  AssignedSiteModel,
   PlanningPrDayModel,
   PlanningPrDayUpdateModel
 } from '../../../../models';
@@ -23,7 +24,7 @@ import * as R from 'ramda';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
 import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
-import {MatIcon} from "@angular/material/icon";
+import {MatIcon} from '@angular/material/icon';
 
 @Component({
   selector: 'app-workday-entity-dialog',
@@ -53,7 +54,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   workdayEntityUpdate: EventEmitter<PlanningPrDayUpdateModel> = new EventEmitter<PlanningPrDayUpdateModel>();
   enumKeys: string[];
-  originalData: PlanningPrDayModel;
+  // originalData: PlanningPrDayModel;
   tableHeaders: MtxGridColumn[] = [];
   shiftData: any[] = [];
   plannedStartOfShift1: string;
@@ -77,7 +78,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   @ViewChild('actualColumnTemplate', { static: true }) actualColumnTemplate!: TemplateRef<any>;
   constructor(
     private planningsService: TimePlanningPnPlanningsService,
-    @Inject(MAT_DIALOG_DATA) public data: PlanningPrDayModel,
+    @Inject(MAT_DIALOG_DATA) public data: { planningPrDayModels: PlanningPrDayModel, assignedSiteModel: AssignedSiteModel },
     protected datePipe: DatePipe,
     private translateService: TranslateService,
   ) {}
@@ -85,24 +86,24 @@ export class WorkdayEntityDialogComponent implements OnInit {
   protected readonly JSON = JSON;
 
   ngOnInit(): void {
-    this.originalData = R.clone(this.data);
+    // this.originalData = R.clone(this.data.planningPrDayModels);
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
-    this.data[this.enumKeys[this.data.message - 1]] = true;
-    this.plannedStartOfShift1 = this.convertMinutesToTime(this.data.plannedStartOfShift1);
-    this.plannedEndOfShift1 = this.convertMinutesToTime(this.data.plannedEndOfShift1);
-    this.plannedBreakOfShift1 = this.convertMinutesToTime(this.data.plannedBreakOfShift1);
-    this.plannedStartOfShift2 = this.convertMinutesToTime(this.data.plannedStartOfShift2);
-    this.plannedEndOfShift2 = this.convertMinutesToTime(this.data.plannedEndOfShift2);
-    this.plannedBreakOfShift2 = this.convertMinutesToTime(this.data.plannedBreakOfShift2);
-    this.start1StartedAt = this.datePipe.transform(this.data.start1StartedAt, 'HH:mm', 'UTC')
-    this.stop1StoppedAt =  this.datePipe.transform(this.data.stop1StoppedAt, 'HH:mm', 'UTC');
-    this.pause1Id = this.convertMinutesToTime(this.data.pause1Id * 5);
-    this.start2StartedAt = this.datePipe.transform(this.data.start2StartedAt, 'HH:mm', 'UTC');
-    this.stop2StoppedAt = this.datePipe.transform(this.data.stop2StoppedAt, 'HH:mm', 'UTC');
-    this.pause2Id = this.convertMinutesToTime(this.data.pause2Id * 5);
-    this.isInTheFuture = Date.parse(this.data.date) > Date.now();
-    this.todaysFlex = this.data.actualHours - this.data.planHours;
-    this.date = Date.parse(this.data.date);
+    this.data[this.enumKeys[this.data.planningPrDayModels.message - 1]] = true;
+    this.plannedStartOfShift1 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedStartOfShift1);
+    this.plannedEndOfShift1 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedEndOfShift1);
+    this.plannedBreakOfShift1 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedBreakOfShift1);
+    this.plannedStartOfShift2 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedStartOfShift2);
+    this.plannedEndOfShift2 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedEndOfShift2);
+    this.plannedBreakOfShift2 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedBreakOfShift2);
+    this.start1StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start1StartedAt, 'HH:mm', 'UTC')
+    this.stop1StoppedAt =  this.datePipe.transform(this.data.planningPrDayModels.stop1StoppedAt, 'HH:mm', 'UTC');
+    this.pause1Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause1Id * 5);
+    this.start2StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start2StartedAt, 'HH:mm', 'UTC');
+    this.stop2StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop2StoppedAt, 'HH:mm', 'UTC');
+    this.pause2Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause2Id * 5);
+    this.isInTheFuture = Date.parse(this.data.planningPrDayModels.date) > Date.now();
+    this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
+    this.date = Date.parse(this.data.planningPrDayModels.date);
     //this.tableHeaders = [];
 
     this.tableHeaders = [
@@ -175,14 +176,14 @@ export class WorkdayEntityDialogComponent implements OnInit {
   }
 
   onCheckboxChange(selectedOption: TimePlanningMessagesEnum): void {
-    if (selectedOption !== this.data.message) {
-      this.data.message = selectedOption;
+    if (selectedOption !== this.data.planningPrDayModels.message) {
+      this.data.planningPrDayModels.message = selectedOption;
       this.enumKeys.forEach(key => {
         this.data[key] = selectedOption === TimePlanningMessagesEnum[key as keyof typeof TimePlanningMessagesEnum];
       });
     }
     else {
-      this.data.message = null;
+      this.data.planningPrDayModels.message = null;
       this.calculatePlanHours();
     }
   }
@@ -260,27 +261,27 @@ export class WorkdayEntityDialogComponent implements OnInit {
   }
 
   onUpdateWorkDayEntity() {
-    this.data.plannedStartOfShift1 = this.convertTimeToMinutes(this.plannedStartOfShift1);
-    this.data.plannedEndOfShift1 = this.convertTimeToMinutes(this.plannedEndOfShift1);
-    this.data.plannedBreakOfShift1 = this.convertTimeToMinutes(this.plannedBreakOfShift1);
-    this.data.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
-    this.data.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
-    this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
-    this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
-    this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id, true);
-    this.data.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
-    this.data.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
-    this.data.pause2Id = this.convertTimeToMinutes(this.pause2Id, true);
-    this.data.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
-    this.data.paidOutFlex = this.data.paidOutFlex === null ? 0 : this.data.paidOutFlex;
+    this.data.planningPrDayModels.plannedStartOfShift1 = this.convertTimeToMinutes(this.plannedStartOfShift1);
+    this.data.planningPrDayModels.plannedEndOfShift1 = this.convertTimeToMinutes(this.plannedEndOfShift1);
+    this.data.planningPrDayModels.plannedBreakOfShift1 = this.convertTimeToMinutes(this.plannedBreakOfShift1);
+    this.data.planningPrDayModels.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
+    this.data.planningPrDayModels.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
+    this.data.planningPrDayModels.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
+    this.data.planningPrDayModels.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
+    this.data.planningPrDayModels.pause1Id = this.convertTimeToMinutes(this.pause1Id, true);
+    this.data.planningPrDayModels.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
+    this.data.planningPrDayModels.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
+    this.data.planningPrDayModels.pause2Id = this.convertTimeToMinutes(this.pause2Id, true);
+    this.data.planningPrDayModels.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
+    this.data.planningPrDayModels.paidOutFlex = this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
     // this.data.start1StartedAt = this.convertTimeToDateTimeOfToday(this.start1StartedAt);
     // this.data.stop1StoppedAt = this.convertTimeToDateTimeOfToday(this.stop1StoppedAt);
     // this.data.break1Shift = this.convertTimeToMinutes(this.break1Shift);
     // this.data.start2StartedAt = this.convertTimeToDateTimeOfToday(this.start2StartedAt);
     // this.data.stop2StoppedAt = this.convertTimeToDateTimeOfToday(this.stop2StoppedAt);
-    this.planningsService.updatePlanning(this.data, this.data.id).subscribe(
+    this.planningsService.updatePlanning(this.data.planningPrDayModels, this.data.planningPrDayModels.id).subscribe(
       () => {
-        this.workdayEntityUpdate.emit(this.data);
+        this.workdayEntityUpdate.emit(this.data.planningPrDayModels);
       }
     );
   }
@@ -337,59 +338,61 @@ export class WorkdayEntityDialogComponent implements OnInit {
   }
 
   onCancel() {
-    this.data.message = this.originalData.message;
-    this.enumKeys.forEach(key => {
-      this.data[key] = this.originalData[key];
-    });
+    // this.data.planningPrDayModels.message = this.originalData.message;
+    // this.enumKeys.forEach(key => {
+    //   this.data[key] = this.originalData[key];
+    // });
+    // debugger;
+    // this.data.planningPrDayModels = this.originalData
   }
 
   calculatePlanHours() {
-    this.data.plannedStartOfShift1 = this.convertTimeToMinutes(this.plannedStartOfShift1);
-    this.data.plannedEndOfShift1 = this.convertTimeToMinutes(this.plannedEndOfShift1);
-    this.data.plannedBreakOfShift1 = this.convertTimeToMinutes(this.plannedBreakOfShift1);
-    this.data.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
-    this.data.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
-    this.data.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
+    this.data.planningPrDayModels.plannedStartOfShift1 = this.convertTimeToMinutes(this.plannedStartOfShift1);
+    this.data.planningPrDayModels.plannedEndOfShift1 = this.convertTimeToMinutes(this.plannedEndOfShift1);
+    this.data.planningPrDayModels.plannedBreakOfShift1 = this.convertTimeToMinutes(this.plannedBreakOfShift1);
+    this.data.planningPrDayModels.plannedStartOfShift2 = this.convertTimeToMinutes(this.plannedStartOfShift2);
+    this.data.planningPrDayModels.plannedEndOfShift2 = this.convertTimeToMinutes(this.plannedEndOfShift2);
+    this.data.planningPrDayModels.plannedBreakOfShift2 = this.convertTimeToMinutes(this.plannedBreakOfShift2);
     let plannedTimeInMinutes = 0;
-    if (this.data.plannedEndOfShift1 !== 0) {
-      plannedTimeInMinutes = this.data.plannedEndOfShift1 - this.data.plannedStartOfShift1 - this.data.plannedBreakOfShift1;
+    if (this.data.planningPrDayModels.plannedEndOfShift1 !== 0) {
+      plannedTimeInMinutes = this.data.planningPrDayModels.plannedEndOfShift1 - this.data.planningPrDayModels.plannedStartOfShift1 - this.data.planningPrDayModels.plannedBreakOfShift1;
     }
-    if (this.data.plannedEndOfShift2 !== 0) {
-      let timeInMinutes2NdShift = this.data.plannedEndOfShift2 - this.data.plannedStartOfShift2 - this.data.plannedBreakOfShift2;
+    if (this.data.planningPrDayModels.plannedEndOfShift2 !== 0) {
+      let timeInMinutes2NdShift = this.data.planningPrDayModels.plannedEndOfShift2 - this.data.planningPrDayModels.plannedStartOfShift2 - this.data.planningPrDayModels.plannedBreakOfShift2;
       plannedTimeInMinutes += timeInMinutes2NdShift;
     }
-    if (this.data.message === null) {
-      this.data.planHours = plannedTimeInMinutes / 60;
+    if (this.data.planningPrDayModels.message === null) {
+      this.data.planningPrDayModels.planHours = plannedTimeInMinutes / 60;
     }
 
-    this.data.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
-    this.data.pause1Id = this.convertTimeToMinutes(this.pause1Id, true) === 0 ? null : this.convertTimeToMinutes(this.pause1Id, true);
-    if (this.data.pause1Id > 0) {
-      this.data.pause1Id -= 1;
+    this.data.planningPrDayModels.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
+    this.data.planningPrDayModels.pause1Id = this.convertTimeToMinutes(this.pause1Id, true) === 0 ? null : this.convertTimeToMinutes(this.pause1Id, true);
+    if (this.data.planningPrDayModels.pause1Id > 0) {
+      this.data.planningPrDayModels.pause1Id -= 1;
     }
-    this.data.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
-    this.data.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
-    this.data.pause2Id = this.convertTimeToMinutes(this.pause2Id, true) === 0 ? null : this.convertTimeToMinutes(this.pause2Id, true);
-    if (this.data.pause2Id > 0) {
-      this.data.pause2Id -= 1;
+    this.data.planningPrDayModels.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
+    this.data.planningPrDayModels.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
+    this.data.planningPrDayModels.pause2Id = this.convertTimeToMinutes(this.pause2Id, true) === 0 ? null : this.convertTimeToMinutes(this.pause2Id, true);
+    if (this.data.planningPrDayModels.pause2Id > 0) {
+      this.data.planningPrDayModels.pause2Id -= 1;
     }
-    this.data.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
+    this.data.planningPrDayModels.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
 
     let actualTimeInMinutes = 0;
-    if (this.data.stop1Id !== null) {
-      actualTimeInMinutes = this.data.stop1Id - this.data.pause1Id - this.data.start1Id;
+    if (this.data.planningPrDayModels.stop1Id !== null) {
+      actualTimeInMinutes = this.data.planningPrDayModels.stop1Id - this.data.planningPrDayModels.pause1Id - this.data.planningPrDayModels.start1Id;
     }
-    if (this.data.stop2Id !== null) {
-      let timeInMinutes2NdShift = this.data.stop2Id - this.data.pause2Id - this.data.start2Id;
+    if (this.data.planningPrDayModels.stop2Id !== null) {
+      let timeInMinutes2NdShift = this.data.planningPrDayModels.stop2Id - this.data.planningPrDayModels.pause2Id - this.data.planningPrDayModels.start2Id;
       actualTimeInMinutes += timeInMinutes2NdShift;
     }
     if (actualTimeInMinutes !== 0) {
       // actualTimeInMinutes += 1;
       actualTimeInMinutes *= 5;
     }
-    this.data.actualHours = actualTimeInMinutes / 60;
+    this.data.planningPrDayModels.actualHours = actualTimeInMinutes / 60;
 
-    this.todaysFlex = this.data.actualHours - this.data.planHours;
-    this.data.sumFlexEnd = this.data.sumFlexStart + this.data.actualHours - this.data.planHours - this.data.paidOutFlex;
+    this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
+    this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart + this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours - this.data.planningPrDayModels.paidOutFlex;
   }
 }

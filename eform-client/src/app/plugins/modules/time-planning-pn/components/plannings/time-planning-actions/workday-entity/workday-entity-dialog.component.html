@@ -1,5 +1,5 @@
 <!-- src/app/plugins/modules/time-planning-pn/components/plannings/time-planning-actions/workday-entity/workday-entity-dialog.component.html -->
-<div mat-dialog-title>{{ data.siteName }} - {{ datePipe.transform(data.date, 'dd.MM.yyyy') }} ({{data.id}})</div><div mat-dialog-content>
+<div mat-dialog-title>{{ data.planningPrDayModels.siteName }} - {{ datePipe.transform(data.planningPrDayModels.date, 'dd.MM.yyyy') }} ({{data.planningPrDayModels.id}})</div><div mat-dialog-content>
   <br>
   <mtx-grid
     [columns]="tableHeaders"
@@ -340,7 +340,7 @@
     </ng-container>
   </ng-template>
 
-  <!--  <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planText }}</p>-->
+  <!--  <p><strong>{{ 'Plan text' | translate }}:</strong> {{ data.planningPrDayModels.planText }}</p>-->
   <br>
   <mat-form-field class="pr-2">
     <mat-label>{{ 'Flex balance at start of day' | translate }}</mat-label>
@@ -351,7 +351,7 @@
       name="flexToDate"
       readonly="readonly"
       disabled
-      [value]="data.sumFlexStart.toFixed(2)"
+      [value]="data.planningPrDayModels.sumFlexStart.toFixed(2)"
     >
   </mat-form-field>
   <br><mat-form-field class="pr-2">
@@ -361,8 +361,8 @@
     matInput
     id="planHours"
     name="planHours"
-    [disabled]="isInTheFuture || data.message === null"
-    [(ngModel)]="data.planHours"
+    [disabled]="isInTheFuture || data.planningPrDayModels.message === null"
+    [(ngModel)]="data.planningPrDayModels.planHours"
     (change)="calculatePlanHours()"
   >
 </mat-form-field>
@@ -376,7 +376,7 @@
       name="nettoHours"
       readonly="readonly"
       disabled
-      [value]="convertHoursToTime(data.actualHours)"
+      [value]="convertHoursToTime(data.planningPrDayModels.actualHours)"
     >
   </mat-form-field>
   <br>
@@ -401,7 +401,7 @@
       id="paidOutFlex"
       name="paidOutFlex"
       (change)="calculatePlanHours()"
-      [(ngModel)]="data.paidOutFlex"
+      [(ngModel)]="data.planningPrDayModels.paidOutFlex"
     >
   </mat-form-field>
   <br>
@@ -414,12 +414,12 @@
       name="flexIncludingToday"
       readonly="readonly"
       disabled
-      [value]="data.sumFlexEnd.toFixed(2)"
+      [value]="data.planningPrDayModels.sumFlexEnd.toFixed(2)"
     >
   </mat-form-field>
   <br>
   <br>
-  <p *ngIf="data.workerComment"><strong>{{ 'CommentWorker' | translate }}:</strong> {{ data.workerComment }}</p>
+  <p *ngIf="data.planningPrDayModels.workerComment"><strong>{{ 'CommentWorker' | translate }}:</strong> {{ data.planningPrDayModels.workerComment }}</p>
   <ng-container *ngFor="let key of enumKeys">
     <ng-container *ngIf="key !== 'Blank' && key !== 'Care'">
       <mat-checkbox [(ngModel)]="data[key]" (change)="onCheckboxChange(TimePlanningMessagesEnum[key])">
@@ -436,7 +436,7 @@
       matInput
       id="CommentOffice"
       name="CommentOffice"
-      [(ngModel)]="data.commentOffice"
+      [(ngModel)]="data.planningPrDayModels.commentOffice"
     >
   </mat-form-field>
   <br>
