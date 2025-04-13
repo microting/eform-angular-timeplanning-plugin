@@ -421,7 +421,7 @@
   <p *ngIf="data.planningPrDayModels.workerComment"><strong>{{ 'CommentWorker' | translate }}:</strong> {{ data.planningPrDayModels.workerComment }}</p>
   <ng-container *ngFor="let key of enumKeys">
     <ng-container *ngIf="key !== 'Blank' && key !== 'Care'">
-      <mat-checkbox [(ngModel)]="data[key]" (change)="onCheckboxChange(TimePlanningMessagesEnum[key])">
+      <mat-checkbox [(ngModel)]="data.planningPrDayModels[key]" (change)="onCheckboxChange(TimePlanningMessagesEnum[key])">
         {{ key | translate }}
       </mat-checkbox>
     </ng-container>
