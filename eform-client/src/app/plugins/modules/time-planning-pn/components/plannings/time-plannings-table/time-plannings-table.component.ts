@@ -1,13 +1,15 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output,
-  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation} from '@angular/core';
+import {
+  ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output,
+  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation
+} from '@angular/core';
 import {AssignedSiteModel, TimePlanningModel} from '../../../models';
-import {MtxGrid, MtxGridColumn} from '@ng-matero/extensions/grid';
+import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {MatDialog} from '@angular/material/dialog';
 import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
 import {DatePipe} from '@angular/common';
-import * as R from "ramda";
+import * as R from 'ramda';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -15,7 +17,6 @@ import * as R from "ramda";
   styleUrls: ['./time-plannings-table.component.scss'],
   encapsulation: ViewEncapsulation.None,
   standalone: false
-
 
 })
 export class TimePlanningsTableComponent implements OnInit, OnChanges {
@@ -27,8 +28,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
   tableHeaders: MtxGridColumn[] = [];
 
-  @ViewChild('firstColumnTemplate', { static: true }) firstColumnTemplate!: TemplateRef<any>;
-  @ViewChild('dayColumnTemplate', { static: true }) dayColumnTemplate!: TemplateRef<any>;
+  @ViewChild('firstColumnTemplate', {static: true}) firstColumnTemplate!: TemplateRef<any>;
+  @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
 
   constructor(
     private timePlanningPnSettingsService: TimePlanningPnSettingsService,
@@ -36,7 +37,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     private translateService: TranslateService,
     protected datePipe: DatePipe,
     private cdr: ChangeDetectorRef
-    ) {}
+  ) {
+  }
 
   ngOnInit(): void {
     this.updateTableHeaders();
@@ -67,7 +69,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         field: 'siteName',
         sortable: true,
       },
-      ...Array.from({ length: daysCount }).map((_, index) => {
+      ...Array.from({length: daysCount}).map((_, index) => {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + index);
         const isToday = currentDate.toDateString() === today.toDateString();
@@ -85,7 +87,6 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     ];
     this.cdr.detectChanges();
   }
-
 
   // sortTable(sort: string) {
   //   this.sortChanged.emit(sort);
@@ -114,13 +115,16 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         if (workDayStarted) {
           //console.log('getCellClass', row, field, planHours, workDayStarted, workDayEnded);
           return workDayEnded ? 'green-background' : 'white-background';
-        } else {
+        }
+        else {
           return 'grey-background';
         }
-      } else {
+      }
+      else {
         return workDayStarted ? 'grey-background' : 'white-background';
       }
-    } catch (e) {
+    }
+    catch (e) {
       //console.error(e);
       return '';
     }
@@ -131,11 +135,12 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
     const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
     const isInOlderThanToday = new Date(row.planningPrDayModels[field]?.date) < new Date();
-    if (planHours > 0 ) {
+    if (planHours > 0) {
       if (workDayStarted) {
         //console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
         return workDayEnded ? 'white-text' : 'green-text';
-      } else {
+      }
+      else {
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }
     }
@@ -151,7 +156,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
       if (workDayStarted) {
         //console.log('getCellTextColorForDay', row, field, planHours, workDayStarted, workDayEnded);
         return workDayEnded ? 'black-text' : 'green-text';
-      } else {
+      }
+      else {
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }
     }
@@ -179,7 +185,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
 
   onDayColumnClick(row: any, field: string): void {
     const siteId = row.siteId;
-    const cellData =  R.clone(row.planningPrDayModels[field]);
+    const cellData = R.clone(row.planningPrDayModels[field]);
     this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
       if (result && result.success) {
         this.dialog.open(WorkdayEntityDialogComponent, {
@@ -218,7 +224,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     const totalMinutes = Math.floor(hours * 60)
     const hrs = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
-    return `${this.padZero(hrs)} ${this.translateService.instant('hours')} ${this.padZero(mins)} ${this.translateService.instant('minutes')}`;
+    return `${this.padZero(hrs)} ${this.translateService.instant('hours')} ${this.padZero(mins)} ${this.translateService.instant(
+      'minutes')}`;
   }
 
   padZero(num: number): string {
