@@ -360,7 +360,7 @@
     matInput
     id="planHours"
     name="planHours"
-    [disabled]="isInTheFuture || data.planningPrDayModels.message === null"
+    [disabled]="data.planningPrDayModels.message === null && data.assignedSiteModel.useOnlyPlanHours !== true"
     [(ngModel)]="data.planningPrDayModels.planHours"
     (change)="calculatePlanHours()"
   >

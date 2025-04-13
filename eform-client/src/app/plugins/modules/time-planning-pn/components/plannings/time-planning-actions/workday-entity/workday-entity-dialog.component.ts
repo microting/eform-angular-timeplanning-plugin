@@ -1,10 +1,10 @@
 import {Component, EventEmitter, Inject, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {
-    MAT_DIALOG_DATA,
-    MatDialogActions,
-    MatDialogClose,
-    MatDialogContent,
-    MatDialogTitle
+  MAT_DIALOG_DATA,
+  MatDialogActions,
+  MatDialogClose,
+  MatDialogContent,
+  MatDialogTitle
 } from '@angular/material/dialog';
 import {MatButton, MatIconButton} from '@angular/material/button';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
@@ -13,9 +13,9 @@ import {MatCheckbox} from '@angular/material/checkbox';
 import {FormsModule} from '@angular/forms';
 import {TimePlanningMessagesEnum} from '../../../../enums';
 import {
-    AssignedSiteModel,
-    PlanningPrDayModel,
-    PlanningPrDayUpdateModel
+  AssignedSiteModel,
+  PlanningPrDayModel,
+  PlanningPrDayUpdateModel
 } from '../../../../models';
 import {MtxGrid, MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService} from '../../../../services';
@@ -25,28 +25,28 @@ import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
 import {MatIcon} from '@angular/material/icon';
 
 @Component({
-    selector: 'app-workday-entity-dialog',
-    templateUrl: './workday-entity-dialog.component.html',
-    imports: [
-        MatButton,
-        MatDialogActions,
-        MatDialogClose,
-        TranslatePipe,
-        MatDialogTitle,
-        MatDialogContent,
-        MatCheckbox,
-        FormsModule,
-        NgForOf,
-        NgIf,
-        MtxGrid,
-        MatFormField,
-        MatInput,
-        MatLabel,
-        NgxMaterialTimepickerModule,
-        MatIconButton,
-        MatIcon
-    ],
-    styleUrls: ['./workday-entity-dialog.component.scss']
+  selector: 'app-workday-entity-dialog',
+  templateUrl: './workday-entity-dialog.component.html',
+  imports: [
+    MatButton,
+    MatDialogActions,
+    MatDialogClose,
+    TranslatePipe,
+    MatDialogTitle,
+    MatDialogContent,
+    MatCheckbox,
+    FormsModule,
+    NgForOf,
+    NgIf,
+    MtxGrid,
+    MatFormField,
+    MatInput,
+    MatLabel,
+    NgxMaterialTimepickerModule,
+    MatIconButton,
+    MatIcon
+  ],
+  styleUrls: ['./workday-entity-dialog.component.scss']
 })
 export class WorkdayEntityDialogComponent implements OnInit {
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
@@ -88,7 +88,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
-    this.data[this.enumKeys[this.data.planningPrDayModels.message - 1]] = true;
+    this.data.planningPrDayModels[this.enumKeys[this.data.planningPrDayModels.message - 1]] = true;
     this.plannedStartOfShift1 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedStartOfShift1);
     this.plannedEndOfShift1 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedEndOfShift1);
     this.plannedBreakOfShift1 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedBreakOfShift1);
@@ -105,7 +105,18 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
     this.date = Date.parse(this.data.planningPrDayModels.date);
 
-    this.tableHeaders = [
+    this.tableHeaders = this.data.assignedSiteModel.useOnlyPlanHours ? [
+      {
+        header: this.translateService.stream('Shift'), field: 'shift',
+        pinned: 'left'
+      },
+      {
+        cellTemplate: this.actualColumnTemplate,
+        header: this.translateService.stream('Registered'),
+        field: 'actualStart',
+        sortable: false,
+      },
+    ]: [
       {
         header: this.translateService.stream('Shift'), field: 'shift',
         pinned: 'left'
@@ -157,7 +168,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     if (selectedOption !== this.data.planningPrDayModels.message) {
       this.data.planningPrDayModels.message = selectedOption;
       this.enumKeys.forEach(key => {
-        this.data[key] = selectedOption
+        this.data.planningPrDayModels[key] = selectedOption
           === TimePlanningMessagesEnum[key as keyof typeof TimePlanningMessagesEnum];
       });
     }
@@ -261,17 +272,17 @@ export class WorkdayEntityDialogComponent implements OnInit {
     );
   }
 
-    getMaxDifference(start: string, end: string): string {
-        const startTime = this.convertTimeToMinutes(start);
-        const endTime = this.convertTimeToMinutes(end);
-        const diff = endTime - startTime;
-        if (diff < 0) {
-            return '00:00';
-        }
-        const hours = Math.floor(diff / 60);
-        const minutes = diff % 60;
-        return `${hours}:${minutes}`;
+  getMaxDifference(start: string, end: string): string {
+    const startTime = this.convertTimeToMinutes(start);
+    const endTime = this.convertTimeToMinutes(end);
+    const diff = endTime - startTime;
+    if (diff < 0) {
+      return '00:00';
     }
+    const hours = Math.floor(diff / 60);
+    const minutes = diff % 60;
+    return `${hours}:${minutes}`;
+  }
 
   convertTimeToDateTimeOfToday(hourMinutes: string): string {
     const today = new Date();
@@ -280,37 +291,37 @@ export class WorkdayEntityDialogComponent implements OnInit {
     return today.toISOString();
   }
 
-    convertTimeToMinutes(timeStamp: string, isFiveNumberIntervals: boolean = false): number {
-        if (timeStamp === '' || timeStamp === null) {
-            return null;
-        }
-        const parts = timeStamp.split(':');
-        const hours = parseInt(parts[0], 10);
-        const minutes = parseInt(parts[1], 10);
-        if (isFiveNumberIntervals) {
-            const result = ((hours * 60 + minutes) / 5);
-            if (result !== 0) {
-                return result + 1
-            }
-            return 0;
-        }
-        return hours * 60 + minutes;
+  convertTimeToMinutes(timeStamp: string, isFiveNumberIntervals: boolean = false): number {
+    if (timeStamp === '' || timeStamp === null) {
+      return null;
     }
+    const parts = timeStamp.split(':');
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    if (isFiveNumberIntervals) {
+      const result = ((hours * 60 + minutes) / 5);
+      if (result !== 0) {
+        return result + 1
+      }
+      return 0;
+    }
+    return hours * 60 + minutes;
+  }
 
-    convertHoursToTime(hours: number): string {
-        const isNegative = hours < 0;
-        if (hours < 0) {
-            hours = Math.abs(hours);
-        }
-        const totalMinutes = Math.floor(hours * 60)
-        const hrs = Math.floor(totalMinutes / 60);
-        let mins = totalMinutes % 60;
-        if (isNegative) {
-            // return '${padZero(hrs)}:${padZero(60 - mins)}';
-            return `-${hrs}:${this.padZero(mins)}`;
-        }
-        return `${this.padZero(hrs)}:${this.padZero(mins)}`;
+  convertHoursToTime(hours: number): string {
+    const isNegative = hours < 0;
+    if (hours < 0) {
+      hours = Math.abs(hours);
     }
+    const totalMinutes = Math.floor(hours * 60)
+    const hrs = Math.floor(totalMinutes / 60);
+    let mins = totalMinutes % 60;
+    if (isNegative) {
+      // return '${padZero(hrs)}:${padZero(60 - mins)}';
+      return `-${hrs}:${this.padZero(mins)}`;
+    }
+    return `${this.padZero(hrs)}:${this.padZero(mins)}`;
+  }
 
   onCancel() {
   }

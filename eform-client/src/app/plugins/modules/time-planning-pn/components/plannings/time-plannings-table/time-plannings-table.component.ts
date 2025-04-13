@@ -189,7 +189,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
       if (result && result.success) {
         this.dialog.open(WorkdayEntityDialogComponent, {
-          data: {planningPrDayModels: cellData, site: result.model},
+          data: {planningPrDayModels: cellData, assignedSiteModel: result.model},
         }).afterClosed().subscribe((data) => {
           if (data) {
             this.timePlanningChanged.emit(data);
