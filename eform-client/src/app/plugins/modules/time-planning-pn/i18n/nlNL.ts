@@ -95,4 +95,5 @@ export const nlNL = {
   TimeOff: 'Vrije tijd',
   Shift: 'Verschuiving',
   Registered: 'Geregistreerd',
+  PlannedHours: 'Geplande uren',
 };

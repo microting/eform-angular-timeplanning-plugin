@@ -95,4 +95,5 @@ export const noNO = {
   TimeOff: 'Fritid',
   Shift: 'Skifte',
   Registered: 'Registrert',
+  PlannedHours: 'Planlagte timer',
 };

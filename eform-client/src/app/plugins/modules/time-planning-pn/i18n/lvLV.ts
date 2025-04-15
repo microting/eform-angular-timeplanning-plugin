@@ -95,4 +95,5 @@ export const lvLV = {
   TimeOff: 'Brīvs laiks',
   Shift: 'Shift',
   Registered: 'Reģistrēts',
+  PlannedHours: 'Plānotās stundas',
 };

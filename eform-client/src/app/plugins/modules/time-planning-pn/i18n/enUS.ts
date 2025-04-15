@@ -92,5 +92,6 @@ export const enUS = {
   'Flex balance to date': 'Flex balance to date',
   'TimeOff': 'Time off',
   'Shift': 'Shift',
-  'Registered': 'Registered'
+  'Registered': 'Registered',
+  'PlannedHours': 'Planned hours',
 };

@@ -95,4 +95,5 @@ export const ptBR = {
   TimeOff: 'Tempo livre',
   Shift: 'Mudança',
   Registered: 'Registrado',
+  PlannedHours: 'Horas planejadas',
 };

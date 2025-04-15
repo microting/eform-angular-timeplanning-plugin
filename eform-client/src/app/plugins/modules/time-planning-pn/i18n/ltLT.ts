@@ -95,4 +95,5 @@ export const ltLT = {
   TimeOff: 'Laisvas laikas',
   Shift: 'Shift',
   Registered: 'Registruotas',
+  PlannedHours: 'Planuojamos valandos',
 };

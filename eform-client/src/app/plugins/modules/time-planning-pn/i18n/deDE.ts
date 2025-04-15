@@ -95,4 +95,5 @@ export const deDE = {
   TimeOff: 'Auszeit',
   Shift: 'Schicht',
   Registered: 'Eingetragen',
+  PlannedHours: 'Geplante Stunden',
 };

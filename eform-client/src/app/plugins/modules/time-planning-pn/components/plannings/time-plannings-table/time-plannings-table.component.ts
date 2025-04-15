@@ -5,11 +5,12 @@ import {
 import {AssignedSiteModel, TimePlanningModel} from '../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
-import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
+import {TimePlanningPnSettingsService} from '../../../services';
 import {MatDialog} from '@angular/material/dialog';
 import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
 import {DatePipe} from '@angular/common';
 import * as R from 'ramda';
+import {TimePlanningMessagesEnum} from '../../../enums';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -27,6 +28,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   @Output() assignedSiteChanged: EventEmitter<AssignedSiteModel> = new EventEmitter<AssignedSiteModel>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
   tableHeaders: MtxGridColumn[] = [];
+  enumKeys: string[];
 
   @ViewChild('firstColumnTemplate', {static: true}) firstColumnTemplate!: TemplateRef<any>;
   @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
@@ -41,6 +43,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
+    this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.updateTableHeaders();
   }
 

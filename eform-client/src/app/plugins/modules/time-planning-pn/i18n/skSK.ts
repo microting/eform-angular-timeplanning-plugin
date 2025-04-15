@@ -95,4 +95,5 @@ export const skSK = {
   TimeOff: 'Voľno',
   Shift: 'Shift',
   Registered: 'Registrovaný',
+  PlannedHours: 'Plánované hodiny',
 };

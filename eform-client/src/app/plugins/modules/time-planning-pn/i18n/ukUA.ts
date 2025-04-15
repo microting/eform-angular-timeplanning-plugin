@@ -95,4 +95,5 @@ export const ukUA = {
   TimeOff: 'Відпустка',
   Shift: 'Shift',
   Registered: 'Зареєстрований',
+  PlannedHours: 'Заплановані години',
 };

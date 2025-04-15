@@ -95,4 +95,5 @@ export const bgBG = {
   TimeOff: 'Свободно време',
   Shift: 'Shift',
   Registered: 'Регистриран',
+  PlannedHours: 'Планирани часове',
 };

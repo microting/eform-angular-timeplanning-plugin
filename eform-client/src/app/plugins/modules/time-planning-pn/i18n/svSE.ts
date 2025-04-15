@@ -95,4 +95,5 @@ export const svSE = {
   TimeOff: 'Ledig',
   Shift: 'Flytta',
   Registered: 'Registrerad',
+  PlannedHours: 'Planerade timmar',
 };

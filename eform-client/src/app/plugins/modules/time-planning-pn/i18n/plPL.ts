@@ -95,4 +95,5 @@ export const plPL = {
   TimeOff: 'Czas wolny',
   Shift: 'Zmiana',
   Registered: 'Zarejestrowany',
+  PlannedHours: 'Zaplanowane godziny',
 };

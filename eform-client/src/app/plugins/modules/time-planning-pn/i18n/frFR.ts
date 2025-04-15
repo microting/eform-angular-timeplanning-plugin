@@ -95,4 +95,5 @@ export const frFR = {
   TimeOff: 'Congés',
   Shift: 'Changement',
   Registered: 'Inscrit',
+  PlannedHours: 'Horaires prévus',
 };

@@ -95,4 +95,5 @@ export const esES = {
   TimeOff: 'Tiempo libre',
   Shift: 'Cambio',
   Registered: 'Registrado',
+  PlannedHours: 'Horas planificadas',
 };

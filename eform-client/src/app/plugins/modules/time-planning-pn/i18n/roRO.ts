@@ -95,4 +95,5 @@ export const roRO = {
   TimeOff: 'Timp liber',
   Shift: 'Schimbare',
   Registered: 'Înregistrat',
+  PlannedHours: 'Orele planificate',
 };

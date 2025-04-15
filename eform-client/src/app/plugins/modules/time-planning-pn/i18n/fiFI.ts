@@ -95,4 +95,5 @@ export const fiFI = {
   TimeOff: 'Vapaa-aika',
   Shift: 'Siirtää',
   Registered: 'Rekisteröity',
+  PlannedHours: 'Suunnitellut tunnit',
 };

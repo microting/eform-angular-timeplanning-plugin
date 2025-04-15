@@ -95,4 +95,5 @@ export const slSL = {
   TimeOff: 'prosti čas',
   Shift: 'Shift',
   Registered: 'Registriran',
+  PlannedHours: 'Načrtovane ure',
 };

@@ -95,4 +95,5 @@ export const hrHR = {
   TimeOff: 'Slobodno vrijeme',
   Shift: 'Shift',
   Registered: 'Registriran',
+  PlannedHours: 'Planirano vrijeme',
 };

@@ -95,4 +95,5 @@ export const isIS = {
   TimeOff: 'Frí frí',
   Shift: 'Shift',
   Registered: 'Skráður',
+  PlannedHours: 'Fyrirhugaðir tímar',
 };

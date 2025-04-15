@@ -28,33 +28,35 @@ import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/m
 import {MtxGrid} from '@ng-matero/extensions/grid';
 import {NgxChartsModule} from '@swimlane/ngx-charts';
 import {MatIcon} from '@angular/material/icon';
+import {MatTooltip} from "@angular/material/tooltip";
 
 @NgModule({
-    imports: [
-        CommonModule,
-        TranslateModule,
-        FormsModule,
-        NgSelectModule,
-        EformSharedModule,
-        RouterModule,
-        TimePlanningPnRouting,
-        ReactiveFormsModule,
-        MatCardHeader,
-        MatCard,
-        MatCardContent,
-        MatFormField,
-        MatInput,
-        MatButton,
-        MatSlideToggle,
-        MatLabel,
-        MatDatepicker,
-        MatDatepickerInput,
-        MatDatepickerToggle,
-        MatSuffix,
-        MtxGrid,
-        NgxChartsModule,
-        MatIcon
-    ],
+  imports: [
+    CommonModule,
+    TranslateModule,
+    FormsModule,
+    NgSelectModule,
+    EformSharedModule,
+    RouterModule,
+    TimePlanningPnRouting,
+    ReactiveFormsModule,
+    MatCardHeader,
+    MatCard,
+    MatCardContent,
+    MatFormField,
+    MatInput,
+    MatButton,
+    MatSlideToggle,
+    MatLabel,
+    MatDatepicker,
+    MatDatepickerInput,
+    MatDatepickerToggle,
+    MatSuffix,
+    MtxGrid,
+    NgxChartsModule,
+    MatIcon,
+    MatTooltip
+  ],
   declarations: [
     TimePlanningPnLayoutComponent,
     TimePlanningSettingsComponent,

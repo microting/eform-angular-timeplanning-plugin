@@ -95,4 +95,5 @@ export const csCZ = {
   TimeOff: 'Volno',
   Shift: 'Posun',
   Registered: 'Registrovaný',
+  PlannedHours: 'Plánované hodiny',
 };

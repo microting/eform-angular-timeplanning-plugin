@@ -93,4 +93,5 @@ export const da = {
   TimeOff: 'Ferie fridag',
   Shift: 'Skift',
   Registered: 'Registreret',
+  PlannedHours: 'Planlagte timer',
 };

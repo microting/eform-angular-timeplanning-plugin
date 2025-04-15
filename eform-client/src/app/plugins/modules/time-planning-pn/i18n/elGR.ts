@@ -95,4 +95,5 @@ export const elGR = {
   TimeOff: 'Ρεπό',
   Shift: 'Αλλαγή',
   Registered: 'Εγγεγραμμένος',
+  PlannedHours: 'Προγραμματισμένες ώρες',
 };

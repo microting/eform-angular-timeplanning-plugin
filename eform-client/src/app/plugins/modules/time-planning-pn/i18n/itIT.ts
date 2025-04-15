@@ -95,4 +95,5 @@ export const itIT = {
   TimeOff: 'Tempo libero',
   Shift: 'Spostare',
   Registered: 'Registrato',
+  PlannedHours: 'Ore pianificate',
 };

@@ -95,4 +95,5 @@ export const etET = {
   TimeOff: 'Vaba aeg',
   Shift: 'Shift',
   Registered: 'Registreeritud',
+  PlannedHours: 'Planeeritud tunnid',
 };

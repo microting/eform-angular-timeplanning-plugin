@@ -95,4 +95,5 @@ export const huHU = {
   TimeOff: 'Szabadidő',
   Shift: 'Váltás',
   Registered: 'Bejegyzett',
+  PlannedHours: 'Tervezett órák',
 };
