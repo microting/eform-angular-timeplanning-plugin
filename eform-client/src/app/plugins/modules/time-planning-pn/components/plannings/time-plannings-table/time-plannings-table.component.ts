@@ -211,7 +211,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
       hours = Math.abs(hours);
     }
     const totalMinutes = Math.round(hours * 60)
-    const hrs = Math.round(totalMinutes / 60);
+    const hrs = Math.floor(totalMinutes / 60);
     let mins = totalMinutes % 60;
     if (isNegative) {
       // return '${padZero(hrs)}:${padZero(60 - mins)}';
