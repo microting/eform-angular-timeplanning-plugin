@@ -147,13 +147,13 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     if (planHours > 0) {
       if (workDayStarted) {
         //console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
-        return workDayEnded ? 'white-text' : 'green-text';
+        return workDayEnded ? 'white-text' : 'red-text';
       }
       else {
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }
     } else {
-      return workDayStarted ? workDayEnded ? 'black-text' : 'red-text' : plannedStarted ? 'white-text' : message || workerComment ? 'black-text' : 'white-text';
+      return workDayStarted ? workDayEnded ? 'black-text' : 'red-text' : plannedStarted ? message || workerComment ? 'black-text' : 'white-text' : message || workerComment ? 'black-text' : 'white-text';
       // if (workDayStarted) {
       //   return 'black-text';
       // }
