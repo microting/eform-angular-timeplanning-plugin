@@ -51,7 +51,7 @@
     <div class="plan-content">
       <!--<div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>-->
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}">
+        <strong class="{{ getCellTextColor(row, col.field) }}" [matTooltip]="'PlannedHours' | translate ">
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift1) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}

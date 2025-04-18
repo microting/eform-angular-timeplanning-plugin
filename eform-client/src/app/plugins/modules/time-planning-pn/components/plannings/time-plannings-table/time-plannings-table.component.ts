@@ -112,19 +112,21 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   getCellClass(row: any, field: string): string {
     try {
       const planHours = row.planningPrDayModels[field]?.planHours;
+      const plannedStarted = row.planningPrDayModels[field]?.plannedStartOfShift1;
       const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
       const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+      const message = row.planningPrDayModels[field]?.message;
       if (planHours > 0) {
         if (workDayStarted) {
           //console.log('getCellClass', row, field, planHours, workDayStarted, workDayEnded);
-          return workDayEnded ? 'green-background' : 'white-background';
+          return workDayEnded ? 'green-background' : 'grey-background';
         }
         else {
           return 'grey-background';
         }
       }
       else {
-        return workDayStarted ? 'grey-background' : 'white-background';
+        return workDayStarted ? workDayEnded ? 'green-background' : 'red-background' : plannedStarted ? 'grey-background' : message ? 'grey-background' : 'white-background';
       }
     }
     catch (e) {
@@ -146,6 +148,13 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
       else {
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }
+    } else {
+      if (workDayStarted) {
+        return 'black-text';
+      }
+      else {
+        return isInOlderThanToday ? 'red-text' : 'black-text';
+      }
     }
     return 'black-text';
   }
@@ -158,7 +167,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     if (sumFlexEnd >= 0) {
       if (workDayStarted) {
         //console.log('getCellTextColorForDay', row, field, planHours, workDayStarted, workDayEnded);
-        return workDayEnded ? 'black-text' : 'green-text';
+        return workDayEnded ? 'black-text' : 'black-text';
       }
       else {
         return isInOlderThanToday ? 'red-text' : 'black-text';
