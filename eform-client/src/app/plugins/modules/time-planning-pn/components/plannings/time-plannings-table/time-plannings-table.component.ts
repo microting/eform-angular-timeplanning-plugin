@@ -113,9 +113,10 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     try {
       const planHours = row.planningPrDayModels[field]?.planHours;
       const plannedStarted = row.planningPrDayModels[field]?.plannedStartOfShift1;
-      const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
+      const workDayStarted = row.planningPrDayModels[field]?.start1StartedAt || row.planningPrDayModels[field]?.start2StartedAt;
       const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
       const message = row.planningPrDayModels[field]?.message;
+      const workerComment = row.planningPrDayModels[field]?.workerComment;
       if (planHours > 0) {
         if (workDayStarted) {
           //console.log('getCellClass', row, field, planHours, workDayStarted, workDayEnded);
@@ -126,7 +127,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         }
       }
       else {
-        return workDayStarted ? workDayEnded ? 'green-background' : 'red-background' : plannedStarted ? 'grey-background' : message ? 'grey-background' : 'white-background';
+        return workDayStarted ? workDayEnded ? 'green-background' : 'red-background' : plannedStarted ? 'grey-background' : message || workerComment ? 'grey-background' : 'white-background';
       }
     }
     catch (e) {
@@ -137,9 +138,12 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
 
   getCellTextColor(row: any, field: string): string {
     const planHours = row.planningPrDayModels[field]?.planHours;
-    const workDayStarted = row.planningPrDayModels[field]?.workDayStarted;
+    const plannedStarted = row.planningPrDayModels[field]?.plannedStartOfShift1
+    const workDayStarted = row.planningPrDayModels[field]?.start1StartedAt || row.planningPrDayModels[field]?.start2StartedAt;
     const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
     const isInOlderThanToday = new Date(row.planningPrDayModels[field]?.date) < new Date();
+    const message = row.planningPrDayModels[field]?.message;
+    const workerComment = row.planningPrDayModels[field]?.workerComment;
     if (planHours > 0) {
       if (workDayStarted) {
         //console.log('getCellTextColor', row, field, planHours, workDayStarted, workDayEnded);
@@ -149,14 +153,15 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }
     } else {
-      if (workDayStarted) {
-        return 'black-text';
-      }
-      else {
-        return isInOlderThanToday ? 'red-text' : 'black-text';
-      }
+      return workDayStarted ? workDayEnded ? 'black-text' : 'red-text' : plannedStarted ? 'white-text' : message || workerComment ? 'black-text' : 'white-text';
+      // if (workDayStarted) {
+      //   return 'black-text';
+      // }
+      // else {
+      //   return isInOlderThanToday ? 'red-text' : 'black-text';
+      // }
     }
-    return 'black-text';
+    // return 'black-text';
   }
 
   getCellTextColorForDay(row: any, field: string): string {

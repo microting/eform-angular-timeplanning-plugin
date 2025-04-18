@@ -86,7 +86,7 @@
           </div>
         </div>
       </ng-container>
-      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null">
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null && row.planningPrDayModels[col.field]?.workerComment !== ''">
         <div class="{{ getCellTextColor(row, col.field) }}">
           <strong>{{ 'CommentWorker' | translate }}:</strong> {{row.planningPrDayModels[col.field]?.workerComment}}
         </div>
