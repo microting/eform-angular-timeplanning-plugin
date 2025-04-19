@@ -44,8 +44,7 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   }
 
   setMinutes(event: any, field: string): void {
-    debugger;
-    const [hours, mins] = event.target.value.split(':').map(Number);
+    const [hours, mins] = event.split(':').map(Number);
     this.settingsModel[field] = (hours * 60) + mins;
     // this.calculateHours();
     this.previousData = {...this.settingsModel};

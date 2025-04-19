@@ -30,6 +30,7 @@ import {NgxChartsModule} from '@swimlane/ngx-charts';
 import {MatIcon} from '@angular/material/icon';
 import {MatTooltip} from "@angular/material/tooltip";
 import {NgxMaskDirective} from "ngx-mask";
+import {NgxMaterialTimepickerModule} from "ngx-material-timepicker";
 
 @NgModule({
   imports: [
@@ -57,7 +58,8 @@ import {NgxMaskDirective} from "ngx-mask";
     NgxChartsModule,
     MatIcon,
     MatTooltip,
-    NgxMaskDirective
+    NgxMaskDirective,
+    NgxMaterialTimepickerModule
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
