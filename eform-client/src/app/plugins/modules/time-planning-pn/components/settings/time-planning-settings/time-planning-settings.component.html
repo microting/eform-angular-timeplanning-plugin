@@ -26,22 +26,22 @@
         <h4 class="mat-card-title">{{'Auto calculation of breaks' | translate}}</h4>
       </mat-card-header>
       <mat-card-content>
-        <div class="row">
-          <div class="col-12">
-            <mat-slide-toggle
-              color="primary"
-              class="mb-2"
-              id="forceLoadAllPlanningsFromGoogleSheet"
-              [checked]="settingsModel.forceLoadAllPlanningsFromGoogleSheet"
-              [(ngModel)]="settingsModel.forceLoadAllPlanningsFromGoogleSheet"
-            >
-              {{ 'Force fetch' | translate }}
-            </mat-slide-toggle>
-          </div>
-          <div class="col-12">
+<!--        <div class="row">-->
+<!--          <div class="col-12">-->
+<!--            <mat-slide-toggle-->
+<!--              color="primary"-->
+<!--              class="mb-2"-->
+<!--              id="forceLoadAllPlanningsFromGoogleSheet"-->
+<!--              [checked]="settingsModel.forceLoadAllPlanningsFromGoogleSheet"-->
+<!--              [(ngModel)]="settingsModel.forceLoadAllPlanningsFromGoogleSheet"-->
+<!--            >-->
+<!--              {{ 'Force fetch' | translate }}-->
+<!--            </mat-slide-toggle>-->
+<!--          </div>-->
+<!--          <div class="col-12">-->
 
-          </div>
-        </div>
+<!--          </div>-->
+<!--        </div>-->
         <div class="row">
           <div class="col-12">
             <mat-slide-toggle
@@ -58,251 +58,54 @@
 
           </div>
         </div>
-        <div class="d-flex flex-row">
-            <mat-form-field class="p-2">
-              <mat-label>{{'Monday break time divider in minutes' | translate}}</mat-label>
+        <ng-container *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+          <div class="d-flex flex-row">
+            <mat-form-field class="p-1">
+              <mat-label>{{ day + ' break time divider in minutes' | translate }}</mat-label>
               <input
-                type="number"
+                type="text"
                 matInput
-                id="mondayBreakMinutesDivider"
-                name="mondayBreakMinutesDivider"
-                [(ngModel)]="settingsModel.mondayBreakMinutesDivider"
+                mask="00:00"
+                placeholder="HH:MM"
+                [id]="day.toLowerCase() + 'BreakMinutesDivider'"
+                [name]="day.toLowerCase() + 'BreakMinutesDivider'"
+                [ngModel]="getConvertedValue(settingsModel[day.toLowerCase() + 'BreakMinutesDivider'])"
+                (change)="setMinutes($event, day.toLowerCase() + 'BreakMinutesDivider')"
+                [disabled]="!settingsModel.autoBreakCalculationActive"
                 [readonly]="!settingsModel.autoBreakCalculationActive"
               >
             </mat-form-field>
-            <mat-form-field class="p-2">
-              <mat-label>{{'Monday break time pr divider in minutes' | translate}}</mat-label>
+            <mat-form-field class="p-1">
+              <mat-label>{{ day + ' break time pr divider in minutes' | translate }}</mat-label>
               <input
-                type="number"
+                type="text"
                 matInput
-                id="mondayBreakMinutesPrDivider"
-                name="mondayBreakMinutesPrDivider"
-                [(ngModel)]="settingsModel.mondayBreakMinutesPrDivider"
+                mask="00:00"
+                placeholder="HH:MM"
+                [id]="'breakMinutesPrDivider' + day"
+                [name]="'breakMinutesPrDivider' + day"
+                [ngModel]="getConvertedValue(settingsModel[day.toLowerCase() + 'BreakMinutesPrDivider'])"
+                (change)="setMinutes($event, day.toLowerCase() + 'BreakMinutesPrDivider')"
+                [disabled]="!settingsModel.autoBreakCalculationActive"
+                [readonly]="!settingsModel.autoBreakCalculationActive">
+            </mat-form-field>
+            <mat-form-field class="p-1">
+              <mat-label>{{ day + ' break upper limit' | translate }}</mat-label>
+              <input
+                type="text"
+                matInput
+                mask="00:00"
+                placeholder="HH:MM"
+                [id]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
+                [name]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
+                [ngModel]="getConvertedValue(settingsModel[day.toLowerCase() + 'BreakMinutesUpperLimit'])"
+                (change)="setMinutes($event, day.toLowerCase() + 'BreakMinutesUpperLimit')"
+                [disabled]="!settingsModel.autoBreakCalculationActive"
                 [readonly]="!settingsModel.autoBreakCalculationActive"
               >
             </mat-form-field>
-            <mat-form-field class="p-2">
-              <mat-label>{{'Monday break upper limit' | translate}}</mat-label>
-              <input
-                type="number"
-                matInput
-                id="mondayBreakMinutesUpperLimit"
-                name="mondayBreakMinutesUpperLimit"
-                [(ngModel)]="settingsModel.mondayBreakMinutesUpperLimit"
-                [readonly]="!settingsModel.autoBreakCalculationActive"
-              >
-            </mat-form-field>
-        </div>
-        <div class="d-flex flex-row">
-          <mat-form-field class="p-2">
-            <mat-label>{{'Tuesday break time divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="tuesdayBreakMinutesDivider"
-              name="tuesdayBreakMinutesDivider"
-              [(ngModel)]="settingsModel.tuesdayBreakMinutesDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Tuesday break time pr divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="tuesdayBreakMinutesPrDivider"
-              name="tuesdayBreakMinutesPrDivider"
-              [(ngModel)]="settingsModel.tuesdayBreakMinutesPrDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Tuesday break upper limit' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="tuesdayBreakMinutesUpperLimit"
-              name="tuesdayBreakMinutesUpperLimit"
-              [(ngModel)]="settingsModel.tuesdayBreakMinutesUpperLimit"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-        </div>
-        <div class="d-flex flex-row">
-          <mat-form-field class="p-2">
-            <mat-label>{{'Wednesday break time divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="wednesdayBreakMinutesDivider"
-              name="wednesdayBreakMinutesDivider"
-              [(ngModel)]="settingsModel.wednesdayBreakMinutesDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Wednesday break time pr divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="wednesdayBreakMinutesPrDivider"
-              name="wednesdayBreakMinutesPrDivider"
-              [(ngModel)]="settingsModel.wednesdayBreakMinutesPrDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Wednesday break upper limit' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="wednesdayBreakMinutesUpperLimit"
-              name="wednesdayBreakMinutesUpperLimit"
-              [(ngModel)]="settingsModel.wednesdayBreakMinutesUpperLimit"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-        </div>
-        <div class="d-flex flex-row">
-          <mat-form-field class="p-2">
-            <mat-label>{{'Thursday break time divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="thursdayBreakMinutesDivider"
-              name="thursdayBreakMinutesDivider"
-              [(ngModel)]="settingsModel.thursdayBreakMinutesDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Thursday break time pr divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="thursdayBreakMinutesPrDivider"
-              name="thursdayBreakMinutesPrDivider"
-              [(ngModel)]="settingsModel.thursdayBreakMinutesPrDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Thursday break upper limit' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="thursdayBreakMinutesUpperLimit"
-              name="thursdayBreakMinutesUpperLimit"
-              [(ngModel)]="settingsModel.thursdayBreakMinutesUpperLimit"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-        </div>
-        <div class="d-flex flex-row">
-          <mat-form-field class="p-2">
-            <mat-label>{{'Friday break time divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="fridayBreakMinutesDivider"
-              name="fridayBreakMinutesDivider"
-              [(ngModel)]="settingsModel.fridayBreakMinutesDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Friday break time pr divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="fridayBreakMinutesPrDivider"
-              name="fridayBreakMinutesPrDivider"
-              [(ngModel)]="settingsModel.fridayBreakMinutesPrDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Friday break upper limit' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="fridayBreakMinutesUpperLimit"
-              name="fridayBreakMinutesUpperLimit"
-              [(ngModel)]="settingsModel.fridayBreakMinutesUpperLimit"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-        </div>
-        <div class="d-flex flex-row">
-          <mat-form-field class="p-2">
-            <mat-label>{{'Saturday break time divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="saturdayBreakMinutesDivider"
-              name="saturdayBreakMinutesDivider"
-              [(ngModel)]="settingsModel.saturdayBreakMinutesDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Saturday break time pr divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="saturdayBreakMinutesPrDivider"
-              name="saturdayBreakMinutesPrDivider"
-              [(ngModel)]="settingsModel.saturdayBreakMinutesPrDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Saturday break upper limit' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="saturdayBreakMinutesUpperLimit"
-              name="saturdayBreakMinutesUpperLimit"
-              [(ngModel)]="settingsModel.saturdayBreakMinutesUpperLimit"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-        </div>
-        <div class="d-flex flex-row">
-          <mat-form-field class="p-2">
-            <mat-label>{{'Sunday break time divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="sundayBreakMinutesDivider"
-              name="sundayBreakMinutesDivider"
-              [(ngModel)]="settingsModel.sundayBreakMinutesDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Sunday break time pr divider in minutes' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="sundayBreakMinutesPrDivider"
-              name="sundayBreakMinutesPrDivider"
-              [(ngModel)]="settingsModel.sundayBreakMinutesPrDivider"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-          <mat-form-field class="p-2">
-            <mat-label>{{'Sunday break upper limit' | translate}}</mat-label>
-            <input
-              type="number"
-              matInput
-              id="sundayBreakMinutesUpperLimit"
-              name="sundayBreakMinutesUpperLimit"
-              [(ngModel)]="settingsModel.sundayBreakMinutesUpperLimit"
-              [readonly]="!settingsModel.autoBreakCalculationActive"
-            >
-          </mat-form-field>
-        </div>
+          </div>
+        </ng-container>
       </mat-card-content>
     </mat-card>
 

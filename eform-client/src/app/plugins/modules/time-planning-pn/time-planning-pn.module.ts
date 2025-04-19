@@ -29,6 +29,7 @@ import {MtxGrid} from '@ng-matero/extensions/grid';
 import {NgxChartsModule} from '@swimlane/ngx-charts';
 import {MatIcon} from '@angular/material/icon';
 import {MatTooltip} from "@angular/material/tooltip";
+import {NgxMaskDirective} from "ngx-mask";
 
 @NgModule({
   imports: [
@@ -55,7 +56,8 @@ import {MatTooltip} from "@angular/material/tooltip";
     MtxGrid,
     NgxChartsModule,
     MatIcon,
-    MatTooltip
+    MatTooltip,
+    NgxMaskDirective
   ],
   declarations: [
     TimePlanningPnLayoutComponent,

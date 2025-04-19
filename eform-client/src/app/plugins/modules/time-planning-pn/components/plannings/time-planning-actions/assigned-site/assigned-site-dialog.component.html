@@ -111,31 +111,40 @@
           <mat-form-field class="p-1">
             <mat-label>{{ day + ' break time divider in minutes' | translate }}</mat-label>
             <input
-              type="number"
+              type="text"
               matInput
+              mask="00:00"
+              placeholder="HH:MM"
               [id]="day.toLowerCase() + 'BreakMinutesDivider'"
               [name]="day.toLowerCase() + 'BreakMinutesDivider'"
-              [(ngModel)]="data[day.toLowerCase() + 'BreakMinutesDivider']"
+              [ngModel]="getConvertedValue(data[day.toLowerCase() + 'BreakMinutesDivider'])"
+              (change)="setMinutes($event, day.toLowerCase() + 'BreakMinutesDivider')"
             >
           </mat-form-field>
           <mat-form-field class="p-1">
             <mat-label>{{ day + ' break time pr divider in minutes' | translate }}</mat-label>
             <input
-              type="number"
+              type="text"
               matInput
-              [id]="day.toLowerCase() + 'BreakMinutesPrDivider'"
-              [name]="day.toLowerCase() + 'BreakMinutesPrDivider'"
-              [(ngModel)]="data[day.toLowerCase() + 'BreakMinutesPrDivider']"
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'breakMinutesPrDivider' + day"
+              [name]="'breakMinutesPrDivider' + day"
+              [ngModel]="getConvertedValue(data[day.toLowerCase() + 'BreakMinutesPrDivider'])"
+              (change)="setMinutes($event, day.toLowerCase() + 'BreakMinutesPrDivider')"
             >
           </mat-form-field>
           <mat-form-field class="p-1">
             <mat-label>{{ day + ' break upper limit' | translate }}</mat-label>
             <input
-              type="number"
+              type="text"
               matInput
+              mask="00:00"
+              placeholder="HH:MM"
               [id]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
               [name]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
-              [(ngModel)]="data[day.toLowerCase() + 'BreakMinutesUpperLimit']"
+              [ngModel]="getConvertedValue(data[day.toLowerCase() + 'BreakMinutesUpperLimit'])"
+              (change)="setMinutes($event, day.toLowerCase() + 'BreakMinutesUpperLimit')"
             >
           </mat-form-field>
         </div>

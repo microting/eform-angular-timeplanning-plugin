@@ -12,8 +12,10 @@ import {TimePlanningSettingsModel} from '../../../models';
 export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   getSettings$: Subscription;
   settingsModel: TimePlanningSettingsModel = new TimePlanningSettingsModel();
+  previousData: TimePlanningSettingsModel = new TimePlanningSettingsModel();
 
   constructor(private timePlanningPnSettingsService: TimePlanningPnSettingsService) {
+    this.previousData = {...this.settingsModel};
   }
   ngOnInit() {
     this.getSettings();
@@ -28,6 +30,29 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
         this.settingsModel = data.model;
       }
     });
+  }
+
+
+  getConvertedValue(minutes: number, compareMinutes?: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    let result = `${this.padZero(hours)}:${this.padZero(mins)}`;
+    if (result === '00:00' && (compareMinutes === 0 || compareMinutes === undefined || compareMinutes === null)) {
+      result = '';
+    }
+    return result;
+  }
+
+  setMinutes(event: any, field: string): void {
+    debugger;
+    const [hours, mins] = event.target.value.split(':').map(Number);
+    this.settingsModel[field] = (hours * 60) + mins;
+    // this.calculateHours();
+    this.previousData = {...this.settingsModel};
+  }
+
+  private padZero(num: number): string {
+    return num < 10 ? `0${num}` : `${num}`;
   }
 
   updateGoogleSheetSettings() {
