@@ -42,6 +42,7 @@ public class AssignedSite
     public int SaturdayBreakMinutesPrDivider { get; set; }
     public int SundayBreakMinutesDivider { get; set; }
     public int SundayBreakMinutesPrDivider { get; set; }
+    public bool GlobalAutoBreakCalculationActive { get; set; }
     public bool AutoBreakCalculationActive { get; set; }
     public int MondayBreakMinutesUpperLimit { get; set; }
     public int TuesdayBreakMinutesUpperLimit { get; set; }

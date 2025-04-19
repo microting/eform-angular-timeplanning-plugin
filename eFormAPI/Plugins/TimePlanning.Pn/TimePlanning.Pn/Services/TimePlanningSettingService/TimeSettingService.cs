@@ -456,8 +456,8 @@ public class TimeSettingService : ISettingService
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
 
-        var autoBreakCalculationActive = _options.Value.AutoBreakCalculationActive == "1";
-        dbAssignedSite.AutoBreakCalculationActive = autoBreakCalculationActive;
+        var globalAutoBreakCalculationActive = _options.Value.AutoBreakCalculationActive == "1";
+        dbAssignedSite.GlobalAutoBreakCalculationActive = globalAutoBreakCalculationActive;
         dbAssignedSite.SiteName = site.Name;
 
         return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
@@ -509,6 +509,7 @@ public class TimeSettingService : ISettingService
         dbAssignedSite.UseOneMinuteIntervals = site.UseOneMinuteIntervals;
         dbAssignedSite.UsePunchClock = site.UsePunchClock;
         dbAssignedSite.UseDetailedPauseEditing = site.UseDetailedPauseEditing;
+        dbAssignedSite.AutoBreakCalculationActive = site.AutoBreakCalculationActive;
 
         dbAssignedSite.StartMonday = site.StartMonday;
         dbAssignedSite.StartTuesday = site.StartTuesday;

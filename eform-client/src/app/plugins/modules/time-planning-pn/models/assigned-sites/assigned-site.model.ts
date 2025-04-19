@@ -40,6 +40,7 @@ export class AssignedSiteModel {
   sundayBreakMinutesDivider: number;
   sundayBreakMinutesPrDivider: number;
   autoBreakCalculationActive: boolean;
+  globalAutoBreakCalculationActive: boolean;
   mondayBreakMinutesUpperLimit: number;
   tuesdayBreakMinutesUpperLimit: number;
   wednesdayBreakMinutesUpperLimit: number;
