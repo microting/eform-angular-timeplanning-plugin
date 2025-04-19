@@ -22,24 +22,31 @@
           {{ 'Use only plan hours' | translate }}
         </mat-checkbox>
       </div>
+<!--      <div class="d-flex flex-row">-->
+<!--         data.useOneMinuteIntervals -->
+<!--        <mat-checkbox class="p-1"-->
+<!--                      [id]="'useOneMinuteIntervals'"-->
+<!--                      [name]="'useOneMinuteIntervals'"-->
+<!--                      [(ngModel)]="data.useOneMinuteIntervals">-->
+<!--          {{ 'Use one minute intervals' | translate }}-->
+<!--        </mat-checkbox>-->
+<!--      </div>-->
+<!--      <div class="d-flex flex-row">-->
+<!--        &lt;!&ndash; data.useDetailedPauseEditing &ndash;&gt;-->
+<!--        <mat-checkbox class="p-1"-->
+<!--                      [id]="'useDetailedPauseEditing'"-->
+<!--                      [name]="'useDetailedPauseEditing'"-->
+<!--                      [(ngModel)]="data.useDetailedPauseEditing">-->
+<!--          {{ 'Use detailed pause editing' | translate }}-->
+<!--        </mat-checkbox>-->
+<!--      </div>-->
       <div class="d-flex flex-row">
-        <!-- data.useOneMinuteIntervals -->
-        <!--
+        <!-- data.autoBreakCalculationActive -->
         <mat-checkbox class="p-1"
-                      [id]="'useOneMinuteIntervals'"
-                      [name]="'useOneMinuteIntervals'"
-                      [(ngModel)]="data.useOneMinuteIntervals">
-          {{ 'Use one minute intervals' | translate }}
-        </mat-checkbox>
-        -->
-      </div>
-      <div class="d-flex flex-row">
-        <!-- data.useDetailedPauseEditing -->
-        <mat-checkbox class="p-1"
-                      [id]="'useDetailedPauseEditing'"
-                      [name]="'useDetailedPauseEditing'"
-                      [(ngModel)]="data.useDetailedPauseEditing">
-          {{ 'Use detailed pause editing' | translate }}
+                      [id]="'autoBreakCalculationActive'"
+                      [name]="'autoBreakCalculationActive'"
+                      [(ngModel)]="data.autoBreakCalculationActive">
+          {{ 'Auto break calculation' | translate }}
         </mat-checkbox>
       </div>
       <div class="d-flex flex-row">
@@ -98,6 +105,42 @@
         </mat-form-field>
       </div>
     </mat-tab>
+    <mat-tab label="{{ 'Auto break calculation settings' | translate }}" *ngIf="data.autoBreakCalculationActive">
+      <ng-container *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+        <div class="d-flex flex-row">
+          <mat-form-field class="p-1">
+            <mat-label>{{ day + ' break time divider in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              [id]="day.toLowerCase() + 'BreakMinutesDivider'"
+              [name]="day.toLowerCase() + 'BreakMinutesDivider'"
+              [(ngModel)]="data[day.toLowerCase() + 'BreakMinutesDivider']"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ day + ' break time pr divider in minutes' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              [id]="day.toLowerCase() + 'BreakMinutesPrDivider'"
+              [name]="day.toLowerCase() + 'BreakMinutesPrDivider'"
+              [(ngModel)]="data[day.toLowerCase() + 'BreakMinutesPrDivider']"
+            >
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ day + ' break upper limit' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              [id]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
+              [name]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
+              [(ngModel)]="data[day.toLowerCase() + 'BreakMinutesUpperLimit']"
+            >
+          </mat-form-field>
+        </div>
+      </ng-container>
+    </mat-tab>
     <mat-tab label="{{'1st shift' | translate }}" *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
@@ -130,7 +173,7 @@
               [ngModel]="getConvertedValue(data['end' + day])"
               (change)="setMinutes($event, 'end' + day)">
           </mat-form-field>
-          <mat-form-field class="p-1">
+          <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
             <mat-label>{{ 'Break time' | translate }}</mat-label>
             <input
               type="text"
@@ -187,7 +230,7 @@
               [ngModel]="getConvertedValue(data['end' + day + '2NdShift'])"
               (change)="setMinutes($event, 'end' + day + '2NdShift')">
           </mat-form-field>
-          <mat-form-field class="p-1">
+          <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
             <mat-label>{{ 'Break time' | translate }}</mat-label>
             <input
               type="text"
