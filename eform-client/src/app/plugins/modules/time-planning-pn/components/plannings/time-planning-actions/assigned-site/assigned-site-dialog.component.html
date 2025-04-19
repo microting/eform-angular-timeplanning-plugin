@@ -111,42 +111,59 @@
           <mat-form-field class="p-1">
             <mat-label>{{ day + ' break time divider in minutes' | translate }}</mat-label>
             <input
-              type="text"
               matInput
-              mask="00:00"
+              [ngxTimepicker]="timePicker"
+              [format]="24"
               placeholder="HH:MM"
               [id]="day.toLowerCase() + 'BreakMinutesDivider'"
               [name]="day.toLowerCase() + 'BreakMinutesDivider'"
               [ngModel]="getConvertedValue(data[day.toLowerCase() + 'BreakMinutesDivider'])"
-              (change)="setMinutes($event, day.toLowerCase() + 'BreakMinutesDivider')"
+              [disabled]="!data.autoBreakCalculationActive"
+              readonly
             >
+            <ngx-material-timepicker
+                #timePicker
+                [format]="24"
+                (timeSet)="setMinutes($event, day.toLowerCase() + 'BreakMinutesDivider')"
+            ></ngx-material-timepicker>
           </mat-form-field>
           <mat-form-field class="p-1">
             <mat-label>{{ day + ' break time pr divider in minutes' | translate }}</mat-label>
             <input
-              type="text"
               matInput
-              mask="00:00"
+              [ngxTimepicker]="timePickerPrDivider"
+              [format]="24"
               placeholder="HH:MM"
-              [id]="'breakMinutesPrDivider' + day"
-              [name]="'breakMinutesPrDivider' + day"
+              [id]="day.toLowerCase() + 'BreakMinutesPrDivider'"
+              [name]="day.toLowerCase() + 'BreakMinutesPrDivider'"
               [ngModel]="getConvertedValue(data[day.toLowerCase() + 'BreakMinutesPrDivider'])"
-              (change)="setMinutes($event, day.toLowerCase() + 'BreakMinutesPrDivider')"
-            >
+              [disabled]="!data.autoBreakCalculationActive"
+              readonly>
+            <ngx-material-timepicker
+                #timePickerPrDivider
+                [format]="24"
+                (timeSet)="setMinutes($event, day.toLowerCase() + 'BreakMinutesPrDivider')"
+            ></ngx-material-timepicker>
           </mat-form-field>
           <mat-form-field class="p-1">
             <mat-label>{{ day + ' break upper limit' | translate }}</mat-label>
             <input
-              type="text"
               matInput
-              mask="00:00"
+              [ngxTimepicker]="timePickerUpperLimit"
+              [format]="24"
               placeholder="HH:MM"
               [id]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
               [name]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
               [ngModel]="getConvertedValue(data[day.toLowerCase() + 'BreakMinutesUpperLimit'])"
-              (change)="setMinutes($event, day.toLowerCase() + 'BreakMinutesUpperLimit')"
+              [disabled]="!data.autoBreakCalculationActive"
+              readonly
             >
           </mat-form-field>
+          <ngx-material-timepicker
+              #timePickerUpperLimit
+              [format]="24"
+              (timeSet)="setMinutes($event, day.toLowerCase() + 'BreakMinutesUpperLimit')"
+          ></ngx-material-timepicker>
         </div>
       </ng-container>
     </mat-tab>

@@ -19,6 +19,7 @@ import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {NgxMaskDirective} from 'ngx-mask';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
+import {NgxMaterialTimepickerModule} from "ngx-material-timepicker";
 
 @Component({
   selector: 'app-assigned-site-dialog',
@@ -41,6 +42,7 @@ import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planni
     NgForOf,
     NgxMaskDirective,
     MatCheckbox,
+    NgxMaterialTimepickerModule,
   ],
   styleUrls: ['./assigned-site-dialog.component.scss']
 })
@@ -154,10 +156,17 @@ export class AssignedSiteDialogComponent implements DoCheck {
   }
 
   setMinutes(event: any, field: string): void {
-    const [hours, mins] = event.target.value.split(':').map(Number);
-    this.data[field] = (hours * 60) + mins;
-    this.calculateHours();
-    this.previousData = {...this.data};
+    if (event === null || event === undefined || event === '') {
+      const [hours, mins] = event.target.value.split(':').map(Number);
+      this.data[field] = (hours * 60) + mins;
+      this.calculateHours();
+      this.previousData = {...this.data};
+    } else {
+      const [hours, mins] = event.split(':').map(Number);
+      this.data[field] = (hours * 60) + mins;
+      this.calculateHours();
+      this.previousData = {...this.data};
+    }
   }
 
   updateAssignedSite() {
