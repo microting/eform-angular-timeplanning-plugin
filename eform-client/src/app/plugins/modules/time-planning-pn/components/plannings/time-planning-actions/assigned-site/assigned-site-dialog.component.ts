@@ -1,4 +1,4 @@
-import {Component, DoCheck, EventEmitter, Inject, OnChanges, SimpleChanges} from '@angular/core';
+import {Component, DoCheck, EventEmitter, Inject, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
@@ -6,8 +6,8 @@ import {
   MatDialogContent,
   MatDialogTitle
 } from '@angular/material/dialog';
-import {AssignedSiteModel} from '../../../../models';
-import {MatButton} from '@angular/material/button';
+import {AssignedSiteModel, GlobalAutoBreakSettingsModel} from '../../../../models';
+import {MatButton, MatIconButton} from '@angular/material/button';
 import {FormsModule} from '@angular/forms';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
@@ -19,7 +19,8 @@ import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {NgxMaskDirective} from 'ngx-mask';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
-import {NgxMaterialTimepickerModule} from "ngx-material-timepicker";
+import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
+import {MatIcon} from "@angular/material/icon";
 
 @Component({
   selector: 'app-assigned-site-dialog',
@@ -43,13 +44,16 @@ import {NgxMaterialTimepickerModule} from "ngx-material-timepicker";
     NgxMaskDirective,
     MatCheckbox,
     NgxMaterialTimepickerModule,
+    MatIcon,
+    MatIconButton,
   ],
   styleUrls: ['./assigned-site-dialog.component.scss']
 })
-export class AssignedSiteDialogComponent implements DoCheck {
+export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   public selectCurrentUserIsAdmin$ = this.authStore.select(selectCurrentUserIsAdmin);
   assignedSiteUpdate: EventEmitter<AssignedSiteModel> = new EventEmitter<AssignedSiteModel>();
   private previousData: AssignedSiteModel;
+  private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: AssignedSiteModel,
@@ -65,6 +69,14 @@ export class AssignedSiteDialogComponent implements DoCheck {
       // this.calculateHours();
       // this.previousData = { ...this.data };
     }
+  }
+
+  ngOnInit(): void {
+    this.timePlanningPnSettingsService.getGlobalAutoBreakCalculationSettings().subscribe(result => {
+      if (result && result.success) {
+        this.globalAutoBreakSettings = result.model;
+      }
+    });
   }
 
   hasDataChanged(): boolean {
@@ -221,5 +233,46 @@ export class AssignedSiteDialogComponent implements DoCheck {
 
   private padZero(num: number): string {
     return num < 10 ? `0${num}` : `${num}`;
+  }
+
+  copyBreakSettings(day: string) {
+    switch (day) {
+      case 'monday':
+        this.data.mondayBreakMinutesDivider = this.globalAutoBreakSettings.mondayBreakMinutesDivider;
+        this.data.mondayBreakMinutesPrDivider = this.globalAutoBreakSettings.mondayBreakMinutesPrDivider;
+        this.data.mondayBreakMinutesUpperLimit = this.globalAutoBreakSettings.mondayBreakMinutesUpperLimit;
+        break;
+      case 'tuesday':
+        this.data.tuesdayBreakMinutesDivider = this.globalAutoBreakSettings.tuesdayBreakMinutesDivider;
+        this.data.tuesdayBreakMinutesPrDivider = this.globalAutoBreakSettings.tuesdayBreakMinutesPrDivider;
+        this.data.tuesdayBreakMinutesUpperLimit = this.globalAutoBreakSettings.tuesdayBreakMinutesUpperLimit;
+        break;
+      case 'wednesday':
+        this.data.wednesdayBreakMinutesDivider = this.globalAutoBreakSettings.wednesdayBreakMinutesDivider;
+        this.data.wednesdayBreakMinutesPrDivider = this.globalAutoBreakSettings.wednesdayBreakMinutesPrDivider;
+        this.data.wednesdayBreakMinutesUpperLimit = this.globalAutoBreakSettings.wednesdayBreakMinutesUpperLimit;
+        break;
+      case 'thursday':
+        this.data.thursdayBreakMinutesDivider = this.globalAutoBreakSettings.thursdayBreakMinutesDivider;
+        this.data.thursdayBreakMinutesPrDivider = this.globalAutoBreakSettings.thursdayBreakMinutesPrDivider;
+        this.data.thursdayBreakMinutesUpperLimit = this.globalAutoBreakSettings.thursdayBreakMinutesUpperLimit;
+        break;
+      case 'friday':
+        this.data.fridayBreakMinutesDivider = this.globalAutoBreakSettings.fridayBreakMinutesDivider;
+        this.data.fridayBreakMinutesPrDivider = this.globalAutoBreakSettings.fridayBreakMinutesPrDivider;
+        this.data.fridayBreakMinutesUpperLimit = this.globalAutoBreakSettings.fridayBreakMinutesUpperLimit;
+        break;
+      case 'saturday':
+        this.data.saturdayBreakMinutesDivider = this.globalAutoBreakSettings.saturdayBreakMinutesDivider;
+        this.data.saturdayBreakMinutesPrDivider = this.globalAutoBreakSettings.saturdayBreakMinutesPrDivider;
+        this.data.saturdayBreakMinutesUpperLimit = this.globalAutoBreakSettings.saturdayBreakMinutesUpperLimit;
+        break;
+      case 'sunday':
+        this.data.sundayBreakMinutesDivider = this.globalAutoBreakSettings.sundayBreakMinutesDivider;
+        this.data.sundayBreakMinutesPrDivider = this.globalAutoBreakSettings.sundayBreakMinutesPrDivider;
+        this.data.sundayBreakMinutesUpperLimit = this.globalAutoBreakSettings.sundayBreakMinutesUpperLimit;
+        break;
+    }
+    // this.data[`break${day}`] = this.globalAutoBreakSettings.;
   }
 }

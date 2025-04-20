@@ -8,6 +8,7 @@ import {
 import { ApiBaseService } from 'src/app/common/services';
 import { TimePlanningSettingsModel,
   AssignedSiteModel,
+  GlobalAutoBreakSettingsModel,
   AssignedSiteUpdateModel } from '../models';
 
 export let TimePlanningSettingsMethods = {
@@ -17,6 +18,7 @@ export let TimePlanningSettingsMethods = {
   SettingsEform: 'api/time-planning-pn/settings/eform',
   GetAssignedSites: 'api/time-planning-pn/settings/assigned-sites',
   UpdateAssignedSite: 'api/time-planning-pn/settings/assigned-site',
+  GlobalAutoBreakCalculationSettings: 'api/time-planning-pn/settings/global-auto-break-settings',
 };
 
 @Injectable()
@@ -75,5 +77,9 @@ export class TimePlanningPnSettingsService {
       TimePlanningSettingsMethods.UpdateAssignedSite,
       model
     );
+  }
+
+  getGlobalAutoBreakCalculationSettings(): Observable<OperationDataResult<GlobalAutoBreakSettingsModel>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.GlobalAutoBreakCalculationSettings);
   }
 }

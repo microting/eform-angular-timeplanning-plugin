@@ -164,6 +164,14 @@
               [format]="24"
               (timeSet)="setMinutes($event, day.toLowerCase() + 'BreakMinutesUpperLimit')"
           ></ngx-material-timepicker>
+          <div class="pt-4">
+            <button
+              mat-icon-button
+              (click)="copyBreakSettings(day.toLowerCase())"
+              color="warn">
+              <mat-icon>sync_arrow_down</mat-icon>
+            </button>
+          </div>
         </div>
       </ng-container>
     </mat-tab>

@@ -489,6 +489,36 @@ public class TimeSettingService : ISettingService
         return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
     }
 
+    public Task<OperationDataResult<GlobalAutoBreakSettings>> GetGlobalAutoBreakSettings()
+    {
+        var global =  new GlobalAutoBreakSettings()
+        {
+            MondayBreakMinutesDivider = int.Parse(_options.Value.MondayBreakMinutesDivider),
+            MondayBreakMinutesPrDivider = int.Parse(_options.Value.MondayBreakMinutesPrDivider),
+            TuesdayBreakMinutesDivider = int.Parse(_options.Value.TuesdayBreakMinutesDivider),
+            TuesdayBreakMinutesPrDivider = int.Parse(_options.Value.TuesdayBreakMinutesPrDivider),
+            WednesdayBreakMinutesDivider = int.Parse(_options.Value.WednesdayBreakMinutesDivider),
+            WednesdayBreakMinutesPrDivider = int.Parse(_options.Value.WednesdayBreakMinutesPrDivider),
+            ThursdayBreakMinutesDivider = int.Parse(_options.Value.ThursdayBreakMinutesDivider),
+            ThursdayBreakMinutesPrDivider = int.Parse(_options.Value.ThursdayBreakMinutesPrDivider),
+            FridayBreakMinutesDivider = int.Parse(_options.Value.FridayBreakMinutesDivider),
+            FridayBreakMinutesPrDivider = int.Parse(_options.Value.FridayBreakMinutesPrDivider),
+            SaturdayBreakMinutesDivider = int.Parse(_options.Value.SaturdayBreakMinutesDivider),
+            SaturdayBreakMinutesPrDivider = int.Parse(_options.Value.SaturdayBreakMinutesPrDivider),
+            SundayBreakMinutesDivider = int.Parse(_options.Value.SundayBreakMinutesDivider),
+            SundayBreakMinutesPrDivider = int.Parse(_options.Value.SundayBreakMinutesPrDivider),
+            MondayBreakMinutesUpperLimit = int.Parse(_options.Value.MondayBreakMinutesUpperLimit),
+            TuesdayBreakMinutesUpperLimit = int.Parse(_options.Value.TuesdayBreakMinutesUpperLimit),
+            WednesdayBreakMinutesUpperLimit = int.Parse(_options.Value.WednesdayBreakMinutesUpperLimit),
+            ThursdayBreakMinutesUpperLimit = int.Parse(_options.Value.ThursdayBreakMinutesUpperLimit),
+            FridayBreakMinutesUpperLimit = int.Parse(_options.Value.FridayBreakMinutesUpperLimit),
+            SaturdayBreakMinutesUpperLimit = int.Parse(_options.Value.SaturdayBreakMinutesUpperLimit),
+            SundayBreakMinutesUpperLimit = int.Parse(_options.Value.SundayBreakMinutesUpperLimit)
+        };
+
+        return Task.FromResult(new OperationDataResult<GlobalAutoBreakSettings>(true, global));
+    }
+
     public async Task<OperationResult> UpdateAssignedSite(Infrastructure.Models.Settings.AssignedSite site)
     {
         var siteId = site.SiteId;

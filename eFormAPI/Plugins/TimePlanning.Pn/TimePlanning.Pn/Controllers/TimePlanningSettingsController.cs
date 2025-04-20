@@ -128,5 +128,12 @@ namespace TimePlanning.Pn.Controllers
         {
             return await _settingService.UpdateAssignedSite(site);
         }
+
+        [HttpGet]
+        [Route("global-auto-break-settings")]
+        public async Task<OperationDataResult<GlobalAutoBreakSettings>> GetGlobalAutoBreakSettings()
+        {
+            return await _settingService.GetGlobalAutoBreakSettings();
+        }
     }
 }
