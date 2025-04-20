@@ -85,7 +85,6 @@ namespace TimePlanning.Pn
             services.AddTransient<ITimePlanningRegistrationDeviceService, TimePlanningRegistrationDeviceService>();
             services.AddTransient<ISettingService, TimeSettingService>();
             services.AddControllers();
-            SeedEForms(services);
         }
 
         public void AddPluginConfig(IConfigurationBuilder builder, string connectionString)
@@ -96,8 +95,6 @@ namespace TimePlanning.Pn
                 connectionString,
                 seedData,
                 contextFactory);
-
-            //CaseUpdateDelegates.CaseUpdateDelegate += UpdateRelatedCase;
         }
 
         public void ConfigureOptionsServices(
@@ -106,221 +103,6 @@ namespace TimePlanning.Pn
         {
             services.ConfigurePluginDbOptions<TimePlanningBaseSettings>(
                 configuration.GetSection("TimePlanningBaseSettings"));
-        }
-
-        private static async void SeedEForms(IServiceCollection services)
-        {
-            var serviceProvider = services.BuildServiceProvider();
-            var core = await serviceProvider.GetRequiredService<IEFormCoreService>().GetCore();
-            var eform = TimePlanningSeedEforms.GetForms().FirstOrDefault();
-            var lasteForm = TimePlanningSeedEforms.GetForms().LastOrDefault();
-            var sdkDbContext = core.DbContextHelper.GetDbContext();
-            var context = serviceProvider.GetRequiredService<TimePlanningPnDbContext>();
-            var options = serviceProvider.GetRequiredService<IPluginDbOptions<TimePlanningBaseSettings>>();
-            var user = serviceProvider.GetRequiredService<IUserService>();
-            // seed eforms
-            var assembly = Assembly.GetExecutingAssembly();
-
-            var resourceStream = assembly.GetManifestResourceStream($"TimePlanning.Pn.Resources.eForms.{eform.Key}.xml");
-            if (resourceStream == null)
-            {
-                Console.WriteLine(eform.Key);
-            }
-            else
-            {
-                string contents;
-                using (var sr = new StreamReader(resourceStream))
-                {
-                    contents = await sr.ReadToEndAsync();
-                }
-                var newTemplate = await core.TemplateFromXml(contents);
-                var originalId = await sdkDbContext.CheckLists
-                    .Where(x => x.OriginalId == newTemplate.OriginalId)
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Select(x => x.Id)
-                    .FirstOrDefaultAsync();
-                if (originalId == 0)
-                {
-                    int clId = await core.TemplateCreate(newTemplate);
-                    var cl = await sdkDbContext.CheckLists.SingleAsync(x => x.Id == clId);
-                    cl.IsLocked = true;
-                    cl.IsEditable = false;
-                    cl.ReportH1 = eform.Value[0];
-                    cl.ReportH2 = eform.Value[1];
-                    cl.IsHidden = true;
-                    await cl.Update(sdkDbContext);
-                    originalId = cl.Id;
-                }
-                else
-                {
-                    var cl = await sdkDbContext.CheckLists.SingleAsync(x => x.Id == originalId);
-                    if (!cl.IsHidden)
-                    {
-                        cl.IsHidden = true;
-                        await cl.Update(sdkDbContext);
-                    }
-                }
-
-                await options.UpdateDb(settings =>
-                {
-                    settings.EformId = originalId;
-                }, context, user.UserId);
-            }
-            resourceStream = assembly.GetManifestResourceStream($"TimePlanning.Pn.Resources.eForms.{lasteForm.Key}.xml");
-            if (resourceStream == null)
-            {
-                Console.WriteLine(eform.Key);
-            }
-            else
-            {
-                string contents;
-                using (var sr = new StreamReader(resourceStream))
-                {
-                    contents = await sr.ReadToEndAsync();
-                }
-                var newTemplate = await core.TemplateFromXml(contents);
-                var originalId = await sdkDbContext.CheckLists
-                    .Where(x => x.OriginalId == newTemplate.OriginalId)
-                    .Select(x => x.Id)
-                    .FirstOrDefaultAsync();
-                if (originalId == 0)
-                {
-                    int clId = await core.TemplateCreate(newTemplate);
-                    var cl = await sdkDbContext.CheckLists.SingleAsync(x => x.Id == clId);
-                    cl.IsLocked = true;
-                    cl.IsEditable = false;
-                    cl.IsHidden = true;
-                    cl.ReportH1 = eform.Value[0];
-                    cl.ReportH2 = eform.Value[1];
-                    await cl.Update(sdkDbContext);
-                    originalId = cl.Id;
-                }
-                else
-                {
-                    var cl = await sdkDbContext.CheckLists.SingleAsync(x => x.Id == originalId);
-                    if (!cl.IsHidden)
-                    {
-                        cl.IsHidden = true;
-                        await cl.Update(sdkDbContext);
-                    }
-                }
-
-                var field = await sdkDbContext.Fields.FirstOrDefaultAsync(x => x.OriginalId == "373285");
-                if (field != null)
-                {
-                    field.Mandatory = 1;
-                    await field.Update(sdkDbContext);
-                }
-
-                await options.UpdateDb(settings =>
-                {
-                    settings.InfoeFormId = originalId;
-                }, context, user.UserId);
-            }
-
-            var newTaskId = options.Value.EformId;
-            if (newTaskId is 0)
-            {
-                var clt = await sdkDbContext.CheckListTranslations
-                    .FirstAsync(x => x.Text == "00. Arbejdstid").ConfigureAwait(false);
-                await options.UpdateDb(settings =>
-                    {
-                        settings.EformId = clt.CheckListId;
-                    },
-                    context,
-                    user.UserId);
-
-            }
-            var folderId = options.Value.FolderId;
-
-            if (folderId is 0)
-            {
-                var timeFolder = await sdkDbContext.FolderTranslations.FirstOrDefaultAsync(x =>
-                    x.WorkflowState != Constants.WorkflowStates.Removed
-                    && x.Name == "Tidsregistrering").ConfigureAwait(false);
-                if (timeFolder != null)
-                {
-                    await options.UpdateDb(settings =>
-                        {
-                            settings.FolderId = timeFolder.FolderId;
-                        },
-                        context,
-                        user.UserId);
-                }
-                else
-                {
-                    var languages = sdkDbContext.Languages
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .ToList();
-                    var translations = new List<CommonTranslationsModel>()
-                    {
-                        new()
-                        {
-                            Name = "Tidsregistrering",
-                            LanguageId = languages.Where(x => x.LanguageCode == "da").Select(x => x.Id).First(),
-                            Description = ""
-                        },
-                        new()
-                        {
-                            Name = "Time registration",
-                            LanguageId = languages.Where(x => x.LanguageCode == "en-US").Select(x => x.Id).First(),
-                            Description = ""
-                        },
-                        new()
-                        {
-                            Name = "Zeiterfassung",
-                            LanguageId = languages.Where(x => x.LanguageCode == "de-DE").Select(x => x.Id).First(),
-                            Description = ""
-                        },
-                        new()
-                        {
-                            Name = "Реєстрація часу",
-                            LanguageId = languages.Where(x => x.LanguageCode == "uk-UA").Select(x => x.Id).First(),
-                            Description = ""
-                        }
-                    };
-
-                    var res = await core.FolderCreate(translations, null).ConfigureAwait(false);
-
-                    await options.UpdateDb(settings =>
-                        {
-                            settings.FolderId = res;
-                        },
-                        context,
-                        user.UserId);
-                }
-            }
-
-            var registrationDevices = await context.RegistrationDevices
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .ToListAsync().ConfigureAwait(false);
-
-            if (registrationDevices.Any())
-            {
-                // var assignmentForDeletes = await context.AssignedSites.Where(x =>
-                //     x.WorkflowState != Constants.WorkflowStates.Removed).ToListAsync().ConfigureAwait(false);
-                //
-                // foreach (var assignmentForDelete in assignmentForDeletes)
-                // {
-                //     //await assignmentForDelete.Delete(timePlanningDbContext).ConfigureAwait(false);
-                //     if (assignmentForDelete.CaseMicrotingUid != null)
-                //     {
-                //         await core.CaseDelete((int)assignmentForDelete.CaseMicrotingUid).ConfigureAwait(false);
-                //     }
-                // }
-                //
-                // var planRegistrations = await context.PlanRegistrations
-                //     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed).ToListAsync()
-                //     .ConfigureAwait(false);
-                //
-                // foreach (var planRegistration in planRegistrations)
-                // {
-                //     if (planRegistration.StatusCaseId != 0)
-                //     {
-                //         await core.CaseDelete(planRegistration.StatusCaseId).ConfigureAwait(false);
-                //     }
-                // }
-            }
         }
 
         public void ConfigureDbContext(IServiceCollection services, string connectionString)
@@ -380,7 +162,7 @@ namespace TimePlanning.Pn
                     builder.MigrationsAssembly(PluginAssembly().FullName);
                     builder.TranslateParameterizedCollectionsToConstants();
                 }));
-            
+
 
             services.AddDbContext<BaseDbContext>(
                 o => o.UseMySql(frontendBaseConnectionString, new MariaDbServerVersion(
@@ -407,211 +189,351 @@ namespace TimePlanning.Pn
 
         public List<PluginMenuItemModel> GetNavigationMenu(IServiceProvider serviceProvider)
         {
-            var pluginMenu = new List<PluginMenuItemModel>
-            {
-                    new()
-                    {
-                        Name = "Dropdown",
-                        E2EId = "time-planning-pn",
-                        Link = "",
-                        Type = MenuItemTypeEnum.Dropdown,
-                        Position = 0,
-                        Translations = new List<PluginMenuTranslationModel>
+            List<PluginMenuItemModel> pluginMenu =
+            [
+                new()
+                {
+                    Name = "Dropdown",
+                    E2EId = "time-planning-pn",
+                    Link = "",
+                    Type = MenuItemTypeEnum.Dropdown,
+                    Position = 0,
+                    Translations =
+                    [
+                        new()
                         {
-                            new()
-                            {
-                                 LocaleName = LocaleNames.English,
-                                 Name = "Time Planning",
-                                 Language = LanguageNames.English
-                            },
-                            new()
-                            {
-                                 LocaleName = LocaleNames.German,
-                                 Name = "Time Planning",
-                                 Language = LanguageNames.German
-                            },
-                            new()
-                            {
-                                 LocaleName = LocaleNames.Danish,
-                                 Name = "Timeregistrering",
-                                 Language = LanguageNames.Danish
-                            }
+                            LocaleName = LocaleNames.English,
+                            Name = "Time Planning",
+                            Language = LanguageNames.English
                         },
-                        ChildItems = new List<PluginMenuItemModel>
+
+                        new()
                         {
-                            new()
+                            LocaleName = LocaleNames.German,
+                            Name = "Time Planning",
+                            Language = LanguageNames.German
+                        },
+
+                        new()
+                        {
+                            LocaleName = LocaleNames.Danish,
+                            Name = "Timeregistrering",
+                            Language = LanguageNames.Danish
+                        }
+                    ],
+                    ChildItems =
+                    [
+                        new()
+                        {
+                            Name = "Working hours",
+                            E2EId = "time-planning-pn-working-hours",
+                            Link = "/plugins/time-planning-pn/working-hours",
+                            Type = MenuItemTypeEnum.Link,
+                            MenuTemplate = new()
                             {
                                 Name = "Working hours",
                                 E2EId = "time-planning-pn-working-hours",
-                                Link = "/plugins/time-planning-pn/working-hours",
-                                Type = MenuItemTypeEnum.Link,
-                                MenuTemplate = new PluginMenuTemplateModel
-                                {
-                                    Name = "Working hours",
-                                    E2EId = "time-planning-pn-working-hours",
-                                    DefaultLink = "/plugins/time-planning-pn/working-hours",
-                                    Permissions = new List<PluginMenuTemplatePermissionModel>(),
-                                    Translations = new List<PluginMenuTranslationModel>
-                                    {
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.English,
-                                            Name = "Working hours",
-                                            Language = LanguageNames.English
-                                        },
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.German,
-                                            Name = "Working hours",
-                                            Language = LanguageNames.German
-                                        },
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.Danish,
-                                            Name = "Timeregistrering",
-                                            Language = LanguageNames.Danish
-                                        }
-                                    }
-                                },
-                                Translations = new List<PluginMenuTranslationModel>
-                                {
+                                DefaultLink = "/plugins/time-planning-pn/working-hours",
+                                Permissions = [],
+                                Translations =
+                                [
                                     new()
                                     {
                                         LocaleName = LocaleNames.English,
                                         Name = "Working hours",
                                         Language = LanguageNames.English
                                     },
+
                                     new()
                                     {
                                         LocaleName = LocaleNames.German,
                                         Name = "Working hours",
                                         Language = LanguageNames.German
                                     },
+
                                     new()
                                     {
                                         LocaleName = LocaleNames.Danish,
                                         Name = "Timeregistrering",
                                         Language = LanguageNames.Danish
                                     }
-                                }
+                                ]
                             },
-                            new()
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Working hours",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Working hours",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Timeregistrering",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+
+                        new()
+                        {
+                            Name = "Flex",
+                            E2EId = "time-planning-pn-flex",
+                            Link = "/plugins/time-planning-pn/flex",
+                            Type = MenuItemTypeEnum.Link,
+                            Position = 2,
+                            MenuTemplate = new()
                             {
                                 Name = "Flex",
                                 E2EId = "time-planning-pn-flex",
-                                Link = "/plugins/time-planning-pn/flex",
-                                Type = MenuItemTypeEnum.Link,
-                                Position = 2,
-                                MenuTemplate = new PluginMenuTemplateModel
-                                {
-                                    Name = "Flex",
-                                    E2EId = "time-planning-pn-flex",
-                                    DefaultLink = "/plugins/time-planning-pn/flex",
-                                    Permissions = new List<PluginMenuTemplatePermissionModel>(),
-                                    Translations = new List<PluginMenuTranslationModel>
-                                    {
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.English,
-                                            Name = "Flex",
-                                            Language = LanguageNames.English
-                                        },
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.German,
-                                            Name = "Flex",
-                                            Language = LanguageNames.German
-                                        },
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.Danish,
-                                            Name = "Flex",
-                                            Language = LanguageNames.Danish
-                                        }
-                                    }
-                                },
-                                Translations = new List<PluginMenuTranslationModel>
-                                {
+                                DefaultLink = "/plugins/time-planning-pn/flex",
+                                Permissions = [],
+                                Translations =
+                                [
                                     new()
                                     {
                                         LocaleName = LocaleNames.English,
                                         Name = "Flex",
                                         Language = LanguageNames.English
                                     },
+
                                     new()
                                     {
                                         LocaleName = LocaleNames.German,
                                         Name = "Flex",
                                         Language = LanguageNames.German
                                     },
+
                                     new()
                                     {
                                         LocaleName = LocaleNames.Danish,
                                         Name = "Flex",
                                         Language = LanguageNames.Danish
                                     }
-                                }
+                                ]
                             },
-                            new()
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Flex",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Flex",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Flex",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+
+                        new()
+                        {
+                            Name = "RegistrationDevice",
+                            E2EId = "time-planning-pn-registration-devices",
+                            Link = "/plugins/time-planning-pn/registration-devices",
+                            Type = MenuItemTypeEnum.Link,
+                            Position = 2,
+                            MenuTemplate = new()
                             {
                                 Name = "RegistrationDevice",
                                 E2EId = "time-planning-pn-registration-devices",
-                                Link = "/plugins/time-planning-pn/registration-devices",
-                                Type = MenuItemTypeEnum.Link,
-                                Position = 2,
-                                MenuTemplate = new PluginMenuTemplateModel
-                                {
-                                    Name = "RegistrationDevice",
-                                    E2EId = "time-planning-pn-registration-devices",
-                                    DefaultLink = "/plugins/time-planning-pn/registration-devices",
-                                    Permissions = new List<PluginMenuTemplatePermissionModel>(),
-                                    Translations = new List<PluginMenuTranslationModel>
-                                    {
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.English,
-                                            Name = "Registration devices",
-                                            Language = LanguageNames.English
-                                        },
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.German,
-                                            Name = "Registrierungsgeräte",
-                                            Language = LanguageNames.German
-                                        },
-                                        new()
-                                        {
-                                            LocaleName = LocaleNames.Danish,
-                                            Name = "Registreringsenheder",
-                                            Language = LanguageNames.Danish
-                                        }
-                                    }
-                                },
-                                Translations = new List<PluginMenuTranslationModel>
-                                {
+                                DefaultLink = "/plugins/time-planning-pn/registration-devices",
+                                Permissions = [],
+                                Translations =
+                                [
                                     new()
                                     {
                                         LocaleName = LocaleNames.English,
                                         Name = "Registration devices",
                                         Language = LanguageNames.English
                                     },
+
                                     new()
                                     {
                                         LocaleName = LocaleNames.German,
                                         Name = "Registrierungsgeräte",
                                         Language = LanguageNames.German
                                     },
+
                                     new()
                                     {
                                         LocaleName = LocaleNames.Danish,
                                         Name = "Registreringsenheder",
                                         Language = LanguageNames.Danish
                                     }
+                                ]
+                            },
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Registration devices",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Registrierungsgeräte",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Registreringsenheder",
+                                    Language = LanguageNames.Danish
                                 }
-                            }
+                            ]
+                        },
+
+                        new()
+                        {
+                            Name = "Dashboard",
+                            E2EId = "time-planning-pn-planning",
+                            Link = "/plugins/time-planning-pn/planning",
+                            Type = MenuItemTypeEnum.Link,
+                            Position = 3,
+                            MenuTemplate = new PluginMenuTemplateModel
+                            {
+                                Name = "Dashboard",
+                                E2EId = "time-planning-pn-planning",
+                                DefaultLink = "/plugins/time-planning-pn/planning",
+                                Permissions = [],
+                                Translations =
+                                [
+                                    new()
+                                    {
+                                        LocaleName = LocaleNames.English,
+                                        Name = "Dashboard",
+                                        Language = LanguageNames.English
+                                    },
+
+                                    new()
+                                    {
+                                        LocaleName = LocaleNames.German,
+                                        Name = "Dashboard",
+                                        Language = LanguageNames.German
+                                    },
+
+                                    new()
+                                    {
+                                        LocaleName = LocaleNames.Danish,
+                                        Name = "Dashboard",
+                                        Language = LanguageNames.Danish
+                                    }
+                                ]
+                            },
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Dashboard",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Dashboard",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Dashboard",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+
+                        new()
+                        {
+                            Name = "Timer",
+                            E2EId = "time-planning-pn-mobile-working-hours",
+                            Link = "/plugins/time-planning-pn/working-hours/mobile-working-hours",
+                            Type = MenuItemTypeEnum.Link,
+                            Position = 4,
+                            MenuTemplate = new PluginMenuTemplateModel
+                            {
+                                Name = "Timer",
+                                E2EId = "time-planning-pn-mobile-working-hours",
+                                DefaultLink = "/plugins/time-planning-pn/working-hours/mobile-working-hours",
+                                Permissions = [],
+                                Translations =
+                                [
+                                    new()
+                                    {
+                                        LocaleName = LocaleNames.English,
+                                        Name = "Timer",
+                                        Language = LanguageNames.English
+                                    },
+
+                                    new()
+                                    {
+                                        LocaleName = LocaleNames.German,
+                                        Name = "Timer",
+                                        Language = LanguageNames.German
+                                    },
+
+                                    new()
+                                    {
+                                        LocaleName = LocaleNames.Danish,
+                                        Name = "Timer",
+                                        Language = LanguageNames.Danish
+                                    }
+                                ]
+                            },
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Timer",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Timer",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Timer",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
                         }
-                    }
-                };
+                    ]
+                }
+            ];
 
             return pluginMenu;
         }
@@ -627,34 +549,54 @@ namespace TimePlanning.Pn
                 Name = localizationService.GetString("Time Planning"),
                 E2EId = "time-planning-pn",
                 Link = "",
-                Guards = new List<string> { TimePlanningClaims.AccessTimePlanningPlugin },
-                MenuItems = new List<MenuItemModel>
-                {
+                Guards = [TimePlanningClaims.AccessTimePlanningPlugin],
+                MenuItems =
+                [
                     new()
                     {
                         Name = localizationService.GetString("Plannings"),
                         E2EId = "time-planning-pn-planning",
                         Link = "/plugins/time-planning-pn/planning",
-                        Guards = new List<string> { TimePlanningClaims.GetPlanning },
+                        Guards = [TimePlanningClaims.GetPlanning],
                         Position = 0
                     },
+
                     new()
                     {
                         Name = localizationService.GetString("Working hours"),
                         E2EId = "time-planning-pn-working-hours",
                         Link = "/plugins/time-planning-pn/working-hours",
-                        Guards = new List<string> { TimePlanningClaims.GetWorkingHours },
+                        Guards = [TimePlanningClaims.GetWorkingHours],
                         Position = 1
                     },
+
                     new()
                     {
                         Name = localizationService.GetString("Flex"),
                         E2EId = "time-planning-pn-flex",
                         Link = "/plugins/time-planning-pn/flex",
                         Position = 2,
-                        Guards = new List<string> { TimePlanningClaims.GetFlex }
+                        Guards = [TimePlanningClaims.GetFlex]
+                    },
+
+                    new()
+                    {
+                        Name = localizationService.GetString("Dashboard"),
+                        E2EId = "time-planning-pn-planning",
+                        Link = "/plugins/time-planning-pn/planning",
+                        Position = 3,
+                        Guards = [TimePlanningClaims.GetFlex]
+                    },
+
+                    new()
+                    {
+                        Name = localizationService.GetString("Timer"),
+                        E2EId = "time-planning-pn-mobile-working-hours",
+                        Link = "/plugins/time-planning-pn/working-hours/mobile-working-hours",
+                        Position = 4,
+                        Guards = [TimePlanningClaims.GetFlex]
                     }
-                }
+                ]
             });
             return result;
         }
@@ -663,7 +605,7 @@ namespace TimePlanning.Pn
         {
             // Get DbContext
             var contextFactory = new TimePlanningPnContextFactory();
-            using var context = contextFactory.CreateDbContext(new[] { connectionString });
+            using var context = contextFactory.CreateDbContext([connectionString]);
             // Seed configuration
             TimePlanningPluginSeed.SeedData(context);
         }
@@ -671,7 +613,7 @@ namespace TimePlanning.Pn
         public PluginPermissionsManager GetPermissionsManager(string connectionString)
         {
             var contextFactory = new TimePlanningPnContextFactory();
-            var context = contextFactory.CreateDbContext(new[] { connectionString });
+            var context = contextFactory.CreateDbContext([connectionString]);
 
             return new PluginPermissionsManager(context);
         }
