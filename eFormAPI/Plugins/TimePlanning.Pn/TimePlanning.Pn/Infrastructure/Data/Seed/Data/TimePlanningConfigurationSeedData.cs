@@ -30,8 +30,8 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
     public class TimePlanningConfigurationSeedData : IPluginConfigurationSeedData
     {
         private const string TimePlanningBaseSettingsName = "TimePlanningBaseSettings";
-        public PluginConfigurationValue[] Data => new[]
-        {
+        public PluginConfigurationValue[] Data =>
+        [
             new PluginConfigurationValue
             {
                 Name = $"{TimePlanningBaseSettingsName}:FolderId",
@@ -201,7 +201,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             {
                 Name = $"{TimePlanningBaseSettingsName}:DayOfPayment",
                 Value = "20"
-            },
-        };
+            }
+        ];
     }
 }
