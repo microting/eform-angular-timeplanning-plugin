@@ -10,6 +10,7 @@ describe('Enable Backend Config plugin', () => {
 
   it('should validate default Time registration plugin settings', () => {
     const pluginName = 'Microting Time Planning Plugin';
+    pluginPage.enablePluginByName(pluginName);
     let row = cy.contains('.mat-mdc-row', pluginName).first();
     row.find('.mat-column-actions button')
       .should('contain.text', 'toggle_on'); // plugin is enabled
