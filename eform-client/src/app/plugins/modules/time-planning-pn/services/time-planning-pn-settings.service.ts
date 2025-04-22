@@ -19,6 +19,7 @@ export let TimePlanningSettingsMethods = {
   GetAssignedSites: 'api/time-planning-pn/settings/assigned-sites',
   UpdateAssignedSite: 'api/time-planning-pn/settings/assigned-site',
   GlobalAutoBreakCalculationSettings: 'api/time-planning-pn/settings/global-auto-break-settings',
+  ResetGlobalAutoBreakCalculationSettings: 'api/time-planning-pn/settings/reset-global-auto-break-settings',
 };
 
 @Injectable()
@@ -81,5 +82,9 @@ export class TimePlanningPnSettingsService {
 
   getGlobalAutoBreakCalculationSettings(): Observable<OperationDataResult<GlobalAutoBreakSettingsModel>> {
     return this.apiBaseService.get(TimePlanningSettingsMethods.GlobalAutoBreakCalculationSettings);
+  }
+
+  resetGlobalAutoBreakCalculationSettings(): Observable<OperationResult> {
+    return this.apiBaseService.delete(TimePlanningSettingsMethods.ResetGlobalAutoBreakCalculationSettings);
   }
 }

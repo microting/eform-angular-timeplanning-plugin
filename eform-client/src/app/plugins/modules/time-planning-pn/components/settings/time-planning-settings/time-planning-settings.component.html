@@ -14,7 +14,7 @@
             </mat-form-field>
           </div>
           <div class="col-12">
-            <button mat-raised-button color="primary" (click)="updateGoogleSheetSettings()">Update</button>
+            <button id="saveSettings" mat-raised-button color="primary" (click)="updateGoogleSheetSettings()">Update</button>
           </div>
         </div>
       </mat-card-content>
@@ -53,6 +53,8 @@
             >
               {{ 'Active' | translate }}
             </mat-slide-toggle>
+            <br>
+            <button id="resetGlobalAutoBreakCalculationSettings" mat-raised-button color="warn" (click)="resetGlobalAutoBreakCalculationSettings()">{{ 'Reset to default' | translate }}</button>
           </div>
           <div class="col-12">
 

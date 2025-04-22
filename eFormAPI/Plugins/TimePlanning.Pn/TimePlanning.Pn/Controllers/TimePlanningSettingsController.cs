@@ -135,5 +135,13 @@ namespace TimePlanning.Pn.Controllers
         {
             return await _settingService.GetGlobalAutoBreakSettings();
         }
+
+        [HttpDelete]
+        [Route("reset-global-auto-break-settings")]
+        [Authorize(Roles = EformRole.Admin)]
+        public async Task<OperationResult> ResetGlobalAutoBreakSettings()
+        {
+            return await _settingService.ResetGlobalAutoBreakSettings();
+        }
     }
 }

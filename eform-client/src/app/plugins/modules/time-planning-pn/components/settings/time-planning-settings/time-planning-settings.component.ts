@@ -61,4 +61,12 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  resetGlobalAutoBreakCalculationSettings() {
+    this.timePlanningPnSettingsService.resetGlobalAutoBreakCalculationSettings().subscribe((data) => {
+      if (data && data.success) {
+        this.getSettings();
+      }
+    })
+  }
 }

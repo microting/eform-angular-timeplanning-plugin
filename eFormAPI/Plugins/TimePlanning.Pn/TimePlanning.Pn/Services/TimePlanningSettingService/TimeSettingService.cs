@@ -519,6 +519,37 @@ public class TimeSettingService : ISettingService
         return Task.FromResult(new OperationDataResult<GlobalAutoBreakSettings>(true, global));
     }
 
+    public Task<OperationResult> ResetGlobalAutoBreakSettings()
+    {
+        _options.UpdateDb(settings =>
+        {
+            settings.AutoBreakCalculationActive = "0";
+            settings.MondayBreakMinutesDivider = "180";
+            settings.MondayBreakMinutesPrDivider = "30";
+            settings.MondayBreakMinutesUpperLimit = "60";
+            settings.TuesdayBreakMinutesDivider = "180";
+            settings.TuesdayBreakMinutesPrDivider = "30";
+            settings.TuesdayBreakMinutesUpperLimit = "60";
+            settings.WednesdayBreakMinutesDivider = "180";
+            settings.WednesdayBreakMinutesPrDivider = "30";
+            settings.WednesdayBreakMinutesUpperLimit = "60";
+            settings.ThursdayBreakMinutesDivider = "180";
+            settings.ThursdayBreakMinutesPrDivider = "30";
+            settings.ThursdayBreakMinutesUpperLimit = "60";
+            settings.FridayBreakMinutesDivider = "180";
+            settings.FridayBreakMinutesPrDivider = "30";
+            settings.FridayBreakMinutesUpperLimit = "60";
+            settings.SaturdayBreakMinutesDivider = "120";
+            settings.SaturdayBreakMinutesPrDivider = "30";
+            settings.SaturdayBreakMinutesUpperLimit = "60";
+            settings.SundayBreakMinutesDivider = "120";
+            settings.SundayBreakMinutesPrDivider = "30";
+            settings.SundayBreakMinutesUpperLimit = "60";
+        }, _dbContext, _userService.UserId);
+
+        return Task.FromResult(new OperationResult(true, _localizationService.GetString("GlobalAutoBreakSettingsReset")));
+    }
+
     public async Task<OperationResult> UpdateAssignedSite(Infrastructure.Models.Settings.AssignedSite site)
     {
         var siteId = site.SiteId;

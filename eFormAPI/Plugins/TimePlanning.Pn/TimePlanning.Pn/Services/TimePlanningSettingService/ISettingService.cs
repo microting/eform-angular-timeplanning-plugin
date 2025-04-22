@@ -53,5 +53,6 @@ namespace TimePlanning.Pn.Services.TimePlanningSettingService
         Task<OperationResult> UpdateAssignedSite(AssignedSite site);
         Task<OperationDataResult<AssignedSite>> GetAssignedSiteByCurrentUserName();
         Task<OperationDataResult<GlobalAutoBreakSettings>> GetGlobalAutoBreakSettings();
+        Task<OperationResult> ResetGlobalAutoBreakSettings();
     }
 }
