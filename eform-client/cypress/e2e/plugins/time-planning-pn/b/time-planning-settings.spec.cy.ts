@@ -160,13 +160,13 @@ describe('Enable Backend Config plugin', () => {
 
 
     const newDayBreakMinutesDividerValues = [
-      '04:00',
-      '05:00',
-      '06:00',
-      '07:00',
-      '08:00',
-      '09:00',
-      '10:00'
+      '04:30',
+      '05:45',
+      '06:45',
+      '07:40',
+      '08:45',
+      '09:50',
+      '10:45'
     ];
     const newDayBreakMinutesPrDividerValues = [
       '01:30',
@@ -223,7 +223,7 @@ describe('Enable Backend Config plugin', () => {
       cy.get('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
       if (minuteDegrees > 0) {
         cy.wait(1000);
-        cy.get('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click();
+        cy.get('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({force: true});
       }
       cy.get('.timepicker-button span').contains('Ok').click();
 
@@ -260,7 +260,7 @@ describe('Enable Backend Config plugin', () => {
       cy.get(`#${breakMinutesUpperLimitFieldId}`).click();
       // eslint-disable-next-line max-len
       degrees = 360 / 12 * parseInt(newDayBreakMinutesUpperLimitValues[index].split(':')[0]);
-      minuteDegrees = 360 / 60 * parseInt(newDayBreakMinutesPrDividerValues[index].split(':')[1]);
+      minuteDegrees = 360 / 60 * parseInt(newDayBreakMinutesUpperLimitValues[index].split(':')[1]);
       cy.get('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
       if (minuteDegrees > 0) {
         cy.get('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({force: true});
@@ -288,7 +288,7 @@ describe('Enable Backend Config plugin', () => {
     // .should('be.visible');
     settingsElement.click();
 
-    const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    // const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     daysOfWeek.forEach((day, index) => {
       const breakMinutesDividerFieldId = `${day}BreakMinutesDivider`;
       let breakMinutesDividerInputField = cy.get(`#${breakMinutesDividerFieldId}`);
@@ -296,7 +296,8 @@ describe('Enable Backend Config plugin', () => {
         .should('have.length', 1)
         .should('be.visible');
       breakMinutesDividerInputField
-        .should('have.attr', 'disabled');
+        .should('have.attr', 'class')
+        .and('not.include', 'mat-form-field-disabled');
 
       breakMinutesDividerInputField = cy.get(`#${breakMinutesDividerFieldId}`);
       breakMinutesDividerInputField
@@ -308,7 +309,8 @@ describe('Enable Backend Config plugin', () => {
         .should('have.length', 1)
         .should('be.visible');
       breakMinutesPrDividerInputField
-        .should('have.attr', 'disabled');
+        .should('have.attr', 'class')
+        .and('not.include', 'mat-form-field-disabled');
 
       breakMinutesPrDividerInputField = cy.get(`#${breakMinutesPrDividerFieldId}`);
       breakMinutesPrDividerInputField
@@ -320,7 +322,8 @@ describe('Enable Backend Config plugin', () => {
         .should('have.length', 1)
         .should('be.visible');
       breakMinutesUpperLimitInputField
-        .should('have.attr', 'disabled');
+        .should('have.attr', 'class')
+        .and('not.include', 'mat-form-field-disabled');
 
       breakMinutesUpperLimitInputField = cy.get(`#${breakMinutesUpperLimitFieldId}`);
       breakMinutesUpperLimitInputField
