@@ -22,7 +22,7 @@
             [format]="24"
             [(ngModel)]="plannedStartOfShift1"
             readonly
-            [max]="plannedEndOfShift1"
+            [max]="plannedEndOfShift1 === '00:00' ? '23:55' : plannedEndOfShift1"
             [value]="plannedStartOfShift1"
           >
           <ngx-material-timepicker #plannedPicker
