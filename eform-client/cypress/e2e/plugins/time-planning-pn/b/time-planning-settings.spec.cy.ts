@@ -108,12 +108,12 @@ describe('Enable Backend Config plugin', () => {
         .should('include.value', dayBreakMinutesUpperLimitValues[index]);
     });
 
-    let autoBreakCalculationToggle = cy.get('mat-slide-toggle');
+    let autoBreakCalculationToggle = cy.get('#autoBreakCalculationActiveToggle');
     autoBreakCalculationToggle
       .should('be.visible')
       .should('not.be.checked');
     autoBreakCalculationToggle.click();
-    autoBreakCalculationToggle = cy.get('mat-slide-toggle div button');
+    autoBreakCalculationToggle = cy.get('#autoBreakCalculationActiveToggle div button');
     autoBreakCalculationToggle
       .should('have.attr', 'aria-checked', 'true');
 
@@ -187,12 +187,12 @@ describe('Enable Backend Config plugin', () => {
       '08:40'
     ];
 
-    let autoBreakCalculationToggle = cy.get('mat-slide-toggle');
+    let autoBreakCalculationToggle = cy.get('#autoBreakCalculationActiveToggle');
     autoBreakCalculationToggle
       .should('be.visible')
       .should('not.be.checked');
     autoBreakCalculationToggle.click();
-    autoBreakCalculationToggle = cy.get('mat-slide-toggle div button');
+    autoBreakCalculationToggle = cy.get('#autoBreakCalculationActiveToggle div button');
     autoBreakCalculationToggle
       .should('have.attr', 'aria-checked', 'true');
 
