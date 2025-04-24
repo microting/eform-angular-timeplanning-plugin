@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using eFormCore;
 using Google.Apis.Auth.OAuth2;
@@ -300,6 +301,51 @@ public class GoogleSheetHelper
                                     StatusCaseId = 0
                                 };
 
+                                var regex = new Regex(@"(.*)-(.*)\/(.*)");
+                                var match = regex.Match(planRegistration.PlanText);
+                                if (match.Captures.Count == 0)
+                                {
+                                    regex = new Regex(@"(.*)-(.*)");
+                                    match = regex.Match(planRegistration.PlanText);
+                                }
+
+                                if (match.Captures.Count == 1)
+                                {
+                                    var firstPart = match.Groups[1].Value;
+                                    var firstPartSplit =
+                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var firstPartHours = int.Parse(firstPartSplit[0]);
+                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                    var secondPart = match.Groups[2].Value;
+                                    var secondPartSplit =
+                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var secondPartHours = int.Parse(secondPartSplit[0]);
+                                    var secondPartMinutes =
+                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                    planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
+                                    planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
+
+                                    if (match.Groups.Count == 4)
+                                    {
+                                        var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+                                        var breakPartMinutes = breakPart switch
+                                        {
+                                            "0.5" => 30,
+                                            ".5" => 30,
+                                            ".75" => 45,
+                                            "0.75" => 45,
+                                            "¾" => 45,
+                                            "½" => 30,
+                                            "1" => 60,
+                                            _ => 0
+                                        };
+
+                                        planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                                    }
+                                }
+
                                 if (preTimePlanning != null)
                                 {
                                     planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
@@ -335,6 +381,51 @@ public class GoogleSheetHelper
 
                                 planRegistration.PlanHours = parsedPlanHours;
                                 planRegistration.UpdatedByUserId = 1;
+
+                                var regex = new Regex(@"(.*)-(.*)\/(.*)");
+                                var match = regex.Match(planRegistration.PlanText);
+                                if (match.Captures.Count == 0)
+                                {
+                                    regex = new Regex(@"(.*)-(.*)");
+                                    match = regex.Match(planRegistration.PlanText);
+                                }
+
+                                if (match.Captures.Count == 1)
+                                {
+                                    var firstPart = match.Groups[1].Value;
+                                    var firstPartSplit =
+                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var firstPartHours = int.Parse(firstPartSplit[0]);
+                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                    var secondPart = match.Groups[2].Value;
+                                    var secondPartSplit =
+                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var secondPartHours = int.Parse(secondPartSplit[0]);
+                                    var secondPartMinutes =
+                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                    planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
+                                    planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
+
+                                    if (match.Groups.Count == 4)
+                                    {
+                                        var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+                                        var breakPartMinutes = breakPart switch
+                                        {
+                                            "0.5" => 30,
+                                            ".5" => 30,
+                                            ".75" => 45,
+                                            "0.75" => 45,
+                                            "¾" => 45,
+                                            "½" => 30,
+                                            "1" => 60,
+                                            _ => 0
+                                        };
+
+                                        planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                                    }
+                                }
 
                                 if (preTimePlanning != null)
                                 {
