@@ -220,8 +220,100 @@ describe('Enable Backend Config plugin', () => {
     cy.wait(1000);
     cy.get('#forwards').click();
     cy.wait(1000);
-    // cy.get('#plannedHours0').should('include.text', '0:00');
-    // cy.visit('http://localhost:4200');
-    // TimePlanningWorkingHoursPage.Navbar.advancedBtn();
+  });
+
+  it('should go to dashboard and set to use google sheet as default and check if the settings are correct', () => {
+    cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('update');
+    cy.get('mat-tree-node').contains('Dashboard').click();
+    cy.wait('@update', { timeout: 60000 });
+    cy.get('#firstColumn0').click();
+    cy.get('#useGoogleSheetAsDefault').click();
+    cy.get('#saveButton').click();
+      // cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+      cy.get('mat-tree-node').contains('Timeregistrering').click();
+      cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+      cy.get('#workingHoursSite').clear().type('c d');
+      cy.get('.ng-option.ng-option-marked').click();
+      TimePlanningWorkingHoursPage.dateFormInput().click();
+      selectDateRangeOnNewDatePicker(
+        filters[0].dateRange.yearFrom, filters[0].dateRange.monthFrom,  filters[0].dateRange.dayFrom,
+        filters[0].dateRange.yearTo, filters[0].dateRange.monthTo, filters[0].dateRange.dayTo
+      );
+      cy.get('#sumFlex0 input').should('contain.value', '97.45');
+      // cy.get('#nettoHours0 input').should('contain.value', '8.83');
+      // cy.get('#flexHours0 input').should('contain.value', '8.83');
+      for (let i = 0; i < planHours.length; i++) {
+        let id = `#planHours${i+1}`;
+        cy.get(id).find('input').clear().type(planHours[i].hours.toString());
+        let sumFlexId = `#sumFlex${i+1}`;
+        cy.get(sumFlexId).find('input').should('contain.value', planHours[i].sumFlex.toString());
+        let nettoHoursId = `#nettoHours${i+1}`;
+        cy.get(nettoHoursId).find('input').should('contain.value', planHours[i].nettoHours.toString());
+        let flexId = `#flexHours${i+1}`;
+        cy.get(flexId).find('input').should('contain.value', planHours[i].flex.toString());
+      }
+      for (let i = 0; i < planTexts.length; i++) {
+        let id = `#planText${i+1}`;
+        cy.get(id).find('input').clear().type(planTexts[i].text);
+      }
+      cy.get('#workingHoursSave').click();
+      cy.get('#sumFlex7 input').should('contain.value', '41.45');
+
+      TimePlanningWorkingHoursPage.dateFormInput().click();
+      selectDateRangeOnNewDatePicker(
+        filtersNextWeek[0].dateRange.yearFrom, filtersNextWeek[0].dateRange.monthFrom,  filtersNextWeek[0].dateRange.dayFrom,
+        filtersNextWeek[0].dateRange.yearTo, filtersNextWeek[0].dateRange.monthTo, filtersNextWeek[0].dateRange.dayTo
+      );
+
+      cy.get('#sumFlex0 input').should('contain.value', '41.45');
+      cy.get('#nettoHours0 input').should('contain.value', '0');
+      // cy.get('#flexHours0 input').should('contain.value', '-8');
+      for (let i = 0; i < planHoursNextWeek.length; i++) {
+        let id = `#planHours${i+1}`;
+        cy.get(id).find('input').clear().type(planHoursNextWeek[i].hours.toString());
+        let sumFlexId = `#sumFlex${i+1}`;
+        cy.get(sumFlexId).find('input').should('contain.value', planHoursNextWeek[i].sumFlex.toString());
+        let nettoHoursId = `#nettoHours${i+1}`;
+        cy.get(nettoHoursId).find('input').should('contain.value', planHoursNextWeek[i].nettoHours.toString());
+        let flexId = `#flexHours${i+1}`;
+        cy.get(flexId).find('input').should('contain.value', planHoursNextWeek[i].flex.toString());
+      }
+      for (let i = 0; i < planTextsNextWeek.length; i++) {
+        let id = `#planText${i+1}`;
+        cy.get(id).find('input').clear().type(planTextsNextWeek[i].text);
+      }
+      cy.get('#workingHoursSave').click();
+      cy.get('#sumFlex7 input').should('contain.value', '-14.55');
+
+      cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+      pluginPage.Navbar.goToPluginsPage();
+      const pluginName = 'Microting Time Planning Plugin';
+      // pluginPage.enablePluginByName(pluginName);
+      let row = cy.contains('.mat-mdc-row', pluginName).first();
+      row.find('.mat-column-actions button')
+        .should('contain.text', 'toggle_on'); // plugin is enabled
+      row = cy.contains('.mat-mdc-row', pluginName).first();
+      row.find('.mat-column-actions a')
+
+        .should('contain.text', 'settings'); // plugin is enabled
+      row = cy.contains('.mat-mdc-row', pluginName).first();
+      let settingsElement = row
+        .find('.mat-column-actions a')
+        // .should('be.enabled')
+        .should('be.visible');
+      settingsElement.click();
+      cy.get('#forceLoadAllPlanningsFromGoogleSheet').click();
+      cy.get('#saveSettings').click();
+      cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('update');
+      cy.get('mat-tree-node').contains('Dashboard').click();
+      cy.wait('@update', { timeout: 60000 });
+      cy.get('#backwards').click();
+      cy.get('#plannedHours0').should('include.text', '56:00');
+
+      cy.get('#forwards').click();
+      cy.wait(1000);
+      cy.get('#forwards').click();
+      cy.wait(1000);
   });
 });

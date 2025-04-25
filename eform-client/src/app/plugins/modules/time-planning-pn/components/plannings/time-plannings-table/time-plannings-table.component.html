@@ -10,7 +10,7 @@
 </mtx-grid>
 
 <ng-template #firstColumnTemplate let-row let-col="colDef" let-index="index">
-  <div class="first-column" (click)="onFirstColumnClick(row)">
+  <div class="first-column" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
     <div class="progress-container">
       <ng-container *ngIf="row['avatarUrl'] === null">
         <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
