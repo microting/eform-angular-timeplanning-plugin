@@ -9,7 +9,7 @@
 >
 </mtx-grid>
 
-<ng-template #firstColumnTemplate let-row let-col="colDef">
+<ng-template #firstColumnTemplate let-row let-col="colDef" let-index="index">
   <div class="first-column" (click)="onFirstColumnClick(row)">
     <div class="progress-container">
       <ng-container *ngIf="row['avatarUrl'] === null">
@@ -25,7 +25,7 @@
       <br>
       <div class="hours-info">
         <strong>{{ row[col.field] }}</strong>
-        <div *ngIf="row['plannedHours'] !== 0">
+        <div *ngIf="row['plannedHours'] !== 0" id="plannedHours{{index}}">
           {{ padZero(row['plannedHours']) }}:{{ padZero(row['plannedMinutes']) }}
 
           <ng-container *ngIf="row['currentWorkedHours'] !== 0">
@@ -33,7 +33,7 @@
             {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
             )
           </ng-container>
-        </div><div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0">
+        </div><div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
           <ng-container *ngIf="row['currentWorkedHours'] !== 0">
             (
             {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
@@ -45,7 +45,7 @@
   </div>
 </ng-template>
 
-<ng-template #dayColumnTemplate let-row let-col="colDef">
+<ng-template #dayColumnTemplate let-row let-col="colDef" let-index="index">
   <div class="plan-container" (click)="onDayColumnClick(row, col.field)">
     <!-- Left Content -->
     <div class="plan-content">
@@ -58,7 +58,7 @@
         </strong>
       </div>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.planHours !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}" [matTooltip]="'PlannedHours' | translate ">
+        <strong class="{{ getCellTextColor(row, col.field) }}" [matTooltip]="'PlannedHours' | translate " id="plannedHours{{index}}_{{col.field}}">
           {{ convertHoursToTime(row.planningPrDayModels[col.field]?.planHours) }}
         </strong>
       </div>

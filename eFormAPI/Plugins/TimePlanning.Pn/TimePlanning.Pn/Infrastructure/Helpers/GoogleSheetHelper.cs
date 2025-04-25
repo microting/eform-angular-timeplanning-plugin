@@ -202,258 +202,258 @@ public class GoogleSheetHelper
         });
 
         var range = $"PlanTimer";
-                var request =
-                    service.Spreadsheets.Values.Get(googleSheetId, range);
+        var request =
+            service.Spreadsheets.Values.Get(googleSheetId, range);
 
-                // Fetch the data from the sheet
-                var response = await request.ExecuteAsync();
-                var values = response.Values;
+        // Fetch the data from the sheet
+        var response = await request.ExecuteAsync();
+        var values = response.Values;
 
-                var headerRows = values?.FirstOrDefault();
-                if (values is {Count: > 0})
+        var headerRows = values?.FirstOrDefault();
+        if (values is {Count: > 0})
+        {
+            // Skip the header row (first row)
+            for (var i = 1; i < values.Count; i++)
+            {
+                var row = values[i];
+                // Process each row
+                string date = row[0].ToString();
+
+                // Process the dato as date
+
+                // Parse date and validate
+                if (!DateTime.TryParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture,
+                        DateTimeStyles.None, out var _))
                 {
-                    // Skip the header row (first row)
-                    for (var i = 1; i < values.Count; i++)
+                    continue;
+                }
+
+                var dateValue = DateTime.ParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+                Console.WriteLine($"Processing date: {dateValue}");
+
+                if (dateValue > DateTime.Now.AddDays(180))
+                {
+                    continue;
+                }
+
+                // Iterate over each pair of columns starting from the fourth column
+                for (int j = 3; j < row.Count; j += 2)
+                {
+
+                    string siteName = headerRows[j].ToString().Split(" - ").First().ToLower().Replace(" ", "").Trim();
+                    Console.WriteLine($"Processing site: {siteName}");
+                    var site = await sdkDbContext.Sites
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .FirstOrDefaultAsync(x =>
+                            x.Name.Replace(" ", "").ToLower() == siteName);
+                    if (site == null)
                     {
-                        var row = values[i];
-                        // Process each row
-                        string date = row[0].ToString();
+                        continue;
+                    }
 
-                        // Process the dato as date
+                    var planHours = row.Count > j ? row[j].ToString() : string.Empty;
+                    var planText = row.Count > j + 1 ? row[j + 1].ToString() : string.Empty;
 
-                        // Parse date and validate
-                        if (!DateTime.TryParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture,
-                                DateTimeStyles.None, out var _))
+                    if (string.IsNullOrEmpty(planHours))
+                    {
+                        planHours = "0";
+                    }
+
+                    // Replace comma with dot if needed
+                    if (planHours.Contains(','))
+                    {
+                        planHours = planHours.Replace(",", ".");
+                    }
+
+                    double parsedPlanHours = double.Parse(planHours, NumberStyles.AllowDecimalPoint,
+                        NumberFormatInfo.InvariantInfo);
+
+                    var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Date < dateValue && x.SdkSitId == (int) site.MicrotingUid!)
+                        .OrderByDescending(x => x.Date)
+                        .FirstOrDefaultAsync();
+
+                    var midnight = new DateTime(dateValue.Year, dateValue.Month, dateValue.Day, 0, 0, 0);
+
+                    var planRegistration = await dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
+                        x.Date == midnight && x.SdkSitId == site.MicrotingUid);
+
+                    if (planRegistration == null)
+                    {
+                        planRegistration = new PlanRegistration
                         {
-                            continue;
+                            Date = midnight,
+                            PlanText = planText,
+                            PlanHours = parsedPlanHours,
+                            SdkSitId = (int) site.MicrotingUid!,
+                            CreatedByUserId = 1,
+                            UpdatedByUserId = 1,
+                            NettoHours = 0,
+                            PaiedOutFlex = 0,
+                            Pause1Id = 0,
+                            Pause2Id = 0,
+                            Start1Id = 0,
+                            Start2Id = 0,
+                            Stop1Id = 0,
+                            Stop2Id = 0,
+                            Flex = 0,
+                            StatusCaseId = 0
+                        };
+
+                        var regex = new Regex(@"(.*)-(.*)\/(.*)");
+                        var match = regex.Match(planRegistration.PlanText);
+                        if (match.Captures.Count == 0)
+                        {
+                            regex = new Regex(@"(.*)-(.*)");
+                            match = regex.Match(planRegistration.PlanText);
                         }
 
-                        var dateValue = DateTime.ParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture);
-                        Console.WriteLine($"Processing date: {dateValue}");
-
-                        if (dateValue > DateTime.Now.AddDays(180))
+                        if (match.Captures.Count == 1)
                         {
-                            continue;
-                        }
+                            var firstPart = match.Groups[1].Value;
+                            var firstPartSplit =
+                                firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                            var firstPartHours = int.Parse(firstPartSplit[0]);
+                            var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                            var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                            var secondPart = match.Groups[2].Value;
+                            var secondPartSplit =
+                                secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                            var secondPartHours = int.Parse(secondPartSplit[0]);
+                            var secondPartMinutes =
+                                secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                            var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                            planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
+                            planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
 
-                        // Iterate over each pair of columns starting from the fourth column
-                        for (int j = 3; j < row.Count; j += 2)
-                        {
-
-                            string siteName = headerRows[j].ToString().Split(" - ").First().ToLower().Replace(" ", "").Trim();
-                            Console.WriteLine($"Processing site: {siteName}");
-                            var site = await sdkDbContext.Sites
-                                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                .FirstOrDefaultAsync(x =>
-                                    x.Name.Replace(" ", "").ToLower() == siteName);
-                            if (site == null)
+                            if (match.Groups.Count == 4)
                             {
-                                continue;
-                            }
-
-                            var planHours = row.Count > j ? row[j].ToString() : string.Empty;
-                            var planText = row.Count > j + 1 ? row[j + 1].ToString() : string.Empty;
-
-                            if (string.IsNullOrEmpty(planHours))
-                            {
-                                planHours = "0";
-                            }
-
-                            // Replace comma with dot if needed
-                            if (planHours.Contains(','))
-                            {
-                                planHours = planHours.Replace(",", ".");
-                            }
-
-                            double parsedPlanHours = double.Parse(planHours, NumberStyles.AllowDecimalPoint,
-                                NumberFormatInfo.InvariantInfo);
-
-                            var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
-                                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                .Where(x => x.Date < dateValue && x.SdkSitId == (int) site.MicrotingUid!)
-                                .OrderByDescending(x => x.Date)
-                                .FirstOrDefaultAsync();
-
-                            var midnight = new DateTime(dateValue.Year, dateValue.Month, dateValue.Day, 0, 0, 0);
-
-                            var planRegistration = await dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
-                                x.Date == midnight && x.SdkSitId == site.MicrotingUid);
-
-                            if (planRegistration == null)
-                            {
-                                planRegistration = new PlanRegistration
+                                var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+                                var breakPartMinutes = breakPart switch
                                 {
-                                    Date = midnight,
-                                    PlanText = planText,
-                                    PlanHours = parsedPlanHours,
-                                    SdkSitId = (int) site.MicrotingUid!,
-                                    CreatedByUserId = 1,
-                                    UpdatedByUserId = 1,
-                                    NettoHours = 0,
-                                    PaiedOutFlex = 0,
-                                    Pause1Id = 0,
-                                    Pause2Id = 0,
-                                    Start1Id = 0,
-                                    Start2Id = 0,
-                                    Stop1Id = 0,
-                                    Stop2Id = 0,
-                                    Flex = 0,
-                                    StatusCaseId = 0
+                                    "0.5" => 30,
+                                    ".5" => 30,
+                                    ".75" => 45,
+                                    "0.75" => 45,
+                                    "¾" => 45,
+                                    "½" => 30,
+                                    "1" => 60,
+                                    _ => 0
                                 };
 
-                                var regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                var match = regex.Match(planRegistration.PlanText);
-                                if (match.Captures.Count == 0)
-                                {
-                                    regex = new Regex(@"(.*)-(.*)");
-                                    match = regex.Match(planRegistration.PlanText);
-                                }
-
-                                if (match.Captures.Count == 1)
-                                {
-                                    var firstPart = match.Groups[1].Value;
-                                    var firstPartSplit =
-                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var firstPartHours = int.Parse(firstPartSplit[0]);
-                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                    var secondPart = match.Groups[2].Value;
-                                    var secondPartSplit =
-                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var secondPartHours = int.Parse(secondPartSplit[0]);
-                                    var secondPartMinutes =
-                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                    planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
-                                    planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
-
-                                    if (match.Groups.Count == 4)
-                                    {
-                                        var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                        var breakPartMinutes = breakPart switch
-                                        {
-                                            "0.5" => 30,
-                                            ".5" => 30,
-                                            ".75" => 45,
-                                            "0.75" => 45,
-                                            "¾" => 45,
-                                            "½" => 30,
-                                            "1" => 60,
-                                            _ => 0
-                                        };
-
-                                        planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
-                                    }
-                                }
-
-                                if (preTimePlanning != null)
-                                {
-                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                    planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
-                                                                  planRegistration.PaiedOutFlex;
-                                    planRegistration.Flex = -planRegistration.PlanHours;
-                                }
-                                else
-                                {
-                                    planRegistration.Flex = -planRegistration.PlanHours;
-                                    planRegistration.SumFlexEnd = planRegistration.Flex;
-                                    planRegistration.SumFlexStart = 0;
-                                }
-
-                                await planRegistration.Create(dbContext);
-                            }
-                            else
-                            {
-                                // print to console if the current PlanText is different from the one in the database
-                                if (planRegistration.PlanText != planText)
-                                {
-                                    Console.WriteLine(
-                                        $"PlanText for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanText} to {planText}");
-                                }
-
-                                planRegistration.PlanText = planText;
-                                // print to console if the current PlanHours is different from the one in the database
-                                if (planRegistration.PlanHours != parsedPlanHours)
-                                {
-                                    Console.WriteLine(
-                                        $"PlanHours for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanHours} to {parsedPlanHours}");
-                                }
-
-                                planRegistration.PlanHours = parsedPlanHours;
-                                planRegistration.UpdatedByUserId = 1;
-
-                                var regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                var match = regex.Match(planRegistration.PlanText);
-                                if (match.Captures.Count == 0)
-                                {
-                                    regex = new Regex(@"(.*)-(.*)");
-                                    match = regex.Match(planRegistration.PlanText);
-                                }
-
-                                if (match.Captures.Count == 1)
-                                {
-                                    var firstPart = match.Groups[1].Value;
-                                    var firstPartSplit =
-                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var firstPartHours = int.Parse(firstPartSplit[0]);
-                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                    var secondPart = match.Groups[2].Value;
-                                    var secondPartSplit =
-                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var secondPartHours = int.Parse(secondPartSplit[0]);
-                                    var secondPartMinutes =
-                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                    planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
-                                    planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
-
-                                    if (match.Groups.Count == 4)
-                                    {
-                                        var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                        var breakPartMinutes = breakPart switch
-                                        {
-                                            "0.5" => 30,
-                                            ".5" => 30,
-                                            ".75" => 45,
-                                            "0.75" => 45,
-                                            "¾" => 45,
-                                            "½" => 30,
-                                            "1" => 60,
-                                            _ => 0
-                                        };
-
-                                        planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
-                                    }
-                                }
-
-                                if (preTimePlanning != null)
-                                {
-                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                    planRegistration.SumFlexEnd =
-                                        preTimePlanning.SumFlexEnd + planRegistration.PlanHours -
-                                        planRegistration.NettoHours -
-                                        planRegistration.PaiedOutFlex;
-                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                                }
-                                else
-                                {
-                                    planRegistration.SumFlexEnd =
-                                        planRegistration.PlanHours - planRegistration.NettoHours -
-                                        planRegistration.PaiedOutFlex;
-                                    planRegistration.SumFlexStart = 0;
-                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                                }
-
-                                await planRegistration.Update(dbContext);
+                                planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
                             }
                         }
+
+                        if (preTimePlanning != null)
+                        {
+                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
+                                                          planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = -planRegistration.PlanHours;
+                        }
+                        else
+                        {
+                            planRegistration.Flex = -planRegistration.PlanHours;
+                            planRegistration.SumFlexEnd = planRegistration.Flex;
+                            planRegistration.SumFlexStart = 0;
+                        }
+
+                        await planRegistration.Create(dbContext);
+                    }
+                    else
+                    {
+                        // print to console if the current PlanText is different from the one in the database
+                        if (planRegistration.PlanText != planText)
+                        {
+                            Console.WriteLine(
+                                $"PlanText for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanText} to {planText}");
+                        }
+
+                        planRegistration.PlanText = planText;
+                        // print to console if the current PlanHours is different from the one in the database
+                        if (planRegistration.PlanHours != parsedPlanHours)
+                        {
+                            Console.WriteLine(
+                                $"PlanHours for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanHours} to {parsedPlanHours}");
+                        }
+
+                        planRegistration.PlanHours = parsedPlanHours;
+                        planRegistration.UpdatedByUserId = 1;
+
+                        var regex = new Regex(@"(.*)-(.*)\/(.*)");
+                        var match = regex.Match(planRegistration.PlanText);
+                        if (match.Captures.Count == 0)
+                        {
+                            regex = new Regex(@"(.*)-(.*)");
+                            match = regex.Match(planRegistration.PlanText);
+                        }
+
+                        if (match.Captures.Count == 1)
+                        {
+                            var firstPart = match.Groups[1].Value;
+                            var firstPartSplit =
+                                firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                            var firstPartHours = int.Parse(firstPartSplit[0]);
+                            var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                            var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                            var secondPart = match.Groups[2].Value;
+                            var secondPartSplit =
+                                secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                            var secondPartHours = int.Parse(secondPartSplit[0]);
+                            var secondPartMinutes =
+                                secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                            var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                            planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
+                            planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
+
+                            if (match.Groups.Count == 4)
+                            {
+                                var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+                                var breakPartMinutes = breakPart switch
+                                {
+                                    "0.5" => 30,
+                                    ".5" => 30,
+                                    ".75" => 45,
+                                    "0.75" => 45,
+                                    "¾" => 45,
+                                    "½" => 30,
+                                    "1" => 60,
+                                    _ => 0
+                                };
+
+                                planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                            }
+                        }
+
+                        if (preTimePlanning != null)
+                        {
+                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.PlanHours -
+                                planRegistration.NettoHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
+                        else
+                        {
+                            planRegistration.SumFlexEnd =
+                                planRegistration.PlanHours - planRegistration.NettoHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
+
+                        await planRegistration.Update(dbContext);
                     }
                 }
-                else
-                {
-                    Console.WriteLine("No data found.");
-                }
+            }
+        }
+        else
+        {
+            Console.WriteLine("No data found.");
+        }
     }
 
     static void AutoAdjustColumnWidths(SheetsService service, string spreadsheetId, string sheetName, ILogger logger)

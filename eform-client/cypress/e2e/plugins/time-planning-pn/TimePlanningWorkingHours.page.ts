@@ -44,6 +44,12 @@ class TimePlanningWorkingHoursPage extends PageWithNavbarPage {
     return cy.get('#workingHoursRange')
       .should('be.visible');
   }
+
+  public dateFormInput() {
+    return cy.get('mat-date-range-input').should('be.visible');
+  }
+
+
 }
 
 const timePlanningWorkingHoursPage = new TimePlanningWorkingHoursPage();
