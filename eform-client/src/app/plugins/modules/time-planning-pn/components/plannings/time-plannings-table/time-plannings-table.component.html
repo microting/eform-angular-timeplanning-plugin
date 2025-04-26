@@ -51,7 +51,7 @@
     <div class="plan-content">
       <!--<div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>-->
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}" [matTooltip]="'PlannedHours' | translate ">
+        <strong class="{{ getCellTextColor(row, col.field) }}" [matTooltip]="'PlannedHours' | translate " id="firstShift{{index}}_{{col.field}}">
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift1) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}
@@ -63,37 +63,37 @@
         </strong>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
-           *ngIf="row.planningPrDayModels[col.field]?.start1StartedAt !== null">
+           *ngIf="row.planningPrDayModels[col.field]?.start1StartedAt !== null" id="firstShiftActual{{index}}_{{col.field}}">
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.start1StartedAt, 'HH:mm', 'UTC') }} -
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop1StoppedAt, 'HH:mm', 'UTC') }}
       </div>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift2 !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}">
+        <strong class="{{ getCellTextColor(row, col.field) }}" id="secondShift{{index}}_{{col.field}}">
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift2) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift2) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift2) }}
         </strong>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
-           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift">
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="secondShiftActual{{index}}_{{col.field}}">
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }} -
         {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }}
       </div>
       <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
           <div class="{{ getCellTextColorForDay(row, col.field) }}">
-            <strong>{{ 'Flex balance to date' | translate}}: {{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>
+            <strong id="flexBalanceToDate{{index}}_{{col.field}}">{{ 'Flex balance to date' | translate}}: {{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>
           </div>
         </div>
       </ng-container>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null && row.planningPrDayModels[col.field]?.workerComment !== ''">
         <div class="{{ getCellTextColor(row, col.field) }}">
-          <strong>{{ 'CommentWorker' | translate }}:</strong> {{row.planningPrDayModels[col.field]?.workerComment}}
+          <strong id="commentWorker{{index}}_{{col.field}}">{{ 'CommentWorker' | translate }}:</strong> {{row.planningPrDayModels[col.field]?.workerComment}}
         </div>
       </div>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.commentOffice !== null && row.planningPrDayModels[col.field]?.commentOffice !== ''">
         <div class="{{ getCellTextColor(row, col.field) }}">
-          <strong>{{ 'CommentOffice' | translate}}:</strong> {{row.planningPrDayModels[col.field]?.commentOffice}}
+          <strong id="commentOffice{{index}}_{{col.field}}">{{ 'CommentOffice' | translate}}:</strong> {{row.planningPrDayModels[col.field]?.commentOffice}}
         </div>
       </div>
     </div>
