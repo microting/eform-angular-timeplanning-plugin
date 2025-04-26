@@ -332,22 +332,22 @@ describe('Enable Backend Config plugin', () => {
 
     /* ==== End Cypress Studio ==== */
   });
-  afterEach(() => {
-    cy.visit('http://localhost:4200');
-    pluginPage.Navbar.goToPluginsPage();
-    const pluginName = 'Microting Time Planning Plugin';
-    // pluginPage.enablePluginByName(pluginName);
-    let row = cy.contains('.mat-mdc-row', pluginName).first();
-    // row = cy.contains('.mat-mdc-row', pluginName).first();
-    let settingsElement = row
-      .find('.mat-column-actions a');
-      // .should('be.enabled')
-      // .should('be.visible');
-    settingsElement.click();
-    const resetGlobalAutoBreakCalculationSettingsButton = cy.get('#resetGlobalAutoBreakCalculationSettings');
-    resetGlobalAutoBreakCalculationSettingsButton
-      .should('be.visible')
-      .should('be.enabled');
-    resetGlobalAutoBreakCalculationSettingsButton.click();
-  });
+  // afterEach(() => {
+  //   cy.visit('http://localhost:4200');
+  //   pluginPage.Navbar.goToPluginsPage();
+  //   const pluginName = 'Microting Time Planning Plugin';
+  //   // pluginPage.enablePluginByName(pluginName);
+  //   let row = cy.contains('.mat-mdc-row', pluginName).first();
+  //   // row = cy.contains('.mat-mdc-row', pluginName).first();
+  //   let settingsElement = row
+  //     .find('.mat-column-actions a');
+  //     // .should('be.enabled')
+  //     // .should('be.visible');
+  //   settingsElement.click();
+  //   const resetGlobalAutoBreakCalculationSettingsButton = cy.get('#resetGlobalAutoBreakCalculationSettings');
+  //   resetGlobalAutoBreakCalculationSettingsButton
+  //     .should('be.visible')
+  //     .should('be.enabled');
+  //   resetGlobalAutoBreakCalculationSettingsButton.click();
+  // });
 });

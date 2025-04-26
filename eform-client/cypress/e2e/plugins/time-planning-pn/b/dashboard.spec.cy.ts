@@ -119,12 +119,12 @@ const planHours = [
 
 const updatePlanHours = [
   { date: lastWeekDates[0], hours: 1, sumFlex: 96.45, nettoHours: 0, flex: -1, humanFlex: '89:27'},
-  { date: lastWeekDates[1], hours: 2, sumFlex: 81.45, nettoHours: 0, flex: -2, humanFlex: '81:27'},
-  { date: lastWeekDates[2], hours: 3, sumFlex: 73.45, nettoHours: 0, flex: -3, humanFlex: '73:27'},
-  { date: lastWeekDates[3], hours: 0, sumFlex: 65.45, nettoHours: 0, flex: 0, humanFlex: '65:27'},
-  { date: lastWeekDates[4], hours: 4, sumFlex: 57.45, nettoHours: 0, flex: -4, humanFlex: '57:27'},
-  { date: lastWeekDates[5], hours: 5, sumFlex: 49.45, nettoHours: 0, flex: -5, humanFlex: '49:27'},
-  { date: lastWeekDates[6], hours: 6, sumFlex: 41.45, nettoHours: 0, flex: -6, humanFlex: '41:27'},
+  { date: lastWeekDates[1], hours: 2, sumFlex: 94.45, nettoHours: 0, flex: -2, humanFlex: '81:27'},
+  { date: lastWeekDates[2], hours: 3, sumFlex: 91.45, nettoHours: 0, flex: -3, humanFlex: '73:27'},
+  { date: lastWeekDates[3], hours: 0, sumFlex: 91.45, nettoHours: 0, flex: 0, humanFlex: '65:27'},
+  { date: lastWeekDates[4], hours: 4, sumFlex: 87.45, nettoHours: 0, flex: -4, humanFlex: '57:27'},
+  { date: lastWeekDates[5], hours: 5, sumFlex: 82.45, nettoHours: 0, flex: -5, humanFlex: '49:27'},
+  { date: lastWeekDates[6], hours: 6, sumFlex: 76.45, nettoHours: 0, flex: -6, humanFlex: '41:27'},
 ]
 
 const planHoursNextWeek = [
@@ -138,13 +138,13 @@ const planHoursNextWeek = [
 ];
 
 const updatePlanHoursNextWeek = [
-  { date: nextWeekDates[0], hours: 8, sumFlex: 33.45, nettoHours: 0, flex: -8, humanFlex: '33:27'},
-  { date: nextWeekDates[1], hours: 8, sumFlex: 25.45, nettoHours: 0, flex: -8, humanFlex: '25:27'},
-  { date: nextWeekDates[2], hours: 0, sumFlex: 17.45, nettoHours: 0, flex: -8, humanFlex: '17:27'},
-  { date: nextWeekDates[3], hours: 0, sumFlex: 9.45, nettoHours: 0, flex: -8, humanFlex: '9:27'},
-  { date: nextWeekDates[4], hours: 0, sumFlex: 1.45, nettoHours: 0, flex: -8, humanFlex: '1:27'},
-  { date: nextWeekDates[5], hours: 8, sumFlex: -6.55, nettoHours: 0, flex: -8, humanFlex: '-6:33'},
-  { date: nextWeekDates[6], hours: 8, sumFlex: -14.55, nettoHours: 0, flex: -8, humanFlex: '-14:33'},
+  { date: nextWeekDates[0], hours: 8, sumFlex: 68.45, nettoHours: 0, flex: -8, humanFlex: '33:27'},
+  { date: nextWeekDates[1], hours: 8, sumFlex: 60.45, nettoHours: 0, flex: -8, humanFlex: '25:27'},
+  { date: nextWeekDates[2], hours: 0, sumFlex: 60.45, nettoHours: 0, flex: 0, humanFlex: '17:27'},
+  { date: nextWeekDates[3], hours: 0, sumFlex: 60.45, nettoHours: 0, flex: 0, humanFlex: '9:27'},
+  { date: nextWeekDates[4], hours: 0, sumFlex: 60.45, nettoHours: 0, flex: 0, humanFlex: '1:27'},
+  { date: nextWeekDates[5], hours: 8, sumFlex: 52.45, nettoHours: 0, flex: -8, humanFlex: '-6:33'},
+  { date: nextWeekDates[6], hours: 8, sumFlex: 44.45, nettoHours: 0, flex: -8, humanFlex: '-14:33'},
 ]
 
 const planHoursFutureWeek = [
@@ -158,73 +158,73 @@ const planHoursFutureWeek = [
 ];
 
 const updatePlanHoursFutureWeek = [
-  { date: futureWeekDates[0], hours: 2, sumFlex: -22.55, nettoHours: 0, flex: -8, humanFlex: '-22:33'},
-  { date: futureWeekDates[1], hours: 4, sumFlex: -30.55, nettoHours: 0, flex: -8, humanFlex: '-30:33'},
-  { date: futureWeekDates[2], hours: 0, sumFlex: -46.55, nettoHours: 0, flex: -16, humanFlex: '-46:33'},
-  { date: futureWeekDates[3], hours: 10, sumFlex: -54.55, nettoHours: 0, flex: -8, humanFlex: '-54:33'},
-  { date: futureWeekDates[4], hours: 12, sumFlex: -62.55, nettoHours: 0, flex: -8, humanFlex: '-64:33'},
-  { date: futureWeekDates[5], hours: 3, sumFlex: -70.55, nettoHours: 0, flex: -8, humanFlex: '-70:33'},
-  { date: futureWeekDates[6], hours: 8, sumFlex: -78.55, nettoHours: 0, flex: -8, humanFlex:'-78.33'},
+  { date: futureWeekDates[0], hours: 2, sumFlex: 42.45, nettoHours: 0, flex: -2, humanFlex: '-22:33'},
+  { date: futureWeekDates[1], hours: 4, sumFlex: 38.45, nettoHours: 0, flex: -4, humanFlex: '-30:33'},
+  { date: futureWeekDates[2], hours: 0, sumFlex: 38.45, nettoHours: 0, flex: 0, humanFlex: '-46:33'},
+  { date: futureWeekDates[3], hours: 10, sumFlex: 28.45, nettoHours: 0, flex: -10, humanFlex: '-54:33'},
+  { date: futureWeekDates[4], hours: 12, sumFlex: 16.45, nettoHours: 0, flex: -12, humanFlex: '-64:33'},
+  { date: futureWeekDates[5], hours: 3, sumFlex: 13.45, nettoHours: 0, flex: -3, humanFlex: '-70:33'},
+  { date: futureWeekDates[6], hours: 8, sumFlex: 5.45, nettoHours: 0, flex: -8, humanFlex:'-78.33'},
 ]
 
 const planTexts = [
-  { date: lastWeekDates[0], text: '07:30-15:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 89:27' },
-  { date: lastWeekDates[1], text: '7:45-16:00/1', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 81:27' },
-  { date: lastWeekDates[2], text: '7:15-16:00/1;17-20/0,5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 73:27' },
-  { date: lastWeekDates[3], text: '6-12/½;18:00-20:00/0.5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 65:27' },
-  { date: lastWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 57:27' },
-  { date: lastWeekDates[5], text: '6-12/¾;18-20/¾', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 49:27' },
-  { date: lastWeekDates[6], text: '6-14/½', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 41:27' },
+  { date: lastWeekDates[0], text: '07:30-15:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 89:27', calculatedHours: '8:00' },
+  { date: lastWeekDates[1], text: '7:45-16:00/1', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 81:27', calculatedHours: '8:15' },
+  { date: lastWeekDates[2], text: '7:15-16:00/1;17-20/0,5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 73:27', calculatedHours: '9:45' },
+  { date: lastWeekDates[3], text: '6-12/½;18:00-20:00/0.5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 65:27', calculatedHours: '7:0' },
+  { date: lastWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 57:27', calculatedHours: '7:0' },
+  { date: lastWeekDates[5], text: '6-12/¾;18-20/¾', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 49:27', calculatedHours: '7:0' },
+  { date: lastWeekDates[6], text: '6-14/½', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 41:27', calculatedHours: '7:30' },
 ];
 
 const updatePlanTexts = [
-  { date: lastWeekDates[0], text: '07:30-15:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 89:27' },
-  { date: lastWeekDates[1], text: '7:45-16:00/1', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 81:27' },
-  { date: lastWeekDates[2], text: '7:15-16:00/1;17-20/0,5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 73:27' },
-  { date: lastWeekDates[3], text: '6-12/½;18:00-20:00/0.5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 65:27' },
-  { date: lastWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 57:27' },
-  { date: lastWeekDates[5], text: '6-12/¾;18-20/¾', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 49:27' },
-  { date: lastWeekDates[6], text: '6-14/½', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 41:27' },
+  { date: lastWeekDates[0], text: '07:30-15:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 89:27', calculatedHours: '8:00' },
+  { date: lastWeekDates[1], text: '7:45-16:00/1', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 81:27', calculatedHours: '8:15' },
+  { date: lastWeekDates[2], text: '7:15-16:00/1;17-20/0,5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 73:27', calculatedHours: '9:45' },
+  { date: lastWeekDates[3], text: '6-12/½;18:00-20:00/0.5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 65:27', calculatedHours: '7:0' },
+  { date: lastWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 57:27', calculatedHours: '7:0' },
+  { date: lastWeekDates[5], text: '6-12/¾;18-20/¾', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 49:27', calculatedHours: '7:0' },
+  { date: lastWeekDates[6], text: '6-14/½', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 41:27', calculatedHours: '7:30' },
 ];
 
 const planTextsNextWeek = [
-  { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00' },
-  { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:45 - 16:00 / 01:00' },
-  { date: nextWeekDates[2], text: '7:15-16:00/1;17-20/0,5', firstShift: '07:15 - 16:00 / 01:00', secondShift: '17:00 - 20:00 / 00:30' },
-  { date: nextWeekDates[3], text: '6-12/½;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:30', secondShift: '18:00 - 20:00 / 00:30' },
-  { date: nextWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:30' },
-  { date: nextWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:45' },
-  { date: lastWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30' },
+  { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 33:27', calculatedHours: '8:00' },
+  { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:45 - 16:00 / 01:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 25:27', calculatedHours: '8:15' },
+  { date: nextWeekDates[2], text: '7:15-16:00/1;17-20/0,5', firstShift: '07:15 - 16:00 / 01:00', secondShift: '17:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 17:27', calculatedHours: '9:45' },
+  { date: nextWeekDates[3], text: '6-12/½;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:30', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 9:27', calculatedHours: '7:0' },
+  { date: nextWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 1:27', calculatedHours: '7:0' },
+  { date: nextWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:45', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -6:33', calculatedHours: '7:0' },
+  { date: lastWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -14:33', calculatedHours: '7:30' },
 ];
 
 const updatePlanTextsNextWeek = [
-  { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00' },
-  { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:45 - 16:00 / 01:00' },
-  { date: nextWeekDates[2], text: '7:15-16:00/1;17-20/0,5', firstShift: '07:15 - 16:00 / 01:00', secondShift: '17:00 - 20:00 / 00:30' },
-  { date: nextWeekDates[3], text: '6-12/½;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:30', secondShift: '18:00 - 20:00 / 00:30' },
-  { date: nextWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:30' },
-  { date: nextWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:45' },
-  { date: lastWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30' },
+  { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 33:27', calculatedHours: '8:00' },
+  { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:45 - 16:00 / 01:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 25:27', calculatedHours: '8:15' },
+  { date: nextWeekDates[2], text: '7:15-16:00/1;17-20/0,5', firstShift: '07:15 - 16:00 / 01:00', secondShift: '17:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 17:27', calculatedHours: '9:45' },
+  { date: nextWeekDates[3], text: '6-12/½;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:30', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 9:27', calculatedHours: '7:0' },
+  { date: nextWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 1:27', calculatedHours: '7:0' },
+  { date: nextWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:45', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -6:33', calculatedHours: '7:0' },
+  { date: lastWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -14:33', calculatedHours: '7:30' },
 ];
 
 const planTextsFutureWeek = [
-  { date: futureWeekDates[0], text: '07:30-15:30;foobar', firstShift: '07:30 - 15:30 / 00:00' },
-  { date: futureWeekDates[1], text: '7:45-16/0.75', firstShift: '07:45 - 16:00 / 00:45' },
-  { date: futureWeekDates[2], text: 'foo bar', plannedHours: '16:00' },
-  { date: futureWeekDates[3], text: '6-12;18:00-20:00', firstShift: '06:00 - 12:00 / 00:00', secondShift: '18:00 - 20:00 / 00:00' },
-  { date: futureWeekDates[4], text: ' ', plannedHours: '8:00'},
-  { date: futureWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:45' },
-  { date: futureWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30' },
+  { date: futureWeekDates[0], text: '07:30-15:30;foobar', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -22:33', calculatedHours: '8:00' },
+  { date: futureWeekDates[1], text: '7:45-16/0.75', firstShift: '07:45 - 16:00 / 00:45', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -30:33', calculatedHours: '8:15' },
+  { date: futureWeekDates[2], text: 'foo bar', plannedHours: '16:00', flexBalanceToDate: 'Flex saldo til dato: -46:33', calculatedHours: '16:00' },
+  { date: futureWeekDates[3], text: '6-12;18:00-20:00', firstShift: '06:00 - 12:00 / 00:00', secondShift: '18:00 - 20:00 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -54:33', calculatedHours: '8:00' },
+  { date: futureWeekDates[4], text: ' ', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -62:33', calculatedHours: '8:00'},
+  { date: futureWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:45', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -70:33', calculatedHours: '8:00' },
+  { date: futureWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -78:33', calculatedHours: '8:00' },
 ];
 
 const updatePlanTextsFutureWeek = [
-  { date: futureWeekDates[0], text: '07:30-15:30;foobar', firstShift: '07:30 - 15:30 / 00:00' },
-  { date: futureWeekDates[1], text: '7:45-16/0.75', firstShift: '07:45 - 16:00 / 00:45' },
-  { date: futureWeekDates[2], text: 'foo bar', plannedHours: '16:00' },
-  { date: futureWeekDates[3], text: '6-12;18:00-20:00', firstShift: '06:00 - 12:00 / 00:00', secondShift: '18:00 - 20:00 / 00:00' },
-  { date: futureWeekDates[4], text: ' ', plannedHours: '8:00'},
-  { date: futureWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:45' },
-  { date: futureWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30' },
+  { date: futureWeekDates[0], text: '07:30-15:30;foobar', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -22:33', calculatedHours: '8:00' },
+  { date: futureWeekDates[1], text: '7:45-16/0.75', firstShift: '07:45 - 16:00 / 00:45', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -30:33', calculatedHours: '8:15' },
+  { date: futureWeekDates[2], text: 'foo bar', plannedHours: '16:00', flexBalanceToDate: 'Flex saldo til dato: -46:33', calculatedHours: '16:00' },
+  { date: futureWeekDates[3], text: '6-12;18:00-20:00', firstShift: '06:00 - 12:00 / 00:00', secondShift: '18:00 - 20:00 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -54:33', calculatedHours: '8:00' },
+  { date: futureWeekDates[4], text: ' ', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -62:33', calculatedHours: '8:00'},
+  { date: futureWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:45', secondShift: '18:00 - 20:00 / 00:45', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -70:33', calculatedHours: '8:00' },
+  { date: futureWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: -78:33', calculatedHours: '8:00' },
 ];
 
 
@@ -236,8 +236,8 @@ describe('Enable Backend Config plugin', () => {
 
   it('should go to dashboard', () => {
     // we have more than one mat-nested-tree-node so we beed to select the own with the text "Timeregistrering"
-    cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
-    cy.get('mat-tree-node').contains('Timeregistrering').click();
+    cy.get('mat-nested-tree-node').contains('Time Planning').click();
+    cy.get('mat-tree-node').contains('Working hours').click();
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
     cy.get('#workingHoursSite').clear().type('c d');
     cy.get('.ng-option.ng-option-marked').click();
@@ -323,15 +323,15 @@ describe('Enable Backend Config plugin', () => {
   });
 
   it('should go to dashboard and set to use google sheet as default and check if the settings are correct', () => {
-    cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+    cy.get('mat-nested-tree-node').contains('Time Planning').click();
     cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('update');
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.wait('@update', { timeout: 60000 });
     cy.get('#firstColumn0').click();
     cy.get('#useGoogleSheetAsDefault').click();
     cy.get('#saveButton').click();
-      // cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
-      cy.get('mat-tree-node').contains('Timeregistrering').click();
+      // cy.get('mat-nested-tree-node').contains('Time Planning').click();
+      cy.get('mat-tree-node').contains('Working hours').click();
       cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
       cy.get('#workingHoursSite').clear().type('c d');
       cy.get('.ng-option.ng-option-marked').click();
@@ -479,9 +479,9 @@ describe('Enable Backend Config plugin', () => {
     }
   });
 
-
   it('should go to dashboard and after updating planText to new values and they should change in dashboard', () => {
-    cy.get('mat-tree-node').contains('Timeregistrering').click();
+    cy.get('mat-nested-tree-node').contains('Time Planning').click();
+    cy.get('mat-tree-node').contains('Working hours').click();
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
     cy.get('#workingHoursSite').clear().type('c d');
     cy.get('.ng-option.ng-option-marked').click();
@@ -508,7 +508,7 @@ describe('Enable Backend Config plugin', () => {
       cy.get(id).find('input').clear().type(updatePlanTexts[i].text);
     }
     cy.get('#workingHoursSave').click();
-    cy.get('#sumFlex7 input').should('contain.value', '41.45');
+    cy.get('#sumFlex7 input').should('contain.value', '76.45');
 
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
@@ -516,7 +516,7 @@ describe('Enable Backend Config plugin', () => {
       filtersNextWeek[0].dateRange.yearTo, filtersNextWeek[0].dateRange.monthTo, filtersNextWeek[0].dateRange.dayTo
     );
 
-    cy.get('#sumFlex0 input').should('contain.value', '41.45');
+    cy.get('#sumFlex0 input').should('contain.value', '76.45');
     cy.get('#nettoHours0 input').should('contain.value', '0');
     // cy.get('#flexHours0 input').should('contain.value', '-8');
     for (let i = 0; i < updatePlanHoursNextWeek.length; i++) {
@@ -534,7 +534,7 @@ describe('Enable Backend Config plugin', () => {
       cy.get(id).find('input').clear().type(updatePlanTextsNextWeek[i].text);
     }
     cy.get('#workingHoursSave').click();
-    cy.get('#sumFlex7 input').should('contain.value', '-14.55');
+    cy.get('#sumFlex7 input').should('contain.value', '44.45');
 
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
@@ -560,7 +560,7 @@ describe('Enable Backend Config plugin', () => {
       cy.get(id).find('input').clear().type(updatePlanTextsFutureWeek[i].text);
     }
     cy.get('#workingHoursSave').click();
-    cy.get('#sumFlex7 input').should('contain.value', '-78.55');
+    cy.get('#sumFlex7 input').should('contain.value', '5.45');
 
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
   });
