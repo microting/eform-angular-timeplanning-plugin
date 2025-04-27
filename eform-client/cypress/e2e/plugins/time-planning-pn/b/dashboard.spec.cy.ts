@@ -241,11 +241,13 @@ describe('Enable Backend Config plugin', () => {
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
     cy.get('#workingHoursSite').clear().type('c d');
     cy.get('.ng-option.ng-option-marked').click();
+    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
       filters[0].dateRange.yearFrom, filters[0].dateRange.monthFrom,  filters[0].dateRange.dayFrom,
       filters[0].dateRange.yearTo, filters[0].dateRange.monthTo, filters[0].dateRange.dayTo
     );
+    cy.wait('@update');
     cy.get('#sumFlex0 input').should('contain.value', '97.45');
     // cy.get('#nettoHours0 input').should('contain.value', '8.83');
     // cy.get('#flexHours0 input').should('contain.value', '8.83');
@@ -263,15 +265,19 @@ describe('Enable Backend Config plugin', () => {
       let id = `#planText${i+1}`;
       cy.get(id).find('input').clear().type(planTexts[i].text);
     }
+
+    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
+    cy.wait('@save');
     cy.get('#sumFlex7 input').should('contain.value', '41.45');
 
+    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
       filtersNextWeek[0].dateRange.yearFrom, filtersNextWeek[0].dateRange.monthFrom,  filtersNextWeek[0].dateRange.dayFrom,
       filtersNextWeek[0].dateRange.yearTo, filtersNextWeek[0].dateRange.monthTo, filtersNextWeek[0].dateRange.dayTo
     );
-
+    cy.wait('@update');
     cy.get('#sumFlex0 input').should('contain.value', '41.45');
     cy.get('#nettoHours0 input').should('contain.value', '0');
     // cy.get('#flexHours0 input').should('contain.value', '-8');
@@ -289,7 +295,10 @@ describe('Enable Backend Config plugin', () => {
       let id = `#planText${i+1}`;
       cy.get(id).find('input').clear().type(planTextsNextWeek[i].text);
     }
+
+    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
+    cy.wait('@save');
     cy.get('#sumFlex7 input').should('contain.value', '-14.55');
 
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
@@ -330,67 +339,78 @@ describe('Enable Backend Config plugin', () => {
     cy.get('#firstColumn0').click();
     cy.get('#useGoogleSheetAsDefault').click();
     cy.get('#saveButton').click();
-      // cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
-      cy.get('mat-tree-node').contains('Timeregistrering').click();
-      cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
-      cy.get('#workingHoursSite').clear().type('c d');
-      cy.get('.ng-option.ng-option-marked').click();
-      TimePlanningWorkingHoursPage.dateFormInput().click();
-      selectDateRangeOnNewDatePicker(
-        filters[0].dateRange.yearFrom, filters[0].dateRange.monthFrom,  filters[0].dateRange.dayFrom,
-        filters[0].dateRange.yearTo, filters[0].dateRange.monthTo, filters[0].dateRange.dayTo
-      );
-      cy.get('#sumFlex0 input').should('contain.value', '97.45');
-      // cy.get('#nettoHours0 input').should('contain.value', '8.83');
-      // cy.get('#flexHours0 input').should('contain.value', '8.83');
-      for (let i = 0; i < planHours.length; i++) {
-        let id = `#planHours${i+1}`;
-        cy.get(id).find('input').clear().type(planHours[i].hours.toString());
-        let sumFlexId = `#sumFlex${i+1}`;
-        cy.get(sumFlexId).find('input').should('contain.value', planHours[i].sumFlex.toString());
-        let nettoHoursId = `#nettoHours${i+1}`;
-        cy.get(nettoHoursId).find('input').should('contain.value', planHours[i].nettoHours.toString());
-        let flexId = `#flexHours${i+1}`;
-        cy.get(flexId).find('input').should('contain.value', planHours[i].flex.toString());
-      }
-      for (let i = 0; i < planTexts.length; i++) {
-        let id = `#planText${i+1}`;
-        cy.get(id).find('input').clear().type(planTexts[i].text);
-      }
-      cy.get('#workingHoursSave').click();
-      cy.get('#sumFlex7 input').should('contain.value', '41.45');
+    // cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+    cy.get('mat-tree-node').contains('Timeregistrering').click();
+    cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+    cy.get('#workingHoursSite').clear().type('c d');
+    cy.get('.ng-option.ng-option-marked').click();
 
-      TimePlanningWorkingHoursPage.dateFormInput().click();
-      selectDateRangeOnNewDatePicker(
-        filtersNextWeek[0].dateRange.yearFrom, filtersNextWeek[0].dateRange.monthFrom,  filtersNextWeek[0].dateRange.dayFrom,
-        filtersNextWeek[0].dateRange.yearTo, filtersNextWeek[0].dateRange.monthTo, filtersNextWeek[0].dateRange.dayTo
-      );
+    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
+    TimePlanningWorkingHoursPage.dateFormInput().click();
+    selectDateRangeOnNewDatePicker(
+      filters[0].dateRange.yearFrom, filters[0].dateRange.monthFrom,  filters[0].dateRange.dayFrom,
+      filters[0].dateRange.yearTo, filters[0].dateRange.monthTo, filters[0].dateRange.dayTo
+    );
+    cy.wait('@update');
+    cy.get('#sumFlex0 input').should('contain.value', '97.45');
+    // cy.get('#nettoHours0 input').should('contain.value', '8.83');
+    // cy.get('#flexHours0 input').should('contain.value', '8.83');
+    for (let i = 0; i < planHours.length; i++) {
+      let id = `#planHours${i+1}`;
+      cy.get(id).find('input').clear().type(planHours[i].hours.toString());
+      let sumFlexId = `#sumFlex${i+1}`;
+      cy.get(sumFlexId).find('input').should('contain.value', planHours[i].sumFlex.toString());
+      let nettoHoursId = `#nettoHours${i+1}`;
+      cy.get(nettoHoursId).find('input').should('contain.value', planHours[i].nettoHours.toString());
+      let flexId = `#flexHours${i+1}`;
+      cy.get(flexId).find('input').should('contain.value', planHours[i].flex.toString());
+    }
+    for (let i = 0; i < planTexts.length; i++) {
+      let id = `#planText${i+1}`;
+      cy.get(id).find('input').clear().type(planTexts[i].text);
+    }
+    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
+    cy.get('#workingHoursSave').click();
+    cy.wait('@save');
+    cy.get('#sumFlex7 input').should('contain.value', '41.45');
 
-      cy.get('#sumFlex0 input').should('contain.value', '41.45');
-      cy.get('#nettoHours0 input').should('contain.value', '0');
-      // cy.get('#flexHours0 input').should('contain.value', '-8');
-      for (let i = 0; i < planHoursNextWeek.length; i++) {
-        let id = `#planHours${i+1}`;
-        cy.get(id).find('input').clear().type(planHoursNextWeek[i].hours.toString());
-        let sumFlexId = `#sumFlex${i+1}`;
-        cy.get(sumFlexId).find('input').should('contain.value', planHoursNextWeek[i].sumFlex.toString());
-        let nettoHoursId = `#nettoHours${i+1}`;
-        cy.get(nettoHoursId).find('input').should('contain.value', planHoursNextWeek[i].nettoHours.toString());
-        let flexId = `#flexHours${i+1}`;
-        cy.get(flexId).find('input').should('contain.value', planHoursNextWeek[i].flex.toString());
-      }
-      for (let i = 0; i < planTextsNextWeek.length; i++) {
-        let id = `#planText${i+1}`;
-        cy.get(id).find('input').clear().type(planTextsNextWeek[i].text);
-      }
-      cy.get('#workingHoursSave').click();
-      cy.get('#sumFlex7 input').should('contain.value', '-14.55');
+    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
+    TimePlanningWorkingHoursPage.dateFormInput().click();
+    selectDateRangeOnNewDatePicker(
+      filtersNextWeek[0].dateRange.yearFrom, filtersNextWeek[0].dateRange.monthFrom,  filtersNextWeek[0].dateRange.dayFrom,
+      filtersNextWeek[0].dateRange.yearTo, filtersNextWeek[0].dateRange.monthTo, filtersNextWeek[0].dateRange.dayTo
+    );
+    cy.wait('@update');
 
+    cy.get('#sumFlex0 input').should('contain.value', '41.45');
+    cy.get('#nettoHours0 input').should('contain.value', '0');
+    // cy.get('#flexHours0 input').should('contain.value', '-8');
+    for (let i = 0; i < planHoursNextWeek.length; i++) {
+      let id = `#planHours${i+1}`;
+      cy.get(id).find('input').clear().type(planHoursNextWeek[i].hours.toString());
+      let sumFlexId = `#sumFlex${i+1}`;
+      cy.get(sumFlexId).find('input').should('contain.value', planHoursNextWeek[i].sumFlex.toString());
+      let nettoHoursId = `#nettoHours${i+1}`;
+      cy.get(nettoHoursId).find('input').should('contain.value', planHoursNextWeek[i].nettoHours.toString());
+      let flexId = `#flexHours${i+1}`;
+      cy.get(flexId).find('input').should('contain.value', planHoursNextWeek[i].flex.toString());
+    }
+    for (let i = 0; i < planTextsNextWeek.length; i++) {
+      let id = `#planText${i+1}`;
+      cy.get(id).find('input').clear().type(planTextsNextWeek[i].text);
+    }
+    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
+    cy.get('#workingHoursSave').click();
+    cy.wait('@save');
+    cy.get('#sumFlex7 input').should('contain.value', '-14.55');
+
+    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
       filtersFutureWeek[0].dateRange.yearFrom, filtersFutureWeek[0].dateRange.monthFrom,  filtersFutureWeek[0].dateRange.dayFrom,
       filtersFutureWeek[0].dateRange.yearTo, filtersFutureWeek[0].dateRange.monthTo, filtersFutureWeek[0].dateRange.dayTo
     );
+    cy.wait('@update');
 
     // cy.get('#sumFlex0 input').should('contain.value', '41.45');
     cy.get('#nettoHours0 input').should('contain.value', '0');
@@ -409,7 +429,10 @@ describe('Enable Backend Config plugin', () => {
       let id = `#planText${i+1}`;
       cy.get(id).find('input').clear().type(planTextsFutureWeek[i].text);
     }
+
+    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
+    cy.wait('@save');
     cy.get('#sumFlex7 input').should('contain.value', '-78.55');
 
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
@@ -485,11 +508,13 @@ describe('Enable Backend Config plugin', () => {
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
     cy.get('#workingHoursSite').clear().type('c d');
     cy.get('.ng-option.ng-option-marked').click();
+    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
       filters[0].dateRange.yearFrom, filters[0].dateRange.monthFrom,  filters[0].dateRange.dayFrom,
       filters[0].dateRange.yearTo, filters[0].dateRange.monthTo, filters[0].dateRange.dayTo
     );
+    cy.wait('@update');
     cy.get('#sumFlex0 input').should('contain.value', '97.45');
     // cy.get('#nettoHours0 input').should('contain.value', '8.83');
     // cy.get('#flexHours0 input').should('contain.value', '8.83');
@@ -507,14 +532,18 @@ describe('Enable Backend Config plugin', () => {
       let id = `#planText${i+1}`;
       cy.get(id).find('input').clear().type(updatePlanTexts[i].text);
     }
+    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
+    cy.wait('@save');
     cy.get('#sumFlex7 input').should('contain.value', '76.45');
 
+    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
       filtersNextWeek[0].dateRange.yearFrom, filtersNextWeek[0].dateRange.monthFrom,  filtersNextWeek[0].dateRange.dayFrom,
       filtersNextWeek[0].dateRange.yearTo, filtersNextWeek[0].dateRange.monthTo, filtersNextWeek[0].dateRange.dayTo
     );
+    cy.wait('@update');
 
     cy.get('#sumFlex0 input').should('contain.value', '76.45');
     cy.get('#nettoHours0 input').should('contain.value', '0');
@@ -533,14 +562,19 @@ describe('Enable Backend Config plugin', () => {
       let id = `#planText${i+1}`;
       cy.get(id).find('input').clear().type(updatePlanTextsNextWeek[i].text);
     }
+
+    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
+    cy.wait('@save');
     cy.get('#sumFlex7 input').should('contain.value', '44.45');
 
+    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
       filtersFutureWeek[0].dateRange.yearFrom, filtersFutureWeek[0].dateRange.monthFrom,  filtersFutureWeek[0].dateRange.dayFrom,
       filtersFutureWeek[0].dateRange.yearTo, filtersFutureWeek[0].dateRange.monthTo, filtersFutureWeek[0].dateRange.dayTo
     );
+    cy.wait('@update');
 
     // cy.get('#sumFlex0 input').should('contain.value', '41.45');
     cy.get('#nettoHours0 input').should('contain.value', '0');
@@ -559,61 +593,64 @@ describe('Enable Backend Config plugin', () => {
       let id = `#planText${i+1}`;
       cy.get(id).find('input').clear().type(updatePlanTextsFutureWeek[i].text);
     }
+
+    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
+    cy.wait('@save');
     cy.get('#sumFlex7 input').should('contain.value', '5.45');
 
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
 
-      cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('update');
-      cy.get('mat-tree-node').contains('Dashboard').click();
-      cy.wait('@update', { timeout: 60000 });
-      cy.get('#backwards').click();
-      cy.get('#plannedHours0').should('include.text', '21:00');
-      for (let i = 0; i < updatePlanTexts.length; i++) {
-        let plannedHoursId = `#plannedHours0_${i}`;
-        if (updatePlanTexts[i].plannedHours !== '') {
-          cy.get(plannedHoursId).should('include.text', updatePlanTexts[i].plannedHours);
-        }
-        // cy.get(id).find('input').should('contain.value', planHoursNextWeek[i].hours.toString());
-        let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
-        if (updatePlanTexts[i].flexBalanceToDate !== '') {
-          cy.get(flexBalanceToDateId).should('include.text', updatePlanTexts[i].flexBalanceToDate);
-        }
-        // cy.get(sumFlexId).find('input').should('contain.value', planHoursNextWeek[i].sumFlex.toString());
-        // let nettoHoursId = `#nettoHours${i+1}`;
-        // cy.get(nettoHoursId).find('input').should('contain.value', planHoursNextWeek[i].nettoHours.toString());
-        // let flexId = `#flexHours${i+1}`;
-        // cy.get(flexId).find('input').should('contain.value', planHoursNextWeek[i].flex.toString());
+    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('update');
+    cy.get('mat-tree-node').contains('Dashboard').click();
+    cy.wait('@update', { timeout: 60000 });
+    cy.get('#backwards').click();
+    cy.get('#plannedHours0').should('include.text', '21:00');
+    for (let i = 0; i < updatePlanTexts.length; i++) {
+      let plannedHoursId = `#plannedHours0_${i}`;
+      if (updatePlanTexts[i].plannedHours !== '') {
+        cy.get(plannedHoursId).should('include.text', updatePlanTexts[i].plannedHours);
       }
+      // cy.get(id).find('input').should('contain.value', planHoursNextWeek[i].hours.toString());
+      let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
+      if (updatePlanTexts[i].flexBalanceToDate !== '') {
+        cy.get(flexBalanceToDateId).should('include.text', updatePlanTexts[i].flexBalanceToDate);
+      }
+      // cy.get(sumFlexId).find('input').should('contain.value', planHoursNextWeek[i].sumFlex.toString());
+      // let nettoHoursId = `#nettoHours${i+1}`;
+      // cy.get(nettoHoursId).find('input').should('contain.value', planHoursNextWeek[i].nettoHours.toString());
+      // let flexId = `#flexHours${i+1}`;
+      // cy.get(flexId).find('input').should('contain.value', planHoursNextWeek[i].flex.toString());
+    }
 
-      cy.get('#forwards').click();
-      cy.wait(1000);
-      cy.get('#forwards').click();
-      cy.wait(1000);
-      for (let i = 0; i < updatePlanTextsNextWeek.length; i++) {
+    cy.get('#forwards').click();
+    cy.wait(1000);
+    cy.get('#forwards').click();
+    cy.wait(1000);
+    for (let i = 0; i < updatePlanTextsNextWeek.length; i++) {
+      let firstShiftId = `#firstShift0_${i}`;
+      cy.get(firstShiftId).should('include.text', updatePlanTextsNextWeek[i].firstShift);
+      if (planTextsNextWeek[i].secondShift) {
+        let secondShiftId = `#secondShift0_${i}`;
+        cy.get(secondShiftId).should('include.text', updatePlanTextsNextWeek[i].secondShift);
+      }
+    }
+    cy.get('#forwards').click();
+    cy.wait(1000);
+    for (let i = 0; i < updatePlanTextsFutureWeek.length; i++) {
+      if (planTextsFutureWeek[i].firstShift) {
         let firstShiftId = `#firstShift0_${i}`;
-        cy.get(firstShiftId).should('include.text', updatePlanTextsNextWeek[i].firstShift);
-        if (planTextsNextWeek[i].secondShift) {
-          let secondShiftId = `#secondShift0_${i}`;
-          cy.get(secondShiftId).should('include.text', updatePlanTextsNextWeek[i].secondShift);
+        cy.get(firstShiftId).should('include.text', updatePlanTextsFutureWeek[i].firstShift);
+      } else {
+        if (updatePlanTextsFutureWeek[i].plannedHours !== '') {
+          let plannedHoursId = `#plannedHours0_${i}`;
+          cy.get(plannedHoursId).should('include.text', updatePlanTextsFutureWeek[i].plannedHours);
         }
       }
-      cy.get('#forwards').click();
-      cy.wait(1000);
-      for (let i = 0; i < updatePlanTextsFutureWeek.length; i++) {
-        if (planTextsFutureWeek[i].firstShift) {
-          let firstShiftId = `#firstShift0_${i}`;
-          cy.get(firstShiftId).should('include.text', updatePlanTextsFutureWeek[i].firstShift);
-        } else {
-          if (updatePlanTextsFutureWeek[i].plannedHours !== '') {
-            let plannedHoursId = `#plannedHours0_${i}`;
-            cy.get(plannedHoursId).should('include.text', updatePlanTextsFutureWeek[i].plannedHours);
-          }
-        }
-        if (planTextsFutureWeek[i].secondShift) {
-          let secondShiftId = `#secondShift0_${i}`;
-          cy.get(secondShiftId).should('include.text', updatePlanTextsFutureWeek[i].secondShift);
-        }
+      if (planTextsFutureWeek[i].secondShift) {
+        let secondShiftId = `#secondShift0_${i}`;
+        cy.get(secondShiftId).should('include.text', updatePlanTextsFutureWeek[i].secondShift);
       }
+    }
   });
 });

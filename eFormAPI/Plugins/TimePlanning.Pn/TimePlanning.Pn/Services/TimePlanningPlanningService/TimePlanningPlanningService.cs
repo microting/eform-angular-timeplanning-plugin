@@ -356,6 +356,20 @@ public class TimePlanningPlanningService(
                                         }
                                     }
 
+                                    var calculatedPlanHoursInMinutes = 0;
+                                    if (planRegistration.PlannedStartOfShift1 != 0 && planRegistration.PlannedEndOfShift1 != 0)
+                                    {
+                                        calculatedPlanHoursInMinutes += (int)planRegistration.PlannedEndOfShift1 -
+                                                                        (int)planRegistration.PlannedStartOfShift1 - planRegistration.PlannedBreakOfShift1;
+                                        planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                                    }
+                                    if (planRegistration.PlannedStartOfShift2 != 0 && planRegistration.PlannedEndOfShift2 != 0)
+                                    {
+                                        calculatedPlanHoursInMinutes += (int)planRegistration.PlannedEndOfShift2 -
+                                                                        (int)planRegistration.PlannedStartOfShift2 - planRegistration.PlannedBreakOfShift2;
+                                        planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                                    }
+
                                     await planRegistration.Update(dbContext).ConfigureAwait(false);
                                 }
                             }
@@ -750,9 +764,6 @@ public class TimePlanningPlanningService(
 
                     planningModel.CommentOffice = planRegistration.CommentOffice;
                     planningModel.WorkerComment = planRegistration.WorkerComment;
-                    planningModel.PlannedBreakOfShift1 = planRegistration.PlannedBreakOfShift1;
-                    planningModel.PlannedStartOfShift1 = planRegistration.PlannedStartOfShift1;
-                    planningModel.PlannedEndOfShift1 = planRegistration.PlannedEndOfShift1;
                     planningModel.PlanHoursMatched = Math.Abs(planRegistration.NettoHours - planRegistration.PlanHours) <= 0.00;
 
                     planningModel.IsDoubleShift = planningModel.Start2StartedAt != planningModel.Stop2StoppedAt;
