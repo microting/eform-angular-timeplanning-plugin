@@ -46,7 +46,7 @@
 </ng-template>
 
 <ng-template #dayColumnTemplate let-row let-col="colDef" let-index="index">
-  <div class="plan-container" (click)="onDayColumnClick(row, col.field)">
+  <div class="plan-container" (click)="onDayColumnClick(row, col.field)" id="cell{{index}}_{{col.field}}">
     <!-- Left Content -->
     <div class="plan-content">
       <!--<div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>-->

@@ -24,6 +24,7 @@
             readonly
             [max]="plannedEndOfShift1 === '00:00' ? '23:55' : plannedEndOfShift1"
             [value]="plannedStartOfShift1"
+            id="plannedStartOfShift1"
           >
           <ngx-material-timepicker #plannedPicker
                                    (closed)="calculatePlanHours()"
@@ -51,6 +52,7 @@
             [min]="'00:00'"
             [max]="getMaxDifference(plannedStartOfShift1, plannedEndOfShift1)"
             [value]="plannedBreakOfShift1"
+            id="plannedBreakOfShift1"
           >
           <ngx-material-timepicker #plannedPause1Picker
                                    (closed)="calculatePlanHours()"
@@ -77,7 +79,9 @@
             readonly
             [min]="plannedStartOfShift1"
             [max]="plannedStartOfShift2 === '00:00' ? '23:55' : plannedStartOfShift2"
-            [value]="plannedEndOfShift1">
+            [value]="plannedEndOfShift1"
+            id="plannedEndOfShift1"
+          >
           <ngx-material-timepicker #plannedPicker2
                                    (closed)="calculatePlanHours()"
                                    [format]="24"
@@ -105,7 +109,9 @@
             [(ngModel)]="plannedStartOfShift2"
             [min]="plannedEndOfShift1"
             [max]="plannedEndOfShift2 === '00:00' ? '23:55' : plannedEndOfShift2"
-            [value]="plannedStartOfShift2">
+            [value]="plannedStartOfShift2"
+            id="plannedStartOfShift2"
+          >
           <ngx-material-timepicker #plannedPicker3
                                    (closed)="calculatePlanHours()"
                                    [format]="24"
@@ -132,6 +138,7 @@
             [min]="'00:00'"
             [max]="getMaxDifference(plannedStartOfShift2, plannedEndOfShift2)"
             [value]="plannedBreakOfShift2"
+            id="plannedBreakOfShift2"
           >
           <ngx-material-timepicker #plannedPause2Picker
                                    (closed)="calculatePlanHours()"
@@ -157,7 +164,9 @@
             [format]="24"
             [(ngModel)]="plannedEndOfShift2"
             [min]="plannedStartOfShift2 === '00:00' ? plannedEndOfShift1 : plannedStartOfShift2"
-            [value]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2">
+            [value]="plannedEndOfShift2 === '00:00' ? '' : plannedEndOfShift2"
+            id="plannedEndOfShift2"
+          >
           <ngx-material-timepicker #plannedPicker4
                                    (closed)="calculatePlanHours()"
                                    [format]="24"
@@ -442,10 +451,12 @@
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
   <button mat-raised-button mat-dialog-close
+          id="cancelButton"
           (click)="onCancel()">
     {{'Cancel' | translate}}
   </button>
   <button
+    id="saveButton"
     mat-raised-button
     color="accent"
     (click)="onUpdateWorkDayEntity()"
