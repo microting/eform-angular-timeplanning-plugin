@@ -316,10 +316,11 @@ describe('Enable Backend Config plugin', () => {
     settingsElement.click();
     cy.get('#forceLoadAllPlanningsFromGoogleSheet').click();
     cy.get('#saveSettings').click();
-    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('update');
+    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
     cy.get('mat-tree-node').contains('Dashboard').click();
-    cy.wait('@update', { timeout: 60000 });
+    cy.wait('@index-update', { timeout: 60000 });
     cy.get('#backwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.get('#plannedHours0').should('include.text', '56:00');
 
     for (let i = 0; i < planTexts.length; i++) {
@@ -342,6 +343,7 @@ describe('Enable Backend Config plugin', () => {
     }
 
     cy.get('#forwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.wait(1000);
 
 
@@ -363,9 +365,9 @@ describe('Enable Backend Config plugin', () => {
 
   it('should go to dashboard and set to use google sheet as default and check if the settings are correct', () => {
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
-    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('update');
+    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
     cy.get('mat-tree-node').contains('Dashboard').click();
-    cy.wait('@update', { timeout: 60000 });
+    cy.wait('@index-update', { timeout: 60000 });
     cy.get('#firstColumn0').click();
     cy.get('#useGoogleSheetAsDefault').click();
     cy.get('#saveButton').click();
@@ -482,10 +484,10 @@ describe('Enable Backend Config plugin', () => {
     settingsElement.click();
     cy.get('#forceLoadAllPlanningsFromGoogleSheet').click();
     cy.get('#saveSettings').click();
-    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('update');
     cy.get('mat-tree-node').contains('Dashboard').click();
-    cy.wait('@update', { timeout: 60000 });
+    cy.wait('@index-update', { timeout: 60000 });
     cy.get('#backwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.get('#plannedHours0').should('include.text', '56:00');
     for (let i = 0; i < planTexts.length; i++) {
       let plannedHoursId = `#plannedHours0_${i}`;
@@ -507,8 +509,10 @@ describe('Enable Backend Config plugin', () => {
     }
 
     cy.get('#forwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.wait(1000);
     cy.get('#forwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.wait(1000);
     for (let i = 0; i < planTextsNextWeek.length; i++) {
       let firstShiftId = `#firstShift0_${i}`;
@@ -532,6 +536,7 @@ describe('Enable Backend Config plugin', () => {
     }
 
     cy.get('#forwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.wait(1000);
     for (let i = 0; i < planTextsFutureWeek.length; i++) {
       if (planTextsFutureWeek[i].firstShift) {
@@ -658,10 +663,11 @@ describe('Enable Backend Config plugin', () => {
 
 
 
-    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('update');
+    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
     cy.get('mat-tree-node').contains('Dashboard').click();
-    cy.wait('@update', { timeout: 60000 });
+    cy.wait('@index-update', { timeout: 60000 });
     cy.get('#backwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.get('#plannedHours0').should('include.text', '21:00');
     for (let i = 0; i < updatePlanTexts.length; i++) {
       let plannedHoursId = `#plannedHours0_${i}`;
@@ -687,8 +693,10 @@ describe('Enable Backend Config plugin', () => {
     }
 
     cy.get('#forwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.wait(1000);
     cy.get('#forwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.wait(1000);
     for (let i = 0; i < updatePlanTextsNextWeek.length; i++) {
       let firstShiftId = `#firstShift0_${i}`;
@@ -711,6 +719,7 @@ describe('Enable Backend Config plugin', () => {
       cy.get('#cancelButton').click();
     }
     cy.get('#forwards').click();
+    cy.wait('@index-update', { timeout: 60000 });
     cy.wait(1000);
     for (let i = 0; i < updatePlanTextsFutureWeek.length; i++) {
       if (planTextsFutureWeek[i].firstShift) {

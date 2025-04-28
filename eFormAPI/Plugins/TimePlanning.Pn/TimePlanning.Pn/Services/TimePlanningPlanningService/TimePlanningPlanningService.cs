@@ -335,15 +335,6 @@ public class TimePlanningPlanningService(
             midnightOfDateFrom,
             midnightOfDateTo);
 
-        var plannedTotalHours = planningsInPeriod.Sum(x => x.PlanHours);
-        var nettoHoursTotal = planningsInPeriod.Sum(x => x.NettoHours);
-
-        siteModel.PlannedHours = (int)plannedTotalHours;
-        siteModel.PlannedMinutes = (int)((plannedTotalHours - siteModel.PlannedHours) * 60);
-        siteModel.CurrentWorkedHours = (int)nettoHoursTotal;
-        siteModel.CurrentWorkedMinutes = (int)((nettoHoursTotal - siteModel.CurrentWorkedHours) * 60);
-        siteModel.PercentageCompleted = (int)(nettoHoursTotal / plannedTotalHours * 100);
-
         siteModel.PlanningPrDayModels = model.IsSortDsc
             ? siteModel.PlanningPrDayModels.OrderByDescending(x => x.Date).ToList()
             : siteModel.PlanningPrDayModels.OrderBy(x => x.Date).ToList();
