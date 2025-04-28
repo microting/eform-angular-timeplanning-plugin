@@ -187,6 +187,17 @@ const updatePlanTexts = [
   { date: lastWeekDates[6], text: '6-14/½', plannedHours: '6:00', flexBalanceToDate: 'Flex saldo til dato: 76:27', calculatedHours: '6', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
 ];
 
+const secondUpdatePlanTexts = [
+  { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 89:27', calculatedHours: '8', plannedStartOfShift1: '07:30', plannedEndOfShift1: '15:30', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:50 - 16:00 / 01:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 82:17', calculatedHours: '7.166666666666667', plannedStartOfShift1: '07:50', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: nextWeekDates[2], text: '7:15-16:00/1;17-20/0,5', firstShift: '07:15 - 16:00 / 01:00', secondShift: '17:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 72:02', calculatedHours: '10.25', plannedStartOfShift1: '07:15', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '17:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
+  { date: nextWeekDates[3], text: '6-12/½;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:30', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 65:02', calculatedHours: '7', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
+  { date: nextWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 58:22', calculatedHours: '7', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
+  { date: nextWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:50', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 52:02', calculatedHours: '6.333333333333333', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:50' },
+  { date: lastWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 44:32', calculatedHours: '7.5', plannedStartOfShift1: '06:00', plannedEndOfShift1: '14:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+];
+
+
 const planTextsNextWeek = [
   { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 33:27', calculatedHours: '8', plannedStartOfShift1: '07:30', plannedEndOfShift1: '15:30', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
   { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:45 - 16:00 / 01:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 25:27', calculatedHours: '7.25', plannedStartOfShift1: '07:45', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
@@ -262,5 +273,144 @@ describe('Dashboard edit values', () => {
       cy.get('#plannedEndOfShift2').should('include.value', updatePlanTexts[i].plannedEndOfShift2);
       cy.get('#cancelButton').click();
     }
+
+    for (let i = 0; i < secondUpdatePlanTexts.length; i++) {
+      // let plannedHoursId = `#plannedHours0_${i}`;
+      // if (updatePlanTexts[i].plannedHours !== '') {
+      //   cy.get(plannedHoursId).should('include.text', updatePlanTexts[i].plannedHours);
+      // }
+
+      let cellId = `#cell0_${i}`;
+      cy.get(cellId).click();
+      cy.get('#planHours').should('be.visible');
+      cy.get(`#plannedStartOfShift1`).click();
+      // eslint-disable-next-line max-len
+      let degrees0 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift1.split(':')[0]);
+      let minuteDegrees0 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift1.split(':')[1]);
+      cy.get('[style="transform: rotateZ(' + degrees0 + 'deg) translateX(-50%);"] > span').click();
+      if (minuteDegrees0 > 0) {
+        // cy.wait(1000);
+        cy.get('[style="transform: rotateZ(' + minuteDegrees0 + 'deg) translateX(-50%);"] > span').click({force: true});
+      }
+      cy.get('.timepicker-button span').contains('Ok').click();
+      cy.get('#plannedStartOfShift1').should('include.value', secondUpdatePlanTexts[i].plannedStartOfShift1);
+
+
+      cy.get(`#plannedEndOfShift1`).click();
+      // eslint-disable-next-line max-len
+      let degrees1 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift1.split(':')[0]);
+      let minuteDegrees1 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift1.split(':')[1]);
+      if (degrees1 > 360) {
+        cy.get('[style="height: 85px; transform: rotateZ(' + degrees1 + 'deg) translateX(-50%);"] > span').click();
+      } else {
+        cy.get('[style="transform: rotateZ(' + degrees1 + 'deg) translateX(-50%);"] > span').click();
+      }
+      if (minuteDegrees1 > 0) {
+        // cy.wait(1000);
+        cy.get('[style="transform: rotateZ(' + minuteDegrees1 + 'deg) translateX(-50%);"] > span').click({force: true});
+      }
+      cy.get('.timepicker-button span').contains('Ok').click();
+      cy.get('#plannedEndOfShift1').should('include.value', secondUpdatePlanTexts[i].plannedEndOfShift1);
+
+      if (secondUpdatePlanTexts[i].plannedBreakOfShift1 !== '00:00') {
+        cy.get(`#plannedBreakOfShift1`).click();
+        // eslint-disable-next-line max-len
+        let degrees2 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift1.split(':')[0]);
+        let minuteDegrees2 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift1.split(':')[1]);
+        if (degrees2 > 360) {
+          cy.get('[style="height: 85px; transform: rotateZ(' + degrees2 + 'deg) translateX(-50%);"] > span').click();
+        } else {
+          if (degrees2 === 0) {
+            cy.get('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
+          } else {
+            cy.get('[style="transform: rotateZ(' + degrees2 + 'deg) translateX(-50%);"] > span').click();
+          }
+        }
+        if (minuteDegrees2 > 0) {
+          // cy.wait(1000);
+          cy.get('[style="transform: rotateZ(' + minuteDegrees2 + 'deg) translateX(-50%);"] > span').click({force: true});
+        }
+        cy.get('.timepicker-button span').contains('Ok').click();
+      }
+      cy.get('#plannedBreakOfShift1').should('include.value', secondUpdatePlanTexts[i].plannedBreakOfShift1);
+
+      if (secondUpdatePlanTexts[i].plannedStartOfShift2 !== '') {
+        cy.get(`#plannedStartOfShift2`).click();
+        // eslint-disable-next-line max-len
+        let degrees3 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift2.split(':')[0]);
+        let minuteDegrees3 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift2.split(':')[1]);
+        if (degrees3 > 360) {
+          cy.get('[style="height: 85px; transform: rotateZ(' + degrees3 + 'deg) translateX(-50%);"] > span').click();
+        } else {
+          cy.get('[style="transform: rotateZ(' + degrees3 + 'deg) translateX(-50%);"] > span').click();
+        }
+        if (minuteDegrees3 > 0) {
+          // cy.wait(1000);
+          cy.get('[style="transform: rotateZ(' + minuteDegrees3 + 'deg) translateX(-50%);"] > span').click({force: true});
+        }
+        cy.get('.timepicker-button span').contains('Ok').click();
+
+        cy.get('#plannedStartOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedStartOfShift2);
+
+        cy.get('#plannedEndOfShift2').click();
+        // eslint-disable-next-line max-len
+        let degrees4 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift2.split(':')[0]);
+        let minuteDegrees4 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift2.split(':')[1]);
+        if (degrees4 > 360) {
+          cy.get('[style="height: 85px; transform: rotateZ(' + degrees4 + 'deg) translateX(-50%);"] > span').click();
+        } else {
+          cy.get('[style="transform: rotateZ(' + degrees4 + 'deg) translateX(-50%);"] > span').click();
+        }
+        if (minuteDegrees4 > 0) {
+          // cy.wait(1000);
+          cy.get('[style="transform: rotateZ(' + minuteDegrees4 + 'deg) translateX(-50%);"] > span').click({force: true});
+        }
+        cy.get('.timepicker-button span').contains('Ok').click();
+
+        cy.get('#plannedEndOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedEndOfShift2);
+
+        cy.get('#plannedBreakOfShift2').click();
+        // eslint-disable-next-line max-len
+        let degrees5 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift2.split(':')[0]);
+        let minuteDegrees5 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift2.split(':')[1]);
+        if (degrees5 > 360) {
+          cy.get('[style="height: 85px; transform: rotateZ(' + degrees5 + 'deg) translateX(-50%);"] > span').click();
+        } else {
+          if (degrees5 === 0) {
+            cy.get('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
+          } else {
+            cy.get('[style="transform: rotateZ(' + degrees5 + 'deg) translateX(-50%);"] > span').click();
+          }
+        }
+        if (minuteDegrees5 > 0) {
+          // cy.wait(1000);
+          cy.get('[style="transform: rotateZ(' + minuteDegrees5 + 'deg) translateX(-50%);"] > span').click({force: true});
+        }
+        cy.get('.timepicker-button span').contains('Ok').click();
+
+        cy.get('#plannedBreakOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedBreakOfShift2);
+      }
+
+      cy.get('#planHours').should('include.value', secondUpdatePlanTexts[i].calculatedHours);
+      // cy.get('#plannedStartOfShift1').should('include.value', secondUpdatePlanTexts[i].plannedStartOfShift1);
+      // cy.get('#plannedBreakOfShift1').should('include.value', secondUpdatePlanTexts[i].plannedBreakOfShift1);
+      // cy.get('#plannedEndOfShift1').should('include.value', secondUpdatePlanTexts[i].plannedEndOfShift1);
+      // cy.get('#plannedStartOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedStartOfShift2);
+      // cy.get('#plannedBreakOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedBreakOfShift2);
+      // cy.get('#plannedEndOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedEndOfShift2);
+      cy.get('#saveButton').click();
+      let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
+      if (secondUpdatePlanTexts[i].flexBalanceToDate !== '') {
+        cy.get(flexBalanceToDateId).should('include.text', secondUpdatePlanTexts[i].flexBalanceToDate);
+      }
+      let firstShiftId = `#firstShift0_${i}`;
+      cy.get(firstShiftId).should('include.text', secondUpdatePlanTexts[i].firstShift);
+      if (secondUpdatePlanTexts[i].secondShift) {
+        let secondShiftId = `#secondShift0_${i}`;
+        cy.get(secondShiftId).should('include.text', secondUpdatePlanTexts[i].secondShift);
+      }
+    }
+
+    cy.get('#plannedHours0').should('include.text', '52:55');
   });
 });

@@ -1,4 +1,4 @@
-import {Component, DoCheck, EventEmitter, Inject, OnChanges, OnInit, SimpleChanges} from '@angular/core';
+import {Component, DoCheck, Inject, OnInit} from '@angular/core';
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
@@ -20,7 +20,7 @@ import {NgxMaskDirective} from 'ngx-mask';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
-import {MatIcon} from "@angular/material/icon";
+import {MatIcon} from '@angular/material/icon';
 
 @Component({
   selector: 'app-assigned-site-dialog',
@@ -51,7 +51,6 @@ import {MatIcon} from "@angular/material/icon";
 })
 export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   public selectCurrentUserIsAdmin$ = this.authStore.select(selectCurrentUserIsAdmin);
-  assignedSiteUpdate: EventEmitter<AssignedSiteModel> = new EventEmitter<AssignedSiteModel>();
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
 
@@ -224,11 +223,6 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.data.sundayPlanHours += this.data.startSunday2NdShift && this.data.endSunday2NdShift
       ? this.data.endSunday2NdShift - this.data.startSunday2NdShift - this.data.breakSunday2NdShift
       : 0;
-    this.timePlanningPnSettingsService.updateAssignedSite(this.data).subscribe(result => {
-      if (result && result.success) {
-        //this.workdayEntityUpdate.emit(this.data);
-      }
-    });
   }
 
   private padZero(num: number): string {
@@ -273,6 +267,5 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
         this.data.sundayBreakMinutesUpperLimit = this.globalAutoBreakSettings.sundayBreakMinutesUpperLimit;
         break;
     }
-    // this.data[`break${day}`] = this.globalAutoBreakSettings.;
   }
 }

@@ -93,11 +93,11 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     return `${from} - ${to}`;
   }
 
-  onTimePlanningChanged($event: TimePlanningModel) {
+  onTimePlanningChanged($event: any) {
     this.getPlannings();
   }
 
-  onAssignedSiteChanged($event: AssignedSiteModel) {
+  onAssignedSiteChanged($event: any) {
     this.getPlannings();
   }
 }

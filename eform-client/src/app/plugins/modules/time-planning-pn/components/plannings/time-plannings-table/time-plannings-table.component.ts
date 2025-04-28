@@ -5,7 +5,7 @@ import {
 import {AssignedSiteModel, TimePlanningModel} from '../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
-import {TimePlanningPnSettingsService} from '../../../services';
+import {TimePlanningPnPlanningsService, TimePlanningPnSettingsService} from '../../../services';
 import {MatDialog} from '@angular/material/dialog';
 import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
 import {DatePipe} from '@angular/common';
@@ -24,8 +24,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   @Input() timePlannings: TimePlanningModel[] = [];
   @Input() dateFrom!: Date;
   @Input() dateTo!: Date;
-  @Output() timePlanningChanged: EventEmitter<TimePlanningModel> = new EventEmitter<TimePlanningModel>();
-  @Output() assignedSiteChanged: EventEmitter<AssignedSiteModel> = new EventEmitter<AssignedSiteModel>();
+  @Output() timePlanningChanged: EventEmitter<any> = new EventEmitter<any>();
+  @Output() assignedSiteChanged: EventEmitter<any> = new EventEmitter<any>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
   tableHeaders: MtxGridColumn[] = [];
   enumKeys: string[];
@@ -34,6 +34,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
 
   constructor(
+    private planningsService: TimePlanningPnPlanningsService,
     private timePlanningPnSettingsService: TimePlanningPnSettingsService,
     private dialog: MatDialog,
     private translateService: TranslateService,
@@ -191,8 +192,12 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
           data: result.model,
           minWidth: '50%',
         })
-          .afterClosed().subscribe((data) => {
-            this.assignedSiteChanged.emit(data);
+          .afterClosed().subscribe((data: AssignedSiteModel) => {
+          this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
+            if (result && result.success) {
+              this.assignedSiteChanged.emit(data);
+            }
+          });
         });
       }
     });
@@ -205,8 +210,13 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
       if (result && result.success) {
         this.dialog.open(WorkdayEntityDialogComponent, {
           data: {planningPrDayModels: cellData, assignedSiteModel: result.model},
-        }).afterClosed().subscribe((data) => {
-          this.timePlanningChanged.emit(data);
+        })
+          .afterClosed().subscribe((data: any) => {
+          this.planningsService.updatePlanning(data.planningPrDayModels, data.planningPrDayModels.id).subscribe(result => {
+            if (result && result.success) {
+              this.timePlanningChanged.emit(data);
+            }
+          });
         });
       }
     });

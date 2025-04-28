@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Inject, OnInit, TemplateRef, ViewChild} from '@angular/core';
+import {Component, Inject, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
@@ -15,7 +15,6 @@ import {TimePlanningMessagesEnum} from '../../../../enums';
 import {
   AssignedSiteModel,
   PlanningPrDayModel,
-  PlanningPrDayUpdateModel
 } from '../../../../models';
 import {MtxGrid, MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService} from '../../../../services';
@@ -50,7 +49,6 @@ import {MatIcon} from '@angular/material/icon';
 })
 export class WorkdayEntityDialogComponent implements OnInit {
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
-  workdayEntityUpdate: EventEmitter<PlanningPrDayUpdateModel> = new EventEmitter<PlanningPrDayUpdateModel>();
   enumKeys: string[];
   tableHeaders: MtxGridColumn[] = [];
   shiftData: any[] = [];
@@ -265,11 +263,6 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.planningPrDayModels.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
     this.data.planningPrDayModels.paidOutFlex = this.data.planningPrDayModels.paidOutFlex
     === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
-    this.planningsService.updatePlanning(this.data.planningPrDayModels, this.data.planningPrDayModels.id).subscribe(
-      () => {
-        this.workdayEntityUpdate.emit(this.data.planningPrDayModels);
-      }
-    );
   }
 
   getMaxDifference(start: string, end: string): string {
