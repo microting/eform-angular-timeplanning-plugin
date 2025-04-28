@@ -197,12 +197,14 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
             data: result.model,
             minWidth: '50%',
           })
-            .afterClosed().subscribe((data: AssignedSiteModel) => {
-            this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
-              if (result && result.success) {
-                this.assignedSiteChanged.emit(data);
+            .afterClosed().subscribe((data: any) => {
+              if (data !== '' && data !== undefined) {
+                this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
+                  if (result && result.success) {
+                    this.assignedSiteChanged.emit(data);
+                  }
+                });
               }
-            });
           });
         }
       });
@@ -218,11 +220,13 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
           data: {planningPrDayModels: cellData, assignedSiteModel: result.model},
         })
           .afterClosed().subscribe((data: any) => {
-          this.planningsService.updatePlanning(data.planningPrDayModels, data.planningPrDayModels.id).subscribe(result => {
-            if (result && result.success) {
-              this.timePlanningChanged.emit(data);
-            }
-          });
+          if (data !== '' && data !== undefined) {
+            this.planningsService.updatePlanning(data.planningPrDayModels, data.planningPrDayModels.id).subscribe(result => {
+              if (result && result.success) {
+                this.timePlanningChanged.emit(data);
+              }
+            });
+          }
         });
       }
     });
