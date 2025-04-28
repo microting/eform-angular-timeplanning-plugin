@@ -228,7 +228,7 @@ const updatePlanTextsFutureWeek = [
 ];
 
 
-describe('Enable Backend Config plugin', () => {
+describe('Dashboard assert', () => {
   beforeEach(() => {
     cy.visit('http://localhost:4200');
     loginPage.login();
