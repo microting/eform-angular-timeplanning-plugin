@@ -11,6 +11,8 @@ import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
 import {DatePipe} from '@angular/common';
 import * as R from 'ramda';
 import {TimePlanningMessagesEnum} from '../../../enums';
+import {Store} from "@ngrx/store";
+import {selectAuthIsAdmin} from "src/app/state";
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -32,8 +34,10 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
 
   @ViewChild('firstColumnTemplate', {static: true}) firstColumnTemplate!: TemplateRef<any>;
   @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
+  private selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
 
   constructor(
+    private store: Store,
     private planningsService: TimePlanningPnPlanningsService,
     private timePlanningPnSettingsService: TimePlanningPnSettingsService,
     private dialog: MatDialog,
@@ -185,21 +189,23 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   protected readonly JSON = JSON;
 
   onFirstColumnClick(row: any): void {
-    const siteId = row.siteId; // Adjust this according to your data structure
-    this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
-      if (result && result.success) {
-        this.dialog.open(AssignedSiteDialogComponent, {
-          data: result.model,
-          minWidth: '50%',
-        })
-          .afterClosed().subscribe((data: AssignedSiteModel) => {
-          this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
-            if (result && result.success) {
-              this.assignedSiteChanged.emit(data);
-            }
+    this.selectAuthIsAdmin$.subscribe((isAdmin) => {
+      const siteId = row.siteId; // Adjust this according to your data structure
+      this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
+        if (result && result.success) {
+          this.dialog.open(AssignedSiteDialogComponent, {
+            data: result.model,
+            minWidth: '50%',
+          })
+            .afterClosed().subscribe((data: AssignedSiteModel) => {
+            this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
+              if (result && result.success) {
+                this.assignedSiteChanged.emit(data);
+              }
+            });
           });
-        });
-      }
+        }
+      });
     });
   }
 
