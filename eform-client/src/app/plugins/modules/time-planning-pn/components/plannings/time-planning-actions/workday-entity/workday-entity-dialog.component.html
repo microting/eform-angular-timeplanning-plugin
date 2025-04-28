@@ -369,7 +369,7 @@
     matInput
     id="planHours"
     name="planHours"
-    [disabled]="data.planningPrDayModels.message === null && data.assignedSiteModel.useOnlyPlanHours !== true"
+    [disabled]="(data.planningPrDayModels.message === null && data.assignedSiteModel.useOnlyPlanHours !== true) && plannedStartOfShift1 !== '00:00'"
     [(ngModel)]="data.planningPrDayModels.planHours"
     (change)="calculatePlanHours()"
   >

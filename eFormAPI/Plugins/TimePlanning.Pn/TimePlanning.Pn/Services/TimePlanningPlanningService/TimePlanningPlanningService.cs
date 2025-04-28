@@ -594,7 +594,7 @@ public class TimePlanningPlanningService(
                 }
                 if (planning.MessageId == null)
                 {
-                    planning.PlanHours = minutesPlanned != 0 ? minutesPlanned / 60 : 0;
+                    planning.PlanHours = minutesPlanned != 0 ? minutesPlanned / 60 : model.PlanHours;
                 }
                 else
                 {

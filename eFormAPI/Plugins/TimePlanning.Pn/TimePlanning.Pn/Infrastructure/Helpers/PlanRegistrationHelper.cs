@@ -30,7 +30,7 @@ public static class PlanRegistrationHelper
     {
         foreach (var plan in planningsInPeriod)
         {
-            var planRegistration = await dbContext.PlanRegistrations.FirstAsync(x => x.Id == plan.Id);
+            var planRegistration = await dbContext.PlanRegistrations.AsTracking().FirstAsync(x => x.Id == plan.Id);
             var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month, planRegistration.Date.Day, 0, 0, 0);
 
             try

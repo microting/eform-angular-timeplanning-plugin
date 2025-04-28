@@ -346,7 +346,9 @@ export class WorkdayEntityDialogComponent implements OnInit {
       plannedTimeInMinutes += timeInMinutes2NdShift;
     }
     if (this.data.planningPrDayModels.message === null) {
-      this.data.planningPrDayModels.planHours = plannedTimeInMinutes / 60;
+      if (plannedTimeInMinutes !== 0) {
+        this.data.planningPrDayModels.planHours = plannedTimeInMinutes / 60;
+      }
     }
 
     this.data.planningPrDayModels.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
