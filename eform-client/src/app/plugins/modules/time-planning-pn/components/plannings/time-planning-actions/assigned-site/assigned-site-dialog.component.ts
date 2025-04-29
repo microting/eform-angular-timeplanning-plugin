@@ -12,7 +12,7 @@ import {FormsModule} from '@angular/forms';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
 import {TranslatePipe} from '@ngx-translate/core';
-import {selectCurrentUserIsAdmin} from 'src/app/state';
+import {selectAuthIsAdmin, selectCurrentUserIsAdmin} from 'src/app/state';
 import {Store} from '@ngrx/store';
 import {AsyncPipe, NgForOf, NgIf} from '@angular/common';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
@@ -50,14 +50,14 @@ import {MatIcon} from '@angular/material/icon';
   styleUrls: ['./assigned-site-dialog.component.scss']
 })
 export class AssignedSiteDialogComponent implements DoCheck, OnInit {
-  public selectCurrentUserIsAdmin$ = this.authStore.select(selectCurrentUserIsAdmin);
+  public selectCurrentUserIsAdmin$ = this.store.select(selectCurrentUserIsAdmin);
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: AssignedSiteModel,
     private timePlanningPnSettingsService: TimePlanningPnSettingsService,
-    private authStore: Store
+    private store: Store
   ) {
     this.previousData = {...data};
     this.calculateHours();
