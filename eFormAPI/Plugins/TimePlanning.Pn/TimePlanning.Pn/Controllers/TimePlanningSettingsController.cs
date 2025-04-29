@@ -108,7 +108,7 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpGet]
         [Route("assigned-sites")]
-        [Authorize(Roles = EformRole.Admin)]
+        [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
         public async Task<OperationDataResult<AssignedSite>> GetAssignedSite(int siteId)
         {
             return await _settingService.GetAssignedSite(siteId);
@@ -123,7 +123,7 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpPut]
         [Route("assigned-site")]
-        [Authorize(Roles = EformRole.Admin)]
+        [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
         public async Task<OperationResult> UpdateAssignedSite([FromBody] AssignedSite site)
         {
             return await _settingService.UpdateAssignedSite(site);
