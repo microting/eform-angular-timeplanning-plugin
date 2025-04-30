@@ -655,6 +655,7 @@ public class TimeSettingService : ISettingService
         dbAssignedSite.FridayPlanHours = site.FridayPlanHours;
         dbAssignedSite.SaturdayPlanHours = site.SaturdayPlanHours;
         dbAssignedSite.SundayPlanHours = site.SundayPlanHours;
+        dbAssignedSite.UsePunchClockWithAllowRegisteringInHistory = site.UsePunchClockWithAllowRegisteringInHistory;
 
         await dbAssignedSite.Update(_dbContext);
 

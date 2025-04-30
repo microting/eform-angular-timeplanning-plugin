@@ -154,6 +154,7 @@ public class AssignedSite
     public bool UsePunchClock { get; set; }
 
     public bool UseDetailedPauseEditing { get; set; }
+    public bool UsePunchClockWithAllowRegisteringInHistory { get; set; }
 
     // implicit conversion from Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite to AssignedSite
     public static implicit operator AssignedSite(
@@ -301,6 +302,7 @@ public class AssignedSite
             UseOnlyPlanHours = model.UseOnlyPlanHours,
             UsePunchClock = model.UsePunchClock,
             UseDetailedPauseEditing = model.UseDetailedPauseEditing,
+            UsePunchClockWithAllowRegisteringInHistory = model.UsePunchClockWithAllowRegisteringInHistory,
         };
     }
 }

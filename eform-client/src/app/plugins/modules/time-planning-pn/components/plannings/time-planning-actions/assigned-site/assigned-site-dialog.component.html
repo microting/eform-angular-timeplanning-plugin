@@ -76,6 +76,15 @@
           {{ 'Use punch clock' | translate }}
         </mat-checkbox>
       </div>
+      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours && data.usePunchClock">
+        <!-- data.allowPersonalTimeRegistration -->
+        <mat-checkbox class="p-1"
+                      [id]="'usePunchClockWithAllowRegisteringInHistory'"
+                      [name]="'usePunchClockWithAllowRegisteringInHistory'"
+                      [(ngModel)]="data.usePunchClockWithAllowRegisteringInHistory">
+          {{ 'Allow registering time in history for punch clock' | translate }}
+        </mat-checkbox>
+      </div>
       <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsFirstUser$ | async">
         <!-- data.allowAcceptOfPlannedHours -->
         <mat-checkbox class="p-1"
