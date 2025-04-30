@@ -12,7 +12,7 @@ import {FormsModule} from '@angular/forms';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
 import {TranslatePipe} from '@ngx-translate/core';
-import {selectAuthIsAdmin, selectCurrentUserIsAdmin} from 'src/app/state';
+import {selectAuthIsAdmin, selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {Store} from '@ngrx/store';
 import {AsyncPipe, NgForOf, NgIf} from '@angular/common';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
@@ -51,6 +51,7 @@ import {MatIcon} from '@angular/material/icon';
 })
 export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   public selectCurrentUserIsAdmin$ = this.store.select(selectCurrentUserIsAdmin);
+  public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
 

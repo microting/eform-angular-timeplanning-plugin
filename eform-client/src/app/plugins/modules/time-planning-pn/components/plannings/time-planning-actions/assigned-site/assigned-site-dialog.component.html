@@ -4,7 +4,7 @@
     dynamicHeight="false"
   >
     <mat-tab label="{{'General' | translate }}">
-      <div class="d-flex flex-row" *ngIf="selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row" *ngIf="selectCurrentUserIsFirstUser$ | async">
         <!-- data.useGoogleSheetAsDefault -->
         <mat-checkbox class="p-1"
                       [id]="'useGoogleSheetAsDefault'"
@@ -13,7 +13,7 @@
           {{ 'Use Google Sheet as default' | translate }}
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="!data.useGoogleSheetAsDefault && selectCurrentUserIsAdmin$ | async" >
+      <div class="d-flex flex-row" *ngIf="!data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async" >
         <!-- data.useOnlyPlanHours checkbox -->
         <mat-checkbox class="p-1"
                       [id]="'useOnlyPlanHours'"
@@ -40,22 +40,13 @@
 <!--          {{ 'Use detailed pause editing' | translate }}-->
 <!--        </mat-checkbox>-->
 <!--      </div>-->
-      <div class="d-flex flex-row" *ngIf="data.globalAutoBreakCalculationActive && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row" *ngIf="data.globalAutoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
         <!-- data.autoBreakCalculationActive -->
         <mat-checkbox class="p-1"
                       [id]="'autoBreakCalculationActive'"
                       [name]="'autoBreakCalculationActive'"
                       [(ngModel)]="data.autoBreakCalculationActive">
           {{ 'Auto break calculation' | translate }}
-        </mat-checkbox>
-      </div>
-      <div class="d-flex flex-row">
-        <!-- data.allowEditOfRegistrations -->
-        <mat-checkbox class="p-1"
-                      [id]="'allowEditOfRegistrations'"
-                      [name]="'allowEditOfRegistrations'"
-                      [(ngModel)]="data.allowEditOfRegistrations">
-          {{ 'Allow edit of registrations' | translate }}
         </mat-checkbox>
       </div>
       <div class="d-flex flex-row">
@@ -67,6 +58,15 @@
           {{ 'Allow personal time registration' | translate }}
         </mat-checkbox>
       </div>
+      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration">
+        <!-- data.allowEditOfRegistrations -->
+        <mat-checkbox class="p-1"
+                      [id]="'allowEditOfRegistrations'"
+                      [name]="'allowEditOfRegistrations'"
+                      [(ngModel)]="data.allowEditOfRegistrations">
+          {{ 'Allow edit of registrations' | translate }}
+        </mat-checkbox>
+      </div>
       <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours">
         <!-- data.allowPersonalTimeRegistration -->
         <mat-checkbox class="p-1"
@@ -76,7 +76,7 @@
           {{ 'Use punch clock' | translate }}
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsFirstUser$ | async">
         <!-- data.allowAcceptOfPlannedHours -->
         <mat-checkbox class="p-1"
                       [id]="'allowAcceptOfPlannedHours'"
@@ -86,7 +86,7 @@
         </mat-checkbox>
       </div>
     </mat-tab>
-    <mat-tab label="{{'Plan hours' | translate }}" *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsAdmin$ | async">
+    <mat-tab label="{{'Plan hours' | translate }}" *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
       <div class="d-flex flex-row"
            *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
         <mat-form-field class="p-1">
@@ -105,7 +105,7 @@
         </mat-form-field>
       </div>
     </mat-tab>
-    <mat-tab label="{{ 'Auto break calculation settings' | translate }}" *ngIf="data.autoBreakCalculationActive && selectCurrentUserIsAdmin$ | async">
+    <mat-tab label="{{ 'Auto break calculation settings' | translate }}" *ngIf="data.autoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
       <ng-container *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
         <div class="d-flex flex-row">
           <mat-form-field class="p-1">
@@ -175,7 +175,7 @@
         </div>
       </ng-container>
     </mat-tab>
-    <mat-tab label="{{'1st shift' | translate }}" *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsAdmin$ | async">
+    <mat-tab label="{{'1st shift' | translate }}" *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
              *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
@@ -232,7 +232,7 @@
         </div>
       </ng-container>
     </mat-tab>
-    <mat-tab label="{{'2nd shift' | translate }}" *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsAdmin$ | async">
+    <mat-tab label="{{'2nd shift' | translate }}" *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
              *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
