@@ -10,39 +10,76 @@
 </mtx-grid>
 
 <ng-template #firstColumnTemplate let-row let-col="colDef" let-index="index">
-  <div class="first-column" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
-    <div class="progress-container">
-      <ng-container *ngIf="row['avatarUrl'] === null">
-        <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
-          <div class="avatar" [style.background-image]="'url(https://www.gravatar.com/avatar/?d=retro&s=32)'"></div>
-        </div>
-      </ng-container>
-      <ng-container *ngIf="row['avatarUrl'] !== null">
-        <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
-          <div class="avatar" [style.background-image]="'url(' + row['avatarUrl'] + ')'"></div>
-        </div>
-      </ng-container>
-      <br>
-      <div class="hours-info">
-        <strong>{{ row[col.field] }}</strong>
-        <div *ngIf="row['plannedHours'] !== 0" id="plannedHours{{index}}">
-          {{ padZero(row['plannedHours']) }}:{{ padZero(row['plannedMinutes']) }}
+  <ng-container *ngIf="(selectAuthIsAdmin$ | async) === true">
+    <div class="first-column" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
+      <div class="progress-container">
+        <ng-container *ngIf="row['avatarUrl'] === null">
+          <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+            <div class="avatar" [style.background-image]="'url(https://www.gravatar.com/avatar/?d=retro&s=32)'"></div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="row['avatarUrl'] !== null">
+          <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+            <div class="avatar" [style.background-image]="'url(' + row['avatarUrl'] + ')'"></div>
+          </div>
+        </ng-container>
+        <br>
+        <div class="hours-info">
+          <strong>{{ row[col.field] }}</strong>
+          <div *ngIf="row['plannedHours'] !== 0" id="plannedHours{{index}}">
+            {{ padZero(row['plannedHours']) }}:{{ padZero(row['plannedMinutes']) }}
 
+            <ng-container *ngIf="row['currentWorkedHours'] !== 0">
+              (
+              {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+              )
+            </ng-container>
+          </div><div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
           <ng-container *ngIf="row['currentWorkedHours'] !== 0">
             (
             {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
             )
           </ng-container>
-        </div><div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
-          <ng-container *ngIf="row['currentWorkedHours'] !== 0">
-            (
-            {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
-            )
-          </ng-container>
+        </div>
         </div>
       </div>
     </div>
-  </div>
+  </ng-container>
+  <ng-container *ngIf="(selectAuthIsAdmin$ | async) === false">
+    <div class="first-column" id="firstColumn{{index}}">
+      <div class="progress-container">
+        <ng-container *ngIf="row['avatarUrl'] === null">
+          <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+            <div class="avatar" [style.background-image]="'url(https://www.gravatar.com/avatar/?d=retro&s=32)'"></div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="row['avatarUrl'] !== null">
+          <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+            <div class="avatar" [style.background-image]="'url(' + row['avatarUrl'] + ')'"></div>
+          </div>
+        </ng-container>
+        <br>
+        <div class="hours-info">
+          <strong>{{ row[col.field] }}</strong>
+          <div *ngIf="row['plannedHours'] !== 0" id="plannedHours{{index}}">
+            {{ padZero(row['plannedHours']) }}:{{ padZero(row['plannedMinutes']) }}
+
+            <ng-container *ngIf="row['currentWorkedHours'] !== 0">
+              (
+              {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+              )
+            </ng-container>
+          </div><div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
+          <ng-container *ngIf="row['currentWorkedHours'] !== 0">
+            (
+            {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+            )
+          </ng-container>
+        </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
 </ng-template>
 
 <ng-template #dayColumnTemplate let-row let-col="colDef" let-index="index">

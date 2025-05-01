@@ -34,7 +34,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
 
   @ViewChild('firstColumnTemplate', {static: true}) firstColumnTemplate!: TemplateRef<any>;
   @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
-  private selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
+  protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
 
   constructor(
     private store: Store,
@@ -189,25 +189,23 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   protected readonly JSON = JSON;
 
   onFirstColumnClick(row: any): void {
-    this.selectAuthIsAdmin$.subscribe((isAdmin) => {
-      const siteId = row.siteId; // Adjust this according to your data structure
-      this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
-        if (result && result.success) {
-          this.dialog.open(AssignedSiteDialogComponent, {
-            data: result.model,
-            minWidth: '50%',
-          })
-            .afterClosed().subscribe((data: any) => {
-              if (data !== '' && data !== undefined) {
-                this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
-                  if (result && result.success) {
-                    this.assignedSiteChanged.emit(data);
-                  }
-                });
+    const siteId = row.siteId; // Adjust this according to your data structure
+    this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
+      if (result && result.success) {
+        this.dialog.open(AssignedSiteDialogComponent, {
+          data: result.model,
+          minWidth: '50%',
+        })
+          .afterClosed().subscribe((data: any) => {
+          if (data !== '' && data !== undefined) {
+            this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
+              if (result && result.success) {
+                this.assignedSiteChanged.emit(data);
               }
-          });
-        }
-      });
+            });
+          }
+        });
+      }
     });
   }
 
