@@ -85,7 +85,7 @@
           {{ 'Allow registering time in history for punch clock' | translate }}
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsFirstUser$ | async">
+      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowAcceptOfPlannedHours -->
         <mat-checkbox class="p-1"
                       [id]="'allowAcceptOfPlannedHours'"
