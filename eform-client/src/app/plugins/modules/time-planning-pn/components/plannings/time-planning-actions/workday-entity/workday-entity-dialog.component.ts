@@ -134,6 +134,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     ];
 
     let shift2Data = {
+      shiftId: '2',
       shift: this.translateService.instant('2nd'),
       plannedStart: this.plannedStartOfShift2,
       plannedEnd: this.plannedEndOfShift2,
@@ -144,6 +145,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     };
 
     let shift1Data = {
+      shiftId: '1',
       shift: this.translateService.instant('1st'),
       plannedStart: this.plannedStartOfShift1,
       plannedEnd: this.plannedEndOfShift1,

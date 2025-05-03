@@ -12,7 +12,7 @@
   </mtx-grid>
 
   <ng-template #plannedColumnTemplate let-row let-col="colDef">
-    <ng-container *ngIf="row['shift'] === '1'">
+    <ng-container *ngIf="row['shiftId'] === '1'">
       <div class="flex-row">
         <mat-form-field>
           <mat-label>{{'Start' | translate}}</mat-label>
@@ -96,7 +96,7 @@
         </button>
       </div>
     </ng-container>
-    <ng-container *ngIf="row['shift'] === '2'">
+    <ng-container *ngIf="row['shiftId'] === '2'">
       <div class="flex-row">
         <mat-form-field>
           <mat-label>{{'Start' | translate}}</mat-label>
@@ -185,7 +185,7 @@
   </ng-template>
 
   <ng-template #actualColumnTemplate let-row let-col="colDef">
-    <ng-container *ngIf="row['shift'] === '1'">
+    <ng-container *ngIf="row['shiftId'] === '1'">
       <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Start' | translate}}</mat-label>
@@ -267,7 +267,7 @@
         </button>
       </div>
     </ng-container>
-    <ng-container *ngIf="row['shift'] === '2'">
+    <ng-container *ngIf="row['shiftId'] === '2'">
       <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Start' | translate}}</mat-label>
