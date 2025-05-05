@@ -185,7 +185,7 @@
   </ng-template>
 
   <ng-template #actualColumnTemplate let-row let-col="colDef">
-    <ng-container *ngIf="row['shiftId'] === '1'">
+    <ng-container *ngIf="row['shiftId'] === '1' && !isInTheFuture">
       <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Start' | translate}}</mat-label>
@@ -267,7 +267,7 @@
         </button>
       </div>
     </ng-container>
-    <ng-container *ngIf="row['shiftId'] === '2'">
+    <ng-container *ngIf="row['shiftId'] === '2' && !isInTheFuture">
       <div class="flex-row">
       <mat-form-field>
         <mat-label>{{'Start' | translate}}</mat-label>
@@ -350,7 +350,7 @@
   </ng-template>
 
   <br>
-  <mat-form-field class="pr-2">
+  <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
     <mat-label>{{ 'Flex balance at start of day' | translate }}</mat-label>
     <input
       type="text"
@@ -359,7 +359,7 @@
       name="flexToDate"
       readonly="readonly"
       disabled
-      [value]="data.planningPrDayModels.sumFlexStart.toFixed(2)"
+      [value]="convertHoursToTime(data.planningPrDayModels.sumFlexStart)"
     >
   </mat-form-field>
   <br><mat-form-field class="pr-2">
@@ -375,7 +375,7 @@
   >
 </mat-form-field>
   <br>
-  <mat-form-field class="pr-2">
+  <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
     <mat-label>{{ 'NettoHours' | translate }}</mat-label>
     <input
       type="text"
@@ -388,7 +388,7 @@
     >
   </mat-form-field>
   <br>
-  <mat-form-field class="pr-2">
+  <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
     <mat-label>{{ 'Flex' | translate }}</mat-label>
     <input
       type="text"
@@ -401,7 +401,7 @@
     >
   </mat-form-field>
   <br>
-  <mat-form-field class="pr-2">
+  <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
     <mat-label>{{ 'PaidOutFlex' | translate }}</mat-label>
     <input
       type="number"
@@ -413,7 +413,7 @@
     >
   </mat-form-field>
   <br>
-  <mat-form-field class="pr-2">
+  <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
     <mat-label>{{ 'SumFlex' | translate }}</mat-label>
     <input
       type="text"
@@ -422,7 +422,7 @@
       name="flexIncludingToday"
       readonly="readonly"
       disabled
-      [value]="data.planningPrDayModels.sumFlexEnd.toFixed(2)"
+      [value]="convertHoursToTime(data.planningPrDayModels.sumFlexEnd)"
     >
   </mat-form-field>
   <br>

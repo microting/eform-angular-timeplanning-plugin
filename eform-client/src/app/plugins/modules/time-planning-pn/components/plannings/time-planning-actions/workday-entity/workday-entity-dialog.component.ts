@@ -114,7 +114,18 @@ export class WorkdayEntityDialogComponent implements OnInit {
         field: 'actualStart',
         sortable: false,
       },
-    ]: [
+    ]: this.isInTheFuture ? [
+      {
+        header: this.translateService.stream('Shift'), field: 'shift',
+        pinned: 'left'
+      },
+      {
+        cellTemplate: this.plannedColumnTemplate,
+        header: this.translateService.stream('Planned'),
+        field: 'plannedStart',
+        sortable: false,
+      },
+    ] : [
       {
         header: this.translateService.stream('Shift'), field: 'shift',
         pinned: 'left'
@@ -308,7 +319,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     if (hours < 0) {
       hours = Math.abs(hours);
     }
-    const totalMinutes = Math.floor(hours * 60)
+    const totalMinutes = Math.round(hours * 60)
     const hrs = Math.floor(totalMinutes / 60);
     let mins = totalMinutes % 60;
     if (isNegative) {
