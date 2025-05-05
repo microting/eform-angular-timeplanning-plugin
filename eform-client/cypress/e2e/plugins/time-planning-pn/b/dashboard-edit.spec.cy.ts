@@ -178,23 +178,23 @@ const planTexts = [
 ];
 
 const updatePlanTexts = [
-  { date: lastWeekDates[0], text: '07:30-15:30', plannedHours: '1:00', flexBalanceToDate: 'Flex saldo til dato: 96:27', calculatedHours: '1', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
-  { date: lastWeekDates[1], text: '7:45-16:00/1', plannedHours: '2:00', flexBalanceToDate: 'Flex saldo til dato: 94:27', calculatedHours: '2', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
-  { date: lastWeekDates[2], text: '7:15-16:00/1;17-20/0,5', plannedHours: '3:00', flexBalanceToDate: 'Flex saldo til dato: 91:27', calculatedHours: '3', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '00:00', plannedEndOfShift2: '00:00', plannedBreakOfShift2: '00:00' },
-  { date: lastWeekDates[3], text: '6-12/½;18:00-20:00/0.5', plannedHours: '', flexBalanceToDate: '', calculatedHours: '0', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '00:00', plannedEndOfShift2: '00:00', plannedBreakOfShift2: '00:00' },
-  { date: lastWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', plannedHours: '4:00', flexBalanceToDate: 'Flex saldo til dato: 87:27', calculatedHours: '4', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '00:00', plannedEndOfShift2: '00:00', plannedBreakOfShift2: '00:00' },
-  { date: lastWeekDates[5], text: '6-12/¾;18-20/¾', plannedHours: '5:00', flexBalanceToDate: 'Flex saldo til dato: 82:27', calculatedHours: '5', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '00:00', plannedEndOfShift2: '00:00', plannedBreakOfShift2: '00:00' },
-  { date: lastWeekDates[6], text: '6-14/½', plannedHours: '6:00', flexBalanceToDate: 'Flex saldo til dato: 76:27', calculatedHours: '6', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: lastWeekDates[0], text: '07:30-15:30', plannedHours: '1:00', flexBalanceToDate: 'Flex saldo til dato: 96:27', flexToDate: '97:27', flexIncludingToday: '96:27', nettoHours: '00:00', todaysFlex: '-1:00', paidOutFlex: 0, calculatedHours: '1', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: lastWeekDates[1], text: '7:45-16:00/1', plannedHours: '2:00', flexBalanceToDate: 'Flex saldo til dato: 94:27', flexToDate: '96:27', flexIncludingToday: '94:27', nettoHours: '00:00', todaysFlex: '-2:00', paidOutFlex: 0, calculatedHours: '2', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: lastWeekDates[2], text: '7:15-16:00/1;17-20/0,5', plannedHours: '3:00', flexBalanceToDate: 'Flex saldo til dato: 91:27', flexToDate: '94:27', flexIncludingToday: '91:27', nettoHours: '00:00', todaysFlex: '-3:00', paidOutFlex: 0, calculatedHours: '3', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '00:00', plannedEndOfShift2: '00:00', plannedBreakOfShift2: '00:00' },
+  { date: lastWeekDates[3], text: '6-12/½;18:00-20:00/0.5', plannedHours: '', flexBalanceToDate: '', flexToDate: '91:27', flexIncludingToday: '91:27', nettoHours: '00:00', todaysFlex: '00:00', paidOutFlex: 0, calculatedHours: '0', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '00:00', plannedEndOfShift2: '00:00', plannedBreakOfShift2: '00:00' },
+  { date: lastWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', plannedHours: '4:00', flexBalanceToDate: 'Flex saldo til dato: 87:27', flexToDate: '91:27', flexIncludingToday: '87:27', nettoHours: '00:00', todaysFlex: '-4:00', paidOutFlex: 0, calculatedHours: '4', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '00:00', plannedEndOfShift2: '00:00', plannedBreakOfShift2: '00:00' },
+  { date: lastWeekDates[5], text: '6-12/¾;18-20/¾', plannedHours: '5:00', flexBalanceToDate: 'Flex saldo til dato: 82:27', flexToDate: '87:27', flexIncludingToday: '82:27', nettoHours: '00:00', todaysFlex: '-5:00', paidOutFlex: 0, calculatedHours: '5', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '00:00', plannedEndOfShift2: '00:00', plannedBreakOfShift2: '00:00' },
+  { date: lastWeekDates[6], text: '6-14/½', plannedHours: '6:00', flexBalanceToDate: 'Flex saldo til dato: 76:27', flexToDate: '82:27', flexIncludingToday: '76:27', nettoHours: '00:00', todaysFlex: '-6:00', paidOutFlex: 0, calculatedHours: '6', plannedStartOfShift1: '00:00', plannedEndOfShift1: '00:00', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
 ];
 
 const secondUpdatePlanTexts = [
-  { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 89:27', calculatedHours: '8', plannedStartOfShift1: '07:30', plannedEndOfShift1: '15:30', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
-  { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:50 - 16:00 / 01:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 82:17', calculatedHours: '7.166666666666667', plannedStartOfShift1: '07:50', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
-  { date: nextWeekDates[2], text: '7:15-16:00/1;17-20/0,5', firstShift: '07:15 - 16:00 / 01:00', secondShift: '17:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 72:02', calculatedHours: '10.25', plannedStartOfShift1: '07:15', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '17:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
-  { date: nextWeekDates[3], text: '6-12/½;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:30', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 65:02', calculatedHours: '7', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
-  { date: nextWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 58:22', calculatedHours: '7', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
-  { date: nextWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:50', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 52:02', calculatedHours: '6.333333333333333', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:50' },
-  { date: lastWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 44:32', calculatedHours: '7.5', plannedStartOfShift1: '06:00', plannedEndOfShift1: '14:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 89:27', flexToDate: '97:27', flexIncludingToday: '89:27', nettoHours: '00:00', todaysFlex: '-8:00', paidOutFlex: 0, calculatedHours: '8', plannedStartOfShift1: '07:30', plannedEndOfShift1: '15:30', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:50 - 16:00 / 01:00', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 82:17', flexToDate: '89:27', flexIncludingToday: '82:17', nettoHours: '00:00', todaysFlex: '-7:10', paidOutFlex: 0, calculatedHours: '7.166666666666667', plannedStartOfShift1: '07:50', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: nextWeekDates[2], text: '7:15-16:00/1;17-20/0,5', firstShift: '07:15 - 16:00 / 01:00', secondShift: '17:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 72:02', flexToDate: '82:17', flexIncludingToday: '72:02', nettoHours: '00:00', todaysFlex: '-10:15', paidOutFlex: 0, calculatedHours: '10.25', plannedStartOfShift1: '07:15', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '17:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
+  { date: nextWeekDates[3], text: '6-12/½;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:30', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 65:02', flexToDate: '72:02', flexIncludingToday: '65:02', nettoHours: '00:00', todaysFlex: '-7:00', paidOutFlex: 0, calculatedHours: '7', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
+  { date: nextWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 58:22', flexToDate: '65:02', flexIncludingToday: '58:22', nettoHours: '00:00', todaysFlex: '-6:40', paidOutFlex: 0, calculatedHours: '6.666666666666667', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
+  { date: nextWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:50', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 52:02', flexToDate: '58:22', flexIncludingToday: '52:02', nettoHours: '00:00', todaysFlex: '-6:20', paidOutFlex: 0, calculatedHours: '6.333333333333333', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:50' },
+  { date: lastWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 44:32', flexToDate: '52:02', flexIncludingToday: '44:32', nettoHours: '00:00', todaysFlex: '-1:00', paidOutFlex: 0, calculatedHours: '7.5', plannedStartOfShift1: '06:00', plannedEndOfShift1: '14:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
 ];
 
 
@@ -271,14 +271,15 @@ describe('Dashboard edit values', () => {
       cy.get('#plannedStartOfShift2').should('include.value', updatePlanTexts[i].plannedStartOfShift2);
       cy.get('#plannedBreakOfShift2').should('include.value', updatePlanTexts[i].plannedBreakOfShift2);
       cy.get('#plannedEndOfShift2').should('include.value', updatePlanTexts[i].plannedEndOfShift2);
+      cy.get('#flexToDate').should('include.value', updatePlanTexts[i].flexToDate);
+      cy.get('#flexIncludingToday').should('include.value', updatePlanTexts[i].flexIncludingToday);
+      cy.get('#nettoHours').should('include.value', updatePlanTexts[i].nettoHours);
+      cy.get('#todaysFlex').should('include.value', updatePlanTexts[i].todaysFlex);
+      cy.get('#paidOutFlex').should('include.value', updatePlanTexts[i].paidOutFlex);
       cy.get('#cancelButton').click();
     }
 
     for (let i = 0; i < secondUpdatePlanTexts.length; i++) {
-      // let plannedHoursId = `#plannedHours0_${i}`;
-      // if (updatePlanTexts[i].plannedHours !== '') {
-      //   cy.get(plannedHoursId).should('include.text', updatePlanTexts[i].plannedHours);
-      // }
 
       let cellId = `#cell0_${i}`;
       cy.get(cellId).click();
@@ -391,13 +392,15 @@ describe('Dashboard edit values', () => {
         cy.get('#plannedBreakOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedBreakOfShift2);
       }
 
-      cy.get('#planHours').should('include.value', secondUpdatePlanTexts[i].calculatedHours);
-      // cy.get('#plannedStartOfShift1').should('include.value', secondUpdatePlanTexts[i].plannedStartOfShift1);
-      // cy.get('#plannedBreakOfShift1').should('include.value', secondUpdatePlanTexts[i].plannedBreakOfShift1);
-      // cy.get('#plannedEndOfShift1').should('include.value', secondUpdatePlanTexts[i].plannedEndOfShift1);
-      // cy.get('#plannedStartOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedStartOfShift2);
-      // cy.get('#plannedBreakOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedBreakOfShift2);
-      // cy.get('#plannedEndOfShift2').should('include.value', secondUpdatePlanTexts[i].plannedEndOfShift2);
+
+
+      cy.get('#flexToDate').should('have.value', secondUpdatePlanTexts[i].flexToDate);
+      cy.get('#flexIncludingToday').should('have.value', secondUpdatePlanTexts[i].flexIncludingToday);
+      cy.get('#nettoHours').should('have.value', secondUpdatePlanTexts[i].nettoHours);
+      cy.get('#todaysFlex').should('have.value', secondUpdatePlanTexts[i].todaysFlex);
+      cy.get('#paidOutFlex').should('have.value', secondUpdatePlanTexts[i].paidOutFlex);
+
+      cy.get('#planHours').should('have.value', secondUpdatePlanTexts[i].calculatedHours);
       cy.get('#saveButton').click();
       let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
       if (secondUpdatePlanTexts[i].flexBalanceToDate !== '') {
