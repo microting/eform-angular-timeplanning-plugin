@@ -113,13 +113,13 @@ const secondUpdatePlanTexts = [
 ];
 
 const secondUpdateActualTexts = [
-  { date: nextWeekDates[0], start1StartedAt: '07:30', stop1StoppedAt: '15:30', pause1Id: '00:25', start2StartedAt: '', stop2StoppedAt: '', pause2Id: '', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 89:27', flexToDate: '97:27', flexIncludingToday: '89:27', nettoHours: '00:00', todaysFlex: '-8:00', paidOutFlex: 0, calculatedHours: '8' },
-  { date: nextWeekDates[1], start1StartedAt: '07:50', stop1StoppedAt: '16:00', pause1Id: '01:00', start2StartedAt: '', stop2StoppedAt: '', pause2Id: '', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 82:17', flexToDate: '89:27', flexIncludingToday: '82:17', nettoHours: '00:00', todaysFlex: '-7:10', paidOutFlex: 0, calculatedHours: '7.166666666666667' },
-  { date: nextWeekDates[2], start1StartedAt: '07:15', stop1StoppedAt: '16:00', pause1Id: '01:00', start2StartedAt: '17:00', stop2StoppedAt: '20:00', pause2Id: '00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 72:02', flexToDate: '82:17', flexIncludingToday: '72:02', nettoHours: '00:00', todaysFlex: '-10:15', paidOutFlex: 0, calculatedHours: '10.25' },
-  { date: nextWeekDates[3], start1StartedAt: '06:00', stop1StoppedAt: '12:00', pause1Id: '00:30', start2StartedAt: '18:00', stop2StoppedAt: '20:00', pause2Id: '00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 65:02', flexToDate: '72:02', flexIncludingToday: '65:02', nettoHours: '00:00', todaysFlex: '-7.0', paidOutFlex: 0, calculatedHours: '7' },
-  { date: nextWeekDates[4], start1StartedAt: '06:00', stop1StoppedAt: '12:00' , pause1Id: '01:50' , start2StartedAt: '18:00' , stop2StoppedAt: '20:00' , pause2Id: '01:50' , plannedHours: '8.0' , flexBalanceToDate: 'Flex saldo til dato : 58.22' , flexToDate: '65.02' , flexIncludingToday: '58.22' , nettoHours: '0.0' , todaysFlex: '-6.40' , paidOutFlex : 0, calculatedHours : 6.666666666666667 },
-  { date : nextWeekDates[5] , start1StartedAt : '' , stop1StoppedAt : '' , pause1Id : '' , start2StartedAt : '' , stop2StoppedAt : '' , pause2Id : '' , plannedHours : '' , flexBalanceToDate : '' , flexToDate : '' , flexIncludingToday : '' , nettoHours : '' , todaysFlex : '' , paidOutFlex : 0 , calculatedHours : 6.333333333333333 },
-  { date : lastWeekDates[6] , start1StartedAt : '06:00' , stop1StoppedAt : '14:00' , pause1Id : '00:30' , start2StartedAt : '' , stop2StoppedAt : '' , pause2Id : '' , plannedHours : '8:00' , flexBalanceToDate : 'Flex saldo til dato: 44:32' , flexToDate : '52:02' , flexIncludingToday : '44:32' , nettoHours : '00:00' , todaysFlex : '-7:30' , paidOutFlex : 0 , calculatedHours : '7.5' }
+  { date: nextWeekDates[0], start1StartedAt: '07:30', stop1StoppedAt: '15:30', pause1Id: '00:25', start2StartedAt: '', stop2StoppedAt: '', pause2Id: '', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 97:02', flexToDate: '97:27', flexIncludingToday: '97:02', nettoHours: '07:35', todaysFlex: '-0:25', paidOutFlex: 0, calculatedHours: '8' },
+  { date: nextWeekDates[1], start1StartedAt: '07:50', stop1StoppedAt: '16:00', pause1Id: '01:00', start2StartedAt: '', stop2StoppedAt: '', pause2Id: '', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 97:02', flexToDate: '97:02', flexIncludingToday: '97:02', nettoHours: '07:10', todaysFlex: '00:00', paidOutFlex: 0, calculatedHours: '7.166666666666667' },
+  { date: nextWeekDates[2], start1StartedAt: '07:15', stop1StoppedAt: '16:00', pause1Id: '01:00', start2StartedAt: '17:00', stop2StoppedAt: '20:00', pause2Id: '00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 97:02', flexToDate: '97:02', flexIncludingToday: '97:02', nettoHours: '10:15', todaysFlex: '00:00', paidOutFlex: 0, calculatedHours: '10.25' },
+  { date: nextWeekDates[3], start1StartedAt: '06:00', stop1StoppedAt: '12:00', pause1Id: '00:30', start2StartedAt: '18:00', stop2StoppedAt: '20:00', pause2Id: '00:30', plannedHours: '8:00', flexBalanceToDate: 'Flex saldo til dato: 97:02', flexToDate: '97:02', flexIncludingToday: '97:02', nettoHours: '07:00', todaysFlex: '00:00', paidOutFlex: 0, calculatedHours: '7' },
+  { date: nextWeekDates[4], start1StartedAt: '06:00', stop1StoppedAt: '12:00' , pause1Id: '01:50' , start2StartedAt: '18:00' , stop2StoppedAt: '20:00' , pause2Id: '01:50' , plannedHours: '8.0' , flexBalanceToDate: 'Flex saldo til dato: 94:42' , flexToDate: '97:02' , flexIncludingToday: '94:42' , nettoHours: '04:20' , todaysFlex: '-2:20' , paidOutFlex : 0, calculatedHours : 6.666666666666667 },
+  { date : nextWeekDates[5] , start1StartedAt : '' , stop1StoppedAt : '' , pause1Id : '' , start2StartedAt : '' , stop2StoppedAt : '' , pause2Id : '' , plannedHours : '' , flexBalanceToDate : 'Flex saldo til dato: 88:22' , flexToDate : '94:42' , flexIncludingToday : '88:22' , nettoHours : '00:00' , todaysFlex : '-6:20' , paidOutFlex : 0 , calculatedHours : 6.333333333333333 },
+  { date : lastWeekDates[6] , start1StartedAt : '06:00' , stop1StoppedAt : '14:00' , pause1Id : '00:30' , start2StartedAt : '' , stop2StoppedAt : '' , pause2Id : '' , plannedHours : '8:00' , flexBalanceToDate : 'Flex saldo til dato: 88:22' , flexToDate : '88:22' , flexIncludingToday : '88:22' , nettoHours : '07:30' , todaysFlex : '00:00' , paidOutFlex : 0 , calculatedHours : '7.5' }
 ]
 
 
@@ -289,8 +289,18 @@ describe('Dashboard edit values', () => {
       } else {
         cy.get('#pause2Id').should('have.value', '00:00');
       }
+      cy.get('#flexToDate').should('have.value', secondUpdateActualTexts[i].flexToDate);
+      cy.get('#flexIncludingToday').should('have.value', secondUpdateActualTexts[i].flexIncludingToday);
+      cy.get('#nettoHours').should('have.value', secondUpdateActualTexts[i].nettoHours);
+      cy.get('#todaysFlex').should('have.value', secondUpdateActualTexts[i].todaysFlex);
+      cy.get('#paidOutFlex').should('have.value', secondUpdateActualTexts[i].paidOutFlex);
+
 
       cy.get('#planHours').should('have.value', secondUpdateActualTexts[i].calculatedHours);
+      let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
+      if (secondUpdateActualTexts[i].flexBalanceToDate !== '') {
+        cy.get(flexBalanceToDateId).should('include.text', secondUpdateActualTexts[i].flexBalanceToDate);
+      }
       cy.get('#saveButton').click();
       cy.wait(1000);
     }
