@@ -190,6 +190,7 @@
       <mat-form-field>
         <mat-label>{{'Start' | translate}}</mat-label>
         <input
+          id="start1StartedAt"
           matInput
           readonly
           [disabled]="isInTheFuture"
@@ -217,6 +218,7 @@
       <mat-form-field>
         <mat-label>{{'Pause' | translate}}</mat-label>
         <input
+          id="pause1Id"
           matInput
           [disabled]="isInTheFuture || start1StartedAt === null || stop1StoppedAt === null"
           [ngxTimepicker]="pause1IdPicker"
@@ -244,6 +246,7 @@
       <mat-form-field>
         <mat-label>{{'Stop' | translate}}</mat-label>
         <input
+          id="stop1StoppedAt"
           matInput
           readonly
           [disabled]="isInTheFuture || start1StartedAt === null"
@@ -272,6 +275,7 @@
       <mat-form-field>
         <mat-label>{{'Start' | translate}}</mat-label>
         <input
+          id="start2StartedAt"
           matInput
           readonly
           [disabled]="isInTheFuture || stop1StoppedAt === null"
@@ -298,6 +302,7 @@
       <mat-form-field>
         <mat-label>{{'Pause' | translate}}</mat-label>
         <input
+          id="pause2Id"
           matInput
           [disabled]="isInTheFuture || start2StartedAt === null || stop2StoppedAt === null"
           [ngxTimepicker]="pause2IdPicker"
@@ -325,6 +330,7 @@
       <mat-form-field>
         <mat-label>{{'Stop' | translate}}</mat-label>
         <input
+          id="stop2StoppedAt"
           matInput
           readonly
           [disabled]="isInTheFuture || start2StartedAt === null"
