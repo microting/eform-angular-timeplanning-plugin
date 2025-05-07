@@ -297,12 +297,13 @@ describe('Dashboard edit values', () => {
 
 
       cy.get('#planHours').should('have.value', secondUpdateActualTexts[i].calculatedHours);
+
+      cy.get('#saveButton').click();
+      cy.wait(1000);
       let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
       if (secondUpdateActualTexts[i].flexBalanceToDate !== '') {
         cy.get(flexBalanceToDateId).should('include.text', secondUpdateActualTexts[i].flexBalanceToDate);
       }
-      cy.get('#saveButton').click();
-      cy.wait(1000);
     }
 
   });
