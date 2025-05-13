@@ -112,6 +112,7 @@ public class TimePlanningWorkingHoursService(
             var timePlannings = await timePlanningRequest
                 .Select(x => new TimePlanningWorkingHoursModel
                 {
+                    Id = x.Id,
                     WorkerName = site.Name,
                     WeekDay = (int)x.Date.DayOfWeek,
                     Date = x.Date,
@@ -145,6 +146,7 @@ public class TimePlanningWorkingHoursService(
 
             var prePlanning = new TimePlanningWorkingHoursModel
             {
+                Id = 0,
                 WorkerName = site.Name,
                 WeekDay = lastPlanning != null
                     ? (int)lastPlanning.Date.DayOfWeek

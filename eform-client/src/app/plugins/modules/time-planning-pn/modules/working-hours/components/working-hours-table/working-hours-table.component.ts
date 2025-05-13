@@ -19,7 +19,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {Overlay} from '@angular/cdk/overlay';
 import {WorkingHoursCommentOfficeUpdateModalComponent} from '../';
 import {dialogConfigHelper} from 'src/app/common/helpers';
-import {selectCurrentUserLocale} from 'src/app/state';
+import {selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser, selectCurrentUserLocale} from 'src/app/state';
 import {Store} from '@ngrx/store';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
 import {
@@ -52,7 +52,9 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   @Output() updateWorkingHours: EventEmitter<void> = new EventEmitter<void>();
   messages: { id: number; value: string }[] = [];
   private selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
+  private selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
   selectCurrentUserLocaleSub$: Subscription;
+  selectCurrentUserIsFirstUserSub$: Subscription;
 
   get columns() {
     return this.tableHeaders.map(x => x.field);
@@ -61,6 +63,7 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   subs$: Subscription[] = [];
 
   tableHeaders: MtxGridColumn[] = [];
+  isFirstUser = false;
 
   constructor(
     private translateService: TranslateService,
@@ -69,6 +72,9 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
     private store: Store,
   ) {
     this.selectCurrentUserLocaleSub$ = this.selectCurrentUserLocale$.subscribe(() => this.messages = messages(translateService));
+    this.selectCurrentUserIsFirstUserSub$ = this.selectCurrentUserIsFirstUser$.subscribe((data) => {
+      this.isFirstUser = data;
+    });
   }
 
   getIsWeekend(workingHoursModel: AbstractControl): boolean {
@@ -88,12 +94,50 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   }
 
   ngOnInit(): void {
-    this.tableHeaders = [
+    this.tableHeaders = this.isFirstUser ? [
+      {
+        header: this.translateService.stream('Id'),
+        pinned: 'left',
+        field: 'id',
+        formatter: (row: FormGroup) => row.get('id').value,
+        },
       {
         header: this.translateService.stream('DayOfWeek'),
         pinned: 'left',
         field: 'weekDay',
-        formatter: (row: FormGroup) => this.translateService.instant(DaysOfWeekEnum[row.get('weekDay').value])
+        formatter: (row: FormGroup) => this.translateService.instant(DaysOfWeekEnum[row.get('weekDay').value]),
+      },
+      {
+        header: this.translateService.stream('Date'),
+        pinned: 'left',
+        field: 'date',
+        formatter: (row: FormGroup) => `${format(row.get('date').value, STANDARD_DANISH_DATE_FORMAT.replace('YYYY', 'yyyy'))}`,
+      },
+      {header: this.translateService.stream('Plan text'), field: 'planText', cellTemplate: this.inputTextTpl},
+      {header: this.translateService.stream('Plan hours'), field: 'planHours', cellTemplate: this.inputNumberTpl},
+      {header: this.translateService.stream('Shift 1: Start'), field: 'shift1Start', cellTemplate: this.shiftSelectorTpl},
+      {header: this.translateService.stream('Shift 1: Stop'), field: 'shift1Stop', cellTemplate: this.shiftSelectorTpl},
+      {header: this.translateService.stream('Shift 1: Pause'), field: 'shift1Pause', cellTemplate: this.shiftSelectorTpl},
+      {header: this.translateService.stream('Shift 2: Start'), field: 'shift2Start', cellTemplate: this.shiftSelectorTpl},
+      {header: this.translateService.stream('Shift 2: Stop'), field: 'shift2Stop', cellTemplate: this.shiftSelectorTpl},
+      {header: this.translateService.stream('Shift 2: Pause'), field: 'shift2Pause', cellTemplate: this.shiftSelectorTpl},
+      {header: this.translateService.stream('NettoHours'), field: 'nettoHours', cellTemplate: this.inputTextTpl},
+      {header: this.translateService.stream('Flex'), field: 'flexHours', cellTemplate: this.inputNumberTpl},
+      {header: this.translateService.stream('SumFlex'), field: 'sumFlex', cellTemplate: this.inputTextTpl},
+      {header: this.translateService.stream('PaidOutFlex'), field: 'paidOutFlex', cellTemplate: this.inputTextTpl},
+      {header: this.translateService.stream('Message'), field: 'message', cellTemplate: this.messageSelectorTpl},
+      {
+        header: this.translateService.stream('CommentWorker'),
+        field: 'commentWorker',
+        formatter: (row: FormGroup) => row.get('commentWorker').value
+      },
+      {header: this.translateService.stream('CommentOffice'), field: 'commentOffice', cellTemplate: this.inputTextTpl},
+    ] : [
+      {
+        header: this.translateService.stream('DayOfWeek'),
+        pinned: 'left',
+        field: 'weekDay',
+        formatter: (row: FormGroup) => this.translateService.instant(DaysOfWeekEnum[row.get('weekDay').value]),
       },
       {
         header: this.translateService.stream('Date'),
