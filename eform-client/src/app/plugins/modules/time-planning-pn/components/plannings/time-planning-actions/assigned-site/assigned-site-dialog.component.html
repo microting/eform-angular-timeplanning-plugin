@@ -175,6 +175,7 @@
           ></ngx-material-timepicker>
           <div class="pt-4">
             <button
+              [id]="day.toLowerCase() + 'LoadDefaults'"
               mat-icon-button
               (click)="copyBreakSettings(day.toLowerCase())"
               color="warn">
