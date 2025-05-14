@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test: [a,b]
+        test: [a,b,c]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -121,7 +121,7 @@ jobs:
       if: matrix.test == 'a'
       run: cd eform-angular-frontend/eform-client && npm run testheadlessplugin2${{matrix.test}}
     - name: Create database
-      if: matrix.test == 'b'
+      if: matrix.test != 'a'
       run: |
         docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_Angular.EformPlugins set Status = 1'
         docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'create database `420_eform-angular-time-planning-plugin`'
