@@ -662,7 +662,8 @@ public class TimeSettingService : ISettingService
 
         await dbAssignedSite.Update(_dbContext);
 
-        if (!dbAssignedSite.UseGoogleSheetAsDefault)
+        if (dbAssignedSite.UseGoogleSheetAsDefault)
+            return new OperationResult(true, _localizationService.GetString("AssignedSiteUpdatedSuccessfuly"));
         {
             var midnight = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, 0, 0, 0);
             var planRegistrationsFromTodayAndForward = await _dbContext.PlanRegistrations
@@ -888,7 +889,6 @@ public class TimeSettingService : ISettingService
 
                 await planRegistration.Update(_dbContext);
             }
-
         }
 
         return new OperationResult(true, _localizationService.GetString("AssignedSiteUpdatedSuccessfuly"));

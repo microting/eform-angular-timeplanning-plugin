@@ -224,6 +224,112 @@ public static class PlanRegistrationHelper
                                 planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
                             }
 
+                            if (dbAssignedSite.AutoBreakCalculationActive)
+                            {
+                                var hoursPlannedToBeAtWorkInMinutes =
+                                    planRegistration.PlannedEndOfShift1 - planRegistration.PlannedStartOfShift1
+                                    + planRegistration.PlannedEndOfShift2 - planRegistration.PlannedStartOfShift2
+                                    + planRegistration.PlannedEndOfShift3 - planRegistration.PlannedStartOfShift3
+                                    + planRegistration.PlannedEndOfShift4 - planRegistration.PlannedStartOfShift4
+                                    + planRegistration.PlannedEndOfShift5 - planRegistration.PlannedStartOfShift5;
+                                if (hoursPlannedToBeAtWorkInMinutes > 0)
+                                {
+                                    var dayOfWeek = planRegistration.Date.DayOfWeek;
+                                    var breakTime = 0;
+                                    planRegistration.PlannedBreakOfShift2 = 0;
+                                    planRegistration.PlannedBreakOfShift3 = 0;
+                                    planRegistration.PlannedBreakOfShift4 = 0;
+                                    planRegistration.PlannedBreakOfShift5 = 0;
+                                    switch (dayOfWeek)
+                                    {
+                                        case DayOfWeek.Monday:
+                                        {
+                                            var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
+                                                                 dbAssignedSite.MondayBreakMinutesDivider;
+                                            breakTime = (int)numberOfBreaks *
+                                                        dbAssignedSite.MondayBreakMinutesPrDivider;
+                                            planRegistration.PlannedBreakOfShift1 =
+                                                breakTime < dbAssignedSite.MondayBreakMinutesUpperLimit
+                                                    ? breakTime
+                                                    : dbAssignedSite.MondayBreakMinutesUpperLimit;
+                                            break;
+                                        }
+                                        case DayOfWeek.Tuesday:
+                                        {
+                                            var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
+                                                                 dbAssignedSite.TuesdayBreakMinutesDivider;
+                                            breakTime = (int)numberOfBreaks *
+                                                        dbAssignedSite.TuesdayBreakMinutesPrDivider;
+                                            planRegistration.PlannedBreakOfShift1 =
+                                                breakTime < dbAssignedSite.TuesdayBreakMinutesUpperLimit
+                                                    ? breakTime
+                                                    : dbAssignedSite.TuesdayBreakMinutesUpperLimit;
+                                            break;
+                                        }
+                                        case DayOfWeek.Wednesday:
+                                        {
+                                            var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
+                                                                 dbAssignedSite.WednesdayBreakMinutesDivider;
+                                            breakTime = (int)numberOfBreaks *
+                                                        dbAssignedSite.WednesdayBreakMinutesPrDivider;
+                                            planRegistration.PlannedBreakOfShift1 =
+                                                breakTime < dbAssignedSite.WednesdayBreakMinutesUpperLimit
+                                                    ? breakTime
+                                                    : dbAssignedSite.WednesdayBreakMinutesUpperLimit;
+                                            break;
+                                        }
+                                        case DayOfWeek.Thursday:
+                                        {
+                                            var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
+                                                                 dbAssignedSite.ThursdayBreakMinutesDivider;
+                                            breakTime = (int)numberOfBreaks *
+                                                        dbAssignedSite.ThursdayBreakMinutesPrDivider;
+                                            planRegistration.PlannedBreakOfShift1 =
+                                                breakTime < dbAssignedSite.ThursdayBreakMinutesUpperLimit
+                                                    ? breakTime
+                                                    : dbAssignedSite.ThursdayBreakMinutesUpperLimit;
+                                            break;
+                                        }
+                                        case DayOfWeek.Friday:
+                                        {
+                                            var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
+                                                                 dbAssignedSite.FridayBreakMinutesDivider;
+                                            breakTime = (int)numberOfBreaks *
+                                                        dbAssignedSite.FridayBreakMinutesPrDivider;
+                                            planRegistration.PlannedBreakOfShift1 =
+                                                breakTime < dbAssignedSite.FridayBreakMinutesUpperLimit
+                                                    ? breakTime
+                                                    : dbAssignedSite.FridayBreakMinutesUpperLimit;
+                                            break;
+                                        }
+                                        case DayOfWeek.Saturday:
+                                        {
+                                            var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
+                                                                 dbAssignedSite.SaturdayBreakMinutesDivider;
+                                            breakTime = (int)numberOfBreaks *
+                                                        dbAssignedSite.SaturdayBreakMinutesPrDivider;
+                                            planRegistration.PlannedBreakOfShift1 =
+                                                breakTime < dbAssignedSite.SaturdayBreakMinutesUpperLimit
+                                                    ? breakTime
+                                                    : dbAssignedSite.SaturdayBreakMinutesUpperLimit;
+                                            break;
+                                        }
+                                        case DayOfWeek.Sunday:
+                                        {
+                                            var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
+                                                                 dbAssignedSite.SundayBreakMinutesDivider;
+                                            breakTime = (int)numberOfBreaks *
+                                                        dbAssignedSite.SundayBreakMinutesPrDivider;
+                                            planRegistration.PlannedBreakOfShift1 =
+                                                breakTime < dbAssignedSite.SundayBreakMinutesUpperLimit
+                                                    ? breakTime
+                                                    : dbAssignedSite.SundayBreakMinutesUpperLimit;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
                             await planRegistration.Update(dbContext).ConfigureAwait(false);
                         }
                     }
