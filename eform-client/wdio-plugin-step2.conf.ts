@@ -58,6 +58,7 @@ export const config: Options.Testrunner = {
         browserName: 'chrome',
         'goog:chromeOptions': {
             args: [
+                'headless',
                 'window-size=1920,1080',
                 'disable-gpu'],
         },
