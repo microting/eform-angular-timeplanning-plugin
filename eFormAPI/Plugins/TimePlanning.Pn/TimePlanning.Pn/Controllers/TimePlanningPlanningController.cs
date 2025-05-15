@@ -56,8 +56,8 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
 
     [HttpGet]
     [Route("get-by-user")]
-    public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(TimePlanningPlanningRequestModel obj, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
+    public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(TimePlanningPlanningRequestModel model, string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion)
     {
-        return await _planningService.IndexByCurrentUserName(obj, softwareVersion, model, manufacturer, osVersion);
+        return await _planningService.IndexByCurrentUserName(model, softwareVersion, deviceModel, manufacturer, osVersion);
     }
 }

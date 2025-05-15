@@ -204,7 +204,7 @@ public class TimePlanningPlanningService(
     }
 
     public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserName(
-        TimePlanningPlanningRequestModel obj, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
+        TimePlanningPlanningRequestModel model, string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion)
     {
         var sdkCore = await core.GetCore();
         var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
@@ -212,9 +212,9 @@ public class TimePlanningPlanningService(
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
 
-        if (model != null)
+        if (deviceModel != null)
         {
-            currentUser.TimeRegistrationModel = model;
+            currentUser.TimeRegistrationModel = deviceModel;
             currentUser.TimeRegistrationManufacturer = manufacturer;
             currentUser.TimeRegistrationSoftwareVersion = softwareVersion;
             currentUser.TimeRegistrationOsVersion = osVersion;
@@ -238,11 +238,11 @@ public class TimePlanningPlanningService(
             .FirstOrDefaultAsync(x => x.SiteId == site.MicrotingUid);
 
         var datesInPeriod = new List<DateTime>();
-        var midnightOfDateFrom = new DateTime(obj.DateFrom!.Value.Year, obj.DateFrom.Value.Month, obj.DateFrom.Value.Day, 0, 0, 0);
-        var midnightOfDateTo = new DateTime(obj.DateTo!.Value.Year, obj.DateTo.Value.Month, obj.DateTo.Value.Day, 23, 59, 59);
+        var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
+        var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
         var todayMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
-        var date = obj.DateFrom;
-        while (date <= obj.DateTo)
+        var date = model.DateFrom;
+        while (date <= model.DateTo)
         {
             datesInPeriod.Add(date.Value);
             date = date.Value.AddDays(1);
@@ -345,7 +345,7 @@ public class TimePlanningPlanningService(
             midnightOfDateFrom,
             midnightOfDateTo);
 
-        siteModel.PlanningPrDayModels = obj.IsSortDsc
+        siteModel.PlanningPrDayModels = model.IsSortDsc
             ? siteModel.PlanningPrDayModels.OrderByDescending(x => x.Date).ToList()
             : siteModel.PlanningPrDayModels.OrderBy(x => x.Date).ToList();
 
