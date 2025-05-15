@@ -124,6 +124,11 @@ public static class PlanRegistrationHelper
                         break;
                     }
                 }
+
+                if (planning.Pause1Id > 0)
+                {
+                    planning.Pause1Id /= 5;
+                }
             }
         }
 
