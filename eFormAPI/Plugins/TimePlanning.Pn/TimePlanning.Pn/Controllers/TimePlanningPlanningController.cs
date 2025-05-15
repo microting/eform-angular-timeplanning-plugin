@@ -18,47 +18,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Controllers
+namespace TimePlanning.Pn.Controllers;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Infrastructure.Models.Planning;
+using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Services.TimePlanningPlanningService;
+
+[Route("api/time-planning-pn/plannings")]
+public class TimePlanningPlanningController(ITimePlanningPlanningService planningService) : Controller
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.Planning;
-    using Microsoft.AspNetCore.Mvc;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
-    using Services.TimePlanningPlanningService;
+    private readonly ITimePlanningPlanningService _planningService = planningService;
 
-    [Route("api/time-planning-pn/plannings")]
-    public class TimePlanningPlanningController(ITimePlanningPlanningService planningService) : Controller
+    [HttpPost]
+    [Route("index")]
+    public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(
+        [FromBody] TimePlanningPlanningRequestModel model)
     {
-        private readonly ITimePlanningPlanningService _planningService = planningService;
+        return await _planningService.Index(model);
+    }
 
-        [HttpPost]
-        [Route("index")]
-        public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(
-            [FromBody] TimePlanningPlanningRequestModel model)
-        {
-            return await _planningService.Index(model);
-        }
+    [HttpPut]
+    [Route("{id}")]
+    public async Task<OperationResult> Update(int id, [FromBody] TimePlanningPlanningPrDayModel model)
+    {
+        return await _planningService.Update(id, model);
+    }
 
-        [HttpPut]
-        [Route("{id}")]
-        public async Task<OperationResult> Update(int id, [FromBody] TimePlanningPlanningPrDayModel model)
-        {
-            return await _planningService.Update(id, model);
-        }
+    [HttpPut]
+    [Route("update-by-current-user")]
+    public async Task<OperationResult> UpdateByCurrentUserNam([FromBody] TimePlanningPlanningPrDayModel model)
+    {
+        return await _planningService.UpdateByCurrentUserNam(model);
+    }
 
-        [HttpPut]
-        [Route("update-by-current-user")]
-        public async Task<OperationResult> UpdateByCurrentUserNam([FromBody] TimePlanningPlanningPrDayModel model)
-        {
-            return await _planningService.UpdateByCurrentUserNam(model);
-        }
-
-        [HttpGet]
-        [Route("get-by-user")]
-        public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(TimePlanningPlanningRequestModel obj, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
-        {
-            return await _planningService.IndexByCurrentUserNam(obj, softwareVersion, model, manufacturer, osVersion);
-        }
+    [HttpGet]
+    [Route("get-by-user")]
+    public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(TimePlanningPlanningRequestModel obj, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
+    {
+        return await _planningService.IndexByCurrentUserName(obj, softwareVersion, model, manufacturer, osVersion);
     }
 }

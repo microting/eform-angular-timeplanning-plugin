@@ -203,7 +203,7 @@ public class TimePlanningPlanningService(
         }
     }
 
-    public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(
+    public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserName(
         TimePlanningPlanningRequestModel obj, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
     {
         var sdkCore = await core.GetCore();
