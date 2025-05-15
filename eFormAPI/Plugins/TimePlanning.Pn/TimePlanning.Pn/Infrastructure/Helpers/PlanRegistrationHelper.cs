@@ -18,6 +18,119 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 
 public static class PlanRegistrationHelper
 {
+    public static PlanRegistration CalculatePauseAutoBreakCalculationActive(
+        AssignedSite assignedSite, PlanRegistration planning)
+    {
+        if (assignedSite.AutoBreakCalculationActive)
+        {
+            var minutesActualAtWork =
+                (planning.Stop1Id - planning.Start1Id
+                    + planning.Stop2Id - planning.Start2Id
+                    + planning.Stop3Id - planning.Start3Id
+                    + planning.Stop4Id - planning.Start4Id
+                    + planning.Stop5Id - planning.Start5Id) * 5;
+            if (minutesActualAtWork > 0)
+            {
+                var dayOfWeek = planning.Date.DayOfWeek;
+                var breakTime = 0;
+                planning.Pause2Id = 0;
+                planning.Pause3Id = 0;
+                planning.Pause4Id = 0;
+                planning.Pause5Id = 0;
+                switch (dayOfWeek)
+                {
+                    case DayOfWeek.Monday:
+                    {
+                        var numberOfBreaks = minutesActualAtWork /
+                                             assignedSite.MondayBreakMinutesDivider;
+                        breakTime = numberOfBreaks *
+                                    assignedSite.MondayBreakMinutesPrDivider;
+                        planning.Pause1Id =
+                            breakTime < assignedSite.MondayBreakMinutesUpperLimit
+                                ? breakTime
+                                : assignedSite.MondayBreakMinutesUpperLimit;
+                        break;
+                    }
+                    case DayOfWeek.Tuesday:
+                    {
+                        var numberOfBreaks = minutesActualAtWork /
+                                             assignedSite.TuesdayBreakMinutesDivider;
+                        breakTime = numberOfBreaks *
+                                    assignedSite.TuesdayBreakMinutesPrDivider;
+                        planning.Pause1Id =
+                            breakTime < assignedSite.TuesdayBreakMinutesUpperLimit
+                                ? breakTime
+                                : assignedSite.TuesdayBreakMinutesUpperLimit;
+                        break;
+                    }
+                    case DayOfWeek.Wednesday:
+                    {
+                        var numberOfBreaks = minutesActualAtWork /
+                                             assignedSite.WednesdayBreakMinutesDivider;
+                        breakTime = numberOfBreaks *
+                                    assignedSite.WednesdayBreakMinutesPrDivider;
+                        planning.Pause1Id =
+                            breakTime < assignedSite.WednesdayBreakMinutesUpperLimit
+                                ? breakTime
+                                : assignedSite.WednesdayBreakMinutesUpperLimit;
+                        break;
+                    }
+                    case DayOfWeek.Thursday:
+                    {
+                        var numberOfBreaks = minutesActualAtWork /
+                                             assignedSite.ThursdayBreakMinutesDivider;
+                        breakTime = numberOfBreaks *
+                                    assignedSite.ThursdayBreakMinutesPrDivider;
+                        planning.Pause1Id =
+                            breakTime < assignedSite.ThursdayBreakMinutesUpperLimit
+                                ? breakTime
+                                : assignedSite.ThursdayBreakMinutesUpperLimit;
+                        break;
+                    }
+                    case DayOfWeek.Friday:
+                    {
+                        var numberOfBreaks = minutesActualAtWork /
+                                             assignedSite.FridayBreakMinutesDivider;
+                        breakTime = numberOfBreaks *
+                                    assignedSite.FridayBreakMinutesPrDivider;
+                        planning.Pause1Id =
+                            breakTime < assignedSite.FridayBreakMinutesUpperLimit
+                                ? breakTime
+                                : assignedSite.FridayBreakMinutesUpperLimit;
+                        break;
+                    }
+                    case DayOfWeek.Saturday:
+                    {
+                        var numberOfBreaks = minutesActualAtWork /
+                                             assignedSite.SaturdayBreakMinutesDivider;
+                        breakTime = numberOfBreaks *
+                                    assignedSite.SaturdayBreakMinutesPrDivider;
+                        planning.Pause1Id =
+                            breakTime < assignedSite.SaturdayBreakMinutesUpperLimit
+                                ? breakTime
+                                : assignedSite.SaturdayBreakMinutesUpperLimit;
+                        break;
+                    }
+                    case DayOfWeek.Sunday:
+                    {
+                        var numberOfBreaks = minutesActualAtWork /
+                                             assignedSite.SundayBreakMinutesDivider;
+                        breakTime = numberOfBreaks *
+                                    assignedSite.SundayBreakMinutesPrDivider;
+                        planning.Pause1Id =
+                            breakTime < assignedSite.SundayBreakMinutesUpperLimit
+                                ? breakTime
+                                : assignedSite.SundayBreakMinutesUpperLimit;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return planning;
+    }
+
+
     public static async Task<TimePlanningPlanningModel> UpdatePlanRegistrationsInPeriod(
         List<PlanRegistration> planningsInPeriod,
         TimePlanningPlanningModel siteModel,
@@ -213,14 +326,14 @@ public static class PlanRegistrationHelper
                             var calculatedPlanHoursInMinutes = 0;
                             if (planRegistration.PlannedStartOfShift1 != 0 && planRegistration.PlannedEndOfShift1 != 0)
                             {
-                                calculatedPlanHoursInMinutes += (int)planRegistration.PlannedEndOfShift1 -
-                                                                (int)planRegistration.PlannedStartOfShift1 - planRegistration.PlannedBreakOfShift1;
+                                calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift1 -
+                                                                planRegistration.PlannedStartOfShift1 - planRegistration.PlannedBreakOfShift1;
                                 planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
                             }
                             if (planRegistration.PlannedStartOfShift2 != 0 && planRegistration.PlannedEndOfShift2 != 0)
                             {
-                                calculatedPlanHoursInMinutes += (int)planRegistration.PlannedEndOfShift2 -
-                                                                (int)planRegistration.PlannedStartOfShift2 - planRegistration.PlannedBreakOfShift2;
+                                calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift2 -
+                                                                planRegistration.PlannedStartOfShift2 - planRegistration.PlannedBreakOfShift2;
                                 planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
                             }
 

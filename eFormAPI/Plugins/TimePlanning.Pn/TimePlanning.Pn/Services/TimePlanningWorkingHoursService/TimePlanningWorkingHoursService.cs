@@ -818,7 +818,7 @@ public class TimePlanningWorkingHoursService(
                 localizationService.GetString("SiteNotFound"));
         }
 
-        var dbAssignedSite = await dbContext.AssignedSites
+        var assignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
 
@@ -1039,6 +1039,8 @@ public class TimePlanningWorkingHoursService(
 
             var minutesMultiplier = 5;
             double nettoMinutes = 0;
+
+            planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
 
             if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {
@@ -1275,6 +1277,8 @@ public class TimePlanningWorkingHoursService(
 
             var minutesMultiplier = 5;
             double nettoMinutes = 0;
+
+            planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
 
             if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {
@@ -1558,6 +1562,12 @@ public class TimePlanningWorkingHoursService(
             var minutesMultiplier = 5;
             double nettoMinutes = 0;
 
+            var assignedSite = await dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.SiteId == sdkSiteId.Value);
+
+            planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
+
             if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {
                 nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
@@ -1794,6 +1804,12 @@ public class TimePlanningWorkingHoursService(
 
             var minutesMultiplier = 5;
             double nettoMinutes = 0;
+
+            var assignedSite = await dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.SiteId == sdkSiteId!.Value);
+
+            planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
 
             if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {

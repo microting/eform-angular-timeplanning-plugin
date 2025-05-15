@@ -46,7 +46,7 @@ namespace TimePlanning.Pn.Controllers
         {
             return await _planningService.Update(id, model);
         }
-        
+
         [HttpPut]
         [Route("update-by-current-user")]
         public async Task<OperationResult> UpdateByCurrentUserNam([FromBody] TimePlanningPlanningPrDayModel model)
@@ -56,9 +56,9 @@ namespace TimePlanning.Pn.Controllers
 
         [HttpGet]
         [Route("get-by-user")]
-        public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(TimePlanningPlanningRequestModel model)
+        public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(TimePlanningPlanningRequestModel obj, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
         {
-            return await _planningService.IndexByCurrentUserNam(model);
+            return await _planningService.IndexByCurrentUserNam(obj, softwareVersion, model, manufacturer, osVersion);
         }
     }
 }

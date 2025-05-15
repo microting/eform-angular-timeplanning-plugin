@@ -204,13 +204,23 @@ public class TimePlanningPlanningService(
     }
 
     public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(
-        TimePlanningPlanningRequestModel model)
+        TimePlanningPlanningRequestModel obj, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
     {
         var sdkCore = await core.GetCore();
         var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
         var currentUserAsync = await userService.GetCurrentUserAsync();
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
+
+        if (model != null)
+        {
+            currentUser.TimeRegistrationModel = model;
+            currentUser.TimeRegistrationManufacturer = manufacturer;
+            currentUser.TimeRegistrationSoftwareVersion = softwareVersion;
+            currentUser.TimeRegistrationOsVersion = osVersion;
+            await baseDbContext.SaveChangesAsync();
+        }
+
         var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
         var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
             x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
@@ -228,11 +238,11 @@ public class TimePlanningPlanningService(
             .FirstOrDefaultAsync(x => x.SiteId == site.MicrotingUid);
 
         var datesInPeriod = new List<DateTime>();
-        var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
-        var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
+        var midnightOfDateFrom = new DateTime(obj.DateFrom!.Value.Year, obj.DateFrom.Value.Month, obj.DateFrom.Value.Day, 0, 0, 0);
+        var midnightOfDateTo = new DateTime(obj.DateTo!.Value.Year, obj.DateTo.Value.Month, obj.DateTo.Value.Day, 23, 59, 59);
         var todayMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
-        var date = model.DateFrom;
-        while (date <= model.DateTo)
+        var date = obj.DateFrom;
+        while (date <= obj.DateTo)
         {
             datesInPeriod.Add(date.Value);
             date = date.Value.AddDays(1);
@@ -335,7 +345,7 @@ public class TimePlanningPlanningService(
             midnightOfDateFrom,
             midnightOfDateTo);
 
-        siteModel.PlanningPrDayModels = model.IsSortDsc
+        siteModel.PlanningPrDayModels = obj.IsSortDsc
             ? siteModel.PlanningPrDayModels.OrderByDescending(x => x.Date).ToList()
             : siteModel.PlanningPrDayModels.OrderBy(x => x.Date).ToList();
 
@@ -729,111 +739,7 @@ public class TimePlanningPlanningService(
                 planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;
                 planning.Pause2Id = model.Pause2Id ?? planning.Pause2Id;
 
-                if (assignedSite.AutoBreakCalculationActive)
-                {
-                    var hoursPlannedToBeAtWorkInMinutes =
-                        (planning.Stop1Id - planning.Start1Id
-                            + planning.Stop2Id - planning.Start2Id
-                            + planning.Stop3Id - planning.Start3Id
-                            + planning.Stop4Id - planning.Start4Id
-                            + planning.Stop5Id - planning.Start5Id) * 5;
-                    if (hoursPlannedToBeAtWorkInMinutes > 0)
-                    {
-                        var dayOfWeek = planning.Date.DayOfWeek;
-                        var breakTime = 0;
-                        planning.Pause2Id = 0;
-                        planning.Pause3Id = 0;
-                        planning.Pause4Id = 0;
-                        planning.Pause5Id = 0;
-                        switch (dayOfWeek)
-                        {
-                            case DayOfWeek.Monday:
-                            {
-                                var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
-                                                     assignedSite.MondayBreakMinutesDivider;
-                                breakTime = (int)numberOfBreaks *
-                                            assignedSite.MondayBreakMinutesPrDivider;
-                                planning.Pause1Id =
-                                    breakTime < assignedSite.MondayBreakMinutesUpperLimit
-                                        ? breakTime
-                                        : assignedSite.MondayBreakMinutesUpperLimit;
-                                break;
-                            }
-                            case DayOfWeek.Tuesday:
-                            {
-                                var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
-                                                     assignedSite.TuesdayBreakMinutesDivider;
-                                breakTime = (int)numberOfBreaks *
-                                            assignedSite.TuesdayBreakMinutesPrDivider;
-                                planning.Pause1Id =
-                                    breakTime < assignedSite.TuesdayBreakMinutesUpperLimit
-                                        ? breakTime
-                                        : assignedSite.TuesdayBreakMinutesUpperLimit;
-                                break;
-                            }
-                            case DayOfWeek.Wednesday:
-                            {
-                                var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
-                                                     assignedSite.WednesdayBreakMinutesDivider;
-                                breakTime = (int)numberOfBreaks *
-                                            assignedSite.WednesdayBreakMinutesPrDivider;
-                                planning.Pause1Id =
-                                    breakTime < assignedSite.WednesdayBreakMinutesUpperLimit
-                                        ? breakTime
-                                        : assignedSite.WednesdayBreakMinutesUpperLimit;
-                                break;
-                            }
-                            case DayOfWeek.Thursday:
-                            {
-                                var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
-                                                     assignedSite.ThursdayBreakMinutesDivider;
-                                breakTime = (int)numberOfBreaks *
-                                            assignedSite.ThursdayBreakMinutesPrDivider;
-                                planning.Pause1Id =
-                                    breakTime < assignedSite.ThursdayBreakMinutesUpperLimit
-                                        ? breakTime
-                                        : assignedSite.ThursdayBreakMinutesUpperLimit;
-                                break;
-                            }
-                            case DayOfWeek.Friday:
-                            {
-                                var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
-                                                     assignedSite.FridayBreakMinutesDivider;
-                                breakTime = (int)numberOfBreaks *
-                                            assignedSite.FridayBreakMinutesPrDivider;
-                                planning.Pause1Id =
-                                    breakTime < assignedSite.FridayBreakMinutesUpperLimit
-                                        ? breakTime
-                                        : assignedSite.FridayBreakMinutesUpperLimit;
-                                break;
-                            }
-                            case DayOfWeek.Saturday:
-                            {
-                                var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
-                                                     assignedSite.SaturdayBreakMinutesDivider;
-                                breakTime = (int)numberOfBreaks *
-                                            assignedSite.SaturdayBreakMinutesPrDivider;
-                                planning.Pause1Id =
-                                    breakTime < assignedSite.SaturdayBreakMinutesUpperLimit
-                                        ? breakTime
-                                        : assignedSite.SaturdayBreakMinutesUpperLimit;
-                                break;
-                            }
-                            case DayOfWeek.Sunday:
-                            {
-                                var numberOfBreaks = hoursPlannedToBeAtWorkInMinutes /
-                                                     assignedSite.SundayBreakMinutesDivider;
-                                breakTime = (int)numberOfBreaks *
-                                            assignedSite.SundayBreakMinutesPrDivider;
-                                planning.Pause1Id =
-                                    breakTime < assignedSite.SundayBreakMinutesUpperLimit
-                                        ? breakTime
-                                        : assignedSite.SundayBreakMinutesUpperLimit;
-                                break;
-                            }
-                        }
-                    }
-                }
+                planning = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planning);
             }
             else
             {
