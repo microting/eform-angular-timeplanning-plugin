@@ -164,7 +164,7 @@ jobs:
       if: always()
       run: |
         cat docker_run_log
-    - name: Archive screenshot artifacts
+    - name: Archive mp4 artifacts
       if: ${{ failure() }}
       uses: actions/upload-artifact@v4
       with:
@@ -172,6 +172,13 @@ jobs:
         path: |
           /home/runner/work/eform-angular-timeplanning-plugin/eform-angular-timeplanning-plugin/eform-angular-frontend/eform-client/cypress/videos/*.cy.ts.mp4
         retention-days: 2
+    - name: Archive screenshot artifacts
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: error Screenshots ${{matrix.test}}
+        path: |
+          /home/runner/work/eform-angular-frontend/eform-angular-frontend/eform-client/errorShots/*.png
   test-dotnet:
     runs-on: ubuntu-latest
     steps:
