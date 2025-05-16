@@ -127,7 +127,7 @@ public static class PlanRegistrationHelper
 
                 if (planning.Pause1Id > 0)
                 {
-                    planning.Pause1Id /= 5;
+                    planning.Pause1Id = planning.Pause1Id / 5 + 1;
                 }
             }
         }

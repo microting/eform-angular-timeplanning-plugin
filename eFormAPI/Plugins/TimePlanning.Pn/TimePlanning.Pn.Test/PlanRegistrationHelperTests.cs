@@ -8,13 +8,13 @@ namespace TimePlanning.Pn.Test;
 [TestFixture]
 public class PlanRegistrationHelperTests
 {
-    [TestCase(DayOfWeek.Monday, 180, 30, 2, 60, 12, 96, 12)]
+    [TestCase(DayOfWeek.Monday, 180, 30, 2, 60, 12, 96, 13)]
     [TestCase(DayOfWeek.Tuesday, 180, 30, 2, 60, 24, 30, 0)]
-    [TestCase(DayOfWeek.Wednesday, 180, 30, 2, 60, 96, 192, 12)]
-    [TestCase(DayOfWeek.Thursday, 180, 30, 2, 60, 96, 132, 6)]
-    [TestCase(DayOfWeek.Friday, 180, 30, 2, 60, 96, 132, 6)]
-    [TestCase(DayOfWeek.Saturday, 120, 30, 2, 60, 96, 132, 6)]
-    [TestCase(DayOfWeek.Sunday, 120, 30, 2, 60, 96, 192, 12)]
+    [TestCase(DayOfWeek.Wednesday, 180, 30, 2, 60, 96, 192, 13)]
+    [TestCase(DayOfWeek.Thursday, 180, 30, 2, 60, 96, 132, 7)]
+    [TestCase(DayOfWeek.Friday, 180, 30, 2, 60, 96, 132, 7)]
+    [TestCase(DayOfWeek.Saturday, 120, 30, 2, 60, 96, 132, 7)]
+    [TestCase(DayOfWeek.Sunday, 120, 30, 2, 60, 96, 192, 13)]
     public void CalculatePauseAutoBreakCalculationActive_SetsPause1Id_Correctly(
         DayOfWeek dayOfWeek,
         int breakMinutesDivider,
