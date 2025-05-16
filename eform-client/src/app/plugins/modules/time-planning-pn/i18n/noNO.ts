@@ -96,4 +96,12 @@ export const noNO = {
   Shift: 'Skifte',
   Registered: 'Registrert',
   PlannedHours: 'Planlagte timer',
+  'Use Google Sheet as default': 'Bruk Google Regneark som standard',
+  'Use only plan hours': 'Bruk kun plantimer',
+  'Auto break calculation': 'Automatisk pauseberegning',
+  'Allow time registration on mobile': 'Tillat tidsregistrering på mobil',
+  'Allow editing of working hours on mobile': 'Tillat redigering av arbeidstider på mobil',
+  'Use time clock on mobile': 'Bruk stempelklokke på mobilen',
+  'Allow entry of unregistered working hours on mobile': 'Tillat registrering av uregistrerte arbeidstimer på mobil',
+  'Allow receipt for standard time on mobile': 'Tillat kvittering for standardtid på mobil',
 };

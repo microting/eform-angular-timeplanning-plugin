@@ -96,4 +96,12 @@ export const deDE = {
   Shift: 'Schicht',
   Registered: 'Eingetragen',
   PlannedHours: 'Geplante Stunden',
+  'Use Google Sheet as default': 'Google Sheet als Standard verwenden',
+  'Use only plan hours': 'Nur Planstunden verwenden',
+  'Auto break calculation': 'Automatische Bruchberechnung',
+  'Allow time registration on mobile': 'Zeiterfassung auf Mobilgeräten zulassen',
+  'Allow editing of working hours on mobile': 'Bearbeiten der Arbeitszeiten auf dem Handy ermöglichen',
+  'Use time clock on mobile': 'Verwenden Sie die Stechuhr auf dem Handy',
+  'Allow entry of unregistered working hours on mobile': 'Erfassung nicht erfasster Arbeitszeiten mobil ermöglichen',
+  'Allow receipt for standard time on mobile': 'Empfang für Standardzeit auf Mobilgeräten zulassen',
 };

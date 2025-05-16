@@ -96,4 +96,12 @@ export const csCZ = {
   Shift: 'Posun',
   Registered: 'Registrovaný',
   PlannedHours: 'Plánované hodiny',
+  'Use Google Sheet as default': 'Použít jako výchozí nastavení Google Tabulky',
+  'Use only plan hours': 'Používejte pouze plánované hodiny',
+  'Auto break calculation': 'Automatický výpočet přerušení',
+  'Allow time registration on mobile': 'Povolit registraci času na mobilu',
+  'Allow editing of working hours on mobile': 'Povolit úpravu pracovní doby na mobilu',
+  'Use time clock on mobile': 'Používejte časovač na mobilu',
+  'Allow entry of unregistered working hours on mobile': 'Povolit zadávání neregistrované pracovní doby na mobilu',
+  'Allow receipt for standard time on mobile': 'Povolit účtenku pro standardní čas na mobilu',
 };

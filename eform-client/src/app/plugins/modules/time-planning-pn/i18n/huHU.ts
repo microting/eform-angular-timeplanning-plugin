@@ -96,4 +96,12 @@ export const huHU = {
   Shift: 'Váltás',
   Registered: 'Bejegyzett',
   PlannedHours: 'Tervezett órák',
+  'Use Google Sheet as default': 'A Google Táblázatok használata alapértelmezettként',
+  'Use only plan hours': 'Csak a tervezett órákat használja',
+  'Auto break calculation': 'Automatikus szünetszámítás',
+  'Allow time registration on mobile': 'Időregisztráció engedélyezése mobilon',
+  'Allow editing of working hours on mobile': 'Munkaidő szerkesztésének engedélyezése mobilon',
+  'Use time clock on mobile': 'Időzítő használata mobilon',
+  'Allow entry of unregistered working hours on mobile': 'Engedélyezze a nem regisztrált munkaórák bevitelét mobilon',
+  'Allow receipt for standard time on mobile': 'Engedélyezze a nyugtát a szokásos időre mobilon',
 };

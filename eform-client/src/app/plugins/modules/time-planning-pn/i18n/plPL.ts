@@ -96,4 +96,12 @@ export const plPL = {
   Shift: 'Zmiana',
   Registered: 'Zarejestrowany',
   PlannedHours: 'Zaplanowane godziny',
+  'Use Google Sheet as default': 'Użyj Arkuszy Google jako domyślnego',
+  'Use only plan hours': 'Używaj tylko godzin planu',
+  'Auto break calculation': 'Automatyczne obliczanie przerwy',
+  'Allow time registration on mobile': 'Zezwól na rejestrację czasu na urządzeniu mobilnym',
+  'Allow editing of working hours on mobile': 'Zezwalaj na edycję godzin pracy na urządzeniu mobilnym',
+  'Use time clock on mobile': 'Użyj zegara czasu na telefonie komórkowym',
+  'Allow entry of unregistered working hours on mobile': 'Zezwalaj na wprowadzanie niezarejestrowanych godzin pracy na urządzeniach mobilnych',
+  'Allow receipt for standard time on mobile': 'Zezwalaj na odbiór paragonu w czasie standardowym na urządzeniach mobilnych',
 };

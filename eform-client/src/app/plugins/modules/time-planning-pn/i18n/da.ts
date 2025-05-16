@@ -94,4 +94,12 @@ export const da = {
   Shift: 'Skift',
   Registered: 'Registreret',
   PlannedHours: 'Planlagte timer',
+  'Use Google Sheet as default': 'Brug Google Sheet som standard',
+  'Use only plan hours': 'Brug kun plantimer',
+  'Auto break calculation': 'Automatisk pauseberegning',
+  'Allow time registration on mobile': 'Tillad tidsregistrering på mobil',
+  'Allow editing of working hours on mobile': 'Tillad redigering af arbejdstider på mobilen',
+  'Use time clock on mobile': 'Brug stempelur på mobilen',
+  'Allow entry of unregistered working hours on mobile': 'Tillad indtastning af uregistrerede arbejdstimer på mobilen',
+  'Allow receipt for standard time on mobile': 'Tillad kvittering for standardtid på mobil',
 };

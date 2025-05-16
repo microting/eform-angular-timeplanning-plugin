@@ -96,4 +96,12 @@ export const isIS = {
   Shift: 'Shift',
   Registered: 'Skráður',
   PlannedHours: 'Fyrirhugaðir tímar',
+  'Use Google Sheet as default': 'Nota Google töflureikni sem sjálfgefið',
+  'Use only plan hours': 'Nota aðeins áætlunartíma',
+  'Auto break calculation': 'Sjálfvirk útreikningur á brot',
+  'Allow time registration on mobile': 'Leyfa tímaskráningu í farsíma',
+  'Allow editing of working hours on mobile': 'Leyfa breytingar á vinnutíma í farsíma',
+  'Use time clock on mobile': 'Nota stimplaklukku í farsíma',
+  'Allow entry of unregistered working hours on mobile': 'Leyfa færslu óskráðra vinnustunda í farsíma',
+  'Allow receipt for standard time on mobile': 'Leyfa kvittun fyrir staðlaðan tíma í farsíma',
 };

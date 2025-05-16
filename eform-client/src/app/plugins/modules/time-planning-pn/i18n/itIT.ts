@@ -96,4 +96,12 @@ export const itIT = {
   Shift: 'Spostare',
   Registered: 'Registrato',
   PlannedHours: 'Ore pianificate',
+  'Use Google Sheet as default': 'Utilizza Google Sheet come predefinito',
+  'Use only plan hours': 'Utilizza solo le ore del piano',
+  'Auto break calculation': 'Calcolo della frenata automatica',
+  'Allow time registration on mobile': 'Consenti la registrazione oraria sul cellulare',
+  'Allow editing of working hours on mobile': 'Consenti la modifica dell&#39;orario di lavoro su dispositivi mobili',
+  'Use time clock on mobile': 'Utilizzare il cronometro sul cellulare',
+  'Allow entry of unregistered working hours on mobile': 'Consenti l&#39;inserimento di ore di lavoro non registrate sul cellulare',
+  'Allow receipt for standard time on mobile': 'Consenti la ricezione per l&#39;ora standard sul cellulare',
 };

@@ -96,4 +96,12 @@ export const ptPT = {
   Shift: 'Mudança',
   Registered: 'Registrado',
   PlannedHours: 'Horas planejadas',
+  'Use Google Sheet as default': 'Usar o Planilha Google como padrão',
+  'Use only plan hours': 'Use apenas horas do plano',
+  'Auto break calculation': 'Cálculo de pausa automática',
+  'Allow time registration on mobile': 'Permitir registro de tempo no celular',
+  'Allow editing of working hours on mobile': 'Permitir edição de horas de trabalho no celular',
+  'Use time clock on mobile': 'Usar relógio de ponto no celular',
+  'Allow entry of unregistered working hours on mobile': 'Permitir entrada de horas de trabalho não registradas no celular',
+  'Allow receipt for standard time on mobile': 'Permitir recebimento para horário padrão no celular',
 };

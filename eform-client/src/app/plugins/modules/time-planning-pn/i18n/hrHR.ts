@@ -96,4 +96,12 @@ export const hrHR = {
   Shift: 'Shift',
   Registered: 'Registriran',
   PlannedHours: 'Planirano vrijeme',
+  'Use Google Sheet as default': 'Koristi Google tablicu kao zadanu',
+  'Use only plan hours': 'Koristi samo sate plana',
+  'Auto break calculation': 'Automatski izračun prekida',
+  'Allow time registration on mobile': 'Omogući registraciju vremena na mobilnom uređaju',
+  'Allow editing of working hours on mobile': 'Dopusti uređivanje radnog vremena na mobilnom uređaju',
+  'Use time clock on mobile': 'Koristite sat za radno vrijeme na mobitelu',
+  'Allow entry of unregistered working hours on mobile': 'Dopusti unos neregistriranih radnih sati na mobitelu',
+  'Allow receipt for standard time on mobile': 'Dopusti potvrdu za standardno vrijeme na mobilnom uređaju',
 };

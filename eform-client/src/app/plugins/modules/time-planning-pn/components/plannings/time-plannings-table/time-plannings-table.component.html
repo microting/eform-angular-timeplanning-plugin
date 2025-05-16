@@ -118,7 +118,7 @@
       </div>
       <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
-          <div class="{{ getCellTextColorForDay(row, col.field) }}">
+          <div class="{{ getCellTextColor(row, col.field) }}">
             <strong id="flexBalanceToDate{{index}}_{{col.field}}">{{ 'Flex balance to date' | translate}}: {{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>
           </div>
         </div>

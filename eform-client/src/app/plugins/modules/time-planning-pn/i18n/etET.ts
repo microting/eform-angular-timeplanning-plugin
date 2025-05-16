@@ -96,4 +96,12 @@ export const etET = {
   Shift: 'Shift',
   Registered: 'Registreeritud',
   PlannedHours: 'Planeeritud tunnid',
+  'Use Google Sheet as default': 'Kasuta vaikimisi Google Sheetsi',
+  'Use only plan hours': 'Kasutage ainult plaanitud tunde',
+  'Auto break calculation': 'Automaatne pausi arvutamine',
+  'Allow time registration on mobile': 'Luba aja registreerimine mobiilis',
+  'Allow editing of working hours on mobile': 'Luba töötundide muutmine mobiilseadmes',
+  'Use time clock on mobile': 'Kasutage mobiiltelefonis kellaaega',
+  'Allow entry of unregistered working hours on mobile': 'Luba registreerimata töötundide sisestamine mobiiltelefonis',
+  'Allow receipt for standard time on mobile': 'Luba mobiilis standardaja kviitung',
 };

@@ -96,4 +96,12 @@ export const frFR = {
   Shift: 'Changement',
   Registered: 'Inscrit',
   PlannedHours: 'Horaires prévus',
+  'Use Google Sheet as default': 'Utiliser Google Sheet par défaut',
+  'Use only plan hours': 'Utiliser uniquement les heures du plan',
+  'Auto break calculation': 'Calcul de rupture automatique',
+  'Allow time registration on mobile': 'Autoriser l&#39;enregistrement du temps sur mobile',
+  'Allow editing of working hours on mobile': 'Autoriser la modification des heures de travail sur mobile',
+  'Use time clock on mobile': 'Utiliser l&#39;horloge de pointage sur mobile',
+  'Allow entry of unregistered working hours on mobile': 'Autoriser la saisie des heures de travail non enregistrées sur mobile',
+  'Allow receipt for standard time on mobile': 'Autoriser la réception de l&#39;heure standard sur mobile',
 };

@@ -96,4 +96,12 @@ export const slSL = {
   Shift: 'Shift',
   Registered: 'Registriran',
   PlannedHours: 'Načrtovane ure',
+  'Use Google Sheet as default': 'Uporabi Google Preglednico kot privzeto',
+  'Use only plan hours': 'Uporabi samo ure načrta',
+  'Auto break calculation': 'Samodejni izračun prekinitev',
+  'Allow time registration on mobile': 'Dovoli registracijo časa na mobilnem telefonu',
+  'Allow editing of working hours on mobile': 'Dovoli urejanje delovnega časa na mobilni napravi',
+  'Use time clock on mobile': 'Uporabite časovno uro na mobilnem telefonu',
+  'Allow entry of unregistered working hours on mobile': 'Dovoli vnos neregistriranih delovnih ur na mobilnem telefonu',
+  'Allow receipt for standard time on mobile': 'Dovoli potrdilo o prejemu za standardni čas na mobilnem telefonu',
 };

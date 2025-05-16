@@ -96,4 +96,12 @@ export const lvLV = {
   Shift: 'Shift',
   Registered: 'Reģistrēts',
   PlannedHours: 'Plānotās stundas',
+  'Use Google Sheet as default': 'Izmantot Google izklājlapas kā noklusējuma vērtību',
+  'Use only plan hours': 'Izmantojiet tikai plānotās stundas',
+  'Auto break calculation': 'Automātiska pārtraukuma aprēķināšana',
+  'Allow time registration on mobile': 'Atļaut laika reģistrēšanu mobilajā tālrunī',
+  'Allow editing of working hours on mobile': 'Atļaut darba laika rediģēšanu mobilajā ierīcē',
+  'Use time clock on mobile': 'Izmantojiet laika pulksteni mobilajā tālrunī',
+  'Allow entry of unregistered working hours on mobile': 'Atļaut nereģistrētu darba stundu ievadīšanu mobilajā tālrunī',
+  'Allow receipt for standard time on mobile': 'Atļaut standarta laika kvīti mobilajā tālrunī',
 };

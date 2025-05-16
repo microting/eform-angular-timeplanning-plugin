@@ -96,4 +96,12 @@ export const fiFI = {
   Shift: 'Siirtää',
   Registered: 'Rekisteröity',
   PlannedHours: 'Suunnitellut tunnit',
+  'Use Google Sheet as default': 'Käytä Google Sheetsiä oletuksena',
+  'Use only plan hours': 'Käytä vain suunniteltuja tunteja',
+  'Auto break calculation': 'Automaattinen taukolaskenta',
+  'Allow time registration on mobile': 'Salli ajan rekisteröinti mobiililaitteella',
+  'Allow editing of working hours on mobile': 'Salli työaikojen muokkaaminen mobiililaitteella',
+  'Use time clock on mobile': 'Käytä aikakelloa mobiililaitteella',
+  'Allow entry of unregistered working hours on mobile': 'Salli rekisteröimättömien työtuntien syöttö mobiililaitteella',
+  'Allow receipt for standard time on mobile': 'Salli kuitti normaalille ajalle mobiililaitteella',
 };

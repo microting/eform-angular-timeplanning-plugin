@@ -96,4 +96,12 @@ export const roRO = {
   Shift: 'Schimbare',
   Registered: 'Înregistrat',
   PlannedHours: 'Orele planificate',
+  'Use Google Sheet as default': 'Folosește Google Sheet ca implicit',
+  'Use only plan hours': 'Folosește doar orele din plan',
+  'Auto break calculation': 'Calculul automat al pauzei',
+  'Allow time registration on mobile': 'Permite înregistrarea orei pe mobil',
+  'Allow editing of working hours on mobile': 'Permiteți editarea orelor de lucru pe mobil',
+  'Use time clock on mobile': 'Folosește ceasul de pontaj pe mobil',
+  'Allow entry of unregistered working hours on mobile': 'Permiteți introducerea orelor de lucru neînregistrate pe mobil',
+  'Allow receipt for standard time on mobile': 'Permiteți primirea pentru ora standard pe mobil',
 };

@@ -96,4 +96,12 @@ export const skSK = {
   Shift: 'Shift',
   Registered: 'Registrovaný',
   PlannedHours: 'Plánované hodiny',
+  'Use Google Sheet as default': 'Použiť Tabuľku Google ako predvolenú',
+  'Use only plan hours': 'Použiť iba plánované hodiny',
+  'Auto break calculation': 'Automatický výpočet prestávky',
+  'Allow time registration on mobile': 'Povoliť registráciu času na mobile',
+  'Allow editing of working hours on mobile': 'Povoliť úpravu pracovnej doby na mobile',
+  'Use time clock on mobile': 'Používajte časovač na mobile',
+  'Allow entry of unregistered working hours on mobile': 'Povoliť zadávanie neregistrovaných pracovných hodín v mobile',
+  'Allow receipt for standard time on mobile': 'Povoliť potvrdenie o štandardnom čase na mobile',
 };

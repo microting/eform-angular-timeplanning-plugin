@@ -96,4 +96,12 @@ export const esES = {
   Shift: 'Cambio',
   Registered: 'Registrado',
   PlannedHours: 'Horas planificadas',
+  'Use Google Sheet as default': 'Utilice Google Sheet como predeterminado',
+  'Use only plan hours': 'Utilice únicamente horas del plan',
+  'Auto break calculation': 'Cálculo de pausa automática',
+  'Allow time registration on mobile': 'Permitir el registro de tiempo en el móvil',
+  'Allow editing of working hours on mobile': 'Permitir la edición del horario laboral en el móvil',
+  'Use time clock on mobile': 'Usar el reloj de control de tiempo en el móvil',
+  'Allow entry of unregistered working hours on mobile': 'Permitir la entrada de horas de trabajo no registradas en el móvil',
+  'Allow receipt for standard time on mobile': 'Permitir recibo de hora estándar en móvil',
 };

@@ -96,4 +96,12 @@ export const nlNL = {
   Shift: 'Verschuiving',
   Registered: 'Geregistreerd',
   PlannedHours: 'Geplande uren',
+  'Use Google Sheet as default': 'Gebruik Google Sheet als standaard',
+  'Use only plan hours': 'Gebruik alleen planuren',
+  'Auto break calculation': 'Automatische pauzeberekening',
+  'Allow time registration on mobile': 'Tijdregistratie op mobiel mogelijk maken',
+  'Allow editing of working hours on mobile': 'Bewerken van werkuren op mobiel toestaan',
+  'Use time clock on mobile': 'Gebruik tijdklok op mobiel',
+  'Allow entry of unregistered working hours on mobile': 'Toestaan van invoer van niet-geregistreerde werkuren op mobiel',
+  'Allow receipt for standard time on mobile': 'Ontvangst toestaan voor standaardtijd op mobiel',
 };

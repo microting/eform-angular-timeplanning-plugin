@@ -96,4 +96,12 @@ export const bgBG = {
   Shift: 'Shift',
   Registered: 'Регистриран',
   PlannedHours: 'Планирани часове',
+  'Use Google Sheet as default': 'Използване на Google Таблици по подразбиране',
+  'Use only plan hours': 'Използвайте само часове по план',
+  'Auto break calculation': 'Автоматично изчисляване на прекъсване',
+  'Allow time registration on mobile': 'Разрешаване на регистрация на време на мобилно устройство',
+  'Allow editing of working hours on mobile': 'Разрешаване на редактиране на работно време на мобилно устройство',
+  'Use time clock on mobile': 'Използвайте часовник на мобилно устройство',
+  'Allow entry of unregistered working hours on mobile': 'Разрешаване на въвеждането на нерегистрирани работни часове на мобилно устройство',
+  'Allow receipt for standard time on mobile': 'Разрешаване на разписка за стандартно време на мобилно устройство',
 };

@@ -96,4 +96,12 @@ export const ltLT = {
   Shift: 'Shift',
   Registered: 'Registruotas',
   PlannedHours: 'Planuojamos valandos',
+  'Use Google Sheet as default': 'Naudoti „Google“ skaičiuokles kaip numatytąją parinktį',
+  'Use only plan hours': 'Naudokite tik plano valandas',
+  'Auto break calculation': 'Automatinis pertraukų skaičiavimas',
+  'Allow time registration on mobile': 'Leisti laiko registraciją mobiliajame telefone',
+  'Allow editing of working hours on mobile': 'Leisti redaguoti darbo valandas mobiliajame telefone',
+  'Use time clock on mobile': 'Naudokite laiko laikrodį mobiliajame telefone',
+  'Allow entry of unregistered working hours on mobile': 'Leisti įvesti neregistruotas darbo valandas mobiliajame telefone',
+  'Allow receipt for standard time on mobile': 'Leisti kvitą standartiniam laikui mobiliajame telefone',
 };

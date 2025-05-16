@@ -96,4 +96,12 @@ export const ukUA = {
   Shift: 'Shift',
   Registered: 'Зареєстрований',
   PlannedHours: 'Заплановані години',
+  'Use Google Sheet as default': 'Використовувати Google Таблиці за замовчуванням',
+  'Use only plan hours': 'Використовувати лише години плану',
+  'Auto break calculation': 'Автоматичний розрахунок перерв',
+  'Allow time registration on mobile': 'Дозволити реєстрацію часу на мобільному пристрої',
+  'Allow editing of working hours on mobile': 'Дозволити редагування робочого часу на мобільному пристрої',
+  'Use time clock on mobile': 'Використовуйте годинник часу на мобільному пристрої',
+  'Allow entry of unregistered working hours on mobile': 'Дозволити введення незареєстрованих робочих годин на мобільному пристрої',
+  'Allow receipt for standard time on mobile': 'Дозволити отримання квитанції за стандартний час на мобільному пристрої',
 };

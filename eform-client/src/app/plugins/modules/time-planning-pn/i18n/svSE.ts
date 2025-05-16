@@ -96,4 +96,12 @@ export const svSE = {
   Shift: 'Flytta',
   Registered: 'Registrerad',
   PlannedHours: 'Planerade timmar',
+  'Use Google Sheet as default': 'Använd Google Sheet som standard',
+  'Use only plan hours': 'Använd endast planerade timmar',
+  'Auto break calculation': 'Automatisk rastberäkning',
+  'Allow time registration on mobile': 'Tillåt tidsregistrering på mobilen',
+  'Allow editing of working hours on mobile': 'Tillåt redigering av arbetstider på mobilen',
+  'Use time clock on mobile': 'Använd stämpelklocka på mobilen',
+  'Allow entry of unregistered working hours on mobile': 'Tillåt inmatning av oregistrerade arbetstimmar på mobilen',
+  'Allow receipt for standard time on mobile': 'Tillåt kvitto för standardtid på mobilen',
 };

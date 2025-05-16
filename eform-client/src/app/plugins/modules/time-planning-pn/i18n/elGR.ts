@@ -96,4 +96,12 @@ export const elGR = {
   Shift: 'Αλλαγή',
   Registered: 'Εγγεγραμμένος',
   PlannedHours: 'Προγραμματισμένες ώρες',
+  'Use Google Sheet as default': 'Χρήση του Υπολογιστικού Φύλλου Google ως προεπιλογή',
+  'Use only plan hours': 'Χρησιμοποιήστε μόνο τις ώρες του προγράμματος.',
+  'Auto break calculation': 'Αυτόματος υπολογισμός διαλείμματος',
+  'Allow time registration on mobile': 'Να επιτρέπεται η εγγραφή χρόνου σε κινητό',
+  'Allow editing of working hours on mobile': 'Να επιτρέπεται η επεξεργασία των ωρών εργασίας σε κινητά',
+  'Use time clock on mobile': 'Χρήση χρονομέτρου σε κινητό',
+  'Allow entry of unregistered working hours on mobile': 'Επιτρέψτε την εισαγωγή μη καταχωρημένων ωρών εργασίας στο κινητό',
+  'Allow receipt for standard time on mobile': 'Να επιτρέπεται η λήψη για την τυπική ώρα σε κινητό',
 };

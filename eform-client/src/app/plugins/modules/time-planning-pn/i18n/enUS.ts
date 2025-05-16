@@ -94,4 +94,12 @@ export const enUS = {
   'Shift': 'Shift',
   'Registered': 'Registered',
   'PlannedHours': 'Planned hours',
+  'Use Google Sheet as default': 'Use Google Sheet as default',
+  'Use only plan hours': 'Use only plan hours',
+  'Auto break calculation': 'Auto break calculation',
+  'Allow time registration on mobile': 'Allow time registration on mobile',
+  'Allow editing of working hours on mobile': 'Allow editing of working hours on mobile',
+  'Use time clock on mobile': 'Use time clock on mobile',
+  'Allow entry of unregistered working hours on mobile': 'Allow entry of unregistered working hours on mobile',
+  'Allow receipt for standard time on mobile': 'Allow receipt for standard time on mobile',
 };

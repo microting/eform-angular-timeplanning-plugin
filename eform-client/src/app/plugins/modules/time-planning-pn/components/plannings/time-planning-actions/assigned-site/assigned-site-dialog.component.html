@@ -10,7 +10,10 @@
                       [id]="'useGoogleSheetAsDefault'"
                       [name]="'useGoogleSheetAsDefault'"
                       [(ngModel)]="data.useGoogleSheetAsDefault">
-          {{ 'Use Google Sheet as default' | translate }}
+          <div>
+            <div>{{ 'Use Google Sheet as default' | translate }}</div>
+            <small class="checkbox-description"></small>
+          </div>
         </mat-checkbox>
       </div>
       <div class="d-flex flex-row" *ngIf="!data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async" >
@@ -19,7 +22,10 @@
                       [id]="'useOnlyPlanHours'"
                       [name]="'useOnlyPlanHours'"
                       [(ngModel)]="data.useOnlyPlanHours">
-          {{ 'Use only plan hours' | translate }}
+          <div>
+            <div>{{ 'Use only plan hours' | translate }}</div>
+            <small class="checkbox-description"></small>
+          </div>
         </mat-checkbox>
       </div>
 <!--      <div class="d-flex flex-row">-->
@@ -46,7 +52,10 @@
                       [id]="'autoBreakCalculationActive'"
                       [name]="'autoBreakCalculationActive'"
                       [(ngModel)]="data.autoBreakCalculationActive">
-          {{ 'Auto break calculation' | translate }}
+          <div>
+            <div>{{ 'Auto break calculation' | translate }}</div>
+            <small class="checkbox-description"></small>
+          </div>
         </mat-checkbox>
       </div>
       <div class="d-flex flex-row">
@@ -55,7 +64,10 @@
                       [id]="'allowPersonalTimeRegistration'"
                       [name]="'allowPersonalTimeRegistration'"
                       [(ngModel)]="data.allowPersonalTimeRegistration">
-          {{ 'Allow personal time registration' | translate }}
+          <div>
+            <div>{{ 'Allow time registration on mobile' | translate }}</div>
+            <small class="checkbox-description">{{'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.' | translate}}</small>
+          </div>
         </mat-checkbox>
       </div>
       <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration">
@@ -64,7 +76,10 @@
                       [id]="'allowEditOfRegistrations'"
                       [name]="'allowEditOfRegistrations'"
                       [(ngModel)]="data.allowEditOfRegistrations">
-          {{ 'Allow edit of registrations' | translate }}
+          <div>
+            <div>{{ 'Allow editing of working hours on mobile' | translate }}</div>
+            <small class="checkbox-description">{{'Start time, stop time and breaks can be edited.' | translate}}</small>
+          </div>
         </mat-checkbox>
       </div>
       <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours">
@@ -73,7 +88,10 @@
                       [id]="'usePunchClock'"
                       [name]="'usePunchClock'"
                       [(ngModel)]="data.usePunchClock">
-          {{ 'Use punch clock' | translate }}
+          <div>
+            <div>{{ 'Use time clock on mobile' | translate }}</div>
+            <small class="checkbox-description">{{'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.' | translate}}</small>
+          </div>
         </mat-checkbox>
       </div>
       <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours && data.usePunchClock">
@@ -82,7 +100,10 @@
                       [id]="'usePunchClockWithAllowRegisteringInHistory'"
                       [name]="'usePunchClockWithAllowRegisteringInHistory'"
                       [(ngModel)]="data.usePunchClockWithAllowRegisteringInHistory">
-          {{ 'Allow registering time in history for punch clock' | translate }}
+          <div>
+            <div>{{ 'Allow entry of unregistered working hours on mobile' | translate }}</div>
+            <small class="checkbox-description">{{ 'Indtast starttidspunkt, stoptidspunkt og samlet pause bag ud i tiden. Vælg Tillad redigering af arbejdstid på mobil for at redigere tidspunkter.' | translate }}</small>
+          </div>
         </mat-checkbox>
       </div>
       <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsAdmin$ | async">
@@ -91,7 +112,10 @@
                       [id]="'allowAcceptOfPlannedHours'"
                       [name]="'allowAcceptOfPlannedHours'"
                       [(ngModel)]="data.allowAcceptOfPlannedHours">
-          {{ 'Allow accept of planned hours' | translate }}
+          <div>
+            <div>{{ 'Allow receipt for standard time on mobile' | translate }}</div>
+            <small class="checkbox-description">{{'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.' | translate}}</small>
+          </div>
         </mat-checkbox>
       </div>
     </mat-tab>
