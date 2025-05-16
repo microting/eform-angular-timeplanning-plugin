@@ -158,7 +158,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }
     } else {
-      return workDayStarted ? workDayEnded ? 'black-text' : 'red-text' : plannedStarted ? message || workerComment ? 'black-text' : 'white-text' : message || workerComment ? 'black-text' : 'white-text';
+      return workDayStarted ? workDayEnded ? 'black-text' : 'white-text' : plannedStarted ? message || workerComment ? 'black-text' : 'white-text' : message || workerComment ? 'black-text' : 'white-text';
       // if (workDayStarted) {
       //   return 'black-text';
       // }
