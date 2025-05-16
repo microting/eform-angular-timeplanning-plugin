@@ -579,6 +579,83 @@ public class TimePlanningPlanningService(
             planning.MessageId = model.Message;
             planning.PaiedOutFlex = model.PaidOutFlex;
 
+            if (model.Stop2Id == null)
+            {
+                planning.Stop2StoppedAt = null;
+                planning.Pause2StartedAt = null;
+                planning.Pause2StoppedAt = null;
+                planning.Pause20StartedAt = null;
+                planning.Pause20StoppedAt = null;
+                planning.Pause21StartedAt = null;
+                planning.Pause21StoppedAt = null;
+                planning.Pause22StartedAt = null;
+                planning.Pause22StoppedAt = null;
+                planning.Pause23StartedAt = null;
+                planning.Pause23StoppedAt = null;
+                planning.Pause24StartedAt = null;
+                planning.Pause24StoppedAt = null;
+                planning.Pause25StartedAt = null;
+                planning.Pause25StoppedAt = null;
+                planning.Pause26StartedAt = null;
+                planning.Pause26StoppedAt = null;
+                planning.Pause27StartedAt = null;
+                planning.Pause27StoppedAt = null;
+                planning.Pause28StartedAt = null;
+                planning.Pause28StoppedAt = null;
+                planning.Pause29StartedAt = null;
+                planning.Pause29StoppedAt = null;
+                planning.Pause200StartedAt = null;
+                planning.Pause200StoppedAt = null;
+                planning.Pause201StartedAt = null;
+                planning.Pause201StoppedAt = null;
+                planning.Pause202StartedAt = null;
+                planning.Pause202StoppedAt = null;
+                planning.Pause2Id = 0;
+            }
+
+            if (model.Start2Id == null)
+            {
+                planning.Start2StartedAt = null;
+            }
+
+            if (model.Stop1Id == null)
+            {
+                planning.Stop1StoppedAt = null;
+                planning.Pause1StartedAt = null;
+                planning.Pause1StoppedAt = null;
+                planning.Pause10StartedAt = null;
+                planning.Pause10StoppedAt = null;
+                planning.Pause11StartedAt = null;
+                planning.Pause11StoppedAt = null;
+                planning.Pause12StartedAt = null;
+                planning.Pause12StoppedAt = null;
+                planning.Pause13StartedAt = null;
+                planning.Pause13StoppedAt = null;
+                planning.Pause14StartedAt = null;
+                planning.Pause14StoppedAt = null;
+                planning.Pause15StartedAt = null;
+                planning.Pause15StoppedAt = null;
+                planning.Pause16StartedAt = null;
+                planning.Pause16StoppedAt = null;
+                planning.Pause17StartedAt = null;
+                planning.Pause17StoppedAt = null;
+                planning.Pause18StartedAt = null;
+                planning.Pause18StoppedAt = null;
+                planning.Pause19StartedAt = null;
+                planning.Pause19StoppedAt = null;
+                planning.Pause100StartedAt = null;
+                planning.Pause100StoppedAt = null;
+                planning.Pause101StartedAt = null;
+                planning.Pause101StoppedAt = null;
+                planning.Pause102StartedAt = null;
+                planning.Pause102StoppedAt = null;
+                planning.Pause1Id = 0;
+            }
+            if (model.Start1Id == null)
+            {
+                planning.Start1StartedAt = null;
+            }
+
             if (!assignedSite.UseOnlyPlanHours)
             {
                 double minutesPlanned = 0;
