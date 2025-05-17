@@ -55,9 +55,6 @@ export const lvLV = {
   sumFlexEnd: 'Elastīgās summas beigas',
   paidOutFlex: 'Izmaksāts flex',
   message: 'Ziņojums',
-  commentWorker: 'Komentāru darbinieks',
-  commentOffice: 'Komentāru birojs',
-  commentOfficeAll: 'Komentāru birojs viss',
   start1StartedAt: '1. maiņa sākās plkst',
   stop1StoppedAt: '1. maiņa apstājās plkst',
   pause1StartedAt: '1. pauze sākās plkst',
@@ -104,4 +101,8 @@ export const lvLV = {
   'Use time clock on mobile': 'Izmantojiet laika pulksteni mobilajā tālrunī',
   'Allow entry of unregistered working hours on mobile': 'Atļaut nereģistrētu darba stundu ievadīšanu mobilajā tālrunī',
   'Allow receipt for standard time on mobile': 'Atļaut standarta laika kvīti mobilajā tālrunī',
+  commentOfficeAll: 'Komentāru birojs visiem',
+  'Planned working hours': 'Plānotās darba stundas',
+  'Worktime start': 'Darba laika sākums',
+  'Worktime stop': 'Darba laika pārtraukums',
 };

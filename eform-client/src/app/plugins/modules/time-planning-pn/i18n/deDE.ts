@@ -55,9 +55,6 @@ export const deDE = {
   sumFlexEnd: 'Flexsumme Ende',
   paidOutFlex: 'Ausgezahlter Flex',
   message: 'Nachricht',
-  commentWorker: 'Kommentar Arbeiter',
-  commentOffice: 'Kommentarstelle',
-  commentOfficeAll: 'Kommentarbüro alle',
   start1StartedAt: '1. Schicht begann um',
   stop1StoppedAt: '1. Schicht hielt an bei',
   pause1StartedAt: '1. Pause begann um',
@@ -104,4 +101,8 @@ export const deDE = {
   'Use time clock on mobile': 'Verwenden Sie die Stechuhr auf dem Handy',
   'Allow entry of unregistered working hours on mobile': 'Erfassung nicht erfasster Arbeitszeiten mobil ermöglichen',
   'Allow receipt for standard time on mobile': 'Empfang für Standardzeit auf Mobilgeräten zulassen',
+  commentOfficeAll: 'Kommentarbüro alle',
+  'Planned working hours': 'Geplante Arbeitszeiten',
+  'Worktime start': 'Arbeitszeitbeginn',
+  'Worktime stop': 'Arbeitszeitstopp',
 };

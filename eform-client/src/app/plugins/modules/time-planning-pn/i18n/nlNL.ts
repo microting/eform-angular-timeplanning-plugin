@@ -55,9 +55,6 @@ export const nlNL = {
   sumFlexEnd: 'Einde flexsom',
   paidOutFlex: 'Uitbetaalde flex',
   message: 'Bericht',
-  commentWorker: 'Commentaar medewerker',
-  commentOffice: 'Commentaar bureau',
-  commentOfficeAll: 'Commentaarkantoor allemaal',
   start1StartedAt: '1e ploeg begon om',
   stop1StoppedAt: '1e dienst gestopt om',
   pause1StartedAt: '1e pauze begon om',
@@ -104,4 +101,8 @@ export const nlNL = {
   'Use time clock on mobile': 'Gebruik tijdklok op mobiel',
   'Allow entry of unregistered working hours on mobile': 'Toestaan van invoer van niet-geregistreerde werkuren op mobiel',
   'Allow receipt for standard time on mobile': 'Ontvangst toestaan voor standaardtijd op mobiel',
+  commentOfficeAll: 'Commentaar kantoor allemaal',
+  'Planned working hours': 'Geplande werkuren',
+  'Worktime start': 'Werktijd start',
+  'Worktime stop': 'Werktijd stop',
 };

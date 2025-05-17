@@ -55,9 +55,6 @@ export const itIT = {
   sumFlexEnd: 'Fine della somma flessibile',
   paidOutFlex: 'Flex pagato',
   message: 'Messaggio',
-  commentWorker: 'Commenta l&#39;operaio',
-  commentOffice: 'Ufficio commenti',
-  commentOfficeAll: 'Ufficio commenti a tutti',
   start1StartedAt: 'Il 1° turno è iniziato alle',
   stop1StoppedAt: 'Il 1° turno si è fermato alle',
   pause1StartedAt: 'La prima pausa è iniziata alle',
@@ -104,4 +101,8 @@ export const itIT = {
   'Use time clock on mobile': 'Utilizzare il cronometro sul cellulare',
   'Allow entry of unregistered working hours on mobile': 'Consenti l&#39;inserimento di ore di lavoro non registrate sul cellulare',
   'Allow receipt for standard time on mobile': 'Consenti la ricezione per l&#39;ora standard sul cellulare',
+  commentOfficeAll: 'Ufficio commenti tutti',
+  'Planned working hours': 'Orario di lavoro pianificato',
+  'Worktime start': 'Inizio dell&#39;orario di lavoro',
+  'Worktime stop': 'Sospensione dell&#39;orario di lavoro',
 };

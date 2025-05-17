@@ -55,9 +55,6 @@ export const fiFI = {
   sumFlexEnd: 'Joustava summa loppu',
   paidOutFlex: 'Maksettu flex',
   message: 'Viesti',
-  commentWorker: 'Kommenttityöntekijä',
-  commentOffice: 'Kommenttitoimisto',
-  commentOfficeAll: 'Kommenttitoimisto kaikki',
   start1StartedAt: '1. vuoro alkoi klo',
   stop1StoppedAt: '1. vuoro pysähtyi klo',
   pause1StartedAt: 'Ensimmäinen tauko alkoi klo',
@@ -104,4 +101,8 @@ export const fiFI = {
   'Use time clock on mobile': 'Käytä aikakelloa mobiililaitteella',
   'Allow entry of unregistered working hours on mobile': 'Salli rekisteröimättömien työtuntien syöttö mobiililaitteella',
   'Allow receipt for standard time on mobile': 'Salli kuitti normaalille ajalle mobiililaitteella',
+  commentOfficeAll: 'Kommenttitoimisto kaikille',
+  'Planned working hours': 'Suunnitellut työajat',
+  'Worktime start': 'Työajan alku',
+  'Worktime stop': 'Työajan pysähdys',
 };

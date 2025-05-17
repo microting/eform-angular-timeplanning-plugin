@@ -55,9 +55,6 @@ export const ptBR = {
   sumFlexEnd: 'Fim da soma flexível',
   paidOutFlex: 'Flex pago',
   message: 'Mensagem',
-  commentWorker: 'Trabalhador de comentários',
-  commentOffice: 'Escritório de comentários',
-  commentOfficeAll: 'Comente escritório tudo',
   start1StartedAt: '1º turno começou às',
   stop1StoppedAt: '1º turno parou em',
   pause1StartedAt: 'A 1ª pausa começou às',
@@ -104,4 +101,8 @@ export const ptBR = {
   'Use time clock on mobile': 'Usar relógio de ponto no celular',
   'Allow entry of unregistered working hours on mobile': 'Permitir entrada de horas de trabalho não registradas no celular',
   'Allow receipt for standard time on mobile': 'Permitir recebimento para horário padrão no celular',
+  commentOfficeAll: 'Escritório de comentários todos',
+  'Planned working hours': 'Horário de trabalho planejado',
+  'Worktime start': 'Início do horário de trabalho',
+  'Worktime stop': 'Parada do horário de trabalho',
 };

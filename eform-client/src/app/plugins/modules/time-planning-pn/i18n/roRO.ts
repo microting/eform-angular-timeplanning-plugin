@@ -55,9 +55,6 @@ export const roRO = {
   sumFlexEnd: 'Sfârșitul sumei flexibile',
   paidOutFlex: 'Flex plătit',
   message: 'Mesaj',
-  commentWorker: 'Lucrător de comentarii',
-  commentOffice: 'Biroul de comentarii',
-  commentOfficeAll: 'Comentează toate birourile',
   start1StartedAt: 'primul schimb a început la',
   stop1StoppedAt: 'Schimbul 1 s-a oprit la',
   pause1StartedAt: 'Prima pauză a început la',
@@ -104,4 +101,8 @@ export const roRO = {
   'Use time clock on mobile': 'Folosește ceasul de pontaj pe mobil',
   'Allow entry of unregistered working hours on mobile': 'Permiteți introducerea orelor de lucru neînregistrate pe mobil',
   'Allow receipt for standard time on mobile': 'Permiteți primirea pentru ora standard pe mobil',
+  commentOfficeAll: 'Biroul de comentarii pentru toți',
+  'Planned working hours': 'Orele de lucru planificate',
+  'Worktime start': 'Începutul timpului de lucru',
+  'Worktime stop': 'Oprirea timpului de lucru',
 };

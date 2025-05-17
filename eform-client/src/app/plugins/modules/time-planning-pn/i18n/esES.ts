@@ -55,9 +55,6 @@ export const esES = {
   sumFlexEnd: 'Fin de suma flexible',
   paidOutFlex: 'Flex pagado',
   message: 'Mensaje',
-  commentWorker: 'Comentario trabajador',
-  commentOffice: 'Oficina de comentarios',
-  commentOfficeAll: 'Oficina de comentarios todos',
   start1StartedAt: 'El primer turno comenzó a las',
   stop1StoppedAt: 'El primer turno se detuvo a las',
   pause1StartedAt: 'La primera pausa comenzó a las',
@@ -104,4 +101,8 @@ export const esES = {
   'Use time clock on mobile': 'Usar el reloj de control de tiempo en el móvil',
   'Allow entry of unregistered working hours on mobile': 'Permitir la entrada de horas de trabajo no registradas en el móvil',
   'Allow receipt for standard time on mobile': 'Permitir recibo de hora estándar en móvil',
+  commentOfficeAll: 'Oficina de comentarios todos',
+  'Planned working hours': 'Horas de trabajo planificadas',
+  'Worktime start': 'Inicio del horario laboral',
+  'Worktime stop': 'Parada del horario laboral',
 };

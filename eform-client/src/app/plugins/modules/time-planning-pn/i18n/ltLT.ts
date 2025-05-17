@@ -55,9 +55,6 @@ export const ltLT = {
   sumFlexEnd: 'Lanksčios sumos pabaiga',
   paidOutFlex: 'Išmokėtas flex',
   message: 'Pranešimas',
-  commentWorker: 'Komentarų darbuotojas',
-  commentOffice: 'Komentarų biuras',
-  commentOfficeAll: 'Komentarų biuras visi',
   start1StartedAt: '1 pamaina prasidėjo val',
   stop1StoppedAt: '1 pamaina sustojo',
   pause1StartedAt: '1-oji pauzė prasidėjo',
@@ -104,4 +101,8 @@ export const ltLT = {
   'Use time clock on mobile': 'Naudokite laiko laikrodį mobiliajame telefone',
   'Allow entry of unregistered working hours on mobile': 'Leisti įvesti neregistruotas darbo valandas mobiliajame telefone',
   'Allow receipt for standard time on mobile': 'Leisti kvitą standartiniam laikui mobiliajame telefone',
+  commentOfficeAll: 'Komentarų biuras visiems',
+  'Planned working hours': 'Planuojamos darbo valandos',
+  'Worktime start': 'Darbo laiko pradžia',
+  'Worktime stop': 'Darbo laiko sustojimas',
 };

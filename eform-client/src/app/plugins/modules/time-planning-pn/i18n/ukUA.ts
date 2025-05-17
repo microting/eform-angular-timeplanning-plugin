@@ -55,9 +55,6 @@ export const ukUA = {
   sumFlexEnd: 'Flex підсумковий кінець',
   paidOutFlex: 'Виплачений флекс',
   message: 'повідомлення',
-  commentWorker: 'Коментар робочий',
-  commentOffice: 'Офіс коментарів',
-  commentOfficeAll: 'Коментар офісу всіх',
   start1StartedAt: '1-ша зміна розпочалася о',
   stop1StoppedAt: '1-ша зміна зупинилася на',
   pause1StartedAt: '1-ша пауза почалася о',
@@ -104,4 +101,8 @@ export const ukUA = {
   'Use time clock on mobile': 'Використовуйте годинник часу на мобільному пристрої',
   'Allow entry of unregistered working hours on mobile': 'Дозволити введення незареєстрованих робочих годин на мобільному пристрої',
   'Allow receipt for standard time on mobile': 'Дозволити отримання квитанції за стандартний час на мобільному пристрої',
+  commentOfficeAll: 'Усі коментарі до офісу',
+  'Planned working hours': 'Планований робочий час',
+  'Worktime start': 'Початок робочого часу',
+  'Worktime stop': 'Зупинка робочого часу',
 };

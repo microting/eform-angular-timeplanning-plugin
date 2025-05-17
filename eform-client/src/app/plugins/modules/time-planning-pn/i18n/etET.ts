@@ -55,9 +55,6 @@ export const etET = {
   sumFlexEnd: 'Flex summa lõpp',
   paidOutFlex: 'Väljamakstud flex',
   message: 'Sõnum',
-  commentWorker: 'Kommentaaride töötaja',
-  commentOffice: 'Kommentaaribüroo',
-  commentOfficeAll: 'Kommentaaribüroo kõik',
   start1StartedAt: '1. vahetus algas kl',
   stop1StoppedAt: '1. vahetus peatus kl',
   pause1StartedAt: '1. paus algas kell',
@@ -104,4 +101,8 @@ export const etET = {
   'Use time clock on mobile': 'Kasutage mobiiltelefonis kellaaega',
   'Allow entry of unregistered working hours on mobile': 'Luba registreerimata töötundide sisestamine mobiiltelefonis',
   'Allow receipt for standard time on mobile': 'Luba mobiilis standardaja kviitung',
+  commentOfficeAll: 'Kommentaaribüroo kõik',
+  'Planned working hours': 'Planeeritud tööaeg',
+  'Worktime start': 'Tööaja algus',
+  'Worktime stop': 'Tööaja peatus',
 };

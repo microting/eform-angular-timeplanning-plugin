@@ -55,9 +55,6 @@ export const huHU = {
   sumFlexEnd: 'Flex összeg vége',
   paidOutFlex: 'Kifizetett flex',
   message: 'Üzenet',
-  commentWorker: 'Megjegyzés munkás',
-  commentOffice: 'Megjegyzés iroda',
-  commentOfficeAll: 'Kommentár iroda minden',
   start1StartedAt: '1. műszak kezdődött',
   stop1StoppedAt: '1. műszak megállt a',
   pause1StartedAt: 'Az 1. szünet ekkor kezdődött',
@@ -104,4 +101,8 @@ export const huHU = {
   'Use time clock on mobile': 'Időzítő használata mobilon',
   'Allow entry of unregistered working hours on mobile': 'Engedélyezze a nem regisztrált munkaórák bevitelét mobilon',
   'Allow receipt for standard time on mobile': 'Engedélyezze a nyugtát a szokásos időre mobilon',
+  commentOfficeAll: 'Hozzászólás iroda minden',
+  'Planned working hours': 'Tervezett munkaórák',
+  'Worktime start': 'Munkaidő kezdete',
+  'Worktime stop': 'Munkaidő-megállás',
 };

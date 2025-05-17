@@ -55,9 +55,6 @@ export const noNO = {
   sumFlexEnd: 'Flex sum slutt',
   paidOutFlex: 'Utbetalt flex',
   message: 'Beskjed',
-  commentWorker: 'Kommentararbeider',
-  commentOffice: 'Kommentarkontor',
-  commentOfficeAll: 'Kommentarkontoret alle sammen',
   start1StartedAt: '1. skift startet kl',
   stop1StoppedAt: '1. skift stoppet kl',
   pause1StartedAt: '1. pause startet kl',
@@ -104,4 +101,8 @@ export const noNO = {
   'Use time clock on mobile': 'Bruk stempelklokke på mobilen',
   'Allow entry of unregistered working hours on mobile': 'Tillat registrering av uregistrerte arbeidstimer på mobil',
   'Allow receipt for standard time on mobile': 'Tillat kvittering for standardtid på mobil',
+  commentOfficeAll: 'Kommentarkontor alle',
+  'Planned working hours': 'Planlagte arbeidstider',
+  'Worktime start': 'Arbeidstidsstart',
+  'Worktime stop': 'Arbeidstidsstopp',
 };

@@ -55,9 +55,6 @@ export const svSE = {
   sumFlexEnd: 'Flexsumma slut',
   paidOutFlex: 'Utbetalt flex',
   message: 'Meddelande',
-  commentWorker: 'Kommentar arbetare',
-  commentOffice: 'Kommentarsbyrå',
-  commentOfficeAll: 'Kommentarsbyrå alla',
   start1StartedAt: '1:a skiftet började kl',
   stop1StoppedAt: '1:a skiftet stannade kl',
   pause1StartedAt: '1:a paus började kl',
@@ -104,4 +101,8 @@ export const svSE = {
   'Use time clock on mobile': 'Använd stämpelklocka på mobilen',
   'Allow entry of unregistered working hours on mobile': 'Tillåt inmatning av oregistrerade arbetstimmar på mobilen',
   'Allow receipt for standard time on mobile': 'Tillåt kvitto för standardtid på mobilen',
+  commentOfficeAll: 'Kommentarkontor alla',
+  'Planned working hours': 'Planerade arbetstider',
+  'Worktime start': 'Arbetstidsstart',
+  'Worktime stop': 'Arbetstidsstopp',
 };

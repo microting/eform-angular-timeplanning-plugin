@@ -55,9 +55,6 @@ export const plPL = {
   sumFlexEnd: 'Koniec sumy elastycznej',
   paidOutFlex: 'Płatny elastyczny',
   message: 'Wiadomość',
-  commentWorker: 'Pracownik komentarza',
-  commentOffice: 'Biuro komentarzy',
-  commentOfficeAll: 'Komentarz biura wszystkich',
   start1StartedAt: 'I zmiana rozpoczęła się o godz',
   stop1StoppedAt: 'Pierwsza zmiana zatrzymała się o godz',
   pause1StartedAt: 'Pierwsza przerwa rozpoczęła się o godz',
@@ -104,4 +101,8 @@ export const plPL = {
   'Use time clock on mobile': 'Użyj zegara czasu na telefonie komórkowym',
   'Allow entry of unregistered working hours on mobile': 'Zezwalaj na wprowadzanie niezarejestrowanych godzin pracy na urządzeniach mobilnych',
   'Allow receipt for standard time on mobile': 'Zezwalaj na odbiór paragonu w czasie standardowym na urządzeniach mobilnych',
+  commentOfficeAll: 'Biuro komentarzy wszystkich',
+  'Planned working hours': 'Planowane godziny pracy',
+  'Worktime start': 'Rozpoczęcie czasu pracy',
+  'Worktime stop': 'Przerwa w pracy',
 };

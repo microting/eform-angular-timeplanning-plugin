@@ -55,9 +55,6 @@ export const bgBG = {
   sumFlexEnd: 'Край на гъвкавата сума',
   paidOutFlex: 'Изплатен флекс',
   message: 'Съобщение',
-  commentWorker: 'Работник за коментари',
-  commentOffice: 'Офис за коментари',
-  commentOfficeAll: 'Коментар офис всички',
   start1StartedAt: '1-ва смяна започна в',
   stop1StoppedAt: '1-ва смяна спря на',
   pause1StartedAt: 'Първата пауза започна в',
@@ -104,4 +101,8 @@ export const bgBG = {
   'Use time clock on mobile': 'Използвайте часовник на мобилно устройство',
   'Allow entry of unregistered working hours on mobile': 'Разрешаване на въвеждането на нерегистрирани работни часове на мобилно устройство',
   'Allow receipt for standard time on mobile': 'Разрешаване на разписка за стандартно време на мобилно устройство',
+  commentOfficeAll: 'Коментар офис всички',
+  'Planned working hours': 'Планирано работно време',
+  'Worktime start': 'Начало на работното време',
+  'Worktime stop': 'Спиране на работното време',
 };

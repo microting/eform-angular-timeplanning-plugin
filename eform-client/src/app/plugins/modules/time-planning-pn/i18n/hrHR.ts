@@ -55,9 +55,6 @@ export const hrHR = {
   sumFlexEnd: 'Kraj Flex zbroja',
   paidOutFlex: 'Isplaćeni fleks',
   message: 'Poruka',
-  commentWorker: 'Radnik za komentare',
-  commentOffice: 'Ured za komentare',
-  commentOfficeAll: 'Komentirajte ured sve',
   start1StartedAt: 'Prva smjena započela je u',
   stop1StoppedAt: '1. smjena stala na',
   pause1StartedAt: 'Prva stanka započela je u',
@@ -104,4 +101,8 @@ export const hrHR = {
   'Use time clock on mobile': 'Koristite sat za radno vrijeme na mobitelu',
   'Allow entry of unregistered working hours on mobile': 'Dopusti unos neregistriranih radnih sati na mobitelu',
   'Allow receipt for standard time on mobile': 'Dopusti potvrdu za standardno vrijeme na mobilnom uređaju',
+  commentOfficeAll: 'Ured za komentare',
+  'Planned working hours': 'Planirano radno vrijeme',
+  'Worktime start': 'Početak radnog vremena',
+  'Worktime stop': 'Zaustavljanje radnog vremena',
 };

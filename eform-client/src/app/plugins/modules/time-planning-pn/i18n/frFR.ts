@@ -55,9 +55,6 @@ export const frFR = {
   sumFlexEnd: 'Fin de la somme flexible',
   paidOutFlex: 'Flexibilité payée',
   message: 'Message',
-  commentWorker: 'Travailleur de commentaires',
-  commentOffice: 'Bureau des commentaires',
-  commentOfficeAll: 'Bureau de commentaires tous',
   start1StartedAt: 'Le 1er quart de travail a commencé à',
   stop1StoppedAt: '1ère équipe arrêtée à',
   pause1StartedAt: '1ère pause commencée à',
@@ -104,4 +101,8 @@ export const frFR = {
   'Use time clock on mobile': 'Utiliser l&#39;horloge de pointage sur mobile',
   'Allow entry of unregistered working hours on mobile': 'Autoriser la saisie des heures de travail non enregistrées sur mobile',
   'Allow receipt for standard time on mobile': 'Autoriser la réception de l&#39;heure standard sur mobile',
+  commentOfficeAll: 'Bureau des commentaires à tous',
+  'Planned working hours': 'Horaires de travail prévus',
+  'Worktime start': 'Début des heures de travail',
+  'Worktime stop': 'Arrêt du travail',
 };

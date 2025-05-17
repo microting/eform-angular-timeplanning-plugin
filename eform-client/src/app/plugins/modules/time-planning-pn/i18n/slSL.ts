@@ -55,9 +55,6 @@ export const slSL = {
   sumFlexEnd: 'Konec vsote Flex',
   paidOutFlex: 'Izplačan flex',
   message: 'Sporočilo',
-  commentWorker: 'Komentar delavec',
-  commentOffice: 'Urad za komentarje',
-  commentOfficeAll: 'Komentiraj urad vse',
   start1StartedAt: '1. izmena se je začela ob',
   stop1StoppedAt: '1. izmena ustavila pri',
   pause1StartedAt: '1. premor se je začel ob',
@@ -104,4 +101,8 @@ export const slSL = {
   'Use time clock on mobile': 'Uporabite časovno uro na mobilnem telefonu',
   'Allow entry of unregistered working hours on mobile': 'Dovoli vnos neregistriranih delovnih ur na mobilnem telefonu',
   'Allow receipt for standard time on mobile': 'Dovoli potrdilo o prejemu za standardni čas na mobilnem telefonu',
+  commentOfficeAll: 'Vsi komentarji',
+  'Planned working hours': 'Načrtovani delovni čas',
+  'Worktime start': 'Začetek delovnega časa',
+  'Worktime stop': 'Prekinitev delovnega časa',
 };

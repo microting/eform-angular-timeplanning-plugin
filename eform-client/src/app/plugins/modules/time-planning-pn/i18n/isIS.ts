@@ -55,9 +55,6 @@ export const isIS = {
   sumFlexEnd: 'Flex sum end',
   paidOutFlex: 'Útborgað flex',
   message: 'Skilaboð',
-  commentWorker: 'Athugasemd starfsmaður',
-  commentOffice: 'Athugasemdastofa',
-  commentOfficeAll: 'Athugasemdaskrifstofan öll',
   start1StartedAt: '1. vakt hófst kl',
   stop1StoppedAt: '1. vakt hætt kl',
   pause1StartedAt: '1. hlé hófst kl',
@@ -104,4 +101,8 @@ export const isIS = {
   'Use time clock on mobile': 'Nota stimplaklukku í farsíma',
   'Allow entry of unregistered working hours on mobile': 'Leyfa færslu óskráðra vinnustunda í farsíma',
   'Allow receipt for standard time on mobile': 'Leyfa kvittun fyrir staðlaðan tíma í farsíma',
+  commentOfficeAll: 'Athugasemdir á skrifstofunni öllum',
+  'Planned working hours': 'Áætlaður vinnutími',
+  'Worktime start': 'Byrjun vinnutíma',
+  'Worktime stop': 'Vinnutímastöðvun',
 };

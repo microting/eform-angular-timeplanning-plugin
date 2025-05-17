@@ -55,9 +55,6 @@ export const csCZ = {
   sumFlexEnd: 'Flex součtu konec',
   paidOutFlex: 'Vyplacený flex',
   message: 'Zpráva',
-  commentWorker: 'Komentář pracovník',
-  commentOffice: 'Komentář kancelář',
-  commentOfficeAll: 'Komentář kancelář vše',
   start1StartedAt: '1. směna začala v hod',
   stop1StoppedAt: '1. směna zastavena v',
   pause1StartedAt: '1. pauza začala v',
@@ -104,4 +101,8 @@ export const csCZ = {
   'Use time clock on mobile': 'Používejte časovač na mobilu',
   'Allow entry of unregistered working hours on mobile': 'Povolit zadávání neregistrované pracovní doby na mobilu',
   'Allow receipt for standard time on mobile': 'Povolit účtenku pro standardní čas na mobilu',
+  commentOfficeAll: 'Vše v kanceláři pro komentáře',
+  'Planned working hours': 'Plánovaná pracovní doba',
+  'Worktime start': 'Začátek pracovní doby',
+  'Worktime stop': 'Zastavení pracovní doby',
 };

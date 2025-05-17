@@ -54,8 +54,6 @@ export const enUS = {
   'sumFlexEnd': 'Flex hours {{end}}',
   'paidOutFlex': 'Paid out flex',
   'message': 'Message',
-  'commentWorker': 'Comment worker',
-  'commentOffice': 'Comment office',
   'commentOfficeAll': 'Comment office all',
   'start1StartedAt': '1st shift started at',
   'stop1StoppedAt': '1st shift stopped at',
@@ -102,4 +100,7 @@ export const enUS = {
   'Use time clock on mobile': 'Use time clock on mobile',
   'Allow entry of unregistered working hours on mobile': 'Allow entry of unregistered working hours on mobile',
   'Allow receipt for standard time on mobile': 'Allow receipt for standard time on mobile',
+  'Planned working hours': 'Planned working hours',
+  'Worktime start': 'Worktime start',
+  'Worktime stop': 'Worktime stop',
 };

@@ -55,9 +55,6 @@ export const skSK = {
   sumFlexEnd: 'Flex súčet koniec',
   paidOutFlex: 'Vyplatený flex',
   message: 'Správa',
-  commentWorker: 'Komentár pracovník',
-  commentOffice: 'Komentár',
-  commentOfficeAll: 'Komentár všetko',
   start1StartedAt: '1. zmena začala o hod',
   stop1StoppedAt: '1. zmena zastavená o',
   pause1StartedAt: '1. prestávka začala o hod',
@@ -104,4 +101,8 @@ export const skSK = {
   'Use time clock on mobile': 'Používajte časovač na mobile',
   'Allow entry of unregistered working hours on mobile': 'Povoliť zadávanie neregistrovaných pracovných hodín v mobile',
   'Allow receipt for standard time on mobile': 'Povoliť potvrdenie o štandardnom čase na mobile',
+  commentOfficeAll: 'Všetky komentáre v kancelárii',
+  'Planned working hours': 'Plánovaný pracovný čas',
+  'Worktime start': 'Začiatok pracovného času',
+  'Worktime stop': 'Zastavenie pracovného času',
 };

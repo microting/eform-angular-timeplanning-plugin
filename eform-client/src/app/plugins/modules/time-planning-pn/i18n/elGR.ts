@@ -55,9 +55,6 @@ export const elGR = {
   sumFlexEnd: 'Flex sum τέλος',
   paidOutFlex: 'Πληρωμένο flex',
   message: 'Μήνυμα',
-  commentWorker: 'Σχολιάστε εργαζόμενος',
-  commentOffice: 'Γραφείο σχολίων',
-  commentOfficeAll: 'Γραφείο σχολίων όλα',
   start1StartedAt: 'Η 1η βάρδια ξεκίνησε στις',
   stop1StoppedAt: '1η βάρδια σταμάτησε στις',
   pause1StartedAt: 'Η 1η παύση ξεκίνησε στις',
@@ -104,4 +101,8 @@ export const elGR = {
   'Use time clock on mobile': 'Χρήση χρονομέτρου σε κινητό',
   'Allow entry of unregistered working hours on mobile': 'Επιτρέψτε την εισαγωγή μη καταχωρημένων ωρών εργασίας στο κινητό',
   'Allow receipt for standard time on mobile': 'Να επιτρέπεται η λήψη για την τυπική ώρα σε κινητό',
+  commentOfficeAll: 'Γραφείο σχολίων όλα',
+  'Planned working hours': 'Προγραμματισμένες ώρες εργασίας',
+  'Worktime start': 'Έναρξη εργάσιμου χρόνου',
+  'Worktime stop': 'Διακοπή ωραρίου εργασίας',
 };
