@@ -105,4 +105,5 @@ export const isIS = {
   'Planned working hours': 'Áætlaður vinnutími',
   'Worktime start': 'Byrjun vinnutíma',
   'Worktime stop': 'Vinnutímastöðvun',
+  'Shift not stopped by user!': 'Notandi stöðvaði ekki vaktina!',
 };

@@ -105,4 +105,5 @@ export const ptBR = {
   'Planned working hours': 'Horário de trabalho planejado',
   'Worktime start': 'Início do horário de trabalho',
   'Worktime stop': 'Parada do horário de trabalho',
+  'Shift not stopped by user!': 'Turno não interrompido pelo usuário!',
 };

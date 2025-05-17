@@ -105,4 +105,5 @@ export const etET = {
   'Planned working hours': 'Planeeritud tööaeg',
   'Worktime start': 'Tööaja algus',
   'Worktime stop': 'Tööaja peatus',
+  'Shift not stopped by user!': 'Kasutaja pole vahetust peatanud!',
 };

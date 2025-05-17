@@ -188,6 +188,10 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
 
   protected readonly JSON = JSON;
 
+  isInOlderThanToday(date: Date): boolean {
+    return new Date(date) < new Date();
+  }
+
   onFirstColumnClick(row: any): void {
     const siteId = row.siteId; // Adjust this according to your data structure
     this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {

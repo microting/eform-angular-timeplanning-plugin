@@ -105,4 +105,5 @@ export const hrHR = {
   'Planned working hours': 'Planirano radno vrijeme',
   'Worktime start': 'Početak radnog vremena',
   'Worktime stop': 'Zaustavljanje radnog vremena',
+  'Shift not stopped by user!': 'Korisnik nije zaustavio Shift!',
 };

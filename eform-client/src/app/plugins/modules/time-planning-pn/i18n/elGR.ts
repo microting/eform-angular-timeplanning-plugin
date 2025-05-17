@@ -105,4 +105,5 @@ export const elGR = {
   'Planned working hours': 'Προγραμματισμένες ώρες εργασίας',
   'Worktime start': 'Έναρξη εργάσιμου χρόνου',
   'Worktime stop': 'Διακοπή ωραρίου εργασίας',
+  'Shift not stopped by user!': 'Η μετατόπιση δεν διακόπηκε από τον χρήστη!',
 };

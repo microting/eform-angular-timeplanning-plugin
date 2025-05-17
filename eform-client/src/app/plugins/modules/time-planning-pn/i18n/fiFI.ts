@@ -105,4 +105,5 @@ export const fiFI = {
   'Planned working hours': 'Suunnitellut työajat',
   'Worktime start': 'Työajan alku',
   'Worktime stop': 'Työajan pysähdys',
+  'Shift not stopped by user!': 'Käyttäjä ei ole pysäyttänyt vuoroa!',
 };

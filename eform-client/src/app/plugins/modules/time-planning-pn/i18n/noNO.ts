@@ -105,4 +105,5 @@ export const noNO = {
   'Planned working hours': 'Planlagte arbeidstider',
   'Worktime start': 'Arbeidstidsstart',
   'Worktime stop': 'Arbeidstidsstopp',
+  'Shift not stopped by user!': 'Skiftet ble ikke stoppet av brukeren!',
 };

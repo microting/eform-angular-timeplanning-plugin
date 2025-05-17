@@ -105,4 +105,5 @@ export const roRO = {
   'Planned working hours': 'Orele de lucru planificate',
   'Worktime start': 'Începutul timpului de lucru',
   'Worktime stop': 'Oprirea timpului de lucru',
+  'Shift not stopped by user!': 'Tura nu a fost oprită de utilizator!',
 };

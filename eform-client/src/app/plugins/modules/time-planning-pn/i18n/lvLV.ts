@@ -105,4 +105,5 @@ export const lvLV = {
   'Planned working hours': 'Plānotās darba stundas',
   'Worktime start': 'Darba laika sākums',
   'Worktime stop': 'Darba laika pārtraukums',
+  'Shift not stopped by user!': 'Lietotājs nav apturējis maiņu!',
 };

@@ -105,4 +105,5 @@ export const ltLT = {
   'Planned working hours': 'Planuojamos darbo valandos',
   'Worktime start': 'Darbo laiko pradžia',
   'Worktime stop': 'Darbo laiko sustojimas',
+  'Shift not stopped by user!': 'Vartotojas nesustabdė pamainos!',
 };

@@ -105,4 +105,5 @@ export const itIT = {
   'Planned working hours': 'Orario di lavoro pianificato',
   'Worktime start': 'Inizio dell&#39;orario di lavoro',
   'Worktime stop': 'Sospensione dell&#39;orario di lavoro',
+  'Shift not stopped by user!': 'Turno non interrotto dall&#39;utente!',
 };

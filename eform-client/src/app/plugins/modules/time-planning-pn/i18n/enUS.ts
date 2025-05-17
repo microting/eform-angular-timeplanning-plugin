@@ -103,4 +103,5 @@ export const enUS = {
   'Planned working hours': 'Planned working hours',
   'Worktime start': 'Worktime start',
   'Worktime stop': 'Worktime stop',
+  'Shift not stopped by user!': 'Shift not stopped by user!',
 };

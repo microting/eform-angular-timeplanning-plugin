@@ -105,4 +105,5 @@ export const svSE = {
   'Planned working hours': 'Planerade arbetstider',
   'Worktime start': 'Arbetstidsstart',
   'Worktime stop': 'Arbetstidsstopp',
+  'Shift not stopped by user!': 'Skiftet stoppades inte av användaren!',
 };

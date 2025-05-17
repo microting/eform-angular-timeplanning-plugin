@@ -105,4 +105,5 @@ export const frFR = {
   'Planned working hours': 'Horaires de travail prévus',
   'Worktime start': 'Début des heures de travail',
   'Worktime stop': 'Arrêt du travail',
+  'Shift not stopped by user!': 'Le changement n&#39;est pas arrêté par l&#39;utilisateur !',
 };

@@ -105,4 +105,5 @@ export const skSK = {
   'Planned working hours': 'Plánovaný pracovný čas',
   'Worktime start': 'Začiatok pracovného času',
   'Worktime stop': 'Zastavenie pracovného času',
+  'Shift not stopped by user!': 'Používateľ nezastavil Shift!',
 };

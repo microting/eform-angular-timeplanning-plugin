@@ -105,4 +105,5 @@ export const slSL = {
   'Planned working hours': 'Načrtovani delovni čas',
   'Worktime start': 'Začetek delovnega časa',
   'Worktime stop': 'Prekinitev delovnega časa',
+  'Shift not stopped by user!': 'Uporabnik ni ustavil Shifta!',
 };

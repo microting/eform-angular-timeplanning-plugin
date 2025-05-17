@@ -105,4 +105,5 @@ export const bgBG = {
   'Planned working hours': 'Планирано работно време',
   'Worktime start': 'Начало на работното време',
   'Worktime stop': 'Спиране на работното време',
+  'Shift not stopped by user!': 'Shift не е спрян от потребителя!',
 };

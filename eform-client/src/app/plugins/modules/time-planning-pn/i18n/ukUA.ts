@@ -105,4 +105,5 @@ export const ukUA = {
   'Planned working hours': 'Планований робочий час',
   'Worktime start': 'Початок робочого часу',
   'Worktime stop': 'Зупинка робочого часу',
+  'Shift not stopped by user!': 'Shift не зупинено користувачем!',
 };

@@ -105,4 +105,5 @@ export const esES = {
   'Planned working hours': 'Horas de trabajo planificadas',
   'Worktime start': 'Inicio del horario laboral',
   'Worktime stop': 'Parada del horario laboral',
+  'Shift not stopped by user!': '¡El usuario no detuvo el cambio!',
 };

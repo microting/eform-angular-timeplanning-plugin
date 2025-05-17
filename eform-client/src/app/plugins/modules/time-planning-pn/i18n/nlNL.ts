@@ -105,4 +105,5 @@ export const nlNL = {
   'Planned working hours': 'Geplande werkuren',
   'Worktime start': 'Werktijd start',
   'Worktime stop': 'Werktijd stop',
+  'Shift not stopped by user!': 'De dienst is niet door de gebruiker gestopt!',
 };

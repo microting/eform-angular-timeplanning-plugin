@@ -105,4 +105,5 @@ export const csCZ = {
   'Planned working hours': 'Plánovaná pracovní doba',
   'Worktime start': 'Začátek pracovní doby',
   'Worktime stop': 'Zastavení pracovní doby',
+  'Shift not stopped by user!': 'Shift nebyl zastaven uživatelem!',
 };

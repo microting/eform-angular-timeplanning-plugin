@@ -103,4 +103,5 @@ export const da = {
   'Planned working hours': 'Planlagte arbejdstider',
   'Worktime start': 'Arbejdstids start',
   'Worktime stop': 'Arbejdstidsstop',
+  'Shift not stopped by user!': 'Skiftet blev ikke stoppet af brugeren!',
 };

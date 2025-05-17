@@ -105,4 +105,5 @@ export const huHU = {
   'Planned working hours': 'Tervezett munkaórák',
   'Worktime start': 'Munkaidő kezdete',
   'Worktime stop': 'Munkaidő-megállás',
+  'Shift not stopped by user!': 'A felhasználó nem állította le a műszakot!',
 };

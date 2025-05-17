@@ -105,4 +105,5 @@ export const deDE = {
   'Planned working hours': 'Geplante Arbeitszeiten',
   'Worktime start': 'Arbeitszeitbeginn',
   'Worktime stop': 'Arbeitszeitstopp',
+  'Shift not stopped by user!': 'Schicht wurde vom Benutzer nicht gestoppt!',
 };
