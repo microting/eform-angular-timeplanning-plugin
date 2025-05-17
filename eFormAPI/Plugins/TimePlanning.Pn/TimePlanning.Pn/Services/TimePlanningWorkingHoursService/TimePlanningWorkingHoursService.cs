@@ -668,7 +668,7 @@ public class TimePlanningWorkingHoursService(
             }
         }
 
-        var today = DateTime.Now;
+        var today = DateTime.UtcNow;
         var midnight = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
 
         var planRegistration = await dbContext.PlanRegistrations
