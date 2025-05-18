@@ -691,7 +691,7 @@ public class TimePlanningWorkingHoursService(
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
 
-        var todayAtMidnight = DateTime.UtcNow.Date;
+        var todayAtMidnight = model.Date;
 
         var planRegistration = await dbContext.PlanRegistrations
             .Where(x => x.Date == todayAtMidnight)
@@ -1212,7 +1212,7 @@ public class TimePlanningWorkingHoursService(
 
         await registrationDevice.Update(dbContext);
 
-        var todayAtMidnight = DateTime.UtcNow.Date;
+        var todayAtMidnight = model.Date;
 
         var planRegistration = await dbContext.PlanRegistrations
             .Where(x => x.Date == todayAtMidnight)
