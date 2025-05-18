@@ -10,10 +10,27 @@
       <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
       <PackageReference Include="NUnit" Version="4.3.2" />
       <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+      <PackageReference Include="Testcontainers" Version="4.4.0" />
+      <PackageReference Include="Testcontainers.MariaDb" Version="4.4.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\TimePlanning.Pn\TimePlanning.Pn.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="SQL\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="SQL\420_eform-angular-time-planning-plugin.sql" />
+      <EmbeddedResource Include="SQL\420_eform-angular-time-planning-plugin.sql">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="SQL\420_SDK.sql" />
+      <EmbeddedResource Include="SQL\420_SDK.sql">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
     </ItemGroup>
 
 </Project>

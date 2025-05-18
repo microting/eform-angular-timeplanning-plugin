@@ -12,6 +12,7 @@ using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Models.Planning;
+using TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
 using TimePlanning.Pn.Services.TimePlanningPlanningService;
 
 namespace TimePlanning.Pn.Infrastructure.Helpers;
@@ -768,4 +769,151 @@ public static class PlanRegistrationHelper
 
         return siteModel;
     }
+
+    public static async Task<TimePlanningWorkingHoursModel> ReadBySiteAndDate(
+        TimePlanningPnDbContext dbContext, int sdkSiteId, DateTime dateTime,
+        string token)
+    {
+        if (token != null)
+        {
+            var registrationDevice = await dbContext.RegistrationDevices
+                .Where(x => x.Token == token).FirstOrDefaultAsync();
+            if (registrationDevice == null)
+            {
+                return null;
+            }
+        }
+
+        // var today = DateTime.UtcNow;
+        var midnight = dateTime;
+
+        var planRegistration = await dbContext.PlanRegistrations
+            .Where(x => x.Date == midnight)
+            .Where(x => x.SdkSitId == sdkSiteId)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync();
+
+        if (planRegistration == null)
+        {
+            var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
+            {
+                SdkSiteId = sdkSiteId,
+                Date = midnight,
+                PlanText = "",
+                PlanHours = 0,
+                Shift1Start = 0,
+                Shift1Stop = 0,
+                Shift1Pause = 0,
+                Shift2Start = 0,
+                Shift2Stop = 0,
+                Shift2Pause = 0,
+                NettoHours = 0,
+                FlexHours = 0,
+                SumFlexStart = 0,
+                SumFlexEnd = 0,
+                PaidOutFlex = "0",
+                Message = 0,
+                CommentWorker = "",
+                CommentOffice = "",
+                CommentOfficeAll = "",
+                Shift1PauseNumber = 0,
+                Shift2PauseNumber = 0,
+            };
+
+            return newTimePlanningWorkingHoursModel;
+
+            // return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Plan registration not found",
+            //     null);
+        }
+
+        var timePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
+        {
+            SdkSiteId = sdkSiteId,
+            Date = planRegistration.Date,
+            PlanText = planRegistration.PlanText,
+            PlanHours = planRegistration.PlanHours,
+            Shift1Start = planRegistration.Start1Id,
+            Shift1Stop = planRegistration.Stop1Id,
+            Shift1Pause = planRegistration.Pause1Id,
+            Shift2Start = planRegistration.Start2Id,
+            Shift2Stop = planRegistration.Stop2Id,
+            Shift2Pause = planRegistration.Pause2Id,
+            NettoHours = planRegistration.NettoHours,
+            FlexHours = planRegistration.Flex,
+            SumFlexStart = planRegistration.SumFlexStart,
+            SumFlexEnd = planRegistration.SumFlexEnd,
+            PaidOutFlex = planRegistration.PaiedOutFlex.ToString(),
+            Message = planRegistration.MessageId,
+            CommentWorker = planRegistration.WorkerComment,
+            CommentOffice = planRegistration.CommentOffice,
+            CommentOfficeAll = planRegistration.CommentOfficeAll,
+            Start1StartedAt = planRegistration.Start1StartedAt,
+            Stop1StoppedAt = planRegistration.Stop1StoppedAt,
+            Pause1StartedAt = planRegistration.Pause1StartedAt,
+            Pause1StoppedAt = planRegistration.Pause1StoppedAt,
+            Start2StartedAt = planRegistration.Start2StartedAt,
+            Stop2StoppedAt = planRegistration.Stop2StoppedAt,
+            Pause2StartedAt = planRegistration.Pause2StartedAt,
+            Pause2StoppedAt = planRegistration.Pause2StoppedAt,
+            Pause10StartedAt = planRegistration.Pause10StartedAt,
+            Pause10StoppedAt = planRegistration.Pause10StoppedAt,
+            Pause11StartedAt = planRegistration.Pause11StartedAt,
+            Pause11StoppedAt = planRegistration.Pause11StoppedAt,
+            Pause12StartedAt = planRegistration.Pause12StartedAt,
+            Pause12StoppedAt = planRegistration.Pause12StoppedAt,
+            Pause13StartedAt = planRegistration.Pause13StartedAt,
+            Pause13StoppedAt = planRegistration.Pause13StoppedAt,
+            Pause14StartedAt = planRegistration.Pause14StartedAt,
+            Pause14StoppedAt = planRegistration.Pause14StoppedAt,
+            Pause15StartedAt = planRegistration.Pause15StartedAt,
+            Pause15StoppedAt = planRegistration.Pause15StoppedAt,
+            Pause16StartedAt = planRegistration.Pause16StartedAt,
+            Pause16StoppedAt = planRegistration.Pause16StoppedAt,
+            Pause17StartedAt = planRegistration.Pause17StartedAt,
+            Pause17StoppedAt = planRegistration.Pause17StoppedAt,
+            Pause18StartedAt = planRegistration.Pause18StartedAt,
+            Pause18StoppedAt = planRegistration.Pause18StoppedAt,
+            Pause19StartedAt = planRegistration.Pause19StartedAt,
+            Pause19StoppedAt = planRegistration.Pause19StoppedAt,
+            Pause100StartedAt = planRegistration.Pause100StartedAt,
+            Pause100StoppedAt = planRegistration.Pause100StoppedAt,
+            Pause101StartedAt = planRegistration.Pause101StartedAt,
+            Pause101StoppedAt = planRegistration.Pause101StoppedAt,
+            Pause102StartedAt = planRegistration.Pause102StartedAt,
+            Pause102StoppedAt = planRegistration.Pause102StoppedAt,
+            Pause20StartedAt = planRegistration.Pause20StartedAt,
+            Pause20StoppedAt = planRegistration.Pause20StoppedAt,
+            Pause21StartedAt = planRegistration.Pause21StartedAt,
+            Pause21StoppedAt = planRegistration.Pause21StoppedAt,
+            Pause22StartedAt = planRegistration.Pause22StartedAt,
+            Pause22StoppedAt = planRegistration.Pause22StoppedAt,
+            Pause23StartedAt = planRegistration.Pause23StartedAt,
+            Pause23StoppedAt = planRegistration.Pause23StoppedAt,
+            Pause24StartedAt = planRegistration.Pause24StartedAt,
+            Pause24StoppedAt = planRegistration.Pause24StoppedAt,
+            Pause25StartedAt = planRegistration.Pause25StartedAt,
+            Pause25StoppedAt = planRegistration.Pause25StoppedAt,
+            Pause26StartedAt = planRegistration.Pause26StartedAt,
+            Pause26StoppedAt = planRegistration.Pause26StoppedAt,
+            Pause27StartedAt = planRegistration.Pause27StartedAt,
+            Pause27StoppedAt = planRegistration.Pause27StoppedAt,
+            Pause28StartedAt = planRegistration.Pause28StartedAt,
+            Pause28StoppedAt = planRegistration.Pause28StoppedAt,
+            Pause29StartedAt = planRegistration.Pause29StartedAt,
+            Pause29StoppedAt = planRegistration.Pause29StoppedAt,
+            Pause200StartedAt = planRegistration.Pause200StartedAt,
+            Pause200StoppedAt = planRegistration.Pause200StoppedAt,
+            Pause201StartedAt = planRegistration.Pause201StartedAt,
+            Pause201StoppedAt = planRegistration.Pause201StoppedAt,
+            Pause202StartedAt = planRegistration.Pause202StartedAt,
+            Pause202StoppedAt = planRegistration.Pause202StoppedAt,
+            Shift1PauseNumber = planRegistration.Shift1PauseNumber,
+            Shift2PauseNumber = planRegistration.Shift2PauseNumber
+        };
+
+        return timePlanningWorkingHoursModel;
+        // return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
+        //     timePlanningWorkingHoursModel);
+    }
+
 }
