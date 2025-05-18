@@ -58,9 +58,9 @@ namespace TimePlanning.Pn.Controllers
         [HttpGet]
         [Route("read")]
         [AllowAnonymous]
-        public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token)
+        public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime date, string token)
         {
-            return await _workingHoursService.Read(sdkSiteId, dateTime, token);
+            return await _workingHoursService.Read(sdkSiteId, date, token);
         }
 
         [HttpGet]
