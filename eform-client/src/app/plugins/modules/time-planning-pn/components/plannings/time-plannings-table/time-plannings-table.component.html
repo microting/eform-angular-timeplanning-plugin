@@ -122,7 +122,7 @@
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="secondShiftActual{{index}}_{{col.field}}">
-        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }} -
+        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }}
         <span *ngIf="row.planningPrDayModels[col.field]?.stop2StoppedAt !== null"> -
           {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
         </span>

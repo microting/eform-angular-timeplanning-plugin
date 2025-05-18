@@ -100,8 +100,8 @@ export const da = {
   'Allow entry of unregistered working hours on mobile': 'Tillad indtastning af uregistrerede arbejdstimer på mobilen',
   'Allow receipt for standard time on mobile': 'Tillad kvittering for standardtid på mobil',
   commentOfficeAll: 'Kommentarkontor alle',
-  'Planned working hours': 'Planlagte arbejdstider',
-  'Worktime start': 'Arbejdstids start',
-  'Worktime stop': 'Arbejdstidsstop',
-  'Shift not stopped by user!': 'Skiftet blev ikke stoppet af brugeren!',
+  'Planned working hours': 'Planlagte arbejdstid',
+  'Worktime start': 'Arbejdstid start',
+  'Worktime stop': 'Arbejdstid stop',
+  'Shift not stopped by user!': 'Arbejdstid blev ikke stoppet af medarbejderen!',
 };
