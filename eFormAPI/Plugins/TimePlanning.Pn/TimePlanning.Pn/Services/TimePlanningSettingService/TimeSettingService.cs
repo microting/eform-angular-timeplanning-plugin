@@ -331,14 +331,13 @@ public class TimeSettingService : ISettingService
             var assignedSites = await _dbContext.AssignedSites
                 .AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Select(x => x.SiteId)
                 .ToListAsync();
 
             var sites = new List<Site>();
             foreach (var assignedSite in assignedSites)
             {
                 var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
-                    x.MicrotingUid == assignedSite && x.WorkflowState != Constants.WorkflowStates.Removed);
+                    x.MicrotingUid == assignedSite.SiteId && x.WorkflowState != Constants.WorkflowStates.Removed);
                 if (site == null) continue;
                 {
                     var siteWorker = await sdkDbContext.SiteWorkers
@@ -414,7 +413,8 @@ public class TimeSettingService : ISettingService
                             PinCode = worker.PinCode,
                             DefaultLanguage = language.LanguageCode,
                             HoursStarted = hoursStarted,
-                            PauseStarted = pauseStarted
+                            PauseStarted = pauseStarted,
+                            AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive
                         };
                         sites.Add(newSite);
                     }

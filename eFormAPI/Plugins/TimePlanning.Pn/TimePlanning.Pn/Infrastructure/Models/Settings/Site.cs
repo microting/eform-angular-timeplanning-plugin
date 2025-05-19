@@ -15,4 +15,5 @@ public class Site
     public string DefaultLanguage { get; set; }
     public bool HoursStarted { get; set; }
     public bool PauseStarted { get; set; }
+    public bool AutoBreakCalculationActive { get; set; }
 }
