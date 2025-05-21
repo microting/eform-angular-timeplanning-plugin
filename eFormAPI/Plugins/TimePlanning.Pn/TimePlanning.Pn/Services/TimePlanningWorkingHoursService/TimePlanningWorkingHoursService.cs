@@ -113,6 +113,8 @@ public class TimePlanningWorkingHoursService(
                 .Select(x => new TimePlanningWorkingHoursModel
                 {
                     Id = x.Id,
+                    CreatedAt = x.CreatedAt,
+                    UpdatedAt = x.UpdatedAt,
                     WorkerName = site.Name,
                     WeekDay = (int)x.Date.DayOfWeek,
                     Date = x.Date,
@@ -147,6 +149,8 @@ public class TimePlanningWorkingHoursService(
             var prePlanning = new TimePlanningWorkingHoursModel
             {
                 Id = 0,
+                CreatedAt = lastPlanning.CreatedAt,
+                UpdatedAt = lastPlanning.UpdatedAt,
                 WorkerName = site.Name,
                 WeekDay = lastPlanning != null
                     ? (int)lastPlanning.Date.DayOfWeek

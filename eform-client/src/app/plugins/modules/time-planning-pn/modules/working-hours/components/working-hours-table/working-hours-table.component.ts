@@ -12,7 +12,12 @@ import {Subscription} from 'rxjs';
 import {SiteDto} from 'src/app/common/models';
 import {MtxGridColumn, MtxGridRowClassFormatter} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
-import {DaysOfWeekEnum, HOURS_PICKER_ARRAY, STANDARD_DANISH_DATE_FORMAT} from 'src/app/common/const';
+import {
+  DaysOfWeekEnum, FULL_DATE_FORMAT,
+  HOURS_PICKER_ARRAY,
+  PARSING_DATE_FORMAT,
+  STANDARD_DANISH_DATE_FORMAT
+} from 'src/app/common/const';
 import {messages} from '../../../../consts/messages';
 import {format} from 'date-fns';
 import {MatDialog} from '@angular/material/dialog';
@@ -100,7 +105,19 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
         pinned: 'left',
         field: 'id',
         formatter: (row: FormGroup) => row.get('id').value,
-        },
+      },
+      {
+        header: this.translateService.stream('CreatedAt'),
+        pinned: 'left',
+        field: 'createdAt',
+        formatter: (row: FormGroup) => `${format(row.get('createdAt').value, FULL_DATE_FORMAT.replace('YYYY', 'yyyy'))}`,
+      },
+      {
+        header: this.translateService.stream('UpdatedAt'),
+        pinned: 'left',
+        field: 'updatedAt',
+        formatter: (row: FormGroup) => `${format(row.get('updatedAt').value, FULL_DATE_FORMAT.replace('YYYY', 'yyyy'))}`,
+      },
       {
         header: this.translateService.stream('DayOfWeek'),
         pinned: 'left',
