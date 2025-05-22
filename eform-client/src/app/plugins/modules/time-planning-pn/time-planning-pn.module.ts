@@ -6,31 +6,39 @@ import {NgSelectModule} from '@ng-select/ng-select';
 import {TranslateModule} from '@ngx-translate/core';
 import {EformSharedModule} from 'src/app/common/modules/eform-shared/eform-shared.module';
 import {TimePlanningPnRouting} from './time-planning-pn.routing';
-// import {
-//   TimePlanningsContainerComponent,
-//   TimePlanningsHeaderComponent,
-//   TimePlanningsTableComponent,
-//   TimePlanningTableRowComponent,
-// } from './components';
 import {TimePlanningPnLayoutComponent} from './layouts';
 import {
   TimePlanningPnPlanningsService, TimePlanningPnRegistrationDevicesService,
   TimePlanningPnSettingsService,
   TimePlanningPnFlexesService
 } from './services';
-import {TimePlanningsContainerComponent, TimePlanningSettingsComponent, TimePlanningsTableComponent} from './components';
+import {
+  TimePlanningsContainerComponent, TimePlanningSettingsComponent, TimePlanningsTableComponent,
+  AssignedSiteDialogComponent,
+  WorkdayEntityDialogComponent, DownloadExcelDialogComponent
+} from './components';
 import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormField, MatLabel, MatSuffix} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
-import {MatButton} from '@angular/material/button';
+import {MatButton, MatIconButton} from '@angular/material/button';
 import {MatSlideToggle} from '@angular/material/slide-toggle';
-import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
+import {
+  MatDatepicker,
+  MatDatepickerInput,
+  MatDatepickerToggle,
+  MatDateRangeInput,
+  MatDateRangePicker, MatEndDate, MatStartDate
+} from '@angular/material/datepicker';
 import {MtxGrid} from '@ng-matero/extensions/grid';
 import {NgxChartsModule} from '@swimlane/ngx-charts';
 import {MatIcon} from '@angular/material/icon';
-import {MatTooltip} from "@angular/material/tooltip";
-import {NgxMaskDirective} from "ngx-mask";
-import {NgxMaterialTimepickerModule} from "ngx-material-timepicker";
+import {MatTooltip} from '@angular/material/tooltip';
+import {NgxMaskDirective} from 'ngx-mask';
+import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
+import {MatTab, MatTabGroup} from '@angular/material/tabs';
+import {MatCheckbox} from '@angular/material/checkbox';
+import {MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle} from '@angular/material/dialog';
+import {MtxSelect} from '@ng-matero/extensions/select';
 
 @NgModule({
   imports: [
@@ -43,11 +51,20 @@ import {NgxMaterialTimepickerModule} from "ngx-material-timepicker";
     TimePlanningPnRouting,
     ReactiveFormsModule,
     MatCardHeader,
+    MatTab,
+    MatDialogActions,
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogClose,
+    MtxSelect,
     MatCard,
+    MatCheckbox,
     MatCardContent,
+    MatIconButton,
     MatFormField,
     MatInput,
     MatButton,
+    MatTabGroup,
     MatSlideToggle,
     MatLabel,
     MatDatepicker,
@@ -59,15 +76,20 @@ import {NgxMaterialTimepickerModule} from "ngx-material-timepicker";
     MatIcon,
     MatTooltip,
     NgxMaskDirective,
-    NgxMaterialTimepickerModule
+    NgxMaterialTimepickerModule,
+    MatDateRangeInput,
+    MatDateRangePicker,
+    MatStartDate,
+    MatEndDate
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
     TimePlanningSettingsComponent,
-    // TimePlanningTableRowComponent,
+    WorkdayEntityDialogComponent,
+    AssignedSiteDialogComponent,
+    DownloadExcelDialogComponent,
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
-    // TimePlanningsHeaderComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,

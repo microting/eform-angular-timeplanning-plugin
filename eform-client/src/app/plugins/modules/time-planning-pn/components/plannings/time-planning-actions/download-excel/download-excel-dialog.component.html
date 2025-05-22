@@ -1,0 +1,57 @@
+<div mat-dialog-title>{{ 'Download excel' | translate }}</div>
+<div mat-dialog-content>
+  <div class="d-flex flex-column mr-2 ml-2">
+    <mat-form-field id="workingHoursRange">
+      <mat-label>{{ 'Date range' | translate }}</mat-label>
+      <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
+      <mat-date-range-input [rangePicker]="picker" (click)="picker.open()">
+        <input [value]="dateFrom" (dateChange)="updateDateFrom($event)" (dateInput)="updateDateFrom($event)" matStartDate class="workingHoursRange">
+        <input [value]="dateTo" (dateChange)="updateDateTo($event)" (dateInput)="updateDateTo($event)" matEndDate class="workingHoursRange">
+      </mat-date-range-input>
+      <mat-date-range-picker #picker></mat-date-range-picker>
+    </mat-form-field>
+  </div>
+  <div class="d-flex flex-column mr-2 ml-2" style="min-width: 25em">
+    <mat-form-field>
+      <mat-label>{{ 'Worker' | translate }}</mat-label>
+      <mtx-select
+        [items]="availableSites"
+        bindLabel="siteName"
+        bindValue="siteId"
+        [ngModel]="siteId"
+        (ngModelChange)="onSiteChanged($event)"
+        id="workingHoursSite">
+      </mtx-select>
+    </mat-form-field>
+  </div>
+</div>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+
+  <div class="d-flex align-items-center mr-2 ml-2" *ngIf="siteId && dateFrom && dateTo">
+    <button
+      mat-raised-button
+      id="workingHoursExcel"
+      (click)="onDownloadExcelReport()"
+      color="accent"
+      [matTooltip]="'Download Excel' | translate">
+      {{ 'Download Excel' | translate }}
+    </button>
+  </div>
+
+  <div class="d-flex align-items-center mr-2 ml-2" *ngIf="!siteId && dateFrom && dateTo">
+    <button
+      mat-raised-button
+      id="workingHoursExcelAllWorkers"
+      (click)="onDownloadExcelReportAllWorkers()"
+      color="accent"
+      [matTooltip]="'Download Excel (all workers)' | translate">
+      {{ 'Download Excel (all workers)' | translate }}
+    </button>
+  </div>
+  <div class="d-flex align-items-center mr-2 ml-2">
+    <button mat-raised-button mat-dialog-close
+            id="cancelButton">
+      {{ 'Cancel' | translate }}
+    </button>
+  </div>
+</div>

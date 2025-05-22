@@ -1,54 +1,17 @@
 import {Component, DoCheck, Inject, OnInit} from '@angular/core';
 import {
-  MAT_DIALOG_DATA,
-  MatDialogActions,
-  MatDialogClose,
-  MatDialogContent,
-  MatDialogTitle
+  MAT_DIALOG_DATA
 } from '@angular/material/dialog';
 import {AssignedSiteModel, GlobalAutoBreakSettingsModel} from '../../../../models';
-import {MatButton, MatIconButton} from '@angular/material/button';
-import {FormsModule} from '@angular/forms';
-import {MatFormField, MatHint, MatLabel} from '@angular/material/form-field';
-import {MatInput} from '@angular/material/input';
-import {TranslatePipe} from '@ngx-translate/core';
-import {selectAuthIsAdmin, selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
+import {selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {Store} from '@ngrx/store';
-import {AsyncPipe, NgForOf, NgIf} from '@angular/common';
-import {MatTab, MatTabGroup} from '@angular/material/tabs';
-import {NgxMaskDirective} from 'ngx-mask';
-import {MatCheckbox} from '@angular/material/checkbox';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
-import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
-import {MatIcon} from '@angular/material/icon';
 
 @Component({
   selector: 'app-assigned-site-dialog',
   templateUrl: './assigned-site-dialog.component.html',
-  imports: [
-    MatDialogTitle,
-    MatDialogContent,
-    MatDialogActions,
-    MatButton,
-    MatDialogClose,
-    FormsModule,
-    MatFormField,
-    MatInput,
-    MatLabel,
-    TranslatePipe,
-    AsyncPipe,
-    NgIf,
-    MatTab,
-    MatTabGroup,
-    NgForOf,
-    NgxMaskDirective,
-    MatCheckbox,
-    NgxMaterialTimepickerModule,
-    MatIcon,
-    MatIconButton,
-    MatHint,
-  ],
-  styleUrls: ['./assigned-site-dialog.component.scss']
+  styleUrls: ['./assigned-site-dialog.component.scss'],
+  standalone: false
 })
 export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   public selectCurrentUserIsAdmin$ = this.store.select(selectCurrentUserIsAdmin);

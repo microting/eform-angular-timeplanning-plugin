@@ -1,51 +1,22 @@
 import {Component, Inject, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {
-  MAT_DIALOG_DATA,
-  MatDialogActions,
-  MatDialogClose,
-  MatDialogContent,
-  MatDialogTitle
+  MAT_DIALOG_DATA
 } from '@angular/material/dialog';
-import {MatButton, MatIconButton} from '@angular/material/button';
-import {TranslatePipe, TranslateService} from '@ngx-translate/core';
-import {DatePipe, NgForOf, NgIf} from '@angular/common';
-import {MatCheckbox} from '@angular/material/checkbox';
-import {FormsModule} from '@angular/forms';
+import {TranslateService} from '@ngx-translate/core';
+import {DatePipe} from '@angular/common';
 import {TimePlanningMessagesEnum} from '../../../../enums';
 import {
   AssignedSiteModel,
   PlanningPrDayModel,
 } from '../../../../models';
-import {MtxGrid, MtxGridColumn} from '@ng-matero/extensions/grid';
+import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService} from '../../../../services';
-import {MatFormField, MatLabel} from '@angular/material/form-field';
-import {MatInput} from '@angular/material/input';
-import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
-import {MatIcon} from '@angular/material/icon';
 
 @Component({
   selector: 'app-workday-entity-dialog',
   templateUrl: './workday-entity-dialog.component.html',
-  imports: [
-    MatButton,
-    MatDialogActions,
-    MatDialogClose,
-    TranslatePipe,
-    MatDialogTitle,
-    MatDialogContent,
-    MatCheckbox,
-    FormsModule,
-    NgForOf,
-    NgIf,
-    MtxGrid,
-    MatFormField,
-    MatInput,
-    MatLabel,
-    NgxMaterialTimepickerModule,
-    MatIconButton,
-    MatIcon
-  ],
-  styleUrls: ['./workday-entity-dialog.component.scss']
+  styleUrls: ['./workday-entity-dialog.component.scss'],
+  standalone: false
 })
 export class WorkdayEntityDialogComponent implements OnInit {
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;

@@ -11,6 +11,8 @@ import {startOfWeek, endOfWeek, format} from 'date-fns';
 import {PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {Store} from '@ngrx/store';
 import {selectCurrentUserLocale} from 'src/app/state';
+import {MatDialog} from "@angular/material/dialog";
+import {DownloadExcelDialogComponent} from "src/app/plugins/modules/time-planning-pn/components";
 
 @AutoUnsubscribe()
 @Component({
@@ -36,7 +38,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   constructor(
     private store: Store,
     private planningsService: TimePlanningPnPlanningsService,
-    private settingsService: TimePlanningPnSettingsService
+    private settingsService: TimePlanningPnSettingsService,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -76,6 +79,25 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     this.dateFrom = new Date(this.dateFrom.setDate(this.dateFrom.getDate() - 7));
     this.dateTo = new Date(this.dateTo.setDate(this.dateTo.getDate() - 7));
     this.getPlannings();
+  }
+
+  openDownloadExcelDialog() {
+    this.settingsService
+      .getAvailableSites()
+      .subscribe((data) => {
+        if (data && data.success) {
+          this.availableSites = data.model;
+          const dialogRef = this.dialog.open(DownloadExcelDialogComponent, {
+            width: '600px',
+            data: this.availableSites,
+          });
+          dialogRef.afterClosed().subscribe((result) => {
+            // if (result) {
+            //   this.getPlannings();
+            // }
+          });
+        }
+      });
   }
 
   goForward() {
