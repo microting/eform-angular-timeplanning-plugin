@@ -48,6 +48,15 @@ public class TimePlanningPlanningPrDayModel
     public int PlannedStartOfShift2 { get; set; }
     public int PlannedEndOfShift2 { get; set; }
     public int PlannedBreakOfShift2 { get; set; }
+    public int PlannedStartOfShift3 { get; set; }
+    public int PlannedEndOfShift3 { get; set; }
+    public int PlannedBreakOfShift3 { get; set; }
+    public int PlannedStartOfShift4 { get; set; }
+    public int PlannedEndOfShift4 { get; set; }
+    public int PlannedBreakOfShift4 { get; set; }
+    public int PlannedStartOfShift5 { get; set; }
+    public int PlannedEndOfShift5 { get; set; }
+    public int PlannedBreakOfShift5 { get; set; }
     public bool IsDoubleShift { get; set; }
     public bool OnVacation { get; set; }
     public bool Sick { get; set; }
@@ -149,4 +158,16 @@ public class TimePlanningPlanningPrDayModel
     public DateTime? Pause201StoppedAt { get; set; }
     public DateTime? Pause202StartedAt { get; set; }
     public DateTime? Pause202StoppedAt { get; set; }
+    public DateTime? Start3StartedAt { get; set; }
+    public DateTime? Stop3StoppedAt { get; set; }
+    public DateTime? Pause3StartedAt { get; set; }
+    public DateTime? Pause3StoppedAt { get; set; }
+    public DateTime? Start4StartedAt { get; set; }
+    public DateTime? Stop4StoppedAt { get; set; }
+    public DateTime? Pause4StartedAt { get; set; }
+    public DateTime? Pause4StoppedAt { get; set; }
+    public DateTime? Start5StartedAt { get; set; }
+    public DateTime? Stop5StoppedAt { get; set; }
+    public DateTime? Pause5StartedAt { get; set; }
+    public DateTime? Pause5StoppedAt { get; set; }
 }

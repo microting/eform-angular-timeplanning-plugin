@@ -152,11 +152,29 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.data.mondayPlanHours += this.data.startMonday2NdShift && this.data.endMonday2NdShift
       ? this.data.endMonday2NdShift - this.data.startMonday2NdShift - this.data.breakMonday2NdShift
       : 0;
+    this.data.mondayPlanHours += this.data.startMonday3RdShift && this.data.endMonday3RdShift
+      ? this.data.endMonday3RdShift - this.data.startMonday3RdShift - this.data.breakMonday3RdShift
+      : 0;
+    this.data.mondayPlanHours += this.data.startMonday4ThShift && this.data.endMonday4ThShift
+      ? this.data.endMonday4ThShift - this.data.startMonday4ThShift - this.data.breakMonday4ThShift
+      : 0;
+    this.data.mondayPlanHours += this.data.startMonday5ThShift && this.data.endMonday5ThShift
+      ? this.data.endMonday5ThShift - this.data.startMonday5ThShift - this.data.breakMonday5ThShift
+      : 0;
     this.data.tuesdayPlanHours = this.data.startTuesday && this.data.endTuesday
       ? this.data.endTuesday - this.data.startTuesday - this.data.breakTuesday
       : 0;
     this.data.tuesdayPlanHours += this.data.startTuesday2NdShift && this.data.endTuesday2NdShift
       ? this.data.endTuesday2NdShift - this.data.startTuesday2NdShift - this.data.breakTuesday2NdShift
+      : 0;
+    this.data.tuesdayPlanHours += this.data.startTuesday3RdShift && this.data.endTuesday3RdShift
+      ? this.data.endTuesday3RdShift - this.data.startTuesday3RdShift - this.data.breakTuesday3RdShift
+      : 0;
+    this.data.tuesdayPlanHours += this.data.startTuesday4ThShift && this.data.endTuesday4ThShift
+      ? this.data.endTuesday4ThShift - this.data.startTuesday4ThShift - this.data.breakTuesday4ThShift
+      : 0;
+    this.data.tuesdayPlanHours += this.data.startTuesday5ThShift && this.data.endTuesday5ThShift
+      ? this.data.endTuesday5ThShift - this.data.startTuesday5ThShift - this.data.breakTuesday5ThShift
       : 0;
     this.data.wednesdayPlanHours = this.data.startWednesday && this.data.endWednesday
       ? this.data.endWednesday - this.data.startWednesday - this.data.breakWednesday
@@ -164,11 +182,29 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.data.wednesdayPlanHours += this.data.startWednesday2NdShift && this.data.endWednesday2NdShift
       ? this.data.endWednesday2NdShift - this.data.startWednesday2NdShift - this.data.breakWednesday2NdShift
       : 0;
+    this.data.wednesdayPlanHours += this.data.startWednesday3RdShift && this.data.endWednesday3RdShift
+      ? this.data.endWednesday3RdShift - this.data.startWednesday3RdShift - this.data.breakWednesday3RdShift
+      : 0;
+    this.data.wednesdayPlanHours += this.data.startWednesday4ThShift && this.data.endWednesday4ThShift
+      ? this.data.endWednesday4ThShift - this.data.startWednesday4ThShift - this.data.breakWednesday4ThShift
+      : 0;
+    this.data.wednesdayPlanHours += this.data.startWednesday5ThShift && this.data.endWednesday5ThShift
+      ? this.data.endWednesday5ThShift - this.data.startWednesday5ThShift - this.data.breakWednesday5ThShift
+      : 0;
     this.data.thursdayPlanHours = this.data.startThursday && this.data.endThursday
       ? this.data.endThursday - this.data.startThursday - this.data.breakThursday
       : 0;
     this.data.thursdayPlanHours += this.data.startThursday2NdShift && this.data.endThursday2NdShift
       ? this.data.endThursday2NdShift - this.data.startThursday2NdShift - this.data.breakThursday2NdShift
+      : 0;
+    this.data.thursdayPlanHours += this.data.startThursday3RdShift && this.data.endThursday3RdShift
+      ? this.data.endThursday3RdShift - this.data.startThursday3RdShift - this.data.breakThursday3RdShift
+      : 0;
+    this.data.thursdayPlanHours += this.data.startThursday4ThShift && this.data.endThursday4ThShift
+      ? this.data.endThursday4ThShift - this.data.startThursday4ThShift - this.data.breakThursday4ThShift
+      : 0;
+    this.data.thursdayPlanHours += this.data.startThursday5ThShift && this.data.endThursday5ThShift
+      ? this.data.endThursday5ThShift - this.data.startThursday5ThShift - this.data.breakThursday5ThShift
       : 0;
     this.data.fridayPlanHours = this.data.startFriday && this.data.endFriday
       ? this.data.endFriday - this.data.startFriday - this.data.breakFriday
@@ -176,17 +212,41 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.data.fridayPlanHours += this.data.startFriday2NdShift && this.data.endFriday2NdShift
       ? this.data.endFriday2NdShift - this.data.startFriday2NdShift - this.data.breakFriday2NdShift
       : 0;
+    this.data.fridayPlanHours += this.data.startFriday3RdShift && this.data.endFriday3RdShift
+      ? this.data.endFriday3RdShift - this.data.startFriday3RdShift - this.data.breakFriday3RdShift
+      : 0;
+    this.data.fridayPlanHours += this.data.startFriday4ThShift && this.data.endFriday4ThShift
+      ? this.data.endFriday4ThShift - this.data.startFriday4ThShift - this.data.breakFriday4ThShift
+      : 0;
+    this.data.fridayPlanHours += this.data.startFriday5ThShift && this.data.endFriday5ThShift
+      ? this.data.endFriday5ThShift - this.data.startFriday5ThShift - this.data.breakFriday5ThShift
+      : 0;
     this.data.saturdayPlanHours = this.data.startSaturday && this.data.endSaturday
       ? this.data.endSaturday - this.data.startSaturday - this.data.breakSaturday
       : 0;
     this.data.saturdayPlanHours += this.data.startSaturday2NdShift && this.data.endSaturday2NdShift
       ? this.data.endSaturday2NdShift - this.data.startSaturday2NdShift - this.data.breakSaturday2NdShift
       : 0;
+    this.data.saturdayPlanHours += this.data.startSaturday3RdShift && this.data.endSaturday3RdShift
+      ? this.data.endSaturday3RdShift - this.data.startSaturday3RdShift - this.data.breakSaturday3RdShift
+      : 0;
+    this.data.saturdayPlanHours += this.data.startSaturday4ThShift && this.data.endSaturday4ThShift
+      ? this.data.endSaturday4ThShift - this.data.startSaturday4ThShift - this.data.breakSaturday4ThShift
+      : 0;
     this.data.sundayPlanHours = this.data.startSunday && this.data.endSunday
       ? this.data.endSunday - this.data.startSunday - this.data.breakSunday
       : 0;
     this.data.sundayPlanHours += this.data.startSunday2NdShift && this.data.endSunday2NdShift
       ? this.data.endSunday2NdShift - this.data.startSunday2NdShift - this.data.breakSunday2NdShift
+      : 0;
+    this.data.sundayPlanHours += this.data.startSunday3RdShift && this.data.endSunday3RdShift
+      ? this.data.endSunday3RdShift - this.data.startSunday3RdShift - this.data.breakSunday3RdShift
+      : 0;
+    this.data.sundayPlanHours += this.data.startSunday4ThShift && this.data.endSunday4ThShift
+      ? this.data.endSunday4ThShift - this.data.startSunday4ThShift - this.data.breakSunday4ThShift
+      : 0;
+    this.data.sundayPlanHours += this.data.startSunday5ThShift && this.data.endSunday5ThShift
+      ? this.data.endSunday5ThShift - this.data.startSunday5ThShift - this.data.breakSunday5ThShift
       : 0;
   }
 
