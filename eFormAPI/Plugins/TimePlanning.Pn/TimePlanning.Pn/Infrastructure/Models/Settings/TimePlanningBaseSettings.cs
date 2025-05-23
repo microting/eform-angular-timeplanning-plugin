@@ -24,43 +24,44 @@ SOFTWARE.
 
 using System;
 
-namespace TimePlanning.Pn.Infrastructure.Models.Settings
+namespace TimePlanning.Pn.Infrastructure.Models.Settings;
+
+public class TimePlanningBaseSettings
 {
-    public class TimePlanningBaseSettings
-    {
-        public int? EformId{ get; set; }
+    public int? EformId{ get; set; }
 
-        public int? FolderId { get; set; }
+    public int? FolderId { get; set; }
 
-        public int? InfoeFormId { get; set; }
+    public int? InfoeFormId { get; set; }
 
-        public int? MaxHistoryDays { get; set; }
+    public int? MaxHistoryDays { get; set; }
 
-        public int? MaxDaysEditable { get; set; }
-        public string GoogleApiKey { get; set; }
-        public string GoogleSheetId { get; set; }
-        public string GoogleSheetLastModified { get; set; }
-        public string MondayBreakMinutesDivider { get; set; }
-        public string MondayBreakMinutesPrDivider { get; set; }
-        public string TuesdayBreakMinutesDivider { get; set; }
-        public string TuesdayBreakMinutesPrDivider { get; set; }
-        public string WednesdayBreakMinutesDivider { get; set; }
-        public string WednesdayBreakMinutesPrDivider { get; set; }
-        public string ThursdayBreakMinutesDivider { get; set; }
-        public string ThursdayBreakMinutesPrDivider { get; set; }
-        public string FridayBreakMinutesDivider { get; set; }
-        public string FridayBreakMinutesPrDivider { get; set; }
-        public string SaturdayBreakMinutesDivider { get; set; }
-        public string SaturdayBreakMinutesPrDivider { get; set; }
-        public string SundayBreakMinutesDivider { get; set; }
-        public string SundayBreakMinutesPrDivider { get; set; }
-        public string AutoBreakCalculationActive { get; set; }
-        public string MondayBreakMinutesUpperLimit { get; set; }
-        public string TuesdayBreakMinutesUpperLimit { get; set; }
-        public string WednesdayBreakMinutesUpperLimit { get; set; }
-        public string ThursdayBreakMinutesUpperLimit { get; set; }
-        public string FridayBreakMinutesUpperLimit { get; set; }
-        public string SaturdayBreakMinutesUpperLimit { get; set; }
-        public string SundayBreakMinutesUpperLimit { get; set; }
-    }
+    public int? MaxDaysEditable { get; set; }
+    public string GoogleApiKey { get; set; }
+    public string GoogleSheetId { get; set; }
+    public string GoogleSheetLastModified { get; set; }
+    public string MondayBreakMinutesDivider { get; set; }
+    public string MondayBreakMinutesPrDivider { get; set; }
+    public string TuesdayBreakMinutesDivider { get; set; }
+    public string TuesdayBreakMinutesPrDivider { get; set; }
+    public string WednesdayBreakMinutesDivider { get; set; }
+    public string WednesdayBreakMinutesPrDivider { get; set; }
+    public string ThursdayBreakMinutesDivider { get; set; }
+    public string ThursdayBreakMinutesPrDivider { get; set; }
+    public string FridayBreakMinutesDivider { get; set; }
+    public string FridayBreakMinutesPrDivider { get; set; }
+    public string SaturdayBreakMinutesDivider { get; set; }
+    public string SaturdayBreakMinutesPrDivider { get; set; }
+    public string SundayBreakMinutesDivider { get; set; }
+    public string SundayBreakMinutesPrDivider { get; set; }
+    public string AutoBreakCalculationActive { get; set; }
+    public string MondayBreakMinutesUpperLimit { get; set; }
+    public string TuesdayBreakMinutesUpperLimit { get; set; }
+    public string WednesdayBreakMinutesUpperLimit { get; set; }
+    public string ThursdayBreakMinutesUpperLimit { get; set; }
+    public string FridayBreakMinutesUpperLimit { get; set; }
+    public string SaturdayBreakMinutesUpperLimit { get; set; }
+    public string SundayBreakMinutesUpperLimit { get; set; }
+    public int DayOfPayment { get; set; }
+    public string ShowCalculationsAsNumber { get; set; }
 }

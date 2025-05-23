@@ -22,53 +22,52 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.RebusService
+namespace TimePlanning.Pn.Services.RebusService;
+
+using System.Threading.Tasks;
+using Castle.MicroKernel.Registration;
+using Castle.Windsor;
+using eFormCore;
+using Installers;
+using Microting.eFormApi.BasePn.Abstractions;
+using Microting.TimePlanningBase.Infrastructure.Data;
+using Microting.TimePlanningBase.Infrastructure.Data.Factories;
+using Rebus.Bus;
+
+public class RebusService : IRebusService
 {
-    using System.Threading.Tasks;
-    using Castle.MicroKernel.Registration;
-    using Castle.Windsor;
-    using eFormCore;
-    using Installers;
-    using Microting.eFormApi.BasePn.Abstractions;
-    using Microting.TimePlanningBase.Infrastructure.Data;
-    using Microting.TimePlanningBase.Infrastructure.Data.Factories;
-    using Rebus.Bus;
+    private IBus _bus;
+    private IWindsorContainer _container;
+    private string _connectionString;
+    private readonly IEFormCoreService _coreHelper;
 
-    public class RebusService : IRebusService
+    public RebusService(IEFormCoreService coreHelper)
     {
-        private IBus _bus;
-        private IWindsorContainer _container;
-        private string _connectionString;
-        private readonly IEFormCoreService _coreHelper;
+        _coreHelper = coreHelper;
+    }
 
-        public RebusService(IEFormCoreService coreHelper)
-        {
-            _coreHelper = coreHelper;
-        }
+    public async Task Start(string connectionString, string rabbitMqUser, string rabbitMqPassword, string rabbitMqHost)
+    {
+        _connectionString = connectionString;
+        _container = new WindsorContainer();
+        _container.Install(
+            new RebusHandlerInstaller()
+            , new RebusInstaller(connectionString, 1, 1, rabbitMqUser, rabbitMqPassword, rabbitMqHost)
+        );
 
-        public async Task Start(string connectionString, string rabbitMqUser, string rabbitMqPassword, string rabbitMqHost)
-        {
-            _connectionString = connectionString;
-            _container = new WindsorContainer();
-            _container.Install(
-                new RebusHandlerInstaller()
-                , new RebusInstaller(connectionString, 1, 1, rabbitMqUser, rabbitMqPassword, rabbitMqHost)
-            );
+        Core _core = await _coreHelper.GetCore();
+        _container.Register(Component.For<Core>().Instance(_core));
+        _container.Register(Component.For<TimePlanningPnDbContext>().Instance(GetContext()));
+        _bus = _container.Resolve<IBus>();
+    }
 
-            Core _core = await _coreHelper.GetCore();
-            _container.Register(Component.For<Core>().Instance(_core));
-            _container.Register(Component.For<TimePlanningPnDbContext>().Instance(GetContext()));
-            _bus = _container.Resolve<IBus>();
-        }
-
-        public IBus GetBus()
-        {
-            return _bus;
-        }
-        private TimePlanningPnDbContext GetContext()
-        {
-            TimePlanningPnContextFactory contextFactory = new TimePlanningPnContextFactory();
-            return contextFactory.CreateDbContext(new[] {_connectionString});
-        }
+    public IBus GetBus()
+    {
+        return _bus;
+    }
+    private TimePlanningPnDbContext GetContext()
+    {
+        TimePlanningPnContextFactory contextFactory = new TimePlanningPnContextFactory();
+        return contextFactory.CreateDbContext(new[] {_connectionString});
     }
 }

@@ -815,8 +815,6 @@ public class TimePlanningPlanningService(
             {
                 planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;
                 planning.Pause2Id = model.Pause2Id ?? planning.Pause2Id;
-
-                planning = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planning);
             }
             else
             {
@@ -1082,6 +1080,8 @@ public class TimePlanningPlanningService(
             planning.Start2Id = model.Start2Id ?? 0;
             planning.Stop2Id = model.Stop2Id ?? 0;
             planning.WorkerComment = model.WorkerComment;
+
+            planning = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planning);
 
             var minutesMultiplier = 5;
             double nettoMinutes = 0;

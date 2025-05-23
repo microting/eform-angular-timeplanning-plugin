@@ -22,46 +22,45 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Installers
+namespace TimePlanning.Pn.Installers;
+
+using System;
+using Castle.MicroKernel.Registration;
+using Castle.MicroKernel.SubSystems.Configuration;
+using Castle.Windsor;
+using Rebus.Config;
+using Rebus.Logging;
+
+public class RebusInstaller : IWindsorInstaller
 {
-    using System;
-    using Castle.MicroKernel.Registration;
-    using Castle.MicroKernel.SubSystems.Configuration;
-    using Castle.Windsor;
-    using Rebus.Config;
-    using Rebus.Logging;
+    private readonly string _connectionString;
+    private readonly int _maxParallelism;
+    private readonly int _numberOfWorkers;
+    private readonly string _rabbitMqUser;
+    private readonly string _rabbitMqPassword;
+    private readonly string _rabbitMqHost;
 
-    public class RebusInstaller : IWindsorInstaller
+    public RebusInstaller(string connectionString, int maxParallelism, int numberOfWorkers, string rabbitMqUser, string rabbitMqPassword, string rabbitMqHost)
     {
-        private readonly string _connectionString;
-        private readonly int _maxParallelism;
-        private readonly int _numberOfWorkers;
-        private readonly string _rabbitMqUser;
-        private readonly string _rabbitMqPassword;
-        private readonly string _rabbitMqHost;
+        if (string.IsNullOrEmpty(connectionString)) throw new ArgumentNullException(nameof(connectionString));
+        _connectionString = connectionString;
+        _maxParallelism = maxParallelism;
+        _numberOfWorkers = numberOfWorkers;
+        _rabbitMqHost = rabbitMqHost;
+        _rabbitMqUser = rabbitMqUser;
+        _rabbitMqPassword = rabbitMqPassword;
+    }
 
-        public RebusInstaller(string connectionString, int maxParallelism, int numberOfWorkers, string rabbitMqUser, string rabbitMqPassword, string rabbitMqHost)
-        {
-            if (string.IsNullOrEmpty(connectionString)) throw new ArgumentNullException(nameof(connectionString));
-            _connectionString = connectionString;
-            _maxParallelism = maxParallelism;
-            _numberOfWorkers = numberOfWorkers;
-            _rabbitMqHost = rabbitMqHost;
-            _rabbitMqUser = rabbitMqUser;
-            _rabbitMqPassword = rabbitMqPassword;
-        }
-
-        public void Install(IWindsorContainer container, IConfigurationStore store)
-        {
-            Configure.With(new CastleWindsorContainerAdapter(container))
-                .Logging(l => l.ColoredConsole(LogLevel.Info))
-                .Transport(t => t.UseRabbitMq($"amqp://{_rabbitMqUser}:{_rabbitMqPassword}@{_rabbitMqHost}", "eform-angular-time-planning-plugin"))
-                .Options(o =>
-                {
-                    o.SetMaxParallelism(_maxParallelism);
-                    o.SetNumberOfWorkers(_numberOfWorkers);
-                })
-                .Start();
-        }
+    public void Install(IWindsorContainer container, IConfigurationStore store)
+    {
+        Configure.With(new CastleWindsorContainerAdapter(container))
+            .Logging(l => l.ColoredConsole(LogLevel.Info))
+            .Transport(t => t.UseRabbitMq($"amqp://{_rabbitMqUser}:{_rabbitMqPassword}@{_rabbitMqHost}", "eform-angular-time-planning-plugin"))
+            .Options(o =>
+            {
+                o.SetMaxParallelism(_maxParallelism);
+                o.SetNumberOfWorkers(_numberOfWorkers);
+            })
+            .Start();
     }
 }

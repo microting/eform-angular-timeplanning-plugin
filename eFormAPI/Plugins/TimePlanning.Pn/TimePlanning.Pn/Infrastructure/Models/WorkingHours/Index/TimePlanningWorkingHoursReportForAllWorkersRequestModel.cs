@@ -18,14 +18,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index
+namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
+
+using System;
+
+public class TimePlanningWorkingHoursReportForAllWorkersRequestModel
 {
-    using System;
+    public DateTime DateFrom { get; set; }
 
-    public class TimePlanningWorkingHoursReportForAllWorkersRequestModel
-    {
-        public DateTime DateFrom { get; set; }
-
-        public DateTime DateTo { get; set; }
-    }
+    public DateTime DateTo { get; set; }
 }

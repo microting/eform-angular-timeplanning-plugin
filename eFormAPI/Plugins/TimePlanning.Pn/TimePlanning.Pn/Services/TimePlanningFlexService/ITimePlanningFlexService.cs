@@ -21,21 +21,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-namespace TimePlanning.Pn.Services.TimePlanningFlexService
+namespace TimePlanning.Pn.Services.TimePlanningFlexService;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Infrastructure.Models.Flex.Index;
+using Infrastructure.Models.Flex.Update;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+
+/// <summary>
+/// Interface ITimePlanningFlexService
+/// </summary>
+public interface ITimePlanningFlexService
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.Flex.Index;
-    using Infrastructure.Models.Flex.Update;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+    Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index();
 
-    /// <summary>
-    /// Interface ITimePlanningFlexService
-    /// </summary>
-    public interface ITimePlanningFlexService
-    {
-        Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index();
-
-        Task<OperationResult> UpdateCreate(List<TimePlanningFlexUpdateModel> model);
-    }
+    Task<OperationResult> UpdateCreate(List<TimePlanningFlexUpdateModel> model);
 }

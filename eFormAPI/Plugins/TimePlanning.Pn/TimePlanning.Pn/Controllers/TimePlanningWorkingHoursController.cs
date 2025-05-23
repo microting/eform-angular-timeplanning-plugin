@@ -26,157 +26,156 @@ using Microsoft.AspNetCore.Routing;
 using TimePlanning.Pn.Extensions;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours;
 
-namespace TimePlanning.Pn.Controllers
+namespace TimePlanning.Pn.Controllers;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Infrastructure.Models.WorkingHours.Index;
+using Infrastructure.Models.WorkingHours.UpdateCreate;
+using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Services.TimePlanningWorkingHoursService;
+
+[Authorize]
+[Route("api/time-planning-pn/working-hours")]
+public class TimePlanningWorkingHoursController : Controller
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.WorkingHours.Index;
-    using Infrastructure.Models.WorkingHours.UpdateCreate;
-    using Microsoft.AspNetCore.Mvc;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
-    using Services.TimePlanningWorkingHoursService;
+    private readonly ITimePlanningWorkingHoursService _workingHoursService;
 
-    [Authorize]
-    [Route("api/time-planning-pn/working-hours")]
-    public class TimePlanningWorkingHoursController : Controller
+    public TimePlanningWorkingHoursController(ITimePlanningWorkingHoursService workingHoursService)
     {
-        private readonly ITimePlanningWorkingHoursService _workingHoursService;
+        _workingHoursService = workingHoursService;
+    }
 
-        public TimePlanningWorkingHoursController(ITimePlanningWorkingHoursService workingHoursService)
-        {
-            _workingHoursService = workingHoursService;
-        }
+    [HttpPost]
+    [Route("index")]
+    public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(
+        [FromBody] TimePlanningWorkingHoursRequestModel model)
+    {
+        return await _workingHoursService.Index(model);
+    }
 
-        [HttpPost]
-        [Route("index")]
-        public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(
-            [FromBody] TimePlanningWorkingHoursRequestModel model)
-        {
-            return await _workingHoursService.Index(model);
-        }
+    [HttpGet]
+    [Route("read")]
+    [AllowAnonymous]
+    public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime date, string token)
+    {
+        return await _workingHoursService.Read(sdkSiteId, date, token);
+    }
 
-        [HttpGet]
-        [Route("read")]
-        [AllowAnonymous]
-        public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime date, string token)
-        {
-            return await _workingHoursService.Read(sdkSiteId, date, token);
-        }
+    [HttpGet]
+    [Route("read-simple")]
+    public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> Read(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
+    {
+        return await _workingHoursService.ReadSimple(dateTime, softwareVersion, model, manufacturer, osVersion);
+    }
 
-        [HttpGet]
-        [Route("read-simple")]
-        public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> Read(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
-        {
-            return await _workingHoursService.ReadSimple(dateTime, softwareVersion, model, manufacturer, osVersion);
-        }
+    [HttpGet]
+    [Route("calculate-hours-summary")]
+    public async Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate, DateTime endDate, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
+    {
+        return await _workingHoursService.CalculateHoursSummary(startDate, endDate, softwareVersion, model, manufacturer, osVersion);
+    }
 
-        [HttpGet]
-        [Route("calculate-hours-summary")]
-        public async Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate, DateTime endDate, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
-        {
-            return await _workingHoursService.CalculateHoursSummary(startDate, endDate, softwareVersion, model, manufacturer, osVersion);
-        }
+    [HttpPut]
+    public async Task<OperationResult> Update([FromBody] TimePlanningWorkingHoursUpdateCreateModel model)
+    {
+        return await _workingHoursService.CreateUpdate(model);
+    }
 
-        [HttpPut]
-        public async Task<OperationResult> Update([FromBody] TimePlanningWorkingHoursUpdateCreateModel model)
-        {
-            return await _workingHoursService.CreateUpdate(model);
-        }
+    [HttpPut]
+    [Route("update")]
+    [AllowAnonymous]
+    public async Task<OperationResult> UpdateWorkingHour([FromForm] int? sdkSiteId, [FromForm] TimePlanningWorkingHoursUpdateModel obj, [FromForm] string token)
+    {
+        return await _workingHoursService.UpdateWorkingHour(sdkSiteId, obj, token);
+    }
 
-        [HttpPut]
-        [Route("update")]
-        [AllowAnonymous]
-        public async Task<OperationResult> UpdateWorkingHour([FromForm] int? sdkSiteId, [FromForm] TimePlanningWorkingHoursUpdateModel obj, [FromForm] string token)
+    /// <summary>
+    /// Download records export word
+    /// </summary>
+    /// <param name="requestModel">The request model.</param>
+    [HttpGet]
+    [Route("reports/file")]
+    [ProducesResponseType(typeof(string), 400)]
+    public async Task GenerateReportFile(TimePlanningWorkingHoursRequestModel requestModel)
+    {
+        var result = await _workingHoursService.GenerateExcelDashboard(requestModel);
+        const int bufferSize = 4086;
+        byte[] buffer = new byte[bufferSize];
+        Response.OnStarting(async () =>
         {
-            return await _workingHoursService.UpdateWorkingHour(sdkSiteId, obj, token);
-        }
-
-        /// <summary>
-        /// Download records export word
-        /// </summary>
-        /// <param name="requestModel">The request model.</param>
-        [HttpGet]
-        [Route("reports/file")]
-        [ProducesResponseType(typeof(string), 400)]
-        public async Task GenerateReportFile(TimePlanningWorkingHoursRequestModel requestModel)
-        {
-            var result = await _workingHoursService.GenerateExcelDashboard(requestModel);
-            const int bufferSize = 4086;
-            byte[] buffer = new byte[bufferSize];
-            Response.OnStarting(async () =>
+            if (!result.Success)
             {
-                if (!result.Success)
+                Response.ContentLength = result.Message.Length;
+                Response.ContentType = "text/plain";
+                Response.StatusCode = 400;
+                byte[] bytes = Encoding.UTF8.GetBytes(result.Message);
+                await Response.Body.WriteAsync(bytes, 0, result.Message.Length);
+                await Response.Body.FlushAsync();
+            }
+            else
+            {
+                await using var wordStream = result.Model;
+                int bytesRead;
+                Response.ContentLength = wordStream.Length;
+                Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                while ((bytesRead = wordStream.Read(buffer, 0, buffer.Length)) > 0 &&
+                       !HttpContext.RequestAborted.IsCancellationRequested)
                 {
-                    Response.ContentLength = result.Message.Length;
-                    Response.ContentType = "text/plain";
-                    Response.StatusCode = 400;
-                    byte[] bytes = Encoding.UTF8.GetBytes(result.Message);
-                    await Response.Body.WriteAsync(bytes, 0, result.Message.Length);
+                    await Response.Body.WriteAsync(buffer, 0, bytesRead);
                     await Response.Body.FlushAsync();
                 }
-                else
-                {
-                    await using var wordStream = result.Model;
-                    int bytesRead;
-                    Response.ContentLength = wordStream.Length;
-                    Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-                    while ((bytesRead = wordStream.Read(buffer, 0, buffer.Length)) > 0 &&
-                           !HttpContext.RequestAborted.IsCancellationRequested)
-                    {
-                        await Response.Body.WriteAsync(buffer, 0, bytesRead);
-                        await Response.Body.FlushAsync();
-                    }
-                }
-            });
-        }
+            }
+        });
+    }
 
 
-        /// <summary>
-        /// Download records export word
-        /// </summary>
-        /// <param name="requestModel">The request model.</param>
-        [HttpGet]
-        [Route("reports/file-all-workers")]
-        [ProducesResponseType(typeof(string), 400)]
-        public async Task GenerateReportFileByAllWorkers(TimePlanningWorkingHoursReportForAllWorkersRequestModel requestModel)
+    /// <summary>
+    /// Download records export word
+    /// </summary>
+    /// <param name="requestModel">The request model.</param>
+    [HttpGet]
+    [Route("reports/file-all-workers")]
+    [ProducesResponseType(typeof(string), 400)]
+    public async Task GenerateReportFileByAllWorkers(TimePlanningWorkingHoursReportForAllWorkersRequestModel requestModel)
+    {
+        var result = await _workingHoursService.GenerateExcelDashboard(requestModel);
+        const int bufferSize = 4086;
+        var buffer = new byte[bufferSize];
+        Response.OnStarting(async () =>
         {
-            var result = await _workingHoursService.GenerateExcelDashboard(requestModel);
-            const int bufferSize = 4086;
-            var buffer = new byte[bufferSize];
-            Response.OnStarting(async () =>
+            if (!result.Success)
             {
-                if (!result.Success)
+                Response.ContentLength = result.Message.Length;
+                Response.ContentType = "text/plain";
+                Response.StatusCode = 400;
+                var bytes = Encoding.UTF8.GetBytes(result.Message);
+                await Response.Body.WriteAsync(bytes, 0, result.Message.Length);
+                await Response.Body.FlushAsync();
+            }
+            else
+            {
+                await using var wordStream = result.Model;
+                int bytesRead;
+                Response.ContentLength = wordStream.Length;
+                Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                while ((bytesRead = wordStream.Read(buffer, 0, buffer.Length)) > 0 &&
+                       !HttpContext.RequestAborted.IsCancellationRequested)
                 {
-                    Response.ContentLength = result.Message.Length;
-                    Response.ContentType = "text/plain";
-                    Response.StatusCode = 400;
-                    var bytes = Encoding.UTF8.GetBytes(result.Message);
-                    await Response.Body.WriteAsync(bytes, 0, result.Message.Length);
+                    await Response.Body.WriteAsync(buffer, 0, bytesRead);
                     await Response.Body.FlushAsync();
                 }
-                else
-                {
-                    await using var wordStream = result.Model;
-                    int bytesRead;
-                    Response.ContentLength = wordStream.Length;
-                    Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            }
+        });
+    }
 
-                    while ((bytesRead = wordStream.Read(buffer, 0, buffer.Length)) > 0 &&
-                           !HttpContext.RequestAborted.IsCancellationRequested)
-                    {
-                        await Response.Body.WriteAsync(buffer, 0, bytesRead);
-                        await Response.Body.FlushAsync();
-                    }
-                }
-            });
-        }
-
-        [HttpPost]
-        [Route("reports/import")]
-        public async Task<OperationResult> Import(WorkingHourUploadModel workingHourUploadModel)
-        {
-            return await _workingHoursService.Import(workingHourUploadModel.File);
-        }
+    [HttpPost]
+    [Route("reports/import")]
+    public async Task<OperationResult> Import(WorkingHourUploadModel workingHourUploadModel)
+    {
+        return await _workingHoursService.Import(workingHourUploadModel.File);
     }
 }

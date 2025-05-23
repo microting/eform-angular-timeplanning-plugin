@@ -34,7 +34,7 @@ describe('Enable Backend Config plugin', () => {
 
     const disabledInputFields = cy.get('.flex-cards.mt-4 mat-form-field');
     disabledInputFields
-      .should('have.length', 21)
+      .should('have.length', 22)
       .should('be.visible');
     disabledInputFields
       .should('have.attr', 'class')
@@ -119,7 +119,7 @@ describe('Enable Backend Config plugin', () => {
 
     const enabledInputFields = cy.get('.flex-cards.mt-4 mat-form-field');
     enabledInputFields
-      .should('have.length', 21)
+      .should('have.length', 22)
       .should('be.visible');
     enabledInputFields
       .should('have.attr', 'class')
@@ -152,7 +152,7 @@ describe('Enable Backend Config plugin', () => {
 
     const disabledInputFields = cy.get('.flex-cards.mt-4 mat-form-field');
     disabledInputFields
-      .should('have.length', 21)
+      .should('have.length', 22)
       .should('be.visible');
     disabledInputFields
       .should('have.attr', 'class')
@@ -198,7 +198,7 @@ describe('Enable Backend Config plugin', () => {
 
     const enabledInputFields = cy.get('.flex-cards.mt-4 mat-form-field');
     enabledInputFields
-      .should('have.length', 21)
+      .should('have.length', 22)
       .should('be.visible');
     enabledInputFields
       .should('have.attr', 'class')

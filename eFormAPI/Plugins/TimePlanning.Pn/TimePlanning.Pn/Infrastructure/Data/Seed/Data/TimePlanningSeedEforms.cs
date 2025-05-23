@@ -21,30 +21,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
+namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data;
+
+using System.Collections.Generic;
+
+public class TimePlanningSeedEforms
 {
-    using System.Collections.Generic;
-
-    public class TimePlanningSeedEforms
+    public static List<KeyValuePair<string, List<string>>> GetForms()
     {
-        public static List<KeyValuePair<string, List<string>>> GetForms()
+        List<KeyValuePair<string, List<string>>> theList = new List<KeyValuePair<string, List<string>>>();
+        List<string> headers = new List<string>
         {
-            List<KeyValuePair<string, List<string>>> theList = new List<KeyValuePair<string, List<string>>>();
-            List<string> headers = new List<string>
-            {
-                "00. Arbejdstid","00.01 Arbejdstid"
-            };
-            KeyValuePair<string, List<string>> item = new KeyValuePair<string, List<string>>("00. Arbejdstid", headers);
-            theList.Add(item);
+            "00. Arbejdstid","00.01 Arbejdstid"
+        };
+        KeyValuePair<string, List<string>> item = new KeyValuePair<string, List<string>>("00. Arbejdstid", headers);
+        theList.Add(item);
 
-            headers = new List<string>
-            {
-                "01. Info eForm","01.01 Info eForm"
-            };
-            item = new KeyValuePair<string, List<string>>("01. Info eForm", headers);
-            theList.Add(item);
+        headers = new List<string>
+        {
+            "01. Info eForm","01.01 Info eForm"
+        };
+        item = new KeyValuePair<string, List<string>>("01. Info eForm", headers);
+        theList.Add(item);
 
-            return theList;
-        }
+        return theList;
     }
 }

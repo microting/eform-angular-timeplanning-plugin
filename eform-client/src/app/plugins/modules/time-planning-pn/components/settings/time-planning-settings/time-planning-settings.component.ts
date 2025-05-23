@@ -55,6 +55,9 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   }
 
   updateGoogleSheetSettings() {
+    if (this.settingsModel.dayOfPayment > 28) {
+      this.settingsModel.dayOfPayment = 28;
+    }
     this.timePlanningPnSettingsService.updateSettings(this.settingsModel).subscribe((data) => {
       if (data && data.success) {
         this.getSettings();
