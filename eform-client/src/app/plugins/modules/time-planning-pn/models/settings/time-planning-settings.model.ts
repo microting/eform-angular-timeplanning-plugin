@@ -23,4 +23,6 @@ export class TimePlanningSettingsModel {
   fridayBreakMinutesUpperLimit: number;
   saturdayBreakMinutesUpperLimit: number;
   sundayBreakMinutesUpperLimit: number;
+  dayOfPayment: number;
+  showCalculationsAsNumber: boolean;
 }

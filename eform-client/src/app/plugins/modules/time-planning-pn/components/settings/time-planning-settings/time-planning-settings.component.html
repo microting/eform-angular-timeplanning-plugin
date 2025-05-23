@@ -1,4 +1,8 @@
-<eform-new-subheader [forceStaticTitle]="true" [title]="'Time planning settings' | translate"></eform-new-subheader>
+<eform-new-subheader [forceStaticTitle]="true" [title]="'Time planning settings' | translate">
+  <div class="col-12">
+    <button id="saveSettings" mat-raised-button color="primary" (click)="updateGoogleSheetSettings()">Update</button>
+  </div>
+</eform-new-subheader>
 
 <div class="d-flex flex-column">
   <div class="flex-cards mt-3">
@@ -13,19 +17,9 @@
               <input matInput placeholder="Google sheet id" [(ngModel)]="settingsModel.googleSheetId">
             </mat-form-field>
           </div>
-          <div class="col-12">
-            <button id="saveSettings" mat-raised-button color="primary" (click)="updateGoogleSheetSettings()">Update</button>
-          </div>
+
         </div>
-      </mat-card-content>
-    </mat-card>
-  </div>
-  <div class="flex-cards mt-4">
-    <mat-card class="mat-card-50">
-      <mat-card-header>
-        <h4 class="mat-card-title">{{'Auto calculation of breaks' | translate}}</h4>
-      </mat-card-header>
-      <mat-card-content>
+        <br>
         <div class="row">
           <div class="col-12">
             <mat-slide-toggle
@@ -42,6 +36,15 @@
 
           </div>
         </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <div class="flex-cards mt-4">
+    <mat-card class="mat-card-50">
+      <mat-card-header>
+        <h4 class="mat-card-title">{{'Auto calculation of breaks' | translate}}</h4>
+      </mat-card-header>
+      <mat-card-content>
         <div class="row">
           <div class="col-12">
             <mat-slide-toggle
@@ -122,5 +125,47 @@
       </mat-card-content>
     </mat-card>
 
+  </div>
+  <div class="flex-cards mt-4">
+    <mat-card class="mat-card-50">
+      <mat-card-header>
+        <h4 class="mat-card-title">{{'Show calculations as numbers instead of hh:mm' | translate}}</h4>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="row">
+          <div class="col-12">
+            <mat-slide-toggle
+              color="primary"
+              class="mb-2"
+              id="autoBreakCalculationActiveToggle"
+              [checked]="settingsModel.showCalculationsAsNumber"
+              [(ngModel)]="settingsModel.showCalculationsAsNumber"
+            >
+              {{ 'Active' | translate }}
+            </mat-slide-toggle>
+          </div>
+          <div class="col-12">
+
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <div class="flex-cards mt-4">
+    <mat-card class="mat-card-50">
+      <mat-card-header>
+        <h4 class="mat-card-title">{{'Day of payment' | translate}}</h4>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="row">
+          <div class="col-12">
+            <mat-form-field class="w-100">
+              <input matInput placeholder="Day of payment" [(ngModel)]="settingsModel.dayOfPayment">
+            </mat-form-field>
+          </div>
+
+        </div>
+      </mat-card-content>
+    </mat-card>
   </div>
 </div>
