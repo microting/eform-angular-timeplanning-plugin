@@ -154,5 +154,8 @@ export class AssignedSiteModel {
   useGoogleSheetAsDefault: boolean;
   useOnlyPlanHours: boolean;
   usePunchClock: boolean;
-  usePunchClockWithAllowRegisteringInHistory: boolean
+  usePunchClockWithAllowRegisteringInHistory: boolean;
+  thirdShiftActive: boolean;
+  fourthShiftActive: boolean;
+  fifthShiftActive: boolean;
 }

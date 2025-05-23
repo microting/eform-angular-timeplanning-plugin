@@ -156,6 +156,9 @@ public class AssignedSite
     public bool UseDetailedPauseEditing { get; set; }
     public bool UsePunchClockWithAllowRegisteringInHistory { get; set; }
     public int DayOfPayment { get; set; } = 20;
+    public bool ThirdShiftActive { get; set; } = false;
+    public bool FourthShiftActive { get; set; } = false;
+    public bool FifthShiftActive { get; set; } = false;
 
     // implicit conversion from Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite to AssignedSite
     public static implicit operator AssignedSite(
@@ -304,6 +307,9 @@ public class AssignedSite
             UsePunchClock = model.UsePunchClock,
             UseDetailedPauseEditing = model.UseDetailedPauseEditing,
             UsePunchClockWithAllowRegisteringInHistory = model.UsePunchClockWithAllowRegisteringInHistory,
+            ThirdShiftActive = model.ThirdShiftActive,
+            FourthShiftActive = model.FourthShiftActive,
+            FifthShiftActive = model.FifthShiftActive,
         };
     }
 }

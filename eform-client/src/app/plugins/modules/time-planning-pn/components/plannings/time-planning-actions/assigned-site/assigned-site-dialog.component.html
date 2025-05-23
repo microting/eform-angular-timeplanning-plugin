@@ -118,6 +118,26 @@
           </div>
         </mat-checkbox>
       </div>
+      <div class="d-flex flex-row" *ngIf="selectCurrentUserIsFirstUser$ | async">
+        <mat-checkbox class="p-1"
+                      [id]="'thirdShiftActive'"
+                      [name]="'thirdShiftActive'"
+                      [(ngModel)]="data.thirdShiftActive">
+          <div>{{ 'Enable third shift' | translate }}</div>
+        </mat-checkbox>
+        <mat-checkbox class="p-1" *ngIf="data.thirdShiftActive"
+                      [id]="'fourthShiftActive'"
+                      [name]="'fourthShiftActive'"
+                      [(ngModel)]="data.fourthShiftActive">
+          <div>{{ 'Enable fourth shift' | translate }}</div>
+        </mat-checkbox>
+        <mat-checkbox class="p-1" *ngIf="data.fourthShiftActive && data.thirdShiftActive"
+                      [id]="'fifthShiftActive'"
+                      [name]="'fifthShiftActive'"
+                      [(ngModel)]="data.fifthShiftActive">
+          <div>{{ 'Enable fifth shift' | translate }}</div>
+        </mat-checkbox>
+      </div>
     </mat-tab>
     <mat-tab label="{{'Plan hours' | translate }}" *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
       <div class="d-flex flex-row"
@@ -309,6 +329,177 @@
               [name]="'break' + day + '2NdShift'"
               [ngModel]="getConvertedValue(data['break' + day + '2NdShift'])"
               (change)="setMinutes($event, 'break' + day + '2NdShift')">
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              [id]="day.toLowerCase() + 'CalculatedHours'"
+              [name]="day.toLowerCase() + 'CalculatedHours'"
+              [(ngModel)]="data[day.toLowerCase() + 'CalculatedHours']"
+              readonly disabled>
+          </mat-form-field>
+        </div>
+      </ng-container>
+    </mat-tab>
+    <mat-tab label="{{'3rd shift' | translate }}" *ngIf="data.thirdShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+      <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
+        <div class="d-flex flex-row"
+             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+          <mat-form-field class="p-1">
+            <mat-label>{{ day | translate }}</mat-label>
+            <input matInput type="text" readonly disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'start' + day + '3RdShift'"
+              [name]="'start' + day + '3RdShift'"
+              [ngModel]="getConvertedValue(data['start' + day + '3RdShift'], data['end' + day + '3RdShift'])"
+              (change)="setMinutes($event, 'start' + day + '3RdShift')">
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'end' + day + '3RdShift'"
+              [name]="'end' + day + '3RdShift'"
+              [ngModel]="getConvertedValue(data['end' + day + '3RdShift'])"
+              (change)="setMinutes($event, 'end' + day + '3RdShift')">
+          </mat-form-field>
+          <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
+            <mat-label>{{ 'Break time' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'break' + day + '3RdShift'"
+              [name]="'break' + day + '3RdShift'"
+              [ngModel]="getConvertedValue(data['break' + day + '3RdShift'])"
+              (change)="setMinutes($event, 'break' + day + '3RdShift')">
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              [id]="day.toLowerCase() + 'CalculatedHours'"
+              [name]="day.toLowerCase() + 'CalculatedHours'"
+              [(ngModel)]="data[day.toLowerCase() + 'CalculatedHours']"
+              readonly disabled>
+          </mat-form-field>
+        </div>
+      </ng-container>
+    </mat-tab>
+    <mat-tab label="{{'4th shift' | translate }}" *ngIf="data.thirdShiftActive && data.fourthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+      <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
+        <div class="d-flex flex-row"
+             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+          <mat-form-field class="p-1">
+            <mat-label>{{ day | translate }}</mat-label>
+            <input matInput type="text" readonly disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'start' + day + '4ThShift'"
+              [name]="'start' + day + '4ThShift'"
+              [ngModel]="getConvertedValue(data['start' + day + '4ThShift'], data['end' + day + '4ThShift'])"
+              (change)="setMinutes($event, 'start' + day + '4ThShift')">
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'end' + day + '4ThShift'"
+              [name]="'end' + day + '4ThShift'"
+              [ngModel]="getConvertedValue(data['end' + day + '4ThShift'])"
+              (change)="setMinutes($event, 'end' + day + '4ThShift')">
+          </mat-form-field>
+          <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
+            <mat-label>{{ 'Break time' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'break' + day + '4ThShift'"
+              [name]="'break' + day + '4ThShift'"
+              [ngModel]="getConvertedValue(data['break' + day + '4ThShift'])"
+              (change)="setMinutes($event, 'break' + day + '4ThShift')">
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              [id]="day.toLowerCase() + 'CalculatedHours'"
+              [name]="day.toLowerCase() + 'CalculatedHours'"
+              [(ngModel)]="data[day.toLowerCase() + 'CalculatedHours']"
+              readonly disabled>
+          </mat-form-field>
+        </div>
+      </ng-container>
+    </mat-tab>
+    <mat-tab label="{{'5th shift' | translate }}" *ngIf="data.thirdShiftActive && data.fourthShiftActive && data.fifthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+      <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
+        <div class="d-flex flex-row"
+             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+          <mat-form-field class="p-1">
+            <mat-label>{{ day | translate }}</mat-label>
+            <input matInput type="text" readonly disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Start at' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'start' + day + '5ThShift'"
+              [name]="'start' + day + '5ThShift'"
+              [ngModel]="getConvertedValue(data['start' + day + '5ThShift'], data['end' + day + '5ThShift'])"
+              (change)="setMinutes($event, 'start' + day + '5ThShift')">
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'End at' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'end' + day + '5ThShift'"
+              [name]="'end' + day + '5ThShift'"
+              [ngModel]="getConvertedValue(data['end' + day + '5ThShift'])"
+              (change)="setMinutes($event, 'end' + day + '5ThShift')">
+          </mat-form-field>
+          <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
+            <mat-label>{{ 'Break time' | translate }}</mat-label>
+            <input
+              type="text"
+              matInput
+              mask="00:00"
+              placeholder="HH:MM"
+              [id]="'break' + day + '5ThShift'"
+              [name]="'break' + day + '5ThShift'"
+              [ngModel]="getConvertedValue(data['break' + day + '5ThShift'])"
+              (change)="setMinutes($event, 'break' + day + '5ThShift')">
           </mat-form-field>
           <mat-form-field class="p-1">
             <mat-label>{{ 'Calculated hours' | translate }}</mat-label>
