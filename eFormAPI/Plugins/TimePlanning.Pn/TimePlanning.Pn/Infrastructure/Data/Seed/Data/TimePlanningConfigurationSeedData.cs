@@ -201,6 +201,11 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
             {
                 Name = $"{TimePlanningBaseSettingsName}:DayOfPayment",
                 Value = "20"
+            },
+            new PluginConfigurationValue
+            {
+                Name = $"{TimePlanningBaseSettingsName}:ShowCalculationsAsNumber",
+                Value = "1"
             }
         ];
     }
