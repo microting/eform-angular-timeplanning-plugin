@@ -137,7 +137,7 @@
             <mat-slide-toggle
               color="primary"
               class="mb-2"
-              id="autoBreakCalculationActiveToggle"
+              id="showCalculationsAsNumberToggle"
               [checked]="settingsModel.showCalculationsAsNumber"
               [(ngModel)]="settingsModel.showCalculationsAsNumber"
             >
@@ -160,7 +160,7 @@
         <div class="row">
           <div class="col-12">
             <mat-form-field class="w-100">
-              <input matInput placeholder="Day of payment" [(ngModel)]="settingsModel.dayOfPayment">
+              <input matInput placeholder="Day of payment" [(ngModel)]="settingsModel.dayOfPayment" min="1" max="28">
             </mat-form-field>
           </div>
 
