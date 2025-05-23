@@ -24,68 +24,67 @@ SOFTWARE.
 
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 
-namespace TimePlanning.Pn.Infrastructure.Data.Seed
+namespace TimePlanning.Pn.Infrastructure.Data.Seed;
+
+using System;
+using System.Linq;
+using Data;
+using Microting.eForm.Infrastructure.Constants;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
+using Microting.TimePlanningBase.Infrastructure.Data;
+
+public static class TimePlanningPluginSeed
 {
-    using System;
-    using System.Linq;
-    using Data;
-    using Microting.eForm.Infrastructure.Constants;
-    using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
-    using Microting.TimePlanningBase.Infrastructure.Data;
-
-    public static class TimePlanningPluginSeed
+    public static void SeedData(TimePlanningPnDbContext dbContext)
     {
-        public static void SeedData(TimePlanningPnDbContext dbContext)
+        var seedData = new TimePlanningConfigurationSeedData();
+        var configurationList = seedData.Data;
+        foreach (var configurationItem in configurationList)
         {
-            var seedData = new TimePlanningConfigurationSeedData();
-            var configurationList = seedData.Data;
-            foreach (var configurationItem in configurationList)
+            if (!dbContext.PluginConfigurationValues.Any(x => x.Name == configurationItem.Name))
             {
-                if (!dbContext.PluginConfigurationValues.Any(x => x.Name == configurationItem.Name))
+                var newConfigValue = new PluginConfigurationValue
                 {
-                    var newConfigValue = new PluginConfigurationValue
-                    {
-                        Name = configurationItem.Name,
-                        Value = configurationItem.Value,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        Version = 1,
-                        WorkflowState = Constants.WorkflowStates.Created,
-                        CreatedByUserId = 1
-                    };
-                    dbContext.PluginConfigurationValues.Add(newConfigValue);
-                    dbContext.SaveChanges();
-                }
-            }
-
-            // Seed plugin permissions
-            var newPermissions = TimePlanningPermissionsSeedData.Data
-                .Where(p => dbContext.PluginPermissions.All(x => x.ClaimName != p.ClaimName))
-                .Select(p => new PluginPermission
-                {
-                    PermissionName = p.PermissionName,
-                    ClaimName = p.ClaimName,
+                    Name = configurationItem.Name,
+                    Value = configurationItem.Value,
                     CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                     Version = 1,
                     WorkflowState = Constants.WorkflowStates.Created,
                     CreatedByUserId = 1
-                });
-
-            dbContext.PluginPermissions.AddRange(newPermissions);
-
-            dbContext.SaveChanges();
-
-            var seedMessages = new TimePlanningSeedMessages();
-
-            foreach (Message message in seedMessages.Data)
-            {
-                if (!dbContext.Messages.Any(x => x.Name == message.Name))
-                {
-                    dbContext.Messages.Add(message);
-                }
+                };
+                dbContext.PluginConfigurationValues.Add(newConfigValue);
+                dbContext.SaveChanges();
             }
-
-            dbContext.SaveChanges();
         }
+
+        // Seed plugin permissions
+        var newPermissions = TimePlanningPermissionsSeedData.Data
+            .Where(p => dbContext.PluginPermissions.All(x => x.ClaimName != p.ClaimName))
+            .Select(p => new PluginPermission
+            {
+                PermissionName = p.PermissionName,
+                ClaimName = p.ClaimName,
+                CreatedAt = DateTime.UtcNow,
+                Version = 1,
+                WorkflowState = Constants.WorkflowStates.Created,
+                CreatedByUserId = 1
+            });
+
+        dbContext.PluginPermissions.AddRange(newPermissions);
+
+        dbContext.SaveChanges();
+
+        var seedMessages = new TimePlanningSeedMessages();
+
+        foreach (Message message in seedMessages.Data)
+        {
+            if (!dbContext.Messages.Any(x => x.Name == message.Name))
+            {
+                dbContext.Messages.Add(message);
+            }
+        }
+
+        dbContext.SaveChanges();
     }
 }

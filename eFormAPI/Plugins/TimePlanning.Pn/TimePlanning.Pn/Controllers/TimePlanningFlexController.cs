@@ -18,37 +18,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Controllers
+namespace TimePlanning.Pn.Controllers;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Infrastructure.Models.Flex.Index;
+using Infrastructure.Models.Flex.Update;
+using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Services.TimePlanningFlexService;
+
+[Route("api/time-planning-pn/flex")]
+public class TimePlanningFlexController
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.Flex.Index;
-    using Infrastructure.Models.Flex.Update;
-    using Microsoft.AspNetCore.Mvc;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
-    using Services.TimePlanningFlexService;
+    private readonly ITimePlanningFlexService _flexService;
 
-    [Route("api/time-planning-pn/flex")]
-    public class TimePlanningFlexController
+    public TimePlanningFlexController(ITimePlanningFlexService flexService)
     {
-        private readonly ITimePlanningFlexService _flexService;
+        _flexService = flexService;
+    }
 
-        public TimePlanningFlexController(ITimePlanningFlexService flexService)
-        {
-            _flexService = flexService;
-        }
+    [HttpGet]
+    [Route("index")]
+    public async Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index()
+    {
+        return await _flexService.Index();
+    }
 
-        [HttpGet]
-        [Route("index")]
-        public async Task<OperationDataResult<List<TimePlanningFlexIndexModel>>> Index()
-        {
-            return await _flexService.Index();
-        }
-
-        [HttpPut]
-        public async Task<OperationResult> Update([FromBody]List<TimePlanningFlexUpdateModel> model)
-        {
-            return await _flexService.UpdateCreate(model);
-        }
+    [HttpPut]
+    public async Task<OperationResult> Update([FromBody]List<TimePlanningFlexUpdateModel> model)
+    {
+        return await _flexService.UpdateCreate(model);
     }
 }

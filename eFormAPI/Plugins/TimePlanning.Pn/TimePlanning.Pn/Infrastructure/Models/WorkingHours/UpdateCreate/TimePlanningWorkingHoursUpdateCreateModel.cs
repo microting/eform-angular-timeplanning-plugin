@@ -22,16 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate
+namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
+
+using System.Collections.Generic;
+using Index;
+
+public class TimePlanningWorkingHoursUpdateCreateModel
 {
-    using System.Collections.Generic;
-    using Index;
+    public int SiteId { get; set; }
 
-    public class TimePlanningWorkingHoursUpdateCreateModel
-    {
-        public int SiteId { get; set; }
-
-        public List<TimePlanningWorkingHoursModel> Plannings { get; set; }
-            = new();
-    }
+    public List<TimePlanningWorkingHoursModel> Plannings { get; set; }
+        = new();
 }

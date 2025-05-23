@@ -22,191 +22,190 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
-{
-    using Microting.eFormApi.BasePn.Abstractions;
-    using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
+namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data;
 
-    public class TimePlanningConfigurationSeedData : IPluginConfigurationSeedData
-    {
-        private const string TimePlanningBaseSettingsName = "TimePlanningBaseSettings";
-        public PluginConfigurationValue[] Data =>
-        [
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:FolderId",
-                Value = "0"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:EformId",
-                Value = "0"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:InfoeFormId",
-                Value = "0"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:MaxHistoryDays",
-                Value = "30"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:MaxDaysEditable",
-                Value = "45"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:SiteIdsForCheck",
-                Value = ""
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:AllowUsersToUpdateTimeRegistrations",
-                Value = "0"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:DateOfBlockingUserUpdateTimeRegistrations",
-                Value = "20"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:GoogleApiKey",
-                Value = ""
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:GoogleSheetId",
-                Value = ""
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:GoogleSheetLastModified",
-                Value = ""
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:MondayBreakMinutesDivider",
-                Value = "180"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:MondayBreakMinutesPrDivider",
-                Value = "30"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:TuesdayBreakMinutesDivider",
-                Value = "180"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:TuesdayBreakMinutesPrDivider",
-                Value = "30"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:WednesdayBreakMinutesDivider",
-                Value = "180"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:WednesdayBreakMinutesPrDivider",
-                Value = "30"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:ThursdayBreakMinutesDivider",
-                Value = "180"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:ThursdayBreakMinutesPrDivider",
-                Value = "30"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:FridayBreakMinutesDivider",
-                Value = "180"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:FridayBreakMinutesPrDivider",
-                Value = "30"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:SaturdayBreakMinutesDivider",
-                Value = "120"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:SaturdayBreakMinutesPrDivider",
-                Value = "30"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesDivider",
-                Value = "120"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesPrDivider",
-                Value = "30"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:AutoBreakCalculationActive",
-                Value = "0"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:MondayBreakMinutesUpperLimit",
-                Value = "60"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:TuesdayBreakMinutesUpperLimit",
-                Value = "60"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:WednesdayBreakMinutesUpperLimit",
-                Value = "60"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:ThursdayBreakMinutesUpperLimit",
-                Value = "60"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:FridayBreakMinutesUpperLimit",
-                Value = "60"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:SaturdayBreakMinutesUpperLimit",
-                Value = "60"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesUpperLimit",
-                Value = "60"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:DayOfPayment",
-                Value = "20"
-            },
-            new PluginConfigurationValue
-            {
-                Name = $"{TimePlanningBaseSettingsName}:ShowCalculationsAsNumber",
-                Value = "1"
-            }
-        ];
-    }
+using Microting.eFormApi.BasePn.Abstractions;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
+
+public class TimePlanningConfigurationSeedData : IPluginConfigurationSeedData
+{
+    private const string TimePlanningBaseSettingsName = "TimePlanningBaseSettings";
+    public PluginConfigurationValue[] Data =>
+    [
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:FolderId",
+            Value = "0"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:EformId",
+            Value = "0"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:InfoeFormId",
+            Value = "0"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:MaxHistoryDays",
+            Value = "30"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:MaxDaysEditable",
+            Value = "45"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:SiteIdsForCheck",
+            Value = ""
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:AllowUsersToUpdateTimeRegistrations",
+            Value = "0"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:DateOfBlockingUserUpdateTimeRegistrations",
+            Value = "20"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:GoogleApiKey",
+            Value = ""
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:GoogleSheetId",
+            Value = ""
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:GoogleSheetLastModified",
+            Value = ""
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:MondayBreakMinutesDivider",
+            Value = "180"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:MondayBreakMinutesPrDivider",
+            Value = "30"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:TuesdayBreakMinutesDivider",
+            Value = "180"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:TuesdayBreakMinutesPrDivider",
+            Value = "30"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:WednesdayBreakMinutesDivider",
+            Value = "180"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:WednesdayBreakMinutesPrDivider",
+            Value = "30"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:ThursdayBreakMinutesDivider",
+            Value = "180"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:ThursdayBreakMinutesPrDivider",
+            Value = "30"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:FridayBreakMinutesDivider",
+            Value = "180"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:FridayBreakMinutesPrDivider",
+            Value = "30"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:SaturdayBreakMinutesDivider",
+            Value = "120"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:SaturdayBreakMinutesPrDivider",
+            Value = "30"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesDivider",
+            Value = "120"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesPrDivider",
+            Value = "30"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:AutoBreakCalculationActive",
+            Value = "0"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:MondayBreakMinutesUpperLimit",
+            Value = "60"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:TuesdayBreakMinutesUpperLimit",
+            Value = "60"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:WednesdayBreakMinutesUpperLimit",
+            Value = "60"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:ThursdayBreakMinutesUpperLimit",
+            Value = "60"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:FridayBreakMinutesUpperLimit",
+            Value = "60"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:SaturdayBreakMinutesUpperLimit",
+            Value = "60"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:SundayBreakMinutesUpperLimit",
+            Value = "60"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:DayOfPayment",
+            Value = "20"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:ShowCalculationsAsNumber",
+            Value = "1"
+        }
+    ];
 }

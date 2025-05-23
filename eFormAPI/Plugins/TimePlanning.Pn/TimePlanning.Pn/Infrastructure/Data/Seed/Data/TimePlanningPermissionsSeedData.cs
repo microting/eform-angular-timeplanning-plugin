@@ -22,31 +22,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
-{
-    using System.Collections.Generic;
-    using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
-    using Microting.TimePlanningBase.Infrastructure.Const;
+namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data;
 
-    public static class TimePlanningPermissionsSeedData
+using System.Collections.Generic;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
+using Microting.TimePlanningBase.Infrastructure.Const;
+
+public static class TimePlanningPermissionsSeedData
+{
+    public static IEnumerable<PluginPermission> Data => new[]
     {
-        public static IEnumerable<PluginPermission> Data => new[]
+        new PluginPermission
         {
-            new PluginPermission
-            {
-                PermissionName = "Access Time Plannings Plugin",
-                ClaimName = TimePlanningClaims.AccessTimePlanningPlugin
-            },
-            new PluginPermission
-            {
-                PermissionName = "Obtain flex",
-                ClaimName = TimePlanningClaims.GetFlex
-            },
-            new PluginPermission
-            {
-                PermissionName = "Obtain working hours",
-                ClaimName = TimePlanningClaims.GetWorkingHours
-            }
-        };
-    }
+            PermissionName = "Access Time Plannings Plugin",
+            ClaimName = TimePlanningClaims.AccessTimePlanningPlugin
+        },
+        new PluginPermission
+        {
+            PermissionName = "Obtain flex",
+            ClaimName = TimePlanningClaims.GetFlex
+        },
+        new PluginPermission
+        {
+            PermissionName = "Obtain working hours",
+            ClaimName = TimePlanningClaims.GetWorkingHours
+        }
+    };
 }

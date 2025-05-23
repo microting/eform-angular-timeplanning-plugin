@@ -103,7 +103,9 @@ public class TimeSettingService : ISettingService
                 ThursdayBreakMinutesUpperLimit = int.Parse(_options.Value.ThursdayBreakMinutesUpperLimit),
                 FridayBreakMinutesUpperLimit = int.Parse(_options.Value.FridayBreakMinutesUpperLimit),
                 SaturdayBreakMinutesUpperLimit = int.Parse(_options.Value.SaturdayBreakMinutesUpperLimit),
-                SundayBreakMinutesUpperLimit = int.Parse(_options.Value.SundayBreakMinutesUpperLimit)
+                SundayBreakMinutesUpperLimit = int.Parse(_options.Value.SundayBreakMinutesUpperLimit),
+                ShowCalculationsAsNumber = _options.Value.ShowCalculationsAsNumber == "1",
+                DayOfPayment = int.Parse(_options.Value.DayOfPayment)
             };
 
             //timePlanningSettingsModel.AssignedSites = assignedSites;
@@ -169,6 +171,9 @@ public class TimeSettingService : ISettingService
                     timePlanningSettingsModel.SaturdayBreakMinutesUpperLimit.ToString();
                 settings.SundayBreakMinutesUpperLimit =
                     timePlanningSettingsModel.SundayBreakMinutesUpperLimit.ToString();
+                settings.ShowCalculationsAsNumber = timePlanningSettingsModel.ShowCalculationsAsNumber ? "1" : "0";
+                settings.DayOfPayment =
+                    timePlanningSettingsModel.DayOfPayment.ToString();
             }, _dbContext, _userService.UserId);
             await GoogleSheetHelper.PushToGoogleSheet(await _core.GetCore(), _dbContext, _logger);
 
@@ -187,24 +192,6 @@ public class TimeSettingService : ISettingService
             return new OperationResult(
                 false,
                 _localizationService.GetString("ErrorWhileUpdateSettings"));
-        }
-    }
-
-    public async Task<OperationResult> UpdateEform(int eformId)
-    {
-        try
-        {
-            await _options.UpdateDb(settings => { settings.EformId = eformId; }, _dbContext, _userService.UserId);
-            return new OperationResult(true, _localizationService.GetString("EformUpdatedSuccessfuly"));
-        }
-        catch (Exception e)
-        {
-            SentrySdk.CaptureException(e);
-            Console.WriteLine(e);
-            _logger.LogError(e.Message);
-            return new OperationResult(
-                false,
-                _localizationService.GetString("ErrorWhileUpdateEform"));
         }
     }
 
@@ -248,24 +235,6 @@ public class TimeSettingService : ISettingService
             return new OperationResult(
                 false,
                 _localizationService.GetString("ErrorWhileUpdateSites"));
-        }
-    }
-
-    public async Task<OperationResult> UpdateFolder(int folderId)
-    {
-        try
-        {
-            await _options.UpdateDb(settings => { settings.FolderId = folderId; }, _dbContext, _userService.UserId);
-            return new OperationResult(true, _localizationService.GetString("FolderUpdatedSuccessfuly"));
-        }
-        catch (Exception e)
-        {
-            SentrySdk.CaptureException(e);
-            Console.WriteLine(e);
-            _logger.LogError(e.Message);
-            return new OperationResult(
-                false,
-                _localizationService.GetString("ErrorWhileUpdateFolder"));
         }
     }
 

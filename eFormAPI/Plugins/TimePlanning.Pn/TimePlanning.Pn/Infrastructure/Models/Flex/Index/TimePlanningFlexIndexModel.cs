@@ -22,21 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.Flex.Index
-{
-    using System;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
+namespace TimePlanning.Pn.Infrastructure.Models.Flex.Index;
 
-    /// <summary>
-    /// TimePlanningFlexIndexModel
-    /// </summary>
-    public class TimePlanningFlexIndexModel
-    {
-        public int SdkSiteId { get; set; }
-        public DateTime Date { get; set; }
-        public CommonDictionaryModel Worker { get; set; }
-        public double SumFlex { get; set; }
-        public double PaidOutFlex { get; set; }
-        public string CommentOffice { get; set; }
-    }
+using System;
+using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
+
+/// <summary>
+/// TimePlanningFlexIndexModel
+/// </summary>
+public class TimePlanningFlexIndexModel
+{
+    public int SdkSiteId { get; set; }
+    public DateTime Date { get; set; }
+    public CommonDictionaryModel Worker { get; set; }
+    public double SumFlex { get; set; }
+    public double PaidOutFlex { get; set; }
+    public string CommentOffice { get; set; }
 }

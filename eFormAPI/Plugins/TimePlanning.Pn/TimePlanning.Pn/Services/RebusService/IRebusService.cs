@@ -22,14 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.RebusService
-{
-    using System.Threading.Tasks;
-    using Rebus.Bus;
+namespace TimePlanning.Pn.Services.RebusService;
 
-    public interface IRebusService
-    {
-        Task Start(string connectionString, string rabbitMqUser, string rabbitMqPassword, string rabbitMqHost);
-        IBus GetBus();
-    }
+using System.Threading.Tasks;
+using Rebus.Bus;
+
+public interface IRebusService
+{
+    Task Start(string connectionString, string rabbitMqUser, string rabbitMqPassword, string rabbitMqHost);
+    IBus GetBus();
 }
