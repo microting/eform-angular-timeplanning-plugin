@@ -105,7 +105,7 @@ public class TimeSettingService : ISettingService
                 SaturdayBreakMinutesUpperLimit = int.Parse(_options.Value.SaturdayBreakMinutesUpperLimit),
                 SundayBreakMinutesUpperLimit = int.Parse(_options.Value.SundayBreakMinutesUpperLimit),
                 ShowCalculationsAsNumber = _options.Value.ShowCalculationsAsNumber == "1",
-                DayOfPayment = int.Parse(_options.Value.DayOfPayment)
+                DayOfPayment = _options.Value.DayOfPayment,
             };
 
             //timePlanningSettingsModel.AssignedSites = assignedSites;
@@ -173,7 +173,7 @@ public class TimeSettingService : ISettingService
                     timePlanningSettingsModel.SundayBreakMinutesUpperLimit.ToString();
                 settings.ShowCalculationsAsNumber = timePlanningSettingsModel.ShowCalculationsAsNumber ? "1" : "0";
                 settings.DayOfPayment =
-                    timePlanningSettingsModel.DayOfPayment.ToString();
+                    timePlanningSettingsModel.DayOfPayment;
             }, _dbContext, _userService.UserId);
             await GoogleSheetHelper.PushToGoogleSheet(await _core.GetCore(), _dbContext, _logger);
 
@@ -450,10 +450,11 @@ public class TimeSettingService : ISettingService
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
 
-        var dbAssignedSite = await _dbContext.AssignedSites
+        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await _dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
+        dbAssignedSite.DayOfPayment = _options.Value.DayOfPayment;
 
         return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
     }

@@ -155,6 +155,7 @@ public class AssignedSite
 
     public bool UseDetailedPauseEditing { get; set; }
     public bool UsePunchClockWithAllowRegisteringInHistory { get; set; }
+    public int DayOfPayment { get; set; } = 20;
 
     // implicit conversion from Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite to AssignedSite
     public static implicit operator AssignedSite(

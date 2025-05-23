@@ -62,6 +62,6 @@ public class TimePlanningBaseSettings
     public string FridayBreakMinutesUpperLimit { get; set; }
     public string SaturdayBreakMinutesUpperLimit { get; set; }
     public string SundayBreakMinutesUpperLimit { get; set; }
-    public string DayOfPayment { get; set; }
+    public int DayOfPayment { get; set; }
     public string ShowCalculationsAsNumber { get; set; }
 }
