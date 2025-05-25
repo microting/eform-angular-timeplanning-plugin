@@ -385,6 +385,15 @@ public class TimeSettingService : ISettingService
                             PauseStarted = pauseStarted,
                             AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive
                         };
+                        var user = await _baseDbContext.Users
+                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+                            .FirstOrDefaultAsync().ConfigureAwait(false);
+                        if (user != null)
+                        {
+                            newSite.AvatarUrl = user.ProfilePictureSnapshot != null
+                                ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
+                                : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+                        }
                         sites.Add(newSite);
                     }
                 }
