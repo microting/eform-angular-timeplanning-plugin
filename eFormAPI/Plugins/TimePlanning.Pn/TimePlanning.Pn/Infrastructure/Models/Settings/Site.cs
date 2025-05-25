@@ -17,4 +17,7 @@ public class Site
     public bool PauseStarted { get; set; }
     public bool AutoBreakCalculationActive { get; set; }
     public string AvatarUrl { get; set; }
+    public bool ThirdShiftActive { get; set; }
+    public bool FourthShiftActive { get; set; }
+    public bool FifthShiftActive { get; set; }
 }

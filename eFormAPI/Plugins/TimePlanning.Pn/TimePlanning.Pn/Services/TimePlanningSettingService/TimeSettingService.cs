@@ -383,7 +383,10 @@ public class TimeSettingService : ISettingService
                             DefaultLanguage = language.LanguageCode,
                             HoursStarted = hoursStarted,
                             PauseStarted = pauseStarted,
-                            AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive
+                            AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
+                            ThirdShiftActive = assignedSite.ThirdShiftActive,
+                            FourthShiftActive = assignedSite.FourthShiftActive,
+                            FifthShiftActive = assignedSite.FifthShiftActive
                         };
                         var user = await _baseDbContext.Users
                             .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
