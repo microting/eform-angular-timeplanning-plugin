@@ -192,17 +192,8 @@ public static class PlanRegistrationHelper
                                     if (match.Groups.Count == 4)
                                     {
                                         var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                        var breakPartMinutes = breakPart switch
-                                        {
-                                            "0.5" => 30,
-                                            ".5" => 30,
-                                            ".75" => 45,
-                                            "0.75" => 45,
-                                            "¾" => 45,
-                                            "½" => 30,
-                                            "1" => 60,
-                                            _ => 0
-                                        };
+
+                                        var breakPartMinutes = BreakTimeCalculator(breakPart);
 
                                         planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
                                     }
@@ -230,17 +221,8 @@ public static class PlanRegistrationHelper
                                 if (match.Groups.Count == 4)
                                 {
                                     var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                    var breakPartMinutes = breakPart switch
-                                    {
-                                        "0.5" => 30,
-                                        ".5" => 30,
-                                        ".75" => 45,
-                                        "0.75" => 45,
-                                        "¾" => 45,
-                                        "½" => 30,
-                                        "1" => 60,
-                                        _ => 0
-                                    };
+
+                                    var breakPartMinutes = BreakTimeCalculator(breakPart);
 
                                     planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
                                 }
@@ -278,17 +260,8 @@ public static class PlanRegistrationHelper
                                         if (match.Groups.Count == 4)
                                         {
                                             var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                            var breakPartMinutes = breakPart switch
-                                            {
-                                                "0.5" => 30,
-                                                ".5" => 30,
-                                                ".75" => 45,
-                                                "0.75" => 45,
-                                                "¾" => 45,
-                                                "½" => 30,
-                                                "1" => 60,
-                                                _ => 0
-                                            };
+
+                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
 
                                             planRegistration.PlannedBreakOfShift2 = breakPartMinutes;
                                         }
@@ -316,17 +289,8 @@ public static class PlanRegistrationHelper
                                     if (match.Groups.Count == 4)
                                     {
                                         var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                        var breakPartMinutes = breakPart switch
-                                        {
-                                            "0.5" => 30,
-                                            ".5" => 30,
-                                            ".75" => 45,
-                                            "0.75" => 45,
-                                            "¾" => 45,
-                                            "½" => 30,
-                                            "1" => 60,
-                                            _ => 0
-                                        };
+
+                                        var breakPartMinutes = BreakTimeCalculator(breakPart);
 
                                         planRegistration.PlannedBreakOfShift2 = breakPartMinutes;
                                     }
@@ -365,17 +329,7 @@ public static class PlanRegistrationHelper
                                         if (match.Groups.Count == 4)
                                         {
                                             var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                            var breakPartMinutes = breakPart switch
-                                            {
-                                                "0.5" => 30,
-                                                ".5" => 30,
-                                                ".75" => 45,
-                                                "0.75" => 45,
-                                                "¾" => 45,
-                                                "½" => 30,
-                                                "1" => 60,
-                                                _ => 0
-                                            };
+                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
 
                                             planRegistration.PlannedBreakOfShift3 = breakPartMinutes;
                                         }
@@ -415,17 +369,7 @@ public static class PlanRegistrationHelper
                                         if (match.Groups.Count == 4)
                                         {
                                             var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                            var breakPartMinutes = breakPart switch
-                                            {
-                                                "0.5" => 30,
-                                                ".5" => 30,
-                                                ".75" => 45,
-                                                "0.75" => 45,
-                                                "¾" => 45,
-                                                "½" => 30,
-                                                "1" => 60,
-                                                _ => 0
-                                            };
+                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
 
                                             planRegistration.PlannedBreakOfShift4 = breakPartMinutes;
                                         }
@@ -465,17 +409,8 @@ public static class PlanRegistrationHelper
                                         if (match.Groups.Count == 4)
                                         {
                                             var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                            var breakPartMinutes = breakPart switch
-                                            {
-                                                "0.5" => 30,
-                                                ".5" => 30,
-                                                ".75" => 45,
-                                                "0.75" => 45,
-                                                "¾" => 45,
-                                                "½" => 30,
-                                                "1" => 60,
-                                                _ => 0
-                                            };
+
+                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
 
                                             planRegistration.PlannedBreakOfShift5 = breakPartMinutes;
                                         }
@@ -1016,6 +951,39 @@ public static class PlanRegistrationHelper
         }
 
         return siteModel;
+    }
+
+    private static int BreakTimeCalculator(string breakPart)
+    {
+        return breakPart switch
+        {
+            "0.1" => 5,
+            ".1" => 5,
+            "0.15" => 10,
+            ".15" => 10,
+            "0.25" => 15,
+            ".25" => 15,
+            "0.3" => 20,
+            ".3" => 20,
+            "0.4" => 25,
+            ".4" => 25,
+            "0.5" => 30,
+            ".5" => 30,
+            "0.6" => 35,
+            ".6" => 35,
+            "0.7" => 40,
+            ".7" => 40,
+            "0.75" => 45,
+            ".75" => 45,
+            "0.8" => 50,
+            ".8" => 50,
+            "0.9" => 55,
+            ".9" => 55,
+            "¾" => 45,
+            "½" => 30,
+            "1" => 60,
+            _ => 0
+        };
     }
 
     public static async Task<TimePlanningWorkingHoursModel> ReadBySiteAndDate(
