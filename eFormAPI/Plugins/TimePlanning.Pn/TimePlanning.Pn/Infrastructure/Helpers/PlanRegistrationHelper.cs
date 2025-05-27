@@ -155,9 +155,10 @@ public static class PlanRegistrationHelper
         var tainted = false;
         var settingsDayOfPayment = options.Value.DayOfPayment == 0 ? 20 : options.Value.DayOfPayment;
         var toDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
-        var dayOfPayment = toDay.Day >= settingsDayOfPayment
-            ? new DateTime(DateTime.Now.Year, DateTime.Now.Month, settingsDayOfPayment, 0, 0, 0)
-            : new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, settingsDayOfPayment, 0, 0, 0);
+        // var dayOfPayment = toDay.Day >= settingsDayOfPayment
+        //     ? new DateTime(DateTime.Now.Year, DateTime.Now.Month, settingsDayOfPayment, 0, 0, 0)
+        //     : new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, settingsDayOfPayment, 0, 0, 0);
+        var dayOfPayment = toDay.AddMonths(-1);
         foreach (var plan in planningsInPeriod)
         {
             var planRegistration = await dbContext.PlanRegistrations.AsTracking().FirstAsync(x => x.Id == plan.Id);
