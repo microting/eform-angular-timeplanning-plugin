@@ -268,4 +268,5 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   }
 
   protected readonly Date = Date;
+  protected readonly Math = Math;
 }
