@@ -6,14 +6,17 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
-using Microting.eForm.Infrastructure.Data.Entities;
 using Microting.eForm.Infrastructure.Models;
+using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Models.Planning;
+using TimePlanning.Pn.Infrastructure.Models.Settings;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
 using TimePlanning.Pn.Services.TimePlanningPlanningService;
+using AssignedSite = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
+using Site = Microting.eForm.Infrastructure.Data.Entities.Site;
 
 namespace TimePlanning.Pn.Infrastructure.Helpers;
 
@@ -145,13 +148,20 @@ public static class PlanRegistrationHelper
         ILogger<TimePlanningPlanningService> logger,
         Site site,
         DateTime midnightOfDateFrom,
-        DateTime midnightOfDateTo)
+        DateTime midnightOfDateTo,
+        IPluginDbOptions<TimePlanningBaseSettings> options
+        )
     {
+        var tainted = false;
         foreach (var plan in planningsInPeriod)
         {
             var planRegistration = await dbContext.PlanRegistrations.AsTracking().FirstAsync(x => x.Id == plan.Id);
             var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month,
                 planRegistration.Date.Day, 0, 0, 0);
+            var toDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
+            var dayOfPayment = toDay.Day >= options.Value.DayOfPayment
+                ? new DateTime(DateTime.Now.Year, DateTime.Now.Month, options.Value.DayOfPayment, 0, 0, 0)
+                : new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, options.Value.DayOfPayment, 0, 0, 0);
 
             try
             {
@@ -159,7 +169,7 @@ public static class PlanRegistrationHelper
                 {
                     if (!string.IsNullOrEmpty(planRegistration.PlanText))
                     {
-                        if (planRegistration.Date > DateTime.Now && !planRegistration.PlanChangedByAdmin)
+                        if (planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
                         {
                             var splitList = planRegistration.PlanText.Split(';');
                             var firsSplit = splitList[0];
@@ -419,6 +429,7 @@ public static class PlanRegistrationHelper
                             }
 
                             var calculatedPlanHoursInMinutes = 0;
+                            var originalPlanHours = planRegistration.PlanHours;
                             if (planRegistration.PlannedStartOfShift1 != 0 && planRegistration.PlannedEndOfShift1 != 0)
                             {
                                 calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift1 -
@@ -459,15 +470,46 @@ public static class PlanRegistrationHelper
                                 planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
                             }
 
+                            if (originalPlanHours != planRegistration.PlanHours || tainted)
+                            {
+                                tainted = true;
+                                var preTimePlanning =
+                                    await dbContext.PlanRegistrations.AsNoTracking()
+                                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                        .Where(x => x.Date < planRegistration.Date
+                                                    && x.SdkSitId == dbAssignedSite.SiteId)
+                                        .OrderByDescending(x => x.Date)
+                                        .FirstOrDefaultAsync();
+
+                                if (preTimePlanning != null)
+                                {
+                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                    planRegistration.SumFlexEnd =
+                                        preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                        planRegistration.PlanHours -
+                                        planRegistration.PaiedOutFlex;
+                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                }
+                                else
+                                {
+                                    planRegistration.SumFlexEnd =
+                                        planRegistration.NettoHours - planRegistration.PlanHours -
+                                        planRegistration.PaiedOutFlex;
+                                    planRegistration.SumFlexStart = 0;
+                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                }
+                            }
+
                             await planRegistration.Update(dbContext).ConfigureAwait(false);
                         }
                     }
                 }
                 else
                 {
-                    if (planRegistration.Date > DateTime.Now && !planRegistration.PlanChangedByAdmin)
+                    if (planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
                     {
                         var dayOfWeek = planRegistration.Date.DayOfWeek;
+                        var originalPlanHours = planRegistration.PlanHours;
                         switch (dayOfWeek)
                         {
                             case DayOfWeek.Monday:
@@ -710,6 +752,36 @@ public static class PlanRegistrationHelper
                                 }
 
                                 break;
+                        }
+
+                        if (originalPlanHours != planRegistration.PlanHours || tainted)
+                        {
+                            tainted = true;
+                            var preTimePlanning =
+                                await dbContext.PlanRegistrations.AsNoTracking()
+                                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                    .Where(x => x.Date < planRegistration.Date
+                                                && x.SdkSitId == dbAssignedSite.SiteId)
+                                    .OrderByDescending(x => x.Date)
+                                    .FirstOrDefaultAsync();
+
+                            if (preTimePlanning != null)
+                            {
+                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                planRegistration.SumFlexEnd =
+                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                    planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            }
+                            else
+                            {
+                                planRegistration.SumFlexEnd =
+                                    planRegistration.NettoHours - planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.SumFlexStart = 0;
+                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            }
                         }
 
                         Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");

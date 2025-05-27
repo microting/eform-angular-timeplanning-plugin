@@ -24,8 +24,10 @@ SOFTWARE.
 
 using System.Text.RegularExpressions;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
+using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
+using TimePlanning.Pn.Infrastructure.Models.Settings;
 
 namespace TimePlanning.Pn.Services.TimePlanningPlanningService;
 
@@ -45,6 +47,7 @@ using TimePlanningLocalizationService;
 
 public class TimePlanningPlanningService(
     ILogger<TimePlanningPlanningService> logger,
+    IPluginDbOptions<TimePlanningBaseSettings> options,
     TimePlanningPnDbContext dbContext,
     IUserService userService,
     ITimePlanningLocalizationService localizationService,
@@ -183,7 +186,8 @@ public class TimePlanningPlanningService(
                     logger,
                     site,
                     midnightOfDateFrom,
-                    midnightOfDateTo);
+                    midnightOfDateTo,
+                    options);
 
                 result.Add(siteModel);
             }
@@ -343,7 +347,8 @@ public class TimePlanningPlanningService(
             logger,
             site,
             midnightOfDateFrom,
-            midnightOfDateTo);
+            midnightOfDateTo,
+            options);
 
         siteModel.PlanningPrDayModels = model.IsSortDsc
             ? siteModel.PlanningPrDayModels.OrderByDescending(x => x.Date).ToList()

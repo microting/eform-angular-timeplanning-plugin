@@ -46,34 +46,16 @@ using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using TimePlanningLocalizationService;
 
-public class TimeSettingService : ISettingService
+public class TimeSettingService(
+    IPluginDbOptions<TimePlanningBaseSettings> options,
+    TimePlanningPnDbContext dbContext,
+    ILogger<TimeSettingService> logger,
+    IUserService userService,
+    ITimePlanningLocalizationService localizationService,
+    BaseDbContext baseDbContext,
+    IEFormCoreService core)
+    : ISettingService
 {
-    private readonly ILogger<TimeSettingService> _logger;
-    private readonly IPluginDbOptions<TimePlanningBaseSettings> _options;
-    private readonly TimePlanningPnDbContext _dbContext;
-    private readonly IUserService _userService;
-    private readonly ITimePlanningLocalizationService _localizationService;
-    private readonly IEFormCoreService _core;
-    private readonly BaseDbContext _baseDbContext;
-
-    public TimeSettingService(
-        IPluginDbOptions<TimePlanningBaseSettings> options,
-        TimePlanningPnDbContext dbContext,
-        ILogger<TimeSettingService> logger,
-        IUserService userService,
-        ITimePlanningLocalizationService localizationService,
-        BaseDbContext baseDbContext,
-        IEFormCoreService core)
-    {
-        _options = options;
-        _dbContext = dbContext;
-        _logger = logger;
-        _userService = userService;
-        _localizationService = localizationService;
-        _core = core;
-        _baseDbContext = baseDbContext;
-    }
-
     public async Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
     {
         try
@@ -81,31 +63,31 @@ public class TimeSettingService : ISettingService
             var timePlanningSettingsModel = new TimePlanningSettingsModel
             {
                 //GoogleApiKey = _options.Value.GoogleApiKey,
-                GoogleSheetId = _options.Value.GoogleSheetId,
-                MondayBreakMinutesDivider = int.Parse(_options.Value.MondayBreakMinutesDivider),
-                MondayBreakMinutesPrDivider = int.Parse(_options.Value.MondayBreakMinutesPrDivider),
-                TuesdayBreakMinutesDivider = int.Parse(_options.Value.TuesdayBreakMinutesDivider),
-                TuesdayBreakMinutesPrDivider = int.Parse(_options.Value.TuesdayBreakMinutesPrDivider),
-                WednesdayBreakMinutesDivider = int.Parse(_options.Value.WednesdayBreakMinutesDivider),
-                WednesdayBreakMinutesPrDivider = int.Parse(_options.Value.WednesdayBreakMinutesPrDivider),
-                ThursdayBreakMinutesDivider = int.Parse(_options.Value.ThursdayBreakMinutesDivider),
-                ThursdayBreakMinutesPrDivider = int.Parse(_options.Value.ThursdayBreakMinutesPrDivider),
-                FridayBreakMinutesDivider = int.Parse(_options.Value.FridayBreakMinutesDivider),
-                FridayBreakMinutesPrDivider = int.Parse(_options.Value.FridayBreakMinutesPrDivider),
-                SaturdayBreakMinutesDivider = int.Parse(_options.Value.SaturdayBreakMinutesDivider),
-                SaturdayBreakMinutesPrDivider = int.Parse(_options.Value.SaturdayBreakMinutesPrDivider),
-                SundayBreakMinutesDivider = int.Parse(_options.Value.SundayBreakMinutesDivider),
-                SundayBreakMinutesPrDivider = int.Parse(_options.Value.SundayBreakMinutesPrDivider),
-                AutoBreakCalculationActive = _options.Value.AutoBreakCalculationActive == "1",
-                MondayBreakMinutesUpperLimit = int.Parse(_options.Value.MondayBreakMinutesUpperLimit),
-                TuesdayBreakMinutesUpperLimit = int.Parse(_options.Value.TuesdayBreakMinutesUpperLimit),
-                WednesdayBreakMinutesUpperLimit = int.Parse(_options.Value.WednesdayBreakMinutesUpperLimit),
-                ThursdayBreakMinutesUpperLimit = int.Parse(_options.Value.ThursdayBreakMinutesUpperLimit),
-                FridayBreakMinutesUpperLimit = int.Parse(_options.Value.FridayBreakMinutesUpperLimit),
-                SaturdayBreakMinutesUpperLimit = int.Parse(_options.Value.SaturdayBreakMinutesUpperLimit),
-                SundayBreakMinutesUpperLimit = int.Parse(_options.Value.SundayBreakMinutesUpperLimit),
-                ShowCalculationsAsNumber = _options.Value.ShowCalculationsAsNumber == "1",
-                DayOfPayment = _options.Value.DayOfPayment,
+                GoogleSheetId = options.Value.GoogleSheetId,
+                MondayBreakMinutesDivider = int.Parse(options.Value.MondayBreakMinutesDivider),
+                MondayBreakMinutesPrDivider = int.Parse(options.Value.MondayBreakMinutesPrDivider),
+                TuesdayBreakMinutesDivider = int.Parse(options.Value.TuesdayBreakMinutesDivider),
+                TuesdayBreakMinutesPrDivider = int.Parse(options.Value.TuesdayBreakMinutesPrDivider),
+                WednesdayBreakMinutesDivider = int.Parse(options.Value.WednesdayBreakMinutesDivider),
+                WednesdayBreakMinutesPrDivider = int.Parse(options.Value.WednesdayBreakMinutesPrDivider),
+                ThursdayBreakMinutesDivider = int.Parse(options.Value.ThursdayBreakMinutesDivider),
+                ThursdayBreakMinutesPrDivider = int.Parse(options.Value.ThursdayBreakMinutesPrDivider),
+                FridayBreakMinutesDivider = int.Parse(options.Value.FridayBreakMinutesDivider),
+                FridayBreakMinutesPrDivider = int.Parse(options.Value.FridayBreakMinutesPrDivider),
+                SaturdayBreakMinutesDivider = int.Parse(options.Value.SaturdayBreakMinutesDivider),
+                SaturdayBreakMinutesPrDivider = int.Parse(options.Value.SaturdayBreakMinutesPrDivider),
+                SundayBreakMinutesDivider = int.Parse(options.Value.SundayBreakMinutesDivider),
+                SundayBreakMinutesPrDivider = int.Parse(options.Value.SundayBreakMinutesPrDivider),
+                AutoBreakCalculationActive = options.Value.AutoBreakCalculationActive == "1",
+                MondayBreakMinutesUpperLimit = int.Parse(options.Value.MondayBreakMinutesUpperLimit),
+                TuesdayBreakMinutesUpperLimit = int.Parse(options.Value.TuesdayBreakMinutesUpperLimit),
+                WednesdayBreakMinutesUpperLimit = int.Parse(options.Value.WednesdayBreakMinutesUpperLimit),
+                ThursdayBreakMinutesUpperLimit = int.Parse(options.Value.ThursdayBreakMinutesUpperLimit),
+                FridayBreakMinutesUpperLimit = int.Parse(options.Value.FridayBreakMinutesUpperLimit),
+                SaturdayBreakMinutesUpperLimit = int.Parse(options.Value.SaturdayBreakMinutesUpperLimit),
+                SundayBreakMinutesUpperLimit = int.Parse(options.Value.SundayBreakMinutesUpperLimit),
+                ShowCalculationsAsNumber = options.Value.ShowCalculationsAsNumber == "1",
+                DayOfPayment = options.Value.DayOfPayment,
             };
 
             //timePlanningSettingsModel.AssignedSites = assignedSites;
@@ -115,10 +97,10 @@ public class TimeSettingService : ISettingService
         {
             SentrySdk.CaptureException(e);
             Console.WriteLine(e);
-            _logger.LogError(e.Message);
+            logger.LogError(e.Message);
             return new OperationDataResult<TimePlanningSettingsModel>(
                 false,
-                _localizationService.GetString("ErrorWhileObtainingSettings"));
+                localizationService.GetString("ErrorWhileObtainingSettings"));
         }
     }
 
@@ -133,7 +115,7 @@ public class TimeSettingService : ISettingService
                 timePlanningSettingsModel.GoogleSheetId = split[5];
             }
 
-            await _options.UpdateDb(settings =>
+            await options.UpdateDb(settings =>
             {
                 //settings.GoogleApiKey = timePlanningSettingsModel.GoogleApiKey;
                 settings.GoogleSheetId = timePlanningSettingsModel.GoogleSheetId;
@@ -174,24 +156,24 @@ public class TimeSettingService : ISettingService
                 settings.ShowCalculationsAsNumber = timePlanningSettingsModel.ShowCalculationsAsNumber ? "1" : "0";
                 settings.DayOfPayment =
                     timePlanningSettingsModel.DayOfPayment;
-            }, _dbContext, _userService.UserId);
-            await GoogleSheetHelper.PushToGoogleSheet(await _core.GetCore(), _dbContext, _logger);
+            }, dbContext, userService.UserId);
+            await GoogleSheetHelper.PushToGoogleSheet(await core.GetCore(), dbContext, logger);
 
             if (timePlanningSettingsModel.ForceLoadAllPlanningsFromGoogleSheet)
             {
-                await GoogleSheetHelper.PullEverythingFromGoogleSheet(await _core.GetCore(), _dbContext, _logger);
+                await GoogleSheetHelper.PullEverythingFromGoogleSheet(await core.GetCore(), dbContext, logger);
             }
 
-            return new OperationResult(true, _localizationService.GetString("SettingsUpdatedSuccessfuly"));
+            return new OperationResult(true, localizationService.GetString("SettingsUpdatedSuccessfuly"));
         }
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
             Console.WriteLine(e);
-            _logger.LogError(e.Message);
+            logger.LogError(e.Message);
             return new OperationResult(
                 false,
-                _localizationService.GetString("ErrorWhileUpdateSettings"));
+                localizationService.GetString("ErrorWhileUpdateSettings"));
         }
     }
 
@@ -202,14 +184,14 @@ public class TimeSettingService : ISettingService
             var assignmentSite = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite
             {
                 SiteId = siteId,
-                CreatedByUserId = _userService.UserId,
-                UpdatedByUserId = _userService.UserId
+                CreatedByUserId = userService.UserId,
+                UpdatedByUserId = userService.UserId
             };
-            await assignmentSite.Create(_dbContext);
-            var option = _options.Value;
+            await assignmentSite.Create(dbContext);
+            var option = options.Value;
             var newTaskId = option.EformId;
             var folderId = option.FolderId;
-            var theCore = await _core.GetCore();
+            var theCore = await core.GetCore();
             await using var sdkDbContext = theCore.DbContextHelper.GetDbContext();
             var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);
             var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
@@ -223,18 +205,18 @@ public class TimeSettingService : ISettingService
             mainElement.EnableQuickSync = true;
             var caseId = await theCore.CaseCreate(mainElement, "", siteId, folderId);
             assignmentSite.CaseMicrotingUid = caseId;
-            await assignmentSite.Update(_dbContext);
+            await assignmentSite.Update(dbContext);
 
-            return new OperationResult(true, _localizationService.GetString("SitesUpdatedSuccessfuly"));
+            return new OperationResult(true, localizationService.GetString("SitesUpdatedSuccessfuly"));
         }
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
             Console.WriteLine(e);
-            _logger.LogError(e.Message);
+            logger.LogError(e.Message);
             return new OperationResult(
                 false,
-                _localizationService.GetString("ErrorWhileUpdateSites"));
+                localizationService.GetString("ErrorWhileUpdateSites"));
         }
     }
 
@@ -242,20 +224,20 @@ public class TimeSettingService : ISettingService
     {
         try
         {
-            var assignedSite = await _dbContext.AssignedSites
+            var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SiteId == siteId)
                 .FirstOrDefaultAsync();
 
-            var theCore = await _core.GetCore();
+            var theCore = await core.GetCore();
             if (assignedSite != null)
             {
                 if (assignedSite.CaseMicrotingUid != null)
                     await theCore.CaseDelete((int)assignedSite.CaseMicrotingUid);
-                await assignedSite.Delete(_dbContext);
+                await assignedSite.Delete(dbContext);
             }
 
-            var registrations = await _dbContext.PlanRegistrations
+            var registrations = await dbContext.PlanRegistrations
                 .Where(x => x.StatusCaseId != 0)
                 .ToListAsync();
 
@@ -263,19 +245,19 @@ public class TimeSettingService : ISettingService
             {
                 await theCore.CaseDelete(planRegistration.StatusCaseId);
                 planRegistration.StatusCaseId = 0;
-                await planRegistration.Update(_dbContext);
+                await planRegistration.Update(dbContext);
             }
 
-            return new OperationResult(true, _localizationService.GetString("SitesUpdatedSuccessfuly"));
+            return new OperationResult(true, localizationService.GetString("SitesUpdatedSuccessfuly"));
         }
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
             Console.WriteLine(e);
-            _logger.LogError(e.Message);
+            logger.LogError(e.Message);
             return new OperationResult(
                 false,
-                _localizationService.GetString("ErrorWhileUpdateSites"));
+                localizationService.GetString("ErrorWhileUpdateSites"));
         }
     }
 
@@ -285,7 +267,7 @@ public class TimeSettingService : ISettingService
         {
             if (token != null)
             {
-                var registrationDevice = await _dbContext.RegistrationDevices
+                var registrationDevice = await dbContext.RegistrationDevices
                     .Where(x => x.Token == token).FirstOrDefaultAsync();
                 if (registrationDevice == null)
                 {
@@ -295,9 +277,9 @@ public class TimeSettingService : ISettingService
                 }
             }
 
-            var core = await _core.GetCore();
-            var sdkDbContext = core.DbContextHelper.GetDbContext();
-            var assignedSites = await _dbContext.AssignedSites
+            var core1 = await core.GetCore();
+            var sdkDbContext = core1.DbContextHelper.GetDbContext();
+            var assignedSites = await dbContext.AssignedSites
                 .AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync();
@@ -324,7 +306,7 @@ public class TimeSettingService : ISettingService
 
                         var today = DateTime.UtcNow.Date;
                         var midnight = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
-                        var planRegistrationForToday = await _dbContext.PlanRegistrations
+                        var planRegistrationForToday = await dbContext.PlanRegistrations
                             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                             .Where(x => x.SdkSitId == site.MicrotingUid)
                             .Where(x => x.Date == midnight)
@@ -388,7 +370,7 @@ public class TimeSettingService : ISettingService
                             FourthShiftActive = assignedSite.FourthShiftActive,
                             FifthShiftActive = assignedSite.FifthShiftActive
                         };
-                        var user = await _baseDbContext.Users
+                        var user = await baseDbContext.Users
                             .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
                             .FirstOrDefaultAsync().ConfigureAwait(false);
                         if (user != null)
@@ -410,16 +392,16 @@ public class TimeSettingService : ISettingService
         {
             SentrySdk.CaptureException(e);
             Console.WriteLine(e);
-            _logger.LogError(e.Message);
+            logger.LogError(e.Message);
             return new OperationDataResult<List<Site>>(
                 false,
-                _localizationService.GetString("ErrorWhileObtainingSites"));
+                localizationService.GetString("ErrorWhileObtainingSites"));
         }
     }
 
     public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSite(int siteId)
     {
-        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await _dbContext.AssignedSites
+        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SiteId == siteId);
@@ -428,8 +410,8 @@ public class TimeSettingService : ISettingService
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
 
-        var core = await _core.GetCore();
-        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        var core1 = await core.GetCore();
+        var sdkDbContext = core1.DbContextHelper.GetDbContext();
         var site = await sdkDbContext.Sites.FirstOrDefaultAsync(x => x.MicrotingUid == siteId);
 
         if (site == null)
@@ -437,7 +419,7 @@ public class TimeSettingService : ISettingService
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
 
-        var globalAutoBreakCalculationActive = _options.Value.AutoBreakCalculationActive == "1";
+        var globalAutoBreakCalculationActive = options.Value.AutoBreakCalculationActive == "1";
         dbAssignedSite.GlobalAutoBreakCalculationActive = globalAutoBreakCalculationActive;
         dbAssignedSite.SiteName = site.Name;
 
@@ -447,10 +429,10 @@ public class TimeSettingService : ISettingService
 
     public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSiteByCurrentUserName()
     {
-        var core = await _core.GetCore();
-        var sdkContext = core.DbContextHelper.GetDbContext();
-        var currentUserAsync = await _userService.GetCurrentUserAsync();
-        var currentUser = _baseDbContext.Users
+        var core1 = await core.GetCore();
+        var sdkContext = core1.DbContextHelper.GetDbContext();
+        var currentUserAsync = await userService.GetCurrentUserAsync();
+        var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
         var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
@@ -462,11 +444,11 @@ public class TimeSettingService : ISettingService
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
 
-        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await _dbContext.AssignedSites
+        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
-        dbAssignedSite.DayOfPayment = _options.Value.DayOfPayment;
+        dbAssignedSite.DayOfPayment = options.Value.DayOfPayment;
 
         return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
     }
@@ -475,27 +457,27 @@ public class TimeSettingService : ISettingService
     {
         var global =  new GlobalAutoBreakSettings()
         {
-            MondayBreakMinutesDivider = int.Parse(_options.Value.MondayBreakMinutesDivider),
-            MondayBreakMinutesPrDivider = int.Parse(_options.Value.MondayBreakMinutesPrDivider),
-            TuesdayBreakMinutesDivider = int.Parse(_options.Value.TuesdayBreakMinutesDivider),
-            TuesdayBreakMinutesPrDivider = int.Parse(_options.Value.TuesdayBreakMinutesPrDivider),
-            WednesdayBreakMinutesDivider = int.Parse(_options.Value.WednesdayBreakMinutesDivider),
-            WednesdayBreakMinutesPrDivider = int.Parse(_options.Value.WednesdayBreakMinutesPrDivider),
-            ThursdayBreakMinutesDivider = int.Parse(_options.Value.ThursdayBreakMinutesDivider),
-            ThursdayBreakMinutesPrDivider = int.Parse(_options.Value.ThursdayBreakMinutesPrDivider),
-            FridayBreakMinutesDivider = int.Parse(_options.Value.FridayBreakMinutesDivider),
-            FridayBreakMinutesPrDivider = int.Parse(_options.Value.FridayBreakMinutesPrDivider),
-            SaturdayBreakMinutesDivider = int.Parse(_options.Value.SaturdayBreakMinutesDivider),
-            SaturdayBreakMinutesPrDivider = int.Parse(_options.Value.SaturdayBreakMinutesPrDivider),
-            SundayBreakMinutesDivider = int.Parse(_options.Value.SundayBreakMinutesDivider),
-            SundayBreakMinutesPrDivider = int.Parse(_options.Value.SundayBreakMinutesPrDivider),
-            MondayBreakMinutesUpperLimit = int.Parse(_options.Value.MondayBreakMinutesUpperLimit),
-            TuesdayBreakMinutesUpperLimit = int.Parse(_options.Value.TuesdayBreakMinutesUpperLimit),
-            WednesdayBreakMinutesUpperLimit = int.Parse(_options.Value.WednesdayBreakMinutesUpperLimit),
-            ThursdayBreakMinutesUpperLimit = int.Parse(_options.Value.ThursdayBreakMinutesUpperLimit),
-            FridayBreakMinutesUpperLimit = int.Parse(_options.Value.FridayBreakMinutesUpperLimit),
-            SaturdayBreakMinutesUpperLimit = int.Parse(_options.Value.SaturdayBreakMinutesUpperLimit),
-            SundayBreakMinutesUpperLimit = int.Parse(_options.Value.SundayBreakMinutesUpperLimit)
+            MondayBreakMinutesDivider = int.Parse(options.Value.MondayBreakMinutesDivider),
+            MondayBreakMinutesPrDivider = int.Parse(options.Value.MondayBreakMinutesPrDivider),
+            TuesdayBreakMinutesDivider = int.Parse(options.Value.TuesdayBreakMinutesDivider),
+            TuesdayBreakMinutesPrDivider = int.Parse(options.Value.TuesdayBreakMinutesPrDivider),
+            WednesdayBreakMinutesDivider = int.Parse(options.Value.WednesdayBreakMinutesDivider),
+            WednesdayBreakMinutesPrDivider = int.Parse(options.Value.WednesdayBreakMinutesPrDivider),
+            ThursdayBreakMinutesDivider = int.Parse(options.Value.ThursdayBreakMinutesDivider),
+            ThursdayBreakMinutesPrDivider = int.Parse(options.Value.ThursdayBreakMinutesPrDivider),
+            FridayBreakMinutesDivider = int.Parse(options.Value.FridayBreakMinutesDivider),
+            FridayBreakMinutesPrDivider = int.Parse(options.Value.FridayBreakMinutesPrDivider),
+            SaturdayBreakMinutesDivider = int.Parse(options.Value.SaturdayBreakMinutesDivider),
+            SaturdayBreakMinutesPrDivider = int.Parse(options.Value.SaturdayBreakMinutesPrDivider),
+            SundayBreakMinutesDivider = int.Parse(options.Value.SundayBreakMinutesDivider),
+            SundayBreakMinutesPrDivider = int.Parse(options.Value.SundayBreakMinutesPrDivider),
+            MondayBreakMinutesUpperLimit = int.Parse(options.Value.MondayBreakMinutesUpperLimit),
+            TuesdayBreakMinutesUpperLimit = int.Parse(options.Value.TuesdayBreakMinutesUpperLimit),
+            WednesdayBreakMinutesUpperLimit = int.Parse(options.Value.WednesdayBreakMinutesUpperLimit),
+            ThursdayBreakMinutesUpperLimit = int.Parse(options.Value.ThursdayBreakMinutesUpperLimit),
+            FridayBreakMinutesUpperLimit = int.Parse(options.Value.FridayBreakMinutesUpperLimit),
+            SaturdayBreakMinutesUpperLimit = int.Parse(options.Value.SaturdayBreakMinutesUpperLimit),
+            SundayBreakMinutesUpperLimit = int.Parse(options.Value.SundayBreakMinutesUpperLimit)
         };
 
         return Task.FromResult(new OperationDataResult<GlobalAutoBreakSettings>(true, global));
@@ -506,7 +488,7 @@ public class TimeSettingService : ISettingService
 
         try
         {
-            _options.UpdateDb(settings =>
+            options.UpdateDb(settings =>
             {
                 settings.AutoBreakCalculationActive = "0";
                 settings.MondayBreakMinutesDivider = "180";
@@ -530,25 +512,25 @@ public class TimeSettingService : ISettingService
                 settings.SundayBreakMinutesDivider = "120";
                 settings.SundayBreakMinutesPrDivider = "30";
                 settings.SundayBreakMinutesUpperLimit = "60";
-            }, _dbContext, _userService.UserId);
+            }, dbContext, userService.UserId);
 
-            return new OperationResult(true, _localizationService.GetString("GlobalAutoBreakSettingsReset"));
+            return new OperationResult(true, localizationService.GetString("GlobalAutoBreakSettingsReset"));
         }
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
             Console.WriteLine(e);
-            _logger.LogError(e.Message);
+            logger.LogError(e.Message);
             return new OperationResult(
                 false,
-                _localizationService.GetString("ErrorWhileUpdateFolder"));
+                localizationService.GetString("ErrorWhileUpdateFolder"));
         }
     }
 
     public async Task<OperationResult> UpdateAssignedSite(Infrastructure.Models.Settings.AssignedSite site)
     {
         var siteId = site.SiteId;
-        var dbAssignedSite = await _dbContext.AssignedSites
+        var dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == siteId);
         if (dbAssignedSite == null)
@@ -642,13 +624,13 @@ public class TimeSettingService : ISettingService
         dbAssignedSite.SundayPlanHours = site.SundayPlanHours;
         dbAssignedSite.UsePunchClockWithAllowRegisteringInHistory = site.UsePunchClockWithAllowRegisteringInHistory;
 
-        await dbAssignedSite.Update(_dbContext);
+        await dbAssignedSite.Update(dbContext);
 
         if (dbAssignedSite.UseGoogleSheetAsDefault)
-            return new OperationResult(true, _localizationService.GetString("AssignedSiteUpdatedSuccessfuly"));
+            return new OperationResult(true, localizationService.GetString("AssignedSiteUpdatedSuccessfuly"));
         {
             var midnight = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, 0, 0, 0);
-            var planRegistrationsFromTodayAndForward = await _dbContext.PlanRegistrations
+            var planRegistrationsFromTodayAndForward = await dbContext.PlanRegistrations
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SdkSitId == siteId)
                 .Where(x => x.Date >= midnight)
@@ -664,11 +646,11 @@ public class TimeSettingService : ISettingService
                     {
                         Date = midnight.AddDays(i),
                         SdkSitId = siteId,
-                        CreatedByUserId = _userService.UserId,
-                        UpdatedByUserId = _userService.UserId
+                        CreatedByUserId = userService.UserId,
+                        UpdatedByUserId = userService.UserId
                     };
 
-                    await newPlanRegistration.Create(_dbContext);
+                    await newPlanRegistration.Create(dbContext);
                 }
             } else
             {
@@ -692,16 +674,16 @@ public class TimeSettingService : ISettingService
                         {
                             Date = missingDate,
                             SdkSitId = siteId,
-                            CreatedByUserId = _userService.UserId,
-                            UpdatedByUserId = _userService.UserId
+                            CreatedByUserId = userService.UserId,
+                            UpdatedByUserId = userService.UserId
                         };
 
-                        await newPlanRegistration.Create(_dbContext);
+                        await newPlanRegistration.Create(dbContext);
                     }
                 }
             }
 
-            planRegistrationsFromTodayAndForward = await _dbContext.PlanRegistrations
+            planRegistrationsFromTodayAndForward = await dbContext.PlanRegistrations
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SdkSitId == siteId)
                 .Where(x => x.Date >= midnight)
@@ -869,10 +851,10 @@ public class TimeSettingService : ISettingService
                         break;
                 }
 
-                await planRegistration.Update(_dbContext);
+                await planRegistration.Update(dbContext);
             }
         }
 
-        return new OperationResult(true, _localizationService.GetString("AssignedSiteUpdatedSuccessfuly"));
+        return new OperationResult(true, localizationService.GetString("AssignedSiteUpdatedSuccessfuly"));
     }
 }
