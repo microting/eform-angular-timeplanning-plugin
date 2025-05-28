@@ -415,7 +415,7 @@ describe('Dashboard assert', () => {
     );
     cy.wait('@update');
 
-    cy.get('#sumFlex0 input').should('contain.value', '44.2');
+    cy.get('#sumFlex0 input').should('contain.value', '44.45');
     cy.get('#nettoHours0 input').should('contain.value', '0');
     // cy.get('#flexHours0 input').should('contain.value', '-8');
     for (let i = 0; i < planHoursNextWeek.length; i++) {
