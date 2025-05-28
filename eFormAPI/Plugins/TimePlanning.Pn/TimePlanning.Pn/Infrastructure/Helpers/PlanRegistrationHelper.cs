@@ -502,6 +502,14 @@ public static class PlanRegistrationHelper
 
                             if (originalPlanHours != planRegistration.PlanHours || tainted)
                             {
+                                SentrySdk.CaptureEvent(
+                                    new SentryEvent
+                                    {
+                                        Message = $"PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod: " +
+                                                  $"Plan hours changed from {originalPlanHours} to {planRegistration.PlanHours} " +
+                                                  $"for plan registration with ID {planRegistration.Id} and date {planRegistration.Date}",
+                                        Level = SentryLevel.Warning
+                                    });
                                 tainted = true;
                                 var preTimePlanning =
                                     await dbContext.PlanRegistrations.AsNoTracking()
@@ -786,6 +794,15 @@ public static class PlanRegistrationHelper
 
                         if (originalPlanHours != planRegistration.PlanHours || tainted)
                         {
+
+                            SentrySdk.CaptureEvent(
+                                new SentryEvent
+                                {
+                                    Message = $"PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod: " +
+                                              $"Plan hours changed from {originalPlanHours} to {planRegistration.PlanHours} " +
+                                              $"for plan registration with ID {planRegistration.Id} and date {planRegistration.Date}",
+                                    Level = SentryLevel.Warning
+                                });
                             tainted = true;
                             var preTimePlanning =
                                 await dbContext.PlanRegistrations.AsNoTracking()
