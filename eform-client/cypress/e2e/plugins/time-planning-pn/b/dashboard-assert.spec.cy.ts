@@ -128,13 +128,13 @@ const updatePlanHours = [
 ]
 
 const planHoursNextWeek = [
-  { date: nextWeekDates[0], hours: 8, sumFlex: 33.45, nettoHours: 0, flex: -8, humanFlex: '33:27'},
-  { date: nextWeekDates[1], hours: 8, sumFlex: 25.45, nettoHours: 0, flex: -8, humanFlex: '25:27'},
-  { date: nextWeekDates[2], hours: 8, sumFlex: 17.45, nettoHours: 0, flex: -8, humanFlex: '17:27'},
-  { date: nextWeekDates[3], hours: 8, sumFlex: 9.45, nettoHours: 0, flex: -8, humanFlex: '9:27'},
-  { date: nextWeekDates[4], hours: 8, sumFlex: 1.45, nettoHours: 0, flex: -8, humanFlex: '1:27'},
-  { date: nextWeekDates[5], hours: 8, sumFlex: -6.55, nettoHours: 0, flex: -8, humanFlex: '-6:33'},
-  { date: nextWeekDates[6], hours: 8, sumFlex: -14.55, nettoHours: 0, flex: -8, humanFlex: '-14:33'},
+  { date: nextWeekDates[0], hours: 8, sumFlex: 36.2, nettoHours: 0, flex: -8, humanFlex: '33:27'},
+  { date: nextWeekDates[1], hours: 8, sumFlex: 28.2, nettoHours: 0, flex: -8, humanFlex: '25:27'},
+  { date: nextWeekDates[2], hours: 8, sumFlex: 20.2, nettoHours: 0, flex: -8, humanFlex: '17:27'},
+  { date: nextWeekDates[3], hours: 8, sumFlex: 12.2, nettoHours: 0, flex: -8, humanFlex: '9:27'},
+  { date: nextWeekDates[4], hours: 8, sumFlex: 4.2, nettoHours: 0, flex: -8, humanFlex: '1:27'},
+  { date: nextWeekDates[5], hours: 8, sumFlex: -3.8, nettoHours: 0, flex: -8, humanFlex: '-6:33'},
+  { date: nextWeekDates[6], hours: 8, sumFlex: -11.8, nettoHours: 0, flex: -8, humanFlex: '-14:33'},
 ];
 
 const updatePlanHoursNextWeek = [
@@ -148,13 +148,13 @@ const updatePlanHoursNextWeek = [
 ]
 
 const planHoursFutureWeek = [
-  { date: futureWeekDates[0], hours: 8, sumFlex: -22.55, nettoHours: 0, flex: -8, humanFlex: '-22:33'},
-  { date: futureWeekDates[1], hours: 8, sumFlex: -30.55, nettoHours: 0, flex: -8, humanFlex: '-30:33'},
-  { date: futureWeekDates[2], hours: 16, sumFlex: -46.55, nettoHours: 0, flex: -16, humanFlex: '-46:33'},
-  { date: futureWeekDates[3], hours: 8, sumFlex: -54.55, nettoHours: 0, flex: -8, humanFlex: '-54:33'},
-  { date: futureWeekDates[4], hours: 8, sumFlex: -62.55, nettoHours: 0, flex: -8, humanFlex: '-64:33'},
-  { date: futureWeekDates[5], hours: 8, sumFlex: -70.55, nettoHours: 0, flex: -8, humanFlex: '-70:33'},
-  { date: futureWeekDates[6], hours: 8, sumFlex: -78.55, nettoHours: 0, flex: -8, humanFlex:'-78.33'},
+  { date: futureWeekDates[0], hours: 8, sumFlex: -17.05, nettoHours: 0, flex: -8, humanFlex: '-22:33'},
+  { date: futureWeekDates[1], hours: 8, sumFlex: -25.05, nettoHours: 0, flex: -8, humanFlex: '-30:33'},
+  { date: futureWeekDates[2], hours: 16, sumFlex: -41.05, nettoHours: 0, flex: -16, humanFlex: '-46:33'},
+  { date: futureWeekDates[3], hours: 8, sumFlex: -49.05, nettoHours: 0, flex: -8, humanFlex: '-54:33'},
+  { date: futureWeekDates[4], hours: 8, sumFlex: -57.05, nettoHours: 0, flex: -8, humanFlex: '-64:33'},
+  { date: futureWeekDates[5], hours: 8, sumFlex: -65.05, nettoHours: 0, flex: -8, humanFlex: '-70:33'},
+  { date: futureWeekDates[6], hours: 8, sumFlex: -73.05, nettoHours: 0, flex: -8, humanFlex:'-78.33'},
 ];
 
 const updatePlanHoursFutureWeek = [
@@ -371,6 +371,8 @@ describe('Dashboard assert', () => {
     cy.get('#firstColumn0').click();
     cy.get('#useGoogleSheetAsDefault').click();
     cy.get('#saveButton').click();
+    cy.wait('@index-update', { timeout: 160000 });
+    cy.wait(1000);
     cy.get('mat-tree-node').contains('Timeregistrering').click();
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
     cy.get('#workingHoursSite').clear().type('c d');
@@ -413,7 +415,7 @@ describe('Dashboard assert', () => {
     );
     cy.wait('@update');
 
-    cy.get('#sumFlex0 input').should('contain.value', '41.45');
+    cy.get('#sumFlex0 input').should('contain.value', '44.2');
     cy.get('#nettoHours0 input').should('contain.value', '0');
     // cy.get('#flexHours0 input').should('contain.value', '-8');
     for (let i = 0; i < planHoursNextWeek.length; i++) {
@@ -433,7 +435,7 @@ describe('Dashboard assert', () => {
     cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
     cy.wait('@save');
-    cy.get('#sumFlex7 input').should('contain.value', '-14.55');
+    cy.get('#sumFlex7 input').should('contain.value', '-11.8');
 
     cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
     TimePlanningWorkingHoursPage.dateFormInput().click();
@@ -462,7 +464,7 @@ describe('Dashboard assert', () => {
     cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
     cy.wait('@save');
-    cy.get('#sumFlex7 input').should('contain.value', '-78.55');
+    cy.get('#sumFlex7 input').should('contain.value', '-73.05');
 
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
     pluginPage.Navbar.goToPluginsPage();
