@@ -365,7 +365,7 @@
       name="flexToDate"
       readonly="readonly"
       disabled
-      [value]="data.planningPrDayModels.sumFlexStart"
+      [value]="data.planningPrDayModels.sumFlexStart.toFixed(2)"
     >
   </mat-form-field>
   <br><mat-form-field class="pr-2">
@@ -390,7 +390,7 @@
       name="nettoHours"
       readonly="readonly"
       disabled
-      [value]="data.planningPrDayModels.actualHours"
+      [value]="data.planningPrDayModels.actualHours.toFixed(2)"
     >
   </mat-form-field>
   <br>
@@ -403,7 +403,7 @@
       name="todaysFlex"
       readonly="readonly"
       disabled
-      [value]="todaysFlex"
+      [value]="todaysFlex.toFixed(2)"
     >
   </mat-form-field>
   <br>
@@ -428,7 +428,7 @@
       name="flexIncludingToday"
       readonly="readonly"
       disabled
-      [value]="data.planningPrDayModels.sumFlexEnd"
+      [value]="data.planningPrDayModels.sumFlexEnd.toFixed(2)"
     >
   </mat-form-field>
   <br>
