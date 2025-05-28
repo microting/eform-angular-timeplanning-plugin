@@ -405,6 +405,7 @@ describe('Dashboard edit values', () => {
       cy.get('#saveButton').click();
       cy.wait('@update-day', { timeout: 160000 });
       cy.wait('@index-update', { timeout: 160000 });
+      cy.wait(1000);
       let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
       if (secondUpdatePlanTexts[i].flexBalanceToDate !== '') {
         cy.get(flexBalanceToDateId).should('include.text', secondUpdatePlanTexts[i].flexBalanceToDate);
