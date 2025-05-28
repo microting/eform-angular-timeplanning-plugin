@@ -438,24 +438,30 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Flex = model.FlexHours;
         }
 
-        var preTimePlanning =
-            await dbContext.PlanRegistrations.AsNoTracking()
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.Date < planRegistration.Date
-                            && x.SdkSitId == planRegistration.SdkSitId)
-                .OrderByDescending(x => x.Date)
-                .FirstOrDefaultAsync();
-        if (preTimePlanning != null)
-        {
-            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-            planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
-                                          planRegistration.PaiedOutFlex;
-        }
-        else
-        {
-            planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-            planRegistration.SumFlexStart = 0;
-        }
+        // var preTimePlanning =
+        //     await dbContext.PlanRegistrations.AsNoTracking()
+        //         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+        //         .Where(x => x.Date < planRegistration.Date
+        //                     && x.SdkSitId == planRegistration.SdkSitId)
+        //         .OrderByDescending(x => x.Date)
+        //         .FirstOrDefaultAsync();
+        // if (preTimePlanning != null)
+        // {
+        //     planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+        //     planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
+        //                                   planRegistration.PaiedOutFlex;
+        // }
+        // else
+        // {
+        //     planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+        //     planRegistration.SumFlexStart = 0;
+        // }
+
+        var assignedSite = await dbContext.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.SiteId == microtingUid);
+        planRegistration = await PlanRegistrationHelper
+            .UpdatePlanRegistration(planRegistration, dbContext, assignedSite, DateTime.Now.AddMonths(-1));
 
         await planRegistration.Update(dbContext);
     }
