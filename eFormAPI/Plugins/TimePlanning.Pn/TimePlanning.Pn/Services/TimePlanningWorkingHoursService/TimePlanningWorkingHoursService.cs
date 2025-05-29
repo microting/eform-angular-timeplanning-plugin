@@ -1885,27 +1885,35 @@ public class TimePlanningWorkingHoursService(
     private void FillDataRow(Row dataRow, Worker worker, Microting.eForm.Infrastructure.Data.Entities.Site site, CultureInfo culture,
         TimePlanningWorkingHoursModel planning, PlanRegistration plr, Language language)
     {
-        dataRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
-        dataRow.Append(CreateCell(site.Name));
-        dataRow.Append(CreateCell(planning.Date.ToString("dddd", culture)));
-        dataRow.Append(CreateDateCell(planning.Date));
-        dataRow.Append(CreateCell(planning.PlanText));
-        dataRow.Append(CreateNumericCell(planning.PlanHours));
-        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start)));
-        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Stop)));
-        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Pause)));
-        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start)));
-        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop)));
-        dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Pause)));
-        dataRow.Append(CreateNumericCell(planning.NettoHours));
-        dataRow.Append(CreateNumericCell(planning.FlexHours));
-        dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
-        dataRow.Append(CreateNumericCell(string.IsNullOrEmpty(planning.PaidOutFlex)
-            ? 0
-            : double.Parse(planning.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)));
-        dataRow.Append(CreateCell(GetMessageText(planning.Message, language)));
-        dataRow.Append(CreateCell(planning.CommentWorker?.Replace("<br>", "\n")));
-        dataRow.Append(CreateCell(planning.CommentOffice?.Replace("<br>", "\n")));
+        try {
+            dataRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
+            dataRow.Append(CreateCell(site.Name));
+            dataRow.Append(CreateCell(planning.Date.ToString("dddd", culture)));
+            dataRow.Append(CreateDateCell(planning.Date));
+            dataRow.Append(CreateCell(planning.PlanText));
+            dataRow.Append(CreateNumericCell(planning.PlanHours));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Stop)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Pause)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Pause)));
+            dataRow.Append(CreateNumericCell(planning.NettoHours));
+            dataRow.Append(CreateNumericCell(planning.FlexHours));
+            dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
+            dataRow.Append(CreateNumericCell(string.IsNullOrEmpty(planning.PaidOutFlex)
+                ? 0
+                : double.Parse(planning.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)));
+            dataRow.Append(CreateCell(GetMessageText(planning.Message, language)));
+            dataRow.Append(CreateCell(planning.CommentWorker?.Replace("<br>", "\n")));
+            dataRow.Append(CreateCell(planning.CommentOffice?.Replace("<br>", "\n")));
+        }
+        catch (Exception ex)
+        {
+            SentrySdk.CaptureException(ex);
+            logger.LogError($"Error while filling data row: {ex.Message}");
+            throw;
+        }
     }
 
     private Cell CreateCell(string value)
