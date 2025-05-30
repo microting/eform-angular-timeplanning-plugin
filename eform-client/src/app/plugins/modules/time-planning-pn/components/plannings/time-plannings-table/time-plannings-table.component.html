@@ -171,6 +171,64 @@
           <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
         </span>
       </div>
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift3 !== 0">
+        <strong class="{{ getCellTextColor(row, col.field) }}" id="thirdShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift3) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift3) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift3) }}
+        </strong>
+      </div>
+      <div class="plan-text {{ getCellTextColor(row, col.field) }}"
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="thirdShiftActual{{index}}_{{col.field}}">
+        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start3StartedAt, 'HH:mm', 'UTC') }}
+        <span *ngIf="row.planningPrDayModels[col.field]?.stop3StoppedAt !== null"> -
+          {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop3StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+        </span>
+        <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start3StartedAt) && row.planningPrDayModels[col.field]?.stop3StoppedAt === null"> -
+          <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
+        </span>
+      </div>
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift4 !== 0">
+        <strong class="{{ getCellTextColor(row, col.field) }}" id="fourthShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift4) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift4) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift4) }}
+        </strong>
+      </div>
+      <div class="plan-text {{ getCellTextColor(row, col.field) }}"
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="fourthShiftActual{{index}}_{{col.field}}">
+        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start4StartedAt, 'HH:mm', 'UTC') }}
+        <span *ngIf="row.planningPrDayModels[col.field]?.stop4StoppedAt !== null"> -
+          {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop4StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+        </span>
+        <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start4StartedAt) && row.planningPrDayModels[col.field]?.stop4StoppedAt === null"> -
+          <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
+        </span>
+      </div>
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift5 !== 0">
+        <strong class="{{ getCellTextColor(row, col.field) }}" id="fifthShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift5) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift5) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift5) }}
+        </strong>
+      </div>
+      <div class="plan-text {{ getCellTextColor(row, col.field) }}"
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="fifthShiftActual{{index}}_{{col.field}}">
+        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start5StartedAt, 'HH:mm', 'UTC') }}
+        <span *ngIf="row.planningPrDayModels[col.field]?.stop5StoppedAt !== null"> -
+          {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop5StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+        </span>
+        <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start5StartedAt) && row.planningPrDayModels[col.field]?.stop5StoppedAt === null"> -
+          <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
+        </span>
+      </div>
+
       <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
           <div class="{{ getCellTextColor(row, col.field) }}">
