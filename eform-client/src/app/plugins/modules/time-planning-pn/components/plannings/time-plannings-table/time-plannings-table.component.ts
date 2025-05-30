@@ -12,7 +12,7 @@ import {DatePipe} from '@angular/common';
 import * as R from 'ramda';
 import {TimePlanningMessagesEnum} from '../../../enums';
 import {Store} from "@ngrx/store";
-import {selectAuthIsAdmin} from "src/app/state";
+import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from "src/app/state";
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -35,6 +35,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   @ViewChild('firstColumnTemplate', {static: true}) firstColumnTemplate!: TemplateRef<any>;
   @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
   protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
+  public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
   constructor(
     private store: Store,

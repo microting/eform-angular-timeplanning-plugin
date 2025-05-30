@@ -148,6 +148,13 @@
           <strong id="commentOffice{{index}}_{{col.field}}"><mat-icon class="neutral-icon" [matTooltip]="'CommentOffice' | translate ">gite</mat-icon></strong> {{row.planningPrDayModels[col.field]?.commentOffice}}
         </div>
       </div>
+      <div class="plan-text"  *ngIf="selectCurrentUserIsFirstUser$ | async">
+        <div class="{{ getCellTextColor(row, col.field) }}">
+          <small>
+            (id: {{ row.planningPrDayModels[col.field]?.id }})
+          </small>
+        </div>
+      </div>
     </div>
 
     <!-- Right Icons -->
