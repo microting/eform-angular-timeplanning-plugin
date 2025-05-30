@@ -165,14 +165,14 @@ public static class PlanRegistrationHelper
             var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month,
                 planRegistration.Date.Day, 0, 0, 0);
 
-            if (planRegistration.Start1Id > 288)
+            if (planRegistration.Start1Id > 289)
             {
                 // FIXME: This is a workaround, it should be removed when the frontend is fixed.
                 planRegistration.Start1Id /= 5 + 1;
                 planRegistration.Start1StartedAt = planRegistration.Date.AddMinutes(planRegistration.Start1Id * 5);
             }
 
-            if (planRegistration.Stop1Id > 288 )
+            if (planRegistration.Stop1Id > 289 )
             {
                 // FIXME: This is a workaround, it should be removed when the frontend is fixed.
                 planRegistration.Stop1Id /= 5 + 1;
