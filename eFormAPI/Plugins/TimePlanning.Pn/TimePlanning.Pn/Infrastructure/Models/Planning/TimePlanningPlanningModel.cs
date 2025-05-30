@@ -36,5 +36,8 @@ public class TimePlanningPlanningModel
     public int CurrentWorkedHours { get; set; }
     public int CurrentWorkedMinutes { get; set; }
     public int PercentageCompleted { get; set; }
+    public string SoftwareVersion { get; set; }
+    public string DeviceModel { get; set; }
+    public string DeviceManufacturer { get; set; }
     public List<TimePlanningPlanningPrDayModel> PlanningPrDayModels { get; set; }
 }

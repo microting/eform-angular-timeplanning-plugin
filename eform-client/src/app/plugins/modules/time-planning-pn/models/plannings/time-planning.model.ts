@@ -11,4 +11,7 @@ export class TimePlanningModel {
   currentWorkedHours: number;
   currentWorkedMinutes: number;
   percentageCompleted: number;
+  SoftwareVersion: string;
+  deviceModel: string;
+  deviceManufacturer: string;
 }

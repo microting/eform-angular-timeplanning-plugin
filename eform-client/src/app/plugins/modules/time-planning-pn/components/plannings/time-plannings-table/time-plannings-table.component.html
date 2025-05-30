@@ -35,13 +35,32 @@
               {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
               )
             </span>
-          </div><div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
-          <span *ngIf="row['currentWorkedHours'] !== 0" [matTooltip]="'Actual' | translate ">
-            (
-            {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
-            )
-          </span>
-        </div>
+          </div>
+          <div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
+            <span *ngIf="row['currentWorkedHours'] !== 0" [matTooltip]="'Actual' | translate ">
+              (
+              {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+              )
+            </span>
+          </div>
+          <div>
+            <div>
+              <ng-container *ngIf="row['deviceManufacturer'] === 'iOS' ">
+                <span [matTooltip]="row['deviceModel']" class="neutral-icon">
+                  <mat-icon>phone_iphone</mat-icon>
+                </span>
+              </ng-container>
+              <ng-container *ngIf="row['deviceManufacturer'] !== 'iOS' ">
+                <span [matTooltip]="row['deviceModel']" class="neutral-icon">
+                  <mat-icon>android</mat-icon>
+                </span>
+              </ng-container>
+              {{row['softwareVersion']}}
+              <div *ngIf="row['softwareVersion'] !== '3.9.3'">
+                <span [matTooltip]="'Needs update!' | translate "><mat-icon>warning</mat-icon></span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -70,14 +89,36 @@
               {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
               )
             </ng-container>
-          </div><div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
-          <ng-container *ngIf="row['currentWorkedHours'] !== 0">
-            (
-            {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
-            )
-          </ng-container>
+          </div>
+          <div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
+            <ng-container *ngIf="row['currentWorkedHours'] !== 0">
+              (
+              {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+              )
+            </ng-container>
+          </div>
+          <div>
+            <div>
+              <ng-container *ngIf="row['deviceManufacturer'] === 'iOS' ">
+                <span [matTooltip]="row['deviceModel']" class="neutral-icon">
+                  <mat-icon>phone_iphone</mat-icon>
+                </span>
+              </ng-container>
+              <ng-container *ngIf="row['deviceManufacturer'] !== 'iOS' ">
+                <span [matTooltip]="row['deviceModel']" class="neutral-icon">
+                  <mat-icon>android</mat-icon>
+                </span>
+              </ng-container>
+              {{row['softwareVersion']}}
+              <div *ngIf="row['softwareVersion'] !== '3.9.3'">
+                <span [matTooltip]="'Needs update!' | translate "><mat-icon>warning</mat-icon></span>
+              </div>
+            </div>
+          </div>
         </div>
-        </div>
+      </div>
+      <div>
+        {{row['softwareVersion']}}
       </div>
     </div>
   </ng-container>
@@ -133,7 +174,7 @@
       <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
           <div class="{{ getCellTextColor(row, col.field) }}">
-<!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
+            <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
             <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ row.planningPrDayModels[col.field]?.sumFlexEnd.toFixed(2) }}</strong>
           </div>
         </div>

@@ -103,6 +103,9 @@ public class TimePlanningPlanningService(
                     siteModel.AvatarUrl = user.ProfilePictureSnapshot != null
                         ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
                         : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+                    siteModel.SoftwareVersion = user.TimeRegistrationSoftwareVersion;
+                    siteModel.DeviceModel = user.TimeRegistrationModel;
+                    siteModel.DeviceManufacturer = user.TimeRegistrationManufacturer;
                 }
 
                 var planningsInPeriod = await dbContext.PlanRegistrations
