@@ -106,4 +106,11 @@ export const lvLV = {
   'Worktime start': 'Darba laika sākums',
   'Worktime stop': 'Darba laika pārtraukums',
   'Shift not stopped by user!': 'Lietotājs nav apturējis maiņu!',
+  'Total breaktime': 'Kopējais pārtraukuma laiks',
+  'Total working hours': 'Kopējais darba stundu skaits',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Ievadiet sākuma laiku, beigu laiku un kopējo pārtraukumu. Lai rediģētu laikus, atlasiet “Atļaut darba stundu rediģēšanu mobilajā ierīcē”.',
+  'Start time, stop time and breaks can be edited.': 'Sākuma laiku, beigu laiku un pārtraukumus var rediģēt.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Darba stundas tiek reģistrētas, nospiežot Sākt/Apturēt darba stundas. Pārtraukumi tiek reģistrēti, nospiežot Sākt/Apturēt pārtraukuma laiku. Lai rediģētu laikus, atlasiet Atļaut darba stundu rediģēšanu mobilajā tālrunī.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Ievadiet sākuma laiku, beigu laiku un kopējo pārtraukuma laiku atpakaļ laikā. Lai rediģētu laikus, atlasiet “Atļaut darba stundu rediģēšanu mobilajā ierīcē”.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Plānotās darba stundas var apstiprināt ar vienu klikšķi. Plānotās darba stundas nevar rediģēt.',
 };

@@ -106,4 +106,11 @@ export const ukUA = {
   'Worktime start': 'Початок робочого часу',
   'Worktime stop': 'Зупинка робочого часу',
   'Shift not stopped by user!': 'Shift не зупинено користувачем!',
+  'Total breaktime': 'Загальний час перерви',
+  'Total working hours': 'Загальна кількість робочих годин',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Введіть час початку, час закінчення та загальну перерву. Виберіть «Дозволити редагування робочих годин на мобільному пристрої», щоб редагувати час.',
+  'Start time, stop time and breaks can be edited.': 'Час початку, час закінчення та перерви можна редагувати.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Робочий час записується натисканням кнопки «Почати/зупинити робочий час». Перерви записуються натисканням кнопки «Почати/зупинити час перерви». Виберіть «Дозволити редагування робочого часу на мобільному пристрої», щоб редагувати час.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Введіть час початку, час закінчення та загальний час перерви назад у минулому часі. Виберіть «Дозволити редагування робочих годин на мобільному пристрої», щоб редагувати час.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Запланований робочий час можна затвердити одним клацанням миші. Запланований робочий час не можна редагувати.',
 };

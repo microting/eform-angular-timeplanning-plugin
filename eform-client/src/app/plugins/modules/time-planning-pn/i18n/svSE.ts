@@ -106,4 +106,11 @@ export const svSE = {
   'Worktime start': 'Arbetstidsstart',
   'Worktime stop': 'Arbetstidsstopp',
   'Shift not stopped by user!': 'Skiftet stoppades inte av användaren!',
+  'Total breaktime': 'Total rasttid',
+  'Total working hours': 'Totala arbetstimmar',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Ange starttid, stopptid och total rast. Välj Tillåt redigering av arbetstimmar på mobilen för att redigera tider.',
+  'Start time, stop time and breaks can be edited.': 'Starttid, stopptid och pauser kan redigeras.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Arbetstimmar registreras genom att trycka på Starta/Stoppa arbetstid. Raster registreras genom att trycka på Starta/Stoppa rasttid. Välj Tillåt redigering av arbetstid på mobilen för att redigera tider.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Ange starttid, stopptid och total rasttid bakåt i tiden. Välj Tillåt redigering av arbetstimmar på mobilen för att redigera tider.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Schemalagda arbetstider kan godkännas med ett enda klick. Schemalagda arbetstider kan inte redigeras.',
 };

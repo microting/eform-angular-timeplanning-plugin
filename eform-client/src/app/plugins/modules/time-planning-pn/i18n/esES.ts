@@ -106,4 +106,11 @@ export const esES = {
   'Worktime start': 'Inicio del horario laboral',
   'Worktime stop': 'Parada del horario laboral',
   'Shift not stopped by user!': '¡El usuario no detuvo el cambio!',
+  'Total breaktime': 'Tiempo total de descanso',
+  'Total working hours': 'Total de horas de trabajo',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Introduce la hora de inicio, la hora de finalización y el total de descansos. Selecciona &quot;Permitir edición de horas de trabajo en el móvil&quot; para editar las horas.',
+  'Start time, stop time and breaks can be edited.': 'Se puede editar la hora de inicio, la hora de finalización y los descansos.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Las horas de trabajo se registran pulsando Iniciar/Detener horas de trabajo. Los descansos se registran pulsando Iniciar/Detener tiempo de descanso. Seleccione &quot;Permitir edición de horas de trabajo en el móvil&quot; para editar las horas.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Introduce la hora de inicio, la hora de finalización y el tiempo total de descanso. Selecciona &quot;Permitir edición de horas de trabajo en el móvil&quot; para editar las horas.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Las horas de trabajo programadas se pueden aprobar con un solo clic. No se pueden editar.',
 };

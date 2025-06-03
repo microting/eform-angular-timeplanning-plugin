@@ -106,4 +106,11 @@ export const bgBG = {
   'Worktime start': 'Начало на работното време',
   'Worktime stop': 'Спиране на работното време',
   'Shift not stopped by user!': 'Shift не е спрян от потребителя!',
+  'Total breaktime': 'Общо време за почивка',
+  'Total working hours': 'Общо работни часове',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Въведете начален час, краен час и обща почивка. Изберете „Разрешаване на редактиране на работните часове на мобилно устройство“, за да редактирате часовете.',
+  'Start time, stop time and breaks can be edited.': 'Времето за начало, времето за край и почивките могат да се редактират.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Работните часове се записват чрез натискане на „Старт/Стоп на работното време“. Почивките се записват чрез натискане на „Старт/Стоп на времето за почивка“. Изберете „Разрешаване на редактиране на работното време на мобилно устройство“, за да редактирате времената.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Въведете начален час, краен час и общо време за почивка назад във времето. Изберете „Разрешаване на редактиране на работни часове на мобилно устройство“, за да редактирате часовете.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Планираните работни часове могат да бъдат одобрени с едно щракване. Планираните работни часове не могат да бъдат редактирани.',
 };

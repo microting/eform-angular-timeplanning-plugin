@@ -106,4 +106,11 @@ export const nlNL = {
   'Worktime start': 'Werktijd start',
   'Worktime stop': 'Werktijd stop',
   'Shift not stopped by user!': 'De dienst is niet door de gebruiker gestopt!',
+  'Total breaktime': 'Totale pauzetijd',
+  'Total working hours': 'Totaal aantal werkuren',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Voer de begintijd, eindtijd en totale pauze in. Selecteer &#39;Bewerken van werkuren op mobiel toestaan&#39; om de tijden te bewerken.',
+  'Start time, stop time and breaks can be edited.': 'Begintijd, eindtijd en pauzes kunnen worden bewerkt.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Werkuren worden geregistreerd door op Start/Stop werkuren te drukken. Pauzes worden geregistreerd door op Start/Stop pauzetijd te drukken. Selecteer &#39;Bewerken van werkuren op mobiel toestaan&#39; om de tijden te bewerken.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Voer de begintijd, eindtijd en totale pauzetijd in de tijd in. Selecteer &#39;Bewerken van werkuren op mobiel toestaan&#39; om de tijden te bewerken.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Geplande werkuren kunnen met één klik worden goedgekeurd. Geplande werkuren kunnen niet worden bewerkt.',
 };

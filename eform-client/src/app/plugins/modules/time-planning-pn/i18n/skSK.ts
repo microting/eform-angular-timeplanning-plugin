@@ -106,4 +106,11 @@ export const skSK = {
   'Worktime start': 'Začiatok pracovného času',
   'Worktime stop': 'Zastavenie pracovného času',
   'Shift not stopped by user!': 'Používateľ nezastavil Shift!',
+  'Total breaktime': 'Celkový čas prestávky',
+  'Total working hours': 'Celkový počet pracovných hodín',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Zadajte čas začiatku, čas ukončenia a celkovú prestávku. Ak chcete upravovať časy, vyberte možnosť Povoliť úpravu pracovnej doby v mobile.',
+  'Start time, stop time and breaks can be edited.': 'Čas začiatku, čas ukončenia a prestávky je možné upraviť.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Pracovné hodiny sa zaznamenávajú stlačením tlačidla Spustiť/Zastaviť pracovné hodiny. Prestávky sa zaznamenávajú stlačením tlačidla Spustiť/Zastaviť čas prestávky. Ak chcete upravovať časy, vyberte možnosť Povoliť úpravu pracovných hodín v mobile.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Zadajte čas začiatku, čas ukončenia a celkový čas prestávky spätne v čase. Ak chcete upravovať časy, vyberte možnosť Povoliť úpravu pracovnej doby v mobile.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Naplánovaný pracovný čas je možné schváliť jedným kliknutím. Naplánovaný pracovný čas nie je možné upravovať.',
 };

@@ -106,4 +106,11 @@ export const slSL = {
   'Worktime start': 'Začetek delovnega časa',
   'Worktime stop': 'Prekinitev delovnega časa',
   'Shift not stopped by user!': 'Uporabnik ni ustavil Shifta!',
+  'Total breaktime': 'Skupni čas odmora',
+  'Total working hours': 'Skupni delovni čas',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Vnesite čas začetka, čas konca in skupni odmor. Za urejanje časov izberite Dovoli urejanje delovnega časa v mobilni napravi.',
+  'Start time, stop time and breaks can be edited.': 'Začetni čas, končni čas in odmore je mogoče urejati.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Delovni čas se zabeleži s pritiskom na Začni/Ustavi delovni čas. Odmori se zabeležijo s pritiskom na Začni/Ustavi čas odmora. Za urejanje časov izberite Dovoli urejanje delovnega časa na mobilni napravi.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Vnesite čas začetka, čas konca in skupni čas odmora za nazaj v preteklost. Za urejanje časov izberite Dovoli urejanje delovnega časa v mobilni napravi.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Načrtovane delovne ure je mogoče odobriti z enim samim klikom. Načrtovanih delovnih ur ni mogoče urejati.',
 };

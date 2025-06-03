@@ -106,4 +106,11 @@ export const deDE = {
   'Worktime start': 'Arbeitszeitbeginn',
   'Worktime stop': 'Arbeitszeitstopp',
   'Shift not stopped by user!': 'Schicht wurde vom Benutzer nicht gestoppt!',
+  'Total breaktime': 'Gesamtpausenzeit',
+  'Total working hours': 'Gesamtarbeitszeit',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Geben Sie Startzeit, Endzeit und Gesamtpausenzeit ein. Aktivieren Sie „Bearbeiten der Arbeitszeiten auf Mobilgeräten zulassen“, um die Zeiten zu bearbeiten.',
+  'Start time, stop time and breaks can be edited.': 'Startzeit, Stoppzeit und Pausen können bearbeitet werden.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Die Erfassung der Arbeitszeit erfolgt durch Drücken von „Arbeitszeit starten/stoppen“. Die Erfassung der Pausen erfolgt durch Drücken von „Pausenzeit starten/stoppen“. Um die Zeiten zu bearbeiten, wählen Sie „Bearbeitung der Arbeitszeiten auf dem Mobilgerät zulassen“.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Geben Sie Startzeit, Endzeit und Gesamtpausenzeit rückwirkend ein. Aktivieren Sie „Bearbeiten der Arbeitszeiten auf Mobilgeräten zulassen“, um die Zeiten zu bearbeiten.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Geplante Arbeitszeiten können mit nur einem Klick freigegeben werden. Geplante Arbeitszeiten können nicht bearbeitet werden.',
 };

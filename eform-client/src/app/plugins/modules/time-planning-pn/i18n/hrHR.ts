@@ -106,4 +106,11 @@ export const hrHR = {
   'Worktime start': 'Početak radnog vremena',
   'Worktime stop': 'Zaustavljanje radnog vremena',
   'Shift not stopped by user!': 'Korisnik nije zaustavio Shift!',
+  'Total breaktime': 'Ukupno vrijeme pauze',
+  'Total working hours': 'Ukupni radni sati',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Unesite vrijeme početka, vrijeme završetka i ukupni odmor. Odaberite Dopusti uređivanje radnog vremena na mobilnom uređaju za uređivanje vremena.',
+  'Start time, stop time and breaks can be edited.': 'Vrijeme početka, vrijeme završetka i pauze mogu se uređivati.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Radni sati se bilježe pritiskom na Pokreni/Zaustavi radno vrijeme. Pauze se bilježe pritiskom na Pokreni/Zaustavi vrijeme pauze. Odaberite Dopusti uređivanje radnih sati na mobitelu za uređivanje vremena.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Unesite vrijeme početka, vrijeme završetka i ukupno vrijeme pauze unatrag unatrag. Odaberite Dopusti uređivanje radnog vremena na mobilnom uređaju za uređivanje vremena.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Planirano radno vrijeme može se odobriti jednim klikom. Planirano radno vrijeme ne može se uređivati.',
 };

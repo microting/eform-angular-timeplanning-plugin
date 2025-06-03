@@ -106,4 +106,11 @@ export const ltLT = {
   'Worktime start': 'Darbo laiko pradžia',
   'Worktime stop': 'Darbo laiko sustojimas',
   'Shift not stopped by user!': 'Vartotojas nesustabdė pamainos!',
+  'Total breaktime': 'Bendras pertraukos laikas',
+  'Total working hours': 'Bendras darbo valandų skaičius',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Įveskite pradžios laiką, pabaigos laiką ir bendrą pertrauką. Norėdami redaguoti laiką, pasirinkite „Leisti redaguoti darbo valandas mobiliajame įrenginyje“.',
+  'Start time, stop time and breaks can be edited.': 'Pradžios laiką, pabaigos laiką ir pertraukas galima redaguoti.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Darbo valandos registruojamos paspaudus „Pradėti/Sustabdyti darbo valandas“. Pertraukos registruojamos paspaudus „Pradėti/Sustabdyti pertraukos laiką“. Norėdami redaguoti laiką, pasirinkite „Leisti redaguoti darbo valandas mobiliajame įrenginyje“.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Įveskite pradžios laiką, pabaigos laiką ir bendrą pertraukos laiką atgaline data. Norėdami redaguoti laiką, pasirinkite „Leisti redaguoti darbo valandas mobiliajame įrenginyje“.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Suplanuotas darbo valandas galima patvirtinti vienu spustelėjimu. Suplanuotų darbo valandų redaguoti negalima.',
 };

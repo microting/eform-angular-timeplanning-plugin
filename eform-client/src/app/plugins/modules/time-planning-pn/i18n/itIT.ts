@@ -106,4 +106,11 @@ export const itIT = {
   'Worktime start': 'Inizio dell&#39;orario di lavoro',
   'Worktime stop': 'Sospensione dell&#39;orario di lavoro',
   'Shift not stopped by user!': 'Turno non interrotto dall&#39;utente!',
+  'Total breaktime': 'Tempo totale di pausa',
+  'Total working hours': 'Ore di lavoro totali',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Inserisci l&#39;ora di inizio, l&#39;ora di fine e la pausa totale. Seleziona &quot;Consenti modifica orario di lavoro su dispositivo mobile&quot; per modificare gli orari.',
+  'Start time, stop time and breaks can be edited.': 'È possibile modificare l&#39;orario di inizio, l&#39;orario di fine e le pause.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'L&#39;orario di lavoro viene registrato premendo &quot;Avvia/Interrompi orario di lavoro&quot;. Le pause vengono registrate premendo &quot;Avvia/Interrompi pausa&quot;. Seleziona &quot;Consenti modifica orario di lavoro su dispositivo mobile&quot; per modificare gli orari.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Inserisci l&#39;ora di inizio, l&#39;ora di fine e la durata totale della pausa a ritroso nel tempo. Seleziona Consenti modifica orario di lavoro su dispositivo mobile per modificare gli orari.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Gli orari di lavoro programmati possono essere approvati con un solo clic. Non possono essere modificati.',
 };

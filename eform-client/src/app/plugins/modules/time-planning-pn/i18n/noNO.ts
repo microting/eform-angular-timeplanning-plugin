@@ -106,4 +106,11 @@ export const noNO = {
   'Worktime start': 'Arbeidstidsstart',
   'Worktime stop': 'Arbeidstidsstopp',
   'Shift not stopped by user!': 'Skiftet ble ikke stoppet av brukeren!',
+  'Total breaktime': 'Total pausetid',
+  'Total working hours': 'Totalt antall arbeidstimer',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Skriv inn starttid, stopptid og total pause. Velg Tillat redigering av arbeidstimer på mobil for å redigere tider.',
+  'Start time, stop time and breaks can be edited.': 'Starttid, stopptid og pauser kan redigeres.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Arbeidstimer registreres ved å trykke Start/Stopp arbeidstid. Pauser registreres ved å trykke Start/Stopp pausetid. Velg Tillat redigering av arbeidstimer på mobil for å redigere tider.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Skriv inn starttid, stopptid og total pausetid tilbake i tid. Velg Tillat redigering av arbeidstimer på mobil for å redigere tider.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Planlagte arbeidstider kan godkjennes med et enkelt klikk. Planlagte arbeidstider kan ikke redigeres.',
 };

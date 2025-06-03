@@ -104,4 +104,11 @@ export const enUS = {
   'Worktime start': 'Worktime start',
   'Worktime stop': 'Worktime stop',
   'Shift not stopped by user!': 'Shift not stopped by user!',
+  'Total breaktime': 'Total breaktime',
+  'Total working hours': 'Total working hours',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.',
+  'Start time, stop time and breaks can be edited.': 'Start time, stop time and breaks can be edited.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.',
 };

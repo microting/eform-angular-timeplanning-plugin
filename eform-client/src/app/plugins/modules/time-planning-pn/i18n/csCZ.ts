@@ -106,4 +106,11 @@ export const csCZ = {
   'Worktime start': 'Začátek pracovní doby',
   'Worktime stop': 'Zastavení pracovní doby',
   'Shift not stopped by user!': 'Shift nebyl zastaven uživatelem!',
+  'Total breaktime': 'Celková doba přestávky',
+  'Total working hours': 'Celková pracovní doba',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Zadejte čas zahájení, čas ukončení a celkovou přestávku. Chcete-li časy upravovat, vyberte možnost Povolit úpravu pracovní doby na mobilu.',
+  'Start time, stop time and breaks can be edited.': 'Čas zahájení, čas ukončení a přestávky lze upravit.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Pracovní doba se zaznamenává stisknutím tlačítka Spustit/Zastavit pracovní dobu. Přestávky se zaznamenávají stisknutím tlačítka Spustit/Zastavit čas přestávky. Chcete-li časy upravovat, vyberte možnost Povolit úpravu pracovní doby na mobilu.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Zadejte čas začátku, čas konce a celkovou dobu přestávky zpětně v čase. Chcete-li časy upravovat, vyberte možnost Povolit úpravu pracovní doby na mobilu.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Naplánovanou pracovní dobu lze schválit jediným kliknutím. Naplánovanou pracovní dobu nelze upravovat.',
 };

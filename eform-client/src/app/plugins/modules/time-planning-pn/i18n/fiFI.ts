@@ -106,4 +106,11 @@ export const fiFI = {
   'Worktime start': 'Työajan alku',
   'Worktime stop': 'Työajan pysähdys',
   'Shift not stopped by user!': 'Käyttäjä ei ole pysäyttänyt vuoroa!',
+  'Total breaktime': 'Kokonaistaukoaika',
+  'Total working hours': 'Kokonaistyöaika',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Syötä aloitusaika, lopetusaika ja kokonaistauko. Valitse Salli työaikojen muokkaaminen mobiililaitteella muokataksesi aikoja.',
+  'Start time, stop time and breaks can be edited.': 'Aloitusaikaa, lopetusaikaa ja taukoja voidaan muokata.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Työtunnit kirjataan painamalla Käynnistä/Pysäytä työtunnit. Tauot kirjataan painamalla Käynnistä/Pysäytä taukoaika. Valitse Salli työtuntien muokkaus mobiililaitteella muokataksesi aikoja.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Syötä aloitusaika, lopetusaika ja kokonaistauon kesto ajassa taaksepäin. Valitse Salli työaikojen muokkaaminen mobiililaitteella muokataksesi aikoja.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Suunnitellut työajat voidaan hyväksyä yhdellä napsautuksella. Suunniteltuja työaikoja ei voi muokata.',
 };

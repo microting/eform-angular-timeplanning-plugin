@@ -106,4 +106,11 @@ export const elGR = {
   'Worktime start': 'Έναρξη εργάσιμου χρόνου',
   'Worktime stop': 'Διακοπή ωραρίου εργασίας',
   'Shift not stopped by user!': 'Η μετατόπιση δεν διακόπηκε από τον χρήστη!',
+  'Total breaktime': 'Συνολικό διάλειμμα',
+  'Total working hours': 'Συνολικές ώρες εργασίας',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Εισαγάγετε την ώρα έναρξης, την ώρα λήξης και το συνολικό διάλειμμα. Επιλέξτε Να επιτρέπεται η επεξεργασία των ωρών εργασίας σε κινητό για να επεξεργαστείτε τις ώρες.',
+  'Start time, stop time and breaks can be edited.': 'Η ώρα έναρξης, η ώρα λήξης και τα διαλείμματα μπορούν να τροποποιηθούν.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Οι ώρες εργασίας καταγράφονται πατώντας Έναρξη/Διακοπή ωρών εργασίας. Τα διαλείμματα καταγράφονται πατώντας Έναρξη/Διακοπή ώρας διαλείμματος. Επιλέξτε Να επιτρέπεται η επεξεργασία των ωρών εργασίας σε κινητό για να επεξεργαστείτε τις ώρες.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Εισαγάγετε την ώρα έναρξης, την ώρα λήξης και τον συνολικό χρόνο διαλείμματος πίσω στο χρόνο. Επιλέξτε Να επιτρέπεται η επεξεργασία των ωρών εργασίας σε κινητό για να επεξεργαστείτε τις ώρες.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Οι προγραμματισμένες ώρες εργασίας μπορούν να εγκριθούν με ένα μόνο κλικ. Δεν είναι δυνατή η επεξεργασία των προγραμματισμένων ωρών εργασίας.',
 };

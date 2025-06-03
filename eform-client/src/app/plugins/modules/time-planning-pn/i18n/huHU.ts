@@ -106,4 +106,11 @@ export const huHU = {
   'Worktime start': 'Munkaidő kezdete',
   'Worktime stop': 'Munkaidő-megállás',
   'Shift not stopped by user!': 'A felhasználó nem állította le a műszakot!',
+  'Total breaktime': 'Teljes szünetidő',
+  'Total working hours': 'Teljes munkaóra',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Adja meg a kezdési időpontot, a befejezési időpontot és a teljes szünetet. Az időpontok szerkesztéséhez válassza a Munkaórák szerkesztésének engedélyezése mobilon lehetőséget.',
+  'Start time, stop time and breaks can be edited.': 'A kezdési idő, a befejezési idő és a szünetek szerkeszthetők.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'A munkaórák rögzítése a Munkaórák indítása/leállítása gomb megnyomásával történik. A szünetek rögzítése a Szünetidő indítása/leállítása gomb megnyomásával történik. Az időpontok szerkesztéséhez válassza a Munkaórák szerkesztésének engedélyezése mobilon lehetőséget.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Adja meg a kezdési időpontot, a befejezési időpontot és a teljes szünetidőt visszamenőleg. Az időpontok szerkesztéséhez válassza a Munkaórák szerkesztésének engedélyezése mobilon lehetőséget.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'A beütemezett munkaórák egyetlen kattintással jóváhagyhatók. A beütemezett munkaórák nem szerkeszthetők.',
 };

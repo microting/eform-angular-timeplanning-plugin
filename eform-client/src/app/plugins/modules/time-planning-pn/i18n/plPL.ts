@@ -106,4 +106,11 @@ export const plPL = {
   'Worktime start': 'Rozpoczęcie czasu pracy',
   'Worktime stop': 'Przerwa w pracy',
   'Shift not stopped by user!': 'Zmiana nie została zatrzymana przez użytkownika!',
+  'Total breaktime': 'Całkowity czas przerwy',
+  'Total working hours': 'Łączna liczba godzin pracy',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Wprowadź czas rozpoczęcia, czas zakończenia i całkowitą przerwę. Wybierz opcję Zezwalaj na edycję godzin pracy na urządzeniu mobilnym, aby edytować godziny.',
+  'Start time, stop time and breaks can be edited.': 'Można edytować czas rozpoczęcia, czas zakończenia i przerwy.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Godziny pracy są rejestrowane poprzez naciśnięcie Start/Stop working hours. Przerwy są rejestrowane poprzez naciśnięcie Start/Stop break time. Wybierz Allow editing of working hours on mobile, aby edytować czasy.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Wprowadź czas rozpoczęcia, czas zakończenia i całkowity czas przerwy w czasie. Wybierz opcję Zezwalaj na edycję godzin pracy na urządzeniu mobilnym, aby edytować czasy.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Zaplanowane godziny pracy można zatwierdzić jednym kliknięciem. Zaplanowanych godzin pracy nie można edytować.',
 };

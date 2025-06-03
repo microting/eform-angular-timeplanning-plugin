@@ -104,4 +104,11 @@ export const da = {
   'Worktime start': 'Arbejdstid start',
   'Worktime stop': 'Arbejdstid stop',
   'Shift not stopped by user!': 'Arbejdstid blev ikke stoppet af medarbejderen!',
+  'Total breaktime': 'Samlet pausetid',
+  'Total working hours': 'Samlede arbejdstimer',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Indtast starttidspunkt, sluttidspunkt og samlet pause. Vælg Tillad redigering af arbejdstimer på mobilen for at redigere tider.',
+  'Start time, stop time and breaks can be edited.': 'Starttidspunkt, stoptidspunkt og pauser kan redigeres.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Arbejdstimer registreres ved at trykke på Start/Stop arbejdstimer. Pauser registreres ved at trykke på Start/Stop pausetid. Vælg Tillad redigering af arbejdstimer på mobil for at redigere tider.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Indtast starttidspunkt, sluttidspunkt og samlet pausetid tilbage i tiden. Vælg Tillad redigering af arbejdstimer på mobilen for at redigere tider.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Planlagte arbejdstider kan godkendes med et enkelt klik. Planlagte arbejdstider kan ikke redigeres.',
 };

@@ -106,4 +106,11 @@ export const roRO = {
   'Worktime start': 'Începutul timpului de lucru',
   'Worktime stop': 'Oprirea timpului de lucru',
   'Shift not stopped by user!': 'Tura nu a fost oprită de utilizator!',
+  'Total breaktime': 'Timp total de pauză',
+  'Total working hours': 'Total ore de lucru',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Introduceți ora de începere, ora de încheiere și pauza totală. Selectați Permiteți editarea orelor de lucru pe mobil pentru a edita orele.',
+  'Start time, stop time and breaks can be edited.': 'Ora de începere, ora de oprire și pauzele pot fi editate.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Orele de lucru sunt înregistrate apăsând Start/Oprire ore de lucru. Pauzele sunt înregistrate apăsând Start/Oprire timp pauză. Selectați Permiteți editarea orelor de lucru pe mobil pentru a edita orele.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Introduceți ora de început, ora de sfârșit și timpul total de pauză în timp real. Selectați Permiteți editarea orelor de lucru pe mobil pentru a edita orele.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Orele de lucru programate pot fi aprobate cu un singur clic. Orele de lucru programate nu pot fi editate.',
 };

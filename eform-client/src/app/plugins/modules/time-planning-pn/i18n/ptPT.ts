@@ -106,4 +106,11 @@ export const ptPT = {
   'Worktime start': 'Início do horário de trabalho',
   'Worktime stop': 'Parada do horário de trabalho',
   'Shift not stopped by user!': 'Turno não interrompido pelo usuário!',
+  'Total breaktime': 'Tempo total de intervalo',
+  'Total working hours': 'Total de horas de trabalho',
+  'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.': 'Insira o horário de início, o horário de término e o intervalo total. Selecione &quot;Permitir edição de horas de trabalho no celular&quot; para editar os horários.',
+  'Start time, stop time and breaks can be edited.': 'É possível editar o horário de início, o horário de término e os intervalos.',
+  'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'As horas de trabalho são registradas pressionando Iniciar/Parar horas de trabalho. Os intervalos são registrados pressionando Iniciar/Parar tempo de intervalo. Selecione Permitir edição de horas de trabalho no celular para editar os horários.',
+  'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Insira o horário de início, o horário de término e o tempo total de intervalo novamente. Selecione &quot;Permitir edição de horas de trabalho no celular&quot; para editar os horários.',
+  'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'O horário de trabalho agendado pode ser aprovado com um único clique. O horário de trabalho agendado não pode ser editado.',
 };
