@@ -233,7 +233,7 @@
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
           <div class="{{ getCellTextColor(row, col.field) }}">
             <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
-            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Total breaktime' | translate "><mat-icon class="neutral-icon">pause</mat-icon>{{ convertMinutesToTime(row.planningPrDayModels[col.field]?.pauseMinutes) }}</strong>
+            <strong id="totalBreakTime{{index}}_{{col.field}}" [matTooltip]="'Total breaktime' | translate "><mat-icon class="neutral-icon">pause</mat-icon>{{ convertMinutesToTime(row.planningPrDayModels[col.field]?.pauseMinutes) }}</strong>
           </div>
         </div>
       </ng-container>
@@ -242,7 +242,7 @@
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
           <div class="{{ getCellTextColor(row, col.field) }}">
             <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
-            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Total working hours' | translate "><mat-icon class="neutral-icon">schedule</mat-icon>{{ row.planningPrDayModels[col.field]?.actualHours.toFixed(2) }}</strong>
+            <strong id="totalWorkingHours{{index}}_{{col.field}}" [matTooltip]="'Total working hours' | translate "><mat-icon class="neutral-icon">schedule</mat-icon>{{ row.planningPrDayModels[col.field]?.actualHours.toFixed(2) }}</strong>
           </div>
         </div>
       </ng-container>
