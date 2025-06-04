@@ -728,6 +728,15 @@ public class TimePlanningWorkingHoursService(
                 Start2Id = model.Shift2Start ?? 0,
                 Stop1Id = model.Shift1Stop ?? 0,
                 Stop2Id = model.Shift2Stop ?? 0,
+                Start3Id = model.Shift3Start ?? 0,
+                Stop3Id = model.Shift3Stop ?? 0,
+                Pause3Id = model.Shift3Pause ?? 0,
+                Start4Id = model.Shift4Start ?? 0,
+                Stop4Id = model.Shift4Stop ?? 0,
+                Pause4Id = model.Shift4Pause ?? 0,
+                Start5Id = model.Shift5Start ?? 0,
+                Stop5Id = model.Shift5Stop ?? 0,
+                Pause5Id = model.Shift5Pause ?? 0,
                 Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
                     ? null
                     : DateTime.Parse(model.Start1StartedAt),
@@ -746,6 +755,24 @@ public class TimePlanningWorkingHoursService(
                 Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
                     ? null
                     : DateTime.Parse(model.Stop2StoppedAt),
+                Start3StartedAt = string.IsNullOrEmpty(model.Start3StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start3StartedAt),
+                Stop3StoppedAt = string.IsNullOrEmpty(model.Stop3StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop3StoppedAt),
+                Start4StartedAt = string.IsNullOrEmpty(model.Start4StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start4StartedAt),
+                Stop4StoppedAt = string.IsNullOrEmpty(model.Stop4StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop4StoppedAt),
+                Start5StartedAt = string.IsNullOrEmpty(model.Start5StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start5StartedAt),
+                Stop5StoppedAt = string.IsNullOrEmpty(model.Stop5StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop5StoppedAt),
                 Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
                     ? null
                     : DateTime.Parse(model.Pause10StartedAt),
@@ -909,6 +936,24 @@ public class TimePlanningWorkingHoursService(
                 Pause202StoppedAt = string.IsNullOrEmpty(model.Pause202StoppedAt)
                     ? null
                     : DateTime.Parse(model.Pause202StoppedAt),
+                Pause3StartedAt = string.IsNullOrEmpty(model.Pause3StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause3StartedAt),
+                Pause3StoppedAt = string.IsNullOrEmpty(model.Pause3StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause3StoppedAt),
+                Pause4StartedAt = string.IsNullOrEmpty(model.Pause4StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause4StartedAt),
+                Pause4StoppedAt = string.IsNullOrEmpty(model.Pause4StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause4StoppedAt),
+                Pause5StartedAt = string.IsNullOrEmpty(model.Pause5StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause5StartedAt),
+                Pause5StoppedAt = string.IsNullOrEmpty(model.Pause5StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause5StoppedAt),
                 Flex = 0,
                 WorkerComment = model.CommentWorker,
                 SdkSitId = (int)sdkSite.MicrotingUid,
@@ -931,6 +976,24 @@ public class TimePlanningWorkingHoursService(
             {
                 nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
                 nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop3Id >= planRegistration.Start3Id && planRegistration.Stop3Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop3Id - planRegistration.Start3Id;
+                nettoMinutes -= planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop4Id >= planRegistration.Start4Id && planRegistration.Stop4Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop4Id - planRegistration.Start4Id;
+                nettoMinutes -= planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop5Id >= planRegistration.Start5Id && planRegistration.Stop5Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop5Id - planRegistration.Start5Id;
+                nettoMinutes -= planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0;
             }
 
             nettoMinutes *= minutesMultiplier;
@@ -966,6 +1029,14 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Start2Id = model.Shift2Start ?? 0;
             planRegistration.Stop1Id = model.Shift1Stop ?? 0;
             planRegistration.Stop2Id = model.Shift2Stop ?? 0;
+            planRegistration.Start3Id = model.Shift3Start ?? 0;
+            planRegistration.Stop3Id = model.Shift3Stop ?? 0;
+            planRegistration.Pause3Id = model.Shift3Pause ?? 0;
+            planRegistration.Start4Id = model.Shift4Start ?? 0;
+            planRegistration.Stop4Id = model.Shift4Stop ?? 0;
+            planRegistration.Pause4Id = model.Shift4Pause ?? 0;
+            planRegistration.Start5Id = model.Shift5Start ?? 0;
+            planRegistration.Stop5Id = model.Shift5Stop ?? 0;
             planRegistration.WorkerComment = model.CommentWorker;
 
             planRegistration.Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
@@ -986,6 +1057,24 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
                 ? null
                 : DateTime.Parse(model.Stop2StoppedAt);
+            planRegistration.Start3StartedAt = string.IsNullOrEmpty(model.Start3StartedAt)
+                ? null
+                : DateTime.Parse(model.Start3StartedAt);
+            planRegistration.Stop3StoppedAt = string.IsNullOrEmpty(model.Stop3StoppedAt)
+                ? null
+                : DateTime.Parse(model.Stop3StoppedAt);
+            planRegistration.Start4StartedAt = string.IsNullOrEmpty(model.Start4StartedAt)
+                ? null
+                : DateTime.Parse(model.Start4StartedAt);
+            planRegistration.Stop4StoppedAt = string.IsNullOrEmpty(model.Stop4StoppedAt)
+                ? null
+                : DateTime.Parse(model.Stop4StoppedAt);
+            planRegistration.Start5StartedAt = string.IsNullOrEmpty(model.Start5StartedAt)
+                ? null
+                : DateTime.Parse(model.Start5StartedAt);
+            planRegistration.Stop5StoppedAt = string.IsNullOrEmpty(model.Stop5StoppedAt)
+                ? null
+                : DateTime.Parse(model.Stop5StoppedAt);
 
             planRegistration.Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
                 ? null
@@ -1151,6 +1240,27 @@ public class TimePlanningWorkingHoursService(
                 ? null
                 : DateTime.Parse(model.Pause202StoppedAt);
 
+            planRegistration.Pause3StartedAt = string.IsNullOrEmpty(model.Pause3StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause3StartedAt);
+            planRegistration.Pause3StoppedAt = string.IsNullOrEmpty(model.Pause3StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause3StoppedAt);
+
+            planRegistration.Pause4StartedAt = string.IsNullOrEmpty(model.Pause4StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause4StartedAt);
+            planRegistration.Pause4StoppedAt = string.IsNullOrEmpty(model.Pause4StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause4StoppedAt);
+
+            planRegistration.Pause5StartedAt = string.IsNullOrEmpty(model.Pause5StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause5StartedAt);
+            planRegistration.Pause5StoppedAt = string.IsNullOrEmpty(model.Pause5StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause5StoppedAt);
+
             planRegistration.Shift1PauseNumber = model.Shift1PauseNumber;
             planRegistration.Shift2PauseNumber = model.Shift2PauseNumber;
 
@@ -1169,6 +1279,24 @@ public class TimePlanningWorkingHoursService(
             {
                 nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
                 nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop3Id >= planRegistration.Start3Id && planRegistration.Stop3Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop3Id - planRegistration.Start3Id;
+                nettoMinutes -= planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop4Id >= planRegistration.Start4Id && planRegistration.Stop4Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop4Id - planRegistration.Start4Id;
+                nettoMinutes -= planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop5Id >= planRegistration.Start5Id && planRegistration.Stop5Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop5Id - planRegistration.Start5Id;
+                nettoMinutes -= planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0;
             }
 
             nettoMinutes *= minutesMultiplier;
@@ -1249,24 +1377,56 @@ public class TimePlanningWorkingHoursService(
                 Start2Id = model.Shift2Start ?? 0,
                 Stop1Id = model.Shift1Stop ?? 0,
                 Stop2Id = model.Shift2Stop ?? 0,
+                Start3Id = model.Shift3Start ?? 0,
+                Stop3Id = model.Shift3Stop ?? 0,
+                Pause3Id = model.Shift3Pause ?? 0,
+                Start4Id = model.Shift4Start ?? 0,
+                Stop4Id = model.Shift4Stop ?? 0,
+                Pause4Id = model.Shift4Pause ?? 0,
+                Start5Id = model.Shift5Start ?? 0,
+                Stop5Id = model.Shift5Stop ?? 0,
+                Pause5Id = model.Shift5Pause ?? 0,
                 Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
                     ? null
                     : DateTime.Parse(model.Start1StartedAt),
                 Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt)
                     ? null
                     : DateTime.Parse(model.Stop1StoppedAt),
-                Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
-                    ? null
-                    : DateTime.Parse(model.Pause1StartedAt),
-                Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
-                    ? null
-                    : DateTime.Parse(model.Pause1StoppedAt),
+
                 Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt)
                     ? null
                     : DateTime.Parse(model.Start2StartedAt),
                 Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
                     ? null
                     : DateTime.Parse(model.Stop2StoppedAt),
+
+                Start3StartedAt = string.IsNullOrEmpty(model.Start3StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start3StartedAt),
+                Stop3StoppedAt = string.IsNullOrEmpty(model.Stop3StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop3StoppedAt),
+
+                Start4StartedAt = string.IsNullOrEmpty(model.Start4StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start4StartedAt),
+                Stop4StoppedAt = string.IsNullOrEmpty(model.Stop4StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop4StoppedAt),
+
+                Start5StartedAt = string.IsNullOrEmpty(model.Start5StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Start5StartedAt),
+                Stop5StoppedAt = string.IsNullOrEmpty(model.Stop5StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Stop5StoppedAt),
+
+                Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause1StartedAt),
+                Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause1StoppedAt),
                 Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
                     ? null
                     : DateTime.Parse(model.Pause10StartedAt),
@@ -1430,6 +1590,27 @@ public class TimePlanningWorkingHoursService(
                 Pause202StoppedAt = string.IsNullOrEmpty(model.Pause202StoppedAt)
                     ? null
                     : DateTime.Parse(model.Pause202StoppedAt),
+
+                Pause3StartedAt = string.IsNullOrEmpty(model.Pause3StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause3StartedAt),
+                Pause3StoppedAt = string.IsNullOrEmpty(model.Pause3StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause3StoppedAt),
+
+                Pause4StartedAt = string.IsNullOrEmpty(model.Pause4StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause4StartedAt),
+                Pause4StoppedAt = string.IsNullOrEmpty(model.Pause4StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause4StoppedAt),
+
+                Pause5StartedAt = string.IsNullOrEmpty(model.Pause5StartedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause5StartedAt),
+                Pause5StoppedAt = string.IsNullOrEmpty(model.Pause5StoppedAt)
+                    ? null
+                    : DateTime.Parse(model.Pause5StoppedAt),
                 Flex = 0,
                 WorkerComment = model.CommentWorker,
                 SdkSitId = sdkSiteId!.Value,
@@ -1457,6 +1638,24 @@ public class TimePlanningWorkingHoursService(
             {
                 nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
                 nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop3Id >= planRegistration.Start3Id && planRegistration.Stop3Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop3Id - planRegistration.Start3Id;
+                nettoMinutes -= planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop4Id >= planRegistration.Start4Id && planRegistration.Stop4Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop4Id - planRegistration.Start4Id;
+                nettoMinutes -= planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop5Id >= planRegistration.Start5Id && planRegistration.Stop5Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop5Id - planRegistration.Start5Id;
+                nettoMinutes -= planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0;
             }
 
             nettoMinutes *= minutesMultiplier;
@@ -1492,6 +1691,15 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Start2Id = model.Shift2Start ?? 0;
             planRegistration.Stop1Id = model.Shift1Stop ?? 0;
             planRegistration.Stop2Id = model.Shift2Stop ?? 0;
+            planRegistration.Start3Id = model.Shift3Start ?? 0;
+            planRegistration.Stop3Id = model.Shift3Stop ?? 0;
+            planRegistration.Pause3Id = model.Shift3Pause ?? 0;
+            planRegistration.Start4Id = model.Shift4Start ?? 0;
+            planRegistration.Stop4Id = model.Shift4Stop ?? 0;
+            planRegistration.Pause4Id = model.Shift4Pause ?? 0;
+            planRegistration.Start5Id = model.Shift5Start ?? 0;
+            planRegistration.Stop5Id = model.Shift5Stop ?? 0;
+            planRegistration.Pause5Id = model.Shift5Pause ?? 0;
             planRegistration.WorkerComment = model.CommentWorker;
             planRegistration.RegistrationDeviceId = registrationDevice.Id;
 
@@ -1501,12 +1709,7 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt)
                 ? null
                 : DateTime.Parse(model.Stop1StoppedAt);
-            planRegistration.Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
-                ? null
-                : DateTime.Parse(model.Pause1StartedAt);
-            planRegistration.Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
-                ? null
-                : DateTime.Parse(model.Pause1StoppedAt);
+
             planRegistration.Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt)
                 ? null
                 : DateTime.Parse(model.Start2StartedAt);
@@ -1514,6 +1717,33 @@ public class TimePlanningWorkingHoursService(
                 ? null
                 : DateTime.Parse(model.Stop2StoppedAt);
 
+            planRegistration.Start3StartedAt = string.IsNullOrEmpty(model.Start3StartedAt)
+                ? null
+                : DateTime.Parse(model.Start3StartedAt);
+            planRegistration.Stop3StoppedAt = string.IsNullOrEmpty(model.Stop3StoppedAt)
+                ? null
+                : DateTime.Parse(model.Stop3StoppedAt);
+
+            planRegistration.Start4StartedAt = string.IsNullOrEmpty(model.Start4StartedAt)
+                ? null
+                : DateTime.Parse(model.Start4StartedAt);
+            planRegistration.Stop4StoppedAt = string.IsNullOrEmpty(model.Stop4StoppedAt)
+                ? null
+                : DateTime.Parse(model.Stop4StoppedAt);
+
+            planRegistration.Start5StartedAt = string.IsNullOrEmpty(model.Start5StartedAt)
+                ? null
+                : DateTime.Parse(model.Start5StartedAt);
+            planRegistration.Stop5StoppedAt = string.IsNullOrEmpty(model.Stop5StoppedAt)
+                ? null
+                : DateTime.Parse(model.Stop5StoppedAt);
+
+            planRegistration.Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
+                ? null
+                : DateTime.Parse(model.Pause1StartedAt);
+            planRegistration.Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
+                ? null
+                : DateTime.Parse(model.Pause1StoppedAt);
             planRegistration.Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
                 ? null
                 : DateTime.Parse(model.Pause10StartedAt);
@@ -1700,6 +1930,24 @@ public class TimePlanningWorkingHoursService(
             {
                 nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
                 nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop3Id >= planRegistration.Start3Id && planRegistration.Stop3Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop3Id - planRegistration.Start3Id;
+                nettoMinutes -= planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop4Id >= planRegistration.Start4Id && planRegistration.Stop4Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop4Id - planRegistration.Start4Id;
+                nettoMinutes -= planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0;
+            }
+
+            if (planRegistration.Stop5Id >= planRegistration.Start5Id && planRegistration.Stop5Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planRegistration.Stop5Id - planRegistration.Start5Id;
+                nettoMinutes -= planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0;
             }
 
             nettoMinutes *= minutesMultiplier;

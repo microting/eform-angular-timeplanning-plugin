@@ -41,6 +41,15 @@ public class TimePlanningWorkingHoursModel
     public int? Shift2Start { get; set; }
     public int? Shift2Pause { get; set; }
     public int? Shift2Stop { get; set; }
+    public int? Shift3Start { get; set; }
+    public int? Shift3Pause { get; set; }
+    public int? Shift3Stop { get; set; }
+    public int? Shift4Start { get; set; }
+    public int? Shift4Pause { get; set; }
+    public int? Shift4Stop { get; set; }
+    public int? Shift5Start { get; set; }
+    public int? Shift5Pause { get; set; }
+    public int? Shift5Stop { get; set; }
     public double NettoHours { get; set; }
     public double FlexHours { get; set; }
     public double SumFlexStart { get; set; }
@@ -60,112 +69,70 @@ public class TimePlanningWorkingHoursModel
     public DateTime? Stop2StoppedAt { get; set; }
     public DateTime? Pause2StartedAt { get; set; }
     public DateTime? Pause2StoppedAt { get; set; }
-
     public DateTime? Pause10StartedAt { get; set; }
-
     public DateTime? Pause10StoppedAt { get; set; }
-
     public DateTime? Pause11StartedAt { get; set; }
-
     public DateTime? Pause11StoppedAt { get; set; }
-
     public DateTime? Pause12StartedAt { get; set; }
-
     public DateTime? Pause12StoppedAt { get; set; }
-
     public DateTime? Pause13StartedAt { get; set; }
-
     public DateTime? Pause13StoppedAt { get; set; }
-
     public DateTime? Pause14StartedAt { get; set; }
-
     public DateTime? Pause14StoppedAt { get; set; }
-
     public DateTime? Pause15StartedAt { get; set; }
-
     public DateTime? Pause15StoppedAt { get; set; }
-
     public DateTime? Pause16StartedAt { get; set; }
-
     public DateTime? Pause16StoppedAt { get; set; }
-
     public DateTime? Pause17StartedAt { get; set; }
-
     public DateTime? Pause17StoppedAt { get; set; }
-
     public DateTime? Pause18StartedAt { get; set; }
-
     public DateTime? Pause18StoppedAt { get; set; }
-
     public DateTime? Pause19StartedAt { get; set; }
-
     public DateTime? Pause19StoppedAt { get; set; }
-
     public DateTime? Pause100StartedAt { get; set; }
-
     public DateTime? Pause100StoppedAt { get; set; }
-
     public DateTime? Pause101StartedAt { get; set; }
-
     public DateTime? Pause101StoppedAt { get; set; }
-
     public DateTime? Pause102StartedAt { get; set; }
-
     public DateTime? Pause102StoppedAt { get; set; }
-
     public DateTime? Pause20StartedAt { get; set; }
-
     public DateTime? Pause20StoppedAt { get; set; }
-
     public DateTime? Pause21StartedAt { get; set; }
-
     public DateTime? Pause21StoppedAt { get; set; }
-
     public DateTime? Pause22StartedAt { get; set; }
-
     public DateTime? Pause22StoppedAt { get; set; }
-
     public DateTime? Pause23StartedAt { get; set; }
-
     public DateTime? Pause23StoppedAt { get; set; }
-
     public DateTime? Pause24StartedAt { get; set; }
-
     public DateTime? Pause24StoppedAt { get; set; }
-
     public DateTime? Pause25StartedAt { get; set; }
-
     public DateTime? Pause25StoppedAt { get; set; }
-
     public DateTime? Pause26StartedAt { get; set; }
-
     public DateTime? Pause26StoppedAt { get; set; }
-
     public DateTime? Pause27StartedAt { get; set; }
-
     public DateTime? Pause27StoppedAt { get; set; }
-
     public DateTime? Pause28StartedAt { get; set; }
-
     public DateTime? Pause28StoppedAt { get; set; }
-
     public DateTime? Pause29StartedAt { get; set; }
-
     public DateTime? Pause29StoppedAt { get; set; }
-
     public DateTime? Pause200StartedAt { get; set; }
-
     public DateTime? Pause200StoppedAt { get; set; }
-
     public DateTime? Pause201StartedAt { get; set; }
-
     public DateTime? Pause201StoppedAt { get; set; }
-
     public DateTime? Pause202StartedAt { get; set; }
-
     public DateTime? Pause202StoppedAt { get; set; }
-
+    public DateTime? Start3StartedAt { get; set; }
+    public DateTime? Stop3StoppedAt { get; set; }
+    public DateTime? Pause3StartedAt { get; set; }
+    public DateTime? Pause3StoppedAt { get; set; }
+    public DateTime? Start4StartedAt { get; set; }
+    public DateTime? Stop4StoppedAt { get; set; }
+    public DateTime? Pause4StartedAt { get; set; }
+    public DateTime? Pause4StoppedAt { get; set; }
+    public DateTime? Start5StartedAt { get; set; }
+    public DateTime? Stop5StoppedAt { get; set; }
+    public DateTime? Pause5StartedAt { get; set; }
+    public DateTime? Pause5StoppedAt { get; set; }
     public int Shift1PauseNumber { get; set; }
-
     public int Shift2PauseNumber { get; set; }
 }
