@@ -93,4 +93,31 @@
     <data name="TokenNotFound" xml:space="preserve">
         <value>Token not found</value>
     </data>
+    <data name="Shift 3: start" xml:space="preserve">
+        <value>Shift 3: start</value>
+    </data>
+    <data name="Shift 3: end" xml:space="preserve">
+        <value>Shift 3: end</value>
+    </data>
+    <data name="Shift 3: pause" xml:space="preserve">
+        <value>Shift 3: pause</value>
+    </data>
+    <data name="Shift 4: start" xml:space="preserve">
+        <value>Shift 4: start</value>
+    </data>
+    <data name="Shift 4: end" xml:space="preserve">
+        <value>Shift 4: end</value>
+    </data>
+    <data name="Shift 4: pause" xml:space="preserve">
+        <value>Shift 4: pause</value>
+    </data>
+    <data name="Shift 5: start" xml:space="preserve">
+        <value>Shift 5: start</value>
+    </data>
+    <data name="Shift 5: end" xml:space="preserve">
+        <value>Shift 5: end</value>
+    </data>
+    <data name="Shift 5: pause" xml:space="preserve">
+        <value>Shift 5: pause</value>
+    </data>
 </root>

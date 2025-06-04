@@ -188,5 +188,65 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("To", resourceCulture);
             }
         }
+        
+        internal static string Shift_3__end {
+            get {
+                return ResourceManager.GetString("Shift 3: end", resourceCulture);
+            }
+        }
+        
+        internal static string Shift_3__pause {
+            get {
+                return ResourceManager.GetString("Shift 3: pause", resourceCulture);
+            }
+        }
+        
+        internal static string Shift_3__start {
+            get {
+                return ResourceManager.GetString("Shift 3: start", resourceCulture);
+            }
+        }
+        
+        internal static string Shift_4__end {
+            get {
+                return ResourceManager.GetString("Shift 4: end", resourceCulture);
+            }
+        }
+        
+        internal static string Shift_4__pause {
+            get {
+                return ResourceManager.GetString("Shift 4: pause", resourceCulture);
+            }
+        }
+        
+        internal static string Shift_4__start {
+            get {
+                return ResourceManager.GetString("Shift 4: start", resourceCulture);
+            }
+        }
+        
+        internal static string Shift_5__end {
+            get {
+                return ResourceManager.GetString("Shift 5: end", resourceCulture);
+            }
+        }
+        
+        internal static string Shift_5__pause {
+            get {
+                return ResourceManager.GetString("Shift 5: pause", resourceCulture);
+            }
+        }
+        
+        internal static string Shift_5__start {
+            get {
+                return ResourceManager.GetString("Shift 5: start", resourceCulture);
+            }
+        }
+        
+        internal static string TokenNotFound {
+            get {
+                return ResourceManager.GetString("TokenNotFound", resourceCulture);
+            }
+        }
     }
 }

@@ -90,4 +90,34 @@
     <data name="To" xml:space="preserve">
         <value>Til</value>
     </data>
+    <data name="Shift 3: end" xml:space="preserve">
+        <value>Skift 3: stop</value>
+    </data>
+    <data name="Shift 3: pause" xml:space="preserve">
+        <value>Skift 3: pause</value>
+    </data>
+    <data name="Shift 3: start" xml:space="preserve">
+        <value>Skift 3: start</value>
+    </data>
+    <data name="Shift 4: end" xml:space="preserve">
+        <value>Skift 4: stop</value>
+    </data>
+    <data name="Shift 4: pause" xml:space="preserve">
+        <value>Skift 4: pause</value>
+    </data>
+    <data name="Shift 4: start" xml:space="preserve">
+        <value>Skift 4: start</value>
+    </data>
+    <data name="Shift 5: end" xml:space="preserve">
+        <value>Skift 5: stop</value>
+    </data>
+    <data name="Shift 5: pause" xml:space="preserve">
+        <value>Skift 5: pause</value>
+    </data>
+    <data name="Shift 5: start" xml:space="preserve">
+        <value>Skift 5: start</value>
+    </data>
+    <data name="TokenNotFound" xml:space="preserve">
+        <value>Token blen ikke fundet</value>
+    </data>
 </root>

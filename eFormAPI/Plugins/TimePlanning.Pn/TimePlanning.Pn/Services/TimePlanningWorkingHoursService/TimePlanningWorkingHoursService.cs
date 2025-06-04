@@ -126,6 +126,15 @@ public class TimePlanningWorkingHoursService(
                     Shift2Start = x.Start2Id,
                     Shift2Stop = x.Stop2Id,
                     Shift2Pause = x.Pause2Id,
+                    Shift3Start = x.Start3Id,
+                    Shift3Stop = x.Stop3Id,
+                    Shift3Pause = x.Pause3Id,
+                    Shift4Start = x.Start4Id,
+                    Shift4Stop = x.Stop4Id,
+                    Shift4Pause = x.Pause4Id,
+                    Shift5Start = x.Start5Id,
+                    Shift5Stop = x.Stop5Id,
+                    Shift5Pause = x.Pause5Id,
                     NettoHours = Math.Round(x.NettoHours, 2),
                     FlexHours = Math.Round(x.Flex, 2),
                     SumFlexStart = Math.Round(x.SumFlexStart, 2),
@@ -164,6 +173,15 @@ public class TimePlanningWorkingHoursService(
                 Shift2Start = lastPlanning?.Start2Id,
                 Shift2Stop = lastPlanning?.Stop2Id,
                 Shift2Pause = lastPlanning?.Pause2Id,
+                Shift3Start = lastPlanning?.Start3Id,
+                Shift3Stop = lastPlanning?.Stop3Id,
+                Shift3Pause = lastPlanning?.Pause3Id,
+                Shift4Start = lastPlanning?.Start4Id,
+                Shift4Stop = lastPlanning?.Stop4Id,
+                Shift4Pause = lastPlanning?.Pause4Id,
+                Shift5Start = lastPlanning?.Start5Id,
+                Shift5Stop = lastPlanning?.Stop5Id,
+                Shift5Pause = lastPlanning?.Pause5Id,
                 NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0, 2),
                 FlexHours = Math.Round(lastPlanning?.Flex ?? 0, 2),
                 SumFlexStart = lastPlanning?.SumFlexStart ?? 0,
@@ -1985,9 +2003,18 @@ public class TimePlanningWorkingHoursService(
             var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
             var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
-            var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
-            var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
+            var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site!.Id);
+            var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker!.WorkerId);
             var language = await userService.GetCurrentUserLanguage();
+            var assignedSite = await dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.SiteId == site!.Id);
+
+            var isThirdShiftEnabled = assignedSite!.ThirdShiftActive;
+
+            var isFourthShiftEnabled = assignedSite.FourthShiftActive;
+
+            var isFifthShiftEnabled = assignedSite.FifthShiftActive;
 
             Thread.CurrentThread.CurrentUICulture = new CultureInfo(language.LanguageCode);
             var culture = new CultureInfo(language.LanguageCode);
@@ -2032,6 +2059,37 @@ public class TimePlanningWorkingHoursService(
                     Translations.Comments,
                     Translations.Comment_office
                 };
+
+                if (isThirdShiftEnabled)
+                {
+                    headers = headers.Concat(new[]
+                    {
+                        Translations.Shift_3__start,
+                        Translations.Shift_3__end,
+                        Translations.Shift_3__pause
+                    }).ToArray();
+                }
+
+                if (isFourthShiftEnabled)
+                {
+                    headers = headers.Concat(new[]
+                    {
+                        Translations.Shift_4__start,
+                        Translations.Shift_4__end,
+                        Translations.Shift_4__pause
+                    }).ToArray();
+                }
+
+                if (isFifthShiftEnabled)
+                {
+                    headers = headers.Concat(new[]
+                    {
+                        Translations.Shift_5__start,
+                        Translations.Shift_5__end,
+                        Translations.Shift_5__pause
+                    }).ToArray();
+                }
+
                 List<string> headerStrings = new List<string>();
                 foreach (var header in headers)
                 {
@@ -2094,7 +2152,7 @@ public class TimePlanningWorkingHoursService(
                 foreach (var planning in timePlannings)
                 {
                     var dataRow = new Row() { RowIndex = (uint)rowIndex };
-                    FillDataRow(dataRow, worker, site, culture, planning, plr, language);
+                    FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled);
                     sheetData1.Append(dataRow);
                     rowIndex++;
                 }
@@ -2131,7 +2189,7 @@ public class TimePlanningWorkingHoursService(
     }
 
     private void FillDataRow(Row dataRow, Worker worker, Microting.eForm.Infrastructure.Data.Entities.Site site, CultureInfo culture,
-        TimePlanningWorkingHoursModel planning, PlanRegistration plr, Language language)
+        TimePlanningWorkingHoursModel planning, PlanRegistration plr, Language language, bool isThirdShiftEnabled, bool isFourthShiftEnabled, bool isFifthShiftEnabled)
     {
         try {
             dataRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
@@ -2155,6 +2213,24 @@ public class TimePlanningWorkingHoursService(
             dataRow.Append(CreateCell(GetMessageText(planning.Message, language)));
             dataRow.Append(CreateCell(planning.CommentWorker?.Replace("<br>", "\n")));
             dataRow.Append(CreateCell(planning.CommentOffice?.Replace("<br>", "\n")));
+            if (isThirdShiftEnabled)
+            {
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Start)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Stop)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Pause)));
+            }
+            if (isFourthShiftEnabled)
+            {
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Start)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Stop)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Pause)));
+            }
+            if (isFifthShiftEnabled)
+            {
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Start)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Stop)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Pause)));
+            }
         }
         catch (Exception ex)
         {
@@ -2255,6 +2331,15 @@ public class TimePlanningWorkingHoursService(
                 .Select(x => x.SiteId)
                 .Distinct()
                 .ToListAsync();
+
+            var isThirdShiftEnabled = dbContext.AssignedSites
+                .Any(x => x.ThirdShiftActive && x.WorkflowState != Constants.WorkflowStates.Removed);
+
+            var isFourthShiftEnabled = dbContext.AssignedSites
+                .Any(x => x.FourthShiftActive && x.WorkflowState != Constants.WorkflowStates.Removed);
+
+            var isFifthShiftEnabled = dbContext.AssignedSites
+                .Any(x => x.FifthShiftActive && x.WorkflowState != Constants.WorkflowStates.Removed);
 
             var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
@@ -2390,6 +2475,36 @@ public class TimePlanningWorkingHoursService(
                         Translations.Comments,
                         Translations.Comment_office
                     };
+
+                    if (isThirdShiftEnabled)
+                    {
+                        headers = headers.Concat(new[]
+                        {
+                            Translations.Shift_3__start,
+                            Translations.Shift_3__end,
+                            Translations.Shift_3__pause
+                        }).ToArray();
+                    }
+
+                    if (isFourthShiftEnabled)
+                    {
+                        headers = headers.Concat(new[]
+                        {
+                            Translations.Shift_4__start,
+                            Translations.Shift_4__end,
+                            Translations.Shift_4__pause
+                        }).ToArray();
+                    }
+
+                    if (isFifthShiftEnabled)
+                    {
+                        headers = headers.Concat(new[]
+                        {
+                            Translations.Shift_5__start,
+                            Translations.Shift_5__end,
+                            Translations.Shift_5__pause
+                        }).ToArray();
+                    }
                     List<string> headerStrings = new List<string>();
                     foreach (var header in headers)
                     {
@@ -2457,7 +2572,7 @@ public class TimePlanningWorkingHoursService(
                     foreach (var planning in timePlannings)
                     {
                         var dataRow = new Row() { RowIndex = (uint)rowIndex };
-                        FillDataRow(dataRow, worker, site, culture, planning, plr, language);
+                        FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled);
                         sheetData1.Append(dataRow);
                         rowIndex++;
                     }
