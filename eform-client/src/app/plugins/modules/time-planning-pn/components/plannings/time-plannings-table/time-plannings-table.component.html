@@ -181,7 +181,7 @@
         </strong>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
-           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="thirdShiftActual{{index}}_{{col.field}}">
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start3StartedAt != null" id="thirdShiftActual{{index}}_{{col.field}}">
         <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start3StartedAt, 'HH:mm', 'UTC') }}
         <span *ngIf="row.planningPrDayModels[col.field]?.stop3StoppedAt !== null"> -
           {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop3StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
@@ -200,7 +200,7 @@
         </strong>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
-           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="fourthShiftActual{{index}}_{{col.field}}">
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start4StartedAt != null" id="fourthShiftActual{{index}}_{{col.field}}">
         <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start4StartedAt, 'HH:mm', 'UTC') }}
         <span *ngIf="row.planningPrDayModels[col.field]?.stop4StoppedAt !== null"> -
           {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop4StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
@@ -219,7 +219,7 @@
         </strong>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
-           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="fifthShiftActual{{index}}_{{col.field}}">
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start5StartedAt != null" id="fifthShiftActual{{index}}_{{col.field}}">
         <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start5StartedAt, 'HH:mm', 'UTC') }}
         <span *ngIf="row.planningPrDayModels[col.field]?.stop5StoppedAt !== null"> -
           {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop5StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
