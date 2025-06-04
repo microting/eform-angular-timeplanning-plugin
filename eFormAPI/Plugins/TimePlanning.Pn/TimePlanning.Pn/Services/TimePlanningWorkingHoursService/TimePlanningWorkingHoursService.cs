@@ -2008,9 +2008,9 @@ public class TimePlanningWorkingHoursService(
             var language = await userService.GetCurrentUserLanguage();
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .FirstOrDefaultAsync(x => x.SiteId == site!.Id);
+                .FirstAsync(x => x.SiteId == site!.MicrotingUid);
 
-            var isThirdShiftEnabled = assignedSite!.ThirdShiftActive;
+            var isThirdShiftEnabled = assignedSite.ThirdShiftActive;
 
             var isFourthShiftEnabled = assignedSite.FourthShiftActive;
 
