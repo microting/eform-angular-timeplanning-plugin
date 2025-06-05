@@ -623,6 +623,9 @@ public class TimeSettingService(
         dbAssignedSite.SaturdayPlanHours = site.SaturdayPlanHours;
         dbAssignedSite.SundayPlanHours = site.SundayPlanHours;
         dbAssignedSite.UsePunchClockWithAllowRegisteringInHistory = site.UsePunchClockWithAllowRegisteringInHistory;
+        dbAssignedSite.ThirdShiftActive = site.ThirdShiftActive;
+        dbAssignedSite.FourthShiftActive = site.FourthShiftActive;
+        dbAssignedSite.FifthShiftActive = site.FifthShiftActive;
 
         await dbAssignedSite.Update(dbContext);
 

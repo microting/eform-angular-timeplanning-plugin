@@ -79,6 +79,15 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.start2StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start2StartedAt, 'HH:mm', 'UTC');
     this.stop2StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop2StoppedAt, 'HH:mm', 'UTC');
     this.pause2Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause2Id * 5);
+    this.start3StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start3StartedAt, 'HH:mm', 'UTC');
+    this.stop3StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop3StoppedAt, 'HH:mm', 'UTC');
+    this.pause3Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause3Id * 5);
+    this.start4StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start4StartedAt, 'HH:mm', 'UTC');
+    this.stop4StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop4StoppedAt, 'HH:mm', 'UTC');
+    this.pause4Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause4Id * 5);
+    this.start5StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start5StartedAt, 'HH:mm', 'UTC');
+    this.stop5StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop5StoppedAt, 'HH:mm', 'UTC');
+    this.pause5Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause5Id * 5);
     this.isInTheFuture = Date.parse(this.data.planningPrDayModels.date) > Date.now();
     this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
     this.date = Date.parse(this.data.planningPrDayModels.date);
@@ -146,7 +155,49 @@ export class WorkdayEntityDialogComponent implements OnInit {
       actualBreak: this.pause1Id,
     };
 
+    let shift3Data = {
+      shiftId: '3',
+      shift: this.translateService.instant('3rd'),
+      plannedStart: this.plannedStartOfShift1,
+      plannedEnd: this.plannedEndOfShift1,
+      plannedBreak: this.plannedBreakOfShift1,
+      actualStart: this.start3StartedAt,
+      actualEnd: this.stop3StoppedAt,
+      actualBreak: this.pause3Id,
+    }
+
+    let shift4Data = {
+      shiftId: '4',
+      shift: this.translateService.instant('4th'),
+      plannedStart: this.plannedStartOfShift2,
+      plannedEnd: this.plannedEndOfShift2,
+      plannedBreak: this.plannedBreakOfShift2,
+      actualStart: this.start4StartedAt,
+      actualEnd: this.stop4StoppedAt,
+      actualBreak: this.pause4Id,
+    }
+
+    let shift5Data = {
+      shiftId: '5',
+      shift: this.translateService.instant('5th'),
+      plannedStart: this.plannedStartOfShift1,
+      plannedEnd: this.plannedEndOfShift1,
+      plannedBreak: this.plannedBreakOfShift1,
+      actualStart: this.start5StartedAt,
+      actualEnd: this.stop5StoppedAt,
+      actualBreak: this.pause5Id,
+    }
+
     this.shiftData = [shift1Data, shift2Data];
+    if (this.data.assignedSiteModel.thirdShiftActive) {
+      this.shiftData.push(shift3Data);
+    }
+    if (this.data.assignedSiteModel.fourthShiftActive) {
+      this.shiftData.push(shift4Data);
+    }
+    if (this.data.assignedSiteModel.fifthShiftActive) {
+      this.shiftData.push(shift5Data);
+    }
   }
 
   convertMinutesToTime(minutes: number): string {
@@ -254,6 +305,15 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.planningPrDayModels.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
     this.data.planningPrDayModels.pause2Id = this.convertTimeToMinutes(this.pause2Id, true);
     this.data.planningPrDayModels.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
+    this.data.planningPrDayModels.start3Id = this.convertTimeToMinutes(this.start3StartedAt, true);
+    this.data.planningPrDayModels.stop3Id = this.convertTimeToMinutes(this.stop3StoppedAt, true);
+    this.data.planningPrDayModels.pause3Id = this.convertTimeToMinutes(this.pause3Id, true);
+    this.data.planningPrDayModels.start4Id = this.convertTimeToMinutes(this.start4StartedAt, true);
+    this.data.planningPrDayModels.stop4Id = this.convertTimeToMinutes(this.stop4StoppedAt, true);
+    this.data.planningPrDayModels.pause4Id = this.convertTimeToMinutes(this.pause4Id, true);
+    this.data.planningPrDayModels.start5Id = this.convertTimeToMinutes(this.start5StartedAt, true);
+    this.data.planningPrDayModels.stop5Id = this.convertTimeToMinutes(this.stop5StoppedAt, true);
+    this.data.planningPrDayModels.pause5Id = this.convertTimeToMinutes(this.pause5Id, true);
     this.data.planningPrDayModels.paidOutFlex = this.data.planningPrDayModels.paidOutFlex
     === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
   }
@@ -338,21 +398,49 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
 
     this.data.planningPrDayModels.start1Id = this.convertTimeToMinutes(this.start1StartedAt, true);
+    this.data.planningPrDayModels.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
     this.data.planningPrDayModels.pause1Id = this.convertTimeToMinutes(
       this.pause1Id,
       true) === 0 ? null : this.convertTimeToMinutes(this.pause1Id, true);
     if (this.data.planningPrDayModels.pause1Id > 0) {
       this.data.planningPrDayModels.pause1Id -= 1;
     }
+
     this.data.planningPrDayModels.start2Id = this.convertTimeToMinutes(this.start2StartedAt, true);
-    this.data.planningPrDayModels.stop1Id = this.convertTimeToMinutes(this.stop1StoppedAt, true);
+    this.data.planningPrDayModels.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
     this.data.planningPrDayModels.pause2Id = this.convertTimeToMinutes(
       this.pause2Id,
       true) === 0 ? null : this.convertTimeToMinutes(this.pause2Id, true);
     if (this.data.planningPrDayModels.pause2Id > 0) {
       this.data.planningPrDayModels.pause2Id -= 1;
     }
-    this.data.planningPrDayModels.stop2Id = this.convertTimeToMinutes(this.stop2StoppedAt, true);
+
+    this.data.planningPrDayModels.start3Id = this.convertTimeToMinutes(this.start3StartedAt, true);
+    this.data.planningPrDayModels.stop3Id = this.convertTimeToMinutes(this.stop3StoppedAt, true);
+    this.data.planningPrDayModels.pause3Id = this.convertTimeToMinutes(
+      this.pause3Id,
+      true) === 0 ? null : this.convertTimeToMinutes(this.pause3Id, true);
+    if (this.data.planningPrDayModels.pause3Id > 0) {
+      this.data.planningPrDayModels.pause3Id -= 1;
+    }
+
+    this.data.planningPrDayModels.start4Id = this.convertTimeToMinutes(this.start4StartedAt, true);
+    this.data.planningPrDayModels.stop4Id = this.convertTimeToMinutes(this.stop4StoppedAt, true);
+    this.data.planningPrDayModels.pause4Id = this.convertTimeToMinutes(
+      this.pause4Id,
+      true) === 0 ? null : this.convertTimeToMinutes(this.pause4Id, true);
+    if (this.data.planningPrDayModels.pause4Id > 0) {
+      this.data.planningPrDayModels.pause4Id -= 1;
+    }
+
+    this.data.planningPrDayModels.start5Id = this.convertTimeToMinutes(this.start5StartedAt, true);
+    this.data.planningPrDayModels.stop5Id = this.convertTimeToMinutes(this.stop5StoppedAt, true);
+    this.data.planningPrDayModels.pause5Id = this.convertTimeToMinutes(
+      this.pause5Id,
+      true) === 0 ? null : this.convertTimeToMinutes(this.pause5Id, true);
+    if (this.data.planningPrDayModels.pause5Id > 0) {
+      this.data.planningPrDayModels.pause5Id -= 1;
+    }
 
     let actualTimeInMinutes = 0;
     if (this.data.planningPrDayModels.stop1Id !== null) {
@@ -360,12 +448,35 @@ export class WorkdayEntityDialogComponent implements OnInit {
         - this.data.planningPrDayModels.pause1Id
         - this.data.planningPrDayModels.start1Id;
     }
+
     if (this.data.planningPrDayModels.stop2Id !== null) {
       let timeInMinutes2NdShift = this.data.planningPrDayModels.stop2Id
         - this.data.planningPrDayModels.pause2Id
         - this.data.planningPrDayModels.start2Id;
       actualTimeInMinutes += timeInMinutes2NdShift;
     }
+
+    if (this.data.planningPrDayModels.stop3Id !== null) {
+      let timeInMinutes3RdShift = this.data.planningPrDayModels.stop3Id
+        - this.data.planningPrDayModels.pause3Id
+        - this.data.planningPrDayModels.start3Id;
+      actualTimeInMinutes += timeInMinutes3RdShift;
+    }
+
+    if (this.data.planningPrDayModels.stop4Id !== null) {
+      let timeInMinutes4ThShift = this.data.planningPrDayModels.stop4Id
+        - this.data.planningPrDayModels.pause4Id
+        - this.data.planningPrDayModels.start4Id;
+      actualTimeInMinutes += timeInMinutes4ThShift;
+    }
+
+    if (this.data.planningPrDayModels.stop5Id !== null) {
+      let timeInMinutes5ThShift = this.data.planningPrDayModels.stop5Id
+        - this.data.planningPrDayModels.pause5Id
+        - this.data.planningPrDayModels.start5Id;
+      actualTimeInMinutes += timeInMinutes5ThShift;
+    }
+
     if (actualTimeInMinutes !== 0) {
       actualTimeInMinutes *= 5;
     }

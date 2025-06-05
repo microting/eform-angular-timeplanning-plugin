@@ -353,6 +353,255 @@
         </button>
       </div>
     </ng-container>
+    <ng-container *ngIf="row['shiftId'] === '3' && data.assignedSiteModel.thirdShiftActive === true">
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{ 'Start' | translate }}</mat-label>
+          <input
+            id="start3StartedAt"
+            matInput
+            readonly
+            [disabled]="isInTheFuture || stop2StoppedAt === null"
+            [ngxTimepicker]="picker5"
+            [format]="24"
+            [(ngModel)]="start3StartedAt"
+            [min]="stop2StoppedAt"
+            [max]="stop3StoppedAt"
+            [value]="start3StartedAt">
+          <ngx-material-timepicker #picker5
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="start3StartedAt"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(7)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{ 'Pause' | translate }}</mat-label>
+          <input
+            id="pause3Id"
+            matInput
+            [disabled]="isInTheFuture || start3StartedAt === null || stop3StoppedAt === null"
+            [ngxTimepicker]="pause3IdPicker"
+            [format]="24"
+            [(ngModel)]="pause3Id"
+            readonly
+            [min]="'00:00'"
+            [max]="getMaxDifference(start3StartedAt, stop3StoppedAt)"
+            [value]="pause3Id"
+          >
+          <ngx-material-timepicker #pause3IdPicker
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="pause3Id"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(8)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{ 'Stop' | translate }}</mat-label>
+          <input
+            id="stop3StoppedAt"
+            matInput
+            readonly
+            [disabled]="isInTheFuture || start3StartedAt === null"
+            [ngxTimepicker]="picker6"
+            [format]="24"
+            [(ngModel)]="stop3StoppedAt"
+            [min]="start3StartedAt"
+            [value]="stop3StoppedAt">
+          <ngx-material-timepicker #picker6
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="stop3StoppedAt"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(9)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </ng-container>
+    <ng-container *ngIf="row['shiftId'] === '4' && data.assignedSiteModel.fourthShiftActive === true">
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{ 'Start' | translate }}</mat-label>
+          <input
+            id="start4StartedAt"
+            matInput
+            readonly
+            [disabled]="isInTheFuture || stop3StoppedAt === null"
+            [ngxTimepicker]="picker7"
+            [format]="24"
+            [(ngModel)]="start4StartedAt"
+            [min]="stop3StoppedAt"
+            [max]="stop4StoppedAt"
+            [value]="start4StartedAt">
+          <ngx-material-timepicker #picker7
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="start4StartedAt"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(10)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{ 'Pause' | translate }}</mat-label>
+          <input
+            id="pause4Id"
+            matInput
+            [disabled]="isInTheFuture || start4StartedAt === null || stop4StoppedAt === null"
+            [ngxTimepicker]="pause4IdPicker"
+            [format]="24"
+            [(ngModel)]="pause4Id"
+            readonly
+            [min]="'00:00'"
+            [max]="getMaxDifference(start4StartedAt, stop4StoppedAt)"
+            [value]="pause4Id"
+          >
+          <ngx-material-timepicker #pause4IdPicker
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="pause4Id"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(11)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <div class="flex-row">
+        <mat-form-field>
+          <mat-label>{{ 'Stop' | translate }}</mat-label>
+          <input
+            id="stop4StoppedAt"
+            matInput
+            readonly
+            [disabled]="isInTheFuture || start4StartedAt === null"
+            [ngxTimepicker]="picker8"
+            [format]="24"
+            [(ngModel)]="stop4StoppedAt"
+            [min]="start4StartedAt"
+            [value]="stop4StoppedAt">
+          <ngx-material-timepicker #picker8
+                                   (closed)="calculatePlanHours()"
+                                   [format]="24"
+                                   [defaultTime]="stop4StoppedAt"
+                                   [minutesGap]="5"></ngx-material-timepicker>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="resetActualTimes(12)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </ng-container>
+  <ng-container *ngIf="row['shiftId'] === '5' && data.assignedSiteModel.fifthShiftActive === true">
+    <div class="flex-row">
+      <mat-form-field>
+        <mat-label>{{ 'Start' | translate }}</mat-label>
+        <input
+          id="start5StartedAt"
+          matInput
+          readonly
+          [disabled]="isInTheFuture || stop4StoppedAt === null"
+          [ngxTimepicker]="picker9"
+          [format]="24"
+          [(ngModel)]="start5StartedAt"
+          [min]="stop4StoppedAt"
+          [max]="stop5StoppedAt"
+          [value]="start5StartedAt">
+        <ngx-material-timepicker #picker9
+                                 (closed)="calculatePlanHours()"
+                                 [format]="24"
+                                 [defaultTime]="start5StartedAt"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+      <button
+        mat-icon-button
+        color="warn"
+        (click)="resetActualTimes(13)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+    <div class="flex-row">
+      <mat-form-field>
+        <mat-label>{{ 'Pause' | translate }}</mat-label>
+        <input
+          id="pause5Id"
+          matInput
+          [disabled]="isInTheFuture || start5StartedAt === null || stop5StoppedAt === null"
+          [ngxTimepicker]="pause5IdPicker"
+          [format]="24"
+          [(ngModel)]="pause5Id"
+          readonly
+          [min]="'00:00'"
+          [max]="getMaxDifference(start5StartedAt, stop5StoppedAt)"
+          [value]="pause5Id"
+        >
+        <ngx-material-timepicker #pause5IdPicker
+                                 (closed)="calculatePlanHours()"
+                                 [format]="24"
+                                 [defaultTime]="pause5Id"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+      <button
+        mat-icon-button
+        color="warn"
+        (click)="resetActualTimes(14)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+    <div class="flex-row">
+      <mat-form-field>
+        <mat-label>{{ 'Stop' | translate }}</mat-label>
+        <input
+          id="stop5StoppedAt"
+          matInput
+          readonly
+          [disabled]="isInTheFuture || start5StartedAt === null"
+          [ngxTimepicker]="picker10"
+          [format]="24"
+          [(ngModel)]="stop5StoppedAt"
+          [min]="start5StartedAt"
+          [value]="stop5StoppedAt">
+        <ngx-material-timepicker #picker10
+                                 (closed)="calculatePlanHours()"
+                                 [format]="24"
+                                 [defaultTime]="stop5StoppedAt"
+                                 [minutesGap]="5"></ngx-material-timepicker>
+      </mat-form-field>
+      <button
+        mat-icon-button
+        color="warn"
+        (click)="resetActualTimes(15)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </ng-container>
   </ng-template>
 
   <br>

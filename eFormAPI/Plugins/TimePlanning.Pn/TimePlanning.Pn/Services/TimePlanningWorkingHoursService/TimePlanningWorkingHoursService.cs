@@ -155,49 +155,65 @@ public class TimePlanningWorkingHoursService(
                 .Where(x => x.Date < model.DateFrom)
                 .Where(x => x.SdkSitId == model.SiteId).OrderBy(x => x.Date).LastOrDefault();
 
-            var prePlanning = new TimePlanningWorkingHoursModel
+            if (lastPlanning != null)
             {
-                Id = 0,
-                CreatedAt = lastPlanning.CreatedAt,
-                UpdatedAt = lastPlanning.UpdatedAt,
-                WorkerName = site.Name,
-                WeekDay = lastPlanning != null
-                    ? (int)lastPlanning.Date.DayOfWeek
-                    : (int)model.DateFrom.AddDays(-1).DayOfWeek,
-                Date = lastPlanning?.Date ?? model.DateFrom.AddDays(-1),
-                PlanText = lastPlanning?.PlanText,
-                PlanHours = lastPlanning?.PlanHours ?? 0,
-                Shift1Start = lastPlanning?.Start1Id,
-                Shift1Stop = lastPlanning?.Stop1Id,
-                Shift1Pause = lastPlanning?.Pause1Id,
-                Shift2Start = lastPlanning?.Start2Id,
-                Shift2Stop = lastPlanning?.Stop2Id,
-                Shift2Pause = lastPlanning?.Pause2Id,
-                Shift3Start = lastPlanning?.Start3Id,
-                Shift3Stop = lastPlanning?.Stop3Id,
-                Shift3Pause = lastPlanning?.Pause3Id,
-                Shift4Start = lastPlanning?.Start4Id,
-                Shift4Stop = lastPlanning?.Stop4Id,
-                Shift4Pause = lastPlanning?.Pause4Id,
-                Shift5Start = lastPlanning?.Start5Id,
-                Shift5Stop = lastPlanning?.Stop5Id,
-                Shift5Pause = lastPlanning?.Pause5Id,
-                NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0, 2),
-                FlexHours = Math.Round(lastPlanning?.Flex ?? 0, 2),
-                SumFlexStart = lastPlanning?.SumFlexStart ?? 0,
-                PaidOutFlex = lastPlanning?.PaiedOutFlex.ToString().Replace(",", ".") ?? "0",
-                Message = lastPlanning?.MessageId,
-                CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
-                CommentOffice = lastPlanning?.CommentOffice?.Replace("\r", "<br />"),
-                IsLocked = true,
-                IsWeekend = lastPlanning != null
-                    ? lastPlanning.Date.DayOfWeek == DayOfWeek.Saturday ||
-                      lastPlanning.Date.DayOfWeek == DayOfWeek.Sunday
-                    : model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Saturday ||
-                      model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Sunday
-            };
+                // lastPlanning.Date = new DateTime(lastPlanning.Date.Year, lastPlanning.Date.Month, lastPlanning.Date.Day, 0, 0, 0);
 
-            timePlannings.Add(prePlanning);
+
+                try
+                {
+                    var prePlanning = new TimePlanningWorkingHoursModel
+                    {
+                        Id = 0,
+                        CreatedAt = lastPlanning.CreatedAt,
+                        UpdatedAt = lastPlanning.UpdatedAt,
+                        WorkerName = site.Name,
+                        WeekDay = lastPlanning != null
+                            ? (int)lastPlanning.Date.DayOfWeek
+                            : (int)model.DateFrom.AddDays(-1).DayOfWeek,
+                        Date = lastPlanning?.Date ?? model.DateFrom.AddDays(-1),
+                        PlanText = lastPlanning?.PlanText,
+                        PlanHours = lastPlanning?.PlanHours ?? 0,
+                        Shift1Start = lastPlanning?.Start1Id,
+                        Shift1Stop = lastPlanning?.Stop1Id,
+                        Shift1Pause = lastPlanning?.Pause1Id,
+                        Shift2Start = lastPlanning?.Start2Id,
+                        Shift2Stop = lastPlanning?.Stop2Id,
+                        Shift2Pause = lastPlanning?.Pause2Id,
+                        Shift3Start = lastPlanning?.Start3Id,
+                        Shift3Stop = lastPlanning?.Stop3Id,
+                        Shift3Pause = lastPlanning?.Pause3Id,
+                        Shift4Start = lastPlanning?.Start4Id,
+                        Shift4Stop = lastPlanning?.Stop4Id,
+                        Shift4Pause = lastPlanning?.Pause4Id,
+                        Shift5Start = lastPlanning?.Start5Id,
+                        Shift5Stop = lastPlanning?.Stop5Id,
+                        Shift5Pause = lastPlanning?.Pause5Id,
+                        NettoHours = Math.Round(lastPlanning?.NettoHours ?? 0, 2),
+                        FlexHours = Math.Round(lastPlanning?.Flex ?? 0, 2),
+                        SumFlexStart = lastPlanning?.SumFlexStart ?? 0,
+                        PaidOutFlex = lastPlanning?.PaiedOutFlex.ToString().Replace(",", ".") ?? "0",
+                        Message = lastPlanning?.MessageId,
+                        CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
+                        CommentOffice = lastPlanning?.CommentOffice?.Replace("\r", "<br />"),
+                        IsLocked = true,
+                        IsWeekend = lastPlanning != null
+                            ? lastPlanning.Date.DayOfWeek == DayOfWeek.Saturday ||
+                              lastPlanning.Date.DayOfWeek == DayOfWeek.Sunday
+                            : model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Saturday ||
+                              model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Sunday
+                    };
+
+                    timePlannings.Add(prePlanning);
+
+                }
+                catch (Exception e)
+                {
+                    SentrySdk.CaptureException(e);
+                    logger.LogError(e.Message);
+                    logger.LogTrace(e.StackTrace);
+                }
+            }
 
             if (timePlannings.Count - 1 < totalDays)
             {
