@@ -2272,6 +2272,10 @@ public class TimePlanningWorkingHoursService(
 
     private string GetShiftTime(PlanRegistration plr, int? shift)
     {
+        if (shift == 289)
+        {
+            return "00:00";
+        }
         return shift > 0 ? plr.Options[(int)shift - 1] : "";
     }
 
@@ -2572,8 +2576,19 @@ public class TimePlanningWorkingHoursService(
                     foreach (var planning in timePlannings)
                     {
                         var dataRow = new Row() { RowIndex = (uint)rowIndex };
-                        FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled);
-                        sheetData1.Append(dataRow);
+                        try
+                        {
+                            FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled);
+                            sheetData1.Append(dataRow);
+                        }
+                        catch (Exception e)
+                        {
+                            SentrySdk.CaptureException(e);
+                            logger.LogError(e.Message);
+                            logger.LogError(e.StackTrace);
+                            logger.LogError($"Error while filling data row for site {site.Name} on row {rowIndex}: {e.Message}");
+                            throw;
+                        }
                         rowIndex++;
                     }
 

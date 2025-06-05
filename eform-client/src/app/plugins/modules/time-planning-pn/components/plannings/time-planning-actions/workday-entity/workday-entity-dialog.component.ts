@@ -35,6 +35,15 @@ export class WorkdayEntityDialogComponent implements OnInit {
   start2StartedAt: string;
   stop2StoppedAt: string;
   pause2Id: string;
+  start3StartedAt: string;
+  stop3StoppedAt: string;
+  pause3Id: string;
+  start4StartedAt: string;
+  stop4StoppedAt: string;
+  pause4Id: string;
+  start5StartedAt: string;
+  stop5StoppedAt: string;
+  pause5Id: string;
   isInTheFuture: boolean = false;
   maxPause1Id: number = 0;
   maxPause2Id: number = 0;
