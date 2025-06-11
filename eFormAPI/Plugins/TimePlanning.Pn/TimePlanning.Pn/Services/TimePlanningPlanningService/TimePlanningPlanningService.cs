@@ -160,7 +160,7 @@ public class TimePlanningPlanningService(
                         {
                             newPlanRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
                             newPlanRegistration.SumFlexEnd =
-                                preTimePlanning.SumFlexEnd + newPlanRegistration.NettoHours -
+                                preTimePlanning.SumFlexEnd - newPlanRegistration.NettoHours -
                                 newPlanRegistration.PlanHours -
                                 newPlanRegistration.PaiedOutFlex;
                             newPlanRegistration.Flex = newPlanRegistration.NettoHours - newPlanRegistration.PlanHours;
