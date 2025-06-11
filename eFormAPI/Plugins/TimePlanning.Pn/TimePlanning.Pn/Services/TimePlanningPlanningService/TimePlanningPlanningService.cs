@@ -106,6 +106,15 @@ public class TimePlanningPlanningService(
                     siteModel.SoftwareVersion = user.TimeRegistrationSoftwareVersion;
                     siteModel.DeviceModel = user.TimeRegistrationModel;
                     siteModel.DeviceManufacturer = user.TimeRegistrationManufacturer;
+                    try
+                    {
+                        siteModel.SoftwareVersionIsValid = int.Parse(user.TimeRegistrationSoftwareVersion.Replace(".", "")) >= 3103;
+                    }
+                    catch (Exception)
+                    {
+                        // If the version format is invalid, we assume it's not valid
+                        siteModel.SoftwareVersionIsValid = false;
+                    }
                 }
 
                 var planningsInPeriod = await dbContext.PlanRegistrations

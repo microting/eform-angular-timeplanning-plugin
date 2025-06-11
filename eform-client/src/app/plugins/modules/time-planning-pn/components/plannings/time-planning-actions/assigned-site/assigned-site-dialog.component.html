@@ -118,7 +118,7 @@
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="selectCurrentUserIsFirstUser$ | async">
+      <div class="d-flex flex-row" *ngIf="selectCurrentUserIsAdmin$ | async">
         <mat-checkbox class="p-1"
                       [id]="'thirdShiftActive'"
                       [name]="'thirdShiftActive'"

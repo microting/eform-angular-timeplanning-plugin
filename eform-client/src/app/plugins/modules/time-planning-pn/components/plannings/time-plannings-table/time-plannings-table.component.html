@@ -56,7 +56,7 @@
                 </span>
               </ng-container>
               {{row['softwareVersion']}}
-              <div *ngIf="row['softwareVersion'] !== '3.10.3'">
+              <div *ngIf="row['softwareVersionIsValid'] === false">
                 <span [matTooltip]="'Needs update!' | translate "><mat-icon>warning</mat-icon></span>
               </div>
             </div>

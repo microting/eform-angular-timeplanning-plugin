@@ -14,4 +14,5 @@ export class TimePlanningModel {
   SoftwareVersion: string;
   deviceModel: string;
   deviceManufacturer: string;
+  softwareVersionIsValid: boolean;
 }
