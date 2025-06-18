@@ -525,33 +525,35 @@ public static class PlanRegistrationHelper
                                         Level = SentryLevel.Warning
                                     });
                                 tainted = true;
-                                var preTimePlanning =
-                                    await dbContext.PlanRegistrations.AsNoTracking()
-                                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                        .Where(x => x.Date < planRegistration.Date
-                                                    && x.SdkSitId == dbAssignedSite.SiteId)
-                                        .OrderByDescending(x => x.Date)
-                                        .FirstOrDefaultAsync();
 
-                                if (preTimePlanning != null)
-                                {
-                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                    planRegistration.SumFlexEnd =
-                                        preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                        planRegistration.PlanHours -
-                                        planRegistration.PaiedOutFlex;
-                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                                }
-                                else
-                                {
-                                    planRegistration.SumFlexEnd =
-                                        planRegistration.NettoHours - planRegistration.PlanHours -
-                                        planRegistration.PaiedOutFlex;
-                                    planRegistration.SumFlexStart = 0;
-                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                                }
                             }
                         }
+                    }
+
+                    var preTimePlanning =
+                        await dbContext.PlanRegistrations.AsNoTracking()
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.Date < planRegistration.Date
+                                        && x.SdkSitId == dbAssignedSite.SiteId)
+                            .OrderByDescending(x => x.Date)
+                            .FirstOrDefaultAsync();
+
+                    if (preTimePlanning != null)
+                    {
+                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                        planRegistration.SumFlexEnd =
+                            preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                            planRegistration.PlanHours -
+                            planRegistration.PaiedOutFlex;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                    }
+                    else
+                    {
+                        planRegistration.SumFlexEnd =
+                            planRegistration.NettoHours - planRegistration.PlanHours -
+                            planRegistration.PaiedOutFlex;
+                        planRegistration.SumFlexStart = 0;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                     }
 
                     await planRegistration.Update(dbContext).ConfigureAwait(false);
@@ -818,36 +820,37 @@ public static class PlanRegistrationHelper
                                     Level = SentryLevel.Warning
                                 });
                             tainted = true;
-                            var preTimePlanning =
-                                await dbContext.PlanRegistrations.AsNoTracking()
-                                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                    .Where(x => x.Date < planRegistration.Date
-                                                && x.SdkSitId == dbAssignedSite.SiteId)
-                                    .OrderByDescending(x => x.Date)
-                                    .FirstOrDefaultAsync();
-
-                            if (preTimePlanning != null)
-                            {
-                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                planRegistration.SumFlexEnd =
-                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                    planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                            }
-                            else
-                            {
-                                planRegistration.SumFlexEnd =
-                                    planRegistration.NettoHours - planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.SumFlexStart = 0;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                            }
                         }
 
                         Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
 
                         await planRegistration.Update(dbContext).ConfigureAwait(false);
+                    }
+
+                    var preTimePlanning =
+                        await dbContext.PlanRegistrations.AsNoTracking()
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.Date < planRegistration.Date
+                                        && x.SdkSitId == dbAssignedSite.SiteId)
+                            .OrderByDescending(x => x.Date)
+                            .FirstOrDefaultAsync();
+
+                    if (preTimePlanning != null)
+                    {
+                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                        planRegistration.SumFlexEnd =
+                            preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                            planRegistration.PlanHours -
+                            planRegistration.PaiedOutFlex;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                    }
+                    else
+                    {
+                        planRegistration.SumFlexEnd =
+                            planRegistration.NettoHours - planRegistration.PlanHours -
+                            planRegistration.PaiedOutFlex;
+                        planRegistration.SumFlexStart = 0;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                     }
                 }
             }
@@ -1065,6 +1068,13 @@ public static class PlanRegistrationHelper
                 .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
                 .Where(x => x.Date >= midnightOfDateFrom)
                 .Where(x => x.Date <= midnightOfDateTo)
+                .Select(x => new PlanRegistration
+                {
+                    Id = x.Id,
+                    Date = x.Date,
+                    PlanHours = x.PlanHours,
+                    NettoHours = x.NettoHours,
+                })
                 .OrderBy(x => x.Date)
                 .ToListAsync().ConfigureAwait(false);
 
@@ -1078,11 +1088,6 @@ public static class PlanRegistrationHelper
             siteModel.PercentageCompleted = (int)(nettoHoursTotal / plannedTotalHours * 100);
 
             siteModel.PlanningPrDayModels.Add(planningModel);
-
-            foreach (var entity in planningsInPeriod)
-            {
-                dbContext.Entry(entity).State = EntityState.Detached;
-            }
         }
 
         return siteModel;
@@ -1444,33 +1449,35 @@ public static class PlanRegistrationHelper
                             if (originalPlanHours != planRegistration.PlanHours || tainted)
                             {
                                 tainted = true;
-                                var preTimePlanning =
-                                    await dbContext.PlanRegistrations.AsNoTracking()
-                                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                        .Where(x => x.Date < planRegistration.Date
-                                                    && x.SdkSitId == dbAssignedSite.SiteId)
-                                        .OrderByDescending(x => x.Date)
-                                        .FirstOrDefaultAsync();
 
-                                if (preTimePlanning != null)
-                                {
-                                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                    planRegistration.SumFlexEnd =
-                                        preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                        planRegistration.PlanHours -
-                                        planRegistration.PaiedOutFlex;
-                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                                }
-                                else
-                                {
-                                    planRegistration.SumFlexEnd =
-                                        planRegistration.NettoHours - planRegistration.PlanHours -
-                                        planRegistration.PaiedOutFlex;
-                                    planRegistration.SumFlexStart = 0;
-                                    planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                                }
                             }
                         }
+                    }
+
+                    var preTimePlanning =
+                        await dbContext.PlanRegistrations.AsNoTracking()
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.Date < planRegistration.Date
+                                        && x.SdkSitId == dbAssignedSite.SiteId)
+                            .OrderByDescending(x => x.Date)
+                            .FirstOrDefaultAsync();
+
+                    if (preTimePlanning != null)
+                    {
+                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                        planRegistration.SumFlexEnd =
+                            preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                            planRegistration.PlanHours -
+                            planRegistration.PaiedOutFlex;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                    }
+                    else
+                    {
+                        planRegistration.SumFlexEnd =
+                            planRegistration.NettoHours - planRegistration.PlanHours -
+                            planRegistration.PaiedOutFlex;
+                        planRegistration.SumFlexStart = 0;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                     }
 
                     await planRegistration.Update(dbContext).ConfigureAwait(false);
@@ -1728,35 +1735,37 @@ public static class PlanRegistrationHelper
                         if (originalPlanHours != planRegistration.PlanHours || tainted)
                         {
                             tainted = true;
-                            var preTimePlanning =
-                                await dbContext.PlanRegistrations.AsNoTracking()
-                                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                    .Where(x => x.Date < planRegistration.Date
-                                                && x.SdkSitId == dbAssignedSite.SiteId)
-                                    .OrderByDescending(x => x.Date)
-                                    .FirstOrDefaultAsync();
 
-                            if (preTimePlanning != null)
-                            {
-                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                planRegistration.SumFlexEnd =
-                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                    planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                            }
-                            else
-                            {
-                                planRegistration.SumFlexEnd =
-                                    planRegistration.NettoHours - planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.SumFlexStart = 0;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                            }
-
-                            Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
                         }
                     }
+
+                    var preTimePlanning =
+                        await dbContext.PlanRegistrations.AsNoTracking()
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.Date < planRegistration.Date
+                                        && x.SdkSitId == dbAssignedSite.SiteId)
+                            .OrderByDescending(x => x.Date)
+                            .FirstOrDefaultAsync();
+
+                    if (preTimePlanning != null)
+                    {
+                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                        planRegistration.SumFlexEnd =
+                            preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                            planRegistration.PlanHours -
+                            planRegistration.PaiedOutFlex;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                    }
+                    else
+                    {
+                        planRegistration.SumFlexEnd =
+                            planRegistration.NettoHours - planRegistration.PlanHours -
+                            planRegistration.PaiedOutFlex;
+                        planRegistration.SumFlexStart = 0;
+                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                    }
+
+                    Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
 
                     await planRegistration.Update(dbContext).ConfigureAwait(false);
                 }

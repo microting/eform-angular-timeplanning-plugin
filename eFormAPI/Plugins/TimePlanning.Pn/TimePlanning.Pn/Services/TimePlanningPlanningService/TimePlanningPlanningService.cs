@@ -118,10 +118,16 @@ public class TimePlanningPlanningService(
                 }
 
                 var planningsInPeriod = await dbContext.PlanRegistrations
+                    .AsNoTracking()
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
                     .Where(x => x.Date >= midnightOfDateFrom)
                     .Where(x => x.Date <= midnightOfDateTo)
+                    .Select(x => new PlanRegistration
+                    {
+                        Id = x.Id,
+                        Date = x.Date,
+                        })
                     .OrderBy(x => x.Date)
                     .ToListAsync().ConfigureAwait(false);
 
@@ -186,6 +192,11 @@ public class TimePlanningPlanningService(
                         .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
                         .Where(x => x.Date >= midnightOfDateFrom)
                         .Where(x => x.Date <= midnightOfDateTo)
+                        .Select(x => new PlanRegistration
+                        {
+                            Id = x.Id,
+                            Date = x.Date,
+                        })
                         .OrderBy(x => x.Date)
                         .ToListAsync().ConfigureAwait(false);
                 }
@@ -286,6 +297,11 @@ public class TimePlanningPlanningService(
             .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
             .Where(x => x.Date >= midnightOfDateFrom)
             .Where(x => x.Date <= midnightOfDateTo)
+            .Select(x => new PlanRegistration
+            {
+                Id = x.Id,
+                Date = x.Date,
+            })
             .OrderByDescending(x => x.Date)
             .ToListAsync().ConfigureAwait(false);
 
@@ -347,6 +363,11 @@ public class TimePlanningPlanningService(
                 .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
                 .Where(x => x.Date >= midnightOfDateFrom)
                 .Where(x => x.Date <= midnightOfDateTo)
+                .Select(x => new PlanRegistration
+                {
+                    Id = x.Id,
+                    Date = x.Date,
+                })
                 .OrderByDescending(x => x.Date)
                 .ToListAsync().ConfigureAwait(false);
         }
@@ -747,6 +768,7 @@ public class TimePlanningPlanningService(
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SdkSitId == planning.SdkSitId)
                 .Where(x => x.Date > planning.Date)
+                .Where(x => x.Date <= planning.Date.AddDays(7))
                 .OrderBy(x => x.Date)
                 .ToList();
 
