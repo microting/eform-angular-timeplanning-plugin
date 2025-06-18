@@ -49,6 +49,7 @@ public class TimePlanningPlanningService(
     ILogger<TimePlanningPlanningService> logger,
     IPluginDbOptions<TimePlanningBaseSettings> options,
     TimePlanningPnDbContext dbContext,
+    ITimePlanningDbContextHelper dbContextHelper,
     IUserService userService,
     ITimePlanningLocalizationService localizationService,
     BaseDbContext baseDbContext,
@@ -204,7 +205,7 @@ public class TimePlanningPlanningService(
                 siteModel = await PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod(
                     planningsInPeriod,
                     siteModel,
-                    dbContext,
+                    dbContextHelper.GetDbContext(),
                     dbAssignedSite,
                     logger,
                     site,
@@ -375,7 +376,7 @@ public class TimePlanningPlanningService(
         siteModel = await PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod(
             planningsInPeriod,
             siteModel,
-            dbContext,
+            dbContextHelper.GetDbContext(),
             dbAssignedSite,
             logger,
             site,

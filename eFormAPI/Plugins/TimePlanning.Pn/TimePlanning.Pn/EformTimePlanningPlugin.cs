@@ -26,6 +26,7 @@ using System.Runtime.InteropServices;
 using Microting.eForm.Infrastructure.Models;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Sentry;
+using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
@@ -154,6 +155,7 @@ public class EformTimePlanningPlugin : IEformPlugin
             "Angular");
 
         _connectionString = connectionString;
+        services.AddSingleton<ITimePlanningDbContextHelper>(provider => new TimePlanningDbContextHelper(_connectionString));
         services.AddDbContext<TimePlanningPnDbContext>(o =>
             o.UseMySql(connectionString, new MariaDbServerVersion(
                 ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
