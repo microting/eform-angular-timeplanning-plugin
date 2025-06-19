@@ -141,7 +141,7 @@ describe('Dashboard edit values', () => {
 
     for (let i = 0; i < secondUpdatePlanTexts.length; i++) {
 
-      let cellId = `#cell0_${i}`;
+      let cellId = `#cell3_${i}`;
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
 
