@@ -250,18 +250,18 @@ describe('Dashboard edit values', () => {
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.get('#backwards').click();
     cy.wait('@index-update', { timeout: 160000 });
-    cy.get('#plannedHours0').should('include.text', '53:15');
+    cy.get('#plannedHours3').should('include.text', '53:15');
     for (let i = 0; i < updatePlanTexts.length; i++) {
-      // let plannedHoursId = `#plannedHours0_${i}`;
+      // let plannedHoursId = `#plannedHours3_${i}`;
       // if (updatePlanTexts[i].plannedHours !== '') {
       //   cy.get(plannedHoursId).should('include.text', updatePlanTexts[i].plannedHours);
       // }
-      let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
+      let flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (updatePlanTexts[i].flexBalanceToDate !== '') {
         cy.get(flexBalanceToDateId).should('include.text', updatePlanTexts[i].flexBalanceToDate);
       }
 
-      let cellId = `#cell0_${i}`;
+      let cellId = `#cell3_${i}`;
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('have.value', updatePlanTexts[i].calculatedHours);
@@ -281,7 +281,7 @@ describe('Dashboard edit values', () => {
 
     for (let i = 0; i < secondUpdatePlanTexts.length; i++) {
 
-      let cellId = `#cell0_${i}`;
+      let cellId = `#cell3_${i}`;
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get(`#plannedStartOfShift1`).click();
@@ -406,18 +406,18 @@ describe('Dashboard edit values', () => {
       cy.wait('@update-day', { timeout: 160000 });
       cy.wait('@index-update', { timeout: 160000 });
       cy.wait(1000);
-      let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
+      let flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (secondUpdatePlanTexts[i].flexBalanceToDate !== '') {
         cy.get(flexBalanceToDateId).should('include.text', secondUpdatePlanTexts[i].flexBalanceToDate);
       }
-      let firstShiftId = `#firstShift0_${i}`;
+      let firstShiftId = `#firstShift3_${i}`;
       cy.get(firstShiftId).should('include.text', secondUpdatePlanTexts[i].firstShift);
       if (secondUpdatePlanTexts[i].secondShift) {
-        let secondShiftId = `#secondShift0_${i}`;
+        let secondShiftId = `#secondShift3_${i}`;
         cy.get(secondShiftId).should('include.text', secondUpdatePlanTexts[i].secondShift);
       }
     }
 
-    cy.get('#plannedHours0').should('include.text', '52:55');
+    cy.get('#plannedHours3').should('include.text', '52:55');
   });
 });
