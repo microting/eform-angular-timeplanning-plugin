@@ -77,8 +77,6 @@ public class TimePlanningPlanningService(
                 datesInPeriod.Add(date.Value);
                 date = date.Value.AddDays(1);
             }
-            // foreach (var dbAssignedSite in assignedSites)
-            // {
 
             var usersList = await baseDbContext.Users
                 .AsNoTracking()
@@ -94,12 +92,7 @@ public class TimePlanningPlanningService(
                     dbContextHelper.GetDbContext();
                 var site = sitesList
                     .First(x => x.MicrotingUid == dbAssignedSite.SiteId);
-                    // .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    // .FirstAsync().ConfigureAwait(false);
-                // if (site == null)
-                // {
-                    // continue;
-                // }
+
                 var siteModel = new TimePlanningPlanningModel
                 {
                     SiteId = dbAssignedSite.SiteId,
@@ -231,6 +224,11 @@ public class TimePlanningPlanningService(
             }).ToList();
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            result = result.OrderBy(x => Regex.Replace(x.SiteName, @"\d", ""))
+                .ThenBy(x => x.SiteName)
+                .ToList();
+
             return new OperationDataResult<List<TimePlanningPlanningModel>>(
                 true,
                 result);
