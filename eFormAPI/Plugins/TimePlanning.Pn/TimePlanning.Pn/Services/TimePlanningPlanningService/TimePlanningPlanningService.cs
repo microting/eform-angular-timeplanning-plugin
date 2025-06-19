@@ -91,7 +91,13 @@ public class TimePlanningPlanningService(
                 var innerDbContext =
                     dbContextHelper.GetDbContext();
                 var site = sitesList
-                    .First(x => x.MicrotingUid == dbAssignedSite.SiteId);
+                    .FirstOrDefault(x => x.MicrotingUid == dbAssignedSite.SiteId);
+
+                if (site == null)
+                {
+                    logger.LogWarning($"Site with ID {dbAssignedSite.SiteId} not found in Sites list.");
+                    return null; // Skip this site if not found
+                }
 
                 var siteModel = new TimePlanningPlanningModel
                 {
