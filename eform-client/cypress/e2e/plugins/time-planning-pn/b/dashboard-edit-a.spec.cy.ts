@@ -256,7 +256,7 @@ describe('Dashboard edit values', () => {
       // if (updatePlanTexts[i].plannedHours !== '') {
       //   cy.get(plannedHoursId).should('include.text', updatePlanTexts[i].plannedHours);
       // }
-      let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
+      let flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (updatePlanTexts[i].flexBalanceToDate !== '') {
         cy.get(flexBalanceToDateId).should('include.text', updatePlanTexts[i].flexBalanceToDate);
       }
@@ -406,14 +406,14 @@ describe('Dashboard edit values', () => {
       cy.wait('@update-day', { timeout: 160000 });
       cy.wait('@index-update', { timeout: 160000 });
       cy.wait(1000);
-      let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
+      let flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (secondUpdatePlanTexts[i].flexBalanceToDate !== '') {
         cy.get(flexBalanceToDateId).should('include.text', secondUpdatePlanTexts[i].flexBalanceToDate);
       }
-      let firstShiftId = `#firstShift0_${i}`;
+      let firstShiftId = `#firstShift3_${i}`;
       cy.get(firstShiftId).should('include.text', secondUpdatePlanTexts[i].firstShift);
       if (secondUpdatePlanTexts[i].secondShift) {
-        let secondShiftId = `#secondShift0_${i}`;
+        let secondShiftId = `#secondShift3_${i}`;
         cy.get(secondShiftId).should('include.text', secondUpdatePlanTexts[i].secondShift);
       }
     }

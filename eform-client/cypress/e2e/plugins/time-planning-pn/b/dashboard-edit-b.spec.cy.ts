@@ -302,7 +302,7 @@ describe('Dashboard edit values', () => {
       cy.wait('@update-day', { timeout: 160000 });
       cy.wait('@index-update', { timeout: 160000 });
       cy.wait(1000);
-      let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
+      let flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (secondUpdateActualTexts[i].flexBalanceToDate !== '') {
         cy.get(flexBalanceToDateId).should('include.text', secondUpdateActualTexts[i].flexBalanceToDate);
       }
