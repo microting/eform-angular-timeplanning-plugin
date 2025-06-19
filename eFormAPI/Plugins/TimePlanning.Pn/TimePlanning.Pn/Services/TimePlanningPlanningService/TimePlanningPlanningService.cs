@@ -77,16 +77,29 @@ public class TimePlanningPlanningService(
                 datesInPeriod.Add(date.Value);
                 date = date.Value.AddDays(1);
             }
-            foreach (var dbAssignedSite in assignedSites)
+            // foreach (var dbAssignedSite in assignedSites)
+            // {
+
+            var usersList = await baseDbContext.Users
+                .AsNoTracking()
+                .ToListAsync().ConfigureAwait(false);
+            var sitesList = await sdkDbContext.Sites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .ToListAsync().ConfigureAwait(false);
+
+            var tasks = assignedSites.Select(async dbAssignedSite =>
             {
-                var site = await sdkDbContext.Sites
-                    .Where(x => x.MicrotingUid == dbAssignedSite.SiteId)
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .FirstOrDefaultAsync().ConfigureAwait(false);
-                if (site == null)
-                {
-                    continue;
-                }
+                var innerDbContext =
+                    dbContextHelper.GetDbContext();
+                var site = sitesList
+                    .First(x => x.MicrotingUid == dbAssignedSite.SiteId);
+                    // .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    // .FirstAsync().ConfigureAwait(false);
+                // if (site == null)
+                // {
+                    // continue;
+                // }
                 var siteModel = new TimePlanningPlanningModel
                 {
                     SiteId = dbAssignedSite.SiteId,
@@ -96,9 +109,8 @@ public class TimePlanningPlanningService(
 
                 // do a lookup in the baseDbContext.Users where the concat string of FirstName and LastName toLowerCase() is equal to the site.Name toLowerCase()
                 // if we find a user, we take the user.EmailSha256 and set the siteModel.AvatarUrl to the gravatar url with the sha256
-                var user = await baseDbContext.Users
-                    .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
-                    .FirstOrDefaultAsync().ConfigureAwait(false);
+                var user = usersList.FirstOrDefault(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() ==
+                                                site.Name.Replace(" ", "").ToLower());
                 if (user != null)
                 {
                     siteModel.AvatarUrl = user.ProfilePictureSnapshot != null
@@ -118,7 +130,7 @@ public class TimePlanningPlanningService(
                     }
                 }
 
-                var planningsInPeriod = await dbContext.PlanRegistrations
+                var planningsInPeriod = await innerDbContext.PlanRegistrations
                     .AsNoTracking()
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
@@ -156,7 +168,7 @@ public class TimePlanningPlanningService(
                     if (missingDate.Date <= todayMidnight)
                     {
                         var preTimePlanning =
-                            await dbContext.PlanRegistrations.AsNoTracking()
+                            await innerDbContext.PlanRegistrations.AsNoTracking()
                                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                                 .Where(x => x.Date < missingDate
                                             && x.SdkSitId == dbAssignedSite.SiteId)
@@ -182,12 +194,12 @@ public class TimePlanningPlanningService(
                         }
                     }
 
-                    await newPlanRegistration.Create(dbContext);
+                    await newPlanRegistration.Create(innerDbContext);
                 }
 
                 if (missingDates.Count > 0)
                 {
-                    planningsInPeriod = await dbContext.PlanRegistrations
+                    planningsInPeriod = await innerDbContext.PlanRegistrations
                         .AsNoTracking()
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                         .Where(x => x.SdkSitId == dbAssignedSite.SiteId)
@@ -205,7 +217,7 @@ public class TimePlanningPlanningService(
                 siteModel = await PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod(
                     planningsInPeriod,
                     siteModel,
-                    dbContextHelper.GetDbContext(),
+                    innerDbContext,
                     dbAssignedSite,
                     logger,
                     site,
@@ -214,8 +226,11 @@ public class TimePlanningPlanningService(
                     options);
 
                 result.Add(siteModel);
-            }
+            // }
+            return siteModel;
+            }).ToList();
 
+            await Task.WhenAll(tasks).ConfigureAwait(false);
             return new OperationDataResult<List<TimePlanningPlanningModel>>(
                 true,
                 result);
