@@ -97,6 +97,9 @@ public class TimePlanningPlanningPrDayModel
     public int? Pause5Id { get; set; }
     public int Break1Shift { get; set; }
     public int Break2Shift { get; set; }
+    public int Break3Shift { get; set; }
+    public int Break4Shift { get; set; }
+    public int Break5Shift { get; set; }
     public string CommentOffice { get; set; }
     public string WorkerComment { get; set; }
     public double SumFlexStart { get; set; }
