@@ -23,7 +23,7 @@
 
     <ItemGroup>
       <PackageReference Include="ExcelDataReader" Version="3.7.0" />
-      <PackageReference Include="Google.Apis.Sheets.v4" Version="1.69.0.3785" />
+      <PackageReference Include="Google.Apis.Sheets.v4" Version="1.70.0.3806" />
       <PackageReference Include="Microting.eForm" Version="9.0.40" />
       <PackageReference Include="Microting.EformAngularFrontendBase" Version="9.0.34" />
       <PackageReference Include="Microting.eFormApi.BasePn" Version="9.0.38" />
