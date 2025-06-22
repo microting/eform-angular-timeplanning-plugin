@@ -450,6 +450,9 @@ public class TimePlanningPlanningService(
             {
                 planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;
                 planning.Pause2Id = model.Pause2Id ?? planning.Pause2Id;
+                planning.Pause3Id = model.Pause3Id ?? planning.Pause3Id;
+                planning.Pause4Id = model.Pause4Id ?? planning.Pause4Id;
+                planning.Pause5Id = model.Pause5Id ?? planning.Pause5Id;
             }
             else
             {
@@ -628,12 +631,29 @@ public class TimePlanningPlanningService(
                     planning.Shift2PauseNumber += (int)((DateTime)planning.Pause202StoppedAt - (DateTime)planning.Pause202StartedAt).TotalMinutes;
                 }
                 planning.Pause2Id = planning.Shift2PauseNumber / 5;
-                // we need to calculate the pause id based on the start and stop times from all the pauses above
+
+                planning.Pause3StartedAt = model.Pause3StartedAt;
+                planning.Pause3StoppedAt = model.Pause3StoppedAt;
+                planning.Pause3Id = model.Pause3Id ?? 0;
+
+                planning.Pause4StartedAt = model.Pause4StartedAt;
+                planning.Pause4StoppedAt = model.Pause4StoppedAt;
+                planning.Pause4Id = model.Pause4Id ?? 0;
+
+                planning.Pause5StartedAt = model.Pause5StartedAt;
+                planning.Pause5StoppedAt = model.Pause5StoppedAt;
+                planning.Pause5Id = model.Pause5Id ?? 0;
             }
             planning.Start1Id = model.Start1Id ?? 0;
             planning.Stop1Id = model.Stop1Id ?? 0;
             planning.Start2Id = model.Start2Id ?? 0;
             planning.Stop2Id = model.Stop2Id ?? 0;
+            planning.Start3Id = model.Start3Id ?? 0;
+            planning.Stop3Id = model.Stop3Id ?? 0;
+            planning.Start4Id = model.Start4Id ?? 0;
+            planning.Stop4Id = model.Stop4Id ?? 0;
+            planning.Start5Id = model.Start5Id ?? 0;
+            planning.Stop5Id = model.Stop5Id ?? 0;
             planning.MessageId = model.Message;
             planning.PaiedOutFlex = model.PaidOutFlex;
 
@@ -762,6 +782,24 @@ public class TimePlanningPlanningService(
             {
                 nettoMinutes = nettoMinutes + planning.Stop2Id - planning.Start2Id;
                 nettoMinutes -= planning.Pause2Id > 0 ? planning.Pause2Id - 1 : 0;
+            }
+
+            if (planning.Stop3Id >= planning.Start3Id && planning.Stop3Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planning.Stop3Id - planning.Start3Id;
+                nettoMinutes -= planning.Pause3Id > 0 ? planning.Pause3Id - 1 : 0;
+            }
+
+            if (planning.Stop4Id >= planning.Start4Id && planning.Stop4Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planning.Stop4Id - planning.Start4Id;
+                nettoMinutes -= planning.Pause4Id > 0 ? planning.Pause4Id - 1 : 0;
+            }
+
+            if (planning.Stop5Id >= planning.Start5Id && planning.Stop5Id != 0)
+            {
+                nettoMinutes = nettoMinutes + planning.Stop5Id - planning.Start5Id;
+                nettoMinutes -= planning.Pause5Id > 0 ? planning.Pause5Id - 1 : 0;
             }
 
             nettoMinutes *= minutesMultiplier;
