@@ -1112,55 +1112,55 @@ public class TimePlanningPlanningService(
                 // we need to calculate the pause id based on the start and stop times from all the pauses above
             }
 
+            planning.Start1StartedAt = model.Start1StartedAt;
+            planning.Stop1StoppedAt = model.Stop1StoppedAt;
+            planning.Start2StartedAt = model.Start2StartedAt;
+            planning.Stop2StoppedAt = model.Stop2StoppedAt;
+            planning.Start3StartedAt = model.Start3StartedAt;
+            planning.Stop3StoppedAt = model.Stop3StoppedAt;
+            planning.Start4StartedAt = model.Start4StartedAt;
+            planning.Stop4StoppedAt = model.Stop4StoppedAt;
+            planning.Start5StartedAt = model.Start5StartedAt;
+            planning.Stop5StoppedAt = model.Stop5StoppedAt;
+
             if (assignedSite.UseOneMinuteIntervals)
             {
-                planning.Start1StartedAt = model.Start1StartedAt;
-
                 planning.Start1Id = planning.Start1StartedAt != null
                     ? planning.Start1StartedAt.Value.Hour * 12
                       + planning.Start1StartedAt.Value.Minute / 5 + 1
                     : 0;
-                planning.Stop1StoppedAt = model.Stop1StoppedAt;
                 planning.Stop1Id = planning.Stop1StoppedAt != null
                     ? planning.Stop1StoppedAt.Value.Hour * 12
                       + planning.Stop1StoppedAt.Value.Minute / 5 + 1
                     : 0;
-                planning.Start2StartedAt = model.Start2StartedAt;
                 planning.Start2Id = planning.Start2StartedAt != null
                     ? planning.Start2StartedAt.Value.Hour * 12
                       + planning.Start2StartedAt.Value.Minute / 5 + 1
                     : 0;
-                planning.Stop2StoppedAt = model.Stop2StoppedAt;
                 planning.Stop2Id = planning.Stop2StoppedAt != null
                     ? planning.Stop2StoppedAt.Value.Hour * 12
                       + planning.Stop2StoppedAt.Value.Minute / 5 + 1
                     : 0;
-                planning.Start3StartedAt = model.Start3StartedAt;
                 planning.Start3Id = planning.Start3StartedAt != null
                     ? planning.Start3StartedAt.Value.Hour * 12
                       + planning.Start3StartedAt.Value.Minute / 5 + 1
                     : 0;
-                planning.Stop3StoppedAt = model.Stop3StoppedAt;
                 planning.Stop3Id = planning.Stop3StoppedAt != null
                     ? planning.Stop3StoppedAt.Value.Hour * 12
                       + planning.Stop3StoppedAt.Value.Minute / 5 + 1
                     : 0;
-                planning.Start4StartedAt = model.Start4StartedAt;
                 planning.Start4Id = planning.Start4StartedAt != null
                     ? planning.Start4StartedAt.Value.Hour * 12
                       + planning.Start4StartedAt.Value.Minute / 5 + 1
                     : 0;
-                planning.Stop4StoppedAt = model.Stop4StoppedAt;
                 planning.Stop4Id = planning.Stop4StoppedAt != null
                     ? planning.Stop4StoppedAt.Value.Hour * 12
                       + planning.Stop4StoppedAt.Value.Minute / 5 + 1
                     : 0;
-                planning.Start5StartedAt = model.Start5StartedAt;
                 planning.Start5Id = planning.Start5StartedAt != null
                     ? planning.Start5StartedAt.Value.Hour * 12
                       + planning.Start5StartedAt.Value.Minute / 5 + 1
                     : 0;
-                planning.Stop5StoppedAt = model.Stop5StoppedAt;
                 planning.Stop5Id = planning.Stop5StoppedAt != null
                     ? planning.Stop5StoppedAt.Value.Hour * 12
                       + planning.Stop5StoppedAt.Value.Minute / 5 + 1
