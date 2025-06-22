@@ -1042,22 +1042,22 @@ public static class PlanRegistrationHelper
             };
 
             planningModel.PauseMinutes += planRegistration.Pause1Id > 0
-                ? planRegistration.Pause1Id * 5
+                ? (planRegistration.Pause1Id * 5) - 5
                 : 0;
             planningModel.PauseMinutes += planRegistration.Pause2Id > 0
-                ? planRegistration.Pause2Id * 5
+                ? (planRegistration.Pause2Id * 5) - 5
                 : 0;
             planningModel.PauseMinutes += planRegistration.Pause3Id > 0
-                ? planRegistration.Pause3Id * 5
+                ? (planRegistration.Pause3Id * 5) - 5
                 : 0;
             planningModel.PauseMinutes += planRegistration.Pause4Id > 0
-                ? planRegistration.Pause4Id * 5
+                ? (planRegistration.Pause4Id * 5) - 5
                 : 0;
             planningModel.PauseMinutes += planRegistration.Pause5Id > 0
-                ? planRegistration.Pause5Id * 5
+                ? (planRegistration.Pause5Id * 5) - 5
                 : 0;
 
-            planningModel.PauseMinutes = planningModel.PauseMinutes > 0 ? planningModel.PauseMinutes - 5 : 0;
+            // planningModel.PauseMinutes = planningModel.PauseMinutes > 0 ? planningModel.PauseMinutes - 5 : 0;
 
             planningModel.CommentOffice = planRegistration.CommentOffice;
             planningModel.WorkerComment = planRegistration.WorkerComment;
