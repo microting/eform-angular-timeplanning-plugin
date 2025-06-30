@@ -17,6 +17,7 @@ using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Sentry;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 
 namespace TimePlanning.Pn.Infrastructure.Helpers;
@@ -240,12 +241,14 @@ public class GoogleSheetHelper
                 for (int j = 3; j < row.Count; j += 2)
                 {
 
-                    string siteName = headerRows[j].ToString().Split(" - ").First().ToLower().Replace(" ", "").Trim();
+                    var siteName = headerRows[j].ToString().Split(" - ").Length > 1
+                        ? headerRows[j].ToString().Split(" - ")[0].ToLower().Replace(" ", "").Trim()
+                        : headerRows[j].ToString().Split(" - ").First().ToLower().Replace(" ", "").Trim();
                     Console.WriteLine($"Processing site: {siteName}");
                     var site = await sdkDbContext.Sites
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                         .FirstOrDefaultAsync(x =>
-                            x.Name.Replace(" ", "").ToLower() == siteName);
+                            x.Name.Replace(" ", "").Replace("-", "").ToLower() == siteName);
                     if (site == null)
                     {
                         continue;
@@ -276,8 +279,26 @@ public class GoogleSheetHelper
 
                     var midnight = new DateTime(dateValue.Year, dateValue.Month, dateValue.Day, 0, 0, 0);
 
-                    var planRegistration = await dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
-                        x.Date == midnight && x.SdkSitId == site.MicrotingUid);
+                    var planRegistrations = await dbContext.PlanRegistrations.Where(x =>
+                        x.Date == midnight && x.SdkSitId == site.MicrotingUid)
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .ToListAsync();
+                    if (planRegistrations.Count > 1)
+                    {
+                        Console.WriteLine(
+                            $"Found multiple plan registrations for site: {site.Name} and date: {dateValue}. This should not happen.");
+                        SentrySdk.CaptureMessage(
+                            $"Found multiple plan registrations for site: {site.Name} and date: {dateValue}. This should not happen.");
+                        foreach (var plan in planRegistrations)
+                        {
+                            Console.WriteLine(
+                                $"PlanRegistration ID: {plan.Id}, PlanText: {plan.PlanText}, PlanHours: {plan.PlanHours}, Date: {plan.Date}, workflowState: {plan.WorkflowState}, SdkSitId: {plan.SdkSitId}");
+                            SentrySdk.CaptureMessage(
+                                $"PlanRegistration ID: {plan.Id}, PlanText: {plan.PlanText}, PlanHours: {plan.PlanHours}, Date: {plan.Date}, workflowState: {plan.WorkflowState}, SdkSitId: {plan.SdkSitId}");
+                        }
+                        continue;
+                    }
+                    var planRegistration = planRegistrations.FirstOrDefault();
 
                     if (planRegistration == null)
                     {
@@ -301,63 +322,352 @@ public class GoogleSheetHelper
                             StatusCaseId = 0
                         };
 
-                        var regex = new Regex(@"(.*)-(.*)\/(.*)");
-                        var match = regex.Match(planRegistration.PlanText);
-                        if (match.Captures.Count == 0)
+                        if (!string.IsNullOrEmpty(planRegistration.PlanText))
                         {
-                            regex = new Regex(@"(.*)-(.*)");
-                            match = regex.Match(planRegistration.PlanText);
-                        }
+                            var splitList = planRegistration.PlanText.Split(';');
+                            var firsSplit = splitList[0];
 
-                        if (match.Captures.Count == 1)
-                        {
-                            var firstPart = match.Groups[1].Value;
-                            var firstPartSplit =
-                                firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                            var firstPartHours = int.Parse(firstPartSplit[0]);
-                            var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                            var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                            var secondPart = match.Groups[2].Value;
-                            var secondPartSplit =
-                                secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                            var secondPartHours = int.Parse(secondPartSplit[0]);
-                            var secondPartMinutes =
-                                secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                            var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                            planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
-                            planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
-
-                            if (match.Groups.Count == 4)
+                            var regex = new Regex(@"(.*)-(.*)\/(.*)");
+                            var match = regex.Match(firsSplit);
+                            if (match.Captures.Count == 0)
                             {
-                                var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                var breakPartMinutes = breakPart switch
-                                {
-                                    "0.5" => 30,
-                                    ".5" => 30,
-                                    ".75" => 45,
-                                    "0.75" => 45,
-                                    "¾" => 45,
-                                    "½" => 30,
-                                    "1" => 60,
-                                    _ => 0
-                                };
+                                regex = new Regex(@"(.*)-(.*)");
+                                match = regex.Match(firsSplit);
 
-                                planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                                if (match.Captures.Count == 1)
+                                {
+                                    var firstPart = match.Groups[1].Value;
+                                    var firstPartSplit =
+                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var firstPartHours = int.Parse(firstPartSplit[0]);
+                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                    var secondPart = match.Groups[2].Value;
+                                    var secondPartSplit =
+                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var secondPartHours = int.Parse(secondPartSplit[0]);
+                                    var secondPartMinutes =
+                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                    planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
+                                    planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
+
+                                    if (match.Groups.Count == 4)
+                                    {
+                                        var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+
+                                        var breakPartMinutes = BreakTimeCalculator(breakPart);
+
+                                        planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                                    }
+                                    else
+                                    {
+                                        planRegistration.PlannedBreakOfShift1 = 0;
+                                    }
+                                }
+                            }
+
+                            if (match.Captures.Count == 1)
+                            {
+                                var firstPart = match.Groups[1].Value;
+                                var firstPartSplit =
+                                    firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                var firstPartHours = int.Parse(firstPartSplit[0]);
+                                var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                var secondPart = match.Groups[2].Value;
+                                var secondPartSplit =
+                                    secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                var secondPartHours = int.Parse(secondPartSplit[0]);
+                                var secondPartMinutes =
+                                    secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
+                                planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
+
+                                if (match.Groups.Count == 4)
+                                {
+                                    var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+
+                                    var breakPartMinutes = BreakTimeCalculator(breakPart);
+
+                                    planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
+                                }
+                                else
+                                {
+                                    planRegistration.PlannedBreakOfShift1 = 0;
+                                }
+                            }
+
+                            if (splitList.Length > 1)
+                            {
+                                var secondSplit = splitList[1];
+                                regex = new Regex(@"(.*)-(.*)\/(.*)");
+                                match = regex.Match(secondSplit);
+                                if (match.Captures.Count == 0)
+                                {
+                                    regex = new Regex(@"(.*)-(.*)");
+                                    match = regex.Match(secondSplit);
+
+                                    if (match.Captures.Count == 1)
+                                    {
+                                        var firstPart = match.Groups[1].Value;
+                                        var firstPartSplit =
+                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                        var firstPartHours = int.Parse(firstPartSplit[0]);
+                                        var firstPartMinutes =
+                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                        var secondPart = match.Groups[2].Value;
+                                        var secondPartSplit =
+                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                        var secondPartHours = int.Parse(secondPartSplit[0]);
+                                        var secondPartMinutes =
+                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                        planRegistration.PlannedStartOfShift2 = firstPartTotalMinutes;
+                                        planRegistration.PlannedEndOfShift2 = secondPartTotalMinutes;
+
+                                        if (match.Groups.Count == 4)
+                                        {
+                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+
+                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
+
+                                            planRegistration.PlannedBreakOfShift2 = breakPartMinutes;
+                                        }
+                                        else
+                                        {
+                                            planRegistration.PlannedBreakOfShift2 = 0;
+                                        }
+                                    }
+                                }
+
+                                if (match.Captures.Count == 1)
+                                {
+                                    var firstPart = match.Groups[1].Value;
+                                    var firstPartSplit =
+                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var firstPartHours = int.Parse(firstPartSplit[0]);
+                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                    var secondPart = match.Groups[2].Value;
+                                    var secondPartSplit =
+                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                    var secondPartHours = int.Parse(secondPartSplit[0]);
+                                    var secondPartMinutes =
+                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                    planRegistration.PlannedStartOfShift2 = firstPartTotalMinutes;
+                                    planRegistration.PlannedEndOfShift2 = secondPartTotalMinutes;
+
+                                    if (match.Groups.Count == 4)
+                                    {
+                                        var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+
+                                        var breakPartMinutes = BreakTimeCalculator(breakPart);
+
+                                        planRegistration.PlannedBreakOfShift2 = breakPartMinutes;
+                                    }
+                                    else
+                                    {
+                                        planRegistration.PlannedBreakOfShift2 = 0;
+                                    }
+                                }
+                            }
+
+                            if (splitList.Length > 2)
+                            {
+                                var thirdSplit = splitList[2];
+                                regex = new Regex(@"(.*)-(.*)\/(.*)");
+                                match = regex.Match(thirdSplit);
+                                if (match.Captures.Count == 0)
+                                {
+                                    regex = new Regex(@"(.*)-(.*)");
+                                    match = regex.Match(thirdSplit);
+
+                                    if (match.Captures.Count == 1)
+                                    {
+                                        var firstPart = match.Groups[1].Value;
+                                        var firstPartSplit =
+                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                        var firstPartHours = int.Parse(firstPartSplit[0]);
+                                        var firstPartMinutes =
+                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                        var secondPart = match.Groups[2].Value;
+                                        var secondPartSplit =
+                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                        var secondPartHours = int.Parse(secondPartSplit[0]);
+                                        var secondPartMinutes =
+                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                        planRegistration.PlannedStartOfShift3 = firstPartTotalMinutes;
+                                        planRegistration.PlannedEndOfShift3 = secondPartTotalMinutes;
+
+                                        if (match.Groups.Count == 4)
+                                        {
+                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
+
+                                            planRegistration.PlannedBreakOfShift3 = breakPartMinutes;
+                                        }
+                                        else
+                                        {
+                                            planRegistration.PlannedBreakOfShift3 = 0;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (splitList.Length > 3)
+                            {
+                                var fourthSplit = splitList[3];
+                                regex = new Regex(@"(.*)-(.*)\/(.*)");
+                                match = regex.Match(fourthSplit);
+                                if (match.Captures.Count == 0)
+                                {
+                                    regex = new Regex(@"(.*)-(.*)");
+                                    match = regex.Match(fourthSplit);
+
+                                    if (match.Captures.Count == 1)
+                                    {
+                                        var firstPart = match.Groups[1].Value;
+                                        var firstPartSplit =
+                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                        var firstPartHours = int.Parse(firstPartSplit[0]);
+                                        var firstPartMinutes =
+                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                        var secondPart = match.Groups[2].Value;
+                                        var secondPartSplit =
+                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                        var secondPartHours = int.Parse(secondPartSplit[0]);
+                                        var secondPartMinutes =
+                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                        planRegistration.PlannedStartOfShift4 = firstPartTotalMinutes;
+                                        planRegistration.PlannedEndOfShift4 = secondPartTotalMinutes;
+
+                                        if (match.Groups.Count == 4)
+                                        {
+                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
+
+                                            planRegistration.PlannedBreakOfShift4 = breakPartMinutes;
+                                        }
+                                        else
+                                        {
+                                            planRegistration.PlannedBreakOfShift4 = 0;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (splitList.Length > 4)
+                            {
+                                var fifthSplit = splitList[4];
+                                regex = new Regex(@"(.*)-(.*)\/(.*)");
+                                match = regex.Match(fifthSplit);
+                                if (match.Captures.Count == 0)
+                                {
+                                    regex = new Regex(@"(.*)-(.*)");
+                                    match = regex.Match(fifthSplit);
+
+                                    if (match.Captures.Count == 1)
+                                    {
+                                        var firstPart = match.Groups[1].Value;
+                                        var firstPartSplit =
+                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                        var firstPartHours = int.Parse(firstPartSplit[0]);
+                                        var firstPartMinutes =
+                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
+                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
+                                        var secondPart = match.Groups[2].Value;
+                                        var secondPartSplit =
+                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
+                                        var secondPartHours = int.Parse(secondPartSplit[0]);
+                                        var secondPartMinutes =
+                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
+                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
+                                        planRegistration.PlannedStartOfShift5 = firstPartTotalMinutes;
+                                        planRegistration.PlannedEndOfShift5 = secondPartTotalMinutes;
+
+                                        if (match.Groups.Count == 4)
+                                        {
+                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
+
+                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
+
+                                            planRegistration.PlannedBreakOfShift5 = breakPartMinutes;
+                                        }
+                                        else
+                                        {
+                                            planRegistration.PlannedBreakOfShift5 = 0;
+                                        }
+                                    }
+                                }
+
+                                var calculatedPlanHoursInMinutes = 0;
+                                var originalPlanHours = planRegistration.PlanHours;
+                                if (planRegistration.PlannedStartOfShift1 != 0 && planRegistration.PlannedEndOfShift1 != 0)
+                                {
+                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift1 -
+                                                                    planRegistration.PlannedStartOfShift1 -
+                                                                    planRegistration.PlannedBreakOfShift1;
+                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                                }
+
+                                if (planRegistration.PlannedStartOfShift2 != 0 && planRegistration.PlannedEndOfShift2 != 0)
+                                {
+                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift2 -
+                                                                    planRegistration.PlannedStartOfShift2 -
+                                                                    planRegistration.PlannedBreakOfShift2;
+                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                                }
+
+                                if (planRegistration.PlannedStartOfShift3 != 0 && planRegistration.PlannedEndOfShift3 != 0)
+                                {
+                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift3 -
+                                                                    planRegistration.PlannedStartOfShift3 -
+                                                                    planRegistration.PlannedBreakOfShift3;
+                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                                }
+
+                                if (planRegistration.PlannedStartOfShift4 != 0 && planRegistration.PlannedEndOfShift4 != 0)
+                                {
+                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift4 -
+                                                                    planRegistration.PlannedStartOfShift4 -
+                                                                    planRegistration.PlannedBreakOfShift4;
+                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                                }
+
+                                if (planRegistration.PlannedStartOfShift5 != 0 && planRegistration.PlannedEndOfShift5 != 0)
+                                {
+                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift5 -
+                                                                    planRegistration.PlannedStartOfShift5 -
+                                                                    planRegistration.PlannedBreakOfShift5;
+                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                                }
                             }
                         }
 
                         if (preTimePlanning != null)
                         {
                             planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                            planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.Flex -
-                                                          planRegistration.PaiedOutFlex;
-                            planRegistration.Flex = -planRegistration.PlanHours;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                         }
                         else
                         {
-                            planRegistration.Flex = -planRegistration.PlanHours;
-                            planRegistration.SumFlexEnd = planRegistration.Flex;
+                            planRegistration.SumFlexEnd =
+                                planRegistration.NettoHours - planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
                             planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                         }
 
                         await planRegistration.Create(dbContext);
@@ -454,6 +764,39 @@ public class GoogleSheetHelper
         {
             Console.WriteLine("No data found.");
         }
+    }
+
+    private static int BreakTimeCalculator(string breakPart)
+    {
+        return breakPart switch
+        {
+            "0.1" => 5,
+            ".1" => 5,
+            "0.15" => 10,
+            ".15" => 10,
+            "0.25" => 15,
+            ".25" => 15,
+            "0.3" => 20,
+            ".3" => 20,
+            "0.4" => 25,
+            ".4" => 25,
+            "0.5" => 30,
+            ".5" => 30,
+            "0.6" => 35,
+            ".6" => 35,
+            "0.7" => 40,
+            ".7" => 40,
+            "0.75" => 45,
+            ".75" => 45,
+            "0.8" => 50,
+            ".8" => 50,
+            "0.9" => 55,
+            ".9" => 55,
+            "¾" => 45,
+            "½" => 30,
+            "1" => 60,
+            _ => 0
+        };
     }
 
     static void AutoAdjustColumnWidths(SheetsService service, string spreadsheetId, string sheetName, ILogger logger)
