@@ -158,4 +158,6 @@ export class AssignedSiteModel {
   thirdShiftActive: boolean;
   fourthShiftActive: boolean;
   fifthShiftActive: boolean;
+  daysBackInTimeAllowedEditingEnabled: boolean;
+  daysBackInTimeAllowedEditing: number;
 }

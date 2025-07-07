@@ -159,6 +159,8 @@ public class AssignedSite
     public bool ThirdShiftActive { get; set; } = false;
     public bool FourthShiftActive { get; set; } = false;
     public bool FifthShiftActive { get; set; } = false;
+    public bool DaysBackInTimeAllowedEditingEnabled { get; set; }
+    public int DaysBackInTimeAllowedEditing { get; set; } = 2;
 
     // implicit conversion from Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite to AssignedSite
     public static implicit operator AssignedSite(
@@ -310,6 +312,8 @@ public class AssignedSite
             ThirdShiftActive = model.ThirdShiftActive,
             FourthShiftActive = model.FourthShiftActive,
             FifthShiftActive = model.FifthShiftActive,
+            DaysBackInTimeAllowedEditingEnabled = model.DaysBackInTimeAllowedEditingEnabled,
+            DaysBackInTimeAllowedEditing = model.DaysBackInTimeAllowedEditing,
         };
     }
 }

@@ -54,4 +54,6 @@ public class TimePlanningSettingsModel
     public int SundayBreakMinutesUpperLimit { get; set; }
     public int DayOfPayment { get; set; }
     public bool ShowCalculationsAsNumber { get; set; }
+    public bool DaysBackInTimeAllowedEditingEnabled { get; set; } = false;
+    public int DaysBackInTimeAllowedEditing { get; set; } = 2;
 }

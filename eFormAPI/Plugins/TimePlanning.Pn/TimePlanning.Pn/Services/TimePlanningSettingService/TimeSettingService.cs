@@ -88,6 +88,8 @@ public class TimeSettingService(
                 SundayBreakMinutesUpperLimit = int.Parse(options.Value.SundayBreakMinutesUpperLimit),
                 ShowCalculationsAsNumber = options.Value.ShowCalculationsAsNumber == "1",
                 DayOfPayment = options.Value.DayOfPayment,
+                DaysBackInTimeAllowedEditingEnabled = options.Value.DaysBackInTimeAllowedEditingEnabled == "1",
+                DaysBackInTimeAllowedEditing = options.Value.DaysBackInTimeAllowedEditing
             };
 
             //timePlanningSettingsModel.AssignedSites = assignedSites;
@@ -156,6 +158,9 @@ public class TimeSettingService(
                 settings.ShowCalculationsAsNumber = timePlanningSettingsModel.ShowCalculationsAsNumber ? "1" : "0";
                 settings.DayOfPayment =
                     timePlanningSettingsModel.DayOfPayment;
+                settings.DaysBackInTimeAllowedEditingEnabled = timePlanningSettingsModel.DaysBackInTimeAllowedEditingEnabled ? "1" : "0";
+                settings.DaysBackInTimeAllowedEditing =
+                    timePlanningSettingsModel.DaysBackInTimeAllowedEditing;
             }, dbContext, userService.UserId);
             await GoogleSheetHelper.PushToGoogleSheet(await core.GetCore(), dbContext, logger);
 
@@ -626,6 +631,8 @@ public class TimeSettingService(
         dbAssignedSite.ThirdShiftActive = site.ThirdShiftActive;
         dbAssignedSite.FourthShiftActive = site.FourthShiftActive;
         dbAssignedSite.FifthShiftActive = site.FifthShiftActive;
+        dbAssignedSite.DaysBackInTimeAllowedEditing = site.DaysBackInTimeAllowedEditing;
+        dbAssignedSite.DaysBackInTimeAllowedEditingEnabled = site.DaysBackInTimeAllowedEditingEnabled;
 
         await dbAssignedSite.Update(dbContext);
 
