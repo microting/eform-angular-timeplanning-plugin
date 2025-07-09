@@ -113,4 +113,11 @@ export const ukUA = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Робочий час записується натисканням кнопки «Почати/зупинити робочий час». Перерви записуються натисканням кнопки «Почати/зупинити час перерви». Виберіть «Дозволити редагування робочого часу на мобільному пристрої», щоб редагувати час.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Введіть час початку, час закінчення та загальний час перерви назад у минулому часі. Виберіть «Дозволити редагування робочих годин на мобільному пристрої», щоб редагувати час.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Запланований робочий час можна затвердити одним клацанням миші. Запланований робочий час не можна редагувати.',
+  'Download the app': 'Завантажте додаток',
+  'Open the app': 'Відкрийте програму',
+  'Enter customer number': 'Введіть номер клієнта',
+  'Enter your email': 'Введіть свою електронну адресу',
+  'Enter your password': 'Введіть свій пароль',
+  Login: 'Вхід',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Ця сторінка більше не працює, завантажте Microting Time та дотримуйтесь інструкцій нижче.',
 };

@@ -113,4 +113,11 @@ export const fiFI = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Työtunnit kirjataan painamalla Käynnistä/Pysäytä työtunnit. Tauot kirjataan painamalla Käynnistä/Pysäytä taukoaika. Valitse Salli työtuntien muokkaus mobiililaitteella muokataksesi aikoja.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Syötä aloitusaika, lopetusaika ja kokonaistauon kesto ajassa taaksepäin. Valitse Salli työaikojen muokkaaminen mobiililaitteella muokataksesi aikoja.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Suunnitellut työajat voidaan hyväksyä yhdellä napsautuksella. Suunniteltuja työaikoja ei voi muokata.',
+  'Download the app': 'Lataa sovellus',
+  'Open the app': 'Avaa sovellus',
+  'Enter customer number': 'Syötä asiakasnumero',
+  'Enter your email': 'Anna sähköpostiosoitteesi',
+  'Enter your password': 'Anna salasanasi',
+  Login: 'Kirjaudu sisään',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Tämä sivu ei ole enää toiminnassa, lataa Microting Time ja seuraa alla olevia ohjeita.',
 };

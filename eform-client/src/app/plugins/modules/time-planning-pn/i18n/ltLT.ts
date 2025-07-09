@@ -113,4 +113,11 @@ export const ltLT = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Darbo valandos registruojamos paspaudus „Pradėti/Sustabdyti darbo valandas“. Pertraukos registruojamos paspaudus „Pradėti/Sustabdyti pertraukos laiką“. Norėdami redaguoti laiką, pasirinkite „Leisti redaguoti darbo valandas mobiliajame įrenginyje“.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Įveskite pradžios laiką, pabaigos laiką ir bendrą pertraukos laiką atgaline data. Norėdami redaguoti laiką, pasirinkite „Leisti redaguoti darbo valandas mobiliajame įrenginyje“.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Suplanuotas darbo valandas galima patvirtinti vienu spustelėjimu. Suplanuotų darbo valandų redaguoti negalima.',
+  'Download the app': 'Atsisiųskite programėlę',
+  'Open the app': 'Atidarykite programėlę',
+  'Enter customer number': 'Įveskite kliento numerį',
+  'Enter your email': 'Įveskite savo el. pašto adresą',
+  'Enter your password': 'Įveskite slaptažodį',
+  Login: 'Prisijungti',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Šis puslapis nebeveikia, atsisiųskite „Microting Time“ ir vykdykite toliau pateiktas instrukcijas.',
 };

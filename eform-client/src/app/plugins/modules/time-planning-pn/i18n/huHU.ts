@@ -113,4 +113,11 @@ export const huHU = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'A munkaórák rögzítése a Munkaórák indítása/leállítása gomb megnyomásával történik. A szünetek rögzítése a Szünetidő indítása/leállítása gomb megnyomásával történik. Az időpontok szerkesztéséhez válassza a Munkaórák szerkesztésének engedélyezése mobilon lehetőséget.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Adja meg a kezdési időpontot, a befejezési időpontot és a teljes szünetidőt visszamenőleg. Az időpontok szerkesztéséhez válassza a Munkaórák szerkesztésének engedélyezése mobilon lehetőséget.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'A beütemezett munkaórák egyetlen kattintással jóváhagyhatók. A beütemezett munkaórák nem szerkeszthetők.',
+  'Download the app': 'Töltsd le az alkalmazást',
+  'Open the app': 'Nyissa meg az alkalmazást',
+  'Enter customer number': 'Adja meg az ügyfélszámot',
+  'Enter your email': 'Add meg az e-mail címed',
+  'Enter your password': 'Írja be a jelszavát',
+  Login: 'Bejelentkezés',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Ez az oldal már nem működik, töltsd le a Microting Time oldalt és kövesd az alábbi utasításokat.',
 };

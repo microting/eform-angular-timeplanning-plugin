@@ -113,4 +113,11 @@ export const bgBG = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Работните часове се записват чрез натискане на „Старт/Стоп на работното време“. Почивките се записват чрез натискане на „Старт/Стоп на времето за почивка“. Изберете „Разрешаване на редактиране на работното време на мобилно устройство“, за да редактирате времената.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Въведете начален час, краен час и общо време за почивка назад във времето. Изберете „Разрешаване на редактиране на работни часове на мобилно устройство“, за да редактирате часовете.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Планираните работни часове могат да бъдат одобрени с едно щракване. Планираните работни часове не могат да бъдат редактирани.',
+  'Download the app': 'Изтеглете приложението',
+  'Open the app': 'Отворете приложението',
+  'Enter customer number': 'Въведете клиентски номер',
+  'Enter your email': 'Въведете имейла си',
+  'Enter your password': 'Въведете паролата си',
+  Login: 'Вход',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Тази страница вече не функционира, вземете Microting Time и следвайте инструкциите по-долу.',
 };

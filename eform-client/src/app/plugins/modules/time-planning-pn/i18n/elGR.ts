@@ -113,4 +113,11 @@ export const elGR = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Οι ώρες εργασίας καταγράφονται πατώντας Έναρξη/Διακοπή ωρών εργασίας. Τα διαλείμματα καταγράφονται πατώντας Έναρξη/Διακοπή ώρας διαλείμματος. Επιλέξτε Να επιτρέπεται η επεξεργασία των ωρών εργασίας σε κινητό για να επεξεργαστείτε τις ώρες.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Εισαγάγετε την ώρα έναρξης, την ώρα λήξης και τον συνολικό χρόνο διαλείμματος πίσω στο χρόνο. Επιλέξτε Να επιτρέπεται η επεξεργασία των ωρών εργασίας σε κινητό για να επεξεργαστείτε τις ώρες.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Οι προγραμματισμένες ώρες εργασίας μπορούν να εγκριθούν με ένα μόνο κλικ. Δεν είναι δυνατή η επεξεργασία των προγραμματισμένων ωρών εργασίας.',
+  'Download the app': 'Κατεβάστε την εφαρμογή',
+  'Open the app': 'Άνοιγμα της εφαρμογής',
+  'Enter customer number': 'Εισαγάγετε τον αριθμό πελάτη',
+  'Enter your email': 'Εισαγάγετε το email σας',
+  'Enter your password': 'Εισαγάγετε τον κωδικό πρόσβασής σας',
+  Login: 'Σύνδεση',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Αυτή η σελίδα δεν λειτουργεί πλέον, αποκτήστε το Microting Time και ακολουθήστε τις παρακάτω οδηγίες.',
 };

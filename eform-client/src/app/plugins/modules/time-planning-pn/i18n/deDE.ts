@@ -113,4 +113,11 @@ export const deDE = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Die Erfassung der Arbeitszeit erfolgt durch Drücken von „Arbeitszeit starten/stoppen“. Die Erfassung der Pausen erfolgt durch Drücken von „Pausenzeit starten/stoppen“. Um die Zeiten zu bearbeiten, wählen Sie „Bearbeitung der Arbeitszeiten auf dem Mobilgerät zulassen“.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Geben Sie Startzeit, Endzeit und Gesamtpausenzeit rückwirkend ein. Aktivieren Sie „Bearbeiten der Arbeitszeiten auf Mobilgeräten zulassen“, um die Zeiten zu bearbeiten.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Geplante Arbeitszeiten können mit nur einem Klick freigegeben werden. Geplante Arbeitszeiten können nicht bearbeitet werden.',
+  'Download the app': 'Laden Sie die App herunter',
+  'Open the app': 'Öffnen Sie die App',
+  'Enter customer number': 'Kundennummer eingeben',
+  'Enter your email': 'Geben Sie Ihre E-Mail ein',
+  'Enter your password': 'Geben Sie Ihr Passwort ein',
+  Login: 'Login',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Diese Seite ist nicht mehr in Funktion. Holen Sie sich Microting Time und folgen Sie den Anweisungen unten',
 };

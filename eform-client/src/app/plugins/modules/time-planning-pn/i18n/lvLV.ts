@@ -113,4 +113,11 @@ export const lvLV = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Darba stundas tiek reģistrētas, nospiežot Sākt/Apturēt darba stundas. Pārtraukumi tiek reģistrēti, nospiežot Sākt/Apturēt pārtraukuma laiku. Lai rediģētu laikus, atlasiet Atļaut darba stundu rediģēšanu mobilajā tālrunī.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Ievadiet sākuma laiku, beigu laiku un kopējo pārtraukuma laiku atpakaļ laikā. Lai rediģētu laikus, atlasiet “Atļaut darba stundu rediģēšanu mobilajā ierīcē”.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Plānotās darba stundas var apstiprināt ar vienu klikšķi. Plānotās darba stundas nevar rediģēt.',
+  'Download the app': 'Lejupielādēt lietotni',
+  'Open the app': 'Atveriet lietotni',
+  'Enter customer number': 'Ievadiet klienta numuru',
+  'Enter your email': 'Ievadiet savu e-pasta adresi',
+  'Enter your password': 'Ievadiet savu paroli',
+  Login: 'Pieteikšanās',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Šī lapa vairs nedarbojas, iegūstiet Microting Time un izpildiet tālāk norādītās instrukcijas.',
 };

@@ -113,4 +113,11 @@ export const etET = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Töötunde saab registreerida, vajutades nuppu „Alusta/Lõpeta töötunnid“. Pause saab registreerida, vajutades nuppu „Alusta/Lõpeta paus“. Aegade muutmiseks valige „Luba töötundide muutmine mobiilis“.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Sisestage algusaeg, lõppaeg ja kogu pausiaeg ajas tagasi. Aegade muutmiseks valige „Luba töötundide muutmine mobiilis”.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Planeeritud tööaega saab kinnitada ühe klõpsuga. Planeeritud tööaega ei saa muuta.',
+  'Download the app': 'Laadige rakendus alla',
+  'Open the app': 'Ava rakendus',
+  'Enter customer number': 'Sisestage kliendinumber',
+  'Enter your email': 'Sisesta oma e-posti aadress',
+  'Enter your password': 'Sisesta oma parool',
+  Login: 'Sisselogimine',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'See leht enam ei tööta, hankige Microting Time ja järgige allolevaid juhiseid.',
 };

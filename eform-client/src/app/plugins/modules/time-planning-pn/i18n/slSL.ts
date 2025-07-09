@@ -113,4 +113,11 @@ export const slSL = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Delovni čas se zabeleži s pritiskom na Začni/Ustavi delovni čas. Odmori se zabeležijo s pritiskom na Začni/Ustavi čas odmora. Za urejanje časov izberite Dovoli urejanje delovnega časa na mobilni napravi.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Vnesite čas začetka, čas konca in skupni čas odmora za nazaj v preteklost. Za urejanje časov izberite Dovoli urejanje delovnega časa v mobilni napravi.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Načrtovane delovne ure je mogoče odobriti z enim samim klikom. Načrtovanih delovnih ur ni mogoče urejati.',
+  'Download the app': 'Prenesite aplikacijo',
+  'Open the app': 'Odprite aplikacijo',
+  'Enter customer number': 'Vnesite številko stranke',
+  'Enter your email': 'Vnesite svoj e-poštni naslov',
+  'Enter your password': 'Vnesite svoje geslo',
+  Login: 'Prijava',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Ta stran ne deluje več, pridobite Microting Time in sledite spodnjim navodilom.',
 };

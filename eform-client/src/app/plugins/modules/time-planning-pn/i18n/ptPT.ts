@@ -113,4 +113,11 @@ export const ptPT = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'As horas de trabalho são registradas pressionando Iniciar/Parar horas de trabalho. Os intervalos são registrados pressionando Iniciar/Parar tempo de intervalo. Selecione Permitir edição de horas de trabalho no celular para editar os horários.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Insira o horário de início, o horário de término e o tempo total de intervalo novamente. Selecione &quot;Permitir edição de horas de trabalho no celular&quot; para editar os horários.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'O horário de trabalho agendado pode ser aprovado com um único clique. O horário de trabalho agendado não pode ser editado.',
+  'Download the app': 'Baixe o aplicativo',
+  'Open the app': 'Abra o aplicativo',
+  'Enter customer number': 'Digite o número do cliente',
+  'Enter your email': 'Digite seu e-mail',
+  'Enter your password': 'Digite sua senha',
+  Login: 'Conecte-se',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Esta página não está mais em funcionamento, adquira o Microting Time e siga as instruções abaixo',
 };

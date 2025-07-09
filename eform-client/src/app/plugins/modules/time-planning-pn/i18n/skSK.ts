@@ -113,4 +113,11 @@ export const skSK = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Pracovné hodiny sa zaznamenávajú stlačením tlačidla Spustiť/Zastaviť pracovné hodiny. Prestávky sa zaznamenávajú stlačením tlačidla Spustiť/Zastaviť čas prestávky. Ak chcete upravovať časy, vyberte možnosť Povoliť úpravu pracovných hodín v mobile.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Zadajte čas začiatku, čas ukončenia a celkový čas prestávky spätne v čase. Ak chcete upravovať časy, vyberte možnosť Povoliť úpravu pracovnej doby v mobile.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Naplánovaný pracovný čas je možné schváliť jedným kliknutím. Naplánovaný pracovný čas nie je možné upravovať.',
+  'Download the app': 'Stiahnite si aplikáciu',
+  'Open the app': 'Otvorte aplikáciu',
+  'Enter customer number': 'Zadajte číslo zákazníka',
+  'Enter your email': 'Zadajte svoj e-mail',
+  'Enter your password': 'Zadajte svoje heslo',
+  Login: 'Prihlásenie',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Táto stránka už nie je funkčná, stiahnite si Microting Time a postupujte podľa pokynov nižšie.',
 };

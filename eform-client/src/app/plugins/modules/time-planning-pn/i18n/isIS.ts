@@ -113,4 +113,11 @@ export const isIS = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Vinnutími er skráður með því að ýta á Byrja/Stöðva vinnutíma. Hlé eru skráð með því að ýta á Byrja/Stöðva hlétíma. Veldu Leyfa breytingar á vinnutíma í farsíma til að breyta tímum.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Sláðu inn upphafstíma, loktíma og heildarhlétíma aftur í tímann. Veldu Leyfa breytingar á vinnutíma í farsíma til að breyta tímum.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Hægt er að samþykkja áætlaða vinnutíma með einum smelli. Ekki er hægt að breyta áætluðum vinnutíma.',
+  'Download the app': 'Sækja appið',
+  'Open the app': 'Opnaðu appið',
+  'Enter customer number': 'Sláðu inn viðskiptavinarnúmer',
+  'Enter your email': 'Sláðu inn netfangið þitt',
+  'Enter your password': 'Sláðu inn lykilorðið þitt',
+  Login: 'Innskráning',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Þessi síða virkar ekki lengur, sæktu Microting Time og fylgdu leiðbeiningunum hér að neðan.',
 };

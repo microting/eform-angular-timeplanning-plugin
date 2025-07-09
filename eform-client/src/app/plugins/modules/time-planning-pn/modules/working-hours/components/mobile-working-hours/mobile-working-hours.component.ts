@@ -19,6 +19,7 @@ export class MobileWorkingHoursComponent implements OnInit, OnDestroy {
   workingHourModel: WorkingHourModel;
   selectedDate: Date = new Date();
   yesterday: Date = new Date(this.selectedDate.setDate(this.selectedDate.getDate() - 1));
+  customerNumber: string = '';
 
   constructor(
     private titleService: TitleService,
@@ -30,6 +31,8 @@ export class MobileWorkingHoursComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    const host = window.location.hostname;
+    this.customerNumber = host.split('.')[0];
     this.workingHoursService.getWorkingHourReadSimple(format(this.selectedDate, PARSING_DATE_FORMAT))
       .subscribe((data) => {
       if (data && data.success) {

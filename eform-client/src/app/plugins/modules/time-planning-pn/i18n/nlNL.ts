@@ -113,4 +113,11 @@ export const nlNL = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Werkuren worden geregistreerd door op Start/Stop werkuren te drukken. Pauzes worden geregistreerd door op Start/Stop pauzetijd te drukken. Selecteer &#39;Bewerken van werkuren op mobiel toestaan&#39; om de tijden te bewerken.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Voer de begintijd, eindtijd en totale pauzetijd in de tijd in. Selecteer &#39;Bewerken van werkuren op mobiel toestaan&#39; om de tijden te bewerken.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Geplande werkuren kunnen met één klik worden goedgekeurd. Geplande werkuren kunnen niet worden bewerkt.',
+  'Download the app': 'Download de app',
+  'Open the app': 'Open de app',
+  'Enter customer number': 'Voer klantnummer in',
+  'Enter your email': 'Voer uw e-mailadres in',
+  'Enter your password': 'Voer uw wachtwoord in',
+  Login: 'Login',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Deze pagina is niet meer in gebruik, download Microting Time en volg de onderstaande instructies',
 };

@@ -111,4 +111,11 @@ export const enUS = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.',
+  'Download the app': 'Download the app',
+  'Open the app': 'Open the app',
+  'Enter customer number': 'Enter customer number',
+  'Enter your email': 'Enter your email',
+  'Enter your password': 'Enter your password',
+  'Login': 'Login',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'This page is no longer in function, get Microting Time and follow the instructions below',
 };

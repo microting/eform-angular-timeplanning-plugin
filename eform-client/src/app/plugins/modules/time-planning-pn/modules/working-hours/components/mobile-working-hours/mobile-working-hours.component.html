@@ -1,30 +1,21 @@
-<!-- TODO add calendar navigator in the top bar -->
-<div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-  <button mat-raised-button color="primary" (click)="goBackward()">{{ 'Back' | translate }}</button>
-  <mat-form-field appearance="fill">
-    <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate" (dateChange)="updateSelectedDate()">
-    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-    <mat-datepicker touchUi #picker></mat-datepicker>
-  </mat-form-field>
-  <button mat-raised-button color="primary" (click)="goForward()" [disabled]="isToday()">{{ 'Forward' | translate }}</button>
-</div>
+<p>{{'This page is no longer in function, get Microting Time and follow the instructions below' | translate}}:</p>
 
-<ng-container *ngIf="workingHourModel">
-  <table mat-table [dataSource]="workingHourData" class="mat-elevation-z8" style="width: 100%;">
-    <ng-container matColumnDef="property">
+<a href="https://apps.apple.com/dk/app/microting-time/id6504076189" target="_blank" rel="noopener">
+  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
+       alt="Download on the App Store" height="40">
+</a>
+<br>
+<a href="https://play.google.com/store/apps/details?id=com.microting.time" target="_blank" rel="noopener">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+       alt="Get it on Google Play" height="40">
+</a>
 
-      <td mat-cell *matCellDef="let element">
-        <ng-container *ngIf="element.property.includes('sumFlexStart')"> {{element.property | translate : {start: workingHourModel.yesterDay} }}: </ng-container>
-        <ng-container *ngIf="element.property.includes('sumFlexEnd')"> {{element.property | translate : {end: workingHourModel.date} }}: </ng-container>
-        <ng-container *ngIf="element.property.includes('paidOutFlex')"> {{element.property | translate}}: </ng-container>
-        <ng-container *ngIf="!element.property.includes('Flex')"> {{element.property | translate}}: </ng-container>
-      </td>
-    </ng-container>
 
-    <ng-container matColumnDef="value">
-      <td mat-cell *matCellDef="let element"> {{element.value}} </td>
-    </ng-container>
-
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-  </table>
-</ng-container>
+<ul>
+  <li>{{'Download the app' | translate}}</li>
+  <li>{{'Open the app' | translate}}</li>
+  <li>{{'Enter customer number' | translate}}: {{ customerNumber }}</li>
+  <li>{{'Enter your email' | translate}}</li>
+  <li>{{'Enter your password' | translate}}</li>
+  <li>{{'Login' | translate}}</li>
+</ul>

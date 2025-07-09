@@ -113,4 +113,11 @@ export const frFR = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Les heures de travail sont enregistrées en appuyant sur « Démarrer/Arrêter ». Les pauses sont enregistrées en appuyant sur « Démarrer/Arrêter ». Sélectionnez « Autoriser la modification des heures de travail sur mobile » pour modifier les heures.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Saisissez l&#39;heure de début, l&#39;heure de fin et la durée totale de la pause. Sélectionnez « Autoriser la modification des heures de travail sur mobile » pour modifier les heures.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Les horaires de travail planifiés peuvent être approuvés en un seul clic. Ils ne sont pas modifiables.',
+  'Download the app': 'Téléchargez l&#39;application',
+  'Open the app': 'Ouvrez l&#39;application',
+  'Enter customer number': 'Entrez le numéro de client',
+  'Enter your email': 'Entrez votre email',
+  'Enter your password': 'Entrez votre mot de passe',
+  Login: 'Se connecter',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Cette page n&#39;est plus fonctionnelle, téléchargez Microting Time et suivez les instructions ci-dessous',
 };

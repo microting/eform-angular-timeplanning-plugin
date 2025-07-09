@@ -113,4 +113,11 @@ export const hrHR = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Radni sati se bilježe pritiskom na Pokreni/Zaustavi radno vrijeme. Pauze se bilježe pritiskom na Pokreni/Zaustavi vrijeme pauze. Odaberite Dopusti uređivanje radnih sati na mobitelu za uređivanje vremena.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Unesite vrijeme početka, vrijeme završetka i ukupno vrijeme pauze unatrag unatrag. Odaberite Dopusti uređivanje radnog vremena na mobilnom uređaju za uređivanje vremena.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Planirano radno vrijeme može se odobriti jednim klikom. Planirano radno vrijeme ne može se uređivati.',
+  'Download the app': 'Preuzmite aplikaciju',
+  'Open the app': 'Otvorite aplikaciju',
+  'Enter customer number': 'Unesite broj kupca',
+  'Enter your email': 'Unesite svoju e-poštu',
+  'Enter your password': 'Unesite svoju lozinku',
+  Login: 'Prijava',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Ova stranica više nije u funkciji, preuzmite Microting Time i slijedite upute u nastavku.',
 };

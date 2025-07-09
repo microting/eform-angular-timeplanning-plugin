@@ -113,4 +113,11 @@ export const noNO = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Arbeidstimer registreres ved å trykke Start/Stopp arbeidstid. Pauser registreres ved å trykke Start/Stopp pausetid. Velg Tillat redigering av arbeidstimer på mobil for å redigere tider.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Skriv inn starttid, stopptid og total pausetid tilbake i tid. Velg Tillat redigering av arbeidstimer på mobil for å redigere tider.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Planlagte arbeidstider kan godkjennes med et enkelt klikk. Planlagte arbeidstider kan ikke redigeres.',
+  'Download the app': 'Last ned appen',
+  'Open the app': 'Åpne appen',
+  'Enter customer number': 'Skriv inn kundenummer',
+  'Enter your email': 'Skriv inn e-postadressen din',
+  'Enter your password': 'Skriv inn passordet ditt',
+  Login: 'Logg inn',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Denne siden fungerer ikke lenger. Skaff deg Microting Time og følg instruksjonene nedenfor.',
 };

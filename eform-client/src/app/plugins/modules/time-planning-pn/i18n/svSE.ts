@@ -113,4 +113,11 @@ export const svSE = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Arbetstimmar registreras genom att trycka på Starta/Stoppa arbetstid. Raster registreras genom att trycka på Starta/Stoppa rasttid. Välj Tillåt redigering av arbetstid på mobilen för att redigera tider.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Ange starttid, stopptid och total rasttid bakåt i tiden. Välj Tillåt redigering av arbetstimmar på mobilen för att redigera tider.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Schemalagda arbetstider kan godkännas med ett enda klick. Schemalagda arbetstider kan inte redigeras.',
+  'Download the app': 'Ladda ner appen',
+  'Open the app': 'Öppna appen',
+  'Enter customer number': 'Ange kundnummer',
+  'Enter your email': 'Ange din e-postadress',
+  'Enter your password': 'Ange ditt lösenord',
+  Login: 'Inloggning',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Den här sidan fungerar inte längre, hämta Microting Time och följ instruktionerna nedan.',
 };

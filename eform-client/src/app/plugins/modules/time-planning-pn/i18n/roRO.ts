@@ -113,4 +113,11 @@ export const roRO = {
   'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.': 'Orele de lucru sunt înregistrate apăsând Start/Oprire ore de lucru. Pauzele sunt înregistrate apăsând Start/Oprire timp pauză. Selectați Permiteți editarea orelor de lucru pe mobil pentru a edita orele.',
   'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.': 'Introduceți ora de început, ora de sfârșit și timpul total de pauză în timp real. Selectați Permiteți editarea orelor de lucru pe mobil pentru a edita orele.',
   'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.': 'Orele de lucru programate pot fi aprobate cu un singur clic. Orele de lucru programate nu pot fi editate.',
+  'Download the app': 'Descărcați aplicația',
+  'Open the app': 'Deschide aplicația',
+  'Enter customer number': 'Introduceți numărul clientului',
+  'Enter your email': 'Introdu adresa ta de e-mail',
+  'Enter your password': 'Introduceți parola',
+  Login: 'Log in',
+  'This page is no longer in function, get Microting Time and follow the instructions below': 'Această pagină nu mai este funcțională, obțineți Microting Time și urmați instrucțiunile de mai jos.',
 };
