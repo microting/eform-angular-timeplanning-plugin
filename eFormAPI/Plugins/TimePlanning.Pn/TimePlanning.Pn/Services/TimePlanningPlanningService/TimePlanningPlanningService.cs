@@ -302,6 +302,16 @@ public class TimePlanningPlanningService(
             PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
         };
 
+        try
+        {
+            siteModel.SoftwareVersionIsValid = int.Parse(currentUser.TimeRegistrationSoftwareVersion.Replace(".", "")) >= 3114;
+        }
+        catch (Exception)
+        {
+            // If the version format is invalid, we assume it's not valid
+            siteModel.SoftwareVersionIsValid = false;
+        }
+
         var user = await baseDbContext.Users
             .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
             .FirstOrDefaultAsync().ConfigureAwait(false);
