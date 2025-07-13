@@ -33,6 +33,7 @@ public class TimePlanningPlanningRequestModel
 {
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
+    public int? SiteId { get; set; }
     public bool IsSortDsc { get; set; }
     public string Sort { get; set; }
 }

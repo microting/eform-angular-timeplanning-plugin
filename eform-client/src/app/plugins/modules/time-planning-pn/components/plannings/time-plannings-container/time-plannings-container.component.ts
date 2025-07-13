@@ -11,8 +11,8 @@ import {startOfWeek, endOfWeek, format} from 'date-fns';
 import {PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {Store} from '@ngrx/store';
 import {selectCurrentUserLocale} from 'src/app/state';
-import {MatDialog} from "@angular/material/dialog";
-import {DownloadExcelDialogComponent} from "src/app/plugins/modules/time-planning-pn/components";
+import {MatDialog} from '@angular/material/dialog';
+import {DownloadExcelDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
 
 @AutoUnsubscribe()
 @Component({
@@ -27,7 +27,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   timePlannings: TimePlanningModel[] = [];
   selectedDate: Date = new Date();
   dateFrom: Date;
-  dateTo: Date
+  dateTo: Date;
+  siteId: number = null; // Default to 0 to get all sites
 
   getTimePlannings$: Subscription;
   updateTimePlanning$: Subscription;
@@ -43,6 +44,15 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+
+    this.settingsService
+      .getAvailableSites()
+      .subscribe((data) => {
+        if (data && data.success) {
+          this.availableSites = data.model;
+
+        }
+      });
     this.selectCurrentUserLocale$.pipe(take(1)).subscribe((locale) => {
       this.locale = locale;
       this.getPlannings();
@@ -62,6 +72,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
       dateTo: format(this.dateTo, PARSING_DATE_FORMAT),
       sort: 'Date',
       isSortDsc: true,
+      siteId: this.siteId, // Default to 0 to get all sites
     }
     this.getTimePlannings$ = this.planningsService
       .getPlannings(this.timePlanningsRequest)
@@ -82,11 +93,6 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   openDownloadExcelDialog() {
-    this.settingsService
-      .getAvailableSites()
-      .subscribe((data) => {
-        if (data && data.success) {
-          this.availableSites = data.model;
           const dialogRef = this.dialog.open(DownloadExcelDialogComponent, {
             width: '600px',
             data: this.availableSites,
@@ -96,8 +102,6 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
             //   this.getPlannings();
             // }
           });
-        }
-      });
   }
 
   goForward() {
@@ -120,6 +124,11 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   onAssignedSiteChanged($event: any) {
+    this.getPlannings();
+  }
+
+  onSiteChanged($event: any) {
+    this.siteId = $event;
     this.getPlannings();
   }
 }

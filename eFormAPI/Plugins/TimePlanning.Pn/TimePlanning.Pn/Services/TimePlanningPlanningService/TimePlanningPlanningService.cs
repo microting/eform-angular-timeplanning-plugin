@@ -67,6 +67,12 @@ public class TimePlanningPlanningService(
             var assignedSites =
                 await dbContext.AssignedSites.Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .ToListAsync().ConfigureAwait(false);
+
+            if (model.SiteId != 0 && model.SiteId != null)
+            {
+                assignedSites = assignedSites.Where(x => x.SiteId == model.SiteId).ToList();
+            }
+
             var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
             var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
             var todayMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
