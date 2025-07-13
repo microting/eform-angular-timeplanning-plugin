@@ -120,4 +120,5 @@ export const ptPT = {
   'Enter your password': 'Digite sua senha',
   Login: 'Conecte-se',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Esta página não está mais em funcionamento, adquira o Microting Time e siga as instruções abaixo',
+  'Needs update!': 'Precisa de atualização!',
 };

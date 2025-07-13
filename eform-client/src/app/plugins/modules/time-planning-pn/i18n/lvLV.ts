@@ -120,4 +120,5 @@ export const lvLV = {
   'Enter your password': 'Ievadiet savu paroli',
   Login: 'Pieteikšanās',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Šī lapa vairs nedarbojas, iegūstiet Microting Time un izpildiet tālāk norādītās instrukcijas.',
+  'Needs update!': 'Nepieciešams atjauninājums!',
 };

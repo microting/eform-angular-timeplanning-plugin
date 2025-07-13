@@ -120,4 +120,5 @@ export const bgBG = {
   'Enter your password': 'Въведете паролата си',
   Login: 'Вход',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Тази страница вече не функционира, вземете Microting Time и следвайте инструкциите по-долу.',
+  'Needs update!': 'Нуждае се от актуализация!',
 };

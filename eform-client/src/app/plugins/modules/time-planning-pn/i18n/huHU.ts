@@ -120,4 +120,5 @@ export const huHU = {
   'Enter your password': 'Írja be a jelszavát',
   Login: 'Bejelentkezés',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ez az oldal már nem működik, töltsd le a Microting Time oldalt és kövesd az alábbi utasításokat.',
+  'Needs update!': 'Frissítésre szorul!',
 };

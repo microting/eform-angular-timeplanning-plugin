@@ -57,7 +57,8 @@
               </ng-container>
               {{row['softwareVersion']}}
               <div *ngIf="row['softwareVersionIsValid'] === false">
-                <span [matTooltip]="'Needs update!' | translate "><mat-icon>warning</mat-icon></span>
+                <span [matTooltip]="'Needs update!' | translate "><mat-icon
+                  color="accent">warning</mat-icon></span>
               </div>
             </div>
           </div>
@@ -111,7 +112,8 @@
               </ng-container>
               {{row['softwareVersion']}}
               <div *ngIf="row['softwareVersionIsValid'] === false">
-                <span [matTooltip]="'Needs update!' | translate "><mat-icon>warning</mat-icon></span>
+                <span [matTooltip]="'Needs update!' | translate "><mat-icon
+                  color="accent">warning</mat-icon></span>
               </div>
             </div>
           </div>

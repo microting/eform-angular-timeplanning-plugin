@@ -120,4 +120,5 @@ export const csCZ = {
   'Enter your password': 'Zadejte své heslo',
   Login: 'Přihlášení',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Tato stránka již není funkční, stáhněte si aplikaci Microting Time a postupujte podle níže uvedených pokynů.',
+  'Needs update!': 'Potřebuje aktualizaci!',
 };

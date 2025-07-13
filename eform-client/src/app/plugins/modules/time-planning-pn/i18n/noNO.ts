@@ -120,4 +120,5 @@ export const noNO = {
   'Enter your password': 'Skriv inn passordet ditt',
   Login: 'Logg inn',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Denne siden fungerer ikke lenger. Skaff deg Microting Time og følg instruksjonene nedenfor.',
+  'Needs update!': 'Trenger oppdatering!',
 };

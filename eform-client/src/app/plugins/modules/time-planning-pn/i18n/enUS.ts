@@ -118,4 +118,5 @@ export const enUS = {
   'Enter your password': 'Enter your password',
   'Login': 'Login',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'This page is no longer in function, get Microting Time and follow the instructions below',
+  'Needs update!': 'Needs update!',
 };

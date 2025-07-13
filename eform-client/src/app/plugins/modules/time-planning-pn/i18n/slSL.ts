@@ -120,4 +120,5 @@ export const slSL = {
   'Enter your password': 'Vnesite svoje geslo',
   Login: 'Prijava',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ta stran ne deluje več, pridobite Microting Time in sledite spodnjim navodilom.',
+  'Needs update!': 'Potrebna je posodobitev!',
 };

@@ -120,4 +120,5 @@ export const nlNL = {
   'Enter your password': 'Voer uw wachtwoord in',
   Login: 'Login',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Deze pagina is niet meer in gebruik, download Microting Time en volg de onderstaande instructies',
+  'Needs update!': 'Moet geüpdatet worden!',
 };

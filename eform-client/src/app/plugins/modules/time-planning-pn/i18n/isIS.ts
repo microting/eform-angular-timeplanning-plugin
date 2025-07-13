@@ -120,4 +120,5 @@ export const isIS = {
   'Enter your password': 'Sláðu inn lykilorðið þitt',
   Login: 'Innskráning',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Þessi síða virkar ekki lengur, sæktu Microting Time og fylgdu leiðbeiningunum hér að neðan.',
+  'Needs update!': 'Þarfnast uppfærslu!',
 };

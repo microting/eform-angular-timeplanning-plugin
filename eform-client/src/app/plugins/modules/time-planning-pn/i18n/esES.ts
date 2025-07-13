@@ -120,4 +120,5 @@ export const esES = {
   'Enter your password': 'Ingrese su contraseña',
   Login: 'Acceso',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Esta página ya no está en funcionamiento, obtenga Microting Time y siga las instrucciones a continuación',
+  'Needs update!': '¡Necesita actualización!',
 };

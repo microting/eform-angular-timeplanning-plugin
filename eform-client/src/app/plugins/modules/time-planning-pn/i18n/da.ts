@@ -118,4 +118,5 @@ export const da = {
   'Enter your password': 'Indtast din adgangskode',
   Login: 'Log ind',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Denne side fungerer ikke længere. Hent Microting Time og følg instruktionerne nedenfor.',
+  'Needs update!': 'Trænger til opdatering!',
 };

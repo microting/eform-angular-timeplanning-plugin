@@ -120,4 +120,5 @@ export const hrHR = {
   'Enter your password': 'Unesite svoju lozinku',
   Login: 'Prijava',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ova stranica više nije u funkciji, preuzmite Microting Time i slijedite upute u nastavku.',
+  'Needs update!': 'Potrebno ažuriranje!',
 };

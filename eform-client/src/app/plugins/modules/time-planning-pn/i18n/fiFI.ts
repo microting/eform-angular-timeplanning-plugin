@@ -120,4 +120,5 @@ export const fiFI = {
   'Enter your password': 'Anna salasanasi',
   Login: 'Kirjaudu sisään',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Tämä sivu ei ole enää toiminnassa, lataa Microting Time ja seuraa alla olevia ohjeita.',
+  'Needs update!': 'Tarvitsee päivitystä!',
 };

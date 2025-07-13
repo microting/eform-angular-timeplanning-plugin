@@ -120,4 +120,5 @@ export const deDE = {
   'Enter your password': 'Geben Sie Ihr Passwort ein',
   Login: 'Login',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Diese Seite ist nicht mehr in Funktion. Holen Sie sich Microting Time und folgen Sie den Anweisungen unten',
+  'Needs update!': 'Muss aktualisiert werden!',
 };

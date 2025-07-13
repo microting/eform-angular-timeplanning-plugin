@@ -120,4 +120,5 @@ export const etET = {
   'Enter your password': 'Sisesta oma parool',
   Login: 'Sisselogimine',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'See leht enam ei tööta, hankige Microting Time ja järgige allolevaid juhiseid.',
+  'Needs update!': 'Vajab uuendamist!',
 };

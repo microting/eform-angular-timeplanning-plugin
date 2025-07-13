@@ -120,4 +120,5 @@ export const ukUA = {
   'Enter your password': 'Введіть свій пароль',
   Login: 'Вхід',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ця сторінка більше не працює, завантажте Microting Time та дотримуйтесь інструкцій нижче.',
+  'Needs update!': 'Потребує оновлення!',
 };

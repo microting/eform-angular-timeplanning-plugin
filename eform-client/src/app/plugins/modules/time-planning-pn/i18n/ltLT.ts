@@ -120,4 +120,5 @@ export const ltLT = {
   'Enter your password': 'Įveskite slaptažodį',
   Login: 'Prisijungti',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Šis puslapis nebeveikia, atsisiųskite „Microting Time“ ir vykdykite toliau pateiktas instrukcijas.',
+  'Needs update!': 'Reikia atnaujinimo!',
 };
