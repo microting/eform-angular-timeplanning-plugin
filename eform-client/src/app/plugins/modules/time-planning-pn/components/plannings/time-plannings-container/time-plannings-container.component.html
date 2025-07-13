@@ -1,7 +1,16 @@
 <eform-new-subheader [title]="'Dashboard'"></eform-new-subheader>
 <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
   <button id="backwards" mat-raised-button color="primary" (click)="goBackward()">{{ 'Back' | translate }}</button>
-  <span>{{ formatDateRange() }}</span>
+<!--  <span>{{ formatDateRange() }}</span>-->
+  <mat-form-field id="workingHoursRange">
+    <mat-label>{{ 'Date range' | translate }}</mat-label>
+    <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
+    <mat-date-range-input [rangePicker]="picker" (click)="picker.open()">
+      <input [value]="dateFrom" (dateChange)="updateDateFrom($event)" (dateInput)="updateDateFrom($event)" matStartDate class="workingHoursRange">
+      <input [value]="dateTo" (dateChange)="updateDateTo($event)" (dateInput)="updateDateTo($event)" matEndDate class="workingHoursRange">
+    </mat-date-range-input>
+    <mat-date-range-picker #picker></mat-date-range-picker>
+  </mat-form-field>
 <!--  <mat-form-field appearance="fill">-->
 <!--    <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate" (dateChange)="updateSelectedDate()">-->
 <!--    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>-->

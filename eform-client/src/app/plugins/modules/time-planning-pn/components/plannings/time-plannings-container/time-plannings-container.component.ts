@@ -13,6 +13,7 @@ import {Store} from '@ngrx/store';
 import {selectCurrentUserLocale} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
 import {DownloadExcelDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
+import {MatDatepickerInputEvent} from "@angular/material/datepicker";
 
 @AutoUnsubscribe()
 @Component({
@@ -130,5 +131,17 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   onSiteChanged($event: any) {
     this.siteId = $event;
     this.getPlannings();
+  }
+
+  updateDateFrom(dateFrom: MatDatepickerInputEvent<any, any>) {
+    this.dateFrom = dateFrom.value;
+  }
+
+  updateDateTo(dateTo: MatDatepickerInputEvent<any, any>) {
+    if (dateTo.value) {
+      this.dateTo = dateTo.value;
+      this.dateTo.setHours(23, 59, 59, 999);
+      this.getPlannings();
+    }
   }
 }

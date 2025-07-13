@@ -55,8 +55,13 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.dateFrom || changes.dateTo) {
-      this.dateFrom = changes.dateFrom.currentValue;
-      this.dateTo = changes.dateTo.currentValue;
+      // debugger;
+      if (changes.dateFrom !== undefined) {
+        this.dateFrom = changes.dateFrom.currentValue;
+      }
+      if (changes.dateTo !== undefined) {
+        this.dateTo = changes.dateTo.currentValue;
+      }
       this.updateTableHeaders();
     }
   }
