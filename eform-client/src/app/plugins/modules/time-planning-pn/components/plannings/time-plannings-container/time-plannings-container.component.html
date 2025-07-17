@@ -6,8 +6,8 @@
     <mat-label>{{ 'Date range' | translate }}</mat-label>
     <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
     <mat-date-range-input [rangePicker]="picker" (click)="picker.open()">
-      <input [value]="dateFrom" (dateChange)="updateDateFrom($event)" (dateInput)="updateDateFrom($event)" matStartDate class="workingHoursRange">
-      <input [value]="dateTo" (dateChange)="updateDateTo($event)" (dateInput)="updateDateTo($event)" matEndDate class="workingHoursRange">
+      <input [value]="dateFrom" (dateChange)="updateDateFrom($event)" matStartDate class="workingHoursRange">
+      <input [value]="dateTo" (dateChange)="updateDateTo($event)" matEndDate class="workingHoursRange">
     </mat-date-range-input>
     <mat-date-range-picker #picker></mat-date-range-picker>
   </mat-form-field>
