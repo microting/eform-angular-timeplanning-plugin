@@ -483,10 +483,29 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.planningPrDayModels.actualHours = actualTimeInMinutes / 60;
 
     this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
-    this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
-      + this.data.planningPrDayModels.actualHours
-      - this.data.planningPrDayModels.planHours
-      - this.data.planningPrDayModels.paidOutFlex;
+
+    if (this.data.planningPrDayModels.paidOutFlex !== null) {
+      let paidOutFlex = this.data.planningPrDayModels.paidOutFlex.toString();
+      if (paidOutFlex.includes(',')) {
+        paidOutFlex = paidOutFlex.replace(',', '.');
+      }
+      // check if the string is a valid number
+      if (!isNaN(Number(paidOutFlex))) {
+        this.data.planningPrDayModels.paidOutFlex = Number(paidOutFlex);
+        this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
+          + this.data.planningPrDayModels.actualHours
+          - this.data.planningPrDayModels.planHours
+          - this.data.planningPrDayModels.paidOutFlex;
+      } else {
+        this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
+          + this.data.planningPrDayModels.actualHours
+          - this.data.planningPrDayModels.planHours;
+      }
+    } else {
+      this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
+        + this.data.planningPrDayModels.actualHours
+        - this.data.planningPrDayModels.planHours;
+    }
   }
 
   private padZero(num: number): string {

@@ -247,6 +247,15 @@
       </ng-container>
 
       <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
+        <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.paidOutFlex !== 0">
+          <div class="{{ getCellTextColor(row, col.field) }}">
+            <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
+            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'PaidOutFlex' | translate "><mat-icon class="neutral-icon">payments</mat-icon>{{ row.planningPrDayModels[col.field]?.paidOutFlex }}</strong>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
           <div class="{{ getCellTextColor(row, col.field) }}">
             <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
@@ -254,14 +263,16 @@
           </div>
         </div>
       </ng-container>
-      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null && row.planningPrDayModels[col.field]?.workerComment !== ''">
+      <div class="comment" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null && row.planningPrDayModels[col.field]?.workerComment !== ''">
         <div class="{{ getCellTextColor(row, col.field) }}">
-          <strong id="commentWorker{{index}}_{{col.field}}" [matTooltip]="'CommentWorker' | translate "><mat-icon class="neutral-icon">face</mat-icon></strong> {{row.planningPrDayModels[col.field]?.workerComment}}
+          <strong id="commentWorker{{index}}_{{col.field}}" [matTooltip]="'CommentWorker' | translate "><mat-icon class="neutral-icon">face</mat-icon></strong>
+          {{row.planningPrDayModels[col.field]?.workerComment}}
         </div>
       </div>
-      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.commentOffice !== null && row.planningPrDayModels[col.field]?.commentOffice !== ''">
+      <div class="comment" *ngIf="row.planningPrDayModels[col.field]?.commentOffice !== null && row.planningPrDayModels[col.field]?.commentOffice !== ''">
         <div class="{{ getCellTextColor(row, col.field) }}">
-          <strong id="commentOffice{{index}}_{{col.field}}"><mat-icon class="neutral-icon" [matTooltip]="'CommentOffice' | translate ">gite</mat-icon></strong> {{row.planningPrDayModels[col.field]?.commentOffice}}
+          <strong id="commentOffice{{index}}_{{col.field}}"><mat-icon class="neutral-icon" [matTooltip]="'CommentOffice' | translate ">gite</mat-icon></strong>
+          {{row.planningPrDayModels[col.field]?.commentOffice}}
         </div>
       </div>
       <div class="plan-text"  *ngIf="selectCurrentUserIsFirstUser$ | async">

@@ -121,4 +121,5 @@ export const huHU = {
   Login: 'Bejelentkezés',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ez az oldal már nem működik, töltsd le a Microting Time oldalt és kövesd az alábbi utasításokat.',
   'Needs update!': 'Frissítésre szorul!',
+  'Flex balance at start of day': 'Rugalmas egyenleg a nap elején',
 };

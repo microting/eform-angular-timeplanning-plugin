@@ -119,4 +119,5 @@ export const enUS = {
   'Login': 'Login',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'This page is no longer in function, get Microting Time and follow the instructions below',
   'Needs update!': 'Needs update!',
+  'Flex balance at start of day': 'Flex balance at start of day',
 };

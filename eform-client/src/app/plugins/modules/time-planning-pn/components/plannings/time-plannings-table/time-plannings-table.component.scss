@@ -102,9 +102,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px;
+  padding: 0;
+  padding-bottom: 4px;
   min-width: 100px; /* Adjust the value as needed */
   min-height: 100px;
+  max-width: 270px;
+  margin:0;
 }
 
 .plan-content {
@@ -114,4 +117,8 @@
 .plan-icons {
   display: flex;
   gap: 8px;
+}
+
+.comment {
+  display: flex;
 }

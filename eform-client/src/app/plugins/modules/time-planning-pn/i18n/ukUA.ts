@@ -121,4 +121,5 @@ export const ukUA = {
   Login: 'Вхід',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ця сторінка більше не працює, завантажте Microting Time та дотримуйтесь інструкцій нижче.',
   'Needs update!': 'Потребує оновлення!',
+  'Flex balance at start of day': 'Гнучкий баланс на початку дня',
 };

@@ -121,4 +121,5 @@ export const esES = {
   Login: 'Acceso',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Esta página ya no está en funcionamiento, obtenga Microting Time y siga las instrucciones a continuación',
   'Needs update!': '¡Necesita actualización!',
+  'Flex balance at start of day': 'Equilibrio flexible al inicio del día',
 };

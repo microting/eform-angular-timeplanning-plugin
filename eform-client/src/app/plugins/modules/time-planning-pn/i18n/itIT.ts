@@ -121,4 +121,5 @@ export const itIT = {
   Login: 'Login',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Questa pagina non è più attiva, scarica Microting Time e segui le istruzioni riportate di seguito',
   'Needs update!': 'Necessita di aggiornamento!',
+  'Flex balance at start of day': 'Saldo flessibile all&#39;inizio della giornata',
 };

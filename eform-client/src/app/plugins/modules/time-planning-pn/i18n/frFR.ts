@@ -121,4 +121,5 @@ export const frFR = {
   Login: 'Se connecter',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Cette page n&#39;est plus fonctionnelle, téléchargez Microting Time et suivez les instructions ci-dessous',
   'Needs update!': 'Besoin d&#39;une mise à jour !',
+  'Flex balance at start of day': 'Solde flexible en début de journée',
 };

@@ -121,4 +121,5 @@ export const hrHR = {
   Login: 'Prijava',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ova stranica više nije u funkciji, preuzmite Microting Time i slijedite upute u nastavku.',
   'Needs update!': 'Potrebno ažuriranje!',
+  'Flex balance at start of day': 'Fleksibilna ravnoteža na početku dana',
 };

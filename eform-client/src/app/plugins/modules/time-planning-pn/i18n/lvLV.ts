@@ -121,4 +121,5 @@ export const lvLV = {
   Login: 'Pieteikšanās',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Šī lapa vairs nedarbojas, iegūstiet Microting Time un izpildiet tālāk norādītās instrukcijas.',
   'Needs update!': 'Nepieciešams atjauninājums!',
+  'Flex balance at start of day': 'Elastīgais atlikums dienas sākumā',
 };

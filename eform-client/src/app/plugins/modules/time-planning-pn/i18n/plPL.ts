@@ -121,4 +121,5 @@ export const plPL = {
   Login: 'Login',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ta strona nie działa już, pobierz Microting Time i postępuj zgodnie z poniższymi instrukcjami',
   'Needs update!': 'Wymaga aktualizacji!',
+  'Flex balance at start of day': 'Elastyczna równowaga na początku dnia',
 };

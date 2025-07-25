@@ -121,4 +121,5 @@ export const roRO = {
   Login: 'Log in',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Această pagină nu mai este funcțională, obțineți Microting Time și urmați instrucțiunile de mai jos.',
   'Needs update!': 'Necesită actualizare!',
+  'Flex balance at start of day': 'Sold flexibil la începutul zilei',
 };

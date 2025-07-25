@@ -121,4 +121,5 @@ export const ltLT = {
   Login: 'Prisijungti',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Šis puslapis nebeveikia, atsisiųskite „Microting Time“ ir vykdykite toliau pateiktas instrukcijas.',
   'Needs update!': 'Reikia atnaujinimo!',
+  'Flex balance at start of day': 'Lankstus likutis dienos pradžioje',
 };

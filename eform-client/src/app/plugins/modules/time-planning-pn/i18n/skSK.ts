@@ -121,4 +121,5 @@ export const skSK = {
   Login: 'Prihlásenie',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Táto stránka už nie je funkčná, stiahnite si Microting Time a postupujte podľa pokynov nižšie.',
   'Needs update!': 'Potrebuje aktualizáciu!',
+  'Flex balance at start of day': 'Flexibilný zostatok na začiatku dňa',
 };

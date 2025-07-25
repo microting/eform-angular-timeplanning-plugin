@@ -121,4 +121,5 @@ export const etET = {
   Login: 'Sisselogimine',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'See leht enam ei tööta, hankige Microting Time ja järgige allolevaid juhiseid.',
   'Needs update!': 'Vajab uuendamist!',
+  'Flex balance at start of day': 'Paindlik saldo päeva alguses',
 };

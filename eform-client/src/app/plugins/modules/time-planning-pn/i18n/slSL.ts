@@ -121,4 +121,5 @@ export const slSL = {
   Login: 'Prijava',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ta stran ne deluje več, pridobite Microting Time in sledite spodnjim navodilom.',
   'Needs update!': 'Potrebna je posodobitev!',
+  'Flex balance at start of day': 'Fleksibilno ravnovesje na začetku dneva',
 };

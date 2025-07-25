@@ -121,4 +121,5 @@ export const deDE = {
   Login: 'Login',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Diese Seite ist nicht mehr in Funktion. Holen Sie sich Microting Time und folgen Sie den Anweisungen unten',
   'Needs update!': 'Muss aktualisiert werden!',
+  'Flex balance at start of day': 'Flex-Guthaben zu Beginn des Tages',
 };

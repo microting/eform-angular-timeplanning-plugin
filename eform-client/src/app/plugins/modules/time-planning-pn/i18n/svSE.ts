@@ -121,4 +121,5 @@ export const svSE = {
   Login: 'Inloggning',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Den här sidan fungerar inte längre, hämta Microting Time och följ instruktionerna nedan.',
   'Needs update!': 'Behöver uppdateras!',
+  'Flex balance at start of day': 'Flexsaldo vid dagens början',
 };

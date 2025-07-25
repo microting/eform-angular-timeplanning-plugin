@@ -121,4 +121,5 @@ export const elGR = {
   Login: 'Σύνδεση',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Αυτή η σελίδα δεν λειτουργεί πλέον, αποκτήστε το Microting Time και ακολουθήστε τις παρακάτω οδηγίες.',
   'Needs update!': 'Χρειάζεται ενημέρωση!',
+  'Flex balance at start of day': 'Ευέλικτη ισορροπία στην αρχή της ημέρας',
 };

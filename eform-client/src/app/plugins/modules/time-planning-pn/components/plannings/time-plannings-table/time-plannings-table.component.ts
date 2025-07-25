@@ -31,6 +31,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
   tableHeaders: MtxGridColumn[] = [];
   enumKeys: string[];
+  currentLocale: string = 'da';
 
   @ViewChild('firstColumnTemplate', {static: true}) firstColumnTemplate!: TemplateRef<any>;
   @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
@@ -51,6 +52,10 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.updateTableHeaders();
+    this.translateService.onLangChange.subscribe((lang) => {
+      this.currentLocale = lang.lang;
+      this.updateTableHeaders();
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -88,7 +93,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         const isToday = currentDate.toDateString() === today.toDateString();
         const formattedDate = isToday
           ? todayTranslated
-          : this.datePipe.transform(currentDate, 'dd/MM', undefined);
+          : this.datePipe.transform(currentDate, 'E dd/MM', undefined, this.currentLocale) || '';
         return {
           cellTemplate: this.dayColumnTemplate,
           header: formattedDate,

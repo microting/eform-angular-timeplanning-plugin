@@ -121,4 +121,5 @@ export const nlNL = {
   Login: 'Login',
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Deze pagina is niet meer in gebruik, download Microting Time en volg de onderstaande instructies',
   'Needs update!': 'Moet geüpdatet worden!',
+  'Flex balance at start of day': 'Flexibel saldo aan het begin van de dag',
 };
