@@ -30,6 +30,16 @@
       id="workingHoursSite">
     </mtx-select>
   </mat-form-field>
+  <mat-slide-toggle
+    color="primary"
+    class="mb-2"
+    id="showCalculationsAsNumberToggle"
+    [checked]="showResignedSites"
+    [(ngModel)]="showResignedSites"
+    (change)="onShowResignedSitesChanged($event)"
+  >
+    {{ 'Show resigned' | translate }}
+  </mat-slide-toggle>
   <button
     mat-icon-button
     id="workingHoursReload"

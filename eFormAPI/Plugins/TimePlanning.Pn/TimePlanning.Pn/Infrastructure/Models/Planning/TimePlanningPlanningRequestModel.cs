@@ -36,4 +36,5 @@ public class TimePlanningPlanningRequestModel
     public int? SiteId { get; set; }
     public bool IsSortDsc { get; set; }
     public string Sort { get; set; }
+    public bool ShowResignedSites { get; set; }
 }

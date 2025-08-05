@@ -150,6 +150,30 @@
           <div>{{ 'Enable fifth shift' | translate }}</div>
         </mat-checkbox>
       </div>
+      <div class="d-flex flex-row" *ngIf="selectCurrentUserIsAdmin$ | async">
+        <mat-checkbox class="p-1"
+                      [id]="'resigned'"
+                      [name]="'resigned'"
+                      [(ngModel)]="data.resigned">
+          <div>{{ 'Resigned' | translate }}</div>
+        </mat-checkbox>
+        <mat-form-field *ngIf="data.resigned">
+          <mat-label>{{ 'Resigned at date' | translate }}</mat-label>
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <input
+            required
+            matInput
+            [matDatepicker]="picker"
+            [value]="data.resignedAtDate"
+            (dateChange)="data.resignedAtDate = $event.value"
+            (click)="picker.open()"
+          >
+          <mat-datepicker #picker></mat-datepicker>
+          <mat-error class="text-warn" *ngIf="!data.resignedAtDate">
+            {{'Date is required'| translate}}*
+          </mat-error>
+        </mat-form-field>
+      </div>
     </mat-tab>
     <mat-tab label="{{'Plan hours' | translate }}" *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
       <div class="d-flex flex-row"

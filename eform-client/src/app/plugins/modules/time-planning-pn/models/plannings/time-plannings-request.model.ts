@@ -4,6 +4,7 @@ export class TimePlanningsRequestModel {
   sort?: string;
   isSortDsc?: boolean;
   siteId: number;
+  showResignedSites?: boolean;
 
   constructor(data?: any) {
     if (data) {
@@ -12,6 +13,7 @@ export class TimePlanningsRequestModel {
       this.sort = data.sort;
       this.isSortDsc = data.isSortDsc;
       this.siteId = data.siteId;
+      this.showResignedSites = data.showResignedSites;
     }
   }
 }

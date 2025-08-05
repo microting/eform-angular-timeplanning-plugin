@@ -1,3 +1,5 @@
+using System;
+
 namespace TimePlanning.Pn.Infrastructure.Models.Settings;
 
 public class Site
@@ -20,4 +22,8 @@ public class Site
     public bool ThirdShiftActive { get; set; }
     public bool FourthShiftActive { get; set; }
     public bool FifthShiftActive { get; set; }
+
+    public bool Resigned { get; set; }
+
+    public DateTime ResignedAtDate { get; set; }
 }

@@ -14,6 +14,7 @@ import { TimePlanningSettingsModel,
 export let TimePlanningSettingsMethods = {
   Settings: 'api/time-planning-pn/settings',
   SettingsSites: 'api/time-planning-pn/settings/sites',
+  ResignedSites: 'api/time-planning-pn/settings/resigned-sites',
   SettingsFolder: 'api/time-planning-pn/settings/folder',
   SettingsEform: 'api/time-planning-pn/settings/eform',
   GetAssignedSites: 'api/time-planning-pn/settings/assigned-sites',
@@ -39,6 +40,10 @@ export class TimePlanningPnSettingsService {
 
   getAvailableSites(): Observable<OperationDataResult<SiteDto[]>> {
     return this.apiBaseService.get(TimePlanningSettingsMethods.SettingsSites);
+  }
+
+  getResignedSites(): Observable<OperationDataResult<SiteDto[]>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.ResignedSites);
   }
 
   addSiteToSettings(siteId: number): Observable<OperationResult> {

@@ -25,6 +25,7 @@ export class AssignedSiteModel {
   endSunday: number;
   breakSunday: number;
   resigned: boolean;
+  resignedAtDate: string;
   mondayBreakMinutesDivider: number;
   mondayBreakMinutesPrDivider: number;
   tuesdayBreakMinutesDivider: number;

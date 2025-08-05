@@ -66,6 +66,7 @@ public class TimePlanningPlanningService(
             var result = new List<TimePlanningPlanningModel>();
             var assignedSites =
                 await dbContext.AssignedSites.Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Resigned == model.ShowResignedSites)
                     .ToListAsync().ConfigureAwait(false);
 
             if (model.SiteId != 0 && model.SiteId != null)
@@ -89,7 +90,6 @@ public class TimePlanningPlanningService(
                 .ToListAsync().ConfigureAwait(false);
             var sitesList = await sdkDbContext.Sites
                 .AsNoTracking()
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync().ConfigureAwait(false);
 
             var tasks = assignedSites.Select(async dbAssignedSite =>
@@ -276,8 +276,7 @@ public class TimePlanningPlanningService(
 
         var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
         var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
-            x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
-            x.WorkflowState != Constants.WorkflowStates.Removed);
+            x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
 
         if (site == null)
         {
@@ -445,7 +444,6 @@ public class TimePlanningPlanningService(
             }
 
             var assignedSite = await dbContext.AssignedSites
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstAsync(x => x.SiteId == planning.SdkSitId);
 
             planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
@@ -892,8 +890,7 @@ public class TimePlanningPlanningService(
                 .Single(x => x.Id == currentUserAsync.Id);
             var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
             var sdkSite = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
-                x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
-                x.WorkflowState != Constants.WorkflowStates.Removed);
+                x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
 
             if (sdkSite == null)
             {
@@ -903,7 +900,6 @@ public class TimePlanningPlanningService(
             }
 
             var assignedSite = await dbContext.AssignedSites
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
 
             if (assignedSite == null)

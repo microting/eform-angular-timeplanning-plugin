@@ -48,21 +48,21 @@ public class TimePlanningSettingsController(ISettingService settingService) : Co
         return await settingService.UpdateSettings(timePlanningSettingsModel);
     }
 
-    [HttpPut]
-    [Route("sites")]
-    [Authorize(Roles = EformRole.Admin)]
-    public async Task<OperationResult> AddSite([FromBody] int siteId)
-    {
-        return await settingService.AddSite(siteId);
-    }
+    // [HttpPut]
+    // [Route("sites")]
+    // [Authorize(Roles = EformRole.Admin)]
+    // public async Task<OperationResult> AddSite([FromBody] int siteId)
+    // {
+    //     return await settingService.AddSite(siteId);
+    // }
 
-    [HttpDelete]
-    [Route("sites")]
-    [Authorize(Roles = EformRole.User)]
-    public async Task<OperationResult> DeleteSite(int siteId)
-    {
-        return await settingService.DeleteSite(siteId);
-    }
+    // [HttpDelete]
+    // [Route("sites")]
+    // [Authorize(Roles = EformRole.User)]
+    // public async Task<OperationResult> DeleteSite(int siteId)
+    // {
+    //     return await settingService.DeleteSite(siteId);
+    // }
 
     [HttpGet]
     [Route("sites")]
@@ -70,6 +70,14 @@ public class TimePlanningSettingsController(ISettingService settingService) : Co
     public async Task<OperationDataResult<List<Site>>> GetAvailableSites()
     {
         return await settingService.GetAvailableSites(null);
+    }
+
+    [HttpGet]
+    [Route("resigned-sites")]
+    [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
+    public async Task<OperationDataResult<List<Site>>> GetResignedSites()
+    {
+        return await settingService.GetResignedSites();
     }
 
     [HttpGet]

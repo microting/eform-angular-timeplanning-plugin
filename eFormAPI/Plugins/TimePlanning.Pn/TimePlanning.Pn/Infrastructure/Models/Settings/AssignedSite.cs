@@ -1,3 +1,5 @@
+using System;
+
 namespace TimePlanning.Pn.Infrastructure.Models.Settings;
 
 public class AssignedSite
@@ -28,6 +30,7 @@ public class AssignedSite
     public int? EndSunday { get; set; }
     public int? BreakSunday { get; set; }
     public bool Resigned { get; set; }
+    public DateTime ResignedAtDate { get; set; }
     public int MondayBreakMinutesDivider { get; set; }
     public int MondayBreakMinutesPrDivider { get; set; }
     public int TuesdayBreakMinutesDivider { get; set; }
@@ -194,6 +197,7 @@ public class AssignedSite
             EndSunday = model.EndSunday,
             BreakSunday = model.BreakSunday,
             Resigned = model.Resigned,
+            ResignedAtDate = model.ResignedAtDate,
             MondayBreakMinutesDivider = model.MondayBreakMinutesDivider,
             MondayBreakMinutesPrDivider = model.MondayBreakMinutesPrDivider,
             TuesdayBreakMinutesDivider = model.TuesdayBreakMinutesDivider,

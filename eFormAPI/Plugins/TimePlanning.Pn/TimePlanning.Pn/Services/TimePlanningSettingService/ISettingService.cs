@@ -40,9 +40,9 @@ public interface ISettingService
 
     Task<OperationResult> UpdateSettings(TimePlanningSettingsModel timePlanningSettingsModel);
 
-    Task<OperationResult> AddSite(int siteId);
+    // Task<OperationResult> AddSite(int siteId);
 
-    Task<OperationResult> DeleteSite(int siteId);
+    // Task<OperationResult> DeleteSite(int siteId);
 
     Task<OperationDataResult<List<Site>>> GetAvailableSites(string? token);
     Task<OperationDataResult<AssignedSite>> GetAssignedSite(int siteId);
@@ -50,4 +50,5 @@ public interface ISettingService
     Task<OperationDataResult<AssignedSite>> GetAssignedSiteByCurrentUserName();
     Task<OperationDataResult<GlobalAutoBreakSettings>> GetGlobalAutoBreakSettings();
     OperationResult ResetGlobalAutoBreakSettings();
+    Task<OperationDataResult<List<Site>>> GetResignedSites();
 }

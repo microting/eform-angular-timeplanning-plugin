@@ -41,6 +41,11 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
         this.globalAutoBreakSettings = result.model;
       }
     });
+    if (!this.data.resigned) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      this.data.resignedAtDate = today.toISOString();
+    }
   }
 
   hasDataChanged(): boolean {

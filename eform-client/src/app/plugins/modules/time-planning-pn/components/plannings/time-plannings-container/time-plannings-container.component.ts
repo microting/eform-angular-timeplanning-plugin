@@ -13,7 +13,7 @@ import {Store} from '@ngrx/store';
 import {selectCurrentUserLocale} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
 import {DownloadExcelDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
-import {MatDatepickerInputEvent} from "@angular/material/datepicker";
+import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 
 @AutoUnsubscribe()
 @Component({
@@ -25,6 +25,7 @@ import {MatDatepickerInputEvent} from "@angular/material/datepicker";
 export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
+  showResignedSites: boolean = false;
   timePlannings: TimePlanningModel[] = [];
   selectedDate: Date = new Date();
   dateFrom: Date;
@@ -46,14 +47,25 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
-    this.settingsService
-      .getAvailableSites()
-      .subscribe((data) => {
-        if (data && data.success) {
-          this.availableSites = data.model;
+    if (!this.showResignedSites) {
+      this.settingsService
+        .getAvailableSites()
+        .subscribe((data) => {
+          if (data && data.success) {
+            this.availableSites = data.model;
 
-        }
-      });
+          }
+        });
+    } else {
+      this.getAvailableSites$ = this.settingsService
+        .getResignedSites()
+        .subscribe((data) => {
+          if (data && data.success) {
+            this.availableSites = data.model;
+
+          }
+        });
+    }
     this.selectCurrentUserLocale$.pipe(take(1)).subscribe((locale) => {
       this.locale = locale;
       this.getPlannings();
@@ -74,6 +86,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
       sort: 'Date',
       isSortDsc: true,
       siteId: this.siteId, // Default to 0 to get all sites
+      showResignedSites: this.showResignedSites
     }
     this.getTimePlannings$ = this.planningsService
       .getPlannings(this.timePlanningsRequest)
@@ -143,5 +156,29 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
       this.dateTo.setHours(23, 59, 59, 999);
       this.getPlannings();
     }
+  }
+
+  onShowResignedSitesChanged($event: any) {
+    this.showResignedSites = $event.checked;
+    if (!this.showResignedSites) {
+      this.settingsService
+        .getAvailableSites()
+        .subscribe((data) => {
+          if (data && data.success) {
+            this.availableSites = data.model;
+
+          }
+        });
+    } else {
+      this.getAvailableSites$ = this.settingsService
+        .getResignedSites()
+        .subscribe((data) => {
+          if (data && data.success) {
+            this.availableSites = data.model;
+
+          }
+        });
+    }
+    this.getPlannings();
   }
 }

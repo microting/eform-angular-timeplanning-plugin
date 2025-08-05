@@ -182,89 +182,89 @@ public class TimeSettingService(
         }
     }
 
-    public async Task<OperationResult> AddSite(int siteId)
-    {
-        try
-        {
-            var assignmentSite = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite
-            {
-                SiteId = siteId,
-                CreatedByUserId = userService.UserId,
-                UpdatedByUserId = userService.UserId
-            };
-            await assignmentSite.Create(dbContext);
-            var option = options.Value;
-            var newTaskId = option.EformId;
-            var folderId = option.FolderId;
-            var theCore = await core.GetCore();
-            await using var sdkDbContext = theCore.DbContextHelper.GetDbContext();
-            var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);
-            var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
-            var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
-            var mainElement = await theCore.ReadeForm((int)newTaskId, language);
-            mainElement.CheckListFolderName = folder.MicrotingUid.ToString();
-            mainElement.EndDate = DateTime.UtcNow.AddYears(10);
-            mainElement.DisplayOrder = int.MinValue;
-            mainElement.Repeated = 0;
-            mainElement.PushMessageTitle = mainElement.Label;
-            mainElement.EnableQuickSync = true;
-            var caseId = await theCore.CaseCreate(mainElement, "", siteId, folderId);
-            assignmentSite.CaseMicrotingUid = caseId;
-            await assignmentSite.Update(dbContext);
-
-            return new OperationResult(true, localizationService.GetString("SitesUpdatedSuccessfuly"));
-        }
-        catch (Exception e)
-        {
-            SentrySdk.CaptureException(e);
-            Console.WriteLine(e);
-            logger.LogError(e.Message);
-            return new OperationResult(
-                false,
-                localizationService.GetString("ErrorWhileUpdateSites"));
-        }
-    }
-
-    public async Task<OperationResult> DeleteSite(int siteId)
-    {
-        try
-        {
-            var assignedSite = await dbContext.AssignedSites
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.SiteId == siteId)
-                .FirstOrDefaultAsync();
-
-            var theCore = await core.GetCore();
-            if (assignedSite != null)
-            {
-                if (assignedSite.CaseMicrotingUid != null)
-                    await theCore.CaseDelete((int)assignedSite.CaseMicrotingUid);
-                await assignedSite.Delete(dbContext);
-            }
-
-            var registrations = await dbContext.PlanRegistrations
-                .Where(x => x.StatusCaseId != 0)
-                .ToListAsync();
-
-            foreach (PlanRegistration planRegistration in registrations)
-            {
-                await theCore.CaseDelete(planRegistration.StatusCaseId);
-                planRegistration.StatusCaseId = 0;
-                await planRegistration.Update(dbContext);
-            }
-
-            return new OperationResult(true, localizationService.GetString("SitesUpdatedSuccessfuly"));
-        }
-        catch (Exception e)
-        {
-            SentrySdk.CaptureException(e);
-            Console.WriteLine(e);
-            logger.LogError(e.Message);
-            return new OperationResult(
-                false,
-                localizationService.GetString("ErrorWhileUpdateSites"));
-        }
-    }
+    // public async Task<OperationResult> AddSite(int siteId)
+    // {
+    //     try
+    //     {
+    //         var assignmentSite = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite
+    //         {
+    //             SiteId = siteId,
+    //             CreatedByUserId = userService.UserId,
+    //             UpdatedByUserId = userService.UserId
+    //         };
+    //         await assignmentSite.Create(dbContext);
+    //         var option = options.Value;
+    //         var newTaskId = option.EformId;
+    //         var folderId = option.FolderId;
+    //         var theCore = await core.GetCore();
+    //         await using var sdkDbContext = theCore.DbContextHelper.GetDbContext();
+    //         var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);
+    //         var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
+    //         var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+    //         var mainElement = await theCore.ReadeForm((int)newTaskId, language);
+    //         mainElement.CheckListFolderName = folder.MicrotingUid.ToString();
+    //         mainElement.EndDate = DateTime.UtcNow.AddYears(10);
+    //         mainElement.DisplayOrder = int.MinValue;
+    //         mainElement.Repeated = 0;
+    //         mainElement.PushMessageTitle = mainElement.Label;
+    //         mainElement.EnableQuickSync = true;
+    //         var caseId = await theCore.CaseCreate(mainElement, "", siteId, folderId);
+    //         assignmentSite.CaseMicrotingUid = caseId;
+    //         await assignmentSite.Update(dbContext);
+    //
+    //         return new OperationResult(true, localizationService.GetString("SitesUpdatedSuccessfuly"));
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         SentrySdk.CaptureException(e);
+    //         Console.WriteLine(e);
+    //         logger.LogError(e.Message);
+    //         return new OperationResult(
+    //             false,
+    //             localizationService.GetString("ErrorWhileUpdateSites"));
+    //     }
+    // }
+    //
+    // public async Task<OperationResult> DeleteSite(int siteId)
+    // {
+    //     try
+    //     {
+    //         var assignedSite = await dbContext.AssignedSites
+    //             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+    //             .Where(x => x.SiteId == siteId)
+    //             .FirstOrDefaultAsync();
+    //
+    //         var theCore = await core.GetCore();
+    //         if (assignedSite != null)
+    //         {
+    //             if (assignedSite.CaseMicrotingUid != null)
+    //                 await theCore.CaseDelete((int)assignedSite.CaseMicrotingUid);
+    //             await assignedSite.Delete(dbContext);
+    //         }
+    //
+    //         var registrations = await dbContext.PlanRegistrations
+    //             .Where(x => x.StatusCaseId != 0)
+    //             .ToListAsync();
+    //
+    //         foreach (PlanRegistration planRegistration in registrations)
+    //         {
+    //             await theCore.CaseDelete(planRegistration.StatusCaseId);
+    //             planRegistration.StatusCaseId = 0;
+    //             await planRegistration.Update(dbContext);
+    //         }
+    //
+    //         return new OperationResult(true, localizationService.GetString("SitesUpdatedSuccessfuly"));
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         SentrySdk.CaptureException(e);
+    //         Console.WriteLine(e);
+    //         logger.LogError(e.Message);
+    //         return new OperationResult(
+    //             false,
+    //             localizationService.GetString("ErrorWhileUpdateSites"));
+    //     }
+    // }
 
     public async Task<OperationDataResult<List<Site>>> GetAvailableSites(string? token)
     {
@@ -287,6 +287,260 @@ public class TimeSettingService(
             var assignedSites = await dbContext.AssignedSites
                 .AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Resigned != true)
+                .ToListAsync();
+
+            var sites = new List<Site>();
+            foreach (var assignedSite in assignedSites)
+            {
+                var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
+                    x.MicrotingUid == assignedSite.SiteId);
+                if (site == null) continue;
+                {
+                    var siteWorker = await sdkDbContext.SiteWorkers
+                        .Where(x => x.SiteId == site.Id)
+                        .FirstAsync();
+                    var worker = await sdkDbContext.Workers
+                        .Where(x => x.Id == siteWorker.WorkerId)
+                        .FirstOrDefaultAsync();
+                    var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
+                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                    if (worker != null)
+                    {
+
+                        var today = DateTime.UtcNow.Date;
+                        var midnight = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
+                        var planRegistrationForToday = await dbContext.PlanRegistrations
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.SdkSitId == site.MicrotingUid)
+                            .Where(x => x.Date == midnight)
+                            .FirstOrDefaultAsync();
+                        var hoursStarted = false;
+                        var pauseStarted = false;
+                        if (planRegistrationForToday != null)
+                        {
+                            hoursStarted =
+                                planRegistrationForToday is { Start1StartedAt: not null, Stop1StoppedAt: null } or
+                                    { Start2StartedAt: not null, Stop2StoppedAt: null };
+                            pauseStarted =
+                                planRegistrationForToday is
+                                    { Pause1StartedAt: not null, Pause1StoppedAt: null } or
+                                    { Pause10StartedAt: not null, Pause10StoppedAt: null } or
+                                    { Pause11StartedAt: not null, Pause11StoppedAt: null } or
+                                    { Pause12StartedAt: not null, Pause12StoppedAt: null } or
+                                    { Pause13StartedAt: not null, Pause13StoppedAt: null } or
+                                    { Pause14StartedAt: not null, Pause14StoppedAt: null } or
+                                    { Pause15StartedAt: not null, Pause15StoppedAt: null } or
+                                    { Pause16StartedAt: not null, Pause16StoppedAt: null } or
+                                    { Pause17StartedAt: not null, Pause17StoppedAt: null } or
+                                    { Pause18StartedAt: not null, Pause18StoppedAt: null } or
+                                    { Pause19StartedAt: not null, Pause19StoppedAt: null } or
+                                    { Pause100StartedAt: not null, Pause100StoppedAt: null } or
+                                    { Pause101StartedAt: not null, Pause101StoppedAt: null } or
+                                    { Pause102StartedAt: not null, Pause102StoppedAt: null } or
+                                    { Pause2StartedAt: not null, Pause2StoppedAt: null } or
+                                    { Pause20StartedAt: not null, Pause20StoppedAt: null } or
+                                    { Pause21StartedAt: not null, Pause21StoppedAt: null } or
+                                    { Pause22StartedAt: not null, Pause22StoppedAt: null } or
+                                    { Pause23StartedAt: not null, Pause23StoppedAt: null } or
+                                    { Pause24StartedAt: not null, Pause24StoppedAt: null } or
+                                    { Pause25StartedAt: not null, Pause25StoppedAt: null } or
+                                    { Pause26StartedAt: not null, Pause26StoppedAt: null } or
+                                    { Pause27StartedAt: not null, Pause27StoppedAt: null } or
+                                    { Pause28StartedAt: not null, Pause28StoppedAt: null } or
+                                    { Pause29StartedAt: not null, Pause29StoppedAt: null } or
+                                    { Pause200StartedAt: not null, Pause200StoppedAt: null } or
+                                    { Pause201StartedAt: not null, Pause201StoppedAt: null } or
+                                    { Pause202StartedAt: not null, Pause202StoppedAt: null };
+                        }
+
+                        var newSite = new Site
+                        {
+                            SiteId = (int)site.MicrotingUid!,
+                            SiteName = site.Name,
+                            FirstName = worker.FirstName,
+                            LastName = worker.LastName,
+                            CustomerNo = unit!.CustomerNo,
+                            OtpCode = unit.OtpCode,
+                            UnitId = unit.MicrotingUid,
+                            WorkerUid = worker.MicrotingUid,
+                            Email = worker.Email,
+                            PinCode = worker.PinCode,
+                            DefaultLanguage = language.LanguageCode,
+                            HoursStarted = hoursStarted,
+                            PauseStarted = pauseStarted,
+                            AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
+                            ThirdShiftActive = assignedSite.ThirdShiftActive,
+                            FourthShiftActive = assignedSite.FourthShiftActive,
+                            FifthShiftActive = assignedSite.FifthShiftActive,
+                            Resigned = assignedSite.Resigned,
+                            ResignedAtDate = assignedSite.ResignedAtDate,
+                        };
+                        var user = await baseDbContext.Users
+                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+                            .FirstOrDefaultAsync().ConfigureAwait(false);
+                        if (user != null)
+                        {
+                            newSite.AvatarUrl = user.ProfilePictureSnapshot != null
+                                ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
+                                : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+                        }
+                        sites.Add(newSite);
+                    }
+                }
+            }
+
+            sites = sites.OrderBy(x => x.SiteName).ToList();
+
+            return new OperationDataResult<List<Site>>(true, sites);
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            Console.WriteLine(e);
+            logger.LogError(e.Message);
+            return new OperationDataResult<List<Site>>(
+                false,
+                localizationService.GetString("ErrorWhileObtainingSites"));
+        }
+    }
+
+    public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSite(int siteId)
+    {
+        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.SiteId == siteId);
+        if (dbAssignedSite == null)
+        {
+            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
+        }
+
+        var core1 = await core.GetCore();
+        var sdkDbContext = core1.DbContextHelper.GetDbContext();
+        var site = await sdkDbContext.Sites.FirstOrDefaultAsync(x => x.MicrotingUid == siteId);
+
+        if (site == null)
+        {
+            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
+        }
+
+        var globalAutoBreakCalculationActive = options.Value.AutoBreakCalculationActive == "1";
+        dbAssignedSite.GlobalAutoBreakCalculationActive = globalAutoBreakCalculationActive;
+        dbAssignedSite.SiteName = site.Name;
+
+        return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
+
+    }
+
+    public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSiteByCurrentUserName()
+    {
+        var core1 = await core.GetCore();
+        var sdkContext = core1.DbContextHelper.GetDbContext();
+        var currentUserAsync = await userService.GetCurrentUserAsync();
+        var currentUser = baseDbContext.Users
+            .Single(x => x.Id == currentUserAsync.Id);
+        var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
+        var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
+            x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+
+        if (sdkSite == null)
+        {
+            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
+        }
+
+        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
+        dbAssignedSite.DayOfPayment = options.Value.DayOfPayment;
+
+        return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
+    }
+
+    public Task<OperationDataResult<GlobalAutoBreakSettings>> GetGlobalAutoBreakSettings()
+    {
+        var global =  new GlobalAutoBreakSettings()
+        {
+            MondayBreakMinutesDivider = int.Parse(options.Value.MondayBreakMinutesDivider),
+            MondayBreakMinutesPrDivider = int.Parse(options.Value.MondayBreakMinutesPrDivider),
+            TuesdayBreakMinutesDivider = int.Parse(options.Value.TuesdayBreakMinutesDivider),
+            TuesdayBreakMinutesPrDivider = int.Parse(options.Value.TuesdayBreakMinutesPrDivider),
+            WednesdayBreakMinutesDivider = int.Parse(options.Value.WednesdayBreakMinutesDivider),
+            WednesdayBreakMinutesPrDivider = int.Parse(options.Value.WednesdayBreakMinutesPrDivider),
+            ThursdayBreakMinutesDivider = int.Parse(options.Value.ThursdayBreakMinutesDivider),
+            ThursdayBreakMinutesPrDivider = int.Parse(options.Value.ThursdayBreakMinutesPrDivider),
+            FridayBreakMinutesDivider = int.Parse(options.Value.FridayBreakMinutesDivider),
+            FridayBreakMinutesPrDivider = int.Parse(options.Value.FridayBreakMinutesPrDivider),
+            SaturdayBreakMinutesDivider = int.Parse(options.Value.SaturdayBreakMinutesDivider),
+            SaturdayBreakMinutesPrDivider = int.Parse(options.Value.SaturdayBreakMinutesPrDivider),
+            SundayBreakMinutesDivider = int.Parse(options.Value.SundayBreakMinutesDivider),
+            SundayBreakMinutesPrDivider = int.Parse(options.Value.SundayBreakMinutesPrDivider),
+            MondayBreakMinutesUpperLimit = int.Parse(options.Value.MondayBreakMinutesUpperLimit),
+            TuesdayBreakMinutesUpperLimit = int.Parse(options.Value.TuesdayBreakMinutesUpperLimit),
+            WednesdayBreakMinutesUpperLimit = int.Parse(options.Value.WednesdayBreakMinutesUpperLimit),
+            ThursdayBreakMinutesUpperLimit = int.Parse(options.Value.ThursdayBreakMinutesUpperLimit),
+            FridayBreakMinutesUpperLimit = int.Parse(options.Value.FridayBreakMinutesUpperLimit),
+            SaturdayBreakMinutesUpperLimit = int.Parse(options.Value.SaturdayBreakMinutesUpperLimit),
+            SundayBreakMinutesUpperLimit = int.Parse(options.Value.SundayBreakMinutesUpperLimit)
+        };
+
+        return Task.FromResult(new OperationDataResult<GlobalAutoBreakSettings>(true, global));
+    }
+
+    public OperationResult ResetGlobalAutoBreakSettings()
+    {
+
+        try
+        {
+            options.UpdateDb(settings =>
+            {
+                settings.AutoBreakCalculationActive = "0";
+                settings.MondayBreakMinutesDivider = "180";
+                settings.MondayBreakMinutesPrDivider = "30";
+                settings.MondayBreakMinutesUpperLimit = "60";
+                settings.TuesdayBreakMinutesDivider = "180";
+                settings.TuesdayBreakMinutesPrDivider = "30";
+                settings.TuesdayBreakMinutesUpperLimit = "60";
+                settings.WednesdayBreakMinutesDivider = "180";
+                settings.WednesdayBreakMinutesPrDivider = "30";
+                settings.WednesdayBreakMinutesUpperLimit = "60";
+                settings.ThursdayBreakMinutesDivider = "180";
+                settings.ThursdayBreakMinutesPrDivider = "30";
+                settings.ThursdayBreakMinutesUpperLimit = "60";
+                settings.FridayBreakMinutesDivider = "180";
+                settings.FridayBreakMinutesPrDivider = "30";
+                settings.FridayBreakMinutesUpperLimit = "60";
+                settings.SaturdayBreakMinutesDivider = "120";
+                settings.SaturdayBreakMinutesPrDivider = "30";
+                settings.SaturdayBreakMinutesUpperLimit = "60";
+                settings.SundayBreakMinutesDivider = "120";
+                settings.SundayBreakMinutesPrDivider = "30";
+                settings.SundayBreakMinutesUpperLimit = "60";
+            }, dbContext, userService.UserId);
+
+            return new OperationResult(true, localizationService.GetString("GlobalAutoBreakSettingsReset"));
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            Console.WriteLine(e);
+            logger.LogError(e.Message);
+            return new OperationResult(
+                false,
+                localizationService.GetString("ErrorWhileUpdateFolder"));
+        }
+    }
+
+    public async Task<OperationDataResult<List<Site>>> GetResignedSites()
+    {
+
+        try
+        {
+            var core1 = await core.GetCore();
+            var sdkDbContext = core1.DbContextHelper.GetDbContext();
+            var assignedSites = await dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Resigned == true)
                 .ToListAsync();
 
             var sites = new List<Site>();
@@ -373,7 +627,9 @@ public class TimeSettingService(
                             AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
                             ThirdShiftActive = assignedSite.ThirdShiftActive,
                             FourthShiftActive = assignedSite.FourthShiftActive,
-                            FifthShiftActive = assignedSite.FifthShiftActive
+                            FifthShiftActive = assignedSite.FifthShiftActive,
+                            Resigned = assignedSite.Resigned,
+                            ResignedAtDate = assignedSite.ResignedAtDate,
                         };
                         var user = await baseDbContext.Users
                             .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
@@ -404,139 +660,10 @@ public class TimeSettingService(
         }
     }
 
-    public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSite(int siteId)
-    {
-        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
-            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.SiteId == siteId);
-        if (dbAssignedSite == null)
-        {
-            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
-        }
-
-        var core1 = await core.GetCore();
-        var sdkDbContext = core1.DbContextHelper.GetDbContext();
-        var site = await sdkDbContext.Sites.FirstOrDefaultAsync(x => x.MicrotingUid == siteId);
-
-        if (site == null)
-        {
-            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
-        }
-
-        var globalAutoBreakCalculationActive = options.Value.AutoBreakCalculationActive == "1";
-        dbAssignedSite.GlobalAutoBreakCalculationActive = globalAutoBreakCalculationActive;
-        dbAssignedSite.SiteName = site.Name;
-
-        return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
-
-    }
-
-    public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSiteByCurrentUserName()
-    {
-        var core1 = await core.GetCore();
-        var sdkContext = core1.DbContextHelper.GetDbContext();
-        var currentUserAsync = await userService.GetCurrentUserAsync();
-        var currentUser = baseDbContext.Users
-            .Single(x => x.Id == currentUserAsync.Id);
-        var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-        var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
-            x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
-            x.WorkflowState != Constants.WorkflowStates.Removed);
-
-        if (sdkSite == null)
-        {
-            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
-        }
-
-        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
-            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
-        dbAssignedSite.DayOfPayment = options.Value.DayOfPayment;
-
-        return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
-    }
-
-    public Task<OperationDataResult<GlobalAutoBreakSettings>> GetGlobalAutoBreakSettings()
-    {
-        var global =  new GlobalAutoBreakSettings()
-        {
-            MondayBreakMinutesDivider = int.Parse(options.Value.MondayBreakMinutesDivider),
-            MondayBreakMinutesPrDivider = int.Parse(options.Value.MondayBreakMinutesPrDivider),
-            TuesdayBreakMinutesDivider = int.Parse(options.Value.TuesdayBreakMinutesDivider),
-            TuesdayBreakMinutesPrDivider = int.Parse(options.Value.TuesdayBreakMinutesPrDivider),
-            WednesdayBreakMinutesDivider = int.Parse(options.Value.WednesdayBreakMinutesDivider),
-            WednesdayBreakMinutesPrDivider = int.Parse(options.Value.WednesdayBreakMinutesPrDivider),
-            ThursdayBreakMinutesDivider = int.Parse(options.Value.ThursdayBreakMinutesDivider),
-            ThursdayBreakMinutesPrDivider = int.Parse(options.Value.ThursdayBreakMinutesPrDivider),
-            FridayBreakMinutesDivider = int.Parse(options.Value.FridayBreakMinutesDivider),
-            FridayBreakMinutesPrDivider = int.Parse(options.Value.FridayBreakMinutesPrDivider),
-            SaturdayBreakMinutesDivider = int.Parse(options.Value.SaturdayBreakMinutesDivider),
-            SaturdayBreakMinutesPrDivider = int.Parse(options.Value.SaturdayBreakMinutesPrDivider),
-            SundayBreakMinutesDivider = int.Parse(options.Value.SundayBreakMinutesDivider),
-            SundayBreakMinutesPrDivider = int.Parse(options.Value.SundayBreakMinutesPrDivider),
-            MondayBreakMinutesUpperLimit = int.Parse(options.Value.MondayBreakMinutesUpperLimit),
-            TuesdayBreakMinutesUpperLimit = int.Parse(options.Value.TuesdayBreakMinutesUpperLimit),
-            WednesdayBreakMinutesUpperLimit = int.Parse(options.Value.WednesdayBreakMinutesUpperLimit),
-            ThursdayBreakMinutesUpperLimit = int.Parse(options.Value.ThursdayBreakMinutesUpperLimit),
-            FridayBreakMinutesUpperLimit = int.Parse(options.Value.FridayBreakMinutesUpperLimit),
-            SaturdayBreakMinutesUpperLimit = int.Parse(options.Value.SaturdayBreakMinutesUpperLimit),
-            SundayBreakMinutesUpperLimit = int.Parse(options.Value.SundayBreakMinutesUpperLimit)
-        };
-
-        return Task.FromResult(new OperationDataResult<GlobalAutoBreakSettings>(true, global));
-    }
-
-    public OperationResult ResetGlobalAutoBreakSettings()
-    {
-
-        try
-        {
-            options.UpdateDb(settings =>
-            {
-                settings.AutoBreakCalculationActive = "0";
-                settings.MondayBreakMinutesDivider = "180";
-                settings.MondayBreakMinutesPrDivider = "30";
-                settings.MondayBreakMinutesUpperLimit = "60";
-                settings.TuesdayBreakMinutesDivider = "180";
-                settings.TuesdayBreakMinutesPrDivider = "30";
-                settings.TuesdayBreakMinutesUpperLimit = "60";
-                settings.WednesdayBreakMinutesDivider = "180";
-                settings.WednesdayBreakMinutesPrDivider = "30";
-                settings.WednesdayBreakMinutesUpperLimit = "60";
-                settings.ThursdayBreakMinutesDivider = "180";
-                settings.ThursdayBreakMinutesPrDivider = "30";
-                settings.ThursdayBreakMinutesUpperLimit = "60";
-                settings.FridayBreakMinutesDivider = "180";
-                settings.FridayBreakMinutesPrDivider = "30";
-                settings.FridayBreakMinutesUpperLimit = "60";
-                settings.SaturdayBreakMinutesDivider = "120";
-                settings.SaturdayBreakMinutesPrDivider = "30";
-                settings.SaturdayBreakMinutesUpperLimit = "60";
-                settings.SundayBreakMinutesDivider = "120";
-                settings.SundayBreakMinutesPrDivider = "30";
-                settings.SundayBreakMinutesUpperLimit = "60";
-            }, dbContext, userService.UserId);
-
-            return new OperationResult(true, localizationService.GetString("GlobalAutoBreakSettingsReset"));
-        }
-        catch (Exception e)
-        {
-            SentrySdk.CaptureException(e);
-            Console.WriteLine(e);
-            logger.LogError(e.Message);
-            return new OperationResult(
-                false,
-                localizationService.GetString("ErrorWhileUpdateFolder"));
-        }
-    }
-
     public async Task<OperationResult> UpdateAssignedSite(Infrastructure.Models.Settings.AssignedSite site)
     {
         var siteId = site.SiteId;
         var dbAssignedSite = await dbContext.AssignedSites
-            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == siteId);
         if (dbAssignedSite == null)
         {
@@ -633,6 +760,8 @@ public class TimeSettingService(
         dbAssignedSite.FifthShiftActive = site.FifthShiftActive;
         dbAssignedSite.DaysBackInTimeAllowedEditing = site.DaysBackInTimeAllowedEditing;
         dbAssignedSite.DaysBackInTimeAllowedEditingEnabled = site.DaysBackInTimeAllowedEditingEnabled;
+        dbAssignedSite.Resigned = site.Resigned;
+        dbAssignedSite.ResignedAtDate = site.ResignedAtDate;
 
         await dbAssignedSite.Update(dbContext);
 
