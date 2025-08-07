@@ -127,9 +127,15 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   getCellClass(row: any, field: string): string {
     try {
       const planHours = row.planningPrDayModels[field]?.planHours;
+      const nettoHoursOverrideActive = row.planningPrDayModels[field]?.nettoHoursOverrideActive;
       const plannedStarted = row.planningPrDayModels[field]?.plannedStartOfShift1;
-      const workDayStarted = row.planningPrDayModels[field]?.start1StartedAt || row.planningPrDayModels[field]?.start2StartedAt;
-      const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+      let workDayStarted = row.planningPrDayModels[field]?.start1StartedAt || row.planningPrDayModels[field]?.start2StartedAt;
+      let workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+      if (nettoHoursOverrideActive && nettoHoursOverrideActive) {
+        // If netto hours override is active, use the override value
+        workDayStarted = true;
+        workDayEnded = true;
+      }
       const message = row.planningPrDayModels[field]?.message;
       const workerComment = row.planningPrDayModels[field]?.workerComment;
       if (planHours > 0) {
@@ -153,9 +159,15 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
 
   getCellTextColor(row: any, field: string): string {
     const planHours = row.planningPrDayModels[field]?.planHours;
+    const nettoHoursOverrideActive = row.planningPrDayModels[field]?.nettoHoursOverrideActive;
     const plannedStarted = row.planningPrDayModels[field]?.plannedStartOfShift1
-    const workDayStarted = row.planningPrDayModels[field]?.start1StartedAt || row.planningPrDayModels[field]?.start2StartedAt;
-    const workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+    let workDayStarted = row.planningPrDayModels[field]?.start1StartedAt || row.planningPrDayModels[field]?.start2StartedAt;
+    let workDayEnded = row.planningPrDayModels[field]?.workDayEnded;
+    if (nettoHoursOverrideActive && nettoHoursOverrideActive) {
+      // If netto hours override is active, use the override value
+      workDayStarted = true;
+      workDayEnded = true;
+    }
     const isInOlderThanToday = new Date(row.planningPrDayModels[field]?.date) < new Date();
     const message = row.planningPrDayModels[field]?.message;
     const workerComment = row.planningPrDayModels[field]?.workerComment;

@@ -460,6 +460,8 @@ public class TimePlanningPlanningService(
             planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
             planning.PlannedEndOfShift2 = model.PlannedEndOfShift2;
             planning.CommentOffice = model.CommentOffice;
+            planning.NettoHoursOverride = model.NettoHoursOverride;
+            planning.NettoHoursOverrideActive = model.NettoHoursOverrideActive;
 
             if (!planning.PlanChangedByAdmin)
             {
@@ -837,10 +839,19 @@ public class TimePlanningPlanningService(
                     .FirstOrDefaultAsync();
 
             planning.SumFlexStart = preTimePlanning.SumFlexEnd;
-            planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
-                                  planning.PlanHours -
-                                  planning.PaiedOutFlex;
-            planning.Flex = planning.NettoHours - planning.PlanHours;
+            if (planning.NettoHoursOverrideActive)
+            {
+                planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHoursOverride -
+                                      planning.PlanHours -
+                                      planning.PaiedOutFlex;
+                planning.Flex = planning.NettoHoursOverride - planning.PlanHours;
+            } else
+            {
+                planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
+                                      planning.PlanHours -
+                                      planning.PaiedOutFlex;
+                planning.Flex = planning.NettoHours - planning.PlanHours;
+            }
             await planning.Update(dbContext).ConfigureAwait(false);
 
             var planningsAfterThisPlanning = dbContext.PlanRegistrations

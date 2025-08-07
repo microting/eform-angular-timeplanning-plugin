@@ -127,4 +127,6 @@ export class PlanningPrDayModel {
   start5Id: number;
   stop5Id: number;
   pause5Id: number;
+  nettoHoursOverride: number;
+  nettoHoursOverrideActive: boolean;
 }

@@ -643,6 +643,18 @@
     >
   </mat-form-field>
   <br>
+  <mat-form-field class="pr-2" *ngIf="!isInTheFuture && data.planningPrDayModels.nettoHoursOverrideActive">
+    <mat-label>{{ 'NettoHours override' | translate }}</mat-label>
+    <input
+      type="number"
+      matInput
+      id="nettoHoursOverride"
+      name="nettoHoursOverride"
+      [(ngModel)]="data.planningPrDayModels.nettoHoursOverride"
+      (change)="calculatePlanHours()"
+    >
+  </mat-form-field>
+  <br *ngIf="data.planningPrDayModels.nettoHoursOverrideActive">
   <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
     <mat-label>{{ 'Flex' | translate }}</mat-label>
     <input

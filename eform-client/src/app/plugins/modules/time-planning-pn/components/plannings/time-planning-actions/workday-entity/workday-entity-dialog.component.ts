@@ -48,6 +48,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   maxPause1Id: number = 0;
   maxPause2Id: number = 0;
   todaysFlex: number = 0;
+  nettoHoursOverrideActive: boolean = false;
   date: any;
   @ViewChild('plannedColumnTemplate', {static: true}) plannedColumnTemplate!: TemplateRef<any>;
   @ViewChild('actualColumnTemplate', {static: true}) actualColumnTemplate!: TemplateRef<any>;
@@ -66,6 +67,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
+    this.nettoHoursOverrideActive = this.data.planningPrDayModels.nettoHoursOverrideActive;
     this.data.planningPrDayModels[this.enumKeys[this.data.planningPrDayModels.message - 1]] = true;
     this.plannedStartOfShift1 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedStartOfShift1);
     this.plannedEndOfShift1 = this.convertMinutesToTime(this.data.planningPrDayModels.plannedEndOfShift1);
@@ -208,6 +210,12 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
   onCheckboxChange(selectedOption: TimePlanningMessagesEnum): void {
     if (selectedOption !== this.data.planningPrDayModels.message) {
+      if (selectedOption !== TimePlanningMessagesEnum.DayOff) {
+        this.data.planningPrDayModels.nettoHoursOverrideActive = true;
+        this.data.planningPrDayModels.nettoHoursOverride = this.data.planningPrDayModels.planHours;
+      } else {
+        this.data.planningPrDayModels.nettoHoursOverrideActive = false;
+      }
       this.data.planningPrDayModels.message = selectedOption;
       this.enumKeys.forEach(key => {
         this.data.planningPrDayModels[key] = selectedOption
@@ -215,9 +223,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
       });
     }
     else {
+      this.data.planningPrDayModels.nettoHoursOverrideActive = false;
       this.data.planningPrDayModels.message = null;
-      this.calculatePlanHours();
+      // this.calculatePlanHours();
     }
+    this.calculatePlanHours();
   }
 
   resetPlannedTimes(number: number) {
@@ -482,7 +492,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
     this.data.planningPrDayModels.actualHours = actualTimeInMinutes / 60;
 
-    this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
+    if (this.data.planningPrDayModels.nettoHoursOverrideActive) {
+      this.todaysFlex = this.data.planningPrDayModels.nettoHoursOverride - this.data.planningPrDayModels.planHours;
+    } else {
+      this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
+    }
 
     if (this.data.planningPrDayModels.paidOutFlex !== null) {
       let paidOutFlex = this.data.planningPrDayModels.paidOutFlex.toString();
@@ -492,19 +506,41 @@ export class WorkdayEntityDialogComponent implements OnInit {
       // check if the string is a valid number
       if (!isNaN(Number(paidOutFlex))) {
         this.data.planningPrDayModels.paidOutFlex = Number(paidOutFlex);
-        this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
-          + this.data.planningPrDayModels.actualHours
-          - this.data.planningPrDayModels.planHours
-          - this.data.planningPrDayModels.paidOutFlex;
+        if (this.data.planningPrDayModels.nettoHoursOverrideActive) {
+          this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
+            + this.data.planningPrDayModels.nettoHoursOverride
+            - this.data.planningPrDayModels.planHours
+            - this.data.planningPrDayModels.paidOutFlex;
+        } else {
+          this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
+            + this.data.planningPrDayModels.actualHours
+            - this.data.planningPrDayModels.planHours
+            - this.data.planningPrDayModels.paidOutFlex;
+        }
       } else {
+        if (this.data.planningPrDayModels.nettoHoursOverrideActive) {
+          this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
+            + this.data.planningPrDayModels.nettoHoursOverride
+            - this.data.planningPrDayModels.planHours;
+        }
+        else {
+          this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
+            + this.data.planningPrDayModels.actualHours
+            - this.data.planningPrDayModels.planHours;
+        }
+      }
+    } else {
+      if (this.data.planningPrDayModels.nettoHoursOverrideActive) {
+        debugger;
+        this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
+          + this.data.planningPrDayModels.nettoHoursOverride
+          - this.data.planningPrDayModels.planHours;
+      }
+      else {
         this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
           + this.data.planningPrDayModels.actualHours
           - this.data.planningPrDayModels.planHours;
       }
-    } else {
-      this.data.planningPrDayModels.sumFlexEnd = this.data.planningPrDayModels.sumFlexStart
-        + this.data.planningPrDayModels.actualHours
-        - this.data.planningPrDayModels.planHours;
     }
   }
 
