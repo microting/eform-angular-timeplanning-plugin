@@ -122,4 +122,12 @@ export const slSL = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ta stran ne deluje več, pridobite Microting Time in sledite spodnjim navodilom.',
   'Needs update!': 'Potrebna je posodobitev!',
   'Flex balance at start of day': 'Fleksibilno ravnovesje na začetku dneva',
+  'Enable third shift': 'Omogoči tretjo izmeno',
+  'Enable fourth shift': 'Omogoči četrto izmeno',
+  'Enable fifth shift': 'Omogoči peto izmeno',
+  'Allow x days back in time editing': 'Dovoli urejanje x dni nazaj v preteklost',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Če omogočite to možnost, lahko uporabnik uredi x dni nazaj, privzeta vrednost je 2.',
+  'Show resigned': 'Pokaži odstopil',
+  Resigned: 'Odstopil',
+  'Resigned at date': 'Odstopil dne',
 };

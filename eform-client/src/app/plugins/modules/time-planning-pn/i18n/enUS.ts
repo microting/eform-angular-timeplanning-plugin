@@ -120,4 +120,12 @@ export const enUS = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'This page is no longer in function, get Microting Time and follow the instructions below',
   'Needs update!': 'Needs update!',
   'Flex balance at start of day': 'Flex balance at start of day',
+  'Enable third shift': 'Enable third shift',
+  'Enable fourth shift': 'Enable fourth shift',
+  'Enable fifth shift': 'Enable fifth shift',
+  'Allow x days back in time editing': 'Allow x days back in time editing',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Enabling this option allows the user to edit x days back in time, default is 2.',
+  'Show resigned': 'Show resigned',
+  'Resigned': 'Resigned',
+  'Resigned at date': 'Resigned at date'
 };

@@ -122,4 +122,12 @@ export const hrHR = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ova stranica više nije u funkciji, preuzmite Microting Time i slijedite upute u nastavku.',
   'Needs update!': 'Potrebno ažuriranje!',
   'Flex balance at start of day': 'Fleksibilna ravnoteža na početku dana',
+  'Enable third shift': 'Omogući treću smjenu',
+  'Enable fourth shift': 'Omogući četvrtu smjenu',
+  'Enable fifth shift': 'Omogući petu smjenu',
+  'Allow x days back in time editing': 'Dopusti uređivanje unatrag x dana',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Omogućavanje ove opcije omogućuje korisniku uređivanje x dana unatrag, zadana vrijednost je 2.',
+  'Show resigned': 'Prikaži ostavku',
+  Resigned: 'Dao ostavku',
+  'Resigned at date': 'Ostavka dana',
 };

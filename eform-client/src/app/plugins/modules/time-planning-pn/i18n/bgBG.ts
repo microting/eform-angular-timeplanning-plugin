@@ -122,4 +122,12 @@ export const bgBG = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Тази страница вече не функционира, вземете Microting Time и следвайте инструкциите по-долу.',
   'Needs update!': 'Нуждае се от актуализация!',
   'Flex balance at start of day': 'Гъвкав баланс в началото на деня',
+  'Enable third shift': 'Активиране на трета смяна',
+  'Enable fourth shift': 'Активиране на четвърта смяна',
+  'Enable fifth shift': 'Активиране на пета смяна',
+  'Allow x days back in time editing': 'Позволява редактиране на x дни назад във времето',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Активирането на тази опция позволява на потребителя да редактира x дни назад във времето, по подразбиране е 2.',
+  'Show resigned': 'Покажи оставка',
+  Resigned: 'Оставка',
+  'Resigned at date': 'Оставка на дата',
 };

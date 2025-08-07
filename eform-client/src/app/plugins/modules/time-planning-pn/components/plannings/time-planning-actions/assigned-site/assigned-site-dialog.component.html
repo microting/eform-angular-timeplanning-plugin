@@ -4,7 +4,7 @@
     dynamicHeight="false"
   >
     <mat-tab label="{{'General' | translate }}">
-      <div class="d-flex flex-row" *ngIf="selectCurrentUserIsFirstUser$ | async">
+      <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsFirstUser$ | async">
         <!-- data.useGoogleSheetAsDefault -->
         <mat-checkbox class="p-1"
                       [id]="'useGoogleSheetAsDefault'"
@@ -16,7 +16,7 @@
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="!data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async" >
+      <div class="d-flex flex-row" *ngIf="!data.resigned && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async" >
         <!-- data.useOnlyPlanHours checkbox -->
         <mat-checkbox class="p-1"
                       [id]="'useOnlyPlanHours'"
@@ -46,7 +46,7 @@
 <!--          {{ 'Use detailed pause editing' | translate }}-->
 <!--        </mat-checkbox>-->
 <!--      </div>-->
-      <div class="d-flex flex-row" *ngIf="data.globalAutoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
+      <div class="d-flex flex-row" *ngIf="!data.resigned && data.globalAutoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
         <!-- data.autoBreakCalculationActive -->
         <mat-checkbox class="p-1"
                       [id]="'autoBreakCalculationActive'"
@@ -58,7 +58,7 @@
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row">
+      <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowPersonalTimeRegistration -->
         <mat-checkbox class="p-1"
                       [id]="'allowPersonalTimeRegistration'"
@@ -70,7 +70,7 @@
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration">
+      <div class="d-flex flex-row" *ngIf="!data.daysBackInTimeAllowedEditingEnabled && !data.resigned && data.allowPersonalTimeRegistration && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowEditOfRegistrations -->
         <mat-checkbox class="p-1"
                       [id]="'allowEditOfRegistrations'"
@@ -82,7 +82,7 @@
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours">
+      <div class="d-flex flex-row" *ngIf="!data.resigned && data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowPersonalTimeRegistration -->
         <mat-checkbox class="p-1"
                       [id]="'usePunchClock'"
@@ -94,7 +94,7 @@
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours && data.usePunchClock">
+      <div class="d-flex flex-row" *ngIf="!data.daysBackInTimeAllowedEditingEnabled && !data.resigned && data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours && data.usePunchClock && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowPersonalTimeRegistration -->
         <mat-checkbox class="p-1"
                       [id]="'usePunchClockWithAllowRegisteringInHistory'"
@@ -106,7 +106,7 @@
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row" *ngIf="!data.resigned && data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowAcceptOfPlannedHours -->
         <mat-checkbox class="p-1"
                       [id]="'allowAcceptOfPlannedHours'"
@@ -118,7 +118,7 @@
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="data.allowPersonalTimeRegistration && data.allowEditOfRegistrations && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row" *ngIf="!data.resigned && data.allowPersonalTimeRegistration && data.allowEditOfRegistrations && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowAcceptOfPlannedHours -->
         <mat-checkbox class="p-1"
                       [id]="'daysBackInTimeAllowedEditingEnabled'"
@@ -130,27 +130,27 @@
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsAdmin$ | async">
         <mat-checkbox class="p-1"
                       [id]="'thirdShiftActive'"
                       [name]="'thirdShiftActive'"
                       [(ngModel)]="data.thirdShiftActive">
           <div>{{ 'Enable third shift' | translate }}</div>
         </mat-checkbox>
-        <mat-checkbox class="p-1" *ngIf="data.thirdShiftActive"
+        <mat-checkbox class="p-1" *ngIf="!data.resigned && data.thirdShiftActive && selectCurrentUserIsAdmin$ | async"
                       [id]="'fourthShiftActive'"
                       [name]="'fourthShiftActive'"
                       [(ngModel)]="data.fourthShiftActive">
           <div>{{ 'Enable fourth shift' | translate }}</div>
         </mat-checkbox>
-        <mat-checkbox class="p-1" *ngIf="data.fourthShiftActive && data.thirdShiftActive"
+        <mat-checkbox class="p-1" *ngIf="!data.resigned && data.fourthShiftActive && data.thirdShiftActive && selectCurrentUserIsAdmin$ | async"
                       [id]="'fifthShiftActive'"
                       [name]="'fifthShiftActive'"
                       [(ngModel)]="data.fifthShiftActive">
           <div>{{ 'Enable fifth shift' | translate }}</div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row">
         <mat-checkbox class="p-1"
                       [id]="'resigned'"
                       [name]="'resigned'"

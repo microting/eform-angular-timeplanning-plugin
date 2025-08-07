@@ -122,4 +122,12 @@ export const etET = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'See leht enam ei tööta, hankige Microting Time ja järgige allolevaid juhiseid.',
   'Needs update!': 'Vajab uuendamist!',
   'Flex balance at start of day': 'Paindlik saldo päeva alguses',
+  'Enable third shift': 'Kolmanda vahetuse lubamine',
+  'Enable fourth shift': 'Neljanda vahetuse lubamine',
+  'Enable fifth shift': 'Viienda vahetuse lubamine',
+  'Allow x days back in time editing': 'Luba x päeva tagasi ajas redigeerida',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Selle valiku lubamine võimaldab kasutajal muuta x päeva tagasi ajas, vaikimisi on see 2.',
+  'Show resigned': 'Näita astus tagasi',
+  Resigned: 'Astus tagasi',
+  'Resigned at date': 'Astus tagasi kuupäeval',
 };

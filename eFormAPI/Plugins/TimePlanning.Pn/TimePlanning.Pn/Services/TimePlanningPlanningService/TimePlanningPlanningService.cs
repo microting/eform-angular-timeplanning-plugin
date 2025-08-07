@@ -446,6 +446,13 @@ public class TimePlanningPlanningService(
             var assignedSite = await dbContext.AssignedSites
                 .FirstAsync(x => x.SiteId == planning.SdkSitId);
 
+            if (assignedSite.Resigned)
+            {
+                return new OperationResult(
+                    false,
+                    localizationService.GetString("PlanningCannotBeEditedForResignedSite"));
+            }
+
             planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
             planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
             planning.PlannedEndOfShift1 = model.PlannedEndOfShift1;
@@ -907,6 +914,13 @@ public class TimePlanningPlanningService(
                 return new OperationDataResult<TimePlanningPlanningModel>(
                     false,
                     localizationService.GetString("AssignedSiteNotFound"));
+            }
+
+            if (assignedSite.Resigned)
+            {
+                return new OperationResult(
+                    false,
+                    localizationService.GetString("PlanningCannotBeEditedForResignedSite"));
             }
 
             var planning = await dbContext.PlanRegistrations

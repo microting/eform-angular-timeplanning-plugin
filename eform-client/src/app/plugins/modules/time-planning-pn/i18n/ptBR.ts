@@ -122,4 +122,12 @@ export const ptBR = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Esta página não está mais em funcionamento, adquira o Microting Time e siga as instruções abaixo',
   'Needs update!': 'Precisa de atualização!',
   'Flex balance at start of day': 'Flexibilidade de equilíbrio no início do dia',
+  'Enable third shift': 'Habilitar terceiro turno',
+  'Enable fourth shift': 'Habilitar quarto turno',
+  'Enable fifth shift': 'Habilitar quinto turno',
+  'Allow x days back in time editing': 'Permitir edição retroativa de x dias',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Habilitar esta opção permite que o usuário edite x dias no tempo, o padrão é 2.',
+  'Show resigned': 'Mostrar resignado',
+  Resigned: 'Resignado',
+  'Resigned at date': 'Renunciou na data',
 };

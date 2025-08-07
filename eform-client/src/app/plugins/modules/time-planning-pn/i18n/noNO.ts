@@ -122,4 +122,12 @@ export const noNO = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Denne siden fungerer ikke lenger. Skaff deg Microting Time og følg instruksjonene nedenfor.',
   'Needs update!': 'Trenger oppdatering!',
   'Flex balance at start of day': 'Fleksibel saldo ved starten av dagen',
+  'Enable third shift': 'Aktiver tredje skift',
+  'Enable fourth shift': 'Aktiver fjerde skift',
+  'Enable fifth shift': 'Aktiver femte skift',
+  'Allow x days back in time editing': 'Tillat redigering x dager tilbake i tid',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Hvis dette alternativet aktiveres, kan brukeren redigere x dager tilbake i tid, standard er 2.',
+  'Show resigned': 'Vis oppgitt',
+  Resigned: 'Sa opp',
+  'Resigned at date': 'Sa opp på dato',
 };

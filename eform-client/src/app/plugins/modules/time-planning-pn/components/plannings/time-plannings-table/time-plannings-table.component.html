@@ -67,7 +67,7 @@
     </div>
   </ng-container>
   <ng-container *ngIf="(selectAuthIsAdmin$ | async) === false">
-    <div class="first-column" id="firstColumn{{index}}">
+    <div class="first-column" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
       <div class="progress-container">
         <ng-container *ngIf="row['avatarUrl'] === null">
           <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">

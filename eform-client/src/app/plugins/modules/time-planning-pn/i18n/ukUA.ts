@@ -122,4 +122,12 @@ export const ukUA = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ця сторінка більше не працює, завантажте Microting Time та дотримуйтесь інструкцій нижче.',
   'Needs update!': 'Потребує оновлення!',
   'Flex balance at start of day': 'Гнучкий баланс на початку дня',
+  'Enable third shift': 'Увімкнути третю зміну',
+  'Enable fourth shift': 'Увімкнути четверту зміну',
+  'Enable fifth shift': 'Увімкнути п&#39;яту зміну',
+  'Allow x days back in time editing': 'Дозволити редагування на x днів назад у часі',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Увімкнення цієї опції дозволяє користувачеві редагувати дані на x днів назад, за замовчуванням – 2.',
+  'Show resigned': 'Показати у відставці',
+  Resigned: 'У відставку',
+  'Resigned at date': 'Звільнений у дату',
 };

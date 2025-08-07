@@ -122,4 +122,12 @@ export const elGR = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Αυτή η σελίδα δεν λειτουργεί πλέον, αποκτήστε το Microting Time και ακολουθήστε τις παρακάτω οδηγίες.',
   'Needs update!': 'Χρειάζεται ενημέρωση!',
   'Flex balance at start of day': 'Ευέλικτη ισορροπία στην αρχή της ημέρας',
+  'Enable third shift': 'Ενεργοποίηση τρίτης βάρδιας',
+  'Enable fourth shift': 'Ενεργοποίηση τέταρτης βάρδιας',
+  'Enable fifth shift': 'Ενεργοποίηση πέμπτης βάρδιας',
+  'Allow x days back in time editing': 'Να επιτρέπεται η επεξεργασία x ημέρες πίσω στο χρόνο',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Η ενεργοποίηση αυτής της επιλογής επιτρέπει στον χρήστη να επεξεργαστεί x ημέρες πίσω στο χρόνο, η προεπιλογή είναι 2.',
+  'Show resigned': 'Η εκπομπή παραιτήθηκε',
+  Resigned: 'Καρτερικός',
+  'Resigned at date': 'Παραιτήθηκε την ημερομηνία',
 };

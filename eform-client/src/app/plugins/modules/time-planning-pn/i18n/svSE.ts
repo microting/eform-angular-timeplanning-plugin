@@ -122,4 +122,12 @@ export const svSE = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Den här sidan fungerar inte längre, hämta Microting Time och följ instruktionerna nedan.',
   'Needs update!': 'Behöver uppdateras!',
   'Flex balance at start of day': 'Flexsaldo vid dagens början',
+  'Enable third shift': 'Aktivera tredje skiftet',
+  'Enable fourth shift': 'Aktivera fjärde skiftet',
+  'Enable fifth shift': 'Aktivera femte skiftet',
+  'Allow x days back in time editing': 'Tillåt redigering x dagar bakåt i tiden',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Om det här alternativet aktiveras kan användaren redigera x dagar tillbaka i tiden, standardvärdet är 2.',
+  'Show resigned': 'Visa avgick',
+  Resigned: 'Resignerad',
+  'Resigned at date': 'Avgick vid datumet',
 };

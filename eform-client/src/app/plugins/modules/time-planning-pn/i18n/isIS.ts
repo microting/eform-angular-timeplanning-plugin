@@ -122,4 +122,12 @@ export const isIS = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Þessi síða virkar ekki lengur, sæktu Microting Time og fylgdu leiðbeiningunum hér að neðan.',
   'Needs update!': 'Þarfnast uppfærslu!',
   'Flex balance at start of day': 'Sveigjanlegur staða í upphafi dags',
+  'Enable third shift': 'Virkja þriðju vaktina',
+  'Enable fourth shift': 'Virkja fjórðu vaktina',
+  'Enable fifth shift': 'Virkja fimmtu vaktina',
+  'Allow x days back in time editing': 'Leyfa breytingar x daga aftur í tímann',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Ef þessi valkostur er virkjaður getur notandinn breytt x dögum aftur í tímann, sjálfgefið er 2.',
+  'Show resigned': 'Sýna sagði upp',
+  Resigned: 'Sagði upp',
+  'Resigned at date': 'Sagði af sér þann dag',
 };

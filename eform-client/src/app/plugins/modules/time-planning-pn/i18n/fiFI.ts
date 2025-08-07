@@ -122,4 +122,12 @@ export const fiFI = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Tämä sivu ei ole enää toiminnassa, lataa Microting Time ja seuraa alla olevia ohjeita.',
   'Needs update!': 'Tarvitsee päivitystä!',
   'Flex balance at start of day': 'Joustava saldo päivän alussa',
+  'Enable third shift': 'Ota käyttöön kolmas vuoro',
+  'Enable fourth shift': 'Ota käyttöön neljäs vuoro',
+  'Enable fifth shift': 'Ota käyttöön viides vuoro',
+  'Allow x days back in time editing': 'Salli x päivän muokkaus ajassa taaksepäin',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Tämän asetuksen käyttöönotto antaa käyttäjälle mahdollisuuden muokata x päivää taaksepäin ajassa, oletusarvo on 2.',
+  'Show resigned': 'Näytä erosi',
+  Resigned: 'Erosi',
+  'Resigned at date': 'Erosi päivämääränä',
 };

@@ -122,4 +122,12 @@ export const ltLT = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Šis puslapis nebeveikia, atsisiųskite „Microting Time“ ir vykdykite toliau pateiktas instrukcijas.',
   'Needs update!': 'Reikia atnaujinimo!',
   'Flex balance at start of day': 'Lankstus likutis dienos pradžioje',
+  'Enable third shift': 'Įjungti trečią pamainą',
+  'Enable fourth shift': 'Įjungti ketvirtą pamainą',
+  'Enable fifth shift': 'Įjungti penktą pamainą',
+  'Allow x days back in time editing': 'Leisti redaguoti x dienų atgal',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Įjungus šią parinktį, vartotojas gali redaguoti x dienų atgal laiku, numatytoji reikšmė yra 2.',
+  'Show resigned': 'Rodyti atsistatydino',
+  Resigned: 'Atsistatydino',
+  'Resigned at date': 'Atsistatydino nuo datos',
 };

@@ -122,4 +122,12 @@ export const itIT = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Questa pagina non è più attiva, scarica Microting Time e segui le istruzioni riportate di seguito',
   'Needs update!': 'Necessita di aggiornamento!',
   'Flex balance at start of day': 'Saldo flessibile all&#39;inizio della giornata',
+  'Enable third shift': 'Abilita il terzo turno',
+  'Enable fourth shift': 'Abilita il quarto turno',
+  'Enable fifth shift': 'Abilita il quinto turno',
+  'Allow x days back in time editing': 'Consenti x giorni di modifica indietro nel tempo',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Abilitando questa opzione, l&#39;utente potrà modificare x giorni indietro nel tempo; il valore predefinito è 2.',
+  'Show resigned': 'Mostra dimissioni',
+  Resigned: 'Rassegnato',
+  'Resigned at date': 'Dimessosi alla data',
 };

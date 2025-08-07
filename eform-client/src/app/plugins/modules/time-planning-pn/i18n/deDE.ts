@@ -122,4 +122,12 @@ export const deDE = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Diese Seite ist nicht mehr in Funktion. Holen Sie sich Microting Time und folgen Sie den Anweisungen unten',
   'Needs update!': 'Muss aktualisiert werden!',
   'Flex balance at start of day': 'Flex-Guthaben zu Beginn des Tages',
+  'Enable third shift': 'Dritte Schicht aktivieren',
+  'Enable fourth shift': 'Vierte Schicht aktivieren',
+  'Enable fifth shift': 'Fünfte Schicht aktivieren',
+  'Allow x days back in time editing': 'Bearbeitung x Tage zurück zulassen',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Durch Aktivieren dieser Option kann der Benutzer x Tage in der Vergangenheit bearbeiten, der Standardwert ist 2.',
+  'Show resigned': 'Show zurückgetreten',
+  Resigned: 'Resigniert',
+  'Resigned at date': 'Zurückgetreten am Datum',
 };

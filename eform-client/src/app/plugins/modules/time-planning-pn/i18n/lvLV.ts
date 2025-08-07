@@ -122,4 +122,12 @@ export const lvLV = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Šī lapa vairs nedarbojas, iegūstiet Microting Time un izpildiet tālāk norādītās instrukcijas.',
   'Needs update!': 'Nepieciešams atjauninājums!',
   'Flex balance at start of day': 'Elastīgais atlikums dienas sākumā',
+  'Enable third shift': 'Iespējot trešo maiņu',
+  'Enable fourth shift': 'Iespējot ceturto maiņu',
+  'Enable fifth shift': 'Iespējot piekto maiņu',
+  'Allow x days back in time editing': 'Atļaut rediģēšanu x dienas atpakaļ laikā',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Iespējojot šo opciju, lietotājs var rediģēt x dienas atpakaļ laikā; noklusējuma vērtība ir 2.',
+  'Show resigned': 'Rādīt atkāpās',
+  Resigned: 'Atkāpās no amata',
+  'Resigned at date': 'Atkāpšanās no amata datumā',
 };

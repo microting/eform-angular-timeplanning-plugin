@@ -122,4 +122,12 @@ export const nlNL = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Deze pagina is niet meer in gebruik, download Microting Time en volg de onderstaande instructies',
   'Needs update!': 'Moet geüpdatet worden!',
   'Flex balance at start of day': 'Flexibel saldo aan het begin van de dag',
+  'Enable third shift': 'Derde shift inschakelen',
+  'Enable fourth shift': 'Vierde shift inschakelen',
+  'Enable fifth shift': 'Vijfde shift inschakelen',
+  'Allow x days back in time editing': 'Sta x dagen terug in de tijd toe om te bewerken',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Als u deze optie inschakelt, kan de gebruiker x dagen terug in de tijd gaan. De standaardinstelling is 2.',
+  'Show resigned': 'Toon ontslag genomen',
+  Resigned: 'Afgetreden',
+  'Resigned at date': 'Afgetreden op datum',
 };

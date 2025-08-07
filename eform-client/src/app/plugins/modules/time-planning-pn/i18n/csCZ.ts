@@ -122,4 +122,12 @@ export const csCZ = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Tato stránka již není funkční, stáhněte si aplikaci Microting Time a postupujte podle níže uvedených pokynů.',
   'Needs update!': 'Potřebuje aktualizaci!',
   'Flex balance at start of day': 'Flexibilní zůstatek na začátku dne',
+  'Enable third shift': 'Povolit třetí směnu',
+  'Enable fourth shift': 'Povolit čtvrtou směnu',
+  'Enable fifth shift': 'Povolit pátou směnu',
+  'Allow x days back in time editing': 'Povolit úpravy v čase x dní zpět',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Povolení této možnosti umožňuje uživateli upravit data o x dní zpět, výchozí hodnota je 2.',
+  'Show resigned': 'Zobrazit rezignaci',
+  Resigned: 'Rezignoval',
+  'Resigned at date': 'Rezignoval/a k datu',
 };

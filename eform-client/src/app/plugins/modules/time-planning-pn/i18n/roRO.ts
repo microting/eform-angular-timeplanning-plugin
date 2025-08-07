@@ -122,4 +122,12 @@ export const roRO = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Această pagină nu mai este funcțională, obțineți Microting Time și urmați instrucțiunile de mai jos.',
   'Needs update!': 'Necesită actualizare!',
   'Flex balance at start of day': 'Sold flexibil la începutul zilei',
+  'Enable third shift': 'Activează a treia tură',
+  'Enable fourth shift': 'Activează schimbul al patrulea',
+  'Enable fifth shift': 'Activează a cincea tură',
+  'Allow x days back in time editing': 'Permiteți x zile înapoi în timp editând',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Activarea acestei opțiuni permite utilizatorului să editeze x zile în urmă în timp, valoarea implicită fiind 2.',
+  'Show resigned': 'Arătați demisionat',
+  Resigned: 'Demisionat',
+  'Resigned at date': 'Demisionat la data de',
 };

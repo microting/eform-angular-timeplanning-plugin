@@ -122,4 +122,12 @@ export const skSK = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Táto stránka už nie je funkčná, stiahnite si Microting Time a postupujte podľa pokynov nižšie.',
   'Needs update!': 'Potrebuje aktualizáciu!',
   'Flex balance at start of day': 'Flexibilný zostatok na začiatku dňa',
+  'Enable third shift': 'Povoliť tretiu smenu',
+  'Enable fourth shift': 'Povoliť štvrtú smenu',
+  'Enable fifth shift': 'Povoliť piatu smenu',
+  'Allow x days back in time editing': 'Povoliť úpravy v čase x dní späť',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Povolenie tejto možnosti umožňuje používateľovi upraviť čas o x dní späť, predvolená hodnota je 2.',
+  'Show resigned': 'Zobraziť rezignáciu',
+  Resigned: 'Rezignoval/a',
+  'Resigned at date': 'Dátum rezignácie',
 };

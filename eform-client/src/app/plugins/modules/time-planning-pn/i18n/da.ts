@@ -120,4 +120,12 @@ export const da = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Denne side fungerer ikke længere. Hent Microting Time og følg instruktionerne nedenfor.',
   'Needs update!': 'Trænger til opdatering!',
   'Flex balance at start of day': 'Flexbalance ved dagens start',
+  'Enable third shift': 'Aktivér tredje vagt',
+  'Enable fourth shift': 'Aktivér fjerde vagt',
+  'Enable fifth shift': 'Aktivér femte skift',
+  'Allow x days back in time editing': 'Tillad redigering x dage tilbage i tiden',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Hvis denne indstilling aktiveres, kan brugeren redigere x dage tilbage i tiden, standardværdien er 2.',
+  'Show resigned': 'Vis fratrådt',
+  Resigned: 'Fratrådt',
+  'Resigned at date': 'Fratrådte på datoen',
 };

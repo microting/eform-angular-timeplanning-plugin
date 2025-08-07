@@ -122,4 +122,12 @@ export const huHU = {
   'This page is no longer in function, get Microting Time and follow the instructions below': 'Ez az oldal már nem működik, töltsd le a Microting Time oldalt és kövesd az alábbi utasításokat.',
   'Needs update!': 'Frissítésre szorul!',
   'Flex balance at start of day': 'Rugalmas egyenleg a nap elején',
+  'Enable third shift': 'Harmadik műszak engedélyezése',
+  'Enable fourth shift': 'Negyedik műszak engedélyezése',
+  'Enable fifth shift': 'Ötödik műszak engedélyezése',
+  'Allow x days back in time editing': 'Engedélyezze az x napos visszamenőleges szerkesztést',
+  'Enabling this option allows the user to edit x days back in time, default is 2.': 'Ennek az opciónak az engedélyezése lehetővé teszi a felhasználó számára, hogy x nappal visszamenőleg szerkeszthesse az értékeket, az alapértelmezett érték 2.',
+  'Show resigned': 'Show lemondott',
+  Resigned: 'Lemondó',
+  'Resigned at date': 'Lemondott ezen a napon',
 };
