@@ -65,13 +65,19 @@ public class TimePlanningPlanningService(
             var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
             var result = new List<TimePlanningPlanningModel>();
             var assignedSites =
-                await dbContext.AssignedSites.Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                await dbContext.AssignedSites
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Resigned == model.ShowResignedSites)
                     .ToListAsync().ConfigureAwait(false);
 
             if (model.SiteId != 0 && model.SiteId != null)
             {
                 assignedSites = assignedSites.Where(x => x.SiteId == model.SiteId).ToList();
+            }
+
+            foreach (var assignedSite in assignedSites)
+            {
+                Console.WriteLine($"Resigned site: {assignedSite.SiteId}, Resigned at: {assignedSite.ResignedAtDate}");
             }
 
             var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
@@ -444,6 +450,7 @@ public class TimePlanningPlanningService(
             }
 
             var assignedSite = await dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstAsync(x => x.SiteId == planning.SdkSitId);
 
             if (assignedSite.Resigned)
@@ -918,6 +925,7 @@ public class TimePlanningPlanningService(
             }
 
             var assignedSite = await dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
 
             if (assignedSite == null)

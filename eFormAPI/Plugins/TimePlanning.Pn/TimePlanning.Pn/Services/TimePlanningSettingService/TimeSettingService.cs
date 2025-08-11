@@ -182,90 +182,6 @@ public class TimeSettingService(
         }
     }
 
-    // public async Task<OperationResult> AddSite(int siteId)
-    // {
-    //     try
-    //     {
-    //         var assignmentSite = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite
-    //         {
-    //             SiteId = siteId,
-    //             CreatedByUserId = userService.UserId,
-    //             UpdatedByUserId = userService.UserId
-    //         };
-    //         await assignmentSite.Create(dbContext);
-    //         var option = options.Value;
-    //         var newTaskId = option.EformId;
-    //         var folderId = option.FolderId;
-    //         var theCore = await core.GetCore();
-    //         await using var sdkDbContext = theCore.DbContextHelper.GetDbContext();
-    //         var folder = await sdkDbContext.Folders.SingleOrDefaultAsync(x => x.Id == folderId);
-    //         var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == siteId);
-    //         var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
-    //         var mainElement = await theCore.ReadeForm((int)newTaskId, language);
-    //         mainElement.CheckListFolderName = folder.MicrotingUid.ToString();
-    //         mainElement.EndDate = DateTime.UtcNow.AddYears(10);
-    //         mainElement.DisplayOrder = int.MinValue;
-    //         mainElement.Repeated = 0;
-    //         mainElement.PushMessageTitle = mainElement.Label;
-    //         mainElement.EnableQuickSync = true;
-    //         var caseId = await theCore.CaseCreate(mainElement, "", siteId, folderId);
-    //         assignmentSite.CaseMicrotingUid = caseId;
-    //         await assignmentSite.Update(dbContext);
-    //
-    //         return new OperationResult(true, localizationService.GetString("SitesUpdatedSuccessfuly"));
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         SentrySdk.CaptureException(e);
-    //         Console.WriteLine(e);
-    //         logger.LogError(e.Message);
-    //         return new OperationResult(
-    //             false,
-    //             localizationService.GetString("ErrorWhileUpdateSites"));
-    //     }
-    // }
-    //
-    // public async Task<OperationResult> DeleteSite(int siteId)
-    // {
-    //     try
-    //     {
-    //         var assignedSite = await dbContext.AssignedSites
-    //             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-    //             .Where(x => x.SiteId == siteId)
-    //             .FirstOrDefaultAsync();
-    //
-    //         var theCore = await core.GetCore();
-    //         if (assignedSite != null)
-    //         {
-    //             if (assignedSite.CaseMicrotingUid != null)
-    //                 await theCore.CaseDelete((int)assignedSite.CaseMicrotingUid);
-    //             await assignedSite.Delete(dbContext);
-    //         }
-    //
-    //         var registrations = await dbContext.PlanRegistrations
-    //             .Where(x => x.StatusCaseId != 0)
-    //             .ToListAsync();
-    //
-    //         foreach (PlanRegistration planRegistration in registrations)
-    //         {
-    //             await theCore.CaseDelete(planRegistration.StatusCaseId);
-    //             planRegistration.StatusCaseId = 0;
-    //             await planRegistration.Update(dbContext);
-    //         }
-    //
-    //         return new OperationResult(true, localizationService.GetString("SitesUpdatedSuccessfuly"));
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         SentrySdk.CaptureException(e);
-    //         Console.WriteLine(e);
-    //         logger.LogError(e.Message);
-    //         return new OperationResult(
-    //             false,
-    //             localizationService.GetString("ErrorWhileUpdateSites"));
-    //     }
-    // }
-
     public async Task<OperationDataResult<List<Site>>> GetAvailableSites(string? token)
     {
         try
@@ -408,6 +324,7 @@ public class TimeSettingService(
     public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSite(int siteId)
     {
         Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SiteId == siteId);
         if (dbAssignedSite == null)
@@ -449,6 +366,7 @@ public class TimeSettingService(
         }
 
         Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
         dbAssignedSite.DayOfPayment = options.Value.DayOfPayment;
@@ -542,6 +460,11 @@ public class TimeSettingService(
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Resigned == true)
                 .ToListAsync();
+
+            foreach (var assignedSite in assignedSites)
+            {
+                Console.WriteLine($"Resigned site: {assignedSite.SiteId}, Resigned at: {assignedSite.ResignedAtDate}");
+            }
 
             var sites = new List<Site>();
             foreach (var assignedSite in assignedSites)
@@ -664,6 +587,7 @@ public class TimeSettingService(
     {
         var siteId = site.SiteId;
         var dbAssignedSite = await dbContext.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == siteId);
         if (dbAssignedSite == null)
         {
