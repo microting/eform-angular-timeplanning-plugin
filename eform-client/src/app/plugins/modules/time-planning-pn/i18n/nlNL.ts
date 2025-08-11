@@ -130,4 +130,5 @@ export const nlNL = {
   'Show resigned': 'Toon ontslag genomen',
   Resigned: 'Afgetreden',
   'Resigned at date': 'Afgetreden op datum',
+  'NettoHours override': 'Netto-uren overschrijven',
 };

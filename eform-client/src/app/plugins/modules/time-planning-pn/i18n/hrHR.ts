@@ -130,4 +130,5 @@ export const hrHR = {
   'Show resigned': 'Prikaži ostavku',
   Resigned: 'Dao ostavku',
   'Resigned at date': 'Ostavka dana',
+  'NettoHours override': 'Poništavanje neto sati',
 };

@@ -130,4 +130,5 @@ export const ltLT = {
   'Show resigned': 'Rodyti atsistatydino',
   Resigned: 'Atsistatydino',
   'Resigned at date': 'Atsistatydino nuo datos',
+  'NettoHours override': 'Grynojo valandų skaičiaus nepaisymas',
 };

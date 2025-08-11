@@ -130,4 +130,5 @@ export const noNO = {
   'Show resigned': 'Vis oppgitt',
   Resigned: 'Sa opp',
   'Resigned at date': 'Sa opp på dato',
+  'NettoHours override': 'Overstyring av netto timer',
 };

@@ -130,4 +130,5 @@ export const svSE = {
   'Show resigned': 'Visa avgick',
   Resigned: 'Resignerad',
   'Resigned at date': 'Avgick vid datumet',
+  'NettoHours override': 'Åsidosättning av nettotimmar',
 };

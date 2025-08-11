@@ -130,4 +130,5 @@ export const csCZ = {
   'Show resigned': 'Zobrazit rezignaci',
   Resigned: 'Rezignoval',
   'Resigned at date': 'Rezignoval/a k datu',
+  'NettoHours override': 'Přepsání hodin netto',
 };

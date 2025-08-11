@@ -130,4 +130,5 @@ export const lvLV = {
   'Show resigned': 'Rādīt atkāpās',
   Resigned: 'Atkāpās no amata',
   'Resigned at date': 'Atkāpšanās no amata datumā',
+  'NettoHours override': 'Neto stundu ignorēšana',
 };

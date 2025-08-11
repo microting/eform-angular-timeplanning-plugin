@@ -130,4 +130,5 @@ export const isIS = {
   'Show resigned': 'Sýna sagði upp',
   Resigned: 'Sagði upp',
   'Resigned at date': 'Sagði af sér þann dag',
+  'NettoHours override': 'Hnekkt nettótíma',
 };

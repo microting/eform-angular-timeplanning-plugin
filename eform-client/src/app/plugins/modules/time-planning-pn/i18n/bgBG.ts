@@ -130,4 +130,5 @@ export const bgBG = {
   'Show resigned': 'Покажи оставка',
   Resigned: 'Оставка',
   'Resigned at date': 'Оставка на дата',
+  'NettoHours override': 'Отмяна на нетно време',
 };

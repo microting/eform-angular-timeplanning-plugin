@@ -130,4 +130,5 @@ export const itIT = {
   'Show resigned': 'Mostra dimissioni',
   Resigned: 'Rassegnato',
   'Resigned at date': 'Dimessosi alla data',
+  'NettoHours override': 'Override delle ore nette',
 };

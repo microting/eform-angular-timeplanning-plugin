@@ -130,4 +130,5 @@ export const ptBR = {
   'Show resigned': 'Mostrar resignado',
   Resigned: 'Resignado',
   'Resigned at date': 'Renunciou na data',
+  'NettoHours override': 'Substituição de horas líquidas',
 };

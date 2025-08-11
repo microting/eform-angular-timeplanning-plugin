@@ -130,4 +130,5 @@ export const elGR = {
   'Show resigned': 'Η εκπομπή παραιτήθηκε',
   Resigned: 'Καρτερικός',
   'Resigned at date': 'Παραιτήθηκε την ημερομηνία',
+  'NettoHours override': 'Παράκαμψη καθαρών ωρών',
 };

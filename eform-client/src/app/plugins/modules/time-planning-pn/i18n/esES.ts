@@ -130,4 +130,5 @@ export const esES = {
   'Show resigned': 'Mostrar resignado',
   Resigned: 'Resignado',
   'Resigned at date': 'Renunció en la fecha',
+  'NettoHours override': 'Anulación de horas netas',
 };

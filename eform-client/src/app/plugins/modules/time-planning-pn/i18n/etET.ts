@@ -130,4 +130,5 @@ export const etET = {
   'Show resigned': 'Näita astus tagasi',
   Resigned: 'Astus tagasi',
   'Resigned at date': 'Astus tagasi kuupäeval',
+  'NettoHours override': 'Neto tundide tühistamine',
 };

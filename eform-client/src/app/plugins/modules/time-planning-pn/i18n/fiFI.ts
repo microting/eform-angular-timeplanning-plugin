@@ -130,4 +130,5 @@ export const fiFI = {
   'Show resigned': 'Näytä erosi',
   Resigned: 'Erosi',
   'Resigned at date': 'Erosi päivämääränä',
+  'NettoHours override': 'Nettotuntien ohitus',
 };

@@ -128,4 +128,5 @@ export const da = {
   'Show resigned': 'Vis fratrådt',
   Resigned: 'Fratrådt',
   'Resigned at date': 'Fratrådte på datoen',
+  'NettoHours override': 'Netto timer overskrivning',
 };

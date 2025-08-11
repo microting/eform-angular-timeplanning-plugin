@@ -130,4 +130,5 @@ export const deDE = {
   'Show resigned': 'Show zurückgetreten',
   Resigned: 'Resigniert',
   'Resigned at date': 'Zurückgetreten am Datum',
+  'NettoHours override': 'Nettostundenüberschreibung',
 };

@@ -130,4 +130,5 @@ export const plPL = {
   'Show resigned': 'Pokaż zrezygnowany',
   Resigned: 'Zrezygnowany',
   'Resigned at date': 'Zrezygnował w dniu',
+  'NettoHours override': 'Nadpisanie godzin netto',
 };

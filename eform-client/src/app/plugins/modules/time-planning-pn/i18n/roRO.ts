@@ -130,4 +130,5 @@ export const roRO = {
   'Show resigned': 'Arătați demisionat',
   Resigned: 'Demisionat',
   'Resigned at date': 'Demisionat la data de',
+  'NettoHours override': 'Suprascrierea orelor nete',
 };

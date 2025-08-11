@@ -130,4 +130,5 @@ export const ukUA = {
   'Show resigned': 'Показати у відставці',
   Resigned: 'У відставку',
   'Resigned at date': 'Звільнений у дату',
+  'NettoHours override': 'Перевизначення годин нетто',
 };

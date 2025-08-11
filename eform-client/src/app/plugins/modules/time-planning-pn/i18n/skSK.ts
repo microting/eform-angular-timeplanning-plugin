@@ -130,4 +130,5 @@ export const skSK = {
   'Show resigned': 'Zobraziť rezignáciu',
   Resigned: 'Rezignoval/a',
   'Resigned at date': 'Dátum rezignácie',
+  'NettoHours override': 'Prepísanie čistých hodín',
 };

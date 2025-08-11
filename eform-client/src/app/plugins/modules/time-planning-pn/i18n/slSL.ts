@@ -130,4 +130,5 @@ export const slSL = {
   'Show resigned': 'Pokaži odstopil',
   Resigned: 'Odstopil',
   'Resigned at date': 'Odstopil dne',
+  'NettoHours override': 'Razveljavitev neto ur',
 };

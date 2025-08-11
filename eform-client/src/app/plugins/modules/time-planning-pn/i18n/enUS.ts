@@ -127,5 +127,6 @@ export const enUS = {
   'Enabling this option allows the user to edit x days back in time, default is 2.': 'Enabling this option allows the user to edit x days back in time, default is 2.',
   'Show resigned': 'Show resigned',
   'Resigned': 'Resigned',
-  'Resigned at date': 'Resigned at date'
+  'Resigned at date': 'Resigned at date',
+  'NettoHours override': 'Netto hours override',
 };

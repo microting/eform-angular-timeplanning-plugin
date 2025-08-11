@@ -130,4 +130,5 @@ export const frFR = {
   'Show resigned': 'Afficher résigné',
   Resigned: 'Résigné',
   'Resigned at date': 'A démissionné à ce jour',
+  'NettoHours override': 'Remplacement des heures nettes',
 };

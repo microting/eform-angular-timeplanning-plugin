@@ -130,4 +130,5 @@ export const huHU = {
   'Show resigned': 'Show lemondott',
   Resigned: 'Lemondó',
   'Resigned at date': 'Lemondott ezen a napon',
+  'NettoHours override': 'Nettó órák felülbírálása',
 };
