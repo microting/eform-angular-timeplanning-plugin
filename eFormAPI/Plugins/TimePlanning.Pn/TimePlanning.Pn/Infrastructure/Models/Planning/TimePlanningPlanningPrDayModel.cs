@@ -173,6 +173,6 @@ public class TimePlanningPlanningPrDayModel
     public DateTime? Stop5StoppedAt { get; set; }
     public DateTime? Pause5StartedAt { get; set; }
     public DateTime? Pause5StoppedAt { get; set; }
-    public int NettoHoursOverride { get; set; }
+    public double NettoHoursOverride { get; set; }
     public bool NettoHoursOverrideActive { get; set; }
 }

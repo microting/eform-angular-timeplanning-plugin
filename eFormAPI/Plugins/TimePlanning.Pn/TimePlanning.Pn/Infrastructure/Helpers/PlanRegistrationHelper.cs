@@ -1129,9 +1129,9 @@ public static class PlanRegistrationHelper
 
             siteModel.PlannedHours = (int)plannedTotalHours;
             siteModel.PlannedMinutes = (int)((plannedTotalHours - siteModel.PlannedHours) * 60);
-            siteModel.CurrentWorkedHours = (int)nettoHoursTotal + nettoHoursOverrideTotal;
-            siteModel.CurrentWorkedMinutes = (int)((nettoHoursTotal - siteModel.CurrentWorkedHours) * 60);
-            siteModel.PercentageCompleted = (int)(nettoHoursTotal / plannedTotalHours * 100);
+            siteModel.CurrentWorkedHours = (int)nettoHoursTotal + (int)nettoHoursOverrideTotal;
+            siteModel.CurrentWorkedMinutes = (int)((nettoHoursTotal + nettoHoursOverrideTotal - siteModel.CurrentWorkedHours) * 60);
+            siteModel.PercentageCompleted = (int)(nettoHoursTotal + nettoHoursOverrideTotal / plannedTotalHours * 100);
 
             siteModel.PlanningPrDayModels.Add(planningModel);
         }
