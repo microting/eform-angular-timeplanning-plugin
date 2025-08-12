@@ -2220,7 +2220,7 @@ public class TimePlanningWorkingHoursService(
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Pause)));
-            dataRow.Append(CreateNumericCell(planning.NettoHours));
+            dataRow.Append(CreateNumericCell(plr.NettoHoursOverrideActive ? plr.NettoHoursOverride : planning.NettoHours));
             dataRow.Append(CreateNumericCell(planning.FlexHours));
             dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
             dataRow.Append(CreateNumericCell(string.IsNullOrEmpty(planning.PaidOutFlex)
