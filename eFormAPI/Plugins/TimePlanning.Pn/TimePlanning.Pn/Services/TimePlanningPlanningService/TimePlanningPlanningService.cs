@@ -932,7 +932,7 @@ public class TimePlanningPlanningService(
             {
                 return new OperationDataResult<TimePlanningPlanningModel>(
                     false,
-                    localizationService.GetString("AssignedSiteNotFound"));
+                    "AssignedSiteNotFound");
             }
 
             if (assignedSite.Resigned)

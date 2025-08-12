@@ -49,9 +49,19 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
 
     [HttpPut]
     [Route("update-by-current-user")]
-    public async Task<OperationResult> UpdateByCurrentUserNam([FromBody] TimePlanningPlanningPrDayModel model)
+    public async Task<IActionResult> UpdateByCurrentUserNam([FromBody] TimePlanningPlanningPrDayModel model)
     {
-        return await _planningService.UpdateByCurrentUserNam(model);
+        var result = await _planningService.UpdateByCurrentUserNam(model);
+        if (result.Success)
+        {
+            return Ok(result);
+        }
+
+        if (result.Message == "AssignedSiteNotFound")
+        {
+            return NotFound(new OperationResult(false, "Assigned site not found."));
+        }
+        return BadRequest(new OperationResult(false, result.Message));
     }
 
     [HttpGet]

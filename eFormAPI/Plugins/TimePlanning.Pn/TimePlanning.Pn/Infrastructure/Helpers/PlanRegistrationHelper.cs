@@ -1117,16 +1117,19 @@ public static class PlanRegistrationHelper
                     Date = x.Date,
                     PlanHours = x.PlanHours,
                     NettoHours = x.NettoHours,
+                    NettoHoursOverride = x.NettoHoursOverride,
+                    NettoHoursOverrideActive = x.NettoHoursOverrideActive,
                 })
                 .OrderBy(x => x.Date)
                 .ToListAsync().ConfigureAwait(false);
 
             var plannedTotalHours = planningsInPeriod.Sum(x => x.PlanHours);
-            var nettoHoursTotal = planningsInPeriod.Sum(x => x.NettoHours);
+            var nettoHoursTotal = planningsInPeriod.Where(x => x.NettoHoursOverrideActive == false).Sum(x => x.NettoHours);
+            var nettoHoursOverrideTotal = planningsInPeriod.Where(x => x.NettoHoursOverrideActive).Sum(x => x.NettoHoursOverride);
 
             siteModel.PlannedHours = (int)plannedTotalHours;
             siteModel.PlannedMinutes = (int)((plannedTotalHours - siteModel.PlannedHours) * 60);
-            siteModel.CurrentWorkedHours = (int)nettoHoursTotal;
+            siteModel.CurrentWorkedHours = (int)nettoHoursTotal + nettoHoursOverrideTotal;
             siteModel.CurrentWorkedMinutes = (int)((nettoHoursTotal - siteModel.CurrentWorkedHours) * 60);
             siteModel.PercentageCompleted = (int)(nettoHoursTotal / plannedTotalHours * 100);
 
