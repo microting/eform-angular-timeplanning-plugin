@@ -144,7 +144,9 @@ public class TimePlanningWorkingHoursService(
                     CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
                     // CommentOfficeAll = x.CommentOfficeAll,
                     IsLocked = (x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable) || x.Date == midnight),
-                    IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday
+                    IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
+                    NettoHoursOverride = x.NettoHoursOverride,
+                    NettoHoursOverrideActive = x.NettoHoursOverrideActive
                 })
                 .ToListAsync();
 
@@ -2018,9 +2020,9 @@ public class TimePlanningWorkingHoursService(
         {
             var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
-            var site = await sdkContext.Sites.SingleOrDefaultAsync(x => x.MicrotingUid == model.SiteId);
-            var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site!.Id);
-            var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker!.WorkerId);
+            var site = await sdkContext.Sites.FirstAsync(x => x.MicrotingUid == model.SiteId);
+            var siteWorker = await sdkContext.SiteWorkers.FirstAsync(x => x.SiteId == site.Id);
+            var worker = await sdkContext.Workers.FirstAsync(x => x.Id == siteWorker!.WorkerId);
             var language = await userService.GetCurrentUserLanguage();
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -2220,7 +2222,7 @@ public class TimePlanningWorkingHoursService(
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Pause)));
-            dataRow.Append(CreateNumericCell(plr.NettoHoursOverrideActive ? plr.NettoHoursOverride : planning.NettoHours));
+            dataRow.Append(CreateNumericCell(planning.NettoHoursOverrideActive ? planning.NettoHoursOverride : planning.NettoHours));
             dataRow.Append(CreateNumericCell(planning.FlexHours));
             dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
             dataRow.Append(CreateNumericCell(string.IsNullOrEmpty(planning.PaidOutFlex)
@@ -2461,16 +2463,16 @@ public class TimePlanningWorkingHoursService(
 
                 #endregion
 
+                var language = await userService.GetCurrentUserLanguage();
+
+                var culture = new CultureInfo(language.LanguageCode);
                 for (int i = 0; i < siteIdCount; i++)
                 {
-                    var site = await sdkContext.Sites.SingleOrDefaultAsync(x =>
-                        x.MicrotingUid == siteIds[i] && x.WorkflowState != Constants.WorkflowStates.Removed);
+                    var site = await sdkContext.Sites.FirstOrDefaultAsync(x =>
+                        x.MicrotingUid == siteIds[i]);
                     if (site == null) continue;
-                    var siteWorker = await sdkContext.SiteWorkers.SingleOrDefaultAsync(x => x.SiteId == site.Id);
-                    var worker = await sdkContext.Workers.SingleOrDefaultAsync(x => x.Id == siteWorker.WorkerId);
-                    var language = await userService.GetCurrentUserLanguage();
-
-                    var culture = new CultureInfo(language.LanguageCode);
+                    var siteWorker = await sdkContext.SiteWorkers.FirstAsync(x => x.SiteId == site.Id);
+                    var worker = await sdkContext.Workers.FirstAsync(x => x.Id == siteWorker.WorkerId);
                     WorksheetPart worksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId{i + 2}");
 
                     var headers = new[]
@@ -2631,7 +2633,9 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
                     totalRow.Append(CreateCell(site.Name));
                     totalRow.Append(CreateNumericCell(content.Model.Skip(1).ToList().Sum(x => x.PlanHours)));
-                    totalRow.Append(CreateNumericCell(content.Model.Skip(1).ToList().Sum(x => x.NettoHours)));
+                    var nettoHoursTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive == false).Sum(x => x.NettoHours);
+                    var nettoHoursOverrideTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive).Sum(x => x.NettoHoursOverride);
+                    totalRow.Append(CreateNumericCell(nettoHoursTotal + nettoHoursOverrideTotal));
                     totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
                     totalSheetData1.Append(totalRow);
                     totalRowIndex++;

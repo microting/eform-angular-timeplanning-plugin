@@ -135,4 +135,6 @@ public class TimePlanningWorkingHoursModel
     public DateTime? Pause5StoppedAt { get; set; }
     public int Shift1PauseNumber { get; set; }
     public int Shift2PauseNumber { get; set; }
+    public double NettoHoursOverride { get; set; }
+    public bool NettoHoursOverrideActive { get; set; }
 }
