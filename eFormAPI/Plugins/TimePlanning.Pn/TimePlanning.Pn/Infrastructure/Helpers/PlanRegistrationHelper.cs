@@ -874,20 +874,41 @@ public static class PlanRegistrationHelper
 
                         if (preTimePlanning != null)
                         {
-                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                            planRegistration.SumFlexEnd =
-                                preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            if (planRegistration.NettoHoursOverrideActive)
+                            {
+                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                planRegistration.SumFlexEnd =
+                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
+                                    planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                            } else
+                            {
+                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                planRegistration.SumFlexEnd =
+                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                    planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            }
                         }
                         else
                         {
-                            planRegistration.SumFlexEnd =
-                                planRegistration.NettoHours - planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.SumFlexStart = 0;
-                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            if (planRegistration.NettoHoursOverrideActive)
+                            {
+                                planRegistration.SumFlexEnd =
+                                    planRegistration.NettoHoursOverride - planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.SumFlexStart = 0;
+                                planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                            } else
+                            {
+                                planRegistration.SumFlexEnd =
+                                    planRegistration.NettoHours - planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.SumFlexStart = 0;
+                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            }
                         }
                     }
                 }
@@ -1514,20 +1535,43 @@ public static class PlanRegistrationHelper
 
                     if (preTimePlanning != null)
                     {
-                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                        planRegistration.SumFlexEnd =
-                            preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                            planRegistration.PlanHours -
-                            planRegistration.PaiedOutFlex;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        if (planRegistration.NettoHoursOverrideActive)
+                        {
+                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
+                                planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                        }
+                        else
+                        {
+                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
                     }
                     else
                     {
-                        planRegistration.SumFlexEnd =
-                            planRegistration.NettoHours - planRegistration.PlanHours -
-                            planRegistration.PaiedOutFlex;
-                        planRegistration.SumFlexStart = 0;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        if (planRegistration.NettoHoursOverrideActive)
+                        {
+                            planRegistration.SumFlexEnd =
+                                planRegistration.NettoHoursOverride - planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                        }
+                        else
+                        {
+                            planRegistration.SumFlexEnd =
+                                planRegistration.NettoHours - planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
                     }
 
                     await planRegistration.Update(dbContext).ConfigureAwait(false);
@@ -1799,20 +1843,41 @@ public static class PlanRegistrationHelper
 
                     if (preTimePlanning != null)
                     {
-                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                        planRegistration.SumFlexEnd =
-                            preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                            planRegistration.PlanHours -
-                            planRegistration.PaiedOutFlex;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        if (planRegistration.NettoHoursOverrideActive)
+                        {planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
+                                planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                        } else
+                        {
+                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
                     }
                     else
                     {
-                        planRegistration.SumFlexEnd =
-                            planRegistration.NettoHours - planRegistration.PlanHours -
-                            planRegistration.PaiedOutFlex;
-                        planRegistration.SumFlexStart = 0;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        if (planRegistration.NettoHoursOverrideActive)
+                        {
+                            planRegistration.SumFlexEnd =
+                                planRegistration.NettoHoursOverride - planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                        }
+                        else
+                        {
+                            planRegistration.SumFlexEnd =
+                                planRegistration.NettoHours - planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
                     }
 
                     Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");

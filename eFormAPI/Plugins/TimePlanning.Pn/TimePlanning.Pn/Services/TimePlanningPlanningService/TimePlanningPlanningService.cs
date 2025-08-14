@@ -880,11 +880,23 @@ public class TimePlanningPlanningService(
                         .FirstOrDefaultAsync();
 
                 planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
-                planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
-                                                       planningAfterThisPlanning.NettoHours -
-                                                       planningAfterThisPlanning.PlanHours -
-                                                       planningAfterThisPlanning.PaiedOutFlex;
-                planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                if (planningAfterThisPlanning.NettoHoursOverrideActive)
+                {
+                    planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                           planningAfterThisPlanning.NettoHoursOverride -
+                                                           planningAfterThisPlanning.PlanHours -
+                                                           planningAfterThisPlanning.PaiedOutFlex;
+                    planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHoursOverride - planningAfterThisPlanning.PlanHours;
+                }
+                else
+                {
+                    planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                           planningAfterThisPlanning.NettoHours -
+                                                           planningAfterThisPlanning.PlanHours -
+                                                           planningAfterThisPlanning.PaiedOutFlex;
+                    planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+
+                }
                 await planningAfterThisPlanning.Update(dbContext).ConfigureAwait(false);
             }
 
