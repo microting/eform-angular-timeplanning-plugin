@@ -281,8 +281,10 @@ public class TimePlanningPlanningService(
         }
 
         var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-        var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
-            x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+
+        var site = await sdkDbContext.Sites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
 
         if (site == null)
         {
@@ -926,8 +928,9 @@ public class TimePlanningPlanningService(
             var currentUser = baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
             var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-            var sdkSite = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
-                x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+            var sdkSite = await sdkDbContext.Sites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
 
             if (sdkSite == null)
             {
