@@ -910,6 +910,7 @@ public static class PlanRegistrationHelper
                                 planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
                             }
                         }
+                        await planRegistration.Update(dbContext).ConfigureAwait(false);
                     }
                 }
                 catch (Exception e)
