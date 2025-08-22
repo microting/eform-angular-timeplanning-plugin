@@ -232,6 +232,20 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     return dateMidnight <todayMidnight;
   }
 
+  getStopTimeDisplay(startedAt: string | null, stoppedAt: string | null): string {
+    if (!startedAt || !stoppedAt) return '';
+    const startDate = new Date(startedAt);
+    const stopDate = new Date(stoppedAt);
+    if (
+      startDate.getUTCFullYear() !== stopDate.getUTCFullYear() ||
+      startDate.getUTCMonth() !== stopDate.getUTCMonth() ||
+      startDate.getUTCDate() !== stopDate.getUTCDate()
+    ) {
+      return '24:00';
+    }
+    return this.datePipe.transform(stoppedAt, 'HH:mm', 'UTC') ?? '';
+  }
+
   onFirstColumnClick(row: any): void {
     const siteId = row.siteId; // Adjust this according to your data structure
     this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
