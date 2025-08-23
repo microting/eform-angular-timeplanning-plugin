@@ -281,8 +281,10 @@ public class TimePlanningPlanningService(
         }
 
         var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-        var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
-            x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+
+        var site = await sdkDbContext.Sites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
 
         if (site == null)
         {
@@ -687,6 +689,17 @@ public class TimePlanningPlanningService(
             planning.MessageId = model.Message;
             planning.PaiedOutFlex = model.PaidOutFlex;
 
+            planning.Start1StartedAt = model.Start1StartedAt;
+            planning.Stop1StoppedAt = model.Stop1StoppedAt;
+            planning.Start2StartedAt = model.Start2StartedAt;
+            planning.Stop2StoppedAt = model.Stop2StoppedAt;
+            planning.Start3StartedAt = model.Start3StartedAt;
+            planning.Stop3StoppedAt = model.Stop3StoppedAt;
+            planning.Start4StartedAt = model.Start4StartedAt;
+            planning.Stop4StoppedAt = model.Stop4StoppedAt;
+            planning.Start5StartedAt = model.Start5StartedAt;
+            planning.Stop5StoppedAt = model.Stop5StoppedAt;
+
             if (model.Stop2Id == null)
             {
                 planning.Stop2StoppedAt = null;
@@ -880,11 +893,23 @@ public class TimePlanningPlanningService(
                         .FirstOrDefaultAsync();
 
                 planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
-                planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
-                                                       planningAfterThisPlanning.NettoHours -
-                                                       planningAfterThisPlanning.PlanHours -
-                                                       planningAfterThisPlanning.PaiedOutFlex;
-                planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                if (planningAfterThisPlanning.NettoHoursOverrideActive)
+                {
+                    planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                           planningAfterThisPlanning.NettoHoursOverride -
+                                                           planningAfterThisPlanning.PlanHours -
+                                                           planningAfterThisPlanning.PaiedOutFlex;
+                    planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHoursOverride - planningAfterThisPlanning.PlanHours;
+                }
+                else
+                {
+                    planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                           planningAfterThisPlanning.NettoHours -
+                                                           planningAfterThisPlanning.PlanHours -
+                                                           planningAfterThisPlanning.PaiedOutFlex;
+                    planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+
+                }
                 await planningAfterThisPlanning.Update(dbContext).ConfigureAwait(false);
             }
 
@@ -914,8 +939,9 @@ public class TimePlanningPlanningService(
             var currentUser = baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
             var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-            var sdkSite = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
-                x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+            var sdkSite = await sdkDbContext.Sites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
 
             if (sdkSite == null)
             {

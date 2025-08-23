@@ -146,7 +146,7 @@
            *ngIf="row.planningPrDayModels[col.field]?.start1StartedAt !== null" id="firstShiftActual{{index}}_{{col.field}}">
         <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login</mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start1StartedAt, 'HH:mm', 'UTC') }}
         <span *ngIf="row.planningPrDayModels[col.field]?.stop1StoppedAt !== null"> -
-          {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop1StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start1StartedAt, row.planningPrDayModels[col.field]?.stop1StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
         </span>
         <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start1StartedAt) && row.planningPrDayModels[col.field]?.stop1StoppedAt === null"> -
           <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
@@ -164,7 +164,7 @@
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="secondShiftActual{{index}}_{{col.field}}">
         <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }}
         <span *ngIf="row.planningPrDayModels[col.field]?.stop2StoppedAt !== null"> -
-          {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop2StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start2StartedAt, row.planningPrDayModels[col.field]?.stop2StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
         </span>
         <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start2StartedAt) && row.planningPrDayModels[col.field]?.stop2StoppedAt === null"> -
           <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
@@ -183,7 +183,7 @@
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start3StartedAt != null" id="thirdShiftActual{{index}}_{{col.field}}">
         <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start3StartedAt, 'HH:mm', 'UTC') }}
         <span *ngIf="row.planningPrDayModels[col.field]?.stop3StoppedAt !== null"> -
-          {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop3StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start3StartedAt, row.planningPrDayModels[col.field]?.stop3StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
         </span>
         <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start3StartedAt) && row.planningPrDayModels[col.field]?.stop3StoppedAt === null"> -
           <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
@@ -202,7 +202,7 @@
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start4StartedAt != null" id="fourthShiftActual{{index}}_{{col.field}}">
         <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start4StartedAt, 'HH:mm', 'UTC') }}
         <span *ngIf="row.planningPrDayModels[col.field]?.stop4StoppedAt !== null"> -
-          {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop4StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start4StartedAt, row.planningPrDayModels[col.field]?.stop4StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
         </span>
         <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start4StartedAt) && row.planningPrDayModels[col.field]?.stop4StoppedAt === null"> -
           <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
@@ -221,7 +221,7 @@
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start5StartedAt != null" id="fifthShiftActual{{index}}_{{col.field}}">
         <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start5StartedAt, 'HH:mm', 'UTC') }}
         <span *ngIf="row.planningPrDayModels[col.field]?.stop5StoppedAt !== null"> -
-          {{ datePipe.transform(row.planningPrDayModels[col.field]?.stop5StoppedAt, 'HH:mm', 'UTC') }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start5StartedAt, row.planningPrDayModels[col.field]?.stop5StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
         </span>
         <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start5StartedAt) && row.planningPrDayModels[col.field]?.stop5StoppedAt === null"> -
           <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>

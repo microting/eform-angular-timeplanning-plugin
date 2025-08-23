@@ -357,8 +357,9 @@ public class TimeSettingService(
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-        var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
-            x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+        var sdkSite = await sdkContext.Sites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
 
         if (sdkSite == null)
         {

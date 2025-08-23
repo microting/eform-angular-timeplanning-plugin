@@ -874,21 +874,43 @@ public static class PlanRegistrationHelper
 
                         if (preTimePlanning != null)
                         {
-                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                            planRegistration.SumFlexEnd =
-                                preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            if (planRegistration.NettoHoursOverrideActive)
+                            {
+                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                planRegistration.SumFlexEnd =
+                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
+                                    planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                            } else
+                            {
+                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                                planRegistration.SumFlexEnd =
+                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                    planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            }
                         }
                         else
                         {
-                            planRegistration.SumFlexEnd =
-                                planRegistration.NettoHours - planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.SumFlexStart = 0;
-                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            if (planRegistration.NettoHoursOverrideActive)
+                            {
+                                planRegistration.SumFlexEnd =
+                                    planRegistration.NettoHoursOverride - planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.SumFlexStart = 0;
+                                planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                            } else
+                            {
+                                planRegistration.SumFlexEnd =
+                                    planRegistration.NettoHours - planRegistration.PlanHours -
+                                    planRegistration.PaiedOutFlex;
+                                planRegistration.SumFlexStart = 0;
+                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                            }
                         }
+                        await planRegistration.Update(dbContext).ConfigureAwait(false);
                     }
                 }
                 catch (Exception e)
@@ -1129,9 +1151,9 @@ public static class PlanRegistrationHelper
 
             siteModel.PlannedHours = (int)plannedTotalHours;
             siteModel.PlannedMinutes = (int)((plannedTotalHours - siteModel.PlannedHours) * 60);
-            siteModel.CurrentWorkedHours = (int)nettoHoursTotal + nettoHoursOverrideTotal;
-            siteModel.CurrentWorkedMinutes = (int)((nettoHoursTotal - siteModel.CurrentWorkedHours) * 60);
-            siteModel.PercentageCompleted = (int)(nettoHoursTotal / plannedTotalHours * 100);
+            siteModel.CurrentWorkedHours = (int)nettoHoursTotal + (int)nettoHoursOverrideTotal;
+            siteModel.CurrentWorkedMinutes = (int)((nettoHoursTotal + nettoHoursOverrideTotal - siteModel.CurrentWorkedHours) * 60);
+            siteModel.PercentageCompleted = (int)(nettoHoursTotal + nettoHoursOverrideTotal / plannedTotalHours * 100);
 
             siteModel.PlanningPrDayModels.Add(planningModel);
         }
@@ -1514,20 +1536,43 @@ public static class PlanRegistrationHelper
 
                     if (preTimePlanning != null)
                     {
-                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                        planRegistration.SumFlexEnd =
-                            preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                            planRegistration.PlanHours -
-                            planRegistration.PaiedOutFlex;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        if (planRegistration.NettoHoursOverrideActive)
+                        {
+                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
+                                planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                        }
+                        else
+                        {
+                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
                     }
                     else
                     {
-                        planRegistration.SumFlexEnd =
-                            planRegistration.NettoHours - planRegistration.PlanHours -
-                            planRegistration.PaiedOutFlex;
-                        planRegistration.SumFlexStart = 0;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        if (planRegistration.NettoHoursOverrideActive)
+                        {
+                            planRegistration.SumFlexEnd =
+                                planRegistration.NettoHoursOverride - planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                        }
+                        else
+                        {
+                            planRegistration.SumFlexEnd =
+                                planRegistration.NettoHours - planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
                     }
 
                     await planRegistration.Update(dbContext).ConfigureAwait(false);
@@ -1799,20 +1844,41 @@ public static class PlanRegistrationHelper
 
                     if (preTimePlanning != null)
                     {
-                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                        planRegistration.SumFlexEnd =
-                            preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                            planRegistration.PlanHours -
-                            planRegistration.PaiedOutFlex;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        if (planRegistration.NettoHoursOverrideActive)
+                        {planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
+                                planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                        } else
+                        {
+                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd =
+                                preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
+                                planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
                     }
                     else
                     {
-                        planRegistration.SumFlexEnd =
-                            planRegistration.NettoHours - planRegistration.PlanHours -
-                            planRegistration.PaiedOutFlex;
-                        planRegistration.SumFlexStart = 0;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        if (planRegistration.NettoHoursOverrideActive)
+                        {
+                            planRegistration.SumFlexEnd =
+                                planRegistration.NettoHoursOverride - planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
+                        }
+                        else
+                        {
+                            planRegistration.SumFlexEnd =
+                                planRegistration.NettoHours - planRegistration.PlanHours -
+                                planRegistration.PaiedOutFlex;
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
                     }
 
                     Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
