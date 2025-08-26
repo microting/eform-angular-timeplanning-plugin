@@ -328,9 +328,6 @@
                 [minutesGap]="5"
                 (closed)="calculatePlanHours()">
               </ngx-material-timepicker>
-              <mat-error *ngIf="workdayForm.hasError('stop2AfterStart')">
-                {{ stop2Error }}
-              </mat-error>
             </mat-form-field>
             <button mat-icon-button color="warn" (click)="resetActualTimes(6)">
               <mat-icon>delete</mat-icon>
@@ -407,9 +404,6 @@
                 [minutesGap]="5"
                 (closed)="calculatePlanHours()">
               </ngx-material-timepicker>
-              <mat-error *ngIf="workdayForm.hasError('stop3AfterStart')">
-                {{ stop3Error }}
-              </mat-error>
             </mat-form-field>
             <button mat-icon-button color="warn" (click)="resetActualTimes(9)">
               <mat-icon>delete</mat-icon>
@@ -486,9 +480,6 @@
                 [minutesGap]="5"
                 (closed)="calculatePlanHours()">
               </ngx-material-timepicker>
-              <mat-error *ngIf="workdayForm.hasError('stop4AfterStart')">
-                {{ stop4Error }}
-              </mat-error>
             </mat-form-field>
             <button mat-icon-button color="warn" (click)="resetActualTimes(12)">
               <mat-icon>delete</mat-icon>
@@ -565,9 +556,6 @@
                 [minutesGap]="5"
                 (closed)="calculatePlanHours()">
               </ngx-material-timepicker>
-              <mat-error *ngIf="workdayForm.hasError('stop5AfterStart')">
-                {{ stop5Error }}
-              </mat-error>
             </mat-form-field>
             <button mat-icon-button color="warn" (click)="resetActualTimes(15)">
               <mat-icon>delete</mat-icon>
