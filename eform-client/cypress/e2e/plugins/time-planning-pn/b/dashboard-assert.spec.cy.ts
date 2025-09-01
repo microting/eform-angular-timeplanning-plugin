@@ -447,6 +447,7 @@ describe('Dashboard assert', () => {
 
     cy.get('#nettoHours0 input').should('contain.value', '0');
     for (let i = 0; i < planHoursFutureWeek.length; i++) {
+      cy.wait(1000);
       let id = `#planHours${i+1}`;
       cy.get(id).find('input').clear().type(planHoursFutureWeek[i].hours.toString());
       let sumFlexId = `#sumFlex${i+1}`;
