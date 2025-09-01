@@ -856,7 +856,10 @@ public class TimePlanningPlanningService(
                     .Where(x => x.Date < planning.Date
                                 && x.SdkSitId == planning.SdkSitId)
                     .OrderByDescending(x => x.Date)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync() ?? new PlanRegistration
+                {
+                    SumFlexEnd = 0
+                };
 
             planning.SumFlexStart = preTimePlanning.SumFlexEnd;
             if (planning.NettoHoursOverrideActive)
@@ -1334,7 +1337,10 @@ public class TimePlanningPlanningService(
                     .Where(x => x.Date < planning.Date
                                 && x.SdkSitId == planning.SdkSitId)
                     .OrderByDescending(x => x.Date)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync() ?? new PlanRegistration
+                {
+                    SumFlexEnd = 0
+                };
 
             planning.SumFlexStart = preTimePlanning.SumFlexEnd;
             planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
