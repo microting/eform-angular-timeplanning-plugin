@@ -745,6 +745,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.planningPrDayModels.planHours = this.workdayForm.get('planHours')?.value;
     this.data.planningPrDayModels.paidOutFlex = this.workdayForm.get('paidOutFlex')?.value;
 
+    this.data.planningPrDayModels.nettoHoursOverride = this.workdayForm.get('nettoHoursOverride')?.value;
+
     // Rens paidOutFlex
     this.data.planningPrDayModels.paidOutFlex =
       this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
