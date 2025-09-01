@@ -231,7 +231,6 @@
       <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
           <div class="{{ getCellTextColor(row, col.field) }}">
-            <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
             <strong id="totalBreakTime{{index}}_{{col.field}}" [matTooltip]="'Total breaktime' | translate "><mat-icon class="neutral-icon">pause</mat-icon>{{ convertMinutesToTime(row.planningPrDayModels[col.field]?.pauseMinutes) }}</strong>
           </div>
         </div>
@@ -241,16 +240,14 @@
         <ng-container *ngIf="!row.planningPrDayModels[col.field]?.nettoHoursOverrideActive">
           <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
             <div class="{{ getCellTextColor(row, col.field) }}">
-              <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
               <strong id="totalWorkingHours{{index}}_{{col.field}}" [matTooltip]="'Total working hours' | translate "><mat-icon class="neutral-icon">schedule</mat-icon>{{ row.planningPrDayModels[col.field]?.actualHours.toFixed(2) }}</strong>
             </div>
           </div>
         </ng-container>
         <ng-container *ngIf="row.planningPrDayModels[col.field]?.nettoHoursOverrideActive">
-          <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
+          <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.nettoHoursOverride !== 0">
             <div class="{{ getCellTextColor(row, col.field) }}">
-              <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
-              <strong id="totalWorkingHours{{index}}_{{col.field}}" [matTooltip]="'Total working hours' | translate "><mat-icon class="neutral-icon">schedule</mat-icon>{{ row.planningPrDayModels[col.field]?.nettoHoursOverride.toFixed(2) }}</strong>
+              <strong id="totalWorkingHours{{index}}_{{col.field}}" [matTooltip]="'NettoHours override' | translate "><mat-icon class="neutral-icon">schedule</mat-icon>{{ row.planningPrDayModels[col.field]?.nettoHoursOverride.toFixed(2) }}</strong>
             </div>
           </div>
         </ng-container>
@@ -259,7 +256,6 @@
       <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.paidOutFlex !== 0">
           <div class="{{ getCellTextColor(row, col.field) }}">
-            <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
             <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'PaidOutFlex' | translate "><mat-icon class="neutral-icon">payments</mat-icon>{{ row.planningPrDayModels[col.field]?.paidOutFlex }}</strong>
           </div>
         </div>
@@ -268,7 +264,6 @@
       <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
         <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
           <div class="{{ getCellTextColor(row, col.field) }}">
-            <!--            <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ convertHoursToTime(row.planningPrDayModels[col.field]?.sumFlexEnd)}}</strong>-->
             <strong id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ row.planningPrDayModels[col.field]?.sumFlexEnd.toFixed(2) }}</strong>
           </div>
         </div>
