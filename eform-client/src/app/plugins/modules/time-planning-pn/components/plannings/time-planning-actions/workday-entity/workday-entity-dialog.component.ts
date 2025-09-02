@@ -799,10 +799,10 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
 
     if (this.data.planningPrDayModels.message === null) {
-      if (plannedTimeInMinutes !== 0) {
+      // if (plannedTimeInMinutes !== 0) {
         this.data.planningPrDayModels.planHours = plannedTimeInMinutes / 60;
         this.workdayForm.get('planHours')?.setValue(this.data.planningPrDayModels.planHours, {emitEvent: false});
-      }
+      // }
     }
 
     // Summer actual
