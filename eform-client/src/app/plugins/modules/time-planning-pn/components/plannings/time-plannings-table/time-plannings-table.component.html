@@ -136,12 +136,23 @@
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}
         </strong>
       </div>
-      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.planHours !== 0">
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.plannedEndOfShift1 !== 0 ">
+        <strong class="{{ getCellTextColor(row, col.field) }}" id="firstShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift1) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}
+        </strong>
+      </div>
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.plannedEndOfShift1 === 0 && row.planningPrDayModels[col.field]?.planHours !== 0">
         <strong class="{{ getCellTextColor(row, col.field) }}" id="plannedHours{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertHoursToTime(row.planningPrDayModels[col.field]?.planHours) }}
         </strong>
       </div>
+
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
            *ngIf="row.planningPrDayModels[col.field]?.start1StartedAt !== null" id="firstShiftActual{{index}}_{{col.field}}">
         <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login</mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start1StartedAt, 'HH:mm', 'UTC') }}
