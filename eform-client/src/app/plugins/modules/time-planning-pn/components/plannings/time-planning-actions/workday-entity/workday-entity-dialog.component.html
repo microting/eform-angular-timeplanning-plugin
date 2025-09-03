@@ -32,7 +32,6 @@
                 [ngxTimepicker]="plannedPicker"
                 [format]="24"
                 formControlName="start"
-                [max]="workdayForm.get('planned.shift1.stop')?.value === '00:00' ? '23:55' : workdayForm.get('planned.shift1.stop')?.value"
                 id="plannedStartOfShift1" />
               <ngx-material-timepicker
                 #plannedPicker
@@ -81,8 +80,6 @@
                 [ngxTimepicker]="plannedPicker2"
                 [format]="24"
                 formControlName="stop"
-                [min]="workdayForm.get('planned.shift1.start')?.value"
-                [max]="workdayForm.get('planned.shift2.start')?.value === '00:00' ? '23:55' : workdayForm.get('planned.shift2.start')?.value"
                 id="plannedEndOfShift1" />
               <ngx-material-timepicker
                 #plannedPicker2
@@ -111,8 +108,6 @@
                 [ngxTimepicker]="plannedPicker3"
                 [format]="24"
                 formControlName="start"
-                [min]="workdayForm.get('planned.shift1.stop')?.value"
-                [max]="workdayForm.get('planned.shift2.stop')?.value === '00:00' ? '23:55' : workdayForm.get('planned.shift2.stop')?.value"
                 id="plannedStartOfShift2" />
               <ngx-material-timepicker
                 #plannedPicker3
@@ -161,9 +156,6 @@
                 [ngxTimepicker]="plannedPicker4"
                 [format]="24"
                 formControlName="stop"
-                [min]="workdayForm.get('planned.shift2.start')?.value === '00:00'
-                        ? workdayForm.get('planned.shift1.stop')?.value
-                        : workdayForm.get('planned.shift2.start')?.value"
                 [value]="workdayForm.get('planned.shift2.stop')?.value === '00:00' ? '' : workdayForm.get('planned.shift2.stop')?.value"
                 id="plannedEndOfShift2" />
               <ngx-material-timepicker
