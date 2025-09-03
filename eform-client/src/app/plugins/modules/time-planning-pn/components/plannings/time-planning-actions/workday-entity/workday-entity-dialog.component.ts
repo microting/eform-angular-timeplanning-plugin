@@ -752,6 +752,26 @@ export class WorkdayEntityDialogComponent implements OnInit {
       this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
   }
 
+  private getPlannedShiftMinutes(
+    start: number | null,
+    end: number | null,
+    breakMinutes: number | null
+  ): number {
+    if (start === null || end === null || start === end) {return 0;}
+
+    let duration = end - start;
+
+    if (end <= start) {
+      duration = (1440 - start) + end;
+    }
+
+    if (breakMinutes) {
+      duration -= breakMinutes;
+    }
+
+    return Math.max(0, duration);
+  }
+
   // ===== Genberegn plan/actual/todaysFlex og sumFlexEnd (samme logik som før, men baseret på form) =====
   calculatePlanHours() {
     this.updateDisabledStates?.();
@@ -763,47 +783,19 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.onUpdateWorkDayEntity();
 
     let plannedTimeInMinutes = 0;
-    if (this.data.planningPrDayModels.plannedEndOfShift1 !== 0) {
-      plannedTimeInMinutes =
-        this.data.planningPrDayModels.plannedEndOfShift1
-        - this.data.planningPrDayModels.plannedStartOfShift1
-        - this.data.planningPrDayModels.plannedBreakOfShift1;
-    }
-    if (this.data.planningPrDayModels.plannedEndOfShift2 !== 0) {
-      const timeInMinutes2NdShift =
-        this.data.planningPrDayModels.plannedEndOfShift2
-        - this.data.planningPrDayModels.plannedStartOfShift2
-        - this.data.planningPrDayModels.plannedBreakOfShift2;
-      plannedTimeInMinutes += timeInMinutes2NdShift;
-    }
-    if (this.data.planningPrDayModels.plannedEndOfShift3 !== 0) {
-      const timeInMinutes3RdShift =
-        this.data.planningPrDayModels.plannedEndOfShift3
-        - this.data.planningPrDayModels.plannedStartOfShift3
-        - this.data.planningPrDayModels.plannedBreakOfShift3;
-      plannedTimeInMinutes += timeInMinutes3RdShift;
-    }
-    if (this.data.planningPrDayModels.plannedEndOfShift4 !== 0) {
-      const timeInMinutes4ThShift =
-        this.data.planningPrDayModels.plannedEndOfShift4
-        - this.data.planningPrDayModels.plannedStartOfShift4
-        - this.data.planningPrDayModels.plannedBreakOfShift4;
-      plannedTimeInMinutes += timeInMinutes4ThShift;
-    }
-    if (this.data.planningPrDayModels.plannedEndOfShift5 !== 0) {
-      const timeInMinutes5ThShift =
-        this.data.planningPrDayModels.plannedEndOfShift5
-        - this.data.planningPrDayModels.plannedStartOfShift5
-        - this.data.planningPrDayModels.plannedBreakOfShift5;
-      plannedTimeInMinutes += timeInMinutes5ThShift;
+    const m = this.data.planningPrDayModels;
+
+    const shifts = [1, 2, 3, 4, 5];
+    for (const i of shifts) {
+      const start = m[`plannedStartOfShift${i}`];
+      const end = m[`plannedEndOfShift${i}`];
+      const brk = m[`plannedBreakOfShift${i}`];
+
+      plannedTimeInMinutes += this.getPlannedShiftMinutes(start, end, brk);
     }
 
-    if (this.data.planningPrDayModels.message === null) {
-      // if (plannedTimeInMinutes !== 0) {
-        this.data.planningPrDayModels.planHours = plannedTimeInMinutes / 60;
-        this.workdayForm.get('planHours')?.setValue(this.data.planningPrDayModels.planHours, {emitEvent: false});
-      // }
-    }
+    m.planHours = plannedTimeInMinutes / 60;
+    this.workdayForm.get('planHours')?.setValue(m.planHours, { emitEvent: false });
 
     // Summer actual
     let actualTimeInMinutes = 0;

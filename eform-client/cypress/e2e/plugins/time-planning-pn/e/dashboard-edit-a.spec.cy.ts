@@ -20,7 +20,8 @@ describe('Dashboard edit values', () => {
 
     // Planned time
     cy.get('#cell0_0').click();
-    cy.get('#plannedEndOfShift1').click();
+
+    cy.get('#plannedStartOfShift1').click();
     cy.get('ngx-material-timepicker-face')
       .contains('1')
       .click({force: true});
@@ -29,8 +30,9 @@ describe('Dashboard edit values', () => {
       .click({force: true});
     cy.wait(1000);
     cy.contains('button', /^Ok$/).click({force: true});
-    cy.get('#plannedEndOfShift1').should('have.value', '01:00');
-    cy.get('#planHours').should('have.value', '1');
+    cy.get('#plannedStartOfShift1').should('have.value', '01:00');
+    cy.get('#plannedEndOfShift1').should('have.value', '00:00');
+    cy.get('#planHours').should('have.value', '23');
     cy.get('#saveButton').click();
     cy.wait('@saveWorkdayEntity', {timeout: 60000});
     cy.wait(1000);
@@ -41,15 +43,17 @@ describe('Dashboard edit values', () => {
     cy.get('#cell0_0').click();
     cy.get('#start1StartedAt').click();
     cy.get('ngx-material-timepicker-face')
-      .contains('00')
+      .contains('1')
       .click({ force: true });
     cy.get('ngx-material-timepicker-face')
       .contains('00')
       .click({ force: true });
     cy.contains('button', /^Ok$/).click({ force: true });
+    cy.get('#start1StartedAt').should('have.value', '01:00');
+
     cy.get('#stop1StoppedAt').click();
     cy.get('ngx-material-timepicker-face')
-      .contains('1')
+      .contains('00')
       .click({ force: true });
     cy.get('ngx-material-timepicker-face')
       .contains('00')
@@ -57,7 +61,7 @@ describe('Dashboard edit values', () => {
 
     cy.contains('button', /^Ok$/).click({ force: true });
     cy.wait(1000);
-    cy.get('#stop1StoppedAt').should('have.value', '01:00');
+    cy.get('#stop1StoppedAt').should('have.value', '00:00');
     cy.get('#saveButton').click();
     cy.wait('@saveWorkdayEntity', { timeout: 60000 });
   });
