@@ -1,11 +1,12 @@
-import { Component, Inject, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { TranslateService } from '@ngx-translate/core';
-import { DatePipe } from '@angular/common';
-import { TimePlanningMessagesEnum } from '../../../../enums';
-import { AssignedSiteModel, PlanningPrDayModel } from '../../../../models';
-import { MtxGridColumn } from '@ng-matero/extensions/grid';
-import { TimePlanningPnPlanningsService } from '../../../../services';
+import {Component, Inject, OnInit, TemplateRef, ViewChild} from '@angular/core';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
+import {TranslateService} from '@ngx-translate/core';
+import {DatePipe} from '@angular/common';
+import {TimePlanningMessagesEnum} from '../../../../enums';
+import {AssignedSiteModel, PlanningPrDayModel} from '../../../../models';
+import {MtxGridColumn} from '@ng-matero/extensions/grid';
+import {TimePlanningPnPlanningsService} from '../../../../services';
+import validator from 'validator';
 
 import {
   AbstractControl,
@@ -14,6 +15,8 @@ import {
   FormGroup,
   ValidationErrors,
   Validators,
+  ReactiveFormsModule,
+  FormArray,
 } from '@angular/forms';
 
 @Component({
@@ -48,6 +51,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
   @ViewChild('plannedColumnTemplate', {static: true}) plannedColumnTemplate!: TemplateRef<any>;
   @ViewChild('actualColumnTemplate', {static: true}) actualColumnTemplate!: TemplateRef<any>;
   protected readonly JSON = JSON;
+  private readonly timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  inputErrorMessages: Record<string, Record<string, string>> = {};
 
   constructor(
     private fb: FormBuilder,
@@ -125,73 +130,89 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // Byg formstruktur
     this.workdayForm = this.fb.group({
       planned: this.fb.group({
-        shift1: this.fb.group({
-          start: new FormControl({value: plannedStartOfShift1, disabled: false}),
-          break: new FormControl({value: plannedBreakOfShift1, disabled: false}),
-          stop: new FormControl({value: plannedEndOfShift1, disabled: false}),
-        }),
+        shift1: this.fb.group(
+          {
+            start: new FormControl({value: plannedStartOfShift1, disabled: false}, [this.timeValidator]),
+            break: new FormControl({value: plannedBreakOfShift1, disabled: false}, [this.timeValidator]),
+            stop: new FormControl({value: plannedEndOfShift1, disabled: false}, [this.timeValidator]),
+          }, {validators: [this.plannedShiftDurationValidator.bind(this)]}
+        ),
         shift2: this.fb.group({
-          start: new FormControl({value: plannedStartOfShift2, disabled: false}),
-          break: new FormControl({value: plannedBreakOfShift2, disabled: false}),
-          stop: new FormControl({value: plannedEndOfShift2, disabled: false}),
-        }),
+            start: new FormControl({value: plannedStartOfShift2, disabled: false}),
+            break: new FormControl({value: plannedBreakOfShift2, disabled: false}),
+            stop: new FormControl({value: plannedEndOfShift2, disabled: false}),
+          },
+          {validators: [this.plannedShiftDurationValidator.bind(this)]},),
         shift3: this.fb.group({
-          start: new FormControl({value: plannedStartOfShift3, disabled: false}),
-          break: new FormControl({value: plannedBreakOfShift3, disabled: false}),
-          stop: new FormControl({value: plannedEndOfShift3, disabled: false}),
-        }),
+            start: new FormControl({value: plannedStartOfShift3, disabled: false}),
+            break: new FormControl({value: plannedBreakOfShift3, disabled: false}),
+            stop: new FormControl({value: plannedEndOfShift3, disabled: false}),
+          },
+          {validators: [this.plannedShiftDurationValidator.bind(this)]},),
         shift4: this.fb.group({
-          start: new FormControl({value: plannedStartOfShift4, disabled: false}),
-          break: new FormControl({value: plannedBreakOfShift4, disabled: false}),
-          stop: new FormControl({value: plannedEndOfShift4, disabled: false}),
-        }),
+            start: new FormControl({value: plannedStartOfShift4, disabled: false}),
+            break: new FormControl({value: plannedBreakOfShift4, disabled: false}),
+            stop: new FormControl({value: plannedEndOfShift4, disabled: false}),
+          },
+          {validators: [this.plannedShiftDurationValidator.bind(this)]},),
         shift5: this.fb.group({
-          start: new FormControl({value: plannedStartOfShift5, disabled: false}),
-          break: new FormControl({value: plannedBreakOfShift5, disabled: false}),
-          stop: new FormControl({value: plannedEndOfShift5, disabled: false}),
-        }),
+            start: new FormControl({value: plannedStartOfShift5, disabled: false}),
+            break: new FormControl({value: plannedBreakOfShift5, disabled: false}),
+            stop: new FormControl({value: plannedEndOfShift5, disabled: false}),
+          },
+          {validators: [this.plannedShiftDurationValidator.bind(this)]},),
       }),
       actual: this.fb.group({
         shift1: this.fb.group({
-          start: new FormControl({value: start1StartedAt, disabled: this.isInTheFuture}),
-          pause: new FormControl({value: pause1Id, disabled: this.isInTheFuture}),
-          stop: new FormControl({value: stop1StoppedAt, disabled: this.isInTheFuture}),
-        }),
+            start: new FormControl({value: start1StartedAt, disabled: this.isInTheFuture}),
+            pause: new FormControl({value: pause1Id, disabled: this.isInTheFuture}),
+            stop: new FormControl({value: stop1StoppedAt, disabled: this.isInTheFuture}),
+          },
+          {validators: [this.actualShiftDurationValidator.bind(this)]},),
         shift2: this.fb.group({
             start: new FormControl({value: start2StartedAt, disabled: this.isInTheFuture}),
             pause: new FormControl({value: pause2Id, disabled: this.isInTheFuture}),
             stop: new FormControl({value: stop2StoppedAt, disabled: this.isInTheFuture}),
           },
+          {validators: [this.actualShiftDurationValidator.bind(this)]},
         ),
         shift3: this.fb.group({
             start: new FormControl({value: start3StartedAt, disabled: this.isInTheFuture}),
             pause: new FormControl({value: pause3Id, disabled: this.isInTheFuture}),
             stop: new FormControl({value: stop3StoppedAt, disabled: this.isInTheFuture}),
           },
+          {validators: [this.actualShiftDurationValidator.bind(this)]},
         ),
         shift4: this.fb.group({
             start: new FormControl({value: start4StartedAt, disabled: this.isInTheFuture}),
             pause: new FormControl({value: pause4Id, disabled: this.isInTheFuture}),
             stop: new FormControl({value: stop4StoppedAt, disabled: this.isInTheFuture}),
           },
+          {validators: [this.actualShiftDurationValidator.bind(this)]},
         ),
         shift5: this.fb.group({
             start: new FormControl({value: start5StartedAt, disabled: this.isInTheFuture}),
             pause: new FormControl({value: pause5Id, disabled: this.isInTheFuture}),
             stop: new FormControl({value: stop5StoppedAt, disabled: this.isInTheFuture}),
           },
+          {validators: [this.actualShiftDurationValidator.bind(this)]},
         ),
       }),
       planHours: new FormControl({
         value: this.data.planningPrDayModels.planHours ?? null,
         disabled: this.isInTheFuture
-      }),
+      }, {validators: [this.numberValidator, this.maxPlanHoursValidator]},),
       nettoHoursOverride: new FormControl(this.data.planningPrDayModels.nettoHoursOverride ?? null),
       paidOutFlex: new FormControl(this.data.planningPrDayModels.paidOutFlex ?? null),
       commentOffice: new FormControl(this.data.planningPrDayModels.commentOffice ?? null),
 
       flags: this.fb.group(flagsGroup),
-    });
+    }, {
+      validators: [
+        this.totalHoursValidator.bind(this),
+        this.shiftWiseValidator.bind(this),
+      ],
+    },);
 
     // Tabellens kolonner
     this.tableHeaders = this.data.assignedSiteModel.useOnlyPlanHours ? [
@@ -310,6 +331,359 @@ export class WorkdayEntityDialogComponent implements OnInit {
     if (!disabled && c.disabled) {
       c.enable({emitEvent: false});
     }
+  }
+
+  // validators
+  private timeValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (!value || value === '00:00') {
+      return null;
+    }
+
+    if (!validator.matches(value, /^([01]\d|2[0-3]):([0-5]\d)$/)) {
+      return {invalidTime: true};
+    }
+    return null;
+  }
+
+  private getMinutes(time: string | null): number {
+    if (!time || !validator.matches(time, this.timeRegex)) {
+      return 0;
+    }
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  private plannedShiftDurationValidator(group: AbstractControl): ValidationErrors | null {
+    const startControl = group.get('start');
+    const stopControl = group.get('stop');
+    const breakControl = group.get('break');
+
+    const start = startControl?.value as string;
+    const stop = stopControl?.value as string;
+    const brk = breakControl?.value as string;
+
+    if (!start || !stop) {
+      return null;
+    }
+
+    const startMin = this.getMinutes(start);
+    const stopMin = this.getMinutes(stop);
+    const breakMin = this.getMinutes(brk);
+
+    const setError = (control: AbstractControl | null, key: string, value: any = true) => {
+      if (!control) {
+        return;
+      }
+      const errors = control.errors || {};
+      errors[key] = value;
+      control.setErrors(errors);
+    };
+
+    const removeError = (control: AbstractControl | null, key: string) => {
+      if (!control || !control.errors) {
+        return;
+      }
+      const errors = {...control.errors};
+      delete errors[key];
+      control.setErrors(Object.keys(errors).length ? errors : null);
+    };
+
+    if (!start || !stop) {
+      if (!start) {
+        setError(startControl, 'required', 'Start time is required');
+      } else {
+        removeError(startControl, 'required');
+      }
+      if (!stop) {
+        setError(stopControl, 'required', 'Stop time is required');
+      } else {
+        removeError(stopControl, 'required');
+      }
+      return null;
+    }
+
+    // Validate same start/stop
+    if (startMin === stopMin && (startMin !== 0 && stopMin !== 0)) {
+      setError(startControl, 'sameStartStop', 'Start and Stop cannot be the same');
+      setError(stopControl, 'sameStartStop', 'Start and Stop cannot be the same');
+    } else {
+      removeError(startControl, 'sameStartStop');
+      removeError(stopControl, 'sameStartStop');
+    }
+
+    // Till midnight sameday
+    const adjustedStop = stopMin === 0 ? 1440 : stopMin;
+    let duration = adjustedStop - startMin;
+    if (duration <= 0) {
+      duration += 1440;
+    }
+
+    // Stop before start
+    if (stopMin !== 0 && stopMin < startMin) {
+      setError(stopControl, 'invalidRange', 'Stop time cannot be before start time');
+    } else {
+      removeError(stopControl, 'invalidRange');
+    }
+
+    // Break time validation
+    if (breakMin !== null) {
+      if (breakMin < 0) {
+        setError(breakControl, 'negativeBreak', 'Break cannot be negative');
+      } else {
+        removeError(breakControl, 'negativeBreak');
+      }
+
+      if (breakMin >= duration) {
+        setError(
+          breakControl,
+          'breakTooLong',
+          'Break cannot be equal or longer than shift duration',
+        );
+      } else {
+        removeError(breakControl, 'breakTooLong');
+      }
+    }
+
+    if (duration > 24 * 60) {
+      setError(group, 'shiftTooLong', 'Shift duration cannot exceed 24 hours');
+    } else {
+      removeError(group, 'shiftTooLong');
+    }
+
+    if (breakMin && breakMin >= duration) {
+      setError(breakControl, 'invalidBreak', 'Break must be shorter than shift duration');
+    } else {
+      removeError(breakControl, 'invalidBreak');
+    }
+
+    return null;
+  }
+
+  private actualShiftDurationValidator(group: AbstractControl): ValidationErrors | null {
+    const startControl = group.get('start');
+    const stopControl = group.get('stop');
+    const pauseControl = group.get('pause');
+
+    const start = startControl?.value as string;
+    const stop = stopControl?.value as string;
+    const pause = pauseControl?.value as string;
+
+    if (!start || !pause) {
+      return null;
+    }
+
+    const startMin = this.getMinutes(start);
+    const stopMin = this.getMinutes(stop);
+    const breakMin = this.getMinutes(pause);
+
+    const setError = (control: AbstractControl | null, key: string, value: any = true) => {
+      if (!control) {
+        return;
+      }
+      const errors = control.errors || {};
+      errors[key] = value;
+      control.setErrors(errors);
+    };
+
+    const removeError = (control: AbstractControl | null, key: string) => {
+      if (!control || !control.errors) {
+        return;
+      }
+      const errors = {...control.errors};
+      delete errors[key];
+      control.setErrors(Object.keys(errors).length ? errors : null);
+    };
+
+    if (!start || !stop) {
+      if (!start) {
+        setError(startControl, 'required', 'Start time is required');
+      } else {
+        removeError(startControl, 'required');
+      }
+      if (!stop) {
+        setError(stopControl, 'required', 'Stop time is required');
+      } else {
+        removeError(stopControl, 'required');
+      }
+      return null;
+    }
+
+    // Validate same start/pause
+    if (startMin === stopMin && (startMin !== 0 && stopMin !== 0)) {
+      setError(startControl, 'sameStartStop', 'Start and Stop cannot be the same');
+      setError(stopControl, 'sameStartStop', 'Start and Stop cannot be the same');
+    } else {
+      removeError(startControl, 'sameStartStop');
+      removeError(stopControl, 'sameStartStop');
+    }
+    // Till midnight sameday
+    const adjustedStop = stopMin === 0 ? 1440 : stopMin;
+    let duration = adjustedStop - startMin;
+    if (duration <= 0) {
+      duration += 1440;
+    }
+
+    // Stop before start
+    if (stopMin !== 0 && stopMin < startMin) {
+      setError(stopControl, 'invalidRange', 'Stop time cannot be before start time');
+    } else {
+      removeError(stopControl, 'invalidRange');
+    }
+
+    // Break time validation
+    if (breakMin !== null) {
+      if (breakMin < 0) {
+        setError(pauseControl, 'negativeBreak', 'Break cannot be negative');
+      } else {
+        removeError(pauseControl, 'negativeBreak');
+      }
+
+      if (breakMin >= duration) {
+        setError(
+          pauseControl,
+          'breakTooLong',
+          'Break cannot be equal or longer than shift duration',
+        );
+      } else {
+        removeError(pauseControl, 'breakTooLong');
+      }
+    }
+
+    if (duration > 24 * 60) {
+      setError(group, 'shiftTooLong', 'Shift duration cannot exceed 24 hours');
+    } else {
+      removeError(group, 'shiftTooLong');
+    }
+
+    if (breakMin && breakMin >= duration) {
+      setError(pauseControl, 'invalidBreak', 'Break must be shorter than shift duration');
+    } else {
+      removeError(pauseControl, 'invalidBreak');
+    }
+
+    return null;
+  }
+
+  private numberValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    return isNaN(value) ? {notNumber: true} : null;
+  }
+
+  public getGroupErrorMessage(path: string): string | null {
+    const group = this.workdayForm.get(path);
+    if (!group || !group.errors) {
+      return null;
+    }
+    const firstKey = Object.keys(group.errors)[0];
+    return group.errors[firstKey];
+  }
+
+  // InputErrorMessages dynamically
+  public getInputErrors(controlPath: string): string[] {
+    const ctrl = this.workdayForm.get(controlPath);
+
+    if (!ctrl) {
+      return [];
+    }
+
+    const errors = ctrl.errors ?? {};
+
+    const messages = this.inputErrorMessages[controlPath] || {};
+
+    return Object.keys(errors).map((key) => messages[key] || errors[key]);
+  }
+
+  // max plan hour
+  private maxPlanHoursValidator = (control: AbstractControl): ValidationErrors | null => {
+    const raw = control.value;
+    if (raw === null || raw === undefined || raw === '') {
+      return null;
+    }
+    const v = parseFloat(String(raw).replace(',', '.'));
+    if (Number.isNaN(v)) {
+      return {notNumber: true};
+    }
+    return v > 24 ? {tooManyHours: true} : null;
+  };
+
+  private totalHoursValidator(form: AbstractControl): ValidationErrors | null {
+    let totalMinutes = 0;
+    for (let i = 1; i <= 5; i++) {
+      const shift = form.get(`planned.shift${i}`)?.value;
+      if (!shift) {
+        continue;
+      }
+      const start = this.getMinutes(shift.start);
+      const stop = this.getMinutes(shift.stop);
+      const brk = this.getMinutes(shift.break);
+      totalMinutes += this.getPlannedShiftMinutes(start, stop, brk);
+    }
+    const totalHours = totalMinutes / 60;
+    return totalHours > 24 ? {tooManyHours: 'Total planned hours cannot exceed 24'} : null;
+  }
+
+  private parseTimeToMinutes(time: string): number | null {
+    if (!time) {
+      return null;
+    }
+    const [h, m] = time.split(':').map(Number);
+    if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+      return null;
+    }
+    return h * 60 + m;
+  }
+
+  private shiftWiseValidator(form: AbstractControl): ValidationErrors | null {
+    const planned = form.get('planned') as FormGroup;
+    const actual = form.get('actual') as FormGroup;
+    const shifts = ['shift1', 'shift2', 'shift3', 'shift4', 'shift5'];
+
+    let formError: string | null = null;
+
+    const validateShifts = (group: FormGroup, label: string) => {
+      for (let i = 1; i < shifts.length; i++) {
+        const prevShift = group.get(shifts[i - 1]);
+        const currShift = group.get(shifts[i]);
+
+        if (!prevShift || !currShift) {
+          continue;
+        }
+        const prevEnd = this.parseTimeToMinutes(prevShift.get('stop')?.value);
+        const currStart = this.parseTimeToMinutes(currShift.get('start')?.value);
+
+        if (prevEnd !== null && (currStart !== null && currStart !== 0)) {
+          if (currStart < prevEnd) {
+            currShift.get('start')?.setErrors({
+              hierarchyError: `Start time cannot be earlier than previous shift's end time`,
+            });
+
+            if (!formError) {
+              formError = `${label} Shift ${i + 1} cannot start before ${label} Shift ${i} ends`;
+            }
+          } else {
+            const errors = currShift.get('start')?.errors;
+            if (errors) {
+              delete errors['hierarchyError'];
+              currShift.get('start')?.setErrors(Object.keys(errors).length ? errors : null);
+            }
+          }
+        }
+      }
+    };
+
+    // Validate both planned and actual
+    if (planned) {
+      validateShifts(planned, 'Planned');
+    }
+    if (actual) {
+      validateShifts(actual, 'Actual');
+    }
+
+    return formError ? {shiftOrder: formError} : null;
   }
 
   private updateDisabledStates() {
@@ -684,20 +1058,20 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.planningPrDayModels.plannedBreakOfShift1 = this.convertTimeToMinutes(p1?.break ?? '00:00');
 
     this.data.planningPrDayModels.plannedStartOfShift2 = this.convertTimeToMinutes(p2?.start);
-    this.data.planningPrDayModels.plannedEndOfShift2   = this.convertTimeToMinutes(p2?.stop ?? '00:00');
-    this.data.planningPrDayModels.plannedBreakOfShift2 = this.convertTimeToMinutes(p2?.break  ?? '00:00');
+    this.data.planningPrDayModels.plannedEndOfShift2 = this.convertTimeToMinutes(p2?.stop ?? '00:00');
+    this.data.planningPrDayModels.plannedBreakOfShift2 = this.convertTimeToMinutes(p2?.break ?? '00:00');
 
     this.data.planningPrDayModels.plannedStartOfShift3 = this.convertTimeToMinutes(p3?.start);
-    this.data.planningPrDayModels.plannedEndOfShift3   = this.convertTimeToMinutes(p3?.stop ?? '00:00');
-    this.data.planningPrDayModels.plannedBreakOfShift3 = this.convertTimeToMinutes(p3?.break  ?? '00:00');
+    this.data.planningPrDayModels.plannedEndOfShift3 = this.convertTimeToMinutes(p3?.stop ?? '00:00');
+    this.data.planningPrDayModels.plannedBreakOfShift3 = this.convertTimeToMinutes(p3?.break ?? '00:00');
 
     this.data.planningPrDayModels.plannedStartOfShift4 = this.convertTimeToMinutes(p4?.start);
-    this.data.planningPrDayModels.plannedEndOfShift4   = this.convertTimeToMinutes(p4?.stop ?? '00:00');
-    this.data.planningPrDayModels.plannedBreakOfShift4 = this.convertTimeToMinutes(p4?.break  ?? '00:00');
+    this.data.planningPrDayModels.plannedEndOfShift4 = this.convertTimeToMinutes(p4?.stop ?? '00:00');
+    this.data.planningPrDayModels.plannedBreakOfShift4 = this.convertTimeToMinutes(p4?.break ?? '00:00');
 
     this.data.planningPrDayModels.plannedStartOfShift5 = this.convertTimeToMinutes(p5?.start);
-    this.data.planningPrDayModels.plannedEndOfShift5   = this.convertTimeToMinutes(p5?.stop ?? '00:00');
-    this.data.planningPrDayModels.plannedBreakOfShift5 = this.convertTimeToMinutes(p5?.break  ?? '00:00');
+    this.data.planningPrDayModels.plannedEndOfShift5 = this.convertTimeToMinutes(p5?.stop ?? '00:00');
+    this.data.planningPrDayModels.plannedBreakOfShift5 = this.convertTimeToMinutes(p5?.break ?? '00:00');
 
 
     // Læs actual fra form (med 5-min intervaller)
@@ -757,7 +1131,9 @@ export class WorkdayEntityDialogComponent implements OnInit {
     end: number | null,
     breakMinutes: number | null
   ): number {
-    if (start === null || end === null || start === end) {return 0;}
+    if (start === null || end === null || start === end) {
+      return 0;
+    }
 
     let duration = end - start;
 
@@ -772,9 +1148,22 @@ export class WorkdayEntityDialogComponent implements OnInit {
     return Math.max(0, duration);
   }
 
+  markAllAsTouched(control: AbstractControl) {
+    if (control instanceof FormControl) {
+      control.markAsTouched({ onlySelf: true });
+    } else if (control instanceof FormGroup) {
+      Object.values(control.controls).forEach((c) => this.markAllAsTouched(c));
+      control.markAsTouched({ onlySelf: true });
+    } else if (control instanceof FormArray) {
+      control.controls.forEach((c) => this.markAllAsTouched(c));
+    }
+  }
+
   // ===== Genberegn plan/actual/todaysFlex og sumFlexEnd (samme logik som før, men baseret på form) =====
   calculatePlanHours() {
+    this.markAllAsTouched(this.workdayForm);
     this.updateDisabledStates?.();
+
     const ok = this.runAllValidators();
     if (!ok) {
       this.focusFirstError(); // valgfri
@@ -795,7 +1184,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
 
     m.planHours = plannedTimeInMinutes / 60;
-    this.workdayForm.get('planHours')?.setValue(m.planHours, { emitEvent: false });
+    this.workdayForm.get('planHours')?.setValue(m.planHours, {emitEvent: false});
 
     // Summer actual
     let actualTimeInMinutes = 0;
