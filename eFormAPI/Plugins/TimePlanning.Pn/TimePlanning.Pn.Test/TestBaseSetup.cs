@@ -20,8 +20,6 @@ public class TestBaseSetup
         .WithCommand("--max_allowed_packet", "32505856")
         .Build();
 
-    protected MicrotingDbContext? DbContext;
-
     protected TimePlanningPnDbContext? TimePlanningPnDbContext;
     protected MicrotingDbContext? MicrotingDbContext;
 
@@ -89,7 +87,7 @@ public class TestBaseSetup
 
         // ConnectionString = _mariadbTestcontainer.GetConnectionString();
 
-        DbContext = GetContext(_mariadbTestcontainer.GetConnectionString());
+        var DbContext = GetContext(_mariadbTestcontainer.GetConnectionString());
 
         DbContext!.Database.SetCommandTimeout(300);
         // Console.WriteLine($"{DateTime.Now} : Starting MariaDb Container...");
@@ -119,6 +117,5 @@ public class TestBaseSetup
     public async Task TearDown()
     {
         await TimePlanningPnDbContext!.DisposeAsync();
-        // await MicrotingDbContext!.DisposeAsync();
     }
 }
