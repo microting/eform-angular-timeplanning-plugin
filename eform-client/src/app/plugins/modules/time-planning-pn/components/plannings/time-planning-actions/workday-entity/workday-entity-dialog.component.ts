@@ -846,7 +846,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
   // ===== UI-hjælpere (samme logik som tidligere, men brugt af form) =====
   convertMinutesToTime(minutes: number): string {
-    if (minutes == null) {
+    if (minutes === null || minutes === 0) {
       return null;
     }
     const hours = Math.floor(minutes / 60);
@@ -1057,19 +1057,19 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.planningPrDayModels.plannedEndOfShift1 = this.convertTimeToMinutes(p1?.stop);
     this.data.planningPrDayModels.plannedBreakOfShift1 = this.convertTimeToMinutes(p1?.break ?? '00:00');
 
-    this.data.planningPrDayModels.plannedStartOfShift2 = this.convertTimeToMinutes(p2?.start);
+    this.data.planningPrDayModels.plannedStartOfShift2 = this.convertTimeToMinutes(p2?.start ?? '00:00');
     this.data.planningPrDayModels.plannedEndOfShift2 = this.convertTimeToMinutes(p2?.stop ?? '00:00');
     this.data.planningPrDayModels.plannedBreakOfShift2 = this.convertTimeToMinutes(p2?.break ?? '00:00');
 
-    this.data.planningPrDayModels.plannedStartOfShift3 = this.convertTimeToMinutes(p3?.start);
+    this.data.planningPrDayModels.plannedStartOfShift3 = this.convertTimeToMinutes(p3?.start ?? '00:00');
     this.data.planningPrDayModels.plannedEndOfShift3 = this.convertTimeToMinutes(p3?.stop ?? '00:00');
     this.data.planningPrDayModels.plannedBreakOfShift3 = this.convertTimeToMinutes(p3?.break ?? '00:00');
 
-    this.data.planningPrDayModels.plannedStartOfShift4 = this.convertTimeToMinutes(p4?.start);
+    this.data.planningPrDayModels.plannedStartOfShift4 = this.convertTimeToMinutes(p4?.start ?? '00:00');
     this.data.planningPrDayModels.plannedEndOfShift4 = this.convertTimeToMinutes(p4?.stop ?? '00:00');
     this.data.planningPrDayModels.plannedBreakOfShift4 = this.convertTimeToMinutes(p4?.break ?? '00:00');
 
-    this.data.planningPrDayModels.plannedStartOfShift5 = this.convertTimeToMinutes(p5?.start);
+    this.data.planningPrDayModels.plannedStartOfShift5 = this.convertTimeToMinutes(p5?.start ?? '00:00');
     this.data.planningPrDayModels.plannedEndOfShift5 = this.convertTimeToMinutes(p5?.stop ?? '00:00');
     this.data.planningPrDayModels.plannedBreakOfShift5 = this.convertTimeToMinutes(p5?.break ?? '00:00');
 
