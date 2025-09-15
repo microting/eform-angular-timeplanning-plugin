@@ -750,6 +750,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // Rens paidOutFlex
     this.data.planningPrDayModels.paidOutFlex =
       this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
+
+    this.data.planningPrDayModels.commentOffice = this.workdayForm.get('commentOffice')?.value;
   }
 
   // ===== Genberegn plan/actual/todaysFlex og sumFlexEnd (samme logik som før, men baseret på form) =====
