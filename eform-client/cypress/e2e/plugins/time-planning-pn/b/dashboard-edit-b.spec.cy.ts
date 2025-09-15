@@ -103,25 +103,24 @@ const filtersFutureWeek = [
 ];
 
 const secondUpdatePlanTexts = [
-  { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'swap_vert89:27', flexToDate: '97:27', flexIncludingToday: '89:27', nettoHours: '00:00', todaysFlex: '-8:00', paidOutFlex: 0, calculatedHours: '8', plannedStartOfShift1: '07:30', plannedEndOfShift1: '15:30', plannedBreakOfShift1: '00:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
-  { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:50 - 16:00 / 01:00', plannedHours: '8:00', flexBalanceToDate: 'swap_vert82:17', flexToDate: '89:27', flexIncludingToday: '82:17', nettoHours: '00:00', todaysFlex: '-7:10', paidOutFlex: 0, calculatedHours: '7.166666666666667', plannedStartOfShift1: '07:50', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
-  { date: nextWeekDates[2], text: '7:15-16:00/1;17-20/0,5', firstShift: '07:15 - 16:00 / 01:00', secondShift: '17:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert72:02', flexToDate: '82:17', flexIncludingToday: '72:02', nettoHours: '00:00', todaysFlex: '-10:15', paidOutFlex: 0, calculatedHours: '10.25', plannedStartOfShift1: '07:15', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '17:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
-  { date: nextWeekDates[3], text: '6-12/½;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:30', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert65:02', flexToDate: '72:02', flexIncludingToday: '65:02', nettoHours: '00:00', todaysFlex: '-7:00', paidOutFlex: 0, calculatedHours: '7', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
-  { date: nextWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert58:22', flexToDate: '65:02', flexIncludingToday: '58:22', nettoHours: '00:00', todaysFlex: '-6:40', paidOutFlex: 0, calculatedHours: '6.666666666666667', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
-  { date: nextWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:50', plannedHours: '8:00', flexBalanceToDate: 'swap_vert52:02', flexToDate: '58:22', flexIncludingToday: '52:02', nettoHours: '00:00', todaysFlex: '-6:20', paidOutFlex: 0, calculatedHours: '6.333333333333333', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:50' },
-  { date: lastWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert44:32', flexToDate: '52:02', flexIncludingToday: '44:32', nettoHours: '00:00', todaysFlex: '-7:30', paidOutFlex: 0, calculatedHours: '7.5', plannedStartOfShift1: '06:00', plannedEndOfShift1: '14:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: nextWeekDates[0], text: '07:30-15:30', firstShift: '07:30 - 15:30 / 00:00', plannedHours: '8:00', flexBalanceToDate: 'swap_vert89:27', flexToDate: '97:27', flexIncludingToday: '89:27', nettoHours: '', todaysFlex: '-8:00', paidOutFlex: 0, calculatedHours: '8', plannedStartOfShift1: '07:30', plannedEndOfShift1: '15:30', plannedBreakOfShift1: '', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: nextWeekDates[1], text: '7:45-16:00/1', firstShift: '07:50 - 16:00 / 01:00', plannedHours: '8:00', flexBalanceToDate: 'swap_vert82:17', flexToDate: '89:27', flexIncludingToday: '82:17', nettoHours: '', todaysFlex: '-7:10', paidOutFlex: 0, calculatedHours: '7.166666666666667', plannedStartOfShift1: '07:50', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
+  { date: nextWeekDates[2], text: '7:15-16:00/1;17-20/0,5', firstShift: '07:15 - 16:00 / 01:00', secondShift: '17:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert72:02', flexToDate: '82:17', flexIncludingToday: '72:02', nettoHours: '', todaysFlex: '-10:15', paidOutFlex: 0, calculatedHours: '10.25', plannedStartOfShift1: '07:15', plannedEndOfShift1: '16:00', plannedBreakOfShift1: '01:00', plannedStartOfShift2: '17:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
+  { date: nextWeekDates[3], text: '6-12/½;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:30', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert65:02', flexToDate: '72:02', flexIncludingToday: '65:02', nettoHours: '', todaysFlex: '-7:00', paidOutFlex: 0, calculatedHours: '7', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
+  { date: nextWeekDates[4], text: '06:00-12:00/¾;18:00-20:00/0.5', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert58:22', flexToDate: '65:02', flexIncludingToday: '58:22', nettoHours: '', todaysFlex: '-6:40', paidOutFlex: 0, calculatedHours: '6.666666666666667', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:30' },
+  { date: nextWeekDates[5], text: '6-12/¾;18-20/¾', firstShift: '06:00 - 12:00 / 00:50', secondShift: '18:00 - 20:00 / 00:50', plannedHours: '8:00', flexBalanceToDate: 'swap_vert52:02', flexToDate: '58:22', flexIncludingToday: '52:02', nettoHours: '', todaysFlex: '-6:20', paidOutFlex: 0, calculatedHours: '6.333333333333333', plannedStartOfShift1: '06:00', plannedEndOfShift1: '12:00', plannedBreakOfShift1: '00:50', plannedStartOfShift2: '18:00', plannedEndOfShift2: '20:00', plannedBreakOfShift2: '00:50' },
+  { date: lastWeekDates[6], text: '6-14/½', firstShift: '06:00 - 14:00 / 00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert44:32', flexToDate: '52:02', flexIncludingToday: '44:32', nettoHours: '', todaysFlex: '-7:30', paidOutFlex: 0, calculatedHours: '7.5', plannedStartOfShift1: '06:00', plannedEndOfShift1: '14:00', plannedBreakOfShift1: '00:30', plannedStartOfShift2: '', plannedEndOfShift2: '', plannedBreakOfShift2: '' },
 ];
 
 const secondUpdateActualTexts = [
-  { date: nextWeekDates[0], start1StartedAt: '07:30', stop1StoppedAt: '15:30', pause1Id: '00:25', start2StartedAt: '', stop2StoppedAt: '', pause2Id: '', plannedHours: '8:00', flexBalanceToDate: 'swap_vert97.03', flexToDate: '97.45', flexIncludingToday: '97.03', nettoHours: '7.58', todaysFlex: '-0.42', paidOutFlex: 0, calculatedHours: '8' },
-  { date: nextWeekDates[1], start1StartedAt: '07:50', stop1StoppedAt: '16:00', pause1Id: '01:00', start2StartedAt: '', stop2StoppedAt: '', pause2Id: '', plannedHours: '8:00', flexBalanceToDate: 'swap_vert97.03', flexToDate: '97.03', flexIncludingToday: '97.03', nettoHours: '7.17', todaysFlex: '0.00', paidOutFlex: 0, calculatedHours: '7.166666666666667' },
+  { date: nextWeekDates[0], start1StartedAt: '07:30', stop1StoppedAt: '15:30', pause1Id: '00:25', start2StartedAt: '00:00', stop2StoppedAt: '00:00', pause2Id: '00:00', plannedHours: '8:00', flexBalanceToDate: 'swap_vert97.03', flexToDate: '97.45', flexIncludingToday: '97.03', nettoHours: '7.58', todaysFlex: '-0.42', paidOutFlex: 0, calculatedHours: '8' },
+  { date: nextWeekDates[1], start1StartedAt: '07:50', stop1StoppedAt: '16:00', pause1Id: '01:00', start2StartedAt: '00:00', stop2StoppedAt: '00:00', pause2Id: '00:00', plannedHours: '8:00', flexBalanceToDate: 'swap_vert97.03', flexToDate: '97.03', flexIncludingToday: '97.03', nettoHours: '7.17', todaysFlex: '0.00', paidOutFlex: 0, calculatedHours: '7.166666666666667' },
   { date: nextWeekDates[2], start1StartedAt: '07:15', stop1StoppedAt: '16:00', pause1Id: '01:00', start2StartedAt: '17:00', stop2StoppedAt: '20:00', pause2Id: '00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert97.03', flexToDate: '97.03', flexIncludingToday: '97.03', nettoHours: '10.25', todaysFlex: '0.00', paidOutFlex: 0, calculatedHours: '10.25' },
   { date: nextWeekDates[3], start1StartedAt: '06:00', stop1StoppedAt: '12:00', pause1Id: '00:30', start2StartedAt: '18:00', stop2StoppedAt: '20:00', pause2Id: '00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert97.03', flexToDate: '97.03', flexIncludingToday: '97.03', nettoHours: '7.00', todaysFlex: '0.00', paidOutFlex: 0, calculatedHours: '7' },
   { date: nextWeekDates[4], start1StartedAt: '06:00', stop1StoppedAt: '12:00' , pause1Id: '01:50' , start2StartedAt: '18:00' , stop2StoppedAt: '20:00' , pause2Id: '01:50' , plannedHours: '8.0' , flexBalanceToDate: 'swap_vert94.70' , flexToDate: '97.03' , flexIncludingToday: '94.70' , nettoHours: '4.33' , todaysFlex: '-2.33' , paidOutFlex : 0, calculatedHours : 6.666666666666667 },
-  { date : nextWeekDates[5] , start1StartedAt : '' , stop1StoppedAt : '' , pause1Id : '' , start2StartedAt : '' , stop2StoppedAt : '' , pause2Id : '' , plannedHours : '' , flexBalanceToDate : 'swap_vert88.36' , flexToDate : '94.70' , flexIncludingToday : '88.36' , nettoHours : '0.00' , todaysFlex : '-6.33' , paidOutFlex : 0 , calculatedHours : 6.333333333333333 },
-  { date : lastWeekDates[6] , start1StartedAt : '06:00' , stop1StoppedAt : '14:00' , pause1Id : '00:30' , start2StartedAt : '' , stop2StoppedAt : '' , pause2Id : '' , plannedHours : '8:00' , flexBalanceToDate : 'swap_vert88.36' , flexToDate : '88.36' , flexIncludingToday : '88.36' , nettoHours : '7.50' , todaysFlex : '0.00' , paidOutFlex : 0 , calculatedHours : '7.5' }
-]
-
+  { date : nextWeekDates[5] , start1StartedAt : '00:00' , stop1StoppedAt : '00:00' , pause1Id : '00:00' , start2StartedAt : '00:00' , stop2StoppedAt : '00:00' , pause2Id : '00:00' , plannedHours : '' , flexBalanceToDate : 'swap_vert88.36' , flexToDate : '94.70' , flexIncludingToday : '88.36' , nettoHours : '0.00' , todaysFlex : '-6.33' , paidOutFlex : 0 , calculatedHours : 6.333333333333333 },
+  { date : lastWeekDates[6] , start1StartedAt : '06:00' , stop1StoppedAt : '14:00' , pause1Id : '00:30' , start2StartedAt : '00:00' , stop2StoppedAt : '00:00' , pause2Id : '00:00' , plannedHours : '8:00' , flexBalanceToDate : 'swap_vert88.36' , flexToDate : '88.36' , flexIncludingToday : '88.36' , nettoHours : '7.50' , todaysFlex : '0.00' , paidOutFlex : 0 , calculatedHours : '7.5' }
+];
 
 describe('Dashboard edit values', () => {
   beforeEach(() => {
@@ -190,7 +189,7 @@ describe('Dashboard edit values', () => {
       }
       cy.get('#stop1StoppedAt').should('have.value', secondUpdateActualTexts[i].stop1StoppedAt);
 
-      if (secondUpdateActualTexts[i].pause1Id !== '') {
+      if (secondUpdateActualTexts[i].pause1Id !== '' || secondUpdateActualTexts[i].pause1Id !== '00:00') {
         cy.get(`#pause1Id`).click();
         // eslint-disable-next-line max-len
         let degrees2 = 360 / 12 * parseInt(secondUpdateActualTexts[i].pause1Id.split(':')[0]);
@@ -216,7 +215,7 @@ describe('Dashboard edit values', () => {
         cy.get('#pause1Id').should('have.value', '00:00');
       }
 
-      if (secondUpdateActualTexts[i].start2StartedAt !== '') {
+      if (secondUpdateActualTexts[i].start2StartedAt !== '' || secondUpdateActualTexts[i].start2StartedAt !== '00:00') {
         cy.get(`#start2StartedAt`).click();
         // eslint-disable-next-line max-len
         let degrees3 = 360 / 12 * parseInt(secondUpdateActualTexts[i].start2StartedAt.split(':')[0]);
@@ -224,7 +223,7 @@ describe('Dashboard edit values', () => {
         if (degrees3 > 360) {
           cy.get('[style="height: 85px; transform: rotateZ(' + degrees3 + 'deg) translateX(-50%);"] > span').click();
         } else {
-          if (degrees3 === 0) {
+          if (!degrees3 || isNaN(degrees3) || degrees3 === 0) {
             cy.get('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
           } else {
             cy.get('[style="transform: rotateZ(' + degrees3 + 'deg) translateX(-50%);"] > span').click();
@@ -233,14 +232,14 @@ describe('Dashboard edit values', () => {
         if (minuteDegrees3 > 0) {
           cy.get('[style="transform: rotateZ(' + minuteDegrees3 + 'deg) translateX(-50%);"] > span').click({force: true});
         }
-        if (minuteDegrees3 === 0) {
+        if (!minuteDegrees3 || isNaN(minuteDegrees3) || minuteDegrees3 === 0) {
           cy.get('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
       cy.get('#start2StartedAt').should('have.value', secondUpdateActualTexts[i].start2StartedAt);
 
-      if (secondUpdateActualTexts[i].stop2StoppedAt !== '') {
+      if (secondUpdateActualTexts[i].stop2StoppedAt !== '' || secondUpdateActualTexts[i].stop2StoppedAt !== '00:00' ) {
         cy.get(`#stop2StoppedAt`).click();
         // eslint-disable-next-line max-len
         let degrees4 = 360 / 12 * parseInt(secondUpdateActualTexts[i].stop2StoppedAt.split(':')[0]);
@@ -264,7 +263,7 @@ describe('Dashboard edit values', () => {
       }
       cy.get('#stop2StoppedAt').should('have.value', secondUpdateActualTexts[i].stop2StoppedAt);
 
-      if (secondUpdateActualTexts[i].pause2Id !== '') {
+      if (secondUpdateActualTexts[i].pause2Id !== '' || secondUpdateActualTexts[i].pause2Id !== '00:00') {
         cy.get(`#pause2Id`).click();
         // eslint-disable-next-line max-len
         let degrees5 = 360 / 12 * parseInt(secondUpdateActualTexts[i].pause2Id.split(':')[0]);
@@ -287,7 +286,7 @@ describe('Dashboard edit values', () => {
         cy.get('.timepicker-button span').contains('Ok').click();
         cy.get('#pause2Id').should('have.value', secondUpdateActualTexts[i].pause2Id);
       } else {
-        cy.get('#pause2Id').should('have.value', '00:00');
+        cy.get('#pause2Id').should('have.value', '');
       }
       cy.get('#flexToDate').should('have.value', secondUpdateActualTexts[i].flexToDate);
       cy.get('#flexIncludingToday').should('have.value', secondUpdateActualTexts[i].flexIncludingToday);

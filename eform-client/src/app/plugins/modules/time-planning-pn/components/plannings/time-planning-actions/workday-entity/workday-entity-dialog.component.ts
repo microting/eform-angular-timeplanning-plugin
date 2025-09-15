@@ -845,8 +845,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
   }
 
   // ===== UI-hjælpere (samme logik som tidligere, men brugt af form) =====
-  convertMinutesToTime(minutes: number): string {
-    if (minutes === null || minutes === 0) {
+  convertMinutesToTime(minutes?: number | null): string | null {
+    if (minutes == null || minutes === 0) {
       return null;
     }
     const hours = Math.floor(minutes / 60);
