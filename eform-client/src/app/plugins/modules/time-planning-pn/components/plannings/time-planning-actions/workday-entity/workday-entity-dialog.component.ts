@@ -1124,6 +1124,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // Rens paidOutFlex
     this.data.planningPrDayModels.paidOutFlex =
       this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
+    this.data.planningPrDayModels.commentOffice = this.workdayForm.get('commentOffice')?.value;
   }
 
   private getPlannedShiftMinutes(
