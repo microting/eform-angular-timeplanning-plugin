@@ -928,6 +928,7 @@ public static class PlanRegistrationHelper
             var planningModel = new TimePlanningPlanningPrDayModel
             {
                 Id = planRegistration.Id,
+                PlanChangedByAdmin = planRegistration.PlanChangedByAdmin,
                 SiteName = site.Name,
                 Date = midnight,
                 PlanText = planRegistration.PlanText,
