@@ -551,6 +551,14 @@ export class WorkdayEntityDialogComponent implements OnInit {
       }
     }
 
+    // Disallow pause = 00:00
+    if (breakMin === 0) {
+      setError(pauseControl, 'invalidPause', 'Pause cannot be 00:00');
+    } else {
+      removeError(pauseControl, 'invalidPause');
+    }
+
+
     if (duration > 24 * 60) {
       setError(group, 'shiftTooLong', 'Shift duration cannot exceed 24 hours');
     } else {
@@ -1265,7 +1273,6 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // Rens paidOutFlex
     this.data.planningPrDayModels.paidOutFlex =
       this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
-    this.data.planningPrDayModels.commentOffice = this.workdayForm.get('commentOffice')?.value;
   }
 
   private getPlannedShiftMinutes(
