@@ -14,33 +14,16 @@ describe('Dashboard edit values', () => {
     cy.get('.ng-option').contains('ac ad').click();
     cy.get('#cell0_0').click();
 
-    cy.get('#plannedStartOfShift1')
-      .closest('.flex-row')
-      .find('button mat-icon')
-      .contains('delete')
-      .click({force: true});
-    cy.wait(500);
-
-    cy.get('#plannedEndOfShift1')
-      .closest('.flex-row')
-      .find('button mat-icon')
-      .contains('delete')
-      .click({force: true});
-    cy.wait(500);
-
-    cy.get('#start1StartedAt')
-      .closest('.flex-row')
-      .find('button mat-icon')
-      .contains('delete')
-      .click({force: true});
-    cy.wait(500);
-
-    cy.get('#stop1StoppedAt')
-      .closest('.flex-row')
-      .find('button mat-icon')
-      .contains('delete')
-      .click({force: true});
-    cy.wait(500);
+    ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
+      (selector) => {
+        cy.get(selector)
+          .closest('.flex-row')
+          .find('button mat-icon')
+          .contains('delete')
+          .click({ force: true });
+        cy.wait(500);
+      }
+    );
   });
 
   // Set a timepicker value
@@ -73,8 +56,8 @@ describe('Dashboard edit values', () => {
 
   it('should show an error when planned break is longer than the shift duration', () => {
     setTimepickerValue('#plannedStartOfShift1', '1', '00');
-    setTimepickerValue('#plannedBreakOfShift1', '9', '00');
     setTimepickerValue('#plannedEndOfShift1', '10', '00');
+    setTimepickerValue('#plannedBreakOfShift1', '9', '00');
     assertInputError('plannedBreakOfShift1-Error', 'Break cannot be equal or longer than shift duration');
   });
 
