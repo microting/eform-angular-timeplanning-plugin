@@ -763,12 +763,13 @@
       {{ 'Cancel' | translate }}
     </button>
 
+<!--    [disabled]="workdayForm.invalid"-->
+
     <button
       id="saveButton"
       mat-raised-button
       color="accent"
       (click)="onUpdateWorkDayEntity()"
-      [disabled]="workdayForm.invalid"
       [mat-dialog-close]="data">
       {{ 'Save' | translate }}
     </button>

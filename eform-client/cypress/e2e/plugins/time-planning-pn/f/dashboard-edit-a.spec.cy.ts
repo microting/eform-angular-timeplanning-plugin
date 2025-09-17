@@ -73,8 +73,8 @@ describe('Dashboard edit values', () => {
 
   it('should show an error when planned break is longer than the shift duration', () => {
     setTimepickerValue('#plannedStartOfShift1', '1', '00');
-    setTimepickerValue('#plannedBreakOfShift1', '9', '00');
     setTimepickerValue('#plannedEndOfShift1', '10', '00');
+    setTimepickerValue('#plannedBreakOfShift1', '9', '00');
     assertInputError('plannedBreakOfShift1-Error', 'Break cannot be equal or longer than shift duration');
   });
 
