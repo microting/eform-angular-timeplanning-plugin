@@ -719,7 +719,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     const p2Start = this.getCtrl('planned.shift2.start').value as string | null;
     const p2Stop = this.getCtrl('planned.shift2.stop').value as string | null;
 
-    if (p1Start === '00:00' && p1Stop === '00:00') {
+    if (!p1Start || !p1Stop || (p1Start === '00:00' && p1Stop === '00:00')) {
       this.setDisabled('planned.shift1.break', true);
       this.setDisabled('planned.shift1.stop', false);
       this.setDisabled('planned.shift2.start', true);
@@ -734,6 +734,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
       this.setDisabled('planned.shift5.start', true);
       this.setDisabled('planned.shift5.break', true);
       this.setDisabled('planned.shift5.stop', true);
+      this.setDisabled('planHours', false);
     } else {
       this.setDisabled('planHours', true);
       this.setDisabled('planned.shift1.break', false);
@@ -741,12 +742,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
       this.setDisabled('planned.shift2.start', false);
     }
 
-    if (p2Start !== '00:00') {
-      // this.setDisabled('planned.shift2.break', false);
+    if (p2Start && p2Start !== '00:00') {
       this.setDisabled('planned.shift2.stop', false);
       this.setDisabled('planned.shift3.start', false);
     }
-    if (p2Stop !== '00:00') {
+    if (p2Stop && p2Stop !== '00:00') {
       this.setDisabled('planned.shift2.break', false);
     }
 
