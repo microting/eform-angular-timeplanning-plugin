@@ -1185,39 +1185,6 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
   }
 
-  private getPlannedShiftMinutes(
-    start: number | null,
-    end: number | null,
-    breakMinutes: number | null
-  ): number {
-    if (start === null || end === null || start === end) {
-      return 0;
-    }
-
-    let duration = end - start;
-
-    if (end <= start) {
-      duration = (1440 - start) + end;
-    }
-
-    if (breakMinutes) {
-      duration -= breakMinutes;
-    }
-
-    return Math.max(0, duration);
-  }
-
-  markAllAsTouched(control: AbstractControl) {
-    if (control instanceof FormControl) {
-      control.markAsTouched({ onlySelf: true });
-    } else if (control instanceof FormGroup) {
-      Object.values(control.controls).forEach((c) => this.markAllAsTouched(c));
-      control.markAsTouched({ onlySelf: true });
-    } else if (control instanceof FormArray) {
-      control.controls.forEach((c) => this.markAllAsTouched(c));
-    }
-  }
-
   // ===== Genberegn plan/actual/todaysFlex og sumFlexEnd (samme logik som før, men baseret på form) =====
   calculatePlanHours() {
     this.markAllAsTouched(this.workdayForm);
