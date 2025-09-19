@@ -550,6 +550,14 @@ export class WorkdayEntityDialogComponent implements OnInit {
       }
     }
 
+    // Disallow pause = 00:00
+    if (breakMin === 0) {
+      setError(pauseControl, 'invalidPause', 'Pause cannot be 00:00');
+    } else {
+      removeError(pauseControl, 'invalidPause');
+    }
+
+
     if (duration > 24 * 60) {
       setError(group, 'shiftTooLong', 'Shift duration cannot exceed 24 hours');
     } else {
@@ -654,6 +662,24 @@ export class WorkdayEntityDialogComponent implements OnInit {
         }
         const prevEnd = this.parseTimeToMinutes(prevShift.get('stop')?.value);
         const currStart = this.parseTimeToMinutes(currShift.get('start')?.value);
+
+        // Disallow 00:00 as start for shifts > 1
+        if (i > 0 && currStart === 0) {
+          currShift.get('start')?.setErrors({
+            ...(currShift.get('start')?.errors || {}),
+            invalidStart: `Start time 00:00 is not allowed for ${label} Shift ${i + 1}`,
+          });
+
+          if (!formError) {
+            formError = `${label} Shift ${i + 1} cannot start at 00:00`;
+          }
+        } else {
+          const errors = currShift.get('start')?.errors;
+          if (errors && errors['invalidStart']) {
+            delete errors['invalidStart'];
+            currShift.get('start')?.setErrors(Object.keys(errors).length ? errors : null);
+          }
+        }
 
         if (prevEnd !== null && (currStart !== null && currStart !== 0)) {
           if (currStart < prevEnd) {
@@ -990,24 +1016,24 @@ export class WorkdayEntityDialogComponent implements OnInit {
     const s2 = this.workdayForm.get('planned.shift2') as FormGroup;
     switch (number) {
       case 1:
-        s1.patchValue({start: '00:00', break: '00:00', stop: '00:00'});
-        s2.patchValue({start: '00:00', break: '00:00', stop: '00:00'});
+        s1.patchValue({start: null, break: null, stop: null});
+        s2.patchValue({start: null, break: null, stop: null});
         break;
       case 2:
-        s1.patchValue({break: '00:00'});
+        s1.patchValue({break: null});
         break;
       case 3:
-        s1.patchValue({break: '00:00', stop: '00:00'});
-        s2.patchValue({start: '00:00', break: '00:00', stop: '00:00'});
+        s1.patchValue({break: null, stop: null});
+        s2.patchValue({start: null, break: null, stop: null});
         break;
       case 4:
-        s2.patchValue({start: '00:00', break: '00:00', stop: '00:00'});
+        s2.patchValue({start: null, break: null, stop: null});
         break;
       case 5:
-        s2.patchValue({break: '00:00'});
+        s2.patchValue({break: null});
         break;
       case 6:
-        s2.patchValue({break: '00:00', stop: '00:00'});
+        s2.patchValue({break: null, stop: null});
         break;
     }
     this.calculatePlanHours();
@@ -1053,8 +1079,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
     const p4 = this.workdayForm.get('planned.shift4')?.value as { start: string; break: string; stop: string };
     const p5 = this.workdayForm.get('planned.shift5')?.value as { start: string; break: string; stop: string };
 
-    this.data.planningPrDayModels.plannedStartOfShift1 = this.convertTimeToMinutes(p1?.start);
-    this.data.planningPrDayModels.plannedEndOfShift1 = this.convertTimeToMinutes(p1?.stop);
+    this.data.planningPrDayModels.plannedStartOfShift1 = this.convertTimeToMinutes(p1?.start ?? '00:00');
+    this.data.planningPrDayModels.plannedEndOfShift1 = this.convertTimeToMinutes(p1?.stop ?? '00:00');
     this.data.planningPrDayModels.plannedBreakOfShift1 = this.convertTimeToMinutes(p1?.break ?? '00:00');
 
     this.data.planningPrDayModels.plannedStartOfShift2 = this.convertTimeToMinutes(p2?.start ?? '00:00');
@@ -1124,7 +1150,39 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // Rens paidOutFlex
     this.data.planningPrDayModels.paidOutFlex =
       this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
-    this.data.planningPrDayModels.commentOffice = this.workdayForm.get('commentOffice')?.value;
+  }
+
+  private getPlannedShiftMinutes(
+    start: number | null,
+    end: number | null,
+    breakMinutes: number | null
+  ): number {
+    if (start === null || end === null || start === end) {
+      return 0;
+    }
+
+    let duration = end - start;
+
+    if (end <= start) {
+      duration = (1440 - start) + end;
+    }
+
+    if (breakMinutes) {
+      duration -= breakMinutes;
+    }
+
+    return Math.max(0, duration);
+  }
+
+  markAllAsTouched(control: AbstractControl) {
+    if (control instanceof FormControl) {
+      control.markAsTouched({ onlySelf: true });
+    } else if (control instanceof FormGroup) {
+      Object.values(control.controls).forEach((c) => this.markAllAsTouched(c));
+      control.markAsTouched({ onlySelf: true });
+    } else if (control instanceof FormArray) {
+      control.controls.forEach((c) => this.markAllAsTouched(c));
+    }
   }
 
   private getPlannedShiftMinutes(

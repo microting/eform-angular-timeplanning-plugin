@@ -118,8 +118,8 @@ const secondUpdateActualTexts = [
   { date: nextWeekDates[2], start1StartedAt: '07:15', stop1StoppedAt: '16:00', pause1Id: '01:00', start2StartedAt: '17:00', stop2StoppedAt: '20:00', pause2Id: '00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert97.03', flexToDate: '97.03', flexIncludingToday: '97.03', nettoHours: '10.25', todaysFlex: '0.00', paidOutFlex: 0, calculatedHours: '10.25' },
   { date: nextWeekDates[3], start1StartedAt: '06:00', stop1StoppedAt: '12:00', pause1Id: '00:30', start2StartedAt: '18:00', stop2StoppedAt: '20:00', pause2Id: '00:30', plannedHours: '8:00', flexBalanceToDate: 'swap_vert97.03', flexToDate: '97.03', flexIncludingToday: '97.03', nettoHours: '7.00', todaysFlex: '0.00', paidOutFlex: 0, calculatedHours: '7' },
   { date: nextWeekDates[4], start1StartedAt: '06:00', stop1StoppedAt: '12:00' , pause1Id: '01:50' , start2StartedAt: '18:00' , stop2StoppedAt: '20:00' , pause2Id: '01:50' , plannedHours: '8.0' , flexBalanceToDate: 'swap_vert94.70' , flexToDate: '97.03' , flexIncludingToday: '94.70' , nettoHours: '4.33' , todaysFlex: '-2.33' , paidOutFlex : 0, calculatedHours : 6.666666666666667 },
-  { date : nextWeekDates[5] , start1StartedAt : '00:00' , stop1StoppedAt : '00:00' , pause1Id : '00:00' , start2StartedAt : '00:00' , stop2StoppedAt : '00:00' , pause2Id : '00:00' , plannedHours : '' , flexBalanceToDate : 'swap_vert88.36' , flexToDate : '94.70' , flexIncludingToday : '88.36' , nettoHours : '0.00' , todaysFlex : '-6.33' , paidOutFlex : 0 , calculatedHours : 6.333333333333333 },
-  { date : lastWeekDates[6] , start1StartedAt : '06:00' , stop1StoppedAt : '14:00' , pause1Id : '00:30' , start2StartedAt : '00:00' , stop2StoppedAt : '00:00' , pause2Id : '00:00' , plannedHours : '8:00' , flexBalanceToDate : 'swap_vert88.36' , flexToDate : '88.36' , flexIncludingToday : '88.36' , nettoHours : '7.50' , todaysFlex : '0.00' , paidOutFlex : 0 , calculatedHours : '7.5' }
+  { date : nextWeekDates[5] , start1StartedAt : '' , stop1StoppedAt : '' , pause1Id : '' , start2StartedAt : '' , stop2StoppedAt : '' , pause2Id : '' , plannedHours : '' , flexBalanceToDate : 'swap_vert88.36' , flexToDate : '94.70' , flexIncludingToday : '88.36' , nettoHours : '0.00' , todaysFlex : '-6.33' , paidOutFlex : 0 , calculatedHours : 6.333333333333333 },
+  { date : lastWeekDates[6] , start1StartedAt : '06:00' , stop1StoppedAt : '14:00' , pause1Id : '00:30' , start2StartedAt : '' , stop2StoppedAt : '' , pause2Id : '' , plannedHours : '8:00' , flexBalanceToDate : 'swap_vert88.36' , flexToDate : '88.36' , flexIncludingToday : '88.36' , nettoHours : '7.50' , todaysFlex : '0.00' , paidOutFlex : 0 , calculatedHours : '7.5' }
 ];
 
 describe('Dashboard edit values', () => {
@@ -144,7 +144,7 @@ describe('Dashboard edit values', () => {
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
 
-      if (secondUpdateActualTexts[i].start1StartedAt !== '') {
+      if (secondUpdateActualTexts[i].start1StartedAt !== '' && secondUpdateActualTexts[i].start1StartedAt !== '00:00') {
         cy.get(`#start1StartedAt`).click();
         // eslint-disable-next-line max-len
         let degrees0 = 360 / 12 * parseInt(secondUpdateActualTexts[i].start1StartedAt.split(':')[0]);
@@ -165,7 +165,7 @@ describe('Dashboard edit values', () => {
       }
       cy.get('#start1StartedAt').should('have.value', secondUpdateActualTexts[i].start1StartedAt);
 
-      if (secondUpdateActualTexts[i].stop1StoppedAt !== '') {
+      if (secondUpdateActualTexts[i].stop1StoppedAt !== '' && secondUpdateActualTexts[i].stop1StoppedAt !== '00:00') {
         cy.get(`#stop1StoppedAt`).click();
         // eslint-disable-next-line max-len
         let degrees1 = 360 / 12 * parseInt(secondUpdateActualTexts[i].stop1StoppedAt.split(':')[0]);
@@ -189,7 +189,7 @@ describe('Dashboard edit values', () => {
       }
       cy.get('#stop1StoppedAt').should('have.value', secondUpdateActualTexts[i].stop1StoppedAt);
 
-      if (secondUpdateActualTexts[i].pause1Id !== '' || secondUpdateActualTexts[i].pause1Id !== '00:00') {
+      if (secondUpdateActualTexts[i].pause1Id !== '' && secondUpdateActualTexts[i].pause1Id !== '00:00') {
         cy.get(`#pause1Id`).click();
         // eslint-disable-next-line max-len
         let degrees2 = 360 / 12 * parseInt(secondUpdateActualTexts[i].pause1Id.split(':')[0]);
@@ -212,10 +212,10 @@ describe('Dashboard edit values', () => {
         cy.get('.timepicker-button span').contains('Ok').click();
         cy.get('#pause1Id').should('have.value', secondUpdateActualTexts[i].pause1Id);
       } else {
-        cy.get('#pause1Id').should('have.value', '00:00');
+        cy.get('#pause1Id').should('have.value', '');
       }
 
-      if (secondUpdateActualTexts[i].start2StartedAt !== '' || secondUpdateActualTexts[i].start2StartedAt !== '00:00') {
+      if (secondUpdateActualTexts[i].start2StartedAt !== '' && secondUpdateActualTexts[i].start2StartedAt !== '00:00') {
         cy.get(`#start2StartedAt`).click();
         // eslint-disable-next-line max-len
         let degrees3 = 360 / 12 * parseInt(secondUpdateActualTexts[i].start2StartedAt.split(':')[0]);
@@ -239,7 +239,7 @@ describe('Dashboard edit values', () => {
       }
       cy.get('#start2StartedAt').should('have.value', secondUpdateActualTexts[i].start2StartedAt);
 
-      if (secondUpdateActualTexts[i].stop2StoppedAt !== '' || secondUpdateActualTexts[i].stop2StoppedAt !== '00:00' ) {
+      if (secondUpdateActualTexts[i].stop2StoppedAt !== '' && secondUpdateActualTexts[i].stop2StoppedAt !== '00:00' ) {
         cy.get(`#stop2StoppedAt`).click();
         // eslint-disable-next-line max-len
         let degrees4 = 360 / 12 * parseInt(secondUpdateActualTexts[i].stop2StoppedAt.split(':')[0]);
@@ -263,7 +263,7 @@ describe('Dashboard edit values', () => {
       }
       cy.get('#stop2StoppedAt').should('have.value', secondUpdateActualTexts[i].stop2StoppedAt);
 
-      if (secondUpdateActualTexts[i].pause2Id !== '' || secondUpdateActualTexts[i].pause2Id !== '00:00') {
+      if (secondUpdateActualTexts[i].pause2Id !== '' && secondUpdateActualTexts[i].pause2Id !== '00:00') {
         cy.get(`#pause2Id`).click();
         // eslint-disable-next-line max-len
         let degrees5 = 360 / 12 * parseInt(secondUpdateActualTexts[i].pause2Id.split(':')[0]);
