@@ -1023,6 +1023,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
       if (changedKey !== 'DayOff') {
         this.data.planningPrDayModels.nettoHoursOverrideActive = true;
         this.data.planningPrDayModels.nettoHoursOverride = this.data.planningPrDayModels.planHours;
+        this.workdayForm.get('nettoHoursOverride')?.setValue(this.data.planningPrDayModels.planHours);
       } else {
         this.data.planningPrDayModels.nettoHoursOverrideActive = false;
       }
@@ -1332,8 +1333,10 @@ export class WorkdayEntityDialogComponent implements OnInit {
       plannedTimeInMinutes += this.getPlannedShiftMinutes(start, end, brk);
     }
 
-    m.planHours = plannedTimeInMinutes / 60;
-    this.workdayForm.get('planHours')?.setValue(m.planHours, {emitEvent: false});
+    if (plannedTimeInMinutes !== 0) {
+      m.planHours = plannedTimeInMinutes / 60;
+      this.workdayForm.get('planHours')?.setValue(m.planHours, {emitEvent: false});
+    }
 
     // Summer actual
     let actualTimeInMinutes = 0;
