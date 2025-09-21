@@ -194,7 +194,7 @@
         </mat-form-field>
       </div>
     </mat-tab>
-    <mat-tab label="{{ 'Auto break calculation settings' | translate }}" *ngIf="data.autoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
+    <mat-tab label="{{ 'Auto break calculation settings' | translate }}" *ngIf="data.autoBreakCalculationActive && selectCurrentUserIsAdmin$ | async">
       <ng-container *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
         <div class="d-flex flex-row">
           <mat-form-field class="p-1">
