@@ -352,3 +352,5 @@ MigrationBackup/
 eform-client/.idea/
 /eFormAPI/eFormAPI.Web
 .idea
+
+.DS_Store

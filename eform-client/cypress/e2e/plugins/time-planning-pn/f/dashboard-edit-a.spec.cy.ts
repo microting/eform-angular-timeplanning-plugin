@@ -14,33 +14,16 @@ describe('Dashboard edit values', () => {
     cy.get('.ng-option').contains('ac ad').click();
     cy.get('#cell0_0').click();
 
-    cy.get('#plannedStartOfShift1')
-      .closest('.flex-row')
-      .find('button mat-icon')
-      .contains('delete')
-      .click({force: true});
-    cy.wait(500);
-
-    cy.get('#plannedEndOfShift1')
-      .closest('.flex-row')
-      .find('button mat-icon')
-      .contains('delete')
-      .click({force: true});
-    cy.wait(500);
-
-    cy.get('#start1StartedAt')
-      .closest('.flex-row')
-      .find('button mat-icon')
-      .contains('delete')
-      .click({force: true});
-    cy.wait(500);
-
-    cy.get('#stop1StoppedAt')
-      .closest('.flex-row')
-      .find('button mat-icon')
-      .contains('delete')
-      .click({force: true});
-    cy.wait(500);
+    ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
+      (selector) => {
+        cy.get(selector)
+          .closest('.flex-row')
+          .find('button mat-icon')
+          .contains('delete')
+          .click({ force: true });
+        cy.wait(500);
+      }
+    );
   });
 
   // Set a timepicker value
