@@ -46,7 +46,7 @@
 <!--          {{ 'Use detailed pause editing' | translate }}-->
 <!--        </mat-checkbox>-->
 <!--      </div>-->
-      <div class="d-flex flex-row" *ngIf="!data.resigned && data.globalAutoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
+      <div class="d-flex flex-row" *ngIf="!data.resigned && data.globalAutoBreakCalculationActive">
         <!-- data.autoBreakCalculationActive -->
         <mat-checkbox class="p-1"
                       [id]="'autoBreakCalculationActive'"
