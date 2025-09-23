@@ -920,7 +920,7 @@ public class TimePlanningPlanningService(
 
             return new OperationResult(
                 true,
-                localizationService.GetString("SuccessfullyUpdatedPlanning"));
+                localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
         }
         catch (Exception e)
         {
@@ -1383,7 +1383,7 @@ public class TimePlanningPlanningService(
 
             return new OperationResult(
                 true,
-                localizationService.GetString("SuccessfullyUpdatedPlanning"));
+                localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
         }
         catch (Exception e)
         {
