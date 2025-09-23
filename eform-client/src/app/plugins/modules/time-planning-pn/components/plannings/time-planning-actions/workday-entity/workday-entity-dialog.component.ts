@@ -1149,8 +1149,13 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.planningPrDayModels.nettoHoursOverride = this.workdayForm.get('nettoHoursOverride')?.value;
     this.data.planningPrDayModels.commentOffice = this.workdayForm.get('commentOffice')?.value;
     // Rens paidOutFlex
-    this.data.planningPrDayModels.paidOutFlex =
-      this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
+
+    // let paidOutFlex = this.data.planningPrDayModels.paidOutFlex.toString();
+    if (this.data.planningPrDayModels.paidOutFlex.toString().includes(',')) {
+      this.data.planningPrDayModels.paidOutFlex = parseFloat(
+        this.data.planningPrDayModels.paidOutFlex.toString().replace(',', '.')
+      );
+    }
   }
 
   private getPlannedShiftMinutes(
