@@ -463,19 +463,19 @@ export class WorkdayEntityDialogComponent implements OnInit {
   private actualShiftDurationValidator(group: AbstractControl): ValidationErrors | null {
     const startControl = group.get('start');
     const stopControl = group.get('stop');
-    const pauseControl = group.get('pause');
+    const breakControl = group.get('pause');
 
     const start = startControl?.value as string;
     const stop = stopControl?.value as string;
-    const pause = pauseControl?.value as string;
+    const brk = breakControl?.value as string;
 
-    if (!start || !pause) {
+    if (!start || !stop) {
       return null;
     }
 
     const startMin = this.getMinutes(start);
     const stopMin = this.getMinutes(stop);
-    const breakMin = this.getMinutes(pause);
+    const breakMin = this.getMinutes(brk);
 
     const setError = (control: AbstractControl | null, key: string, value: any = true) => {
       if (!control) {
@@ -509,7 +509,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
       return null;
     }
 
-    // Validate same start/pause
+    // Validate same start/stop
     if (startMin === stopMin && (startMin !== 0 && stopMin !== 0)) {
       setError(startControl, 'sameStartStop', 'Start and Stop cannot be the same');
       setError(stopControl, 'sameStartStop', 'Start and Stop cannot be the same');
@@ -517,6 +517,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
       removeError(startControl, 'sameStartStop');
       removeError(stopControl, 'sameStartStop');
     }
+
     // Till midnight sameday
     const adjustedStop = stopMin === 0 ? 1440 : stopMin;
     let duration = adjustedStop - startMin;
@@ -534,29 +535,21 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // Break time validation
     if (breakMin !== null) {
       if (breakMin < 0) {
-        setError(pauseControl, 'negativeBreak', 'Break cannot be negative');
+        setError(breakControl, 'negativeBreak', 'Break cannot be negative');
       } else {
-        removeError(pauseControl, 'negativeBreak');
+        removeError(breakControl, 'negativeBreak');
       }
 
       if (breakMin >= duration) {
         setError(
-          pauseControl,
+          breakControl,
           'breakTooLong',
           'Break cannot be equal or longer than shift duration',
         );
       } else {
-        removeError(pauseControl, 'breakTooLong');
+        removeError(breakControl, 'breakTooLong');
       }
     }
-
-    // Disallow pause = 00:00
-    if (breakMin === 0) {
-      setError(pauseControl, 'invalidPause', 'Pause cannot be 00:00');
-    } else {
-      removeError(pauseControl, 'invalidPause');
-    }
-
 
     if (duration > 24 * 60) {
       setError(group, 'shiftTooLong', 'Shift duration cannot exceed 24 hours');
@@ -565,9 +558,9 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
 
     if (breakMin && breakMin >= duration) {
-      setError(pauseControl, 'invalidBreak', 'Break must be shorter than shift duration');
+      setError(breakControl, 'invalidBreak', 'Break must be shorter than shift duration');
     } else {
-      removeError(pauseControl, 'invalidBreak');
+      removeError(breakControl, 'invalidBreak');
     }
 
     return null;
@@ -713,78 +706,104 @@ export class WorkdayEntityDialogComponent implements OnInit {
   }
 
   private updateDisabledStates() {
-    // ---- PLANNED, SHIFT 1 ----
+    // Planned
     const p1Start = this.getCtrl('planned.shift1.start').value as string | null;
     const p1Stop = this.getCtrl('planned.shift1.stop').value as string | null;
     const p2Start = this.getCtrl('planned.shift2.start').value as string | null;
     const p2Stop = this.getCtrl('planned.shift2.stop').value as string | null;
 
-    if (!p1Start || !p1Stop || (p1Start === '00:00' && p1Stop === '00:00')) {
-      this.setDisabled('planned.shift1.break', true);
-      this.setDisabled('planned.shift1.stop', false);
-      this.setDisabled('planned.shift2.start', true);
-      this.setDisabled('planned.shift2.break', true);
-      this.setDisabled('planned.shift2.stop', true);
-      this.setDisabled('planned.shift3.start', true);
-      this.setDisabled('planned.shift3.break', true);
-      this.setDisabled('planned.shift3.stop', true);
-      this.setDisabled('planned.shift4.start', true);
-      this.setDisabled('planned.shift4.break', true);
-      this.setDisabled('planned.shift4.stop', true);
-      this.setDisabled('planned.shift5.start', true);
-      this.setDisabled('planned.shift5.break', true);
-      this.setDisabled('planned.shift5.stop', true);
+    const isSet = (time: string | null) => !!time && time !== '00:00';
+
+    // Plan hours enabled only if shift 1 start & stop are empty or 00:00
+    if ((!p1Start && !p1Stop) || (p1Start === '00:00' && p1Stop === '00:00')) {
       this.setDisabled('planHours', false);
     } else {
       this.setDisabled('planHours', true);
-      this.setDisabled('planned.shift1.break', false);
+    }
+
+    // Shift 1
+    if (isSet(p1Start) || p1Start == '00:00') {
       this.setDisabled('planned.shift1.stop', false);
+    } else {
+      this.setDisabled('planned.shift1.stop', true);
+    }
+
+    if (isSet(p1Stop)) {
+      this.setDisabled('planned.shift1.break', false);
       this.setDisabled('planned.shift2.start', false);
+    } else {
+      this.setDisabled('planned.shift1.break', true);
+      this.setDisabled('planned.shift2.start', true);
     }
 
-    if (p2Start && p2Start !== '00:00') {
+    // Shift 2
+    if (isSet(p2Start)) {
       this.setDisabled('planned.shift2.stop', false);
-      this.setDisabled('planned.shift3.start', false);
-    }
-    if (p2Stop && p2Stop !== '00:00') {
-      this.setDisabled('planned.shift2.break', false);
+    } else {
+      this.setDisabled('planned.shift2.stop', true);
     }
 
+    if (isSet(p2Stop)) {
+      this.setDisabled('planned.shift2.break', false);
+      if (this.data.assignedSiteModel.thirdShiftActive)
+        {this.setDisabled('planned.shift3.start', false);}
+    } else {
+      this.setDisabled('planned.shift2.break', true);
+      if (this.data.assignedSiteModel.thirdShiftActive)
+        {this.setDisabled('planned.shift3.start', true);}
+    }
+
+    // Shift 3
     if (this.data.assignedSiteModel.thirdShiftActive) {
       const p3Start = this.getCtrl('planned.shift3.start').value as string | null;
       const p3Stop = this.getCtrl('planned.shift3.stop').value as string | null;
-      if (p3Start !== '00:00') {
-        this.setDisabled('planned.shift3.stop', false);
-        this.setDisabled('planned.shift4.start', false);
-      }
-      if (p3Stop !== '00:00') {
+
+      if (isSet(p3Start)) {this.setDisabled('planned.shift3.stop', false);}
+      else {this.setDisabled('planned.shift3.stop', true);}
+
+      if (isSet(p3Stop)) {
         this.setDisabled('planned.shift3.break', false);
+        if (this.data.assignedSiteModel.fourthShiftActive)
+          {this.setDisabled('planned.shift4.start', false);}
+      } else {
+        this.setDisabled('planned.shift3.break', true);
+        if (this.data.assignedSiteModel.fourthShiftActive)
+          {this.setDisabled('planned.shift4.start', true);}
       }
     }
 
+    // Shift 4
     if (this.data.assignedSiteModel.fourthShiftActive) {
       const p4Start = this.getCtrl('planned.shift4.start').value as string | null;
       const p4Stop = this.getCtrl('planned.shift4.stop').value as string | null;
-      if (p4Start !== '00:00') {
-        this.setDisabled('planned.shift4.stop', false);
-        this.setDisabled('planned.shift5.start', false);
-      }
-      if (p4Stop !== '00:00') {
+
+      if (isSet(p4Start)) {this.setDisabled('planned.shift4.stop', false);}
+      else {this.setDisabled('planned.shift4.stop', true);}
+
+      if (isSet(p4Stop)) {
         this.setDisabled('planned.shift4.break', false);
+        if (this.data.assignedSiteModel.fifthShiftActive)
+          {this.setDisabled('planned.shift5.start', false);}
+      } else {
+        this.setDisabled('planned.shift4.break', true);
+        if (this.data.assignedSiteModel.fifthShiftActive)
+          {this.setDisabled('planned.shift5.start', true);}
       }
     }
 
+    // Shift 5
     if (this.data.assignedSiteModel.fifthShiftActive) {
       const p5Start = this.getCtrl('planned.shift5.start').value as string | null;
       const p5Stop = this.getCtrl('planned.shift5.stop').value as string | null;
-      if (p5Start !== '00:00') {
-        this.setDisabled('planned.shift5.stop', false);
-      }
-      if (p5Stop !== '00:00') {
-        this.setDisabled('planned.shift5.break', false);
-      }
+
+      if (isSet(p5Start)) {this.setDisabled('planned.shift5.stop', false);}
+      else {this.setDisabled('planned.shift5.stop', true);}
+
+      if (isSet(p5Stop)) {this.setDisabled('planned.shift5.break', false);}
+      else {this.setDisabled('planned.shift5.break', true);}
     }
 
+    // Actual
     const a1Start = this.getCtrl('actual.shift1.start').value as string | null;
     const a1Stop = this.getCtrl('actual.shift1.stop').value as string | null;
 
@@ -1015,10 +1034,16 @@ export class WorkdayEntityDialogComponent implements OnInit {
   resetPlannedTimes(number: number) {
     const s1 = this.workdayForm.get('planned.shift1') as FormGroup;
     const s2 = this.workdayForm.get('planned.shift2') as FormGroup;
+    const s3 = this.workdayForm.get('planned.shift3') as FormGroup;
+    const s4 = this.workdayForm.get('planned.shift4') as FormGroup;
+    const s5 = this.workdayForm.get('planned.shift5') as FormGroup;
     switch (number) {
       case 1:
         s1.patchValue({start: null, break: null, stop: null});
         s2.patchValue({start: null, break: null, stop: null});
+        s3.patchValue({start: null, break: null, stop: null});
+        s4.patchValue({start: null, break: null, stop: null});
+        s5.patchValue({start: null, break: null, stop: null});
         break;
       case 2:
         s1.patchValue({break: null});
@@ -1026,15 +1051,57 @@ export class WorkdayEntityDialogComponent implements OnInit {
       case 3:
         s1.patchValue({break: null, stop: null});
         s2.patchValue({start: null, break: null, stop: null});
+        s3.patchValue({start: null, break: null, stop: null});
+        s4.patchValue({start: null, break: null, stop: null});
+        s5.patchValue({start: null, break: null, stop: null});
         break;
       case 4:
         s2.patchValue({start: null, break: null, stop: null});
+        s3.patchValue({start: null, break: null, stop: null});
+        s4.patchValue({start: null, break: null, stop: null});
+        s5.patchValue({start: null, break: null, stop: null});
         break;
       case 5:
         s2.patchValue({break: null});
         break;
       case 6:
         s2.patchValue({break: null, stop: null});
+        s3.patchValue({start: null, break: null, stop: null});
+        s4.patchValue({start: null, break: null, stop: null});
+        s5.patchValue({start: null, break: null, stop: null});
+        break;
+      case 7:
+        s3.patchValue({start: null, break: null, stop: null});
+        s4.patchValue({start: null, break: null, stop: null});
+        s5.patchValue({start: null, break: null, stop: null});
+        break;
+      case 8:
+        s3.patchValue({break: null});
+        break;
+      case 9:
+        s3.patchValue({break: null, stop: null});
+        s4.patchValue({start: null, break: null, stop: null});
+        s5.patchValue({start: null, break: null, stop: null});
+        break;
+      case 10:
+        s4.patchValue({start: null, break: null, stop: null});
+        s5.patchValue({start: null, break: null, stop: null});
+        break;
+      case 11:
+        s4.patchValue({break: null});
+        break;
+      case 12:
+        s4.patchValue({break: null, stop: null});
+        s5.patchValue({start: null, break: null, stop: null});
+        break;
+      case 13:
+        s5.patchValue({start: null, break: null, stop: null});
+        break;
+      case 14:
+        s5.patchValue({break: null});
+        break;
+      case 15:
+        s5.patchValue({break: null, stop: null});
         break;
     }
     this.calculatePlanHours();
@@ -1045,10 +1112,16 @@ export class WorkdayEntityDialogComponent implements OnInit {
   resetActualTimes(number: number) {
     const a1 = this.workdayForm.get('actual.shift1') as FormGroup;
     const a2 = this.workdayForm.get('actual.shift2') as FormGroup;
+    const a3 = this.workdayForm.get('actual.shift3') as FormGroup;
+    const a4 = this.workdayForm.get('actual.shift4') as FormGroup;
+    const a5 = this.workdayForm.get('actual.shift5') as FormGroup;
     switch (number) {
       case 1:
         a1.patchValue({start: null, pause: null, stop: null});
         a2.patchValue({start: null, pause: null, stop: null});
+        a3.patchValue({start: null, pause: null, stop: null});
+        a4.patchValue({start: null, pause: null, stop: null});
+        a5.patchValue({start: null, pause: null, stop: null});
         break;
       case 2:
         a1.patchValue({pause: null});
@@ -1056,15 +1129,57 @@ export class WorkdayEntityDialogComponent implements OnInit {
       case 3:
         a1.patchValue({pause: null, stop: null});
         a2.patchValue({start: null, pause: null, stop: null});
+        a3.patchValue({start: null, pause: null, stop: null});
+        a4.patchValue({start: null, pause: null, stop: null});
+        a5.patchValue({start: null, pause: null, stop: null});
         break;
       case 4:
         a2.patchValue({start: null, pause: null, stop: null});
+        a3.patchValue({start: null, pause: null, stop: null});
+        a4.patchValue({start: null, pause: null, stop: null});
+        a5.patchValue({start: null, pause: null, stop: null});
         break;
       case 5:
         a2.patchValue({pause: null});
         break;
       case 6:
         a2.patchValue({pause: null, stop: null});
+        a3.patchValue({start: null, pause: null, stop: null});
+        a4.patchValue({start: null, pause: null, stop: null});
+        a5.patchValue({start: null, pause: null, stop: null});
+        break;
+      case 7:
+        a3.patchValue({start: null, pause: null, stop: null});
+        a4.patchValue({start: null, pause: null, stop: null});
+        a5.patchValue({start: null, pause: null, stop: null});
+        break;
+      case 8:
+        a3.patchValue({pause: null});
+        break;
+      case 9:
+        a3.patchValue({pause: null, stop: null});
+        a4.patchValue({start: null, pause: null, stop: null});
+        a5.patchValue({start: null, pause: null, stop: null});
+        break;
+      case 10:
+        a4.patchValue({start: null, pause: null, stop: null});
+        a5.patchValue({start: null, pause: null, stop: null});
+        break;
+      case 11:
+        a4.patchValue({pause: null});
+        break;
+      case 12:
+        a4.patchValue({pause: null, stop: null});
+        a5.patchValue({start: null, pause: null, stop: null});
+        break;
+      case 13:
+        a5.patchValue({start: null, pause: null, stop: null});
+        break;
+      case 14:
+        a5.patchValue({pause: null});
+        break;
+      case 15:
+        a5.patchValue({pause: null, stop: null});
         break;
     }
     this.calculatePlanHours();

@@ -14,7 +14,7 @@ describe('Dashboard edit values', () => {
     cy.get('.ng-option').contains('ac ad').click();
     cy.get('#cell0_0').click();
 
-    ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
+    ['#plannedStartOfShift1', '#start1StartedAt'].forEach(
       (selector) => {
         cy.get(selector)
           .closest('.flex-row')
@@ -41,7 +41,7 @@ describe('Dashboard edit values', () => {
 
   // Get error message for a given input path
   const assertInputError = (errorTestId: string, expectedMessage: string) => {
-    cy.wait(3000);
+    cy.wait(1000);
     cy.get(`[data-testid="${errorTestId}"]`)
       .should('be.visible')
       .and('contain', expectedMessage);

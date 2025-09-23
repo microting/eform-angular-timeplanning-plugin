@@ -60,7 +60,7 @@ describe('Dashboard edit values', () => {
   afterEach(() => {
     cy.get('#cell0_0').click();
 
-    ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
+    ['#plannedStartOfShift1', '#start1StartedAt'].forEach(
       (selector) => {
         cy.get(selector)
           .closest('.flex-row')
