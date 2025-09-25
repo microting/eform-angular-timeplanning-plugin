@@ -2,56 +2,61 @@
 <div mat-dialog-content>
   <mat-tab-group
     dynamicHeight="false"
+    [formGroup]="assignedSiteForm"
   >
-    <mat-tab label="{{'General' | translate }}">
+    <mat-tab label="{{'General' | translate }}" >
+
       <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsFirstUser$ | async">
         <!-- data.useGoogleSheetAsDefault -->
         <mat-checkbox class="p-1"
                       [id]="'useGoogleSheetAsDefault'"
                       [name]="'useGoogleSheetAsDefault'"
-                      [(ngModel)]="data.useGoogleSheetAsDefault">
+                      formControlName="useGoogleSheetAsDefault">
           <div>
             <div>{{ 'Use Google Sheet as default' | translate }}</div>
             <small class="checkbox-description"></small>
           </div>
         </mat-checkbox>
+
       </div>
-      <div class="d-flex flex-row" *ngIf="!data.resigned && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async" >
+      <div class="d-flex flex-row"
+           *ngIf="!data.resigned && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
         <!-- data.useOnlyPlanHours checkbox -->
         <mat-checkbox class="p-1"
                       [id]="'useOnlyPlanHours'"
                       [name]="'useOnlyPlanHours'"
-                      [(ngModel)]="data.useOnlyPlanHours">
+                      formControlName="useOnlyPlanHours">
           <div>
             <div>{{ 'Use only plan hours' | translate }}</div>
             <small class="checkbox-description"></small>
           </div>
         </mat-checkbox>
       </div>
-<!--      <div class="d-flex flex-row">-->
-<!--         data.useOneMinuteIntervals -->
-<!--        <mat-checkbox class="p-1"-->
-<!--                      [id]="'useOneMinuteIntervals'"-->
-<!--                      [name]="'useOneMinuteIntervals'"-->
-<!--                      [(ngModel)]="data.useOneMinuteIntervals">-->
-<!--          {{ 'Use one minute intervals' | translate }}-->
-<!--        </mat-checkbox>-->
-<!--      </div>-->
-<!--      <div class="d-flex flex-row">-->
-<!--        &lt;!&ndash; data.useDetailedPauseEditing &ndash;&gt;-->
-<!--        <mat-checkbox class="p-1"-->
-<!--                      [id]="'useDetailedPauseEditing'"-->
-<!--                      [name]="'useDetailedPauseEditing'"-->
-<!--                      [(ngModel)]="data.useDetailedPauseEditing">-->
-<!--          {{ 'Use detailed pause editing' | translate }}-->
-<!--        </mat-checkbox>-->
-<!--      </div>-->
-      <div class="d-flex flex-row" *ngIf="!data.resigned && data.globalAutoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
+      <!--      <div class="d-flex flex-row">-->
+      <!--         data.useOneMinuteIntervals -->
+      <!--        <mat-checkbox class="p-1"-->
+      <!--                      [id]="'useOneMinuteIntervals'"-->
+      <!--                      [name]="'useOneMinuteIntervals'"-->
+      <!--                      [(ngModel)]="data.useOneMinuteIntervals">-->
+      <!--          {{ 'Use one minute intervals' | translate }}-->
+      <!--        </mat-checkbox>-->
+      <!--      </div>-->
+      <!--      <div class="d-flex flex-row">-->
+      <!--        &lt;!&ndash; data.useDetailedPauseEditing &ndash;&gt;-->
+      <!--        <mat-checkbox class="p-1"-->
+      <!--                      [id]="'useDetailedPauseEditing'"-->
+      <!--                      [name]="'useDetailedPauseEditing'"-->
+      <!--                      [(ngModel)]="data.useDetailedPauseEditing">-->
+      <!--          {{ 'Use detailed pause editing' | translate }}-->
+      <!--        </mat-checkbox>-->
+      <!--      </div>-->
+      <div class="d-flex flex-row"
+           *ngIf="!data.resigned && data.globalAutoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
         <!-- data.autoBreakCalculationActive -->
         <mat-checkbox class="p-1"
                       [id]="'autoBreakCalculationActive'"
                       [name]="'autoBreakCalculationActive'"
-                      [(ngModel)]="data.autoBreakCalculationActive">
+                      formControlName="autoBreakCalculationActive">
           <div>
             <div>{{ 'Auto break calculation' | translate }}</div>
             <small class="checkbox-description"></small>
@@ -63,70 +68,81 @@
         <mat-checkbox class="p-1"
                       [id]="'allowPersonalTimeRegistration'"
                       [name]="'allowPersonalTimeRegistration'"
-                      [(ngModel)]="data.allowPersonalTimeRegistration">
+                      formControlName="allowPersonalTimeRegistration">
           <div>
             <div>{{ 'Allow time registration on mobile' | translate }}</div>
-            <small class="checkbox-description">{{'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.' | translate}}</small>
+            <small
+              class="checkbox-description">{{ 'Enter start time, stop time, and total break. Select Allow editing of work hours on mobile to edit times.' | translate }}</small>
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="!data.daysBackInTimeAllowedEditingEnabled && !data.resigned && data.allowPersonalTimeRegistration && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row"
+           *ngIf="!data.daysBackInTimeAllowedEditingEnabled && !data.resigned && data.allowPersonalTimeRegistration && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowEditOfRegistrations -->
         <mat-checkbox class="p-1"
                       [id]="'allowEditOfRegistrations'"
                       [name]="'allowEditOfRegistrations'"
-                      [(ngModel)]="data.allowEditOfRegistrations">
+                      formControlName="allowEditOfRegistrations">
           <div>
             <div>{{ 'Allow editing of working hours on mobile' | translate }}</div>
-            <small class="checkbox-description">{{'Start time, stop time and breaks can be edited.' | translate}}</small>
+            <small
+              class="checkbox-description">{{ 'Start time, stop time and breaks can be edited.' | translate }}</small>
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="!data.resigned && data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row"
+           *ngIf="!data.resigned && data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowPersonalTimeRegistration -->
         <mat-checkbox class="p-1"
                       [id]="'usePunchClock'"
                       [name]="'usePunchClock'"
-                      [(ngModel)]="data.usePunchClock">
+                      formControlName="usePunchClock">
           <div>
             <div>{{ 'Use time clock on mobile' | translate }}</div>
-            <small class="checkbox-description">{{'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.' | translate}}</small>
+            <small
+              class="checkbox-description">{{ 'Working hours are recorded by pressing Start/Stop working hours. Breaks are recorded by pressing Start/Stop break time. Select Allow editing of working hours on mobile to edit times.' | translate }}</small>
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="!data.daysBackInTimeAllowedEditingEnabled && !data.resigned && data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours && data.usePunchClock && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row"
+           *ngIf="!data.daysBackInTimeAllowedEditingEnabled && !data.resigned && data.allowPersonalTimeRegistration && !data.allowAcceptOfPlannedHours && data.usePunchClock && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowPersonalTimeRegistration -->
         <mat-checkbox class="p-1"
                       [id]="'usePunchClockWithAllowRegisteringInHistory'"
                       [name]="'usePunchClockWithAllowRegisteringInHistory'"
-                      [(ngModel)]="data.usePunchClockWithAllowRegisteringInHistory">
+                      formControlName="usePunchClockWithAllowRegisteringInHistory">
           <div>
             <div>{{ 'Allow entry of unregistered working hours on mobile' | translate }}</div>
-            <small class="checkbox-description">{{ 'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.' | translate }}</small>
+            <small
+              class="checkbox-description">{{ 'Enter start time, stop time, and total break time back in time. Select Allow editing of work hours on mobile to edit times.' | translate }}</small>
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="!data.resigned && data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row"
+           *ngIf="!data.resigned && data.allowPersonalTimeRegistration && !data.usePunchClock && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowAcceptOfPlannedHours -->
         <mat-checkbox class="p-1"
                       [id]="'allowAcceptOfPlannedHours'"
                       [name]="'allowAcceptOfPlannedHours'"
-                      [(ngModel)]="data.allowAcceptOfPlannedHours">
+                      formControlName="allowAcceptOfPlannedHours">
           <div>
             <div>{{ 'Allow receipt for standard time on mobile' | translate }}</div>
-            <small class="checkbox-description">{{'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.' | translate}}</small>
+            <small
+              class="checkbox-description">{{ 'Scheduled working hours can be approved with a single click. Scheduled working hours cannot be edited.' | translate }}</small>
           </div>
         </mat-checkbox>
       </div>
-      <div class="d-flex flex-row" *ngIf="!data.resigned && data.allowPersonalTimeRegistration && data.allowEditOfRegistrations && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row"
+           *ngIf="!data.resigned && data.allowPersonalTimeRegistration && data.allowEditOfRegistrations && selectCurrentUserIsAdmin$ | async">
         <!-- data.allowAcceptOfPlannedHours -->
         <mat-checkbox class="p-1"
                       [id]="'daysBackInTimeAllowedEditingEnabled'"
                       [name]="'daysBackInTimeAllowedEditingEnabled'"
-                      [(ngModel)]="data.daysBackInTimeAllowedEditingEnabled">
+                      formControlName="daysBackInTimeAllowedEditingEnabled">
           <div>
             <div>{{ 'Allow x days back in time editing' | translate }}</div>
-            <small class="checkbox-description">{{'Enabling this option allows the user to edit x days back in time, default is 2.' | translate}}</small>
+            <small
+              class="checkbox-description">{{ 'Enabling this option allows the user to edit x days back in time, default is 2.' | translate }}</small>
           </div>
         </mat-checkbox>
       </div>
@@ -134,19 +150,20 @@
         <mat-checkbox class="p-1"
                       [id]="'thirdShiftActive'"
                       [name]="'thirdShiftActive'"
-                      [(ngModel)]="data.thirdShiftActive">
+                      formControlName="thirdShiftActive">
           <div>{{ 'Enable third shift' | translate }}</div>
         </mat-checkbox>
         <mat-checkbox class="p-1" *ngIf="!data.resigned && data.thirdShiftActive && selectCurrentUserIsAdmin$ | async"
                       [id]="'fourthShiftActive'"
                       [name]="'fourthShiftActive'"
-                      [(ngModel)]="data.fourthShiftActive">
+                      formControlName="fourthShiftActive">
           <div>{{ 'Enable fourth shift' | translate }}</div>
         </mat-checkbox>
-        <mat-checkbox class="p-1" *ngIf="!data.resigned && data.fourthShiftActive && data.thirdShiftActive && selectCurrentUserIsAdmin$ | async"
+        <mat-checkbox class="p-1"
+                      *ngIf="!data.resigned && data.fourthShiftActive && data.thirdShiftActive && selectCurrentUserIsAdmin$ | async"
                       [id]="'fifthShiftActive'"
                       [name]="'fifthShiftActive'"
-                      [(ngModel)]="data.fifthShiftActive">
+                      formControlName="fifthShiftActive">
           <div>{{ 'Enable fifth shift' | translate }}</div>
         </mat-checkbox>
       </div>
@@ -154,7 +171,7 @@
         <mat-checkbox class="p-1"
                       [id]="'resigned'"
                       [name]="'resigned'"
-                      [(ngModel)]="data.resigned">
+                      formControlName="resigned">
           <div>{{ 'Resigned' | translate }}</div>
         </mat-checkbox>
         <mat-form-field *ngIf="data.resigned">
@@ -164,39 +181,43 @@
             required
             matInput
             [matDatepicker]="picker"
-            [value]="data.resignedAtDate"
-            (dateChange)="data.resignedAtDate = $event.value"
+            formControlName="resignedAtDate"
             (click)="picker.open()"
           >
           <mat-datepicker #picker></mat-datepicker>
           <mat-error class="text-warn" *ngIf="!data.resignedAtDate">
-            {{'Date is required'| translate}}*
+            {{ 'Date is required'| translate }}*
           </mat-error>
         </mat-form-field>
       </div>
     </mat-tab>
-    <mat-tab label="{{'Plan hours' | translate }}" *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
-      <div class="d-flex flex-row"
-           *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
-        <mat-form-field class="p-1">
-          <mat-label>{{ day | translate }}</mat-label>
-          <input matInput type="text" readonly disabled>
-        </mat-form-field>
-        <mat-form-field class="p-1">
-          <mat-label>{{ 'Plan hours' | translate }}</mat-label>
-          <input
-            type="number"
-            matInput
-            [id]="day.toLowerCase() + 'PlanHours'"
-            [name]="day.toLowerCase() + 'PlanHours'"
-            [(ngModel)]="data[day.toLowerCase() + 'PlanHours']"
-          >
-        </mat-form-field>
+    <mat-tab label="{{'Plan hours' | translate }} "
+             *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+      <div formGroupName="planHours">
+        <div class="d-flex flex-row"
+             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+          <mat-form-field class="p-1">
+            <mat-label>{{ day | translate }}</mat-label>
+            <input matInput type="text" readonly disabled>
+          </mat-form-field>
+          <mat-form-field class="p-1">
+            <mat-label>{{ 'Plan hours' | translate }}</mat-label>
+            <input
+              type="number"
+              matInput
+              [id]="day.toLowerCase() + 'PlanHours'"
+              [name]="day.toLowerCase() + 'PlanHours'"
+              [formControlName]="day.toLowerCase()"
+            >
+          </mat-form-field>
+        </div>
       </div>
     </mat-tab>
-    <mat-tab label="{{ 'Auto break calculation settings' | translate }}" *ngIf="data.autoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
+    <mat-tab  label="{{ 'Auto break calculation settings' | translate }}"
+             *ngIf="data.autoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
+      <div [formGroupName]="'autoBreakSettings'">
       <ng-container *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
-        <div class="d-flex flex-row">
+        <div [formGroupName]="day" class="d-flex flex-row">
           <mat-form-field class="p-1">
             <mat-label>{{ day + ' break time divider in minutes' | translate }}</mat-label>
             <input
@@ -206,14 +227,14 @@
               placeholder="HH:MM"
               [id]="day.toLowerCase() + 'BreakMinutesDivider'"
               [name]="day.toLowerCase() + 'BreakMinutesDivider'"
-              [ngModel]="getConvertedValue(data[day.toLowerCase() + 'BreakMinutesDivider'])"
+              formControlName="breakMinutesDivider"
               [disabled]="!data.autoBreakCalculationActive"
               readonly
             >
             <ngx-material-timepicker
-                #timePicker
-                [format]="24"
-                (timeSet)="setMinutes($event, day.toLowerCase() + 'BreakMinutesDivider')"
+              #timePicker
+              [format]="24"
+              (timeSet)="setAutoBreakValue(day, 'BreakMinutesDivider', $event)"
             ></ngx-material-timepicker>
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -225,13 +246,13 @@
               placeholder="HH:MM"
               [id]="day.toLowerCase() + 'BreakMinutesPrDivider'"
               [name]="day.toLowerCase() + 'BreakMinutesPrDivider'"
-              [ngModel]="getConvertedValue(data[day.toLowerCase() + 'BreakMinutesPrDivider'])"
+              formControlName="breakMinutesPrDivider"
               [disabled]="!data.autoBreakCalculationActive"
               readonly>
             <ngx-material-timepicker
-                #timePickerPrDivider
-                [format]="24"
-                (timeSet)="setMinutes($event, day.toLowerCase() + 'BreakMinutesPrDivider')"
+              #timePickerPrDivider
+              [format]="24"
+              (timeSet)="setAutoBreakValue(day, 'breakMinutesPrDivider', $event)"
             ></ngx-material-timepicker>
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -243,15 +264,15 @@
               placeholder="HH:MM"
               [id]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
               [name]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
-              [ngModel]="getConvertedValue(data[day.toLowerCase() + 'BreakMinutesUpperLimit'])"
+              formControlName="breakMinutesUpperLimit"
               [disabled]="!data.autoBreakCalculationActive"
               readonly
             >
           </mat-form-field>
           <ngx-material-timepicker
-              #timePickerUpperLimit
-              [format]="24"
-              (timeSet)="setMinutes($event, day.toLowerCase() + 'BreakMinutesUpperLimit')"
+            #timePickerUpperLimit
+            [format]="24"
+            (timeSet)="setAutoBreakValue(day, 'BreakMinutesUpperLimit', $event)"
           ></ngx-material-timepicker>
           <div class="pt-4">
             <button
@@ -264,11 +285,14 @@
           </div>
         </div>
       </ng-container>
+      </div>
     </mat-tab>
-    <mat-tab label="{{'1st shift' | translate }}" *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+    <mat-tab  label="{{'1st shift' | translate }}"
+             *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+      <div [formGroupName]="'firstShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
-             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" [formGroupName]="day.toLowerCase()">
           <mat-form-field class="p-1">
             <mat-label>{{ day | translate }}</mat-label>
             <input matInput type="text" readonly disabled>
@@ -282,7 +306,7 @@
               placeholder="HH:MM"
               [id]="'start' + day"
               [name]="'start' + day"
-              [ngModel]="getConvertedValue(data['start' + day], data['end' + day])"
+              formControlName="start"
               (change)="setMinutes($event, 'start' + day)">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -294,7 +318,7 @@
               placeholder="HH:MM"
               [id]="'end' + day"
               [name]="'end' + day"
-              [ngModel]="getConvertedValue(data['end' + day])"
+              formControlName="end"
               (change)="setMinutes($event, 'end' + day)">
           </mat-form-field>
           <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
@@ -306,7 +330,7 @@
               placeholder="HH:MM"
               [id]="'break' + day"
               [name]="'break' + day"
-              [ngModel]="getConvertedValue(data['break' + day])"
+              formControlName="break"
               (change)="setMinutes($event, 'break' + day)">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -316,16 +340,19 @@
               matInput
               [id]="day.toLowerCase() + 'CalculatedHours'"
               [name]="day.toLowerCase() + 'CalculatedHours'"
-              [(ngModel)]="data[day.toLowerCase() + 'CalculatedHours']"
-              readonly disabled>
+              formControlName="calculatedHours"
+              readonly >
           </mat-form-field>
         </div>
       </ng-container>
+      </div>
     </mat-tab>
-    <mat-tab label="{{'2nd shift' | translate }}" *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+    <mat-tab  label="{{'2nd shift' | translate }}"
+             *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+      <div [formGroupName]="'secondShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
-             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" [formGroupName]="day.toLowerCase()">
           <mat-form-field class="p-1">
             <mat-label>{{ day | translate }}</mat-label>
             <input matInput type="text" readonly disabled>
@@ -339,7 +366,7 @@
               placeholder="HH:MM"
               [id]="'start' + day + '2NdShift'"
               [name]="'start' + day + '2NdShift'"
-              [ngModel]="getConvertedValue(data['start' + day + '2NdShift'], data['end' + day + '2NdShift'])"
+              formControlName="start"
               (change)="setMinutes($event, 'start' + day + '2NdShift')">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -351,7 +378,7 @@
               placeholder="HH:MM"
               [id]="'end' + day + '2NdShift'"
               [name]="'end' + day + '2NdShift'"
-              [ngModel]="getConvertedValue(data['end' + day + '2NdShift'])"
+              formControlName="end"
               (change)="setMinutes($event, 'end' + day + '2NdShift')">
           </mat-form-field>
           <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
@@ -363,7 +390,7 @@
               placeholder="HH:MM"
               [id]="'break' + day + '2NdShift'"
               [name]="'break' + day + '2NdShift'"
-              [ngModel]="getConvertedValue(data['break' + day + '2NdShift'])"
+              formControlName="break"
               (change)="setMinutes($event, 'break' + day + '2NdShift')">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -373,16 +400,19 @@
               matInput
               [id]="day.toLowerCase() + 'CalculatedHours'"
               [name]="day.toLowerCase() + 'CalculatedHours'"
-              [(ngModel)]="data[day.toLowerCase() + 'CalculatedHours']"
-              readonly disabled>
+              formControlName="calculatedHours"
+              readonly >
           </mat-form-field>
         </div>
       </ng-container>
+      </div>
     </mat-tab>
-    <mat-tab label="{{'3rd shift' | translate }}" *ngIf="data.thirdShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+    <mat-tab label="{{'3rd shift' | translate }}"
+             *ngIf="data.thirdShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+      <div [formGroupName]="'thirdShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
-             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" [formGroupName]="day.toLowerCase()">
           <mat-form-field class="p-1">
             <mat-label>{{ day | translate }}</mat-label>
             <input matInput type="text" readonly disabled>
@@ -396,7 +426,7 @@
               placeholder="HH:MM"
               [id]="'start' + day + '3RdShift'"
               [name]="'start' + day + '3RdShift'"
-              [ngModel]="getConvertedValue(data['start' + day + '3RdShift'], data['end' + day + '3RdShift'])"
+              formControlName="start"
               (change)="setMinutes($event, 'start' + day + '3RdShift')">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -408,7 +438,7 @@
               placeholder="HH:MM"
               [id]="'end' + day + '3RdShift'"
               [name]="'end' + day + '3RdShift'"
-              [ngModel]="getConvertedValue(data['end' + day + '3RdShift'])"
+              formControlName="end"
               (change)="setMinutes($event, 'end' + day + '3RdShift')">
           </mat-form-field>
           <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
@@ -420,7 +450,7 @@
               placeholder="HH:MM"
               [id]="'break' + day + '3RdShift'"
               [name]="'break' + day + '3RdShift'"
-              [ngModel]="getConvertedValue(data['break' + day + '3RdShift'])"
+              formControlName="break"
               (change)="setMinutes($event, 'break' + day + '3RdShift')">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -430,16 +460,19 @@
               matInput
               [id]="day.toLowerCase() + 'CalculatedHours'"
               [name]="day.toLowerCase() + 'CalculatedHours'"
-              [(ngModel)]="data[day.toLowerCase() + 'CalculatedHours']"
-              readonly disabled>
+              formControlName="calculatedHours"
+              readonly >
           </mat-form-field>
         </div>
       </ng-container>
+      </div>
     </mat-tab>
-    <mat-tab label="{{'4th shift' | translate }}" *ngIf="data.thirdShiftActive && data.fourthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+    <mat-tab label="{{'4th shift' | translate }}"
+             *ngIf="data.thirdShiftActive && data.fourthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+      <div [formGroupName]="'fourthShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
-             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" [formGroupName]="day.toLowerCase()">
           <mat-form-field class="p-1">
             <mat-label>{{ day | translate }}</mat-label>
             <input matInput type="text" readonly disabled>
@@ -453,7 +486,7 @@
               placeholder="HH:MM"
               [id]="'start' + day + '4ThShift'"
               [name]="'start' + day + '4ThShift'"
-              [ngModel]="getConvertedValue(data['start' + day + '4ThShift'], data['end' + day + '4ThShift'])"
+              formControlName="start"
               (change)="setMinutes($event, 'start' + day + '4ThShift')">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -465,7 +498,7 @@
               placeholder="HH:MM"
               [id]="'end' + day + '4ThShift'"
               [name]="'end' + day + '4ThShift'"
-              [ngModel]="getConvertedValue(data['end' + day + '4ThShift'])"
+              formControlName="end"
               (change)="setMinutes($event, 'end' + day + '4ThShift')">
           </mat-form-field>
           <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
@@ -477,7 +510,7 @@
               placeholder="HH:MM"
               [id]="'break' + day + '4ThShift'"
               [name]="'break' + day + '4ThShift'"
-              [ngModel]="getConvertedValue(data['break' + day + '4ThShift'])"
+              formControlName="break"
               (change)="setMinutes($event, 'break' + day + '4ThShift')">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -487,16 +520,19 @@
               matInput
               [id]="day.toLowerCase() + 'CalculatedHours'"
               [name]="day.toLowerCase() + 'CalculatedHours'"
-              [(ngModel)]="data[day.toLowerCase() + 'CalculatedHours']"
-              readonly disabled>
+              formControlName="calculatedHours"
+              readonly >
           </mat-form-field>
         </div>
       </ng-container>
+      </div>
     </mat-tab>
-    <mat-tab label="{{'5th shift' | translate }}" *ngIf="data.thirdShiftActive && data.fourthShiftActive && data.fifthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+    <mat-tab label="{{'5th shift' | translate }}"
+             *ngIf="data.thirdShiftActive && data.fourthShiftActive && data.fifthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+      <div [formGroupName]="'fifthShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
-             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
+             *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" [formGroupName]="day.toLowerCase()">
           <mat-form-field class="p-1">
             <mat-label>{{ day | translate }}</mat-label>
             <input matInput type="text" readonly disabled>
@@ -510,7 +546,7 @@
               placeholder="HH:MM"
               [id]="'start' + day + '5ThShift'"
               [name]="'start' + day + '5ThShift'"
-              [ngModel]="getConvertedValue(data['start' + day + '5ThShift'], data['end' + day + '5ThShift'])"
+              formControlName="start"
               (change)="setMinutes($event, 'start' + day + '5ThShift')">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -522,7 +558,7 @@
               placeholder="HH:MM"
               [id]="'end' + day + '5ThShift'"
               [name]="'end' + day + '5ThShift'"
-              [ngModel]="getConvertedValue(data['end' + day + '5ThShift'])"
+              formControlName="end"
               (change)="setMinutes($event, 'end' + day + '5ThShift')">
           </mat-form-field>
           <mat-form-field class="p-1" *ngIf="!data.autoBreakCalculationActive">
@@ -534,7 +570,7 @@
               placeholder="HH:MM"
               [id]="'break' + day + '5ThShift'"
               [name]="'break' + day + '5ThShift'"
-              [ngModel]="getConvertedValue(data['break' + day + '5ThShift'])"
+              formControlName="break"
               (change)="setMinutes($event, 'break' + day + '5ThShift')">
           </mat-form-field>
           <mat-form-field class="p-1">
@@ -544,17 +580,18 @@
               matInput
               [id]="day.toLowerCase() + 'CalculatedHours'"
               [name]="day.toLowerCase() + 'CalculatedHours'"
-              [(ngModel)]="data[day.toLowerCase() + 'CalculatedHours']"
-              readonly disabled>
+              formControlName="calculatedHours"
+              readonly >
           </mat-form-field>
         </div>
       </ng-container>
+      </div>
     </mat-tab>
   </mat-tab-group>
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
   <button mat-raised-button mat-dialog-close
-  id="cancelButton">
+          id="cancelButton">
     {{ 'Cancel' | translate }}
   </button>
   <button

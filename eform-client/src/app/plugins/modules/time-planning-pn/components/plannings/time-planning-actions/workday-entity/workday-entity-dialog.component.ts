@@ -722,7 +722,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
 
     // Shift 1
-    if (isSet(p1Start) || p1Start == '00:00') {
+    if (isSet(p1Start) || p1Start === '00:00') {
       this.setDisabled('planned.shift1.stop', false);
     } else {
       this.setDisabled('planned.shift1.stop', true);
