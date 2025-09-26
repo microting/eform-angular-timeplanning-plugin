@@ -551,14 +551,6 @@ export class WorkdayEntityDialogComponent implements OnInit {
       }
     }
 
-    // Disallow pause = 00:00
-    if (breakMin === 0) {
-      setError(pauseControl, 'invalidPause', 'Pause cannot be 00:00');
-    } else {
-      removeError(pauseControl, 'invalidPause');
-    }
-
-
     if (duration > 24 * 60) {
       setError(group, 'shiftTooLong', 'Shift duration cannot exceed 24 hours');
     } else {
@@ -754,11 +746,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
     if (isSet(p2Stop)) {
       this.setDisabled('planned.shift2.break', false);
       if (this.data.assignedSiteModel.thirdShiftActive)
-        {this.setDisabled('planned.shift3.start', false);}
+      {this.setDisabled('planned.shift3.start', false);}
     } else {
       this.setDisabled('planned.shift2.break', true);
       if (this.data.assignedSiteModel.thirdShiftActive)
-        {this.setDisabled('planned.shift3.start', true);}
+      {this.setDisabled('planned.shift3.start', true);}
     }
 
     // Shift 3
@@ -772,11 +764,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
       if (isSet(p3Stop)) {
         this.setDisabled('planned.shift3.break', false);
         if (this.data.assignedSiteModel.fourthShiftActive)
-          {this.setDisabled('planned.shift4.start', false);}
+        {this.setDisabled('planned.shift4.start', false);}
       } else {
         this.setDisabled('planned.shift3.break', true);
         if (this.data.assignedSiteModel.fourthShiftActive)
-          {this.setDisabled('planned.shift4.start', true);}
+        {this.setDisabled('planned.shift4.start', true);}
       }
     }
 
@@ -791,11 +783,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
       if (isSet(p4Stop)) {
         this.setDisabled('planned.shift4.break', false);
         if (this.data.assignedSiteModel.fifthShiftActive)
-          {this.setDisabled('planned.shift5.start', false);}
+        {this.setDisabled('planned.shift5.start', false);}
       } else {
         this.setDisabled('planned.shift4.break', true);
         if (this.data.assignedSiteModel.fifthShiftActive)
-          {this.setDisabled('planned.shift5.start', true);}
+        {this.setDisabled('planned.shift5.start', true);}
       }
     }
 
@@ -1272,8 +1264,9 @@ export class WorkdayEntityDialogComponent implements OnInit {
     this.data.planningPrDayModels.nettoHoursOverride = this.workdayForm.get('nettoHoursOverride')?.value;
     this.data.planningPrDayModels.commentOffice = this.workdayForm.get('commentOffice')?.value;
     // Rens paidOutFlex
+    this.data.planningPrDayModels.paidOutFlex =
+      this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
 
-    // let paidOutFlex = this.data.planningPrDayModels.paidOutFlex.toString();
     if (this.data.planningPrDayModels.paidOutFlex.toString().includes(',')) {
       this.data.planningPrDayModels.paidOutFlex = parseFloat(
         this.data.planningPrDayModels.paidOutFlex.toString().replace(',', '.')
@@ -1281,7 +1274,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
   }
 
-  private getPlannedShiftMinutes(
+
+private getPlannedShiftMinutes(
     start: number | null,
     end: number | null,
     breakMinutes: number | null
