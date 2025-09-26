@@ -6,6 +6,16 @@ import {AssignedSiteModel, GlobalAutoBreakSettingsModel} from '../../../../model
 import {selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {Store} from '@ngrx/store';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ValidationErrors,
+  Validators,
+  ReactiveFormsModule,
+  FormControl,
+} from '@angular/forms';
+
 
 @Component({
   selector: 'app-assigned-site-dialog',
@@ -14,18 +24,21 @@ import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planni
   standalone: false
 })
 export class AssignedSiteDialogComponent implements DoCheck, OnInit {
+  assignedSiteForm!: FormGroup;
+
   public selectCurrentUserIsAdmin$ = this.store.select(selectCurrentUserIsAdmin);
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
 
   constructor(
+    private fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: AssignedSiteModel,
     private timePlanningPnSettingsService: TimePlanningPnSettingsService,
     private store: Store
   ) {
     this.previousData = {...data};
-    this.calculateHours();
+    // this.calculateHours();
   }
 
   ngDoCheck(): void {
@@ -46,6 +59,144 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
       today.setHours(0, 0, 0, 0);
       this.data.resignedAtDate = today.toISOString();
     }
+
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+    // autoBreakSettings group
+    const autoBreakGroup = days.reduce((acc, day) => {
+      acc[day] = this.fb.group({
+        breakMinutesDivider: new FormControl(this.data[`${day}BreakMinutesDivider`] ?? null),
+        breakMinutesPrDivider: new FormControl(this.data[`${day}BreakMinutesPrDivider`] ?? null),
+        breakMinutesUpperLimit: new FormControl(this.data[`${day}BreakMinutesUpperLimit`] ?? null),
+      });
+      return acc;
+    }, {} as { [key: string]: FormGroup });
+
+    // planHours group
+    const planHoursGroup = days.reduce((acc, day) => {
+      acc[day] = new FormControl(this.data[`${day}PlanHours`] ?? null);
+      return acc;
+    }, {} as { [key: string]: FormControl });
+
+    // 1st Shift
+    const firstShiftGroup = days.reduce((acc, day) => {
+      const startRaw = this.data[`start${this.capitalize(day)}`] ?? null;
+      const endRaw = this.data[`end${this.capitalize(day)}`] ?? null;
+      const breakRaw = this.data[`break${this.capitalize(day)}`] ?? null;
+
+      acc[day] = this.fb.group({
+        start: new FormControl(this.getConvertedValue(startRaw, endRaw)),
+        end: new FormControl(this.getConvertedValue(endRaw)),
+        break: new FormControl(this.getConvertedValue(breakRaw)),
+        calculatedHours: new FormControl({ value: this.data[`${day.toLowerCase()}CalculatedHours`] ?? null, disabled: true }),
+      });
+      return acc;
+    }, {} as { [key: string]: FormGroup });
+
+    // 2nd Shift
+    const secondShiftGroup = days.reduce((acc, day) => {
+      const startRaw = this.data[`start${this.capitalize(day)}2NdShift`] ?? null;
+      const endRaw = this.data[`end${this.capitalize(day)}2NdShift`] ?? null;
+      const breakRaw = this.data[`break${this.capitalize(day)}2NdShift`] ?? null;
+
+      acc[day.toLowerCase()] = this.fb.group({
+        start: new FormControl(this.getConvertedValue(startRaw, endRaw)),
+        end: new FormControl(this.getConvertedValue(endRaw)),
+        break: new FormControl(this.getConvertedValue(breakRaw)),
+        calculatedHours: new FormControl({ value: this.data[`${day.toLowerCase()}CalculatedHours`] ?? null, disabled: true }),
+      });
+      return acc;
+    }, {} as { [key: string]: FormGroup });
+
+    // 3rd Shift
+    const thirdShiftGroup = days.reduce((acc, day) => {
+      const startRaw = this.data[`start${this.capitalize(day)}3RdShift`] ?? null;
+      const endRaw = this.data[`end${this.capitalize(day)}3RdShift`] ?? null;
+      const breakRaw = this.data[`break${this.capitalize(day)}3RdShift`] ?? null;
+
+      acc[day.toLowerCase()] = this.fb.group({
+        start: new FormControl(this.getConvertedValue(startRaw, endRaw)),
+        end: new FormControl(this.getConvertedValue(endRaw)),
+        break: new FormControl(this.getConvertedValue(breakRaw)),
+        calculatedHours: new FormControl({ value: this.data[`${day.toLowerCase()}CalculatedHours`] ?? null, disabled: true }),
+      });
+      return acc;
+    }, {} as { [key: string]: FormGroup });
+
+    // 4th Shift
+    const fourthShiftGroup = days.reduce((acc, day) => {
+      const startRaw = this.data[`start${this.capitalize(day)}4ThShift`] ?? null;
+      const endRaw = this.data[`end${this.capitalize(day)}4ThShift`] ?? null;
+      const breakRaw = this.data[`break${this.capitalize(day)}4ThShift`] ?? null;
+
+      acc[day.toLowerCase()] = this.fb.group({
+        start: new FormControl(this.getConvertedValue(startRaw, endRaw)),
+        end: new FormControl(this.getConvertedValue(endRaw)),
+        break: new FormControl(this.getConvertedValue(breakRaw)),
+        calculatedHours: new FormControl({ value: this.data[`${day.toLowerCase()}CalculatedHours`] ?? null, disabled: true }),
+      });
+      return acc;
+    }, {} as { [key: string]: FormGroup });
+
+    // 5th Shift
+    const fifthShiftGroup = days.reduce((acc, day) => {
+      const startRaw = this.data[`start${this.capitalize(day)}5ThShift`] ?? null;
+      const endRaw = this.data[`end${this.capitalize(day)}5ThShift`] ?? null;
+      const breakRaw = this.data[`break${this.capitalize(day)}5ThShift`] ?? null;
+
+      acc[day.toLowerCase()] = this.fb.group({
+        start: new FormControl(this.getConvertedValue(startRaw, endRaw)),
+        end: new FormControl(this.getConvertedValue(endRaw)),
+        break: new FormControl(this.getConvertedValue(breakRaw)),
+        // calculatedHours: new FormControl(this.data[`${day.toLowerCase()}CalculatedHours`] ?? null),
+        calculatedHours: new FormControl({ value: this.data[`${day.toLowerCase()}CalculatedHours`] ?? null, disabled: true }),
+      });
+      return acc;
+    }, {} as { [key: string]: FormGroup });
+
+    this.assignedSiteForm = this.fb.group({
+      useGoogleSheetAsDefault: new FormControl(this.data.useGoogleSheetAsDefault),
+      useOnlyPlanHours: new FormControl(this.data.useOnlyPlanHours),
+      autoBreakCalculationActive: new FormControl(this.data.autoBreakCalculationActive),
+      allowPersonalTimeRegistration: new FormControl(this.data.allowPersonalTimeRegistration),
+      allowEditOfRegistrations: new FormControl(this.data.allowEditOfRegistrations),
+      usePunchClock: new FormControl(this.data.usePunchClock),
+      usePunchClockWithAllowRegisteringInHistory: new FormControl(this.data.usePunchClockWithAllowRegisteringInHistory),
+      allowAcceptOfPlannedHours: new FormControl(this.data.allowAcceptOfPlannedHours),
+      daysBackInTimeAllowedEditingEnabled: new FormControl(this.data.daysBackInTimeAllowedEditingEnabled),
+      thirdShiftActive: new FormControl(this.data.thirdShiftActive),
+      fourthShiftActive: new FormControl(this.data.fourthShiftActive),
+      fifthShiftActive: new FormControl(this.data.fifthShiftActive),
+      resigned: new FormControl(this.data.resigned),
+      resignedAtDate: new FormControl(
+        this.data.resigned ? new Date(this.data.resignedAtDate) : new Date(),
+        this.data.resigned ? Validators.required : null
+      ),
+      planHours: this.fb.group(planHoursGroup),
+      autoBreakSettings: this.fb.group(autoBreakGroup),
+      firstShift: this.fb.group(firstShiftGroup),
+      secondShift: this.fb.group(secondShiftGroup),
+      thirdShift: this.fb.group(thirdShiftGroup),
+      fourthShift: this.fb.group(fourthShiftGroup),
+      fifthShift: this.fb.group(fifthShiftGroup),
+    }, {
+      validators: [
+      ],
+    },);
+
+    this.assignedSiteForm.valueChanges.subscribe(formValue => {
+      Object.assign(this.data, formValue);
+    });
+    this.calculateHours();
+  }
+
+  setAutoBreakValue(day: string, control: string, value: string) {
+    const fg = this.assignedSiteForm.get('autoBreakSettings') as FormGroup;
+    fg.get(day)?.get(control)?.setValue(value, { emitEvent: true });
+  }
+
+  private capitalize(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
   hasDataChanged(): boolean {
@@ -53,56 +204,86 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   }
 
   calculateHours(): void {
-    this.data.mondayCalculatedHours = this.calculateDayHours(
-      this.data.startMonday,
-      this.data.endMonday,
-      this.data.breakMonday,
-      this.data.startMonday2NdShift,
-      this.data.endMonday2NdShift,
-      this.data.breakMonday2NdShift);
-    this.data.tuesdayCalculatedHours = this.calculateDayHours(
-      this.data.startTuesday,
-      this.data.endTuesday,
-      this.data.breakTuesday,
-      this.data.startTuesday2NdShift,
-      this.data.endTuesday2NdShift,
-      this.data.breakTuesday2NdShift);
-    this.data.wednesdayCalculatedHours = this.calculateDayHours(
-      this.data.startWednesday,
-      this.data.endWednesday,
-      this.data.breakWednesday,
-      this.data.startWednesday2NdShift,
-      this.data.endWednesday2NdShift,
-      this.data.breakWednesday2NdShift);
-    this.data.thursdayCalculatedHours = this.calculateDayHours(
-      this.data.startThursday,
-      this.data.endThursday,
-      this.data.breakThursday,
-      this.data.startThursday2NdShift,
-      this.data.endThursday2NdShift,
-      this.data.breakThursday2NdShift);
-    this.data.fridayCalculatedHours = this.calculateDayHours(
-      this.data.startFriday,
-      this.data.endFriday,
-      this.data.breakFriday,
-      this.data.startFriday2NdShift,
-      this.data.endFriday2NdShift,
-      this.data.breakFriday2NdShift);
-    this.data.saturdayCalculatedHours = this.calculateDayHours(
-      this.data.startSaturday,
-      this.data.endSaturday,
-      this.data.breakSaturday,
-      this.data.startSaturday2NdShift,
-      this.data.endSaturday2NdShift,
-      this.data.breakSaturday2NdShift);
-    this.data.sundayCalculatedHours = this.calculateDayHours(
-      this.data.startSunday,
-      this.data.endSunday,
-      this.data.breakSunday,
-      this.data.startSunday2NdShift,
-      this.data.endSunday2NdShift,
-      this.data.breakSunday2NdShift);
+    const f = this.assignedSiteForm;
+
+    f.get('mondayCalculatedHours')?.setValue(
+      this.calculateDayHours(
+        f.get('startMonday')?.value,
+        f.get('endMonday')?.value,
+        f.get('breakMonday')?.value,
+        f.get('startMonday2NdShift')?.value,
+        f.get('endMonday2NdShift')?.value,
+        f.get('breakMonday2NdShift')?.value
+      )
+    );
+
+    f.get('tuesdayCalculatedHours')?.setValue(
+      this.calculateDayHours(
+        f.get('startTuesday')?.value,
+        f.get('endTuesday')?.value,
+        f.get('breakTuesday')?.value,
+        f.get('startTuesday2NdShift')?.value,
+        f.get('endTuesday2NdShift')?.value,
+        f.get('breakTuesday2NdShift')?.value
+      )
+    );
+
+    f.get('wednesdayCalculatedHours')?.setValue(
+      this.calculateDayHours(
+        f.get('startWednesday')?.value,
+        f.get('endWednesday')?.value,
+        f.get('breakWednesday')?.value,
+        f.get('startWednesday2NdShift')?.value,
+        f.get('endWednesday2NdShift')?.value,
+        f.get('breakWednesday2NdShift')?.value
+      )
+    );
+
+    f.get('thursdayCalculatedHours')?.setValue(
+      this.calculateDayHours(
+        f.get('startThursday')?.value,
+        f.get('endThursday')?.value,
+        f.get('breakThursday')?.value,
+        f.get('startThursday2NdShift')?.value,
+        f.get('endThursday2NdShift')?.value,
+        f.get('breakThursday2NdShift')?.value
+      )
+    );
+
+    f.get('fridayCalculatedHours')?.setValue(
+      this.calculateDayHours(
+        f.get('startFriday')?.value,
+        f.get('endFriday')?.value,
+        f.get('breakFriday')?.value,
+        f.get('startFriday2NdShift')?.value,
+        f.get('endFriday2NdShift')?.value,
+        f.get('breakFriday2NdShift')?.value
+      )
+    );
+
+    f.get('saturdayCalculatedHours')?.setValue(
+      this.calculateDayHours(
+        f.get('startSaturday')?.value,
+        f.get('endSaturday')?.value,
+        f.get('breakSaturday')?.value,
+        f.get('startSaturday2NdShift')?.value,
+        f.get('endSaturday2NdShift')?.value,
+        f.get('breakSaturday2NdShift')?.value
+      )
+    );
+
+    f.get('sundayCalculatedHours')?.setValue(
+      this.calculateDayHours(
+        f.get('startSunday')?.value,
+        f.get('endSunday')?.value,
+        f.get('breakSunday')?.value,
+        f.get('startSunday2NdShift')?.value,
+        f.get('endSunday2NdShift')?.value,
+        f.get('breakSunday2NdShift')?.value
+      )
+    );
   }
+
 
   calculateDayHours(
     start: number,
@@ -137,122 +318,148 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   }
 
   setMinutes(event: any, field: string): void {
-    if (event === null || event === undefined || event === '') {
-      const [hours, mins] = event.target.value.split(':').map(Number);
-      this.data[field] = (hours * 60) + mins;
-      this.calculateHours();
-      this.previousData = {...this.data};
+    let value: string;
+    if (event && event.target) {
+      value = (event.target as HTMLInputElement).value;
     } else {
-      const [hours, mins] = event.split(':').map(Number);
-      this.data[field] = (hours * 60) + mins;
-      this.calculateHours();
-      this.previousData = {...this.data};
+      value = event;
     }
+    if (!value) {
+      this.data[field] = 0;
+    } else {
+      const [hours, mins] = value.split(':').map(Number);
+      this.data[field] = (hours * 60) + mins;
+    }
+    this.calculateHours();
+    this.previousData = { ...this.data };
   }
 
+
   updateAssignedSite() {
-    this.data.mondayPlanHours = this.data.startMonday && this.data.endMonday
-      ? this.data.endMonday - this.data.startMonday - this.data.breakMonday
-      : 0;
-    this.data.mondayPlanHours += this.data.startMonday2NdShift && this.data.endMonday2NdShift
-      ? this.data.endMonday2NdShift - this.data.startMonday2NdShift - this.data.breakMonday2NdShift
-      : 0;
-    this.data.mondayPlanHours += this.data.startMonday3RdShift && this.data.endMonday3RdShift
-      ? this.data.endMonday3RdShift - this.data.startMonday3RdShift - this.data.breakMonday3RdShift
-      : 0;
-    this.data.mondayPlanHours += this.data.startMonday4ThShift && this.data.endMonday4ThShift
-      ? this.data.endMonday4ThShift - this.data.startMonday4ThShift - this.data.breakMonday4ThShift
-      : 0;
-    this.data.mondayPlanHours += this.data.startMonday5ThShift && this.data.endMonday5ThShift
-      ? this.data.endMonday5ThShift - this.data.startMonday5ThShift - this.data.breakMonday5ThShift
-      : 0;
-    this.data.tuesdayPlanHours = this.data.startTuesday && this.data.endTuesday
-      ? this.data.endTuesday - this.data.startTuesday - this.data.breakTuesday
-      : 0;
-    this.data.tuesdayPlanHours += this.data.startTuesday2NdShift && this.data.endTuesday2NdShift
-      ? this.data.endTuesday2NdShift - this.data.startTuesday2NdShift - this.data.breakTuesday2NdShift
-      : 0;
-    this.data.tuesdayPlanHours += this.data.startTuesday3RdShift && this.data.endTuesday3RdShift
-      ? this.data.endTuesday3RdShift - this.data.startTuesday3RdShift - this.data.breakTuesday3RdShift
-      : 0;
-    this.data.tuesdayPlanHours += this.data.startTuesday4ThShift && this.data.endTuesday4ThShift
-      ? this.data.endTuesday4ThShift - this.data.startTuesday4ThShift - this.data.breakTuesday4ThShift
-      : 0;
-    this.data.tuesdayPlanHours += this.data.startTuesday5ThShift && this.data.endTuesday5ThShift
-      ? this.data.endTuesday5ThShift - this.data.startTuesday5ThShift - this.data.breakTuesday5ThShift
-      : 0;
-    this.data.wednesdayPlanHours = this.data.startWednesday && this.data.endWednesday
-      ? this.data.endWednesday - this.data.startWednesday - this.data.breakWednesday
-      : 0;
-    this.data.wednesdayPlanHours += this.data.startWednesday2NdShift && this.data.endWednesday2NdShift
-      ? this.data.endWednesday2NdShift - this.data.startWednesday2NdShift - this.data.breakWednesday2NdShift
-      : 0;
-    this.data.wednesdayPlanHours += this.data.startWednesday3RdShift && this.data.endWednesday3RdShift
-      ? this.data.endWednesday3RdShift - this.data.startWednesday3RdShift - this.data.breakWednesday3RdShift
-      : 0;
-    this.data.wednesdayPlanHours += this.data.startWednesday4ThShift && this.data.endWednesday4ThShift
-      ? this.data.endWednesday4ThShift - this.data.startWednesday4ThShift - this.data.breakWednesday4ThShift
-      : 0;
-    this.data.wednesdayPlanHours += this.data.startWednesday5ThShift && this.data.endWednesday5ThShift
-      ? this.data.endWednesday5ThShift - this.data.startWednesday5ThShift - this.data.breakWednesday5ThShift
-      : 0;
-    this.data.thursdayPlanHours = this.data.startThursday && this.data.endThursday
-      ? this.data.endThursday - this.data.startThursday - this.data.breakThursday
-      : 0;
-    this.data.thursdayPlanHours += this.data.startThursday2NdShift && this.data.endThursday2NdShift
-      ? this.data.endThursday2NdShift - this.data.startThursday2NdShift - this.data.breakThursday2NdShift
-      : 0;
-    this.data.thursdayPlanHours += this.data.startThursday3RdShift && this.data.endThursday3RdShift
-      ? this.data.endThursday3RdShift - this.data.startThursday3RdShift - this.data.breakThursday3RdShift
-      : 0;
-    this.data.thursdayPlanHours += this.data.startThursday4ThShift && this.data.endThursday4ThShift
-      ? this.data.endThursday4ThShift - this.data.startThursday4ThShift - this.data.breakThursday4ThShift
-      : 0;
-    this.data.thursdayPlanHours += this.data.startThursday5ThShift && this.data.endThursday5ThShift
-      ? this.data.endThursday5ThShift - this.data.startThursday5ThShift - this.data.breakThursday5ThShift
-      : 0;
-    this.data.fridayPlanHours = this.data.startFriday && this.data.endFriday
-      ? this.data.endFriday - this.data.startFriday - this.data.breakFriday
-      : 0;
-    this.data.fridayPlanHours += this.data.startFriday2NdShift && this.data.endFriday2NdShift
-      ? this.data.endFriday2NdShift - this.data.startFriday2NdShift - this.data.breakFriday2NdShift
-      : 0;
-    this.data.fridayPlanHours += this.data.startFriday3RdShift && this.data.endFriday3RdShift
-      ? this.data.endFriday3RdShift - this.data.startFriday3RdShift - this.data.breakFriday3RdShift
-      : 0;
-    this.data.fridayPlanHours += this.data.startFriday4ThShift && this.data.endFriday4ThShift
-      ? this.data.endFriday4ThShift - this.data.startFriday4ThShift - this.data.breakFriday4ThShift
-      : 0;
-    this.data.fridayPlanHours += this.data.startFriday5ThShift && this.data.endFriday5ThShift
-      ? this.data.endFriday5ThShift - this.data.startFriday5ThShift - this.data.breakFriday5ThShift
-      : 0;
-    this.data.saturdayPlanHours = this.data.startSaturday && this.data.endSaturday
-      ? this.data.endSaturday - this.data.startSaturday - this.data.breakSaturday
-      : 0;
-    this.data.saturdayPlanHours += this.data.startSaturday2NdShift && this.data.endSaturday2NdShift
-      ? this.data.endSaturday2NdShift - this.data.startSaturday2NdShift - this.data.breakSaturday2NdShift
-      : 0;
-    this.data.saturdayPlanHours += this.data.startSaturday3RdShift && this.data.endSaturday3RdShift
-      ? this.data.endSaturday3RdShift - this.data.startSaturday3RdShift - this.data.breakSaturday3RdShift
-      : 0;
-    this.data.saturdayPlanHours += this.data.startSaturday4ThShift && this.data.endSaturday4ThShift
-      ? this.data.endSaturday4ThShift - this.data.startSaturday4ThShift - this.data.breakSaturday4ThShift
-      : 0;
-    this.data.sundayPlanHours = this.data.startSunday && this.data.endSunday
-      ? this.data.endSunday - this.data.startSunday - this.data.breakSunday
-      : 0;
-    this.data.sundayPlanHours += this.data.startSunday2NdShift && this.data.endSunday2NdShift
-      ? this.data.endSunday2NdShift - this.data.startSunday2NdShift - this.data.breakSunday2NdShift
-      : 0;
-    this.data.sundayPlanHours += this.data.startSunday3RdShift && this.data.endSunday3RdShift
-      ? this.data.endSunday3RdShift - this.data.startSunday3RdShift - this.data.breakSunday3RdShift
-      : 0;
-    this.data.sundayPlanHours += this.data.startSunday4ThShift && this.data.endSunday4ThShift
-      ? this.data.endSunday4ThShift - this.data.startSunday4ThShift - this.data.breakSunday4ThShift
-      : 0;
-    this.data.sundayPlanHours += this.data.startSunday5ThShift && this.data.endSunday5ThShift
-      ? this.data.endSunday5ThShift - this.data.startSunday5ThShift - this.data.breakSunday5ThShift
-      : 0;
+    const f = this.assignedSiteForm;
+
+    f.get('mondayPlanHours')?.setValue(
+      (f.get('startMonday')?.value && f.get('endMonday')?.value
+        ? f.get('endMonday')?.value - f.get('startMonday')?.value - f.get('breakMonday')?.value
+        : 0) +
+      (f.get('startMonday2NdShift')?.value && f.get('endMonday2NdShift')?.value
+        ? f.get('endMonday2NdShift')?.value - f.get('startMonday2NdShift')?.value - f.get('breakMonday2NdShift')?.value
+        : 0) +
+      (f.get('startMonday3RdShift')?.value && f.get('endMonday3RdShift')?.value
+        ? f.get('endMonday3RdShift')?.value - f.get('startMonday3RdShift')?.value - f.get('breakMonday3RdShift')?.value
+        : 0) +
+      (f.get('startMonday4ThShift')?.value && f.get('endMonday4ThShift')?.value
+        ? f.get('endMonday4ThShift')?.value - f.get('startMonday4ThShift')?.value - f.get('breakMonday4ThShift')?.value
+        : 0) +
+      (f.get('startMonday5ThShift')?.value && f.get('endMonday5ThShift')?.value
+        ? f.get('endMonday5ThShift')?.value - f.get('startMonday5ThShift')?.value - f.get('breakMonday5ThShift')?.value
+        : 0)
+    );
+
+    f.get('tuesdayPlanHours')?.setValue(
+      (f.get('startTuesday')?.value && f.get('endTuesday')?.value
+        ? f.get('endTuesday')?.value - f.get('startTuesday')?.value - f.get('breakTuesday')?.value
+        : 0) +
+      (f.get('startTuesday2NdShift')?.value && f.get('endTuesday2NdShift')?.value
+        ? f.get('endTuesday2NdShift')?.value - f.get('startTuesday2NdShift')?.value - f.get('breakTuesday2NdShift')?.value
+        : 0) +
+      (f.get('startTuesday3RdShift')?.value && f.get('endTuesday3RdShift')?.value
+        ? f.get('endTuesday3RdShift')?.value - f.get('startTuesday3RdShift')?.value - f.get('breakTuesday3RdShift')?.value
+        : 0) +
+      (f.get('startTuesday4ThShift')?.value && f.get('endTuesday4ThShift')?.value
+        ? f.get('endTuesday4ThShift')?.value - f.get('startTuesday4ThShift')?.value - f.get('breakTuesday4ThShift')?.value
+        : 0) +
+      (f.get('startTuesday5ThShift')?.value && f.get('endTuesday5ThShift')?.value
+        ? f.get('endTuesday5ThShift')?.value - f.get('startTuesday5ThShift')?.value - f.get('breakTuesday5ThShift')?.value
+        : 0)
+    );
+
+    f.get('wednesdayPlanHours')?.setValue(
+      (f.get('startWednesday')?.value && f.get('endWednesday')?.value
+        ? f.get('endWednesday')?.value - f.get('startWednesday')?.value - f.get('breakWednesday')?.value
+        : 0) +
+      (f.get('startWednesday2NdShift')?.value && f.get('endWednesday2NdShift')?.value
+        ? f.get('endWednesday2NdShift')?.value - f.get('startWednesday2NdShift')?.value - f.get('breakWednesday2NdShift')?.value
+        : 0) +
+      (f.get('startWednesday3RdShift')?.value && f.get('endWednesday3RdShift')?.value
+        ? f.get('endWednesday3RdShift')?.value - f.get('startWednesday3RdShift')?.value - f.get('breakWednesday3RdShift')?.value
+        : 0) +
+      (f.get('startWednesday4ThShift')?.value && f.get('endWednesday4ThShift')?.value
+        ? f.get('endWednesday4ThShift')?.value - f.get('startWednesday4ThShift')?.value - f.get('breakWednesday4ThShift')?.value
+        : 0) +
+      (f.get('startWednesday5ThShift')?.value && f.get('endWednesday5ThShift')?.value
+        ? f.get('endWednesday5ThShift')?.value - f.get('startWednesday5ThShift')?.value - f.get('breakWednesday5ThShift')?.value
+        : 0)
+    );
+
+    f.get('thursdayPlanHours')?.setValue(
+      (f.get('startThursday')?.value && f.get('endThursday')?.value
+        ? f.get('endThursday')?.value - f.get('startThursday')?.value - f.get('breakThursday')?.value
+        : 0) +
+      (f.get('startThursday2NdShift')?.value && f.get('endThursday2NdShift')?.value
+        ? f.get('endThursday2NdShift')?.value - f.get('startThursday2NdShift')?.value - f.get('breakThursday2NdShift')?.value
+        : 0) +
+      (f.get('startThursday3RdShift')?.value && f.get('endThursday3RdShift')?.value
+        ? f.get('endThursday3RdShift')?.value - f.get('startThursday3RdShift')?.value - f.get('breakThursday3RdShift')?.value
+        : 0) +
+      (f.get('startThursday4ThShift')?.value && f.get('endThursday4ThShift')?.value
+        ? f.get('endThursday4ThShift')?.value - f.get('startThursday4ThShift')?.value - f.get('breakThursday4ThShift')?.value
+        : 0) +
+      (f.get('startThursday5ThShift')?.value && f.get('endThursday5ThShift')?.value
+        ? f.get('endThursday5ThShift')?.value - f.get('startThursday5ThShift')?.value - f.get('breakThursday5ThShift')?.value
+        : 0)
+    );
+
+    f.get('fridayPlanHours')?.setValue(
+      (f.get('startFriday')?.value && f.get('endFriday')?.value
+        ? f.get('endFriday')?.value - f.get('startFriday')?.value - f.get('breakFriday')?.value
+        : 0) +
+      (f.get('startFriday2NdShift')?.value && f.get('endFriday2NdShift')?.value
+        ? f.get('endFriday2NdShift')?.value - f.get('startFriday2NdShift')?.value - f.get('breakFriday2NdShift')?.value
+        : 0) +
+      (f.get('startFriday3RdShift')?.value && f.get('endFriday3RdShift')?.value
+        ? f.get('endFriday3RdShift')?.value - f.get('startFriday3RdShift')?.value - f.get('breakFriday3RdShift')?.value
+        : 0) +
+      (f.get('startFriday4ThShift')?.value && f.get('endFriday4ThShift')?.value
+        ? f.get('endFriday4ThShift')?.value - f.get('startFriday4ThShift')?.value - f.get('breakFriday4ThShift')?.value
+        : 0) +
+      (f.get('startFriday5ThShift')?.value && f.get('endFriday5ThShift')?.value
+        ? f.get('endFriday5ThShift')?.value - f.get('startFriday5ThShift')?.value - f.get('breakFriday5ThShift')?.value
+        : 0)
+    );
+
+    f.get('saturdayPlanHours')?.setValue(
+      (f.get('startSaturday')?.value && f.get('endSaturday')?.value
+        ? f.get('endSaturday')?.value - f.get('startSaturday')?.value - f.get('breakSaturday')?.value
+        : 0) +
+      (f.get('startSaturday2NdShift')?.value && f.get('endSaturday2NdShift')?.value
+        ? f.get('endSaturday2NdShift')?.value - f.get('startSaturday2NdShift')?.value - f.get('breakSaturday2NdShift')?.value
+        : 0) +
+      (f.get('startSaturday3RdShift')?.value && f.get('endSaturday3RdShift')?.value
+        ? f.get('endSaturday3RdShift')?.value - f.get('startSaturday3RdShift')?.value - f.get('breakSaturday3RdShift')?.value
+        : 0) +
+      (f.get('startSaturday4ThShift')?.value && f.get('endSaturday4ThShift')?.value
+        ? f.get('endSaturday4ThShift')?.value - f.get('startSaturday4ThShift')?.value - f.get('breakSaturday4ThShift')?.value
+        : 0)
+    );
+
+    f.get('sundayPlanHours')?.setValue(
+      (f.get('startSunday')?.value && f.get('endSunday')?.value
+        ? f.get('endSunday')?.value - f.get('startSunday')?.value - f.get('breakSunday')?.value
+        : 0) +
+      (f.get('startSunday2NdShift')?.value && f.get('endSunday2NdShift')?.value
+        ? f.get('endSunday2NdShift')?.value - f.get('startSunday2NdShift')?.value - f.get('breakSunday2NdShift')?.value
+        : 0) +
+      (f.get('startSunday3RdShift')?.value && f.get('endSunday3RdShift')?.value
+        ? f.get('endSunday3RdShift')?.value - f.get('startSunday3RdShift')?.value - f.get('breakSunday3RdShift')?.value
+        : 0) +
+      (f.get('startSunday4ThShift')?.value && f.get('endSunday4ThShift')?.value
+        ? f.get('endSunday4ThShift')?.value - f.get('startSunday4ThShift')?.value - f.get('breakSunday4ThShift')?.value
+        : 0) +
+      (f.get('startSunday5ThShift')?.value && f.get('endSunday5ThShift')?.value
+        ? f.get('endSunday5ThShift')?.value - f.get('startSunday5ThShift')?.value - f.get('breakSunday5ThShift')?.value
+        : 0)
+    );
   }
 
   private padZero(num: number): string {
@@ -260,42 +467,62 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   }
 
   copyBreakSettings(day: string) {
+    if (!this.globalAutoBreakSettings) {return;}
+
+    const fg = this.assignedSiteForm.get('autoBreakSettings') as FormGroup;
+    const dayGroup = fg.get(day) as FormGroup;
+
     switch (day) {
       case 'monday':
-        this.data.mondayBreakMinutesDivider = this.globalAutoBreakSettings.mondayBreakMinutesDivider;
-        this.data.mondayBreakMinutesPrDivider = this.globalAutoBreakSettings.mondayBreakMinutesPrDivider;
-        this.data.mondayBreakMinutesUpperLimit = this.globalAutoBreakSettings.mondayBreakMinutesUpperLimit;
+        dayGroup.patchValue({
+          breakMinutesDivider: this.globalAutoBreakSettings.mondayBreakMinutesDivider,
+          breakMinutesPrDivider: this.globalAutoBreakSettings.mondayBreakMinutesPrDivider,
+          breakMinutesUpperLimit: this.globalAutoBreakSettings.mondayBreakMinutesUpperLimit,
+        });
         break;
       case 'tuesday':
-        this.data.tuesdayBreakMinutesDivider = this.globalAutoBreakSettings.tuesdayBreakMinutesDivider;
-        this.data.tuesdayBreakMinutesPrDivider = this.globalAutoBreakSettings.tuesdayBreakMinutesPrDivider;
-        this.data.tuesdayBreakMinutesUpperLimit = this.globalAutoBreakSettings.tuesdayBreakMinutesUpperLimit;
+        dayGroup.patchValue({
+          breakMinutesDivider: this.globalAutoBreakSettings.tuesdayBreakMinutesDivider,
+          breakMinutesPrDivider: this.globalAutoBreakSettings.tuesdayBreakMinutesPrDivider,
+          breakMinutesUpperLimit: this.globalAutoBreakSettings.tuesdayBreakMinutesUpperLimit,
+        });
         break;
       case 'wednesday':
-        this.data.wednesdayBreakMinutesDivider = this.globalAutoBreakSettings.wednesdayBreakMinutesDivider;
-        this.data.wednesdayBreakMinutesPrDivider = this.globalAutoBreakSettings.wednesdayBreakMinutesPrDivider;
-        this.data.wednesdayBreakMinutesUpperLimit = this.globalAutoBreakSettings.wednesdayBreakMinutesUpperLimit;
+        dayGroup.patchValue({
+          breakMinutesDivider: this.globalAutoBreakSettings.wednesdayBreakMinutesDivider,
+          breakMinutesPrDivider: this.globalAutoBreakSettings.wednesdayBreakMinutesPrDivider,
+          breakMinutesUpperLimit: this.globalAutoBreakSettings.wednesdayBreakMinutesUpperLimit,
+        });
         break;
       case 'thursday':
-        this.data.thursdayBreakMinutesDivider = this.globalAutoBreakSettings.thursdayBreakMinutesDivider;
-        this.data.thursdayBreakMinutesPrDivider = this.globalAutoBreakSettings.thursdayBreakMinutesPrDivider;
-        this.data.thursdayBreakMinutesUpperLimit = this.globalAutoBreakSettings.thursdayBreakMinutesUpperLimit;
+        dayGroup.patchValue({
+          breakMinutesDivider: this.globalAutoBreakSettings.thursdayBreakMinutesDivider,
+          breakMinutesPrDivider: this.globalAutoBreakSettings.thursdayBreakMinutesPrDivider,
+          breakMinutesUpperLimit: this.globalAutoBreakSettings.thursdayBreakMinutesUpperLimit,
+        });
         break;
       case 'friday':
-        this.data.fridayBreakMinutesDivider = this.globalAutoBreakSettings.fridayBreakMinutesDivider;
-        this.data.fridayBreakMinutesPrDivider = this.globalAutoBreakSettings.fridayBreakMinutesPrDivider;
-        this.data.fridayBreakMinutesUpperLimit = this.globalAutoBreakSettings.fridayBreakMinutesUpperLimit;
+        dayGroup.patchValue({
+          breakMinutesDivider: this.globalAutoBreakSettings.fridayBreakMinutesDivider,
+          breakMinutesPrDivider: this.globalAutoBreakSettings.fridayBreakMinutesPrDivider,
+          breakMinutesUpperLimit: this.globalAutoBreakSettings.fridayBreakMinutesUpperLimit,
+        });
         break;
       case 'saturday':
-        this.data.saturdayBreakMinutesDivider = this.globalAutoBreakSettings.saturdayBreakMinutesDivider;
-        this.data.saturdayBreakMinutesPrDivider = this.globalAutoBreakSettings.saturdayBreakMinutesPrDivider;
-        this.data.saturdayBreakMinutesUpperLimit = this.globalAutoBreakSettings.saturdayBreakMinutesUpperLimit;
+        dayGroup.patchValue({
+          breakMinutesDivider: this.globalAutoBreakSettings.saturdayBreakMinutesDivider,
+          breakMinutesPrDivider: this.globalAutoBreakSettings.saturdayBreakMinutesPrDivider,
+          breakMinutesUpperLimit: this.globalAutoBreakSettings.saturdayBreakMinutesUpperLimit,
+        });
         break;
       case 'sunday':
-        this.data.sundayBreakMinutesDivider = this.globalAutoBreakSettings.sundayBreakMinutesDivider;
-        this.data.sundayBreakMinutesPrDivider = this.globalAutoBreakSettings.sundayBreakMinutesPrDivider;
-        this.data.sundayBreakMinutesUpperLimit = this.globalAutoBreakSettings.sundayBreakMinutesUpperLimit;
+        dayGroup.patchValue({
+          breakMinutesDivider: this.globalAutoBreakSettings.sundayBreakMinutesDivider,
+          breakMinutesPrDivider: this.globalAutoBreakSettings.sundayBreakMinutesPrDivider,
+          breakMinutesUpperLimit: this.globalAutoBreakSettings.sundayBreakMinutesUpperLimit,
+        });
         break;
     }
   }
+
 }

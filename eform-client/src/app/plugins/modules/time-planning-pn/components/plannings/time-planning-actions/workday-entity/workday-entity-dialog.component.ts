@@ -551,6 +551,14 @@ export class WorkdayEntityDialogComponent implements OnInit {
       }
     }
 
+    // Disallow pause = 00:00
+    if (breakMin === 0) {
+      setError(pauseControl, 'invalidPause', 'Pause cannot be 00:00');
+    } else {
+      removeError(pauseControl, 'invalidPause');
+    }
+
+
     if (duration > 24 * 60) {
       setError(group, 'shiftTooLong', 'Shift duration cannot exceed 24 hours');
     } else {
@@ -722,7 +730,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
 
     // Shift 1
-    if (isSet(p1Start) || p1Start == '00:00') {
+    if (isSet(p1Start) || p1Start === '00:00') {
       this.setDisabled('planned.shift1.stop', false);
     } else {
       this.setDisabled('planned.shift1.stop', true);
