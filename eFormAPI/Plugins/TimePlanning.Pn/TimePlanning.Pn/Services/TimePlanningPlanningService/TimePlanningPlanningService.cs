@@ -280,20 +280,18 @@ public class TimePlanningPlanningService(
             await baseDbContext.SaveChangesAsync();
         }
 
-        var worker = await sdkDbContext.Workers
-            .Include(x => x.SiteWorkers)
-            .ThenInclude(x => x.Site)
-            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-            .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+        var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
 
-        if (worker == null)
+        var site = await sdkDbContext.Sites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+
+        if (site == null)
         {
             return new OperationDataResult<TimePlanningPlanningModel>(
                 false,
                 localizationService.GetString("SiteNotFound"));
         }
-
-        var site = worker.SiteWorkers.First().Site;
 
         var dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -920,7 +918,7 @@ public class TimePlanningPlanningService(
 
             return new OperationResult(
                 true,
-                localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
+                localizationService.GetString("SuccessfullyUpdatedPlanning"));
         }
         catch (Exception e)
         {
@@ -943,24 +941,21 @@ public class TimePlanningPlanningService(
             var currentUserAsync = await userService.GetCurrentUserAsync();
             var currentUser = baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
-            var worker = await sdkDbContext.Workers
-                .Include(x => x.SiteWorkers)
-                .ThenInclude(x => x.Site)
+            var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
+            var sdkSite = await sdkDbContext.Sites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+                .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
 
-            if (worker == null)
+            if (sdkSite == null)
             {
                 return new OperationDataResult<TimePlanningPlanningModel>(
                     false,
                     localizationService.GetString("SiteNotFound"));
             }
 
-            var mcrotingUid = worker.SiteWorkers.First().Site.MicrotingUid;
-
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .FirstOrDefaultAsync(x => x.SiteId == mcrotingUid);
+                .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
 
             if (assignedSite == null)
             {
@@ -1383,7 +1378,7 @@ public class TimePlanningPlanningService(
 
             return new OperationResult(
                 true,
-                localizationService.GetString("SuccessfullyCreateOrUpdatePlanning"));
+                localizationService.GetString("SuccessfullyUpdatedPlanning"));
         }
         catch (Exception e)
         {
