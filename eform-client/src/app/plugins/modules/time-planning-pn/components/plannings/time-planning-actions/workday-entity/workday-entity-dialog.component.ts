@@ -712,7 +712,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     const p2Start = this.getCtrl('planned.shift2.start').value as string | null;
     const p2Stop = this.getCtrl('planned.shift2.stop').value as string | null;
 
-    const isSet = (time: string | null) => !!time;// && time !== '00:00';
+    const isSet = (time: string | null) => !!time && time !== '00:00';
 
     // Plan hours enabled only if shift 1 start & stop are empty or 00:00
     if ((!p1Start && !p1Stop) || (p1Start === '00:00' && p1Stop === '00:00')) {
@@ -730,11 +730,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
     if (isSet(p1Stop)) {
       this.setDisabled('planned.shift1.break', false);
-      if (p1Stop !== '00:00') {
-        this.setDisabled('planned.shift2.start', false);
-      } else {
-        this.setDisabled('planned.shift2.start', true);
-      }
+      this.setDisabled('planned.shift2.start', false);
     } else {
       this.setDisabled('planned.shift1.break', true);
       this.setDisabled('planned.shift2.start', true);
@@ -749,16 +745,12 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
     if (isSet(p2Stop)) {
       this.setDisabled('planned.shift2.break', false);
-      if (this.data.assignedSiteModel.thirdShiftActive && p2Stop !== '00:00') {
-        this.setDisabled('planned.shift3.start', false);
-      } else {
-        this.setDisabled('planned.shift3.start', true);
-      }
+      if (this.data.assignedSiteModel.thirdShiftActive)
+        {this.setDisabled('planned.shift3.start', false);}
     } else {
       this.setDisabled('planned.shift2.break', true);
-      if (this.data.assignedSiteModel.thirdShiftActive) {
-        this.setDisabled('planned.shift3.start', true);
-      }
+      if (this.data.assignedSiteModel.thirdShiftActive)
+        {this.setDisabled('planned.shift3.start', true);}
     }
 
     // Shift 3
@@ -766,24 +758,17 @@ export class WorkdayEntityDialogComponent implements OnInit {
       const p3Start = this.getCtrl('planned.shift3.start').value as string | null;
       const p3Stop = this.getCtrl('planned.shift3.stop').value as string | null;
 
-      if (isSet(p3Start)) {
-        this.setDisabled('planned.shift3.stop', false);
-      } else {
-        this.setDisabled('planned.shift3.stop', true);
-      }
+      if (isSet(p3Start)) {this.setDisabled('planned.shift3.stop', false);}
+      else {this.setDisabled('planned.shift3.stop', true);}
 
       if (isSet(p3Stop)) {
         this.setDisabled('planned.shift3.break', false);
-        if (this.data.assignedSiteModel.fourthShiftActive && p3Stop !== '00:00') {
-          this.setDisabled('planned.shift4.start', false);
-        } else {
-          this.setDisabled('planned.shift4.start', true);
-        }
+        if (this.data.assignedSiteModel.fourthShiftActive)
+          {this.setDisabled('planned.shift4.start', false);}
       } else {
         this.setDisabled('planned.shift3.break', true);
-        if (this.data.assignedSiteModel.fourthShiftActive) {
-          this.setDisabled('planned.shift4.start', true);
-        }
+        if (this.data.assignedSiteModel.fourthShiftActive)
+          {this.setDisabled('planned.shift4.start', true);}
       }
     }
 
@@ -792,24 +777,17 @@ export class WorkdayEntityDialogComponent implements OnInit {
       const p4Start = this.getCtrl('planned.shift4.start').value as string | null;
       const p4Stop = this.getCtrl('planned.shift4.stop').value as string | null;
 
-      if (isSet(p4Start)) {
-        this.setDisabled('planned.shift4.stop', false);
-      } else {
-        this.setDisabled('planned.shift4.stop', true);
-      }
+      if (isSet(p4Start)) {this.setDisabled('planned.shift4.stop', false);}
+      else {this.setDisabled('planned.shift4.stop', true);}
 
       if (isSet(p4Stop)) {
         this.setDisabled('planned.shift4.break', false);
-        if (this.data.assignedSiteModel.fifthShiftActive && p4Stop !== '00:00') {
-          this.setDisabled('planned.shift5.start', false);
-        } else {
-          this.setDisabled('planned.shift5.start', true);
-        }
+        if (this.data.assignedSiteModel.fifthShiftActive)
+          {this.setDisabled('planned.shift5.start', false);}
       } else {
         this.setDisabled('planned.shift4.break', true);
-        if (this.data.assignedSiteModel.fifthShiftActive) {
-          this.setDisabled('planned.shift5.start', true);
-        }
+        if (this.data.assignedSiteModel.fifthShiftActive)
+          {this.setDisabled('planned.shift5.start', true);}
       }
     }
 
@@ -818,17 +796,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
       const p5Start = this.getCtrl('planned.shift5.start').value as string | null;
       const p5Stop = this.getCtrl('planned.shift5.stop').value as string | null;
 
-      if (isSet(p5Start)) {
-        this.setDisabled('planned.shift5.stop', false);
-      } else {
-        this.setDisabled('planned.shift5.stop', true);
-      }
+      if (isSet(p5Start)) {this.setDisabled('planned.shift5.stop', false);}
+      else {this.setDisabled('planned.shift5.stop', true);}
 
-      if (isSet(p5Stop)) {
-        this.setDisabled('planned.shift5.break', false);
-      } else {
-        this.setDisabled('planned.shift5.break', true);
-      }
+      if (isSet(p5Stop)) {this.setDisabled('planned.shift5.break', false);}
+      else {this.setDisabled('planned.shift5.break', true);}
     }
 
     // Actual
@@ -872,11 +844,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
     if (a2Stop) {
       this.setDisabled('actual.shift2.pause', false);
-      if (this.data.assignedSiteModel.thirdShiftActive && a2Stop !== '00:00') {
-        this.setDisabled('actual.shift3.start', false);
-      } else {
-        this.setDisabled('actual.shift3.start', true);
-      }
+      this.setDisabled('actual.shift3.start', false);
     }
 
     if (this.data.assignedSiteModel.thirdShiftActive) {
@@ -889,11 +857,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
       }
       if (a3Stop) {
         this.setDisabled('actual.shift3.pause', false);
-        if (this.data.assignedSiteModel.fourthShiftActive && a3Stop !== '00:00') {
-          this.setDisabled('actual.shift4.start', false);
-        } else {
-          this.setDisabled('actual.shift4.start', true);
-        }
+        this.setDisabled('actual.shift4.start', false);
       }
     }
 
@@ -907,11 +871,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
       }
       if (a4Stop) {
         this.setDisabled('actual.shift4.pause', false);
-        if (this.data.assignedSiteModel.fifthShiftActive && a4Stop !== '00:00') {
-          this.setDisabled('actual.shift5.start', false);
-        } else {
-          this.setDisabled('actual.shift5.start', true);
-        }
+        this.setDisabled('actual.shift5.start', false);
       }
     }
 
@@ -926,6 +886,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
         this.setDisabled('actual.shift5.pause', false);
       }
     }
+
   }
 
   // ===== UI-hjælpere (samme logik som tidligere, men brugt af form) =====
@@ -1054,7 +1015,6 @@ export class WorkdayEntityDialogComponent implements OnInit {
       if (changedKey !== 'DayOff') {
         this.data.planningPrDayModels.nettoHoursOverrideActive = true;
         this.data.planningPrDayModels.nettoHoursOverride = this.data.planningPrDayModels.planHours;
-        this.workdayForm.get('nettoHoursOverride')?.setValue(this.data.planningPrDayModels.planHours);
       } else {
         this.data.planningPrDayModels.nettoHoursOverrideActive = false;
       }
@@ -1078,7 +1038,6 @@ export class WorkdayEntityDialogComponent implements OnInit {
     const s5 = this.workdayForm.get('planned.shift5') as FormGroup;
     switch (number) {
       case 1:
-        this.workdayForm.get('planHours')?.setValue(0, {emitEvent: false});
         s1.patchValue({start: null, break: null, stop: null});
         s2.patchValue({start: null, break: null, stop: null});
         s3.patchValue({start: null, break: null, stop: null});
@@ -1306,14 +1265,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // Rens paidOutFlex
     this.data.planningPrDayModels.paidOutFlex =
       this.data.planningPrDayModels.paidOutFlex === null ? 0 : this.data.planningPrDayModels.paidOutFlex;
-
-    if (this.data.planningPrDayModels.paidOutFlex.toString().includes(',')) {
-      this.data.planningPrDayModels.paidOutFlex = parseFloat(
-        this.data.planningPrDayModels.paidOutFlex.toString().replace(',', '.')
-      );
-    }
   }
-
 
   private getPlannedShiftMinutes(
     start: number | null,
@@ -1339,10 +1291,10 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
   markAllAsTouched(control: AbstractControl) {
     if (control instanceof FormControl) {
-      control.markAsTouched({onlySelf: true});
+      control.markAsTouched({ onlySelf: true });
     } else if (control instanceof FormGroup) {
       Object.values(control.controls).forEach((c) => this.markAllAsTouched(c));
-      control.markAsTouched({onlySelf: true});
+      control.markAsTouched({ onlySelf: true });
     } else if (control instanceof FormArray) {
       control.controls.forEach((c) => this.markAllAsTouched(c));
     }
@@ -1372,10 +1324,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
       plannedTimeInMinutes += this.getPlannedShiftMinutes(start, end, brk);
     }
 
-    if (plannedTimeInMinutes !== 0) {
-      m.planHours = plannedTimeInMinutes / 60;
-      this.workdayForm.get('planHours')?.setValue(m.planHours, {emitEvent: false});
-    }
+    m.planHours = plannedTimeInMinutes / 60;
+    this.workdayForm.get('planHours')?.setValue(m.planHours, {emitEvent: false});
 
     // Summer actual
     let actualTimeInMinutes = 0;

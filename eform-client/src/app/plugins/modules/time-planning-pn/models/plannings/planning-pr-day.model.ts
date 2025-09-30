@@ -1,6 +1,5 @@
 export class PlanningPrDayModel {
   id: number;
-  planChangedByAdmin: boolean;
   siteName: string;
   siteId: number;
   weekDay: number;
