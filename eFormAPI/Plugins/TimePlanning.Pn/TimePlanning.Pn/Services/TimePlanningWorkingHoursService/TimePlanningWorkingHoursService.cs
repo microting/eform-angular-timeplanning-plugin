@@ -154,7 +154,6 @@ public class TimePlanningWorkingHoursService(
 
             var lastPlanning = dbContext.PlanRegistrations
                 .AsNoTracking()
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Date < model.DateFrom)
                 .Where(x => x.SdkSitId == model.SiteId).OrderBy(x => x.Date).LastOrDefault();
 
