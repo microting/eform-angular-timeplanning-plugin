@@ -356,15 +356,18 @@ public class TimeSettingService(
         var currentUserAsync = await userService.GetCurrentUserAsync();
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
-        var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-        var sdkSite = await sdkContext.Sites
+        var worker = await sdkContext.Workers
+            .Include(x => x.SiteWorkers)
+            .ThenInclude(x => x.Site)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-            .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+            .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
 
-        if (sdkSite == null)
+        if (worker == null)
         {
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
+
+        var sdkSite = worker.SiteWorkers.First().Site;
 
         Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)

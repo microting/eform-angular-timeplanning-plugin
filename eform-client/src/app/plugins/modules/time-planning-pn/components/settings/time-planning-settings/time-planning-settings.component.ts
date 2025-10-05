@@ -2,6 +2,8 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {TimePlanningPnSettingsService} from '../../../services';
 import {TimePlanningSettingsModel} from '../../../models';
+import {selectCurrentUserIsFirstUser} from 'src/app/state';
+import {Store} from '@ngrx/store';
 
 @Component({
     selector: 'app-time-planning-settings',
@@ -13,8 +15,13 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   getSettings$: Subscription;
   settingsModel: TimePlanningSettingsModel = new TimePlanningSettingsModel();
   previousData: TimePlanningSettingsModel = new TimePlanningSettingsModel();
+  public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
-  constructor(private timePlanningPnSettingsService: TimePlanningPnSettingsService) {
+
+  constructor(
+    private timePlanningPnSettingsService: TimePlanningPnSettingsService,
+    private store: Store
+  ) {
     this.previousData = {...this.settingsModel};
   }
   ngOnInit() {

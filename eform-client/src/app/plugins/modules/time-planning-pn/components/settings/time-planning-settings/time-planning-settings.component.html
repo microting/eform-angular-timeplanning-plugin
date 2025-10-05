@@ -17,10 +17,21 @@
               <input matInput placeholder="Google sheet id" [(ngModel)]="settingsModel.googleSheetId">
             </mat-form-field>
           </div>
-
+          <div class="mt-2" *ngIf="settingsModel.googleSheetId">
+            <a
+              id="openGoogleSheetLink"
+              mat-raised-button
+              color="primary"
+              [href]="'https://docs.google.com/spreadsheets/d/' + settingsModel.googleSheetId + '/edit'"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ 'Open Google Sheet' | translate }}
+            </a>
+          </div>
         </div>
         <br>
-        <div class="row">
+        <div class="row" *ngIf="selectCurrentUserIsFirstUser$ | async">
           <div class="col-12">
             <mat-slide-toggle
               color="primary"
@@ -126,7 +137,7 @@
     </mat-card>
 
   </div>
-  <div class="flex-cards mt-4">
+  <div class="flex-cards mt-4" *ngIf="selectCurrentUserIsFirstUser$ | async">
     <mat-card class="mat-card-50">
       <mat-card-header>
         <h4 class="mat-card-title">{{'Show calculations as numbers instead of hh:mm' | translate}}</h4>
@@ -151,7 +162,7 @@
       </mat-card-content>
     </mat-card>
   </div>
-  <div class="flex-cards mt-4">
+  <div class="flex-cards mt-4" *ngIf="selectCurrentUserIsFirstUser$ | async">
     <mat-card class="mat-card-50">
       <mat-card-header>
         <h4 class="mat-card-title">{{'Day of payment' | translate}}</h4>

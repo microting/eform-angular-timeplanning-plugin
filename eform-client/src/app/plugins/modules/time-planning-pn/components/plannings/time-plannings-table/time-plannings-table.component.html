@@ -296,6 +296,9 @@
           <small>
             (id: {{ row.planningPrDayModels[col.field]?.id }})
           </small>
+          <mat-icon class="neutral-icon" *ngIf="row.planningPrDayModels[col.field]?.planChangedByAdmin">
+            lock
+          </mat-icon>
         </div>
       </div>
     </div>
