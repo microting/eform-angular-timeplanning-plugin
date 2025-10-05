@@ -167,7 +167,6 @@ public class GoogleSheetHelper
         }
 
         var applicationName = "Google Sheets API Integration";
-        var sheetName = "PlanTimer";
 
         //var core = await coreHelper.GetCore();
         await using var sdkDbContext = core.DbContextHelper.GetDbContext();

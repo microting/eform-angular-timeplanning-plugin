@@ -143,7 +143,7 @@ public class TimePlanningWorkingHoursService(
                     CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
                     CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
                     // CommentOfficeAll = x.CommentOfficeAll,
-                    IsLocked = (x.Date < DateTime.Now.AddDays(-(int)maxDaysEditable) || x.Date == midnight),
+                    IsLocked = (x.Date < DateTime.Now.AddDays(-(int)(maxDaysEditable ?? 0)) || x.Date == midnight),
                     IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
                     NettoHoursOverride = x.NettoHoursOverride,
                     NettoHoursOverrideActive = x.NettoHoursOverrideActive
@@ -228,7 +228,7 @@ public class TimePlanningWorkingHoursService(
                         {
                             Date = model.DateFrom.AddDays(i),
                             WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
-                            IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)maxDaysEditable) ||
+                            IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)(maxDaysEditable ?? 0)) ||
                                        model.DateFrom.AddDays(i) == midnight,
                             IsWeekend = model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Saturday
                                         || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday
@@ -516,7 +516,7 @@ public class TimePlanningWorkingHoursService(
 
         if (sdkSite == null)
         {
-            return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(false, "Site not found", null);
+            return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(false, "Site not found", null!);
         }
 
         var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
@@ -642,7 +642,7 @@ public class TimePlanningWorkingHoursService(
 
             if (sdkSite == null)
             {
-                return new OperationDataResult<TimePlanningHoursSummaryModel>(false, "Site not found", null);
+                return new OperationDataResult<TimePlanningHoursSummaryModel>(false, "Site not found", null!);
             }
 
             var planRegistrations = await dbContext.PlanRegistrations
@@ -708,7 +708,7 @@ public class TimePlanningWorkingHoursService(
         if (result == null)
         {
             return new OperationDataResult<TimePlanningWorkingHoursModel>(false,
-                localizationService.GetString("PlanRegistrationNotFound"), null);
+                localizationService.GetString("PlanRegistrationNotFound"), null!);
         }
         return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
             result);
@@ -992,7 +992,7 @@ public class TimePlanningWorkingHoursService(
                     : DateTime.Parse(model.Pause5StoppedAt),
                 Flex = 0,
                 WorkerComment = model.CommentWorker,
-                SdkSitId = (int)sdkSite.MicrotingUid,
+                SdkSitId = sdkSite.MicrotingUid!.Value,
                 Shift1PauseNumber = model.Shift1PauseNumber,
                 Shift2PauseNumber = model.Shift2PauseNumber,
             };
@@ -2258,11 +2258,11 @@ public class TimePlanningWorkingHoursService(
         }
     }
 
-    private Cell CreateCell(string value)
+    private Cell CreateCell(string? value)
     {
         return new Cell()
         {
-            CellValue = new CellValue(value),
+            CellValue = new CellValue(value ?? string.Empty),
             DataType = CellValues.String // Explicitly setting the data type to string
         };
     }
@@ -2326,8 +2326,8 @@ public class TimePlanningWorkingHoursService(
                 count++;
                 sb.Append(("Error Count : " + count) + "\r\n");
                 sb.Append(("Description : " + error.Description) + "\r\n");
-                sb.Append(("Path: " + error.Path.XPath) + "\r\n");
-                sb.Append(("Part: " + error.Part.Uri) + "\r\n");
+                sb.Append(("Path: " + error.Path?.XPath) + "\r\n");
+                sb.Append(("Part: " + error.Part?.Uri) + "\r\n");
                 sb.Append("\r\n-------------------------------------------------\r\n");
             }
 
@@ -2694,24 +2694,36 @@ public class TimePlanningWorkingHoursService(
                 using (var spreadsheetDocument = SpreadsheetDocument.Open(stream, false))
                 {
                     var workbookPart = spreadsheetDocument.WorkbookPart;
+                    if (workbookPart == null)
+                    {
+                        return new OperationResult(false, localizationService.GetString("FileFormatError"));
+                    }
                     var sheets = workbookPart.Workbook.Sheets;
+                    if (sheets == null)
+                    {
+                        return new OperationResult(false, localizationService.GetString("FileFormatError"));
+                    }
 
                     foreach (Sheet sheet in sheets)
                     {
+                        if (sheet.Name?.Value == null || sheet.Id?.Value == null)
+                        {
+                            continue;
+                        }
                         var site = await sdkContext.Sites.FirstOrDefaultAsync(x => x.Name.Replace(" ", "").ToLower() == sheet.Name.Value.Replace(" ", "").ToLower());
                         if (site == null)
                         {
                             continue;
                         }
 
-                        var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
+                        var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
                         var sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
 
                         var rows = sheetData.Elements<Row>();
                         foreach (var row in rows)
                         {
                             // Skip header row
-                            if (row.RowIndex == 1)
+                            if (row.RowIndex?.Value == 1)
                             {
                                 continue;
                             }
@@ -2849,10 +2861,10 @@ public class TimePlanningWorkingHoursService(
         var columnLetter = GetColumnLetter(columnIndex);
 
         // Create the cell reference (e.g., A1, B1, C1)
-        var cellReference = columnLetter + row.RowIndex;
+        var cellReference = columnLetter + row.RowIndex?.Value;
 
         // Find the cell with the matching CellReference
-        var cell = row.Elements<Cell>().FirstOrDefault(c => c.CellReference.Value == cellReference);
+        var cell = row.Elements<Cell>().FirstOrDefault(c => c.CellReference?.Value == cellReference);
 
         if (cell == null || cell.CellValue == null)
         {
@@ -2866,7 +2878,10 @@ public class TimePlanningWorkingHoursService(
             if (sharedStringTablePart != null)
             {
                 var sharedStringTable = sharedStringTablePart.SharedStringTable;
-                return sharedStringTable.ElementAt(int.Parse(cell.CellValue.Text)).InnerText;
+                if (sharedStringTable != null)
+                {
+                    return sharedStringTable.ElementAt(int.Parse(cell.CellValue.Text)).InnerText;
+                }
             }
         }
 
@@ -2874,14 +2889,17 @@ public class TimePlanningWorkingHoursService(
         if (cell.StyleIndex != null)
         {
             var stylesPart = workbookPart.WorkbookStylesPart;
-            var cellFormat = stylesPart.Stylesheet.CellFormats.ElementAt((int)cell.StyleIndex.Value) as CellFormat;
-            var isDate = IsDateFormat(stylesPart, cellFormat);
-
-            // If it's a date format, interpret the numeric value as a date
-            if (isDate && double.TryParse(cell.CellValue.Text, out var oaDate))
+            if (stylesPart?.Stylesheet?.CellFormats != null)
             {
-                var dateValue = DateTime.FromOADate(oaDate);
-                return dateValue.ToString("dd.MM.yyyy"); // Format as a date
+                var cellFormat = stylesPart.Stylesheet.CellFormats.ElementAt((int)cell.StyleIndex.Value) as CellFormat;
+                var isDate = IsDateFormat(stylesPart, cellFormat);
+
+                // If it's a date format, interpret the numeric value as a date
+                if (isDate && double.TryParse(cell.CellValue.Text, out var oaDate))
+                {
+                    var dateValue = DateTime.FromOADate(oaDate);
+                    return dateValue.ToString("dd.MM.yyyy"); // Format as a date
+                }
             }
         }
 
@@ -2889,7 +2907,7 @@ public class TimePlanningWorkingHoursService(
         return cell.CellValue.Text;
     }
 
-    private bool IsDateFormat(WorkbookStylesPart stylesPart, CellFormat cellFormat)
+    private bool IsDateFormat(WorkbookStylesPart stylesPart, CellFormat? cellFormat)
     {
         if (cellFormat == null || cellFormat.NumberFormatId == null)
         {
@@ -2908,8 +2926,8 @@ public class TimePlanningWorkingHoursService(
         var numberFormats = stylesPart.Stylesheet.NumberingFormats?.Elements<NumberingFormat>();
         if (numberFormats != null)
         {
-            var format = numberFormats.FirstOrDefault(nf => nf.NumberFormatId.Value == cellFormat.NumberFormatId.Value);
-            if (format != null && format.FormatCode != null)
+            var format = numberFormats.FirstOrDefault(nf => nf.NumberFormatId?.Value == cellFormat.NumberFormatId.Value);
+            if (format?.FormatCode?.Value != null)
             {
                 // Check if the custom format code looks like a date format
                 var formatCode = format.FormatCode.Value.ToLower();

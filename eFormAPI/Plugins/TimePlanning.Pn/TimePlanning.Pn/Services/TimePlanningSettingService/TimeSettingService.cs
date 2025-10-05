@@ -56,7 +56,7 @@ public class TimeSettingService(
     IEFormCoreService core)
     : ISettingService
 {
-    public async Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
+    public Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
     {
         try
         {
@@ -93,16 +93,16 @@ public class TimeSettingService(
             };
 
             //timePlanningSettingsModel.AssignedSites = assignedSites;
-            return new OperationDataResult<TimePlanningSettingsModel>(true, timePlanningSettingsModel);
+            return Task.FromResult(new OperationDataResult<TimePlanningSettingsModel>(true, timePlanningSettingsModel));
         }
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
             Console.WriteLine(e);
             logger.LogError(e.Message);
-            return new OperationDataResult<TimePlanningSettingsModel>(
+            return Task.FromResult(new OperationDataResult<TimePlanningSettingsModel>(
                 false,
-                localizationService.GetString("ErrorWhileObtainingSettings"));
+                localizationService.GetString("ErrorWhileObtainingSettings")));
         }
     }
 

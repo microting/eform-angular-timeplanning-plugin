@@ -28,19 +28,19 @@ using System;
 /// </summary>
 public class TimePlanningWorkingHourSimpleModel
 {
-    public string Date { get; set; }
-    public string YesterDay { get; set; }
-    public string Worker { get; set; }
-    public string PlanText { get; set; }
+    public string Date { get; set; } = null!;
+    public string YesterDay { get; set; } = null!;
+    public string Worker { get; set; } = null!;
+    public string PlanText { get; set; } = null!;
     public double PlanHours { get; set; }
     public double NettoHours { get; set; }
     public double FlexHours { get; set; }
-    public string SumFlexStart { get; set; }
-    public string SumFlexEnd { get; set; }
+    public string SumFlexStart { get; set; } = null!;
+    public string SumFlexEnd { get; set; } = null!;
     public double PaidOutFlex { get; set; }
-    public string Message { get; set; }
-    public string CommentWorker { get; set; }
-    public string CommentOffice { get; set; }
+    public string Message { get; set; } = null!;
+    public string CommentWorker { get; set; } = null!;
+    public string CommentOffice { get; set; } = null!;
     public string? Start1StartedAt { get; set; }
     public string? Stop1StoppedAt { get; set; }
     public string? Pause1StartedAt { get; set; }

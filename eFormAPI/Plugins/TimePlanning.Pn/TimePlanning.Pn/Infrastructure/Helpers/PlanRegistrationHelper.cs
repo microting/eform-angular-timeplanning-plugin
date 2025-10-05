@@ -1886,7 +1886,7 @@ public static class PlanRegistrationHelper
                     await planRegistration.Update(dbContext).ConfigureAwait(false);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 SentrySdk.CaptureMessage(
                     $"Could not parse PlanText for planning with id: {planRegistration.Id} the PlanText was: {planRegistration.PlanText}");
