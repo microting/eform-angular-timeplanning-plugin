@@ -2699,10 +2699,14 @@ public class TimePlanningWorkingHoursService(
                         return new OperationResult(false, localizationService.GetString("FileFormatError"));
                     }
                     var sheets = workbookPart.Workbook.Sheets;
+                    if (sheets == null)
+                    {
+                        return new OperationResult(false, localizationService.GetString("FileFormatError"));
+                    }
 
                     foreach (Sheet sheet in sheets)
                     {
-                        if (sheet.Name?.Value == null || sheet.Id == null)
+                        if (sheet.Name?.Value == null || sheet.Id?.Value == null)
                         {
                             continue;
                         }
@@ -2712,7 +2716,7 @@ public class TimePlanningWorkingHoursService(
                             continue;
                         }
 
-                        var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
+                        var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
                         var sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
 
                         var rows = sheetData.Elements<Row>();
@@ -2885,7 +2889,7 @@ public class TimePlanningWorkingHoursService(
         if (cell.StyleIndex != null)
         {
             var stylesPart = workbookPart.WorkbookStylesPart;
-            if (stylesPart != null)
+            if (stylesPart?.Stylesheet?.CellFormats != null)
             {
                 var cellFormat = stylesPart.Stylesheet.CellFormats.ElementAt((int)cell.StyleIndex.Value) as CellFormat;
                 var isDate = IsDateFormat(stylesPart, cellFormat);
@@ -2922,8 +2926,8 @@ public class TimePlanningWorkingHoursService(
         var numberFormats = stylesPart.Stylesheet.NumberingFormats?.Elements<NumberingFormat>();
         if (numberFormats != null)
         {
-            var format = numberFormats.FirstOrDefault(nf => nf.NumberFormatId.Value == cellFormat.NumberFormatId.Value);
-            if (format != null && format.FormatCode != null)
+            var format = numberFormats.FirstOrDefault(nf => nf.NumberFormatId?.Value == cellFormat.NumberFormatId.Value);
+            if (format?.FormatCode?.Value != null)
             {
                 // Check if the custom format code looks like a date format
                 var formatCode = format.FormatCode.Value.ToLower();

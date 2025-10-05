@@ -298,6 +298,13 @@ public class TimePlanningPlanningService(
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == site.MicrotingUid);
 
+        if (dbAssignedSite == null)
+        {
+            return new OperationDataResult<TimePlanningPlanningModel>(
+                false,
+                localizationService.GetString("AssignedSiteNotFound"));
+        }
+
         var datesInPeriod = new List<DateTime>();
         var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
         var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
@@ -318,7 +325,8 @@ public class TimePlanningPlanningService(
 
         try
         {
-            siteModel.SoftwareVersionIsValid = int.Parse(currentUser.TimeRegistrationSoftwareVersion.Replace(".", "")) >= 3114;
+            siteModel.SoftwareVersionIsValid = currentUser.TimeRegistrationSoftwareVersion != null && 
+                int.Parse(currentUser.TimeRegistrationSoftwareVersion.Replace(".", "")) >= 3114;
         }
         catch (Exception)
         {
@@ -896,6 +904,8 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
+                if (preTimePlanningAfterThisPlanning == null) continue;
+
                 planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
                 if (planningAfterThisPlanning.NettoHoursOverrideActive)
                 {
@@ -1366,6 +1376,8 @@ public class TimePlanningPlanningService(
                                     && x.SdkSitId == planningAfterThisPlanning.SdkSitId)
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
+
+                if (preTimePlanningAfterThisPlanning == null) continue;
 
                 planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
                 planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
