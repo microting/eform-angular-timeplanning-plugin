@@ -22,8 +22,8 @@ describe('TimePlanningsContainerComponent', () => {
     mockStore = jasmine.createSpyObj('Store', ['select']);
 
     mockStore.select.and.returnValue(of('en-US'));
-    mockSettingsService.getAvailableSites.and.returnValue(of({ success: true, model: [] }));
-    mockPlanningsService.getPlannings.and.returnValue(of({ success: true, model: [] }));
+    mockSettingsService.getAvailableSites.and.returnValue(of({ success: true, model: [] }) as any);
+    mockPlanningsService.getPlannings.and.returnValue(of({ success: true, model: [] }) as any);
 
     await TestBed.configureTestingModule({
       declarations: [TimePlanningsContainerComponent],
