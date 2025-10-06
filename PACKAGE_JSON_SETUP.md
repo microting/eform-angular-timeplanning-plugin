@@ -33,6 +33,44 @@ The workflow will add `--watch=false --browsers=ChromeHeadless` automatically.
 
 ## Common Issues and Solutions
 
+### Issue 0: "Cannot find module 'karma'" Error
+
+**Error message:**
+```
+Error: Cannot find module 'karma'
+```
+
+**Cause:** The frontend repository doesn't have Karma installed, which is required for running Angular unit tests with `ng test`.
+
+**Solution:** Add Karma and related dependencies to the frontend's package.json:
+
+```json
+{
+  "devDependencies": {
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.1.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.0.0",
+    "@types/jasmine": "~4.3.0",
+    "jasmine-core": "~4.5.0"
+  },
+  "scripts": {
+    "test": "ng test",
+    "test:ci": "ng test --no-watch --no-progress --browsers=ChromeHeadless --code-coverage"
+  }
+}
+```
+
+Then run:
+```bash
+npm install
+# or
+yarn install
+```
+
+**Note:** The GitHub Actions workflow will now detect if Karma is missing and skip the tests gracefully with a helpful message instead of failing.
+
 ### Issue 1: "--include" parameter not recognized
 
 If you're using Karma with Jasmine, the `--include` parameter might not work. Instead, you can:
