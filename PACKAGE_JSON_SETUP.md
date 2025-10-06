@@ -534,6 +534,87 @@ npm run test:ci -- --include='**/time-planning-pn/**/*.spec.ts'
 npm run test -- --watch=false --browsers=ChromeHeadless
 ```
 
+
+### Issue 5: "Can't resolve 'src/styles.scss'" or "Can't resolve 'src/theme.scss'"
+
+**Error messages:**
+```
+Error: Can't resolve 'src/styles.scss' in '/path/to/eform-client'
+Error: Can't resolve 'src/theme.scss' in '/path/to/eform-client'
+ERROR [karma-server]: Error: Found 1 load error
+```
+
+**Cause:** The Angular configuration references style files that don't exist or aren't needed for running tests. This typically happens when `angular.json` specifies global styles that aren't present in the repository.
+
+**Solution - Option A: Create Placeholder Files (Quick Fix)**
+
+If these files are referenced but not needed for tests, create empty placeholders:
+
+```bash
+cd eform-client
+touch src/styles.scss
+touch src/theme.scss
+```
+
+**Solution - Option B: Update angular.json (Recommended)**
+
+Modify the test configuration in `angular.json` to exclude missing style files:
+
+```json
+{
+  "projects": {
+    "your-project-name": {
+      "architect": {
+        "test": {
+          "options": {
+            "styles": [],
+            "scripts": []
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+If you have existing style files that should be included, reference only those:
+
+```json
+{
+  "projects": {
+    "your-project-name": {
+      "architect": {
+        "test": {
+          "options": {
+            "styles": [
+              "src/styles.css"  // Only include files that exist
+            ],
+            "scripts": []
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Solution - Option C: Update karma.conf.js**
+
+Alternatively, you can configure Karma to ignore missing files by updating the `preprocessors` section in `karma.conf.js`:
+
+```javascript
+module.exports = function (config) {
+  config.set({
+    // ... other config
+    files: [
+      // Only include files that exist
+    ],
+    preprocessors: {
+      // Add preprocessors only for existing files
+    }
+  });
+};
+```
 ## Contact
 
 If you need help configuring the tests, check:
