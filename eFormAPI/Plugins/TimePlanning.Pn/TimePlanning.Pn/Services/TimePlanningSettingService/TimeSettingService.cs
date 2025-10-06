@@ -56,7 +56,7 @@ public class TimeSettingService(
     IEFormCoreService core)
     : ISettingService
 {
-    public Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
+    public async Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
     {
         try
         {
@@ -93,16 +93,16 @@ public class TimeSettingService(
             };
 
             //timePlanningSettingsModel.AssignedSites = assignedSites;
-            return Task.FromResult(new OperationDataResult<TimePlanningSettingsModel>(true, timePlanningSettingsModel));
+            return new OperationDataResult<TimePlanningSettingsModel>(true, timePlanningSettingsModel);
         }
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
             Console.WriteLine(e);
             logger.LogError(e.Message);
-            return Task.FromResult(new OperationDataResult<TimePlanningSettingsModel>(
+            return new OperationDataResult<TimePlanningSettingsModel>(
                 false,
-                localizationService.GetString("ErrorWhileObtainingSettings")));
+                localizationService.GetString("ErrorWhileObtainingSettings"));
         }
     }
 
@@ -362,10 +362,12 @@ public class TimeSettingService(
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
 
-        if (sdkSite == null)
+        if (worker == null)
         {
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
+
+        var sdkSite = worker.SiteWorkers.First().Site;
 
         Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
