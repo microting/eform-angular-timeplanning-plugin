@@ -214,8 +214,8 @@ describe('AssignedSiteDialogComponent', () => {
             mondayBreakMinutesDivider: 480,
             mondayBreakMinutesPrDivider: 30,
             mondayBreakMinutesUpperLimit: 60
-          } as any
-        })
+          }
+        }) as any
       );
     });
 
