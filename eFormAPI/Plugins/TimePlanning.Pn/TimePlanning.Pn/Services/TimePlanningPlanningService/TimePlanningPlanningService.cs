@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#nullable enable
 using System.Text.RegularExpressions;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
@@ -280,18 +281,20 @@ public class TimePlanningPlanningService(
             await baseDbContext.SaveChangesAsync();
         }
 
-        var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-
-        var site = await sdkDbContext.Sites
+        var worker = await sdkDbContext.Workers
+            .Include(x => x.SiteWorkers)
+            .ThenInclude(x => x.Site)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-            .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+            .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
 
-        if (site == null)
+        if (worker == null)
         {
             return new OperationDataResult<TimePlanningPlanningModel>(
                 false,
                 localizationService.GetString("SiteNotFound"));
         }
+
+        var site = worker.SiteWorkers.First().Site;
 
         var dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -317,7 +320,8 @@ public class TimePlanningPlanningService(
 
         try
         {
-            siteModel.SoftwareVersionIsValid = int.Parse(currentUser.TimeRegistrationSoftwareVersion.Replace(".", "")) >= 3114;
+            siteModel.SoftwareVersionIsValid = currentUser.TimeRegistrationSoftwareVersion != null &&
+                                               int.Parse(currentUser.TimeRegistrationSoftwareVersion.Replace(".", "")) >= 3114;
         }
         catch (Exception)
         {
@@ -941,21 +945,24 @@ public class TimePlanningPlanningService(
             var currentUserAsync = await userService.GetCurrentUserAsync();
             var currentUser = baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
-            var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-            var sdkSite = await sdkDbContext.Sites
+            var worker = await sdkDbContext.Workers
+                .Include(x => x.SiteWorkers)
+                .ThenInclude(x => x.Site)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .FirstOrDefaultAsync(x => x.Name.Replace(" ", "") == fullName.Replace(" ", ""));
+                .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
 
-            if (sdkSite == null)
+            if (worker == null)
             {
                 return new OperationDataResult<TimePlanningPlanningModel>(
                     false,
                     localizationService.GetString("SiteNotFound"));
             }
 
+            var mcrotingUid = worker.SiteWorkers.First().Site.MicrotingUid;
+
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
+                .FirstOrDefaultAsync(x => x.SiteId == mcrotingUid);
 
             if (assignedSite == null)
             {

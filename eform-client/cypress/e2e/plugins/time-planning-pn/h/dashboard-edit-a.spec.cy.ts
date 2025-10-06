@@ -35,12 +35,12 @@ describe('Dashboard edit values', () => {
   });
 
   it('should accepts decimal values with comma', () => {
-    cy.get('#paidOutFlex').should('have.value', '12');
-    cy.get('#paidOutFlex').clear().type('12');
+    cy.get('#paidOutFlex').should('have.value', '1.2');
+    cy.get('#paidOutFlex').clear().type('1,2');
   });
 
   it('should accepts whole numbers', () => {
-    cy.get('#paidOutFlex').should('have.value', '12');
+    cy.get('#paidOutFlex').should('have.value', '1.2');
     cy.get('#paidOutFlex').clear().type('0');
   });
 

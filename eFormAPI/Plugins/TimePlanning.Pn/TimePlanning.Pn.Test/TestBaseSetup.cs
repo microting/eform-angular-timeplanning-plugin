@@ -9,9 +9,10 @@ using Microting.TimePlanningBase.Infrastructure.Data;
 using NUnit.Framework;
 using Testcontainers.MariaDb;
 
+#nullable enable
 namespace BackendConfiguration.Pn.Integration.Test;
 
-public class TestBaseSetup
+public abstract class TestBaseSetup
 {
     private readonly MariaDbContainer _mariadbTestcontainer = new MariaDbBuilder()
         .WithDatabase(
