@@ -65,11 +65,15 @@ jobs:
     - name: Run Angular unit tests
       run: |
         cd eform-angular-frontend/eform-client
-        # Check if test:ci script exists, otherwise use test with headless mode
-        if npm run test:ci --help &> /dev/null; then
-          npm run test:ci -- --include='**/time-planning-pn/**/*.spec.ts' || echo "Unit tests failed or not configured"
+        # Try different test commands based on what's available in package.json
+        if grep -q '"test:ci"' package.json 2>/dev/null; then
+          echo "Running with test:ci script..."
+          npm run test:ci -- --include='**/time-planning-pn/**/*.spec.ts' || true
+        elif grep -q '"test"' package.json 2>/dev/null; then
+          echo "Running with test script..."
+          npm run test -- --watch=false --browsers=ChromeHeadless --include='**/time-planning-pn/**/*.spec.ts' || true
         else
-          echo "test:ci not configured in main frontend, skipping unit tests for now"
+          echo "No test script found in package.json, skipping unit tests"
         fi
       continue-on-error: true
   pn-test:
