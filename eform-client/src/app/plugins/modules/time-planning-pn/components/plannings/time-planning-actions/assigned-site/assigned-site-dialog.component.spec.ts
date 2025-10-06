@@ -59,7 +59,7 @@ describe('AssignedSiteDialogComponent', () => {
 
     mockStore.select.and.returnValue(of(true));
     mockSettingsService.getGlobalAutoBreakCalculationSettings.and.returnValue(
-      of({ success: true, model: {} as any })
+      of({ success: true, model: {} }) as any
     );
 
     await TestBed.configureTestingModule({

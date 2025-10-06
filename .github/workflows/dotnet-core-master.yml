@@ -91,14 +91,13 @@ jobs:
         # Try different test commands based on what's available in package.json
         if grep -q '"test:ci"' package.json 2>/dev/null; then
           echo "Running with test:ci script..."
-          npm run test:ci -- --include='**/time-planning-pn/**/*.spec.ts' || true
+          npm run test:ci -- --include='**/time-planning-pn/**/*.spec.ts'
         elif grep -q '"test"' package.json 2>/dev/null; then
           echo "Running with test script..."
-          npm run test -- --watch=false --browsers=ChromeHeadless --include='**/time-planning-pn/**/*.spec.ts' || true
+          npm run test -- --watch=false --browsers=ChromeHeadless --include='**/time-planning-pn/**/*.spec.ts'
         else
           echo "No test script found in package.json, skipping unit tests"
         fi
-      continue-on-error: true
   pn-test:
     needs: build
     runs-on: ubuntu-latest
