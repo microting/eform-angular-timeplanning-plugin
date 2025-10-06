@@ -1324,8 +1324,12 @@ export class WorkdayEntityDialogComponent implements OnInit {
       plannedTimeInMinutes += this.getPlannedShiftMinutes(start, end, brk);
     }
 
-    m.planHours = plannedTimeInMinutes / 60;
-    this.workdayForm.get('planHours')?.setValue(m.planHours, {emitEvent: false});
+    if (plannedTimeInMinutes !== 0) {
+      m.planHours = plannedTimeInMinutes / 60;
+      this.workdayForm.get('planHours')?.setValue(m.planHours, {emitEvent: false});
+    }
+    // m.planHours = plannedTimeInMinutes / 60;
+    // this.workdayForm.get('planHours')?.setValue(m.planHours, {emitEvent: false});
 
     // Summer actual
     let actualTimeInMinutes = 0;
