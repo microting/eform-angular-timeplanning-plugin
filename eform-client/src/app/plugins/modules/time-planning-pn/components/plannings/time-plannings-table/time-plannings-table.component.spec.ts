@@ -242,6 +242,63 @@ describe('TimePlanningsTableComponent', () => {
 
       expect(component.getCellClass(row, '0')).toBe('red-background');
     });
+
+    it('should return grey-background when plannedStartOfShift1 is set but no work started', () => {
+      const row = {
+        planningPrDayModels: {
+          '0': {
+            planHours: 0,
+            start1StartedAt: null,
+            start2StartedAt: null,
+            workDayEnded: false,
+            plannedStartOfShift1: '08:00',
+            message: null,
+            workerComment: null,
+            nettoHoursOverrideActive: false
+          }
+        }
+      };
+
+      expect(component.getCellClass(row, '0')).toBe('grey-background');
+    });
+
+    it('should return grey-background when message is set', () => {
+      const row = {
+        planningPrDayModels: {
+          '0': {
+            planHours: 0,
+            start1StartedAt: null,
+            start2StartedAt: null,
+            workDayEnded: false,
+            plannedStartOfShift1: null,
+            message: 'Some message',
+            workerComment: null,
+            nettoHoursOverrideActive: false
+          }
+        }
+      };
+
+      expect(component.getCellClass(row, '0')).toBe('grey-background');
+    });
+
+    it('should return grey-background when workerComment is set', () => {
+      const row = {
+        planningPrDayModels: {
+          '0': {
+            planHours: 0,
+            start1StartedAt: null,
+            start2StartedAt: null,
+            workDayEnded: false,
+            plannedStartOfShift1: null,
+            message: null,
+            workerComment: 'Worker comment',
+            nettoHoursOverrideActive: false
+          }
+        }
+      };
+
+      expect(component.getCellClass(row, '0')).toBe('grey-background');
+    });
   });
 
   describe('isInOlderThanToday', () => {

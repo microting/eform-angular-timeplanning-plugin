@@ -70,6 +70,17 @@ describe('TimePlanningsContainerComponent', () => {
       expect(component.dateTo.getDate()).toBe(expectedDateTo.getDate());
       expect(mockPlanningsService.getPlannings).toHaveBeenCalled();
     });
+
+    it('should not mutate original dates when navigating', () => {
+      const originalDateFrom = new Date(component.dateFrom);
+      const originalDateTo = new Date(component.dateTo);
+
+      component.goForward();
+
+      // The internal dates should have changed
+      expect(component.dateFrom.getTime()).not.toBe(originalDateFrom.getTime());
+      expect(component.dateTo.getTime()).not.toBe(originalDateTo.getTime());
+    });
   });
 
   describe('Date Formatting', () => {
