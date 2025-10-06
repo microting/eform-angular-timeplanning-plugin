@@ -931,7 +931,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     if (hourMinutes === '' || hourMinutes === null || hourMinutes === undefined) {
       return null;
     }
-    const today = new Date();
+    const today= new Date(this.data.planningPrDayModels.date);
     const [hours, minutes] = hourMinutes.split(':');
     const utcDate = new Date(Date.UTC(
       today.getUTCFullYear(),
