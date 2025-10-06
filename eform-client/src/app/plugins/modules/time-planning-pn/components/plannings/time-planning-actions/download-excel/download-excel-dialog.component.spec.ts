@@ -141,7 +141,7 @@ describe('DownloadExcelDialogComponent', () => {
       component.onDownloadExcelReportAllWorkers();
 
       const callArgs = mockWorkingHoursService.downloadReportAllWorkers.calls.mostRecent().args[0];
-      expect(callArgs).not.toHaveProperty('siteId');
+      expect(callArgs.siteId).toBeUndefined();
     });
   });
 });
