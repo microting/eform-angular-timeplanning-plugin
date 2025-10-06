@@ -39,6 +39,31 @@ jobs:
       with:
         name: time-planning-container
         path: time-planning-container.tar
+  angular-unit-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        path: eform-angular-timeplanning-plugin
+    - name: 'Preparing Frontend checkout'
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        repository: microting/eform-angular-frontend
+        ref: stable
+        path: eform-angular-frontend
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+    - name: Copy dependencies
+      run: |
+        cp -av eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn eform-angular-frontend/eform-client/src/app/plugins/modules/time-planning-pn
+        cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
+    - name: yarn install
+      run: cd eform-angular-frontend/eform-client && yarn install
+    - name: Run Angular unit tests
+      run: cd eform-angular-frontend/eform-client && npm run test:ci -- --include='**/time-planning-pn/**/*.spec.ts'
   pn-test:
     needs: build
     runs-on: ubuntu-22.04
