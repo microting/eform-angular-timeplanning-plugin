@@ -615,6 +615,167 @@ module.exports = function (config) {
   });
 };
 ```
+### Issue 6: Chrome Headless Timeout - "Disconnected, because no message in 30000 ms"
+
+**Error messages:**
+```
+Chrome Headless 140.0.0.0 (Linux 0.0.0) ERROR
+  Disconnected , because no message in 30000 ms.
+Error: Process completed with exit code 1.
+```
+
+**Cause:** Tests are taking longer than 30 seconds to compile or load, causing Karma to disconnect the browser. This commonly happens when:
+- Tests include many dependencies or large files
+- Initial compilation takes too long in CI environment
+- Memory/CPU constraints in the CI environment
+
+**Solution - Option A: Increase Browser Timeout (Recommended)**
+
+Update `karma.conf.js` to increase the timeout values:
+
+```javascript
+module.exports = function (config) {
+  config.set({
+    // ... other config
+    browserNoActivityTimeout: 60000, // Increase from default 30s to 60s
+    browserDisconnectTimeout: 10000,
+    browserDisconnectTolerance: 3,
+    captureTimeout: 210000,
+  });
+};
+```
+
+**Solution - Option B: Add Chrome Flags for CI**
+
+Update `karma.conf.js` to add Chrome flags that improve performance in CI:
+
+```javascript
+module.exports = function (config) {
+  config.set({
+    // ... other config
+    customLaunchers: {
+      ChromeHeadlessCI: {
+        base: 'ChromeHeadless',
+        flags: [
+          '--no-sandbox',
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+          '--disable-software-rasterizer',
+          '--disable-extensions',
+        ]
+      }
+    },
+    browsers: ['ChromeHeadlessCI'],
+    browserNoActivityTimeout: 60000,
+  });
+};
+```
+
+Then update package.json to use this custom launcher:
+
+```json
+{
+  "scripts": {
+    "test:ci": "ng test --no-watch --no-progress --browsers=ChromeHeadlessCI --code-coverage --include='**/time-planning-pn/**/*.spec.ts'"
+  }
+}
+```
+
+**Solution - Option C: Optimize Test Configuration**
+
+In `angular.json`, ensure optimization is disabled for tests:
+
+```json
+{
+  "projects": {
+    "your-project-name": {
+      "architect": {
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "optimization": false,
+            "sourceMap": true,
+            "vendorChunk": true,
+            "buildOptimizer": false
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Solution - Option D: Use Single Quotes for Glob Pattern**
+
+Make sure the test:ci script uses single quotes around the glob pattern:
+
+```json
+{
+  "scripts": {
+    "test:ci": "ng test --no-watch --no-progress --browsers=ChromeHeadlessCI --code-coverage --include='**/time-planning-pn/**/*.spec.ts'"
+  }
+}
+```
+
+**Combined Recommended Configuration:**
+
+For the best results in CI environments, combine multiple solutions in `karma.conf.js`:
+
+```javascript
+module.exports = function (config) {
+  config.set({
+    basePath: '',
+    frameworks: ['jasmine', '@angular-devkit/build-angular'],
+    plugins: [
+      require('karma-jasmine'),
+      require('karma-chrome-launcher'),
+      require('karma-jasmine-html-reporter'),
+      require('karma-coverage'),
+      require('@angular-devkit/build-angular/plugins/karma')
+    ],
+    client: {
+      jasmine: {},
+      clearContext: false
+    },
+    jasmineHtmlReporter: {
+      suppressAll: true
+    },
+    coverageReporter: {
+      dir: require('path').join(__dirname, './coverage'),
+      subdir: '.',
+      reporters: [
+        { type: 'html' },
+        { type: 'text-summary' }
+      ]
+    },
+    reporters: ['progress', 'kjhtml', 'coverage'],
+    port: 9876,
+    colors: true,
+    logLevel: config.LOG_INFO,
+    autoWatch: true,
+    browsers: ['Chrome'],
+    customLaunchers: {
+      ChromeHeadlessCI: {
+        base: 'ChromeHeadless',
+        flags: [
+          '--no-sandbox',
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+          '--disable-software-rasterizer',
+          '--disable-extensions',
+        ]
+      }
+    },
+    singleRun: false,
+    restartOnFileChange: true,
+    browserNoActivityTimeout: 60000,
+    browserDisconnectTimeout: 10000,
+    browserDisconnectTolerance: 3,
+    captureTimeout: 210000,
+  });
+};
+```
+
 ## Contact
 
 If you need help configuring the tests, check:
