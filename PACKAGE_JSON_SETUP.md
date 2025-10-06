@@ -615,21 +615,101 @@ module.exports = function (config) {
   });
 };
 ```
-### Issue 6: Chrome Headless Timeout - "Disconnected, because no message in 30000 ms"
+### Issue 6: Chrome Headless Timeout - "Disconnected, because no message in 60000 ms"
 
 **Error messages:**
 ```
 Chrome Headless 140.0.0.0 (Linux 0.0.0) ERROR
-  Disconnected , because no message in 30000 ms.
+  Disconnected , because no message in 60000 ms.
 Error: Process completed with exit code 1.
 ```
 
-**Cause:** Tests are taking longer than 30 seconds to compile or load, causing Karma to disconnect the browser. This commonly happens when:
-- Tests include many dependencies or large files
-- Initial compilation takes too long in CI environment
+**Cause:** The browser connects but tests never execute, usually indicating:
+- Compilation errors in test files preventing execution
+- Missing dependencies or circular imports
+- Test setup errors that halt initialization
 - Memory/CPU constraints in the CI environment
 
-**Solution - Option A: Increase Browser Timeout (Recommended)**
+**Solution - Option A: Enable Verbose Logging (Recommended First Step)**
+
+To diagnose what's preventing tests from executing, enable detailed logging:
+
+**1. Update package.json:**
+```json
+{
+  "scripts": {
+    "test:ci": "ng test --no-watch --browsers=ChromeHeadless --code-coverage --include='**/time-planning-pn/**/*.spec.ts' --source-map"
+  }
+}
+```
+
+**2. Update karma.conf.js:**
+```javascript
+module.exports = function (config) {
+  config.set({
+    basePath: '',
+    frameworks: ['jasmine', '@angular-devkit/build-angular'],
+    plugins: [
+      require('karma-jasmine'),
+      require('karma-chrome-launcher'),
+      require('karma-jasmine-html-reporter'),
+      require('karma-coverage'),
+      require('@angular-devkit/build-angular/plugins/karma')
+    ],
+    client: {
+      captureConsole: true,  // Capture all console output
+      clearContext: false,   // Keep Jasmine Spec Runner output visible
+      jasmine: {
+        random: false  // Run tests in deterministic order for debugging
+      }
+    },
+    jasmineHtmlReporter: {
+      suppressAll: false  // Show all test output, not just failures
+    },
+    logLevel: config.LOG_DEBUG,  // Enable detailed Karma logging
+    browserNoActivityTimeout: 120000,  // 2 minutes to allow for debugging
+    browserDisconnectTimeout: 10000,
+    browserDisconnectTolerance: 3,
+    captureTimeout: 210000,
+    // ... rest of config
+  });
+};
+```
+
+**What verbose logging shows:**
+- Which test files are being loaded
+- Compilation progress and any errors
+- Console output from the test runner
+- Detailed timing information
+- Any uncaught exceptions or initialization errors
+
+**Debugging Steps:**
+
+1. **Run locally with verbose output:**
+   ```bash
+   cd eform-client
+   ng test --no-watch --browsers=ChromeHeadless --source-map
+   ```
+
+2. **Test a single spec file to isolate the issue:**
+   ```bash
+   ng test --no-watch --include='**/time-plannings-container.component.spec.ts'
+   ```
+
+3. **Check for compilation errors:**
+   - Look for TypeScript errors in the test output
+   - Verify all imports are correct
+   - Ensure all test dependencies are mocked
+
+4. **Common causes:**
+   - **Import errors:** Missing or circular imports in spec files
+   - **Missing mocks:** Services/dependencies not properly mocked in TestBed
+   - **Module configuration:** Incorrect TestBed.configureTestingModule setup
+   - **Memory issues:** Too many test files loaded at once
+
+**Solution - Option B: Increase Browser Timeout**
+
+**Solution - Option B: Increase Browser Timeout (If tests are just slow)**
 
 Update `karma.conf.js` to increase the timeout values:
 
@@ -637,7 +717,7 @@ Update `karma.conf.js` to increase the timeout values:
 module.exports = function (config) {
   config.set({
     // ... other config
-    browserNoActivityTimeout: 60000, // Increase from default 30s to 60s
+    browserNoActivityTimeout: 120000, // Increase to 2 minutes
     browserDisconnectTimeout: 10000,
     browserDisconnectTolerance: 3,
     captureTimeout: 210000,
@@ -645,7 +725,9 @@ module.exports = function (config) {
 };
 ```
 
-**Solution - Option B: Add Chrome Flags for CI**
+**Solution - Option C: Add Chrome Flags for CI**
+
+**Solution - Option C: Add Chrome Flags for CI**
 
 Update `karma.conf.js` to add Chrome flags that improve performance in CI:
 
@@ -666,7 +748,7 @@ module.exports = function (config) {
       }
     },
     browsers: ['ChromeHeadlessCI'],
-    browserNoActivityTimeout: 60000,
+    browserNoActivityTimeout: 120000,
   });
 };
 ```
@@ -681,7 +763,9 @@ Then update package.json to use this custom launcher:
 }
 ```
 
-**Solution - Option C: Optimize Test Configuration**
+**Solution - Option D: Optimize Test Configuration**
+
+**Solution - Option D: Optimize Test Configuration**
 
 In `angular.json`, ensure optimization is disabled for tests:
 
@@ -705,7 +789,9 @@ In `angular.json`, ensure optimization is disabled for tests:
 }
 ```
 
-**Solution - Option D: Use Single Quotes for Glob Pattern**
+**Solution - Option E: Use Single Quotes for Glob Pattern**
+
+**Solution - Option E: Use Single Quotes for Glob Pattern**
 
 Make sure the test:ci script uses single quotes around the glob pattern:
 
@@ -717,9 +803,9 @@ Make sure the test:ci script uses single quotes around the glob pattern:
 }
 ```
 
-**Combined Recommended Configuration:**
+**Combined Recommended Configuration for Debugging:**
 
-For the best results in CI environments, combine multiple solutions in `karma.conf.js`:
+For the best results when diagnosing timeout issues, use this comprehensive `karma.conf.js`:
 
 ```javascript
 module.exports = function (config) {
@@ -734,26 +820,30 @@ module.exports = function (config) {
       require('@angular-devkit/build-angular/plugins/karma')
     ],
     client: {
-      jasmine: {},
-      clearContext: false
+      captureConsole: true,  // Capture console output for debugging
+      clearContext: false,   // Keep test runner output visible
+      jasmine: {
+        random: false  // Deterministic test order
+      }
     },
     jasmineHtmlReporter: {
-      suppressAll: true
+      suppressAll: false  // Show all output when debugging
     },
     coverageReporter: {
       dir: require('path').join(__dirname, './coverage'),
       subdir: '.',
       reporters: [
         { type: 'html' },
-        { type: 'text-summary' }
+        { type: 'text-summary' },
+        { type: 'lcovonly' }
       ]
     },
     reporters: ['progress', 'kjhtml', 'coverage'],
     port: 9876,
     colors: true,
-    logLevel: config.LOG_INFO,
-    autoWatch: true,
-    browsers: ['Chrome'],
+    logLevel: config.LOG_DEBUG,  // Verbose logging
+    autoWatch: false,
+    browsers: ['ChromeHeadlessCI'],
     customLaunchers: {
       ChromeHeadlessCI: {
         base: 'ChromeHeadless',
@@ -766,15 +856,24 @@ module.exports = function (config) {
         ]
       }
     },
-    singleRun: false,
-    restartOnFileChange: true,
-    browserNoActivityTimeout: 60000,
+    singleRun: true,
+    restartOnFileChange: false,
+    browserNoActivityTimeout: 120000,  // 2 minutes
     browserDisconnectTimeout: 10000,
     browserDisconnectTolerance: 3,
     captureTimeout: 210000,
   });
 };
 ```
+
+This configuration provides:
+- Verbose logging to see what's happening
+- Extended timeouts for slow compilation
+- Chrome flags optimized for CI environments
+- Console capture for debugging test issues
+
+Once you identify the issue, you can switch `logLevel` back to `config.LOG_INFO` and `jasmineHtmlReporter.suppressAll` to `true` for cleaner output.
+
 
 ## Contact
 
