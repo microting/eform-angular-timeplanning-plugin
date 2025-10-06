@@ -346,7 +346,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     return null;
   }
 
-  private getMinutes(time: string | null): number {
+  getMinutes(time: string | null): number {
     if (!time || !validator.matches(time, this.timeRegex)) {
       return 0;
     }
@@ -1001,7 +1001,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     return `${this.padZero(hrs)}:${this.padZero(mins)}`;
   }
 
-  private padZero(num: number): string {
+  padZero(num: number): string {
     return num < 10 ? '0' + num : num.toString();
   }
 
