@@ -131,4 +131,12 @@ export const plPL = {
   Resigned: 'Zrezygnowany',
   'Resigned at date': 'Zrezygnował w dniu',
   'NettoHours override': 'Nadpisanie godzin netto',
+  'Break must be shorter than shift duration': 'Przerwa musi być krótsza niż czas trwania zmiany',
+  'Shift duration cannot exceed 24 hours': 'Czas trwania zmiany nie może przekraczać 24 godzin',
+  'Break cannot be equal or longer than shift duration': 'Przerwa nie może być równa lub dłuższa niż czas trwania zmiany',
+  'Break cannot be negative': 'Przerwa nie może być ujemna',
+  'Stop time cannot be before start time': 'Czas zakończenia nie może przypadać przed czasem rozpoczęcia',
+  'Start and Stop cannot be the same': 'Start i Stop nie mogą być takie same',
+  'Stop time is required': 'Wymagany jest czas zatrzymania',
+  'Start time is required': 'Wymagana jest godzina rozpoczęcia',
 };

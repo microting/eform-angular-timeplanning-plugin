@@ -131,4 +131,12 @@ export const esES = {
   Resigned: 'Resignado',
   'Resigned at date': 'Renunció en la fecha',
   'NettoHours override': 'Anulación de horas netas',
+  'Break must be shorter than shift duration': 'El descanso debe ser más corto que la duración del turno',
+  'Shift duration cannot exceed 24 hours': 'La duración del turno no puede exceder las 24 horas',
+  'Break cannot be equal or longer than shift duration': 'El descanso no puede ser igual o más largo que la duración del turno',
+  'Break cannot be negative': 'La ruptura no puede ser negativa',
+  'Stop time cannot be before start time': 'La hora de parada no puede ser anterior a la hora de inicio',
+  'Start and Stop cannot be the same': 'Inicio y parada no pueden ser lo mismo',
+  'Stop time is required': 'Se requiere tiempo de parada',
+  'Start time is required': 'Se requiere hora de inicio',
 };

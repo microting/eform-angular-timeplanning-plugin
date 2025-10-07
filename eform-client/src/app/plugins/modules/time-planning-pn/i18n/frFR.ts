@@ -131,4 +131,12 @@ export const frFR = {
   Resigned: 'Résigné',
   'Resigned at date': 'A démissionné à ce jour',
   'NettoHours override': 'Remplacement des heures nettes',
+  'Break must be shorter than shift duration': 'La pause doit être plus courte que la durée du quart de travail',
+  'Shift duration cannot exceed 24 hours': 'La durée du quart de travail ne peut pas dépasser 24 heures',
+  'Break cannot be equal or longer than shift duration': 'La pause ne peut pas être égale ou plus longue que la durée du quart de travail',
+  'Break cannot be negative': 'La rupture ne peut pas être négative',
+  'Stop time cannot be before start time': 'L&#39;heure d&#39;arrêt ne peut pas être antérieure à l&#39;heure de début',
+  'Start and Stop cannot be the same': 'Le démarrage et l&#39;arrêt ne peuvent pas être identiques',
+  'Stop time is required': 'Un temps d&#39;arrêt est requis',
+  'Start time is required': 'L&#39;heure de début est obligatoire',
 };

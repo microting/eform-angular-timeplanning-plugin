@@ -131,4 +131,12 @@ export const slSL = {
   Resigned: 'Odstopil',
   'Resigned at date': 'Odstopil dne',
   'NettoHours override': 'Razveljavitev neto ur',
+  'Break must be shorter than shift duration': 'Odmor mora biti krajši od trajanja izmene',
+  'Shift duration cannot exceed 24 hours': 'Trajanje izmene ne sme presegati 24 ur',
+  'Break cannot be equal or longer than shift duration': 'Odmor ne sme biti enak ali daljši od trajanja izmene',
+  'Break cannot be negative': 'Prekinitev ne more biti negativna',
+  'Stop time cannot be before start time': 'Čas konca ne more biti pred časom začetka',
+  'Start and Stop cannot be the same': 'Začetek in konec ne moreta biti enaka',
+  'Stop time is required': 'Čas zaustavitve je obvezen',
+  'Start time is required': 'Začetni čas je obvezen',
 };

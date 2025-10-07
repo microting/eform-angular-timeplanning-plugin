@@ -131,4 +131,12 @@ export const csCZ = {
   Resigned: 'Rezignoval',
   'Resigned at date': 'Rezignoval/a k datu',
   'NettoHours override': 'Přepsání hodin netto',
+  'Break must be shorter than shift duration': 'Přestávka musí být kratší než délka směny',
+  'Shift duration cannot exceed 24 hours': 'Délka směny nesmí překročit 24 hodin',
+  'Break cannot be equal or longer than shift duration': 'Přestávka nemůže být stejná nebo delší než délka směny',
+  'Break cannot be negative': 'Přerušení nemůže být záporné',
+  'Stop time cannot be before start time': 'Čas ukončení nemůže být před časem zahájení',
+  'Start and Stop cannot be the same': 'Start a Stop nemohou být stejné',
+  'Stop time is required': 'Je vyžadován čas zastavení',
+  'Start time is required': 'Čas zahájení je povinný',
 };

@@ -131,4 +131,12 @@ export const hrHR = {
   Resigned: 'Dao ostavku',
   'Resigned at date': 'Ostavka dana',
   'NettoHours override': 'Poništavanje neto sati',
+  'Break must be shorter than shift duration': 'Pauza mora biti kraća od trajanja smjene',
+  'Shift duration cannot exceed 24 hours': 'Trajanje smjene ne može biti dulje od 24 sata',
+  'Break cannot be equal or longer than shift duration': 'Pauza ne može biti jednaka ili dulja od trajanja smjene',
+  'Break cannot be negative': 'Prekid ne može biti negativan',
+  'Stop time cannot be before start time': 'Vrijeme završetka ne može biti prije vremena početka',
+  'Start and Stop cannot be the same': 'Početak i kraj ne mogu biti isti',
+  'Stop time is required': 'Vrijeme zaustavljanja je obavezno',
+  'Start time is required': 'Vrijeme početka je obavezno',
 };

@@ -131,4 +131,12 @@ export const isIS = {
   Resigned: 'Sagði upp',
   'Resigned at date': 'Sagði af sér þann dag',
   'NettoHours override': 'Hnekkt nettótíma',
+  'Break must be shorter than shift duration': 'Hlé verður að vera styttra en vaktalengd',
+  'Shift duration cannot exceed 24 hours': 'Vaktatími má ekki fara yfir 24 klukkustundir',
+  'Break cannot be equal or longer than shift duration': 'Hlé má ekki vera jafnt eða lengra en vaktalengd',
+  'Break cannot be negative': 'Brot getur ekki verið neikvætt',
+  'Stop time cannot be before start time': 'Stöðvunartími má ekki vera á undan upphafstíma',
+  'Start and Stop cannot be the same': 'Byrjun og Stöðvun geta ekki verið það sama',
+  'Stop time is required': 'Stöðvunartími er nauðsynlegur',
+  'Start time is required': 'Upphafstími er nauðsynlegur',
 };

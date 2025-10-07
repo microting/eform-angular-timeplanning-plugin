@@ -131,4 +131,12 @@ export const ptBR = {
   Resigned: 'Resignado',
   'Resigned at date': 'Renunciou na data',
   'NettoHours override': 'Substituição de horas líquidas',
+  'Break must be shorter than shift duration': 'O intervalo deve ser menor que a duração do turno',
+  'Shift duration cannot exceed 24 hours': 'A duração do turno não pode exceder 24 horas',
+  'Break cannot be equal or longer than shift duration': 'O intervalo não pode ser igual ou maior que a duração do turno',
+  'Break cannot be negative': 'A quebra não pode ser negativa',
+  'Stop time cannot be before start time': 'O tempo de parada não pode ser anterior ao tempo de início',
+  'Start and Stop cannot be the same': 'Iniciar e Parar não podem ser a mesma coisa',
+  'Stop time is required': 'O tempo de parada é necessário',
+  'Start time is required': 'A hora de início é necessária',
 };

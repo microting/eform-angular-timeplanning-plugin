@@ -131,4 +131,12 @@ export const ltLT = {
   Resigned: 'Atsistatydino',
   'Resigned at date': 'Atsistatydino nuo datos',
   'NettoHours override': 'Grynojo valandų skaičiaus nepaisymas',
+  'Break must be shorter than shift duration': 'Pertrauka turi būti trumpesnė nei pamainos trukmė',
+  'Shift duration cannot exceed 24 hours': 'Pamainos trukmė negali viršyti 24 valandų',
+  'Break cannot be equal or longer than shift duration': 'Pertrauka negali būti lygi arba ilgesnė už pamainos trukmę',
+  'Break cannot be negative': 'Pertrauka negali būti neigiama',
+  'Stop time cannot be before start time': 'Pabaigos laikas negali būti ankstesnis nei pradžios laikas',
+  'Start and Stop cannot be the same': 'Pradėti ir sustabdyti negali būti tas pats',
+  'Stop time is required': 'Būtina nurodyti sustojimo laiką',
+  'Start time is required': 'Būtina nurodyti pradžios laiką',
 };

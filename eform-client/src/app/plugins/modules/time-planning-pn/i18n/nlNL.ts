@@ -131,4 +131,12 @@ export const nlNL = {
   Resigned: 'Afgetreden',
   'Resigned at date': 'Afgetreden op datum',
   'NettoHours override': 'Netto-uren overschrijven',
+  'Break must be shorter than shift duration': 'Pauze moet korter zijn dan de dienstduur',
+  'Shift duration cannot exceed 24 hours': 'De dienst mag niet langer duren dan 24 uur',
+  'Break cannot be equal or longer than shift duration': 'De pauze mag niet gelijk zijn aan of langer zijn dan de dienstduur',
+  'Break cannot be negative': 'Break kan niet negatief zijn',
+  'Stop time cannot be before start time': 'De stoptijd kan niet vóór de starttijd liggen',
+  'Start and Stop cannot be the same': 'Start en Stop kunnen niet hetzelfde zijn',
+  'Stop time is required': 'Stoptijd is vereist',
+  'Start time is required': 'Starttijd is vereist',
 };

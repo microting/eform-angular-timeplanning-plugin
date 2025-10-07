@@ -131,4 +131,12 @@ export const noNO = {
   Resigned: 'Sa opp',
   'Resigned at date': 'Sa opp på dato',
   'NettoHours override': 'Overstyring av netto timer',
+  'Break must be shorter than shift duration': 'Pausen må være kortere enn vaktlengden',
+  'Shift duration cannot exceed 24 hours': 'Skiftets varighet kan ikke overstige 24 timer',
+  'Break cannot be equal or longer than shift duration': 'Pausen kan ikke være lik eller lengre enn vaktvarigheten',
+  'Break cannot be negative': 'Brudd kan ikke være negativt',
+  'Stop time cannot be before start time': 'Stopptidspunktet kan ikke være før starttidspunktet',
+  'Start and Stop cannot be the same': 'Start og Stopp kan ikke være det samme',
+  'Stop time is required': 'Stopptid er påkrevd',
+  'Start time is required': 'Starttidspunkt er obligatorisk',
 };

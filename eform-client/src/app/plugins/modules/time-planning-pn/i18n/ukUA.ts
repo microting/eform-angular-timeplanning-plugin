@@ -131,4 +131,12 @@ export const ukUA = {
   Resigned: 'У відставку',
   'Resigned at date': 'Звільнений у дату',
   'NettoHours override': 'Перевизначення годин нетто',
+  'Break must be shorter than shift duration': 'Перерва має бути коротшою за тривалість зміни',
+  'Shift duration cannot exceed 24 hours': 'Тривалість зміни не може перевищувати 24 годин',
+  'Break cannot be equal or longer than shift duration': 'Перерва не може бути рівною або довшою за тривалість зміни',
+  'Break cannot be negative': 'Перерва не може бути від&#39;ємним значенням',
+  'Stop time cannot be before start time': 'Час зупинки не може бути раніше часу початку',
+  'Start and Stop cannot be the same': 'Пуск і зупинка не можуть бути однаковими',
+  'Stop time is required': 'Потрібно вказати час зупинки',
+  'Start time is required': 'Потрібно вказати час початку',
 };

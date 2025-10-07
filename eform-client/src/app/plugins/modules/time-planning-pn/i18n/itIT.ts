@@ -131,4 +131,12 @@ export const itIT = {
   Resigned: 'Rassegnato',
   'Resigned at date': 'Dimessosi alla data',
   'NettoHours override': 'Override delle ore nette',
+  'Break must be shorter than shift duration': 'La pausa deve essere più breve della durata del turno',
+  'Shift duration cannot exceed 24 hours': 'La durata del turno non può superare le 24 ore',
+  'Break cannot be equal or longer than shift duration': 'La pausa non può essere uguale o più lunga della durata del turno',
+  'Break cannot be negative': 'La pausa non può essere negativa',
+  'Stop time cannot be before start time': 'L&#39;orario di fine non può essere precedente all&#39;orario di inizio',
+  'Start and Stop cannot be the same': 'Start e Stop non possono essere uguali',
+  'Stop time is required': 'È richiesto il tempo di arresto',
+  'Start time is required': 'L&#39;orario di inizio è obbligatorio',
 };

@@ -131,4 +131,12 @@ export const skSK = {
   Resigned: 'Rezignoval/a',
   'Resigned at date': 'Dátum rezignácie',
   'NettoHours override': 'Prepísanie čistých hodín',
+  'Break must be shorter than shift duration': 'Prestávka musí byť kratšia ako trvanie zmeny',
+  'Shift duration cannot exceed 24 hours': 'Trvanie zmeny nesmie presiahnuť 24 hodín',
+  'Break cannot be equal or longer than shift duration': 'Prestávka nemôže byť rovnaká alebo dlhšia ako trvanie zmeny',
+  'Break cannot be negative': 'Prerušenie nemôže byť záporné',
+  'Stop time cannot be before start time': 'Čas ukončenia nemôže byť pred časom začiatku',
+  'Start and Stop cannot be the same': 'Štart a Stop nemôžu byť rovnaké',
+  'Stop time is required': 'Čas zastavenia je povinný',
+  'Start time is required': 'Čas začiatku je povinný',
 };

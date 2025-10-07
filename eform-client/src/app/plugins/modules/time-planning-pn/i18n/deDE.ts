@@ -131,4 +131,12 @@ export const deDE = {
   Resigned: 'Resigniert',
   'Resigned at date': 'Zurückgetreten am Datum',
   'NettoHours override': 'Nettostundenüberschreibung',
+  'Break must be shorter than shift duration': 'Pause muss kürzer als Schichtdauer sein',
+  'Shift duration cannot exceed 24 hours': 'Die Schichtdauer darf 24 Stunden nicht überschreiten',
+  'Break cannot be equal or longer than shift duration': 'Die Pause darf nicht gleich lang oder länger als die Schichtdauer sein.',
+  'Break cannot be negative': 'Break kann nicht negativ sein',
+  'Stop time cannot be before start time': 'Die Stoppzeit kann nicht vor der Startzeit liegen',
+  'Start and Stop cannot be the same': 'Start und Stopp können nicht identisch sein',
+  'Stop time is required': 'Stoppzeit ist erforderlich',
+  'Start time is required': 'Startzeit ist erforderlich',
 };

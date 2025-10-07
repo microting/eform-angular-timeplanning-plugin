@@ -131,4 +131,12 @@ export const svSE = {
   Resigned: 'Resignerad',
   'Resigned at date': 'Avgick vid datumet',
   'NettoHours override': 'Åsidosättning av nettotimmar',
+  'Break must be shorter than shift duration': 'Rasten måste vara kortare än arbetspassets längd',
+  'Shift duration cannot exceed 24 hours': 'Skiftets längd får inte överstiga 24 timmar',
+  'Break cannot be equal or longer than shift duration': 'Rasten får inte vara lika lång som eller längre än arbetspassets längd',
+  'Break cannot be negative': 'Bryt kan inte vara negativt',
+  'Stop time cannot be before start time': 'Stopptiden får inte vara före starttiden',
+  'Start and Stop cannot be the same': 'Start och stopp kan inte vara samma sak',
+  'Stop time is required': 'Stopptid krävs',
+  'Start time is required': 'Starttid krävs',
 };

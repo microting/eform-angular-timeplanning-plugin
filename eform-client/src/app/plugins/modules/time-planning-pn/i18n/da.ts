@@ -129,4 +129,12 @@ export const da = {
   Resigned: 'Fratrådt',
   'Resigned at date': 'Fratrådte på datoen',
   'NettoHours override': 'Netto timer overskrivning',
+  'Break must be shorter than shift duration': 'Pausen skal være kortere end vagtens varighed',
+  'Shift duration cannot exceed 24 hours': 'Vagtens varighed må ikke overstige 24 timer',
+  'Break cannot be equal or longer than shift duration': 'Pausen må ikke være lige så lang som eller længere end vagtens varighed',
+  'Break cannot be negative': 'Pausen kan ikke være negativ',
+  'Stop time cannot be before start time': 'Stoptidspunktet må ikke være før starttidspunktet',
+  'Start and Stop cannot be the same': 'Starttidspunkt og Stoptidspunkt kan ikke være det samme',
+  'Stop time is required': 'Stoptidspunkt er påkrævet',
+  'Start time is required': 'Starttidspunkt er påkrævet',
 };

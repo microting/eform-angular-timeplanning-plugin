@@ -131,4 +131,12 @@ export const lvLV = {
   Resigned: 'Atkāpās no amata',
   'Resigned at date': 'Atkāpšanās no amata datumā',
   'NettoHours override': 'Neto stundu ignorēšana',
+  'Break must be shorter than shift duration': 'Pārtraukumam jābūt īsākam par maiņas ilgumu',
+  'Shift duration cannot exceed 24 hours': 'Maiņas ilgums nedrīkst pārsniegt 24 stundas',
+  'Break cannot be equal or longer than shift duration': 'Pārtraukums nedrīkst būt vienāds ar maiņas ilgumu vai ilgāks par to',
+  'Break cannot be negative': 'Pārtraukums nevar būt negatīvs',
+  'Stop time cannot be before start time': 'Beigu laiks nevar būt pirms sākuma laika',
+  'Start and Stop cannot be the same': 'Sākums un Beigas nevar būt viens un tas pats',
+  'Stop time is required': 'Nepieciešams apstāšanās laiks',
+  'Start time is required': 'Sākuma laiks ir obligāts.',
 };
