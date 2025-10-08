@@ -77,7 +77,7 @@ jobs:
         
         # Run Jest tests for time-planning-pn plugin
         echo "Running Jest tests for time-planning-pn plugin..."
-        npm test:unit -- --testPathPattern=time-planning-pn --coverage --collectCoverageFrom='src/app/plugins/modules/time-planning-pn/**/*.ts' --coveragePathIgnorePatterns='\.spec\.ts$'
+        npm run test:unit -- --testPathPattern=time-planning-pn --coverage --collectCoverageFrom='src/app/plugins/modules/time-planning-pn/**/*.ts' --coveragePathIgnorePatterns='\.spec\.ts$'
   pn-test:
     needs: build
     runs-on: ubuntu-22.04
