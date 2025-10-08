@@ -101,8 +101,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   goBackward() {
-    this.dateFrom = new Date(this.dateFrom.setDate(this.dateFrom.getDate() - 7));
-    this.dateTo = new Date(this.dateTo.setDate(this.dateTo.getDate() - 7));
+    this.dateFrom = this.addDays(this.dateFrom, -7);
+    this.dateTo = this.addDays(this.dateTo, -7);
     this.getPlannings();
   }
 
@@ -119,9 +119,15 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   goForward() {
-    this.dateFrom = new Date(this.dateFrom.setDate(this.dateFrom.getDate() + 7));
-    this.dateTo = new Date(this.dateTo.setDate(this.dateTo.getDate() + 7));
+    this.dateFrom = this.addDays(this.dateFrom, 7);
+    this.dateTo = this.addDays(this.dateTo, 7);
     this.getPlannings();
+  }
+
+  private addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
   }
 
   formatDateRange(): string {
