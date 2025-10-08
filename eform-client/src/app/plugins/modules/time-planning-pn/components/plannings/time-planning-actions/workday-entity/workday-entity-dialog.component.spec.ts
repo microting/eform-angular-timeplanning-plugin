@@ -242,8 +242,8 @@ describe('WorkdayEntityDialogComponent', () => {
         expect(result).toBe('2:0'); // 2 hours to midnight
       });
 
-      it('should return 00:00 for invalid inputs', () => {
-        expect(component.getMaxDifference('', '')).toBe('00:00');
+      it('should return 0:0 for invalid inputs', () => {
+        expect(component.getMaxDifference('', '')).toBe('0:0');
       });
 
       it('should handle times with minutes', () => {
