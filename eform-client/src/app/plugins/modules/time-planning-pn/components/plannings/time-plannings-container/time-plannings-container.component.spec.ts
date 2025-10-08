@@ -7,6 +7,7 @@ import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { format } from 'date-fns';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 describe('TimePlanningsContainerComponent', () => {
   let component: TimePlanningsContainerComponent;
@@ -40,6 +41,7 @@ describe('TimePlanningsContainerComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [TimePlanningsContainerComponent],
+      imports: [TranslateModule.forRoot()],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },

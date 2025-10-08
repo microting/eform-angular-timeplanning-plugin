@@ -10,41 +10,53 @@ The Angular unit tests were failing with errors like:
 These errors occurred because Angular's test compiler was trying to compile the component templates and couldn't find the declarations for various directives and pipes used in the templates (like Material components, translate pipe, mtx-grid, etc.).
 
 ## Solution
-Added `NO_ERRORS_SCHEMA` to all component test specs. This schema tells Angular to ignore unknown elements and attributes during template compilation, which is appropriate for unit tests that focus on component logic rather than template rendering.
+Added `NO_ERRORS_SCHEMA` to all component test specs to ignore unknown elements and attributes, AND imported `TranslateModule` to provide the `translate` pipe. 
 
-`NO_ERRORS_SCHEMA` is a testing best practice for unit tests because:
-1. **Minimal changes** - Only requires adding one line to each test configuration
-2. **Isolation** - Unit tests should focus on component logic, not template rendering
-3. **Simplicity** - Avoids importing dozens of Angular Material and other modules
-4. **Performance** - Tests run faster without compiling full module trees
+**Important Note:** `NO_ERRORS_SCHEMA` only ignores unknown elements and attributes - it does NOT ignore missing pipes. Since all component templates use the `translate` pipe, we must import `TranslateModule.forRoot()` in the test configuration.
+
+This combined approach is appropriate for unit tests because:
+1. **Focus on Logic** - Unit tests should test component logic, not template rendering
+2. **Minimal Changes** - Only requires adding imports and one line to config
+3. **Performance** - Tests run faster without compiling full module trees for Material components
+4. **Handles Pipes** - TranslateModule provides the translate pipe that NO_ERRORS_SCHEMA cannot ignore
 5. **Maintenance** - Less brittle when templates change
 
 ## Files Modified
 
 1. **time-plannings-table.component.spec.ts**
    - Added `NO_ERRORS_SCHEMA` import
+   - Added `TranslateModule` import
    - Added `schemas: [NO_ERRORS_SCHEMA]` to TestBed configuration
+   - Added `TranslateModule.forRoot()` to imports array
 
 2. **time-plannings-container.component.spec.ts**
    - Added `NO_ERRORS_SCHEMA` import
+   - Added `TranslateModule` import
    - Added `schemas: [NO_ERRORS_SCHEMA]` to TestBed configuration
+   - Added `TranslateModule.forRoot()` to imports array
 
 3. **assigned-site-dialog.component.spec.ts**
    - Added `NO_ERRORS_SCHEMA` import
+   - Added `TranslateModule` import
    - Added `schemas: [NO_ERRORS_SCHEMA]` to TestBed configuration
+   - Added `TranslateModule.forRoot()` to imports array
 
 4. **workday-entity-dialog.component.spec.ts**
    - Added `NO_ERRORS_SCHEMA` import
+   - Added `TranslateModule` import
    - Added `schemas: [NO_ERRORS_SCHEMA]` to TestBed configuration
+   - Added `TranslateModule.forRoot()` to imports array
 
 5. **download-excel-dialog.component.spec.ts**
    - Added `NO_ERRORS_SCHEMA` import
+   - Added `TranslateModule` import
    - Added `schemas: [NO_ERRORS_SCHEMA]` to TestBed configuration
+   - Added `TranslateModule.forRoot()` to imports array
 
 ## Change Summary
 - **5 files changed**
-- **10 insertions(+)**, **1 deletion(-)**
-- All changes are additive and minimal
+- **15 insertions(+)**, **5 deletions(-)**
+- All changes are minimal and focused
 
 ## Testing
 To run the tests, use the command specified in the issue:
@@ -52,15 +64,25 @@ To run the tests, use the command specified in the issue:
 npm run test:unit -- --testPathPatterns=time-planning-pn --coverage --collectCoverageFrom='src/app/plugins/modules/time-planning-pn/**/*.ts' --coveragePathIgnorePatterns='\.spec\.ts'
 ```
 
-## Alternative Approach (Not Used)
-The alternative would have been to import all the required modules in each test:
-- `TranslateModule.forRoot()`
+## Why This Approach Works
+
+### NO_ERRORS_SCHEMA handles:
+- Unknown elements (mat-tab, mat-form-field, mat-button, etc.)
+- Unknown attributes (matTooltip, matStartDate, etc.)
+- Unknown components (mtx-grid, mtx-select, etc.)
+
+### TranslateModule handles:
+- The `translate` pipe used throughout templates
+- Provides actual pipe implementation for template compilation
+
+### Alternative Approach (Not Used)
+The alternative would have been to import all the required modules:
 - All Material modules (MatTabModule, MatFormFieldModule, MatInputModule, etc.)
 - MtxGridModule
 - Other dependencies
 
 This approach was rejected because:
-- Much more invasive changes
+- Much more invasive changes (20+ module imports per test)
 - Harder to maintain
 - Slower test execution
 - Not appropriate for unit tests (better suited for integration tests)

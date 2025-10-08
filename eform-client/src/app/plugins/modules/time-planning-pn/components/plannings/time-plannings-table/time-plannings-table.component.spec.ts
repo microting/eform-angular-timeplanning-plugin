@@ -8,6 +8,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectorRef, NO_ERRORS_SCHEMA } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
 
 describe('TimePlanningsTableComponent', () => {
   let component: TimePlanningsTableComponent;
@@ -45,6 +46,7 @@ describe('TimePlanningsTableComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [TimePlanningsTableComponent],
+      imports: [TranslateModule.forRoot()],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },

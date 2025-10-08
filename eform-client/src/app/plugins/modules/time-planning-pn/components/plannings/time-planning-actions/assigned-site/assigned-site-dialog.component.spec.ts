@@ -6,6 +6,7 @@ import { TimePlanningPnSettingsService } from '../../../../services';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 describe('AssignedSiteDialogComponent', () => {
   let component: AssignedSiteDialogComponent;
@@ -67,7 +68,7 @@ describe('AssignedSiteDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [AssignedSiteDialogComponent],
-      imports: [ReactiveFormsModule],
+      imports: [ReactiveFormsModule, TranslateModule.forRoot()],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         FormBuilder,

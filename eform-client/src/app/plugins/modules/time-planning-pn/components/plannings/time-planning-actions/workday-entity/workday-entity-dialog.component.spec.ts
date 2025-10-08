@@ -7,6 +7,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 describe('WorkdayEntityDialogComponent', () => {
   let component: WorkdayEntityDialogComponent;
@@ -97,7 +98,7 @@ describe('WorkdayEntityDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [WorkdayEntityDialogComponent],
-      imports: [ReactiveFormsModule],
+      imports: [ReactiveFormsModule, TranslateModule.forRoot()],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         FormBuilder,
