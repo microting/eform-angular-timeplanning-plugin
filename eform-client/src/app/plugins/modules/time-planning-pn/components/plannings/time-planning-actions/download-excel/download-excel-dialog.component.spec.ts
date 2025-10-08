@@ -5,6 +5,7 @@ import { TimePlanningPnWorkingHoursService } from '../../../../services';
 import { ToastrService } from 'ngx-toastr';
 import { of, throwError } from 'rxjs';
 import { format } from 'date-fns';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('DownloadExcelDialogComponent', () => {
   let component: DownloadExcelDialogComponent;
@@ -24,6 +25,7 @@ describe('DownloadExcelDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [DownloadExcelDialogComponent],
+      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: [] },
         { provide: TimePlanningPnWorkingHoursService, useValue: mockWorkingHoursService },

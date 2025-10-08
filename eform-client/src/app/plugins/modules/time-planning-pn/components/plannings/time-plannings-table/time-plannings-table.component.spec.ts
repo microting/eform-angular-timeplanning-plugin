@@ -5,7 +5,7 @@ import { TimePlanningPnSettingsService } from '../../../services/time-planning-p
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, NO_ERRORS_SCHEMA } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 
@@ -45,6 +45,7 @@ describe('TimePlanningsTableComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [TimePlanningsTableComponent],
+      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },
         { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },

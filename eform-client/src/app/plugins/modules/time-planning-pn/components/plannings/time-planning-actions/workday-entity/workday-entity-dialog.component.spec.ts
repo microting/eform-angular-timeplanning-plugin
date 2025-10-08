@@ -6,6 +6,7 @@ import { TimePlanningPnPlanningsService } from '../../../../services';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { of } from 'rxjs';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('WorkdayEntityDialogComponent', () => {
   let component: WorkdayEntityDialogComponent;
@@ -97,6 +98,7 @@ describe('WorkdayEntityDialogComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [WorkdayEntityDialogComponent],
       imports: [ReactiveFormsModule],
+      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         FormBuilder,
         DatePipe,
