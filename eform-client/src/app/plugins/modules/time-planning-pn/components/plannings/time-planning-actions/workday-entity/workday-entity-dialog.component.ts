@@ -497,12 +497,12 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
     if (!start || !stop) {
       if (!start) {
-        setError(startControl, 'required', 'Start time is required');
+        setError(startControl, 'required', this.translateService.instant('Start time is required'));
       } else {
         removeError(startControl, 'required');
       }
       if (!stop) {
-        setError(stopControl, 'required', 'Stop time is required');
+        setError(stopControl, 'required', this.translateService.instant('Stop time is required'));
       } else {
         removeError(stopControl, 'required');
       }
@@ -511,8 +511,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
     // Validate same start/stop
     if (startMin === stopMin && (startMin !== 0 && stopMin !== 0)) {
-      setError(startControl, 'sameStartStop', 'Start and Stop cannot be the same');
-      setError(stopControl, 'sameStartStop', 'Start and Stop cannot be the same');
+      setError(startControl, 'sameStartStop', this.translateService.instant('Start and Stop cannot be the same'));
+      setError(stopControl, 'sameStartStop', this.translateService.instant('Start and Stop cannot be the same'));
     } else {
       removeError(startControl, 'sameStartStop');
       removeError(stopControl, 'sameStartStop');
@@ -527,7 +527,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
     // Stop before start
     if (stopMin !== 0 && stopMin < startMin) {
-      setError(stopControl, 'invalidRange', 'Stop time cannot be before start time');
+      setError(stopControl, 'invalidRange', this.translateService.instant('Stop time cannot be before start time'));
     } else {
       removeError(stopControl, 'invalidRange');
     }
@@ -535,7 +535,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // Break time validation
     if (breakMin !== null) {
       if (breakMin < 0) {
-        setError(breakControl, 'negativeBreak', 'Break cannot be negative');
+        setError(breakControl, 'negativeBreak', this.translateService.instant('Break cannot be negative'));
       } else {
         removeError(breakControl, 'negativeBreak');
       }
@@ -544,21 +544,20 @@ export class WorkdayEntityDialogComponent implements OnInit {
         setError(
           breakControl,
           'breakTooLong',
-          'Break cannot be equal or longer than shift duration',
-        );
+          this.translateService.instant('Break cannot be equal or longer than shift duration'),);
       } else {
         removeError(breakControl, 'breakTooLong');
       }
     }
 
     if (duration > 24 * 60) {
-      setError(group, 'shiftTooLong', 'Shift duration cannot exceed 24 hours');
+      setError(group, 'shiftTooLong', this.translateService.instant('Shift duration cannot exceed 24 hours'));
     } else {
       removeError(group, 'shiftTooLong');
     }
 
     if (breakMin && breakMin >= duration) {
-      setError(breakControl, 'invalidBreak', 'Break must be shorter than shift duration');
+      setError(breakControl, 'invalidBreak', this.translateService.instant('Break must be shorter than shift duration'));
     } else {
       removeError(breakControl, 'invalidBreak');
     }
