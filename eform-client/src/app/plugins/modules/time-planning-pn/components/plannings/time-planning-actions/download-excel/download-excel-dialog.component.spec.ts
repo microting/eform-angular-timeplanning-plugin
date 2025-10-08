@@ -17,6 +17,10 @@ describe('DownloadExcelDialogComponent', () => {
   let mockToastrService: jest.Mocked<ToastrService>;
 
   beforeEach(async () => {
+    // Mock URL.createObjectURL and URL.revokeObjectURL for file-saver
+    global.URL.createObjectURL = jest.fn(() => 'mock-url');
+    global.URL.revokeObjectURL = jest.fn();
+    
     mockWorkingHoursService = {
       downloadReport: jest.fn(),
       downloadReportAllWorkers: jest.fn(),
