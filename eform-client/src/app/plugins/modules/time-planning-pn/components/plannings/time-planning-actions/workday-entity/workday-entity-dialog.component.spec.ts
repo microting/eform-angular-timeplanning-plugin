@@ -4,7 +4,7 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { TimePlanningPnPlanningsService } from '../../../../services';
 import { TranslateService } from '@ngx-translate/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, CommonModule } from '@angular/common';
 import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
@@ -98,7 +98,7 @@ describe('WorkdayEntityDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [WorkdayEntityDialogComponent],
-      imports: [ReactiveFormsModule, TranslateModule.forRoot()],
+      imports: [CommonModule, ReactiveFormsModule, TranslateModule.forRoot()],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         FormBuilder,

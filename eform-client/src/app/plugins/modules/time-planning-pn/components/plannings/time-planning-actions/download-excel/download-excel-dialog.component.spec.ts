@@ -7,6 +7,8 @@ import { of, throwError } from 'rxjs';
 import { format } from 'date-fns';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 describe('DownloadExcelDialogComponent', () => {
   let component: DownloadExcelDialogComponent;
@@ -26,7 +28,7 @@ describe('DownloadExcelDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [DownloadExcelDialogComponent],
-      imports: [TranslateModule.forRoot()],
+      imports: [CommonModule, FormsModule, TranslateModule.forRoot()],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: [] },
