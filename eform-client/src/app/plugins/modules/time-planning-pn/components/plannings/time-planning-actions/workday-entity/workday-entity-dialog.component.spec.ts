@@ -10,8 +10,8 @@ import { of } from 'rxjs';
 describe('WorkdayEntityDialogComponent', () => {
   let component: WorkdayEntityDialogComponent;
   let fixture: ComponentFixture<WorkdayEntityDialogComponent>;
-  let mockPlanningsService: jasmine.SpyObj<TimePlanningPnPlanningsService>;
-  let mockTranslateService: jasmine.SpyObj<TranslateService>;
+  let mockPlanningsService: jest.Mocked<TimePlanningPnPlanningsService>;
+  let mockTranslateService: jest.Mocked<TranslateService>;
 
   const mockData = {
     planningPrDayModels: {
@@ -82,13 +82,17 @@ describe('WorkdayEntityDialogComponent', () => {
   };
 
   beforeEach(async () => {
-    mockPlanningsService = jasmine.createSpyObj('TimePlanningPnPlanningsService', ['updatePlanning']);
-    mockTranslateService = jasmine.createSpyObj('TranslateService', ['instant', 'stream'], {
-      onLangChange: of({ lang: 'en' })
-    });
+    mockPlanningsService = {
+      updatePlanning: jest.fn(),
+    } as any;
+    mockTranslateService = {
+      instant: jest.fn(),
+      stream: jest.fn(),
+      onLangChange: of({ lang: 'en' }),
+    } as any;
 
-    mockTranslateService.instant.and.returnValue('Translated');
-    mockTranslateService.stream.and.returnValue(of('Translated'));
+    mockTranslateService.instant.mockReturnValue('Translated');
+    mockTranslateService.stream.mockReturnValue(of('Translated'));
 
     await TestBed.configureTestingModule({
       declarations: [WorkdayEntityDialogComponent],

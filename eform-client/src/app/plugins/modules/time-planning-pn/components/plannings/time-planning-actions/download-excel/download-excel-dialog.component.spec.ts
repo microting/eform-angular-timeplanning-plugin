@@ -9,15 +9,18 @@ import { format } from 'date-fns';
 describe('DownloadExcelDialogComponent', () => {
   let component: DownloadExcelDialogComponent;
   let fixture: ComponentFixture<DownloadExcelDialogComponent>;
-  let mockWorkingHoursService: jasmine.SpyObj<TimePlanningPnWorkingHoursService>;
-  let mockToastrService: jasmine.SpyObj<ToastrService>;
+  let mockWorkingHoursService: jest.Mocked<TimePlanningPnWorkingHoursService>;
+  let mockToastrService: jest.Mocked<ToastrService>;
 
   beforeEach(async () => {
-    mockWorkingHoursService = jasmine.createSpyObj('TimePlanningPnWorkingHoursService', [
-      'downloadReport',
-      'downloadReportAllWorkers'
-    ]);
-    mockToastrService = jasmine.createSpyObj('ToastrService', ['error', 'success']);
+    mockWorkingHoursService = {
+      downloadReport: jest.fn(),
+      downloadReportAllWorkers: jest.fn(),
+    } as any;
+    mockToastrService = {
+      error: jest.fn(),
+      success: jest.fn(),
+    } as any;
 
     await TestBed.configureTestingModule({
       declarations: [DownloadExcelDialogComponent],
@@ -75,7 +78,7 @@ describe('DownloadExcelDialogComponent', () => {
 
     it('should call downloadReport with correct model', () => {
       const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      mockWorkingHoursService.downloadReport.and.returnValue(of(mockBlob));
+      mockWorkingHoursService.downloadReport.mockReturnValue(of(mockBlob));
 
       component.onDownloadExcelReport();
 
@@ -87,7 +90,7 @@ describe('DownloadExcelDialogComponent', () => {
     });
 
     it('should show error toast when download fails', (done) => {
-      mockWorkingHoursService.downloadReport.and.returnValue(
+      mockWorkingHoursService.downloadReport.mockReturnValue(
         throwError(() => new Error('Download failed'))
       );
 
@@ -109,7 +112,7 @@ describe('DownloadExcelDialogComponent', () => {
 
     it('should call downloadReportAllWorkers with correct model', () => {
       const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      mockWorkingHoursService.downloadReportAllWorkers.and.returnValue(of(mockBlob));
+      mockWorkingHoursService.downloadReportAllWorkers.mockReturnValue(of(mockBlob));
 
       component.onDownloadExcelReportAllWorkers();
 
@@ -120,7 +123,7 @@ describe('DownloadExcelDialogComponent', () => {
     });
 
     it('should show error toast when download all workers fails', (done) => {
-      mockWorkingHoursService.downloadReportAllWorkers.and.returnValue(
+      mockWorkingHoursService.downloadReportAllWorkers.mockReturnValue(
         throwError(() => new Error('Download failed'))
       );
 
@@ -135,12 +138,12 @@ describe('DownloadExcelDialogComponent', () => {
 
     it('should not include siteId in all workers report model', () => {
       const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      mockWorkingHoursService.downloadReportAllWorkers.and.returnValue(of(mockBlob));
+      mockWorkingHoursService.downloadReportAllWorkers.mockReturnValue(of(mockBlob));
       component.siteId = 999; // Should not be included
 
       component.onDownloadExcelReportAllWorkers();
 
-      const callArgs = mockWorkingHoursService.downloadReportAllWorkers.calls.mostRecent().args[0];
+      const callArgs = mockWorkingHoursService.downloadReportAllWorkers.mock.calls[mockWorkingHoursService.downloadReportAllWorkers.mock.calls.length - 1][0];
       expect('siteId' in callArgs).toBe(false);
     });
   });
