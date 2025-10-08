@@ -139,4 +139,5 @@ export const itIT = {
   'Start and Stop cannot be the same': 'Start e Stop non possono essere uguali',
   'Stop time is required': 'È richiesto il tempo di arresto',
   'Start time is required': 'L&#39;orario di inizio è obbligatorio',
+  'Start time cannot be earlier than previous shift`s end time': 'L&#39;ora di inizio non può essere precedente all&#39;ora di fine del turno precedente',
 };

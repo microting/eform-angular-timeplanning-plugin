@@ -139,4 +139,5 @@ export const deDE = {
   'Start and Stop cannot be the same': 'Start und Stopp können nicht identisch sein',
   'Stop time is required': 'Stoppzeit ist erforderlich',
   'Start time is required': 'Startzeit ist erforderlich',
+  'Start time cannot be earlier than previous shift`s end time': 'Die Startzeit kann nicht vor der Endzeit der vorherigen Schicht liegen',
 };

@@ -139,4 +139,5 @@ export const elGR = {
   'Start and Stop cannot be the same': 'Η έναρξη και η διακοπή δεν μπορούν να είναι ίδιες',
   'Stop time is required': 'Απαιτείται χρόνος διακοπής',
   'Start time is required': 'Απαιτείται ώρα έναρξης',
+  'Start time cannot be earlier than previous shift`s end time': 'Η ώρα έναρξης δεν μπορεί να είναι προγενέστερη από την ώρα λήξης της προηγούμενης βάρδιας',
 };

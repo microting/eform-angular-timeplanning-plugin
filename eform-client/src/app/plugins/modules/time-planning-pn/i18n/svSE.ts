@@ -139,4 +139,5 @@ export const svSE = {
   'Start and Stop cannot be the same': 'Start och stopp kan inte vara samma sak',
   'Stop time is required': 'Stopptid krävs',
   'Start time is required': 'Starttid krävs',
+  'Start time cannot be earlier than previous shift`s end time': 'Starttiden kan inte vara tidigare än föregående skifts sluttid',
 };

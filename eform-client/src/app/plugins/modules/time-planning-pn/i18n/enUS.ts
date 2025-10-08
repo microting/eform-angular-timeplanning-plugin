@@ -137,4 +137,5 @@ export const enUS = {
   'Start and Stop cannot be the same': 'Start and Stop cannot be the same',
   'Stop time is required': 'Stop time is required',
   'Start time is required': 'Start time is required',
+  'Start time cannot be earlier than previous shift`s end time': 'Start time cannot be earlier than previous shift`s end time',
 };

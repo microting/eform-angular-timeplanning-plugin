@@ -139,4 +139,5 @@ export const roRO = {
   'Start and Stop cannot be the same': 'Start și Stop nu pot fi același lucru',
   'Stop time is required': 'Este necesar un timp de oprire',
   'Start time is required': 'Este necesară ora de începere',
+  'Start time cannot be earlier than previous shift`s end time': 'Ora de începere nu poate fi anterioară orei de încheiere a turei anterioare',
 };

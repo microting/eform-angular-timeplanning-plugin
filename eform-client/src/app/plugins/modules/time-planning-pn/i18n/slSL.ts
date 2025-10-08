@@ -139,4 +139,5 @@ export const slSL = {
   'Start and Stop cannot be the same': 'Začetek in konec ne moreta biti enaka',
   'Stop time is required': 'Čas zaustavitve je obvezen',
   'Start time is required': 'Začetni čas je obvezen',
+  'Start time cannot be earlier than previous shift`s end time': 'Začetni čas ne more biti pred končnim časom prejšnje izmene',
 };

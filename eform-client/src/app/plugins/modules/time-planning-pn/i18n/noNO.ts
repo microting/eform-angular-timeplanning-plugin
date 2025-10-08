@@ -139,4 +139,5 @@ export const noNO = {
   'Start and Stop cannot be the same': 'Start og Stopp kan ikke være det samme',
   'Stop time is required': 'Stopptid er påkrevd',
   'Start time is required': 'Starttidspunkt er obligatorisk',
+  'Start time cannot be earlier than previous shift`s end time': 'Starttidspunktet kan ikke være tidligere enn sluttidspunktet for forrige skift',
 };

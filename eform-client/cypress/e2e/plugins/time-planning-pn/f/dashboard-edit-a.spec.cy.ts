@@ -51,20 +51,20 @@ describe('Dashboard edit values', () => {
   it('should show an error when planned stop time is before start time', () => {
     setTimepickerValue('#plannedStartOfShift1', '10', '00');
     setTimepickerValue('#plannedEndOfShift1', '9', '00');
-    assertInputError('plannedEndOfShift1-Error', 'Stoptidspunktet må ikke være før starttidspunktet');
+    assertInputError('plannedEndOfShift1-Error', 'Stop må ikke være før start');
   });
 
   it('should show an error when planned break is longer than the shift duration', () => {
     setTimepickerValue('#plannedStartOfShift1', '1', '00');
     setTimepickerValue('#plannedEndOfShift1', '10', '00');
     setTimepickerValue('#plannedBreakOfShift1', '9', '00');
-    assertInputError('plannedBreakOfShift1-Error', 'Pausen må ikke være lige så lang som eller længere end vagtens varighed');
+    assertInputError('plannedBreakOfShift1-Error', 'Pausen må ikke være lige så lang som eller længere end skiftets varighed');
   });
 
   it('should show an error when planned start and stop are the same', () => {
     setTimepickerValue('#plannedStartOfShift1', '9', '00');
     setTimepickerValue('#plannedEndOfShift1', '9', '00');
-    assertInputError('plannedEndOfShift1-Error', 'Starttidspunkt og Stoptidspunkt kan ikke være det samme');
+    assertInputError('plannedEndOfShift1-Error', 'Start og stop kan ikke være det samme');
   });
 
   // --- Actual Shift Duration Validator ---
@@ -72,21 +72,21 @@ describe('Dashboard edit values', () => {
     setTimepickerValue('#start1StartedAt', '11', '00');
     setTimepickerValue('#stop1StoppedAt', '9', '00');
     setTimepickerValue('#pause1Id', '0', '00');
-    assertInputError('stop1StoppedAt-Error', 'Stoptidspunktet må ikke være før starttidspunktet');
+    assertInputError('stop1StoppedAt-Error', 'Stop må ikke være før start');
   });
 
   it('should show an error when actual pause is longer than the shift duration', () => {
     setTimepickerValue('#start1StartedAt', '8', '00');
     setTimepickerValue('#stop1StoppedAt', '10', '00');
     setTimepickerValue('#pause1Id', '2', '00');
-    assertInputError('pause1Id-Error', 'Pausen må ikke være lige så lang som eller længere end vagtens varighed');
+    assertInputError('pause1Id-Error', 'Pausen må ikke være lige så lang som eller længere end skiftets varighed');
   });
 
   it('should show an error when actual start and stop are the same', () => {
     setTimepickerValue('#start1StartedAt', '9', '00');
     setTimepickerValue('#stop1StoppedAt', '9', '00');
     setTimepickerValue('#pause1Id', '0', '00');
-    assertInputError('stop1StoppedAt-Error', 'Starttidspunkt og Stoptidspunkt kan ikke være det samme');
+    assertInputError('stop1StoppedAt-Error', 'Start og stop kan ikke være det samme');
   });
 
   // --- Shift-Wise Validator ---
@@ -94,14 +94,14 @@ describe('Dashboard edit values', () => {
     setTimepickerValue('#plannedStartOfShift1', '8', '00');
     setTimepickerValue('#plannedEndOfShift1', '12', '00');
     setTimepickerValue('#plannedStartOfShift2', '11', '00');
-    assertInputError('plannedStartOfShift2-Error', 'Start time cannot be earlier than previous shift\'s end time');
+    assertInputError('plannedStartOfShift2-Error', 'Start kan ikke være tidligere end stop for den forrige skift');
   });
 
   it('should show an error if actual Shift 2 starts before actual Shift 1 ends', () => {
     setTimepickerValue('#start1StartedAt', '8', '00');
     setTimepickerValue('#stop1StoppedAt', '12', '00');
     setTimepickerValue('#start2StartedAt', '11', '00');
-    assertInputError('start2StartedAt-Error', 'Start time cannot be earlier than previous shift\'s end time');
+    assertInputError('start2StartedAt-Error', 'Start kan ikke være tidligere end stop for den forrige skift');
   });
 
 

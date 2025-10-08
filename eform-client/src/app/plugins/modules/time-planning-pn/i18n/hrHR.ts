@@ -139,4 +139,5 @@ export const hrHR = {
   'Start and Stop cannot be the same': 'Početak i kraj ne mogu biti isti',
   'Stop time is required': 'Vrijeme zaustavljanja je obavezno',
   'Start time is required': 'Vrijeme početka je obavezno',
+  'Start time cannot be earlier than previous shift`s end time': 'Vrijeme početka ne može biti ranije od vremena završetka prethodne smjene',
 };

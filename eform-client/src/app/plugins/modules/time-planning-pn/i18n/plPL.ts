@@ -139,4 +139,5 @@ export const plPL = {
   'Start and Stop cannot be the same': 'Start i Stop nie mogą być takie same',
   'Stop time is required': 'Wymagany jest czas zatrzymania',
   'Start time is required': 'Wymagana jest godzina rozpoczęcia',
+  'Start time cannot be earlier than previous shift`s end time': 'Godzina rozpoczęcia nie może być wcześniejsza niż godzina zakończenia poprzedniej zmiany.',
 };

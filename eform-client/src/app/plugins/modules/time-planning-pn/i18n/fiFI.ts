@@ -139,4 +139,5 @@ export const fiFI = {
   'Start and Stop cannot be the same': 'Aloitus ja lopetus eivät voi olla sama asia',
   'Stop time is required': 'Pysäytysaika vaaditaan',
   'Start time is required': 'Aloitusaika on pakollinen',
+  'Start time cannot be earlier than previous shift`s end time': 'Aloitusaika ei voi olla aikaisempi kuin edellisen vuoron päättymisaika',
 };

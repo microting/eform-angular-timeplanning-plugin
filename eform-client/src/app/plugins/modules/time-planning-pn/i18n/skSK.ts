@@ -139,4 +139,5 @@ export const skSK = {
   'Start and Stop cannot be the same': 'Štart a Stop nemôžu byť rovnaké',
   'Stop time is required': 'Čas zastavenia je povinný',
   'Start time is required': 'Čas začiatku je povinný',
+  'Start time cannot be earlier than previous shift`s end time': 'Čas začiatku nemôže byť skorší ako čas ukončenia predchádzajúcej zmeny',
 };

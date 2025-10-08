@@ -139,4 +139,5 @@ export const isIS = {
   'Start and Stop cannot be the same': 'Byrjun og Stöðvun geta ekki verið það sama',
   'Stop time is required': 'Stöðvunartími er nauðsynlegur',
   'Start time is required': 'Upphafstími er nauðsynlegur',
+  'Start time cannot be earlier than previous shift`s end time': 'Byrjunartími má ekki vera fyrr en lokatími fyrri vaktar',
 };

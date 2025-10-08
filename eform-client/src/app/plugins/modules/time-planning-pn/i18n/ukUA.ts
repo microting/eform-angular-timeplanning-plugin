@@ -139,4 +139,5 @@ export const ukUA = {
   'Start and Stop cannot be the same': 'Пуск і зупинка не можуть бути однаковими',
   'Stop time is required': 'Потрібно вказати час зупинки',
   'Start time is required': 'Потрібно вказати час початку',
+  'Start time cannot be earlier than previous shift`s end time': 'Час початку не може бути раніше часу закінчення попередньої зміни',
 };

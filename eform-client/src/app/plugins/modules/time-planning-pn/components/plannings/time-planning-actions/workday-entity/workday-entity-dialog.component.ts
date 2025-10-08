@@ -676,7 +676,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
         if (prevEnd !== null && (currStart !== null && currStart !== 0)) {
           if (currStart < prevEnd) {
             currShift.get('start')?.setErrors({
-              hierarchyError: this.translateService.instant(`Start time cannot be earlier than previous shift's end time`),
+              hierarchyError: this.translateService.instant('Start time cannot be earlier than previous shift`s end time'),
             });
 
             if (!formError) {

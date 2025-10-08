@@ -139,4 +139,5 @@ export const frFR = {
   'Start and Stop cannot be the same': 'Le démarrage et l&#39;arrêt ne peuvent pas être identiques',
   'Stop time is required': 'Un temps d&#39;arrêt est requis',
   'Start time is required': 'L&#39;heure de début est obligatoire',
+  'Start time cannot be earlier than previous shift`s end time': 'L&#39;heure de début ne peut pas être antérieure à l&#39;heure de fin du quart de travail précédent',
 };

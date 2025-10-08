@@ -139,4 +139,5 @@ export const esES = {
   'Start and Stop cannot be the same': 'Inicio y parada no pueden ser lo mismo',
   'Stop time is required': 'Se requiere tiempo de parada',
   'Start time is required': 'Se requiere hora de inicio',
+  'Start time cannot be earlier than previous shift`s end time': 'La hora de inicio no puede ser anterior a la hora de finalización del turno anterior',
 };

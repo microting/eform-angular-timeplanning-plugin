@@ -139,4 +139,5 @@ export const ltLT = {
   'Start and Stop cannot be the same': 'Pradėti ir sustabdyti negali būti tas pats',
   'Stop time is required': 'Būtina nurodyti sustojimo laiką',
   'Start time is required': 'Būtina nurodyti pradžios laiką',
+  'Start time cannot be earlier than previous shift`s end time': 'Pradžios laikas negali būti ankstesnis nei ankstesnės pamainos pabaigos laikas',
 };

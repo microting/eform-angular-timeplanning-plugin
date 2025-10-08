@@ -139,4 +139,5 @@ export const lvLV = {
   'Start and Stop cannot be the same': 'Sākums un Beigas nevar būt viens un tas pats',
   'Stop time is required': 'Nepieciešams apstāšanās laiks',
   'Start time is required': 'Sākuma laiks ir obligāts.',
+  'Start time cannot be earlier than previous shift`s end time': 'Sākuma laiks nevar būt agrāks par iepriekšējās maiņas beigu laiku',
 };
