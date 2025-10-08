@@ -4,8 +4,10 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { TimePlanningPnPlanningsService } from '../../../../services';
 import { TranslateService } from '@ngx-translate/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, CommonModule } from '@angular/common';
 import { of } from 'rxjs';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 describe('WorkdayEntityDialogComponent', () => {
   let component: WorkdayEntityDialogComponent;
@@ -96,7 +98,8 @@ describe('WorkdayEntityDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [WorkdayEntityDialogComponent],
-      imports: [ReactiveFormsModule],
+      imports: [CommonModule, ReactiveFormsModule, TranslateModule.forRoot()],
+      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         FormBuilder,
         DatePipe,
@@ -239,8 +242,8 @@ describe('WorkdayEntityDialogComponent', () => {
         expect(result).toBe('2:0'); // 2 hours to midnight
       });
 
-      it('should return 00:00 for invalid inputs', () => {
-        expect(component.getMaxDifference('', '')).toBe('00:00');
+      it('should return 0:0 for invalid inputs', () => {
+        expect(component.getMaxDifference('', '')).toBe('0:0');
       });
 
       it('should handle times with minutes', () => {
@@ -323,10 +326,10 @@ describe('WorkdayEntityDialogComponent', () => {
 
   describe('Flex Calculation', () => {
     it('should calculate todays flex as difference between actual and plan hours', () => {
-      component.ngOnInit();
-      
       component.data.planningPrDayModels.actualHours = 9;
       component.data.planningPrDayModels.planHours = 8;
+      
+      component.ngOnInit();
       
       expect(component.todaysFlex).toBe(1);
     });

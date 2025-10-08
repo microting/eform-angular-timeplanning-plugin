@@ -5,6 +5,10 @@ import { TimePlanningPnWorkingHoursService } from '../../../../services';
 import { ToastrService } from 'ngx-toastr';
 import { of, throwError } from 'rxjs';
 import { format } from 'date-fns';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 describe('DownloadExcelDialogComponent', () => {
   let component: DownloadExcelDialogComponent;
@@ -13,6 +17,17 @@ describe('DownloadExcelDialogComponent', () => {
   let mockToastrService: jest.Mocked<ToastrService>;
 
   beforeEach(async () => {
+    // Mock URL.createObjectURL and URL.revokeObjectURL for file-saver
+    global.URL.createObjectURL = jest.fn(() => 'mock-url');
+    global.URL.revokeObjectURL = jest.fn();
+    
+    // Mock HTMLAnchorElement.prototype.click to prevent navigation errors
+    const mockClick = jest.fn();
+    Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+      configurable: true,
+      value: mockClick,
+    });
+    
     mockWorkingHoursService = {
       downloadReport: jest.fn(),
       downloadReportAllWorkers: jest.fn(),
@@ -24,6 +39,8 @@ describe('DownloadExcelDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [DownloadExcelDialogComponent],
+      imports: [CommonModule, FormsModule, TranslateModule.forRoot()],
+      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: [] },
         { provide: TimePlanningPnWorkingHoursService, useValue: mockWorkingHoursService },
