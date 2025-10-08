@@ -293,11 +293,23 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     end2NdShift: number,
     break2NdShift: number
   ): string {
-    let timeInMinutes = (end - start - breakTime) / 60;
-    let timeInMinutes2NdShift = (end2NdShift - start2NdShift - break2NdShift) / 60;
-    timeInMinutes += timeInMinutes2NdShift;
-    const hours = Math.floor(timeInMinutes);
-    const minutes = Math.round((timeInMinutes - hours) * 60);
+    const firstShiftMinutes = this.calculateShiftMinutes(start, end, breakTime);
+    const secondShiftMinutes = this.calculateShiftMinutes(start2NdShift, end2NdShift, break2NdShift);
+    const totalMinutes = firstShiftMinutes + secondShiftMinutes;
+    
+    return this.formatMinutesAsTime(totalMinutes);
+  }
+
+  private calculateShiftMinutes(start: number, end: number, breakTime: number): number {
+    if (!start || !end) {
+      return 0;
+    }
+    return (end - start - (breakTime || 0)) / 60;
+  }
+
+  private formatMinutesAsTime(totalMinutes: number): string {
+    const hours = Math.floor(totalMinutes);
+    const minutes = Math.round((totalMinutes - hours) * 60);
     return `${hours}:${minutes}`;
   }
 
@@ -462,7 +474,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     );
   }
 
-  private padZero(num: number): string {
+  padZero(num: number): string {
     return num < 10 ? `0${num}` : `${num}`;
   }
 
