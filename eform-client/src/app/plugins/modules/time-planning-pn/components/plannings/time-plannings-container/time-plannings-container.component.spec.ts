@@ -10,20 +10,32 @@ import { format } from 'date-fns';
 describe('TimePlanningsContainerComponent', () => {
   let component: TimePlanningsContainerComponent;
   let fixture: ComponentFixture<TimePlanningsContainerComponent>;
-  let mockPlanningsService: jasmine.SpyObj<TimePlanningPnPlanningsService>;
-  let mockSettingsService: jasmine.SpyObj<TimePlanningPnSettingsService>;
-  let mockDialog: jasmine.SpyObj<MatDialog>;
-  let mockStore: jasmine.SpyObj<Store>;
+  let mockPlanningsService: jest.Mocked<TimePlanningPnPlanningsService>;
+  let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
+  let mockDialog: jest.Mocked<MatDialog>;
+  let mockStore: jest.Mocked<Store>;
 
   beforeEach(async () => {
-    mockPlanningsService = jasmine.createSpyObj('TimePlanningPnPlanningsService', ['getPlannings', 'updatePlanning']);
-    mockSettingsService = jasmine.createSpyObj('TimePlanningPnSettingsService', ['getAvailableSites', 'getResignedSites', 'getAssignedSite', 'updateAssignedSite']);
-    mockDialog = jasmine.createSpyObj('MatDialog', ['open']);
-    mockStore = jasmine.createSpyObj('Store', ['select']);
+    mockPlanningsService = {
+      getPlannings: jest.fn(),
+      updatePlanning: jest.fn(),
+    } as any;
+    mockSettingsService = {
+      getAvailableSites: jest.fn(),
+      getResignedSites: jest.fn(),
+      getAssignedSite: jest.fn(),
+      updateAssignedSite: jest.fn(),
+    } as any;
+    mockDialog = {
+      open: jest.fn(),
+    } as any;
+    mockStore = {
+      select: jest.fn(),
+    } as any;
 
-    mockStore.select.and.returnValue(of('en-US'));
-    mockSettingsService.getAvailableSites.and.returnValue(of({ success: true, model: [] }) as any);
-    mockPlanningsService.getPlannings.and.returnValue(of({ success: true, model: [] }) as any);
+    mockStore.select.mockReturnValue(of('en-US'));
+    mockSettingsService.getAvailableSites.mockReturnValue(of({ success: true, model: [] }) as any);
+    mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: [] }) as any);
 
     await TestBed.configureTestingModule({
       declarations: [TimePlanningsContainerComponent],
@@ -105,7 +117,7 @@ describe('TimePlanningsContainerComponent', () => {
 
   describe('Event Handlers', () => {
     it('should call getPlannings when onTimePlanningChanged is triggered', () => {
-      spyOn(component, 'getPlannings');
+      jest.spyOn(component, 'getPlannings');
       
       component.onTimePlanningChanged({});
 
@@ -113,7 +125,7 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('should call getPlannings when onAssignedSiteChanged is triggered', () => {
-      spyOn(component, 'getPlannings');
+      jest.spyOn(component, 'getPlannings');
       
       component.onAssignedSiteChanged({});
 
@@ -121,7 +133,7 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('should update siteId and call getPlannings when onSiteChanged is triggered', () => {
-      spyOn(component, 'getPlannings');
+      jest.spyOn(component, 'getPlannings');
       const testSiteId = 123;
       
       component.onSiteChanged(testSiteId);
@@ -135,7 +147,7 @@ describe('TimePlanningsContainerComponent', () => {
     it('should open download excel dialog with available sites', () => {
       component.availableSites = [{ id: 1, name: 'Test Site' } as any];
       const mockDialogRef = { afterClosed: () => of(null) };
-      mockDialog.open.and.returnValue(mockDialogRef as any);
+      mockDialog.open.mockReturnValue(mockDialogRef as any);
 
       component.openDownloadExcelDialog();
 
@@ -145,7 +157,7 @@ describe('TimePlanningsContainerComponent', () => {
 
   describe('Show Resigned Sites', () => {
     it('should load resigned sites when showResignedSites is true', () => {
-      mockSettingsService.getResignedSites.and.returnValue(of({ success: true, model: [{ id: 1, name: 'Resigned Site' }] } as any));
+      mockSettingsService.getResignedSites.mockReturnValue(of({ success: true, model: [{ id: 1, name: 'Resigned Site' }] } as any));
       
       component.onShowResignedSitesChanged({ checked: true });
 
@@ -155,7 +167,7 @@ describe('TimePlanningsContainerComponent', () => {
 
     it('should load available sites when showResignedSites is false', () => {
       component.showResignedSites = true;
-      mockSettingsService.getAvailableSites.and.returnValue(of({ success: true, model: [{ id: 1, name: 'Available Site' }] } as any));
+      mockSettingsService.getAvailableSites.mockReturnValue(of({ success: true, model: [{ id: 1, name: 'Available Site' }] } as any));
       
       component.onShowResignedSitesChanged({ checked: false });
 

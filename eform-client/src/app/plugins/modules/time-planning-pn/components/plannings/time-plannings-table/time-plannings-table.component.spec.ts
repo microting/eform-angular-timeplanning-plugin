@@ -12,24 +12,36 @@ import { of } from 'rxjs';
 describe('TimePlanningsTableComponent', () => {
   let component: TimePlanningsTableComponent;
   let fixture: ComponentFixture<TimePlanningsTableComponent>;
-  let mockPlanningsService: jasmine.SpyObj<TimePlanningPnPlanningsService>;
-  let mockSettingsService: jasmine.SpyObj<TimePlanningPnSettingsService>;
-  let mockDialog: jasmine.SpyObj<MatDialog>;
-  let mockTranslateService: jasmine.SpyObj<TranslateService>;
-  let mockStore: jasmine.SpyObj<Store>;
+  let mockPlanningsService: jest.Mocked<TimePlanningPnPlanningsService>;
+  let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
+  let mockDialog: jest.Mocked<MatDialog>;
+  let mockTranslateService: jest.Mocked<TranslateService>;
+  let mockStore: jest.Mocked<Store>;
 
   beforeEach(async () => {
-    mockPlanningsService = jasmine.createSpyObj('TimePlanningPnPlanningsService', ['getPlannings', 'updatePlanning']);
-    mockSettingsService = jasmine.createSpyObj('TimePlanningPnSettingsService', ['getAssignedSite', 'updateAssignedSite']);
-    mockDialog = jasmine.createSpyObj('MatDialog', ['open']);
-    mockTranslateService = jasmine.createSpyObj('TranslateService', ['stream', 'instant'], {
-      onLangChange: of({ lang: 'en' })
-    });
-    mockStore = jasmine.createSpyObj('Store', ['select']);
+    mockPlanningsService = {
+      getPlannings: jest.fn(),
+      updatePlanning: jest.fn(),
+    } as any;
+    mockSettingsService = {
+      getAssignedSite: jest.fn(),
+      updateAssignedSite: jest.fn(),
+    } as any;
+    mockDialog = {
+      open: jest.fn(),
+    } as any;
+    mockTranslateService = {
+      stream: jest.fn(),
+      instant: jest.fn(),
+      onLangChange: of({ lang: 'en' }),
+    } as any;
+    mockStore = {
+      select: jest.fn(),
+    } as any;
 
-    mockStore.select.and.returnValue(of(true));
-    mockTranslateService.stream.and.returnValue(of('Translated'));
-    mockTranslateService.instant.and.returnValue('Translated');
+    mockStore.select.mockReturnValue(of(true));
+    mockTranslateService.stream.mockReturnValue(of('Translated'));
+    mockTranslateService.instant.mockReturnValue('Translated');
 
     await TestBed.configureTestingModule({
       declarations: [TimePlanningsTableComponent],
@@ -354,7 +366,7 @@ describe('TimePlanningsTableComponent', () => {
 
     it('should format time correctly when on same day', () => {
       // This test depends on the DatePipe transform which we've mocked
-      spyOn(component['datePipe'], 'transform').and.returnValue('10:30');
+      jest.spyOn(component['datePipe'], 'transform').mockReturnValue('10:30');
       const result = component.getStopTimeDisplay('2024-01-15T08:00:00', '2024-01-15T10:30:00');
       expect(result).toBe('10:30');
     });

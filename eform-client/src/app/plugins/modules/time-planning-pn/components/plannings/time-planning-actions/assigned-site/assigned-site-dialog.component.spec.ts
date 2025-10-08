@@ -9,8 +9,8 @@ import { of } from 'rxjs';
 describe('AssignedSiteDialogComponent', () => {
   let component: AssignedSiteDialogComponent;
   let fixture: ComponentFixture<AssignedSiteDialogComponent>;
-  let mockSettingsService: jasmine.SpyObj<TimePlanningPnSettingsService>;
-  let mockStore: jasmine.SpyObj<Store>;
+  let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
+  let mockStore: jest.Mocked<Store>;
 
   const mockAssignedSiteData = {
     id: 1,
@@ -50,15 +50,17 @@ describe('AssignedSiteDialogComponent', () => {
   };
 
   beforeEach(async () => {
-    mockSettingsService = jasmine.createSpyObj('TimePlanningPnSettingsService', [
-      'getGlobalAutoBreakCalculationSettings',
-      'updateAssignedSite',
-      'getAssignedSite'
-    ]);
-    mockStore = jasmine.createSpyObj('Store', ['select']);
+    mockSettingsService = {
+      getGlobalAutoBreakCalculationSettings: jest.fn(),
+      updateAssignedSite: jest.fn(),
+      getAssignedSite: jest.fn(),
+    } as any;
+    mockStore = {
+      select: jest.fn(),
+    } as any;
 
-    mockStore.select.and.returnValue(of(true));
-    mockSettingsService.getGlobalAutoBreakCalculationSettings.and.returnValue(
+    mockStore.select.mockReturnValue(of(true));
+    mockSettingsService.getGlobalAutoBreakCalculationSettings.mockReturnValue(
       of({ success: true, model: {} }) as any
     );
 
@@ -207,7 +209,7 @@ describe('AssignedSiteDialogComponent', () => {
   describe('Break Settings', () => {
     beforeEach(() => {
       component.ngOnInit();
-      mockSettingsService.getGlobalAutoBreakCalculationSettings.and.returnValue(
+      mockSettingsService.getGlobalAutoBreakCalculationSettings.mockReturnValue(
         of({
           success: true,
           model: {
