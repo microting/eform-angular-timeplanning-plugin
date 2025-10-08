@@ -22,7 +22,11 @@ describe('DownloadExcelDialogComponent', () => {
     global.URL.revokeObjectURL = jest.fn();
     
     // Mock HTMLAnchorElement.prototype.click to prevent navigation errors
-    HTMLAnchorElement.prototype.click = jest.fn();
+    const mockClick = jest.fn();
+    Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+      configurable: true,
+      value: mockClick,
+    });
     
     mockWorkingHoursService = {
       downloadReport: jest.fn(),
