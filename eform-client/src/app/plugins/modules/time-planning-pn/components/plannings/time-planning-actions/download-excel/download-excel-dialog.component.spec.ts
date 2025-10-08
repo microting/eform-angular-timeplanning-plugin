@@ -21,6 +21,9 @@ describe('DownloadExcelDialogComponent', () => {
     global.URL.createObjectURL = jest.fn(() => 'mock-url');
     global.URL.revokeObjectURL = jest.fn();
     
+    // Mock HTMLAnchorElement.prototype.click to prevent navigation errors
+    HTMLAnchorElement.prototype.click = jest.fn();
+    
     mockWorkingHoursService = {
       downloadReport: jest.fn(),
       downloadReportAllWorkers: jest.fn(),
