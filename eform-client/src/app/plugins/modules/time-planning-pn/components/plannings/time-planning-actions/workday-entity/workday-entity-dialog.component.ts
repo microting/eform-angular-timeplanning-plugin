@@ -1459,6 +1459,11 @@ export class WorkdayEntityDialogComponent implements OnInit {
           - this.data.planningPrDayModels.planHours;
       }
     }
+
+    if (this.data.planningPrDayModels.sumFlexEnd.toFixed(2) === '-0.00') {
+      this.data.planningPrDayModels.sumFlexEnd = 0.00;
+      this.workdayForm.get('sumFlexEnd')?.setValue(0.00, {emitEvent: false});
+    }
   }
 
 // Kør ALLE validators og vis fejl i UI

@@ -924,7 +924,8 @@
         matInput
         type="number"
         id="planHours"
-        formControlName="planHours"/>
+        formControlName="planHours"
+        (change)="calculatePlanHours()"/>
       <mat-error data-testid="planHours-Error"  *ngIf="workdayForm.hasError('tooManyHours')">
         Total planned hours cannot exceed 24
       </mat-error>
