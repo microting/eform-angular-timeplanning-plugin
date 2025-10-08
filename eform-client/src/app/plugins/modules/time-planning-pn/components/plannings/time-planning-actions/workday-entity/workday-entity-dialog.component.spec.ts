@@ -326,10 +326,10 @@ describe('WorkdayEntityDialogComponent', () => {
 
   describe('Flex Calculation', () => {
     it('should calculate todays flex as difference between actual and plan hours', () => {
-      component.ngOnInit();
-      
       component.data.planningPrDayModels.actualHours = 9;
       component.data.planningPrDayModels.planHours = 8;
+      
+      component.ngOnInit();
       
       expect(component.todaysFlex).toBe(1);
     });
