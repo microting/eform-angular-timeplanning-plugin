@@ -65,33 +65,18 @@ jobs:
     - name: Run Angular unit tests
       run: |
         cd eform-angular-frontend/eform-client
-        # Check if Karma is installed
-        if [ ! -d "node_modules/karma" ]; then
-          echo "⚠️  Karma is not installed in the frontend repository."
-          echo "Unit tests require Karma to be installed. Skipping unit tests."
+        # Check if Jest is configured
+        if [ ! -f "jest.config.js" ] && [ ! -f "jest.config.ts" ]; then
+          echo "⚠️  Jest is not configured in the frontend repository."
+          echo "Unit tests require Jest to be configured. Skipping unit tests."
           echo ""
-          echo "To enable unit tests, add these dependencies to the frontend's package.json:"
-          echo "  \"karma\": \"~6.4.0\","
-          echo "  \"karma-chrome-launcher\": \"~3.1.0\","
-          echo "  \"karma-coverage\": \"~2.2.0\","
-          echo "  \"karma-jasmine\": \"~5.1.0\","
-          echo "  \"karma-jasmine-html-reporter\": \"~2.0.0\""
-          echo ""
-          echo "And add this test script:"
-          echo "  \"test:ci\": \"ng test --no-watch --no-progress --browsers=ChromeHeadless --code-coverage\""
+          echo "To enable unit tests, ensure Jest is configured in the frontend repository."
           exit 0
         fi
         
-        # Try different test commands based on what's available in package.json
-        if grep -q '"test:ci"' package.json 2>/dev/null; then
-          echo "Running with test:ci script..."
-          npm run test:ci -- --include='**/time-planning-pn/**/*.spec.ts'
-        elif grep -q '"test"' package.json 2>/dev/null; then
-          echo "Running with test script..."
-          npm run test -- --watch=false --browsers=ChromeHeadless --include='**/time-planning-pn/**/*.spec.ts'
-        else
-          echo "No test script found in package.json, skipping unit tests"
-        fi
+        # Run Jest tests for time-planning-pn plugin
+        echo "Running Jest tests for time-planning-pn plugin..."
+        npm test -- --testPathPattern=time-planning-pn --coverage --collectCoverageFrom='src/app/plugins/modules/time-planning-pn/**/*.ts' --coveragePathIgnorePatterns='\.spec\.ts$'
   pn-test:
     needs: build
     runs-on: ubuntu-22.04

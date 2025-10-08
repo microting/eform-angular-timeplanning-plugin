@@ -1,23 +1,19 @@
-import { TestBed } from '@angular/core/testing';
 import { TimePlanningPnPlanningsService } from './time-planning-pn-plannings.service';
 import { ApiBaseService } from 'src/app/common/services';
 import { of } from 'rxjs';
 
 describe('TimePlanningPnPlanningsService', () => {
   let service: TimePlanningPnPlanningsService;
-  let mockApiBaseService: jasmine.SpyObj<ApiBaseService>;
+  let mockApiBaseService: jest.Mocked<ApiBaseService>;
 
   beforeEach(() => {
-    mockApiBaseService = jasmine.createSpyObj('ApiBaseService', ['post', 'put', 'get']);
+    mockApiBaseService = {
+      post: jest.fn(),
+      put: jest.fn(),
+      get: jest.fn(),
+    } as any;
 
-    TestBed.configureTestingModule({
-      providers: [
-        TimePlanningPnPlanningsService,
-        { provide: ApiBaseService, useValue: mockApiBaseService }
-      ]
-    });
-
-    service = TestBed.inject(TimePlanningPnPlanningsService);
+    service = new TimePlanningPnPlanningsService(mockApiBaseService);
   });
 
   it('should be created', () => {
@@ -25,7 +21,7 @@ describe('TimePlanningPnPlanningsService', () => {
   });
 
   describe('getPlannings', () => {
-    it('should call apiBaseService.post with correct parameters', () => {
+    it('should call apiBaseService.post with correct parameters', (done) => {
       const mockRequest = {
         dateFrom: '2024-01-01',
         dateTo: '2024-01-07',
@@ -35,10 +31,11 @@ describe('TimePlanningPnPlanningsService', () => {
         showResignedSites: false
       };
       const mockResponse = { success: true, model: [] };
-      mockApiBaseService.post.and.returnValue(of(mockResponse as any));
+      mockApiBaseService.post.mockReturnValue(of(mockResponse as any));
 
       service.getPlannings(mockRequest).subscribe(result => {
         expect(result).toEqual(mockResponse as any);
+        done();
       });
 
       expect(mockApiBaseService.post).toHaveBeenCalledWith(
@@ -47,7 +44,7 @@ describe('TimePlanningPnPlanningsService', () => {
       );
     });
 
-    it('should handle empty response', () => {
+    it('should handle empty response', (done) => {
       const mockRequest = {
         dateFrom: '2024-01-01',
         dateTo: '2024-01-07',
@@ -57,16 +54,17 @@ describe('TimePlanningPnPlanningsService', () => {
         showResignedSites: false
       };
       const mockResponse = { success: true, model: [] };
-      mockApiBaseService.post.and.returnValue(of(mockResponse as any));
+      mockApiBaseService.post.mockReturnValue(of(mockResponse as any));
 
       service.getPlannings(mockRequest).subscribe(result => {
         expect(result.model).toEqual([]);
+        done();
       });
     });
   });
 
   describe('updatePlanning', () => {
-    it('should call apiBaseService.put with correct parameters', () => {
+    it('should call apiBaseService.put with correct parameters', (done) => {
       const mockPlanningModel = {
         id: 123,
         planHours: 8,
@@ -74,10 +72,11 @@ describe('TimePlanningPnPlanningsService', () => {
         planText: 'Test planning'
       } as any;
       const mockResponse = { success: true };
-      mockApiBaseService.put.and.returnValue(of(mockResponse as any));
+      mockApiBaseService.put.mockReturnValue(of(mockResponse as any));
 
       service.updatePlanning(mockPlanningModel, 123).subscribe(result => {
         expect(result).toEqual(mockResponse as any);
+        done();
       });
 
       expect(mockApiBaseService.put).toHaveBeenCalledWith(
@@ -89,7 +88,7 @@ describe('TimePlanningPnPlanningsService', () => {
     it('should construct correct URL with id parameter', () => {
       const mockPlanningModel = { id: 456 } as any;
       const mockResponse = { success: true };
-      mockApiBaseService.put.and.returnValue(of(mockResponse as any));
+      mockApiBaseService.put.mockReturnValue(of(mockResponse as any));
 
       service.updatePlanning(mockPlanningModel, 456).subscribe();
 
