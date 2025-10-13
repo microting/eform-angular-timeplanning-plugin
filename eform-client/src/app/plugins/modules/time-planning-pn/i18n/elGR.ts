@@ -131,4 +131,13 @@ export const elGR = {
   Resigned: 'Καρτερικός',
   'Resigned at date': 'Παραιτήθηκε την ημερομηνία',
   'NettoHours override': 'Παράκαμψη καθαρών ωρών',
+  'Break must be shorter than shift duration': 'Το διάλειμμα πρέπει να είναι μικρότερο από τη διάρκεια της βάρδιας',
+  'Shift duration cannot exceed 24 hours': 'Η διάρκεια της βάρδιας δεν μπορεί να υπερβαίνει τις 24 ώρες',
+  'Break cannot be equal or longer than shift duration': 'Το διάλειμμα δεν μπορεί να είναι ίσο ή μεγαλύτερο από τη διάρκεια της βάρδιας.',
+  'Break cannot be negative': 'Το διάλειμμα δεν μπορεί να είναι αρνητικό.',
+  'Stop time cannot be before start time': 'Η ώρα λήξης δεν μπορεί να είναι πριν από την ώρα έναρξης',
+  'Start and Stop cannot be the same': 'Η έναρξη και η διακοπή δεν μπορούν να είναι ίδιες',
+  'Stop time is required': 'Απαιτείται χρόνος διακοπής',
+  'Start time is required': 'Απαιτείται ώρα έναρξης',
+  'Start time cannot be earlier than previous shift`s end time': 'Η ώρα έναρξης δεν μπορεί να είναι προγενέστερη από την ώρα λήξης της προηγούμενης βάρδιας',
 };

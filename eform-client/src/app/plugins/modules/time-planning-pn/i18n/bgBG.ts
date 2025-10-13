@@ -131,4 +131,13 @@ export const bgBG = {
   Resigned: 'Оставка',
   'Resigned at date': 'Оставка на дата',
   'NettoHours override': 'Отмяна на нетно време',
+  'Break must be shorter than shift duration': 'Почивката трябва да е по-кратка от продължителността на смяната',
+  'Shift duration cannot exceed 24 hours': 'Продължителността на смяната не може да надвишава 24 часа',
+  'Break cannot be equal or longer than shift duration': 'Почивката не може да бъде равна или по-дълга от продължителността на смяната',
+  'Break cannot be negative': 'Прекъсването не може да бъде отрицателно',
+  'Stop time cannot be before start time': 'Времето за край не може да бъде преди времето за начало',
+  'Start and Stop cannot be the same': 'Старт и стоп не могат да бъдат едно и също нещо',
+  'Stop time is required': 'Необходимо е време за спиране',
+  'Start time is required': 'Необходимо е да се посочи начален час',
+  'Start time cannot be earlier than previous shift`s end time': 'Началният час не може да бъде по-ранен от крайния час на предишната смяна',
 };

@@ -131,4 +131,13 @@ export const huHU = {
   Resigned: 'Lemondó',
   'Resigned at date': 'Lemondott ezen a napon',
   'NettoHours override': 'Nettó órák felülbírálása',
+  'Break must be shorter than shift duration': 'A szünetnek rövidebbnek kell lennie, mint a műszak időtartama',
+  'Shift duration cannot exceed 24 hours': 'A műszak időtartama nem haladhatja meg a 24 órát',
+  'Break cannot be equal or longer than shift duration': 'A szünet nem lehet egyenlő vagy hosszabb a műszak időtartamánál',
+  'Break cannot be negative': 'A törés nem lehet negatív',
+  'Stop time cannot be before start time': 'A befejezési idő nem lehet a kezdési idő előtt',
+  'Start and Stop cannot be the same': 'A Start és a Stop nem lehet ugyanaz',
+  'Stop time is required': 'Megállási idő megadása kötelező',
+  'Start time is required': 'Kezdési időpont megadása kötelező',
+  'Start time cannot be earlier than previous shift`s end time': 'A kezdési időpont nem lehet korábbi, mint az előző műszak befejezési időpontja',
 };

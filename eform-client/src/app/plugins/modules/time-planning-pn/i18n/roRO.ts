@@ -131,4 +131,13 @@ export const roRO = {
   Resigned: 'Demisionat',
   'Resigned at date': 'Demisionat la data de',
   'NettoHours override': 'Suprascrierea orelor nete',
+  'Break must be shorter than shift duration': 'Pauza trebuie să fie mai scurtă decât durata turei',
+  'Shift duration cannot exceed 24 hours': 'Durata turei nu poate depăși 24 de ore',
+  'Break cannot be equal or longer than shift duration': 'Pauza nu poate fi egală sau mai lungă decât durata turei',
+  'Break cannot be negative': 'Pauza nu poate fi negativă',
+  'Stop time cannot be before start time': 'Ora de oprire nu poate fi anterioară orei de începere',
+  'Start and Stop cannot be the same': 'Start și Stop nu pot fi același lucru',
+  'Stop time is required': 'Este necesar un timp de oprire',
+  'Start time is required': 'Este necesară ora de începere',
+  'Start time cannot be earlier than previous shift`s end time': 'Ora de începere nu poate fi anterioară orei de încheiere a turei anterioare',
 };

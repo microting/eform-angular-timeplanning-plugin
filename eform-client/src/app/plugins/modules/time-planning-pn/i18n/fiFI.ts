@@ -131,4 +131,13 @@ export const fiFI = {
   Resigned: 'Erosi',
   'Resigned at date': 'Erosi päivämääränä',
   'NettoHours override': 'Nettotuntien ohitus',
+  'Break must be shorter than shift duration': 'Tauon on oltava lyhyempi kuin työvuoron kesto',
+  'Shift duration cannot exceed 24 hours': 'Vuoron kesto ei saa ylittää 24 tuntia',
+  'Break cannot be equal or longer than shift duration': 'Tauko ei voi olla yhtä pitkä tai pidempi kuin työvuoron kesto',
+  'Break cannot be negative': 'Tauko ei voi olla negatiivinen',
+  'Stop time cannot be before start time': 'Lopetusaika ei voi olla ennen aloitusaikaa',
+  'Start and Stop cannot be the same': 'Aloitus ja lopetus eivät voi olla sama asia',
+  'Stop time is required': 'Pysäytysaika vaaditaan',
+  'Start time is required': 'Aloitusaika on pakollinen',
+  'Start time cannot be earlier than previous shift`s end time': 'Aloitusaika ei voi olla aikaisempi kuin edellisen vuoron päättymisaika',
 };

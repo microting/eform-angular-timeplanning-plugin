@@ -131,4 +131,13 @@ export const etET = {
   Resigned: 'Astus tagasi',
   'Resigned at date': 'Astus tagasi kuupäeval',
   'NettoHours override': 'Neto tundide tühistamine',
+  'Break must be shorter than shift duration': 'Paus peab olema lühem kui vahetuse kestus',
+  'Shift duration cannot exceed 24 hours': 'Vahetuse kestus ei tohi ületada 24 tundi',
+  'Break cannot be equal or longer than shift duration': 'Paus ei tohi olla võrdne ega pikem kui vahetuse kestus',
+  'Break cannot be negative': 'Katkestus ei saa olla negatiivne',
+  'Stop time cannot be before start time': 'Lõpp-aeg ei saa olla varasem kui algusaeg',
+  'Start and Stop cannot be the same': 'Start ja Stop ei saa olla samad',
+  'Stop time is required': 'Peatumisaeg on kohustuslik',
+  'Start time is required': 'Algusaeg on kohustuslik',
+  'Start time cannot be earlier than previous shift`s end time': 'Algusaeg ei saa olla varasem kui eelmise vahetuse lõppaeg',
 };

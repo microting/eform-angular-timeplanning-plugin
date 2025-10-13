@@ -42,6 +42,48 @@ jobs:
       with:
         name: time-planning-container
         path: time-planning-container.tar
+  angular-unit-test:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        path: eform-angular-timeplanning-plugin
+    - name: Extract branch name
+      id: extract_branch
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+    - name: 'Preparing Frontend checkout'
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        repository: microting/eform-angular-frontend
+        ref: ${{ steps.extract_branch.outputs.branch }}
+        path: eform-angular-frontend
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+    - name: Copy dependencies
+      run: |
+        cp -av eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn eform-angular-frontend/eform-client/src/app/plugins/modules/time-planning-pn
+        cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
+    - name: yarn install
+      run: cd eform-angular-frontend/eform-client && yarn install
+    - name: Run Angular unit tests
+      run: |
+        cd eform-angular-frontend/eform-client
+        # Check if Jest is configured
+        if [ ! -f "jest.config.js" ] && [ ! -f "jest.config.ts" ]; then
+          echo "⚠️  Jest is not configured in the frontend repository."
+          echo "Unit tests require Jest to be configured. Skipping unit tests."
+          echo ""
+          echo "To enable unit tests, ensure Jest is configured in the frontend repository."
+          exit 0
+        fi
+        
+        # Run Jest tests for time-planning-pn plugin
+        echo "Running Jest tests for time-planning-pn plugin..."
+        npm run test:unit -- --testPathPatterns=time-planning-pn --coverage --collectCoverageFrom='src/app/plugins/modules/time-planning-pn/**/*.ts' --coveragePathIgnorePatterns='\.spec\.ts$'
   pn-test:
     needs: build
     runs-on: ubuntu-latest

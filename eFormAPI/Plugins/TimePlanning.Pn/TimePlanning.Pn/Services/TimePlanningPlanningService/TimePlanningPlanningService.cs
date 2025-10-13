@@ -482,6 +482,8 @@ public class TimePlanningPlanningService(
                 planning.PlanChangedByAdmin = entry.State == EntityState.Modified;
             }
 
+            planning.UpdatedByUserId = userService.UserId;
+
             if (!assignedSite.UseDetailedPauseEditing)
             {
                 planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;

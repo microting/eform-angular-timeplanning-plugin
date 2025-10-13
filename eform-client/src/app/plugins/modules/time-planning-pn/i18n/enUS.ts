@@ -129,4 +129,13 @@ export const enUS = {
   'Resigned': 'Resigned',
   'Resigned at date': 'Resigned at date',
   'NettoHours override': 'Netto hours override',
+  'Break must be shorter than shift duration': 'Break must be shorter than shift duration',
+  'Shift duration cannot exceed 24 hours': 'Shift duration cannot exceed 24 hours',
+  'Break cannot be equal or longer than shift duration': 'Break cannot be equal or longer than shift duration',
+  'Break cannot be negative': 'Break cannot be negative',
+  'Stop time cannot be before start time': 'Stop time cannot be before start time',
+  'Start and Stop cannot be the same': 'Start and Stop cannot be the same',
+  'Stop time is required': 'Stop time is required',
+  'Start time is required': 'Start time is required',
+  'Start time cannot be earlier than previous shift`s end time': 'Start time cannot be earlier than previous shift`s end time',
 };
