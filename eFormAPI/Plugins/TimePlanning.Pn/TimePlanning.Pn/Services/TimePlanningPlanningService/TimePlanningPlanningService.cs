@@ -289,6 +289,7 @@ public class TimePlanningPlanningService(
 
         if (worker == null)
         {
+            SentrySdk.CaptureMessage($"Worker with email {currentUser.Email} not found");
             return new OperationDataResult<TimePlanningPlanningModel>(
                 false,
                 localizationService.GetString("SiteNotFound"));
@@ -955,6 +956,7 @@ public class TimePlanningPlanningService(
 
             if (worker == null)
             {
+                SentrySdk.CaptureMessage($"Worker with email {currentUser.Email} not found");
                 return new OperationDataResult<TimePlanningPlanningModel>(
                     false,
                     localizationService.GetString("SiteNotFound"));
