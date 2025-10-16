@@ -167,15 +167,15 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     if (workDayStarted) {
       return workDayEnded ? 'green-background' : 'red-background';
     }
-    
+
     if (plannedStarted) {
       return 'grey-background';
     }
-    
+
     if (message || workerComment) {
       return 'grey-background';
     }
-    
+
     return 'white-background';
   }
 
@@ -299,6 +299,48 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         })
           .afterClosed().subscribe((data: any) => {
           if (data !== '' && data !== undefined) {
+            data.autoBreakSettings.monday.breakMinutesDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.monday.breakMinutesDivider as string);
+            data.autoBreakSettings.monday.breakMinutesPrDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.monday.breakMinutesPrDivider as string);
+            data.autoBreakSettings.monday.breakMinutesUpperLimit =
+              this.convertStringToMinutes(data.autoBreakSettings.monday.breakMinutesUpperLimit as string);
+            data.autoBreakSettings.tuesday.breakMinutesDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.tuesday.breakMinutesDivider as string);
+            data.autoBreakSettings.tuesday.breakMinutesPrDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.tuesday.breakMinutesPrDivider as string);
+            data.autoBreakSettings.tuesday.breakMinutesUpperLimit =
+              this.convertStringToMinutes(data.autoBreakSettings.tuesday.breakMinutesUpperLimit as string);
+            data.autoBreakSettings.wednesday.breakMinutesDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.wednesday.breakMinutesDivider as string);
+            data.autoBreakSettings.wednesday.breakMinutesPrDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.wednesday.breakMinutesPrDivider as string);
+            data.autoBreakSettings.wednesday.breakMinutesUpperLimit =
+              this.convertStringToMinutes(data.autoBreakSettings.wednesday.breakMinutesUpperLimit as string);
+            data.autoBreakSettings.thursday.breakMinutesDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.thursday.breakMinutesDivider as string);
+            data.autoBreakSettings.thursday.breakMinutesPrDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.thursday.breakMinutesPrDivider as string);
+            data.autoBreakSettings.thursday.breakMinutesUpperLimit =
+              this.convertStringToMinutes(data.autoBreakSettings.thursday.breakMinutesUpperLimit as string);
+            data.autoBreakSettings.friday.breakMinutesDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.friday.breakMinutesDivider as string);
+            data.autoBreakSettings.friday.breakMinutesPrDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.friday.breakMinutesPrDivider as string);
+            data.autoBreakSettings.friday.breakMinutesUpperLimit =
+              this.convertStringToMinutes(data.autoBreakSettings.friday.breakMinutesUpperLimit as string);
+            data.autoBreakSettings.saturday.breakMinutesDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.saturday.breakMinutesDivider as string);
+            data.autoBreakSettings.saturday.breakMinutesPrDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.saturday.breakMinutesPrDivider as string);
+            data.autoBreakSettings.saturday.breakMinutesUpperLimit =
+              this.convertStringToMinutes(data.autoBreakSettings.saturday.breakMinutesUpperLimit as string);
+            data.autoBreakSettings.sunday.breakMinutesDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.sunday.breakMinutesDivider as string);
+            data.autoBreakSettings.sunday.breakMinutesPrDivider =
+              this.convertStringToMinutes(data.autoBreakSettings.sunday.breakMinutesPrDivider as string);
+            data.autoBreakSettings.sunday.breakMinutesUpperLimit =
+              this.convertStringToMinutes(data.autoBreakSettings.sunday.breakMinutesUpperLimit as string);
             this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
               if (result && result.success) {
                 this.assignedSiteChanged.emit(data);
@@ -358,6 +400,15 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     const mins = totalMinutes % 60;
     return `${this.padZero(hrs)} ${this.translateService.instant('hours')} ${this.padZero(mins)} ${this.translateService.instant(
       'minutes')}`;
+  }
+
+  convertStringToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    const result = hours * 60 + minutes;
+    if (isNaN(result)) {
+      return 0;
+    }
+    return result;
   }
 
   padZero(num: number): string {

@@ -214,10 +214,10 @@
       </div>
     </mat-tab>
     <mat-tab  label="{{ 'Auto break calculation settings' | translate }}"
-             *ngIf="data.autoBreakCalculationActive && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="data.autoBreakCalculationActive && selectCurrentUserIsAdmin$ | async">
       <div [formGroupName]="'autoBreakSettings'">
       <ng-container *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
-        <div [formGroupName]="day" class="d-flex flex-row">
+        <div [formGroupName]="day.toLowerCase()" class="d-flex flex-row">
           <mat-form-field class="p-1">
             <mat-label>{{ day + ' break time divider in minutes' | translate }}</mat-label>
             <input
@@ -228,7 +228,6 @@
               [id]="day.toLowerCase() + 'BreakMinutesDivider'"
               [name]="day.toLowerCase() + 'BreakMinutesDivider'"
               formControlName="breakMinutesDivider"
-              [disabled]="!data.autoBreakCalculationActive"
               readonly
             >
             <ngx-material-timepicker
@@ -238,7 +237,7 @@
             ></ngx-material-timepicker>
           </mat-form-field>
           <mat-form-field class="p-1">
-            <mat-label>{{ day + ' break time pr divider in minutes' | translate }}</mat-label>
+            <mat-label>{{ day.toLowerCase() + ' break time pr divider in minutes' | translate }}</mat-label>
             <input
               matInput
               [ngxTimepicker]="timePickerPrDivider"
@@ -247,7 +246,6 @@
               [id]="day.toLowerCase() + 'BreakMinutesPrDivider'"
               [name]="day.toLowerCase() + 'BreakMinutesPrDivider'"
               formControlName="breakMinutesPrDivider"
-              [disabled]="!data.autoBreakCalculationActive"
               readonly>
             <ngx-material-timepicker
               #timePickerPrDivider
@@ -265,7 +263,6 @@
               [id]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
               [name]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
               formControlName="breakMinutesUpperLimit"
-              [disabled]="!data.autoBreakCalculationActive"
               readonly
             >
           </mat-form-field>

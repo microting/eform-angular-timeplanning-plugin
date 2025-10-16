@@ -859,7 +859,7 @@ public static class PlanRegistrationHelper
                                 tainted = true;
                             }
 
-                            Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
+                            // Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
 
                             await planRegistration.Update(dbContext).ConfigureAwait(false);
                         }
@@ -1881,7 +1881,7 @@ public static class PlanRegistrationHelper
                         }
                     }
 
-                    Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
+                    // Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
 
                     await planRegistration.Update(dbContext).ConfigureAwait(false);
                 }
