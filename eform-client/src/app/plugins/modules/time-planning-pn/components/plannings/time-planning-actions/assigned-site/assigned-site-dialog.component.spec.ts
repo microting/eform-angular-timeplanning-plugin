@@ -231,9 +231,9 @@ describe('AssignedSiteDialogComponent', () => {
       component.copyBreakSettings('monday');
       
       const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('monday');
-      expect(mondayBreak?.get('breakMinutesDivider')?.value).toBe(480);
-      expect(mondayBreak?.get('breakMinutesPrDivider')?.value).toBe(30);
-      expect(mondayBreak?.get('breakMinutesUpperLimit')?.value).toBe(60);
+      expect(mondayBreak?.get('breakMinutesDivider')?.value).toBe('08:00');
+      expect(mondayBreak?.get('breakMinutesPrDivider')?.value).toBe('00:30');
+      expect(mondayBreak?.get('breakMinutesUpperLimit')?.value).toBe('01:00');
     });
 
     it('should handle missing global settings gracefully', () => {
