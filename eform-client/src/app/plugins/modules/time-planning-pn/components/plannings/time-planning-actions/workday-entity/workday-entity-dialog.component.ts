@@ -82,8 +82,8 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
     m.sumFlexStart = normalizeTwoDecimals(m.sumFlexStart);
     m.sumFlexEnd = normalizeTwoDecimals(m.sumFlexEnd);
-    m.planHours = normalizeTwoDecimals(m.planHours);
-    m.actualHours = normalizeTwoDecimals(m.actualHours);
+    // m.planHours = normalizeTwoDecimals(m.planHours);
+    // m.actualHours = normalizeTwoDecimals(m.actualHours);
     m.paidOutFlex = normalizeTwoDecimals(m.paidOutFlex);
 
     if (this.data.planningPrDayModels.message) {
