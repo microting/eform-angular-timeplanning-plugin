@@ -178,7 +178,7 @@ describe('AssignedSiteDialogComponent', () => {
   describe('Form Initialization', () => {
     it('should initialize form with correct structure', () => {
       component.ngOnInit();
-      
+
       expect(component.assignedSiteForm).toBeDefined();
       expect(component.assignedSiteForm.get('useGoogleSheetAsDefault')).toBeDefined();
       expect(component.assignedSiteForm.get('useOnlyPlanHours')).toBeDefined();
@@ -189,17 +189,17 @@ describe('AssignedSiteDialogComponent', () => {
 
     it('should populate form with data values', () => {
       component.ngOnInit();
-      
+
       expect(component.assignedSiteForm.get('useGoogleSheetAsDefault')?.value).toBe(false);
       expect(component.assignedSiteForm.get('useOnlyPlanHours')?.value).toBe(false);
     });
 
     it('should create shift forms for each day of the week', () => {
       component.ngOnInit();
-      
+
       const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
       const firstShift = component.assignedSiteForm.get('firstShift');
-      
+
       days.forEach(day => {
         expect(firstShift?.get(day)).toBeDefined();
         expect(firstShift?.get(day)?.get('start')).toBeDefined();
@@ -227,9 +227,9 @@ describe('AssignedSiteDialogComponent', () => {
     it('should copy break settings from global settings for monday', () => {
       // Reinitialize to get the new global settings
       component.ngOnInit();
-      
+
       component.copyBreakSettings('monday');
-      
+
       const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('monday');
       expect(mondayBreak?.get('breakMinutesDivider')?.value).toBe('08:00');
       expect(mondayBreak?.get('breakMinutesPrDivider')?.value).toBe('00:30');
@@ -238,9 +238,9 @@ describe('AssignedSiteDialogComponent', () => {
 
     it('should handle missing global settings gracefully', () => {
       component['globalAutoBreakSettings'] = null;
-      
+
       component.copyBreakSettings('monday');
-      
+
       // Should not throw error and should not modify values
       const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('monday');
       expect(mondayBreak).toBeDefined();
@@ -250,11 +250,11 @@ describe('AssignedSiteDialogComponent', () => {
   describe('Data Change Detection', () => {
     it('should detect when data has changed', () => {
       component.ngOnInit();
-      
+
       expect(component.hasDataChanged()).toBe(false);
-      
+
       component.data.useGoogleSheetAsDefault = true;
-      
+
       expect(component.hasDataChanged()).toBe(true);
     });
   });
@@ -262,27 +262,27 @@ describe('AssignedSiteDialogComponent', () => {
   describe('Time Field Update', () => {
     it('should set minutes correctly from time string', () => {
       component.ngOnInit();
-      
+
       component.setMinutes('08:30', 'startMonday');
-      
+
       expect(component.data['startMonday']).toBe(510); // 8*60 + 30
     });
 
     it('should set minutes to 0 when empty value provided', () => {
       component.ngOnInit();
       component.data['startMonday'] = 480;
-      
+
       component.setMinutes('', 'startMonday');
-      
+
       expect(component.data['startMonday']).toBe(0);
     });
 
     it('should handle different time formats', () => {
       component.ngOnInit();
-      
+
       component.setMinutes('12:00', 'startMonday');
       expect(component.data['startMonday']).toBe(720); // 12*60
-      
+
       component.setMinutes('00:30', 'endMonday');
       expect(component.data['endMonday']).toBe(30);
     });

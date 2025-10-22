@@ -10,6 +10,7 @@
 
 .comment {
   display: flex;
+  max-width: 250px;
 }
 
 .first-column {
@@ -21,17 +22,18 @@
 }
 
 .time-dashboard table td {
-  background-color: white;
-  border-right: 1px solid #EBEFF2;
-  border-bottom: 1px solid #EBEFF2;
-
+  background-color: var(--tp-td-bg);
+  border-right: 1px solid var(--tp-border);
+  border-bottom: 1px solid var(--tp-border);
+  color: var(--tp-text);
 }
 
 .time-dashboard table tr th {
-  background-color: #f7f9fa !important;
+  background-color: var(--tp-th-bg) !important;
   font-size: 14px;
   font-weight: 500;
-  border-right: 1px solid #EBEFF2;
-  border-top: 1px solid #EBEFF2;
-  border-left: 1px solid #EBEFF2;
+  border-right: 1px solid var(--tp-border);
+  border-top: 1px solid var(--tp-border);
+  border-left: 1px solid var(--tp-border);
+  color: var(--tp-text);
 }
