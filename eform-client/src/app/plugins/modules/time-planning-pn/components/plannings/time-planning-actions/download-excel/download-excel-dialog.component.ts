@@ -1,5 +1,5 @@
 import {Component, Inject, Input, OnDestroy, OnInit} from '@angular/core';
-import {Subscription} from 'rxjs';
+import {EMPTY, Subscription} from 'rxjs';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 import {SiteDto} from 'src/app/common/models';
 import {
@@ -66,7 +66,7 @@ export class DownloadExcelDialogComponent implements OnInit, OnDestroy {
       .pipe(catchError(
         (error, caught) => {
           this.toastrService.error('Error downloading report');
-          return caught;
+          return EMPTY;
         }))
       .subscribe(
         (data) => {
@@ -83,9 +83,9 @@ export class DownloadExcelDialogComponent implements OnInit, OnDestroy {
     this.downloadReportSub$ = this.workingHoursService
       .downloadReportAllWorkers(model)
       .pipe(catchError(
-        (caught) => {
+        (error) => {
           this.toastrService.error('Error downloading report');
-          return caught;
+          return EMPTY;
         }))
       .subscribe(
         (data) => {
