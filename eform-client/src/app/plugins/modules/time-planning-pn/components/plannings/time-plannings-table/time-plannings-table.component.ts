@@ -73,10 +73,14 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   private updateTableHeaders(): void {
     this.tableHeaders = [];
     this.cdr.detectChanges();
+    // debugger;
     const startDate = new Date(this.dateFrom);
     const endDate = new Date(this.dateTo);
     const today = new Date();
-    const daysCount = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+    let daysCount = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+    if (endDate.getHours() === 23) {
+      daysCount--;
+    }
     let todayTranslated = this.translateService.stream('Today');
 
     this.tableHeaders = [
