@@ -204,7 +204,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     // Case 1: Has planned hours
     if (planHours > 0) {
       if (workDayStarted) {
-        return workDayEnded ? 'white-text' : 'red-text';
+        return workDayEnded ? 'black-text' : 'red-text';
       } else {
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }
