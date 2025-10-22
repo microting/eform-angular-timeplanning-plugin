@@ -509,6 +509,7 @@ describe('Dashboard assert', () => {
       cy.get('#plannedBreakOfShift2').should('have.value', planTexts[i].plannedBreakOfShift2);
       cy.get('#plannedEndOfShift2').should('have.value', planTexts[i].plannedEndOfShift2);
       cy.get('#cancelButton').click();
+      cy.wait(500);
     }
 
     cy.get('#forwards').click();
@@ -693,6 +694,7 @@ describe('Dashboard assert', () => {
       cy.get('#plannedBreakOfShift2').should('include.value', updatePlanTexts[i].plannedBreakOfShift2);
       cy.get('#plannedEndOfShift2').should('include.value', updatePlanTexts[i].plannedEndOfShift2);
       cy.get('#cancelButton').click();
+      cy.wait(500);
     }
 
     cy.get('#forwards').click();
