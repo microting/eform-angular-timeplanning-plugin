@@ -70,6 +70,22 @@ export class WorkdayEntityDialogComponent implements OnInit {
     // Enum-opsætning
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.nettoHoursOverrideActive = this.data.planningPrDayModels.nettoHoursOverrideActive;
+
+
+    const m = this.data.planningPrDayModels;
+
+    const normalizeTwoDecimals = (value: any) => {
+      if (value === null || value === undefined || isNaN(value)) {return 0.00;}
+      const rounded = Number(value).toFixed(2);
+      return rounded === '-0.00' ? 0.00 : Number(rounded);
+    };
+
+    m.sumFlexStart = normalizeTwoDecimals(m.sumFlexStart);
+    m.sumFlexEnd = normalizeTwoDecimals(m.sumFlexEnd);
+    // m.planHours = normalizeTwoDecimals(m.planHours);
+    // m.actualHours = normalizeTwoDecimals(m.actualHours);
+    m.paidOutFlex = normalizeTwoDecimals(m.paidOutFlex);
+
     if (this.data.planningPrDayModels.message) {
       this.data.planningPrDayModels[this.enumKeys[this.data.planningPrDayModels.message - 1]] = true;
     }

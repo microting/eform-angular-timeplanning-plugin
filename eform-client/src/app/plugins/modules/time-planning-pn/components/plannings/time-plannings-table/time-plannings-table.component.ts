@@ -128,6 +128,12 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   //   });
   // }
 
+  normalizeFlex(value: any): string {
+    if (value === null || value === undefined || isNaN(value)) {return '0.00';}
+    const rounded = Number(value).toFixed(2);
+    return rounded === '-0.00' ? '0.00' : rounded;
+  }
+
   getCellClass(row: any, field: string): string {
     try {
       const cellData = row.planningPrDayModels[field];
