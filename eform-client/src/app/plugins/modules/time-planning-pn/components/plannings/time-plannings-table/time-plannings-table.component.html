@@ -130,28 +130,28 @@
     <div class="plan-content">
       <!--<div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>-->
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}" id="firstShift{{index}}_{{col.field}}">
+        <span class="{{ getCellTextColor(row, col.field) }}" id="firstShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift1) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}
-        </strong>
+        </span>
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.plannedEndOfShift1 !== 0 ">
-        <strong class="{{ getCellTextColor(row, col.field) }}" id="firstShift{{index}}_{{col.field}}">
+        <span class="{{ getCellTextColor(row, col.field) }}" id="firstShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift1) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}
-        </strong>
+        </span>
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.plannedEndOfShift1 === 0 && row.planningPrDayModels[col.field]?.planHours !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}" id="plannedHours{{index}}_{{col.field}}">
+        <span class="{{ getCellTextColor(row, col.field) }}" id="plannedHours{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertHoursToTime(row.planningPrDayModels[col.field]?.planHours) }}
-        </strong>
+        </span>
       </div>
 
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
@@ -165,12 +165,12 @@
         </span>
       </div>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift2 !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}" id="secondShift{{index}}_{{col.field}}">
+        <span class="{{ getCellTextColor(row, col.field) }}" id="secondShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift2) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift2) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift2) }}
-        </strong>
+        </span>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="secondShiftActual{{index}}_{{col.field}}">
@@ -184,12 +184,12 @@
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift3 !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}" id="thirdShift{{index}}_{{col.field}}">
+        <span class="{{ getCellTextColor(row, col.field) }}" id="thirdShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift3) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift3) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift3) }}
-        </strong>
+        </span>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start3StartedAt != null" id="thirdShiftActual{{index}}_{{col.field}}">
@@ -203,12 +203,12 @@
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift4 !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}" id="fourthShift{{index}}_{{col.field}}">
+        <span class="{{ getCellTextColor(row, col.field) }}" id="fourthShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift4) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift4) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift4) }}
-        </strong>
+        </span>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start4StartedAt != null" id="fourthShiftActual{{index}}_{{col.field}}">
@@ -222,12 +222,12 @@
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift5 !== 0">
-        <strong class="{{ getCellTextColor(row, col.field) }}" id="fifthShift{{index}}_{{col.field}}">
+        <span class="{{ getCellTextColor(row, col.field) }}" id="fifthShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift5) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift5) }} /
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift5) }}
-        </strong>
+        </span>
       </div>
       <div class="plan-text {{ getCellTextColor(row, col.field) }}"
            *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start5StartedAt != null" id="fifthShiftActual{{index}}_{{col.field}}">
@@ -282,13 +282,13 @@
       </ng-container>
       <div class="comment" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null && row.planningPrDayModels[col.field]?.workerComment !== ''">
         <div class="{{ getCellTextColor(row, col.field) }}">
-          <strong id="commentWorker{{index}}_{{col.field}}" [matTooltip]="'CommentWorker' | translate "><mat-icon class="neutral-icon">face</mat-icon></strong>
+          <span id="commentWorker{{index}}_{{col.field}}" [matTooltip]="'CommentWorker' | translate "><mat-icon class="neutral-icon">face</mat-icon></span>
           {{row.planningPrDayModels[col.field]?.workerComment}}
         </div>
       </div>
       <div class="comment" *ngIf="row.planningPrDayModels[col.field]?.commentOffice !== null && row.planningPrDayModels[col.field]?.commentOffice !== ''">
         <div class="{{ getCellTextColor(row, col.field) }}">
-          <strong id="commentOffice{{index}}_{{col.field}}"><mat-icon class="neutral-icon" [matTooltip]="'CommentOffice' | translate ">gite</mat-icon></strong>
+          <span id="commentOffice{{index}}_{{col.field}}"><mat-icon class="neutral-icon" [matTooltip]="'CommentOffice' | translate ">gite</mat-icon></span>
           {{row.planningPrDayModels[col.field]?.commentOffice}}
         </div>
       </div>
@@ -303,12 +303,12 @@
 
     <!-- Right Icons -->
     <div class="plan-icons">
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 2" class="blue-text" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">flight</mat-icon>
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 3 || row.planningPrDayModels[col.field]?.message === 7 || row.planningPrDayModels[col.field]?.message === 8" class="red-text" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">sick</mat-icon>
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 1" class="blue-text" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">event_busy</mat-icon>
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 4" class="blue-text" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">school</mat-icon>
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 5" class="blue-text" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">event_busy</mat-icon>
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 9" class="blue-text" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">outdoor_grill</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 2" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">flight</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 3 || row.planningPrDayModels[col.field]?.message === 7 || row.planningPrDayModels[col.field]?.message === 8" class="red-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">sick</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 1" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">event_busy</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 4" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">school</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 5" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">event_busy</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 9" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">outdoor_grill</mat-icon>
     </div>
   </div>
 </ng-template>
