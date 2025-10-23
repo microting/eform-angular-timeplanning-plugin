@@ -73,14 +73,13 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   private updateTableHeaders(): void {
     this.tableHeaders = [];
     this.cdr.detectChanges();
-    // debugger;
     const startDate = new Date(this.dateFrom);
     const endDate = new Date(this.dateTo);
     const today = new Date();
-    let daysCount = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
-    if (endDate.getHours() === 23) {
-      daysCount--;
-    }
+    const tempEndDate = new Date(endDate);
+    tempEndDate.setHours(0, 0, 0, 0);
+    const diff = (tempEndDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+    let daysCount = Math.floor(diff) +1;
     let todayTranslated = this.translateService.stream('Today');
 
     this.tableHeaders = [
@@ -210,7 +209,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     // Case 1: Has planned hours
     if (planHours > 0) {
       if (workDayStarted) {
-        return workDayEnded ? 'white-text' : 'red-text';
+        return workDayEnded ? 'black-text' : 'red-text';
       } else {
         return isInOlderThanToday ? 'red-text' : 'black-text';
       }

@@ -74,6 +74,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
 
   getPlannings() {
     const now = new Date();
+    now.setHours(0, 0, 0, 0);
     if (!this.dateFrom) {
       this.dateFrom = startOfWeek(now, { weekStartsOn: 1 });
       this.dateTo = endOfWeek(now, { weekStartsOn: 1 });
@@ -101,8 +102,12 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   goBackward() {
-    this.dateFrom = this.addDays(this.dateFrom, -7);
-    this.dateTo = this.addDays(this.dateTo, -7);
+    const tempEndDate = new Date(this.dateTo);
+    tempEndDate.setHours(0, 0, 0, 0);
+
+    let daysCount = (Math.floor((tempEndDate.getTime() - this.dateFrom.getTime()) / (1000 * 3600 * 24)) * -1) -1;
+    this.dateFrom = this.addDays(this.dateFrom, daysCount);
+    this.dateTo = this.addDays(this.dateTo, daysCount);
     this.getPlannings();
   }
 
@@ -119,8 +124,11 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   goForward() {
-    this.dateFrom = this.addDays(this.dateFrom, 7);
-    this.dateTo = this.addDays(this.dateTo, 7);
+    const tempEndDate = new Date(this.dateTo);
+    tempEndDate.setHours(0, 0, 0, 0);
+    let daysCount = Math.floor((tempEndDate.getTime() - this.dateFrom.getTime()) / (1000 * 3600 * 24)) +1;
+    this.dateFrom = this.addDays(this.dateFrom, daysCount);
+    this.dateTo = this.addDays(this.dateTo, daysCount);
     this.getPlannings();
   }
 
