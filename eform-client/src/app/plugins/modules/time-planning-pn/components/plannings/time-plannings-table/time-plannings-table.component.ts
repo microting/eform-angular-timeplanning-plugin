@@ -78,7 +78,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     const today = new Date();
     const tempEndDate = new Date(endDate);
     tempEndDate.setHours(0, 0, 0, 0);
-    let daysCount = Math.ceil((tempEndDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)) +1;
+    const diff = (tempEndDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+    let daysCount = Math.floor(diff) +1;
     let todayTranslated = this.translateService.stream('Today');
 
     this.tableHeaders = [
