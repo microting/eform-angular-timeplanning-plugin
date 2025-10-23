@@ -465,9 +465,8 @@ describe('Dashboard assert', () => {
     cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
     cy.wait('@save');
-    cy.get('#sumFlex7 input').should('contain.value', '-78.55');
-
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+    cy.get('#sumFlex7 input').should('contain.value', '-78.55');
     pluginPage.Navbar.goToPluginsPage();
     const pluginName = 'Microting Time Planning Plugin';
 
@@ -489,6 +488,7 @@ describe('Dashboard assert', () => {
     cy.get('#saveSettings').click();
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.wait('@index-update', { timeout: 60000 });
+    cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
     cy.get('#backwards').click();
     cy.wait('@index-update', { timeout: 60000 });
     cy.get('#plannedHours3').should('include.text', '53:15');
@@ -664,9 +664,8 @@ describe('Dashboard assert', () => {
     cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
     cy.wait('@save');
-    cy.get('#sumFlex7 input').should('contain.value', '-48.05');
-
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+    cy.get('#sumFlex7 input').should('contain.value', '-48.05');
 
 
 
