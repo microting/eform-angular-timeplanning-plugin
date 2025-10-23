@@ -321,7 +321,7 @@ describe('Dashboard assert', () => {
   //   cy.wait('@index-update', { timeout: 60000 });
   //   cy.get('#backwards').click();
   //   cy.wait('@index-update', { timeout: 60000 });
-  //   cy.get('#plannedHours3').should('include.text', '56:00');
+  //   cy.get('#plannedHours0').should('include.text', '56:00');
   //
   //   for (let i = 0; i < planTexts.length; i++) {
   //     let plannedHoursId = `#plannedHours0_${i}`;
@@ -495,7 +495,7 @@ describe('Dashboard assert', () => {
     cy.wait('@index-update', { timeout: 60000 });
     cy.get('#backwards').click();
     cy.wait('@index-update', { timeout: 60000 });
-    cy.get('#plannedHours3').should('include.text', '53:15');
+    cy.get('#plannedHours0').should('include.text', '53:15');
     for (let i = 0; i < planTexts.length; i++) {
       let plannedHoursId = `#plannedHours0_${i}`;
       // cy.get(plannedHoursId).should('include.text', planTexts[i].plannedHours);
@@ -681,7 +681,7 @@ describe('Dashboard assert', () => {
     cy.wait('@index-update', { timeout: 60000 });
     cy.get('#backwards').click();
     cy.wait('@index-update', { timeout: 60000 });
-    cy.get('#plannedHours3').should('include.text', '53:15');
+    cy.get('#plannedHours0').should('include.text', '53:15');
     for (let i = 0; i < updatePlanTexts.length; i++) {
       // let plannedHoursId = `#plannedHours0_${i}`;
       // if (updatePlanTexts[i].plannedHours !== '') {
