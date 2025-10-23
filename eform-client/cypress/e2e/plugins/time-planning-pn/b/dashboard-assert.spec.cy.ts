@@ -684,6 +684,7 @@ describe('Dashboard assert', () => {
       }
 
       let cellId = `#cell3_${i}`;
+      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('include.value', updatePlanTexts[i].calculatedHours);
@@ -699,10 +700,10 @@ describe('Dashboard assert', () => {
 
     cy.get('#forwards').click();
     cy.wait('@index-update', { timeout: 60000 });
-    cy.wait(1000);
+    cy.wait(500);
     cy.get('#forwards').click();
     cy.wait('@index-update', { timeout: 60000 });
-    cy.wait(1000);
+    cy.wait(500);
     for (let i = 0; i < updatePlanTextsNextWeek.length; i++) {
       let firstShiftId = `#firstShift3_${i}`;
       cy.get(firstShiftId).should('include.text', updatePlanTextsNextWeek[i].firstShift);
@@ -712,6 +713,7 @@ describe('Dashboard assert', () => {
       }
 
       let cellId = `#cell3_${i}`;
+      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('include.value', updatePlanTextsNextWeek[i].calculatedHours);
@@ -725,7 +727,7 @@ describe('Dashboard assert', () => {
     }
     cy.get('#forwards').click();
     cy.wait('@index-update', { timeout: 60000 });
-    cy.wait(1000);
+    cy.wait(500);
     for (let i = 0; i < updatePlanTextsFutureWeek.length; i++) {
       if (planTextsFutureWeek[i].firstShift) {
         let firstShiftId = `#firstShift3_${i}`;
@@ -741,6 +743,7 @@ describe('Dashboard assert', () => {
         cy.get(secondShiftId).should('include.text', updatePlanTextsFutureWeek[i].secondShift);
       }
       let cellId = `#cell3_${i}`;
+      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('include.value', updatePlanTextsFutureWeek[i].calculatedHours);
