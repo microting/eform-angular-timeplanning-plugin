@@ -499,6 +499,7 @@ describe('Dashboard assert', () => {
       cy.get(flexBalanceToDateId).should('include.text', planTexts[i].flexBalanceToDate);
 
       let cellId = `#cell3_${i}`;
+      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('have.value', planTexts[i].calculatedHours);
@@ -527,6 +528,7 @@ describe('Dashboard assert', () => {
       }
 
       let cellId = `#cell3_${i}`;
+      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('have.value', planTextsNextWeek[i].calculatedHours);
@@ -556,6 +558,7 @@ describe('Dashboard assert', () => {
       }
 
       let cellId = `#cell3_${i}`;
+      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('have.value', planTextsFutureWeek[i].calculatedHours);

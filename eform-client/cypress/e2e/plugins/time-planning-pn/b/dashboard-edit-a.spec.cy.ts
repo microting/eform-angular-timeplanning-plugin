@@ -212,6 +212,7 @@ describe('Dashboard edit values', () => {
       }
 
       let cellId = `#cell3_${i}`;
+      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('have.value', updatePlanTexts[i].calculatedHours);
@@ -232,6 +233,7 @@ describe('Dashboard edit values', () => {
     for (let i = 0; i < secondUpdatePlanTexts.length; i++) {
 
       let cellId = `#cell3_${i}`;
+      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get(`#plannedStartOfShift1`).click();
