@@ -64,7 +64,7 @@ export class DownloadExcelDialogComponent implements OnInit, OnDestroy {
     this.downloadReportSub$ = this.workingHoursService
       .downloadReport(model)
       .pipe(catchError(
-        (error, caught) => {
+        (error) => {
           this.toastrService.error('Error downloading report');
           return EMPTY;
         }))
