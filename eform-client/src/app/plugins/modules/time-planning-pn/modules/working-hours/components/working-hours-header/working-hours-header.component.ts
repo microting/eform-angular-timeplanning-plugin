@@ -6,7 +6,7 @@ import {TimePlanningsReportAllWorkersDownloadRequestModel} from '../../../../mod
 import {saveAs} from 'file-saver';
 import {ToastrService} from 'ngx-toastr';
 import {TimePlanningPnWorkingHoursService} from '../../../../services';
-import {Subscription} from 'rxjs';
+import {EMPTY, Subscription} from 'rxjs';
 import {MatIconRegistry} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
 import {catchError} from 'rxjs/operators';
@@ -75,9 +75,9 @@ export class WorkingHoursHeaderComponent implements OnInit {
     this.downloadReportSub$ = this.workingHoursService
       .downloadReport(model)
       .pipe(catchError(
-        (error, caught) => {
+        (error) => {
           this.toastrService.error('Error downloading report');
-          return caught;
+          return EMPTY;
         }))
       .subscribe(
         (data) => {
@@ -113,9 +113,9 @@ export class WorkingHoursHeaderComponent implements OnInit {
     this.downloadReportSub$ = this.workingHoursService
       .downloadReportAllWorkers(model)
       .pipe(catchError(
-        (caught) => {
+        (error) => {
           this.toastrService.error('Error downloading report');
-          return caught;
+          return EMPTY;
         }))
       .subscribe(
         (data) => {
