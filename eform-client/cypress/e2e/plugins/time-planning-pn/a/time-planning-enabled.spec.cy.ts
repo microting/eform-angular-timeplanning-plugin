@@ -12,9 +12,14 @@ describe('Enable Backend Config plugin', () => {
   });
   it('should enabled Time registration plugin', () => {
     const pluginName = 'Microting Time Planning Plugin';
-    pluginPage.enablePluginByName(pluginName);
-    const row = cy.contains('.mat-mdc-row', pluginName).first();
-    row.find('.mat-column-actions button')
+    
+    // Open action menu for the plugin
+    cy.contains('.mat-mdc-row', pluginName).first().find('#actionMenu').click();
+    cy.wait(500);
+    
+    // Verify the plugin is enabled by checking the status button in the action menu
+    cy.get('#plugin-status-button0')
+      .find('mat-icon')
       .should('contain.text', 'toggle_on'); // plugin is enabled
   });
 });
