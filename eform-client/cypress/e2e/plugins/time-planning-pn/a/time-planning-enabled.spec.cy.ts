@@ -17,23 +17,7 @@ describe('Enable Backend Config plugin', () => {
     cy.contains('.mat-mdc-row', pluginName).first().find('#actionMenu').click();
     cy.wait(500);
     
-    // Click the status button inside the menu to enable the plugin
-    cy.get('#plugin-status-button0').should('be.visible').click();
-    cy.wait(500);
-    
-    // Confirm activation in the modal if present
-    cy.get('body').then(($body) => {
-      if ($body.find('#pluginOKBtn').length > 0) {
-        cy.get('#pluginOKBtn').click();
-        cy.wait(10000); // Wait for plugin activation
-      }
-    });
-    
-    // Verify the plugin is enabled by checking the status
-    // Re-open the action menu to check the status
-    cy.contains('.mat-mdc-row', pluginName).first().find('#actionMenu').click();
-    cy.wait(500);
-    
+    // Verify the plugin is enabled by checking the status button in the action menu
     cy.get('#plugin-status-button0')
       .find('mat-icon')
       .should('contain.text', 'toggle_on'); // plugin is enabled
