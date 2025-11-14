@@ -264,13 +264,13 @@ describe('Enable Backend Config plugin', () => {
     });
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
-    row = cy.contains('.mat-mdc-row', pluginName).first();
-    // row = cy.contains('.mat-mdc-row', pluginName).first();
-    settingsElement = row
-      .find('.mat-column-actions a');
-    // .should('be.enabled')
-    // .should('be.visible');
-    settingsElement.click();
+
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
 
     // const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     daysOfWeek.forEach((day, index) => {
