@@ -237,21 +237,11 @@ describe('Dashboard edit values', () => {
 
   it('should enable auto break calculations with empty values', () => {
     pluginPage.Navbar.goToPluginsPage();
-    const pluginName = 'Microting Time Planning Plugin';
-    // pluginPage.enablePluginByName(pluginName);
-    let row = cy.contains('.mat-mdc-row', pluginName).first();
-    row.find('.mat-column-actions button')
-      .should('contain.text', 'toggle_on'); // plugin is enabled
-    row = cy.contains('.mat-mdc-row', pluginName).first();
-    row.find('.mat-column-actions a')
-      .should('contain.text', 'settings'); // plugin is enabled
-    row = cy.contains('.mat-mdc-row', pluginName).first();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
-    let settingsElement = row
-      .find('.mat-column-actions a')
-      // .should('be.enabled')
-      .should('be.visible');
-    settingsElement.click();
+    cy.get('#plugin-settings-link0').click();
     cy.wait('@settings-get', { timeout: 60000 });
     // autoBreakCalculationActiveToggle-button
     cy.get('#autoBreakCalculationActiveToggle-button').invoke('attr', 'aria-checked').then(currentState => {
