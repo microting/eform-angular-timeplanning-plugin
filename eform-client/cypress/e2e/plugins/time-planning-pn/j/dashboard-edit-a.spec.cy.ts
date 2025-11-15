@@ -103,10 +103,7 @@ describe('Dashboard edit values', () => {
     cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
     cy.wait(500);
 
-    cy.get('#firstColumn0')
-      .scrollIntoView()
-      .should('be.visible')
-      .click({force: true});
+    cy.get('#firstColumn0').click();
 
     cy.get('mat-dialog-container', {timeout: 500}).should('be.visible');
 
