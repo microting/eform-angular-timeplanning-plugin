@@ -129,49 +129,50 @@ describe('Dashboard edit values', () => {
 
   });
 
-  afterEach(() => {
-    cy.get('#firstColumn0').click();
-
-    // Ensure the checkbox inactive
-    cy.get('#autoBreakCalculationActive-input')
-      .scrollIntoView()
-      .then(($checkbox) => {
-        if ($checkbox.is(':checked')) {
-          cy.wrap($checkbox).click({force: true});
-        }
-      });
-
-    cy.get('#saveButton').scrollIntoView().click({force: true});
-    cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
-    cy.wait(500);
-
-    pluginPage.Navbar.goToPluginsPage();
-    cy.get('#actionMenu')
-      .should('be.visible')
-      .click({ force: true });
-    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
-    cy.get('#plugin-settings-link0').click();
-    cy.wait('@settings-get', { timeout: 60000 });
-
-    cy.url().should('include', '/plugins/time-planning-pn/settings');
-
-    cy.get('#autoBreakCalculationActiveToggle button[role="switch"]')
-      .then(($btn) => {
-        const isChecked = $btn.attr('aria-checked') === 'true';
-        if (isChecked) {
-          cy.wrap($btn)
-            .scrollIntoView()
-            .click({force: true});
-        }
-      });
-
-    // Confirm it’s OFF
-    cy.get('#autoBreakCalculationActiveToggle button[role="switch"]')
-      .should('have.attr', 'aria-checked', 'false');
-
-    cy.get('#saveSettings')
-      .scrollIntoView()
-      .should('be.visible')
-      .click({force: true});
-  });
+  // Since we only have one test in j suite, we can skip the afterEach cleanup
+  // afterEach(() => {
+  //   cy.get('#firstColumn0').click();
+  //
+  //   // Ensure the checkbox inactive
+  //   cy.get('#autoBreakCalculationActive-input')
+  //     .scrollIntoView()
+  //     .then(($checkbox) => {
+  //       if ($checkbox.is(':checked')) {
+  //         cy.wrap($checkbox).click({force: true});
+  //       }
+  //     });
+  //
+  //   cy.get('#saveButton').scrollIntoView().click({force: true});
+  //   cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
+  //   cy.wait(500);
+  //
+  //   pluginPage.Navbar.goToPluginsPage();
+  //   cy.get('#actionMenu')
+  //     .should('be.visible')
+  //     .click({ force: true });
+  //   cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+  //   cy.get('#plugin-settings-link0').click();
+  //   cy.wait('@settings-get', { timeout: 60000 });
+  //
+  //   cy.url().should('include', '/plugins/time-planning-pn/settings');
+  //
+  //   cy.get('#autoBreakCalculationActiveToggle button[role="switch"]')
+  //     .then(($btn) => {
+  //       const isChecked = $btn.attr('aria-checked') === 'true';
+  //       if (isChecked) {
+  //         cy.wrap($btn)
+  //           .scrollIntoView()
+  //           .click({force: true});
+  //       }
+  //     });
+  //
+  //   // Confirm it’s OFF
+  //   cy.get('#autoBreakCalculationActiveToggle button[role="switch"]')
+  //     .should('have.attr', 'aria-checked', 'false');
+  //
+  //   cy.get('#saveSettings')
+  //     .scrollIntoView()
+  //     .should('be.visible')
+  //     .click({force: true});
+  // });
 });
