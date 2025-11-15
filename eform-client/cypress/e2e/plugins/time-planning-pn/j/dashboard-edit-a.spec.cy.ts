@@ -1,4 +1,5 @@
 import loginPage from '../../../Login.page';
+import pluginPage from '../../../Plugin.page';
 
 describe('Dashboard edit values', () => {
   let storedValues = {};
@@ -7,15 +8,13 @@ describe('Dashboard edit values', () => {
     cy.visit('http://localhost:4200');
     loginPage.login();
 
-    cy.get('mat-nested-tree-node').contains('Admin').click();
-    cy.get('mat-nested-tree-node').contains('Plugins').click();
-
-    cy.contains('div.plugin-name', 'Microting Time Planning Plugin')
-      .closest('tr')
-      .find('a#plugin-settings-link')
-      .click();
-
-    cy.url().should('include', '/plugins/time-planning-pn/settings');
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
 
     cy.get('#autoBreakCalculationActiveToggle button[role="switch"]')
       .then(($btn) => {
@@ -149,12 +148,13 @@ describe('Dashboard edit values', () => {
     cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
     cy.wait(500);
 
-    cy.get('mat-nested-tree-node').contains('Plugins').click();
-
-    cy.contains('div.plugin-name', 'Microting Time Planning Plugin')
-      .closest('tr')
-      .find('a#plugin-settings-link')
-      .click();
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
 
     cy.url().should('include', '/plugins/time-planning-pn/settings');
 
