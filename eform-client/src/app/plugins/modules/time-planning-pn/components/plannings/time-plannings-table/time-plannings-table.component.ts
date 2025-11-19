@@ -155,7 +155,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         if (workDayStarted) {
           return workDayEnded ? 'green-background' : 'grey-background';
         } else {
-          return 'grey-background';
+          return 'red-background';
         }
       }
 
@@ -178,7 +178,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
     }
 
     if (plannedStarted) {
-      return 'grey-background';
+      return 'red-background';
     }
 
     if (message || workerComment) {
