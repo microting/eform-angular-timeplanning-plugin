@@ -142,7 +142,7 @@
     <div class="plan-content">
       <!--<div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>-->
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0">
-        <span>
+        <span id="firstShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           <strong>
             {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
@@ -153,7 +153,7 @@
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.plannedEndOfShift1 !== 0 ">
-        <span>
+        <span id="firstShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           <strong>
             {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
@@ -164,7 +164,7 @@
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.plannedEndOfShift1 === 0 && row.planningPrDayModels[col.field]?.planHours !== 0">
-        <span>
+        <span id="plannedHours{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           <strong>
             {{ convertHoursToTime(row.planningPrDayModels[col.field]?.planHours) }}
@@ -183,7 +183,7 @@
         </span>
       </div>
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift2 !== 0">
-        <span>
+        <span id="secondShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift2) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift2) }} /
@@ -202,7 +202,7 @@
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift3 !== 0">
-        <span>
+        <span id="thirdShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift3) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift3) }} /
@@ -221,7 +221,7 @@
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift4 !== 0">
-        <span>
+        <span id="fourthShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift4) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift4) }} /
@@ -240,7 +240,7 @@
       </div>
 
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift5 !== 0">
-        <span>
+        <span id="fifthShift{{index}}_{{col.field}}">
           <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift5) }} -
           {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift5) }} /
