@@ -205,30 +205,32 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
 
   protected readonly JSON = JSON;
 
-  isInOlderThanToday(date: Date): boolean {
-    // take the midnight of the date to compare ot today's midnight
-    if (!date) {
-      return false;
-    }
-    // Convert the date to a string to ensure it's in a valid format
-    if (typeof date === 'string') {
-      date = new Date(date);
-    }
-    // Compare the date with today's date
-    if (isNaN(date.getTime())) {
-      console.error('Invalid date:', date);
-      return false; // or handle the error as needed
-    }
-    // Create a new Date object for today at midnight
-    const todayMidnight = new Date();
-    todayMidnight.setHours(0, 0, 0, 0); // Set to midnight
-    const dateMidnight = new Date(date);
-    dateMidnight.setHours(0, 0, 0, 0); // Set to midnight
-    return dateMidnight <todayMidnight;
-  }
+  // isInOlderThanToday(date: Date): boolean {
+  //   // take the midnight of the date to compare ot today's midnight
+  //   if (!date) {
+  //     return false;
+  //   }
+  //   // Convert the date to a string to ensure it's in a valid format
+  //   if (typeof date === 'string') {
+  //     date = new Date(date);
+  //   }
+  //   // Compare the date with today's date
+  //   if (isNaN(date.getTime())) {
+  //     console.error('Invalid date:', date);
+  //     return false; // or handle the error as needed
+  //   }
+  //   // Create a new Date object for today at midnight
+  //   const todayMidnight = new Date();
+  //   todayMidnight.setHours(0, 0, 0, 0); // Set to midnight
+  //   const dateMidnight = new Date(date);
+  //   dateMidnight.setHours(0, 0, 0, 0); // Set to midnight
+  //   return dateMidnight <todayMidnight;
+  // }
 
   getStopTimeDisplay(startedAt: string | null, stoppedAt: string | null): string {
-    if (!startedAt || !stoppedAt) return '';
+    if (!startedAt || !stoppedAt) {
+      return '';
+    }
     const startDate = new Date(startedAt);
     const stopDate = new Date(stoppedAt);
     if (
