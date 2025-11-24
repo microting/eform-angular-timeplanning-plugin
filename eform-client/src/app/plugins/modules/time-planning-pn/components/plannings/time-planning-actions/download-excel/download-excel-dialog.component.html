@@ -27,31 +27,31 @@
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
 
-  <div class="d-flex align-items-center mr-2 ml-2" *ngIf="siteId && dateFrom && dateTo">
+  <div class="d-flex align-items-center mr-2 ml-2">
     <button
-      mat-raised-button
-      id="workingHoursExcel"
-      (click)="onDownloadExcelReport()"
-      color="accent"
-      [matTooltip]="'Download Excel' | translate">
-      {{ 'Download Excel' | translate }}
+      class="btn-cancel"
+            mat-dialog-close
+            id="cancelButton">
+      {{ 'Cancel' | translate }}
     </button>
   </div>
 
   <div class="d-flex align-items-center mr-2 ml-2" *ngIf="!siteId && dateFrom && dateTo">
     <button
-      mat-raised-button
+      class="btn-primary btn-primary--icon-left"
       id="workingHoursExcelAllWorkers"
       (click)="onDownloadExcelReportAllWorkers()"
-      color="accent"
       [matTooltip]="'Download Excel (all workers)' | translate">
       {{ 'Download Excel (all workers)' | translate }}
     </button>
   </div>
-  <div class="d-flex align-items-center mr-2 ml-2">
-    <button mat-raised-button mat-dialog-close
-            id="cancelButton">
-      {{ 'Cancel' | translate }}
+  <div class="d-flex align-items-center mr-2 ml-2" *ngIf="siteId && dateFrom && dateTo">
+    <button
+      class="btn-primary btn-primary--icon-left"
+      id="workingHoursExcel"
+      (click)="onDownloadExcelReport()"
+      [matTooltip]="'Download Excel' | translate">
+      {{ 'Download Excel' | translate }}
     </button>
   </div>
 </div>
