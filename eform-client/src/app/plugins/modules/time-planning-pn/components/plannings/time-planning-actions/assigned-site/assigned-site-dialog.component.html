@@ -588,16 +588,16 @@
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
   <button
+    class="btn-cancel"
+          mat-dialog-close
+          id="cancelButton">
+    {{ 'Cancel' | translate }}
+  </button>
+  <button
     class="btn-primary btn-primary--icon-left"
     id="saveButton"
     (click)="updateAssignedSite()"
     [mat-dialog-close]="data">
     <span>{{ 'Save' | translate }}</span>
-  </button>
-  <button
-    class="btn-cancel"
-          mat-dialog-close
-          id="cancelButton">
-    {{ 'Cancel' | translate }}
   </button>
 </div>
