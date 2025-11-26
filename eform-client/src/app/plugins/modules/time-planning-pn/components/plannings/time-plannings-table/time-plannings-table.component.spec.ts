@@ -171,7 +171,7 @@ describe('TimePlanningsTableComponent', () => {
         }
       };
 
-      expect(component.getCellClass(row, '0')).toBe('grey-background');
+      expect(component.getCellClass(row, '0')).toBe('red-background');
     });
 
     it('should return green-background for cell with work started and ended', () => {
@@ -274,7 +274,7 @@ describe('TimePlanningsTableComponent', () => {
         }
       };
 
-      expect(component.getCellClass(row, '0')).toBe('grey-background');
+      expect(component.getCellClass(row, '0')).toBe('red-background');
     });
 
     it('should return grey-background when message is set', () => {

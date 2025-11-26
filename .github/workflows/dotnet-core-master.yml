@@ -199,25 +199,18 @@ jobs:
         cat docker_run_log
         result=`cat docker_run_log | grep "Now listening on: http://0.0.0.0:5000" -m 1 | wc -l`
         if [ $result -ne 1 ];then exit 1; fi
-    - name: The job has failed
-      if: always()
+    - name: Get standard output
+      if: ${{ failure() }}
       run: |
         cat docker_run_log
-    - name: Archive mp4 artifacts
+    - name: Archive videos
       if: ${{ failure() }}
       uses: actions/upload-artifact@v4
       with:
-        name: error Screenshots
+        name: cypress-videos-${{matrix.test}}
         path: |
-          /home/runner/work/eform-angular-timeplanning-plugin/eform-angular-timeplanning-plugin/eform-angular-frontend/eform-client/cypress/videos/*.cy.ts.mp4
+          /home/runner/work/eform-angular-timeplanning-plugin/eform-angular-timeplanning-plugin/eform-angular-frontend/eform-client/cypress/videos/*.mp4
         retention-days: 2
-    - name: Archive screenshot artifacts
-      if: ${{ failure() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: error Screenshots ${{matrix.test}}
-        path: |
-          /home/runner/work/eform-angular-frontend/eform-angular-frontend/eform-client/errorShots/*.png
   test-dotnet:
     runs-on: ubuntu-latest
     steps:
@@ -237,7 +230,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 10.0.x
     - name: Build
       run: dotnet build eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.sln
     - name: Unit Tests

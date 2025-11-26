@@ -468,22 +468,13 @@ describe('Dashboard assert', () => {
     cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
     cy.get('#sumFlex7 input').should('contain.value', '-78.55');
     pluginPage.Navbar.goToPluginsPage();
-    const pluginName = 'Microting Time Planning Plugin';
 
-    let row = cy.contains('.mat-mdc-row', pluginName).first();
-    row.find('.mat-column-actions button')
-      .should('contain.text', 'toggle_on'); // plugin is enabled
-    row = cy.contains('.mat-mdc-row', pluginName).first();
-    row.find('.mat-column-actions a')
-
-      .should('contain.text', 'settings'); // plugin is enabled
-    row = cy.contains('.mat-mdc-row', pluginName).first();
-    let settingsElement = row
-      .find('.mat-column-actions a')
-
-      .should('be.visible');
-
-    settingsElement.click();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
     cy.get('#forceLoadAllPlanningsFromGoogleSheet').click();
     cy.get('#saveSettings').click();
     cy.get('mat-tree-node').contains('Dashboard').click();
@@ -715,14 +706,15 @@ describe('Dashboard assert', () => {
     cy.wait(500);
     for (let i = 0; i < updatePlanTextsNextWeek.length; i++) {
       let firstShiftId = `#firstShift0_${i}`;
+      let cellId = `#cell0_${i}`;
+      cy.get(cellId).scrollIntoView();
+      cy.get(firstShiftId).scrollIntoView();
       cy.get(firstShiftId).should('include.text', updatePlanTextsNextWeek[i].firstShift);
       if (planTextsNextWeek[i].secondShift) {
         let secondShiftId = `#secondShift0_${i}`;
         cy.get(secondShiftId).should('include.text', updatePlanTextsNextWeek[i].secondShift);
       }
 
-      let cellId = `#cell0_${i}`;
-      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('include.value', updatePlanTextsNextWeek[i].calculatedHours);
@@ -738,6 +730,8 @@ describe('Dashboard assert', () => {
     cy.wait('@index-update', { timeout: 60000 });
     cy.wait(500);
     for (let i = 0; i < updatePlanTextsFutureWeek.length; i++) {
+      let cellId = `#cell0_${i}`;
+      cy.get(cellId).scrollIntoView();
       if (planTextsFutureWeek[i].firstShift) {
         let firstShiftId = `#firstShift0_${i}`;
         cy.get(firstShiftId).should('include.text', updatePlanTextsFutureWeek[i].firstShift);
@@ -751,8 +745,6 @@ describe('Dashboard assert', () => {
         let secondShiftId = `#secondShift0_${i}`;
         cy.get(secondShiftId).should('include.text', updatePlanTextsFutureWeek[i].secondShift);
       }
-      let cellId = `#cell0_${i}`;
-      cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('include.value', updatePlanTextsFutureWeek[i].calculatedHours);

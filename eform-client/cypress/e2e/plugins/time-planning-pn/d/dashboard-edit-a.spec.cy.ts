@@ -58,6 +58,7 @@ describe('Dashboard edit values', () => {
   });
 
   afterEach(() => {
+    cy.get('#cell0_0').scrollIntoView();
     cy.get('#cell0_0').click();
 
     ['#plannedStartOfShift1', '#start1StartedAt'].forEach(

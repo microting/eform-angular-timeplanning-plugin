@@ -9,20 +9,12 @@ describe('Enable Backend Config plugin', () => {
   });
 
   it('should validate default Time registration plugin settings', () => {
-    const pluginName = 'Microting Time Planning Plugin';
-    // pluginPage.enablePluginByName(pluginName);
-    let row = cy.contains('.mat-mdc-row', pluginName).first();
-    row.find('.mat-column-actions button')
-      .should('contain.text', 'toggle_on'); // plugin is enabled
-    row = cy.contains('.mat-mdc-row', pluginName).first();
-    row.find('.mat-column-actions a')
-      .should('contain.text', 'settings'); // plugin is enabled
-    row = cy.contains('.mat-mdc-row', pluginName).first();
-    let settingsElement = row
-      .find('.mat-column-actions a')
-      // .should('be.enabled')
-      .should('be.visible');
-    settingsElement.click();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
 
     const googleSheetIdInputField = cy.get('.flex-cards.mt-3 mat-form-field');
     googleSheetIdInputField
@@ -127,20 +119,12 @@ describe('Enable Backend Config plugin', () => {
   });
 
   it('should activate auto calculation break times', () => {
-    const pluginName = 'Microting Time Planning Plugin';
-    // pluginPage.enablePluginByName(pluginName);
-    let row = cy.contains('.mat-mdc-row', pluginName).first();
-    row.find('.mat-column-actions button')
-      .should('contain.text', 'toggle_on'); // plugin is enabled
-    row = cy.contains('.mat-mdc-row', pluginName).first();
-    row.find('.mat-column-actions a')
-      .should('contain.text', 'settings'); // plugin is enabled
-    row = cy.contains('.mat-mdc-row', pluginName).first();
-    let settingsElement = row
-      .find('.mat-column-actions a')
-      // .should('be.enabled')
-      .should('be.visible');
-    settingsElement.click();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
 
     const googleSheetIdInputField = cy.get('.flex-cards.mt-3 mat-form-field');
     googleSheetIdInputField
@@ -280,13 +264,13 @@ describe('Enable Backend Config plugin', () => {
     });
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
-    row = cy.contains('.mat-mdc-row', pluginName).first();
-    // row = cy.contains('.mat-mdc-row', pluginName).first();
-    settingsElement = row
-      .find('.mat-column-actions a');
-    // .should('be.enabled')
-    // .should('be.visible');
-    settingsElement.click();
+
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
 
     // const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     daysOfWeek.forEach((day, index) => {

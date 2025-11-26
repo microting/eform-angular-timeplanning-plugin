@@ -185,9 +185,9 @@ public static class PlanRegistrationHelper
                 {
                     if (dbAssignedSite.UseGoogleSheetAsDefault)
                     {
-                        if (!string.IsNullOrEmpty(planRegistration.PlanText))
+                        if (planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
                         {
-                            if (planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
+                            if (!string.IsNullOrEmpty(planRegistration.PlanText))
                             {
                                 var splitList = planRegistration.PlanText.Split(';');
                                 var firsSplit = splitList[0];
@@ -540,6 +540,24 @@ public static class PlanRegistrationHelper
                                     tainted = true;
 
                                 }
+                            }
+                            else
+                            {
+                                planRegistration.PlannedStartOfShift1 = 0;
+                                planRegistration.PlannedEndOfShift1 = 0;
+                                planRegistration.PlannedBreakOfShift1 = 0;
+                                planRegistration.PlannedStartOfShift2 = 0;
+                                planRegistration.PlannedEndOfShift2 = 0;
+                                planRegistration.PlannedBreakOfShift2 = 0;
+                                planRegistration.PlannedStartOfShift3 = 0;
+                                planRegistration.PlannedEndOfShift3 = 0;
+                                planRegistration.PlannedBreakOfShift3 = 0;
+                                planRegistration.PlannedStartOfShift4 = 0;
+                                planRegistration.PlannedEndOfShift4 = 0;
+                                planRegistration.PlannedBreakOfShift4 = 0;
+                                planRegistration.PlannedStartOfShift5 = 0;
+                                planRegistration.PlannedEndOfShift5 = 0;
+                                planRegistration.PlannedBreakOfShift5 = 0;
                             }
                         }
 
@@ -1187,10 +1205,10 @@ public static class PlanRegistrationHelper
             {
                 if (dbAssignedSite.UseGoogleSheetAsDefault)
                 {
+                    if (planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
+                    {
                     if (!string.IsNullOrEmpty(planRegistration.PlanText))
                     {
-                        if (planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
-                        {
                             var splitList = planRegistration.PlanText.Split(';');
                             var firsSplit = splitList[0];
 
@@ -1523,6 +1541,24 @@ public static class PlanRegistrationHelper
                                 tainted = true;
 
                             }
+                        }
+                        else
+                        {
+                            planRegistration.PlannedStartOfShift1 = 0;
+                            planRegistration.PlannedEndOfShift1 = 0;
+                            planRegistration.PlannedBreakOfShift1 = 0;
+                            planRegistration.PlannedStartOfShift2 = 0;
+                            planRegistration.PlannedEndOfShift2 = 0;
+                            planRegistration.PlannedBreakOfShift2 = 0;
+                            planRegistration.PlannedStartOfShift3 = 0;
+                            planRegistration.PlannedEndOfShift3 = 0;
+                            planRegistration.PlannedBreakOfShift3 = 0;
+                            planRegistration.PlannedStartOfShift4 = 0;
+                            planRegistration.PlannedEndOfShift4 = 0;
+                            planRegistration.PlannedBreakOfShift4 = 0;
+                            planRegistration.PlannedStartOfShift5 = 0;
+                            planRegistration.PlannedEndOfShift5 = 0;
+                            planRegistration.PlannedBreakOfShift5 = 0;
                         }
                     }
 
