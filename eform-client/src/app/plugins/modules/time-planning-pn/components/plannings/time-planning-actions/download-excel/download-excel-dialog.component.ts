@@ -1,4 +1,6 @@
-import {Component, Inject, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
 import {EMPTY, Subscription} from 'rxjs';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 import {SiteDto} from 'src/app/common/models';
@@ -21,18 +23,17 @@ import {MAT_DIALOG_DATA} from '@angular/material/dialog';
   standalone: false,
 })
 export class DownloadExcelDialogComponent implements OnInit, OnDestroy {
+  public availableSites = inject<SiteDto[]>(MAT_DIALOG_DATA);
+  private toastrService = inject(ToastrService);
+  private workingHoursService = inject(TimePlanningPnWorkingHoursService);
+
   siteId: number;
 
   dateFrom: Date = null;
   dateTo: Date = null;
   downloadReportSub$: Subscription;
 
-  constructor(
-    @Inject(MAT_DIALOG_DATA) public availableSites: SiteDto[] = [],
-    private toastrService: ToastrService,
-    private workingHoursService: TimePlanningPnWorkingHoursService,
-  ) {
-  }
+  
 
   ngOnInit(): void {
     // this.getAvailableSites();

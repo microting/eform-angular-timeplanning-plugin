@@ -1,4 +1,6 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output,
+  inject
+} from '@angular/core';
 import {format} from 'date-fns';
 import {ExcelIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {SiteDto} from 'src/app/common/models';
@@ -28,6 +30,13 @@ import {
     standalone: false
 })
 export class WorkingHoursHeaderComponent implements OnInit {
+  private toastrService = inject(ToastrService);
+  private workingHoursService = inject(TimePlanningPnWorkingHoursService);
+  private iconRegistry = inject(MatIconRegistry);
+  private sanitizer = inject(DomSanitizer);
+  public dialog = inject(MatDialog);
+  private overlay = inject(Overlay);
+
   @Input()
   workingHoursRequest: WorkingHourRequestModel = new WorkingHourRequestModel();
   @Input() availableSites: SiteDto[] = [];
@@ -43,18 +52,10 @@ export class WorkingHoursHeaderComponent implements OnInit {
   dateTo: Date = null;
   downloadReportSub$: Subscription;
 
-  constructor(
-    private toastrService: ToastrService,
-    private workingHoursService: TimePlanningPnWorkingHoursService,
-    iconRegistry: MatIconRegistry,
-    sanitizer: DomSanitizer,
-    public dialog: MatDialog,
-    private overlay: Overlay,
-  ) {
-    iconRegistry.addSvgIconLiteral('file-excel', sanitizer.bypassSecurityTrustHtml(ExcelIcon));
-  }
+  
 
   ngOnInit(): void {
+    this.iconRegistry.addSvgIconLiteral('file-excel', this.sanitizer.bypassSecurityTrustHtml(ExcelIcon));
   }
 
   onSiteChanged(siteId: number) {

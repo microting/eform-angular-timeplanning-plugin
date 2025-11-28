@@ -1,4 +1,6 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit,
+  inject
+} from '@angular/core';
 import {MatDialogRef} from '@angular/material/dialog';
 import {TimePlanningPnRegistrationDevicesService} from '../../../../../services/time-planning-pn-registration-devices.service';
 import {TimePlanningRegistrationDeviceModel} from '../../../../../../../modules/time-planning-pn/models';
@@ -11,11 +13,11 @@ import {TimePlanningRegistrationDeviceModel} from '../../../../../../../modules/
     standalone: false
 })
 export class RegistrationDevicesCreateModalComponent implements OnInit {
+  private registrationDevicesService = inject(TimePlanningPnRegistrationDevicesService);
+  public dialogRef = inject(MatDialogRef<RegistrationDevicesCreateModalComponent>);
+
   selectedRegistrationDevice: TimePlanningRegistrationDeviceModel = new TimePlanningRegistrationDeviceModel();
-  constructor(
-    private registrationDevicesService: TimePlanningPnRegistrationDevicesService,
-    public dialogRef: MatDialogRef<RegistrationDevicesCreateModalComponent>) {
-  }
+  
 
   ngOnInit() {
   }

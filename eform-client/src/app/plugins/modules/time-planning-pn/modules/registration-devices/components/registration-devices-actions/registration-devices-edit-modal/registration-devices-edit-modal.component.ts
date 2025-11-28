@@ -1,4 +1,6 @@
-import {Component, Inject, Input, OnInit} from '@angular/core';
+import {Component, OnInit,
+  inject
+} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {TimePlanningPnRegistrationDevicesService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {TimePlanningRegistrationDeviceModel} from 'src/app/plugins/modules/time-planning-pn/models';
@@ -11,17 +13,17 @@ import {TimePlanningRegistrationDeviceModel} from 'src/app/plugins/modules/time-
     standalone: false
 })
 export class RegistrationDevicesEditModalComponent implements OnInit {
-  selectedRegistrationDevice: TimePlanningRegistrationDeviceModel = new TimePlanningRegistrationDeviceModel();
-  constructor(
-    @Inject(MAT_DIALOG_DATA) model: {
+  private registrationDevicesService = inject(TimePlanningPnRegistrationDevicesService);
+  public dialogRef = inject(MatDialogRef<RegistrationDevicesEditModalComponent>);
+  private model = inject<{
       selectedRegistrationDevice: TimePlanningRegistrationDeviceModel
-    },
-    private registrationDevicesService: TimePlanningPnRegistrationDevicesService,
-    public dialogRef: MatDialogRef<RegistrationDevicesEditModalComponent>) {
-    this.selectedRegistrationDevice = {...model.selectedRegistrationDevice};
-  }
+    }>(MAT_DIALOG_DATA);
+
+  selectedRegistrationDevice: TimePlanningRegistrationDeviceModel = new TimePlanningRegistrationDeviceModel();
+  
 
   ngOnInit() {
+    this.selectedRegistrationDevice = {...this.model.selectedRegistrationDevice};
   }
 
   updateRegistrationDevice() {

@@ -1,4 +1,6 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
 import {WorkingHourModel} from 'src/app/plugins/modules/time-planning-pn/models';
 import {TimePlanningPnWorkingHoursService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {format} from 'date-fns';
@@ -13,6 +15,10 @@ import {TranslateService} from "@ngx-translate/core";
     standalone: false
 })
 export class MobileWorkingHoursComponent implements OnInit, OnDestroy {
+  private titleService = inject(TitleService);
+  private translateService = inject(TranslateService);
+  private workingHoursService = inject(TimePlanningPnWorkingHoursService);
+
   displayedColumns: string[] = ['property', 'value'];
 
   //workingHourModel: WorkingHourModel;
@@ -21,11 +27,7 @@ export class MobileWorkingHoursComponent implements OnInit, OnDestroy {
   yesterday: Date = new Date(this.selectedDate.setDate(this.selectedDate.getDate() - 1));
   customerNumber: string = '';
 
-  constructor(
-    private titleService: TitleService,
-    private translateService: TranslateService,
-    private workingHoursService: TimePlanningPnWorkingHoursService) {
-  }
+  
 
   ngOnDestroy(): void {
   }
