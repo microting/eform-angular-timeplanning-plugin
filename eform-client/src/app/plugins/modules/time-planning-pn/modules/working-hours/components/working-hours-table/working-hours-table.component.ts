@@ -6,6 +6,7 @@ import {
   OnInit,
   Output,
   SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
+  inject
 } from '@angular/core';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {Subscription} from 'rxjs';
@@ -41,6 +42,11 @@ import {
     standalone: false
 })
 export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy {
+  private translateService = inject(TranslateService);
+  private dialog = inject(MatDialog);
+  private overlay = inject(Overlay);
+  private store = inject(Store);
+
   @ViewChild('shiftSelectorTpl', {static: true}) shiftSelectorTpl!: TemplateRef<any>;
   @ViewChild('inputTextTpl', {static: true}) inputTextTpl!: TemplateRef<any>;
   @ViewChild('inputNumberTpl', {static: true}) inputNumberTpl!: TemplateRef<any>;
@@ -70,13 +76,10 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
   tableHeaders: MtxGridColumn[] = [];
   isFirstUser = false;
 
-  constructor(
-    private translateService: TranslateService,
-    private dialog: MatDialog,
-    private overlay: Overlay,
-    private store: Store,
-  ) {
-    this.selectCurrentUserLocaleSub$ = this.selectCurrentUserLocale$.subscribe(() => this.messages = messages(translateService));
+  
+
+  constructor() {
+    this.selectCurrentUserLocaleSub$ = this.selectCurrentUserLocale$.subscribe(() => this.messages = messages(this.translateService));
     this.selectCurrentUserIsFirstUserSub$ = this.selectCurrentUserIsFirstUser$.subscribe((data) => {
       this.isFirstUser = data;
     });

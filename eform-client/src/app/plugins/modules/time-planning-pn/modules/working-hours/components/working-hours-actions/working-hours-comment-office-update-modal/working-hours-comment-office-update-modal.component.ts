@@ -1,4 +1,6 @@
-import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
 import {FormGroup} from '@angular/forms';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
@@ -12,16 +14,15 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 })
 export class WorkingHoursCommentOfficeUpdateModalComponent
   implements OnInit, OnDestroy {
+  public dialogRef = inject(MatDialogRef<WorkingHoursCommentOfficeUpdateModalComponent>);
+  public workingHoursForm = inject<FormGroup>(MAT_DIALOG_DATA);
+
   commentOffice: string;
 
-  constructor(
-    public dialogRef: MatDialogRef<WorkingHoursCommentOfficeUpdateModalComponent>,
-    @Inject(MAT_DIALOG_DATA) public workingHoursForm: FormGroup,
-  ) {
-    this.commentOffice = this.workingHoursForm.get('commentOffice').value;
-  }
+  
 
   ngOnInit() {
+    this.commentOffice = this.workingHoursForm.get('commentOffice').value;
   }
 
   get date(): Date {
