@@ -78,30 +78,15 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
 
   
 
-  constructor() {
+  ngOnInit(): void {
     this.selectCurrentUserLocaleSub$ = this.selectCurrentUserLocale$.subscribe(() => this.messages = messages(this.translateService));
     this.selectCurrentUserIsFirstUserSub$ = this.selectCurrentUserIsFirstUser$.subscribe((data) => {
       this.isFirstUser = data;
     });
+    this.updateTableHeaders();
   }
 
-  getIsWeekend(workingHoursModel: AbstractControl): boolean {
-    if (workingHoursModel != null) {
-      return workingHoursModel.get('isWeekend').value;
-    }
-  }
-
-  getIsLocked(workingHoursModel: AbstractControl): boolean {
-    if (workingHoursModel != null) {
-      return workingHoursModel.disabled;
-    }
-  }
-
-  get hoursPickerArray() {
-    return HOURS_PICKER_ARRAY;
-  }
-
-  ngOnInit(): void {
+  updateTableHeaders(): void {
     this.tableHeaders = this.isFirstUser ? [
       {
         header: this.translateService.stream('Id'),
@@ -185,6 +170,22 @@ export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy 
       },
       {header: this.translateService.stream('CommentOffice'), field: 'commentOffice', cellTemplate: this.inputTextTpl},
     ];
+  }
+
+  getIsWeekend(workingHoursModel: AbstractControl): boolean {
+    if (workingHoursModel != null) {
+      return workingHoursModel.get('isWeekend').value;
+    }
+  }
+
+  getIsLocked(workingHoursModel: AbstractControl): boolean {
+    if (workingHoursModel != null) {
+      return workingHoursModel.disabled;
+    }
+  }
+
+  get hoursPickerArray() {
+    return HOURS_PICKER_ARRAY;
   }
 
   rowClassFormatter: MtxGridRowClassFormatter = {
