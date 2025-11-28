@@ -1,4 +1,6 @@
-import {Component, Inject, OnInit} from '@angular/core';
+import {Component, OnInit,
+  inject
+} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {TimePlanningRegistrationDeviceModel} from '../../../../../models';
 import {TimePlanningPnRegistrationDevicesService} from '../../../../../services';
@@ -11,13 +13,11 @@ import {TimePlanningPnRegistrationDevicesService} from '../../../../../services'
     standalone: false
 })
 export class RegistrationDevicesOtpCodeComponent implements OnInit {
-  constructor(
-    private timePlanningPnRegistrationDevicesService: TimePlanningPnRegistrationDevicesService,
-    public dialogRef: MatDialogRef<RegistrationDevicesOtpCodeComponent>,
-    @Inject(MAT_DIALOG_DATA) public selectedRegistrationDevice: TimePlanningRegistrationDeviceModel =
-      new TimePlanningRegistrationDeviceModel(),
-  ) {
-  }
+  private timePlanningPnRegistrationDevicesService = inject(TimePlanningPnRegistrationDevicesService);
+  public dialogRef = inject(MatDialogRef<RegistrationDevicesOtpCodeComponent>);
+  public selectedRegistrationDevice = inject<TimePlanningRegistrationDeviceModel>(MAT_DIALOG_DATA);
+
+  
 
   ngOnInit() {
   }
