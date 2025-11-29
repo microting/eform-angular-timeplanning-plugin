@@ -1,4 +1,6 @@
-import {Component, Inject, OnInit} from '@angular/core';
+import {Component, OnInit,
+  inject
+} from '@angular/core';
 import {TranslateService} from '@ngx-translate/core';
 import {FileUploader} from 'ng2-file-upload';
 import {ToastrService} from 'ngx-toastr';
@@ -15,18 +17,17 @@ import {Store} from '@ngrx/store';
     standalone: false
 })
 export class WorkingHoursUploadModalComponent implements OnInit {
+  private toastrService = inject(ToastrService);
+  private authStore = inject(Store);
+  private translateService = inject(TranslateService);
+  private authStateService = inject(AuthStateService);
+  public dialogRef = inject(MatDialogRef<WorkingHoursUploadModalComponent>);
+  public selectedTemplate = inject<TemplateDto>(MAT_DIALOG_DATA);
+
   workingHoursFileUploader: FileUploader;
   private selectBearerToken$ = this.authStore.select(selectBearerToken);
 
-  constructor(
-    private toastrService: ToastrService,
-    private authStore: Store,
-    private translateService: TranslateService,
-    private authStateService: AuthStateService,
-    public dialogRef: MatDialogRef<WorkingHoursUploadModalComponent>,
-    @Inject(MAT_DIALOG_DATA) public selectedTemplate: TemplateDto,
-  ) {
-  }
+  
 
   ngOnInit() {
     let token = '';

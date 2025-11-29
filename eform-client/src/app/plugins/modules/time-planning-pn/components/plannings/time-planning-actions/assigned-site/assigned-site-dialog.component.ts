@@ -1,4 +1,6 @@
-import {Component, DoCheck, Inject, OnInit} from '@angular/core';
+import {Component, DoCheck, OnInit,
+  inject
+} from '@angular/core';
 import {
   MAT_DIALOG_DATA
 } from '@angular/material/dialog';
@@ -24,6 +26,11 @@ import {
   standalone: false
 })
 export class AssignedSiteDialogComponent implements DoCheck, OnInit {
+  private fb = inject(FormBuilder);
+  public data = inject<AssignedSiteModel>(MAT_DIALOG_DATA);
+  private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
+  private store = inject(Store);
+
   assignedSiteForm!: FormGroup;
 
   public selectCurrentUserIsAdmin$ = this.store.select(selectCurrentUserIsAdmin);
@@ -31,15 +38,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
 
-  constructor(
-    private fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: AssignedSiteModel,
-    private timePlanningPnSettingsService: TimePlanningPnSettingsService,
-    private store: Store
-  ) {
-    this.previousData = {...data};
-    // this.calculateHours();
-  }
+  
 
   ngDoCheck(): void {
     if (this.hasDataChanged()) {
@@ -49,6 +48,8 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   }
 
   ngOnInit(): void {
+    this.previousData = {...this.data};
+    // this.calculateHours();
     this.timePlanningPnSettingsService.getGlobalAutoBreakCalculationSettings().subscribe(result => {
       if (result && result.success) {
         this.globalAutoBreakSettings = result.model;

@@ -1,4 +1,6 @@
-import {Component, Inject, OnInit, TemplateRef, ViewChild} from '@angular/core';
+import {Component, OnInit, TemplateRef, ViewChild,
+  inject
+} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {TranslateService} from '@ngx-translate/core';
 import {DatePipe} from '@angular/common';
@@ -26,6 +28,15 @@ import {
   standalone: false
 })
 export class WorkdayEntityDialogComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private planningsService = inject(TimePlanningPnPlanningsService);
+  public data = inject<{
+      planningPrDayModels: PlanningPrDayModel,
+      assignedSiteModel: AssignedSiteModel
+    }>(MAT_DIALOG_DATA);
+  protected datePipe = inject(DatePipe);
+  private translateService = inject(TranslateService);
+
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   enumKeys: string[] = [];
   tableHeaders: MtxGridColumn[] = [];
@@ -54,17 +65,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
   private readonly timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
   inputErrorMessages: Record<string, Record<string, string>> = {};
 
-  constructor(
-    private fb: FormBuilder,
-    private planningsService: TimePlanningPnPlanningsService,
-    @Inject(MAT_DIALOG_DATA) public data: {
-      planningPrDayModels: PlanningPrDayModel,
-      assignedSiteModel: AssignedSiteModel
-    },
-    protected datePipe: DatePipe,
-    private translateService: TranslateService,
-  ) {
-  }
+  
 
   ngOnInit(): void {
     // Enum-opsætning

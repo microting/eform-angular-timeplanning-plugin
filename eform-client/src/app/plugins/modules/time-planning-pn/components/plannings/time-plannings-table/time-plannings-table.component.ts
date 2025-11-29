@@ -1,6 +1,7 @@
 import {
   ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output,
-  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation
+  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
+  inject
 } from '@angular/core';
 import {AssignedSiteModel, TimePlanningModel} from '../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
@@ -23,6 +24,14 @@ import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from "src/app/state";
 
 })
 export class TimePlanningsTableComponent implements OnInit, OnChanges {
+  private store = inject(Store);
+  private planningsService = inject(TimePlanningPnPlanningsService);
+  private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
+  private dialog = inject(MatDialog);
+  private translateService = inject(TranslateService);
+  protected datePipe = inject(DatePipe);
+  private cdr = inject(ChangeDetectorRef);
+
   @Input() timePlannings: TimePlanningModel[] = [];
   @Input() dateFrom!: Date;
   @Input() dateTo!: Date;
@@ -38,16 +47,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
-  constructor(
-    private store: Store,
-    private planningsService: TimePlanningPnPlanningsService,
-    private timePlanningPnSettingsService: TimePlanningPnSettingsService,
-    private dialog: MatDialog,
-    private translateService: TranslateService,
-    protected datePipe: DatePipe,
-    private cdr: ChangeDetectorRef
-  ) {
-  }
+  
 
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
