@@ -58,12 +58,12 @@
             <div>
               <ng-container *ngIf="row['deviceManufacturer'] === 'iOS' ">
                 <span [matTooltip]="row['deviceModel']" class="device-icon">
-                  <mat-icon>phone_iphone</mat-icon>
+                  <mat-icon svgIcon="ios-icon"></mat-icon>
                 </span>
               </ng-container>
               <ng-container *ngIf="row['deviceManufacturer'] !== 'iOS' ">
                 <span [matTooltip]="row['deviceModel']" class="device-icon">
-                  <mat-icon>android</mat-icon>
+                  <mat-icon svgIcon="android-icon"></mat-icon>
                 </span>
               </ng-container>
               {{row['softwareVersion']}}
@@ -119,12 +119,12 @@
             <div>
               <ng-container *ngIf="row['deviceManufacturer'] === 'iOS' ">
                 <span [matTooltip]="row['deviceModel']" class="device-icon">
-                  <mat-icon>phone_iphone</mat-icon>
+                  <mat-icon svgIcon="ios-icon"></mat-icon>
                 </span>
               </ng-container>
               <ng-container *ngIf="row['deviceManufacturer'] !== 'iOS' ">
                 <span [matTooltip]="row['deviceModel']" class="device-icon">
-                  <mat-icon>android</mat-icon>
+                  <mat-icon svgIcon="android-icon"></mat-icon>
                 </span>
               </ng-container>
               {{row['softwareVersion']}}
