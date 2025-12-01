@@ -5,6 +5,7 @@ import {
   OnDestroy,
   OnInit,
   Output,
+  inject
 } from '@angular/core';
 import {TimeFlexesModel} from '../../../../models';
 import {
@@ -27,6 +28,10 @@ import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
     standalone: false
 })
 export class TimeFlexesTableComponent implements OnInit, OnDestroy {
+  private translateService = inject(TranslateService);
+  private dialog = inject(MatDialog);
+  private overlay = inject(Overlay);
+
   @Input() flexPlannings: TimeFlexesModel[] = [];
   @Output()
   flexPlanningChanged: EventEmitter<TimeFlexesModel> = new EventEmitter<TimeFlexesModel>();
@@ -46,12 +51,7 @@ export class TimeFlexesTableComponent implements OnInit, OnDestroy {
   TimeFlexesCommentOfficeUpdateModalComponentAfterClosedSub$: Subscription;
   TimeFlexesCommentOfficeAllUpdateModalComponentAfterClosedSub$: Subscription;
 
-  constructor(
-    private translateService: TranslateService,
-    private dialog: MatDialog,
-    private overlay: Overlay,
-  ) {
-  }
+  
 
   ngOnInit(): void {
   }

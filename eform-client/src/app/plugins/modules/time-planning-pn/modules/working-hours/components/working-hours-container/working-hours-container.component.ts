@@ -1,4 +1,6 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
@@ -17,6 +19,9 @@ import {WorkingHourRequestModel, WorkingHourModel} from '../../../../models';
     standalone: false
 })
 export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
+  private workingHoursService = inject(TimePlanningPnWorkingHoursService);
+  private settingsService = inject(TimePlanningPnSettingsService);
+
   workingHoursFormArray: FormArray = new FormArray([]);
   workingHoursRequest: WorkingHourRequestModel;
   availableSites: SiteDto[] = [];
@@ -28,10 +33,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   workingHoursGroupSub$: Subscription[] = [];
   tainted = false;
 
-  constructor(
-    private workingHoursService: TimePlanningPnWorkingHoursService,
-    private settingsService: TimePlanningPnSettingsService
-  ) {}
+  
 
   ngOnInit(): void {
     this.getAvailableSites();

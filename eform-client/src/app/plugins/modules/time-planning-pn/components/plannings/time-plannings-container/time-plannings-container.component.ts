@@ -1,4 +1,6 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import {Subscription, take} from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
@@ -23,6 +25,11 @@ import {MatDatepickerInputEvent} from '@angular/material/datepicker';
   standalone: false
 })
 export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
+  private store = inject(Store);
+  private planningsService = inject(TimePlanningPnPlanningsService);
+  private settingsService = inject(TimePlanningPnSettingsService);
+  private dialog = inject(MatDialog);
+
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
   showResignedSites: boolean = false;
@@ -38,12 +45,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   public selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
   locale: string;
 
-  constructor(
-    private store: Store,
-    private planningsService: TimePlanningPnPlanningsService,
-    private settingsService: TimePlanningPnSettingsService,
-    private dialog: MatDialog,
-  ) {}
+  
 
   ngOnInit(): void {
 

@@ -1,4 +1,6 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit,
+  inject
+} from '@angular/core';
 import {
   TimePlanningPnRegistrationDevicesService
 } from '../../../../services/time-planning-pn-registration-devices.service';
@@ -16,16 +18,15 @@ import {
     standalone: false
 })
 export class RegistrationDevicesContainerComponent implements OnInit {
+  public dialog = inject(MatDialog);
+  private overlay = inject(Overlay);
+  private registrationDevicesService = inject(TimePlanningPnRegistrationDevicesService);
+
   tainted: any;
   registrationDevices: any;
   getRegistrationDevices$: Subscription;
   createRegistrationDevicesComponentAfterClosedSub$: Subscription;
-  constructor(
-    public dialog: MatDialog,
-    private overlay: Overlay,
-    private registrationDevicesService: TimePlanningPnRegistrationDevicesService,
-  ) {
-  }
+  
 
   ngOnInit(): void {
     this.getRegistrationDevices();

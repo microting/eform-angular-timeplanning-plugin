@@ -1024,7 +1024,7 @@
 
   <div mat-dialog-actions class="d-flex flex-row justify-content-end">
     <button
-      mat-raised-button
+      class="btn-cancel"
       mat-dialog-close
       id="cancelButton"
       (click)="onCancel()">
@@ -1032,13 +1032,12 @@
     </button>
 
     <button
+      class="btn-primary btn-primary--icon-left"
       id="saveButton"
-      mat-raised-button
-      color="accent"
       (click)="onUpdateWorkDayEntity()"
       [disabled]="workdayForm.invalid"
       [mat-dialog-close]="data">
-      {{ 'Save' | translate }}
+      <span>{{ 'Save' | translate }}</span>
     </button>
   </div>
 </form>

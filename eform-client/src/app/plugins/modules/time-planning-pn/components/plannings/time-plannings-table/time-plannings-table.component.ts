@@ -1,6 +1,7 @@
 import {
   ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output,
-  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation
+  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
+  inject
 } from '@angular/core';
 import {AssignedSiteModel, TimePlanningModel} from '../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
@@ -13,6 +14,9 @@ import * as R from 'ramda';
 import {TimePlanningMessagesEnum} from '../../../enums';
 import {Store} from "@ngrx/store";
 import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from "src/app/state";
+import {AndroidIcon, iOSIcon} from "src/app/common/const";
+import {MatIconRegistry} from "@angular/material/icon";
+import {DomSanitizer} from "@angular/platform-browser";
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -23,6 +27,16 @@ import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from "src/app/state";
 
 })
 export class TimePlanningsTableComponent implements OnInit, OnChanges {
+  private store = inject(Store);
+  private planningsService = inject(TimePlanningPnPlanningsService);
+  private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
+  private dialog = inject(MatDialog);
+  private translateService = inject(TranslateService);
+  protected datePipe = inject(DatePipe);
+  private cdr = inject(ChangeDetectorRef);
+  private iconRegistry = inject(MatIconRegistry);
+  private sanitizer = inject(DomSanitizer);
+
   @Input() timePlannings: TimePlanningModel[] = [];
   @Input() dateFrom!: Date;
   @Input() dateTo!: Date;
@@ -38,18 +52,9 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
-  constructor(
-    private store: Store,
-    private planningsService: TimePlanningPnPlanningsService,
-    private timePlanningPnSettingsService: TimePlanningPnSettingsService,
-    private dialog: MatDialog,
-    private translateService: TranslateService,
-    protected datePipe: DatePipe,
-    private cdr: ChangeDetectorRef
-  ) {
-  }
-
   ngOnInit(): void {
+    this.iconRegistry.addSvgIconLiteral('android-icon', this.sanitizer.bypassSecurityTrustHtml(AndroidIcon));
+    this.iconRegistry.addSvgIconLiteral('ios-icon', this.sanitizer.bypassSecurityTrustHtml(iOSIcon));
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.updateTableHeaders();
     this.translateService.onLangChange.subscribe((lang) => {

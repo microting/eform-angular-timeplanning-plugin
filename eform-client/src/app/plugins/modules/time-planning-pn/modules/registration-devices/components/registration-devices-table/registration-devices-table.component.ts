@@ -1,4 +1,6 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output,
+  inject
+} from '@angular/core';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
 import {TimePlanningRegistrationDeviceModel} from '../../../../../../modules/time-planning-pn/models';
@@ -18,6 +20,10 @@ import {Overlay} from '@angular/cdk/overlay';
     standalone: false
 })
 export class RegistrationDevicesTableComponent implements OnInit {
+  private dialog = inject(MatDialog);
+  private overlay = inject(Overlay);
+  private translateService = inject(TranslateService);
+
   get tableHeaders(): MtxGridColumn[] {
     return this._tableHeaders;
   }
@@ -30,11 +36,7 @@ export class RegistrationDevicesTableComponent implements OnInit {
   registrationDeviceEditModalComponentAfterClosedSub$: Subscription;
   registrationDeviceDeleteModalComponentAfterClosedSub$: Subscription
   private _tableHeaders: MtxGridColumn[];
-  constructor(
-    private dialog: MatDialog,
-    private overlay: Overlay,
-    private translateService: TranslateService) {
-  }
+  
 
   ngOnInit(): void {
     this._tableHeaders = [

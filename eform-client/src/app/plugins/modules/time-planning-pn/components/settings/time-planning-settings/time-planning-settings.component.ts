@@ -1,4 +1,6 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {TimePlanningPnSettingsService} from '../../../services';
 import {TimePlanningSettingsModel} from '../../../models';
@@ -12,18 +14,18 @@ import {Store} from '@ngrx/store';
     standalone: false
 })
 export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
+  private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
+  private store = inject(Store);
+
   getSettings$: Subscription;
   settingsModel: TimePlanningSettingsModel = new TimePlanningSettingsModel();
   previousData: TimePlanningSettingsModel = new TimePlanningSettingsModel();
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
-  constructor(
-    private timePlanningPnSettingsService: TimePlanningPnSettingsService,
-    private store: Store
-  ) {
-    this.previousData = {...this.settingsModel};
-  }
+  
+
   ngOnInit() {
+    this.previousData = {...this.settingsModel};
     this.getSettings();
   }
 

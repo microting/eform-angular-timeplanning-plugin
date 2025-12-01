@@ -1,8 +1,8 @@
 import {
   Component,
-  Inject,
   OnDestroy,
   OnInit,
+  inject
 } from '@angular/core';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
 import {TimeFlexesModel} from '../../../../../models';
@@ -12,21 +12,21 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 @Component({
     selector: 'app-time-flexes-comment-office-all-update-modal',
     templateUrl: './time-flexes-comment-office-all-update-modal.component.html',
-    styleUrls: ['./time-flexes-comment-office-all-update-modal.component.scss'],
+    styleUrls: ['./time-flexes-comment-office-all-update-modal.component.scss',
+],
     standalone: false
 })
 export class TimeFlexesCommentOfficeAllUpdateModalComponent
   implements OnInit, OnDestroy {
+  public dialogRef = inject(MatDialogRef<TimeFlexesCommentOfficeAllUpdateModalComponent>);
+  private injectedTimeFlexes = inject<TimeFlexesModel>(MAT_DIALOG_DATA);
+
   timeFlexes: TimeFlexesModel = new TimeFlexesModel();
 
-  constructor(
-    public dialogRef: MatDialogRef<TimeFlexesCommentOfficeAllUpdateModalComponent>,
-    @Inject(MAT_DIALOG_DATA) timeFlexes: TimeFlexesModel,
-  ) {
-    this.timeFlexes = {...timeFlexes};
-  }
+  
 
   ngOnInit() {
+    this.timeFlexes = {...this.injectedTimeFlexes};
   }
 
   onUpdateFlexPlanning() {

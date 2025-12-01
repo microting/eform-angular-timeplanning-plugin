@@ -1,4 +1,6 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
@@ -17,6 +19,8 @@ import { TimePlanningPnFlexesService } from '../../../../services';
     standalone: false
 })
 export class TimeFlexesContainerComponent implements OnInit, OnDestroy {
+  private planningsService = inject(TimePlanningPnFlexesService);
+
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
   timePlannings: TimeFlexesModel[] = [];
@@ -25,7 +29,7 @@ export class TimeFlexesContainerComponent implements OnInit, OnDestroy {
   getTimePlannings$: Subscription;
   updateTimePlanning$: Subscription;
 
-  constructor(private planningsService: TimePlanningPnFlexesService) {}
+  
 
   ngOnInit(): void {
     this.getPlannings();

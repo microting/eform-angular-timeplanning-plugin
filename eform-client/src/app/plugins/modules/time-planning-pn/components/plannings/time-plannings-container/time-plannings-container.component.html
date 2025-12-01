@@ -1,24 +1,21 @@
 <eform-new-subheader [title]="'Dashboard'"></eform-new-subheader>
 <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-  <button id="backwards" mat-raised-button color="primary" (click)="goBackward()">{{ 'Back' | translate }}</button>
 <!--  <span>{{ formatDateRange() }}</span>-->
-  <mat-form-field id="workingHoursRange">
-    <mat-label>{{ 'Date range' | translate }}</mat-label>
-    <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
-    <mat-date-range-input [rangePicker]="picker" (click)="picker.open()">
-      <input [value]="dateFrom" (dateChange)="updateDateFrom($event)" matStartDate class="workingHoursRange">
-      <input [value]="dateTo" (dateChange)="updateDateTo($event)" matEndDate class="workingHoursRange">
-    </mat-date-range-input>
-    <mat-date-range-picker #picker></mat-date-range-picker>
-  </mat-form-field>
 <!--  <mat-form-field appearance="fill">-->
 <!--    <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate" (dateChange)="updateSelectedDate()">-->
 <!--    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>-->
 <!--    <mat-datepicker touchUi #picker></mat-datepicker>-->
 <!--  </mat-form-field>-->
-  <button id="forwards" mat-raised-button color="primary" (click)="goForward()">{{ 'Forward' | translate }}</button>
-
-  <button id="backwards" mat-raised-button color="primary" (click)="openDownloadExcelDialog()">{{ 'Download Excel' | translate }}</button>
+  <mat-slide-toggle
+    color="primary"
+    class="mb-2"
+    id="showCalculationsAsNumberToggle"
+    [checked]="showResignedSites"
+    [(ngModel)]="showResignedSites"
+    (change)="onShowResignedSitesChanged($event)"
+  >
+    {{ 'Show resigned' | translate }}
+  </mat-slide-toggle>
   <mat-form-field style="flex: 0 0 25%; min-width: 150px;">
     <mat-label>{{ 'Worker' | translate }}</mat-label>
     <mtx-select
@@ -30,20 +27,42 @@
       id="workingHoursSite">
     </mtx-select>
   </mat-form-field>
-  <mat-slide-toggle
-    color="primary"
-    class="mb-2"
-    id="showCalculationsAsNumberToggle"
-    [checked]="showResignedSites"
-    [(ngModel)]="showResignedSites"
-    (change)="onShowResignedSitesChanged($event)"
-  >
-    {{ 'Show resigned' | translate }}
-  </mat-slide-toggle>
   <button
-    mat-icon-button
+    id="backwards"
+    class="btn-secondary btn-secondary--icon-rounded-border"
+    (click)="goBackward()"
+    matTooltip="{{ 'Back' | translate }}"
+  >
+    <mat-icon>first_page</mat-icon>
+  </button>
+  <button
+    id="forwards"
+    class="btn-secondary btn-secondary--icon-rounded-border"
+    (click)="goForward()"
+    matTooltip="{{ 'Forward' | translate }}"
+    >
+    <mat-icon>last_page</mat-icon>
+  </button>
+
+  <mat-form-field id="workingHoursRange">
+    <mat-label>{{ 'Date range' | translate }}</mat-label>
+    <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
+    <mat-date-range-input [rangePicker]="picker" (click)="picker.open()">
+      <input [value]="dateFrom" (dateChange)="updateDateFrom($event)" matStartDate class="workingHoursRange">
+      <input [value]="dateTo" (dateChange)="updateDateTo($event)" matEndDate class="workingHoursRange">
+    </mat-date-range-input>
+    <mat-date-range-picker #picker></mat-date-range-picker>
+  </mat-form-field>
+  <button
+    id="backwards"
+    class="btn-secondary btn-secondary--icon-rounded-border"
+    (click)="openDownloadExcelDialog()"
+    matTooltip="{{ 'Download Excel' | translate }}">
+    <mat-icon svgIcon="file-excel"></mat-icon>
+  </button>
+  <button
+    class="btn-secondary btn-secondary--icon-rounded-border"
     id="workingHoursReload"
-    color="accent"
     [matTooltip]="'Reload table' | translate"
     (click)="getPlannings()"
   >
