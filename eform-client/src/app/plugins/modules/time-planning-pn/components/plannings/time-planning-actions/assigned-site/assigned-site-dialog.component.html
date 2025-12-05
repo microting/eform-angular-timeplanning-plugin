@@ -13,7 +13,7 @@
       </app-assigned-site-general-tab>
     </mat-tab>
     <mat-tab label="{{'Plan hours' | translate }} "
-             *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && isFirstUser">
       <div formGroupName="planHours">
         <app-assigned-site-plan-hours-tab
           [planHoursForm]="getPlanHoursFormGroup()">
@@ -21,7 +21,7 @@
       </div>
     </mat-tab>
     <mat-tab  label="{{ 'Auto break calculation settings' | translate }}"
-             *ngIf="data.autoBreakCalculationActive && selectCurrentUserIsAdmin$ | async">
+             *ngIf="data.autoBreakCalculationActive && isAdmin">
       <div [formGroupName]="'autoBreakSettings'">
         <app-assigned-site-auto-break-tab
           [autoBreakSettingsForm]="getAutoBreakSettingsFormGroup()"
@@ -31,7 +31,7 @@
       </div>
     </mat-tab>
     <mat-tab  label="{{'1st shift' | translate }}"
-             *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && isFirstUser">
       <div [formGroupName]="'firstShift'">
         <app-assigned-site-shift-tab
           [shiftForm]="getFirstShiftFormGroup()"
@@ -43,7 +43,7 @@
       </div>
     </mat-tab>
     <mat-tab  label="{{'2nd shift' | translate }}"
-             *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && isFirstUser">
       <div [formGroupName]="'secondShift'">
         <app-assigned-site-shift-tab
           [shiftForm]="getSecondShiftFormGroup()"
@@ -55,7 +55,7 @@
       </div>
     </mat-tab>
     <mat-tab label="{{'3rd shift' | translate }}"
-             *ngIf="data.thirdShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="data.thirdShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && isFirstUser">
       <div [formGroupName]="'thirdShift'">
         <app-assigned-site-shift-tab
           [shiftForm]="getThirdShiftFormGroup()"
@@ -67,7 +67,7 @@
       </div>
     </mat-tab>
     <mat-tab label="{{'4th shift' | translate }}"
-             *ngIf="data.thirdShiftActive && data.fourthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="data.thirdShiftActive && data.fourthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && isFirstUser">
       <div [formGroupName]="'fourthShift'">
         <app-assigned-site-shift-tab
           [shiftForm]="getFourthShiftFormGroup()"
@@ -79,7 +79,7 @@
       </div>
     </mat-tab>
     <mat-tab label="{{'5th shift' | translate }}"
-             *ngIf="data.thirdShiftActive && data.fourthShiftActive && data.fifthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="data.thirdShiftActive && data.fourthShiftActive && data.fifthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && isFirstUser">
       <div [formGroupName]="'fifthShift'">
         <app-assigned-site-shift-tab
           [shiftForm]="getFifthShiftFormGroup()"
