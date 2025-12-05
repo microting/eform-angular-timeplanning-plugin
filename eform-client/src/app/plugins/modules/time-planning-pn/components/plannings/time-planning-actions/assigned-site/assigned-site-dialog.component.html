@@ -2,14 +2,15 @@
 <div mat-dialog-content>
   <!-- DEBUG: Dialog content started -->
   <div id="debug-dialog-content-start" style="display:none;">Dialog content rendering</div>
-  <div id="debug-values" style="background: yellow; padding: 10px; margin: 10px 0;">
-    <strong>DEBUG INFO:</strong><br>
-    isAdmin: {{ isAdmin }}<br>
-    isFirstUser: {{ isFirstUser }}<br>
-    assignedSiteForm exists: {{ assignedSiteForm ? 'YES' : 'NO' }}<br>
-    data.useOnlyPlanHours: {{ data.useOnlyPlanHours }}<br>
-    data.useGoogleSheetAsDefault: {{ data.useGoogleSheetAsDefault }}<br>
-    data.autoBreakCalculationActive: {{ data.autoBreakCalculationActive }}<br>
+  <h3 style="background: yellow; padding: 10px; margin: 10px 0;">
+    DEBUG: Dialog opened - Check tab visibility below
+  </h3>
+  <div style="background: lightgray; padding: 10px; margin: 10px 0; font-family: monospace;">
+    <div>isAdmin = <span style="font-weight: bold; color: red;">{{isAdmin}}</span></div>
+    <div>isFirstUser = <span style="font-weight: bold; color: red;">{{isFirstUser}}</span></div>
+    <div>form = <span style="font-weight: bold; color: red;">{{assignedSiteForm ? 'EXISTS' : 'NULL'}}</span></div>
+    <div>useOnlyPlanHours = <span style="font-weight: bold; color: red;">{{data.useOnlyPlanHours}}</span></div>
+    <div>useGoogleSheetAsDefault = <span style="font-weight: bold; color: red;">{{data.useGoogleSheetAsDefault}}</span></div>
   </div>
   <mat-tab-group
     dynamicHeight="false"
