@@ -4,14 +4,12 @@
     dynamicHeight="false"
   >
     <mat-tab label="{{'General' | translate }}" >
-      <div [formGroup]="assignedSiteForm">
-        <app-assigned-site-general-tab
-          [data]="data"
-          [assignedSiteForm]="assignedSiteForm"
-          [isFirstUser]="isFirstUser"
-          [isAdmin]="isAdmin">
-        </app-assigned-site-general-tab>
-      </div>
+      <app-assigned-site-general-tab
+        [data]="data"
+        [assignedSiteForm]="assignedSiteForm"
+        [isFirstUser]="isFirstUser"
+        [isAdmin]="isAdmin">
+      </app-assigned-site-general-tab>
     </mat-tab>
     <mat-tab label="{{'Plan hours' | translate }} "
              *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && isFirstUser">

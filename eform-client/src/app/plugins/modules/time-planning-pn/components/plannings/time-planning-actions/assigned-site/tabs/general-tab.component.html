@@ -1,3 +1,4 @@
+<div [formGroup]="assignedSiteForm">
 <div class="d-flex flex-row" *ngIf="!data.resigned && isFirstUser">
   <!-- data.useGoogleSheetAsDefault -->
   <mat-checkbox class="p-1"
@@ -163,4 +164,5 @@
       {{ 'Date is required'| translate }}*
     </mat-error>
   </mat-form-field>
+</div>
 </div>
