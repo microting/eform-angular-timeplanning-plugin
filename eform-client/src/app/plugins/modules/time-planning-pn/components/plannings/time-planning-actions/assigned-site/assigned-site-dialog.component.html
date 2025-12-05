@@ -12,12 +12,19 @@
     <div style="color: black;">useOnlyPlanHours = <span style="font-weight: bold; color: red;">{{data.useOnlyPlanHours}}</span></div>
     <div style="color: black;">useGoogleSheetAsDefault = <span style="font-weight: bold; color: red;">{{data.useGoogleSheetAsDefault}}</span></div>
   </div>
+  <div style="background: orange; padding: 10px; margin: 10px 0; color: black;">
+    DEBUG: About to render mat-tab-group
+  </div>
   <mat-tab-group
     dynamicHeight="false"
   >
-    <!-- DEBUG: Tab group started -->
-    <div id="debug-tab-group-start" style="display:none;">Tab group rendering</div>
+    <div style="background: pink; padding: 10px; color: black;">
+      DEBUG: Inside mat-tab-group (before tabs)
+    </div>
     <mat-tab label="{{'General' | translate }}" >
+      <div style="background: lime; padding: 10px; color: black;">
+        DEBUG: Inside General mat-tab
+      </div>
       <!-- DEBUG: General tab started -->
       <div id="debug-general-tab" style="background: lightblue; padding: 5px;">DEBUG: General Tab Content</div>
       <app-assigned-site-general-tab
