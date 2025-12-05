@@ -18,15 +18,15 @@
   <mat-tab-group
     dynamicHeight="false"
   >
-    <div style="background: pink; padding: 10px; color: black;">
-      DEBUG: Inside mat-tab-group (before tabs)
-    </div>
     <mat-tab label="{{'General' | translate }}" >
+      <div style="background: pink; padding: 10px; color: black;">
+        DEBUG: Pink - General tab is rendering
+      </div>
       <div style="background: lime; padding: 10px; color: black;">
-        DEBUG: Inside General mat-tab
+        DEBUG: Lime - Inside General mat-tab content
       </div>
       <!-- DEBUG: General tab started -->
-      <div id="debug-general-tab" style="background: lightblue; padding: 5px;">DEBUG: General Tab Content</div>
+      <div id="debug-general-tab" style="background: lightblue; padding: 5px;">DEBUG: Blue - General Tab Content before component</div>
       <app-assigned-site-general-tab
         [data]="data"
         [assignedSiteForm]="assignedSiteForm"
