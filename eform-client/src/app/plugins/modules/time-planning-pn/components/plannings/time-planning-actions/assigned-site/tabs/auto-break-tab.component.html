@@ -1,0 +1,66 @@
+<ng-container *ngFor="let day of days">
+  <div [formGroupName]="day.toLowerCase()" class="d-flex flex-row">
+    <mat-form-field class="p-1">
+      <mat-label>{{ day + ' break time divider in minutes' | translate }}</mat-label>
+      <input
+        matInput
+        [ngxTimepicker]="timePicker"
+        [format]="24"
+        placeholder="HH:MM"
+        [id]="day.toLowerCase() + 'BreakMinutesDivider'"
+        [name]="day.toLowerCase() + 'BreakMinutesDivider'"
+        formControlName="breakMinutesDivider"
+        readonly
+      >
+      <ngx-material-timepicker
+        #timePicker
+        [format]="24"
+        (timeSet)="setAutoBreakValue(day, 'BreakMinutesDivider', $event)"
+      ></ngx-material-timepicker>
+    </mat-form-field>
+    <mat-form-field class="p-1">
+      <mat-label>{{ day.toLowerCase() + ' break time pr divider in minutes' | translate }}</mat-label>
+      <input
+        matInput
+        [ngxTimepicker]="timePickerPrDivider"
+        [format]="24"
+        placeholder="HH:MM"
+        [id]="day.toLowerCase() + 'BreakMinutesPrDivider'"
+        [name]="day.toLowerCase() + 'BreakMinutesPrDivider'"
+        formControlName="breakMinutesPrDivider"
+        readonly>
+      <ngx-material-timepicker
+        #timePickerPrDivider
+        [format]="24"
+        (timeSet)="setAutoBreakValue(day, 'breakMinutesPrDivider', $event)"
+      ></ngx-material-timepicker>
+    </mat-form-field>
+    <mat-form-field class="p-1">
+      <mat-label>{{ day + ' break upper limit' | translate }}</mat-label>
+      <input
+        matInput
+        [ngxTimepicker]="timePickerUpperLimit"
+        [format]="24"
+        placeholder="HH:MM"
+        [id]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
+        [name]="day.toLowerCase() + 'BreakMinutesUpperLimit'"
+        formControlName="breakMinutesUpperLimit"
+        readonly
+      >
+    </mat-form-field>
+    <ngx-material-timepicker
+      #timePickerUpperLimit
+      [format]="24"
+      (timeSet)="setAutoBreakValue(day, 'BreakMinutesUpperLimit', $event)"
+    ></ngx-material-timepicker>
+    <div class="pt-4">
+      <button
+        [id]="day.toLowerCase() + 'LoadDefaults'"
+        mat-icon-button
+        (click)="copyBreakSettings(day.toLowerCase())"
+        color="warn">
+        <mat-icon>sync_arrow_down</mat-icon>
+      </button>
+    </div>
+  </div>
+</ng-container>

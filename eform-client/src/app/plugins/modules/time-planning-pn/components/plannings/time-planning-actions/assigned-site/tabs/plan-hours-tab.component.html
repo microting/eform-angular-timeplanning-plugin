@@ -1,0 +1,17 @@
+<div class="d-flex flex-row"
+     *ngFor="let day of days">
+  <mat-form-field class="p-1">
+    <mat-label>{{ day | translate }}</mat-label>
+    <input matInput type="text" readonly disabled>
+  </mat-form-field>
+  <mat-form-field class="p-1">
+    <mat-label>{{ 'Plan hours' | translate }}</mat-label>
+    <input
+      type="number"
+      matInput
+      [id]="day.toLowerCase() + 'PlanHours'"
+      [name]="day.toLowerCase() + 'PlanHours'"
+      [formControlName]="day.toLowerCase()"
+    >
+  </mat-form-field>
+</div>
