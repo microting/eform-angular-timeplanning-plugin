@@ -36,8 +36,9 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit, OnDestroy {
 
   public selectCurrentUserIsAdmin$ = this.store.select(selectCurrentUserIsAdmin);
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
-  public isAdmin: boolean = false;
-  public isFirstUser: boolean = false;
+  // Initialize to true for testing - set immediately so template can access
+  public isAdmin: boolean = true;
+  public isFirstUser: boolean = true;
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
   private destroy$ = new Subject<void>();
@@ -56,9 +57,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit, OnDestroy {
     // this.calculateHours();
     
     // Subscribe to observables to get boolean values for child components
-    // Temporarily set to true for testing the refactor
-    this.isAdmin = true;
-    this.isFirstUser = true;
+    // NOTE: isAdmin and isFirstUser already initialized to true at declaration for testing
     
     // TODO: Uncomment after establishing refactor works
     // this.selectCurrentUserIsAdmin$.pipe(takeUntil(this.destroy$)).subscribe(isAdmin => {
