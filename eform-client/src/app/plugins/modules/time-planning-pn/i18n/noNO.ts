@@ -140,4 +140,5 @@ export const noNO = {
   'Stop time is required': 'Stopptid er påkrevd',
   'Start time is required': 'Starttidspunkt er obligatorisk',
   'Start time cannot be earlier than previous shift`s end time': 'Starttidspunktet kan ikke være tidligere enn sluttidspunktet for forrige skift',
+  'Create device': 'Opprett enhet',
 };

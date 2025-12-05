@@ -138,4 +138,5 @@ export const enUS = {
   'Stop time is required': 'Stop time is required',
   'Start time is required': 'Start time is required',
   'Start time cannot be earlier than previous shift`s end time': 'Start time cannot be earlier than previous shift`s end time',
+  'Create device': 'Create device',
 };

@@ -140,4 +140,5 @@ export const fiFI = {
   'Stop time is required': 'Pysäytysaika vaaditaan',
   'Start time is required': 'Aloitusaika on pakollinen',
   'Start time cannot be earlier than previous shift`s end time': 'Aloitusaika ei voi olla aikaisempi kuin edellisen vuoron päättymisaika',
+  'Create device': 'Luo laite',
 };

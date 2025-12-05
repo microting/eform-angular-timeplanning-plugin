@@ -140,4 +140,5 @@ export const deDE = {
   'Stop time is required': 'Stoppzeit ist erforderlich',
   'Start time is required': 'Startzeit ist erforderlich',
   'Start time cannot be earlier than previous shift`s end time': 'Die Startzeit kann nicht vor der Endzeit der vorherigen Schicht liegen',
+  'Create device': 'Gerät erstellen',
 };

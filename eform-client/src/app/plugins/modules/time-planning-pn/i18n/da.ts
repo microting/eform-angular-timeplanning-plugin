@@ -138,4 +138,5 @@ export const da = {
   'Stop time is required': 'Stop er påkrævet',
   'Start time is required': 'Start er påkrævet',
   'Start time cannot be earlier than previous shift`s end time': 'Start kan ikke være tidligere end stop for den forrige skift',
+  'Create device': 'Opret enhed',
 };

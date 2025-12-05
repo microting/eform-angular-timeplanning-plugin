@@ -140,4 +140,5 @@ export const isIS = {
   'Stop time is required': 'Stöðvunartími er nauðsynlegur',
   'Start time is required': 'Upphafstími er nauðsynlegur',
   'Start time cannot be earlier than previous shift`s end time': 'Byrjunartími má ekki vera fyrr en lokatími fyrri vaktar',
+  'Create device': 'Búa til tæki',
 };

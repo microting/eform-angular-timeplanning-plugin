@@ -140,4 +140,5 @@ export const etET = {
   'Stop time is required': 'Peatumisaeg on kohustuslik',
   'Start time is required': 'Algusaeg on kohustuslik',
   'Start time cannot be earlier than previous shift`s end time': 'Algusaeg ei saa olla varasem kui eelmise vahetuse lõppaeg',
+  'Create device': 'Loo seade',
 };
