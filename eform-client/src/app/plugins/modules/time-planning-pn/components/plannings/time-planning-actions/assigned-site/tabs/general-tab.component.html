@@ -1,4 +1,4 @@
-<div [formGroup]="assignedSiteForm">
+<div [formGroup]="assignedSiteForm" *ngIf="assignedSiteForm">
 <div class="d-flex flex-row" *ngIf="!data.resigned && isFirstUser">
   <!-- data.useGoogleSheetAsDefault -->
   <mat-checkbox class="p-1"
