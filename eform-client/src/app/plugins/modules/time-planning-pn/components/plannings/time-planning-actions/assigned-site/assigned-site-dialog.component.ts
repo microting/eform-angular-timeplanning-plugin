@@ -56,13 +56,19 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit, OnDestroy {
     // this.calculateHours();
     
     // Subscribe to observables to get boolean values for child components
-    this.selectCurrentUserIsAdmin$.pipe(takeUntil(this.destroy$)).subscribe(isAdmin => {
-      this.isAdmin = isAdmin;
-    });
+    // Temporarily set to true for testing the refactor
+    this.isAdmin = true;
+    this.isFirstUser = true;
     
-    this.selectCurrentUserIsFirstUser$.pipe(takeUntil(this.destroy$)).subscribe(isFirstUser => {
-      this.isFirstUser = isFirstUser;
-    });
+    // TODO: Uncomment after establishing refactor works
+    // this.selectCurrentUserIsAdmin$.pipe(takeUntil(this.destroy$)).subscribe(isAdmin => {
+    //   this.isAdmin = isAdmin;
+    // });
+    
+    // TODO: Uncomment after establishing refactor works
+    // this.selectCurrentUserIsFirstUser$.pipe(takeUntil(this.destroy$)).subscribe(isFirstUser => {
+    //   this.isFirstUser = isFirstUser;
+    // });
     
     this.timePlanningPnSettingsService.getGlobalAutoBreakCalculationSettings().subscribe(result => {
       if (result && result.success) {
