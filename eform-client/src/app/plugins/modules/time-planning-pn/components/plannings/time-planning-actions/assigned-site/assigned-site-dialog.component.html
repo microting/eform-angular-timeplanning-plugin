@@ -1,9 +1,24 @@
 <div mat-dialog-title>{{ data.siteName }}</div>
 <div mat-dialog-content>
+  <!-- DEBUG: Dialog content started -->
+  <div id="debug-dialog-content-start" style="display:none;">Dialog content rendering</div>
+  <div id="debug-values" style="background: yellow; padding: 10px; margin: 10px 0;">
+    <strong>DEBUG INFO:</strong><br>
+    isAdmin: {{ isAdmin }}<br>
+    isFirstUser: {{ isFirstUser }}<br>
+    assignedSiteForm exists: {{ assignedSiteForm ? 'YES' : 'NO' }}<br>
+    data.useOnlyPlanHours: {{ data.useOnlyPlanHours }}<br>
+    data.useGoogleSheetAsDefault: {{ data.useGoogleSheetAsDefault }}<br>
+    data.autoBreakCalculationActive: {{ data.autoBreakCalculationActive }}<br>
+  </div>
   <mat-tab-group
     dynamicHeight="false"
   >
+    <!-- DEBUG: Tab group started -->
+    <div id="debug-tab-group-start" style="display:none;">Tab group rendering</div>
     <mat-tab label="{{'General' | translate }}" >
+      <!-- DEBUG: General tab started -->
+      <div id="debug-general-tab" style="background: lightblue; padding: 5px;">DEBUG: General Tab Content</div>
       <app-assigned-site-general-tab
         [data]="data"
         [assignedSiteForm]="assignedSiteForm"

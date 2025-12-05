@@ -1,4 +1,11 @@
 <div [formGroup]="assignedSiteForm" *ngIf="assignedSiteForm">
+<div id="debug-general-tab-component" style="background: lightgreen; padding: 10px; margin: 10px 0;">
+  <strong>DEBUG: GeneralTabComponent Rendering</strong><br>
+  Form exists: {{ assignedSiteForm ? 'YES' : 'NO' }}<br>
+  isFirstUser: {{ isFirstUser }}<br>
+  isAdmin: {{ isAdmin }}<br>
+  data.resigned: {{ data.resigned }}
+</div>
 <div class="d-flex flex-row" *ngIf="!data.resigned && isFirstUser">
   <!-- data.useGoogleSheetAsDefault -->
   <mat-checkbox class="p-1"
