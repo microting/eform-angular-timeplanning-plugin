@@ -1,4 +1,4 @@
-<ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
+<ng-container *ngIf="isAdmin">
   <div class="d-flex flex-row"
        *ngFor="let day of days" [formGroupName]="day.toLowerCase()">
     <mat-form-field class="p-1">

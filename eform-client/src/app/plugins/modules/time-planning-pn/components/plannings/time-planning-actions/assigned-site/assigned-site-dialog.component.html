@@ -8,8 +8,8 @@
       <app-assigned-site-general-tab
         [data]="data"
         [assignedSiteForm]="assignedSiteForm"
-        [selectCurrentUserIsFirstUser$]="selectCurrentUserIsFirstUser$"
-        [selectCurrentUserIsAdmin$]="selectCurrentUserIsAdmin$">
+        [isFirstUser]="isFirstUser"
+        [isAdmin]="isAdmin">
       </app-assigned-site-general-tab>
     </mat-tab>
     <mat-tab label="{{'Plan hours' | translate }} "
@@ -37,7 +37,7 @@
           [shiftForm]="getFirstShiftFormGroup()"
           [data]="data"
           [shiftSuffix]="''"
-          [selectCurrentUserIsAdmin$]="selectCurrentUserIsAdmin$"
+          [isAdmin]="isAdmin"
           (minutesSet)="setMinutes($event.event, $event.field)">
         </app-assigned-site-shift-tab>
       </div>
@@ -49,7 +49,7 @@
           [shiftForm]="getSecondShiftFormGroup()"
           [data]="data"
           [shiftSuffix]="'2NdShift'"
-          [selectCurrentUserIsAdmin$]="selectCurrentUserIsAdmin$"
+          [isAdmin]="isAdmin"
           (minutesSet)="setMinutes($event.event, $event.field)">
         </app-assigned-site-shift-tab>
       </div>
@@ -61,7 +61,7 @@
           [shiftForm]="getThirdShiftFormGroup()"
           [data]="data"
           [shiftSuffix]="'3RdShift'"
-          [selectCurrentUserIsAdmin$]="selectCurrentUserIsAdmin$"
+          [isAdmin]="isAdmin"
           (minutesSet)="setMinutes($event.event, $event.field)">
         </app-assigned-site-shift-tab>
       </div>
@@ -73,7 +73,7 @@
           [shiftForm]="getFourthShiftFormGroup()"
           [data]="data"
           [shiftSuffix]="'4ThShift'"
-          [selectCurrentUserIsAdmin$]="selectCurrentUserIsAdmin$"
+          [isAdmin]="isAdmin"
           (minutesSet)="setMinutes($event.event, $event.field)">
         </app-assigned-site-shift-tab>
       </div>
@@ -85,7 +85,7 @@
           [shiftForm]="getFifthShiftFormGroup()"
           [data]="data"
           [shiftSuffix]="'5ThShift'"
-          [selectCurrentUserIsAdmin$]="selectCurrentUserIsAdmin$"
+          [isAdmin]="isAdmin"
           (minutesSet)="setMinutes($event.event, $event.field)">
         </app-assigned-site-shift-tab>
       </div>

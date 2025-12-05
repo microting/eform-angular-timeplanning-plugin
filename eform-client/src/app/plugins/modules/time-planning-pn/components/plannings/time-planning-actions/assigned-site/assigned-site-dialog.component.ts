@@ -1,4 +1,4 @@
-import {Component, DoCheck, OnInit,
+import {Component, DoCheck, OnInit, OnDestroy,
   inject
 } from '@angular/core';
 import {
@@ -17,6 +17,7 @@ import {
   ReactiveFormsModule,
   FormControl,
 } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
 
 
 @Component({
@@ -25,7 +26,7 @@ import {
   styleUrls: ['./assigned-site-dialog.component.scss'],
   standalone: false
 })
-export class AssignedSiteDialogComponent implements DoCheck, OnInit {
+export class AssignedSiteDialogComponent implements DoCheck, OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   public data = inject<AssignedSiteModel>(MAT_DIALOG_DATA);
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
@@ -35,8 +36,11 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
 
   public selectCurrentUserIsAdmin$ = this.store.select(selectCurrentUserIsAdmin);
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
+  public isAdmin: boolean = false;
+  public isFirstUser: boolean = false;
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
+  private destroy$ = new Subject<void>();
 
   
 
@@ -50,6 +54,16 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   ngOnInit(): void {
     this.previousData = {...this.data};
     // this.calculateHours();
+    
+    // Subscribe to observables to get boolean values for child components
+    this.selectCurrentUserIsAdmin$.pipe(takeUntil(this.destroy$)).subscribe(isAdmin => {
+      this.isAdmin = isAdmin;
+    });
+    
+    this.selectCurrentUserIsFirstUser$.pipe(takeUntil(this.destroy$)).subscribe(isFirstUser => {
+      this.isFirstUser = isFirstUser;
+    });
+    
     this.timePlanningPnSettingsService.getGlobalAutoBreakCalculationSettings().subscribe(result => {
       if (result && result.success) {
         this.globalAutoBreakSettings = result.model;
@@ -564,6 +578,11 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
 
   getFifthShiftFormGroup(): FormGroup {
     return this.assignedSiteForm.get('fifthShift') as FormGroup;
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
 }

@@ -287,4 +287,81 @@ describe('AssignedSiteDialogComponent', () => {
       expect(component.data['endMonday']).toBe(30);
     });
   });
+
+  describe('User Role Observables', () => {
+    it('should subscribe to selectCurrentUserIsAdmin$ and update isAdmin', (done) => {
+      component.ngOnInit();
+      
+      // The mock store returns of(true) for all selects
+      setTimeout(() => {
+        expect(component.isAdmin).toBe(true);
+        done();
+      }, 100);
+    });
+
+    it('should subscribe to selectCurrentUserIsFirstUser$ and update isFirstUser', (done) => {
+      component.ngOnInit();
+      
+      // The mock store returns of(true) for all selects
+      setTimeout(() => {
+        expect(component.isFirstUser).toBe(true);
+        done();
+      }, 100);
+    });
+
+    it('should unsubscribe on destroy', () => {
+      component.ngOnInit();
+      const destroySpy = jest.spyOn(component['destroy$'], 'next');
+      const completeSpy = jest.spyOn(component['destroy$'], 'complete');
+      
+      component.ngOnDestroy();
+      
+      expect(destroySpy).toHaveBeenCalled();
+      expect(completeSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('FormGroup Getters', () => {
+    beforeEach(() => {
+      component.ngOnInit();
+    });
+
+    it('should return plan hours form group', () => {
+      const planHoursGroup = component.getPlanHoursFormGroup();
+      expect(planHoursGroup).toBeDefined();
+      expect(planHoursGroup.get('monday')).toBeDefined();
+    });
+
+    it('should return auto break settings form group', () => {
+      const autoBreakGroup = component.getAutoBreakSettingsFormGroup();
+      expect(autoBreakGroup).toBeDefined();
+      expect(autoBreakGroup.get('monday')).toBeDefined();
+    });
+
+    it('should return first shift form group', () => {
+      const firstShiftGroup = component.getFirstShiftFormGroup();
+      expect(firstShiftGroup).toBeDefined();
+      expect(firstShiftGroup.get('monday')).toBeDefined();
+    });
+
+    it('should return second shift form group', () => {
+      const secondShiftGroup = component.getSecondShiftFormGroup();
+      expect(secondShiftGroup).toBeDefined();
+    });
+
+    it('should return third shift form group', () => {
+      const thirdShiftGroup = component.getThirdShiftFormGroup();
+      expect(thirdShiftGroup).toBeDefined();
+    });
+
+    it('should return fourth shift form group', () => {
+      const fourthShiftGroup = component.getFourthShiftFormGroup();
+      expect(fourthShiftGroup).toBeDefined();
+    });
+
+    it('should return fifth shift form group', () => {
+      const fifthShiftGroup = component.getFifthShiftFormGroup();
+      expect(fifthShiftGroup).toBeDefined();
+    });
+  });
 });
