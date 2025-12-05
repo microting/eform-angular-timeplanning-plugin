@@ -5,12 +5,14 @@
     [formGroup]="assignedSiteForm"
   >
     <mat-tab label="{{'General' | translate }}" >
-      <app-assigned-site-general-tab
-        [data]="data"
-        [assignedSiteForm]="assignedSiteForm"
-        [isFirstUser]="isFirstUser"
-        [isAdmin]="isAdmin">
-      </app-assigned-site-general-tab>
+      <div [formGroup]="assignedSiteForm">
+        <app-assigned-site-general-tab
+          [data]="data"
+          [assignedSiteForm]="assignedSiteForm"
+          [isFirstUser]="isFirstUser"
+          [isAdmin]="isAdmin">
+        </app-assigned-site-general-tab>
+      </div>
     </mat-tab>
     <mat-tab label="{{'Plan hours' | translate }} "
              *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && isFirstUser">
