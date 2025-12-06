@@ -538,4 +538,32 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     }
   }
 
+  getPlanHoursFormGroup(): FormGroup {
+    return this.assignedSiteForm.get('planHours') as FormGroup;
+  }
+
+  getAutoBreakSettingsFormGroup(): FormGroup {
+    return this.assignedSiteForm.get('autoBreakSettings') as FormGroup;
+  }
+
+  getFirstShiftFormGroup(): FormGroup {
+    return this.assignedSiteForm.get('firstShift') as FormGroup;
+  }
+
+  getSecondShiftFormGroup(): FormGroup {
+    return this.assignedSiteForm.get('secondShift') as FormGroup;
+  }
+
+  getThirdShiftFormGroup(): FormGroup {
+    return this.assignedSiteForm.get('thirdShift') as FormGroup;
+  }
+
+  getFourthShiftFormGroup(): FormGroup {
+    return this.assignedSiteForm.get('fourthShift') as FormGroup;
+  }
+
+  getFifthShiftFormGroup(): FormGroup {
+    return this.assignedSiteForm.get('fifthShift') as FormGroup;
+  }
+
 }
