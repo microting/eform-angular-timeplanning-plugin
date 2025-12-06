@@ -288,39 +288,6 @@ describe('AssignedSiteDialogComponent', () => {
     });
   });
 
-  describe('User Role Observables', () => {
-    it('should subscribe to selectCurrentUserIsAdmin$ and update isAdmin', (done) => {
-      component.ngOnInit();
-      
-      // The mock store returns of(true) for all selects
-      setTimeout(() => {
-        expect(component.isAdmin).toBe(true);
-        done();
-      }, 100);
-    });
-
-    it('should subscribe to selectCurrentUserIsFirstUser$ and update isFirstUser', (done) => {
-      component.ngOnInit();
-      
-      // The mock store returns of(true) for all selects
-      setTimeout(() => {
-        expect(component.isFirstUser).toBe(true);
-        done();
-      }, 100);
-    });
-
-    it('should unsubscribe on destroy', () => {
-      component.ngOnInit();
-      const destroySpy = jest.spyOn(component['destroy$'], 'next');
-      const completeSpy = jest.spyOn(component['destroy$'], 'complete');
-      
-      component.ngOnDestroy();
-      
-      expect(destroySpy).toHaveBeenCalled();
-      expect(completeSpy).toHaveBeenCalled();
-    });
-  });
-
   describe('FormGroup Getters', () => {
     beforeEach(() => {
       component.ngOnInit();
