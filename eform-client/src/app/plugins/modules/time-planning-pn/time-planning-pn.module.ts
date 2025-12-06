@@ -17,12 +17,6 @@ import {
   AssignedSiteDialogComponent,
   WorkdayEntityDialogComponent, DownloadExcelDialogComponent
 } from './components';
-import {
-  GeneralTabComponent,
-  PlanHoursTabComponent,
-  AutoBreakTabComponent,
-  ShiftTabComponent
-} from './components/plannings/time-planning-actions/assigned-site/tabs';
 import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
 import {
   MAT_FORM_FIELD_DEFAULT_OPTIONS, MatError,
@@ -104,10 +98,6 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     DownloadExcelDialogComponent,
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
-    GeneralTabComponent,
-    PlanHoursTabComponent,
-    AutoBreakTabComponent,
-    ShiftTabComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,

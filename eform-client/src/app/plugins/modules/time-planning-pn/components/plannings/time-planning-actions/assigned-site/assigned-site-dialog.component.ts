@@ -1,4 +1,4 @@
-import {Component, DoCheck, OnInit, OnDestroy,
+import {Component, DoCheck, OnInit,
   inject
 } from '@angular/core';
 import {
@@ -17,7 +17,6 @@ import {
   ReactiveFormsModule,
   FormControl,
 } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
 
 
 @Component({
@@ -26,7 +25,7 @@ import { Subject, takeUntil } from 'rxjs';
   styleUrls: ['./assigned-site-dialog.component.scss'],
   standalone: false
 })
-export class AssignedSiteDialogComponent implements DoCheck, OnInit, OnDestroy {
+export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private fb = inject(FormBuilder);
   public data = inject<AssignedSiteModel>(MAT_DIALOG_DATA);
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
@@ -36,12 +35,8 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit, OnDestroy {
 
   public selectCurrentUserIsAdmin$ = this.store.select(selectCurrentUserIsAdmin);
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
-  // Initialize to true for testing - set immediately so template can access
-  public isAdmin: boolean = true;
-  public isFirstUser: boolean = true;
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
-  private destroy$ = new Subject<void>();
 
   
 
@@ -55,20 +50,6 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit, OnDestroy {
   ngOnInit(): void {
     this.previousData = {...this.data};
     // this.calculateHours();
-    
-    // Subscribe to observables to get boolean values for child components
-    // NOTE: isAdmin and isFirstUser already initialized to true at declaration for testing
-    
-    // TODO: Uncomment after establishing refactor works
-    // this.selectCurrentUserIsAdmin$.pipe(takeUntil(this.destroy$)).subscribe(isAdmin => {
-    //   this.isAdmin = isAdmin;
-    // });
-    
-    // TODO: Uncomment after establishing refactor works
-    // this.selectCurrentUserIsFirstUser$.pipe(takeUntil(this.destroy$)).subscribe(isFirstUser => {
-    //   this.isFirstUser = isFirstUser;
-    // });
-    
     this.timePlanningPnSettingsService.getGlobalAutoBreakCalculationSettings().subscribe(result => {
       if (result && result.success) {
         this.globalAutoBreakSettings = result.model;
@@ -583,11 +564,6 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit, OnDestroy {
 
   getFifthShiftFormGroup(): FormGroup {
     return this.assignedSiteForm.get('fifthShift') as FormGroup;
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
 }
