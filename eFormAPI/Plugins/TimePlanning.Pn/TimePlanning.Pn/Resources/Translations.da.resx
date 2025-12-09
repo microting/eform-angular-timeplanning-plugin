@@ -120,4 +120,19 @@
     <data name="TokenNotFound" xml:space="preserve">
         <value>Token blen ikke fundet</value>
     </data>
+    <data name="Week number" xml:space="preserve">
+        <value>Uge nr</value>
+    </data>
+    <data name="Hours Saturday" xml:space="preserve">
+        <value>Timer lørdag</value>
+    </data>
+    <data name="Hours Sunday" xml:space="preserve">
+        <value>Timer søndag</value>
+    </data>
+    <data name="Yes" xml:space="preserve">
+        <value>Ja</value>
+    </data>
+    <data name="No" xml:space="preserve">
+        <value>Nej</value>
+    </data>
 </root>

@@ -54,6 +54,8 @@ public class TimePlanningWorkingHoursModel
     public double FlexHours { get; set; }
     public double SumFlexStart { get; set; }
     public double SumFlexEnd { get; set; }
+    public bool IsSaturday { get; set; }
+    public bool IsSunday { get; set; }
     public string PaidOutFlex { get; set; }
     public int? Message { get; set; }
     public string CommentWorker { get; set; }

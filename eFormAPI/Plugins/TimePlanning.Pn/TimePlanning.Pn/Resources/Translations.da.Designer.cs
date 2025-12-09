@@ -248,5 +248,35 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("TokenNotFound", resourceCulture);
             }
         }
+        
+        internal static string Week_number {
+            get {
+                return ResourceManager.GetString("Week number", resourceCulture);
+            }
+        }
+        
+        internal static string Hours_Saturday {
+            get {
+                return ResourceManager.GetString("Hours Saturday", resourceCulture);
+            }
+        }
+        
+        internal static string Hours_Sunday {
+            get {
+                return ResourceManager.GetString("Hours Sunday", resourceCulture);
+            }
+        }
+        
+        internal static string Yes {
+            get {
+                return ResourceManager.GetString("Yes", resourceCulture);
+            }
+        }
+        
+        internal static string No {
+            get {
+                return ResourceManager.GetString("No", resourceCulture);
+            }
+        }
     }
 }
