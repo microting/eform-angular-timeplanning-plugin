@@ -140,4 +140,5 @@ export const ptPT = {
   'Stop time is required': 'O tempo de parada é necessário',
   'Start time is required': 'A hora de início é necessária',
   'Start time cannot be earlier than previous shift`s end time': 'O horário de início não pode ser anterior ao horário de término do turno anterior',
+  'Create device': 'Criar dispositivo',
 };

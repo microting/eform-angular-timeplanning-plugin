@@ -287,4 +287,48 @@ describe('AssignedSiteDialogComponent', () => {
       expect(component.data['endMonday']).toBe(30);
     });
   });
+
+  describe('FormGroup Getters', () => {
+    beforeEach(() => {
+      component.ngOnInit();
+    });
+
+    it('should return plan hours form group', () => {
+      const planHoursGroup = component.getPlanHoursFormGroup();
+      expect(planHoursGroup).toBeDefined();
+      expect(planHoursGroup.get('monday')).toBeDefined();
+    });
+
+    it('should return auto break settings form group', () => {
+      const autoBreakGroup = component.getAutoBreakSettingsFormGroup();
+      expect(autoBreakGroup).toBeDefined();
+      expect(autoBreakGroup.get('monday')).toBeDefined();
+    });
+
+    it('should return first shift form group', () => {
+      const firstShiftGroup = component.getFirstShiftFormGroup();
+      expect(firstShiftGroup).toBeDefined();
+      expect(firstShiftGroup.get('monday')).toBeDefined();
+    });
+
+    it('should return second shift form group', () => {
+      const secondShiftGroup = component.getSecondShiftFormGroup();
+      expect(secondShiftGroup).toBeDefined();
+    });
+
+    it('should return third shift form group', () => {
+      const thirdShiftGroup = component.getThirdShiftFormGroup();
+      expect(thirdShiftGroup).toBeDefined();
+    });
+
+    it('should return fourth shift form group', () => {
+      const fourthShiftGroup = component.getFourthShiftFormGroup();
+      expect(fourthShiftGroup).toBeDefined();
+    });
+
+    it('should return fifth shift form group', () => {
+      const fifthShiftGroup = component.getFifthShiftFormGroup();
+      expect(fifthShiftGroup).toBeDefined();
+    });
+  });
 });

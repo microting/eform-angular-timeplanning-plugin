@@ -237,7 +237,7 @@ describe('Dashboard assert', () => {
   // it('should go to dashboard', () => {
   //   cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
   //   cy.get('mat-tree-node').contains('Timeregistrering').click();
-  //   cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+  //   cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
   //   cy.get('#workingHoursSite').clear().type('c d');
   //   cy.get('.ng-option.ng-option-marked').click();
   //   cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
@@ -298,7 +298,7 @@ describe('Dashboard assert', () => {
   //   cy.wait('@save');
   //   cy.get('#sumFlex7 input').should('contain.value', '-14.55');
   //
-  //   cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+  //   cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
   //   pluginPage.Navbar.goToPluginsPage();
   //   const pluginName = 'Microting Time Planning Plugin';
   //   // pluginPage.enablePluginByName(pluginName);
@@ -374,7 +374,7 @@ describe('Dashboard assert', () => {
     cy.wait('@index-update', { timeout: 160000 });
     cy.wait(1000);
     cy.get('mat-tree-node').contains('Timeregistrering').click();
-    cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+    cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
     cy.get('#workingHoursSite').clear().type('c d');
     cy.get('.ng-option.ng-option-marked').click();
 
@@ -465,7 +465,7 @@ describe('Dashboard assert', () => {
     cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
     cy.wait('@save');
-    cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+    cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
     cy.get('#sumFlex7 input').should('contain.value', '-78.55');
     pluginPage.Navbar.goToPluginsPage();
 
@@ -479,7 +479,7 @@ describe('Dashboard assert', () => {
     cy.get('#saveSettings').click();
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.wait('@index-update', { timeout: 60000 });
-    cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+    cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
 
     cy.get('#workingHoursSite').clear().type('c d');
     cy.get('.ng-option.ng-option-marked').click();
@@ -570,7 +570,7 @@ describe('Dashboard assert', () => {
   it('should go to dashboard after updating planText to new values and they should change in dashboard', () => {
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
     cy.get('mat-tree-node').contains('Timeregistrering').click();
-    cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+    cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
     cy.get('#workingHoursSite').clear().type('c d');
     cy.get('.ng-option.ng-option-marked').click();
     cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
@@ -659,7 +659,7 @@ describe('Dashboard assert', () => {
     cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
     cy.wait('@save');
-    cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+    cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
     cy.get('#sumFlex7 input').should('contain.value', '-48.05');
 
 

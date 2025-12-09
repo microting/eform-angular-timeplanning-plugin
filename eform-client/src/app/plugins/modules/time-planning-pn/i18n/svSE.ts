@@ -140,4 +140,5 @@ export const svSE = {
   'Stop time is required': 'Stopptid krävs',
   'Start time is required': 'Starttid krävs',
   'Start time cannot be earlier than previous shift`s end time': 'Starttiden kan inte vara tidigare än föregående skifts sluttid',
+  'Create device': 'Skapa enhet',
 };

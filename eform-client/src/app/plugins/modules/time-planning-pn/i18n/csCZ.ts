@@ -140,4 +140,5 @@ export const csCZ = {
   'Stop time is required': 'Je vyžadován čas zastavení',
   'Start time is required': 'Čas zahájení je povinný',
   'Start time cannot be earlier than previous shift`s end time': 'Čas zahájení nemůže být dříve než čas ukončení předchozí směny',
+  'Create device': 'Vytvořit zařízení',
 };

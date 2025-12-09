@@ -140,4 +140,5 @@ export const huHU = {
   'Stop time is required': 'Megállási idő megadása kötelező',
   'Start time is required': 'Kezdési időpont megadása kötelező',
   'Start time cannot be earlier than previous shift`s end time': 'A kezdési időpont nem lehet korábbi, mint az előző műszak befejezési időpontja',
+  'Create device': 'Eszköz létrehozása',
 };

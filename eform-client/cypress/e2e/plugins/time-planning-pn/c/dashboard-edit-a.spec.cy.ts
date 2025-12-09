@@ -281,7 +281,7 @@ describe('Dashboard edit values', () => {
   it('should enable auto break calculations with values', () => {
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
     cy.get('mat-tree-node').contains('Timeregistrering').click();
-    cy.get('mat-toolbar > button .mat-mdc-button-persistent-ripple').parent().click();
+    cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
     cy.get('#workingHoursSite').clear().type('c d');
     cy.get('.ng-option.ng-option-marked').click();
     cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');

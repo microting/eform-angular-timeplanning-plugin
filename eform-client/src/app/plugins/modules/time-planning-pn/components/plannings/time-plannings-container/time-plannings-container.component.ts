@@ -10,12 +10,14 @@ import {
   TimePlanningPnSettingsService,
 } from '../../../services';
 import {startOfWeek, endOfWeek, format} from 'date-fns';
-import {PARSING_DATE_FORMAT} from 'src/app/common/const';
+import {ExcelIcon, iOSIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {Store} from '@ngrx/store';
 import {selectCurrentUserLocale} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
 import {DownloadExcelDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
+import {MatIconRegistry} from "@angular/material/icon";
+import {DomSanitizer} from "@angular/platform-browser";
 
 @AutoUnsubscribe()
 @Component({
@@ -29,6 +31,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   private planningsService = inject(TimePlanningPnPlanningsService);
   private settingsService = inject(TimePlanningPnSettingsService);
   private dialog = inject(MatDialog);
+  private iconRegistry = inject(MatIconRegistry);
+  private sanitizer = inject(DomSanitizer);
 
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
@@ -45,10 +49,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   public selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
   locale: string;
 
-  
-
   ngOnInit(): void {
-
+    this.iconRegistry.addSvgIconLiteral('file-excel', this.sanitizer.bypassSecurityTrustHtml(ExcelIcon));
     if (!this.showResignedSites) {
       this.settingsService
         .getAvailableSites()

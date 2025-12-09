@@ -140,4 +140,5 @@ export const frFR = {
   'Stop time is required': 'Un temps d&#39;arrêt est requis',
   'Start time is required': 'L&#39;heure de début est obligatoire',
   'Start time cannot be earlier than previous shift`s end time': 'L&#39;heure de début ne peut pas être antérieure à l&#39;heure de fin du quart de travail précédent',
+  'Create device': 'Créer un appareil',
 };
