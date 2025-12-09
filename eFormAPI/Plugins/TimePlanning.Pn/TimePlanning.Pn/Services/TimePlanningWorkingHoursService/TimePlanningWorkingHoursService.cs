@@ -146,7 +146,9 @@ public class TimePlanningWorkingHoursService(
                     IsLocked = (x.Date < DateTime.Now.AddDays(-(int)(maxDaysEditable ?? 0)) || x.Date == midnight),
                     IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
                     NettoHoursOverride = x.NettoHoursOverride,
-                    NettoHoursOverrideActive = x.NettoHoursOverrideActive
+                    NettoHoursOverrideActive = x.NettoHoursOverrideActive,
+                    IsSaturday = x.Date.DayOfWeek == DayOfWeek.Saturday,
+                    IsSunday = x.Date.DayOfWeek == DayOfWeek.Sunday
                 })
                 .ToListAsync();
 
@@ -2061,6 +2063,7 @@ public class TimePlanningWorkingHoursService(
                     Translations.Worker,
                     Translations.DayOfWeek,
                     Translations.Date,
+                    Translations.Week_number,
                     Translations.PlanText,
                     Translations.PlanHours,
                     Translations.Shift_1__start,
@@ -2214,6 +2217,7 @@ public class TimePlanningWorkingHoursService(
             dataRow.Append(CreateCell(site.Name));
             dataRow.Append(CreateCell(planning.Date.ToString("dddd", culture)));
             dataRow.Append(CreateDateCell(planning.Date));
+            dataRow.Append(CreateWeekNumberCell(planning.Date));
             dataRow.Append(CreateCell(planning.PlanText));
             dataRow.Append(CreateNumericCell(planning.PlanHours));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start)));
@@ -2284,6 +2288,17 @@ public class TimePlanningWorkingHoursService(
                 .ToString(CultureInfo.InvariantCulture)), // Excel stores dates as OLE Automation date values
             DataType = CellValues.Number, // Excel treats dates as numbers
             StyleIndex = 2 // Assuming StyleIndex 2 corresponds to the date format in the stylesheet
+        };
+    }
+
+    private Cell CreateWeekNumberCell(DateTime dateValue)
+    {
+        var culture = CultureInfo.CurrentCulture;
+        var weekNumber = culture.Calendar.GetWeekOfYear(dateValue, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+        return new Cell()
+        {
+            CellValue = new CellValue(weekNumber.ToString()),
+            DataType = CellValues.Number
         };
     }
 
@@ -2409,7 +2424,11 @@ public class TimePlanningWorkingHoursService(
                     Translations.Worker,
                     Translations.PlanHours,
                     Translations.NettoHours,
-                    Translations.SumFlexStart
+                    Translations.SumFlexStart,
+                    Translations.Hours_Saturday,
+                    Translations.Hours_Sunday,
+                    Translations.Comments,
+                    Translations.Message
                 };
                 List<string> totalHeaderStrings = new List<string>();
                 foreach (var header in totalHeaders)
@@ -2481,6 +2500,7 @@ public class TimePlanningWorkingHoursService(
                         Translations.Worker,
                         Translations.DayOfWeek,
                         Translations.Date,
+                        Translations.Week_number,
                         Translations.PlanText,
                         Translations.PlanHours,
                         Translations.Shift_1__start,
@@ -2637,6 +2657,14 @@ public class TimePlanningWorkingHoursService(
                     var nettoHoursOverrideTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive).Sum(x => x.NettoHoursOverride);
                     totalRow.Append(CreateNumericCell(nettoHoursTotal + nettoHoursOverrideTotal));
                     totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
+                    var sumHoursSaturday = content.Model.Skip(1).Where(x => x.IsSaturday).Select(x => x.NettoHours).Sum();
+                    var sumHoursSunday = content.Model.Skip(1).Where(x => x.IsSunday).Select(x => x.NettoHours).Sum();
+                    var hasAnyCommentFromWorker = content.Model.Skip(1).ToList().Any(x => !string.IsNullOrEmpty(x.CommentWorker));
+                    var hasAnyMessage = content.Model.Skip(1).ToList().Any(x => x.Message != null);
+                    totalRow.Append(CreateNumericCell(sumHoursSaturday));
+                    totalRow.Append(CreateNumericCell(sumHoursSunday));
+                    totalRow.Append(CreateCell(hasAnyCommentFromWorker ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
+                    totalRow.Append(CreateCell(hasAnyMessage ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
                     totalSheetData1.Append(totalRow);
                     totalRowIndex++;
 
