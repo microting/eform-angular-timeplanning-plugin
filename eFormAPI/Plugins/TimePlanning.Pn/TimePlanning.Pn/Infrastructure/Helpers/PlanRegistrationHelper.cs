@@ -178,6 +178,9 @@ public static class PlanRegistrationHelper
                 planRegistration.Stop1Id /= 5 + 1;
                 planRegistration.Stop1StoppedAt = planRegistration.Date.AddMinutes(planRegistration.Stop1Id * 5);
             }
+            planRegistration.IsSaturday = midnight.DayOfWeek == DayOfWeek.Saturday;
+            planRegistration.IsSunday = midnight.DayOfWeek == DayOfWeek.Sunday;
+            await planRegistration.Update(dbContext).ConfigureAwait(false);
 
             if (!dbAssignedSite.Resigned)
             {
