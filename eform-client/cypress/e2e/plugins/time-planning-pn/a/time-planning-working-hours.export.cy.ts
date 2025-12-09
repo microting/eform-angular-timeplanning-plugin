@@ -42,21 +42,26 @@ describe('Time planning plugin working hours export', () => {
     const downloadedExcelFilename = path.join(downloadsFolder, `${fileNameExcelReport}.xlsx`);
     const fixturesExcelFilename = path.join(<string>fixturesFolder, `${fileNameExcelReport}.xlsx`);
 
-    cy.readFile(fixturesExcelFilename, 'binary').then((file1Content) => {
-      cy.readFile(downloadedExcelFilename, 'binary').then((file2Content) => {
-
-        const workbook1 = read(file1Content, { type: 'binary' });
-        const sheetName1 = workbook1.SheetNames[0]; // Assuming you're comparing the first sheet
-        const sheet1 = workbook1.Sheets[sheetName1];
-        const jsonData1 = utils.sheet_to_json(sheet1, { header: 1 }); // Convert sheet to array of arrays
-        const workbook = read(file2Content, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0]; // Assuming you're comparing the first sheet
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = utils.sheet_to_json(sheet, { header: 1 }); // Convert sheet to array of arrays
-        console.log(jsonData);
-        console.log(jsonData1);
-        expect(jsonData).to.deep.equal(jsonData1);
-        //expect(read(file1Content, {type: 'binary'}), 'excel file').to.deep.equal(read(file2Content, {type: 'binary'}));
+    // Save the generated Excel file to a location for GitHub Actions artifact upload
+    cy.readFile(downloadedExcelFilename, 'binary').then((generatedContent) => {
+      // Copy the generated file to cypress/downloads for artifact collection
+      cy.writeFile(path.join(downloadsFolder, 'generated-excel-report.xlsx'), generatedContent, 'binary');
+      
+      cy.log('Generated Excel file saved for artifact upload');
+      
+      // Compare with fixture file
+      cy.readFile(fixturesExcelFilename, 'binary').then((fixtureContent) => {
+        const workbookGenerated = read(generatedContent, { type: 'binary' });
+        const sheetGenerated = workbookGenerated.Sheets[workbookGenerated.SheetNames[0]];
+        const jsonDataGenerated = utils.sheet_to_json(sheetGenerated, { header: 1 });
+        
+        const workbookFixture = read(fixtureContent, { type: 'binary' });
+        const sheetFixture = workbookFixture.Sheets[workbookFixture.SheetNames[0]];
+        const jsonDataFixture = utils.sheet_to_json(sheetFixture, { header: 1 });
+        
+        console.log('Generated:', jsonDataGenerated);
+        console.log('Fixture:', jsonDataFixture);
+        expect(jsonDataGenerated).to.deep.equal(jsonDataFixture);
       });
     });
   });
