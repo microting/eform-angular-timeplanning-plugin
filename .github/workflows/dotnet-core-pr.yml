@@ -194,6 +194,15 @@ jobs:
       if: ${{ failure() }}
       run: |
         cat docker_run_log
+    - name: Archive generated Excel files
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: generated-excel-${{matrix.test}}
+        path: |
+          /home/runner/work/eform-angular-timeplanning-plugin/eform-angular-timeplanning-plugin/eform-angular-frontend/eform-client/cypress/downloads/generated-excel-report.xlsx
+        retention-days: 7
+        if-no-files-found: ignore
     - name: Archive videos
       if: ${{ failure() }}
       uses: actions/upload-artifact@v4
