@@ -607,9 +607,24 @@ public class EformTimePlanningPlugin : IEformPlugin
     {
         // Get DbContext
         var contextFactory = new TimePlanningPnContextFactory();
-        using var context = contextFactory.CreateDbContext([connectionString]);
+        using var dbContext = contextFactory.CreateDbContext([connectionString]);
+
+        var activeAssignedSites = dbContext.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed).ToList();
+
+        foreach (var activeAssignedSite in activeAssignedSites)
+        {
+            if (activeAssignedSite.AllowPersonalTimeRegistration)
+            {
+                activeAssignedSite.EnableMobileAccess = true;
+                activeAssignedSite.Update(dbContext);
+                dbContext.SaveChanges();
+            }
+        }
+
+
         // Seed configuration
-        TimePlanningPluginSeed.SeedData(context);
+        TimePlanningPluginSeed.SeedData(dbContext);
     }
 
     public PluginPermissionsManager GetPermissionsManager(string connectionString)
