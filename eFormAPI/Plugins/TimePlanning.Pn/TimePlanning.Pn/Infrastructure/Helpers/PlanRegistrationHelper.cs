@@ -47,7 +47,10 @@ public static class PlanRegistrationHelper
                     {
                         if (assignedSite.MondayBreakMinutesDivider == 0)
                         {
-                            planning.Pause1Id = 0;
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
                             break;
                         }
                         var numberOfBreaks = minutesActualAtWork /
@@ -64,7 +67,10 @@ public static class PlanRegistrationHelper
                     {
                         if (assignedSite.TuesdayBreakMinutesDivider == 0)
                         {
-                            planning.Pause1Id = 0;
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
                             break;
                         }
                         var numberOfBreaks = minutesActualAtWork /
@@ -81,7 +87,10 @@ public static class PlanRegistrationHelper
                     {
                         if (assignedSite.WednesdayBreakMinutesDivider == 0)
                         {
-                            planning.Pause1Id = 0;
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
                             break;
                         }
                         var numberOfBreaks = minutesActualAtWork /
@@ -98,7 +107,10 @@ public static class PlanRegistrationHelper
                     {
                         if (assignedSite.ThursdayBreakMinutesDivider == 0)
                         {
-                            planning.Pause1Id = 0;
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
                             break;
                         }
                         var numberOfBreaks = minutesActualAtWork /
@@ -115,7 +127,10 @@ public static class PlanRegistrationHelper
                     {
                         if (assignedSite.FridayBreakMinutesDivider == 0)
                         {
-                            planning.Pause1Id = 0;
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
                             break;
                         }
                         var numberOfBreaks = minutesActualAtWork /
@@ -132,7 +147,10 @@ public static class PlanRegistrationHelper
                     {
                         if (assignedSite.SaturdayBreakMinutesDivider == 0)
                         {
-                            planning.Pause1Id = 0;
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
                             break;
                         }
                         var numberOfBreaks = minutesActualAtWork /
@@ -149,7 +167,10 @@ public static class PlanRegistrationHelper
                     {
                         if (assignedSite.SundayBreakMinutesDivider == 0)
                         {
-                            planning.Pause1Id = 0;
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
                             break;
                         }
                         var numberOfBreaks = minutesActualAtWork /
