@@ -2275,7 +2275,7 @@ public class TimePlanningWorkingHoursService(
     {
         return new Cell()
         {
-            CellValue = new CellValue(value.ToString(CultureInfo.InvariantCulture)),
+            CellValue = new CellValue(value.ToString("G17", CultureInfo.InvariantCulture)),
             DataType = CellValues.Number
         };
     }
