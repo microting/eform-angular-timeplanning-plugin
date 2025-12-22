@@ -125,14 +125,25 @@ public static class OpenXMLHelper
 
         cellStyleFormats1.Append(cellFormat1);
 
-        CellFormats cellFormats1 = new CellFormats(){ Count = (UInt32Value)3U };
+        // Add custom number formats to preserve decimal precision
+        NumberingFormats numberingFormats1 = new NumberingFormats(){ Count = (UInt32Value)1U };
+        NumberingFormat numberingFormat1 = new NumberingFormat()
+        { 
+            NumberFormatId = (UInt32Value)164U,  // Custom formats start at 164
+            FormatCode = "0.##################"  // Show up to 18 decimal places
+        };
+        numberingFormats1.Append(numberingFormat1);
+
+        CellFormats cellFormats1 = new CellFormats(){ Count = (UInt32Value)4U };
         CellFormat cellFormat2 = new CellFormat(){ NumberFormatId = (UInt32Value)0U, FontId = (UInt32Value)0U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U };
         CellFormat cellFormat3 = new CellFormat(){ NumberFormatId = (UInt32Value)0U, FontId = (UInt32Value)1U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U, ApplyFont = true };
         CellFormat cellFormat4 = new CellFormat(){ NumberFormatId = (UInt32Value)14U, FontId = (UInt32Value)0U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U, ApplyNumberFormat = true };
+        CellFormat cellFormat5 = new CellFormat(){ NumberFormatId = (UInt32Value)164U, FontId = (UInt32Value)0U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U, ApplyNumberFormat = true };
 
         cellFormats1.Append(cellFormat2);
         cellFormats1.Append(cellFormat3);
         cellFormats1.Append(cellFormat4);
+        cellFormats1.Append(cellFormat5);
 
         CellStyles cellStyles1 = new CellStyles(){ Count = (UInt32Value)1U };
         CellStyle cellStyle1 = new CellStyle(){ Name = "Normal", FormatId = (UInt32Value)0U, BuiltinId = (UInt32Value)0U };
@@ -158,6 +169,7 @@ public static class OpenXMLHelper
         stylesheetExtensionList1.Append(stylesheetExtension1);
         stylesheetExtensionList1.Append(stylesheetExtension2);
 
+        stylesheet1.Append(numberingFormats1);
         stylesheet1.Append(fonts1);
         stylesheet1.Append(fills1);
         stylesheet1.Append(borders1);

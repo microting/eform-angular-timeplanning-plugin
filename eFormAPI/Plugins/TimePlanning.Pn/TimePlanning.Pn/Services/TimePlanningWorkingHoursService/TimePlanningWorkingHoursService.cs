@@ -2276,7 +2276,8 @@ public class TimePlanningWorkingHoursService(
         return new Cell()
         {
             CellValue = new CellValue(value.ToString("G17", CultureInfo.InvariantCulture)),
-            DataType = CellValues.Number
+            DataType = CellValues.Number,
+            StyleIndex = (UInt32Value)3U  // Use the custom number format that preserves decimals
         };
     }
 
