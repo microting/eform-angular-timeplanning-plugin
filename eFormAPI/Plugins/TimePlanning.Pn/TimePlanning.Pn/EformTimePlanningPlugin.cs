@@ -162,7 +162,6 @@ public class EformTimePlanningPlugin : IEformPlugin
             {
                 builder.EnableRetryOnFailure();
                 builder.MigrationsAssembly(PluginAssembly().FullName);
-                builder.TranslateParameterizedCollectionsToConstants();
             }));
 
 
@@ -172,7 +171,6 @@ public class EformTimePlanningPlugin : IEformPlugin
             {
                 builder.EnableRetryOnFailure();
                 builder.MigrationsAssembly(PluginAssembly().FullName);
-                builder.TranslateParameterizedCollectionsToConstants();
             }));
 
         var contextFactory = new TimePlanningPnContextFactory();
