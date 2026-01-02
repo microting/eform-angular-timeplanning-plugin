@@ -301,6 +301,13 @@ public class TimePlanningPlanningService(
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == site.MicrotingUid);
 
+        if (dbAssignedSite == null)
+        {
+            return new OperationDataResult<TimePlanningPlanningModel>(
+                false,
+                localizationService.GetString("SiteNotFound"));
+        }
+
         var datesInPeriod = new List<DateTime>();
         var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
         var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
@@ -902,24 +909,46 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
-                planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
-                if (planningAfterThisPlanning.NettoHoursOverrideActive)
+                if (preTimePlanningAfterThisPlanning != null)
                 {
-                    planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
-                                                           planningAfterThisPlanning.NettoHoursOverride -
-                                                           planningAfterThisPlanning.PlanHours -
-                                                           planningAfterThisPlanning.PaiedOutFlex;
-                    planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHoursOverride - planningAfterThisPlanning.PlanHours;
+                    planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
+                    if (planningAfterThisPlanning.NettoHoursOverrideActive)
+                    {
+                        planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                               planningAfterThisPlanning.NettoHoursOverride -
+                                                               planningAfterThisPlanning.PlanHours -
+                                                               planningAfterThisPlanning.PaiedOutFlex;
+                        planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHoursOverride - planningAfterThisPlanning.PlanHours;
+                    }
+                    else
+                    {
+                        planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                               planningAfterThisPlanning.NettoHours -
+                                                               planningAfterThisPlanning.PlanHours -
+                                                               planningAfterThisPlanning.PaiedOutFlex;
+                        planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                    }
                 }
                 else
                 {
-                    planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
-                                                           planningAfterThisPlanning.NettoHours -
-                                                           planningAfterThisPlanning.PlanHours -
-                                                           planningAfterThisPlanning.PaiedOutFlex;
-                    planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
-
+                    // No previous planning found, start from 0
+                    if (planningAfterThisPlanning.NettoHoursOverrideActive)
+                    {
+                        planningAfterThisPlanning.SumFlexEnd = planningAfterThisPlanning.NettoHoursOverride -
+                                                               planningAfterThisPlanning.PlanHours -
+                                                               planningAfterThisPlanning.PaiedOutFlex;
+                        planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHoursOverride - planningAfterThisPlanning.PlanHours;
+                    }
+                    else
+                    {
+                        planningAfterThisPlanning.SumFlexEnd = planningAfterThisPlanning.NettoHours -
+                                                               planningAfterThisPlanning.PlanHours -
+                                                               planningAfterThisPlanning.PaiedOutFlex;
+                        planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                    }
+                    planningAfterThisPlanning.SumFlexStart = 0;
                 }
+
                 await planningAfterThisPlanning.Update(dbContext).ConfigureAwait(false);
             }
 
@@ -1377,13 +1406,26 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
-                planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
-                planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
-                                                       planningAfterThisPlanning.NettoHours -
-                                                       planningAfterThisPlanning.PlanHours -
-                                                       planningAfterThisPlanning.PaiedOutFlex;
-                planningAfterThisPlanning.Flex =
-                    planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                if (preTimePlanningAfterThisPlanning != null)
+                {
+                    planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
+                    planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                           planningAfterThisPlanning.NettoHours -
+                                                           planningAfterThisPlanning.PlanHours -
+                                                           planningAfterThisPlanning.PaiedOutFlex;
+                    planningAfterThisPlanning.Flex =
+                        planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                }
+                else
+                {
+                    // No previous planning found, start from 0
+                    planningAfterThisPlanning.SumFlexStart = 0;
+                    planningAfterThisPlanning.SumFlexEnd = planningAfterThisPlanning.NettoHours -
+                                                           planningAfterThisPlanning.PlanHours -
+                                                           planningAfterThisPlanning.PaiedOutFlex;
+                    planningAfterThisPlanning.Flex =
+                        planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                }
                 await planningAfterThisPlanning.Update(dbContext).ConfigureAwait(false);
             }
 
