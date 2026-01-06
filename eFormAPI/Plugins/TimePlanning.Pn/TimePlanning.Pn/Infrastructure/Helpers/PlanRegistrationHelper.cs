@@ -248,7 +248,7 @@ public static class PlanRegistrationHelper
                         {
                             if (!string.IsNullOrEmpty(planRegistration.PlanText))
                             {
-                                var splitList = planRegistration.PlanText.Split(';');
+                                var splitList = planRegistration.PlanText.Replace(",", ".").Split(';');
                                 var firsSplit = splitList[0];
 
                                 var regex = new Regex(@"(.*)-(.*)\/(.*)");
@@ -1268,7 +1268,7 @@ public static class PlanRegistrationHelper
                     {
                     if (!string.IsNullOrEmpty(planRegistration.PlanText))
                     {
-                            var splitList = planRegistration.PlanText.Split(';');
+                            var splitList = planRegistration.PlanText.Replace(",", ".").Split(';');
                             var firsSplit = splitList[0];
 
                             var regex = new Regex(@"(.*)-(.*)\/(.*)");
