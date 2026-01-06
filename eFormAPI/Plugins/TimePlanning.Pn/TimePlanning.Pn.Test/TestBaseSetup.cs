@@ -15,6 +15,7 @@ namespace BackendConfiguration.Pn.Integration.Test;
 public abstract class TestBaseSetup
 {
     private readonly MariaDbContainer _mariadbTestcontainer = new MariaDbBuilder()
+        .WithImage("mariadb:11")
         .WithDatabase(
             "myDb").WithUsername("bla").WithPassword("secretpassword")
         .WithEnvironment("MYSQL_ROOT_PASSWORD", "Qq1234567$")
@@ -34,7 +35,6 @@ public abstract class TestBaseSetup
                 ServerVersion.AutoDetect(connectionStr)),
             mySqlOptionsAction: builder => {
                 builder.EnableRetryOnFailure();
-                builder.TranslateParameterizedCollectionsToConstants();
             });
 
         var backendConfigurationPnDbContext = new TimePlanningPnDbContext(optionsBuilder.Options);
@@ -57,7 +57,6 @@ public abstract class TestBaseSetup
                 ServerVersion.AutoDetect(connectionStr)),
             mySqlOptionsAction: builder => {
                 builder.EnableRetryOnFailure();
-                builder.TranslateParameterizedCollectionsToConstants();
             });
         var microtingDbContext = new MicrotingDbContext(dbContextOptionsBuilder.Options);
         var file = Path.Combine("SQL", "420_SDK.sql");

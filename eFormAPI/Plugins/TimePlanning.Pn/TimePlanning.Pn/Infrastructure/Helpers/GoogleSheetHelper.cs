@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -61,8 +62,8 @@ public class GoogleSheetHelper
         }}";
 
         // Authenticate using the dynamically constructed JSON
-        var credential = GoogleCredential.FromJson(serviceAccountJson)
-            .CreateScoped(SheetsService.Scope.Spreadsheets);
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(serviceAccountJson));
+        var credential = ServiceAccountCredential.FromServiceAccountData(stream);
 
         var service = new SheetsService(new BaseClientService.Initializer
         {
@@ -192,8 +193,8 @@ public class GoogleSheetHelper
         }}";
 
         // Authenticate using the dynamically constructed JSON
-        var credential = GoogleCredential.FromJson(serviceAccountJson)
-            .CreateScoped(SheetsService.Scope.Spreadsheets);
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(serviceAccountJson));
+        var credential = ServiceAccountCredential.FromServiceAccountData(stream);
 
         var service = new SheetsService(new BaseClientService.Initializer
         {

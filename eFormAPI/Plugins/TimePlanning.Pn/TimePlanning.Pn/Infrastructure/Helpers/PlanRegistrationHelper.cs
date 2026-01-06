@@ -45,6 +45,14 @@ public static class PlanRegistrationHelper
                 {
                     case DayOfWeek.Monday:
                     {
+                        if (assignedSite.MondayBreakMinutesDivider == 0)
+                        {
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
+                            break;
+                        }
                         var numberOfBreaks = minutesActualAtWork /
                                              assignedSite.MondayBreakMinutesDivider;
                         breakTime = numberOfBreaks *
@@ -57,6 +65,14 @@ public static class PlanRegistrationHelper
                     }
                     case DayOfWeek.Tuesday:
                     {
+                        if (assignedSite.TuesdayBreakMinutesDivider == 0)
+                        {
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
+                            break;
+                        }
                         var numberOfBreaks = minutesActualAtWork /
                                              assignedSite.TuesdayBreakMinutesDivider;
                         breakTime = numberOfBreaks *
@@ -69,6 +85,14 @@ public static class PlanRegistrationHelper
                     }
                     case DayOfWeek.Wednesday:
                     {
+                        if (assignedSite.WednesdayBreakMinutesDivider == 0)
+                        {
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
+                            break;
+                        }
                         var numberOfBreaks = minutesActualAtWork /
                                              assignedSite.WednesdayBreakMinutesDivider;
                         breakTime = numberOfBreaks *
@@ -81,6 +105,14 @@ public static class PlanRegistrationHelper
                     }
                     case DayOfWeek.Thursday:
                     {
+                        if (assignedSite.ThursdayBreakMinutesDivider == 0)
+                        {
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
+                            break;
+                        }
                         var numberOfBreaks = minutesActualAtWork /
                                              assignedSite.ThursdayBreakMinutesDivider;
                         breakTime = numberOfBreaks *
@@ -93,6 +125,14 @@ public static class PlanRegistrationHelper
                     }
                     case DayOfWeek.Friday:
                     {
+                        if (assignedSite.FridayBreakMinutesDivider == 0)
+                        {
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
+                            break;
+                        }
                         var numberOfBreaks = minutesActualAtWork /
                                              assignedSite.FridayBreakMinutesDivider;
                         breakTime = numberOfBreaks *
@@ -105,6 +145,14 @@ public static class PlanRegistrationHelper
                     }
                     case DayOfWeek.Saturday:
                     {
+                        if (assignedSite.SaturdayBreakMinutesDivider == 0)
+                        {
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
+                            break;
+                        }
                         var numberOfBreaks = minutesActualAtWork /
                                              assignedSite.SaturdayBreakMinutesDivider;
                         breakTime = numberOfBreaks *
@@ -117,6 +165,14 @@ public static class PlanRegistrationHelper
                     }
                     case DayOfWeek.Sunday:
                     {
+                        if (assignedSite.SundayBreakMinutesDivider == 0)
+                        {
+                            if (!planning.PlanChangedByAdmin)
+                            {
+                                planning.Pause1Id = 0;
+                            }
+                            break;
+                        }
                         var numberOfBreaks = minutesActualAtWork /
                                              assignedSite.SundayBreakMinutesDivider;
                         breakTime = numberOfBreaks *
@@ -178,6 +234,9 @@ public static class PlanRegistrationHelper
                 planRegistration.Stop1Id /= 5 + 1;
                 planRegistration.Stop1StoppedAt = planRegistration.Date.AddMinutes(planRegistration.Stop1Id * 5);
             }
+            planRegistration.IsSaturday = midnight.DayOfWeek == DayOfWeek.Saturday;
+            planRegistration.IsSunday = midnight.DayOfWeek == DayOfWeek.Sunday;
+            await planRegistration.Update(dbContext).ConfigureAwait(false);
 
             if (!dbAssignedSite.Resigned)
             {
