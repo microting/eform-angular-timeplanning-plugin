@@ -28,6 +28,8 @@ using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
+using TimePlanning.Pn.Services.TimePlanningGpsCoordinateService;
+using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -84,6 +86,8 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<ITimePlanningWorkingHoursService, TimePlanningWorkingHoursService>();
         services.AddTransient<ITimePlanningFlexService, TimePlanningFlexService>();
         services.AddTransient<ITimePlanningRegistrationDeviceService, TimePlanningRegistrationDeviceService>();
+        services.AddTransient<ITimePlanningGpsCoordinateService, TimePlanningGpsCoordinateService>();
+        services.AddTransient<ITimePlanningPictureSnapshotService, TimePlanningPictureSnapshotService>();
         services.AddTransient<ISettingService, TimeSettingService>();
         services.AddControllers();
     }
