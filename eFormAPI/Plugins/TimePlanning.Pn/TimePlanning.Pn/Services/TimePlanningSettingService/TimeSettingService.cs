@@ -709,6 +709,8 @@ public class TimeSettingService(
         dbAssignedSite.DaysBackInTimeAllowedEditingEnabled = site.DaysBackInTimeAllowedEditingEnabled;
         dbAssignedSite.Resigned = site.Resigned;
         dbAssignedSite.ResignedAtDate = site.ResignedAtDate;
+        dbAssignedSite.GpsEnabled = site.GpsEnabled;
+        dbAssignedSite.SnapshotEnabled = site.SnapshotEnabled;
 
         await dbAssignedSite.Update(dbContext);
 
