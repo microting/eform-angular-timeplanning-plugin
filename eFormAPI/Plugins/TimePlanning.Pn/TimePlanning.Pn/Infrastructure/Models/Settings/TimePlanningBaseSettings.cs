@@ -66,4 +66,6 @@ public class TimePlanningBaseSettings
     public string ShowCalculationsAsNumber { get; set; }
     public string DaysBackInTimeAllowedEditingEnabled { get; set; }
     public int DaysBackInTimeAllowedEditing { get; set; } = 2;
+    public string GpsEnabled { get; set; }
+    public string SnapshotEnabled { get; set; }
 }

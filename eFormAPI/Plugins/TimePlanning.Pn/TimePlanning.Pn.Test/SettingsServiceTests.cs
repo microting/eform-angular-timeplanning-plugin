@@ -45,7 +45,9 @@ public class SettingsServiceTests : TestBaseSetup
         _options.Value.Returns(new TimePlanningBaseSettings
         {
             AutoBreakCalculationActive = "0",
-            DayOfPayment = 20
+            DayOfPayment = 20,
+            GpsEnabled = "0",
+            SnapshotEnabled = "0"
         });
         
         _settingsService = new TimeSettingService(
@@ -310,5 +312,131 @@ public class SettingsServiceTests : TestBaseSetup
         Assert.That(updatedSite.AllowEditOfRegistrations, Is.True);
         Assert.That(updatedSite.StartMonday, Is.EqualTo(480));
         Assert.That(updatedSite.EndMonday, Is.EqualTo(960));
+    }
+
+    [Test]
+    public async Task GetSettings_ReturnsGpsAndSnapshotEnabledSettings()
+    {
+        // Arrange
+        _options.Value.Returns(new TimePlanningBaseSettings
+        {
+            AutoBreakCalculationActive = "0",
+            DayOfPayment = 20,
+            GpsEnabled = "1",
+            SnapshotEnabled = "1",
+            MondayBreakMinutesDivider = "180",
+            MondayBreakMinutesPrDivider = "30",
+            TuesdayBreakMinutesDivider = "180",
+            TuesdayBreakMinutesPrDivider = "30",
+            WednesdayBreakMinutesDivider = "180",
+            WednesdayBreakMinutesPrDivider = "30",
+            ThursdayBreakMinutesDivider = "180",
+            ThursdayBreakMinutesPrDivider = "30",
+            FridayBreakMinutesDivider = "180",
+            FridayBreakMinutesPrDivider = "30",
+            SaturdayBreakMinutesDivider = "120",
+            SaturdayBreakMinutesPrDivider = "30",
+            SundayBreakMinutesDivider = "120",
+            SundayBreakMinutesPrDivider = "30",
+            MondayBreakMinutesUpperLimit = "60",
+            TuesdayBreakMinutesUpperLimit = "60",
+            WednesdayBreakMinutesUpperLimit = "60",
+            ThursdayBreakMinutesUpperLimit = "60",
+            FridayBreakMinutesUpperLimit = "60",
+            SaturdayBreakMinutesUpperLimit = "60",
+            SundayBreakMinutesUpperLimit = "60",
+            ShowCalculationsAsNumber = "1",
+            DaysBackInTimeAllowedEditingEnabled = "0",
+            DaysBackInTimeAllowedEditing = 2,
+            GoogleSheetId = ""
+        });
+
+        // Act
+        var result = await _settingsService.GetSettings();
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.GpsEnabled, Is.True);
+        Assert.That(result.Model.SnapshotEnabled, Is.True);
+    }
+
+    [Test]
+    public async Task UpdateSettings_UpdatesAllAssignedSites_WithGpsAndSnapshotSettings()
+    {
+        // Arrange
+        var assignedSite1 = new AssignedSiteEntity
+        {
+            SiteId = 10,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite1.Create(TimePlanningPnDbContext);
+
+        var assignedSite2 = new AssignedSiteEntity
+        {
+            SiteId = 11,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite2.Create(TimePlanningPnDbContext);
+
+        var settingsModel = new TimePlanningSettingsModel
+        {
+            GoogleSheetId = "",
+            GpsEnabled = true,
+            SnapshotEnabled = true,
+            MondayBreakMinutesDivider = 180,
+            MondayBreakMinutesPrDivider = 30,
+            TuesdayBreakMinutesDivider = 180,
+            TuesdayBreakMinutesPrDivider = 30,
+            WednesdayBreakMinutesDivider = 180,
+            WednesdayBreakMinutesPrDivider = 30,
+            ThursdayBreakMinutesDivider = 180,
+            ThursdayBreakMinutesPrDivider = 30,
+            FridayBreakMinutesDivider = 180,
+            FridayBreakMinutesPrDivider = 30,
+            SaturdayBreakMinutesDivider = 120,
+            SaturdayBreakMinutesPrDivider = 30,
+            SundayBreakMinutesDivider = 120,
+            SundayBreakMinutesPrDivider = 30,
+            MondayBreakMinutesUpperLimit = 60,
+            TuesdayBreakMinutesUpperLimit = 60,
+            WednesdayBreakMinutesUpperLimit = 60,
+            ThursdayBreakMinutesUpperLimit = 60,
+            FridayBreakMinutesUpperLimit = 60,
+            SaturdayBreakMinutesUpperLimit = 60,
+            SundayBreakMinutesUpperLimit = 60,
+            AutoBreakCalculationActive = false,
+            ShowCalculationsAsNumber = true,
+            DayOfPayment = 20,
+            DaysBackInTimeAllowedEditingEnabled = false,
+            DaysBackInTimeAllowedEditing = 2
+        };
+
+        // Act
+        var result = await _settingsService.UpdateSettings(settingsModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite1 = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite1.Id);
+        var updatedSite2 = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite2.Id);
+
+        Assert.That(updatedSite1, Is.Not.Null);
+        Assert.That(updatedSite1.GpsEnabled, Is.True);
+        Assert.That(updatedSite1.SnapshotEnabled, Is.True);
+
+        Assert.That(updatedSite2, Is.Not.Null);
+        Assert.That(updatedSite2.GpsEnabled, Is.True);
+        Assert.That(updatedSite2.SnapshotEnabled, Is.True);
     }
 }

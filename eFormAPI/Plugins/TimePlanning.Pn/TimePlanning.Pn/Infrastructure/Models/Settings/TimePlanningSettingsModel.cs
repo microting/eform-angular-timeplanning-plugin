@@ -56,4 +56,6 @@ public class TimePlanningSettingsModel
     public bool ShowCalculationsAsNumber { get; set; }
     public bool DaysBackInTimeAllowedEditingEnabled { get; set; } = false;
     public int DaysBackInTimeAllowedEditing { get; set; } = 2;
+    public bool GpsEnabled { get; set; }
+    public bool SnapshotEnabled { get; set; }
 }
