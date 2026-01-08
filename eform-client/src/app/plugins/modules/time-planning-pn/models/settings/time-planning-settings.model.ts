@@ -25,4 +25,6 @@ export class TimePlanningSettingsModel {
   sundayBreakMinutesUpperLimit: number;
   dayOfPayment: number;
   showCalculationsAsNumber: boolean;
+  gpsEnabled: boolean;
+  snapshotEnabled: boolean;
 }

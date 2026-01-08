@@ -206,6 +206,16 @@ public class TimePlanningConfigurationSeedData : IPluginConfigurationSeedData
         {
             Name = $"{TimePlanningBaseSettingsName}:ShowCalculationsAsNumber",
             Value = "1"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:GpsEnabled",
+            Value = "0"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:SnapshotEnabled",
+            Value = "0"
         }
     ];
 }

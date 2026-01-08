@@ -89,7 +89,9 @@ public class TimeSettingService(
                 ShowCalculationsAsNumber = options.Value.ShowCalculationsAsNumber == "1",
                 DayOfPayment = options.Value.DayOfPayment,
                 DaysBackInTimeAllowedEditingEnabled = options.Value.DaysBackInTimeAllowedEditingEnabled == "1",
-                DaysBackInTimeAllowedEditing = options.Value.DaysBackInTimeAllowedEditing
+                DaysBackInTimeAllowedEditing = options.Value.DaysBackInTimeAllowedEditing,
+                GpsEnabled = options.Value.GpsEnabled == "1",
+                SnapshotEnabled = options.Value.SnapshotEnabled == "1"
             };
 
             //timePlanningSettingsModel.AssignedSites = assignedSites;
@@ -161,7 +163,22 @@ public class TimeSettingService(
                 settings.DaysBackInTimeAllowedEditingEnabled = timePlanningSettingsModel.DaysBackInTimeAllowedEditingEnabled ? "1" : "0";
                 settings.DaysBackInTimeAllowedEditing =
                     timePlanningSettingsModel.DaysBackInTimeAllowedEditing;
+                settings.GpsEnabled = timePlanningSettingsModel.GpsEnabled ? "1" : "0";
+                settings.SnapshotEnabled = timePlanningSettingsModel.SnapshotEnabled ? "1" : "0";
             }, dbContext, userService.UserId);
+            
+            // Update all assigned sites with the new GPS and Snapshot settings
+            var assignedSites = await dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .ToListAsync();
+            
+            foreach (var assignedSite in assignedSites)
+            {
+                assignedSite.GpsEnabled = timePlanningSettingsModel.GpsEnabled;
+                assignedSite.SnapshotEnabled = timePlanningSettingsModel.SnapshotEnabled;
+                await assignedSite.Update(dbContext);
+            }
+            
             await GoogleSheetHelper.PushToGoogleSheet(await core.GetCore(), dbContext, logger);
 
             if (timePlanningSettingsModel.ForceLoadAllPlanningsFromGoogleSheet)
