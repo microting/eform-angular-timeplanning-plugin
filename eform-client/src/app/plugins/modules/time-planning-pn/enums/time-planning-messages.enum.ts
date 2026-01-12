@@ -4,9 +4,11 @@ export enum TimePlanningMessagesEnum {
   Sick,
   Course,
   LeaveOfAbsence,
-  Care,
+  Blank,
   Children1stSick,
   Children2stSick,
   TimeOff,
-  Blank,
+  Maternity,
+  VacationDayOff,
+  Holiday,
 }

@@ -69,6 +69,30 @@ public class TimePlanningSeedMessages
             DaName = "Ferie fridag",
             EnName = "Holiday day off",
             DeName = "Feiertagsfreier Tag"
+        },
+        new Message
+        {
+            Id = 10,
+            Name = "Maternity",
+            DaName = "Barsel",
+            EnName = "Maternity day off",
+            DeName = "Barsel Tag"
+        },
+        new Message
+        {
+            Id = 11,
+            Name = "VacationDayOff",
+            DaName = "Ferie fridag",
+            EnName = "Vacation day off",
+            DeName = "Ferie fridag Tag"
+        },
+        new Message
+        {
+            Id = 12,
+            Name = "Holiday",
+            DaName = "Helligdag",
+            EnName = "Holiday day off",
+            DeName = "Helligdag Tag"
         }
     };
 }

@@ -13,7 +13,7 @@
       [data]="shiftData"
       [showPaginator]="false"
       [pageOnFront]="false"
-      [rowStriped]="true"
+      [rowStriped]="false"
       [showToolbar]="false"
       [showColumnMenuButton]="false">
     </mtx-grid>
@@ -905,7 +905,8 @@
     </ng-template>
 
     <!-- READ-ONLY NUMBERS / OTHER FIELDS -->
-    <br/>
+    <div class="d-flex flex-column gap-4 py-4">
+
     <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
       <mat-label>{{ 'Flex balance at start of day' | translate }}</mat-label>
       <input
@@ -917,7 +918,6 @@
         [value]="data.planningPrDayModels.sumFlexStart.toFixed(2)"/>
     </mat-form-field>
 
-    <br/>
     <mat-form-field class="pr-2">
       <mat-label>{{ 'Plan hours' | translate }}</mat-label>
       <input
@@ -931,7 +931,6 @@
       </mat-error>
     </mat-form-field>
 
-    <br/>
     <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
       <mat-label>{{ 'NettoHours' | translate }}</mat-label>
       <input
@@ -943,7 +942,6 @@
         [value]="data.planningPrDayModels.actualHours.toFixed(2)"/>
     </mat-form-field>
 
-    <br/>
     <mat-form-field class="pr-2" *ngIf="!isInTheFuture && data.planningPrDayModels.nettoHoursOverrideActive">
       <mat-label>{{ 'NettoHours override' | translate }}</mat-label>
       <input
@@ -966,7 +964,6 @@
         [value]="todaysFlex.toFixed(2)"/>
     </mat-form-field>
 
-    <br/>
     <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
       <mat-label>{{ 'PaidOutFlex' | translate }}</mat-label>
       <input
@@ -977,7 +974,6 @@
         (change)="calculatePlanHours()"/>
     </mat-form-field>
 
-    <br/>
     <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
       <mat-label>{{ 'Flex balance to date' | translate }}</mat-label>
       <input
@@ -989,13 +985,14 @@
         [value]="data.planningPrDayModels.sumFlexEnd.toFixed(2)"/>
     </mat-form-field>
 
-    <br/><br/>
     <p *ngIf="data.planningPrDayModels.workerComment">
       <strong>{{ 'CommentWorker' | translate }}:</strong>
       {{ data.planningPrDayModels.workerComment }}
     </p>
+    </div>
 
-    <div formGroupName="flags">
+
+    <div formGroupName="flags" class="d-flex flex-column gap-4" style="min-width: 70vw">
       <ng-container *ngFor="let key of enumKeys">
         <ng-container *ngIf="key !== 'Blank' && key !== 'Care'">
           <mat-checkbox
