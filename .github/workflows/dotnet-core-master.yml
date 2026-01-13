@@ -90,7 +90,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test: [a,b,c,d,e,f,g,h,i,j]
+        test: [a,b,c,d,e,f,g,h,i,j,k]
     steps:
     - uses: actions/checkout@v3
       with:
