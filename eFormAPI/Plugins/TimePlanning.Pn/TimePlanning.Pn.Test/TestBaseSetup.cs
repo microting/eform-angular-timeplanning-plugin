@@ -8,6 +8,7 @@ using Microting.eForm.Infrastructure;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using NUnit.Framework;
 using Testcontainers.MariaDb;
+using TimePlanning.Pn.Infrastructure.Data.Seed;
 
 #nullable enable
 namespace BackendConfiguration.Pn.Integration.Test;
@@ -44,6 +45,9 @@ public abstract class TestBaseSetup
         // Use only migrations to create the schema - don't use EnsureCreated() or SQL scripts
         // as they conflict with migrations
         backendConfigurationPnDbContext.Database.Migrate();
+        
+        // Seed configuration data after migrations
+        TimePlanningPluginSeed.SeedData(backendConfigurationPnDbContext);
 
         return backendConfigurationPnDbContext;
     }
