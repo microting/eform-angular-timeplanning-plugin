@@ -1,74 +1,85 @@
-<eform-new-subheader [title]="'Dashboard'"></eform-new-subheader>
-<div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-<!--  <span>{{ formatDateRange() }}</span>-->
-<!--  <mat-form-field appearance="fill">-->
-<!--    <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate" (dateChange)="updateSelectedDate()">-->
-<!--    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>-->
-<!--    <mat-datepicker touchUi #picker></mat-datepicker>-->
-<!--  </mat-form-field>-->
-  <mat-slide-toggle
-    color="primary"
-    class="mb-2"
-    id="showCalculationsAsNumberToggle"
-    [checked]="showResignedSites"
-    [(ngModel)]="showResignedSites"
-    (change)="onShowResignedSitesChanged($event)"
-  >
-    {{ 'Show resigned' | translate }}
-  </mat-slide-toggle>
-  <mat-form-field style="flex: 0 0 25%; min-width: 150px;">
-    <mat-label>{{ 'Worker' | translate }}</mat-label>
-    <mtx-select
-      [items]="availableSites"
-      bindLabel="siteName"
-      bindValue="siteId"
-      [ngModel]="siteId"
-      (ngModelChange)="onSiteChanged($event)"
-      id="workingHoursSite">
-    </mtx-select>
-  </mat-form-field>
-  <button
-    id="backwards"
-    class="btn-secondary btn-secondary--icon-rounded-border"
-    (click)="goBackward()"
-    matTooltip="{{ 'Back' | translate }}"
-  >
-    <mat-icon>first_page</mat-icon>
-  </button>
-  <button
-    id="forwards"
-    class="btn-secondary btn-secondary--icon-rounded-border"
-    (click)="goForward()"
-    matTooltip="{{ 'Forward' | translate }}"
-    >
-    <mat-icon>last_page</mat-icon>
-  </button>
+<eform-new-subheader [title]="'Dashboard'">
 
-  <mat-form-field id="workingHoursRange">
-    <mat-label>{{ 'Date range' | translate }}</mat-label>
-    <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
-    <mat-date-range-input [rangePicker]="picker" (click)="picker.open()">
-      <input [value]="dateFrom" (dateChange)="updateDateFrom($event)" matStartDate class="workingHoursRange">
-      <input [value]="dateTo" (dateChange)="updateDateTo($event)" matEndDate class="workingHoursRange">
-    </mat-date-range-input>
-    <mat-date-range-picker #picker></mat-date-range-picker>
-  </mat-form-field>
-  <button
-    id="file-export-excel"
-    class="btn-secondary btn-secondary--icon-rounded-border"
-    (click)="openDownloadExcelDialog()"
-    matTooltip="{{ 'Download Excel' | translate }}">
-    <mat-icon svgIcon="file-excel"></mat-icon>
-  </button>
-  <button
-    class="btn-secondary btn-secondary--icon-rounded-border"
-    id="workingHoursReload"
-    [matTooltip]="'Reload table' | translate"
-    (click)="getPlannings()"
-  >
-    <mat-icon>restart_alt</mat-icon>
-  </button>
-</div>
+
+  <div class="d-flex flex-row justify-content-center align-items-center gap-12">
+    <!--  <span>{{ formatDateRange() }}</span>-->
+    <!--  <mat-form-field appearance="fill">-->
+    <!--    <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate" (dateChange)="updateSelectedDate()">-->
+    <!--    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>-->
+    <!--    <mat-datepicker touchUi #picker></mat-datepicker>-->
+    <!--  </mat-form-field>-->
+    <mat-slide-toggle
+      color="primary"
+      id="showCalculationsAsNumberToggle"
+      [checked]="showResignedSites"
+      [(ngModel)]="showResignedSites"
+      (change)="onShowResignedSitesChanged($event)"
+    >
+      {{ 'Show resigned' | translate }}
+    </mat-slide-toggle>
+
+
+    <button
+      id="backwards"
+      class="btn-secondary btn-secondary--icon-rounded-border"
+      (click)="goBackward()"
+      matTooltip="{{ 'keyboard_tab_rtl' | translate }}"
+    >
+      <mat-icon color="primary">first_page</mat-icon>
+    </button>
+    <button
+      id="forwards"
+      class="btn-secondary btn-secondary--icon-rounded-border"
+      (click)="goForward()"
+      matTooltip="{{ 'keyboard_tab' | translate }}"
+    >
+      <mat-icon color="primary">last_page</mat-icon>
+    </button>
+
+    <div class="line-vert"></div>
+    <div class="text-field--rounded">
+      <mat-form-field style="flex: 0 0 25%; min-width: 150px;">
+        <mat-label>{{ 'Worker' | translate }}</mat-label>
+        <mtx-select
+          [items]="availableSites"
+          bindLabel="siteName"
+          bindValue="siteId"
+          [ngModel]="siteId"
+          (ngModelChange)="onSiteChanged($event)"
+          id="workingHoursSite">
+        </mtx-select>
+      </mat-form-field>
+    </div>
+    <div class="text-field--rounded">
+      <mat-form-field id="workingHoursRange">
+        <mat-label>{{ 'Date range' | translate }}</mat-label>
+        <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
+        <mat-date-range-input [rangePicker]="picker" (click)="picker.open()">
+          <input [value]="dateFrom" (dateChange)="updateDateFrom($event)" matStartDate class="workingHoursRange">
+          <input [value]="dateTo" (dateChange)="updateDateTo($event)" matEndDate class="workingHoursRange">
+        </mat-date-range-input>
+        <mat-date-range-picker #picker></mat-date-range-picker>
+      </mat-form-field>
+    </div>
+    <div class="line-vert"></div>
+    <button
+      id="file-export-excel"
+      class="btn-secondary btn-secondary--icon-rounded-border"
+      (click)="openDownloadExcelDialog()"
+      matTooltip="{{ 'Download Excel' | translate }}">
+      <mat-icon svgIcon="file-excel"></mat-icon>
+    </button>
+    <button
+      class="btn-secondary btn-secondary--icon-rounded-border"
+      id="workingHoursReload"
+      [matTooltip]="'Reload table' | translate"
+      (click)="getPlannings()"
+    >
+      <mat-icon>restart_alt</mat-icon>
+    </button>
+  </div>
+</eform-new-subheader>
+
 <div>
 
 </div>
@@ -79,11 +90,11 @@
 <!--    (filtersChanged)="onTimePlanningsFiltersChanged($event)"-->
 <!--    [availableSites]="availableSites"-->
 <!--  ></app-time-plannings-header>-->
-  <app-time-plannings-table
-    [timePlannings]="timePlannings"
-    [dateFrom]="dateFrom"
-    [dateTo]="dateTo"
-    (timePlanningChanged)="onTimePlanningChanged($event)"
-    (assignedSiteChanged)="onAssignedSiteChanged($event)"
-  ></app-time-plannings-table>
+<app-time-plannings-table
+  [timePlannings]="timePlannings"
+  [dateFrom]="dateFrom"
+  [dateTo]="dateTo"
+  (timePlanningChanged)="onTimePlanningChanged($event)"
+  (assignedSiteChanged)="onAssignedSiteChanged($event)"
+></app-time-plannings-table>
 <!--</div>-->
