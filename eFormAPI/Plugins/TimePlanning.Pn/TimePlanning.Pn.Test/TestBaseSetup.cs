@@ -38,11 +38,11 @@ public abstract class TestBaseSetup
             });
 
         var backendConfigurationPnDbContext = new TimePlanningPnDbContext(optionsBuilder.Options);
-        var file = Path.Combine("SQL", "420_eform-angular-time-planning-plugin.sql");
-        var rawSql = File.ReadAllText(file);
 
-        backendConfigurationPnDbContext.Database.EnsureCreated();
-        backendConfigurationPnDbContext.Database.ExecuteSqlRaw(rawSql);
+        // Drop and recreate the database fresh for each test to avoid state pollution
+        backendConfigurationPnDbContext.Database.EnsureDeleted();
+        // Use only migrations to create the schema - don't use EnsureCreated() or SQL scripts
+        // as they conflict with migrations
         backendConfigurationPnDbContext.Database.Migrate();
 
         return backendConfigurationPnDbContext;
@@ -59,11 +59,11 @@ public abstract class TestBaseSetup
                 builder.EnableRetryOnFailure();
             });
         var microtingDbContext = new MicrotingDbContext(dbContextOptionsBuilder.Options);
-        var file = Path.Combine("SQL", "420_SDK.sql");
-        var rawSql = File.ReadAllText(file);
 
-        microtingDbContext.Database.EnsureCreated();
-        microtingDbContext.Database.ExecuteSqlRaw(rawSql);
+        // Drop and recreate the database fresh for each test to avoid state pollution
+        microtingDbContext.Database.EnsureDeleted();
+        // Use only migrations to create the schema - don't use EnsureCreated() or SQL scripts
+        // as they conflict with migrations
         microtingDbContext.Database.Migrate();
 
         return microtingDbContext;
