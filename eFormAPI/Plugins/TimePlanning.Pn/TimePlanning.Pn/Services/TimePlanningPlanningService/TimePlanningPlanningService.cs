@@ -889,6 +889,10 @@ public class TimePlanningPlanningService(
                                       planning.PaiedOutFlex;
                 planning.Flex = planning.NettoHours - planning.PlanHours;
             }
+            
+            // Compute time tracking fields (seconds-based calculation)
+            PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            
             await planning.Update(dbContext).ConfigureAwait(false);
 
             var planningsAfterThisPlanning = dbContext.PlanRegistrations
@@ -1387,6 +1391,10 @@ public class TimePlanningPlanningService(
                                   planning.PlanHours -
                                   planning.PaiedOutFlex;
             planning.Flex = planning.NettoHours - planning.PlanHours;
+            
+            // Compute time tracking fields (seconds-based calculation)
+            PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            
             await planning.Update(dbContext).ConfigureAwait(false);
 
             var planningsAfterThisPlanning = dbContext.PlanRegistrations
