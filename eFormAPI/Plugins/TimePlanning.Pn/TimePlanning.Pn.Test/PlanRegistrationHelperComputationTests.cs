@@ -371,4 +371,123 @@ public class PlanRegistrationHelperComputationTests
         // 15 + 30 + 10 + 5 = 60 minutes = 3600 seconds
         Assert.That(totalSeconds, Is.EqualTo(3600), "Total pause should be 60 minutes = 3600 seconds");
     }
+
+    /// <summary>
+    /// Test 13: ComputeTimeTrackingFields sets NettoHoursInSeconds correctly
+    /// Given a PlanRegistration with 8 hours work and 0.5 hours pause,
+    /// expect NettoHoursInSeconds == 27000 (7.5 hours).
+    /// </summary>
+    [Test]
+    public void ComputeTimeTrackingFields_CalculatesNettoHoursCorrectly()
+    {
+        // Arrange
+        var baseDate = new DateTime(2026, 1, 15, 0, 0, 0);  // Thursday
+        var planRegistration = new PlanRegistration
+        {
+            Date = baseDate,
+            // Work: 8:00 - 16:00 (8 hours)
+            Start1StartedAt = baseDate.AddHours(8),
+            Stop1StoppedAt = baseDate.AddHours(16),
+            // Pause: 30 minutes
+            Pause1StartedAt = baseDate.AddHours(12),
+            Pause1StoppedAt = baseDate.AddHours(12).AddMinutes(30),
+            NettoHoursOverrideActive = false
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+
+        // Assert
+        // 8 hours work - 0.5 hours pause = 7.5 hours = 27000 seconds
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000), 
+            "NettoHoursInSeconds should be 7.5 hours = 27000 seconds");
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5).Within(0.01), 
+            "NettoHours should be 7.5");
+        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(27000), 
+            "EffectiveNetHoursInSeconds should equal NettoHoursInSeconds when no override");
+    }
+
+    /// <summary>
+    /// Test 14: ComputeTimeTrackingFields respects NettoHoursOverride
+    /// Given a PlanRegistration with override active,
+    /// expect EffectiveNetHoursInSeconds to use the override value.
+    /// </summary>
+    [Test]
+    public void ComputeTimeTrackingFields_RespectsNettoHoursOverride()
+    {
+        // Arrange
+        var baseDate = new DateTime(2026, 1, 15, 0, 0, 0);
+        var planRegistration = new PlanRegistration
+        {
+            Date = baseDate,
+            // Work: 8:00 - 16:00 (8 hours)
+            Start1StartedAt = baseDate.AddHours(8),
+            Stop1StoppedAt = baseDate.AddHours(16),
+            // No pause
+            NettoHoursOverrideActive = true,
+            NettoHoursOverride = 6.0  // Override to 6 hours
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+
+        // Assert
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800), 
+            "NettoHoursInSeconds should be actual 8 hours = 28800 seconds");
+        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(21600), 
+            "EffectiveNetHoursInSeconds should be override 6 hours = 21600 seconds");
+    }
+
+    /// <summary>
+    /// Test 15: ComputeTimeTrackingFields sets day classification flags
+    /// Given a Sunday PlanRegistration, expect IsSunday = true and IsSaturday = false.
+    /// </summary>
+    [Test]
+    public void ComputeTimeTrackingFields_SetsDayClassificationFlags()
+    {
+        // Arrange
+        var sundayDate = new DateTime(2026, 1, 18, 0, 0, 0);  // Sunday
+        var planRegistration = new PlanRegistration
+        {
+            Date = sundayDate,
+            Start1StartedAt = sundayDate.AddHours(8),
+            Stop1StoppedAt = sundayDate.AddHours(16)
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+
+        // Assert
+        Assert.That(planRegistration.IsSunday, Is.True, "IsSunday should be true for Sunday date");
+        Assert.That(planRegistration.IsSaturday, Is.False, "IsSaturday should be false for Sunday date");
+    }
+
+    /// <summary>
+    /// Test 16: MarkAsRuleEngineCalculated sets flags correctly
+    /// Given a PlanRegistration, expect RuleEngineCalculated = true and timestamp set.
+    /// </summary>
+    [Test]
+    public void MarkAsRuleEngineCalculated_SetsFlagsCorrectly()
+    {
+        // Arrange
+        var planRegistration = new PlanRegistration
+        {
+            RuleEngineCalculated = false,
+            RuleEngineCalculatedAt = null
+        };
+        var beforeTime = DateTime.UtcNow;
+
+        // Act
+        PlanRegistrationHelper.MarkAsRuleEngineCalculated(planRegistration);
+        var afterTime = DateTime.UtcNow;
+
+        // Assert
+        Assert.That(planRegistration.RuleEngineCalculated, Is.True, 
+            "RuleEngineCalculated should be true");
+        Assert.That(planRegistration.RuleEngineCalculatedAt, Is.Not.Null, 
+            "RuleEngineCalculatedAt should be set");
+        Assert.That(planRegistration.RuleEngineCalculatedAt!.Value, 
+            Is.InRange(beforeTime, afterTime), 
+            "RuleEngineCalculatedAt should be current UTC time");
+    }
 }

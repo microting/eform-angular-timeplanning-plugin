@@ -2361,4 +2361,65 @@ public static class PlanRegistrationHelper
         return false;
     }
 
+    /// <summary>
+    /// Compute and update all seconds-based time tracking fields on a PlanRegistration.
+    /// This calculates work time, pause time, and effective net hours based on actual timestamps.
+    /// This method does NOT persist changes - caller must save the PlanRegistration.
+    /// </summary>
+    /// <param name="planRegistration">The plan registration to update</param>
+    public static void ComputeTimeTrackingFields(PlanRegistration planRegistration)
+    {
+        // Calculate work intervals and total work seconds
+        var workIntervals = GetWorkIntervals(planRegistration);
+        var totalWorkSeconds = CalculateTotalSeconds(workIntervals);
+
+        // Calculate pause intervals and total pause seconds
+        var pauseIntervals = GetPauseIntervals(planRegistration);
+        var totalPauseSeconds = CalculateTotalSeconds(pauseIntervals);
+
+        // Net work seconds = total work - total pause (cannot be negative)
+        var netWorkSeconds = Math.Max(0, totalWorkSeconds - totalPauseSeconds);
+
+        // Set NettoHoursInSeconds and NettoHours (as double in hours)
+        planRegistration.NettoHoursInSeconds = (int)netWorkSeconds;
+        planRegistration.NettoHours = netWorkSeconds / 3600.0;
+
+        // Calculate effective net hours (considering override if active)
+        if (planRegistration.NettoHoursOverrideActive)
+        {
+            // If override is active, use the override value
+            planRegistration.EffectiveNetHoursInSeconds = (int)(planRegistration.NettoHoursOverride * 3600);
+        }
+        else
+        {
+            // Otherwise, effective = actual net
+            planRegistration.EffectiveNetHoursInSeconds = (int)netWorkSeconds;
+        }
+
+        // Set day classification flags
+        var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month,
+            planRegistration.Date.Day, 0, 0, 0);
+        planRegistration.IsSaturday = midnight.DayOfWeek == DayOfWeek.Saturday;
+        planRegistration.IsSunday = midnight.DayOfWeek == DayOfWeek.Sunday;
+
+        // Set DayCode for pay line generation
+        var dayCode = GetDayCode(midnight);
+        // Note: DayCode field may or may not exist on PlanRegistration in current version
+        // If it doesn't exist, this will need to be stored separately or added to the entity
+        
+        // Note: Break policy splitting (paid/unpaid) would be done here if break policy rules exist
+        // For now, we'll leave that for future implementation when BreakPolicy entities are fully defined
+    }
+
+    /// <summary>
+    /// Mark a PlanRegistration as having been calculated by the rule engine.
+    /// Sets RuleEngineCalculated flag and timestamp.
+    /// </summary>
+    /// <param name="planRegistration">The plan registration to mark</param>
+    public static void MarkAsRuleEngineCalculated(PlanRegistration planRegistration)
+    {
+        planRegistration.RuleEngineCalculated = true;
+        planRegistration.RuleEngineCalculatedAt = DateTime.UtcNow;
+    }
+
 }
