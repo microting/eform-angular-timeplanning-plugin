@@ -53,6 +53,25 @@ export function messages(
         TimePlanningMessagesEnum[TimePlanningMessagesEnum.Children2stSick]
       ),
     },
+
+    {
+      id: TimePlanningMessagesEnum.Maternity,
+      value: translate.instant(
+        TimePlanningMessagesEnum[TimePlanningMessagesEnum.Maternity]
+      ),
+    },
+    {
+      id: TimePlanningMessagesEnum.VacationDayOff,
+      value: translate.instant(
+        TimePlanningMessagesEnum[TimePlanningMessagesEnum.VacationDayOff]
+      ),
+    },
+    {
+      id: TimePlanningMessagesEnum.Holiday,
+      value: translate.instant(
+        TimePlanningMessagesEnum[TimePlanningMessagesEnum.Holiday]
+      ),
+    },
     // {
     //   id: TimePlanningMessagesEnum.TimeOff,
     //   value: translate.instant(

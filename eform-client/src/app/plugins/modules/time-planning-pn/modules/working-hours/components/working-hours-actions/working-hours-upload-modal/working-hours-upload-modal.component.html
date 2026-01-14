@@ -1,17 +1,15 @@
 <h3 mat-dialog-title>{{'Upload working hours plan' | translate}}</h3>
 <div mat-dialog-content>
-  <div class="d-flex flex-column align-items-start">
+  <div class="d-flex flex-column align-items-start gap-12">
     <button
-      mat-raised-button
-      color="primary"
+      class="btn-primary btn-primary--icon-left"
       *ngIf="workingHoursFileUploader?.queue?.length == 0"
       (click)="zipInput.click()"
     >
       {{'Choose file' | translate}}
     </button>
     <button
-      mat-raised-button
-      color="warn"
+      class="btn-warning"
       *ngIf="workingHoursFileUploader?.queue?.length > 0"
       (click)="zipInput.click()"
     >
@@ -34,17 +32,16 @@
     </div>
   </div>
 </div>
-<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+<div mat-dialog-actions class="d-flex flex-row justify-content-end align-items-center gap-12">
   <button
-    mat-raised-button
-    color="accent"
+    class="btn-primary btn-primary--icon-left"
     (click)="uploadTemplateZIP()"
     [disabled]="workingHoursFileUploader?.queue?.length == 0"
   >
     {{'Upload' | translate}}
   </button>
   <button
-    mat-raised-button
+    class="btn-cancel"
     (click)="hideZipModal()"
   >
     {{'Close' | translate}}
