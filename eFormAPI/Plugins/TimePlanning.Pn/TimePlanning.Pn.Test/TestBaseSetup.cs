@@ -59,11 +59,11 @@ public abstract class TestBaseSetup
                 builder.EnableRetryOnFailure();
             });
         var microtingDbContext = new MicrotingDbContext(dbContextOptionsBuilder.Options);
+        var file = Path.Combine("SQL", "420_SDK.sql");
+        var rawSql = File.ReadAllText(file);
 
-        // Drop and recreate the database fresh for each test to avoid state pollution
-        microtingDbContext.Database.EnsureDeleted();
-        // Use only migrations to create the schema - don't use EnsureCreated() or SQL scripts
-        // as they conflict with migrations
+        microtingDbContext.Database.EnsureCreated();
+        microtingDbContext.Database.ExecuteSqlRaw(rawSql);
         microtingDbContext.Database.Migrate();
 
         return microtingDbContext;
