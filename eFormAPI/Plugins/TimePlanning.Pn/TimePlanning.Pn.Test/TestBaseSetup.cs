@@ -8,6 +8,7 @@ using Microting.eForm.Infrastructure;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using NUnit.Framework;
 using Testcontainers.MariaDb;
+using TimePlanning.Pn.Infrastructure.Data.Seed;
 
 #nullable enable
 namespace BackendConfiguration.Pn.Integration.Test;
@@ -38,12 +39,15 @@ public abstract class TestBaseSetup
             });
 
         var backendConfigurationPnDbContext = new TimePlanningPnDbContext(optionsBuilder.Options);
-        var file = Path.Combine("SQL", "420_eform-angular-time-planning-plugin.sql");
-        var rawSql = File.ReadAllText(file);
 
-        backendConfigurationPnDbContext.Database.EnsureCreated();
-        backendConfigurationPnDbContext.Database.ExecuteSqlRaw(rawSql);
+        // Drop and recreate the database fresh for each test to avoid state pollution
+        backendConfigurationPnDbContext.Database.EnsureDeleted();
+        // Use only migrations to create the schema - don't use EnsureCreated() or SQL scripts
+        // as they conflict with migrations
         backendConfigurationPnDbContext.Database.Migrate();
+        
+        // Seed configuration data after migrations
+        TimePlanningPluginSeed.SeedData(backendConfigurationPnDbContext);
 
         return backendConfigurationPnDbContext;
     }

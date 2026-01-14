@@ -2210,4 +2210,216 @@ public static class PlanRegistrationHelper
         //     timePlanningWorkingHoursModel);
     }
 
+    /// <summary>
+    /// Extract work intervals from PlanRegistration (Start/Stop pairs).
+    /// Returns intervals as (StartTime, EndTime) tuples.
+    /// Ignores incomplete or invalid intervals (null or negative duration).
+    /// </summary>
+    private static IEnumerable<(DateTime Start, DateTime End)> GetWorkIntervals(PlanRegistration pr)
+    {
+        var intervals = new (DateTime?, DateTime?)[]
+        {
+            (pr.Start1StartedAt, pr.Stop1StoppedAt),
+            (pr.Start2StartedAt, pr.Stop2StoppedAt),
+            (pr.Start3StartedAt, pr.Stop3StoppedAt),
+            (pr.Start4StartedAt, pr.Stop4StoppedAt),
+            (pr.Start5StartedAt, pr.Stop5StoppedAt)
+        };
+
+        foreach (var (start, end) in intervals)
+        {
+            if (start.HasValue && end.HasValue && start.Value < end.Value)
+            {
+                yield return (start.Value, end.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Extract pause intervals from PlanRegistration.
+    /// Includes Pause1-5, Pause10-29, Pause100-102, Pause200-202.
+    /// Returns intervals as (StartTime, EndTime) tuples.
+    /// Ignores incomplete or invalid intervals (null or negative duration).
+    /// </summary>
+    private static IEnumerable<(DateTime Start, DateTime End)> GetPauseIntervals(PlanRegistration pr)
+    {
+        var intervals = new (DateTime?, DateTime?)[]
+        {
+            // Main pause intervals 1-5
+            (pr.Pause1StartedAt, pr.Pause1StoppedAt),
+            (pr.Pause2StartedAt, pr.Pause2StoppedAt),
+            (pr.Pause3StartedAt, pr.Pause3StoppedAt),
+            (pr.Pause4StartedAt, pr.Pause4StoppedAt),
+            (pr.Pause5StartedAt, pr.Pause5StoppedAt),
+            
+            // Extended pause intervals 10-29
+            (pr.Pause10StartedAt, pr.Pause10StoppedAt),
+            (pr.Pause11StartedAt, pr.Pause11StoppedAt),
+            (pr.Pause12StartedAt, pr.Pause12StoppedAt),
+            (pr.Pause13StartedAt, pr.Pause13StoppedAt),
+            (pr.Pause14StartedAt, pr.Pause14StoppedAt),
+            (pr.Pause15StartedAt, pr.Pause15StoppedAt),
+            (pr.Pause16StartedAt, pr.Pause16StoppedAt),
+            (pr.Pause17StartedAt, pr.Pause17StoppedAt),
+            (pr.Pause18StartedAt, pr.Pause18StoppedAt),
+            (pr.Pause19StartedAt, pr.Pause19StoppedAt),
+            (pr.Pause20StartedAt, pr.Pause20StoppedAt),
+            (pr.Pause21StartedAt, pr.Pause21StoppedAt),
+            (pr.Pause22StartedAt, pr.Pause22StoppedAt),
+            (pr.Pause23StartedAt, pr.Pause23StoppedAt),
+            (pr.Pause24StartedAt, pr.Pause24StoppedAt),
+            (pr.Pause25StartedAt, pr.Pause25StoppedAt),
+            (pr.Pause26StartedAt, pr.Pause26StoppedAt),
+            (pr.Pause27StartedAt, pr.Pause27StoppedAt),
+            (pr.Pause28StartedAt, pr.Pause28StoppedAt),
+            (pr.Pause29StartedAt, pr.Pause29StoppedAt),
+            
+            // Additional pause intervals 100-102
+            (pr.Pause100StartedAt, pr.Pause100StoppedAt),
+            (pr.Pause101StartedAt, pr.Pause101StoppedAt),
+            (pr.Pause102StartedAt, pr.Pause102StoppedAt),
+            
+            // Additional pause intervals 200-202
+            (pr.Pause200StartedAt, pr.Pause200StoppedAt),
+            (pr.Pause201StartedAt, pr.Pause201StoppedAt),
+            (pr.Pause202StartedAt, pr.Pause202StoppedAt)
+        };
+
+        foreach (var (start, end) in intervals)
+        {
+            if (start.HasValue && end.HasValue && start.Value < end.Value)
+            {
+                yield return (start.Value, end.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Calculate total seconds for a collection of time intervals.
+    /// </summary>
+    private static long CalculateTotalSeconds(IEnumerable<(DateTime Start, DateTime End)> intervals)
+    {
+        return intervals.Sum(interval => (long)(interval.End - interval.Start).TotalSeconds);
+    }
+
+    /// <summary>
+    /// Classify the day and return the day code.
+    /// Returns: SUNDAY, SATURDAY, HOLIDAY, GRUNDLOVSDAG, or WEEKDAY
+    /// </summary>
+    private static string GetDayCode(DateTime date)
+    {
+        var dayOfWeek = date.DayOfWeek;
+        
+        if (dayOfWeek == DayOfWeek.Sunday)
+        {
+            return "SUNDAY";
+        }
+        
+        if (dayOfWeek == DayOfWeek.Saturday)
+        {
+            return "SATURDAY";
+        }
+
+        // Check if it's Grundlovsdag (June 5th)
+        if (date.Month == 6 && date.Day == 5)
+        {
+            return "GRUNDLOVSDAG";
+        }
+
+        // TODO: Check against holiday configuration for official holidays
+        // For now, we'll implement a basic check for common Danish holidays
+        if (IsOfficialHoliday(date))
+        {
+            return "HOLIDAY";
+        }
+
+        return "WEEKDAY";
+    }
+
+    /// <summary>
+    /// Check if a date is an official Danish holiday.
+    /// This is a simplified implementation. In production, this should load from
+    /// the JSON configuration file (danish_holidays_2025_2030.json).
+    /// </summary>
+    private static bool IsOfficialHoliday(DateTime date)
+    {
+        // Christmas Eve, Christmas Day, Boxing Day
+        if (date.Month == 12 && (date.Day == 24 || date.Day == 25 || date.Day == 26))
+        {
+            return true;
+        }
+
+        // New Year's Day
+        if (date.Month == 1 && date.Day == 1)
+        {
+            return true;
+        }
+
+        // TODO: Add Easter calculation and other movable holidays
+        // TODO: Load from JSON configuration file
+
+        return false;
+    }
+
+    /// <summary>
+    /// Compute and update all seconds-based time tracking fields on a PlanRegistration.
+    /// This calculates work time, pause time, and effective net hours based on actual timestamps.
+    /// This method does NOT persist changes - caller must save the PlanRegistration.
+    /// </summary>
+    /// <param name="planRegistration">The plan registration to update</param>
+    public static void ComputeTimeTrackingFields(PlanRegistration planRegistration)
+    {
+        // Calculate work intervals and total work seconds
+        var workIntervals = GetWorkIntervals(planRegistration);
+        var totalWorkSeconds = CalculateTotalSeconds(workIntervals);
+
+        // Calculate pause intervals and total pause seconds
+        var pauseIntervals = GetPauseIntervals(planRegistration);
+        var totalPauseSeconds = CalculateTotalSeconds(pauseIntervals);
+
+        // Net work seconds = total work - total pause (cannot be negative)
+        var netWorkSeconds = Math.Max(0, totalWorkSeconds - totalPauseSeconds);
+
+        // Set NettoHoursInSeconds and NettoHours (as double in hours)
+        planRegistration.NettoHoursInSeconds = (int)netWorkSeconds;
+        planRegistration.NettoHours = netWorkSeconds / 3600.0;
+
+        // Calculate effective net hours (considering override if active)
+        if (planRegistration.NettoHoursOverrideActive)
+        {
+            // If override is active, use the override value
+            planRegistration.EffectiveNetHoursInSeconds = (int)(planRegistration.NettoHoursOverride * 3600);
+        }
+        else
+        {
+            // Otherwise, effective = actual net
+            planRegistration.EffectiveNetHoursInSeconds = (int)netWorkSeconds;
+        }
+
+        // Set day classification flags
+        var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month,
+            planRegistration.Date.Day, 0, 0, 0);
+        planRegistration.IsSaturday = midnight.DayOfWeek == DayOfWeek.Saturday;
+        planRegistration.IsSunday = midnight.DayOfWeek == DayOfWeek.Sunday;
+
+        // Set DayCode for pay line generation
+        var dayCode = GetDayCode(midnight);
+        // Note: DayCode field may or may not exist on PlanRegistration in current version
+        // If it doesn't exist, this will need to be stored separately or added to the entity
+        
+        // Note: Break policy splitting (paid/unpaid) would be done here if break policy rules exist
+        // For now, we'll leave that for future implementation when BreakPolicy entities are fully defined
+    }
+
+    /// <summary>
+    /// Mark a PlanRegistration as having been calculated by the rule engine.
+    /// Sets RuleEngineCalculated flag and timestamp.
+    /// </summary>
+    /// <param name="planRegistration">The plan registration to mark</param>
+    public static void MarkAsRuleEngineCalculated(PlanRegistration planRegistration)
+    {
+        planRegistration.RuleEngineCalculated = true;
+        planRegistration.RuleEngineCalculatedAt = DateTime.UtcNow;
+    }
+
 }
