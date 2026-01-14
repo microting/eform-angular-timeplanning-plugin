@@ -2210,4 +2210,155 @@ public static class PlanRegistrationHelper
         //     timePlanningWorkingHoursModel);
     }
 
+    /// <summary>
+    /// Extract work intervals from PlanRegistration (Start/Stop pairs).
+    /// Returns intervals as (StartTime, EndTime) tuples.
+    /// Ignores incomplete or invalid intervals (null or negative duration).
+    /// </summary>
+    private static IEnumerable<(DateTime Start, DateTime End)> GetWorkIntervals(PlanRegistration pr)
+    {
+        var intervals = new (DateTime?, DateTime?)[]
+        {
+            (pr.Start1StartedAt, pr.Stop1StoppedAt),
+            (pr.Start2StartedAt, pr.Stop2StoppedAt),
+            (pr.Start3StartedAt, pr.Stop3StoppedAt),
+            (pr.Start4StartedAt, pr.Stop4StoppedAt),
+            (pr.Start5StartedAt, pr.Stop5StoppedAt)
+        };
+
+        foreach (var (start, end) in intervals)
+        {
+            if (start.HasValue && end.HasValue && start.Value < end.Value)
+            {
+                yield return (start.Value, end.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Extract pause intervals from PlanRegistration.
+    /// Includes Pause1-5, Pause10-29, Pause100-102, Pause200-202.
+    /// Returns intervals as (StartTime, EndTime) tuples.
+    /// Ignores incomplete or invalid intervals (null or negative duration).
+    /// </summary>
+    private static IEnumerable<(DateTime Start, DateTime End)> GetPauseIntervals(PlanRegistration pr)
+    {
+        var intervals = new (DateTime?, DateTime?)[]
+        {
+            // Main pause intervals 1-5
+            (pr.Pause1StartedAt, pr.Pause1StoppedAt),
+            (pr.Pause2StartedAt, pr.Pause2StoppedAt),
+            (pr.Pause3StartedAt, pr.Pause3StoppedAt),
+            (pr.Pause4StartedAt, pr.Pause4StoppedAt),
+            (pr.Pause5StartedAt, pr.Pause5StoppedAt),
+            
+            // Extended pause intervals 10-29
+            (pr.Pause10StartedAt, pr.Pause10StoppedAt),
+            (pr.Pause11StartedAt, pr.Pause11StoppedAt),
+            (pr.Pause12StartedAt, pr.Pause12StoppedAt),
+            (pr.Pause13StartedAt, pr.Pause13StoppedAt),
+            (pr.Pause14StartedAt, pr.Pause14StoppedAt),
+            (pr.Pause15StartedAt, pr.Pause15StoppedAt),
+            (pr.Pause16StartedAt, pr.Pause16StoppedAt),
+            (pr.Pause17StartedAt, pr.Pause17StoppedAt),
+            (pr.Pause18StartedAt, pr.Pause18StoppedAt),
+            (pr.Pause19StartedAt, pr.Pause19StoppedAt),
+            (pr.Pause20StartedAt, pr.Pause20StoppedAt),
+            (pr.Pause21StartedAt, pr.Pause21StoppedAt),
+            (pr.Pause22StartedAt, pr.Pause22StoppedAt),
+            (pr.Pause23StartedAt, pr.Pause23StoppedAt),
+            (pr.Pause24StartedAt, pr.Pause24StoppedAt),
+            (pr.Pause25StartedAt, pr.Pause25StoppedAt),
+            (pr.Pause26StartedAt, pr.Pause26StoppedAt),
+            (pr.Pause27StartedAt, pr.Pause27StoppedAt),
+            (pr.Pause28StartedAt, pr.Pause28StoppedAt),
+            (pr.Pause29StartedAt, pr.Pause29StoppedAt),
+            
+            // Additional pause intervals 100-102
+            (pr.Pause100StartedAt, pr.Pause100StoppedAt),
+            (pr.Pause101StartedAt, pr.Pause101StoppedAt),
+            (pr.Pause102StartedAt, pr.Pause102StoppedAt),
+            
+            // Additional pause intervals 200-202
+            (pr.Pause200StartedAt, pr.Pause200StoppedAt),
+            (pr.Pause201StartedAt, pr.Pause201StoppedAt),
+            (pr.Pause202StartedAt, pr.Pause202StoppedAt)
+        };
+
+        foreach (var (start, end) in intervals)
+        {
+            if (start.HasValue && end.HasValue && start.Value < end.Value)
+            {
+                yield return (start.Value, end.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Calculate total seconds for a collection of time intervals.
+    /// </summary>
+    private static long CalculateTotalSeconds(IEnumerable<(DateTime Start, DateTime End)> intervals)
+    {
+        return intervals.Sum(interval => (long)(interval.End - interval.Start).TotalSeconds);
+    }
+
+    /// <summary>
+    /// Classify the day and return the day code.
+    /// Returns: SUNDAY, SATURDAY, HOLIDAY, GRUNDLOVSDAG, or WEEKDAY
+    /// </summary>
+    private static string GetDayCode(DateTime date)
+    {
+        var dayOfWeek = date.DayOfWeek;
+        
+        if (dayOfWeek == DayOfWeek.Sunday)
+        {
+            return "SUNDAY";
+        }
+        
+        if (dayOfWeek == DayOfWeek.Saturday)
+        {
+            return "SATURDAY";
+        }
+
+        // Check if it's Grundlovsdag (June 5th)
+        if (date.Month == 6 && date.Day == 5)
+        {
+            return "GRUNDLOVSDAG";
+        }
+
+        // TODO: Check against holiday configuration for official holidays
+        // For now, we'll implement a basic check for common Danish holidays
+        if (IsOfficialHoliday(date))
+        {
+            return "HOLIDAY";
+        }
+
+        return "WEEKDAY";
+    }
+
+    /// <summary>
+    /// Check if a date is an official Danish holiday.
+    /// This is a simplified implementation. In production, this should load from
+    /// the JSON configuration file (danish_holidays_2025_2030.json).
+    /// </summary>
+    private static bool IsOfficialHoliday(DateTime date)
+    {
+        // Christmas Eve, Christmas Day, Boxing Day
+        if (date.Month == 12 && (date.Day == 24 || date.Day == 25 || date.Day == 26))
+        {
+            return true;
+        }
+
+        // New Year's Day
+        if (date.Month == 1 && date.Day == 1)
+        {
+            return true;
+        }
+
+        // TODO: Add Easter calculation and other movable holidays
+        // TODO: Load from JSON configuration file
+
+        return false;
+    }
+
 }

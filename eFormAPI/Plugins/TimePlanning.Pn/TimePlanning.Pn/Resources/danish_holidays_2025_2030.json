@@ -1,0 +1,94 @@
+{
+  "jurisdiction": "DK",
+  "agreement": "Jordbrugsoverenskomsten (GLS-A / 3F Den Grønne Gruppe), 2024-2026 rules used for premiums",
+  "range_inclusive": { "from": "2025-12-01", "to": "2030-12-31" },
+  "premium_rule_definitions": {
+    "sunday_holiday_premium": [
+      { "from": "00:00", "to": "12:00", "premium_percent": 80, "basis": "hourly_wage" },
+      { "from": "12:00", "to": "24:00", "premium_percent": 100, "basis": "hourly_wage" }
+    ],
+    "constitution_day_partial": [
+      { "from": "00:00", "to": "12:00", "premium_percent": 0, "basis": "hourly_wage" },
+      { "from": "12:00", "to": "24:00", "premium_percent": 100, "basis": "hourly_wage", "note": "Paid as SH/holiday work after 12:00" }
+    ]
+  },
+  "notes": [
+    "Premiums here are the overenskomst 'tillæg' percentages (e.g., +80% means hourly_wage * 0.80 added).",
+    "For 24/12 and 5/6 rules: see overenskomstfastsatte fridage in Jordbrugsoverenskomsten.",
+    "Store bededag is excluded (not a holiday from 2024)."
+  ],
+  "holidays": [
+    { "date": "2025-12-24", "name_da": "Juleaften", "category": "overenskomstfastsat_fridag", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2025-12-25", "name_da": "Juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2025-12-26", "name_da": "2. juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+
+    { "date": "2026-01-01", "name_da": "Nytårsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-04-02", "name_da": "Skærtorsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-04-03", "name_da": "Langfredag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-04-05", "name_da": "Påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-04-06", "name_da": "2. påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-05-14", "name_da": "Kristi himmelfartsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-05-24", "name_da": "Pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-05-25", "name_da": "2. pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-06-05", "name_da": "Grundlovsdag", "category": "overenskomstfastsat_fridag", "premium_rule": "constitution_day_partial" },
+    { "date": "2026-12-24", "name_da": "Juleaften", "category": "overenskomstfastsat_fridag", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-12-25", "name_da": "Juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2026-12-26", "name_da": "2. juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+
+    { "date": "2027-01-01", "name_da": "Nytårsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-03-25", "name_da": "Skærtorsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-03-26", "name_da": "Langfredag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-03-28", "name_da": "Påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-03-29", "name_da": "2. påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-05-06", "name_da": "Kristi himmelfartsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-05-16", "name_da": "Pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-05-17", "name_da": "2. pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-06-05", "name_da": "Grundlovsdag", "category": "overenskomstfastsat_fridag", "premium_rule": "constitution_day_partial" },
+    { "date": "2027-12-24", "name_da": "Juleaften", "category": "overenskomstfastsat_fridag", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-12-25", "name_da": "Juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2027-12-26", "name_da": "2. juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+
+    { "date": "2028-01-01", "name_da": "Nytårsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-04-13", "name_da": "Skærtorsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-04-14", "name_da": "Langfredag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-04-16", "name_da": "Påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-04-17", "name_da": "2. påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-05-25", "name_da": "Kristi himmelfartsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-06-04", "name_da": "Pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-06-05", "name_da": "2. pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-06-05", "name_da": "Grundlovsdag", "category": "overenskomstfastsat_fridag", "premium_rule": "constitution_day_partial" },
+    { "date": "2028-12-24", "name_da": "Juleaften", "category": "overenskomstfastsat_fridag", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-12-25", "name_da": "Juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2028-12-26", "name_da": "2. juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+
+    { "date": "2029-01-01", "name_da": "Nytårsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-03-29", "name_da": "Skærtorsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-03-30", "name_da": "Langfredag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-04-01", "name_da": "Påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-04-02", "name_da": "2. påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-05-10", "name_da": "Kristi himmelfartsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-05-20", "name_da": "Pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-05-21", "name_da": "2. pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-06-05", "name_da": "Grundlovsdag", "category": "overenskomstfastsat_fridag", "premium_rule": "constitution_day_partial" },
+    { "date": "2029-12-24", "name_da": "Juleaften", "category": "overenskomstfastsat_fridag", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-12-25", "name_da": "Juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2029-12-26", "name_da": "2. juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+
+    { "date": "2030-01-01", "name_da": "Nytårsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-04-18", "name_da": "Skærtorsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-04-19", "name_da": "Langfredag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-04-21", "name_da": "Påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-04-22", "name_da": "2. påskedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-05-30", "name_da": "Kristi himmelfartsdag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-06-09", "name_da": "Pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-06-10", "name_da": "2. pinsedag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-06-05", "name_da": "Grundlovsdag", "category": "overenskomstfastsat_fridag", "premium_rule": "constitution_day_partial" },
+    { "date": "2030-12-24", "name_da": "Juleaften", "category": "overenskomstfastsat_fridag", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-12-25", "name_da": "Juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" },
+    { "date": "2030-12-26", "name_da": "2. juledag", "category": "official_holiday", "premium_rule": "sunday_holiday_premium" }
+  ],
+  "excluded": [
+    { "name_da": "Store bededag", "reason": "Afskaffet som helligdag fra 2024." },
+    { "name_da": "Nytårsaften (31/12)", "reason": "Ikke en overenskomstfastsat fridag i Jordbrugsoverenskomsten; evt. lokale aftaler." }
+  ]
+}
