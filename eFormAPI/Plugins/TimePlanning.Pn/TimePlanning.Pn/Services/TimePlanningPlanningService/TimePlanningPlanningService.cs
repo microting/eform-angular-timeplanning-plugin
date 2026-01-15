@@ -889,6 +889,13 @@ public class TimePlanningPlanningService(
                                       planning.PaiedOutFlex;
                 planning.Flex = planning.NettoHours - planning.PlanHours;
             }
+            
+            // Ensure timestamps are populated from IDs for accurate time tracking calculation
+            EnsureTimestampsFromIds(planning);
+            
+            // Compute time tracking fields (seconds-based calculation)
+            PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            
             await planning.Update(dbContext).ConfigureAwait(false);
 
             var planningsAfterThisPlanning = dbContext.PlanRegistrations
@@ -1387,6 +1394,13 @@ public class TimePlanningPlanningService(
                                   planning.PlanHours -
                                   planning.PaiedOutFlex;
             planning.Flex = planning.NettoHours - planning.PlanHours;
+            
+            // Ensure timestamps are populated from IDs for accurate time tracking calculation
+            EnsureTimestampsFromIds(planning);
+            
+            // Compute time tracking fields (seconds-based calculation)
+            PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            
             await planning.Update(dbContext).ConfigureAwait(false);
 
             var planningsAfterThisPlanning = dbContext.PlanRegistrations
@@ -1441,6 +1455,125 @@ public class TimePlanningPlanningService(
             return new OperationResult(
                 false,
                 localizationService.GetString("ErrorWhileUpdatingPlanning"));
+        }
+    }
+    
+    /// <summary>
+    /// Ensures timestamp fields are populated from ID fields when timestamps are missing.
+    /// This allows ComputeTimeTrackingFields to work with both ID-based and timestamp-based data.
+    /// IDs use 5-minute intervals, so timestamps are rounded to nearest 5 minutes.
+    /// </summary>
+    private void EnsureTimestampsFromIds(PlanRegistration planning)
+    {
+        var midnight = new DateTime(planning.Date.Year, planning.Date.Month, planning.Date.Day, 0, 0, 0);
+        
+        // Convert Start/Stop IDs to timestamps if timestamps are missing
+        if (planning.Start1StartedAt == null && planning.Start1Id > 0)
+        {
+            planning.Start1StartedAt = midnight.AddMinutes((planning.Start1Id - 1) * 5);
+        }
+        if (planning.Stop1StoppedAt == null && planning.Stop1Id > 0)
+        {
+            planning.Stop1StoppedAt = midnight.AddMinutes((planning.Stop1Id - 1) * 5);
+        }
+        
+        if (planning.Start2StartedAt == null && planning.Start2Id > 0)
+        {
+            planning.Start2StartedAt = midnight.AddMinutes((planning.Start2Id - 1) * 5);
+        }
+        if (planning.Stop2StoppedAt == null && planning.Stop2Id > 0)
+        {
+            planning.Stop2StoppedAt = midnight.AddMinutes((planning.Stop2Id - 1) * 5);
+        }
+        
+        if (planning.Start3StartedAt == null && planning.Start3Id > 0)
+        {
+            planning.Start3StartedAt = midnight.AddMinutes((planning.Start3Id - 1) * 5);
+        }
+        if (planning.Stop3StoppedAt == null && planning.Stop3Id > 0)
+        {
+            planning.Stop3StoppedAt = midnight.AddMinutes((planning.Stop3Id - 1) * 5);
+        }
+        
+        if (planning.Start4StartedAt == null && planning.Start4Id > 0)
+        {
+            planning.Start4StartedAt = midnight.AddMinutes((planning.Start4Id - 1) * 5);
+        }
+        if (planning.Stop4StoppedAt == null && planning.Stop4Id > 0)
+        {
+            planning.Stop4StoppedAt = midnight.AddMinutes((planning.Stop4Id - 1) * 5);
+        }
+        
+        if (planning.Start5StartedAt == null && planning.Start5Id > 0)
+        {
+            planning.Start5StartedAt = midnight.AddMinutes((planning.Start5Id - 1) * 5);
+        }
+        if (planning.Stop5StoppedAt == null && planning.Stop5Id > 0)
+        {
+            planning.Stop5StoppedAt = midnight.AddMinutes((planning.Stop5Id - 1) * 5);
+        }
+        
+        // Convert Pause IDs to timestamps if timestamps are missing
+        if (planning.Pause1StartedAt == null && planning.Pause1StoppedAt == null && planning.Pause1Id > 0)
+        {
+            // Assume pause starts after start and lasts for the specified duration
+            // We'll place it at the midpoint of the shift for simplicity
+            var pauseDurationMinutes = (planning.Pause1Id - 1) * 5;
+            if (planning.Start1StartedAt != null && planning.Stop1StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start1StartedAt.Value.AddMinutes(
+                    (planning.Stop1StoppedAt.Value - planning.Start1StartedAt.Value).TotalMinutes / 2);
+                planning.Pause1StartedAt = shiftMidpoint;
+                planning.Pause1StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
+        }
+        
+        if (planning.Pause2StartedAt == null && planning.Pause2StoppedAt == null && planning.Pause2Id > 0)
+        {
+            var pauseDurationMinutes = (planning.Pause2Id - 1) * 5;
+            if (planning.Start2StartedAt != null && planning.Stop2StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start2StartedAt.Value.AddMinutes(
+                    (planning.Stop2StoppedAt.Value - planning.Start2StartedAt.Value).TotalMinutes / 2);
+                planning.Pause2StartedAt = shiftMidpoint;
+                planning.Pause2StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
+        }
+        
+        if (planning.Pause3StartedAt == null && planning.Pause3StoppedAt == null && planning.Pause3Id > 0)
+        {
+            var pauseDurationMinutes = (planning.Pause3Id - 1) * 5;
+            if (planning.Start3StartedAt != null && planning.Stop3StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start3StartedAt.Value.AddMinutes(
+                    (planning.Stop3StoppedAt.Value - planning.Start3StartedAt.Value).TotalMinutes / 2);
+                planning.Pause3StartedAt = shiftMidpoint;
+                planning.Pause3StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
+        }
+        
+        if (planning.Pause4StartedAt == null && planning.Pause4StoppedAt == null && planning.Pause4Id > 0)
+        {
+            var pauseDurationMinutes = (planning.Pause4Id - 1) * 5;
+            if (planning.Start4StartedAt != null && planning.Stop4StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start4StartedAt.Value.AddMinutes(
+                    (planning.Stop4StoppedAt.Value - planning.Start4StartedAt.Value).TotalMinutes / 2);
+                planning.Pause4StartedAt = shiftMidpoint;
+                planning.Pause4StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
+        }
+        
+        if (planning.Pause5StartedAt == null && planning.Pause5StoppedAt == null && planning.Pause5Id > 0)
+        {
+            var pauseDurationMinutes = (planning.Pause5Id - 1) * 5;
+            if (planning.Start5StartedAt != null && planning.Stop5StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start5StartedAt.Value.AddMinutes(
+                    (planning.Stop5StoppedAt.Value - planning.Start5StartedAt.Value).TotalMinutes / 2);
+                planning.Pause5StartedAt = shiftMidpoint;
+                planning.Pause5StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
         }
     }
 }
