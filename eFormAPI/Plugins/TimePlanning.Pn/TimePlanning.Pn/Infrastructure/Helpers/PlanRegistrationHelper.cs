@@ -2381,9 +2381,22 @@ public static class PlanRegistrationHelper
     /// <summary>
     /// Classify the day and return the day code.
     /// Returns: SUNDAY, SATURDAY, HOLIDAY, GRUNDLOVSDAG, or WEEKDAY
+    /// Priority: GRUNDLOVSDAG > HOLIDAY > SUNDAY > SATURDAY > WEEKDAY
     /// </summary>
     private static string GetDayCode(DateTime date)
     {
+        // Check if it's Grundlovsdag (June 5th) - highest priority
+        if (date.Month == 6 && date.Day == 5)
+        {
+            return "GRUNDLOVSDAG";
+        }
+
+        // Check against holiday configuration for official holidays
+        if (IsOfficialHoliday(date))
+        {
+            return "HOLIDAY";
+        }
+        
         var dayOfWeek = date.DayOfWeek;
         
         if (dayOfWeek == DayOfWeek.Sunday)
@@ -2394,19 +2407,6 @@ public static class PlanRegistrationHelper
         if (dayOfWeek == DayOfWeek.Saturday)
         {
             return "SATURDAY";
-        }
-
-        // Check if it's Grundlovsdag (June 5th)
-        if (date.Month == 6 && date.Day == 5)
-        {
-            return "GRUNDLOVSDAG";
-        }
-
-        // TODO: Check against holiday configuration for official holidays
-        // For now, we'll implement a basic check for common Danish holidays
-        if (IsOfficialHoliday(date))
-        {
-            return "HOLIDAY";
         }
 
         return "WEEKDAY";

@@ -96,8 +96,8 @@ public class PlanRegistrationHelperHolidayTests
     [Test]
     public void GetDayCode_RecognizesSaturday()
     {
-        // Arrange - June 7, 2026 is a Saturday
-        var saturday = new DateTime(2026, 6, 7);
+        // Arrange - June 13, 2026 is a Saturday
+        var saturday = new DateTime(2026, 6, 13);
         
         // Act
         var dayCode = GetDayCodePublic(saturday);
@@ -109,8 +109,8 @@ public class PlanRegistrationHelperHolidayTests
     [Test]
     public void GetDayCode_RecognizesSunday()
     {
-        // Arrange - June 8, 2026 is a Sunday
-        var sunday = new DateTime(2026, 6, 8);
+        // Arrange - June 7, 2026 is a Sunday
+        var sunday = new DateTime(2026, 6, 7);
         
         // Act
         var dayCode = GetDayCodePublic(sunday);
@@ -122,8 +122,8 @@ public class PlanRegistrationHelperHolidayTests
     [Test]
     public void GetDayCode_RecognizesWeekday()
     {
-        // Arrange - June 9, 2026 is a Monday (weekday, not a holiday)
-        var weekday = new DateTime(2026, 6, 9);
+        // Arrange - June 8, 2026 is a Monday (weekday, not a holiday)
+        var weekday = new DateTime(2026, 6, 8);
         
         // Act
         var dayCode = GetDayCodePublic(weekday);
@@ -135,8 +135,8 @@ public class PlanRegistrationHelperHolidayTests
     [Test]
     public void ComputeTimeTrackingFields_SetsIsSaturdayCorrectly()
     {
-        // Arrange - June 7, 2026 is a Saturday
-        var saturday = new DateTime(2026, 6, 7);
+        // Arrange - June 13, 2026 is a Saturday
+        var saturday = new DateTime(2026, 6, 13);
         var planRegistration = new PlanRegistration
         {
             Date = saturday,
@@ -155,8 +155,8 @@ public class PlanRegistrationHelperHolidayTests
     [Test]
     public void ComputeTimeTrackingFields_SetsIsSundayCorrectly()
     {
-        // Arrange - June 8, 2026 is a Sunday
-        var sunday = new DateTime(2026, 6, 8);
+        // Arrange - June 7, 2026 is a Sunday
+        var sunday = new DateTime(2026, 6, 7);
         var planRegistration = new PlanRegistration
         {
             Date = sunday,
