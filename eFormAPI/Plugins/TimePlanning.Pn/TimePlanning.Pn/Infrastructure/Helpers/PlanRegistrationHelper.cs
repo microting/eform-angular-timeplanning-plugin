@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
+using TimePlanning.Pn.Infrastructure.Models.Holiday;
 using TimePlanning.Pn.Infrastructure.Models.Planning;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
@@ -22,6 +25,96 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 
 public static class PlanRegistrationHelper
 {
+    private static DanishHolidayConfiguration _holidayConfiguration;
+    private static readonly object _holidayConfigLock = new object();
+    
+    /// <summary>
+    /// Loads the Danish holiday configuration from the JSON file.
+    /// Caches the result for subsequent calls.
+    /// </summary>
+    private static DanishHolidayConfiguration LoadHolidayConfiguration()
+    {
+        if (_holidayConfiguration != null)
+        {
+            return _holidayConfiguration;
+        }
+        
+        lock (_holidayConfigLock)
+        {
+            if (_holidayConfiguration != null)
+            {
+                return _holidayConfiguration;
+            }
+            
+            try
+            {
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
+                // First, try to load as embedded resource
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var resourceName = "TimePlanning.Pn.Resources.danish_holidays_2025_2030.json";
+                
+                using (var stream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (stream != null)
+                    {
+                        using (var reader = new StreamReader(stream))
+                        {
+                            var json = reader.ReadToEnd();
+                            var config = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
+                            _holidayConfiguration = config ?? new DanishHolidayConfiguration
+                            {
+                                Holidays = new List<HolidayDefinition>()
+                            };
+                        }
+                    }
+                    else
+                    {
+                        // Fallback: try to load from file system
+                        var assemblyLocation = assembly.Location;
+                        var assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
+                        var resourcePath = Path.Combine(assemblyDirectory, "Resources", "danish_holidays_2025_2030.json");
+                        
+                        if (File.Exists(resourcePath))
+                        {
+                            var json = File.ReadAllText(resourcePath);
+                            var config = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
+                            _holidayConfiguration = config ?? new DanishHolidayConfiguration
+                            {
+                                Holidays = new List<HolidayDefinition>()
+                            };
+                        }
+                        else
+                        {
+                            SentrySdk.CaptureEvent(new SentryEvent
+                            {
+                                Message = $"Holiday configuration not found as embedded resource or at: {resourcePath}. Using empty holiday configuration as fallback.",
+                                Level = SentryLevel.Warning
+                            });
+                            _holidayConfiguration = new DanishHolidayConfiguration
+                            {
+                                Holidays = new List<HolidayDefinition>()
+                            };
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                SentrySdk.CaptureException(ex);
+                _holidayConfiguration = new DanishHolidayConfiguration
+                {
+                    Holidays = new List<HolidayDefinition>()
+                };
+            }
+            
+            return _holidayConfiguration;
+        }
+    }
+    
     public static PlanRegistration CalculatePauseAutoBreakCalculationActive(
         AssignedSite assignedSite, PlanRegistration planning)
     {
@@ -2305,9 +2398,22 @@ public static class PlanRegistrationHelper
     /// <summary>
     /// Classify the day and return the day code.
     /// Returns: SUNDAY, SATURDAY, HOLIDAY, GRUNDLOVSDAG, or WEEKDAY
+    /// Priority: GRUNDLOVSDAG > HOLIDAY > SUNDAY > SATURDAY > WEEKDAY
     /// </summary>
     private static string GetDayCode(DateTime date)
     {
+        // Check if it's Grundlovsdag (June 5th) - highest priority
+        if (date.Month == 6 && date.Day == 5)
+        {
+            return "GRUNDLOVSDAG";
+        }
+
+        // Check against holiday configuration for official holidays
+        if (IsOfficialHoliday(date))
+        {
+            return "HOLIDAY";
+        }
+        
         var dayOfWeek = date.DayOfWeek;
         
         if (dayOfWeek == DayOfWeek.Sunday)
@@ -2320,45 +2426,30 @@ public static class PlanRegistrationHelper
             return "SATURDAY";
         }
 
-        // Check if it's Grundlovsdag (June 5th)
-        if (date.Month == 6 && date.Day == 5)
-        {
-            return "GRUNDLOVSDAG";
-        }
-
-        // TODO: Check against holiday configuration for official holidays
-        // For now, we'll implement a basic check for common Danish holidays
-        if (IsOfficialHoliday(date))
-        {
-            return "HOLIDAY";
-        }
-
         return "WEEKDAY";
     }
 
     /// <summary>
     /// Check if a date is an official Danish holiday.
-    /// This is a simplified implementation. In production, this should load from
-    /// the JSON configuration file (danish_holidays_2025_2030.json).
+    /// Loads holiday data from the danish_holidays_2025_2030.json configuration file.
     /// </summary>
-    private static bool IsOfficialHoliday(DateTime date)
+    public static bool IsOfficialHoliday(DateTime date)
     {
-        // Christmas Eve, Christmas Day, Boxing Day
-        if (date.Month == 12 && (date.Day == 24 || date.Day == 25 || date.Day == 26))
-        {
-            return true;
-        }
+        var config = LoadHolidayConfiguration();
+        
+        // Normalize the date to midnight for comparison
+        var midnight = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0);
+        
+        // Check if the date exists in our holiday configuration
+        return config.Holidays?.Any(h => h.ParsedDate == midnight) ?? false;
+    }
 
-        // New Year's Day
-        if (date.Month == 1 && date.Day == 1)
-        {
-            return true;
-        }
-
-        // TODO: Add Easter calculation and other movable holidays
-        // TODO: Load from JSON configuration file
-
-        return false;
+    /// <summary>
+    /// Check if a date is Grundlovsdag (Constitution Day - June 5th).
+    /// </summary>
+    public static bool IsGrundlovsdag(DateTime date)
+    {
+        return date.Month == 6 && date.Day == 5;
     }
 
     /// <summary>
