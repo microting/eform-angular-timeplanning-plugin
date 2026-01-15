@@ -50,10 +50,13 @@ public class PremiumRuleDefinition
     public string To { get; set; }
     
     [JsonPropertyName("premium_percent")]
-    public int PremiumPercent { get; set; }
+    public int? PremiumPercent { get; set; }
     
     [JsonPropertyName("basis")]
     public string Basis { get; set; }
+    
+    [JsonPropertyName("group")]
+    public string Group { get; set; }
     
     [JsonPropertyName("note")]
     public string Note { get; set; }
