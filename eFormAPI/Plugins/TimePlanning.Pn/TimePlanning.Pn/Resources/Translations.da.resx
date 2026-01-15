@@ -135,4 +135,7 @@
     <data name="No" xml:space="preserve">
         <value>Nej</value>
     </data>
+    <data name="Total Hours" xml:space="preserve">
+        <value>Total timer</value>
+    </data>
 </root>

@@ -2423,6 +2423,7 @@ public class TimePlanningWorkingHoursService(
                     Translations.Employee_no,
                     Translations.Worker,
                     Translations.PlanHours,
+                    Translations.Total_Hours,
                     Translations.NettoHours,
                     Translations.SumFlexStart,
                     Translations.Hours_Saturday,
@@ -2653,9 +2654,14 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
                     totalRow.Append(CreateCell(site.Name));
                     totalRow.Append(CreateNumericCell(content.Model.Skip(1).ToList().Sum(x => x.PlanHours)));
+                    
+                    // Calculate total hours (with overrides)
                     var nettoHoursTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive == false).Sum(x => x.NettoHours);
                     var nettoHoursOverrideTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive).Sum(x => x.NettoHoursOverride);
-                    totalRow.Append(CreateNumericCell(nettoHoursTotal + nettoHoursOverrideTotal));
+                    var totalHours = nettoHoursTotal + nettoHoursOverrideTotal;
+                    
+                    totalRow.Append(CreateNumericCell(totalHours)); // Total Hours column
+                    
                     totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
                     var sumHoursSaturday = content.Model.Skip(1).Where(x => x.IsSaturday).Select(x => x.NettoHours).Sum();
                     
@@ -2683,6 +2689,12 @@ public class TimePlanningWorkingHoursService(
                             }
                         }
                     }
+                    
+                    // Calculate normal hours (total hours minus Sunday/holiday hours)
+                    var normalHours = totalHours - sumHoursSundayAndHoliday;
+                    
+                    // NettoHours column now shows normal hours only
+                    totalRow.Append(CreateNumericCell(normalHours));
                     
                     var hasAnyCommentFromWorker = content.Model.Skip(1).ToList().Any(x => !string.IsNullOrEmpty(x.CommentWorker));
                     var hasAnyMessage = content.Model.Skip(1).ToList().Any(x => x.Message != null);

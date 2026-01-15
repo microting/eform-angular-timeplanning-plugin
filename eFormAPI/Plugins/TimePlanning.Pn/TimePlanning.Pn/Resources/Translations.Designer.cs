@@ -278,5 +278,11 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("No", resourceCulture);
             }
         }
+        
+        internal static string Total_Hours {
+            get {
+                return ResourceManager.GetString("Total Hours", resourceCulture);
+            }
+        }
     }
 }
