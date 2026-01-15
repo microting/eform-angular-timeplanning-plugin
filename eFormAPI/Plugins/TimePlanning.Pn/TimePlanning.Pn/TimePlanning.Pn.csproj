@@ -46,6 +46,10 @@
         <Generator>ResXFileCodeGenerator</Generator>
         <LastGenOutput>Translations.da.Designer.cs</LastGenOutput>
       </EmbeddedResource>
+      <None Remove="Resources\danish_holidays_2025_2030.json" />
+      <EmbeddedResource Include="Resources\danish_holidays_2025_2030.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
     </ItemGroup>
 
 </Project>
