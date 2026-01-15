@@ -274,6 +274,344 @@ public class PlanRegistrationHelperHolidayTests
         Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(21600)); // 6 * 3600
     }
 
+    // ====================================================================
+    // Tests for accumulated hours on different day types
+    // ====================================================================
+
+    [Test]
+    public void PlanRegistration_OnWeekday_CalculatesCorrectHours()
+    {
+        // Arrange - Tuesday, January 6, 2026 (regular weekday)
+        var weekday = new DateTime(2026, 1, 6);
+        var planRegistration = new PlanRegistration
+        {
+            Date = weekday,
+            // Morning shift: 8:00 - 12:00 (4 hours)
+            Start1StartedAt = weekday.AddHours(8),
+            Stop1StoppedAt = weekday.AddHours(12),
+            // Coffee break during morning: 10:00 - 10:15 (0.25 hours)
+            Pause1StartedAt = weekday.AddHours(10),
+            Pause1StoppedAt = weekday.AddHours(10.25),
+            // Afternoon shift: 13:00 - 16:00 (3 hours)
+            Start2StartedAt = weekday.AddHours(13),
+            Stop2StoppedAt = weekday.AddHours(16)
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+
+        // Assert
+        // Total work: 7 hours (4 + 3)
+        // Pause: 0.25 hours
+        // Net: 6.75 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(6.75));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(24300)); // 6.75 * 3600
+        Assert.That(planRegistration.IsSaturday, Is.False);
+        Assert.That(planRegistration.IsSunday, Is.False);
+    }
+
+    [Test]
+    public void PlanRegistration_OnSaturday_CalculatesCorrectHours()
+    {
+        // Arrange - Saturday, June 13, 2026
+        var saturday = new DateTime(2026, 6, 13);
+        var planRegistration = new PlanRegistration
+        {
+            Date = saturday,
+            // Single shift: 9:00 - 14:00 (5 hours)
+            Start1StartedAt = saturday.AddHours(9),
+            Stop1StoppedAt = saturday.AddHours(14),
+            // Coffee break: 11:00 - 11:15 (0.25 hours)
+            Pause1StartedAt = saturday.AddHours(11),
+            Pause1StoppedAt = saturday.AddHours(11.25)
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+
+        // Assert
+        // Total work: 5 hours
+        // Pause: 0.25 hours
+        // Net: 4.75 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(4.75));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(17100)); // 4.75 * 3600
+        Assert.That(planRegistration.IsSaturday, Is.True);
+        Assert.That(planRegistration.IsSunday, Is.False);
+    }
+
+    [Test]
+    public void PlanRegistration_OnSunday_CalculatesCorrectHours()
+    {
+        // Arrange - Sunday, June 7, 2026
+        var sunday = new DateTime(2026, 6, 7);
+        var planRegistration = new PlanRegistration
+        {
+            Date = sunday,
+            // Single shift: 10:00 - 15:00 (5 hours)
+            Start1StartedAt = sunday.AddHours(10),
+            Stop1StoppedAt = sunday.AddHours(15),
+            // Lunch break: 12:00 - 12:30 (0.5 hours)
+            Pause1StartedAt = sunday.AddHours(12),
+            Pause1StoppedAt = sunday.AddHours(12.5)
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+
+        // Assert
+        // Total work: 5 hours
+        // Pause: 0.5 hours
+        // Net: 4.5 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(4.5));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(16200)); // 4.5 * 3600
+        Assert.That(planRegistration.IsSaturday, Is.False);
+        Assert.That(planRegistration.IsSunday, Is.True);
+    }
+
+    [Test]
+    public void PlanRegistration_OnOfficialHoliday_CalculatesCorrectHours()
+    {
+        // Arrange - Christmas Day, December 25, 2026 (official holiday)
+        var christmas = new DateTime(2026, 12, 25);
+        var planRegistration = new PlanRegistration
+        {
+            Date = christmas,
+            // Emergency shift: 8:00 - 16:00 (8 hours)
+            Start1StartedAt = christmas.AddHours(8),
+            Stop1StoppedAt = christmas.AddHours(16),
+            // Break: 12:00 - 12:45 (0.75 hours)
+            Pause1StartedAt = christmas.AddHours(12),
+            Pause1StoppedAt = christmas.AddHours(12.75)
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+        var dayCode = GetDayCodePublic(christmas);
+
+        // Assert
+        // Total work: 8 hours
+        // Pause: 0.75 hours
+        // Net: 7.25 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.25));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(26100)); // 7.25 * 3600
+        Assert.That(dayCode, Is.EqualTo("HOLIDAY"));
+    }
+
+    [Test]
+    public void PlanRegistration_OnGrundlovsdag_CalculatesCorrectHours()
+    {
+        // Arrange - Grundlovsdag, June 5, 2026 (Constitution Day)
+        var grundlovsdag = new DateTime(2026, 6, 5);
+        var planRegistration = new PlanRegistration
+        {
+            Date = grundlovsdag,
+            // Morning shift only: 8:00 - 12:00 (4 hours, before noon)
+            Start1StartedAt = grundlovsdag.AddHours(8),
+            Stop1StoppedAt = grundlovsdag.AddHours(12),
+            // No pause
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+        var dayCode = GetDayCodePublic(grundlovsdag);
+
+        // Assert
+        // Total work: 4 hours
+        // Pause: 0 hours
+        // Net: 4 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(4.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(14400)); // 4 * 3600
+        Assert.That(dayCode, Is.EqualTo("GRUNDLOVSDAG"));
+    }
+
+    [Test]
+    public void PlanRegistration_OnGrundlovsdagAfternoon_CalculatesCorrectHours()
+    {
+        // Arrange - Grundlovsdag, June 5, 2026 (Constitution Day)
+        // Work after 12:00 should be counted differently
+        var grundlovsdag = new DateTime(2026, 6, 5);
+        var planRegistration = new PlanRegistration
+        {
+            Date = grundlovsdag,
+            // Full day: 8:00 - 16:00 (8 hours)
+            Start1StartedAt = grundlovsdag.AddHours(8),
+            Stop1StoppedAt = grundlovsdag.AddHours(16),
+            // Lunch break: 12:00 - 12:30 (0.5 hours)
+            Pause1StartedAt = grundlovsdag.AddHours(12),
+            Pause1StoppedAt = grundlovsdag.AddHours(12.5)
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+        var dayCode = GetDayCodePublic(grundlovsdag);
+
+        // Assert
+        // Total work: 8 hours
+        // Pause: 0.5 hours
+        // Net: 7.5 hours
+        // Note: Hours before and after 12:00 would be split differently for payroll
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000)); // 7.5 * 3600
+        Assert.That(dayCode, Is.EqualTo("GRUNDLOVSDAG"));
+    }
+
+    [Test]
+    public void PlanRegistration_OnNewYearsDay_CalculatesCorrectHours()
+    {
+        // Arrange - New Year's Day, January 1, 2026 (official holiday)
+        var newYear = new DateTime(2026, 1, 1);
+        var planRegistration = new PlanRegistration
+        {
+            Date = newYear,
+            // Night shift: 22:00 previous day carried over, but dated on this day
+            // Single shift: 6:00 - 14:00 (8 hours)
+            Start1StartedAt = newYear.AddHours(6),
+            Stop1StoppedAt = newYear.AddHours(14),
+            // Two breaks
+            Pause1StartedAt = newYear.AddHours(9),
+            Pause1StoppedAt = newYear.AddHours(9.25),
+            Pause2StartedAt = newYear.AddHours(11),
+            Pause2StoppedAt = newYear.AddHours(11.25)
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+        var dayCode = GetDayCodePublic(newYear);
+
+        // Assert
+        // Total work: 8 hours
+        // Pause: 0.5 hours (2 x 0.25)
+        // Net: 7.5 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000));
+        Assert.That(dayCode, Is.EqualTo("HOLIDAY"));
+    }
+
+    [Test]
+    public void PlanRegistration_WithMultipleShiftsOnWeekday_CalculatesCorrectHours()
+    {
+        // Arrange - Regular weekday with split shifts
+        var weekday = new DateTime(2026, 3, 10); // Tuesday
+        var planRegistration = new PlanRegistration
+        {
+            Date = weekday,
+            // Early morning: 6:00 - 10:00 (4 hours)
+            Start1StartedAt = weekday.AddHours(6),
+            Stop1StoppedAt = weekday.AddHours(10),
+            // Late morning/midday: 11:00 - 14:00 (3 hours)
+            Start2StartedAt = weekday.AddHours(11),
+            Stop2StoppedAt = weekday.AddHours(14),
+            // Evening: 18:00 - 21:00 (3 hours)
+            Start3StartedAt = weekday.AddHours(18),
+            Stop3StoppedAt = weekday.AddHours(21),
+            // Breaks during shifts
+            Pause1StartedAt = weekday.AddHours(8),
+            Pause1StoppedAt = weekday.AddHours(8.25),
+            Pause2StartedAt = weekday.AddHours(12),
+            Pause2StoppedAt = weekday.AddHours(12.5),
+            Pause3StartedAt = weekday.AddHours(19.5),
+            Pause3StoppedAt = weekday.AddHours(19.75)
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+
+        // Assert
+        // Total work: 10 hours (4 + 3 + 3)
+        // Pause: 1.0 hours (0.25 + 0.5 + 0.25)
+        // Net: 9.0 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(9.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(32400)); // 9 * 3600
+    }
+
+    [Test]
+    public void PlanRegistration_OnChristmasEve_CalculatesCorrectHours()
+    {
+        // Arrange - Christmas Eve, December 24, 2026 (overenskomstfastsat fridag)
+        var christmasEve = new DateTime(2026, 12, 24);
+        var planRegistration = new PlanRegistration
+        {
+            Date = christmasEve,
+            // Short shift: 8:00 - 12:00 (4 hours)
+            Start1StartedAt = christmasEve.AddHours(8),
+            Stop1StoppedAt = christmasEve.AddHours(12),
+            // No breaks
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+        var dayCode = GetDayCodePublic(christmasEve);
+
+        // Assert
+        // Total work: 4 hours
+        // Net: 4 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(4.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(14400));
+        Assert.That(dayCode, Is.EqualTo("HOLIDAY"));
+    }
+
+    [Test]
+    public void PlanRegistration_OnEaster_CalculatesCorrectHours()
+    {
+        // Arrange - Easter Sunday, April 5, 2026 (movable holiday)
+        var easter = new DateTime(2026, 4, 5);
+        var planRegistration = new PlanRegistration
+        {
+            Date = easter,
+            // Single shift: 10:00 - 18:00 (8 hours)
+            Start1StartedAt = easter.AddHours(10),
+            Stop1StoppedAt = easter.AddHours(18),
+            // Lunch break: 13:00 - 14:00 (1 hour)
+            Pause1StartedAt = easter.AddHours(13),
+            Pause1StoppedAt = easter.AddHours(14)
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+        var dayCode = GetDayCodePublic(easter);
+
+        // Assert
+        // Total work: 8 hours
+        // Pause: 1 hour
+        // Net: 7 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(25200)); // 7 * 3600
+        Assert.That(dayCode, Is.EqualTo("HOLIDAY"));
+    }
+
+    [Test]
+    public void PlanRegistration_LongShiftOnWeekday_WithMultiplePauses_CalculatesCorrectHours()
+    {
+        // Arrange - Long shift with multiple short breaks
+        var weekday = new DateTime(2026, 5, 12); // Tuesday
+        var planRegistration = new PlanRegistration
+        {
+            Date = weekday,
+            // Long shift: 7:00 - 19:00 (12 hours)
+            Start1StartedAt = weekday.AddHours(7),
+            Stop1StoppedAt = weekday.AddHours(19),
+            // Multiple breaks throughout the day
+            Pause1StartedAt = weekday.AddHours(9),
+            Pause1StoppedAt = weekday.AddHours(9.25),    // 15 min
+            Pause2StartedAt = weekday.AddHours(12),
+            Pause2StoppedAt = weekday.AddHours(12.5),    // 30 min
+            Pause3StartedAt = weekday.AddHours(15),
+            Pause3StoppedAt = weekday.AddHours(15.25),   // 15 min
+            Pause4StartedAt = weekday.AddHours(17),
+            Pause4StoppedAt = weekday.AddHours(17.25)    // 15 min
+        };
+
+        // Act
+        PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
+
+        // Assert
+        // Total work: 12 hours
+        // Pause: 1.25 hours (15 + 30 + 15 + 15 min)
+        // Net: 10.75 hours
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(10.75));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(38700)); // 10.75 * 3600
+    }
+
     // Helper method to test the private GetDayCode method via reflection
     private string GetDayCodePublic(DateTime date)
     {
