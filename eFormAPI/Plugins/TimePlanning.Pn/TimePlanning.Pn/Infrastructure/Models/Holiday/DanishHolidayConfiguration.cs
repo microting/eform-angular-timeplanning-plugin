@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 namespace TimePlanning.Pn.Infrastructure.Models.Holiday;
@@ -72,10 +73,12 @@ public class HolidayDefinition
     [JsonPropertyName("premium_rule")]
     public string PremiumRule { get; set; }
     
+    private readonly object _parseLock = new object();
     private DateTime? _parsedDate;
     
     /// <summary>
     /// Gets the parsed DateTime for this holiday (date only, no time component).
+    /// Thread-safe lazy initialization.
     /// </summary>
     public DateTime ParsedDate
     {
@@ -83,8 +86,20 @@ public class HolidayDefinition
         {
             if (!_parsedDate.HasValue)
             {
-                var parsed = DateTime.Parse(Date);
-                _parsedDate = new DateTime(parsed.Year, parsed.Month, parsed.Day, 0, 0, 0);
+                lock (_parseLock)
+                {
+                    if (!_parsedDate.HasValue)
+                    {
+                        if (DateTime.TryParse(Date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+                        {
+                            _parsedDate = new DateTime(parsed.Year, parsed.Month, parsed.Day, 0, 0, 0);
+                        }
+                        else
+                        {
+                            throw new FormatException($"Failed to parse holiday date: {Date}");
+                        }
+                    }
+                }
             }
             return _parsedDate.Value;
         }

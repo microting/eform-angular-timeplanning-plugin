@@ -48,6 +48,11 @@ public static class PlanRegistrationHelper
             
             try
             {
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
                 // First, try to load as embedded resource
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
                 var resourceName = "TimePlanning.Pn.Resources.danish_holidays_2025_2030.json";
@@ -59,7 +64,7 @@ public static class PlanRegistrationHelper
                         using (var reader = new StreamReader(stream))
                         {
                             var json = reader.ReadToEnd();
-                            _holidayConfiguration = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json);
+                            _holidayConfiguration = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
                         }
                     }
                     else
@@ -72,11 +77,15 @@ public static class PlanRegistrationHelper
                         if (File.Exists(resourcePath))
                         {
                             var json = File.ReadAllText(resourcePath);
-                            _holidayConfiguration = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json);
+                            _holidayConfiguration = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
                         }
                         else
                         {
-                            SentrySdk.CaptureMessage($"Holiday configuration not found as embedded resource or at: {resourcePath}");
+                            SentrySdk.CaptureEvent(new SentryEvent
+                            {
+                                Message = $"Holiday configuration not found as embedded resource or at: {resourcePath}. Using empty holiday configuration as fallback.",
+                                Level = SentryLevel.Warning
+                            });
                             _holidayConfiguration = new DanishHolidayConfiguration
                             {
                                 Holidays = new List<HolidayDefinition>()
