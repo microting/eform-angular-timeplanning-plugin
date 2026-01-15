@@ -2433,7 +2433,7 @@ public static class PlanRegistrationHelper
     /// Check if a date is an official Danish holiday.
     /// Loads holiday data from the danish_holidays_2025_2030.json configuration file.
     /// </summary>
-    private static bool IsOfficialHoliday(DateTime date)
+    public static bool IsOfficialHoliday(DateTime date)
     {
         var config = LoadHolidayConfiguration();
         
@@ -2442,6 +2442,14 @@ public static class PlanRegistrationHelper
         
         // Check if the date exists in our holiday configuration
         return config.Holidays?.Any(h => h.ParsedDate == midnight) ?? false;
+    }
+
+    /// <summary>
+    /// Check if a date is Grundlovsdag (Constitution Day - June 5th).
+    /// </summary>
+    public static bool IsGrundlovsdag(DateTime date)
+    {
+        return date.Month == 6 && date.Day == 5;
     }
 
     /// <summary>

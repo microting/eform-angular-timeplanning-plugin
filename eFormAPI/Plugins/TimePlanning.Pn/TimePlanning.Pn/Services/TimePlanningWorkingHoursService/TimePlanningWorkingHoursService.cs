@@ -2658,11 +2658,36 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateNumericCell(nettoHoursTotal + nettoHoursOverrideTotal));
                     totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
                     var sumHoursSaturday = content.Model.Skip(1).Where(x => x.IsSaturday).Select(x => x.NettoHours).Sum();
-                    var sumHoursSunday = content.Model.Skip(1).Where(x => x.IsSunday).Select(x => x.NettoHours).Sum();
+                    
+                    // Calculate Sunday and Holiday hours
+                    // Include: Sundays + all holidays (but for Grundlovsdag only count hours after 12:00)
+                    var sumHoursSundayAndHoliday = 0.0;
+                    foreach (var day in content.Model.Skip(1).ToList())
+                    {
+                        // Check if it's Sunday or a holiday
+                        var isSundayOrHoliday = day.IsSunday || PlanRegistrationHelper.IsOfficialHoliday(day.Date);
+                        
+                        if (isSundayOrHoliday)
+                        {
+                            // Special handling for Grundlovsdag - only count hours after 12:00
+                            if (PlanRegistrationHelper.IsGrundlovsdag(day.Date))
+                            {
+                                // Calculate hours after 12:00
+                                var hoursAfterNoon = CalculateHoursAfterNoon(day);
+                                sumHoursSundayAndHoliday += hoursAfterNoon;
+                            }
+                            else
+                            {
+                                // For other Sundays/holidays, count all hours
+                                sumHoursSundayAndHoliday += day.NettoHours;
+                            }
+                        }
+                    }
+                    
                     var hasAnyCommentFromWorker = content.Model.Skip(1).ToList().Any(x => !string.IsNullOrEmpty(x.CommentWorker));
                     var hasAnyMessage = content.Model.Skip(1).ToList().Any(x => x.Message != null);
                     totalRow.Append(CreateNumericCell(sumHoursSaturday));
-                    totalRow.Append(CreateNumericCell(sumHoursSunday));
+                    totalRow.Append(CreateNumericCell(sumHoursSundayAndHoliday));
                     totalRow.Append(CreateCell(hasAnyCommentFromWorker ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
                     totalRow.Append(CreateCell(hasAnyMessage ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
                     totalSheetData1.Append(totalRow);
@@ -2964,6 +2989,76 @@ public class TimePlanningWorkingHoursService(
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Calculate hours worked after 12:00 (noon) for a given day.
+    /// Used for Grundlovsdag where only afternoon hours count as holiday hours.
+    /// </summary>
+    private double CalculateHoursAfterNoon(TimePlanningWorkingHoursModel day)
+    {
+        var noonTime = new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, 12, 0, 0);
+        double totalSecondsAfterNoon = 0;
+        
+        // Helper to calculate overlap with period after noon
+        double CalculateOverlap(DateTime? start, DateTime? stop)
+        {
+            if (!start.HasValue || !stop.HasValue || start >= stop)
+                return 0;
+            
+            // If the entire period is before noon, no overlap
+            if (stop <= noonTime)
+                return 0;
+            
+            // Calculate the overlapping portion
+            var effectiveStart = start < noonTime ? noonTime : start.Value;
+            var effectiveEnd = stop.Value;
+            
+            return (effectiveEnd - effectiveStart).TotalSeconds;
+        }
+        
+        // Calculate overlap for each shift
+        totalSecondsAfterNoon += CalculateOverlap(day.Start1StartedAt, day.Stop1StoppedAt);
+        totalSecondsAfterNoon += CalculateOverlap(day.Start2StartedAt, day.Stop2StoppedAt);
+        totalSecondsAfterNoon += CalculateOverlap(day.Start3StartedAt, day.Stop3StoppedAt);
+        totalSecondsAfterNoon += CalculateOverlap(day.Start4StartedAt, day.Stop4StoppedAt);
+        totalSecondsAfterNoon += CalculateOverlap(day.Start5StartedAt, day.Stop5StoppedAt);
+        
+        // Subtract pauses that occur after noon
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause1StartedAt, day.Pause1StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause2StartedAt, day.Pause2StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause3StartedAt, day.Pause3StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause4StartedAt, day.Pause4StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause5StartedAt, day.Pause5StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause10StartedAt, day.Pause10StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause11StartedAt, day.Pause11StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause12StartedAt, day.Pause12StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause13StartedAt, day.Pause13StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause14StartedAt, day.Pause14StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause15StartedAt, day.Pause15StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause16StartedAt, day.Pause16StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause17StartedAt, day.Pause17StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause18StartedAt, day.Pause18StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause19StartedAt, day.Pause19StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause20StartedAt, day.Pause20StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause21StartedAt, day.Pause21StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause22StartedAt, day.Pause22StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause23StartedAt, day.Pause23StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause24StartedAt, day.Pause24StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause25StartedAt, day.Pause25StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause26StartedAt, day.Pause26StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause27StartedAt, day.Pause27StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause28StartedAt, day.Pause28StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause29StartedAt, day.Pause29StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause100StartedAt, day.Pause100StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause101StartedAt, day.Pause101StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause102StartedAt, day.Pause102StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause200StartedAt, day.Pause200StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause201StartedAt, day.Pause201StoppedAt);
+        totalSecondsAfterNoon -= CalculateOverlap(day.Pause202StartedAt, day.Pause202StoppedAt);
+        
+        // Convert to hours and ensure non-negative
+        return Math.Max(0, totalSecondsAfterNoon / 3600.0);
     }
 
     private string GetColumnLetter(int columnIndex)
