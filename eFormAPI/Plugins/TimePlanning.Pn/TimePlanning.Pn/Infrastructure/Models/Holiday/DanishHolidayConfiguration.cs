@@ -73,12 +73,14 @@ public class HolidayDefinition
     [JsonPropertyName("premium_rule")]
     public string PremiumRule { get; set; }
     
+    // Instance-level lock is appropriate here since each HolidayDefinition
+    // instance owns its own parsed date cache
     private readonly object _parseLock = new object();
     private DateTime? _parsedDate;
     
     /// <summary>
     /// Gets the parsed DateTime for this holiday (date only, no time component).
-    /// Thread-safe lazy initialization.
+    /// Thread-safe lazy initialization per instance.
     /// </summary>
     public DateTime ParsedDate
     {

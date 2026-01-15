@@ -64,7 +64,11 @@ public static class PlanRegistrationHelper
                         using (var reader = new StreamReader(stream))
                         {
                             var json = reader.ReadToEnd();
-                            _holidayConfiguration = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
+                            var config = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
+                            _holidayConfiguration = config ?? new DanishHolidayConfiguration
+                            {
+                                Holidays = new List<HolidayDefinition>()
+                            };
                         }
                     }
                     else
@@ -77,7 +81,11 @@ public static class PlanRegistrationHelper
                         if (File.Exists(resourcePath))
                         {
                             var json = File.ReadAllText(resourcePath);
-                            _holidayConfiguration = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
+                            var config = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
+                            _holidayConfiguration = config ?? new DanishHolidayConfiguration
+                            {
+                                Holidays = new List<HolidayDefinition>()
+                            };
                         }
                         else
                         {
