@@ -33,7 +33,7 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   workingHoursGroupSub$: Subscription[] = [];
   tainted = false;
 
-  
+
 
   ngOnInit(): void {
     this.getAvailableSites();
