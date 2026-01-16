@@ -2661,6 +2661,7 @@ public class TimePlanningWorkingHoursService(
                     var nettoHoursOverrideTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive).Sum(x => x.NettoHoursOverride);
                     var totalHours = nettoHoursTotal + nettoHoursOverrideTotal;
 
+                    totalRow.Append(CreateNumericCell(nettoHoursTotal)); // Total Hours column
                     totalRow.Append(CreateNumericCell(totalHours)); // Total Hours column
                     totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
                     var sumHoursSaturday = content.Model.Skip(1).Where(x => x.IsSaturday).Select(x => x.NettoHours).Sum();
@@ -2699,7 +2700,6 @@ public class TimePlanningWorkingHoursService(
                     var hasAnyCommentFromWorker = content.Model.Skip(1).ToList().Any(x => !string.IsNullOrEmpty(x.CommentWorker));
                     var hasAnyMessage = content.Model.Skip(1).ToList().Any(x => x.Message != null);
 
-                    totalRow.Append(CreateNumericCell(totalHours - sumHoursSundayAndHoliday));
                     totalRow.Append(CreateNumericCell(sumHoursSaturday));
                     totalRow.Append(CreateNumericCell(sumHoursSundayAndHoliday));
                     totalRow.Append(CreateCell(hasAnyCommentFromWorker ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
