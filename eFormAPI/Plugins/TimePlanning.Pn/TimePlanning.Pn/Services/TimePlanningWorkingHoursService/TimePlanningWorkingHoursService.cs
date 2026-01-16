@@ -2423,9 +2423,10 @@ public class TimePlanningWorkingHoursService(
                     Translations.Employee_no,
                     Translations.Worker,
                     Translations.PlanHours,
-                    Translations.Total_Hours,
                     Translations.NettoHours,
+                    Translations.Total_Hours,
                     Translations.SumFlexStart,
+                    Translations.Normal_Hours,
                     Translations.Hours_Saturday,
                     Translations.Hours_Sunday,
                     Translations.Comments,
@@ -2654,17 +2655,16 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
                     totalRow.Append(CreateCell(site.Name));
                     totalRow.Append(CreateNumericCell(content.Model.Skip(1).ToList().Sum(x => x.PlanHours)));
-                    
+
                     // Calculate total hours (with overrides)
                     var nettoHoursTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive == false).Sum(x => x.NettoHours);
                     var nettoHoursOverrideTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive).Sum(x => x.NettoHoursOverride);
                     var totalHours = nettoHoursTotal + nettoHoursOverrideTotal;
-                    
+
                     totalRow.Append(CreateNumericCell(totalHours)); // Total Hours column
-                    
                     totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
                     var sumHoursSaturday = content.Model.Skip(1).Where(x => x.IsSaturday).Select(x => x.NettoHours).Sum();
-                    
+
                     // Calculate Sunday and Holiday hours
                     // Include: Sundays + all holidays (but for Grundlovsdag only count hours after 12:00)
                     var sumHoursSundayAndHoliday = 0.0;
@@ -2672,7 +2672,7 @@ public class TimePlanningWorkingHoursService(
                     {
                         // Check if it's Sunday or a holiday
                         var isSundayOrHoliday = day.IsSunday || PlanRegistrationHelper.IsOfficialHoliday(day.Date);
-                        
+
                         if (isSundayOrHoliday)
                         {
                             // Special handling for Grundlovsdag - only count hours after 12:00
@@ -2689,15 +2689,17 @@ public class TimePlanningWorkingHoursService(
                             }
                         }
                     }
-                    
+
                     // Calculate normal hours (total hours minus Sunday/holiday hours)
                     var normalHours = totalHours - sumHoursSundayAndHoliday;
-                    
+
                     // NettoHours column now shows normal hours only
                     totalRow.Append(CreateNumericCell(normalHours));
-                    
+
                     var hasAnyCommentFromWorker = content.Model.Skip(1).ToList().Any(x => !string.IsNullOrEmpty(x.CommentWorker));
                     var hasAnyMessage = content.Model.Skip(1).ToList().Any(x => x.Message != null);
+
+                    totalRow.Append(CreateNumericCell(totalHours - sumHoursSundayAndHoliday));
                     totalRow.Append(CreateNumericCell(sumHoursSaturday));
                     totalRow.Append(CreateNumericCell(sumHoursSundayAndHoliday));
                     totalRow.Append(CreateCell(hasAnyCommentFromWorker ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
@@ -3011,31 +3013,31 @@ public class TimePlanningWorkingHoursService(
     {
         var noonTime = new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, 12, 0, 0);
         double totalSecondsAfterNoon = 0;
-        
+
         // Helper to calculate overlap with period after noon
         double CalculateOverlap(DateTime? start, DateTime? stop)
         {
             if (!start.HasValue || !stop.HasValue || start >= stop)
                 return 0;
-            
+
             // If the entire period is before noon, no overlap
             if (stop <= noonTime)
                 return 0;
-            
+
             // Calculate the overlapping portion
             var effectiveStart = start < noonTime ? noonTime : start.Value;
             var effectiveEnd = stop.Value;
-            
+
             return (effectiveEnd - effectiveStart).TotalSeconds;
         }
-        
+
         // Calculate overlap for each shift
         totalSecondsAfterNoon += CalculateOverlap(day.Start1StartedAt, day.Stop1StoppedAt);
         totalSecondsAfterNoon += CalculateOverlap(day.Start2StartedAt, day.Stop2StoppedAt);
         totalSecondsAfterNoon += CalculateOverlap(day.Start3StartedAt, day.Stop3StoppedAt);
         totalSecondsAfterNoon += CalculateOverlap(day.Start4StartedAt, day.Stop4StoppedAt);
         totalSecondsAfterNoon += CalculateOverlap(day.Start5StartedAt, day.Stop5StoppedAt);
-        
+
         // Subtract pauses that occur after noon
         totalSecondsAfterNoon -= CalculateOverlap(day.Pause1StartedAt, day.Pause1StoppedAt);
         totalSecondsAfterNoon -= CalculateOverlap(day.Pause2StartedAt, day.Pause2StoppedAt);
@@ -3068,7 +3070,7 @@ public class TimePlanningWorkingHoursService(
         totalSecondsAfterNoon -= CalculateOverlap(day.Pause200StartedAt, day.Pause200StoppedAt);
         totalSecondsAfterNoon -= CalculateOverlap(day.Pause201StartedAt, day.Pause201StoppedAt);
         totalSecondsAfterNoon -= CalculateOverlap(day.Pause202StartedAt, day.Pause202StoppedAt);
-        
+
         // Convert to hours and ensure non-negative
         return Math.Max(0, totalSecondsAfterNoon / 3600.0);
     }

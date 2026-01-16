@@ -138,4 +138,7 @@
     <data name="Total Hours" xml:space="preserve">
         <value>Total Hours</value>
     </data>
+    <data name="Normal Hours" xml:space="preserve">
+        <value>Normal Hours</value>
+    </data>
 </root>
