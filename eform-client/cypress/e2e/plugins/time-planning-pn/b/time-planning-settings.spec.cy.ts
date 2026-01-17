@@ -327,12 +327,16 @@ describe('Enable Backend Config plugin', () => {
     cy.wait('@settings-get', { timeout: 60000 });
 
     // Test GPS toggle - turn ON
+    let snapshotToggle = cy.get('#snapshotEnabledToggle');
+    snapshotToggle
+      .should('be.visible')
+      .should('not.be.checked');
     let gpsToggle = cy.get('#gpsEnabledToggle');
     gpsToggle
       .should('be.visible')
       .should('not.be.checked');
     gpsToggle.click();
-    
+
     let gpsToggleButton = cy.get('#gpsEnabledToggle div button');
     gpsToggleButton
       .should('have.attr', 'aria-checked', 'true');
@@ -361,7 +365,7 @@ describe('Enable Backend Config plugin', () => {
     // Test GPS toggle - turn OFF
     gpsToggle = cy.get('#gpsEnabledToggle');
     gpsToggle.click();
-    
+
     gpsToggleButton = cy.get('#gpsEnabledToggle div button');
     gpsToggleButton
       .should('have.attr', 'aria-checked', 'false');
@@ -388,12 +392,8 @@ describe('Enable Backend Config plugin', () => {
       .should('have.attr', 'aria-checked', 'false');
 
     // Test Snapshot toggle - turn ON
-    let snapshotToggle = cy.get('#snapshotEnabledToggle');
-    snapshotToggle
-      .should('be.visible')
-      .should('not.be.checked');
     snapshotToggle.click();
-    
+
     let snapshotToggleButton = cy.get('#snapshotEnabledToggle div button');
     snapshotToggleButton
       .should('have.attr', 'aria-checked', 'true');
@@ -422,7 +422,7 @@ describe('Enable Backend Config plugin', () => {
     // Test Snapshot toggle - turn OFF
     snapshotToggle = cy.get('#snapshotEnabledToggle');
     snapshotToggle.click();
-    
+
     snapshotToggleButton = cy.get('#snapshotEnabledToggle div button');
     snapshotToggleButton
       .should('have.attr', 'aria-checked', 'false');
