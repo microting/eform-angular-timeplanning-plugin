@@ -251,7 +251,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
           if (result && result.success) {
             this.dialog.open(AssignedSiteDialogComponent, {
               data: result.model,
-              minWidth: '50%',
+              minWidth: 1024,
+              minHeight: 500
             })
               .afterClosed().subscribe((data: any) => {
               if (data !== '' && data !== undefined) {
@@ -316,6 +317,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
       if (result && result.success) {
         this.dialog.open(WorkdayEntityDialogComponent, {
           data: {planningPrDayModels: cellData, assignedSiteModel: result.model},
+          minWidth: 1024,
         })
           .afterClosed().subscribe((data: any) => {
           if (data !== '' && data !== undefined) {

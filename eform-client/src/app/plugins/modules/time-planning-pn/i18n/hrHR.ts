@@ -141,4 +141,7 @@ export const hrHR = {
   'Start time is required': 'Vrijeme početka je obavezno',
   'Start time cannot be earlier than previous shift`s end time': 'Vrijeme početka ne može biti ranije od vremena završetka prethodne smjene',
   'Create device': 'Izradi uređaj',
+  Maternity: 'Porodiljni dopust',
+  VacationDayOff: 'Slobodan dan',
+  Holiday: 'Odmor',
 };

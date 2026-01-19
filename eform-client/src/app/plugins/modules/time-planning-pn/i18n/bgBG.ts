@@ -141,4 +141,7 @@ export const bgBG = {
   'Start time is required': 'Необходимо е да се посочи начален час',
   'Start time cannot be earlier than previous shift`s end time': 'Началният час не може да бъде по-ранен от крайния час на предишната смяна',
   'Create device': 'Създаване на устройство',
+  Maternity: 'Отпуск по майчинство',
+  VacationDayOff: 'Почивен ден',
+  Holiday: 'Празник',
 };

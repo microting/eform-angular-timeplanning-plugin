@@ -141,4 +141,7 @@ export const skSK = {
   'Start time is required': 'Čas začiatku je povinný',
   'Start time cannot be earlier than previous shift`s end time': 'Čas začiatku nemôže byť skorší ako čas ukončenia predchádzajúcej zmeny',
   'Create device': 'Vytvoriť zariadenie',
+  Maternity: 'Materská dovolenka',
+  VacationDayOff: 'Deň voľna',
+  Holiday: 'Dovolenka',
 };
