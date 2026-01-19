@@ -8,6 +8,8 @@ import { DatePipe, CommonModule } from '@angular/common';
 import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
+import { Store } from '@ngrx/store';
+import { provideMockStore } from '@ngrx/store/testing';
 
 describe('WorkdayEntityDialogComponent', () => {
   let component: WorkdayEntityDialogComponent;
@@ -103,6 +105,12 @@ describe('WorkdayEntityDialogComponent', () => {
       providers: [
         FormBuilder,
         DatePipe,
+        provideMockStore({
+          initialState: {},
+          selectors: [
+            { selector: 'selectCurrentUserIsFirstUser', value: false }
+          ]
+        }),
         { provide: MAT_DIALOG_DATA, useValue: mockData },
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },
         { provide: TranslateService, useValue: mockTranslateService }
