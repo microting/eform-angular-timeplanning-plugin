@@ -1576,4 +1576,228 @@ public class TimePlanningPlanningService(
             }
         }
     }
+
+    public async Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId)
+    {
+        try
+        {
+            // Get the plan registration to find the associated site
+            var planRegistration = await dbContext.PlanRegistrations
+                .Where(x => x.Id == planRegistrationId)
+                .FirstOrDefaultAsync().ConfigureAwait(false);
+
+            if (planRegistration == null)
+            {
+                return new OperationDataResult<PlanRegistrationVersionHistoryModel>(
+                    false,
+                    localizationService.GetString("PlanRegistrationNotFound"));
+            }
+
+            // Get the assigned site to check GPS and Snapshot settings
+            var assignedSite = await dbContext.AssignedSites
+                .Where(x => x.SiteId == planRegistration.SdkSitId)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync().ConfigureAwait(false);
+
+            var gpsEnabled = assignedSite?.GpsEnabled ?? false;
+            var snapshotEnabled = assignedSite?.SnapshotEnabled ?? false;
+
+            // Get all versions for this plan registration, ordered by version descending (newest first)
+            var versions = await dbContext.PlanRegistrationVersions
+                .Where(x => x.PlanRegistrationId == planRegistrationId)
+                .OrderByDescending(x => x.Version)
+                .ToListAsync().ConfigureAwait(false);
+
+            var result = new PlanRegistrationVersionHistoryModel
+            {
+                PlanRegistrationId = planRegistrationId,
+                GpsEnabled = gpsEnabled,
+                SnapshotEnabled = snapshotEnabled,
+                Versions = []
+            };
+
+            // Compare each version with the previous one
+            for (int i = 0; i < versions.Count; i++)
+            {
+                var currentVersion = versions[i];
+                var previousVersion = i < versions.Count - 1 ? versions[i + 1] : null;
+
+                var changes = CompareVersions(currentVersion, previousVersion);
+
+                // Get GPS coordinates for this version
+                if (gpsEnabled)
+                {
+                    var gpsCoordinates = await dbContext.GpsCoordinateVersions
+                        .Where(x => x.PlanRegistrationId == planRegistrationId)
+                        .Where(x => x.Version == currentVersion.Version)
+                        .ToListAsync().ConfigureAwait(false);
+
+                    foreach (var gps in gpsCoordinates)
+                    {
+                        changes.Add(new FieldChange
+                        {
+                            FieldName = "GPS",
+                            FromValue = "",
+                            ToValue = $"https://www.google.com/maps?q={gps.Latitude},{gps.Longitude}",
+                            FieldType = "gps",
+                            Latitude = gps.Latitude,
+                            Longitude = gps.Longitude,
+                            RegistrationType = gps.RegistrationType
+                        });
+                    }
+                }
+
+                // Get picture snapshots for this version
+                if (snapshotEnabled)
+                {
+                    var snapshots = await dbContext.PictureSnapshotVersions
+                        .Where(x => x.PlanRegistrationId == planRegistrationId)
+                        .Where(x => x.Version == currentVersion.Version)
+                        .ToListAsync().ConfigureAwait(false);
+
+                    foreach (var snapshot in snapshots)
+                    {
+                        changes.Add(new FieldChange
+                        {
+                            FieldName = "Snapshot",
+                            FromValue = "",
+                            ToValue = snapshot.PictureHash,
+                            FieldType = "snapshot",
+                            PictureHash = snapshot.PictureHash,
+                            RegistrationType = snapshot.RegistrationType
+                        });
+                    }
+                }
+
+                if (changes.Any())
+                {
+                    result.Versions.Add(new PlanRegistrationVersionModel
+                    {
+                        Version = currentVersion.Version,
+                        UpdatedAt = currentVersion.UpdatedAt ?? DateTime.UtcNow,
+                        UpdatedByUserId = currentVersion.UpdatedByUserId,
+                        Changes = changes
+                    });
+                }
+            }
+
+            return new OperationDataResult<PlanRegistrationVersionHistoryModel>(true, result);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error getting version history for PlanRegistration {PlanRegistrationId}", planRegistrationId);
+            return new OperationDataResult<PlanRegistrationVersionHistoryModel>(
+                false,
+                localizationService.GetString("ErrorWhileGettingVersionHistory"));
+        }
+    }
+
+    private List<FieldChange> CompareVersions(PlanRegistrationVersion current, PlanRegistrationVersion? previous)
+    {
+        var changes = new List<FieldChange>();
+
+        // Compare all relevant fields
+        CompareField(changes, "PlanText", previous?.PlanText, current.PlanText);
+        CompareField(changes, "PlanHours", previous?.PlanHours.ToString(), current.PlanHours.ToString());
+        CompareField(changes, "NettoHours", previous?.NettoHours.ToString(), current.NettoHours.ToString());
+        CompareField(changes, "Flex", previous?.Flex.ToString(), current.Flex.ToString());
+        CompareField(changes, "SumFlexStart", previous?.SumFlexStart.ToString(), current.SumFlexStart.ToString());
+        CompareField(changes, "SumFlexEnd", previous?.SumFlexEnd.ToString(), current.SumFlexEnd.ToString());
+        CompareField(changes, "PaiedOutFlex", previous?.PaiedOutFlex.ToString(), current.PaiedOutFlex.ToString());
+        CompareField(changes, "NettoHoursOverride", previous?.NettoHoursOverride.ToString(), current.NettoHoursOverride.ToString());
+        CompareField(changes, "NettoHoursOverrideActive", previous?.NettoHoursOverrideActive.ToString(), current.NettoHoursOverrideActive.ToString());
+        
+        // Shift 1
+        CompareDateTimeField(changes, "Start1StartedAt", previous?.Start1StartedAt, current.Start1StartedAt);
+        CompareDateTimeField(changes, "Stop1StoppedAt", previous?.Stop1StoppedAt, current.Stop1StoppedAt);
+        CompareDateTimeField(changes, "Pause1StartedAt", previous?.Pause1StartedAt, current.Pause1StartedAt);
+        CompareDateTimeField(changes, "Pause1StoppedAt", previous?.Pause1StoppedAt, current.Pause1StoppedAt);
+        
+        // Shift 2
+        CompareDateTimeField(changes, "Start2StartedAt", previous?.Start2StartedAt, current.Start2StartedAt);
+        CompareDateTimeField(changes, "Stop2StoppedAt", previous?.Stop2StoppedAt, current.Stop2StoppedAt);
+        CompareDateTimeField(changes, "Pause2StartedAt", previous?.Pause2StartedAt, current.Pause2StartedAt);
+        CompareDateTimeField(changes, "Pause2StoppedAt", previous?.Pause2StoppedAt, current.Pause2StoppedAt);
+        
+        // Shift 3
+        CompareDateTimeField(changes, "Start3StartedAt", previous?.Start3StartedAt, current.Start3StartedAt);
+        CompareDateTimeField(changes, "Stop3StoppedAt", previous?.Stop3StoppedAt, current.Stop3StoppedAt);
+        CompareDateTimeField(changes, "Pause3StartedAt", previous?.Pause3StartedAt, current.Pause3StartedAt);
+        CompareDateTimeField(changes, "Pause3StoppedAt", previous?.Pause3StoppedAt, current.Pause3StoppedAt);
+        
+        // Shift 4
+        CompareDateTimeField(changes, "Start4StartedAt", previous?.Start4StartedAt, current.Start4StartedAt);
+        CompareDateTimeField(changes, "Stop4StoppedAt", previous?.Stop4StoppedAt, current.Stop4StoppedAt);
+        CompareDateTimeField(changes, "Pause4StartedAt", previous?.Pause4StartedAt, current.Pause4StartedAt);
+        CompareDateTimeField(changes, "Pause4StoppedAt", previous?.Pause4StoppedAt, current.Pause4StoppedAt);
+        
+        // Shift 5
+        CompareDateTimeField(changes, "Start5StartedAt", previous?.Start5StartedAt, current.Start5StartedAt);
+        CompareDateTimeField(changes, "Stop5StoppedAt", previous?.Stop5StoppedAt, current.Stop5StoppedAt);
+        CompareDateTimeField(changes, "Pause5StartedAt", previous?.Pause5StartedAt, current.Pause5StartedAt);
+        CompareDateTimeField(changes, "Pause5StoppedAt", previous?.Pause5StoppedAt, current.Pause5StoppedAt);
+
+        // Comments
+        CompareField(changes, "CommentOffice", previous?.CommentOffice, current.CommentOffice);
+        CompareField(changes, "WorkerComment", previous?.WorkerComment, current.WorkerComment);
+        
+        // Absence flags
+        CompareBoolField(changes, "OnVacation", previous?.OnVacation, current.OnVacation);
+        CompareBoolField(changes, "Sick", previous?.Sick, current.Sick);
+        CompareBoolField(changes, "OtherAllowedAbsence", previous?.OtherAllowedAbsence, current.OtherAllowedAbsence);
+        CompareBoolField(changes, "AbsenceWithoutPermission", previous?.AbsenceWithoutPermission, current.AbsenceWithoutPermission);
+
+        return changes;
+    }
+
+    private void CompareField(List<FieldChange> changes, string fieldName, string? previousValue, string? currentValue)
+    {
+        previousValue ??= "";
+        currentValue ??= "";
+        
+        if (previousValue != currentValue)
+        {
+            changes.Add(new FieldChange
+            {
+                FieldName = fieldName,
+                FromValue = previousValue,
+                ToValue = currentValue,
+                FieldType = "standard"
+            });
+        }
+    }
+
+    private void CompareDateTimeField(List<FieldChange> changes, string fieldName, DateTime? previousValue, DateTime? currentValue)
+    {
+        var prevStr = previousValue?.ToString("yyyy-MM-dd HH:mm:ss.ffffff") ?? "";
+        var currStr = currentValue?.ToString("yyyy-MM-dd HH:mm:ss.ffffff") ?? "";
+        
+        if (prevStr != currStr)
+        {
+            changes.Add(new FieldChange
+            {
+                FieldName = fieldName,
+                FromValue = prevStr,
+                ToValue = currStr,
+                FieldType = "standard"
+            });
+        }
+    }
+
+    private void CompareBoolField(List<FieldChange> changes, string fieldName, bool? previousValue, bool? currentValue)
+    {
+        var prevBool = previousValue ?? false;
+        var currBool = currentValue ?? false;
+        
+        if (prevBool != currBool)
+        {
+            changes.Add(new FieldChange
+            {
+                FieldName = fieldName,
+                FromValue = prevBool.ToString(),
+                ToValue = currBool.ToString(),
+                FieldType = "standard"
+            });
+        }
+    }
 }

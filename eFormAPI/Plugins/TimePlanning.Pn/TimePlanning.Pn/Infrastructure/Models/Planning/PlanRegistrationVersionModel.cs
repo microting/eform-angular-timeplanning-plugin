@@ -1,7 +1,7 @@
-﻿/*
+/*
 The MIT License (MIT)
 
-Copyright (c) 2007 - 2021 Microting A/S
+Copyright (c) 2007 - 2025 Microting A/S
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,22 +22,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#nullable enable
-namespace TimePlanning.Pn.Services.TimePlanningPlanningService;
+namespace TimePlanning.Pn.Infrastructure.Models.Planning;
 
+using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Infrastructure.Models.Planning;
-using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
-public interface ITimePlanningPlanningService
+public class PlanRegistrationVersionModel
 {
-    Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(TimePlanningPlanningRequestModel model);
-    //
-    // Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model);
-    Task<OperationResult> Update(int id, TimePlanningPlanningPrDayModel model);
-    Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserName(TimePlanningPlanningRequestModel model, string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion);
+    public int Version { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public int? UpdatedByUserId { get; set; }
+    public List<FieldChange> Changes { get; set; } = [];
+}
 
-    Task<OperationResult> UpdateByCurrentUserNam(TimePlanningPlanningPrDayModel model);
-    Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId);
+public class FieldChange
+{
+    public string FieldName { get; set; }
+    public string FromValue { get; set; }
+    public string ToValue { get; set; }
+    public string FieldType { get; set; } // "standard", "gps", "snapshot"
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public string PictureHash { get; set; }
+    public string RegistrationType { get; set; }
 }
