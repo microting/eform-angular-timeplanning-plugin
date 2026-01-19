@@ -141,4 +141,7 @@ export const nlNL = {
   'Start time is required': 'Starttijd is vereist',
   'Start time cannot be earlier than previous shift`s end time': 'De begintijd kan niet eerder zijn dan de eindtijd van de vorige dienst.',
   'Create device': 'Apparaat maken',
+  Maternity: 'Zwangerschapsverlof',
+  VacationDayOff: 'Vakantiedag vrij',
+  Holiday: 'Vakantie',
 };

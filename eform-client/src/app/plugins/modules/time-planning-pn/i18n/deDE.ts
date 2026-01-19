@@ -141,4 +141,7 @@ export const deDE = {
   'Start time is required': 'Startzeit ist erforderlich',
   'Start time cannot be earlier than previous shift`s end time': 'Die Startzeit kann nicht vor der Endzeit der vorherigen Schicht liegen',
   'Create device': 'Gerät erstellen',
+  Maternity: 'Mutterschaftsurlaub',
+  VacationDayOff: 'Urlaubstag frei',
+  Holiday: 'Urlaub',
 };

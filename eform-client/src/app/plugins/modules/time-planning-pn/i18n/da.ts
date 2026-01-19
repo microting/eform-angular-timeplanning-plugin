@@ -139,4 +139,7 @@ export const da = {
   'Start time is required': 'Start er påkrævet',
   'Start time cannot be earlier than previous shift`s end time': 'Start kan ikke være tidligere end stop for den forrige skift',
   'Create device': 'Opret enhed',
+  Maternity: 'Barselsorlov',
+  VacationDayOff: 'Afspadsering',
+  Holiday: 'Helligdag',
 };

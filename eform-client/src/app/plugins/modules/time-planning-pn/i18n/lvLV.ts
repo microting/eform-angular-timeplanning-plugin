@@ -141,4 +141,7 @@ export const lvLV = {
   'Start time is required': 'Sākuma laiks ir obligāts.',
   'Start time cannot be earlier than previous shift`s end time': 'Sākuma laiks nevar būt agrāks par iepriekšējās maiņas beigu laiku',
   'Create device': 'Izveidot ierīci',
+  Maternity: 'Maternitātes atvaļinājums',
+  VacationDayOff: 'Brīvdiena',
+  Holiday: 'Brīvdienas',
 };

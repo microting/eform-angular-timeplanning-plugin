@@ -141,4 +141,7 @@ export const fiFI = {
   'Start time is required': 'Aloitusaika on pakollinen',
   'Start time cannot be earlier than previous shift`s end time': 'Aloitusaika ei voi olla aikaisempi kuin edellisen vuoron päättymisaika',
   'Create device': 'Luo laite',
+  Maternity: 'Äitiysloma',
+  VacationDayOff: 'Lomapäivä vapaa',
+  Holiday: 'Loma',
 };

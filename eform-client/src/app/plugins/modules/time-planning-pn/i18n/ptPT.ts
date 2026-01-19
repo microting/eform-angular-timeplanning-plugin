@@ -141,4 +141,7 @@ export const ptPT = {
   'Start time is required': 'A hora de início é necessária',
   'Start time cannot be earlier than previous shift`s end time': 'O horário de início não pode ser anterior ao horário de término do turno anterior',
   'Create device': 'Criar dispositivo',
+  Maternity: 'Licença-maternidade',
+  VacationDayOff: 'Dia de folga',
+  Holiday: 'Feriado',
 };

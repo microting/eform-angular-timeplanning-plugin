@@ -141,4 +141,7 @@ export const csCZ = {
   'Start time is required': 'Čas zahájení je povinný',
   'Start time cannot be earlier than previous shift`s end time': 'Čas zahájení nemůže být dříve než čas ukončení předchozí směny',
   'Create device': 'Vytvořit zařízení',
+  Maternity: 'Mateřská dovolená',
+  VacationDayOff: 'Volný den',
+  Holiday: 'Dovolená',
 };
