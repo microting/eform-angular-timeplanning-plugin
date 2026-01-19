@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:schema id="root">
+        <xs:element name="root" ns1:IsDataSet="true">
+
+        </xs:element>
+    </xs:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="Shift 1: start" xml:space="preserve">
+        <value>Смяна 1: начало</value>
+    </data>
+    <data name="PlanText" xml:space="preserve">
+        <value>Текст на план</value>
+    </data>
+    <data name="PlanHours" xml:space="preserve">
+        <value>Часове на план</value>
+    </data>
+    <data name="Shift 1: pause" xml:space="preserve">
+        <value>Смяна 1: пауза</value>
+    </data>
+    <data name="Shift 1: end" xml:space="preserve">
+        <value>Смяна 1: край</value>
+    </data>
+    <data name="Shift 2: start" xml:space="preserve">
+        <value>Смяна 2: начало</value>
+    </data>
+    <data name="Shift 2: pause" xml:space="preserve">
+        <value>Смяна 2: пауза</value>
+    </data>
+    <data name="Shift 2: end" xml:space="preserve">
+        <value>Смяна 2: край</value>
+    </data>
+    <data name="NettoHours" xml:space="preserve">
+        <value>Нетно часове</value>
+    </data>
+    <data name="Flex" xml:space="preserve">
+        <value>Flex</value>
+    </data>
+    <data name="SumFlexStart" xml:space="preserve">
+        <value>Сума flex начало</value>
+    </data>
+    <data name="SumFlexEnd" xml:space="preserve">
+        <value>Сума flex край</value>
+    </data>
+    <data name="PaidOutFlex" xml:space="preserve">
+        <value>Изплатен flex</value>
+    </data>
+    <data name="Message" xml:space="preserve">
+        <value>Съобщение</value>
+    </data>
+    <data name="Comments" xml:space="preserve">
+        <value>Коментари</value>
+    </data>
+    <data name="Comment office" xml:space="preserve">
+        <value>Коментар офис</value>
+    </data>
+    <data name="Comment office all" xml:space="preserve">
+        <value>Коментар офис всички</value>
+    </data>
+    <data name="Date" xml:space="preserve">
+        <value>Дата</value>
+    </data>
+    <data name="Worker" xml:space="preserve">
+        <value>Работник</value>
+    </data>
+    <data name="DayOfWeek" xml:space="preserve">
+        <value>Ден от седмицата</value>
+    </data>
+    <data name="Employee no" xml:space="preserve">
+        <value>Служител номер</value>
+    </data>
+    <data name="PlanRegistrationFound" xml:space="preserve">
+        <value>Регистрация на план намерена</value>
+    </data>
+    <data name="From" xml:space="preserve">
+        <value>От</value>
+    </data>
+    <data name="To" xml:space="preserve">
+        <value>До</value>
+    </data>
+    <data name="TokenNotFound" xml:space="preserve">
+        <value>Токен не е намерен</value>
+    </data>
+    <data name="Shift 3: start" xml:space="preserve">
+        <value>Смяна 3: начало</value>
+    </data>
+    <data name="Shift 3: end" xml:space="preserve">
+        <value>Смяна 3: край</value>
+    </data>
+    <data name="Shift 3: pause" xml:space="preserve">
+        <value>Смяна 3: пауза</value>
+    </data>
+    <data name="Shift 4: start" xml:space="preserve">
+        <value>Смяна 4: начало</value>
+    </data>
+    <data name="Shift 4: end" xml:space="preserve">
+        <value>Смяна 4: край</value>
+    </data>
+    <data name="Shift 4: pause" xml:space="preserve">
+        <value>Смяна 4: пауза</value>
+    </data>
+    <data name="Shift 5: start" xml:space="preserve">
+        <value>Смяна 5: начало</value>
+    </data>
+    <data name="Shift 5: end" xml:space="preserve">
+        <value>Смяна 5: край</value>
+    </data>
+    <data name="Shift 5: pause" xml:space="preserve">
+        <value>Смяна 5: пауза</value>
+    </data>
+    <data name="Week number" xml:space="preserve">
+        <value>Номер на седмица</value>
+    </data>
+    <data name="Hours Saturday" xml:space="preserve">
+        <value>Часове събота</value>
+    </data>
+    <data name="Hours Sunday" xml:space="preserve">
+        <value>Часове неделя и празници</value>
+    </data>
+    <data name="Yes" xml:space="preserve">
+        <value>Да</value>
+    </data>
+    <data name="No" xml:space="preserve">
+        <value>Не</value>
+    </data>
+    <data name="Total Hours" xml:space="preserve">
+        <value>Общо часове</value>
+    </data>
+</root>
