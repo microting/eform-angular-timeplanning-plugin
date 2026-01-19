@@ -10,7 +10,8 @@ const PICTURE_SNAPSHOT_API_URL = '/api/time-planning-pn/picture-snapshots/';
 @Component({
   selector: 'app-version-history-modal',
   templateUrl: './version-history-modal.component.html',
-  styleUrls: ['./version-history-modal.component.scss']
+  styleUrls: ['./version-history-modal.component.scss'],
+  standalone: false
 })
 export class VersionHistoryModalComponent implements OnInit {
   versionHistory: PlanRegistrationVersionHistoryModel;
