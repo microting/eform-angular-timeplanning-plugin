@@ -11,9 +11,9 @@
       <div *ngFor="let version of versionHistory.versions" class="version-section">
         <h5>
           {{ formatDateTime(version.updatedAt) }} Values changed
-          <span *ngIf="version.updatedByUserId">by User ID: {{ version.updatedByUserId }}</span>
+          <span *ngIf="version.updatedByUserId">by User ID: {{ version.updatedByUserId }} ({{version.version}})</span>
         </h5>
-        
+
         <table class="table table-bordered table-sm">
           <thead>
             <tr>
@@ -45,12 +45,12 @@
           </tbody>
         </table>
       </div>
-      
+
       <div *ngIf="versionHistory.versions.length === 0" class="no-versions">
         <p>No version history available.</p>
       </div>
     </div>
-    
+
     <div class="side-panel" *ngIf="selectedGpsCoordinate || selectedSnapshot">
       <div class="side-panel-header">
         <button type="button" class="close" (click)="closePanel()" aria-label="Close">
@@ -59,11 +59,11 @@
       </div>
       <div class="side-panel-content">
         <div *ngIf="selectedGpsCoordinate && mapUrl" class="map-container">
-          <iframe 
-            [src]="mapUrl" 
-            width="100%" 
-            height="100%" 
-            style="border:0" 
+          <iframe
+            [src]="mapUrl"
+            width="100%"
+            height="100%"
+            style="border:0"
             allowfullscreen>
           </iframe>
         </div>
