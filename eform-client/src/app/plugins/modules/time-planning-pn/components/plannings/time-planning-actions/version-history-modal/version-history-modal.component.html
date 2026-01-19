@@ -11,7 +11,7 @@
       <div *ngFor="let version of versionHistory.versions" class="version-section">
         <h5>
           {{ formatDateTime(version.updatedAt) }} Values changed
-          <span *ngIf="version.updatedByUserId">by User ID: {{ version.updatedByUserId }}</span>
+          <span *ngIf="version.updatedByUserId">by User ID: {{ version.updatedByUserId }} ({{version.version}})</span>
         </h5>
 
         <table class="table table-bordered table-sm">
