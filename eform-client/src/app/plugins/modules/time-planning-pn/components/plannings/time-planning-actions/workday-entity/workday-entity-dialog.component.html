@@ -4,6 +4,13 @@
     {{ data.planningPrDayModels.siteName }} -
     {{ datePipe.transform(data.planningPrDayModels.date, 'dd.MM.yyyy') }}
     ({{ data.planningPrDayModels.id }})
+    <button
+      mat-icon-button
+      class="float-end"
+      (click)="openVersionHistory()"
+      matTooltip="View Version History">
+      <mat-icon>history</mat-icon>
+    </button>
   </div>
 
   <div mat-dialog-content>

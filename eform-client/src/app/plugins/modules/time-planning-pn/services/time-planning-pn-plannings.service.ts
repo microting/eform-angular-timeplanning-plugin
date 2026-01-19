@@ -10,6 +10,7 @@ import {
   TimePlanningsRequestModel,
   TimePlanningsUpdateModel,
   TimePlanningUpdateModel,
+  PlanRegistrationVersionHistoryModel,
 } from '../models';
 
 export let TimePlanningPnPlanningsMethods = {
@@ -41,6 +42,14 @@ export class TimePlanningPnPlanningsService {
     return this.apiBaseService.put(
       TimePlanningPnPlanningsMethods.Plannings + '/' + id,
       model
+    );
+  }
+
+  getVersionHistory(
+    planRegistrationId: number
+  ): Observable<OperationDataResult<PlanRegistrationVersionHistoryModel>> {
+    return this.apiBaseService.get(
+      TimePlanningPnPlanningsMethods.Plannings + '/' + planRegistrationId + '/version-history'
     );
   }
 }

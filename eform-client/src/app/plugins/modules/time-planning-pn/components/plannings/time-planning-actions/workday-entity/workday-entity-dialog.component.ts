@@ -1,13 +1,14 @@
 import {Component, OnInit, TemplateRef, ViewChild,
   inject
 } from '@angular/core';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialog} from '@angular/material/dialog';
 import {TranslateService} from '@ngx-translate/core';
 import {DatePipe} from '@angular/common';
 import {TimePlanningMessagesEnum} from '../../../../enums';
 import {AssignedSiteModel, PlanningPrDayModel} from '../../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService} from '../../../../services';
+import {VersionHistoryModalComponent} from '../version-history-modal/version-history-modal.component';
 import validator from 'validator';
 
 import {
@@ -30,6 +31,7 @@ import {
 export class WorkdayEntityDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
   private planningsService = inject(TimePlanningPnPlanningsService);
+  private dialog = inject(MatDialog);
   public data = inject<{
       planningPrDayModels: PlanningPrDayModel,
       assignedSiteModel: AssignedSiteModel
@@ -1543,5 +1545,14 @@ export class WorkdayEntityDialogComponent implements OnInit {
   }
 
   onCancel() {
+  }
+
+  openVersionHistory() {
+    this.dialog.open(VersionHistoryModalComponent, {
+      data: { planRegistrationId: this.data.planningPrDayModels.id },
+      width: '90vw',
+      maxWidth: '1400px',
+      height: '80vh'
+    });
   }
 }
