@@ -30,7 +30,6 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
     private ITimePlanningLocalizationService _localizationService;
     private IPluginDbOptions<TimePlanningBaseSettings> _options;
     private ITimePlanningDbContextHelper _dbContextHelper;
-    private BaseDbContext _baseDbContext;
     private IEFormCoreService _coreService;
 
     [SetUp]
@@ -48,7 +47,7 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
         _dbContextHelper = Substitute.For<ITimePlanningDbContextHelper>();
         _dbContextHelper.GetDbContext().Returns(TimePlanningPnDbContext);
         
-        _baseDbContext = Substitute.For<BaseDbContext>();
+        var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
         _coreService = Substitute.For<IEFormCoreService>();
         var core = Substitute.For<Core>();
         _coreService.GetCore().Returns(Task.FromResult(core));
@@ -60,14 +59,13 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
             _dbContextHelper,
             _userService,
             _localizationService,
-            _baseDbContext,
+            baseDbContext,
             _coreService);
     }
 
     [TearDown]
     public new async Task TearDown()
     {
-        _baseDbContext?.Dispose();
         await base.TearDown();
     }
 
