@@ -57,6 +57,8 @@ public class TimePlanningPlanningService(
     IEFormCoreService core)
     : ITimePlanningPlanningService
 {
+    private const string GoogleMapsUrlTemplate = "https://www.google.com/maps?q={0},{1}";
+
     public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(
         TimePlanningPlanningRequestModel model)
     {
@@ -1638,7 +1640,7 @@ public class TimePlanningPlanningService(
                         {
                             FieldName = "GPS",
                             FromValue = "",
-                            ToValue = $"https://www.google.com/maps?q={gps.Latitude},{gps.Longitude}",
+                            ToValue = string.Format(GoogleMapsUrlTemplate, gps.Latitude, gps.Longitude),
                             FieldType = "gps",
                             Latitude = gps.Latitude,
                             Longitude = gps.Longitude,

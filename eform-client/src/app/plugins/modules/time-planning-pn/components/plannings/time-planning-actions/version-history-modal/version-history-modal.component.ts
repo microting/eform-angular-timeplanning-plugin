@@ -4,6 +4,9 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TimePlanningPnPlanningsService } from '../../../../services';
 import { PlanRegistrationVersionHistoryModel, PlanRegistrationVersionModel, FieldChangeModel } from '../../../../models';
 
+const GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
+const PICTURE_SNAPSHOT_API_URL = '/api/time-planning-pn/picture-snapshots/';
+
 @Component({
   selector: 'app-version-history-modal',
   templateUrl: './version-history-modal.component.html',
@@ -50,7 +53,9 @@ export class VersionHistoryModalComponent implements OnInit {
         longitude: change.longitude
       };
       this.selectedSnapshot = null;
-      const url = `https://www.google.com/maps?q=${change.latitude},${change.longitude}&output=embed`;
+      const url = GOOGLE_MAPS_EMBED_URL
+        .replace('{lat}', change.latitude.toString())
+        .replace('{lng}', change.longitude.toString());
       this.mapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
   }
@@ -62,7 +67,7 @@ export class VersionHistoryModalComponent implements OnInit {
       this.mapUrl = null;
       // Assuming the picture hash is a URL or we need to construct a URL to fetch the image
       // This might need adjustment based on how snapshots are stored
-      this.snapshotUrl = `/api/time-planning-pn/picture-snapshots/${change.pictureHash}`;
+      this.snapshotUrl = `${PICTURE_SNAPSHOT_API_URL}${change.pictureHash}`;
     }
   }
 
