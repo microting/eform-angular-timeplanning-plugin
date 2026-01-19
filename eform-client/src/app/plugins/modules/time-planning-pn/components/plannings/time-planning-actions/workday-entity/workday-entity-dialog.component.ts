@@ -9,6 +9,8 @@ import {AssignedSiteModel, PlanningPrDayModel} from '../../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService} from '../../../../services';
 import {VersionHistoryModalComponent} from '../version-history-modal/version-history-modal.component';
+import {Store} from '@ngrx/store';
+import {selectCurrentUserIsFirstUser} from 'src/app/state';
 import validator from 'validator';
 
 import {
@@ -32,12 +34,15 @@ export class WorkdayEntityDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
   private planningsService = inject(TimePlanningPnPlanningsService);
   private dialog = inject(MatDialog);
+  private store = inject(Store);
   public data = inject<{
       planningPrDayModels: PlanningPrDayModel,
       assignedSiteModel: AssignedSiteModel
     }>(MAT_DIALOG_DATA);
   protected datePipe = inject(DatePipe);
   private translateService = inject(TranslateService);
+
+  public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   enumKeys: string[] = [];
