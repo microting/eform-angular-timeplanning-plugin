@@ -1,7 +1,7 @@
-﻿/*
+/*
 The MIT License (MIT)
 
-Copyright (c) 2007 - 2021 Microting A/S
+Copyright (c) 2007 - 2025 Microting A/S
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,22 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#nullable enable
-namespace TimePlanning.Pn.Services.TimePlanningPlanningService;
+namespace TimePlanning.Pn.Infrastructure.Models.Planning;
 
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Infrastructure.Models.Planning;
-using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
-public interface ITimePlanningPlanningService
+public class PlanRegistrationVersionHistoryModel
 {
-    Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(TimePlanningPlanningRequestModel model);
-    //
-    // Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model);
-    Task<OperationResult> Update(int id, TimePlanningPlanningPrDayModel model);
-    Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserName(TimePlanningPlanningRequestModel model, string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion);
-
-    Task<OperationResult> UpdateByCurrentUserNam(TimePlanningPlanningPrDayModel model);
-    Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId);
+    public int PlanRegistrationId { get; set; }
+    public bool GpsEnabled { get; set; }
+    public bool SnapshotEnabled { get; set; }
+    public List<PlanRegistrationVersionModel> Versions { get; set; } = [];
 }
