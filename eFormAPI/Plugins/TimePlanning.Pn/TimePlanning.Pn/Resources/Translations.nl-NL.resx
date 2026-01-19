@@ -126,7 +126,7 @@
         <value>Uren zaterdag</value>
     </data>
     <data name="Hours Sunday" xml:space="preserve">
-        <value>Sunday and Holiday Hours</value>
+        <value>Zondag en feestdaguren</value>
     </data>
     <data name="Yes" xml:space="preserve">
         <value>Ja</value>

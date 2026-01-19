@@ -126,7 +126,7 @@
         <value>Hodiny sobota</value>
     </data>
     <data name="Hours Sunday" xml:space="preserve">
-        <value>Sunday and Holiday Hours</value>
+        <value>Hodiny nedeľa a sviatky</value>
     </data>
     <data name="Yes" xml:space="preserve">
         <value>Áno</value>
