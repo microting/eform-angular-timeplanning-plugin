@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:schema id="root">
+        <xs:element name="root" ns1:IsDataSet="true">
 
-<root>
-    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-        <xsd:element name="root" msdata:IsDataSet="true">
-
-        </xsd:element>
-    </xsd:schema>
+        </xs:element>
+    </xs:schema>
     <resheader name="resmimetype">
         <value>text/microsoft-resx</value>
     </resheader>
@@ -19,123 +18,123 @@
         <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
     </resheader>
     <data name="Shift 1: start" xml:space="preserve">
-        <value>Shift 1: start</value>
+        <value>Turno 1: inizio</value>
     </data>
     <data name="PlanText" xml:space="preserve">
-        <value>Plan text</value>
+        <value>Testo del piano</value>
     </data>
     <data name="PlanHours" xml:space="preserve">
-        <value>Plan hours</value>
+        <value>Ore del piano</value>
     </data>
     <data name="Shift 1: pause" xml:space="preserve">
-        <value>Shift 1: pause</value>
+        <value>Turno 1: pausa</value>
     </data>
     <data name="Shift 1: end" xml:space="preserve">
-        <value>Shift 1: end</value>
+        <value>Turno 1: fine</value>
     </data>
     <data name="Shift 2: start" xml:space="preserve">
-        <value>Shift 2: start</value>
+        <value>Turno 2: inizio</value>
     </data>
     <data name="Shift 2: pause" xml:space="preserve">
-        <value>Shift 2: pause</value>
+        <value>Turno 2: pausa</value>
     </data>
     <data name="Shift 2: end" xml:space="preserve">
-        <value>Shift 2: end</value>
+        <value>Turno 2: fine</value>
     </data>
     <data name="NettoHours" xml:space="preserve">
-        <value>Netto hours</value>
+        <value>Ore nette</value>
     </data>
     <data name="Flex" xml:space="preserve">
         <value>Flex</value>
     </data>
     <data name="SumFlexStart" xml:space="preserve">
-        <value>Flex sum</value>
+        <value>Somma flex inizio</value>
     </data>
     <data name="SumFlexEnd" xml:space="preserve">
-        <value>Flex sum</value>
+        <value>Somma flex fine</value>
     </data>
     <data name="PaidOutFlex" xml:space="preserve">
-        <value>Paid out flex</value>
+        <value>Flex pagato</value>
     </data>
     <data name="Message" xml:space="preserve">
-        <value>Message</value>
+        <value>Messaggio</value>
     </data>
     <data name="Comments" xml:space="preserve">
-        <value>Comments</value>
+        <value>Commenti</value>
     </data>
     <data name="Comment office" xml:space="preserve">
-        <value>Comment office</value>
+        <value>Commento ufficio</value>
     </data>
     <data name="Comment office all" xml:space="preserve">
-        <value>Comment office all</value>
+        <value>Commento ufficio tutti</value>
     </data>
     <data name="Date" xml:space="preserve">
-        <value>Date</value>
+        <value>Data</value>
     </data>
     <data name="Worker" xml:space="preserve">
-        <value>Worker</value>
+        <value>Lavoratore</value>
     </data>
     <data name="DayOfWeek" xml:space="preserve">
-        <value>Day of week</value>
+        <value>Giorno della settimana</value>
     </data>
     <data name="Employee no" xml:space="preserve">
-        <value>Employee no</value>
+        <value>N. dipendente</value>
     </data>
     <data name="PlanRegistrationFound" xml:space="preserve">
-        <value>Plan registration found</value>
+        <value>Registrazione piano trovata</value>
     </data>
     <data name="From" xml:space="preserve">
-        <value>From</value>
+        <value>Da</value>
     </data>
     <data name="To" xml:space="preserve">
-        <value>To</value>
+        <value>A</value>
     </data>
     <data name="TokenNotFound" xml:space="preserve">
-        <value>Token not found</value>
+        <value>Token non trovato</value>
     </data>
     <data name="Shift 3: start" xml:space="preserve">
-        <value>Shift 3: start</value>
+        <value>Turno 3: inizio</value>
     </data>
     <data name="Shift 3: end" xml:space="preserve">
-        <value>Shift 3: end</value>
+        <value>Turno 3: fine</value>
     </data>
     <data name="Shift 3: pause" xml:space="preserve">
-        <value>Shift 3: pause</value>
+        <value>Turno 3: pausa</value>
     </data>
     <data name="Shift 4: start" xml:space="preserve">
-        <value>Shift 4: start</value>
+        <value>Turno 4: inizio</value>
     </data>
     <data name="Shift 4: end" xml:space="preserve">
-        <value>Shift 4: end</value>
+        <value>Turno 4: fine</value>
     </data>
     <data name="Shift 4: pause" xml:space="preserve">
-        <value>Shift 4: pause</value>
+        <value>Turno 4: pausa</value>
     </data>
     <data name="Shift 5: start" xml:space="preserve">
-        <value>Shift 5: start</value>
+        <value>Turno 5: inizio</value>
     </data>
     <data name="Shift 5: end" xml:space="preserve">
-        <value>Shift 5: end</value>
+        <value>Turno 5: fine</value>
     </data>
     <data name="Shift 5: pause" xml:space="preserve">
-        <value>Shift 5: pause</value>
+        <value>Turno 5: pausa</value>
     </data>
     <data name="Week number" xml:space="preserve">
-        <value>Week number</value>
+        <value>Numero settimana</value>
     </data>
     <data name="Hours Saturday" xml:space="preserve">
-        <value>Hours Saturday</value>
+        <value>Ore sabato</value>
     </data>
     <data name="Hours Sunday" xml:space="preserve">
         <value>Sunday and Holiday Hours</value>
     </data>
     <data name="Yes" xml:space="preserve">
-        <value>Yes</value>
+        <value>Sì</value>
     </data>
     <data name="No" xml:space="preserve">
         <value>No</value>
     </data>
     <data name="Total Hours" xml:space="preserve">
-        <value>Total Hours</value>
+        <value>Ore totali</value>
     </data>
 </root>
