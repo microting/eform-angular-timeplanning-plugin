@@ -155,17 +155,22 @@ public class TimePlanningPictureSnapshotService(
     {
         try
         {
+            var planRegistration = await dbContext.PlanRegistrations
+                .Where(x => x.Date == model.Date)
+                .Where(x => x.SdkSitId == model.SdkSiteId)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync();
             string pictureHash = null;
-            
+
             if (model.FileContent != null && model.FileContent.Length > 0)
             {
                 var tempPath = Path.Combine(Path.GetTempPath(), model.FileName);
                 await File.WriteAllBytesAsync(tempPath, model.FileContent);
-                
+
                 var core = await coreService.GetCore();
                 await core.PutFileToStorageSystem(tempPath, model.FileName);
                 pictureHash = model.FileName;
-                
+
                 if (File.Exists(tempPath))
                 {
                     File.Delete(tempPath);
@@ -174,7 +179,7 @@ public class TimePlanningPictureSnapshotService(
 
             var pictureSnapshot = new PictureSnapshot
             {
-                PlanRegistrationId = model.PlanRegistrationId,
+                PlanRegistrationId = planRegistration.Id,
                 PictureHash = pictureHash ?? model.PictureHash,
                 RegistrationType = model.RegistrationType,
                 CreatedByUserId = userService.UserId,
@@ -196,6 +201,11 @@ public class TimePlanningPictureSnapshotService(
     {
         try
         {
+            var planRegistration = await dbContext.PlanRegistrations
+                .Where(x => x.Date == model.Date)
+                .Where(x => x.SdkSitId == model.SdkSiteId)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync();
             var pictureSnapshot = await dbContext.PictureSnapshots
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Id == model.Id)
@@ -210,11 +220,11 @@ public class TimePlanningPictureSnapshotService(
             {
                 var tempPath = Path.Combine(Path.GetTempPath(), model.FileName);
                 await File.WriteAllBytesAsync(tempPath, model.FileContent);
-                
+
                 var core = await coreService.GetCore();
                 await core.PutFileToStorageSystem(tempPath, model.FileName);
                 pictureSnapshot.PictureHash = model.FileName;
-                
+
                 if (File.Exists(tempPath))
                 {
                     File.Delete(tempPath);
@@ -225,7 +235,7 @@ public class TimePlanningPictureSnapshotService(
                 pictureSnapshot.PictureHash = model.PictureHash;
             }
 
-            pictureSnapshot.PlanRegistrationId = model.PlanRegistrationId;
+            pictureSnapshot.PlanRegistrationId = planRegistration.Id;
             pictureSnapshot.RegistrationType = model.RegistrationType;
             pictureSnapshot.UpdatedByUserId = userService.UserId;
 
