@@ -2424,7 +2424,7 @@ public class TimePlanningWorkingHoursService(
                     Translations.Worker,
                     Translations.PlanHours,
                     Translations.NettoHours,
-                    Translations.Total_Hours,
+                    // Translations.Total_Hours,
                     Translations.SumFlexStart,
                     Translations.Normal_Hours,
                     Translations.Hours_Saturday,
@@ -2661,7 +2661,7 @@ public class TimePlanningWorkingHoursService(
                     var nettoHoursOverrideTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive).Sum(x => x.NettoHoursOverride);
                     var totalHours = nettoHoursTotal + nettoHoursOverrideTotal;
 
-                    totalRow.Append(CreateNumericCell(nettoHoursTotal)); // Total Hours column
+                    // totalRow.Append(CreateNumericCell(nettoHoursTotal)); // Total Hours column
                     totalRow.Append(CreateNumericCell(totalHours)); // Total Hours column
                     totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
                     var sumHoursSaturday = content.Model.Skip(1).Where(x => x.IsSaturday).Select(x => x.NettoHours).Sum();
