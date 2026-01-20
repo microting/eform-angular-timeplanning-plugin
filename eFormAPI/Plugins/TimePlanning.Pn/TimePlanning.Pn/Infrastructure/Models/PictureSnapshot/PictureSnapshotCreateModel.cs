@@ -28,8 +28,8 @@ namespace TimePlanning.Pn.Infrastructure.Models.PictureSnapshot;
 
 public class PictureSnapshotCreateModel
 {
-    public int SdkSiteId;
-    public DateTime Date;
+    public int SdkSiteId { get; set; }
+    public DateTime Date { get; set; }
     public string PictureHash { get; set; }
     public string RegistrationType { get; set; }
     public byte[] FileContent { get; set; }

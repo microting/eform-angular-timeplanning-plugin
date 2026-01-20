@@ -29,8 +29,8 @@ namespace TimePlanning.Pn.Infrastructure.Models.GpsCoordinate;
 public class GpsCoordinateUpdateModel
 {
     public int Id { get; set; }
-    public int SdkSiteId;
-    public DateTime Date;
+    public int SdkSiteId { get; set; }
+    public DateTime Date { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public string RegistrationType { get; set; }
