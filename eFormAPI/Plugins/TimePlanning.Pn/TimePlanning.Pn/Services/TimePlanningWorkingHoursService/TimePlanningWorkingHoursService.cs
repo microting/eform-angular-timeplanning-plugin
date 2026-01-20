@@ -2427,10 +2427,10 @@ public class TimePlanningWorkingHoursService(
                     // Translations.Total_Hours,
                     Translations.SumFlexStart,
                     Translations.Normal_Hours,
-                    Translations.Hours_Saturday,
                     Translations.Hours_Sunday,
                     Translations.Comments,
-                    Translations.Message
+                    Translations.Message,
+                    Translations.Hours_Saturday
                 };
                 List<string> totalHeaderStrings = new List<string>();
                 foreach (var header in totalHeaders)
@@ -2700,10 +2700,10 @@ public class TimePlanningWorkingHoursService(
                     var hasAnyCommentFromWorker = content.Model.Skip(1).ToList().Any(x => !string.IsNullOrEmpty(x.CommentWorker));
                     var hasAnyMessage = content.Model.Skip(1).ToList().Any(x => x.Message != null);
 
-                    totalRow.Append(CreateNumericCell(sumHoursSaturday));
                     totalRow.Append(CreateNumericCell(sumHoursSundayAndHoliday));
                     totalRow.Append(CreateCell(hasAnyCommentFromWorker ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
                     totalRow.Append(CreateCell(hasAnyMessage ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
+                    totalRow.Append(CreateNumericCell(sumHoursSaturday));
                     totalSheetData1.Append(totalRow);
                     totalRowIndex++;
 
