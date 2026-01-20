@@ -27,12 +27,12 @@ public class PictureSnapshotServiceTests : TestBaseSetup
         await base.Setup();
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
-        
+
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
-        
+
         _coreService = Substitute.For<IEFormCoreService>();
-        
+
         _pictureSnapshotService = new TimePlanningPictureSnapshotService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<TimePlanningPictureSnapshotService>>(),
             TimePlanningPnDbContext,
@@ -56,7 +56,8 @@ public class PictureSnapshotServiceTests : TestBaseSetup
 
         var model = new PictureSnapshotCreateModel
         {
-            PlanRegistrationId = planRegistration.Id,
+            SdkSiteId = 1,
+            Date = planRegistration.Date,
             PictureHash = "test-hash-123",
             RegistrationType = "CheckIn"
         };
@@ -169,7 +170,8 @@ public class PictureSnapshotServiceTests : TestBaseSetup
         var updateModel = new PictureSnapshotUpdateModel
         {
             Id = pictureSnapshot.Id,
-            PlanRegistrationId = planRegistration.Id,
+            SdkSiteId = 1,
+            Date = planRegistration.Date,
             PictureHash = "updated-hash-456",
             RegistrationType = "CheckOut"
         };
