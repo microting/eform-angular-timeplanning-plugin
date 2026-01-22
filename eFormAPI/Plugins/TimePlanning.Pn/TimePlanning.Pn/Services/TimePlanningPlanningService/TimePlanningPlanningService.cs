@@ -747,6 +747,7 @@ public class TimePlanningPlanningService(
                 planning.Pause201StoppedAt = null;
                 planning.Pause202StartedAt = null;
                 planning.Pause202StoppedAt = null;
+                planning.Shift2PauseNumber = 0;
                 planning.Pause2Id = 0;
             }
 
@@ -786,6 +787,7 @@ public class TimePlanningPlanningService(
                 planning.Pause101StoppedAt = null;
                 planning.Pause102StartedAt = null;
                 planning.Pause102StoppedAt = null;
+                planning.Shift1PauseNumber = 0;
                 planning.Pause1Id = 0;
             }
             if (model.Start1Id == null)
@@ -1625,11 +1627,11 @@ public class TimePlanningPlanningService(
                 var previousVersion = i < versions.Count - 1 ? versions[i + 1] : null;
 
                 var changes = CompareVersions(currentVersion, previousVersion);
-                var lastChange = changes.Last();
 
                 // Get GPS coordinates for this version
                 if (gpsEnabled && changes.Any())
                 {
+                    var lastChange = changes.Last();
                     var gpsCoordinates = await dbContext.GpsCoordinates
                         .Where(x => x.PlanRegistrationId == planRegistrationId)
                         .Where(x => x.RegistrationType == lastChange.FieldName)
@@ -1653,6 +1655,7 @@ public class TimePlanningPlanningService(
                 // Get picture snapshots for this version
                 if (snapshotEnabled && changes.Any())
                 {
+                    var lastChange = changes.Last();
                     var snapshots = await dbContext.PictureSnapshots
                         .Where(x => x.PlanRegistrationId == planRegistrationId)
                         .Where(x => x.RegistrationType == lastChange.FieldName)
