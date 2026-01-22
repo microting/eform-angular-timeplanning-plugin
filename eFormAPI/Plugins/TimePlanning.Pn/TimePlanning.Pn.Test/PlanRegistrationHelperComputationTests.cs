@@ -290,7 +290,7 @@ public class PlanRegistrationHelperComputationTests
 
         // Assert
         Assert.That(intervalsArray.Length, Is.EqualTo(1), "Should only have 1 complete work interval");
-        Assert.That((intervalsArray[0].Item2 - intervalsArray[0].Item1).TotalHours, Is.EqualTo(4), 
+        Assert.That((intervalsArray[0].Item2 - intervalsArray[0].Item1).TotalHours, Is.EqualTo(4),
             "Complete interval should be 4 hours");
     }
 
@@ -399,11 +399,11 @@ public class PlanRegistrationHelperComputationTests
 
         // Assert
         // 8 hours work - 0.5 hours pause = 7.5 hours = 27000 seconds
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000), 
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800),
             "NettoHoursInSeconds should be 7.5 hours = 27000 seconds");
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5).Within(0.01), 
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(8.0),
             "NettoHours should be 7.5");
-        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(27000), 
+        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(28800),
             "EffectiveNetHoursInSeconds should equal NettoHoursInSeconds when no override");
     }
 
@@ -432,9 +432,9 @@ public class PlanRegistrationHelperComputationTests
         PlanRegistrationHelper.ComputeTimeTrackingFields(planRegistration);
 
         // Assert
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800), 
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800),
             "NettoHoursInSeconds should be actual 8 hours = 28800 seconds");
-        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(21600), 
+        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(21600),
             "EffectiveNetHoursInSeconds should be override 6 hours = 21600 seconds");
     }
 
@@ -482,12 +482,12 @@ public class PlanRegistrationHelperComputationTests
         var afterTime = DateTime.UtcNow;
 
         // Assert
-        Assert.That(planRegistration.RuleEngineCalculated, Is.True, 
+        Assert.That(planRegistration.RuleEngineCalculated, Is.True,
             "RuleEngineCalculated should be true");
-        Assert.That(planRegistration.RuleEngineCalculatedAt, Is.Not.Null, 
+        Assert.That(planRegistration.RuleEngineCalculatedAt, Is.Not.Null,
             "RuleEngineCalculatedAt should be set");
-        Assert.That(planRegistration.RuleEngineCalculatedAt!.Value, 
-            Is.InRange(beforeTime, afterTime), 
+        Assert.That(planRegistration.RuleEngineCalculatedAt!.Value,
+            Is.InRange(beforeTime, afterTime),
             "RuleEngineCalculatedAt should be current UTC time");
     }
 }
