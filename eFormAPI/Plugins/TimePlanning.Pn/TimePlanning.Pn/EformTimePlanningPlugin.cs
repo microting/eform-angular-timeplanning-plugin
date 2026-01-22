@@ -607,7 +607,6 @@ public class EformTimePlanningPlugin : IEformPlugin
 
     public void SeedDatabase(string connectionString)
     {
-        // Get DbContext
         var contextFactory = new TimePlanningPnContextFactory();
         using var dbContext = contextFactory.CreateDbContext([connectionString]);
 
@@ -619,13 +618,10 @@ public class EformTimePlanningPlugin : IEformPlugin
             if (activeAssignedSite.AllowPersonalTimeRegistration)
             {
                 activeAssignedSite.EnableMobileAccess = true;
-                activeAssignedSite.Update(dbContext);
-                dbContext.SaveChanges();
+                activeAssignedSite.Update(dbContext).GetAwaiter().GetResult();
             }
         }
 
-
-        // Seed configuration
         TimePlanningPluginSeed.SeedData(dbContext);
     }
 

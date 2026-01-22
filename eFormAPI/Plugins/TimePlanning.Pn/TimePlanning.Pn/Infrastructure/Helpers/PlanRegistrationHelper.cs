@@ -27,7 +27,7 @@ public static class PlanRegistrationHelper
 {
     private static DanishHolidayConfiguration _holidayConfiguration;
     private static readonly object _holidayConfigLock = new object();
-    
+
     /// <summary>
     /// Loads the Danish holiday configuration from the JSON file.
     /// Caches the result for subsequent calls.
@@ -38,25 +38,25 @@ public static class PlanRegistrationHelper
         {
             return _holidayConfiguration;
         }
-        
+
         lock (_holidayConfigLock)
         {
             if (_holidayConfiguration != null)
             {
                 return _holidayConfiguration;
             }
-            
+
             try
             {
                 var jsonOptions = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 };
-                
+
                 // First, try to load as embedded resource
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
                 var resourceName = "TimePlanning.Pn.Resources.danish_holidays_2025_2030.json";
-                
+
                 using (var stream = assembly.GetManifestResourceStream(resourceName))
                 {
                     if (stream != null)
@@ -77,7 +77,7 @@ public static class PlanRegistrationHelper
                         var assemblyLocation = assembly.Location;
                         var assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
                         var resourcePath = Path.Combine(assemblyDirectory, "Resources", "danish_holidays_2025_2030.json");
-                        
+
                         if (File.Exists(resourcePath))
                         {
                             var json = File.ReadAllText(resourcePath);
@@ -110,11 +110,11 @@ public static class PlanRegistrationHelper
                     Holidays = new List<HolidayDefinition>()
                 };
             }
-            
+
             return _holidayConfiguration;
         }
     }
-    
+
     public static PlanRegistration CalculatePauseAutoBreakCalculationActive(
         AssignedSite assignedSite, PlanRegistration planning)
     {
@@ -2344,7 +2344,7 @@ public static class PlanRegistrationHelper
             (pr.Pause3StartedAt, pr.Pause3StoppedAt),
             (pr.Pause4StartedAt, pr.Pause4StoppedAt),
             (pr.Pause5StartedAt, pr.Pause5StoppedAt),
-            
+
             // Extended pause intervals 10-29
             (pr.Pause10StartedAt, pr.Pause10StoppedAt),
             (pr.Pause11StartedAt, pr.Pause11StoppedAt),
@@ -2366,12 +2366,12 @@ public static class PlanRegistrationHelper
             (pr.Pause27StartedAt, pr.Pause27StoppedAt),
             (pr.Pause28StartedAt, pr.Pause28StoppedAt),
             (pr.Pause29StartedAt, pr.Pause29StoppedAt),
-            
+
             // Additional pause intervals 100-102
             (pr.Pause100StartedAt, pr.Pause100StoppedAt),
             (pr.Pause101StartedAt, pr.Pause101StoppedAt),
             (pr.Pause102StartedAt, pr.Pause102StoppedAt),
-            
+
             // Additional pause intervals 200-202
             (pr.Pause200StartedAt, pr.Pause200StoppedAt),
             (pr.Pause201StartedAt, pr.Pause201StoppedAt),
@@ -2413,14 +2413,14 @@ public static class PlanRegistrationHelper
         {
             return "HOLIDAY";
         }
-        
+
         var dayOfWeek = date.DayOfWeek;
-        
+
         if (dayOfWeek == DayOfWeek.Sunday)
         {
             return "SUNDAY";
         }
-        
+
         if (dayOfWeek == DayOfWeek.Saturday)
         {
             return "SATURDAY";
@@ -2436,10 +2436,10 @@ public static class PlanRegistrationHelper
     public static bool IsOfficialHoliday(DateTime date)
     {
         var config = LoadHolidayConfiguration();
-        
+
         // Normalize the date to midnight for comparison
         var midnight = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0);
-        
+
         // Check if the date exists in our holiday configuration
         return config.Holidays?.Any(h => h.ParsedDate == midnight) ?? false;
     }
@@ -2465,8 +2465,15 @@ public static class PlanRegistrationHelper
         var totalWorkSeconds = CalculateTotalSeconds(workIntervals);
 
         // Calculate pause intervals and total pause seconds
-        var pauseIntervals = GetPauseIntervals(planRegistration);
-        var totalPauseSeconds = CalculateTotalSeconds(pauseIntervals);
+        // var pauseIntervals = GetPauseIntervals(planRegistration);
+        // var totalPauseSeconds = CalculateTotalSeconds(pauseIntervals);
+        long totalPauseSeconds = 0;;
+        // Sum pauses from Pause1Id to Pause5Id only for now (as we don't have timestamps for others) and these are equal to 5 min increments
+        totalPauseSeconds += (planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0) * 300;
+        totalPauseSeconds += (planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0) * 300;
+        totalPauseSeconds += (planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0) * 300;
+        totalPauseSeconds += (planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0) * 300;
+        totalPauseSeconds += (planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0) * 300;
 
         // Net work seconds = total work - total pause (cannot be negative)
         var netWorkSeconds = Math.Max(0, totalWorkSeconds - totalPauseSeconds);
@@ -2497,7 +2504,7 @@ public static class PlanRegistrationHelper
         var dayCode = GetDayCode(midnight);
         // Note: DayCode field may or may not exist on PlanRegistration in current version
         // If it doesn't exist, this will need to be stored separately or added to the entity
-        
+
         // Note: Break policy splitting (paid/unpaid) would be done here if break policy rules exist
         // For now, we'll leave that for future implementation when BreakPolicy entities are fully defined
     }

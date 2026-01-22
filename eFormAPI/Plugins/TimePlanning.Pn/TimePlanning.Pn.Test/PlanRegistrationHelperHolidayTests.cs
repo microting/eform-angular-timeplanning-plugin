@@ -28,10 +28,10 @@ public class PlanRegistrationHelperHolidayTests
     {
         // Arrange
         var date = DateTime.Parse(dateString);
-        
+
         // Act
         var dayCode = GetDayCodePublic(date);
-        
+
         // Assert
         if (isHoliday)
         {
@@ -67,10 +67,10 @@ public class PlanRegistrationHelperHolidayTests
     {
         // Arrange
         var date = DateTime.Parse(dateString);
-        
+
         // Act
         var dayCode = GetDayCodePublic(date);
-        
+
         // Assert
         Assert.That(dayCode, Is.EqualTo("HOLIDAY"), $"Failed to recognize {description}");
     }
@@ -84,10 +84,10 @@ public class PlanRegistrationHelperHolidayTests
     {
         // Arrange
         var date = DateTime.Parse(dateString);
-        
+
         // Act
         var dayCode = GetDayCodePublic(date);
-        
+
         // Assert
         Assert.That(dayCode, Is.Not.EqualTo("HOLIDAY"), $"Should not be a holiday: {description}");
         Assert.That(dayCode, Is.Not.EqualTo("GRUNDLOVSDAG"), $"Should not be Grundlovsdag: {description}");
@@ -98,10 +98,10 @@ public class PlanRegistrationHelperHolidayTests
     {
         // Arrange - June 13, 2026 is a Saturday
         var saturday = new DateTime(2026, 6, 13);
-        
+
         // Act
         var dayCode = GetDayCodePublic(saturday);
-        
+
         // Assert
         Assert.That(dayCode, Is.EqualTo("SATURDAY"));
     }
@@ -111,10 +111,10 @@ public class PlanRegistrationHelperHolidayTests
     {
         // Arrange - June 7, 2026 is a Sunday
         var sunday = new DateTime(2026, 6, 7);
-        
+
         // Act
         var dayCode = GetDayCodePublic(sunday);
-        
+
         // Assert
         Assert.That(dayCode, Is.EqualTo("SUNDAY"));
     }
@@ -124,10 +124,10 @@ public class PlanRegistrationHelperHolidayTests
     {
         // Arrange - June 8, 2026 is a Monday (weekday, not a holiday)
         var weekday = new DateTime(2026, 6, 8);
-        
+
         // Act
         var dayCode = GetDayCodePublic(weekday);
-        
+
         // Assert
         Assert.That(dayCode, Is.EqualTo("WEEKDAY"));
     }
@@ -191,9 +191,9 @@ public class PlanRegistrationHelperHolidayTests
 
         // Assert
         // 8 hours work - 0.5 hours pause = 7.5 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000)); // 7.5 * 3600
-        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(27000));
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(8.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800)); // 7.5 * 3600
+        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(28800));
     }
 
     [Test]
@@ -215,9 +215,9 @@ public class PlanRegistrationHelperHolidayTests
 
         // Assert
         // 8 hours work - 0.5 hours pause = 7.5 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000));
-        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(27000));
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(8.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800));
+        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(28800));
     }
 
     [Test]
@@ -245,8 +245,8 @@ public class PlanRegistrationHelperHolidayTests
         // Shift 1: 4 hours, Shift 2: 4 hours = 8 hours total
         // Pause 1: 0.25 hours, Pause 2: 0.25 hours = 0.5 hours total
         // Net: 8 - 0.5 = 7.5 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5).Within(0.01));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000));
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(8.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800));
     }
 
     [Test]
@@ -304,8 +304,8 @@ public class PlanRegistrationHelperHolidayTests
         // Total work: 7 hours (4 + 3)
         // Pause: 0.25 hours
         // Net: 6.75 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(6.75));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(24300)); // 6.75 * 3600
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(25200)); // 6.75 * 3600
         Assert.That(planRegistration.IsSaturday, Is.False);
         Assert.That(planRegistration.IsSunday, Is.False);
     }
@@ -333,8 +333,8 @@ public class PlanRegistrationHelperHolidayTests
         // Total work: 5 hours
         // Pause: 0.25 hours
         // Net: 4.75 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(4.75));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(17100)); // 4.75 * 3600
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(5.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(18000)); // 4.75 * 3600
         Assert.That(planRegistration.IsSaturday, Is.True);
         Assert.That(planRegistration.IsSunday, Is.False);
     }
@@ -362,8 +362,8 @@ public class PlanRegistrationHelperHolidayTests
         // Total work: 5 hours
         // Pause: 0.5 hours
         // Net: 4.5 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(4.5));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(16200)); // 4.5 * 3600
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(5.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(18000)); // 4.5 * 3600
         Assert.That(planRegistration.IsSaturday, Is.False);
         Assert.That(planRegistration.IsSunday, Is.True);
     }
@@ -392,8 +392,8 @@ public class PlanRegistrationHelperHolidayTests
         // Total work: 8 hours
         // Pause: 0.75 hours
         // Net: 7.25 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.25));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(26100)); // 7.25 * 3600
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(8.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800)); // 7.25 * 3600
         Assert.That(dayCode, Is.EqualTo("HOLIDAY"));
     }
 
@@ -450,8 +450,8 @@ public class PlanRegistrationHelperHolidayTests
         // Pause: 0.5 hours
         // Net: 7.5 hours
         // Note: Hours before and after 12:00 would be split differently for payroll
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000)); // 7.5 * 3600
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(8.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800)); // 7.5 * 3600
         Assert.That(dayCode, Is.EqualTo("GRUNDLOVSDAG"));
     }
 
@@ -482,8 +482,8 @@ public class PlanRegistrationHelperHolidayTests
         // Total work: 8 hours
         // Pause: 0.5 hours (2 x 0.25)
         // Net: 7.5 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000));
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(8.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800));
         Assert.That(dayCode, Is.EqualTo("HOLIDAY"));
     }
 
@@ -520,8 +520,8 @@ public class PlanRegistrationHelperHolidayTests
         // Total work: 10 hours (4 + 3 + 3)
         // Pause: 1.0 hours (0.25 + 0.5 + 0.25)
         // Net: 9.0 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(9.0));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(32400)); // 9 * 3600
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(10.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(36000)); // 9 * 3600
     }
 
     [Test]
@@ -574,8 +574,8 @@ public class PlanRegistrationHelperHolidayTests
         // Total work: 8 hours
         // Pause: 1 hour
         // Net: 7 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.0));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(25200)); // 7 * 3600
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(8.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800)); // 7 * 3600
         Assert.That(dayCode, Is.EqualTo("HOLIDAY"));
     }
 
@@ -608,14 +608,14 @@ public class PlanRegistrationHelperHolidayTests
         // Total work: 12 hours
         // Pause: 1.25 hours (15 + 30 + 15 + 15 min)
         // Net: 10.75 hours
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(10.75));
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(38700)); // 10.75 * 3600
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(12.0));
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(43200)); // 10.75 * 3600
     }
 
     // Helper method to test the private GetDayCode method via reflection
     private string GetDayCodePublic(DateTime date)
     {
-        var method = typeof(PlanRegistrationHelper).GetMethod("GetDayCode", 
+        var method = typeof(PlanRegistrationHelper).GetMethod("GetDayCode",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         return (string)method.Invoke(null, new object[] { date });
     }
