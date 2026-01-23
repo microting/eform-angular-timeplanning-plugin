@@ -179,4 +179,37 @@
       </mat-card-content>
     </mat-card>
   </div>
+  <div class="flex-cards mt-4">
+    <mat-card class="mat-card-50">
+      <mat-card-header>
+        <h4 class="mat-card-title">{{'GPS and Snapshot Settings' | translate}}</h4>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="row">
+          <div class="col-12">
+            <mat-slide-toggle
+              color="primary"
+              class="mb-2"
+              id="gpsEnabledToggle"
+              [checked]="settingsModel.gpsEnabled"
+              [(ngModel)]="settingsModel.gpsEnabled"
+            >
+              {{ 'Enable GPS for all sites' | translate }}
+            </mat-slide-toggle>
+          </div>
+          <div class="col-12">
+            <mat-slide-toggle
+              color="primary"
+              class="mb-2"
+              id="snapshotEnabledToggle"
+              [checked]="settingsModel.snapshotEnabled"
+              [(ngModel)]="settingsModel.snapshotEnabled"
+            >
+              {{ 'Enable Snapshots for all sites' | translate }}
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
 </div>

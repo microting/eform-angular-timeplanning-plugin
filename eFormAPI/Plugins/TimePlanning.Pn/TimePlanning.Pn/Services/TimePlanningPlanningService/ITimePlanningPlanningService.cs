@@ -39,4 +39,5 @@ public interface ITimePlanningPlanningService
     Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserName(TimePlanningPlanningRequestModel model, string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion);
 
     Task<OperationResult> UpdateByCurrentUserNam(TimePlanningPlanningPrDayModel model);
+    Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId);
 }

@@ -57,6 +57,8 @@ public class TimePlanningPlanningService(
     IEFormCoreService core)
     : ITimePlanningPlanningService
 {
+    private const string GoogleMapsUrlTemplate = "https://www.google.com/maps?q={0},{1}";
+
     public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(
         TimePlanningPlanningRequestModel model)
     {
@@ -889,6 +891,13 @@ public class TimePlanningPlanningService(
                                       planning.PaiedOutFlex;
                 planning.Flex = planning.NettoHours - planning.PlanHours;
             }
+            
+            // Ensure timestamps are populated from IDs for accurate time tracking calculation
+            EnsureTimestampsFromIds(planning);
+            
+            // Compute time tracking fields (seconds-based calculation)
+            PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            
             await planning.Update(dbContext).ConfigureAwait(false);
 
             var planningsAfterThisPlanning = dbContext.PlanRegistrations
@@ -1387,6 +1396,13 @@ public class TimePlanningPlanningService(
                                   planning.PlanHours -
                                   planning.PaiedOutFlex;
             planning.Flex = planning.NettoHours - planning.PlanHours;
+            
+            // Ensure timestamps are populated from IDs for accurate time tracking calculation
+            EnsureTimestampsFromIds(planning);
+            
+            // Compute time tracking fields (seconds-based calculation)
+            PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            
             await planning.Update(dbContext).ConfigureAwait(false);
 
             var planningsAfterThisPlanning = dbContext.PlanRegistrations
@@ -1441,6 +1457,349 @@ public class TimePlanningPlanningService(
             return new OperationResult(
                 false,
                 localizationService.GetString("ErrorWhileUpdatingPlanning"));
+        }
+    }
+    
+    /// <summary>
+    /// Ensures timestamp fields are populated from ID fields when timestamps are missing.
+    /// This allows ComputeTimeTrackingFields to work with both ID-based and timestamp-based data.
+    /// IDs use 5-minute intervals, so timestamps are rounded to nearest 5 minutes.
+    /// </summary>
+    private void EnsureTimestampsFromIds(PlanRegistration planning)
+    {
+        var midnight = new DateTime(planning.Date.Year, planning.Date.Month, planning.Date.Day, 0, 0, 0);
+        
+        // Convert Start/Stop IDs to timestamps if timestamps are missing
+        if (planning.Start1StartedAt == null && planning.Start1Id > 0)
+        {
+            planning.Start1StartedAt = midnight.AddMinutes((planning.Start1Id - 1) * 5);
+        }
+        if (planning.Stop1StoppedAt == null && planning.Stop1Id > 0)
+        {
+            planning.Stop1StoppedAt = midnight.AddMinutes((planning.Stop1Id - 1) * 5);
+        }
+        
+        if (planning.Start2StartedAt == null && planning.Start2Id > 0)
+        {
+            planning.Start2StartedAt = midnight.AddMinutes((planning.Start2Id - 1) * 5);
+        }
+        if (planning.Stop2StoppedAt == null && planning.Stop2Id > 0)
+        {
+            planning.Stop2StoppedAt = midnight.AddMinutes((planning.Stop2Id - 1) * 5);
+        }
+        
+        if (planning.Start3StartedAt == null && planning.Start3Id > 0)
+        {
+            planning.Start3StartedAt = midnight.AddMinutes((planning.Start3Id - 1) * 5);
+        }
+        if (planning.Stop3StoppedAt == null && planning.Stop3Id > 0)
+        {
+            planning.Stop3StoppedAt = midnight.AddMinutes((planning.Stop3Id - 1) * 5);
+        }
+        
+        if (planning.Start4StartedAt == null && planning.Start4Id > 0)
+        {
+            planning.Start4StartedAt = midnight.AddMinutes((planning.Start4Id - 1) * 5);
+        }
+        if (planning.Stop4StoppedAt == null && planning.Stop4Id > 0)
+        {
+            planning.Stop4StoppedAt = midnight.AddMinutes((planning.Stop4Id - 1) * 5);
+        }
+        
+        if (planning.Start5StartedAt == null && planning.Start5Id > 0)
+        {
+            planning.Start5StartedAt = midnight.AddMinutes((planning.Start5Id - 1) * 5);
+        }
+        if (planning.Stop5StoppedAt == null && planning.Stop5Id > 0)
+        {
+            planning.Stop5StoppedAt = midnight.AddMinutes((planning.Stop5Id - 1) * 5);
+        }
+        
+        // Convert Pause IDs to timestamps if timestamps are missing
+        if (planning.Pause1StartedAt == null && planning.Pause1StoppedAt == null && planning.Pause1Id > 0)
+        {
+            // Assume pause starts after start and lasts for the specified duration
+            // We'll place it at the midpoint of the shift for simplicity
+            var pauseDurationMinutes = (planning.Pause1Id - 1) * 5;
+            if (planning.Start1StartedAt != null && planning.Stop1StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start1StartedAt.Value.AddMinutes(
+                    (planning.Stop1StoppedAt.Value - planning.Start1StartedAt.Value).TotalMinutes / 2);
+                planning.Pause1StartedAt = shiftMidpoint;
+                planning.Pause1StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
+        }
+        
+        if (planning.Pause2StartedAt == null && planning.Pause2StoppedAt == null && planning.Pause2Id > 0)
+        {
+            var pauseDurationMinutes = (planning.Pause2Id - 1) * 5;
+            if (planning.Start2StartedAt != null && planning.Stop2StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start2StartedAt.Value.AddMinutes(
+                    (planning.Stop2StoppedAt.Value - planning.Start2StartedAt.Value).TotalMinutes / 2);
+                planning.Pause2StartedAt = shiftMidpoint;
+                planning.Pause2StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
+        }
+        
+        if (planning.Pause3StartedAt == null && planning.Pause3StoppedAt == null && planning.Pause3Id > 0)
+        {
+            var pauseDurationMinutes = (planning.Pause3Id - 1) * 5;
+            if (planning.Start3StartedAt != null && planning.Stop3StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start3StartedAt.Value.AddMinutes(
+                    (planning.Stop3StoppedAt.Value - planning.Start3StartedAt.Value).TotalMinutes / 2);
+                planning.Pause3StartedAt = shiftMidpoint;
+                planning.Pause3StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
+        }
+        
+        if (planning.Pause4StartedAt == null && planning.Pause4StoppedAt == null && planning.Pause4Id > 0)
+        {
+            var pauseDurationMinutes = (planning.Pause4Id - 1) * 5;
+            if (planning.Start4StartedAt != null && planning.Stop4StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start4StartedAt.Value.AddMinutes(
+                    (planning.Stop4StoppedAt.Value - planning.Start4StartedAt.Value).TotalMinutes / 2);
+                planning.Pause4StartedAt = shiftMidpoint;
+                planning.Pause4StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
+        }
+        
+        if (planning.Pause5StartedAt == null && planning.Pause5StoppedAt == null && planning.Pause5Id > 0)
+        {
+            var pauseDurationMinutes = (planning.Pause5Id - 1) * 5;
+            if (planning.Start5StartedAt != null && planning.Stop5StoppedAt != null)
+            {
+                var shiftMidpoint = planning.Start5StartedAt.Value.AddMinutes(
+                    (planning.Stop5StoppedAt.Value - planning.Start5StartedAt.Value).TotalMinutes / 2);
+                planning.Pause5StartedAt = shiftMidpoint;
+                planning.Pause5StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
+            }
+        }
+    }
+
+    public async Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId)
+    {
+        try
+        {
+            // Get the plan registration to find the associated site
+            var planRegistration = await dbContext.PlanRegistrations
+                .Where(x => x.Id == planRegistrationId)
+                .FirstOrDefaultAsync().ConfigureAwait(false);
+
+            if (planRegistration == null)
+            {
+                return new OperationDataResult<PlanRegistrationVersionHistoryModel>(
+                    false,
+                    localizationService.GetString("PlanRegistrationNotFound"));
+            }
+
+            // Get the assigned site to check GPS and Snapshot settings
+            var assignedSite = await dbContext.AssignedSites
+                .Where(x => x.SiteId == planRegistration.SdkSitId)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync().ConfigureAwait(false);
+
+            var gpsEnabled = assignedSite?.GpsEnabled ?? false;
+            var snapshotEnabled = assignedSite?.SnapshotEnabled ?? false;
+
+            // Get all versions for this plan registration, ordered by version descending (newest first)
+            var versions = await dbContext.PlanRegistrationVersions
+                .Where(x => x.PlanRegistrationId == planRegistrationId)
+                .OrderByDescending(x => x.Version)
+                .ToListAsync().ConfigureAwait(false);
+
+            var result = new PlanRegistrationVersionHistoryModel
+            {
+                PlanRegistrationId = planRegistrationId,
+                GpsEnabled = gpsEnabled,
+                SnapshotEnabled = snapshotEnabled,
+                Versions = []
+            };
+
+            // Compare each version with the previous one
+            for (int i = 0; i < versions.Count; i++)
+            {
+                var currentVersion = versions[i];
+                var previousVersion = i < versions.Count - 1 ? versions[i + 1] : null;
+
+                var changes = CompareVersions(currentVersion, previousVersion);
+
+                // Get GPS coordinates for this version
+                if (gpsEnabled)
+                {
+                    var gpsCoordinates = await dbContext.GpsCoordinateVersions
+                        .Where(x => x.PlanRegistrationId == planRegistrationId)
+                        .Where(x => x.Version == currentVersion.Version)
+                        .ToListAsync().ConfigureAwait(false);
+
+                    foreach (var gps in gpsCoordinates)
+                    {
+                        changes.Add(new FieldChange
+                        {
+                            FieldName = "GPS",
+                            FromValue = "",
+                            ToValue = string.Format(GoogleMapsUrlTemplate, gps.Latitude, gps.Longitude),
+                            FieldType = "gps",
+                            Latitude = gps.Latitude,
+                            Longitude = gps.Longitude,
+                            RegistrationType = gps.RegistrationType
+                        });
+                    }
+                }
+
+                // Get picture snapshots for this version
+                if (snapshotEnabled)
+                {
+                    var snapshots = await dbContext.PictureSnapshotVersions
+                        .Where(x => x.PlanRegistrationId == planRegistrationId)
+                        .Where(x => x.Version == currentVersion.Version)
+                        .ToListAsync().ConfigureAwait(false);
+
+                    foreach (var snapshot in snapshots)
+                    {
+                        changes.Add(new FieldChange
+                        {
+                            FieldName = "Snapshot",
+                            FromValue = "",
+                            ToValue = snapshot.PictureHash,
+                            FieldType = "snapshot",
+                            PictureHash = snapshot.PictureHash,
+                            RegistrationType = snapshot.RegistrationType
+                        });
+                    }
+                }
+
+                if (changes.Any())
+                {
+                    result.Versions.Add(new PlanRegistrationVersionModel
+                    {
+                        Version = currentVersion.Version,
+                        UpdatedAt = currentVersion.UpdatedAt ?? DateTime.UtcNow,
+                        UpdatedByUserId = currentVersion.UpdatedByUserId,
+                        Changes = changes
+                    });
+                }
+            }
+
+            return new OperationDataResult<PlanRegistrationVersionHistoryModel>(true, result);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error getting version history for PlanRegistration {PlanRegistrationId}", planRegistrationId);
+            return new OperationDataResult<PlanRegistrationVersionHistoryModel>(
+                false,
+                localizationService.GetString("ErrorWhileGettingVersionHistory"));
+        }
+    }
+
+    private List<FieldChange> CompareVersions(PlanRegistrationVersion current, PlanRegistrationVersion? previous)
+    {
+        var changes = new List<FieldChange>();
+
+        // Compare all relevant fields
+        CompareField(changes, "PlanText", previous?.PlanText, current.PlanText);
+        CompareField(changes, "PlanHours", previous?.PlanHours.ToString(), current.PlanHours.ToString());
+        CompareField(changes, "NettoHours", previous?.NettoHours.ToString(), current.NettoHours.ToString());
+        CompareField(changes, "Flex", previous?.Flex.ToString(), current.Flex.ToString());
+        CompareField(changes, "SumFlexStart", previous?.SumFlexStart.ToString(), current.SumFlexStart.ToString());
+        CompareField(changes, "SumFlexEnd", previous?.SumFlexEnd.ToString(), current.SumFlexEnd.ToString());
+        CompareField(changes, "PaiedOutFlex", previous?.PaiedOutFlex.ToString(), current.PaiedOutFlex.ToString());
+        CompareField(changes, "NettoHoursOverride", previous?.NettoHoursOverride.ToString(), current.NettoHoursOverride.ToString());
+        CompareField(changes, "NettoHoursOverrideActive", previous?.NettoHoursOverrideActive.ToString(), current.NettoHoursOverrideActive.ToString());
+        
+        // Shift 1
+        CompareDateTimeField(changes, "Start1StartedAt", previous?.Start1StartedAt, current.Start1StartedAt);
+        CompareDateTimeField(changes, "Stop1StoppedAt", previous?.Stop1StoppedAt, current.Stop1StoppedAt);
+        CompareDateTimeField(changes, "Pause1StartedAt", previous?.Pause1StartedAt, current.Pause1StartedAt);
+        CompareDateTimeField(changes, "Pause1StoppedAt", previous?.Pause1StoppedAt, current.Pause1StoppedAt);
+        
+        // Shift 2
+        CompareDateTimeField(changes, "Start2StartedAt", previous?.Start2StartedAt, current.Start2StartedAt);
+        CompareDateTimeField(changes, "Stop2StoppedAt", previous?.Stop2StoppedAt, current.Stop2StoppedAt);
+        CompareDateTimeField(changes, "Pause2StartedAt", previous?.Pause2StartedAt, current.Pause2StartedAt);
+        CompareDateTimeField(changes, "Pause2StoppedAt", previous?.Pause2StoppedAt, current.Pause2StoppedAt);
+        
+        // Shift 3
+        CompareDateTimeField(changes, "Start3StartedAt", previous?.Start3StartedAt, current.Start3StartedAt);
+        CompareDateTimeField(changes, "Stop3StoppedAt", previous?.Stop3StoppedAt, current.Stop3StoppedAt);
+        CompareDateTimeField(changes, "Pause3StartedAt", previous?.Pause3StartedAt, current.Pause3StartedAt);
+        CompareDateTimeField(changes, "Pause3StoppedAt", previous?.Pause3StoppedAt, current.Pause3StoppedAt);
+        
+        // Shift 4
+        CompareDateTimeField(changes, "Start4StartedAt", previous?.Start4StartedAt, current.Start4StartedAt);
+        CompareDateTimeField(changes, "Stop4StoppedAt", previous?.Stop4StoppedAt, current.Stop4StoppedAt);
+        CompareDateTimeField(changes, "Pause4StartedAt", previous?.Pause4StartedAt, current.Pause4StartedAt);
+        CompareDateTimeField(changes, "Pause4StoppedAt", previous?.Pause4StoppedAt, current.Pause4StoppedAt);
+        
+        // Shift 5
+        CompareDateTimeField(changes, "Start5StartedAt", previous?.Start5StartedAt, current.Start5StartedAt);
+        CompareDateTimeField(changes, "Stop5StoppedAt", previous?.Stop5StoppedAt, current.Stop5StoppedAt);
+        CompareDateTimeField(changes, "Pause5StartedAt", previous?.Pause5StartedAt, current.Pause5StartedAt);
+        CompareDateTimeField(changes, "Pause5StoppedAt", previous?.Pause5StoppedAt, current.Pause5StoppedAt);
+
+        // Comments
+        CompareField(changes, "CommentOffice", previous?.CommentOffice, current.CommentOffice);
+        CompareField(changes, "WorkerComment", previous?.WorkerComment, current.WorkerComment);
+        
+        // Absence flags
+        CompareBoolField(changes, "OnVacation", previous?.OnVacation, current.OnVacation);
+        CompareBoolField(changes, "Sick", previous?.Sick, current.Sick);
+        CompareBoolField(changes, "OtherAllowedAbsence", previous?.OtherAllowedAbsence, current.OtherAllowedAbsence);
+        CompareBoolField(changes, "AbsenceWithoutPermission", previous?.AbsenceWithoutPermission, current.AbsenceWithoutPermission);
+
+        return changes;
+    }
+
+    private void CompareField(List<FieldChange> changes, string fieldName, string? previousValue, string? currentValue)
+    {
+        previousValue ??= "";
+        currentValue ??= "";
+        
+        if (previousValue != currentValue)
+        {
+            changes.Add(new FieldChange
+            {
+                FieldName = fieldName,
+                FromValue = previousValue,
+                ToValue = currentValue,
+                FieldType = "standard"
+            });
+        }
+    }
+
+    private void CompareDateTimeField(List<FieldChange> changes, string fieldName, DateTime? previousValue, DateTime? currentValue)
+    {
+        var prevStr = previousValue?.ToString("yyyy-MM-dd HH:mm:ss.ffffff") ?? "";
+        var currStr = currentValue?.ToString("yyyy-MM-dd HH:mm:ss.ffffff") ?? "";
+        
+        if (prevStr != currStr)
+        {
+            changes.Add(new FieldChange
+            {
+                FieldName = fieldName,
+                FromValue = prevStr,
+                ToValue = currStr,
+                FieldType = "standard"
+            });
+        }
+    }
+
+    private void CompareBoolField(List<FieldChange> changes, string fieldName, bool? previousValue, bool? currentValue)
+    {
+        var prevBool = previousValue ?? false;
+        var currBool = currentValue ?? false;
+        
+        if (prevBool != currBool)
+        {
+            changes.Add(new FieldChange
+            {
+                FieldName = fieldName,
+                FromValue = prevBool.ToString(),
+                ToValue = currBool.ToString(),
+                FieldType = "standard"
+            });
         }
     }
 }

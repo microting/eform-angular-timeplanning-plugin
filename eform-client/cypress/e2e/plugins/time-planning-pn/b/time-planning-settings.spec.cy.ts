@@ -316,6 +316,139 @@ describe('Enable Backend Config plugin', () => {
 
     /* ==== End Cypress Studio ==== */
   });
+
+  it('should toggle GPS and Snapshot settings and persist changes', () => {
+    // Navigate to settings page
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
+
+    // Test GPS toggle - turn ON
+    let gpsToggle = cy.get('#gpsEnabledToggle');
+    // gpsToggle
+    //   .should('be.visible')
+    //   .should('not.be.checked');
+    gpsToggle.click();
+
+    let gpsToggleButton = cy.get('#gpsEnabledToggle div button');
+    gpsToggleButton
+      .should('have.attr', 'aria-checked', 'true');
+
+    // Save settings
+    cy.intercept('PUT', '/api/time-planning-pn/settings').as('updateSettings');
+    cy.get('#saveSettings').click();
+    cy.wait('@updateSettings').then((interception) => {
+      expect(interception.response.statusCode).to.equal(200);
+    });
+
+    // Reload page and verify GPS is still ON
+    cy.visit('http://localhost:4200');
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-2');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get-2', { timeout: 60000 });
+
+    gpsToggleButton = cy.get('#gpsEnabledToggle div button');
+    gpsToggleButton
+      .should('have.attr', 'aria-checked', 'true');
+
+    // Test GPS toggle - turn OFF
+    let snapshotToggle = cy.get('#snapshotEnabledToggle');
+    // snapshotToggle
+    //   .should('be.visible')
+    //   .should('not.be.checked');
+    gpsToggle = cy.get('#gpsEnabledToggle');
+    gpsToggle.click();
+
+    gpsToggleButton = cy.get('#gpsEnabledToggle div button');
+    gpsToggleButton
+      .should('have.attr', 'aria-checked', 'false');
+
+    // Save settings
+    cy.intercept('PUT', '/api/time-planning-pn/settings').as('updateSettings-2');
+    cy.get('#saveSettings').click();
+    cy.wait('@updateSettings-2').then((interception) => {
+      expect(interception.response.statusCode).to.equal(200);
+    });
+
+    // Reload page and verify GPS is still OFF
+    cy.visit('http://localhost:4200');
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-3');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get-3', { timeout: 60000 });
+
+    gpsToggleButton = cy.get('#gpsEnabledToggle div button');
+    gpsToggleButton
+      .should('have.attr', 'aria-checked', 'false');
+
+    // Test Snapshot toggle - turn ON
+    snapshotToggle.click();
+
+    let snapshotToggleButton = cy.get('#snapshotEnabledToggle div button');
+    snapshotToggleButton
+      .should('have.attr', 'aria-checked', 'true');
+
+    // Save settings
+    cy.intercept('PUT', '/api/time-planning-pn/settings').as('updateSettings-3');
+    cy.get('#saveSettings').click();
+    cy.wait('@updateSettings-3').then((interception) => {
+      expect(interception.response.statusCode).to.equal(200);
+    });
+
+    // Reload page and verify Snapshot is still ON
+    cy.visit('http://localhost:4200');
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-4');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get-4', { timeout: 60000 });
+
+    snapshotToggleButton = cy.get('#snapshotEnabledToggle div button');
+    snapshotToggleButton
+      .should('have.attr', 'aria-checked', 'true');
+
+    // Test Snapshot toggle - turn OFF
+    snapshotToggle = cy.get('#snapshotEnabledToggle');
+    snapshotToggle.click();
+
+    snapshotToggleButton = cy.get('#snapshotEnabledToggle div button');
+    snapshotToggleButton
+      .should('have.attr', 'aria-checked', 'false');
+
+    // Save settings
+    cy.intercept('PUT', '/api/time-planning-pn/settings').as('updateSettings-4');
+    cy.get('#saveSettings').click();
+    cy.wait('@updateSettings-4').then((interception) => {
+      expect(interception.response.statusCode).to.equal(200);
+    });
+
+    // Reload page and verify Snapshot is still OFF
+    cy.visit('http://localhost:4200');
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-5');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get-5', { timeout: 60000 });
+
+    snapshotToggleButton = cy.get('#snapshotEnabledToggle div button');
+    snapshotToggleButton
+      .should('have.attr', 'aria-checked', 'false');
+  });
+
   // afterEach(() => {
   //   cy.visit('http://localhost:4200');
   //   pluginPage.Navbar.goToPluginsPage();

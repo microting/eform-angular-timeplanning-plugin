@@ -15,7 +15,7 @@ import {
 import {
   TimePlanningsContainerComponent, TimePlanningSettingsComponent, TimePlanningsTableComponent,
   AssignedSiteDialogComponent,
-  WorkdayEntityDialogComponent, DownloadExcelDialogComponent
+  WorkdayEntityDialogComponent, DownloadExcelDialogComponent, VersionHistoryModalComponent
 } from './components';
 import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
 import {
@@ -96,6 +96,7 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     WorkdayEntityDialogComponent,
     AssignedSiteDialogComponent,
     DownloadExcelDialogComponent,
+    VersionHistoryModalComponent,
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
   ],

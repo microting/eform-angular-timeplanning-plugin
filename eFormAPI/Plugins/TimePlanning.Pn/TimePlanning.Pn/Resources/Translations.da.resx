@@ -127,12 +127,18 @@
         <value>Timer lørdag</value>
     </data>
     <data name="Hours Sunday" xml:space="preserve">
-        <value>Timer søndag</value>
+        <value>Søn- og helligdagstimer</value>
     </data>
     <data name="Yes" xml:space="preserve">
         <value>Ja</value>
     </data>
     <data name="No" xml:space="preserve">
         <value>Nej</value>
+    </data>
+    <data name="Total Hours" xml:space="preserve">
+        <value>Total timer</value>
+    </data>
+    <data name="Normal Hours" xml:space="preserve">
+        <value>Normal timer</value>
     </data>
 </root>

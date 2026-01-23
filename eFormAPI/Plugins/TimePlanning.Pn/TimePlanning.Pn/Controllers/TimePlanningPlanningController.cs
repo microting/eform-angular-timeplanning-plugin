@@ -71,4 +71,11 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
     {
         return await _planningService.IndexByCurrentUserName(model, softwareVersion, deviceModel, manufacturer, osVersion);
     }
+
+    [HttpGet]
+    [Route("{planRegistrationId}/version-history")]
+    public async Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId)
+    {
+        return await _planningService.GetVersionHistory(planRegistrationId);
+    }
 }

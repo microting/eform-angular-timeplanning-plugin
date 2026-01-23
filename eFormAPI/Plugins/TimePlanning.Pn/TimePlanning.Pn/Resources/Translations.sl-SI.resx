@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:schema id="root">
+        <xs:element name="root" ns1:IsDataSet="true">
+
+        </xs:element>
+    </xs:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="Shift 1: start" xml:space="preserve">
+        <value>Izmena 1: začetek</value>
+    </data>
+    <data name="PlanText" xml:space="preserve">
+        <value>Besedilo načrta</value>
+    </data>
+    <data name="PlanHours" xml:space="preserve">
+        <value>Ure načrta</value>
+    </data>
+    <data name="Shift 1: pause" xml:space="preserve">
+        <value>Izmena 1: premor</value>
+    </data>
+    <data name="Shift 1: end" xml:space="preserve">
+        <value>Izmena 1: konec</value>
+    </data>
+    <data name="Shift 2: start" xml:space="preserve">
+        <value>Izmena 2: začetek</value>
+    </data>
+    <data name="Shift 2: pause" xml:space="preserve">
+        <value>Izmena 2: premor</value>
+    </data>
+    <data name="Shift 2: end" xml:space="preserve">
+        <value>Izmena 2: konec</value>
+    </data>
+    <data name="NettoHours" xml:space="preserve">
+        <value>Neto ure</value>
+    </data>
+    <data name="Flex" xml:space="preserve">
+        <value>Flex</value>
+    </data>
+    <data name="SumFlexStart" xml:space="preserve">
+        <value>Vsota flex začetek</value>
+    </data>
+    <data name="SumFlexEnd" xml:space="preserve">
+        <value>Vsota flex konec</value>
+    </data>
+    <data name="PaidOutFlex" xml:space="preserve">
+        <value>Izplačan flex</value>
+    </data>
+    <data name="Message" xml:space="preserve">
+        <value>Sporočilo</value>
+    </data>
+    <data name="Comments" xml:space="preserve">
+        <value>Komentarji</value>
+    </data>
+    <data name="Comment office" xml:space="preserve">
+        <value>Komentar pisarna</value>
+    </data>
+    <data name="Comment office all" xml:space="preserve">
+        <value>Komentar pisarna vsi</value>
+    </data>
+    <data name="Date" xml:space="preserve">
+        <value>Datum</value>
+    </data>
+    <data name="Worker" xml:space="preserve">
+        <value>Delavec</value>
+    </data>
+    <data name="DayOfWeek" xml:space="preserve">
+        <value>Dan v tednu</value>
+    </data>
+    <data name="Employee no" xml:space="preserve">
+        <value>Št. zaposlenega</value>
+    </data>
+    <data name="PlanRegistrationFound" xml:space="preserve">
+        <value>Registracija načrta najdena</value>
+    </data>
+    <data name="From" xml:space="preserve">
+        <value>Od</value>
+    </data>
+    <data name="To" xml:space="preserve">
+        <value>Do</value>
+    </data>
+    <data name="TokenNotFound" xml:space="preserve">
+        <value>Žeton ni najden</value>
+    </data>
+    <data name="Shift 3: start" xml:space="preserve">
+        <value>Izmena 3: začetek</value>
+    </data>
+    <data name="Shift 3: end" xml:space="preserve">
+        <value>Izmena 3: konec</value>
+    </data>
+    <data name="Shift 3: pause" xml:space="preserve">
+        <value>Izmena 3: premor</value>
+    </data>
+    <data name="Shift 4: start" xml:space="preserve">
+        <value>Izmena 4: začetek</value>
+    </data>
+    <data name="Shift 4: end" xml:space="preserve">
+        <value>Izmena 4: konec</value>
+    </data>
+    <data name="Shift 4: pause" xml:space="preserve">
+        <value>Izmena 4: premor</value>
+    </data>
+    <data name="Shift 5: start" xml:space="preserve">
+        <value>Izmena 5: začetek</value>
+    </data>
+    <data name="Shift 5: end" xml:space="preserve">
+        <value>Izmena 5: konec</value>
+    </data>
+    <data name="Shift 5: pause" xml:space="preserve">
+        <value>Izmena 5: premor</value>
+    </data>
+    <data name="Week number" xml:space="preserve">
+        <value>Številka tedna</value>
+    </data>
+    <data name="Hours Saturday" xml:space="preserve">
+        <value>Ure sobota</value>
+    </data>
+    <data name="Hours Sunday" xml:space="preserve">
+        <value>Ure nedelja in prazniki</value>
+    </data>
+    <data name="Yes" xml:space="preserve">
+        <value>Da</value>
+    </data>
+    <data name="No" xml:space="preserve">
+        <value>Ne</value>
+    </data>
+    <data name="Total Hours" xml:space="preserve">
+        <value>Skupaj ur</value>
+    </data>
+</root>

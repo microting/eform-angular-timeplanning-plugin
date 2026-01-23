@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
+using TimePlanning.Pn.Infrastructure.Models.Holiday;
 using TimePlanning.Pn.Infrastructure.Models.Planning;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
@@ -22,6 +25,96 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 
 public static class PlanRegistrationHelper
 {
+    private static DanishHolidayConfiguration _holidayConfiguration;
+    private static readonly object _holidayConfigLock = new object();
+    
+    /// <summary>
+    /// Loads the Danish holiday configuration from the JSON file.
+    /// Caches the result for subsequent calls.
+    /// </summary>
+    private static DanishHolidayConfiguration LoadHolidayConfiguration()
+    {
+        if (_holidayConfiguration != null)
+        {
+            return _holidayConfiguration;
+        }
+        
+        lock (_holidayConfigLock)
+        {
+            if (_holidayConfiguration != null)
+            {
+                return _holidayConfiguration;
+            }
+            
+            try
+            {
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
+                // First, try to load as embedded resource
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var resourceName = "TimePlanning.Pn.Resources.danish_holidays_2025_2030.json";
+                
+                using (var stream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (stream != null)
+                    {
+                        using (var reader = new StreamReader(stream))
+                        {
+                            var json = reader.ReadToEnd();
+                            var config = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
+                            _holidayConfiguration = config ?? new DanishHolidayConfiguration
+                            {
+                                Holidays = new List<HolidayDefinition>()
+                            };
+                        }
+                    }
+                    else
+                    {
+                        // Fallback: try to load from file system
+                        var assemblyLocation = assembly.Location;
+                        var assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
+                        var resourcePath = Path.Combine(assemblyDirectory, "Resources", "danish_holidays_2025_2030.json");
+                        
+                        if (File.Exists(resourcePath))
+                        {
+                            var json = File.ReadAllText(resourcePath);
+                            var config = JsonSerializer.Deserialize<DanishHolidayConfiguration>(json, jsonOptions);
+                            _holidayConfiguration = config ?? new DanishHolidayConfiguration
+                            {
+                                Holidays = new List<HolidayDefinition>()
+                            };
+                        }
+                        else
+                        {
+                            SentrySdk.CaptureEvent(new SentryEvent
+                            {
+                                Message = $"Holiday configuration not found as embedded resource or at: {resourcePath}. Using empty holiday configuration as fallback.",
+                                Level = SentryLevel.Warning
+                            });
+                            _holidayConfiguration = new DanishHolidayConfiguration
+                            {
+                                Holidays = new List<HolidayDefinition>()
+                            };
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                SentrySdk.CaptureException(ex);
+                _holidayConfiguration = new DanishHolidayConfiguration
+                {
+                    Holidays = new List<HolidayDefinition>()
+                };
+            }
+            
+            return _holidayConfiguration;
+        }
+    }
+    
     public static PlanRegistration CalculatePauseAutoBreakCalculationActive(
         AssignedSite assignedSite, PlanRegistration planning)
     {
@@ -248,7 +341,7 @@ public static class PlanRegistrationHelper
                         {
                             if (!string.IsNullOrEmpty(planRegistration.PlanText))
                             {
-                                var splitList = planRegistration.PlanText.Split(';');
+                                var splitList = planRegistration.PlanText.Replace(",", ".").Split(';');
                                 var firsSplit = splitList[0];
 
                                 var regex = new Regex(@"(.*)-(.*)\/(.*)");
@@ -1268,7 +1361,7 @@ public static class PlanRegistrationHelper
                     {
                     if (!string.IsNullOrEmpty(planRegistration.PlanText))
                     {
-                            var splitList = planRegistration.PlanText.Split(';');
+                            var splitList = planRegistration.PlanText.Replace(",", ".").Split(';');
                             var firsSplit = splitList[0];
 
                             var regex = new Regex(@"(.*)-(.*)\/(.*)");
@@ -2208,6 +2301,216 @@ public static class PlanRegistrationHelper
         return timePlanningWorkingHoursModel;
         // return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
         //     timePlanningWorkingHoursModel);
+    }
+
+    /// <summary>
+    /// Extract work intervals from PlanRegistration (Start/Stop pairs).
+    /// Returns intervals as (StartTime, EndTime) tuples.
+    /// Ignores incomplete or invalid intervals (null or negative duration).
+    /// </summary>
+    private static IEnumerable<(DateTime Start, DateTime End)> GetWorkIntervals(PlanRegistration pr)
+    {
+        var intervals = new (DateTime?, DateTime?)[]
+        {
+            (pr.Start1StartedAt, pr.Stop1StoppedAt),
+            (pr.Start2StartedAt, pr.Stop2StoppedAt),
+            (pr.Start3StartedAt, pr.Stop3StoppedAt),
+            (pr.Start4StartedAt, pr.Stop4StoppedAt),
+            (pr.Start5StartedAt, pr.Stop5StoppedAt)
+        };
+
+        foreach (var (start, end) in intervals)
+        {
+            if (start.HasValue && end.HasValue && start.Value < end.Value)
+            {
+                yield return (start.Value, end.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Extract pause intervals from PlanRegistration.
+    /// Includes Pause1-5, Pause10-29, Pause100-102, Pause200-202.
+    /// Returns intervals as (StartTime, EndTime) tuples.
+    /// Ignores incomplete or invalid intervals (null or negative duration).
+    /// </summary>
+    private static IEnumerable<(DateTime Start, DateTime End)> GetPauseIntervals(PlanRegistration pr)
+    {
+        var intervals = new (DateTime?, DateTime?)[]
+        {
+            // Main pause intervals 1-5
+            (pr.Pause1StartedAt, pr.Pause1StoppedAt),
+            (pr.Pause2StartedAt, pr.Pause2StoppedAt),
+            (pr.Pause3StartedAt, pr.Pause3StoppedAt),
+            (pr.Pause4StartedAt, pr.Pause4StoppedAt),
+            (pr.Pause5StartedAt, pr.Pause5StoppedAt),
+            
+            // Extended pause intervals 10-29
+            (pr.Pause10StartedAt, pr.Pause10StoppedAt),
+            (pr.Pause11StartedAt, pr.Pause11StoppedAt),
+            (pr.Pause12StartedAt, pr.Pause12StoppedAt),
+            (pr.Pause13StartedAt, pr.Pause13StoppedAt),
+            (pr.Pause14StartedAt, pr.Pause14StoppedAt),
+            (pr.Pause15StartedAt, pr.Pause15StoppedAt),
+            (pr.Pause16StartedAt, pr.Pause16StoppedAt),
+            (pr.Pause17StartedAt, pr.Pause17StoppedAt),
+            (pr.Pause18StartedAt, pr.Pause18StoppedAt),
+            (pr.Pause19StartedAt, pr.Pause19StoppedAt),
+            (pr.Pause20StartedAt, pr.Pause20StoppedAt),
+            (pr.Pause21StartedAt, pr.Pause21StoppedAt),
+            (pr.Pause22StartedAt, pr.Pause22StoppedAt),
+            (pr.Pause23StartedAt, pr.Pause23StoppedAt),
+            (pr.Pause24StartedAt, pr.Pause24StoppedAt),
+            (pr.Pause25StartedAt, pr.Pause25StoppedAt),
+            (pr.Pause26StartedAt, pr.Pause26StoppedAt),
+            (pr.Pause27StartedAt, pr.Pause27StoppedAt),
+            (pr.Pause28StartedAt, pr.Pause28StoppedAt),
+            (pr.Pause29StartedAt, pr.Pause29StoppedAt),
+            
+            // Additional pause intervals 100-102
+            (pr.Pause100StartedAt, pr.Pause100StoppedAt),
+            (pr.Pause101StartedAt, pr.Pause101StoppedAt),
+            (pr.Pause102StartedAt, pr.Pause102StoppedAt),
+            
+            // Additional pause intervals 200-202
+            (pr.Pause200StartedAt, pr.Pause200StoppedAt),
+            (pr.Pause201StartedAt, pr.Pause201StoppedAt),
+            (pr.Pause202StartedAt, pr.Pause202StoppedAt)
+        };
+
+        foreach (var (start, end) in intervals)
+        {
+            if (start.HasValue && end.HasValue && start.Value < end.Value)
+            {
+                yield return (start.Value, end.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Calculate total seconds for a collection of time intervals.
+    /// </summary>
+    private static long CalculateTotalSeconds(IEnumerable<(DateTime Start, DateTime End)> intervals)
+    {
+        return intervals.Sum(interval => (long)(interval.End - interval.Start).TotalSeconds);
+    }
+
+    /// <summary>
+    /// Classify the day and return the day code.
+    /// Returns: SUNDAY, SATURDAY, HOLIDAY, GRUNDLOVSDAG, or WEEKDAY
+    /// Priority: GRUNDLOVSDAG > HOLIDAY > SUNDAY > SATURDAY > WEEKDAY
+    /// </summary>
+    private static string GetDayCode(DateTime date)
+    {
+        // Check if it's Grundlovsdag (June 5th) - highest priority
+        if (date.Month == 6 && date.Day == 5)
+        {
+            return "GRUNDLOVSDAG";
+        }
+
+        // Check against holiday configuration for official holidays
+        if (IsOfficialHoliday(date))
+        {
+            return "HOLIDAY";
+        }
+        
+        var dayOfWeek = date.DayOfWeek;
+        
+        if (dayOfWeek == DayOfWeek.Sunday)
+        {
+            return "SUNDAY";
+        }
+        
+        if (dayOfWeek == DayOfWeek.Saturday)
+        {
+            return "SATURDAY";
+        }
+
+        return "WEEKDAY";
+    }
+
+    /// <summary>
+    /// Check if a date is an official Danish holiday.
+    /// Loads holiday data from the danish_holidays_2025_2030.json configuration file.
+    /// </summary>
+    public static bool IsOfficialHoliday(DateTime date)
+    {
+        var config = LoadHolidayConfiguration();
+        
+        // Normalize the date to midnight for comparison
+        var midnight = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0);
+        
+        // Check if the date exists in our holiday configuration
+        return config.Holidays?.Any(h => h.ParsedDate == midnight) ?? false;
+    }
+
+    /// <summary>
+    /// Check if a date is Grundlovsdag (Constitution Day - June 5th).
+    /// </summary>
+    public static bool IsGrundlovsdag(DateTime date)
+    {
+        return date.Month == 6 && date.Day == 5;
+    }
+
+    /// <summary>
+    /// Compute and update all seconds-based time tracking fields on a PlanRegistration.
+    /// This calculates work time, pause time, and effective net hours based on actual timestamps.
+    /// This method does NOT persist changes - caller must save the PlanRegistration.
+    /// </summary>
+    /// <param name="planRegistration">The plan registration to update</param>
+    public static void ComputeTimeTrackingFields(PlanRegistration planRegistration)
+    {
+        // Calculate work intervals and total work seconds
+        var workIntervals = GetWorkIntervals(planRegistration);
+        var totalWorkSeconds = CalculateTotalSeconds(workIntervals);
+
+        // Calculate pause intervals and total pause seconds
+        var pauseIntervals = GetPauseIntervals(planRegistration);
+        var totalPauseSeconds = CalculateTotalSeconds(pauseIntervals);
+
+        // Net work seconds = total work - total pause (cannot be negative)
+        var netWorkSeconds = Math.Max(0, totalWorkSeconds - totalPauseSeconds);
+
+        // Set NettoHoursInSeconds and NettoHours (as double in hours)
+        planRegistration.NettoHoursInSeconds = (int)netWorkSeconds;
+        planRegistration.NettoHours = netWorkSeconds / 3600.0;
+
+        // Calculate effective net hours (considering override if active)
+        if (planRegistration.NettoHoursOverrideActive)
+        {
+            // If override is active, use the override value
+            planRegistration.EffectiveNetHoursInSeconds = (int)(planRegistration.NettoHoursOverride * 3600);
+        }
+        else
+        {
+            // Otherwise, effective = actual net
+            planRegistration.EffectiveNetHoursInSeconds = (int)netWorkSeconds;
+        }
+
+        // Set day classification flags
+        var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month,
+            planRegistration.Date.Day, 0, 0, 0);
+        planRegistration.IsSaturday = midnight.DayOfWeek == DayOfWeek.Saturday;
+        planRegistration.IsSunday = midnight.DayOfWeek == DayOfWeek.Sunday;
+
+        // Set DayCode for pay line generation
+        var dayCode = GetDayCode(midnight);
+        // Note: DayCode field may or may not exist on PlanRegistration in current version
+        // If it doesn't exist, this will need to be stored separately or added to the entity
+        
+        // Note: Break policy splitting (paid/unpaid) would be done here if break policy rules exist
+        // For now, we'll leave that for future implementation when BreakPolicy entities are fully defined
+    }
+
+    /// <summary>
+    /// Mark a PlanRegistration as having been calculated by the rule engine.
+    /// Sets RuleEngineCalculated flag and timestamp.
+    /// </summary>
+    /// <param name="planRegistration">The plan registration to mark</param>
+    public static void MarkAsRuleEngineCalculated(PlanRegistration planRegistration)
+    {
+        planRegistration.RuleEngineCalculated = true;
+        planRegistration.RuleEngineCalculatedAt = DateTime.UtcNow;
     }
 
 }

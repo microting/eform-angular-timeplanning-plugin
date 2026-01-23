@@ -164,6 +164,8 @@ public class AssignedSite
     public bool FifthShiftActive { get; set; } = false;
     public bool DaysBackInTimeAllowedEditingEnabled { get; set; }
     public int DaysBackInTimeAllowedEditing { get; set; } = 2;
+    public bool GpsEnabled { get; set; }
+    public bool SnapshotEnabled { get; set; }
     public AutoBreakSettings AutoBreakSettings { get; set; }
 
     // implicit conversion from Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite to AssignedSite
@@ -319,6 +321,8 @@ public class AssignedSite
             FifthShiftActive = model.FifthShiftActive,
             DaysBackInTimeAllowedEditingEnabled = model.DaysBackInTimeAllowedEditingEnabled,
             DaysBackInTimeAllowedEditing = model.DaysBackInTimeAllowedEditing,
+            GpsEnabled = model.GpsEnabled,
+            SnapshotEnabled = model.SnapshotEnabled,
         };
     }
 }

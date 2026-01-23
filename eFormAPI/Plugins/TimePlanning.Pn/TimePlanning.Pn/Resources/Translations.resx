@@ -127,12 +127,18 @@
         <value>Hours Saturday</value>
     </data>
     <data name="Hours Sunday" xml:space="preserve">
-        <value>Hours Sunday</value>
+        <value>Sunday and Holiday Hours</value>
     </data>
     <data name="Yes" xml:space="preserve">
         <value>Yes</value>
     </data>
     <data name="No" xml:space="preserve">
         <value>No</value>
+    </data>
+    <data name="Total Hours" xml:space="preserve">
+        <value>Total Hours</value>
+    </data>
+    <data name="Normal Hours" xml:space="preserve">
+        <value>Normal Hours</value>
     </data>
 </root>
