@@ -314,6 +314,7 @@ public class TimeSettingService(
                             FifthShiftActive = assignedSite.FifthShiftActive,
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
+                            SnapshotEnabled = assignedSite.SnapshotEnabled
                         };
                         var user = await baseDbContext.Users
                             .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
