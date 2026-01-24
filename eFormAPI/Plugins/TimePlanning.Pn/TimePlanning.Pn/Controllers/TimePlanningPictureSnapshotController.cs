@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using Microsoft.AspNetCore.Http;
+
 namespace TimePlanning.Pn.Controllers;
 
 using System.Collections.Generic;
@@ -60,7 +62,7 @@ public class TimePlanningPictureSnapshotController
     public async Task<IActionResult> GetFile(int id)
     {
         var result = await _pictureSnapshotService.GetFile(id);
-        
+
         if (!result.Success)
         {
             return new BadRequestObjectResult(result);
@@ -71,9 +73,9 @@ public class TimePlanningPictureSnapshotController
 
     [HttpPost]
     [Route("")]
-    public async Task<OperationResult> Create([FromBody] PictureSnapshotCreateModel model)
+    public async Task<OperationResult> Create([FromBody] PictureSnapshotCreateModel model, [FromForm] IFormFile file)
     {
-        return await _pictureSnapshotService.Create(model);
+        return await _pictureSnapshotService.Create(model, file);
     }
 
     [HttpPut]

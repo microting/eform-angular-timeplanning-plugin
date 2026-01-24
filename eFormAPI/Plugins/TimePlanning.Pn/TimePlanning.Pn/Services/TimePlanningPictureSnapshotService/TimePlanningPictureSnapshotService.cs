@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using Microsoft.AspNetCore.Http;
+
 namespace TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
 
 using System;
@@ -151,7 +153,7 @@ public class TimePlanningPictureSnapshotService(
         }
     }
 
-    public async Task<OperationResult> Create(PictureSnapshotCreateModel model)
+    public async Task<OperationResult> Create(PictureSnapshotCreateModel model, IFormFile file)
     {
         try
         {
@@ -162,11 +164,13 @@ public class TimePlanningPictureSnapshotService(
                 .FirstOrDefaultAsync();
             string pictureHash = null;
 
-            if (model.FileContent != null && model.FileContent.Length > 0)
+            if (file.Length > 0)
             {
                 var tempPath = Path.Combine(Path.GetTempPath(), model.FileName);
-                await File.WriteAllBytesAsync(tempPath, model.FileContent);
-
+                await using (var stream = new FileStream(tempPath, FileMode.Create))
+                {
+                    await file.OpenReadStream().CopyToAsync(stream);
+                }
                 var core = await coreService.GetCore();
                 await core.PutFileToStorageSystem(tempPath, model.FileName);
                 pictureHash = model.FileName;
