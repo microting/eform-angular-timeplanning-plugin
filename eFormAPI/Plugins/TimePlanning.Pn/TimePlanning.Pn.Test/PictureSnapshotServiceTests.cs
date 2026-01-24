@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using BackendConfiguration.Pn.Integration.Test;
+using eFormCore;
+using Microsoft.AspNetCore.Http;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
+using NSubstitute.Extensions;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Models.PictureSnapshot;
 using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
@@ -63,8 +67,49 @@ public class PictureSnapshotServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _pictureSnapshotService.Create(model);
+        var result = await _pictureSnapshotService.Create(model, null);
 
+        // Assert
+        Assert.That(result.Success, Is.False);
+    }
+
+    [Test]
+    public async Task Create_CreatesPictureSnapshot_WithFile()
+    {
+        // Arrange
+        var planRegistration = new PlanRegistration
+        {
+            Date = DateTime.Now,
+            SdkSitId = 1,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planRegistration.Create(TimePlanningPnDbContext);
+        var mockFile = Substitute.For<IFormFile>();
+        mockFile.Length.Returns(1024);
+        mockFile.FileName.Returns("test.jpg");
+        mockFile.ContentType.Returns("image/jpeg");
+
+        var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes("test file content"));
+        mockFile.OpenReadStream().Returns(memoryStream);
+        mockFile.CopyToAsync(Arg.Any<Stream>()).Returns(Task.CompletedTask);
+
+        var core = await GetCore();
+
+        _coreService.GetCore().Returns(Task.FromResult(core));
+
+
+        var model = new PictureSnapshotCreateModel
+        {
+            SdkSiteId = 1,
+            Date = planRegistration.Date,
+            PictureHash = "test-hash-123",
+            RegistrationType = "CheckIn",
+            FileName = "test.jpg"
+        };
+
+        // Act
+        var result = await _pictureSnapshotService.Create(model, mockFile);
         // Assert
         Assert.That(result.Success, Is.True);
     }
