@@ -67,7 +67,7 @@ public class PictureSnapshotServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _pictureSnapshotService.Create(model, null);
+        var result = await _pictureSnapshotService.Create(model, null, null);
 
         // Assert
         Assert.That(result.Success, Is.False);
@@ -109,7 +109,7 @@ public class PictureSnapshotServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _pictureSnapshotService.Create(model, mockFile);
+        var result = await _pictureSnapshotService.Create(model, mockFile, null);
         // Assert
         Assert.That(result.Success, Is.True);
     }

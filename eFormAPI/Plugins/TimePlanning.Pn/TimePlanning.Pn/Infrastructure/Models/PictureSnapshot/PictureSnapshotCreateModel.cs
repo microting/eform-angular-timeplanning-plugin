@@ -34,4 +34,5 @@ public class PictureSnapshotCreateModel
     public string RegistrationType { get; set; }
     public byte[] FileContent { get; set; }
     public string FileName { get; set; }
+    public string FileHash { get; set; }
 }

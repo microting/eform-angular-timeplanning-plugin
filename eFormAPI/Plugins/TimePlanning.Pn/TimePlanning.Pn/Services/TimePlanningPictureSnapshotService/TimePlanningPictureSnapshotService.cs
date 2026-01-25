@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#nullable enable
 using Microsoft.AspNetCore.Http;
 
 namespace TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
@@ -153,38 +154,41 @@ public class TimePlanningPictureSnapshotService(
         }
     }
 
-    public async Task<OperationResult> Create(PictureSnapshotCreateModel model, IFormFile file)
+    public async Task<OperationResult> Create(PictureSnapshotCreateModel model, IFormFile file, string? token)
     {
         try
         {
+            var core = await coreService.GetCore();
+            var sdkDbContext = core.DbContextHelper.GetDbContext();
+            var site = await sdkDbContext.Sites
+                .Where(x => x.Id == model.SdkSiteId)
+                .FirstOrDefaultAsync();
+            var registrationDevice = await dbContext.RegistrationDevices
+                .Where(x => x.Token == token).FirstOrDefaultAsync();
+            if (site == null && registrationDevice == null)
+            {
+                return new OperationResult(false, localizationService.GetString("ErrorWhileCreatingPictureSnapshot"));
+            }
+
             var planRegistration = await dbContext.PlanRegistrations
                 .Where(x => x.Date == model.Date)
                 .Where(x => x.SdkSitId == model.SdkSiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync();
-            string pictureHash = null;
 
             if (file.Length > 0)
             {
-                var tempPath = Path.Combine(Path.GetTempPath(), model.FileName);
-                await using (var stream = new FileStream(tempPath, FileMode.Create))
-                {
-                    await file.OpenReadStream().CopyToAsync(stream);
-                }
-                var core = await coreService.GetCore();
-                await core.PutFileToStorageSystem(tempPath, model.FileName);
-                pictureHash = model.FileName;
+                await using var memoryStream = new MemoryStream();
+                await file.OpenReadStream().CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
 
-                if (File.Exists(tempPath))
-                {
-                    File.Delete(tempPath);
-                }
+                await core.PutFileToS3Storage(memoryStream, model.FileName);
             }
 
             var pictureSnapshot = new PictureSnapshot
             {
                 PlanRegistrationId = planRegistration.Id,
-                PictureHash = pictureHash ?? model.PictureHash,
+                PictureHash = model.FileHash,
                 RegistrationType = model.RegistrationType,
                 CreatedByUserId = userService.UserId,
                 UpdatedByUserId = userService.UserId
