@@ -22,6 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#nullable enable
+using System;
+using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
 namespace TimePlanning.Pn.Controllers;
@@ -34,7 +38,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Services.TimePlanningPictureSnapshotService;
 
 [Route("api/time-planning-pn/picture-snapshots")]
-public class TimePlanningPictureSnapshotController
+public class TimePlanningPictureSnapshotController : ControllerBase
 {
     private readonly ITimePlanningPictureSnapshotService _pictureSnapshotService;
 
@@ -73,9 +77,29 @@ public class TimePlanningPictureSnapshotController
 
     [HttpPost]
     [Route("")]
-    public async Task<OperationResult> Create([FromBody] PictureSnapshotCreateModel model, [FromForm] IFormFile file)
+    [AllowAnonymous]
+    public async Task<OperationResult> Create([FromForm] PictureSnapshotCreateModel model, [FromForm] string? token, [FromForm] IFormFile file)
     {
-        return await _pictureSnapshotService.Create(model, file);
+        // Log request details
+        var contentType = Request.ContentType;
+        var hasBody = Request.ContentLength > 0;
+        var headers = string.Join(", ", Request.Headers.Select(h => $"{h.Key}: {h.Value}"));
+
+        Console.WriteLine($"Content-Type: {contentType}");
+        Console.WriteLine($"Content-Length: {Request.ContentLength}");
+        Console.WriteLine($"Has Body: {hasBody}");
+        Console.WriteLine($"Headers: {headers}");
+        Console.WriteLine($"Model is null: {model == null}");
+        Console.WriteLine($"Token: {token}");
+        Console.WriteLine($"File is null: {file == null}");
+        if (model != null)
+        {
+            Console.WriteLine($"Model fileName: {model.FileName}");
+            Console.WriteLine($"Model Date: {model.Date}");
+            Console.WriteLine($"Model SdkSiteId: {model.SdkSiteId}");
+        }
+
+        return await _pictureSnapshotService.Create(model, file, token);
     }
 
     [HttpPut]

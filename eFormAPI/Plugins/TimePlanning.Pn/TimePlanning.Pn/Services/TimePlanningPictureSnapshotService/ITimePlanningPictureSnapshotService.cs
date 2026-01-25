@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#nullable enable
 using Microsoft.AspNetCore.Http;
 
 namespace TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
@@ -39,7 +40,7 @@ public interface ITimePlanningPictureSnapshotService
 
     Task<OperationDataResult<byte[]>> GetFile(int id);
 
-    Task<OperationResult> Create(PictureSnapshotCreateModel model, IFormFile file);
+    Task<OperationResult> Create(PictureSnapshotCreateModel model, IFormFile file, string? token);
 
     Task<OperationResult> Update(PictureSnapshotUpdateModel model);
 
