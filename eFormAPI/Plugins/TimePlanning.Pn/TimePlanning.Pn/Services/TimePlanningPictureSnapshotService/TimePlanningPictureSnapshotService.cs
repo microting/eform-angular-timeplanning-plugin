@@ -189,6 +189,8 @@ public class TimePlanningPictureSnapshotService(
             {
                 PlanRegistrationId = planRegistration.Id,
                 PictureHash = model.FileHash,
+                FileName = model.FileName.Split(".").First(),
+                FileExtension = model.FileName.Split(".").Last(),
                 RegistrationType = model.RegistrationType,
                 CreatedByUserId = userService.UserId,
                 UpdatedByUserId = userService.UserId
