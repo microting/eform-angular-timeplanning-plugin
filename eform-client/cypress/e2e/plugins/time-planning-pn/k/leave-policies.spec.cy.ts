@@ -13,9 +13,9 @@ describe('Time Planning - Leave policies', () => {
     { labelInFlags: 'Barns 1. sygedag',    expectedTooltip: 'Barns 1. sygedag' },
     { labelInFlags: 'Barns 2. sygedag',    expectedTooltip: 'Barns 2. sygedag' },
     { labelInFlags: 'Ferie fridag',        expectedTooltip: 'Ferie fridag' },
-    { labelInFlags: 'Holiday',             expectedTooltip: 'Helligdag' },
-    { labelInFlags: 'VacationDayOff',      expectedTooltip: 'Afspadsering' },
-    { labelInFlags: 'Maternity',           expectedTooltip: 'Barselsorlov' },
+    { labelInFlags: 'Helligdag',           expectedTooltip: 'Helligdag' },
+    { labelInFlags: 'Afspadsering',        expectedTooltip: 'Afspadsering' },
+    { labelInFlags: 'Barselsorlov',        expectedTooltip: 'Barselsorlov' },
   ];
 
   beforeEach(() => {
