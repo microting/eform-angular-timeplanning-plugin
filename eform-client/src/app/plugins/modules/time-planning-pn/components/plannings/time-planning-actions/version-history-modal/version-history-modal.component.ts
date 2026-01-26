@@ -27,7 +27,7 @@ export class VersionHistoryModalComponent implements OnInit, AfterViewInit, OnDe
   imageSub$: Subscription;
   tableHeaders: MtxGridColumn[] = [];
 
-  @ViewChild('toValueTemplate') toValueTemplate!: TemplateRef<any>;
+  @ViewChild('toValueTemplate', {static: false}) toValueTemplate!: TemplateRef<FieldChangeModel>;
 
   private imageService = inject(TemplateFilesService);
   public dialogRef = inject(MatDialogRef<VersionHistoryModalComponent>);
