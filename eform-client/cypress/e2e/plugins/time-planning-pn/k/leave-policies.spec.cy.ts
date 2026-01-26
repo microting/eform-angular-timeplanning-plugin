@@ -51,7 +51,7 @@ describe('Time Planning - Leave policies', () => {
     leavePolicies.forEach(({ labelInFlags, expectedTooltip }) => {
       cy.get(dayCellSelector).click({ force: true });
 
-      cy.get('div[formgroupname="flags"] mat-checkbox').each(($checkbox) => {
+      cy.get('#flags mat-checkbox').each(($checkbox) => {
         cy.wrap($checkbox)
           .find('input[type="checkbox"]')
           .then(($input) => {
@@ -61,7 +61,7 @@ describe('Time Planning - Leave policies', () => {
           });
       });
 
-      cy.get('div[formgroupname="flags"] mat-checkbox .mdc-label')
+      cy.get('#flags mat-checkbox .mdc-label')
         .contains(labelInFlags)
         .click({ force: true, animationDistanceThreshold: 1 });
 
