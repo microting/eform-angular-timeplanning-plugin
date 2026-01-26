@@ -22,6 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#nullable enable
+using Microsoft.AspNetCore.Http;
+
 namespace TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
 
 using System;
@@ -151,31 +154,43 @@ public class TimePlanningPictureSnapshotService(
         }
     }
 
-    public async Task<OperationResult> Create(PictureSnapshotCreateModel model)
+    public async Task<OperationResult> Create(PictureSnapshotCreateModel model, IFormFile file, string? token)
     {
         try
         {
-            string pictureHash = null;
-            
-            if (model.FileContent != null && model.FileContent.Length > 0)
+            var core = await coreService.GetCore();
+            var sdkDbContext = core.DbContextHelper.GetDbContext();
+            var site = await sdkDbContext.Sites
+                .Where(x => x.Id == model.SdkSiteId)
+                .FirstOrDefaultAsync();
+            var registrationDevice = await dbContext.RegistrationDevices
+                .Where(x => x.Token == token).FirstOrDefaultAsync();
+            if (site == null && registrationDevice == null)
             {
-                var tempPath = Path.Combine(Path.GetTempPath(), model.FileName);
-                await File.WriteAllBytesAsync(tempPath, model.FileContent);
-                
-                var core = await coreService.GetCore();
-                await core.PutFileToStorageSystem(tempPath, model.FileName);
-                pictureHash = model.FileName;
-                
-                if (File.Exists(tempPath))
-                {
-                    File.Delete(tempPath);
-                }
+                return new OperationResult(false, localizationService.GetString("ErrorWhileCreatingPictureSnapshot"));
+            }
+
+            var planRegistration = await dbContext.PlanRegistrations
+                .Where(x => x.Date == model.Date)
+                .Where(x => x.SdkSitId == model.SdkSiteId)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync();
+
+            if (file.Length > 0)
+            {
+                await using var memoryStream = new MemoryStream();
+                await file.OpenReadStream().CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                await core.PutFileToS3Storage(memoryStream, model.FileName);
             }
 
             var pictureSnapshot = new PictureSnapshot
             {
-                PlanRegistrationId = model.PlanRegistrationId,
-                PictureHash = pictureHash ?? model.PictureHash,
+                PlanRegistrationId = planRegistration.Id,
+                PictureHash = model.FileHash,
+                FileName = model.FileName.Split(".").First(),
+                FileExtension = model.FileName.Split(".").Last(),
                 RegistrationType = model.RegistrationType,
                 CreatedByUserId = userService.UserId,
                 UpdatedByUserId = userService.UserId
@@ -196,6 +211,11 @@ public class TimePlanningPictureSnapshotService(
     {
         try
         {
+            var planRegistration = await dbContext.PlanRegistrations
+                .Where(x => x.Date == model.Date)
+                .Where(x => x.SdkSitId == model.SdkSiteId)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync();
             var pictureSnapshot = await dbContext.PictureSnapshots
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Id == model.Id)
@@ -210,11 +230,11 @@ public class TimePlanningPictureSnapshotService(
             {
                 var tempPath = Path.Combine(Path.GetTempPath(), model.FileName);
                 await File.WriteAllBytesAsync(tempPath, model.FileContent);
-                
+
                 var core = await coreService.GetCore();
                 await core.PutFileToStorageSystem(tempPath, model.FileName);
                 pictureSnapshot.PictureHash = model.FileName;
-                
+
                 if (File.Exists(tempPath))
                 {
                     File.Delete(tempPath);
@@ -225,7 +245,7 @@ public class TimePlanningPictureSnapshotService(
                 pictureSnapshot.PictureHash = model.PictureHash;
             }
 
-            pictureSnapshot.PlanRegistrationId = model.PlanRegistrationId;
+            pictureSnapshot.PlanRegistrationId = planRegistration.Id;
             pictureSnapshot.RegistrationType = model.RegistrationType;
             pictureSnapshot.UpdatedByUserId = userService.UserId;
 

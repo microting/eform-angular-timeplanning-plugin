@@ -22,11 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System;
+
 namespace TimePlanning.Pn.Infrastructure.Models.GpsCoordinate;
 
 public class GpsCoordinateCreateModel
 {
-    public int PlanRegistrationId { get; set; }
+    public int SdkSiteId { get; set; }
+    public DateTime Date { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public string RegistrationType { get; set; }

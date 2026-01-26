@@ -166,19 +166,19 @@ public class TimeSettingService(
                 settings.GpsEnabled = timePlanningSettingsModel.GpsEnabled ? "1" : "0";
                 settings.SnapshotEnabled = timePlanningSettingsModel.SnapshotEnabled ? "1" : "0";
             }, dbContext, userService.UserId);
-            
+
             // Update all assigned sites with the new GPS and Snapshot settings
             var assignedSites = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync();
-            
+
             foreach (var assignedSite in assignedSites)
             {
                 assignedSite.GpsEnabled = timePlanningSettingsModel.GpsEnabled;
                 assignedSite.SnapshotEnabled = timePlanningSettingsModel.SnapshotEnabled;
                 await assignedSite.Update(dbContext);
             }
-            
+
             await GoogleSheetHelper.PushToGoogleSheet(await core.GetCore(), dbContext, logger);
 
             if (timePlanningSettingsModel.ForceLoadAllPlanningsFromGoogleSheet)
@@ -254,7 +254,10 @@ public class TimeSettingService(
                         {
                             hoursStarted =
                                 planRegistrationForToday is { Start1StartedAt: not null, Stop1StoppedAt: null } or
-                                    { Start2StartedAt: not null, Stop2StoppedAt: null };
+                                    { Start2StartedAt: not null, Stop2StoppedAt: null } or
+                                    { Start3StartedAt: not null, Stop3StoppedAt: null } or
+                                    { Start4StartedAt: not null, Stop4StoppedAt: null } or
+                                    { Start5StartedAt: not null, Stop5StoppedAt: null };
                             pauseStarted =
                                 planRegistrationForToday is
                                     { Pause1StartedAt: not null, Pause1StoppedAt: null } or
@@ -284,7 +287,10 @@ public class TimeSettingService(
                                     { Pause29StartedAt: not null, Pause29StoppedAt: null } or
                                     { Pause200StartedAt: not null, Pause200StoppedAt: null } or
                                     { Pause201StartedAt: not null, Pause201StoppedAt: null } or
-                                    { Pause202StartedAt: not null, Pause202StoppedAt: null };
+                                    { Pause202StartedAt: not null, Pause202StoppedAt: null } or
+                                    { Pause3StartedAt: not null, Pause3StoppedAt: null } or
+                                    { Pause4StartedAt: not null, Pause4StoppedAt: null } or
+                                    { Pause5StartedAt: not null, Pause5StoppedAt: null };
                         }
 
                         var newSite = new Site
@@ -308,6 +314,7 @@ public class TimeSettingService(
                             FifthShiftActive = assignedSite.FifthShiftActive,
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
+                            SnapshotEnabled = assignedSite.SnapshotEnabled
                         };
                         var user = await baseDbContext.Users
                             .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
@@ -520,7 +527,10 @@ public class TimeSettingService(
                         {
                             hoursStarted =
                                 planRegistrationForToday is { Start1StartedAt: not null, Stop1StoppedAt: null } or
-                                    { Start2StartedAt: not null, Stop2StoppedAt: null };
+                                    { Start2StartedAt: not null, Stop2StoppedAt: null } or
+                                    { Start3StartedAt: not null, Stop3StoppedAt: null } or
+                                    { Start4StartedAt: not null, Stop4StoppedAt: null } or
+                                    { Start5StartedAt: not null, Stop5StoppedAt: null };
                             pauseStarted =
                                 planRegistrationForToday is
                                     { Pause1StartedAt: not null, Pause1StoppedAt: null } or
@@ -550,7 +560,10 @@ public class TimeSettingService(
                                     { Pause29StartedAt: not null, Pause29StoppedAt: null } or
                                     { Pause200StartedAt: not null, Pause200StoppedAt: null } or
                                     { Pause201StartedAt: not null, Pause201StoppedAt: null } or
-                                    { Pause202StartedAt: not null, Pause202StoppedAt: null };
+                                    { Pause202StartedAt: not null, Pause202StoppedAt: null } or
+                                    { Pause3StartedAt: not null, Pause3StoppedAt: null } or
+                                    { Pause4StartedAt: not null, Pause4StoppedAt: null } or
+                                    { Pause5StartedAt: not null, Pause5StoppedAt: null };
                         }
 
                         var newSite = new Site

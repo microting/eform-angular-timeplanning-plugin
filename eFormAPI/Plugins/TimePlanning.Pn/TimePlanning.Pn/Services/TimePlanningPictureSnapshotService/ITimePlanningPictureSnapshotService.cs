@@ -22,6 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#nullable enable
+using Microsoft.AspNetCore.Http;
+
 namespace TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
 
 using System.Collections.Generic;
@@ -32,14 +35,14 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 public interface ITimePlanningPictureSnapshotService
 {
     Task<OperationDataResult<List<PictureSnapshotModel>>> Index(int planRegistrationId);
-    
+
     Task<OperationDataResult<PictureSnapshotModel>> GetById(int id);
-    
+
     Task<OperationDataResult<byte[]>> GetFile(int id);
-    
-    Task<OperationResult> Create(PictureSnapshotCreateModel model);
-    
+
+    Task<OperationResult> Create(PictureSnapshotCreateModel model, IFormFile file, string? token);
+
     Task<OperationResult> Update(PictureSnapshotUpdateModel model);
-    
+
     Task<OperationResult> Delete(int id);
 }

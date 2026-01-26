@@ -141,4 +141,7 @@ export const ltLT = {
   'Start time is required': 'Būtina nurodyti pradžios laiką',
   'Start time cannot be earlier than previous shift`s end time': 'Pradžios laikas negali būti ankstesnis nei ankstesnės pamainos pabaigos laikas',
   'Create device': 'Sukurti įrenginį',
+  Maternity: 'Motinystės atostogos',
+  VacationDayOff: 'Atostogų diena',
+  Holiday: 'Atostogos',
 };

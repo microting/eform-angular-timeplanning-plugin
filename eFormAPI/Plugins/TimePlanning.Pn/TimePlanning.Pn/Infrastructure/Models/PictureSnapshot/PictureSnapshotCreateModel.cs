@@ -22,13 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System;
+
 namespace TimePlanning.Pn.Infrastructure.Models.PictureSnapshot;
 
 public class PictureSnapshotCreateModel
 {
-    public int PlanRegistrationId { get; set; }
+    public int SdkSiteId { get; set; }
+    public DateTime Date { get; set; }
     public string PictureHash { get; set; }
     public string RegistrationType { get; set; }
     public byte[] FileContent { get; set; }
     public string FileName { get; set; }
+    public string FileHash { get; set; }
 }

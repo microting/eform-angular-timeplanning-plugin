@@ -1,11 +1,13 @@
-import { Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { TimePlanningPnPlanningsService } from '../../../../services';
-import { PlanRegistrationVersionHistoryModel, PlanRegistrationVersionModel, FieldChangeModel } from '../../../../models';
+import {Component, Inject, OnInit, inject, OnDestroy} from '@angular/core';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
+import {TimePlanningPnPlanningsService} from '../../../../services';
+import {PlanRegistrationVersionHistoryModel, FieldChangeModel} from '../../../../models';
+import {TemplateFilesService} from 'src/app/common/services';
+import {Subscription} from 'rxjs';
 
 const GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
-const PICTURE_SNAPSHOT_API_URL = '/api/time-planning-pn/picture-snapshots/';
+const PICTURE_SNAPSHOT_API_URL = '/api/template-files/get-image/';
 
 @Component({
   selector: 'app-version-history-modal',
@@ -13,20 +15,20 @@ const PICTURE_SNAPSHOT_API_URL = '/api/time-planning-pn/picture-snapshots/';
   styleUrls: ['./version-history-modal.component.scss'],
   standalone: false
 })
-export class VersionHistoryModalComponent implements OnInit {
+export class VersionHistoryModalComponent implements OnInit, OnDestroy {
   versionHistory: PlanRegistrationVersionHistoryModel;
   selectedGpsCoordinate: { latitude: number; longitude: number } | null = null;
   selectedSnapshot: string | null = null;
   mapUrl: SafeResourceUrl | null = null;
   snapshotUrl: string | null = null;
   loading = false;
+  imageSub$: Subscription;
 
-  constructor(
-    public dialogRef: MatDialogRef<VersionHistoryModalComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { planRegistrationId: number },
-    private planningsService: TimePlanningPnPlanningsService,
-    private sanitizer: DomSanitizer
-  ) {}
+  private imageService = inject(TemplateFilesService);
+  public dialogRef = inject(MatDialogRef<VersionHistoryModalComponent>);
+  public data = inject(MAT_DIALOG_DATA) as { planRegistrationId: number };
+  private planningsService = inject(TimePlanningPnPlanningsService);
+  private sanitizer = inject(DomSanitizer);
 
   ngOnInit(): void {
     this.loadVersionHistory();
@@ -62,13 +64,23 @@ export class VersionHistoryModalComponent implements OnInit {
   }
 
   onSnapshotClick(change: FieldChangeModel): void {
-    if (change.pictureHash) {
-      this.selectedSnapshot = change.pictureHash;
-      this.selectedGpsCoordinate = null;
-      this.mapUrl = null;
-      // Assuming the picture hash is a URL or we need to construct a URL to fetch the image
-      // This might need adjustment based on how snapshots are stored
-      this.snapshotUrl = `${PICTURE_SNAPSHOT_API_URL}${change.pictureHash}`;
+    if (!change.pictureHash) {
+      return;
+    }
+    this.selectedSnapshot = change.pictureHash;
+    this.selectedGpsCoordinate = null;
+    this.mapUrl = null;
+    this.snapshotUrl = null;
+    this.imageSub$?.unsubscribe();
+    this.imageSub$ = this.imageService.getImage(change.toValue).subscribe((blob) => {
+      this.revokeSnapshotUrl();
+      this.snapshotUrl = URL.createObjectURL(blob);
+    });
+  }
+
+  private revokeSnapshotUrl(): void {
+    if (this.snapshotUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(this.snapshotUrl);
     }
   }
 
@@ -84,7 +96,9 @@ export class VersionHistoryModalComponent implements OnInit {
   }
 
   formatDateTime(date: Date): string {
-    if (!date) return '';
+    if (!date) {
+      return '';
+    }
     const d = new Date(date);
     return d.toLocaleString('en-US', {
       year: 'numeric',
@@ -92,12 +106,17 @@ export class VersionHistoryModalComponent implements OnInit {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+      second: '2-digit',
       hour12: false
     });
   }
 
   getFieldDisplayName(fieldName: string): string {
-    // Convert camelCase to space-separated words
     return fieldName.replace(/([A-Z])/g, ' $1').trim();
+  }
+
+  ngOnDestroy(): void {
+    this.imageSub$?.unsubscribe();
+    this.revokeSnapshotUrl();
   }
 }

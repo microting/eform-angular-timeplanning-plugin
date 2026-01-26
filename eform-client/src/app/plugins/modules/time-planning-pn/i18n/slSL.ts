@@ -141,4 +141,7 @@ export const slSL = {
   'Start time is required': 'Začetni čas je obvezen',
   'Start time cannot be earlier than previous shift`s end time': 'Začetni čas ne more biti pred končnim časom prejšnje izmene',
   'Create device': 'Ustvari napravo',
+  Maternity: 'Porodniški dopust',
+  VacationDayOff: 'Prost dan za počitnice',
+  Holiday: 'Prazniki',
 };

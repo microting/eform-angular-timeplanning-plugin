@@ -22,6 +22,7 @@ public class Site
     public bool ThirdShiftActive { get; set; }
     public bool FourthShiftActive { get; set; }
     public bool FifthShiftActive { get; set; }
+    public bool SnapshotEnabled { get; set; }
 
     public bool Resigned { get; set; }
 
