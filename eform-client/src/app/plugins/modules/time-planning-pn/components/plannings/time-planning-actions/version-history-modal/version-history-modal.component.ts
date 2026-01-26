@@ -27,6 +27,7 @@ export class VersionHistoryModalComponent implements OnInit, AfterViewInit, OnDe
   imageSub$: Subscription;
   tableHeaders: MtxGridColumn[] = [];
 
+  @ViewChild('fieldNameTemplate', {static: false}) fieldNameTemplate!: TemplateRef<FieldChangeModel>;
   @ViewChild('toValueTemplate', {static: false}) toValueTemplate!: TemplateRef<FieldChangeModel>;
 
   private imageService = inject(TemplateFilesService);
@@ -49,7 +50,7 @@ export class VersionHistoryModalComponent implements OnInit, AfterViewInit, OnDe
       {
         header: this.translateService.stream('Variable'),
         field: 'fieldName',
-        formatter: (row: FieldChangeModel) => this.getFieldDisplayName(row.fieldName),
+        cellTemplate: this.fieldNameTemplate,
       },
       {
         header: this.translateService.stream('From value'),
