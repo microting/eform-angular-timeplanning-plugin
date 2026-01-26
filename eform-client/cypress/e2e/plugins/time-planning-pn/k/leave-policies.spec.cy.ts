@@ -78,14 +78,14 @@ describe('Time Planning - Leave policies', () => {
       cy.wait(1000);
 
       cy.get(dayCellSelector)
-        .find('mat-icon.mat-mdc-tooltip-trigger')
+        .find('.plan-icons mat-icon.mat-mdc-tooltip-trigger')
         .first()
         .trigger('mouseover', { force: true });
 
       cy.wait(1000);
 
       cy.get(dayCellSelector)
-        .find('mat-icon.mat-mdc-tooltip-trigger')
+        .find('.plan-icons mat-icon.mat-mdc-tooltip-trigger')
         .first()
         .invoke('attr', 'aria-describedby')
         .then((tooltipId) => {
