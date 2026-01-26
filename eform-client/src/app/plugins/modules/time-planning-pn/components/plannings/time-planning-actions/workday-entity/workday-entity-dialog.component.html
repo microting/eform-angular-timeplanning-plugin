@@ -1000,7 +1000,7 @@
     </div>
 
 
-    <div formGroupName="flags" class="d-flex flex-column gap-4">
+    <div id="flags" formGroupName="flags" class="d-flex flex-column gap-4">
       <ng-container *ngFor="let key of enumKeys">
         <ng-container *ngIf="key !== 'Blank' && key !== 'Care'">
           <mat-checkbox
