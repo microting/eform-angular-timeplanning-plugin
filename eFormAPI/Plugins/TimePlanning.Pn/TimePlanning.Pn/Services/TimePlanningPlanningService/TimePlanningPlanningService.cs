@@ -901,12 +901,13 @@ public class TimePlanningPlanningService(
             PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
 
             await planning.Update(dbContext).ConfigureAwait(false);
+            var todayDateMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
 
             var planningsAfterThisPlanning = dbContext.PlanRegistrations
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SdkSitId == planning.SdkSitId)
                 .Where(x => x.Date > planning.Date)
-                .Where(x => x.Date <= planning.Date.AddDays(7))
+                .Where(x => x.Date < todayDateMidnight.AddDays(1))
                 .OrderBy(x => x.Date)
                 .ToList();
 
@@ -1272,6 +1273,18 @@ public class TimePlanningPlanningService(
                 }
 
                 planning.Pause2Id = planning.Shift2PauseNumber / 5;
+
+                planning.Pause3StartedAt = model.Pause3StartedAt;
+                planning.Pause3StoppedAt = model.Pause3StoppedAt;
+                planning.Pause3Id = model.Pause3Id ?? 0;
+
+                planning.Pause4StartedAt = model.Pause4StartedAt;
+                planning.Pause4StoppedAt = model.Pause4StoppedAt;
+                planning.Pause4Id = model.Pause4Id ?? 0;
+
+                planning.Pause5StartedAt = model.Pause5StartedAt;
+                planning.Pause5StoppedAt = model.Pause5StoppedAt;
+                planning.Pause5Id = model.Pause5Id ?? 0;
                 // we need to calculate the pause id based on the start and stop times from all the pauses above
             }
 
@@ -1406,11 +1419,13 @@ public class TimePlanningPlanningService(
             PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
 
             await planning.Update(dbContext).ConfigureAwait(false);
+            var todayDateMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
 
             var planningsAfterThisPlanning = dbContext.PlanRegistrations
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.SdkSitId == planning.SdkSitId)
                 .Where(x => x.Date > planning.Date)
+                .Where(x => x.Date < todayDateMidnight.AddDays(1))
                 .OrderBy(x => x.Date)
                 .ToList();
 
@@ -1427,23 +1442,43 @@ public class TimePlanningPlanningService(
                 if (preTimePlanningAfterThisPlanning != null)
                 {
                     planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
-                    planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
-                                                           planningAfterThisPlanning.NettoHours -
-                                                           planningAfterThisPlanning.PlanHours -
-                                                           planningAfterThisPlanning.PaiedOutFlex;
-                    planningAfterThisPlanning.Flex =
-                        planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                    if (planningAfterThisPlanning.NettoHoursOverrideActive)
+                    {
+                        planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                               planningAfterThisPlanning.NettoHoursOverride -
+                                                               planningAfterThisPlanning.PlanHours -
+                                                               planningAfterThisPlanning.PaiedOutFlex;
+                        planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHoursOverride - planningAfterThisPlanning.PlanHours;
+                    }
+                    else
+                    {
+                        planningAfterThisPlanning.SumFlexEnd = preTimePlanningAfterThisPlanning.SumFlexEnd +
+                                                               planningAfterThisPlanning.NettoHours -
+                                                               planningAfterThisPlanning.PlanHours -
+                                                               planningAfterThisPlanning.PaiedOutFlex;
+                        planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                    }
                 }
                 else
                 {
                     // No previous planning found, start from 0
+                    if (planningAfterThisPlanning.NettoHoursOverrideActive)
+                    {
+                        planningAfterThisPlanning.SumFlexEnd = planningAfterThisPlanning.NettoHoursOverride -
+                                                               planningAfterThisPlanning.PlanHours -
+                                                               planningAfterThisPlanning.PaiedOutFlex;
+                        planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHoursOverride - planningAfterThisPlanning.PlanHours;
+                    }
+                    else
+                    {
+                        planningAfterThisPlanning.SumFlexEnd = planningAfterThisPlanning.NettoHours -
+                                                               planningAfterThisPlanning.PlanHours -
+                                                               planningAfterThisPlanning.PaiedOutFlex;
+                        planningAfterThisPlanning.Flex = planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
+                    }
                     planningAfterThisPlanning.SumFlexStart = 0;
-                    planningAfterThisPlanning.SumFlexEnd = planningAfterThisPlanning.NettoHours -
-                                                           planningAfterThisPlanning.PlanHours -
-                                                           planningAfterThisPlanning.PaiedOutFlex;
-                    planningAfterThisPlanning.Flex =
-                        planningAfterThisPlanning.NettoHours - planningAfterThisPlanning.PlanHours;
                 }
+
                 await planningAfterThisPlanning.Update(dbContext).ConfigureAwait(false);
             }
 
@@ -1722,6 +1757,17 @@ public class TimePlanningPlanningService(
         CompareBoolField(changes, "Sick", previous?.Sick, current.Sick);
         CompareBoolField(changes, "OtherAllowedAbsence", previous?.OtherAllowedAbsence, current.OtherAllowedAbsence);
         CompareBoolField(changes, "AbsenceWithoutPermission", previous?.AbsenceWithoutPermission, current.AbsenceWithoutPermission);
+
+        CompareField(changes, "Pause1StoppedAt", previous?.Start1Id.ToString(), current.Start1Id.ToString());
+        CompareField(changes, "Pause1StoppedAt", previous?.Stop1Id.ToString(), current.Stop1Id.ToString());
+        CompareField(changes, "Pause1StoppedAt", previous?.Start2Id.ToString(), current.Start2Id.ToString());
+        CompareField(changes, "Pause1StoppedAt", previous?.Stop2Id.ToString(), current.Stop2Id.ToString());
+        CompareField(changes, "Pause1StoppedAt", previous?.Start3Id.ToString(), current.Start3Id.ToString());
+        CompareField(changes, "Pause1StoppedAt", previous?.Stop3Id.ToString(), current.Stop3Id.ToString());
+        CompareField(changes, "Pause1StoppedAt", previous?.Start4Id.ToString(), current.Start4Id.ToString());
+        CompareField(changes, "Pause1StoppedAt", previous?.Stop4Id.ToString(), current.Stop4Id.ToString());
+        CompareField(changes, "Pause1StoppedAt", previous?.Start5Id.ToString(), current.Start5Id.ToString());
+        CompareField(changes, "Pause1StoppedAt", previous?.Stop5Id.ToString(), current.Stop5Id.ToString());
 
 
         // Shift 1
