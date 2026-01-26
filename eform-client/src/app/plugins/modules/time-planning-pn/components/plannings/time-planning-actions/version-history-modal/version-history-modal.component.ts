@@ -1,4 +1,4 @@
-import {Component, Inject, OnInit, inject, OnDestroy, ViewChild, TemplateRef} from '@angular/core';
+import {Component, Inject, OnInit, inject, OnDestroy, ViewChild, TemplateRef, AfterViewInit} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TimePlanningPnPlanningsService} from '../../../../services';
@@ -17,7 +17,7 @@ const PICTURE_SNAPSHOT_API_URL = '/api/template-files/get-image/';
   styleUrls: ['./version-history-modal.component.scss'],
   standalone: false
 })
-export class VersionHistoryModalComponent implements OnInit, OnDestroy {
+export class VersionHistoryModalComponent implements OnInit, AfterViewInit, OnDestroy {
   versionHistory: PlanRegistrationVersionHistoryModel;
   selectedGpsCoordinate: { latitude: number; longitude: number } | null = null;
   selectedSnapshot: string | null = null;
@@ -27,7 +27,7 @@ export class VersionHistoryModalComponent implements OnInit, OnDestroy {
   imageSub$: Subscription;
   tableHeaders: MtxGridColumn[] = [];
 
-  @ViewChild('toValueTemplate', {static: true}) toValueTemplate!: TemplateRef<any>;
+  @ViewChild('toValueTemplate') toValueTemplate!: TemplateRef<any>;
 
   private imageService = inject(TemplateFilesService);
   public dialogRef = inject(MatDialogRef<VersionHistoryModalComponent>);
@@ -37,8 +37,11 @@ export class VersionHistoryModalComponent implements OnInit, OnDestroy {
   private translateService = inject(TranslateService);
 
   ngOnInit(): void {
-    this.initTableHeaders();
     this.loadVersionHistory();
+  }
+
+  ngAfterViewInit(): void {
+    this.initTableHeaders();
   }
 
   initTableHeaders(): void {
