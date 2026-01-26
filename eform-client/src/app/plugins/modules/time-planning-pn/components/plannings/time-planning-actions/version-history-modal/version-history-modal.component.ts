@@ -1,10 +1,12 @@
-import {Component, Inject, OnInit, inject, OnDestroy} from '@angular/core';
+import {Component, Inject, OnInit, inject, OnDestroy, ViewChild, TemplateRef} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TimePlanningPnPlanningsService} from '../../../../services';
 import {PlanRegistrationVersionHistoryModel, FieldChangeModel} from '../../../../models';
 import {TemplateFilesService} from 'src/app/common/services';
 import {Subscription} from 'rxjs';
+import {MtxGridColumn} from '@ng-matero/extensions/grid';
+import {TranslateService} from '@ngx-translate/core';
 
 const GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
 const PICTURE_SNAPSHOT_API_URL = '/api/template-files/get-image/';
@@ -23,15 +25,39 @@ export class VersionHistoryModalComponent implements OnInit, OnDestroy {
   snapshotUrl: string | null = null;
   loading = false;
   imageSub$: Subscription;
+  tableHeaders: MtxGridColumn[] = [];
+
+  @ViewChild('toValueTemplate', {static: true}) toValueTemplate!: TemplateRef<any>;
 
   private imageService = inject(TemplateFilesService);
   public dialogRef = inject(MatDialogRef<VersionHistoryModalComponent>);
   public data = inject(MAT_DIALOG_DATA) as { planRegistrationId: number };
   private planningsService = inject(TimePlanningPnPlanningsService);
   private sanitizer = inject(DomSanitizer);
+  private translateService = inject(TranslateService);
 
   ngOnInit(): void {
+    this.initTableHeaders();
     this.loadVersionHistory();
+  }
+
+  initTableHeaders(): void {
+    this.tableHeaders = [
+      {
+        header: this.translateService.stream('Variable'),
+        field: 'fieldName',
+        formatter: (row: FieldChangeModel) => this.getFieldDisplayName(row.fieldName),
+      },
+      {
+        header: this.translateService.stream('From value'),
+        field: 'fromValue',
+      },
+      {
+        header: this.translateService.stream('To value'),
+        field: 'toValue',
+        cellTemplate: this.toValueTemplate,
+      },
+    ];
   }
 
   loadVersionHistory(): void {

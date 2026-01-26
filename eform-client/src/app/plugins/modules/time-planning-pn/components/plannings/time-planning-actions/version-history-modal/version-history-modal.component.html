@@ -14,36 +14,17 @@
           <span *ngIf="version.updatedByUserId">by User ID: {{ version.updatedByUserId }} ({{version.version}})</span>
         </h5>
 
-        <table class="table table-bordered table-sm">
-          <thead>
-            <tr>
-              <th>Variable</th>
-              <th>From value</th>
-              <th>To value</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let change of version.changes">
-              <td>{{ getFieldDisplayName(change.fieldName) }}</td>
-              <td>{{ change.fromValue }}</td>
-              <td>
-                <ng-container *ngIf="change.fieldType === 'gps'">
-                  <a href="javascript:void(0)" (click)="onGpsClick(change)">
-                    View on Maps ({{ change.latitude }}, {{ change.longitude }})
-                  </a>
-                </ng-container>
-                <ng-container *ngIf="change.fieldType === 'snapshot'">
-                  <a href="javascript:void(0)" (click)="onSnapshotClick(change)">
-                    View Snapshot
-                  </a>
-                </ng-container>
-                <ng-container *ngIf="change.fieldType === 'standard'">
-                  {{ change.toValue }}
-                </ng-container>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <mtx-grid
+          [data]="version.changes"
+          [columns]="tableHeaders"
+          [showPaginator]="false"
+          [pageOnFront]="false"
+          [rowStriped]="false"
+          [showToolbar]="false"
+          [showColumnMenuButton]="false"
+          class="version-history-grid"
+        >
+        </mtx-grid>
       </div>
 
       <div *ngIf="versionHistory.versions.length === 0" class="no-versions">
@@ -74,6 +55,22 @@
     </div>
   </div>
 </div>
+
+<ng-template #toValueTemplate let-row>
+  <ng-container *ngIf="row.fieldType === 'gps'">
+    <a href="javascript:void(0)" (click)="onGpsClick(row)">
+      View on Maps ({{ row.latitude }}, {{ row.longitude }})
+    </a>
+  </ng-container>
+  <ng-container *ngIf="row.fieldType === 'snapshot'">
+    <a href="javascript:void(0)" (click)="onSnapshotClick(row)">
+      View Snapshot
+    </a>
+  </ng-container>
+  <ng-container *ngIf="row.fieldType === 'standard'">
+    {{ row.toValue }}
+  </ng-container>
+</ng-template>
 
 <div class="modal-body" *ngIf="loading">
   <div class="text-center">
