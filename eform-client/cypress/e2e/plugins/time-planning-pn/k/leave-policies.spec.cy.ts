@@ -51,6 +51,8 @@ describe('Time Planning - Leave policies', () => {
     leavePolicies.forEach(({ labelInFlags, expectedTooltip }) => {
       cy.get(dayCellSelector).click({ force: true });
 
+      cy.get('#flags').scrollIntoView();
+
       cy.get('#flags mat-checkbox').each(($checkbox) => {
         cy.wrap($checkbox)
           .find('input[type="checkbox"]')
@@ -63,6 +65,7 @@ describe('Time Planning - Leave policies', () => {
 
       cy.get('#flags mat-checkbox .mdc-label')
         .contains(labelInFlags)
+        .scrollIntoView()
         .click({ force: true, animationDistanceThreshold: 1 });
 
       cy.intercept('PUT', '**/api/time-planning-pn/plannings/*').as('planning-save');
@@ -78,15 +81,19 @@ describe('Time Planning - Leave policies', () => {
       cy.wait(1000);
 
       cy.get(dayCellSelector)
+        .scrollIntoView()
         .find('.plan-icons mat-icon.mat-mdc-tooltip-trigger')
         .first()
+        .scrollIntoView()
         .trigger('mouseover', { force: true });
 
       cy.wait(1000);
 
       cy.get(dayCellSelector)
+        .scrollIntoView()
         .find('.plan-icons mat-icon.mat-mdc-tooltip-trigger')
         .first()
+        .scrollIntoView()
         .invoke('attr', 'aria-describedby')
         .then((tooltipId) => {
           expect(tooltipId, 'tooltip id should be set on icon')
