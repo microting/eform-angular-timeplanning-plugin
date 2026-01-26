@@ -38,6 +38,7 @@ export class VersionHistoryModalComponent implements OnInit, AfterViewInit, OnDe
   private translateService = inject(TranslateService);
 
   ngOnInit(): void {
+    this.initTableHeaders();
     this.loadVersionHistory();
   }
 
