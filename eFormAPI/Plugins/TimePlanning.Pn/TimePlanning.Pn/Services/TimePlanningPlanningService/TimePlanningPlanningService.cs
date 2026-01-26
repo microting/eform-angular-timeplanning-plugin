@@ -1667,10 +1667,10 @@ public class TimePlanningPlanningService(
                         {
                             FieldName = "Snapshot",
                             FromValue = "",
-                            ToValue = snapshot.PictureHash,
+                            ToValue = $"{snapshot.FileName}.{snapshot.FileExtension}",
                             FieldType = "snapshot",
                             PictureHash = snapshot.PictureHash,
-                            RegistrationType = snapshot.RegistrationType
+                            RegistrationType = snapshot.RegistrationType,
                         });
                     }
                 }
