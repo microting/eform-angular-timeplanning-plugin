@@ -146,7 +146,7 @@ describe('Dashboard edit values', () => {
       cy.get('#planHours').should('be.visible');
 
       if (secondUpdateActualTexts[i].start1StartedAt !== '' && secondUpdateActualTexts[i].start1StartedAt !== '00:00') {
-        cy.get(`#start1StartedAt`).click();
+        cy.get('[data-testid="start1StartedAt"]').click();
         // eslint-disable-next-line max-len
         let degrees0 = 360 / 12 * parseInt(secondUpdateActualTexts[i].start1StartedAt.split(':')[0]);
         let minuteDegrees0 = 360 / 60 * parseInt(secondUpdateActualTexts[i].start1StartedAt.split(':')[1]);
@@ -164,10 +164,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#start1StartedAt').should('have.value', secondUpdateActualTexts[i].start1StartedAt);
+      cy.get('[data-testid="start1StartedAt"]').should('have.value', secondUpdateActualTexts[i].start1StartedAt);
 
       if (secondUpdateActualTexts[i].stop1StoppedAt !== '' && secondUpdateActualTexts[i].stop1StoppedAt !== '00:00') {
-        cy.get(`#stop1StoppedAt`).click();
+        cy.get('[data-testid="stop1StoppedAt"]').click();
         // eslint-disable-next-line max-len
         let degrees1 = 360 / 12 * parseInt(secondUpdateActualTexts[i].stop1StoppedAt.split(':')[0]);
         let minuteDegrees1 = 360 / 60 * parseInt(secondUpdateActualTexts[i].stop1StoppedAt.split(':')[1]);
@@ -188,10 +188,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#stop1StoppedAt').should('have.value', secondUpdateActualTexts[i].stop1StoppedAt);
+      cy.get('[data-testid="stop1StoppedAt"]').should('have.value', secondUpdateActualTexts[i].stop1StoppedAt);
 
       if (secondUpdateActualTexts[i].pause1Id !== '' && secondUpdateActualTexts[i].pause1Id !== '00:00') {
-        cy.get(`#pause1Id`).click();
+        cy.get('[data-testid="pause1Id"]').click();
         // eslint-disable-next-line max-len
         let degrees2 = 360 / 12 * parseInt(secondUpdateActualTexts[i].pause1Id.split(':')[0]);
         let minuteDegrees2 = 360 / 60 * parseInt(secondUpdateActualTexts[i].pause1Id.split(':')[1]);
@@ -211,13 +211,13 @@ describe('Dashboard edit values', () => {
           cy.get('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         cy.get('.timepicker-button span').contains('Ok').click();
-        cy.get('#pause1Id').should('have.value', secondUpdateActualTexts[i].pause1Id);
+        cy.get('[data-testid="pause1Id"]').should('have.value', secondUpdateActualTexts[i].pause1Id);
       } else {
-        cy.get('#pause1Id').should('have.value', '');
+        cy.get('[data-testid="pause1Id"]').should('have.value', '');
       }
 
       if (secondUpdateActualTexts[i].start2StartedAt !== '' && secondUpdateActualTexts[i].start2StartedAt !== '00:00') {
-        cy.get(`#start2StartedAt`).click();
+        cy.get('[data-testid="start2StartedAt"]').click();
         // eslint-disable-next-line max-len
         let degrees3 = 360 / 12 * parseInt(secondUpdateActualTexts[i].start2StartedAt.split(':')[0]);
         let minuteDegrees3 = 360 / 60 * parseInt(secondUpdateActualTexts[i].start2StartedAt.split(':')[1]);
@@ -238,10 +238,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#start2StartedAt').should('have.value', secondUpdateActualTexts[i].start2StartedAt);
+      cy.get('[data-testid="start2StartedAt"]').should('have.value', secondUpdateActualTexts[i].start2StartedAt);
 
       if (secondUpdateActualTexts[i].stop2StoppedAt !== '' && secondUpdateActualTexts[i].stop2StoppedAt !== '00:00' ) {
-        cy.get(`#stop2StoppedAt`).click();
+        cy.get('[data-testid="stop2StoppedAt"]').click();
         // eslint-disable-next-line max-len
         let degrees4 = 360 / 12 * parseInt(secondUpdateActualTexts[i].stop2StoppedAt.split(':')[0]);
         let minuteDegrees4 = 360 / 60 * parseInt(secondUpdateActualTexts[i].stop2StoppedAt.split(':')[1]);
@@ -262,10 +262,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#stop2StoppedAt').should('have.value', secondUpdateActualTexts[i].stop2StoppedAt);
+      cy.get('[data-testid="stop2StoppedAt"]').should('have.value', secondUpdateActualTexts[i].stop2StoppedAt);
 
       if (secondUpdateActualTexts[i].pause2Id !== '' && secondUpdateActualTexts[i].pause2Id !== '00:00') {
-        cy.get(`#pause2Id`).click();
+        cy.get('[data-testid="pause2Id"]').click();
         // eslint-disable-next-line max-len
         let degrees5 = 360 / 12 * parseInt(secondUpdateActualTexts[i].pause2Id.split(':')[0]);
         let minuteDegrees5 = 360 / 60 * parseInt(secondUpdateActualTexts[i].pause2Id.split(':')[1]);
@@ -285,9 +285,9 @@ describe('Dashboard edit values', () => {
           cy.get('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         cy.get('.timepicker-button span').contains('Ok').click();
-        cy.get('#pause2Id').should('have.value', secondUpdateActualTexts[i].pause2Id);
+        cy.get('[data-testid="pause2Id"]').should('have.value', secondUpdateActualTexts[i].pause2Id);
       } else {
-        cy.get('#pause2Id').should('have.value', '');
+        cy.get('[data-testid="pause2Id"]').should('have.value', '');
       }
       cy.get('#flexToDate').should('have.value', secondUpdateActualTexts[i].flexToDate);
       cy.get('#flexIncludingToday').should('have.value', secondUpdateActualTexts[i].flexIncludingToday);

@@ -24,9 +24,10 @@ describe('Dashboard edit values', () => {
     cy.get('#cell0_0').click();
 
     // clean out shifts
-    ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
+    ['plannedStartOfShift1', 'plannedEndOfShift1', 'start1StartedAt', 'stop1StoppedAt'].forEach(
       (selector) => {
-        cy.get(selector)
+        let newSelector = '[data-testid="' + selector + '"]';
+        cy.get(newSelector)
           .closest('.flex-row')
           .find('button mat-icon')
           .contains('delete')
@@ -63,9 +64,10 @@ describe('Dashboard edit values', () => {
   afterEach(() => {
     cy.get('#cell0_0').click();
 
-    ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
+    ['plannedStartOfShift1', 'plannedEndOfShift1', 'start1StartedAt', 'stop1StoppedAt'].forEach(
       (selector) => {
-        cy.get(selector)
+        let newSelector = '[data-testid="' + selector + '"]';
+        cy.get(newSelector)
           .closest('.flex-row')
           .find('button mat-icon')
           .contains('delete')
