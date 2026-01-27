@@ -266,7 +266,7 @@ describe('Dashboard edit values', () => {
       cy.get('[data-testid="plannedEndOfShift1"]').should('have.value', secondUpdatePlanTexts[i].plannedEndOfShift1);
 
       if (secondUpdatePlanTexts[i].plannedBreakOfShift1 !== '00:00' || secondUpdatePlanTexts[i].plannedBreakOfShift1 !== '') {
-        cy.get(`#plannedBreakOfShift1`).click();
+        cy.get('[data-testid="plannedBreakOfShift1"]').click();
         // eslint-disable-next-line max-len
         let degrees2 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift1.split(':')[0]);
         let minuteDegrees2 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift1.split(':')[1]);

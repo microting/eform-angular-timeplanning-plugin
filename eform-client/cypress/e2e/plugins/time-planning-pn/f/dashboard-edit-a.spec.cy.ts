@@ -16,7 +16,8 @@ describe('Dashboard edit values', () => {
 
     ['plannedStartOfShift1', 'start1StartedAt'].forEach(
       (selector) => {
-        cy.get(selector)
+        let newSelector = '[data-testid="' + selector + '"]';
+        cy.get(newSelector)
           .closest('.flex-row')
           .find('button mat-icon')
           .contains('delete')
@@ -72,21 +73,21 @@ describe('Dashboard edit values', () => {
   it('should show an error when actual stop time is before start time', () => {
     setTimepickerValue('start1StartedAt', '11', '00');
     setTimepickerValue('stop1StoppedAt', '9', '00');
-    setTimepickerValue('#pause1Id', '0', '00');
+    setTimepickerValue('pause1Id', '0', '00');
     assertInputError('stop1StoppedAt-Error', 'Stop må ikke være før start');
   });
 
   it('should show an error when actual pause is longer than the shift duration', () => {
     setTimepickerValue('start1StartedAt', '8', '00');
     setTimepickerValue('stop1StoppedAt', '10', '00');
-    setTimepickerValue('#pause1Id', '2', '00');
+    setTimepickerValue('pause1Id', '2', '00');
     assertInputError('pause1Id-Error', 'Pausen må ikke være lige så lang som eller længere end skiftets varighed');
   });
 
   it('should show an error when actual start and stop are the same', () => {
     setTimepickerValue('start1StartedAt', '9', '00');
     setTimepickerValue('stop1StoppedAt', '9', '00');
-    setTimepickerValue('#pause1Id', '0', '00');
+    setTimepickerValue('pause1Id', '0', '00');
     assertInputError('stop1StoppedAt-Error', 'Start og stop kan ikke være det samme');
   });
 

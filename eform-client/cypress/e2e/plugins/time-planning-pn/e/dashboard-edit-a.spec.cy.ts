@@ -63,7 +63,7 @@ describe('Dashboard edit values', () => {
   afterEach(() => {
     cy.get('#cell0_0').click();
 
-    ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
+    ['plannedStartOfShift1', 'plannedEndOfShift1', 'start1StartedAt', 'stop1StoppedAt'].forEach(
       (selector) => {
         let newSelector = '[data-testid="' + selector + '"]';
         cy.get(newSelector)
