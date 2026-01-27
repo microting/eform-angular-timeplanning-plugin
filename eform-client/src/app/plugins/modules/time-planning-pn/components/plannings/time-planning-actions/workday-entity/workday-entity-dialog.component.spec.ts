@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WorkdayEntityDialogComponent } from './workday-entity-dialog.component';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { TimePlanningPnPlanningsService } from '../../../../services';
+import { TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService } from '../../../../services';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe, CommonModule } from '@angular/common';
 import { of } from 'rxjs';
@@ -10,12 +10,18 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { provideMockStore } from '@ngrx/store/testing';
+import { DomSanitizer } from '@angular/platform-browser';
+import { TemplateFilesService } from 'src/app/common/services';
 
 describe('WorkdayEntityDialogComponent', () => {
   let component: WorkdayEntityDialogComponent;
   let fixture: ComponentFixture<WorkdayEntityDialogComponent>;
   let mockPlanningsService: jest.Mocked<TimePlanningPnPlanningsService>;
   let mockTranslateService: jest.Mocked<TranslateService>;
+  let mockGpsCoordinatesService: jest.Mocked<TimePlanningPnGpsCoordinatesService>;
+  let mockPictureSnapshotsService: jest.Mocked<TimePlanningPnPictureSnapshotsService>;
+  let mockDomSanitizer: jest.Mocked<DomSanitizer>;
+  let mockTemplateFilesService: jest.Mocked<TemplateFilesService>;
 
   const mockData = {
     planningPrDayModels: {
@@ -94,6 +100,18 @@ describe('WorkdayEntityDialogComponent', () => {
       stream: jest.fn(),
       onLangChange: of({ lang: 'en' }),
     } as any;
+    mockGpsCoordinatesService = {
+      getById: jest.fn().mockReturnValue(of({ success: false, model: null })),
+    } as any;
+    mockPictureSnapshotsService = {
+      getById: jest.fn().mockReturnValue(of({ success: false, model: null })),
+    } as any;
+    mockDomSanitizer = {
+      bypassSecurityTrustResourceUrl: jest.fn().mockImplementation((url) => url),
+    } as any;
+    mockTemplateFilesService = {
+      getImage: jest.fn().mockReturnValue(of(new Blob())),
+    } as any;
 
     mockTranslateService.instant.mockReturnValue('Translated');
     mockTranslateService.stream.mockReturnValue(of('Translated'));
@@ -113,7 +131,11 @@ describe('WorkdayEntityDialogComponent', () => {
         }),
         { provide: MAT_DIALOG_DATA, useValue: mockData },
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },
-        { provide: TranslateService, useValue: mockTranslateService }
+        { provide: TranslateService, useValue: mockTranslateService },
+        { provide: TimePlanningPnGpsCoordinatesService, useValue: mockGpsCoordinatesService },
+        { provide: TimePlanningPnPictureSnapshotsService, useValue: mockPictureSnapshotsService },
+        { provide: DomSanitizer, useValue: mockDomSanitizer },
+        { provide: TemplateFilesService, useValue: mockTemplateFilesService }
       ]
     }).compileComponents();
 
