@@ -14,7 +14,7 @@ const TimePlanningPnPictureSnapshotMethods = {
 export class TimePlanningPnPictureSnapshotsService {
   private apiBaseService = inject(ApiBaseService);
 
-  getById(id: number): Observable<OperationDataResult<PictureSnapshotModel>> {
+  getByPlanRegistrationId(id: number): Observable<OperationDataResult<PictureSnapshotModel[]>> {
     return this.apiBaseService.get(
       TimePlanningPnPictureSnapshotMethods.PictureSnapshots + '?planRegistrationId=' + id
     );

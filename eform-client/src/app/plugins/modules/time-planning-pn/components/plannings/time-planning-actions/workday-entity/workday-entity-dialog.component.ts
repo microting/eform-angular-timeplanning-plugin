@@ -10,7 +10,7 @@ import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService} from '../../../../services';
 import {VersionHistoryModalComponent} from '../version-history-modal/version-history-modal.component';
 import {Store} from '@ngrx/store';
-import {selectCurrentUserIsFirstUser} from 'src/app/state';
+import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import validator from 'validator';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TemplateFilesService} from 'src/app/common/services';
@@ -50,6 +50,7 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   private translateService = inject(TranslateService);
 
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
+  protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
 
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   enumKeys: string[] = [];
@@ -85,8 +86,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   mapUrl: SafeResourceUrl | null = null;
   snapshotUrl: string | null = null;
   imageSub$: Subscription;
-  gpsDataMap: Map<number, GpsCoordinateModel> = new Map();
-  snapshotDataMap: Map<number, PictureSnapshotModel> = new Map();
+  gpsDataMap: Map<string, GpsCoordinateModel> = new Map();
+  snapshotDataMap: Map<string, PictureSnapshotModel> = new Map();
   private readonly GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
 
 
@@ -1580,26 +1581,7 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   }
 
   loadGpsAndSnapshotData(): void {
-    // Load GPS/snapshot data for all shifts
-    const registrationIds = [
-      this.data.planningPrDayModels.start1Id,
-      this.data.planningPrDayModels.stop1Id,
-      this.data.planningPrDayModels.pause1Id,
-      this.data.planningPrDayModels.start2Id,
-      this.data.planningPrDayModels.stop2Id,
-      this.data.planningPrDayModels.pause2Id,
-      this.data.planningPrDayModels.start3Id,
-      this.data.planningPrDayModels.stop3Id,
-      this.data.planningPrDayModels.pause3Id,
-      this.data.planningPrDayModels.start4Id,
-      this.data.planningPrDayModels.stop4Id,
-      this.data.planningPrDayModels.pause4Id,
-      this.data.planningPrDayModels.start5Id,
-      this.data.planningPrDayModels.stop5Id,
-      this.data.planningPrDayModels.pause5Id,
-    ];
-
-    registrationIds.forEach(id => this.loadGpsOrSnapshotForRegistration(id));
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.id);
   }
 
   private loadGpsOrSnapshotForRegistration(registrationId: number | null): void {
@@ -1608,10 +1590,15 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     }
 
     // Try to load GPS data first
-    this.gpsCoordinatesService.getById(registrationId).subscribe({
+    this.gpsCoordinatesService.getByPlanRegistrationId(registrationId).subscribe({
       next: (result) => {
         if (result.success && result.model) {
-          this.gpsDataMap.set(registrationId, result.model);
+          // this.gpsDataMap.set(registrationId, result.model);
+          const gpsData = result.model;
+          gpsData.forEach(gpsEntry => {
+            this.gpsDataMap.set(gpsEntry.registrationType, gpsEntry);
+          });
+          this.tryLoadSnapshot(registrationId);
         } else {
           // If no GPS data, try snapshot
           this.tryLoadSnapshot(registrationId);
@@ -1625,10 +1612,13 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   }
 
   private tryLoadSnapshot(registrationId: number): void {
-    this.pictureSnapshotsService.getById(registrationId).subscribe({
+    this.pictureSnapshotsService.getByPlanRegistrationId(registrationId).subscribe({
       next: (snapshotResult) => {
         if (snapshotResult.success && snapshotResult.model) {
-          this.snapshotDataMap.set(registrationId, snapshotResult.model);
+          const snapshotData = snapshotResult.model;
+          snapshotData.forEach(snapshotEntry => {
+            this.snapshotDataMap.set(snapshotEntry.registrationType, snapshotEntry);
+          });
         }
       },
       error: () => {
@@ -1637,22 +1627,22 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     });
   }
 
-  hasGpsData(registrationId: number | null): boolean {
-    if (!registrationId) {
+  hasGpsData(registrationType: string | null): boolean {
+    if (!registrationType) {
       return false;
     }
-    return this.gpsDataMap.has(registrationId);
+    return this.gpsDataMap.has(registrationType);
   }
 
-  hasSnapshotData(registrationId: number | null): boolean {
-    if (!registrationId) {
+  hasSnapshotData(registrationType: string | null): boolean {
+    if (!registrationType) {
       return false;
     }
-    return this.snapshotDataMap.has(registrationId);
+    return this.snapshotDataMap.has(registrationType);
   }
 
-  onGpsClick(registrationId: number): void {
-    const gpsData = this.gpsDataMap.get(registrationId);
+  onGpsClick(registrationType: string): void {
+    const gpsData = this.gpsDataMap.get(registrationType);
     if (gpsData && gpsData.latitude && gpsData.longitude) {
       this.selectedGpsCoordinate = {
         latitude: gpsData.latitude,
@@ -1666,8 +1656,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     }
   }
 
-  onSnapshotClick(registrationId: number): void {
-    const snapshotData = this.snapshotDataMap.get(registrationId);
+  onSnapshotClick(registrationType: string): void {
+    const snapshotData = this.snapshotDataMap.get(registrationType);
     if (!snapshotData || !snapshotData.pictureHash) {
       return;
     }
