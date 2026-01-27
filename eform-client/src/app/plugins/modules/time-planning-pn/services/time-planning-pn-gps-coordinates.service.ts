@@ -14,7 +14,7 @@ const TimePlanningPnGpsCoordinateMethods = {
 export class TimePlanningPnGpsCoordinatesService {
   private apiBaseService = inject(ApiBaseService);
 
-  getById(id: number): Observable<OperationDataResult<GpsCoordinateModel>> {
+  getByPlanRegistrationId(id: number): Observable<OperationDataResult<GpsCoordinateModel[]>> {
     return this.apiBaseService.get(
       TimePlanningPnGpsCoordinateMethods.GpsCoordinates + '?planRegistrationId=' + id
     );
