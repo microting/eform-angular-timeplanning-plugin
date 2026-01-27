@@ -1,17 +1,20 @@
 import {Component, OnInit, TemplateRef, ViewChild,
-  inject
+  inject, OnDestroy
 } from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialog} from '@angular/material/dialog';
 import {TranslateService} from '@ngx-translate/core';
 import {DatePipe} from '@angular/common';
 import {TimePlanningMessagesEnum} from '../../../../enums';
-import {AssignedSiteModel, PlanningPrDayModel} from '../../../../models';
+import {AssignedSiteModel, PlanningPrDayModel, GpsCoordinateModel, PictureSnapshotModel} from '../../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
-import {TimePlanningPnPlanningsService} from '../../../../services';
+import {TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService} from '../../../../services';
 import {VersionHistoryModalComponent} from '../version-history-modal/version-history-modal.component';
 import {Store} from '@ngrx/store';
 import {selectCurrentUserIsFirstUser} from 'src/app/state';
 import validator from 'validator';
+import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
+import {TemplateFilesService} from 'src/app/common/services';
+import {Subscription} from 'rxjs';
 
 import {
   AbstractControl,
@@ -30,11 +33,15 @@ import {
   styleUrls: ['./workday-entity-dialog.component.scss'],
   standalone: false
 })
-export class WorkdayEntityDialogComponent implements OnInit {
+export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private planningsService = inject(TimePlanningPnPlanningsService);
+  private gpsCoordinatesService = inject(TimePlanningPnGpsCoordinatesService);
+  private pictureSnapshotsService = inject(TimePlanningPnPictureSnapshotsService);
   private dialog = inject(MatDialog);
   private store = inject(Store);
+  private sanitizer = inject(DomSanitizer);
+  private imageService = inject(TemplateFilesService);
   public data = inject<{
       planningPrDayModels: PlanningPrDayModel,
       assignedSiteModel: AssignedSiteModel
@@ -71,6 +78,16 @@ export class WorkdayEntityDialogComponent implements OnInit {
   protected readonly JSON = JSON;
   private readonly timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
   inputErrorMessages: Record<string, Record<string, string>> = {};
+
+  // GPS/Snapshot properties
+  selectedGpsCoordinate: { latitude: number; longitude: number } | null = null;
+  selectedSnapshot: string | null = null;
+  mapUrl: SafeResourceUrl | null = null;
+  snapshotUrl: string | null = null;
+  imageSub$: Subscription;
+  gpsDataMap: Map<number, GpsCoordinateModel> = new Map();
+  snapshotDataMap: Map<number, PictureSnapshotModel> = new Map();
+  private readonly GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
 
 
 
@@ -337,6 +354,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
 
     this.updateDisabledStates();
+    this.loadGpsAndSnapshotData();
   }
 
   // inside class:
@@ -1559,5 +1577,127 @@ export class WorkdayEntityDialogComponent implements OnInit {
       maxWidth: '1400px',
       height: '80vh'
     });
+  }
+
+  loadGpsAndSnapshotData(): void {
+    // Load GPS/snapshot data for all shifts
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start1Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop1Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause1Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start2Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop2Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause2Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start3Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop3Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause3Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start4Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop4Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause4Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start5Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop5Id);
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause5Id);
+  }
+
+  private loadGpsOrSnapshotForRegistration(registrationId: number | null): void {
+    if (!registrationId) {
+      return;
+    }
+
+    // Try to load GPS data first
+    this.gpsCoordinatesService.getById(registrationId).subscribe({
+      next: (result) => {
+        if (result.success && result.model) {
+          this.gpsDataMap.set(registrationId, result.model);
+        } else {
+          // If no GPS data, try snapshot
+          this.pictureSnapshotsService.getById(registrationId).subscribe({
+            next: (snapshotResult) => {
+              if (snapshotResult.success && snapshotResult.model) {
+                this.snapshotDataMap.set(registrationId, snapshotResult.model);
+              }
+            },
+            error: () => {
+              // No snapshot either, that's okay
+            }
+          });
+        }
+      },
+      error: () => {
+        // If GPS fails, try snapshot
+        this.pictureSnapshotsService.getById(registrationId).subscribe({
+          next: (snapshotResult) => {
+            if (snapshotResult.success && snapshotResult.model) {
+              this.snapshotDataMap.set(registrationId, snapshotResult.model);
+            }
+          },
+          error: () => {
+            // No snapshot either, that's okay
+          }
+        });
+      }
+    });
+  }
+
+  hasGpsData(registrationId: number | null): boolean {
+    if (!registrationId) {
+      return false;
+    }
+    return this.gpsDataMap.has(registrationId);
+  }
+
+  hasSnapshotData(registrationId: number | null): boolean {
+    if (!registrationId) {
+      return false;
+    }
+    return this.snapshotDataMap.has(registrationId);
+  }
+
+  onGpsClick(registrationId: number): void {
+    const gpsData = this.gpsDataMap.get(registrationId);
+    if (gpsData && gpsData.latitude && gpsData.longitude) {
+      this.selectedGpsCoordinate = {
+        latitude: gpsData.latitude,
+        longitude: gpsData.longitude
+      };
+      this.selectedSnapshot = null;
+      const url = this.GOOGLE_MAPS_EMBED_URL
+        .replace('{lat}', gpsData.latitude.toString())
+        .replace('{lng}', gpsData.longitude.toString());
+      this.mapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+  }
+
+  onSnapshotClick(registrationId: number): void {
+    const snapshotData = this.snapshotDataMap.get(registrationId);
+    if (!snapshotData || !snapshotData.pictureHash) {
+      return;
+    }
+    this.selectedSnapshot = snapshotData.pictureHash;
+    this.selectedGpsCoordinate = null;
+    this.mapUrl = null;
+    this.snapshotUrl = null;
+    this.imageSub$?.unsubscribe();
+    this.imageSub$ = this.imageService.getImage(snapshotData.pictureHash).subscribe((blob) => {
+      this.revokeSnapshotUrl();
+      this.snapshotUrl = URL.createObjectURL(blob);
+    });
+  }
+
+  private revokeSnapshotUrl(): void {
+    if (this.snapshotUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(this.snapshotUrl);
+    }
+  }
+
+  closePanel(): void {
+    this.selectedGpsCoordinate = null;
+    this.selectedSnapshot = null;
+    this.mapUrl = null;
+    this.snapshotUrl = null;
+  }
+
+  ngOnDestroy(): void {
+    this.imageSub$?.unsubscribe();
+    this.revokeSnapshotUrl();
   }
 }
