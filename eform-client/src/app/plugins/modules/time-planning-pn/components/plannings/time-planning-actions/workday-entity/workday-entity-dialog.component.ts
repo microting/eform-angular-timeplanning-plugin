@@ -1581,21 +1581,25 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
   loadGpsAndSnapshotData(): void {
     // Load GPS/snapshot data for all shifts
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start1Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop1Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause1Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start2Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop2Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause2Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start3Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop3Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause3Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start4Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop4Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause4Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.start5Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.stop5Id);
-    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.pause5Id);
+    const registrationIds = [
+      this.data.planningPrDayModels.start1Id,
+      this.data.planningPrDayModels.stop1Id,
+      this.data.planningPrDayModels.pause1Id,
+      this.data.planningPrDayModels.start2Id,
+      this.data.planningPrDayModels.stop2Id,
+      this.data.planningPrDayModels.pause2Id,
+      this.data.planningPrDayModels.start3Id,
+      this.data.planningPrDayModels.stop3Id,
+      this.data.planningPrDayModels.pause3Id,
+      this.data.planningPrDayModels.start4Id,
+      this.data.planningPrDayModels.stop4Id,
+      this.data.planningPrDayModels.pause4Id,
+      this.data.planningPrDayModels.start5Id,
+      this.data.planningPrDayModels.stop5Id,
+      this.data.planningPrDayModels.pause5Id,
+    ];
+    
+    registrationIds.forEach(id => this.loadGpsOrSnapshotForRegistration(id));
   }
 
   private loadGpsOrSnapshotForRegistration(registrationId: number | null): void {
@@ -1610,30 +1614,25 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
           this.gpsDataMap.set(registrationId, result.model);
         } else {
           // If no GPS data, try snapshot
-          this.pictureSnapshotsService.getById(registrationId).subscribe({
-            next: (snapshotResult) => {
-              if (snapshotResult.success && snapshotResult.model) {
-                this.snapshotDataMap.set(registrationId, snapshotResult.model);
-              }
-            },
-            error: () => {
-              // No snapshot either, that's okay
-            }
-          });
+          this.tryLoadSnapshot(registrationId);
         }
       },
       error: () => {
         // If GPS fails, try snapshot
-        this.pictureSnapshotsService.getById(registrationId).subscribe({
-          next: (snapshotResult) => {
-            if (snapshotResult.success && snapshotResult.model) {
-              this.snapshotDataMap.set(registrationId, snapshotResult.model);
-            }
-          },
-          error: () => {
-            // No snapshot either, that's okay
-          }
-        });
+        this.tryLoadSnapshot(registrationId);
+      }
+    });
+  }
+
+  private tryLoadSnapshot(registrationId: number): void {
+    this.pictureSnapshotsService.getById(registrationId).subscribe({
+      next: (snapshotResult) => {
+        if (snapshotResult.success && snapshotResult.model) {
+          this.snapshotDataMap.set(registrationId, snapshotResult.model);
+        }
+      },
+      error: () => {
+        // No snapshot either, that's okay
       }
     });
   }
