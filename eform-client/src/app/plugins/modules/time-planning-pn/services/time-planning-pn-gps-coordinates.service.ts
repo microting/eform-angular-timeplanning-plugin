@@ -16,7 +16,7 @@ export class TimePlanningPnGpsCoordinatesService {
 
   getById(id: number): Observable<OperationDataResult<GpsCoordinateModel>> {
     return this.apiBaseService.get(
-      TimePlanningPnGpsCoordinateMethods.GpsCoordinates + '/' + id
+      TimePlanningPnGpsCoordinateMethods.GpsCoordinates + '?planRegistrationId=' + id
     );
   }
 }

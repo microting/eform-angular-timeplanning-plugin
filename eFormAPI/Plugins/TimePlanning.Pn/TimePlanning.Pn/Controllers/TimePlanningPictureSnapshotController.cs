@@ -78,7 +78,7 @@ public class TimePlanningPictureSnapshotController : ControllerBase
     [HttpPost]
     [Route("")]
     [AllowAnonymous]
-    public async Task<OperationResult> Create([FromForm] PictureSnapshotCreateModel model, [FromForm] string? token, [FromForm] IFormFile file)
+    public async Task<OperationResult> Create(PictureSnapshotCreateModel model, string? token, IFormFile file)
     {
         // Log request details
         var contentType = Request.ContentType;

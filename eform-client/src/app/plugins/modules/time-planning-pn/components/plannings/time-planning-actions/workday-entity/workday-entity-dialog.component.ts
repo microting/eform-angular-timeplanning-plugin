@@ -1598,7 +1598,7 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
       this.data.planningPrDayModels.stop5Id,
       this.data.planningPrDayModels.pause5Id,
     ];
-    
+
     registrationIds.forEach(id => this.loadGpsOrSnapshotForRegistration(id));
   }
 
