@@ -2,7 +2,8 @@ import loginPage from '../../../Login.page';
 
 describe('Dashboard edit values', () => {
   const setTimepickerValue = (selector: string, hour: string, minute: string) => {
-    cy.get(selector).click();
+    let newSelector = '[data-testid="' + selector + '"]';
+    cy.get(newSelector).click();
     cy.get('ngx-material-timepicker-face').contains(hour).click({ force: true });
     cy.get('ngx-material-timepicker-face').contains(minute).click({ force: true });
     cy.wait(1000);
@@ -34,8 +35,8 @@ describe('Dashboard edit values', () => {
       }
     );
 
-    setTimepickerValue('#plannedStartOfShift1', '1', '00');
-    setTimepickerValue('#plannedEndOfShift1', '10', '00');
+    setTimepickerValue('plannedStartOfShift1', '1', '00');
+    setTimepickerValue('plannedEndOfShift1', '10', '00');
     cy.wait(500);
   });
 
