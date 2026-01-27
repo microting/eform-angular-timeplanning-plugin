@@ -15,16 +15,18 @@
   </div>
 
   <div mat-dialog-content>
-    <br/>
-    <mtx-grid
-      [columns]="tableHeaders"
-      [data]="shiftData"
-      [showPaginator]="false"
-      [pageOnFront]="false"
-      [rowStriped]="false"
-      [showToolbar]="false"
-      [showColumnMenuButton]="false">
-    </mtx-grid>
+    <div class="workday-dialog-container">
+      <div class="main-content" [class.with-side-panel]="selectedGpsCoordinate || selectedSnapshot">
+        <br/>
+        <mtx-grid
+          [columns]="tableHeaders"
+          [data]="shiftData"
+          [showPaginator]="false"
+          [pageOnFront]="false"
+          [rowStriped]="false"
+          [showToolbar]="false"
+          [showColumnMenuButton]="false">
+        </mtx-grid>
 
     <!-- PLANNED COLUMN TEMPLATE -->
     <ng-template #plannedColumnTemplate let-row let-col="colDef">
@@ -504,6 +506,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(1)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.start1Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.start1Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.start1Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.start1Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="start1StartedAt-Error" *ngFor="let error of getInputErrors('actual.shift1.start')">
             <small>{{ error }}</small>
@@ -532,6 +550,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(2)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.pause1Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.pause1Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.pause1Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.pause1Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="pause1Id-Error" *ngFor="let error of getInputErrors('actual.shift1.pause')">
             <small>{{ error }}</small>
@@ -557,6 +591,22 @@
             </mat-form-field>
             <button mat-icon-button color="warn" (click)="resetActualTimes(3)">
               <mat-icon>delete</mat-icon>
+            </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.stop1Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.stop1Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.stop1Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.stop1Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
             </button>
           </div>
           <mat-error data-testid="stop1StoppedAt-Error" *ngFor="let error of getInputErrors('actual.shift1.stop')">
@@ -592,6 +642,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(4)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.start2Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.start2Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.start2Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.start2Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="start2StartedAt-Error" *ngFor="let error of getInputErrors('actual.shift2.start')">
             <small>{{ error }}</small>
@@ -620,6 +686,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(5)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.pause2Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.pause2Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.pause2Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.pause2Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="pause2Id-Error" *ngFor="let error of getInputErrors('actual.shift2.pause')">
             <small>{{ error }}</small>
@@ -645,6 +727,22 @@
             </mat-form-field>
             <button mat-icon-button color="warn" (click)="resetActualTimes(6)">
               <mat-icon>delete</mat-icon>
+            </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.stop2Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.stop2Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.stop2Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.stop2Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
             </button>
           </div>
           <mat-error data-testid="stop2StoppedAt-Error" *ngFor="let error of getInputErrors('actual.shift2.stop')">
@@ -678,6 +776,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(7)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.start3Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.start3Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.start3Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.start3Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="start3StartedAt-Error" *ngFor="let error of getInputErrors('actual.shift3.start')">
             <small>{{ error }}</small>
@@ -706,6 +820,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(8)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.pause3Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.pause3Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.pause3Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.pause3Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="pause3Id-Error" *ngFor="let error of getInputErrors('actual.shift3.pause')">
             <small>{{ error }}</small>
@@ -731,6 +861,22 @@
             </mat-form-field>
             <button mat-icon-button color="warn" (click)="resetActualTimes(9)">
               <mat-icon>delete</mat-icon>
+            </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.stop3Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.stop3Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.stop3Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.stop3Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
             </button>
           </div>
           <mat-error data-testid="stop3StoppedAt-Error" *ngFor="let error of getInputErrors('actual.shift3.stop')">
@@ -764,6 +910,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(10)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.start4Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.start4Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.start4Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.start4Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="start4StartedAt-Error" *ngFor="let error of getInputErrors('actual.shift4.start')">
             <small>{{ error }}</small>
@@ -792,6 +954,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(11)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.pause4Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.pause4Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.pause4Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.pause4Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="pause4Id-Error" *ngFor="let error of getInputErrors('actual.shift4.pause')">
             <small>{{ error }}</small>
@@ -817,6 +995,22 @@
             </mat-form-field>
             <button mat-icon-button color="warn" (click)="resetActualTimes(12)">
               <mat-icon>delete</mat-icon>
+            </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.stop4Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.stop4Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.stop4Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.stop4Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
             </button>
           </div>
           <mat-error data-testid="stop4StoppedAt-Error" *ngFor="let error of getInputErrors('actual.shift4.stop')">
@@ -850,6 +1044,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(13)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.start5Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.start5Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.start5Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.start5Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="start5StartedAt-Error" *ngFor="let error of getInputErrors('actual.shift5.start')">
             <small>{{ error }}</small>
@@ -878,6 +1088,22 @@
             <button mat-icon-button color="warn" (click)="resetActualTimes(14)">
               <mat-icon>delete</mat-icon>
             </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.pause5Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.pause5Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.pause5Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.pause5Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
+            </button>
           </div>
           <mat-error data-testid="pause5Id-Error" *ngFor="let error of getInputErrors('actual.shift5.pause')">
             <small>{{ error }}</small>
@@ -903,6 +1129,22 @@
             </mat-form-field>
             <button mat-icon-button color="warn" (click)="resetActualTimes(15)">
               <mat-icon>delete</mat-icon>
+            </button>
+            <button
+              *ngIf="hasGpsData(data.planningPrDayModels.stop5Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onGpsClick(data.planningPrDayModels.stop5Id)"
+              matTooltip="View GPS Location">
+              <mat-icon>location_on</mat-icon>
+            </button>
+            <button
+              *ngIf="hasSnapshotData(data.planningPrDayModels.stop5Id)"
+              mat-icon-button
+              color="primary"
+              (click)="onSnapshotClick(data.planningPrDayModels.stop5Id)"
+              matTooltip="View Snapshot">
+              <mat-icon>photo_camera</mat-icon>
             </button>
           </div>
           <mat-error data-testid="stop5StoppedAt-Error" *ngFor="let error of getInputErrors('actual.shift5.stop')">
@@ -1025,6 +1267,30 @@
     </mat-form-field>
 
     <br/>
+      </div>
+
+      <div class="side-panel" *ngIf="selectedGpsCoordinate || selectedSnapshot">
+        <div class="side-panel-header">
+          <button type="button" class="close" (click)="closePanel()" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="side-panel-content">
+          <div *ngIf="selectedGpsCoordinate && mapUrl" class="map-container">
+            <iframe
+              [src]="mapUrl"
+              width="100%"
+              height="100%"
+              style="border:0"
+              allowfullscreen>
+            </iframe>
+          </div>
+          <div *ngIf="selectedSnapshot && snapshotUrl" class="snapshot-container">
+            <img [src]="snapshotUrl" alt="Snapshot" class="snapshot-image" />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div mat-dialog-actions class="d-flex flex-row justify-content-end">
