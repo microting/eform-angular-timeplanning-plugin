@@ -216,12 +216,12 @@ describe('Dashboard edit values', () => {
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('have.value', updatePlanTexts[i].calculatedHours);
-      cy.get('#plannedStartOfShift1').should('have.value', updatePlanTexts[i].plannedStartOfShift1);
-      cy.get('#plannedBreakOfShift1').should('have.value', updatePlanTexts[i].plannedBreakOfShift1);
-      cy.get('#plannedEndOfShift1').should('have.value', updatePlanTexts[i].plannedEndOfShift1);
-      cy.get('#plannedStartOfShift2').should('have.value', updatePlanTexts[i].plannedStartOfShift2);
-      cy.get('#plannedBreakOfShift2').should('have.value', updatePlanTexts[i].plannedBreakOfShift2);
-      cy.get('#plannedEndOfShift2').should('have.value', updatePlanTexts[i].plannedEndOfShift2);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', updatePlanTexts[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('have.value', updatePlanTexts[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('have.value', updatePlanTexts[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedStartOfShift2"]').should('have.value', updatePlanTexts[i].plannedStartOfShift2);
+      cy.get('[data-testid="plannedBreakOfShift2"]').should('have.value', updatePlanTexts[i].plannedBreakOfShift2);
+      cy.get('[data-testid="plannedEndOfShift2"]').should('have.value', updatePlanTexts[i].plannedEndOfShift2);
       cy.get('#flexToDate').should('have.value', updatePlanTexts[i].flexToDate);
       cy.get('#flexIncludingToday').should('have.value', updatePlanTexts[i].flexIncludingToday);
       cy.get('#nettoHours').should('have.value', updatePlanTexts[i].nettoHours);
@@ -236,7 +236,7 @@ describe('Dashboard edit values', () => {
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
-      cy.get(`#plannedStartOfShift1`).click();
+      cy.get('[data-testid="plannedStartOfShift1"]').click();
       // eslint-disable-next-line max-len
       let degrees0 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift1.split(':')[0]);
       let minuteDegrees0 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift1.split(':')[1]);
@@ -246,10 +246,10 @@ describe('Dashboard edit values', () => {
         cy.get('[style="transform: rotateZ(' + minuteDegrees0 + 'deg) translateX(-50%);"] > span').click({force: true});
       }
       cy.get('.timepicker-button span').contains('Ok').click();
-      cy.get('#plannedStartOfShift1').should('have.value', secondUpdatePlanTexts[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', secondUpdatePlanTexts[i].plannedStartOfShift1);
 
 
-      cy.get(`#plannedEndOfShift1`).click();
+      cy.get('[data-testid="plannedEndOfShift1"]').click();
       // eslint-disable-next-line max-len
       let degrees1 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift1.split(':')[0]);
       let minuteDegrees1 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift1.split(':')[1]);
@@ -263,7 +263,7 @@ describe('Dashboard edit values', () => {
         cy.get('[style="transform: rotateZ(' + minuteDegrees1 + 'deg) translateX(-50%);"] > span').click({force: true});
       }
       cy.get('.timepicker-button span').contains('Ok').click();
-      cy.get('#plannedEndOfShift1').should('have.value', secondUpdatePlanTexts[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('have.value', secondUpdatePlanTexts[i].plannedEndOfShift1);
 
       if (secondUpdatePlanTexts[i].plannedBreakOfShift1 !== '00:00' || secondUpdatePlanTexts[i].plannedBreakOfShift1 !== '') {
         cy.get(`#plannedBreakOfShift1`).click();
@@ -285,10 +285,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#plannedBreakOfShift1').should('have.value', secondUpdatePlanTexts[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('have.value', secondUpdatePlanTexts[i].plannedBreakOfShift1);
 
       if (secondUpdatePlanTexts[i].plannedStartOfShift2 !== '') {
-        cy.get(`#plannedStartOfShift2`).click();
+        cy.get('[data-testid="plannedStartOfShift2"]').click();
         // eslint-disable-next-line max-len
         let degrees3 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift2.split(':')[0]);
         let minuteDegrees3 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift2.split(':')[1]);
@@ -303,9 +303,9 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
 
-        cy.get('#plannedStartOfShift2').should('have.value', secondUpdatePlanTexts[i].plannedStartOfShift2);
+        cy.get('[data-testid="plannedStartOfShift2"]').should('have.value', secondUpdatePlanTexts[i].plannedStartOfShift2);
 
-        cy.get('#plannedEndOfShift2').click();
+        cy.get('[data-testid="plannedEndOfShift2"]').click();
         // eslint-disable-next-line max-len
         let degrees4 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift2.split(':')[0]);
         let minuteDegrees4 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift2.split(':')[1]);
@@ -320,9 +320,9 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
 
-        cy.get('#plannedEndOfShift2').should('have.value', secondUpdatePlanTexts[i].plannedEndOfShift2);
+        cy.get('[data-testid="plannedEndOfShift2"]').should('have.value', secondUpdatePlanTexts[i].plannedEndOfShift2);
 
-        cy.get('#plannedBreakOfShift2').click();
+        cy.get('[data-testid="plannedBreakOfShift2"]').click();
         // eslint-disable-next-line max-len
         let degrees5 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift2.split(':')[0]);
         let minuteDegrees5 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift2.split(':')[1]);
@@ -341,7 +341,7 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
 
-        cy.get('#plannedBreakOfShift2').should('have.value', secondUpdatePlanTexts[i].plannedBreakOfShift2);
+        cy.get('[data-testid="plannedBreakOfShift2"]').should('have.value', secondUpdatePlanTexts[i].plannedBreakOfShift2);
       }
 
 

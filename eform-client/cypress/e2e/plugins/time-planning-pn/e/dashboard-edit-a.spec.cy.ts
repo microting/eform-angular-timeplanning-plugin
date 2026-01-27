@@ -16,7 +16,8 @@ describe('Dashboard edit values', () => {
   });
 
   const setTimepickerValue = (selector: string, hour: string, minute: string) => {
-    cy.get(selector).click();
+    let newSelector = '[data-testid="' + selector + '"]';
+    cy.get(newSelector).click();
     cy.get('ngx-material-timepicker-face')
       .contains(hour)
       .click({force: true});
@@ -33,12 +34,12 @@ describe('Dashboard edit values', () => {
     // Planned time
     cy.get('#cell0_0').click();
 
-    setTimepickerValue('#plannedStartOfShift1', '1', '00');
-    setTimepickerValue('#plannedEndOfShift1', '00', '00');
+    setTimepickerValue('plannedStartOfShift1', '1', '00');
+    setTimepickerValue('plannedEndOfShift1', '00', '00');
 
     cy.contains('button', /^Ok$/).click({force: true});
-    cy.get('#plannedStartOfShift1').should('have.value', '01:00');
-    // cy.get('#plannedEndOfShift1').should('have.value', '00:00');
+    cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', '01:00');
+    // cy.get('[data-testid="plannedEndOfShift1"]').should('have.value', '00:00');
     cy.get('#planHours').should('have.value', '23');
     cy.get('#saveButton').click();
     cy.wait('@saveWorkdayEntity', {timeout: 60000});
@@ -49,8 +50,8 @@ describe('Dashboard edit values', () => {
     // Registrar time
     cy.get('#cell0_0').click();
 
-    setTimepickerValue('#plannedStartOfShift1', '1', '00');
-    setTimepickerValue('#plannedEndOfShift1', '00', '00');
+    setTimepickerValue('plannedStartOfShift1', '1', '00');
+    setTimepickerValue('plannedEndOfShift1', '00', '00');
 
     cy.contains('button', /^Ok$/).click({force: true});
     cy.wait(1000);
@@ -64,7 +65,8 @@ describe('Dashboard edit values', () => {
 
     ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
       (selector) => {
-        cy.get(selector)
+        let newSelector = '[data-testid="' + selector + '"]';
+        cy.get(newSelector)
           .closest('.flex-row')
           .find('button mat-icon')
           .contains('delete')

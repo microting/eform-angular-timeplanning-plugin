@@ -14,7 +14,7 @@ describe('Dashboard edit values', () => {
     cy.get('.ng-option').contains('ac ad').click();
     cy.get('#cell0_0').click();
 
-    ['#plannedStartOfShift1', '#start1StartedAt'].forEach(
+    ['plannedStartOfShift1', 'start1StartedAt'].forEach(
       (selector) => {
         cy.get(selector)
           .closest('.flex-row')
@@ -28,7 +28,8 @@ describe('Dashboard edit values', () => {
 
   // Set a timepicker value
   const setTimepickerValue = (selector: string, hour: string, minute: string) => {
-    cy.get(selector).click();
+    let newSelector = '[data-testid="' + selector + '"]';
+    cy.get(newSelector).click();
     cy.get('ngx-material-timepicker-face')
       .contains(hour)
       .click({force: true});
@@ -49,76 +50,76 @@ describe('Dashboard edit values', () => {
 
   // --- Planned Shift Duration Validator ---
   it('should show an error when planned stop time is before start time', () => {
-    setTimepickerValue('#plannedStartOfShift1', '10', '00');
-    setTimepickerValue('#plannedEndOfShift1', '9', '00');
+    setTimepickerValue('plannedStartOfShift1', '10', '00');
+    setTimepickerValue('plannedEndOfShift1', '9', '00');
     assertInputError('plannedEndOfShift1-Error', 'Stop må ikke være før start');
   });
 
   it('should show an error when planned break is longer than the shift duration', () => {
-    setTimepickerValue('#plannedStartOfShift1', '1', '00');
-    setTimepickerValue('#plannedEndOfShift1', '10', '00');
-    setTimepickerValue('#plannedBreakOfShift1', '9', '00');
+    setTimepickerValue('plannedStartOfShift1', '1', '00');
+    setTimepickerValue('plannedEndOfShift1', '10', '00');
+    setTimepickerValue('plannedBreakOfShift1', '9', '00');
     assertInputError('plannedBreakOfShift1-Error', 'Pausen må ikke være lige så lang som eller længere end skiftets varighed');
   });
 
   it('should show an error when planned start and stop are the same', () => {
-    setTimepickerValue('#plannedStartOfShift1', '9', '00');
-    setTimepickerValue('#plannedEndOfShift1', '9', '00');
+    setTimepickerValue('plannedStartOfShift1', '9', '00');
+    setTimepickerValue('plannedEndOfShift1', '9', '00');
     assertInputError('plannedEndOfShift1-Error', 'Start og stop kan ikke være det samme');
   });
 
   // --- Actual Shift Duration Validator ---
   it('should show an error when actual stop time is before start time', () => {
-    setTimepickerValue('#start1StartedAt', '11', '00');
-    setTimepickerValue('#stop1StoppedAt', '9', '00');
+    setTimepickerValue('start1StartedAt', '11', '00');
+    setTimepickerValue('stop1StoppedAt', '9', '00');
     setTimepickerValue('#pause1Id', '0', '00');
     assertInputError('stop1StoppedAt-Error', 'Stop må ikke være før start');
   });
 
   it('should show an error when actual pause is longer than the shift duration', () => {
-    setTimepickerValue('#start1StartedAt', '8', '00');
-    setTimepickerValue('#stop1StoppedAt', '10', '00');
+    setTimepickerValue('start1StartedAt', '8', '00');
+    setTimepickerValue('stop1StoppedAt', '10', '00');
     setTimepickerValue('#pause1Id', '2', '00');
     assertInputError('pause1Id-Error', 'Pausen må ikke være lige så lang som eller længere end skiftets varighed');
   });
 
   it('should show an error when actual start and stop are the same', () => {
-    setTimepickerValue('#start1StartedAt', '9', '00');
-    setTimepickerValue('#stop1StoppedAt', '9', '00');
+    setTimepickerValue('start1StartedAt', '9', '00');
+    setTimepickerValue('stop1StoppedAt', '9', '00');
     setTimepickerValue('#pause1Id', '0', '00');
     assertInputError('stop1StoppedAt-Error', 'Start og stop kan ikke være det samme');
   });
 
   // --- Shift-Wise Validator ---
   it('should show an error if planned Shift 2 starts before planned Shift 1 ends', () => {
-    setTimepickerValue('#plannedStartOfShift1', '8', '00');
-    setTimepickerValue('#plannedEndOfShift1', '12', '00');
-    setTimepickerValue('#plannedStartOfShift2', '11', '00');
+    setTimepickerValue('plannedStartOfShift1', '8', '00');
+    setTimepickerValue('plannedEndOfShift1', '12', '00');
+    setTimepickerValue('plannedStartOfShift2', '11', '00');
     assertInputError('plannedStartOfShift2-Error', 'Start kan ikke være tidligere end stop for den forrige skift');
   });
 
   it('should show an error if actual Shift 2 starts before actual Shift 1 ends', () => {
-    setTimepickerValue('#start1StartedAt', '8', '00');
-    setTimepickerValue('#stop1StoppedAt', '12', '00');
-    setTimepickerValue('#start2StartedAt', '11', '00');
+    setTimepickerValue('start1StartedAt', '8', '00');
+    setTimepickerValue('stop1StoppedAt', '12', '00');
+    setTimepickerValue('start2StartedAt', '11', '00');
     assertInputError('start2StartedAt-Error', 'Start kan ikke være tidligere end stop for den forrige skift');
   });
 
 
   it('should select midnight to some hours', () => {
-    setTimepickerValue('#plannedStartOfShift1', '00', '00');
-    setTimepickerValue('#plannedEndOfShift1', '2', '00');
-    setTimepickerValue('#start1StartedAt', '00', '00');
-    setTimepickerValue('#stop1StoppedAt', '2', '00');
+    setTimepickerValue('plannedStartOfShift1', '00', '00');
+    setTimepickerValue('plannedEndOfShift1', '2', '00');
+    setTimepickerValue('start1StartedAt', '00', '00');
+    setTimepickerValue('stop1StoppedAt', '2', '00');
     cy.get('#planHours').should('have.value', '2');
     cy.get('#todaysFlex').should('have.value', '0.00');
   });
 
   it('should select some hours to midnight', () => {
-    setTimepickerValue('#plannedStartOfShift1', '2', '00');
-    setTimepickerValue('#plannedEndOfShift1', '00', '00');
-    setTimepickerValue('#start1StartedAt', '2', '00');
-    setTimepickerValue('#stop1StoppedAt', '00', '00');
+    setTimepickerValue('plannedStartOfShift1', '2', '00');
+    setTimepickerValue('plannedEndOfShift1', '00', '00');
+    setTimepickerValue('start1StartedAt', '2', '00');
+    setTimepickerValue('stop1StoppedAt', '00', '00');
     cy.get('#planHours').should('have.value', '22');
     cy.get('#todaysFlex').should('have.value', '0.00');
   });

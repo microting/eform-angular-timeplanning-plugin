@@ -17,7 +17,8 @@ describe('Dashboard edit values', () => {
   });
 
   const setTimepickerValue = (selector: string, hour: string, minute: string) => {
-    cy.get(selector).click();
+    let newSelector = '[data-testid="' + selector + '"]';
+    cy.get(newSelector).click();
     cy.get('ngx-material-timepicker-face').contains(hour).click({ force: true });
     cy.get('ngx-material-timepicker-face').contains(minute).click({ force: true });
     cy.wait(1000);
@@ -28,8 +29,8 @@ describe('Dashboard edit values', () => {
     // Planned time
     cy.get('#cell0_0').click();
 
-    setTimepickerValue('#plannedStartOfShift1', '1', '00');
-    setTimepickerValue('#plannedEndOfShift1', '23', '35');
+    setTimepickerValue('plannedStartOfShift1', '1', '00');
+    setTimepickerValue('plannedEndOfShift1', '23', '35');
 
     cy.contains('button', /^Ok$/).click({ force: true });
     cy.wait(1000);

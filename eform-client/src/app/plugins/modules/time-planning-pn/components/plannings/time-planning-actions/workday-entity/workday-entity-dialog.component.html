@@ -42,7 +42,7 @@
                     [ngxTimepicker]="plannedStartPicker"
                     [format]="24"
                     formControlName="start"
-                    [attr.id]="'plannedStartOfShift' + shiftId"/>
+                    [attr.data-testid]="'plannedStartOfShift' + shiftId"/>
                   <ngx-material-timepicker
                     #plannedStartPicker
                     [format]="24"
@@ -73,7 +73,7 @@
                                     workdayForm.get('planned.shift' + shiftId + '.start')?.value,
                                     workdayForm.get('planned.shift' + shiftId + '.stop')?.value
                                   )"
-                    [attr.id]="'plannedBreakOfShift' + shiftId"/>
+                    [attr.data-testid]="'plannedBreakOfShift' + shiftId"/>
                   <ngx-material-timepicker
                     #plannedPausePicker
                     [format]="24"
@@ -99,7 +99,7 @@
                     [ngxTimepicker]="plannedStopPicker"
                     [format]="24"
                     formControlName="stop"
-                    [attr.id]="'plannedEndOfShift' + shiftId"/>
+                    [attr.data-testid]="'plannedEndOfShift' + shiftId"/>
                   <ngx-material-timepicker
                     #plannedStopPicker
                     [format]="24"
@@ -166,7 +166,7 @@
                     [ngxTimepicker]="actualStartPicker"
                     [format]="24"
                     formControlName="start"
-                    [attr.id]="'start' + shiftId + 'StartedAt'"/>
+                    [attr.data-testid]="'start' + shiftId + 'StartedAt'"/>
                   <ngx-material-timepicker
                     #actualStartPicker
                     [format]="24"
@@ -202,7 +202,7 @@
                                     workdayForm.get('actual.shift' + shiftId + '.start')?.value,
                                     workdayForm.get('actual.shift' + shiftId + '.stop')?.value
                                   )"
-                    [attr.id]="'pause' + shiftId + 'Id'"/>
+                    [attr.data-testid]="'pause' + shiftId + 'Id'"/>
                   <ngx-material-timepicker
                     #actualPausePicker
                     [format]="24"
@@ -233,7 +233,7 @@
                     [ngxTimepicker]="actualStopPicker"
                     [format]="24"
                     formControlName="stop"
-                    [attr.id]="'stop' + shiftId + 'StoppedAt'"/>
+                    [attr.data-testid]="'stop' + shiftId + 'StoppedAt'"/>
                   <ngx-material-timepicker
                     #actualStopPicker
                     [format]="24"

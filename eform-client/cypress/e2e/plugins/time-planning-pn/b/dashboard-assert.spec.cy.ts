@@ -234,134 +234,6 @@ describe('Dashboard assert', () => {
     loginPage.login();
   });
 
-  // it('should go to dashboard', () => {
-  //   cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
-  //   cy.get('mat-tree-node').contains('Timeregistrering').click();
-  //   cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
-  //   cy.get('#workingHoursSite').clear().type('c d');
-  //   cy.get('.ng-option.ng-option-marked').click();
-  //   cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
-  //   TimePlanningWorkingHoursPage.dateFormInput().click();
-  //   selectDateRangeOnNewDatePicker(
-  //     filters[0].dateRange.yearFrom, filters[0].dateRange.monthFrom,  filters[0].dateRange.dayFrom,
-  //     filters[0].dateRange.yearTo, filters[0].dateRange.monthTo, filters[0].dateRange.dayTo
-  //   );
-  //   cy.wait('@update');
-  //   cy.get('#sumFlex0 input').should('contain.value', '97.45');
-  //   for (let i = 0; i < planHours.length; i++) {
-  //     let id = `#planHours${i+1}`;
-  //     cy.get(id).find('input').clear().type(planHours[i].hours.toString());
-  //     let sumFlexId = `#sumFlex${i+1}`;
-  //     cy.get(sumFlexId).find('input').should('contain.value', planHours[i].sumFlex.toString());
-  //     let nettoHoursId = `#nettoHours${i+1}`;
-  //     cy.get(nettoHoursId).find('input').should('contain.value', planHours[i].nettoHours.toString());
-  //     let flexId = `#flexHours${i+1}`;
-  //     cy.get(flexId).find('input').should('contain.value', planHours[i].flex.toString());
-  //   }
-  //   for (let i = 0; i < planTexts.length; i++) {
-  //     let id = `#planText${i+1}`;
-  //     cy.get(id).find('input').clear().type(planTexts[i].text);
-  //   }
-  //
-  //   cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
-  //   cy.get('#workingHoursSave').click();
-  //   cy.wait('@save');
-  //   cy.get('#sumFlex7 input').should('contain.value', '41.45');
-  //
-  //   cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
-  //   TimePlanningWorkingHoursPage.dateFormInput().click();
-  //   selectDateRangeOnNewDatePicker(
-  //     filtersNextWeek[0].dateRange.yearFrom, filtersNextWeek[0].dateRange.monthFrom,  filtersNextWeek[0].dateRange.dayFrom,
-  //     filtersNextWeek[0].dateRange.yearTo, filtersNextWeek[0].dateRange.monthTo, filtersNextWeek[0].dateRange.dayTo
-  //   );
-  //   cy.wait('@update');
-  //   cy.get('#sumFlex0 input').should('contain.value', '41.45');
-  //   cy.get('#nettoHours0 input').should('contain.value', '0');
-  //
-  //   for (let i = 0; i < planHoursNextWeek.length; i++) {
-  //     let id = `#planHours${i+1}`;
-  //     cy.get(id).find('input').clear().type(planHoursNextWeek[i].hours.toString());
-  //     let sumFlexId = `#sumFlex${i+1}`;
-  //     cy.get(sumFlexId).find('input').should('contain.value', planHoursNextWeek[i].sumFlex.toString());
-  //     let nettoHoursId = `#nettoHours${i+1}`;
-  //     cy.get(nettoHoursId).find('input').should('contain.value', planHoursNextWeek[i].nettoHours.toString());
-  //     let flexId = `#flexHours${i+1}`;
-  //     cy.get(flexId).find('input').should('contain.value', planHoursNextWeek[i].flex.toString());
-  //   }
-  //   for (let i = 0; i < planTextsNextWeek.length; i++) {
-  //     let id = `#planText${i+1}`;
-  //     cy.get(id).find('input').clear().type(planTextsNextWeek[i].text);
-  //   }
-  //
-  //   cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
-  //   cy.get('#workingHoursSave').click();
-  //   cy.wait('@save');
-  //   cy.get('#sumFlex7 input').should('contain.value', '-14.55');
-  //
-  //   cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
-  //   pluginPage.Navbar.goToPluginsPage();
-  //   const pluginName = 'Microting Time Planning Plugin';
-  //   // pluginPage.enablePluginByName(pluginName);
-  //   let row = cy.contains('.mat-mdc-row', pluginName).first();
-  //   row.find('.mat-column-actions button')
-  //     .should('contain.text', 'toggle_on'); // plugin is enabled
-  //   row = cy.contains('.mat-mdc-row', pluginName).first();
-  //   row.find('.mat-column-actions a')
-  //     .should('contain.text', 'settings'); // plugin is enabled
-  //   row = cy.contains('.mat-mdc-row', pluginName).first();
-  //   let settingsElement = row
-  //     .find('.mat-column-actions a')
-  //     // .should('be.enabled')
-  //     .should('be.visible');
-  //   settingsElement.click();
-  //   cy.get('#forceLoadAllPlanningsFromGoogleSheet').click();
-  //   cy.get('#saveSettings').click();
-  //   cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
-  //   cy.get('mat-tree-node').contains('Dashboard').click();
-  //   cy.wait('@index-update', { timeout: 60000 });
-  //   cy.get('#backwards').click();
-  //   cy.wait('@index-update', { timeout: 60000 });
-  //   cy.get('#plannedHours0').should('include.text', '56:00');
-  //
-  //   for (let i = 0; i < planTexts.length; i++) {
-  //     let plannedHoursId = `#plannedHours0_${i}`;
-  //     cy.get(plannedHoursId).should('include.text', planTexts[i].plannedHours);
-  //     let flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
-  //     cy.get(flexBalanceToDateId).should('include.text', planTexts[i].flexBalanceToDate);
-  //
-  //     let cellId = `#cell0_${i}`;
-  //     cy.get(cellId).click();
-  //     cy.get('#planHours').should('be.visible');
-  //     cy.get('#planHours').should('include.value', planTexts[i].calculatedHours);
-  //     cy.get('#plannedStartOfShift1').should('include.value', planTexts[i].plannedStartOfShift1);
-  //     cy.get('#plannedBreakOfShift1').should('include.value', planTexts[i].plannedBreakOfShift1);
-  //     cy.get('#plannedEndOfShift1').should('include.value', planTexts[i].plannedEndOfShift1);
-  //     cy.get('#plannedStartOfShift2').should('include.value', planTexts[i].plannedStartOfShift2);
-  //     cy.get('#plannedBreakOfShift2').should('include.value', planTexts[i].plannedBreakOfShift2);
-  //     cy.get('#plannedEndOfShift2').should('include.value', planTexts[i].plannedEndOfShift2);
-  //     cy.get('#cancelButton').click();
-  //   }
-  //
-  //   cy.get('#forwards').click();
-  //   cy.wait('@index-update', { timeout: 60000 });
-  //   cy.wait(1000);
-  //
-  //
-  //   for (let i = 0; i < planTextsNextWeek.length; i++) {
-  //
-  //     let cellId = `#cell0_${i}`;
-  //     cy.get(cellId).click();
-  //     cy.get('#planHours').should('be.visible');
-  //     cy.get('#planHours').should('include.value', 0);
-  //     cy.get('#plannedStartOfShift1').should('include.value', '00:00');
-  //     cy.get('#plannedBreakOfShift1').should('include.value', '00:00');
-  //     cy.get('#plannedEndOfShift1').should('include.value', '00:00');
-  //     cy.get('#plannedStartOfShift2').should('include.value', '00:00');
-  //     cy.get('#plannedBreakOfShift2').should('include.value', '00:00');
-  //     cy.get('#plannedEndOfShift2').should('include.value', '00:00');
-  //     cy.get('#cancelButton').click();
-  //   }
-  // });
 
   it('should go to dashboard and set to use google sheet as default and check if the settings are correct', () => {
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
@@ -498,12 +370,12 @@ describe('Dashboard assert', () => {
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('have.value', planTexts[i].calculatedHours);
-      cy.get('#plannedStartOfShift1').should('have.value', planTexts[i].plannedStartOfShift1);
-      cy.get('#plannedBreakOfShift1').should('have.value', planTexts[i].plannedBreakOfShift1);
-      cy.get('#plannedEndOfShift1').should('have.value', planTexts[i].plannedEndOfShift1);
-      cy.get('#plannedStartOfShift2').should('have.value', planTexts[i].plannedStartOfShift2);
-      cy.get('#plannedBreakOfShift2').should('have.value', planTexts[i].plannedBreakOfShift2);
-      cy.get('#plannedEndOfShift2').should('have.value', planTexts[i].plannedEndOfShift2);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', planTexts[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('have.value', planTexts[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('have.value', planTexts[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedStartOfShift2"]').should('have.value', planTexts[i].plannedStartOfShift2);
+      cy.get('[data-testid="plannedBreakOfShift2"]').should('have.value', planTexts[i].plannedBreakOfShift2);
+      cy.get('[data-testid="plannedEndOfShift2"]').should('have.value', planTexts[i].plannedEndOfShift2);
       cy.get('#cancelButton').click();
       cy.wait(500);
     }
@@ -527,12 +399,12 @@ describe('Dashboard assert', () => {
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('have.value', planTextsNextWeek[i].calculatedHours);
-      cy.get('#plannedStartOfShift1').should('have.value', planTextsNextWeek[i].plannedStartOfShift1);
-      cy.get('#plannedBreakOfShift1').should('have.value', planTextsNextWeek[i].plannedBreakOfShift1);
-      cy.get('#plannedEndOfShift1').should('have.value', planTextsNextWeek[i].plannedEndOfShift1);
-      cy.get('#plannedStartOfShift2').should('have.value', planTextsNextWeek[i].plannedStartOfShift2);
-      cy.get('#plannedBreakOfShift2').should('have.value', planTextsNextWeek[i].plannedBreakOfShift2);
-      cy.get('#plannedEndOfShift2').should('have.value', planTextsNextWeek[i].plannedEndOfShift2);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', planTextsNextWeek[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('have.value', planTextsNextWeek[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('have.value', planTextsNextWeek[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedStartOfShift2"]').should('have.value', planTextsNextWeek[i].plannedStartOfShift2);
+      cy.get('[data-testid="plannedBreakOfShift2"]').should('have.value', planTextsNextWeek[i].plannedBreakOfShift2);
+      cy.get('[data-testid="plannedEndOfShift2"]').should('have.value', planTextsNextWeek[i].plannedEndOfShift2);
       cy.get('#cancelButton').click();
     }
 
@@ -557,12 +429,12 @@ describe('Dashboard assert', () => {
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('have.value', planTextsFutureWeek[i].calculatedHours);
-      cy.get('#plannedStartOfShift1').should('have.value', planTextsFutureWeek[i].plannedStartOfShift1);
-      cy.get('#plannedBreakOfShift1').should('have.value', planTextsFutureWeek[i].plannedBreakOfShift1);
-      cy.get('#plannedEndOfShift1').should('have.value', planTextsFutureWeek[i].plannedEndOfShift1);
-      cy.get('#plannedStartOfShift2').should('have.value', planTextsFutureWeek[i].plannedStartOfShift2);
-      cy.get('#plannedBreakOfShift2').should('have.value', planTextsFutureWeek[i].plannedBreakOfShift2);
-      cy.get('#plannedEndOfShift2').should('have.value', planTextsFutureWeek[i].plannedEndOfShift2);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', planTextsFutureWeek[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('have.value', planTextsFutureWeek[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('have.value', planTextsFutureWeek[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedStartOfShift2"]').should('have.value', planTextsFutureWeek[i].plannedStartOfShift2);
+      cy.get('[data-testid="plannedBreakOfShift2"]').should('have.value', planTextsFutureWeek[i].plannedBreakOfShift2);
+      cy.get('[data-testid="plannedEndOfShift2"]').should('have.value', planTextsFutureWeek[i].plannedEndOfShift2);
       cy.get('#cancelButton').click();
     }
   });
@@ -688,12 +560,12 @@ describe('Dashboard assert', () => {
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('include.value', updatePlanTexts[i].calculatedHours);
-      cy.get('#plannedStartOfShift1').should('include.value', updatePlanTexts[i].plannedStartOfShift1);
-      cy.get('#plannedBreakOfShift1').should('include.value', updatePlanTexts[i].plannedBreakOfShift1);
-      cy.get('#plannedEndOfShift1').should('include.value', updatePlanTexts[i].plannedEndOfShift1);
-      cy.get('#plannedStartOfShift2').should('include.value', updatePlanTexts[i].plannedStartOfShift2);
-      cy.get('#plannedBreakOfShift2').should('include.value', updatePlanTexts[i].plannedBreakOfShift2);
-      cy.get('#plannedEndOfShift2').should('include.value', updatePlanTexts[i].plannedEndOfShift2);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('include.value', updatePlanTexts[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('include.value', updatePlanTexts[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('include.value', updatePlanTexts[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedStartOfShift2"]').should('include.value', updatePlanTexts[i].plannedStartOfShift2);
+      cy.get('[data-testid="plannedBreakOfShift2"]').should('include.value', updatePlanTexts[i].plannedBreakOfShift2);
+      cy.get('[data-testid="plannedEndOfShift2"]').should('include.value', updatePlanTexts[i].plannedEndOfShift2);
       cy.get('#cancelButton').click();
       cy.wait(500);
     }
@@ -718,12 +590,12 @@ describe('Dashboard assert', () => {
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('include.value', updatePlanTextsNextWeek[i].calculatedHours);
-      cy.get('#plannedStartOfShift1').should('include.value', updatePlanTextsNextWeek[i].plannedStartOfShift1);
-      cy.get('#plannedBreakOfShift1').should('include.value', updatePlanTextsNextWeek[i].plannedBreakOfShift1);
-      cy.get('#plannedEndOfShift1').should('include.value', updatePlanTextsNextWeek[i].plannedEndOfShift1);
-      cy.get('#plannedStartOfShift2').should('include.value', updatePlanTextsNextWeek[i].plannedStartOfShift2);
-      cy.get('#plannedBreakOfShift2').should('include.value', updatePlanTextsNextWeek[i].plannedBreakOfShift2);
-      cy.get('#plannedEndOfShift2').should('include.value', updatePlanTextsNextWeek[i].plannedEndOfShift2);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('include.value', updatePlanTextsNextWeek[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('include.value', updatePlanTextsNextWeek[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('include.value', updatePlanTextsNextWeek[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedStartOfShift2"]').should('include.value', updatePlanTextsNextWeek[i].plannedStartOfShift2);
+      cy.get('[data-testid="plannedBreakOfShift2"]').should('include.value', updatePlanTextsNextWeek[i].plannedBreakOfShift2);
+      cy.get('[data-testid="plannedEndOfShift2"]').should('include.value', updatePlanTextsNextWeek[i].plannedEndOfShift2);
       cy.get('#cancelButton').click();
     }
     cy.get('#forwards').click();
@@ -748,12 +620,12 @@ describe('Dashboard assert', () => {
       cy.get(cellId).click();
       cy.get('#planHours').should('be.visible');
       cy.get('#planHours').should('include.value', updatePlanTextsFutureWeek[i].calculatedHours);
-      cy.get('#plannedStartOfShift1').should('include.value', updatePlanTextsFutureWeek[i].plannedStartOfShift1);
-      cy.get('#plannedBreakOfShift1').should('include.value', updatePlanTextsFutureWeek[i].plannedBreakOfShift1);
-      cy.get('#plannedEndOfShift1').should('include.value', updatePlanTextsFutureWeek[i].plannedEndOfShift1);
-      cy.get('#plannedStartOfShift2').should('include.value', updatePlanTextsFutureWeek[i].plannedStartOfShift2);
-      cy.get('#plannedBreakOfShift2').should('include.value', updatePlanTextsFutureWeek[i].plannedBreakOfShift2);
-      cy.get('#plannedEndOfShift2').should('include.value', updatePlanTextsFutureWeek[i].plannedEndOfShift2);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('include.value', updatePlanTextsFutureWeek[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('include.value', updatePlanTextsFutureWeek[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('include.value', updatePlanTextsFutureWeek[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedStartOfShift2"]').should('include.value', updatePlanTextsFutureWeek[i].plannedStartOfShift2);
+      cy.get('[data-testid="plannedBreakOfShift2"]').should('include.value', updatePlanTextsFutureWeek[i].plannedBreakOfShift2);
+      cy.get('[data-testid="plannedEndOfShift2"]').should('include.value', updatePlanTextsFutureWeek[i].plannedEndOfShift2);
       cy.get('#cancelButton').click();
     }
   });
