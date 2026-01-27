@@ -16,7 +16,7 @@ export class TimePlanningPnPictureSnapshotsService {
 
   getById(id: number): Observable<OperationDataResult<PictureSnapshotModel>> {
     return this.apiBaseService.get(
-      TimePlanningPnPictureSnapshotMethods.PictureSnapshots + '/' + id
+      TimePlanningPnPictureSnapshotMethods.PictureSnapshots + '?planRegistrationId=' + id
     );
   }
 }
