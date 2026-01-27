@@ -25,28 +25,32 @@ import {MatDialogModule} from '@angular/material/dialog';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {FileUploadModule} from 'ng2-file-upload';
+import {MatCard} from "@angular/material/card";
+import {MatPasswordStrengthModule} from "@angular-material-extensions/password-strength";
 
 @NgModule({
-  imports: [
-    CommonModule,
-    TranslateModule,
-    FormsModule,
-    EformSharedModule,
-    RouterModule,
-    ReactiveFormsModule,
-    WorkingHoursRouting,
-    MtxGridModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MtxSelectModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTableModule,
-    MatDialogModule,
-    MatDatepickerModule,
-    MatTooltipModule,
-    FileUploadModule,
-  ],
+    imports: [
+        CommonModule,
+        TranslateModule,
+        FormsModule,
+        EformSharedModule,
+        RouterModule,
+        ReactiveFormsModule,
+        WorkingHoursRouting,
+        MtxGridModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MtxSelectModule,
+        MatButtonModule,
+        MatIconModule,
+        MatTableModule,
+        MatDialogModule,
+        MatDatepickerModule,
+        MatTooltipModule,
+        FileUploadModule,
+        MatCard,
+        MatPasswordStrengthModule,
+    ],
   declarations: [
     MobileWorkingHoursComponent,
     WorkingHoursContainerComponent,

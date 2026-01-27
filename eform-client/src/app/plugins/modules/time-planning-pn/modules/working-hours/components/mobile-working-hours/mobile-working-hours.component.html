@@ -1,21 +1,30 @@
-<p>{{'This page is no longer in function, get Microting Time and follow the instructions below' | translate}}:</p>
+<div class="d-flex flex-column justify-content-center align-items-center gap-12 px-3" style="height: 80vh;">
+  <mat-card class="card--no-border d-flex flex-column justify-content-center align-items-center">
+    <div class="d-flex flex-column justify-content-center align-items-center gap-12">
+      <div class="timer--header">{{ 'Download Microting Time' | translate }}</div>
+      <div
+        class="timer--sub-title">{{ 'This page is no longer in function, get Microting Time and follow the instructions below' | translate }}:
+      </div>
+      <ol>
+        <li>{{ 'Download the app' | translate }}</li>
+        <li>{{ 'Open the app' | translate }}</li>
+        <li>{{ 'Enter customer number' | translate }}: {{ customerNumber }}</li>
+        <li>{{ 'Enter your email' | translate }}</li>
+        <li>{{ 'Enter your password' | translate }}</li>
+        <li>{{ 'Login' | translate }}</li>
+      </ol>
 
-<a href="https://apps.apple.com/dk/app/microting-time/id6504076189" target="_blank" rel="noopener">
-  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
-       alt="Download on the App Store" height="40">
-</a>
-<br>
-<a href="https://play.google.com/store/apps/details?id=com.microting.time" target="_blank" rel="noopener">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-       alt="Get it on Google Play" height="40">
-</a>
-
-
-<ul>
-  <li>{{'Download the app' | translate}}</li>
-  <li>{{'Open the app' | translate}}</li>
-  <li>{{'Enter customer number' | translate}}: {{ customerNumber }}</li>
-  <li>{{'Enter your email' | translate}}</li>
-  <li>{{'Enter your password' | translate}}</li>
-  <li>{{'Login' | translate}}</li>
-</ul>
+      <div class="d-flex flex-row gap-4">
+        <a href="https://apps.apple.com/dk/app/microting-time/id6504076189" target="_blank" rel="noopener">
+          <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
+               alt="Download on the App Store" height="40">
+        </a>
+        <br>
+        <a href="https://play.google.com/store/apps/details?id=com.microting.time" target="_blank" rel="noopener">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+               alt="Get it on Google Play" height="40">
+        </a>
+      </div>
+    </div>
+  </mat-card>
+</div>

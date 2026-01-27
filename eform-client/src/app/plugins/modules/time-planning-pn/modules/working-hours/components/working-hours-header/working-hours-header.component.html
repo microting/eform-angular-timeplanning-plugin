@@ -23,18 +23,12 @@
     </mtx-select>
   </mat-form-field>
 
-  <div class="line-vert"></div>
 
-  <div class="d-flex flex-row flex-nowrap justify-content-center align-items-center gap-12" *ngIf="siteId && dateFrom && dateTo">
+  <div class="d-flex flex-row flex-nowrap justify-content-center align-items-center gap-12"
+       *ngIf="siteId && dateFrom && dateTo">
+
     <button
-      class="btn-primary btn-primary--icon-left"
-      id="workingHoursSave"
-      (click)="onSaveWorkingHours()"
-    >
-      {{ 'Save' | translate }}
-    </button>
-    <button
-      class="btn-secondary btn-secondary--icon-rounded-border"
+      class="btn-secondary btn-secondary--icon-square-border"
       id="workingHoursReload"
       (click)="filtersChangedEmmit()"
       [matTooltip]="'Reload table' | translate"
@@ -43,21 +37,30 @@
     </button>
     <button
       *ngIf="!tainted"
-      class="btn-secondary btn-secondary--icon-rounded-border"
+      class="btn-secondary btn-secondary--icon-square-border"
       id="workingHoursExcel"
       (click)="onDownloadExcelReport()"
       [matTooltip]="'Download Excel' | translate"
     >
       <mat-icon>download</mat-icon>
     </button>
+
+    <div class="line-vert"></div>
+
+    <button
+      class="btn-primary btn-primary--icon-left"
+      id="workingHoursSave"
+      (click)="onSaveWorkingHours()"
+    >
+      {{ 'Save' | translate }}
+    </button>
   </div>
 
   <button
     *ngIf="!siteId && dateFrom && dateTo"
-    mat-icon-button
+    class="btn-secondary btn-secondary--icon-square-border"
     id="workingHoursExcelAllWorkers"
     (click)="onDownloadExcelReportAllWorkers()"
-    color="accent"
     [matTooltip]="'Download Excel (all workers)' | translate"
   >
     <mat-icon>download</mat-icon>
@@ -65,7 +68,7 @@
 
   <button
     *ngIf="!tainted && !siteId"
-    class="btn-secondary btn-secondary--icon-rounded-border"
+    class="btn-secondary btn-secondary--icon-square-border"
     id="importEformsBtn"
     matTooltip="{{ 'Import work plan' | translate }}"
     (click)="openEformsImportModal()">
