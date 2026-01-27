@@ -279,7 +279,7 @@
 
           <div class="d-flex flex-column gap-4 py-4">
 
-            <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
+            <mat-form-field *ngIf="!isInTheFuture">
               <mat-label>{{ 'Flex balance at start of day' | translate }}</mat-label>
               <input
                 matInput
@@ -290,7 +290,7 @@
                 [value]="data.planningPrDayModels.sumFlexStart.toFixed(2)"/>
             </mat-form-field>
 
-            <mat-form-field class="pr-2">
+            <mat-form-field>
               <mat-label>{{ 'Plan hours' | translate }}</mat-label>
               <input
                 matInput
@@ -303,7 +303,7 @@
               </mat-error>
             </mat-form-field>
 
-            <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
+            <mat-form-field *ngIf="!isInTheFuture">
               <mat-label>{{ 'NettoHours' | translate }}</mat-label>
               <input
                 matInput
@@ -314,7 +314,7 @@
                 [value]="data.planningPrDayModels.actualHours.toFixed(2)"/>
             </mat-form-field>
 
-            <mat-form-field class="pr-2" *ngIf="!isInTheFuture && data.planningPrDayModels.nettoHoursOverrideActive">
+            <mat-form-field *ngIf="!isInTheFuture && data.planningPrDayModels.nettoHoursOverrideActive">
               <mat-label>{{ 'NettoHours override' | translate }}</mat-label>
               <input
                 matInput
@@ -325,7 +325,7 @@
             </mat-form-field>
 
             <br *ngIf="data.planningPrDayModels.nettoHoursOverrideActive"/>
-            <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
+            <mat-form-field *ngIf="!isInTheFuture">
               <mat-label>{{ 'Flex' | translate }}</mat-label>
               <input
                 matInput
@@ -336,7 +336,7 @@
                 [value]="todaysFlex.toFixed(2)"/>
             </mat-form-field>
 
-            <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
+            <mat-form-field *ngIf="!isInTheFuture">
               <mat-label>{{ 'PaidOutFlex' | translate }}</mat-label>
               <input
                 matInput
@@ -346,7 +346,7 @@
                 (change)="calculatePlanHours()"/>
             </mat-form-field>
 
-            <mat-form-field class="pr-2" *ngIf="!isInTheFuture">
+            <mat-form-field *ngIf="!isInTheFuture">
               <mat-label>{{ 'Flex balance to date' | translate }}</mat-label>
               <input
                 matInput
@@ -363,7 +363,6 @@
             </p>
           </div>
 
-
           <div id="flags" formGroupName="flags" class="d-flex flex-column gap-4">
             <ng-container *ngFor="let key of enumKeys">
               <ng-container *ngIf="key !== 'Blank' && key !== 'Care'">
@@ -377,9 +376,8 @@
             </ng-container>
           </div>
 
-
           <br/><br/>
-          <mat-form-field class="pr-2">
+          <mat-form-field>
             <mat-label>{{ 'CommentOffice' | translate }}</mat-label>
             <input
               matInput
