@@ -1666,7 +1666,7 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.mapUrl = null;
     this.snapshotUrl = null;
     this.imageSub$?.unsubscribe();
-    this.imageSub$ = this.imageService.getImage(snapshotData.pictureHash).subscribe((blob) => {
+    this.imageSub$ = this.imageService.getImage(snapshotData.fileUrl).subscribe((blob) => {
       this.revokeSnapshotUrl();
       this.snapshotUrl = URL.createObjectURL(blob);
     });
