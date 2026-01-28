@@ -63,7 +63,7 @@ public class TimePlanningPictureSnapshotService(
                     PlanRegistrationId = x.PlanRegistrationId,
                     PictureHash = x.PictureHash,
                     RegistrationType = x.RegistrationType,
-                    FileUrl = $"/api/time-planning-pn/picture-snapshots/{x.Id}/file"
+                    FileUrl =$"{x.FileName}.{x.FileExtension}"
                 })
                 .ToListAsync();
 
@@ -90,7 +90,7 @@ public class TimePlanningPictureSnapshotService(
                     PlanRegistrationId = x.PlanRegistrationId,
                     PictureHash = x.PictureHash,
                     RegistrationType = x.RegistrationType,
-                    FileUrl = $"/api/time-planning-pn/picture-snapshots/{x.Id}/file"
+                    FileUrl = $"{x.FileName}.{x.FileExtension}"
                 })
                 .FirstOrDefaultAsync();
 
