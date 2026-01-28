@@ -271,12 +271,12 @@
             [format]="24"
             (timeSet)="setAutoBreakValue(day, 'BreakMinutesUpperLimit', $event)"
           ></ngx-material-timepicker>
-          <div class="pt-4">
+          <div class="pt-2">
             <button
               [id]="day.toLowerCase() + 'LoadDefaults'"
-              mat-icon-button
+              class="btn-secondary btn-secondary--icon-square-border"
               (click)="copyBreakSettings(day.toLowerCase())"
-              color="warn">
+            >
               <mat-icon>sync_arrow_down</mat-icon>
             </button>
           </div>
