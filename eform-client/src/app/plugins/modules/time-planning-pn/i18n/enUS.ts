@@ -163,4 +163,9 @@ export const enUS = {
   'Approved': 'Approved',
   'Rejected': 'Rejected',
   'No absence requests found': 'No absence requests found',
+  'Error loading absence requests': 'Error loading absence requests',
+  'Absence request approved successfully': 'Absence request approved successfully',
+  'Error approving absence request': 'Error approving absence request',
+  'Absence request rejected successfully': 'Absence request rejected successfully',
+  'Error rejecting absence request': 'Error rejecting absence request',
 };

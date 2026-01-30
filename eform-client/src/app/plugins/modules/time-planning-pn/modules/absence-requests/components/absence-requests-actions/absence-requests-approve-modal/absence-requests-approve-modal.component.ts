@@ -2,6 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { TimePlanningPnAbsenceRequestsService } from 'src/app/plugins/modules/time-planning-pn/services';
 import { AbsenceRequestModel, AbsenceRequestDecisionModel } from 'src/app/plugins/modules/time-planning-pn/models';
+import { ToastrService } from 'ngx-toastr';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-absence-requests-approve-modal',
@@ -11,6 +13,8 @@ import { AbsenceRequestModel, AbsenceRequestDecisionModel } from 'src/app/plugin
 export class AbsenceRequestsApproveModalComponent implements OnInit {
   private absenceRequestsService = inject(TimePlanningPnAbsenceRequestsService);
   public dialogRef = inject(MatDialogRef<AbsenceRequestsApproveModalComponent>);
+  private toastrService = inject(ToastrService);
+  private translateService = inject(TranslateService);
   private model = inject<{
     selectedAbsenceRequest: AbsenceRequestModel
   }>(MAT_DIALOG_DATA);
@@ -35,9 +39,19 @@ export class AbsenceRequestsApproveModalComponent implements OnInit {
 
     this.absenceRequestsService
       .approve(this.selectedAbsenceRequest.id, decision)
-      .subscribe((data) => {
-        if (data && data.success) {
-          this.hide(true);
+      .subscribe({
+        next: (data) => {
+          if (data && data.success) {
+            this.toastrService.success(
+              this.translateService.instant('Absence request approved successfully')
+            );
+            this.hide(true);
+          }
+        },
+        error: () => {
+          this.toastrService.error(
+            this.translateService.instant('Error approving absence request')
+          );
         }
       });
   }

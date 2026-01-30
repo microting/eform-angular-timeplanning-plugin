@@ -163,4 +163,9 @@ export const da = {
   'Approved': 'Godkendt',
   'Rejected': 'Afvist',
   'No absence requests found': 'Ingen fraværsanmodninger fundet',
+  'Error loading absence requests': 'Fejl ved indlæsning af fraværsanmodninger',
+  'Absence request approved successfully': 'Fraværsanmodning godkendt',
+  'Error approving absence request': 'Fejl ved godkendelse af fraværsanmodning',
+  'Absence request rejected successfully': 'Fraværsanmodning afvist',
+  'Error rejecting absence request': 'Fejl ved afvisning af fraværsanmodning',
 };
