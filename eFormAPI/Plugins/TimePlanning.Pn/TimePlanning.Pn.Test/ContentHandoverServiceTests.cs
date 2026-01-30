@@ -170,7 +170,8 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var result = await _contentHandoverService.AcceptAsync(request.Id, 2, model);
 
         // Assert
-        Assert.That(result.Success, Is.True);
+        Console.WriteLine($"Result Success: {result.Success}, Message: {result.Message}");
+        Assert.That(result.Success, Is.True, $"Expected success but got error: {result.Message}");
 
         // Verify content moved
         var updatedSource = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(sourcePR.Id);
