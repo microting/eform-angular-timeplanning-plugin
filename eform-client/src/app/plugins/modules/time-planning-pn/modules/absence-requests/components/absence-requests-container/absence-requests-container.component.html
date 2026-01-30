@@ -1,0 +1,26 @@
+<eform-new-subheader>
+  <div class="view-switcher">
+    <button
+      class="btn-secondary"
+      [class.active]="currentView === 'inbox'"
+      id="absenceRequestsInboxBtn"
+      (click)="switchView('inbox')"
+    >
+      {{ 'Inbox' | translate }}
+    </button>
+    <button
+      class="btn-secondary"
+      [class.active]="currentView === 'mine'"
+      id="absenceRequestsMineBtn"
+      (click)="switchView('mine')"
+    >
+      {{ 'My Requests' | translate }}
+    </button>
+  </div>
+</eform-new-subheader>
+
+<app-absence-requests-table
+  [absenceRequests]="absenceRequests"
+  [currentView]="currentView"
+  (updateAbsenceRequests)="onUpdateAbsenceRequests()"
+></app-absence-requests-table>
