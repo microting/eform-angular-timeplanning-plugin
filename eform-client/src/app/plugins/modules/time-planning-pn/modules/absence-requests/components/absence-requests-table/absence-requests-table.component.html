@@ -1,0 +1,47 @@
+<mtx-grid
+  [data]="absenceRequests"
+  [cellTemplate]="{ actions: actionsTpl, status: statusTpl }"
+  [showPaginator]="false"
+  [pageOnFront]="false"
+  [rowStriped]="false"
+  [showToolbar]="false"
+  [showColumnMenuButton]="false"
+  id="time-planning-pn-absence-requests-grid"
+  [columns]="tableHeaders"
+  noResultText="{{ 'No absence requests found' | translate }}"
+></mtx-grid>
+
+<ng-template #statusTpl let-row>
+  <span [ngClass]="{
+    'status-pending': row.status === 'Pending',
+    'status-approved': row.status === 'Approved',
+    'status-rejected': row.status === 'Rejected'
+  }">
+    {{ row.status | translate }}
+  </span>
+</ng-template>
+
+<ng-template #actionsTpl let-row let-i="index">
+  <div class="action-buttons">
+    <button
+      *ngIf="canApproveOrReject(row)"
+      mat-icon-button
+      color="primary"
+      matTooltip="{{ 'Approve' | translate }}"
+      id="approveAbsenceRequestBtn-{{ i }}"
+      (click)="openApproveModal(row)"
+    >
+      <mat-icon>check_circle</mat-icon>
+    </button>
+    <button
+      *ngIf="canApproveOrReject(row)"
+      mat-icon-button
+      color="warn"
+      matTooltip="{{ 'Reject' | translate }}"
+      id="rejectAbsenceRequestBtn-{{ i }}"
+      (click)="openRejectModal(row)"
+    >
+      <mat-icon>cancel</mat-icon>
+    </button>
+  </div>
+</ng-template>
