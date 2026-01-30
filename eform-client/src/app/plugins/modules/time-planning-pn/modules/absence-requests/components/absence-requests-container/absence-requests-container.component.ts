@@ -8,7 +8,7 @@ import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { ToastrService } from 'ngx-toastr';
 import { TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
-import { selectCurrentUserId } from 'src/app/state';
+import { selectAuthUser } from 'src/app/state';
 
 @AutoUnsubscribe()
 @Component({
@@ -31,9 +31,9 @@ export class AbsenceRequestsContainerComponent implements OnInit, OnDestroy {
   selectCurrentUserIdSub$: Subscription;
 
   ngOnInit(): void {
-    // Subscribe to current user ID
-    this.selectCurrentUserIdSub$ = this.store.select(selectCurrentUserId).subscribe((userId) => {
-      this.currentUserId = userId;
+    // Subscribe to current user to get user ID
+    this.selectCurrentUserIdSub$ = this.store.select(selectAuthUser).subscribe((user) => {
+      this.currentUserId = user?.id || null;
       if (this.currentUserId) {
         this.loadAbsenceRequests();
       }
