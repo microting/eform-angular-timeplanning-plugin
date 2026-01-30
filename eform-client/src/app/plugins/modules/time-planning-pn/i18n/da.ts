@@ -168,4 +168,5 @@ export const da = {
   'Error approving absence request': 'Fejl ved godkendelse af fraværsanmodning',
   'Absence request rejected successfully': 'Fraværsanmodning afvist',
   'Error rejecting absence request': 'Fejl ved afvisning af fraværsanmodning',
+  'User not authenticated': 'Bruger ikke godkendt',
 };
