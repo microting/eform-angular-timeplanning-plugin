@@ -317,7 +317,10 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         this.dialog.open(WorkdayEntityDialogComponent, {
           data: {planningPrDayModels: cellData, assignedSiteModel: result.model},
           minWidth: 1024,
-          minHeight: 500
+          minHeight: 500,
+          maxWidth: '95vw',  // Add this
+          maxHeight: '95vh', // Add this
+          panelClass: 'time-planning-dialog'
         })
           .afterClosed().subscribe((data: any) => {
           if (data !== '' && data !== undefined) {
