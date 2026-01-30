@@ -15,6 +15,7 @@ import validator from 'validator';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TemplateFilesService} from 'src/app/common/services';
 import {Subscription} from 'rxjs';
+import { MatDialogRef } from '@angular/material/dialog';
 
 import {
   AbstractControl,
@@ -48,6 +49,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     }>(MAT_DIALOG_DATA);
   protected datePipe = inject(DatePipe);
   private translateService = inject(TranslateService);
+  private dialogRef = inject(MatDialogRef<WorkdayEntityDialogComponent>);
+
 
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
   protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
@@ -1653,6 +1656,9 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
         .replace('{lat}', gpsData.latitude.toString())
         .replace('{lng}', gpsData.longitude.toString());
       this.mapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+
+      // Expand dialog width
+      this.dialogRef.updateSize('90vw', '80vh');
     }
   }
 
@@ -1670,6 +1676,9 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
       this.revokeSnapshotUrl();
       this.snapshotUrl = URL.createObjectURL(blob);
     });
+
+    // Expand dialog width
+    this.dialogRef.updateSize('90vw', '80vh');
   }
 
   private revokeSnapshotUrl(): void {
@@ -1683,6 +1692,7 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.selectedSnapshot = null;
     this.mapUrl = null;
     this.snapshotUrl = null;
+    this.dialogRef.updateSize('1024px', '500px');
   }
 
   ngOnDestroy(): void {
