@@ -1,13 +1,13 @@
 <!-- Reactive: wrap everything in a form -->
 <form [formGroup]="workdayForm">
   <div mat-dialog-title>
-    {{ data.planningPrDayModels.siteName }} -
-    {{ datePipe.transform(data.planningPrDayModels.date, 'dd.MM.yyyy') }}
-    ({{ data.planningPrDayModels.id }})
+    <div>{{ data.planningPrDayModels.siteName }} -
+      {{ datePipe.transform(data.planningPrDayModels.date, 'dd.MM.yyyy') }}
+      ({{ data.planningPrDayModels.id }})</div>
     <button
       *ngIf="selectCurrentUserIsFirstUser$ | async"
-      mat-icon-button
-      class="float-end"
+
+      class="float-end btn-secondary btn-secondary--icon-rounded-border"
       (click)="openVersionHistory()"
       matTooltip="View Version History">
       <mat-icon>history</mat-icon>
