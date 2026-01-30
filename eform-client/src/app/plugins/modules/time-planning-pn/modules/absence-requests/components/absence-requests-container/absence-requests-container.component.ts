@@ -7,6 +7,8 @@ import { Overlay } from '@angular/cdk/overlay';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { ToastrService } from 'ngx-toastr';
 import { TranslateService } from '@ngx-translate/core';
+import { Store } from '@ngrx/store';
+import { selectCurrentUserId } from 'src/app/state';
 
 @AutoUnsubscribe()
 @Component({
@@ -20,15 +22,22 @@ export class AbsenceRequestsContainerComponent implements OnInit, OnDestroy {
   private absenceRequestsService = inject(TimePlanningPnAbsenceRequestsService);
   private toastrService = inject(ToastrService);
   private translateService = inject(TranslateService);
+  private store = inject(Store);
 
   absenceRequests: AbsenceRequestModel[] = [];
   getAbsenceRequests$: Subscription;
   currentView: 'inbox' | 'mine' = 'inbox';
-  managerSdkSitId: number = 1; // TODO: Get from user context
-  requestedBySdkSitId: number = 1; // TODO: Get from user context
+  currentUserId: number = null;
+  public selectCurrentUserId$ = this.store.select(selectCurrentUserId);
 
   ngOnInit(): void {
-    this.loadAbsenceRequests();
+    // Subscribe to current user ID
+    this.selectCurrentUserId$.subscribe((userId) => {
+      this.currentUserId = userId;
+      if (this.currentUserId) {
+        this.loadAbsenceRequests();
+      }
+    });
   }
 
   ngOnDestroy(): void {}
@@ -43,9 +52,13 @@ export class AbsenceRequestsContainerComponent implements OnInit, OnDestroy {
   }
 
   loadAbsenceRequests() {
+    if (!this.currentUserId) {
+      return;
+    }
+
     if (this.currentView === 'inbox') {
       this.getAbsenceRequests$ = this.absenceRequestsService
-        .getInbox(this.managerSdkSitId)
+        .getInbox(this.currentUserId)
         .subscribe({
           next: (data) => {
             if (data && data.success) {
@@ -60,7 +73,7 @@ export class AbsenceRequestsContainerComponent implements OnInit, OnDestroy {
         });
     } else {
       this.getAbsenceRequests$ = this.absenceRequestsService
-        .getMine(this.requestedBySdkSitId)
+        .getMine(this.currentUserId)
         .subscribe({
           next: (data) => {
             if (data && data.success) {

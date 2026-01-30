@@ -168,4 +168,5 @@ export const enUS = {
   'Error approving absence request': 'Error approving absence request',
   'Absence request rejected successfully': 'Absence request rejected successfully',
   'Error rejecting absence request': 'Error rejecting absence request',
+  'User not authenticated': 'User not authenticated',
 };
