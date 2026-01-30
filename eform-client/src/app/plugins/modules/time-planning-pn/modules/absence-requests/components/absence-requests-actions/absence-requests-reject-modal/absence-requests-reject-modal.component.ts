@@ -5,7 +5,7 @@ import { AbsenceRequestModel, AbsenceRequestDecisionModel } from 'src/app/plugin
 import { ToastrService } from 'ngx-toastr';
 import { TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
-import { selectCurrentUserId } from 'src/app/state';
+import { selectAuthUser } from 'src/app/state';
 import { take } from 'rxjs';
 
 @Component({
@@ -30,8 +30,8 @@ export class AbsenceRequestsRejectModalComponent implements OnInit {
   ngOnInit() {
     this.selectedAbsenceRequest = { ...this.model.selectedAbsenceRequest };
     // Get current user ID (take only once)
-    this.store.select(selectCurrentUserId).pipe(take(1)).subscribe((userId) => {
-      this.currentUserId = userId;
+    this.store.select(selectAuthUser).pipe(take(1)).subscribe((user) => {
+      this.currentUserId = user?.id || null;
     });
   }
 
