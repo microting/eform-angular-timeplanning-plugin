@@ -146,7 +146,8 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         var result = await _absenceRequestService.ApproveAsync(request.Id, model);
 
         // Assert
-        Assert.That(result.Success, Is.True);
+        Console.WriteLine($"Result Success: {result.Success}, Message: {result.Message}");
+        Assert.That(result.Success, Is.True, $"Expected success but got error: {result.Message}");
 
         // Verify request status
         var updatedRequest = await TimePlanningPnDbContext.AbsenceRequests.FindAsync(request.Id);
