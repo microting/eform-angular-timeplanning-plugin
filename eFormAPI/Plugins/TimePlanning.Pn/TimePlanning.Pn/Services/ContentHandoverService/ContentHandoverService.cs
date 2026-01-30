@@ -190,7 +190,15 @@ public class ContentHandoverService : IContentHandoverService
             try
             {
                 // Move content from source to target
-                MoveContent(fromPR, toPR);
+                try
+                {
+                    MoveContent(fromPR, toPR);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error moving content from {FromId} to {ToId}", fromPR.Id, toPR.Id);
+                    throw;
+                }
 
                 // Set audit fields if they exist
                 try
@@ -222,38 +230,71 @@ public class ContentHandoverService : IContentHandoverService
                         contentHandedOverAtProp.SetValue(toPR, DateTime.UtcNow);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore if audit fields don't exist
+                    _logger.LogWarning(ex, "Could not set audit fields");
+                    // Continue - audit field failure should not prevent handover
                 }
 
-                fromPR.UpdatedByUserId = _userService.UserId;
-                toPR.UpdatedByUserId = _userService.UserId;
-                await fromPR.Update(_dbContext);
-                await toPR.Update(_dbContext);
+                try
+                {
+                    fromPR.UpdatedByUserId = _userService.UserId;
+                    toPR.UpdatedByUserId = _userService.UserId;
+                    await fromPR.Update(_dbContext);
+                    await toPR.Update(_dbContext);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error updating PlanRegistrations {FromId}, {ToId}", fromPR.Id, toPR.Id);
+                    throw;
+                }
 
                 // Update request status
-                request.Status = HandoverRequestStatus.Accepted;
-                request.RespondedAtUtc = DateTime.UtcNow;
-                request.DecisionComment = model.DecisionComment;
-                request.UpdatedByUserId = _userService.UserId;
-                await request.Update(_dbContext);
-
-                // Recalculate both PlanRegistrations
-                var fromAssignedSite = await _dbContext.AssignedSites
-                    .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
-                if (fromAssignedSite != null)
+                try
                 {
-                    PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(fromAssignedSite, fromPR);
-                    await fromPR.Update(_dbContext);
+                    request.Status = HandoverRequestStatus.Accepted;
+                    request.RespondedAtUtc = DateTime.UtcNow;
+                    request.DecisionComment = model.DecisionComment;
+                    request.UpdatedByUserId = _userService.UserId;
+                    await request.Update(_dbContext);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error updating handover request {RequestId}", request.Id);
+                    throw;
                 }
 
-                var toAssignedSite = await _dbContext.AssignedSites
-                    .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId);
-                if (toAssignedSite != null)
+                // Recalculate both PlanRegistrations - only if AssignedSite exists
+                try
                 {
-                    PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(toAssignedSite, toPR);
-                    await toPR.Update(_dbContext);
+                    var fromAssignedSite = await _dbContext.AssignedSites
+                        .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
+                    if (fromAssignedSite != null)
+                    {
+                        PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(fromAssignedSite, fromPR);
+                        // Note: PR was already updated above, recalculation just modifies in-memory values
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not recalculate source PlanRegistration {Id} after handover", fromPR.Id);
+                    // Continue - recalculation failure should not prevent handover
+                }
+
+                try
+                {
+                    var toAssignedSite = await _dbContext.AssignedSites
+                        .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId);
+                    if (toAssignedSite != null)
+                    {
+                        PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(toAssignedSite, toPR);
+                        // Note: PR was already updated above, recalculation just modifies in-memory values
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not recalculate target PlanRegistration {Id} after handover", toPR.Id);
+                    // Continue - recalculation failure should not prevent handover
                 }
 
                 await transaction.CommitAsync();
