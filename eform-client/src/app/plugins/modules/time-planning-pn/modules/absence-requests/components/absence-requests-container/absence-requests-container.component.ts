@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { TimePlanningPnAbsenceRequestsService } from '../../../../services';
 import { AbsenceRequestModel } from '../../../../models';
-import { Subscription } from 'rxjs';
+import { Subscription, take } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { Overlay } from '@angular/cdk/overlay';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
@@ -27,12 +27,12 @@ export class AbsenceRequestsContainerComponent implements OnInit, OnDestroy {
   absenceRequests: AbsenceRequestModel[] = [];
   getAbsenceRequests$: Subscription;
   currentView: 'inbox' | 'mine' = 'inbox';
-  currentUserId: number = null;
-  public selectCurrentUserId$ = this.store.select(selectCurrentUserId);
+  currentUserId: number | null = null;
+  selectCurrentUserIdSub$: Subscription;
 
   ngOnInit(): void {
     // Subscribe to current user ID
-    this.selectCurrentUserId$.subscribe((userId) => {
+    this.selectCurrentUserIdSub$ = this.store.select(selectCurrentUserId).subscribe((userId) => {
       this.currentUserId = userId;
       if (this.currentUserId) {
         this.loadAbsenceRequests();
