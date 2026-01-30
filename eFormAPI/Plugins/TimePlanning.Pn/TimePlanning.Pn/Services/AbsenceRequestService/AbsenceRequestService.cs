@@ -300,97 +300,115 @@ public class AbsenceRequestService : IAbsenceRequestService
 
     private async Task ApplyAbsenceToPlanRegistration(AbsenceRequest request, AbsenceRequestDay day)
     {
-        // Find or create PlanRegistration for this worker and date
-        var planRegistration = await _dbContext.PlanRegistrations
-            .FirstOrDefaultAsync(pr => pr.SdkSitId == request.RequestedBySdkSitId
-                                       && pr.Date == day.Date);
-
-        if (planRegistration == null)
-        {
-            // Create new PlanRegistration with minimal defaults
-            planRegistration = new PlanRegistration
-            {
-                Date = day.Date,
-                SdkSitId = request.RequestedBySdkSitId,
-                PlanHours = 0,
-                NettoHours = 0,
-                PaiedOutFlex = 0,
-                Pause1Id = 0,
-                Pause2Id = 0,
-                Pause3Id = 0,
-                Pause4Id = 0,
-                Pause5Id = 0,
-                Start1Id = 0,
-                Stop1Id = 0,
-                Start2Id = 0,
-                Stop2Id = 0,
-                Start3Id = 0,
-                Stop3Id = 0,
-                Start4Id = 0,
-                Stop4Id = 0,
-                Start5Id = 0,
-                Stop5Id = 0,
-                CreatedByUserId = _userService.UserId,
-                UpdatedByUserId = _userService.UserId
-            };
-            await planRegistration.Create(_dbContext);
-        }
-
-        // Load the message to determine absence type
-        var message = await _dbContext.Messages
-            .FirstOrDefaultAsync(m => m.Id == day.MessageId);
-        if (message != null)
-        {
-            ApplyAbsenceFromMessage(planRegistration, message);
-        }
-
-        // Set absence audit fields if they exist
-        planRegistration.MessageId = day.MessageId;
-        planRegistration.UpdatedByUserId = _userService.UserId;
-
-        // Try to set audit fields if they exist on the entity
         try
         {
-            var prType = planRegistration.GetType();
-            var absenceRequestIdProp = prType.GetProperty("AbsenceRequestId");
-            if (absenceRequestIdProp != null && absenceRequestIdProp.CanWrite)
+            // Find or create PlanRegistration for this worker and date
+            var planRegistration = await _dbContext.PlanRegistrations
+                .FirstOrDefaultAsync(pr => pr.SdkSitId == request.RequestedBySdkSitId
+                                           && pr.Date == day.Date);
+
+            if (planRegistration == null)
             {
-                absenceRequestIdProp.SetValue(planRegistration, request.Id);
+                // Create new PlanRegistration with minimal defaults
+                planRegistration = new PlanRegistration
+                {
+                    Date = day.Date,
+                    SdkSitId = request.RequestedBySdkSitId,
+                    PlanHours = 0,
+                    PlanHoursInSeconds = 0,
+                    NettoHours = 0,
+                    PaiedOutFlex = 0,
+                    Pause1Id = 0,
+                    Pause2Id = 0,
+                    Pause3Id = 0,
+                    Pause4Id = 0,
+                    Pause5Id = 0,
+                    Start1Id = 0,
+                    Stop1Id = 0,
+                    Start2Id = 0,
+                    Stop2Id = 0,
+                    Start3Id = 0,
+                    Stop3Id = 0,
+                    Start4Id = 0,
+                    Stop4Id = 0,
+                    Start5Id = 0,
+                    Stop5Id = 0,
+                    CreatedByUserId = _userService.UserId,
+                    UpdatedByUserId = _userService.UserId
+                };
+                await planRegistration.Create(_dbContext);
             }
 
-            var absenceApprovedAtProp = prType.GetProperty("AbsenceApprovedAtUtc");
-            if (absenceApprovedAtProp != null && absenceApprovedAtProp.CanWrite)
+            // Load the message to determine absence type
+            var message = await _dbContext.Messages
+                .FirstOrDefaultAsync(m => m.Id == day.MessageId);
+            if (message != null)
             {
-                absenceApprovedAtProp.SetValue(planRegistration, DateTime.UtcNow);
+                ApplyAbsenceFromMessage(planRegistration, message);
             }
 
-            var absenceApprovedByProp = prType.GetProperty("AbsenceApprovedBySdkSitId");
-            if (absenceApprovedByProp != null && absenceApprovedByProp.CanWrite)
+            // Set absence audit fields if they exist
+            planRegistration.MessageId = day.MessageId;
+            planRegistration.UpdatedByUserId = _userService.UserId;
+
+            // Try to set audit fields if they exist on the entity
+            try
             {
-                absenceApprovedByProp.SetValue(planRegistration, request.DecidedBySdkSitId);
+                var prType = planRegistration.GetType();
+                var absenceRequestIdProp = prType.GetProperty("AbsenceRequestId");
+                if (absenceRequestIdProp != null && absenceRequestIdProp.CanWrite)
+                {
+                    absenceRequestIdProp.SetValue(planRegistration, request.Id);
+                }
+
+                var absenceApprovedAtProp = prType.GetProperty("AbsenceApprovedAtUtc");
+                if (absenceApprovedAtProp != null && absenceApprovedAtProp.CanWrite)
+                {
+                    absenceApprovedAtProp.SetValue(planRegistration, DateTime.UtcNow);
+                }
+
+                var absenceApprovedByProp = prType.GetProperty("AbsenceApprovedBySdkSitId");
+                if (absenceApprovedByProp != null && absenceApprovedByProp.CanWrite)
+                {
+                    absenceApprovedByProp.SetValue(planRegistration, request.DecidedBySdkSitId);
+                }
+
+                var absenceMessageIdProp = prType.GetProperty("AbsenceMessageId");
+                if (absenceMessageIdProp != null && absenceMessageIdProp.CanWrite)
+                {
+                    absenceMessageIdProp.SetValue(planRegistration, day.MessageId);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log but ignore if audit fields don't exist
+                _logger.LogWarning(ex, "Could not set audit fields on PlanRegistration");
             }
 
-            var absenceMessageIdProp = prType.GetProperty("AbsenceMessageId");
-            if (absenceMessageIdProp != null && absenceMessageIdProp.CanWrite)
-            {
-                absenceMessageIdProp.SetValue(planRegistration, day.MessageId);
-            }
-        }
-        catch
-        {
-            // Ignore if audit fields don't exist
-        }
-
-        await planRegistration.Update(_dbContext);
-
-        // Recalculate PlanRegistration using helper
-        var assignedSite = await _dbContext.AssignedSites
-            .FirstOrDefaultAsync(a => a.SiteId == planRegistration.SdkSitId);
-        
-        if (assignedSite != null)
-        {
-            PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
             await planRegistration.Update(_dbContext);
+
+            // Recalculate PlanRegistration using helper - only if AssignedSite exists
+            var assignedSite = await _dbContext.AssignedSites
+                .FirstOrDefaultAsync(a => a.SiteId == planRegistration.SdkSitId);
+            
+            if (assignedSite != null)
+            {
+                try
+                {
+                    PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
+                    await planRegistration.Update(_dbContext);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not calculate pause for PlanRegistration {Id}", planRegistration.Id);
+                    // Continue without recalculation if it fails
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error applying absence to PlanRegistration for day {Date}", day.Date);
+            throw;
         }
     }
 
