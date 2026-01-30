@@ -30,6 +30,8 @@ using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
 using TimePlanning.Pn.Services.TimePlanningGpsCoordinateService;
 using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
+using TimePlanning.Pn.Services.AbsenceRequestService;
+using TimePlanning.Pn.Services.ContentHandoverService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -89,6 +91,8 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<ITimePlanningGpsCoordinateService, TimePlanningGpsCoordinateService>();
         services.AddTransient<ITimePlanningPictureSnapshotService, TimePlanningPictureSnapshotService>();
         services.AddTransient<ISettingService, TimeSettingService>();
+        services.AddTransient<IAbsenceRequestService, AbsenceRequestService>();
+        services.AddTransient<IContentHandoverService, ContentHandoverService>();
         services.AddControllers();
     }
 
