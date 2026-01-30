@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WorkdayEntityDialogComponent } from './workday-entity-dialog.component';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService } from '../../../../services';
 import { TranslateService } from '@ngx-translate/core';
@@ -22,6 +22,7 @@ describe('WorkdayEntityDialogComponent', () => {
   let mockPictureSnapshotsService: jest.Mocked<TimePlanningPnPictureSnapshotsService>;
   let mockDomSanitizer: jest.Mocked<DomSanitizer>;
   let mockTemplateFilesService: jest.Mocked<TemplateFilesService>;
+  let mockDialogRef: jest.Mocked<MatDialogRef<WorkdayEntityDialogComponent>>;
 
   const mockData = {
     planningPrDayModels: {
@@ -112,6 +113,9 @@ describe('WorkdayEntityDialogComponent', () => {
     mockTemplateFilesService = {
       getImage: jest.fn().mockReturnValue(of(new Blob())),
     } as any;
+    mockDialogRef = {
+      close: jest.fn(),
+    } as any;
 
     mockTranslateService.instant.mockReturnValue('Translated');
     mockTranslateService.stream.mockReturnValue(of('Translated'));
@@ -130,6 +134,7 @@ describe('WorkdayEntityDialogComponent', () => {
           ]
         }),
         { provide: MAT_DIALOG_DATA, useValue: mockData },
+        { provide: MatDialogRef, useValue: mockDialogRef },
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },
         { provide: TranslateService, useValue: mockTranslateService },
         { provide: TimePlanningPnGpsCoordinatesService, useValue: mockGpsCoordinatesService },
