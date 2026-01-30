@@ -145,7 +145,6 @@ public class ContentHandoverService : IContentHandoverService
         int currentSdkSitId, 
         ContentHandoverDecisionModel model)
     {
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
         try
         {
             // Load request
@@ -186,79 +185,89 @@ public class ContentHandoverService : IContentHandoverService
                     _localizationService.GetString("TargetPlanRegistrationMustBeEmpty"));
             }
 
-            // Move content from source to target
-            MoveContent(fromPR, toPR);
-
-            // Set audit fields if they exist
+            // Start transaction only after all validations pass
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
-                var prType = typeof(PlanRegistration);
-                var contentHandoverFromProp = prType.GetProperty("ContentHandoverFromSdkSitId");
-                if (contentHandoverFromProp != null && contentHandoverFromProp.CanWrite)
+                // Move content from source to target
+                MoveContent(fromPR, toPR);
+
+                // Set audit fields if they exist
+                try
                 {
-                    contentHandoverFromProp.SetValue(toPR, request.FromSdkSitId);
+                    var prType = typeof(PlanRegistration);
+                    var contentHandoverFromProp = prType.GetProperty("ContentHandoverFromSdkSitId");
+                    if (contentHandoverFromProp != null && contentHandoverFromProp.CanWrite)
+                    {
+                        contentHandoverFromProp.SetValue(toPR, request.FromSdkSitId);
+                    }
+
+                    var contentHandoverToProp = prType.GetProperty("ContentHandoverToSdkSitId");
+                    if (contentHandoverToProp != null && contentHandoverToProp.CanWrite)
+                    {
+                        contentHandoverToProp.SetValue(fromPR, request.ToSdkSitId);
+                    }
+
+                    var contentHandoverRequestIdPropFrom = prType.GetProperty("ContentHandoverRequestId");
+                    if (contentHandoverRequestIdPropFrom != null && contentHandoverRequestIdPropFrom.CanWrite)
+                    {
+                        contentHandoverRequestIdPropFrom.SetValue(fromPR, request.Id);
+                        contentHandoverRequestIdPropFrom.SetValue(toPR, request.Id);
+                    }
+
+                    var contentHandedOverAtProp = prType.GetProperty("ContentHandedOverAtUtc");
+                    if (contentHandedOverAtProp != null && contentHandedOverAtProp.CanWrite)
+                    {
+                        contentHandedOverAtProp.SetValue(fromPR, DateTime.UtcNow);
+                        contentHandedOverAtProp.SetValue(toPR, DateTime.UtcNow);
+                    }
+                }
+                catch
+                {
+                    // Ignore if audit fields don't exist
                 }
 
-                var contentHandoverToProp = prType.GetProperty("ContentHandoverToSdkSitId");
-                if (contentHandoverToProp != null && contentHandoverToProp.CanWrite)
-                {
-                    contentHandoverToProp.SetValue(fromPR, request.ToSdkSitId);
-                }
-
-                var contentHandoverRequestIdPropFrom = prType.GetProperty("ContentHandoverRequestId");
-                if (contentHandoverRequestIdPropFrom != null && contentHandoverRequestIdPropFrom.CanWrite)
-                {
-                    contentHandoverRequestIdPropFrom.SetValue(fromPR, request.Id);
-                    contentHandoverRequestIdPropFrom.SetValue(toPR, request.Id);
-                }
-
-                var contentHandedOverAtProp = prType.GetProperty("ContentHandedOverAtUtc");
-                if (contentHandedOverAtProp != null && contentHandedOverAtProp.CanWrite)
-                {
-                    contentHandedOverAtProp.SetValue(fromPR, DateTime.UtcNow);
-                    contentHandedOverAtProp.SetValue(toPR, DateTime.UtcNow);
-                }
-            }
-            catch
-            {
-                // Ignore if audit fields don't exist
-            }
-
-            fromPR.UpdatedByUserId = _userService.UserId;
-            toPR.UpdatedByUserId = _userService.UserId;
-            await fromPR.Update(_dbContext);
-            await toPR.Update(_dbContext);
-
-            // Update request status
-            request.Status = HandoverRequestStatus.Accepted;
-            request.RespondedAtUtc = DateTime.UtcNow;
-            request.DecisionComment = model.DecisionComment;
-            request.UpdatedByUserId = _userService.UserId;
-            await request.Update(_dbContext);
-
-            // Recalculate both PlanRegistrations
-            var fromAssignedSite = await _dbContext.AssignedSites
-                .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
-            if (fromAssignedSite != null)
-            {
-                PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(fromAssignedSite, fromPR);
+                fromPR.UpdatedByUserId = _userService.UserId;
+                toPR.UpdatedByUserId = _userService.UserId;
                 await fromPR.Update(_dbContext);
-            }
-
-            var toAssignedSite = await _dbContext.AssignedSites
-                .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId);
-            if (toAssignedSite != null)
-            {
-                PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(toAssignedSite, toPR);
                 await toPR.Update(_dbContext);
-            }
 
-            await transaction.CommitAsync();
-            return new OperationResult(true);
+                // Update request status
+                request.Status = HandoverRequestStatus.Accepted;
+                request.RespondedAtUtc = DateTime.UtcNow;
+                request.DecisionComment = model.DecisionComment;
+                request.UpdatedByUserId = _userService.UserId;
+                await request.Update(_dbContext);
+
+                // Recalculate both PlanRegistrations
+                var fromAssignedSite = await _dbContext.AssignedSites
+                    .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
+                if (fromAssignedSite != null)
+                {
+                    PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(fromAssignedSite, fromPR);
+                    await fromPR.Update(_dbContext);
+                }
+
+                var toAssignedSite = await _dbContext.AssignedSites
+                    .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId);
+                if (toAssignedSite != null)
+                {
+                    PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(toAssignedSite, toPR);
+                    await toPR.Update(_dbContext);
+                }
+
+                await transaction.CommitAsync();
+                return new OperationResult(true);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error in transaction accepting handover request {RequestId}", requestId);
+                throw;
+            }
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
             _logger.LogError(ex, "Error accepting handover request {RequestId}", requestId);
             return new OperationResult(false, _localizationService.GetString("ErrorAcceptingHandoverRequest"));
         }

@@ -135,7 +135,6 @@ public class AbsenceRequestService : IAbsenceRequestService
 
     public async Task<OperationResult> ApproveAsync(int absenceRequestId, AbsenceRequestDecisionModel model)
     {
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
         try
         {
             // Load request with days
@@ -153,26 +152,36 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
-            // Update request status
-            request.Status = AbsenceRequestStatus.Approved;
-            request.DecidedBySdkSitId = model.ManagerSdkSitId;
-            request.DecidedAtUtc = DateTime.UtcNow;
-            request.DecisionComment = model.DecisionComment;
-            request.UpdatedByUserId = _userService.UserId;
-            await request.Update(_dbContext);
-
-            // Apply absence to each day's PlanRegistration
-            foreach (var day in request.Days!)
+            // Start transaction after validations
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
             {
-                await ApplyAbsenceToPlanRegistration(request, day);
-            }
+                // Update request status
+                request.Status = AbsenceRequestStatus.Approved;
+                request.DecidedBySdkSitId = model.ManagerSdkSitId;
+                request.DecidedAtUtc = DateTime.UtcNow;
+                request.DecisionComment = model.DecisionComment;
+                request.UpdatedByUserId = _userService.UserId;
+                await request.Update(_dbContext);
 
-            await transaction.CommitAsync();
-            return new OperationResult(true);
+                // Apply absence to each day's PlanRegistration
+                foreach (var day in request.Days!)
+                {
+                    await ApplyAbsenceToPlanRegistration(request, day);
+                }
+
+                await transaction.CommitAsync();
+                return new OperationResult(true);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error in transaction approving absence request {RequestId}", absenceRequestId);
+                throw;
+            }
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
             _logger.LogError(ex, "Error approving absence request {RequestId}", absenceRequestId);
             return new OperationResult(false, _localizationService.GetString("ErrorApprovingAbsenceRequest"));
         }
@@ -328,7 +337,8 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
 
         // Load the message to determine absence type
-        var message = await _dbContext.Messages.FindAsync(day.MessageId);
+        var message = await _dbContext.Messages
+            .FirstOrDefaultAsync(m => m.Id == day.MessageId);
         if (message != null)
         {
             ApplyAbsenceFromMessage(planRegistration, message);
