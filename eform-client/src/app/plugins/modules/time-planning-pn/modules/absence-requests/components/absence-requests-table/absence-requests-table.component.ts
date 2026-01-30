@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, OnDestroy, Output, inject } from '@angular/core';
 import { MtxGridColumn } from '@ng-matero/extensions/grid';
 import { TranslateService } from '@ngx-translate/core';
 import { AbsenceRequestModel } from '../../../../models';
@@ -6,17 +6,19 @@ import { Subscription } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { dialogConfigHelper } from 'src/app/common/helpers';
 import { Overlay } from '@angular/cdk/overlay';
+import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import {
   AbsenceRequestsApproveModalComponent,
   AbsenceRequestsRejectModalComponent
 } from '../absence-requests-actions';
 
+@AutoUnsubscribe()
 @Component({
   selector: 'app-absence-requests-table',
   templateUrl: './absence-requests-table.component.html',
   standalone: false
 })
-export class AbsenceRequestsTableComponent implements OnInit {
+export class AbsenceRequestsTableComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);
   private overlay = inject(Overlay);
   private translateService = inject(TranslateService);
@@ -51,6 +53,8 @@ export class AbsenceRequestsTableComponent implements OnInit {
       },
     ];
   }
+
+  ngOnDestroy(): void {}
 
   openApproveModal(row: AbsenceRequestModel) {
     const selectedAbsenceRequest = { ...row };
