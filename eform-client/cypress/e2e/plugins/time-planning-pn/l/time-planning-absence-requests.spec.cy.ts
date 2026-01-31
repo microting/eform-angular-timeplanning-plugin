@@ -5,16 +5,8 @@ describe('Time Planning - Absence Requests', () => {
   beforeEach(() => {
     cy.visit('http://localhost:4200');
     loginPage.login();
-
-    pluginPage.Navbar.goToPluginsPage();
-    cy.get('#actionMenu')
-      .should('be.visible')
-      .click({ force: true });
-
-    cy.get('#plugin-settings-link0').click({ force: true });
-
-    cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
-    cy.get('mat-tree-node').contains('Absence Requests').click();
+    // Navigate directly to the absence requests page since menu entry doesn't exist yet
+    cy.visit('http://localhost:4200/plugins/time-planning-pn/absence-requests');
   });
 
   it('should display absence requests inbox view', () => {
