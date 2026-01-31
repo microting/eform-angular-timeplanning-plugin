@@ -6,3 +6,4 @@ export * from './registration-devices';
 export * from './assigned-sites';
 export * from './gps-coordinate';
 export * from './picture-snapshot';
+export * from './absence-requests';

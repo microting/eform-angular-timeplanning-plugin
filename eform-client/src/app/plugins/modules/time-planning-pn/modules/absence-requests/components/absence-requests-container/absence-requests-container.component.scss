@@ -1,0 +1,9 @@
+.view-switcher {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-secondary.active {
+  background-color: var(--primary-color);
+  color: white;
+}
