@@ -759,10 +759,12 @@ public class TimeSettingService(
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .ToListAsync();
 
+        var managingTagIds = site.ManagingTagIds ?? new List<int>();
+
         // Remove tags that are no longer in the list
         foreach (var existingTag in existingManagingTags)
         {
-            if (!site.ManagingTagIds.Contains(existingTag.TagId))
+            if (!managingTagIds.Contains(existingTag.TagId))
             {
                 await existingTag.Delete(dbContext);
             }
@@ -770,7 +772,7 @@ public class TimeSettingService(
 
         // Add new tags
         var existingTagIds = existingManagingTags.Select(x => x.TagId).ToList();
-        foreach (var tagId in site.ManagingTagIds)
+        foreach (var tagId in managingTagIds)
         {
             if (!existingTagIds.Contains(tagId))
             {
