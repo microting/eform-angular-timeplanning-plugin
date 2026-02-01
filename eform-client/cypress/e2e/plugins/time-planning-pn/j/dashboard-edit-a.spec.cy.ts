@@ -47,6 +47,7 @@ describe('Dashboard edit values', () => {
 
     cy.get('#workingHoursSite').click();
     cy.get('.ng-option').contains('ac ad').click();
+    cy.wait('@index-update', {timeout: 60000});
     cy.get('#firstColumn0').click();
 
     cy.get('mat-dialog-container', {timeout: 10000})

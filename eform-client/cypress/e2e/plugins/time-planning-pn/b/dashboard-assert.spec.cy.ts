@@ -281,7 +281,7 @@ describe('Dashboard assert', () => {
     cy.wait('@save');
     cy.get('#sumFlex7 input').should('contain.value', '41.45');
 
-    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
+    // cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
       filtersNextWeek[0].dateRange.yearFrom, filtersNextWeek[0].dateRange.monthFrom,  filtersNextWeek[0].dateRange.dayFrom,
@@ -306,7 +306,7 @@ describe('Dashboard assert', () => {
       let id = `#planText${i+1}`;
       cy.get(id).find('input').clear().type(planTextsNextWeek[i].text);
     }
-    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
+    // cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
     cy.wait('@save');
     cy.get('#sumFlex7 input').should('contain.value', '-14.55');
@@ -336,7 +336,7 @@ describe('Dashboard assert', () => {
       cy.get(id).find('input').clear().type(planTextsFutureWeek[i].text);
     }
 
-    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
+    // cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
     cy.wait('@save');
     cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
@@ -500,12 +500,12 @@ describe('Dashboard assert', () => {
       cy.get(id).find('input').clear().type(updatePlanTextsNextWeek[i].text);
     }
 
-    cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
+    // cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.get('#workingHoursSave').click();
     cy.wait('@save');
     cy.get('#sumFlex7 input').should('contain.value', '12.2');
 
-    cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
+    // cy.intercept('POST', '**/api/time-planning-pn/working-hours/index').as('update');
     TimePlanningWorkingHoursPage.dateFormInput().click();
     selectDateRangeOnNewDatePicker(
       filtersFutureWeek[0].dateRange.yearFrom, filtersFutureWeek[0].dateRange.monthFrom,  filtersFutureWeek[0].dateRange.dayFrom,
