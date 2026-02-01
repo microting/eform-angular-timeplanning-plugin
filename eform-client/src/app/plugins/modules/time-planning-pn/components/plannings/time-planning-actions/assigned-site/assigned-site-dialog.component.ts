@@ -4,7 +4,7 @@ import {Component, DoCheck, OnInit,
 import {
   MAT_DIALOG_DATA
 } from '@angular/material/dialog';
-import {AssignedSiteModel, GlobalAutoBreakSettingsModel} from '../../../../models';
+import {AssignedSiteModel, CommonTagModel, GlobalAutoBreakSettingsModel} from '../../../../models';
 import {selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {Store} from '@ngrx/store';
 import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
@@ -17,6 +17,8 @@ import {
   ReactiveFormsModule,
   FormControl,
 } from '@angular/forms';
+import {HttpClient} from '@angular/common/http';
+import {ToastrService} from 'ngx-toastr';
 
 
 @Component({
@@ -30,6 +32,8 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   public data = inject<AssignedSiteModel>(MAT_DIALOG_DATA);
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
   private store = inject(Store);
+  private http = inject(HttpClient);
+  private toastrService = inject(ToastrService);
 
   assignedSiteForm!: FormGroup;
 
@@ -37,6 +41,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
+  public availableTags: CommonTagModel[] = [];
 
   
 
@@ -55,6 +60,10 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
         this.globalAutoBreakSettings = result.model;
       }
     });
+    
+    // Load available tags from eForm core API
+    this.loadAvailableTags();
+    
     if (!this.data.resigned) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -173,6 +182,8 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
         this.data.resigned ? new Date(this.data.resignedAtDate) : new Date(),
         this.data.resigned ? Validators.required : null
       ),
+      isManager: new FormControl(this.data.isManager ?? false),
+      managingTagIds: new FormControl(this.data.managingTagIds ?? []),
       planHours: this.fb.group(planHoursGroup),
       autoBreakSettings: this.fb.group(autoBreakGroup),
       firstShift: this.fb.group(firstShiftGroup),
@@ -564,6 +575,22 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
 
   getFifthShiftFormGroup(): FormGroup {
     return this.assignedSiteForm.get('fifthShift') as FormGroup;
+  }
+
+  loadAvailableTags(): void {
+    this.http.get<{success: boolean, model: CommonTagModel[]}>('/api/tags')
+      .subscribe({
+        next: (result) => {
+          if (result && result.success) {
+            this.availableTags = result.model || [];
+          }
+        },
+        error: (error) => {
+          console.error('Error loading tags:', error);
+          this.toastrService.error('Failed to load available tags. Please try again.', 'Error');
+          this.availableTags = [];
+        }
+      });
   }
 
 }
