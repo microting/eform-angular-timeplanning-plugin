@@ -100,6 +100,7 @@ describe('Dashboard edit values', () => {
     cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('assign-site');
     cy.get('#saveButton').scrollIntoView().click({force: true});
     cy.wait('@assign-site', {timeout: 60000});
+    cy.wait('@index-update', {timeout: 60000});
     cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
     cy.wait(500);
 
