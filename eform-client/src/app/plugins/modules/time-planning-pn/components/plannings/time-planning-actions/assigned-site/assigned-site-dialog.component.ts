@@ -18,6 +18,7 @@ import {
   FormControl,
 } from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
+import {ToastrService} from 'ngx-toastr';
 
 
 @Component({
@@ -32,6 +33,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
   private store = inject(Store);
   private http = inject(HttpClient);
+  private toastrService = inject(ToastrService);
 
   assignedSiteForm!: FormGroup;
 
@@ -585,6 +587,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
         },
         error: (error) => {
           console.error('Error loading tags:', error);
+          this.toastrService.error('Failed to load available tags. Please try again.', 'Error');
           this.availableTags = [];
         }
       });
