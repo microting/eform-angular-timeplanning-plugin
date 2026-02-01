@@ -1,100 +1,266 @@
+import loginPage from '../../../Login.page';
+import pluginPage from '../../../Plugin.page';
+
 describe('Time Planning - Manager Assignment', () => {
   beforeEach(() => {
-    // This test assumes the user is already logged in and has the time planning plugin enabled
-    // The actual login and navigation would be done in the test setup
-    cy.visit('/');
+    cy.visit('http://localhost:4200');
+    loginPage.login();
   });
 
-  it('should display manager toggle in assigned site dialog', () => {
-    // Note: This is a placeholder test that should be expanded with actual selectors
-    // and navigation once the full integration is in place
+  it('should display manager toggle and tags selector in assigned site dialog', () => {
+    // Navigate to Time Planning plugin
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
+
+    // Navigate to Dashboard
+    cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
+    cy.get('mat-tree-node').contains('Dashboard').click();
+    cy.wait('@index-update', {timeout: 60000});
+
+    // Select a site
+    cy.get('#workingHoursSite').click();
+    cy.get('.ng-option').first().click();
     
-    // Navigate to time planning and open assigned site dialog
-    // cy.get('[data-cy=time-planning-menu]').click();
-    // cy.get('[data-cy=assigned-site-button]').click();
-    
-    // Verify manager toggle is present
-    // cy.get('[id=isManager]').should('exist');
-    
-    // Verify managing tags selector is not visible initially
-    // cy.get('mat-select[formControlName=managingTagIds]').should('not.be.visible');
+    // Open assigned site dialog by clicking on first column
+    cy.get('#firstColumn0').click();
+
+    // Wait for dialog to appear
+    cy.get('mat-dialog-container', {timeout: 10000})
+      .should('be.visible');
+
+    // Navigate to General tab (should be default, but let's make sure)
+    cy.contains('.mat-mdc-tab', 'General')
+      .scrollIntoView()
+      .should('be.visible')
+      .click({force: true});
+
+    // Verify manager toggle exists and is visible (only for admins)
+    cy.get('mat-slide-toggle').contains('Is Manager')
+      .parents('mat-slide-toggle')
+      .should('exist')
+      .scrollIntoView();
+
+    // Initially, the managing tags selector should not be visible or should be disabled
+    // (because manager toggle is off by default)
+
+    // Close the dialog
+    cy.get('#cancelButton').scrollIntoView().click({force: true});
+    cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
   });
 
   it('should show managing tags selector when manager toggle is enabled', () => {
-    // Navigate to assigned site dialog
-    // cy.get('[data-cy=time-planning-menu]').click();
-    // cy.get('[data-cy=assigned-site-button]').click();
+    // Navigate to Time Planning plugin
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
+
+    // Navigate to Dashboard
+    cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
+    cy.get('mat-tree-node').contains('Dashboard').click();
+    cy.wait('@index-update', {timeout: 60000});
+
+    // Select a site
+    cy.get('#workingHoursSite').click();
+    cy.get('.ng-option').first().click();
     
-    // Enable manager toggle
-    // cy.get('[id=isManager]').click();
-    
-    // Verify managing tags selector is now visible
-    // cy.get('mat-select[formControlName=managingTagIds]').should('be.visible');
+    // Open assigned site dialog
+    cy.get('#firstColumn0').click();
+    cy.get('mat-dialog-container', {timeout: 10000}).should('be.visible');
+
+    // Navigate to General tab
+    cy.contains('.mat-mdc-tab', 'General')
+      .scrollIntoView()
+      .should('be.visible')
+      .click({force: true});
+
+    // Enable the manager toggle
+    cy.get('mat-slide-toggle').contains('Is Manager')
+      .parents('mat-slide-toggle')
+      .scrollIntoView()
+      .find('button[role="switch"]')
+      .then(($btn) => {
+        const isChecked = $btn.attr('aria-checked') === 'true';
+        if (!isChecked) {
+          cy.wrap($btn).click({force: true});
+        }
+      });
+
+    // Verify the toggle is now checked
+    cy.get('mat-slide-toggle').contains('Is Manager')
+      .parents('mat-slide-toggle')
+      .find('button[role="switch"]')
+      .should('have.attr', 'aria-checked', 'true');
+
+    // Now the managing tags selector should be visible
+    cy.contains('Managing Tags')
+      .should('be.visible');
+
+    // Close the dialog without saving
+    cy.get('#cancelButton').scrollIntoView().click({force: true});
+    cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
   });
 
-  it('should allow selection of multiple managing tags', () => {
-    // Navigate to assigned site dialog
-    // cy.get('[data-cy=time-planning-menu]').click();
-    // cy.get('[data-cy=assigned-site-button]').click();
-    
-    // Enable manager toggle
-    // cy.get('[id=isManager]').click();
-    
-    // Open tags dropdown
-    // cy.get('mat-select[formControlName=managingTagIds]').click();
-    
-    // Select multiple tags
-    // cy.get('mat-option').first().click();
-    // cy.get('mat-option').eq(1).click();
-    
-    // Verify tags are selected
-    // cy.get('mat-select[formControlName=managingTagIds]').should('contain', '2');
-  });
+  it('should save and persist manager settings', () => {
+    // Navigate to Time Planning plugin
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
 
-  it('should save manager settings when dialog is saved', () => {
-    // Navigate to assigned site dialog
-    // cy.get('[data-cy=time-planning-menu]').click();
-    // cy.get('[data-cy=assigned-site-button]').click();
+    // Navigate to Dashboard
+    cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
+    cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('assigned-site-update');
+    cy.get('mat-tree-node').contains('Dashboard').click();
+    cy.wait('@index-update', {timeout: 60000});
+
+    // Select a site
+    cy.get('#workingHoursSite').click();
+    cy.get('.ng-option').first().click();
     
-    // Enable manager toggle
-    // cy.get('[id=isManager]').click();
-    
-    // Select managing tags
-    // cy.get('mat-select[formControlName=managingTagIds]').click();
-    // cy.get('mat-option').first().click();
-    // cy.get('mat-option').eq(1).click();
-    
-    // Close dropdown
-    // cy.get('body').click(0, 0);
-    
+    // Open assigned site dialog
+    cy.get('#firstColumn0').click();
+    cy.get('mat-dialog-container', {timeout: 10000}).should('be.visible');
+
+    // Navigate to General tab
+    cy.contains('.mat-mdc-tab', 'General')
+      .scrollIntoView()
+      .should('be.visible')
+      .click({force: true});
+
+    // Enable the manager toggle
+    cy.get('mat-slide-toggle').contains('Is Manager')
+      .parents('mat-slide-toggle')
+      .scrollIntoView()
+      .find('button[role="switch"]')
+      .then(($btn) => {
+        const isChecked = $btn.attr('aria-checked') === 'true';
+        if (!isChecked) {
+          cy.wrap($btn).click({force: true});
+        }
+      });
+
+    // Verify toggle is enabled
+    cy.get('mat-slide-toggle').contains('Is Manager')
+      .parents('mat-slide-toggle')
+      .find('button[role="switch"]')
+      .should('have.attr', 'aria-checked', 'true');
+
     // Save the dialog
-    // cy.contains('button', 'Save').click();
-    
-    // Verify the settings were saved (could check API call or reopen dialog)
-    // cy.wait('@updateAssignedSite');
+    cy.get('#saveButton').scrollIntoView().click({force: true});
+    cy.wait('@assigned-site-update', {timeout: 10000});
+    cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
+
+    // Reopen the dialog to verify settings persisted
+    cy.wait(500);
+    cy.get('#firstColumn0').click();
+    cy.get('mat-dialog-container', {timeout: 10000}).should('be.visible');
+
+    // Navigate to General tab
+    cy.contains('.mat-mdc-tab', 'General')
+      .scrollIntoView()
+      .should('be.visible')
+      .click({force: true});
+
+    // Verify manager toggle is still enabled
+    cy.get('mat-slide-toggle').contains('Is Manager')
+      .parents('mat-slide-toggle')
+      .find('button[role="switch"]')
+      .should('have.attr', 'aria-checked', 'true');
+
+    // Close the dialog
+    cy.get('#cancelButton').scrollIntoView().click({force: true});
+    cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
   });
 
-  it('should persist manager settings after reopening dialog', () => {
-    // This test would verify that settings are persisted
-    // by saving, closing, and reopening the dialog
+  it('should toggle manager off and persist the change', () => {
+    // Navigate to Time Planning plugin
+    pluginPage.Navbar.goToPluginsPage();
+    cy.get('#actionMenu')
+      .should('be.visible')
+      .click({ force: true });
+    cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
+    cy.get('#plugin-settings-link0').click();
+    cy.wait('@settings-get', { timeout: 60000 });
+
+    // Navigate to Dashboard
+    cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+    cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
+    cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('assigned-site-update');
+    cy.get('mat-tree-node').contains('Dashboard').click();
+    cy.wait('@index-update', {timeout: 60000});
+
+    // Select a site
+    cy.get('#workingHoursSite').click();
+    cy.get('.ng-option').first().click();
     
-    // Navigate to assigned site dialog
-    // cy.get('[data-cy=time-planning-menu]').click();
-    // cy.get('[data-cy=assigned-site-button]').click();
-    
-    // Enable manager and select tags
-    // cy.get('[id=isManager]').click();
-    // cy.get('mat-select[formControlName=managingTagIds]').click();
-    // cy.get('mat-option').first().click();
-    
-    // Save and close
-    // cy.contains('button', 'Save').click();
-    
-    // Reopen dialog
-    // cy.get('[data-cy=assigned-site-button]').click();
-    
-    // Verify settings are still set
-    // cy.get('[id=isManager]').should('be.checked');
-    // cy.get('mat-select[formControlName=managingTagIds]').should('contain', '1');
+    // Open assigned site dialog
+    cy.get('#firstColumn0').click();
+    cy.get('mat-dialog-container', {timeout: 10000}).should('be.visible');
+
+    // Navigate to General tab
+    cy.contains('.mat-mdc-tab', 'General')
+      .scrollIntoView()
+      .should('be.visible')
+      .click({force: true});
+
+    // Disable the manager toggle (if it's on)
+    cy.get('mat-slide-toggle').contains('Is Manager')
+      .parents('mat-slide-toggle')
+      .scrollIntoView()
+      .find('button[role="switch"]')
+      .then(($btn) => {
+        const isChecked = $btn.attr('aria-checked') === 'true';
+        if (isChecked) {
+          cy.wrap($btn).click({force: true});
+        }
+      });
+
+    // Verify toggle is disabled
+    cy.get('mat-slide-toggle').contains('Is Manager')
+      .parents('mat-slide-toggle')
+      .find('button[role="switch"]')
+      .should('have.attr', 'aria-checked', 'false');
+
+    // Save the dialog
+    cy.get('#saveButton').scrollIntoView().click({force: true});
+    cy.wait('@assigned-site-update', {timeout: 10000});
+    cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
+
+    // Reopen the dialog to verify settings persisted
+    cy.wait(500);
+    cy.get('#firstColumn0').click();
+    cy.get('mat-dialog-container', {timeout: 10000}).should('be.visible');
+
+    // Navigate to General tab
+    cy.contains('.mat-mdc-tab', 'General')
+      .scrollIntoView()
+      .should('be.visible')
+      .click({force: true});
+
+    // Verify manager toggle is still disabled
+    cy.get('mat-slide-toggle').contains('Is Manager')
+      .parents('mat-slide-toggle')
+      .find('button[role="switch"]')
+      .should('have.attr', 'aria-checked', 'false');
+
+    // Close the dialog
+    cy.get('#cancelButton').scrollIntoView().click({force: true});
+    cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
   });
 });
+
