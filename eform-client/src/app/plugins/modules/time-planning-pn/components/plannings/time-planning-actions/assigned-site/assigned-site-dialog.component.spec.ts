@@ -7,6 +7,7 @@ import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('AssignedSiteDialogComponent', () => {
   let component: AssignedSiteDialogComponent;
@@ -32,6 +33,8 @@ describe('AssignedSiteDialogComponent', () => {
     fifthShiftActive: false,
     resigned: false,
     resignedAtDate: new Date().toISOString(),
+    isManager: false,
+    managingTagIds: [],
     mondayPlanHours: 0,
     tuesdayPlanHours: 0,
     wednesdayPlanHours: 0,
@@ -68,7 +71,7 @@ describe('AssignedSiteDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [AssignedSiteDialogComponent],
-      imports: [ReactiveFormsModule, TranslateModule.forRoot()],
+      imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         FormBuilder,
@@ -329,6 +332,75 @@ describe('AssignedSiteDialogComponent', () => {
     it('should return fifth shift form group', () => {
       const fifthShiftGroup = component.getFifthShiftFormGroup();
       expect(fifthShiftGroup).toBeDefined();
+    });
+  });
+
+  describe('Manager and Tags Functionality', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    it('should initialize isManager form control with false by default', () => {
+      const isManagerControl = component.assignedSiteForm.get('isManager');
+      expect(isManagerControl).toBeDefined();
+      expect(isManagerControl?.value).toBe(false);
+    });
+
+    it('should initialize managingTagIds form control with empty array by default', () => {
+      const managingTagIdsControl = component.assignedSiteForm.get('managingTagIds');
+      expect(managingTagIdsControl).toBeDefined();
+      expect(managingTagIdsControl?.value).toEqual([]);
+    });
+
+    it('should set isManager to true when toggled', () => {
+      const isManagerControl = component.assignedSiteForm.get('isManager');
+      isManagerControl?.setValue(true);
+      expect(isManagerControl?.value).toBe(true);
+      expect(component.data.isManager).toBe(true);
+    });
+
+    it('should update managingTagIds when tags are selected', () => {
+      const managingTagIdsControl = component.assignedSiteForm.get('managingTagIds');
+      const selectedTags = [1, 2, 3];
+      managingTagIdsControl?.setValue(selectedTags);
+      expect(managingTagIdsControl?.value).toEqual(selectedTags);
+      expect(component.data.managingTagIds).toEqual(selectedTags);
+    });
+
+    it('should initialize availableTags as empty array', () => {
+      expect(component.availableTags).toBeDefined();
+      expect(component.availableTags).toEqual([]);
+    });
+
+    it('should preserve isManager value from data', () => {
+      const dataWithManager = {
+        ...mockAssignedSiteData,
+        isManager: true,
+        managingTagIds: [1, 2]
+      };
+      
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        declarations: [AssignedSiteDialogComponent],
+        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          FormBuilder,
+          { provide: MAT_DIALOG_DATA, useValue: dataWithManager },
+          { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: Store, useValue: mockStore }
+        ]
+      }).compileComponents();
+      
+      const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      const newComponent = newFixture.componentInstance;
+      newFixture.detectChanges();
+      
+      const isManagerControl = newComponent.assignedSiteForm.get('isManager');
+      const managingTagIdsControl = newComponent.assignedSiteForm.get('managingTagIds');
+      
+      expect(isManagerControl?.value).toBe(true);
+      expect(managingTagIdsControl?.value).toEqual([1, 2]);
     });
   });
 });
