@@ -7,12 +7,15 @@ import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ToastrService } from 'ngx-toastr';
 
 describe('AssignedSiteDialogComponent', () => {
   let component: AssignedSiteDialogComponent;
   let fixture: ComponentFixture<AssignedSiteDialogComponent>;
   let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
   let mockStore: jest.Mocked<Store>;
+  let mockToastrService: jest.Mocked<ToastrService>;
 
   const mockAssignedSiteData = {
     id: 1,
@@ -32,6 +35,8 @@ describe('AssignedSiteDialogComponent', () => {
     fifthShiftActive: false,
     resigned: false,
     resignedAtDate: new Date().toISOString(),
+    isManager: false,
+    managingTagIds: [],
     mondayPlanHours: 0,
     tuesdayPlanHours: 0,
     wednesdayPlanHours: 0,
@@ -60,6 +65,10 @@ describe('AssignedSiteDialogComponent', () => {
     mockStore = {
       select: jest.fn(),
     } as any;
+    mockToastrService = {
+      error: jest.fn(),
+      success: jest.fn(),
+    } as any;
 
     mockStore.select.mockReturnValue(of(true));
     mockSettingsService.getGlobalAutoBreakCalculationSettings.mockReturnValue(
@@ -68,13 +77,14 @@ describe('AssignedSiteDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [AssignedSiteDialogComponent],
-      imports: [ReactiveFormsModule, TranslateModule.forRoot()],
+      imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         FormBuilder,
         { provide: MAT_DIALOG_DATA, useValue: mockAssignedSiteData },
         { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
-        { provide: Store, useValue: mockStore }
+        { provide: Store, useValue: mockStore },
+        { provide: ToastrService, useValue: mockToastrService }
       ]
     }).compileComponents();
 
@@ -329,6 +339,76 @@ describe('AssignedSiteDialogComponent', () => {
     it('should return fifth shift form group', () => {
       const fifthShiftGroup = component.getFifthShiftFormGroup();
       expect(fifthShiftGroup).toBeDefined();
+    });
+  });
+
+  describe('Manager and Tags Functionality', () => {
+    beforeEach(() => {
+      // Call ngOnInit to initialize the form without rendering the template
+      component.ngOnInit();
+    });
+
+    it('should initialize isManager form control with false by default', () => {
+      const isManagerControl = component.assignedSiteForm.get('isManager');
+      expect(isManagerControl).toBeDefined();
+      expect(isManagerControl?.value).toBe(false);
+    });
+
+    it('should initialize managingTagIds form control with empty array by default', () => {
+      const managingTagIdsControl = component.assignedSiteForm.get('managingTagIds');
+      expect(managingTagIdsControl).toBeDefined();
+      expect(managingTagIdsControl?.value).toEqual([]);
+    });
+
+    it('should set isManager to true when toggled', () => {
+      const isManagerControl = component.assignedSiteForm.get('isManager');
+      isManagerControl?.setValue(true);
+      expect(isManagerControl?.value).toBe(true);
+    });
+
+    it('should update managingTagIds when tags are selected', () => {
+      const managingTagIdsControl = component.assignedSiteForm.get('managingTagIds');
+      const selectedTags = [1, 2, 3];
+      managingTagIdsControl?.setValue(selectedTags);
+      expect(managingTagIdsControl?.value).toEqual(selectedTags);
+    });
+
+    it('should initialize availableTags as empty array', () => {
+      expect(component.availableTags).toBeDefined();
+      expect(component.availableTags).toEqual([]);
+    });
+
+    it('should preserve isManager value from data', () => {
+      const dataWithManager = {
+        ...mockAssignedSiteData,
+        isManager: true,
+        managingTagIds: [1, 2]
+      };
+      
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        declarations: [AssignedSiteDialogComponent],
+        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          FormBuilder,
+          { provide: MAT_DIALOG_DATA, useValue: dataWithManager },
+          { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: Store, useValue: mockStore },
+          { provide: ToastrService, useValue: mockToastrService }
+        ]
+      }).compileComponents();
+      
+      const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      const newComponent = newFixture.componentInstance;
+      // Call ngOnInit to initialize the form without rendering the template
+      newComponent.ngOnInit();
+      
+      const isManagerControl = newComponent.assignedSiteForm.get('isManager');
+      const managingTagIdsControl = newComponent.assignedSiteForm.get('managingTagIds');
+      
+      expect(isManagerControl?.value).toBe(true);
+      expect(managingTagIdsControl?.value).toEqual([1, 2]);
     });
   });
 });

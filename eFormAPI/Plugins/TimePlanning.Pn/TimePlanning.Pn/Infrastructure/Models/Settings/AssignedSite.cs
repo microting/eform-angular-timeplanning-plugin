@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace TimePlanning.Pn.Infrastructure.Models.Settings;
 
@@ -166,6 +167,8 @@ public class AssignedSite
     public int DaysBackInTimeAllowedEditing { get; set; } = 2;
     public bool GpsEnabled { get; set; }
     public bool SnapshotEnabled { get; set; }
+    public bool IsManager { get; set; }
+    public List<int> ManagingTagIds { get; set; } = new List<int>();
     public AutoBreakSettings AutoBreakSettings { get; set; }
 
     // implicit conversion from Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite to AssignedSite
@@ -323,6 +326,7 @@ public class AssignedSite
             DaysBackInTimeAllowedEditing = model.DaysBackInTimeAllowedEditing,
             GpsEnabled = model.GpsEnabled,
             SnapshotEnabled = model.SnapshotEnabled,
+            IsManager = model.IsManager,
         };
     }
 }

@@ -365,6 +365,14 @@ public class TimeSettingService(
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
 
+        // Load managing tags
+        var managingTags = await dbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == dbAssignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .Select(x => x.TagId)
+            .ToListAsync();
+        dbAssignedSite.ManagingTagIds = managingTags;
+
         var globalAutoBreakCalculationActive = options.Value.AutoBreakCalculationActive == "1";
         dbAssignedSite.GlobalAutoBreakCalculationActive = globalAutoBreakCalculationActive;
         dbAssignedSite.SiteName = site.Name;
@@ -741,8 +749,43 @@ public class TimeSettingService(
         dbAssignedSite.ResignedAtDate = site.ResignedAtDate;
         dbAssignedSite.GpsEnabled = site.GpsEnabled;
         dbAssignedSite.SnapshotEnabled = site.SnapshotEnabled;
+        dbAssignedSite.IsManager = site.IsManager;
 
         await dbAssignedSite.Update(dbContext);
+
+        // Update managing tags
+        var existingManagingTags = await dbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == dbAssignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+
+        var managingTagIds = site.ManagingTagIds ?? new List<int>();
+
+        // Remove tags that are no longer in the list
+        foreach (var existingTag in existingManagingTags)
+        {
+            if (!managingTagIds.Contains(existingTag.TagId))
+            {
+                await existingTag.Delete(dbContext);
+            }
+        }
+
+        // Add new tags
+        var existingTagIds = existingManagingTags.Select(x => x.TagId).ToList();
+        foreach (var tagId in managingTagIds)
+        {
+            if (!existingTagIds.Contains(tagId))
+            {
+                var newManagingTag = new AssignedSiteManagingTag
+                {
+                    AssignedSiteId = dbAssignedSite.Id,
+                    TagId = tagId,
+                    CreatedByUserId = userService.UserId,
+                    UpdatedByUserId = userService.UserId
+                };
+                await newManagingTag.Create(dbContext);
+            }
+        }
 
         if (dbAssignedSite.UseGoogleSheetAsDefault)
             return new OperationResult(true, localizationService.GetString("AssignedSiteUpdatedSuccessfuly"));
