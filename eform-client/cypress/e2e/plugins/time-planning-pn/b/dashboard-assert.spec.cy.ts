@@ -242,7 +242,9 @@ describe('Dashboard assert', () => {
     cy.wait('@index-update', { timeout: 60000 });
     cy.get('#firstColumn3').click();
     cy.get('#useGoogleSheetAsDefault').click();
+    cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('assign-site');
     cy.get('#saveButton').click();
+    cy.wait('@assign-site', {timeout: 60000});
     cy.wait('@index-update', { timeout: 160000 });
     cy.wait(1000);
     cy.get('mat-tree-node').contains('Timeregistrering').click();
