@@ -246,7 +246,7 @@ describe('Dashboard assert', () => {
     cy.get('#saveButton').click();
     cy.wait('@assign-site', {timeout: 60000});
     cy.wait('@index-update', { timeout: 160000 });
-    cy.wait(1000);
+    cy.wait(2000);
     cy.get('mat-tree-node').contains('Timeregistrering').click();
     cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
     cy.get('#workingHoursSite').clear().type('c d');
