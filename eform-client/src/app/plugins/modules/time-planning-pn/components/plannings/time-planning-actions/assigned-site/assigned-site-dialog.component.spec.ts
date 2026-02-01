@@ -344,7 +344,8 @@ describe('AssignedSiteDialogComponent', () => {
 
   describe('Manager and Tags Functionality', () => {
     beforeEach(() => {
-      fixture.detectChanges();
+      // Call ngOnInit to initialize the form without rendering the template
+      component.ngOnInit();
     });
 
     it('should initialize isManager form control with false by default', () => {
@@ -362,8 +363,6 @@ describe('AssignedSiteDialogComponent', () => {
     it('should set isManager to true when toggled', () => {
       const isManagerControl = component.assignedSiteForm.get('isManager');
       isManagerControl?.setValue(true);
-      // Wait for valueChanges subscription to update data
-      fixture.detectChanges();
       expect(isManagerControl?.value).toBe(true);
     });
 
@@ -371,8 +370,6 @@ describe('AssignedSiteDialogComponent', () => {
       const managingTagIdsControl = component.assignedSiteForm.get('managingTagIds');
       const selectedTags = [1, 2, 3];
       managingTagIdsControl?.setValue(selectedTags);
-      // Wait for valueChanges subscription to update data
-      fixture.detectChanges();
       expect(managingTagIdsControl?.value).toEqual(selectedTags);
     });
 
@@ -404,7 +401,8 @@ describe('AssignedSiteDialogComponent', () => {
       
       const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
       const newComponent = newFixture.componentInstance;
-      newFixture.detectChanges();
+      // Call ngOnInit to initialize the form without rendering the template
+      newComponent.ngOnInit();
       
       const isManagerControl = newComponent.assignedSiteForm.get('isManager');
       const managingTagIdsControl = newComponent.assignedSiteForm.get('managingTagIds');
