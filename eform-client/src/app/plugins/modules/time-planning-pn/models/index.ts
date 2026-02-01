@@ -7,3 +7,4 @@ export * from './assigned-sites';
 export * from './gps-coordinate';
 export * from './picture-snapshot';
 export * from './absence-requests';
+export * from './common-tag.model';
