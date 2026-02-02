@@ -8,14 +8,12 @@ import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ToastrService } from 'ngx-toastr';
 
 describe('AssignedSiteDialogComponent', () => {
   let component: AssignedSiteDialogComponent;
   let fixture: ComponentFixture<AssignedSiteDialogComponent>;
   let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
   let mockStore: jest.Mocked<Store>;
-  let mockToastrService: jest.Mocked<ToastrService>;
 
   const mockAssignedSiteData = {
     id: 1,
@@ -61,18 +59,18 @@ describe('AssignedSiteDialogComponent', () => {
       getGlobalAutoBreakCalculationSettings: jest.fn(),
       updateAssignedSite: jest.fn(),
       getAssignedSite: jest.fn(),
+      getAvailableTags: jest.fn(),
     } as any;
     mockStore = {
       select: jest.fn(),
-    } as any;
-    mockToastrService = {
-      error: jest.fn(),
-      success: jest.fn(),
     } as any;
 
     mockStore.select.mockReturnValue(of(true));
     mockSettingsService.getGlobalAutoBreakCalculationSettings.mockReturnValue(
       of({ success: true, model: {} }) as any
+    );
+    mockSettingsService.getAvailableTags.mockReturnValue(
+      of({ success: true, model: [] }) as any
     );
 
     await TestBed.configureTestingModule({
@@ -84,7 +82,6 @@ describe('AssignedSiteDialogComponent', () => {
         { provide: MAT_DIALOG_DATA, useValue: mockAssignedSiteData },
         { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
         { provide: Store, useValue: mockStore },
-        { provide: ToastrService, useValue: mockToastrService }
       ]
     }).compileComponents();
 
@@ -195,6 +192,8 @@ describe('AssignedSiteDialogComponent', () => {
       expect(component.assignedSiteForm.get('planHours')).toBeDefined();
       expect(component.assignedSiteForm.get('firstShift')).toBeDefined();
       expect(component.assignedSiteForm.get('secondShift')).toBeDefined();
+      expect(component.assignedSiteForm.get('isManager')).toBeDefined();
+      expect(component.assignedSiteForm.get('managingTagIds')).toBeDefined();
     });
 
     it('should populate form with data values', () => {
@@ -202,6 +201,40 @@ describe('AssignedSiteDialogComponent', () => {
 
       expect(component.assignedSiteForm.get('useGoogleSheetAsDefault')?.value).toBe(false);
       expect(component.assignedSiteForm.get('useOnlyPlanHours')?.value).toBe(false);
+      expect(component.assignedSiteForm.get('isManager')?.value).toBe(false);
+      expect(component.assignedSiteForm.get('managingTagIds')?.value).toEqual([]);
+    });
+
+    it('should call getAvailableTags on initialization', () => {
+      component.ngOnInit();
+
+      expect(mockSettingsService.getAvailableTags).toHaveBeenCalled();
+    });
+
+    it('should load available tags from service', () => {
+      const mockTags = [
+        { id: 1, name: 'Tag 1' },
+        { id: 2, name: 'Tag 2' }
+      ];
+      mockSettingsService.getAvailableTags.mockReturnValue(
+        of({ success: true, model: mockTags }) as any
+      );
+
+      component.ngOnInit();
+
+      expect(component.availableTags).toEqual(mockTags);
+    });
+
+    it('should handle tags loading error gracefully', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockSettingsService.getAvailableTags.mockReturnValue(
+        of({ success: false, model: null }) as any
+      );
+
+      component.ngOnInit();
+
+      expect(component.availableTags).toEqual([]);
+      consoleErrorSpy.mockRestore();
     });
 
     it('should create shift forms for each day of the week', () => {
