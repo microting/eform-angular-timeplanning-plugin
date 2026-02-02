@@ -48,7 +48,7 @@ describe('Time Planning - Manager Assignment', () => {
           cy.get('body').then(($dashBody) => {
             if ($dashBody.find('.overlay-spinner').length > 0) {
               cy.task('log', '[Time Planning Tests] Overlay spinner detected, waiting for it to disappear...');
-              cy.get('.overlay-spinner', {timeout: 30000}).should('not.exist');
+              cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
             }
           });
           
@@ -68,7 +68,7 @@ describe('Time Planning - Manager Assignment', () => {
     cy.get('body').then(($body) => {
       if ($body.find('.overlay-spinner').length > 0) {
         cy.task('log', '[Time Planning Tests] Overlay spinner still present, waiting...');
-        cy.get('.overlay-spinner', {timeout: 30000}).should('not.exist');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
       }
     });
     
@@ -167,7 +167,7 @@ describe('Time Planning - Manager Assignment', () => {
     cy.get('body').then(($body) => {
       if ($body.find('.overlay-spinner').length > 0) {
         cy.task('log', '[Time Planning Tests] Overlay spinner detected after save, waiting for it to disappear...');
-        cy.get('.overlay-spinner', {timeout: 30000}).should('not.exist');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
       }
     });
     
