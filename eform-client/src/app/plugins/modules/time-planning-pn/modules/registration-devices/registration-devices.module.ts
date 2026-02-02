@@ -20,6 +20,7 @@ import {MatTooltip} from '@angular/material/tooltip';
 import {FormsModule} from '@angular/forms';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
+import {MatMenu, MatMenuItem, MatMenuTrigger} from "@angular/material/menu";
 
 @NgModule({
   imports: [
@@ -39,7 +40,10 @@ import {MatInput} from '@angular/material/input';
     FormsModule,
     MatFormField,
     MatInput,
-    MatLabel
+    MatLabel,
+    MatMenu,
+    MatMenuItem,
+    MatMenuTrigger
   ],
   declarations: [
     RegistrationDevicesTableComponent,
