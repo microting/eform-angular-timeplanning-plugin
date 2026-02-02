@@ -30,7 +30,7 @@ jobs:
     - name: Copy Dockerfile
       run: cp eform-angular-timeplanning-plugin/Dockerfile .
     - name: Build the tagged Docker image
-      run: docker build . -t microtingas/time-planning-container:latest -t microtingas/time-planning-container:1.0.0 --build-arg GITVERSION=1.0.0 --build-arg PLUGINVERSION=1.0.0
+      run: docker build . -t microtingas/time-planning-container:latest -t microtingas/time-planning-container:1.0.0 --build-arg GITVERSION=1.0.0 --build-arg PLUGINVERSION=1.0.0 --build-arg DISABLE_SENTRY=true
     - name: Tag builds
       run: |-
         docker tag microtingas/time-planning-container:latest microtingas/time-planning-container:latest
