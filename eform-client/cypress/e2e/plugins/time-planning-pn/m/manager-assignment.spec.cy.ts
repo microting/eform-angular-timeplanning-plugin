@@ -130,23 +130,24 @@ describe('Time Planning - Manager Assignment', () => {
       // Check that the checkbox is off (or get initial state)
       cy.get('body').then(($dialogBody) => {
         if ($dialogBody.find('#isManager').length > 0) {
-          // Get the checkbox element by ID
-          cy.get('#isManager').as('managerCheckbox');
-          
-          // Ensure checkbox is off initially
-          cy.get('@managerCheckbox').find('input[type="checkbox"]').then(($input) => {
-            if ($input.prop('checked')) {
+          // Ensure checkbox is off initially by checking the class
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
+            cy.log('Initial checkbox state: ' + currentState);
+            if (currentState && currentState.includes('mdc-checkbox--selected')) {
               // If it's checked, uncheck it first
-              cy.get('@managerCheckbox').click({force: true});
+              cy.log('Checkbox is checked, clicking to uncheck');
+              cy.get('#isManager').click({force: true});
+              cy.wait(500); // Wait for state change
             }
           });
           
-          // Verify it's off
-          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('not.be.checked');
+          // Verify it's off by checking it doesn't have the selected class
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
           
           // Click checkbox to turn on
-          cy.get('@managerCheckbox').click({force: true});
-          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('be.checked');
+          cy.get('#isManager').click({force: true});
+          cy.wait(500); // Wait for state change
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
           
           // Save
           saveDialog();
@@ -156,14 +157,12 @@ describe('Time Planning - Manager Assignment', () => {
           goToGeneralTab();
           
           // Check that the checkbox is on
-          cy.get('#isManager')
-            .find('input[type="checkbox"]')
-            .should('be.checked');
-          cy.get('#isManager').as('managerCheckboxOn');
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
           
           // Click checkbox to turn off
-          cy.get('@managerCheckboxOn').click({force: true});
-          cy.get('@managerCheckboxOn').find('input[type="checkbox"]').should('not.be.checked');
+          cy.get('#isManager').click({force: true});
+          cy.wait(500); // Wait for state change
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
           
           // Save
           saveDialog();
@@ -173,9 +172,7 @@ describe('Time Planning - Manager Assignment', () => {
           goToGeneralTab();
           
           // Check that the checkbox is off
-          cy.get('#isManager')
-            .find('input[type="checkbox"]')
-            .should('not.be.checked');
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
           
           // Close dialog
           closeDialog();
@@ -215,19 +212,19 @@ describe('Time Planning - Manager Assignment', () => {
       // Check if manager checkbox exists
       cy.get('body').then(($dialogBody) => {
         if ($dialogBody.find('#isManager').length > 0) {
-          // Get the checkbox element by ID
-          cy.get('#isManager').as('managerCheckbox');
-          
-          // Ensure checkbox is off initially
-          cy.get('@managerCheckbox').find('input[type="checkbox"]').then(($input) => {
-            if ($input.prop('checked')) {
+          // Ensure checkbox is off initially by checking the class
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
+            cy.log('Initial checkbox state: ' + currentState);
+            if (currentState && currentState.includes('mdc-checkbox--selected')) {
               // If it's checked, uncheck it first
-              cy.get('@managerCheckbox').click({force: true});
+              cy.log('Checkbox is checked, clicking to uncheck');
+              cy.get('#isManager').click({force: true});
+              cy.wait(500); // Wait for state change
             }
           });
           
-          // Verify it's off
-          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('not.be.checked');
+          // Verify it's off by checking it doesn't have the selected class
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
           
           // Verify tags field is not visible when checkbox is off
           cy.get('body').then(($checkBody) => {
@@ -240,8 +237,9 @@ describe('Time Planning - Manager Assignment', () => {
           });
           
           // Click checkbox to turn on
-          cy.get('@managerCheckbox').click({force: true});
-          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('be.checked');
+          cy.get('#isManager').click({force: true});
+          cy.wait(500); // Wait for state change
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
           
           // Wait a bit for the tags field to appear
           cy.wait(500);
@@ -424,23 +422,24 @@ describe('Time Planning - Manager Assignment', () => {
       // Check if manager checkbox exists
       cy.get('body').then(($dialogBody) => {
         if ($dialogBody.find('#isManager').length > 0) {
-          // Get the checkbox element by ID
-          cy.get('#isManager').as('managerCheckbox');
-          
-          // Ensure checkbox is off initially
-          cy.get('@managerCheckbox').find('input[type="checkbox"]').then(($input) => {
-            if ($input.prop('checked')) {
+          // Ensure checkbox is off initially by checking the class
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
+            cy.log('Initial checkbox state: ' + currentState);
+            if (currentState && currentState.includes('mdc-checkbox--selected')) {
               // If it's checked, uncheck it first
-              cy.get('@managerCheckbox').click({force: true});
+              cy.log('Checkbox is checked, clicking to uncheck');
+              cy.get('#isManager').click({force: true});
+              cy.wait(500); // Wait for state change
             }
           });
           
-          // Verify it's off
-          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('not.be.checked');
+          // Verify it's off by checking it doesn't have the selected class
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
           
           // Click checkbox to turn on
-          cy.get('@managerCheckbox').click({force: true});
-          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('be.checked');
+          cy.get('#isManager').click({force: true});
+          cy.wait(500); // Wait for state change
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
           
           // Wait for tags field to appear
           cy.wait(500);
@@ -484,10 +483,8 @@ describe('Time Planning - Manager Assignment', () => {
                   openAssignedSiteDialog();
                   goToGeneralTab();
                   
-                  // Check that the checkbox is on
-                  cy.get('#isManager')
-                    .find('input[type="checkbox"]')
-                    .should('be.checked');
+                  // Check that the checkbox is on using class check
+                  cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
                   
                   // Validate that the selected tag is shown
                   cy.get(selector).should('be.visible');
