@@ -133,7 +133,7 @@ describe('Time Planning - Manager Assignment', () => {
           // Ensure checkbox is off initially by checking the class
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Initial checkbox state: ' + currentState);
-            if (currentState && currentState.includes('mdc-checkbox--selected')) {
+            if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
               // If it's checked, uncheck it first
               cy.log('Checkbox is checked, clicking to uncheck');
               cy.get('#isManager').click({force: true});
@@ -141,13 +141,15 @@ describe('Time Planning - Manager Assignment', () => {
             }
           });
           
-          // Verify it's off by checking it doesn't have the selected class
-          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
+          // Verify it's off (has no selected class)
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control');
           
           // Click checkbox to turn on
           cy.get('#isManager').click({force: true});
           cy.wait(500); // Wait for state change
-          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
+          
+          // Verify it's on (has selected class)
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control mdc-checkbox--selected');
           
           // Save
           saveDialog();
@@ -156,13 +158,15 @@ describe('Time Planning - Manager Assignment', () => {
           openAssignedSiteDialog();
           goToGeneralTab();
           
-          // Check that the checkbox is on
-          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
+          // Verify checkbox is still on after save/reload
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control mdc-checkbox--selected');
           
           // Click checkbox to turn off
           cy.get('#isManager').click({force: true});
           cy.wait(500); // Wait for state change
-          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
+          
+          // Verify it's off (has no selected class)
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control');
           
           // Save
           saveDialog();
@@ -171,8 +175,8 @@ describe('Time Planning - Manager Assignment', () => {
           openAssignedSiteDialog();
           goToGeneralTab();
           
-          // Check that the checkbox is off
-          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
+          // Verify checkbox is still off after save/reload
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control');
           
           // Close dialog
           closeDialog();
@@ -215,7 +219,7 @@ describe('Time Planning - Manager Assignment', () => {
           // Ensure checkbox is off initially by checking the class
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Initial checkbox state: ' + currentState);
-            if (currentState && currentState.includes('mdc-checkbox--selected')) {
+            if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
               // If it's checked, uncheck it first
               cy.log('Checkbox is checked, clicking to uncheck');
               cy.get('#isManager').click({force: true});
@@ -223,8 +227,8 @@ describe('Time Planning - Manager Assignment', () => {
             }
           });
           
-          // Verify it's off by checking it doesn't have the selected class
-          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
+          // Verify it's off (has no selected class)
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control');
           
           // Verify tags field is not visible when checkbox is off
           cy.get('body').then(($checkBody) => {
@@ -239,7 +243,9 @@ describe('Time Planning - Manager Assignment', () => {
           // Click checkbox to turn on
           cy.get('#isManager').click({force: true});
           cy.wait(500); // Wait for state change
-          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
+          
+          // Verify it's on (has selected class)
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control mdc-checkbox--selected');
           
           // Wait a bit for the tags field to appear
           cy.wait(500);
@@ -425,7 +431,7 @@ describe('Time Planning - Manager Assignment', () => {
           // Ensure checkbox is off initially by checking the class
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Initial checkbox state: ' + currentState);
-            if (currentState && currentState.includes('mdc-checkbox--selected')) {
+            if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
               // If it's checked, uncheck it first
               cy.log('Checkbox is checked, clicking to uncheck');
               cy.get('#isManager').click({force: true});
@@ -433,13 +439,15 @@ describe('Time Planning - Manager Assignment', () => {
             }
           });
           
-          // Verify it's off by checking it doesn't have the selected class
-          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('not.include', 'mdc-checkbox--selected');
+          // Verify it's off (has no selected class)
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control');
           
           // Click checkbox to turn on
           cy.get('#isManager').click({force: true});
           cy.wait(500); // Wait for state change
-          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
+          
+          // Verify it's on (has selected class)
+          cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control mdc-checkbox--selected');
           
           // Wait for tags field to appear
           cy.wait(500);
@@ -483,8 +491,8 @@ describe('Time Planning - Manager Assignment', () => {
                   openAssignedSiteDialog();
                   goToGeneralTab();
                   
-                  // Check that the checkbox is on using class check
-                  cy.get('#isManager > div > div > input').invoke('attr', 'class').should('include', 'mdc-checkbox--selected');
+                  // Verify checkbox is on (has selected class)
+                  cy.get('#isManager > div > div > input').invoke('attr', 'class').should('eq', 'mdc-checkbox__native-control mdc-checkbox--selected');
                   
                   // Validate that the selected tag is shown
                   cy.get(selector).should('be.visible');
