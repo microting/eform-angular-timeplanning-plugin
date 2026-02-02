@@ -167,7 +167,7 @@
           <div>{{ 'Enable fifth shift' | translate }}</div>
         </mat-checkbox>
       </div>
-      
+
       <!-- Manager settings -->
       <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsAdmin$ | async">
         <mat-checkbox class="p-1"
@@ -195,7 +195,7 @@
           <mat-hint>{{ 'Select tags that this manager is responsible for' | translate }}</mat-hint>
         </mat-form-field>
       </div>
-      
+
       <div class="d-flex flex-row">
         <mat-checkbox class="p-1"
                       [id]="'resigned'"
