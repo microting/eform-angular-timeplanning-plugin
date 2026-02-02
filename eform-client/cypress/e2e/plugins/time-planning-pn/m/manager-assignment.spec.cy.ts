@@ -135,7 +135,7 @@ describe('Time Planning - Manager Assignment', () => {
             cy.log('Initial checkbox state: ' + currentState);
             if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
               cy.log('Checkbox is checked, clicking to uncheck');
-              cy.get('#isManager').click({force: true});
+              cy.get('#isManager').click();
               cy.wait(500);
             }
           });
@@ -145,7 +145,7 @@ describe('Time Planning - Manager Assignment', () => {
             cy.log('Checkbox state before turning on: ' + currentState);
             if (currentState !== 'mdc-checkbox__native-control mdc-checkbox--selected') {
               cy.log('Checkbox is off, clicking to turn on');
-              cy.get('#isManager').click({force: true});
+              cy.get('#isManager').click();
               cy.wait(500);
             }
           });
@@ -168,7 +168,7 @@ describe('Time Planning - Manager Assignment', () => {
             cy.log('Checkbox state before turning off: ' + currentState);
             if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
               cy.log('Checkbox is on, clicking to turn off');
-              cy.get('#isManager').click({force: true});
+              cy.get('#isManager').click();
               cy.wait(500);
             }
           });
@@ -229,7 +229,7 @@ describe('Time Planning - Manager Assignment', () => {
             cy.log('Initial checkbox state: ' + currentState);
             if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
               cy.log('Checkbox is checked, clicking to uncheck');
-              cy.get('#isManager').click({force: true});
+              cy.get('#isManager').click();
               cy.wait(500);
             }
           });
@@ -249,7 +249,7 @@ describe('Time Planning - Manager Assignment', () => {
             cy.log('Checkbox state before turning on: ' + currentState);
             if (currentState !== 'mdc-checkbox__native-control mdc-checkbox--selected') {
               cy.log('Checkbox is off, clicking to turn on');
-              cy.get('#isManager').click({force: true});
+              cy.get('#isManager').click();
               cy.wait(500);
             }
           });
@@ -267,7 +267,7 @@ describe('Time Planning - Manager Assignment', () => {
               cy.get(selector).should('be.visible');
               
               // Click on the tags field to open it
-              cy.get(selector).click({force: true});
+              cy.get(selector).click();
               
               // Wait for dropdown to open
               cy.wait(500);
@@ -440,7 +440,7 @@ describe('Time Planning - Manager Assignment', () => {
             cy.log('Initial checkbox state: ' + currentState);
             if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
               cy.log('Checkbox is checked, clicking to uncheck');
-              cy.get('#isManager').click({force: true});
+              cy.get('#isManager').click();
               cy.wait(500);
             }
           });
@@ -450,7 +450,7 @@ describe('Time Planning - Manager Assignment', () => {
             cy.log('Checkbox state before turning on: ' + currentState);
             if (currentState !== 'mdc-checkbox__native-control mdc-checkbox--selected') {
               cy.log('Checkbox is off, clicking to turn on');
-              cy.get('#isManager').click({force: true});
+              cy.get('#isManager').click();
               cy.wait(500);
             }
           });
@@ -467,7 +467,7 @@ describe('Time Planning - Manager Assignment', () => {
               cy.get(selector).should('be.visible');
               
               // Click on the tags field to open it
-              cy.get(selector).click({force: true});
+              cy.get(selector).click();
               
               // Wait for dropdown to load
               cy.wait(1000);
@@ -485,7 +485,7 @@ describe('Time Planning - Manager Assignment', () => {
                   cy.log(`Tag "${tagName}" found in dropdown`);
                   
                   // Select the tag
-                  cy.get('.ng-option').contains(tagName).click({force: true});
+                  cy.get('.ng-option').contains(tagName).click();
                   
                   // Verify tag is selected
                   cy.wait(500);
