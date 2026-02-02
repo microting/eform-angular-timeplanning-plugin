@@ -184,11 +184,14 @@
       <div class="d-flex flex-row" *ngIf="!data.resigned && data.isManager && selectCurrentUserIsAdmin$ | async">
         <mat-form-field class="p-1 w-100">
           <mat-label>{{ 'Managing Tags' | translate }}</mat-label>
-          <mat-select formControlName="managingTagIds" multiple>
-            <mat-option *ngFor="let tag of availableTags" [value]="tag.id">
-              {{ tag.name }}
-            </mat-option>
-          </mat-select>
+          <mtx-select
+            [items]="availableTags"
+            bindLabel="name"
+            bindValue="id"
+            [multiple]="true"
+            placeholder="{{ 'Select tags' | translate }}"
+            formControlName="managingTagIds">
+          </mtx-select>
           <mat-hint>{{ 'Select tags that this manager is responsible for' | translate }}</mat-hint>
         </mat-form-field>
       </div>

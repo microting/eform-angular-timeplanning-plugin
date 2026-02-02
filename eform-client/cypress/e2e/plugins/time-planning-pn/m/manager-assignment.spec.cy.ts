@@ -229,7 +229,7 @@ describe('Time Planning - Manager Assignment', () => {
           
           // Verify tags field is not visible when toggle is off
           cy.get('body').then(($checkBody) => {
-            const hasTagsField = $checkBody.find('mat-select[formcontrolname="managingTagIds"]').length > 0;
+            const hasTagsField = $checkBody.find('mtx-select[formcontrolname="managingTagIds"]').length > 0;
             
             if (hasTagsField) {
               // If tags field exists when toggle is off, it should not be visible
@@ -246,8 +246,8 @@ describe('Time Planning - Manager Assignment', () => {
           
           // Validate that the tags field is shown
           cy.get('body').then(($checkBody) => {
-            // The tags field is a mat-select with formcontrolname="managingTagIds"
-            const selector = 'mat-select[formcontrolname="managingTagIds"]';
+            // The tags field is a mtx-select with formcontrolname="managingTagIds"
+            const selector = 'mtx-select[formcontrolname="managingTagIds"]';
             
             if ($checkBody.find(selector).length > 0) {
               cy.log(`Tags field found with selector: ${selector}`);
@@ -259,39 +259,40 @@ describe('Time Planning - Manager Assignment', () => {
               // Wait for dropdown to open
               cy.wait(500);
               
-              // For mat-select, typing random text won't work since it doesn't have search by default
-              // Instead, we'll verify the dropdown is open and options are available
-              cy.get('body').then(($panelBody) => {
-                // Check if mat-select panel is visible
-                if ($panelBody.find('.mat-mdc-select-panel').length > 0) {
-                  cy.log('Mat-select dropdown opened successfully');
+              // Type random text to test search functionality
+              const randomText = 'random-nonexistent-tag-' + Math.random().toString(36).substring(7);
+              cy.get(selector).find('input').type(randomText);
+              
+              // Wait a bit to see if any errors occur
+              cy.wait(1000);
+              
+              // Verify no tags are shown for random text
+              cy.get('body').then(($dropdownBody) => {
+                // mtx-select uses ng-dropdown-panel
+                if ($dropdownBody.find('.ng-dropdown-panel').length > 0) {
+                  cy.log('Mtx-select dropdown opened successfully');
                   
-                  // Verify options are available or no items message
-                  cy.get('.mat-mdc-select-panel').then(($panel) => {
-                    const hasOptions = $panel.find('mat-option').length > 0;
+                  // Check for "No items found" or similar message
+                  cy.get('.ng-dropdown-panel').then(($panel) => {
+                    const hasOptions = $panel.find('.ng-option').length > 0;
                     const hasNoItems = $panel.text().includes('No items') || 
                                       $panel.text().includes('Ingen') ||
-                                      $panel.find('mat-option').length === 0;
+                                      $panel.find('.ng-option').length === 0;
                     
-                    if (hasOptions) {
-                      cy.log(`Mat-select has ${$panel.find('mat-option').length} tag options available`);
-                    } else if (hasNoItems) {
-                      cy.log('Mat-select shows no tags available (expected if no tags exist)');
+                    if (hasNoItems || !hasOptions) {
+                      cy.log('Mtx-select correctly shows no matching tags for random text');
+                    } else {
+                      cy.log(`Found ${$panel.find('.ng-option').length} options (unexpected for random text)`);
                     }
                   });
-                  
-                  // Close the dropdown by clicking outside
-                  cy.get('body').click(0, 0);
-                  cy.wait(500);
-                } else {
-                  cy.log('Mat-select panel not visible');
                 }
               });
               
-              // Wait to ensure no console errors occurred
-              cy.wait(1000);
+              // Close the dropdown by clicking outside
+              cy.get('body').click(0, 0);
+              cy.wait(500);
               
-              cy.log('Tags field test passed - dropdown handled without errors');
+              cy.log('Tags field test passed - random text handled without errors');
             } else {
               cy.log('Tags field not found - may not be visible or implemented yet');
             }
@@ -322,7 +323,7 @@ describe('Time Planning - Manager Assignment', () => {
    * - save
    * - go open the assigned-site-modal
    * - check that the toggle is on
-   * - validate that the selected tag is shown in the mat-select
+   * - validate that the selected tag is shown in the mtx-select
    */
   it('should create a tag, use it in assigned-site-modal, and persist the selection', () => {
     cy.get('body').then(($body) => {
@@ -444,7 +445,7 @@ describe('Time Planning - Manager Assignment', () => {
           
           // Validate that the tags field is shown
           cy.get('body').then(($checkBody) => {
-            const selector = 'mat-select[formcontrolname="managingTagIds"]';
+            const selector = 'mtx-select[formcontrolname="managingTagIds"]';
             
             if ($checkBody.find(selector).length > 0) {
               cy.log(`Tags field found with selector: ${selector}`);
@@ -456,14 +457,20 @@ describe('Time Planning - Manager Assignment', () => {
               // Wait for dropdown to load
               cy.wait(1000);
               
+              // Type the tag name to search for it
+              cy.get(selector).find('input').type(tagName);
+              
+              // Wait for search results
+              cy.wait(1000);
+              
               // Check if the tag appears in the dropdown
               cy.get('body').then(($dropdownBody) => {
                 if ($dropdownBody.text().includes(tagName) || 
-                    $dropdownBody.find(`mat-option:contains("${tagName}")`).length > 0) {
+                    $dropdownBody.find(`.ng-option:contains("${tagName}")`).length > 0) {
                   cy.log(`Tag "${tagName}" found in dropdown`);
                   
                   // Select the tag
-                  cy.get('mat-option').contains(tagName).click({force: true});
+                  cy.get('.ng-option').contains(tagName).click({force: true});
                   
                   // Verify tag is selected
                   cy.wait(500);
@@ -482,24 +489,15 @@ describe('Time Planning - Manager Assignment', () => {
                   // Validate that the selected tag is shown
                   cy.get(selector).should('be.visible');
                   
-                  // Click to open and verify the tag is selected
-                  cy.get(selector).click({force: true});
-                  cy.wait(500);
-                  
-                  // Check if the tag is selected (mat-option with aria-selected="true")
+                  // Check if the tag value is displayed in the mtx-select
                   cy.get('body').then(($selectedBody) => {
-                    if ($selectedBody.find(`mat-option[aria-selected="true"]:contains("${tagName}")`).length > 0) {
+                    if ($selectedBody.text().includes(tagName) ||
+                        $selectedBody.find(`.ng-value-label:contains("${tagName}")`).length > 0) {
                       cy.log(`Tag "${tagName}" is correctly shown as selected`);
-                    } else if ($selectedBody.text().includes(tagName)) {
-                      cy.log(`Tag "${tagName}" appears to be selected`);
                     } else {
-                      cy.log(`Tag selection state unclear but was saved`);
+                      cy.log(`Tag selection may not be visible but was saved`);
                     }
                   });
-                  
-                  // Close dropdown
-                  cy.get('body').click(0, 0);
-                  cy.wait(500);
                   
                   // Close dialog
                   closeDialog();
