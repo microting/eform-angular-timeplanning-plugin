@@ -170,7 +170,7 @@
       
       <!-- Manager settings -->
       <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsAdmin$ | async">
-        <mat-slide-toggle class="p-1"
+        <mat-checkbox class="p-1"
                       [id]="'isManager'"
                       [name]="'isManager'"
                       formControlName="isManager">
@@ -178,7 +178,7 @@
             <div>{{ 'Is Manager' | translate }}</div>
             <small class="checkbox-description">{{ 'Set this user as a manager' | translate }}</small>
           </div>
-        </mat-slide-toggle>
+        </mat-checkbox>
       </div>
       
       <div class="d-flex flex-row" *ngIf="!data.resigned && data.isManager && selectCurrentUserIsAdmin$ | async">

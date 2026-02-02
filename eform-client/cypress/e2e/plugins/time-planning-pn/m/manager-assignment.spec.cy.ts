@@ -102,15 +102,15 @@ describe('Time Planning - Manager Assignment', () => {
   };
 
   /**
-   * Test 1: Toggle IsManager on/off and verify it persists
+   * Test 1: Check/uncheck IsManager and verify it persists
    * - go to the assigned-site-modal
-   * - check that the toggle is off
-   * - switch the toggle to on and save
+   * - check that the checkbox is off
+   * - check the checkbox and save
    * - go open the assigned-site-modal
-   * - check that the toggle is on
-   * - switch the toggle to off and save
+   * - check that the checkbox is on
+   * - uncheck the checkbox and save
    * - go open the assigned-site-modal
-   * - check that the toggle is off
+   * - check that the checkbox is off
    */
   it('should toggle IsManager on and off and persist the state', () => {
     cy.get('body').then(($body) => {
@@ -127,42 +127,26 @@ describe('Time Planning - Manager Assignment', () => {
       // Navigate to General tab
       goToGeneralTab();
       
-      // Check that the toggle is off (or get initial state)
+      // Check that the checkbox is off (or get initial state)
       cy.get('body').then(($dialogBody) => {
         if ($dialogBody.find('#isManager').length > 0) {
-          // Get the toggle element by ID
-          cy.get('#isManager').as('managerToggle');
+          // Get the checkbox element by ID
+          cy.get('#isManager').as('managerCheckbox');
           
-          // Ensure toggle is off initially
-          cy.get('@managerToggle').then(($toggle) => {
-            if ($toggle.hasClass('mat-mdc-slide-toggle-checked')) {
-              // If it's on, turn it off first
-              cy.get('@managerToggle').click({force: true});
+          // Ensure checkbox is off initially
+          cy.get('@managerCheckbox').find('input[type="checkbox"]').then(($input) => {
+            if ($input.prop('checked')) {
+              // If it's checked, uncheck it first
+              cy.get('@managerCheckbox').click({force: true});
             }
           });
           
           // Verify it's off
-          cy.get('@managerToggle').should('not.have.class', 'mat-mdc-slide-toggle-checked');
+          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('not.be.checked');
           
-          // Switch toggle to on
-          cy.get('@managerToggle').click({force: true});
-          cy.get('@managerToggle').should('have.class', 'mat-mdc-slide-toggle-checked');
-          
-          // Save
-          saveDialog();
-          
-          // Re-open the dialog
-          openAssignedSiteDialog();
-          goToGeneralTab();
-          
-          // Check that the toggle is on
-          cy.get('#isManager')
-            .should('have.class', 'mat-mdc-slide-toggle-checked')
-            .as('managerToggleOn');
-          
-          // Switch toggle to off
-          cy.get('@managerToggleOn').click({force: true});
-          cy.get('@managerToggleOn').should('not.have.class', 'mat-mdc-slide-toggle-checked');
+          // Click checkbox to turn on
+          cy.get('@managerCheckbox').click({force: true});
+          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('be.checked');
           
           // Save
           saveDialog();
@@ -171,16 +155,34 @@ describe('Time Planning - Manager Assignment', () => {
           openAssignedSiteDialog();
           goToGeneralTab();
           
-          // Check that the toggle is off
+          // Check that the checkbox is on
           cy.get('#isManager')
-            .should('not.have.class', 'mat-mdc-slide-toggle-checked');
+            .find('input[type="checkbox"]')
+            .should('be.checked');
+          cy.get('#isManager').as('managerCheckboxOn');
+          
+          // Click checkbox to turn off
+          cy.get('@managerCheckboxOn').click({force: true});
+          cy.get('@managerCheckboxOn').find('input[type="checkbox"]').should('not.be.checked');
+          
+          // Save
+          saveDialog();
+          
+          // Re-open the dialog
+          openAssignedSiteDialog();
+          goToGeneralTab();
+          
+          // Check that the checkbox is off
+          cy.get('#isManager')
+            .find('input[type="checkbox"]')
+            .should('not.be.checked');
           
           // Close dialog
           closeDialog();
           
-          cy.log('Manager toggle test passed - state persists correctly');
+          cy.log('Manager checkbox test passed - state persists correctly');
         } else {
-          cy.log('Manager toggle not found - may not be implemented yet');
+          cy.log('Manager checkbox not found - may not be implemented yet');
           closeDialog();
         }
       });
@@ -190,12 +192,12 @@ describe('Time Planning - Manager Assignment', () => {
   /**
    * Test 2: Verify tags field shows when manager is on, test with random text
    * - go to the assigned-site-modal
-   * - check that the toggle is off
-   * - switch the toggle to on
+   * - check that the checkbox is off
+   * - check the checkbox to turn on
    * - validate that the tags field is shown
    * - write some random text and no tag should be shown and no error should be thrown in the console
    */
-  it('should show tags field when manager toggle is on and handle random text without errors', () => {
+  it('should show tags field when manager checkbox is on and handle random text without errors', () => {
     cy.get('body').then(($body) => {
       if ($body.find('#actionMenu').length === 0) {
         cy.log('Plugin menu not available - skipping test');
@@ -210,36 +212,36 @@ describe('Time Planning - Manager Assignment', () => {
       // Navigate to General tab
       goToGeneralTab();
       
-      // Check if manager toggle exists
+      // Check if manager checkbox exists
       cy.get('body').then(($dialogBody) => {
         if ($dialogBody.find('#isManager').length > 0) {
-          // Get the toggle element by ID
-          cy.get('#isManager').as('managerToggle');
+          // Get the checkbox element by ID
+          cy.get('#isManager').as('managerCheckbox');
           
-          // Ensure toggle is off initially
-          cy.get('@managerToggle').then(($toggle) => {
-            if ($toggle.hasClass('mat-mdc-slide-toggle-checked')) {
-              // If it's on, turn it off first
-              cy.get('@managerToggle').click({force: true});
+          // Ensure checkbox is off initially
+          cy.get('@managerCheckbox').find('input[type="checkbox"]').then(($input) => {
+            if ($input.prop('checked')) {
+              // If it's checked, uncheck it first
+              cy.get('@managerCheckbox').click({force: true});
             }
           });
           
           // Verify it's off
-          cy.get('@managerToggle').should('not.have.class', 'mat-mdc-slide-toggle-checked');
+          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('not.be.checked');
           
-          // Verify tags field is not visible when toggle is off
+          // Verify tags field is not visible when checkbox is off
           cy.get('body').then(($checkBody) => {
             const hasTagsField = $checkBody.find('mtx-select[formcontrolname="managingTagIds"]').length > 0;
             
             if (hasTagsField) {
-              // If tags field exists when toggle is off, it should not be visible
-              cy.log('Tags field found, checking visibility when toggle is off');
+              // If tags field exists when checkbox is off, it should not be visible
+              cy.log('Tags field found, checking visibility when checkbox is off');
             }
           });
           
-          // Switch toggle to on
-          cy.get('@managerToggle').click({force: true});
-          cy.get('@managerToggle').should('have.class', 'mat-mdc-slide-toggle-checked');
+          // Click checkbox to turn on
+          cy.get('@managerCheckbox').click({force: true});
+          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('be.checked');
           
           // Wait a bit for the tags field to appear
           cy.wait(500);
@@ -301,7 +303,7 @@ describe('Time Planning - Manager Assignment', () => {
           // Close dialog without saving
           closeDialog();
         } else {
-          cy.log('Manager toggle not found - may not be implemented yet');
+          cy.log('Manager checkbox not found - may not be implemented yet');
           closeDialog();
         }
       });
@@ -315,14 +317,14 @@ describe('Time Planning - Manager Assignment', () => {
    * - create a tag
    * - validate that the generated tag is available
    * - go to the assigned-site-modal
-   * - check that the toggle is off
-   * - switch the toggle to on
+   * - check that the checkbox is off
+   * - check the checkbox to turn on
    * - validate that the tags field is shown
    * - enter the tag created on the site tags management view
    * - validate that the tag is shown and then select it
    * - save
    * - go open the assigned-site-modal
-   * - check that the toggle is on
+   * - check that the checkbox is on
    * - validate that the selected tag is shown in the mtx-select
    */
   it('should create a tag, use it in assigned-site-modal, and persist the selection', () => {
@@ -419,26 +421,26 @@ describe('Time Planning - Manager Assignment', () => {
       // Navigate to General tab
       goToGeneralTab();
       
-      // Check if manager toggle exists
+      // Check if manager checkbox exists
       cy.get('body').then(($dialogBody) => {
         if ($dialogBody.find('#isManager').length > 0) {
-          // Get the toggle element by ID
-          cy.get('#isManager').as('managerToggle');
+          // Get the checkbox element by ID
+          cy.get('#isManager').as('managerCheckbox');
           
-          // Ensure toggle is off initially
-          cy.get('@managerToggle').then(($toggle) => {
-            if ($toggle.hasClass('mat-mdc-slide-toggle-checked')) {
-              // If it's on, turn it off first
-              cy.get('@managerToggle').click({force: true});
+          // Ensure checkbox is off initially
+          cy.get('@managerCheckbox').find('input[type="checkbox"]').then(($input) => {
+            if ($input.prop('checked')) {
+              // If it's checked, uncheck it first
+              cy.get('@managerCheckbox').click({force: true});
             }
           });
           
           // Verify it's off
-          cy.get('@managerToggle').should('not.have.class', 'mat-mdc-slide-toggle-checked');
+          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('not.be.checked');
           
-          // Switch toggle to on
-          cy.get('@managerToggle').click({force: true});
-          cy.get('@managerToggle').should('have.class', 'mat-mdc-slide-toggle-checked');
+          // Click checkbox to turn on
+          cy.get('@managerCheckbox').click({force: true});
+          cy.get('@managerCheckbox').find('input[type="checkbox"]').should('be.checked');
           
           // Wait for tags field to appear
           cy.wait(500);
@@ -482,9 +484,10 @@ describe('Time Planning - Manager Assignment', () => {
                   openAssignedSiteDialog();
                   goToGeneralTab();
                   
-                  // Check that the toggle is on
+                  // Check that the checkbox is on
                   cy.get('#isManager')
-                    .should('have.class', 'mat-mdc-slide-toggle-checked');
+                    .find('input[type="checkbox"]')
+                    .should('be.checked');
                   
                   // Validate that the selected tag is shown
                   cy.get(selector).should('be.visible');
@@ -517,7 +520,7 @@ describe('Time Planning - Manager Assignment', () => {
             }
           });
         } else {
-          cy.log('Manager toggle not found - may not be implemented yet');
+          cy.log('Manager checkbox not found - may not be implemented yet');
           closeDialog();
         }
       });
