@@ -88,11 +88,11 @@ describe('Time Planning - Manager Assignment', () => {
   const saveDialog = () => {
     cy.get('body').then(($body) => {
       if ($body.find('#saveButton').length > 0) {
-        cy.intercept('POST', '**/api/time-planning-pn/assigned-sites/update').as('site-update');
+        cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('site-update');
         cy.get('#saveButton').scrollIntoView().click({force: true});
         cy.wait('@site-update', {timeout: 10000});
       } else if ($body.find('button:contains("Save")').length > 0) {
-        cy.intercept('POST', '**/api/time-planning-pn/assigned-sites/update').as('site-update');
+        cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('site-update');
         cy.get('button').contains('Save').click({force: true});
         cy.wait('@site-update', {timeout: 10000});
       }
