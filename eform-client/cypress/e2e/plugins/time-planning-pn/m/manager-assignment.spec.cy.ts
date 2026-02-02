@@ -414,22 +414,28 @@ describe('Time Planning - Manager Assignment', () => {
    * - validate that the selected tag is shown in the mtx-select
    */
   it('should create a tag, use it in assigned-site-modal, and persist the selection', () => {
+    cy.task('log', `[Test 3] ========== Starting test - Create tag and persist selection at ${new Date().toISOString()} ==========`);
+    
     cy.get('body').then(($body) => {
       if ($body.find('#actionMenu').length === 0) {
-        cy.task('log', '[Time Planning Tests] Plugin menu not available - skipping test');
+        cy.task('log', '[Test 3] Plugin menu not available - skipping test');
         return;
       }
 
       // Generate a unique tag name
       const tagName = 'TestTag-' + Date.now();
+      cy.task('log', `[Test 3] Generated tag name: ${tagName}`);
       
       // Navigate to Advanced > Sites to access tags management
-      cy.task('log', '[Time Planning Tests] Navigating to Sites page for tags management');
+      cy.task('log', '[Test 3] Navigating to Sites page for tags management');
+      cy.task('log', `[Test 3] Current URL before navigation: ${Cypress.config().baseUrl}`);
       
       // Try to visit the sites page directly
       cy.visit('http://localhost:4200/advanced/sites');
+      cy.task('log', '[Test 3] Visited /advanced/sites, waiting 2 seconds for page load');
       cy.wait(2000);
       
+      cy.task('log', '[Test 3] Checking for tags management UI elements');
       // Look for create tag button or tags section
       cy.get('body').then(($sitesBody) => {
         // Try to find tags management UI
@@ -439,164 +445,208 @@ describe('Time Planning - Manager Assignment', () => {
                                    $sitesBody.find('[id*="newTag"]').length > 0;
         
         if (hasCreateTagButton) {
+          cy.task('log', '[Test 3] Create tag button found, clicking it');
           // Click create tag button
           if ($sitesBody.find('button:contains("Create tag")').length > 0) {
             cy.get('button').contains('Create tag').click();
+            cy.task('log', '[Test 3] Clicked "Create tag" button');
           } else if ($sitesBody.find('button:contains("New tag")').length > 0) {
             cy.get('button').contains('New tag').click();
+            cy.task('log', '[Test 3] Clicked "New tag" button');
           } else if ($sitesBody.find('[id*="createTag"]').length > 0) {
             cy.get('[id*="createTag"]').first().click();
+            cy.task('log', '[Test 3] Clicked element with createTag in ID');
           } else if ($sitesBody.find('[id*="newTag"]').length > 0) {
             cy.get('[id*="newTag"]').first().click();
+            cy.task('log', '[Test 3] Clicked element with newTag in ID');
           }
           
           // Wait for dialog or form to open
           cy.wait(1000);
+          cy.task('log', '[Test 3] Waited for tag creation dialog to open');
           
           // Enter tag name
           cy.get('body').then(($formBody) => {
+            cy.task('log', `[Test 3] Looking for tag name input field, will enter: ${tagName}`);
             // Look for tag name input
             if ($formBody.find('input[name="tagName"]').length > 0) {
               cy.get('input[name="tagName"]').type(tagName);
+              cy.task('log', `[Test 3] Entered tag name in input[name="tagName"]`);
             } else if ($formBody.find('input[formcontrolname="name"]').length > 0) {
               cy.get('input[formcontrolname="name"]').type(tagName);
+              cy.task('log', `[Test 3] Entered tag name in input[formcontrolname="name"]`);
             } else if ($formBody.find('input[placeholder*="name" i]').length > 0) {
               cy.get('input[placeholder*="name" i]').first().type(tagName);
+              cy.task('log', `[Test 3] Entered tag name in input with name placeholder`);
             } else {
               // Try to find any visible input in dialog
               cy.get('mat-dialog-container input[type="text"]').first().type(tagName);
+              cy.task('log', `[Test 3] Entered tag name in first text input in dialog`);
             }
             
+            cy.task('log', '[Test 3] Tag name entered, looking for Save button');
             // Save the tag
             cy.get('body').then(($saveBody) => {
               if ($saveBody.find('button:contains("Save")').length > 0) {
                 cy.intercept('POST', '**/api/tags').as('tag-create');
                 cy.get('button').contains('Save').click();
+                cy.task('log', '[Test 3] Clicked Save button, waiting for tag-create API call');
                 cy.wait('@tag-create', {timeout: 10000});
+                cy.task('log', '[Test 3] Tag-create API call completed');
               } else if ($saveBody.find('#saveButton').length > 0) {
                 cy.intercept('POST', '**/api/tags').as('tag-create');
                 cy.get('#saveButton').click();
+                cy.task('log', '[Test 3] Clicked #saveButton, waiting for tag-create API call');
                 cy.wait('@tag-create', {timeout: 10000});
+                cy.task('log', '[Test 3] Tag-create API call completed');
               }
             });
             
             // Wait for tag to be created
             cy.wait(1000);
+            cy.task('log', '[Test 3] Waited additional 1s after tag creation');
             
             // Validate that the tag appears in the list
             cy.get('body').then(($listBody) => {
               if ($listBody.text().includes(tagName)) {
-                cy.log(`Tag "${tagName}" created successfully`);
+                cy.task('log', `[Test 3] SUCCESS: Tag "${tagName}" found in list after creation`);
               } else {
-                cy.log(`Tag created but not visible in list yet`);
+                cy.task('log', `[Test 3] WARNING: Tag "${tagName}" not visible in list yet (may appear later)`);
               }
             });
           });
         } else {
-          cy.task('log', '[Time Planning Tests] Tags management UI not found on Sites page - skipping tag creation');
+          cy.task('log', '[Test 3] Tags management UI not found on Sites page - skipping tag creation');
           // Continue with rest of test without creating tag
         }
       });
       
+      cy.task('log', '[Test 3] ========== Navigating back to Time Planning Dashboard ==========');
       // Now navigate back to Time Planning Dashboard
       navigateToDashboard();
+      cy.task('log', '[Test 3] Back on Time Planning Dashboard');
       
+      cy.task('log', '[Test 3] Opening assigned site dialog...');
       // Open assigned site dialog
       openAssignedSiteDialog();
+      cy.task('log', '[Test 3] Assigned site dialog opened');
       
+      cy.task('log', '[Test 3] Navigating to General tab...');
       // Navigate to General tab
       goToGeneralTab();
+      cy.task('log', '[Test 3] On General tab now');
       
+      cy.task('log', '[Test 3] Checking if #isManager checkbox exists...');
       // Check if manager checkbox exists
       cy.get('body').then(($dialogBody) => {
         if ($dialogBody.find('#isManager').length > 0) {
+          cy.task('log', '[Test 3] Manager checkbox found, checking initial state');
           // Ensure checkbox is off initially
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
-            cy.log('Initial checkbox state: ' + currentState);
+            cy.task('log', `[Test 3] Initial checkbox state: ${currentState}`);
             if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
-              cy.task('log', '[Time Planning Tests] Checkbox is checked, clicking to uncheck');
+              cy.task('log', '[Test 3] Checkbox is initially checked, clicking to uncheck');
               cy.get('#isManager').click();
               cy.wait(500);
+              cy.task('log', '[Test 3] Checkbox unchecked');
+            } else {
+              cy.task('log', '[Test 3] Checkbox is initially unchecked (as expected)');
             }
           });
           
+          cy.task('log', '[Test 3] Now turning checkbox ON...');
           // Turn checkbox on
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
-            cy.log('Checkbox state before turning on: ' + currentState);
+            cy.task('log', `[Test 3] Checkbox state before turning on: ${currentState}`);
             if (currentState !== 'mdc-checkbox__native-control mdc-checkbox--selected') {
-              cy.task('log', '[Time Planning Tests] Checkbox is off, clicking to turn on');
+              cy.task('log', '[Test 3] Clicking checkbox to turn ON');
               cy.get('#isManager').click();
               cy.wait(500);
+              cy.task('log', '[Test 3] Checkbox should now be ON');
             }
           });
           
           // Wait for tags field to appear
           cy.wait(500);
+          cy.task('log', '[Test 3] Waited for tags field to appear');
           
           // Validate that the tags field is shown
           cy.get('body').then(($checkBody) => {
             const selector = 'mtx-select[formcontrolname="managingTagIds"]';
             
             if ($checkBody.find(selector).length > 0) {
-              cy.log(`Tags field found with selector: ${selector}`);
+              cy.task('log', `[Test 3] Tags field found with selector: ${selector}`);
               cy.get(selector).should('be.visible');
               
+              cy.task('log', `[Test 3] Clicking on tags field to open dropdown...`);
               // Click on the tags field to open it
               cy.get(selector).click();
               
               // Wait for dropdown to load
               cy.wait(1000);
+              cy.task('log', `[Test 3] Dropdown should be open, typing tag name: ${tagName}`);
               
               // Type the tag name to search for it
               cy.get(selector).find('input').type(tagName);
+              cy.task('log', `[Test 3] Typed "${tagName}" in search field`);
               
               // Wait for search results
               cy.wait(1000);
+              cy.task('log', '[Test 3] Waited for search results');
               
               // Check if the tag appears in the dropdown
               cy.get('body').then(($dropdownBody) => {
                 if ($dropdownBody.text().includes(tagName) || 
                     $dropdownBody.find(`.ng-option:contains("${tagName}")`).length > 0) {
-                  cy.log(`Tag "${tagName}" found in dropdown`);
+                  cy.task('log', `[Test 3] SUCCESS: Tag "${tagName}" found in dropdown, selecting it`);
                   
                   // Select the tag
                   cy.get('.ng-option').contains(tagName).click();
+                  cy.task('log', `[Test 3] Clicked on tag to select it`);
                   
                   // Verify tag is selected
                   cy.wait(500);
+                  cy.task('log', '[Test 3] Tag should be selected now');
                   
+                  cy.task('log', '[Test 3] Saving dialog with selected tag...');
                   // Save the dialog
                   saveDialog();
+                  cy.task('log', '[Test 3] Dialog saved');
                   
-                  // Re-open the dialog
+                  cy.task('log', '[Test 3] Re-opening dialog to verify persistence...');
                   openAssignedSiteDialog();
+                  cy.task('log', '[Test 3] Dialog reopened');
+                  
                   goToGeneralTab();
+                  cy.task('log', '[Test 3] On General tab for verification');
                   
                   // Verify checkbox is still on after save/reload
                   cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
-                    cy.log('Checkbox state after reload (should be on): ' + currentState);
+                    cy.task('log', `[Test 3] Checkbox state after reload: ${currentState} (should be ON)`);
                     expect(currentState).to.eq('mdc-checkbox__native-control mdc-checkbox--selected');
+                    cy.task('log', '[Test 3] Checkbox verified as still ON');
                   });
                   
                   // Validate that the selected tag is shown
                   cy.get(selector).should('be.visible');
+                  cy.task('log', '[Test 3] Tags field still visible after reload');
                   
                   // Check if the tag value is displayed in the mtx-select
                   cy.get('body').then(($selectedBody) => {
                     if ($selectedBody.text().includes(tagName) ||
                         $selectedBody.find(`.ng-value-label:contains("${tagName}")`).length > 0) {
-                      cy.log(`Tag "${tagName}" is correctly shown as selected`);
+                      cy.task('log', `[Test 3] SUCCESS: Tag "${tagName}" is still selected and visible`);
                     } else {
-                      cy.log(`Tag selection may not be visible but was saved`);
+                      cy.task('log', `[Test 3] WARNING: Tag "${tagName}" may not be visible but should be saved`);
                     }
                   });
                   
                   // Close dialog
                   closeDialog();
                   
-                  cy.task('log', '[Time Planning Tests] Tag creation and selection test passed');
+                  cy.task('log', '[Test 3] ========== TEST 3 PASSED - Tag creation and persistence verified ==========');
                 } else {
-                  cy.log(`Tag "${tagName}" not found in dropdown - may need time to sync or tag creation failed`);
+                  cy.task('log', `[Test 3] ERROR: Tag "${tagName}" not found in dropdown`);
                   // Close dropdown
                   cy.get('body').click(0, 0);
                   cy.wait(500);
@@ -604,16 +654,15 @@ describe('Time Planning - Manager Assignment', () => {
                 }
               });
             } else {
-              cy.task('log', '[Time Planning Tests] Tags field not found - may not be implemented yet');
+              cy.task('log', '[Test 3] ERROR: Tags field not found');
               closeDialog();
             }
           });
         } else {
-          cy.task('log', '[Time Planning Tests] Manager checkbox not found - may not be implemented yet');
+          cy.task('log', '[Test 3] ERROR: Manager checkbox not found');
           closeDialog();
         }
       });
     });
   });
 });
-
