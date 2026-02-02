@@ -428,7 +428,6 @@ describe('AssignedSiteDialogComponent', () => {
           { provide: MAT_DIALOG_DATA, useValue: dataWithManager },
           { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
           { provide: Store, useValue: mockStore },
-          { provide: ToastrService, useValue: mockToastrService }
         ]
       }).compileComponents();
       
