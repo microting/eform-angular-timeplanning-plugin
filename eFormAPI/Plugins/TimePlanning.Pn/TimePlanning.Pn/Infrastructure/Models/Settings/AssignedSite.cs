@@ -327,6 +327,7 @@ public class AssignedSite
             GpsEnabled = model.GpsEnabled,
             SnapshotEnabled = model.SnapshotEnabled,
             IsManager = model.IsManager,
+            ManagingTagIds = new List<int>(), // Loaded separately in GetAssignedSite
         };
     }
 }
