@@ -9,7 +9,7 @@ describe('Time Planning - Manager Assignment', () => {
 
   // Helper function to navigate to dashboard
   const navigateToDashboard = () => {
-    cy.then(() => console.log('[Time Planning Tests] Starting navigation to dashboard...'));
+    cy.task('log', '[Time Planning Tests] Starting navigation to dashboard...');
     pluginPage.Navbar.goToPluginsPage();
     
     cy.get('body').then(($body) => {
@@ -24,7 +24,7 @@ describe('Time Planning - Manager Assignment', () => {
       cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
       cy.get('#plugin-settings-link0').click();
       cy.wait('@settings-get', { timeout: 60000 });
-      cy.then(() => console.log('[Time Planning Tests] Settings loaded'));
+      cy.task('log', '[Time Planning Tests] Settings loaded');
 
       // Navigate to Dashboard
       cy.get('body').then(($body2) => {
@@ -42,19 +42,19 @@ describe('Time Planning - Manager Assignment', () => {
           cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
           cy.get('mat-tree-node').contains('Dashboard').click();
           cy.wait('@index-update', {timeout: 60000});
-          cy.then(() => console.log('[Time Planning Tests] Dashboard loaded, waiting for UI to stabilize...'));
+          cy.task('log', '[Time Planning Tests] Dashboard loaded, waiting for UI to stabilize...');
           
           // Wait for overlay spinner to disappear
           cy.get('body').then(($dashBody) => {
             if ($dashBody.find('.overlay-spinner').length > 0) {
-              cy.then(() => console.log('[Time Planning Tests] Overlay spinner detected, waiting for it to disappear...'));
+              cy.task('log', '[Time Planning Tests] Overlay spinner detected, waiting for it to disappear...');
               cy.get('.overlay-spinner', {timeout: 30000}).should('not.exist');
             }
           });
           
           // Additional wait for slow CI environment
           cy.wait(2000);
-          cy.then(() => console.log('[Time Planning Tests] Dashboard ready for interaction'));
+          cy.task('log', '[Time Planning Tests] Dashboard ready for interaction');
         });
       });
     });
@@ -62,65 +62,65 @@ describe('Time Planning - Manager Assignment', () => {
 
   // Helper function to open assigned site dialog
   const openAssignedSiteDialog = () => {
-    cy.then(() => console.log('[Time Planning Tests] Opening assigned site dialog...'));
+    cy.task('log', '[Time Planning Tests] Opening assigned site dialog...');
     
     // Wait for any overlay spinner to disappear before interacting
     cy.get('body').then(($body) => {
       if ($body.find('.overlay-spinner').length > 0) {
-        cy.then(() => console.log('[Time Planning Tests] Overlay spinner still present, waiting...'));
+        cy.task('log', '[Time Planning Tests] Overlay spinner still present, waiting...');
         cy.get('.overlay-spinner', {timeout: 30000}).should('not.exist');
       }
     });
     
     // Ensure workingHoursSite is ready and not covered
-    cy.then(() => console.log('[Time Planning Tests] Waiting for workingHoursSite to be ready...'));
+    cy.task('log', '[Time Planning Tests] Waiting for workingHoursSite to be ready...');
     cy.get('#workingHoursSite', {timeout: 10000}).should('be.visible');
     cy.wait(1000); // Additional wait for element to be fully interactive
     
     // Select a site if available
-    cy.then(() => console.log('[Time Planning Tests] Clicking workingHoursSite...'));
+    cy.task('log', '[Time Planning Tests] Clicking workingHoursSite...');
     cy.get('#workingHoursSite').click();
     
     // Wait for dropdown to open
     cy.wait(500);
     
     cy.get('.ng-option', {timeout: 10000}).should('have.length.greaterThan', 0);
-    cy.then(() => console.log('[Time Planning Tests] Selecting first site from dropdown...'));
+    cy.task('log', '[Time Planning Tests] Selecting first site from dropdown...');
     cy.get('.ng-option').first().click();
     
     // Wait for selection to complete
     cy.wait(1000);
     
     // Click on first data cell to open dialog
-    cy.then(() => console.log('[Time Planning Tests] Clicking on first data cell to open dialog...'));
+    cy.task('log', '[Time Planning Tests] Clicking on first data cell to open dialog...');
     cy.get('#firstColumn0', {timeout: 10000}).should('be.visible').click();
     
     // Wait for dialog to open
-    cy.then(() => console.log('[Time Planning Tests] Waiting for dialog to open...'));
+    cy.task('log', '[Time Planning Tests] Waiting for dialog to open...');
     cy.get('mat-dialog-container', {timeout: 10000}).should('be.visible');
     cy.wait(500);
-    cy.then(() => console.log('[Time Planning Tests] Dialog opened successfully'));
+    cy.task('log', '[Time Planning Tests] Dialog opened successfully');
   };
 
   // Helper function to navigate to General tab in dialog
   const goToGeneralTab = () => {
-    cy.then(() => console.log('[Time Planning Tests] Navigating to General tab...'));
+    cy.task('log', '[Time Planning Tests] Navigating to General tab...');
     cy.get('body').then(($body) => {
       if ($body.find('.mat-mdc-tab:contains("General")').length > 0) {
         cy.contains('.mat-mdc-tab', 'General')
           .scrollIntoView()
           .click({force: true});
         cy.wait(500); // Wait for tab content to load
-        cy.then(() => console.log('[Time Planning Tests] General tab selected'));
+        cy.task('log', '[Time Planning Tests] General tab selected');
       } else {
-        cy.then(() => console.log('[Time Planning Tests] General tab not found or already selected'));
+        cy.task('log', '[Time Planning Tests] General tab not found or already selected');
       }
     });
   };
 
   // Helper function to close dialog
   const closeDialog = () => {
-    cy.then(() => console.log('[Time Planning Tests] Closing dialog...'));
+    cy.task('log', '[Time Planning Tests] Closing dialog...');
     cy.get('body').then(($body) => {
       if ($body.find('#cancelButton').length > 0) {
         cy.get('#cancelButton').scrollIntoView().click({force: true});
@@ -130,50 +130,50 @@ describe('Time Planning - Manager Assignment', () => {
     });
     // Wait for dialog to close
     cy.get('mat-dialog-container', {timeout: 10000}).should('not.exist');
-    cy.then(() => console.log('[Time Planning Tests] Dialog closed'));
+    cy.task('log', '[Time Planning Tests] Dialog closed');
   };
 
   // Helper function to save dialog
   const saveDialog = () => {
-    cy.then(() => console.log('[Time Planning Tests] Saving dialog...'));
+    cy.task('log', '[Time Planning Tests] Saving dialog...');
     cy.get('body').then(($body) => {
       if ($body.find('#saveButton').length > 0) {
         cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('site-update');
         cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
         cy.get('#saveButton').scrollIntoView().click({force: true});
-        cy.then(() => console.log('[Time Planning Tests] Waiting for site-update API call...'));
+        cy.task('log', '[Time Planning Tests] Waiting for site-update API call...');
         cy.wait('@site-update', {timeout: 10000});
-        cy.then(() => console.log('[Time Planning Tests] Waiting for index-update API call...'));
+        cy.task('log', '[Time Planning Tests] Waiting for index-update API call...');
         cy.wait('@index-update', {timeout: 10000});
-        cy.then(() => console.log('[Time Planning Tests] API calls completed, waiting for UI to stabilize...'));
+        cy.task('log', '[Time Planning Tests] API calls completed, waiting for UI to stabilize...');
         cy.wait(2000); // Additional wait for slow CI environment
       } else if ($body.find('button:contains("Save")').length > 0) {
         cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('site-update');
         cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
         cy.get('button').contains('Save').click({force: true});
-        cy.then(() => console.log('[Time Planning Tests] Waiting for site-update API call...'));
+        cy.task('log', '[Time Planning Tests] Waiting for site-update API call...');
         cy.wait('@site-update', {timeout: 10000});
-        cy.then(() => console.log('[Time Planning Tests] Waiting for index-update API call...'));
+        cy.task('log', '[Time Planning Tests] Waiting for index-update API call...');
         cy.wait('@index-update', {timeout: 10000});
-        cy.then(() => console.log('[Time Planning Tests] API calls completed, waiting for UI to stabilize...'));
+        cy.task('log', '[Time Planning Tests] API calls completed, waiting for UI to stabilize...');
         cy.wait(2000); // Additional wait for slow CI environment
       }
     });
     // Wait for dialog to close
-    cy.then(() => console.log('[Time Planning Tests] Waiting for dialog to close...'));
+    cy.task('log', '[Time Planning Tests] Waiting for dialog to close...');
     cy.get('mat-dialog-container', {timeout: 10000}).should('not.exist');
     
     // Wait for overlay spinner to disappear after dialog closes
     cy.get('body').then(($body) => {
       if ($body.find('.overlay-spinner').length > 0) {
-        cy.then(() => console.log('[Time Planning Tests] Overlay spinner detected after save, waiting for it to disappear...'));
+        cy.task('log', '[Time Planning Tests] Overlay spinner detected after save, waiting for it to disappear...');
         cy.get('.overlay-spinner', {timeout: 30000}).should('not.exist');
       }
     });
     
     // Additional wait for dashboard to be fully ready
     cy.wait(2000);
-    cy.then(() => console.log('[Time Planning Tests] Dialog saved and closed, dashboard ready'));
+    cy.task('log', '[Time Planning Tests] Dialog saved and closed, dashboard ready');
   };
 
   /**
@@ -190,7 +190,7 @@ describe('Time Planning - Manager Assignment', () => {
   it('should toggle IsManager on and off and persist the state', () => {
     cy.get('body').then(($body) => {
       if ($body.find('#actionMenu').length === 0) {
-        cy.then(() => console.log('[Time Planning Tests] Plugin menu not available - skipping test'));
+        cy.task('log', '[Time Planning Tests] Plugin menu not available - skipping test');
         return;
       }
 
@@ -209,7 +209,7 @@ describe('Time Planning - Manager Assignment', () => {
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Initial checkbox state: ' + currentState);
             if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
-              cy.then(() => console.log('[Time Planning Tests] Checkbox is checked, clicking to uncheck'));
+              cy.task('log', '[Time Planning Tests] Checkbox is checked, clicking to uncheck');
               cy.get('#isManager').click();
               cy.wait(500);
             }
@@ -219,7 +219,7 @@ describe('Time Planning - Manager Assignment', () => {
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Checkbox state before turning on: ' + currentState);
             if (currentState !== 'mdc-checkbox__native-control mdc-checkbox--selected') {
-              cy.then(() => console.log('[Time Planning Tests] Checkbox is off, clicking to turn on'));
+              cy.task('log', '[Time Planning Tests] Checkbox is off, clicking to turn on');
               cy.get('#isManager').click();
               cy.wait(500);
             }
@@ -242,7 +242,7 @@ describe('Time Planning - Manager Assignment', () => {
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Checkbox state before turning off: ' + currentState);
             if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
-              cy.then(() => console.log('[Time Planning Tests] Checkbox is on, clicking to turn off'));
+              cy.task('log', '[Time Planning Tests] Checkbox is on, clicking to turn off');
               cy.get('#isManager').click();
               cy.wait(500);
             }
@@ -264,9 +264,9 @@ describe('Time Planning - Manager Assignment', () => {
           // Close dialog
           closeDialog();
           
-          cy.then(() => console.log('[Time Planning Tests] Manager checkbox test passed - state persists correctly'));
+          cy.task('log', '[Time Planning Tests] Manager checkbox test passed - state persists correctly');
         } else {
-          cy.then(() => console.log('[Time Planning Tests] Manager checkbox not found - may not be implemented yet'));
+          cy.task('log', '[Time Planning Tests] Manager checkbox not found - may not be implemented yet');
           closeDialog();
         }
       });
@@ -284,7 +284,7 @@ describe('Time Planning - Manager Assignment', () => {
   it('should show tags field when manager checkbox is on and handle random text without errors', () => {
     cy.get('body').then(($body) => {
       if ($body.find('#actionMenu').length === 0) {
-        cy.then(() => console.log('[Time Planning Tests] Plugin menu not available - skipping test'));
+        cy.task('log', '[Time Planning Tests] Plugin menu not available - skipping test');
         return;
       }
 
@@ -303,7 +303,7 @@ describe('Time Planning - Manager Assignment', () => {
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Initial checkbox state: ' + currentState);
             if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
-              cy.then(() => console.log('[Time Planning Tests] Checkbox is checked, clicking to uncheck'));
+              cy.task('log', '[Time Planning Tests] Checkbox is checked, clicking to uncheck');
               cy.get('#isManager').click();
               cy.wait(500);
             }
@@ -315,7 +315,7 @@ describe('Time Planning - Manager Assignment', () => {
             
             if (hasTagsField) {
               // If tags field exists when checkbox is off, it should not be visible
-              cy.then(() => console.log('[Time Planning Tests] Tags field found, checking visibility when checkbox is off'));
+              cy.task('log', '[Time Planning Tests] Tags field found, checking visibility when checkbox is off');
             }
           });
           
@@ -323,7 +323,7 @@ describe('Time Planning - Manager Assignment', () => {
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Checkbox state before turning on: ' + currentState);
             if (currentState !== 'mdc-checkbox__native-control mdc-checkbox--selected') {
-              cy.then(() => console.log('[Time Planning Tests] Checkbox is off, clicking to turn on'));
+              cy.task('log', '[Time Planning Tests] Checkbox is off, clicking to turn on');
               cy.get('#isManager').click();
               cy.wait(500);
             }
@@ -358,7 +358,7 @@ describe('Time Planning - Manager Assignment', () => {
               cy.get('body').then(($dropdownBody) => {
                 // mtx-select uses ng-dropdown-panel
                 if ($dropdownBody.find('.ng-dropdown-panel').length > 0) {
-                  cy.then(() => console.log('[Time Planning Tests] Mtx-select dropdown opened successfully'));
+                  cy.task('log', '[Time Planning Tests] Mtx-select dropdown opened successfully');
                   
                   // Check for "No items found" or similar message
                   cy.get('.ng-dropdown-panel').then(($panel) => {
@@ -368,7 +368,7 @@ describe('Time Planning - Manager Assignment', () => {
                                       $panel.find('.ng-option').length === 0;
                     
                     if (hasNoItems || !hasOptions) {
-                      cy.then(() => console.log('[Time Planning Tests] Mtx-select correctly shows no matching tags for random text'));
+                      cy.task('log', '[Time Planning Tests] Mtx-select correctly shows no matching tags for random text');
                     } else {
                       cy.log(`Found ${$panel.find('.ng-option').length} options (unexpected for random text)`);
                     }
@@ -380,16 +380,16 @@ describe('Time Planning - Manager Assignment', () => {
               cy.get('body').click(0, 0);
               cy.wait(500);
               
-              cy.then(() => console.log('[Time Planning Tests] Tags field test passed - random text handled without errors'));
+              cy.task('log', '[Time Planning Tests] Tags field test passed - random text handled without errors');
             } else {
-              cy.then(() => console.log('[Time Planning Tests] Tags field not found - may not be visible or implemented yet'));
+              cy.task('log', '[Time Planning Tests] Tags field not found - may not be visible or implemented yet');
             }
           });
           
           // Close dialog without saving
           closeDialog();
         } else {
-          cy.then(() => console.log('[Time Planning Tests] Manager checkbox not found - may not be implemented yet'));
+          cy.task('log', '[Time Planning Tests] Manager checkbox not found - may not be implemented yet');
           closeDialog();
         }
       });
@@ -416,7 +416,7 @@ describe('Time Planning - Manager Assignment', () => {
   it('should create a tag, use it in assigned-site-modal, and persist the selection', () => {
     cy.get('body').then(($body) => {
       if ($body.find('#actionMenu').length === 0) {
-        cy.then(() => console.log('[Time Planning Tests] Plugin menu not available - skipping test'));
+        cy.task('log', '[Time Planning Tests] Plugin menu not available - skipping test');
         return;
       }
 
@@ -424,7 +424,7 @@ describe('Time Planning - Manager Assignment', () => {
       const tagName = 'TestTag-' + Date.now();
       
       // Navigate to Advanced > Sites to access tags management
-      cy.then(() => console.log('[Time Planning Tests] Navigating to Sites page for tags management'));
+      cy.task('log', '[Time Planning Tests] Navigating to Sites page for tags management');
       
       // Try to visit the sites page directly
       cy.visit('http://localhost:4200/advanced/sites');
@@ -493,7 +493,7 @@ describe('Time Planning - Manager Assignment', () => {
             });
           });
         } else {
-          cy.then(() => console.log('[Time Planning Tests] Tags management UI not found on Sites page - skipping tag creation'));
+          cy.task('log', '[Time Planning Tests] Tags management UI not found on Sites page - skipping tag creation');
           // Continue with rest of test without creating tag
         }
       });
@@ -514,7 +514,7 @@ describe('Time Planning - Manager Assignment', () => {
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Initial checkbox state: ' + currentState);
             if (currentState === 'mdc-checkbox__native-control mdc-checkbox--selected') {
-              cy.then(() => console.log('[Time Planning Tests] Checkbox is checked, clicking to uncheck'));
+              cy.task('log', '[Time Planning Tests] Checkbox is checked, clicking to uncheck');
               cy.get('#isManager').click();
               cy.wait(500);
             }
@@ -524,7 +524,7 @@ describe('Time Planning - Manager Assignment', () => {
           cy.get('#isManager > div > div > input').invoke('attr', 'class').then(currentState => {
             cy.log('Checkbox state before turning on: ' + currentState);
             if (currentState !== 'mdc-checkbox__native-control mdc-checkbox--selected') {
-              cy.then(() => console.log('[Time Planning Tests] Checkbox is off, clicking to turn on'));
+              cy.task('log', '[Time Planning Tests] Checkbox is off, clicking to turn on');
               cy.get('#isManager').click();
               cy.wait(500);
             }
@@ -594,7 +594,7 @@ describe('Time Planning - Manager Assignment', () => {
                   // Close dialog
                   closeDialog();
                   
-                  cy.then(() => console.log('[Time Planning Tests] Tag creation and selection test passed'));
+                  cy.task('log', '[Time Planning Tests] Tag creation and selection test passed');
                 } else {
                   cy.log(`Tag "${tagName}" not found in dropdown - may need time to sync or tag creation failed`);
                   // Close dropdown
@@ -604,12 +604,12 @@ describe('Time Planning - Manager Assignment', () => {
                 }
               });
             } else {
-              cy.then(() => console.log('[Time Planning Tests] Tags field not found - may not be implemented yet'));
+              cy.task('log', '[Time Planning Tests] Tags field not found - may not be implemented yet');
               closeDialog();
             }
           });
         } else {
-          cy.then(() => console.log('[Time Planning Tests] Manager checkbox not found - may not be implemented yet'));
+          cy.task('log', '[Time Planning Tests] Manager checkbox not found - may not be implemented yet');
           closeDialog();
         }
       });
