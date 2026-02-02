@@ -93,12 +93,14 @@ describe('Time Planning - Manager Assignment', () => {
         cy.get('#saveButton').scrollIntoView().click({force: true});
         cy.wait('@site-update', {timeout: 10000});
         cy.wait('@index-update', {timeout: 10000});
+        cy.wait(2000); // Additional wait for slow CI environment
       } else if ($body.find('button:contains("Save")').length > 0) {
         cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('site-update');
         cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
         cy.get('button').contains('Save').click({force: true});
         cy.wait('@site-update', {timeout: 10000});
         cy.wait('@index-update', {timeout: 10000});
+        cy.wait(2000); // Additional wait for slow CI environment
       }
     });
     // Wait for dialog to close
