@@ -9,6 +9,7 @@ describe('Time Planning - Manager Assignment', () => {
 
   // Helper function to navigate to dashboard
   const navigateToDashboard = () => {
+    cy.log('Starting navigation to dashboard...');
     pluginPage.Navbar.goToPluginsPage();
     
     cy.get('body').then(($body) => {
@@ -23,6 +24,7 @@ describe('Time Planning - Manager Assignment', () => {
       cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
       cy.get('#plugin-settings-link0').click();
       cy.wait('@settings-get', { timeout: 60000 });
+      cy.log('Settings loaded');
 
       // Navigate to Dashboard
       cy.get('body').then(($body2) => {
@@ -40,6 +42,19 @@ describe('Time Planning - Manager Assignment', () => {
           cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
           cy.get('mat-tree-node').contains('Dashboard').click();
           cy.wait('@index-update', {timeout: 60000});
+          cy.log('Dashboard loaded, waiting for UI to stabilize...');
+          
+          // Wait for overlay spinner to disappear
+          cy.get('body').then(($dashBody) => {
+            if ($dashBody.find('.overlay-spinner').length > 0) {
+              cy.log('Overlay spinner detected, waiting for it to disappear...');
+              cy.get('.overlay-spinner', {timeout: 30000}).should('not.exist');
+            }
+          });
+          
+          // Additional wait for slow CI environment
+          cy.wait(2000);
+          cy.log('Dashboard ready for interaction');
         });
       });
     });
@@ -47,32 +62,65 @@ describe('Time Planning - Manager Assignment', () => {
 
   // Helper function to open assigned site dialog
   const openAssignedSiteDialog = () => {
-    // Select a site if available
-    cy.get('#workingHoursSite').should('be.visible').click();
+    cy.log('Opening assigned site dialog...');
     
-    cy.get('.ng-option').should('have.length.greaterThan', 0);
+    // Wait for any overlay spinner to disappear before interacting
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.log('Overlay spinner still present, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.exist');
+      }
+    });
+    
+    // Ensure workingHoursSite is ready and not covered
+    cy.log('Waiting for workingHoursSite to be ready...');
+    cy.get('#workingHoursSite', {timeout: 10000}).should('be.visible');
+    cy.wait(1000); // Additional wait for element to be fully interactive
+    
+    // Select a site if available
+    cy.log('Clicking workingHoursSite...');
+    cy.get('#workingHoursSite').click();
+    
+    // Wait for dropdown to open
+    cy.wait(500);
+    
+    cy.get('.ng-option', {timeout: 10000}).should('have.length.greaterThan', 0);
+    cy.log('Selecting first site from dropdown...');
     cy.get('.ng-option').first().click();
     
+    // Wait for selection to complete
+    cy.wait(1000);
+    
     // Click on first data cell to open dialog
-    cy.get('#firstColumn0').should('be.visible').click();
+    cy.log('Clicking on first data cell to open dialog...');
+    cy.get('#firstColumn0', {timeout: 10000}).should('be.visible').click();
     
     // Wait for dialog to open
+    cy.log('Waiting for dialog to open...');
     cy.get('mat-dialog-container', {timeout: 10000}).should('be.visible');
+    cy.wait(500);
+    cy.log('Dialog opened successfully');
   };
 
   // Helper function to navigate to General tab in dialog
   const goToGeneralTab = () => {
+    cy.log('Navigating to General tab...');
     cy.get('body').then(($body) => {
       if ($body.find('.mat-mdc-tab:contains("General")').length > 0) {
         cy.contains('.mat-mdc-tab', 'General')
           .scrollIntoView()
           .click({force: true});
+        cy.wait(500); // Wait for tab content to load
+        cy.log('General tab selected');
+      } else {
+        cy.log('General tab not found or already selected');
       }
     });
   };
 
   // Helper function to close dialog
   const closeDialog = () => {
+    cy.log('Closing dialog...');
     cy.get('body').then(($body) => {
       if ($body.find('#cancelButton').length > 0) {
         cy.get('#cancelButton').scrollIntoView().click({force: true});
@@ -81,30 +129,51 @@ describe('Time Planning - Manager Assignment', () => {
       }
     });
     // Wait for dialog to close
-    cy.get('mat-dialog-container').should('not.exist');
+    cy.get('mat-dialog-container', {timeout: 10000}).should('not.exist');
+    cy.log('Dialog closed');
   };
 
   // Helper function to save dialog
   const saveDialog = () => {
+    cy.log('Saving dialog...');
     cy.get('body').then(($body) => {
       if ($body.find('#saveButton').length > 0) {
         cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('site-update');
         cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
         cy.get('#saveButton').scrollIntoView().click({force: true});
+        cy.log('Waiting for site-update API call...');
         cy.wait('@site-update', {timeout: 10000});
+        cy.log('Waiting for index-update API call...');
         cy.wait('@index-update', {timeout: 10000});
+        cy.log('API calls completed, waiting for UI to stabilize...');
         cy.wait(2000); // Additional wait for slow CI environment
       } else if ($body.find('button:contains("Save")').length > 0) {
         cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('site-update');
         cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
         cy.get('button').contains('Save').click({force: true});
+        cy.log('Waiting for site-update API call...');
         cy.wait('@site-update', {timeout: 10000});
+        cy.log('Waiting for index-update API call...');
         cy.wait('@index-update', {timeout: 10000});
+        cy.log('API calls completed, waiting for UI to stabilize...');
         cy.wait(2000); // Additional wait for slow CI environment
       }
     });
     // Wait for dialog to close
-    cy.get('mat-dialog-container').should('not.exist');
+    cy.log('Waiting for dialog to close...');
+    cy.get('mat-dialog-container', {timeout: 10000}).should('not.exist');
+    
+    // Wait for overlay spinner to disappear after dialog closes
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.log('Overlay spinner detected after save, waiting for it to disappear...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.exist');
+      }
+    });
+    
+    // Additional wait for dashboard to be fully ready
+    cy.wait(2000);
+    cy.log('Dialog saved and closed, dashboard ready');
   };
 
   /**
