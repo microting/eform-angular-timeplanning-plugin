@@ -256,11 +256,35 @@ describe('Dashboard assert', () => {
     });
     cy.task('log', '[Folder b - Dashboard Assert] Index updated successfully');
     cy.task('log', '[Folder b - Dashboard Assert] Clicking firstColumn3');
+    // Wait for spinner before clicking firstColumn3
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before firstColumn3 click, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with firstColumn3 click');
+      }
+    });
     cy.get('#firstColumn3').click();
     cy.task('log', '[Folder b - Dashboard Assert] Clicking useGoogleSheetAsDefault checkbox');
+    // Wait for spinner before clicking checkbox
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before checkbox click, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with checkbox click');
+      }
+    });
     cy.get('#useGoogleSheetAsDefault').click();
     cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('assign-site');
     cy.task('log', '[Folder b - Dashboard Assert] Clicking Save button');
+    // Wait for spinner before clicking Save button
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before Save button click, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with Save button click');
+      }
+    });
     cy.get('#saveButton').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for assign-site API call');
     cy.wait('@assign-site', {timeout: 60000});
@@ -277,8 +301,24 @@ describe('Dashboard assert', () => {
     cy.task('log', '[Folder b - Dashboard Assert] Index updated successfully');
     cy.wait(2000);
     cy.task('log', '[Folder b - Dashboard Assert] Clicking Timeregistrering menu again');
+    // Wait for spinner before clicking Timeregistrering menu
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before Timeregistrering menu click, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with Timeregistrering menu click');
+      }
+    });
     cy.get('mat-tree-node').contains('Timeregistrering').click();
     cy.task('log', '[Folder b - Dashboard Assert] Clicking toolbar button');
+    // Wait for spinner before clicking toolbar button
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before toolbar button click, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with toolbar button click');
+      }
+    });
     cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
     cy.task('log', '[Folder b - Dashboard Assert] Setting workingHoursSite to "c d"');
     cy.get('#workingHoursSite').clear().type('c d');
@@ -608,10 +648,34 @@ describe('Dashboard assert', () => {
   it('should go to dashboard after updating planText to new values and they should change in dashboard', () => {
     cy.task('log', '[Folder b - Dashboard Assert] ========== Test: Update planText to new values ==========');
     cy.task('log', '[Folder b - Dashboard Assert] Clicking Timeregistrering nested menu');
+    // Wait for spinner before clicking Timeregistrering nested menu
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before Timeregistrering nested menu click, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with Timeregistrering nested menu click');
+      }
+    });
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
     cy.task('log', '[Folder b - Dashboard Assert] Clicking Timeregistrering tree menu');
+    // Wait for spinner before clicking Timeregistrering tree menu
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before Timeregistrering tree menu click, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with Timeregistrering tree menu click');
+      }
+    });
     cy.get('mat-tree-node').contains('Timeregistrering').click();
     cy.task('log', '[Folder b - Dashboard Assert] Clicking toolbar button');
+    // Wait for spinner before clicking toolbar button
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before toolbar button click, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with toolbar button click');
+      }
+    });
     cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
     cy.task('log', '[Folder b - Dashboard Assert] Setting workingHoursSite to "c d"');
     cy.get('#workingHoursSite').clear().type('c d');
@@ -652,6 +716,14 @@ describe('Dashboard assert', () => {
     cy.task('log', '[Folder b - Dashboard Assert] Setting up intercept for save');
     cy.intercept('PUT', '**/api/time-planning-pn/working-hours').as('save');
     cy.task('log', '[Folder b - Dashboard Assert] Clicking workingHoursSave button');
+    // Wait for spinner before clicking workingHoursSave button
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before workingHoursSave click, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with workingHoursSave click');
+      }
+    });
     cy.get('#workingHoursSave').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for save API call');
     cy.wait('@save');
