@@ -115,6 +115,12 @@ describe('WorkdayEntityDialogComponent', () => {
     } as any;
     mockDialogRef = {
       close: jest.fn(),
+      _containerInstance: {
+        _config: {
+          width: '600px',
+          height: 'auto'
+        }
+      }
     } as any;
 
     mockTranslateService.instant.mockReturnValue('Translated');
