@@ -459,11 +459,14 @@ describe('Time Planning - Manager Assignment', () => {
       cy.task('log', '[Test 3] Checking for tags management UI elements');
       // Look for create tag button with mat-icon containing tag/discount/offer icons
       cy.get('body').then(($sitesBody) => {
-        // Try to find tags button by mat-icon
-        const hasTagIconButton = $sitesBody.find('button mat-icon').filter((i, el) => {
+        // Helper function to filter mat-icons for tag icons
+        const isTagIcon = (el) => {
           const text = Cypress.$(el).text().trim();
           return text === 'discount' || text === 'local_offer' || text === 'sell';
-        }).length > 0;
+        };
+        
+        // Try to find tags button by mat-icon
+        const hasTagIconButton = $sitesBody.find('button mat-icon').filter((i, el) => isTagIcon(el)).length > 0;
         
         if (!hasTagIconButton) {
           throw new Error('[Test 3] FAILED: Tags button with mat-icon (discount/local_offer/sell) not found on Sites page');
@@ -471,10 +474,7 @@ describe('Time Planning - Manager Assignment', () => {
         
         cy.task('log', '[Test 3] Tags button with mat-icon found, clicking it');
         // Click the tags button
-        cy.get('button').find('mat-icon').filter((i, el) => {
-          const text = Cypress.$(el).text().trim();
-          return text === 'discount' || text === 'local_offer' || text === 'sell';
-        }).parents('button').first().click();
+        cy.get('button').find('mat-icon').filter((i, el) => isTagIcon(el)).parents('button').first().click();
         cy.task('log', '[Test 3] Clicked tags button');
           
           // Wait for dialog or form to open
