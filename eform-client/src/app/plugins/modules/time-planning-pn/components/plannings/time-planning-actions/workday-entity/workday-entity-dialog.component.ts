@@ -50,7 +50,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   protected datePipe = inject(DatePipe);
   private translateService = inject(TranslateService);
   private dialogRef = inject(MatDialogRef<WorkdayEntityDialogComponent>);
-
+  private originalDialogWidth: string = '600px';
+  private originalDialogHeight: string = 'auto';
 
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
   protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
@@ -99,6 +100,10 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     // Enum-opsætning
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.nettoHoursOverrideActive = this.data.planningPrDayModels.nettoHoursOverrideActive;
+    // Store original dialog dimensions at initialization
+    const dialogConfig = this.dialogRef._containerInstance._config;
+    this.originalDialogWidth = dialogConfig.width || '600px';
+    this.originalDialogHeight = dialogConfig.height || 'auto';
 
 
     const m = this.data.planningPrDayModels;
@@ -1692,7 +1697,9 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.selectedSnapshot = null;
     this.mapUrl = null;
     this.snapshotUrl = null;
-    this.dialogRef.updateSize('1024px', '500px');
+
+    // Restore original dialog size
+    this.dialogRef.updateSize(this.originalDialogWidth, this.originalDialogHeight);
   }
 
   ngOnDestroy(): void {
