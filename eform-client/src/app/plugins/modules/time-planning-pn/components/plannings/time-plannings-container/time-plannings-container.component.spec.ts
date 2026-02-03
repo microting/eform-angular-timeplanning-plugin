@@ -122,7 +122,7 @@ describe('TimePlanningsContainerComponent', () => {
   describe('Event Handlers', () => {
     it('should call getPlannings when onTimePlanningChanged is triggered', () => {
       jest.spyOn(component, 'getPlannings');
-      
+
       component.onTimePlanningChanged({});
 
       expect(component.getPlannings).toHaveBeenCalled();
@@ -130,7 +130,7 @@ describe('TimePlanningsContainerComponent', () => {
 
     it('should call getPlannings when onAssignedSiteChanged is triggered', () => {
       jest.spyOn(component, 'getPlannings');
-      
+
       component.onAssignedSiteChanged({});
 
       expect(component.getPlannings).toHaveBeenCalled();
@@ -139,7 +139,7 @@ describe('TimePlanningsContainerComponent', () => {
     it('should update siteId and call getPlannings when onSiteChanged is triggered', () => {
       jest.spyOn(component, 'getPlannings');
       const testSiteId = 123;
-      
+
       component.onSiteChanged(testSiteId);
 
       expect(component.siteId).toBe(testSiteId);
@@ -162,7 +162,7 @@ describe('TimePlanningsContainerComponent', () => {
   describe('Show Resigned Sites', () => {
     it('should load resigned sites when showResignedSites is true', () => {
       mockSettingsService.getResignedSites.mockReturnValue(of({ success: true, model: [{ id: 1, name: 'Resigned Site' }] } as any));
-      
+
       component.onShowResignedSitesChanged({ checked: true });
 
       expect(mockSettingsService.getResignedSites).toHaveBeenCalled();
@@ -172,7 +172,7 @@ describe('TimePlanningsContainerComponent', () => {
     it('should load available sites when showResignedSites is false', () => {
       component.showResignedSites = true;
       mockSettingsService.getAvailableSites.mockReturnValue(of({ success: true, model: [{ id: 1, name: 'Available Site' }] } as any));
-      
+
       component.onShowResignedSitesChanged({ checked: false });
 
       expect(mockSettingsService.getAvailableSites).toHaveBeenCalled();

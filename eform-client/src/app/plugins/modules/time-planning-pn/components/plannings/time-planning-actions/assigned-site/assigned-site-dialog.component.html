@@ -169,8 +169,8 @@
       </div>
 
       <!-- Manager settings -->
-      <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsFirstUser$ | async">
-        <mat-slide-toggle class="p-1"
+      <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsAdmin$ | async">
+        <mat-checkbox class="p-1"
                       [id]="'isManager'"
                       [name]="'isManager'"
                       formControlName="isManager">
@@ -178,17 +178,20 @@
             <div>{{ 'Is Manager' | translate }}</div>
             <small class="checkbox-description">{{ 'Set this user as a manager' | translate }}</small>
           </div>
-        </mat-slide-toggle>
+        </mat-checkbox>
       </div>
-
-      <div class="d-flex flex-row" *ngIf="!data.resigned && assignedSiteForm.get('isManager')?.value && selectCurrentUserIsAdmin$ | async">
+      
+      <div class="d-flex flex-row" *ngIf="!data.resigned && data.isManager && selectCurrentUserIsAdmin$ | async">
         <mat-form-field class="p-1 w-100">
           <mat-label>{{ 'Managing Tags' | translate }}</mat-label>
-          <mat-select formControlName="managingTagIds" multiple>
-            <mat-option *ngFor="let tag of availableTags" [value]="tag.id">
-              {{ tag.name }}
-            </mat-option>
-          </mat-select>
+          <mtx-select
+            [items]="availableTags"
+            bindLabel="name"
+            bindValue="id"
+            [multiple]="true"
+            placeholder="{{ 'Select tags' | translate }}"
+            formControlName="managingTagIds">
+          </mtx-select>
           <mat-hint>{{ 'Select tags that this manager is responsible for' | translate }}</mat-hint>
         </mat-form-field>
       </div>

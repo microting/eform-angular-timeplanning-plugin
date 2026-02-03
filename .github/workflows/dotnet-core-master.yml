@@ -29,6 +29,7 @@ jobs:
         cp -av eform-angular-timeplanning-plugin/eform-client/e2e/Page\ objects/TimePlanning eform-angular-frontend/eform-client/e2e/Page\ objects/TimePlanning
         cp -av eform-angular-timeplanning-plugin/eform-client/wdio-headless-plugin-step2a.conf.ts eform-angular-frontend/eform-client/wdio-headless-plugin-step2a.conf.ts
         cp -av eform-angular-timeplanning-plugin/eform-client/wdio-plugin-step2.conf.ts eform-angular-frontend/eform-client/wdio-plugin-step2.conf.ts
+        cp -av eform-angular-timeplanning-plugin/eform-client/cypress.config.ts eform-angular-frontend/eform-client/cypress.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
     - name: Copy Dockerfile
       run: cp eform-angular-timeplanning-plugin/Dockerfile .
@@ -140,6 +141,7 @@ jobs:
         mkdir -p eform-angular-frontend/eform-client/cypress/fixtures/
         cp -av eform-angular-timeplanning-plugin/eform-client/cypress/fixtures eform-angular-frontend/eform-client/cypress
         cp -av eform-angular-timeplanning-plugin/eform-client/cypress/e2e/plugins/time-planning-pn eform-angular-frontend/eform-client/cypress/e2e/plugins/time-planning-pn
+        cp -av eform-angular-timeplanning-plugin/eform-client/cypress.config.ts eform-angular-frontend/eform-client/cypress.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
     - name: yarn install
       run: cd eform-angular-frontend/eform-client && yarn install

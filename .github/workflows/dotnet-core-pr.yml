@@ -131,6 +131,7 @@ jobs:
         mkdir -p eform-angular-frontend/eform-client/cypress/fixtures/
         cp -av eform-angular-timeplanning-plugin/eform-client/cypress/fixtures eform-angular-frontend/eform-client/cypress
         cp -av eform-angular-timeplanning-plugin/eform-client/cypress/e2e/plugins/time-planning-pn eform-angular-frontend/eform-client/cypress/e2e/plugins/time-planning-pn
+        cp -av eform-angular-timeplanning-plugin/eform-client/cypress.config.ts eform-angular-frontend/eform-client/cypress.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
     - name: yarn install
       run: cd eform-angular-frontend/eform-client && yarn install

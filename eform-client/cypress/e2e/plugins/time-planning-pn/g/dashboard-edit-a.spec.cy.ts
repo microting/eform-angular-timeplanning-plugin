@@ -19,6 +19,13 @@ describe('Dashboard edit values', () => {
 
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder g] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.get('#workingHoursSite').click();
     cy.get('.ng-option').contains('ac ad').click();
     cy.get('#cell0_0').click();
