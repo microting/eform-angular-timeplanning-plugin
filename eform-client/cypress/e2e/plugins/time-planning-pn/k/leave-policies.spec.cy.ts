@@ -24,7 +24,7 @@ describe('Time Planning - Leave policies', () => {
 
     pluginPage.Navbar.goToPluginsPage();
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
 
     cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('plannings-index');
@@ -33,6 +33,7 @@ describe('Time Planning - Leave policies', () => {
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.wait('@plannings-index', { timeout: 60000 });
+    cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
 
     cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple')
       .first()
@@ -43,6 +44,7 @@ describe('Time Planning - Leave policies', () => {
     cy.get('.ng-option.ng-option-marked').click();
 
     cy.wait('@plannings-index', { timeout: 60000 });
+    cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
   });
 
   it('should set and persist all leave policies in dashboard planning table', () => {
@@ -77,6 +79,7 @@ describe('Time Planning - Leave policies', () => {
 
       cy.wait('@planning-save', { timeout: 60000 });
       cy.wait('@plannings-index-after-save', { timeout: 60000 });
+      cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
 
       cy.wait(1000);
 

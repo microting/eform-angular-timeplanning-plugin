@@ -16,7 +16,7 @@ describe('Enable Backend Config plugin', () => {
     cy.wait(500);
 
     // Click the status button inside the menu to enable the plugin
-    cy.get('#plugin-status-button0').should('be.visible').click();
+    cy.get('#plugin-status-button0').scrollIntoView().should('be.visible').click();
     cy.wait(500);
 
     // Confirm activation in the modal if present

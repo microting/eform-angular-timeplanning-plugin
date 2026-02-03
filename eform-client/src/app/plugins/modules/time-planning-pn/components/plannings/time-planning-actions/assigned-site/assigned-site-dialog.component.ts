@@ -17,8 +17,6 @@ import {
   ReactiveFormsModule,
   FormControl,
 } from '@angular/forms';
-import {HttpClient} from '@angular/common/http';
-import {ToastrService} from 'ngx-toastr';
 
 
 @Component({
@@ -32,8 +30,6 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   public data = inject<AssignedSiteModel>(MAT_DIALOG_DATA);
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
   private store = inject(Store);
-  private http = inject(HttpClient);
-  private toastrService = inject(ToastrService);
 
   assignedSiteForm!: FormGroup;
 
@@ -61,7 +57,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
       }
     });
     
-    // Load available tags from eForm core API
+    // Load available tags from eForm core API via service
     this.loadAvailableTags();
     
     if (!this.data.resigned) {
@@ -578,19 +574,17 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   }
 
   loadAvailableTags(): void {
-    this.http.get<{success: boolean, model: CommonTagModel[]}>('/api/tags')
-      .subscribe({
-        next: (result) => {
-          if (result && result.success) {
-            this.availableTags = result.model || [];
-          }
-        },
-        error: (error) => {
-          console.error('Error loading tags:', error);
-          this.toastrService.error('Failed to load available tags. Please try again.', 'Error');
-          this.availableTags = [];
+    this.timePlanningPnSettingsService.getAvailableTags().subscribe({
+      next: (result) => {
+        if (result && result.success) {
+          this.availableTags = result.model || [];
         }
-      });
+      },
+      error: (error) => {
+        console.error('Error loading tags:', error);
+        this.availableTags = [];
+      }
+    });
   }
 
 }
