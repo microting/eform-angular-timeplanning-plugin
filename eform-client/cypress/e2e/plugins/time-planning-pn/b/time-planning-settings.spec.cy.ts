@@ -16,7 +16,7 @@ describe('Enable Backend Config plugin', () => {
     cy.task('log', '[Folder b - Settings] ========== Test: Validate default Time registration plugin settings ==========');
     cy.task('log', '[Folder b - Settings] Clicking action menu');
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Settings] Setting up intercept for settings-get');
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
@@ -30,7 +30,7 @@ describe('Enable Backend Config plugin', () => {
     const googleSheetIdInputField = cy.get('.flex-cards.mt-3 mat-form-field');
     googleSheetIdInputField
       .should('have.length', 1)
-      .should('be.visible');
+      .scrollIntoView().should('be.visible');
     googleSheetIdInputField
       .should('have.attr', 'class')
       .and('not.include', 'mat-form-field-disabled');
@@ -39,7 +39,7 @@ describe('Enable Backend Config plugin', () => {
     const disabledInputFields = cy.get('.flex-cards.mt-4 mat-form-field');
     disabledInputFields
       .should('have.length', 22)
-      .should('be.visible');
+      .scrollIntoView().should('be.visible');
     disabledInputFields
       .should('have.attr', 'class')
       .and('include', 'mat-form-field-disabled');
@@ -81,7 +81,7 @@ describe('Enable Backend Config plugin', () => {
       let breakMinutesDividerInputField = cy.get(`#${breakMinutesDividerFieldId}`);
       breakMinutesDividerInputField
         .should('have.length', 1)
-        .should('be.visible');
+        .scrollIntoView().should('be.visible');
       breakMinutesDividerInputField
         .should('have.attr', 'disabled');
 
@@ -93,7 +93,7 @@ describe('Enable Backend Config plugin', () => {
       let breakMinutesPrDividerInputField = cy.get(`#${breakMinutesPrDividerFieldId}`);
       breakMinutesPrDividerInputField
         .should('have.length', 1)
-        .should('be.visible');
+        .scrollIntoView().should('be.visible');
       breakMinutesPrDividerInputField
         .should('have.attr', 'disabled');
 
@@ -105,7 +105,7 @@ describe('Enable Backend Config plugin', () => {
       let breakMinutesUpperLimitInputField = cy.get(`#${breakMinutesUpperLimitFieldId}`);
       breakMinutesUpperLimitInputField
         .should('have.length', 1)
-        .should('be.visible');
+        .scrollIntoView().should('be.visible');
       breakMinutesUpperLimitInputField
         .should('have.attr', 'disabled');
 
@@ -117,7 +117,7 @@ describe('Enable Backend Config plugin', () => {
     cy.task('log', '[Folder b - Settings] Verifying autoBreakCalculationActiveToggle');
     let autoBreakCalculationToggle = cy.get('#autoBreakCalculationActiveToggle');
     autoBreakCalculationToggle
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .should('not.be.checked');
     cy.task('log', '[Folder b - Settings] Clicking autoBreakCalculationActiveToggle');
     autoBreakCalculationToggle.click();
@@ -129,7 +129,7 @@ describe('Enable Backend Config plugin', () => {
     const enabledInputFields = cy.get('.flex-cards.mt-4 mat-form-field');
     enabledInputFields
       .should('have.length', 22)
-      .should('be.visible');
+      .scrollIntoView().should('be.visible');
     enabledInputFields
       .should('have.attr', 'class')
       .and('not.include', 'mat-form-field-disabled');
@@ -140,7 +140,7 @@ describe('Enable Backend Config plugin', () => {
     cy.task('log', '[Folder b - Settings] ========== Test: Activate auto calculation break times ==========');
     cy.task('log', '[Folder b - Settings] Clicking action menu');
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Settings] Setting up intercept for settings-get');
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
@@ -153,7 +153,7 @@ describe('Enable Backend Config plugin', () => {
     const googleSheetIdInputField = cy.get('.flex-cards.mt-3 mat-form-field');
     googleSheetIdInputField
       .should('have.length', 1)
-      .should('be.visible');
+      .scrollIntoView().should('be.visible');
     googleSheetIdInputField
       .should('have.attr', 'class')
       .and('not.include', 'mat-form-field-disabled');
@@ -161,7 +161,7 @@ describe('Enable Backend Config plugin', () => {
     const disabledInputFields = cy.get('.flex-cards.mt-4 mat-form-field');
     disabledInputFields
       .should('have.length', 22)
-      .should('be.visible');
+      .scrollIntoView().should('be.visible');
     disabledInputFields
       .should('have.attr', 'class')
       .and('include', 'mat-form-field-disabled');
@@ -198,7 +198,7 @@ describe('Enable Backend Config plugin', () => {
     cy.task('log', '[Folder b - Settings] Clicking autoBreakCalculationActiveToggle');
     let autoBreakCalculationToggle = cy.get('#autoBreakCalculationActiveToggle');
     autoBreakCalculationToggle
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .should('not.be.checked');
     autoBreakCalculationToggle.click();
     autoBreakCalculationToggle = cy.get('#autoBreakCalculationActiveToggle div button');
@@ -210,7 +210,7 @@ describe('Enable Backend Config plugin', () => {
     const enabledInputFields = cy.get('.flex-cards.mt-4 mat-form-field');
     enabledInputFields
       .should('have.length', 22)
-      .should('be.visible');
+      .scrollIntoView().should('be.visible');
     enabledInputFields
       .should('have.attr', 'class')
       .and('not.include', 'mat-form-field-disabled');
@@ -223,7 +223,7 @@ describe('Enable Backend Config plugin', () => {
       let breakMinutesDividerInputField = cy.get(`#${breakMinutesDividerFieldId}`);
       breakMinutesDividerInputField
         .should('have.length', 1)
-        .should('be.visible');
+        .scrollIntoView().should('be.visible');
       breakMinutesDividerInputField
         .should('have.attr', 'class')
         .and('not.include', 'mat-form-field-disabled');
@@ -244,7 +244,7 @@ describe('Enable Backend Config plugin', () => {
       let breakMinutesPrDividerInputField = cy.get(`#${breakMinutesPrDividerFieldId}`);
       breakMinutesPrDividerInputField
         .should('have.length', 1)
-        .should('be.visible');
+        .scrollIntoView().should('be.visible');
       breakMinutesPrDividerInputField
         .should('have.attr', 'class')
         .and('not.include', 'mat-form-field-disabled');
@@ -264,7 +264,7 @@ describe('Enable Backend Config plugin', () => {
           let breakMinutesUpperLimitInputField = cy.get(`#${breakMinutesUpperLimitFieldId}`);
       breakMinutesUpperLimitInputField
         .should('have.length', 1)
-        .should('be.visible');
+        .scrollIntoView().should('be.visible');
       breakMinutesUpperLimitInputField
         .should('have.attr', 'class')
         .and('not.include', 'mat-form-field-disabled');
@@ -302,7 +302,7 @@ describe('Enable Backend Config plugin', () => {
 
     cy.task('log', '[Folder b - Settings] Clicking action menu to verify settings');
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Settings] Setting up intercept for settings-get');
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
@@ -320,7 +320,7 @@ describe('Enable Backend Config plugin', () => {
       let breakMinutesDividerInputField = cy.get(`#${breakMinutesDividerFieldId}`);
       breakMinutesDividerInputField
         .should('have.length', 1)
-        .should('be.visible');
+        .scrollIntoView().should('be.visible');
       breakMinutesDividerInputField
         .should('have.attr', 'class')
         .and('not.include', 'mat-form-field-disabled');
@@ -333,7 +333,7 @@ describe('Enable Backend Config plugin', () => {
       let breakMinutesPrDividerInputField = cy.get(`#${breakMinutesPrDividerFieldId}`);
       breakMinutesPrDividerInputField
         .should('have.length', 1)
-        .should('be.visible');
+        .scrollIntoView().should('be.visible');
       breakMinutesPrDividerInputField
         .should('have.attr', 'class')
         .and('not.include', 'mat-form-field-disabled');
@@ -346,7 +346,7 @@ describe('Enable Backend Config plugin', () => {
       let breakMinutesUpperLimitInputField = cy.get(`#${breakMinutesUpperLimitFieldId}`);
       breakMinutesUpperLimitInputField
         .should('have.length', 1)
-        .should('be.visible');
+        .scrollIntoView().should('be.visible');
       breakMinutesUpperLimitInputField
         .should('have.attr', 'class')
         .and('not.include', 'mat-form-field-disabled');
@@ -365,7 +365,7 @@ describe('Enable Backend Config plugin', () => {
     // Navigate to settings page
     cy.task('log', '[Folder b - Settings] Clicking action menu');
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Settings] Setting up intercept for settings-get');
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
@@ -403,7 +403,7 @@ describe('Enable Backend Config plugin', () => {
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-2');
     cy.get('#plugin-settings-link0').click();
@@ -439,7 +439,7 @@ describe('Enable Backend Config plugin', () => {
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-3');
     cy.get('#plugin-settings-link0').click();
@@ -474,7 +474,7 @@ describe('Enable Backend Config plugin', () => {
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-4');
     cy.get('#plugin-settings-link0').click();
@@ -510,7 +510,7 @@ describe('Enable Backend Config plugin', () => {
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-5');
     cy.get('#plugin-settings-link0').click();

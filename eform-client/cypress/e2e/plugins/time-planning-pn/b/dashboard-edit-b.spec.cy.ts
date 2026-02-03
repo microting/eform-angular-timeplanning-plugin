@@ -163,7 +163,7 @@ describe('Dashboard edit values', () => {
       cy.task('log', `[Folder b - Dashboard Edit B] Clicking cell3_${i} to open dialog`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
       cy.task('log', `[Folder b - Dashboard Edit B] Setting actual times: start=${secondUpdateActualTexts[i].start1StartedAt}, stop=${secondUpdateActualTexts[i].stop1StoppedAt}`);
 
       if (secondUpdateActualTexts[i].start1StartedAt !== '' && secondUpdateActualTexts[i].start1StartedAt !== '00:00') {

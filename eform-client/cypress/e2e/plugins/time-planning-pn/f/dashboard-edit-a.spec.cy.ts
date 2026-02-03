@@ -52,7 +52,7 @@ describe('Dashboard edit values', () => {
   const assertInputError = (errorTestId: string, expectedMessage: string) => {
     cy.wait(1000);
     cy.get(`[data-testid="${errorTestId}"]`)
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .and('contain', expectedMessage);
   };
 

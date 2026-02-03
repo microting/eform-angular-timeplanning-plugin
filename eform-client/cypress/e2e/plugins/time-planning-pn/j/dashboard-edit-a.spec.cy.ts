@@ -14,7 +14,7 @@ describe('Dashboard edit values', () => {
     pluginPage.Navbar.goToPluginsPage();
     cy.task('log', '[Folder j - Auto Break Settings] Clicking action menu');
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
     cy.task('log', '[Folder j - Auto Break Settings] Clicking plugin settings link');
@@ -90,7 +90,7 @@ describe('Dashboard edit values', () => {
 
     cy.task('log', '[Folder j - Auto Break Settings] Waiting for dialog to appear');
     cy.get('mat-dialog-container', {timeout: 10000})
-      .should('be.visible');
+      .scrollIntoView().should('be.visible');
     cy.task('log', '[Folder j - Auto Break Settings] Dialog is visible');
 
     // Ensure the checkbox is active
@@ -134,7 +134,7 @@ describe('Dashboard edit values', () => {
     // Capture all current input values
     cy.task('log', '[Folder j - Auto Break Settings] Capturing all current input values');
     cy.get('mat-dialog-container mat-tab-body[aria-hidden="false"]', {timeout: 10000})
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .within(() => {
         cy.get('input[readonly="true"]', {timeout: 10000})
           .should('have.length.at.least', 3)
@@ -178,7 +178,7 @@ describe('Dashboard edit values', () => {
     cy.get('#firstColumn0').click();
 
     cy.task('log', '[Folder j - Auto Break Settings] Waiting for dialog to reappear');
-    cy.get('mat-dialog-container', {timeout: 500}).should('be.visible');
+    cy.get('mat-dialog-container', {timeout: 500}).scrollIntoView().should('be.visible');
     cy.task('log', '[Folder j - Auto Break Settings] Dialog is visible');
 
     cy.task('log', '[Folder j - Auto Break Settings] Clicking "Auto break calculation settings" tab again');

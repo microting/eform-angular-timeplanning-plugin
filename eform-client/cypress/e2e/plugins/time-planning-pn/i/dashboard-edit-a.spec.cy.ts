@@ -80,7 +80,7 @@ describe('Dashboard edit values', () => {
         cy.task('log', `[Folder i - Dashboard Edit] Setting paidOutFlex to: ${actualValue}`);
 
         cy.get('#paidOutFlex')
-          .should('be.visible')
+          .scrollIntoView().should('be.visible')
           .clear({ force: true })
           .type(actualValue, { delay: 0, force: true });
 
@@ -126,7 +126,7 @@ describe('Dashboard edit values', () => {
 
     cy.task('log', '[Folder i - Dashboard Edit] Resetting paidOutFlex to 0');
     cy.get('#paidOutFlex')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .clear({ force: true })
       .type('0', { delay: 0, force: true });
 

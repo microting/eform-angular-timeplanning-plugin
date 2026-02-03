@@ -24,7 +24,7 @@ describe('Time Planning - Leave policies', () => {
 
     pluginPage.Navbar.goToPluginsPage();
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
 
     cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('plannings-index');

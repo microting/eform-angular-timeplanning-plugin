@@ -10,9 +10,9 @@ describe('Time Planning - Absence Requests', () => {
   });
 
   it('should display absence requests inbox view', () => {
-    cy.get('#absenceRequestsInboxBtn').should('be.visible');
+    cy.get('#absenceRequestsInboxBtn').scrollIntoView().should('be.visible');
     cy.get('#absenceRequestsMineBtn').should('be.visible');
-    cy.get('#time-planning-pn-absence-requests-grid').should('be.visible');
+    cy.get('#time-planning-pn-absence-requests-grid').scrollIntoView().should('be.visible');
   });
 
   it('should switch between inbox and my requests views', () => {
@@ -52,7 +52,7 @@ describe('Time Planning - Absence Requests', () => {
         cy.get('[id^="approveAbsenceRequestBtn-"]').first().click();
         
         cy.get('h3[mat-dialog-title]').should('contain', 'Approve Absence Request');
-        cy.get('#saveApproveBtn').should('be.visible');
+        cy.get('#saveApproveBtn').scrollIntoView().should('be.visible');
         cy.get('#cancelApproveBtn').should('be.visible');
         
         cy.get('#cancelApproveBtn').click();
@@ -71,7 +71,7 @@ describe('Time Planning - Absence Requests', () => {
         cy.get('[id^="rejectAbsenceRequestBtn-"]').first().click();
         
         cy.get('h3[mat-dialog-title]').should('contain', 'Reject Absence Request');
-        cy.get('#saveRejectBtn').should('be.visible');
+        cy.get('#saveRejectBtn').scrollIntoView().should('be.visible');
         cy.get('#cancelRejectBtn').should('be.visible');
         
         cy.get('#cancelRejectBtn').click();

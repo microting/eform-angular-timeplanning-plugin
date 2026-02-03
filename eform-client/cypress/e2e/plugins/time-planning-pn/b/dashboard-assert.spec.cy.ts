@@ -422,7 +422,7 @@ describe('Dashboard assert', () => {
 
     cy.task('log', '[Folder b - Dashboard Assert] Clicking action menu');
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Dashboard Assert] Setting up intercept for settings-get');
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
@@ -489,7 +489,7 @@ describe('Dashboard assert', () => {
       cy.task('log', `[Folder b - Dashboard Assert] Clicking cell0_${i}`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
       cy.task('log', `[Folder b - Dashboard Assert] Verifying values: planHours=${planTexts[i].calculatedHours}, shift1=${planTexts[i].plannedStartOfShift1}-${planTexts[i].plannedEndOfShift1}`);
       cy.get('#planHours').should('have.value', planTexts[i].calculatedHours);
       cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', planTexts[i].plannedStartOfShift1);
@@ -543,7 +543,7 @@ describe('Dashboard assert', () => {
       cy.task('log', `[Folder b - Dashboard Assert] Clicking cell0_${i}`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
       cy.task('log', `[Folder b - Dashboard Assert] Verifying planHours=${planTextsNextWeek[i].calculatedHours}`);
       cy.get('#planHours').should('have.value', planTextsNextWeek[i].calculatedHours);
       cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', planTextsNextWeek[i].plannedStartOfShift1);
@@ -590,7 +590,7 @@ describe('Dashboard assert', () => {
       cy.task('log', `[Folder b - Dashboard Assert] Clicking cell0_${i}`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
       cy.task('log', `[Folder b - Dashboard Assert] Verifying planHours=${planTextsFutureWeek[i].calculatedHours}`);
       cy.get('#planHours').should('have.value', planTextsFutureWeek[i].calculatedHours);
       cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', planTextsFutureWeek[i].plannedStartOfShift1);
@@ -807,7 +807,7 @@ describe('Dashboard assert', () => {
       cy.task('log', `[Folder b - Dashboard Assert] Clicking cell0_${i}`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
       cy.task('log', `[Folder b - Dashboard Assert] Verifying planHours=${updatePlanTexts[i].calculatedHours}`);
       cy.get('#planHours').should('include.value', updatePlanTexts[i].calculatedHours);
       cy.get('[data-testid="plannedStartOfShift1"]').should('include.value', updatePlanTexts[i].plannedStartOfShift1);
@@ -862,7 +862,7 @@ describe('Dashboard assert', () => {
 
       cy.task('log', `[Folder b - Dashboard Assert] Clicking cell0_${i}`);
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
       cy.task('log', `[Folder b - Dashboard Assert] Verifying planHours=${updatePlanTextsNextWeek[i].calculatedHours}`);
       cy.get('#planHours').should('include.value', updatePlanTextsNextWeek[i].calculatedHours);
       cy.get('[data-testid="plannedStartOfShift1"]').should('include.value', updatePlanTextsNextWeek[i].plannedStartOfShift1);
@@ -909,7 +909,7 @@ describe('Dashboard assert', () => {
       }
       cy.task('log', `[Folder b - Dashboard Assert] Clicking cell0_${i}`);
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
       cy.task('log', `[Folder b - Dashboard Assert] Verifying planHours=${updatePlanTextsFutureWeek[i].calculatedHours}`);
       cy.get('#planHours').should('include.value', updatePlanTextsFutureWeek[i].calculatedHours);
       cy.get('[data-testid="plannedStartOfShift1"]').should('include.value', updatePlanTextsFutureWeek[i].plannedStartOfShift1);

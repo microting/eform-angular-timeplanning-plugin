@@ -238,7 +238,7 @@ describe('Dashboard edit values', () => {
   it('should enable auto break calculations with empty values', () => {
     pluginPage.Navbar.goToPluginsPage();
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
     cy.get('#plugin-settings-link0').click();

@@ -235,7 +235,7 @@ describe('Dashboard edit values', () => {
       cy.task('log', `[Folder b - Dashboard Edit A] Clicking cell3_${i}`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
       cy.task('log', `[Folder b - Dashboard Edit A] Verifying plan values: planHours=${updatePlanTexts[i].calculatedHours}, flex=${updatePlanTexts[i].flexToDate}`);
       cy.get('#planHours').should('have.value', updatePlanTexts[i].calculatedHours);
       cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', updatePlanTexts[i].plannedStartOfShift1);
@@ -261,7 +261,7 @@ describe('Dashboard edit values', () => {
       cy.task('log', `[Folder b - Dashboard Edit A] Clicking cell3_${i} to open dialog`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
       cy.task('log', `[Folder b - Dashboard Edit A] Setting shift times: start1=${secondUpdatePlanTexts[i].plannedStartOfShift1}, end1=${secondUpdatePlanTexts[i].plannedEndOfShift1}`);
       cy.get('[data-testid="plannedStartOfShift1"]').click();
       // eslint-disable-next-line max-len

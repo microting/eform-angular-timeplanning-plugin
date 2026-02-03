@@ -18,7 +18,7 @@ describe('Time Planning - Manager Assignment', () => {
       }
 
       cy.get('#actionMenu')
-        .should('be.visible')
+        .scrollIntoView().should('be.visible')
         .click({ force: true });
       
       cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
@@ -81,7 +81,7 @@ describe('Time Planning - Manager Assignment', () => {
     
     // Ensure workingHoursSite is ready and not covered
     cy.task('log', '[Time Planning Tests] Waiting for workingHoursSite to be ready...');
-    cy.get('#workingHoursSite', {timeout: 10000}).should('be.visible');
+    cy.get('#workingHoursSite', {timeout: 10000}).scrollIntoView().should('be.visible');
     cy.wait(1000); // Additional wait for element to be fully interactive
     
     // Select a site if available
@@ -100,11 +100,11 @@ describe('Time Planning - Manager Assignment', () => {
     
     // Click on first data cell to open dialog
     cy.task('log', '[Time Planning Tests] Clicking on first data cell to open dialog...');
-    cy.get('#firstColumn0', {timeout: 10000}).should('be.visible').click();
+    cy.get('#firstColumn0', {timeout: 10000}).scrollIntoView().should('be.visible').click();
     
     // Wait for dialog to open
     cy.task('log', '[Time Planning Tests] Waiting for dialog to open...');
-    cy.get('mat-dialog-container', {timeout: 10000}).should('be.visible');
+    cy.get('mat-dialog-container', {timeout: 10000}).scrollIntoView().should('be.visible');
     cy.wait(500);
     cy.task('log', '[Time Planning Tests] Dialog opened successfully');
   };
@@ -360,7 +360,7 @@ describe('Time Planning - Manager Assignment', () => {
             
             if ($checkBody.find(selector).length > 0) {
               cy.log(`Tags field found with selector: ${selector}`);
-              cy.get(selector).should('be.visible');
+              cy.get(selector).scrollIntoView().should('be.visible');
               
               // Click on the tags field to open it
               cy.get(selector).click();
@@ -491,8 +491,14 @@ describe('Time Planning - Manager Assignment', () => {
             } else if ($formBody.find('input[formcontrolname="name"]').length > 0) {
               cy.get('input[formcontrolname="name"]').type(tagName);
               cy.task('log', `[Test 3] Entered tag name in input[formcontrolname="name"]`);
-            } else if ($formBody.find('input[placeholder*="name" i]').length > 0) {
-              cy.get('input[placeholder*="name" i]').first().type(tagName);
+            } else if ($formBody.find('input').filter((i, el) => {
+              const placeholder = Cypress.$(el).attr('placeholder');
+              return placeholder && placeholder.toLowerCase().includes('name');
+            }).length > 0) {
+              cy.get('input').filter((i, el) => {
+                const placeholder = Cypress.$(el).attr('placeholder');
+                return placeholder && placeholder.toLowerCase().includes('name');
+              }).first().type(tagName);
               cy.task('log', `[Test 3] Entered tag name in input with name placeholder`);
             } else {
               // Try to find any visible input in dialog
@@ -588,7 +594,7 @@ describe('Time Planning - Manager Assignment', () => {
             
             if ($checkBody.find(selector).length > 0) {
               cy.task('log', `[Test 3] Tags field found with selector: ${selector}`);
-              cy.get(selector).should('be.visible');
+              cy.get(selector).scrollIntoView().should('be.visible');
               
               cy.task('log', `[Test 3] Clicking on tags field to open dropdown...`);
               // Click on the tags field to open it
@@ -640,7 +646,7 @@ describe('Time Planning - Manager Assignment', () => {
                   });
                   
                   // Validate that the selected tag is shown
-                  cy.get(selector).should('be.visible');
+                  cy.get(selector).scrollIntoView().should('be.visible');
                   cy.task('log', '[Test 3] Tags field still visible after reload');
                   
                   // Check if the tag value is displayed in the mtx-select
