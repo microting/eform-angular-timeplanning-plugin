@@ -145,6 +145,13 @@ describe('Dashboard edit values', () => {
     cy.get('#backwards').click();
     cy.task('log', '[Folder b - Dashboard Edit B] Waiting for index-update API call (60s timeout)');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Edit B] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder b - Dashboard Edit B] Index updated successfully');
     // cy.get('#plannedHours0').should('include.text', '21:00');
 
@@ -320,6 +327,13 @@ describe('Dashboard edit values', () => {
       cy.wait('@update-day', { timeout: 160000 });
       cy.task('log', '[Folder b - Dashboard Edit B] Waiting for index-update API call (160s timeout)');
       cy.wait('@index-update', { timeout: 160000 });
+      // Wait for spinner after index update
+      cy.get('body').then(($body) => {
+        if ($body.find('.overlay-spinner').length > 0) {
+          cy.task('log', '[Folder b - Dashboard Edit B] Spinner detected after index-update, waiting...');
+          cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        }
+      });
       cy.wait(1000);
       cy.task('log', `[Folder b - Dashboard Edit B] Verifying updated flexBalanceToDate: ${secondUpdateActualTexts[i].flexBalanceToDate}`);
       let flexBalanceToDateId = `#flexBalanceToDate3_${i}`;

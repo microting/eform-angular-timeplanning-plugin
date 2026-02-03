@@ -259,6 +259,13 @@ describe('Dashboard edit values', () => {
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder c] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.get('#firstColumn0').click();
     cy.get('#useGoogleSheetAsDefault > div > div > input').invoke('attr', 'class').then(currentState => {
       cy.log('class: ' + currentState);

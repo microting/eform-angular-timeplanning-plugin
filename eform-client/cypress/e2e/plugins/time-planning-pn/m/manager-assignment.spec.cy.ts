@@ -42,6 +42,13 @@ describe('Time Planning - Manager Assignment', () => {
           cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
           cy.get('mat-tree-node').contains('Dashboard').click();
           cy.wait('@index-update', {timeout: 60000});
+          // Wait for spinner after index update
+          cy.get('body').then(($body) => {
+            if ($body.find('.overlay-spinner').length > 0) {
+              cy.task('log', '[Time Planning Tests] Spinner detected after index-update, waiting...');
+              cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+            }
+          });
           cy.task('log', '[Time Planning Tests] Dashboard loaded, waiting for UI to stabilize...');
           
           // Wait for overlay spinner to disappear
@@ -145,6 +152,13 @@ describe('Time Planning - Manager Assignment', () => {
         cy.wait('@site-update', {timeout: 10000});
         cy.task('log', '[Time Planning Tests] Waiting for index-update API call...');
         cy.wait('@index-update', {timeout: 10000});
+        // Wait for spinner after index update
+        cy.get('body').then(($body) => {
+          if ($body.find('.overlay-spinner').length > 0) {
+            cy.task('log', '[Time Planning Tests] Spinner detected after index-update, waiting...');
+            cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+          }
+        });
         cy.task('log', '[Time Planning Tests] API calls completed, waiting for UI to stabilize...');
         cy.wait(2000); // Additional wait for slow CI environment
       } else if ($body.find('button:contains("Save")').length > 0) {
@@ -155,6 +169,13 @@ describe('Time Planning - Manager Assignment', () => {
         cy.wait('@site-update', {timeout: 10000});
         cy.task('log', '[Time Planning Tests] Waiting for index-update API call...');
         cy.wait('@index-update', {timeout: 10000});
+        // Wait for spinner after index update
+        cy.get('body').then(($body) => {
+          if ($body.find('.overlay-spinner').length > 0) {
+            cy.task('log', '[Time Planning Tests] Spinner detected after index-update, waiting...');
+            cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+          }
+        });
         cy.task('log', '[Time Planning Tests] API calls completed, waiting for UI to stabilize...');
         cy.wait(2000); // Additional wait for slow CI environment
       }
@@ -436,30 +457,25 @@ describe('Time Planning - Manager Assignment', () => {
       cy.wait(2000);
       
       cy.task('log', '[Test 3] Checking for tags management UI elements');
-      // Look for create tag button or tags section
+      // Look for create tag button with mat-icon containing tag/discount/offer icons
       cy.get('body').then(($sitesBody) => {
-        // Try to find tags management UI
-        const hasCreateTagButton = $sitesBody.find('button:contains("Create tag")').length > 0 ||
-                                   $sitesBody.find('button:contains("New tag")').length > 0 ||
-                                   $sitesBody.find('[id*="createTag"]').length > 0 ||
-                                   $sitesBody.find('[id*="newTag"]').length > 0;
+        // Try to find tags button by mat-icon
+        const hasTagIconButton = $sitesBody.find('button mat-icon').filter((i, el) => {
+          const text = Cypress.$(el).text().trim();
+          return text === 'discount' || text === 'local_offer' || text === 'sell';
+        }).length > 0;
         
-        if (hasCreateTagButton) {
-          cy.task('log', '[Test 3] Create tag button found, clicking it');
-          // Click create tag button
-          if ($sitesBody.find('button:contains("Create tag")').length > 0) {
-            cy.get('button').contains('Create tag').click();
-            cy.task('log', '[Test 3] Clicked "Create tag" button');
-          } else if ($sitesBody.find('button:contains("New tag")').length > 0) {
-            cy.get('button').contains('New tag').click();
-            cy.task('log', '[Test 3] Clicked "New tag" button');
-          } else if ($sitesBody.find('[id*="createTag"]').length > 0) {
-            cy.get('[id*="createTag"]').first().click();
-            cy.task('log', '[Test 3] Clicked element with createTag in ID');
-          } else if ($sitesBody.find('[id*="newTag"]').length > 0) {
-            cy.get('[id*="newTag"]').first().click();
-            cy.task('log', '[Test 3] Clicked element with newTag in ID');
-          }
+        if (!hasTagIconButton) {
+          throw new Error('[Test 3] FAILED: Tags button with mat-icon (discount/local_offer/sell) not found on Sites page');
+        }
+        
+        cy.task('log', '[Test 3] Tags button with mat-icon found, clicking it');
+        // Click the tags button
+        cy.get('button').find('mat-icon').filter((i, el) => {
+          const text = Cypress.$(el).text().trim();
+          return text === 'discount' || text === 'local_offer' || text === 'sell';
+        }).parents('button').first().click();
+        cy.task('log', '[Test 3] Clicked tags button');
           
           // Wait for dialog or form to open
           cy.wait(1000);
@@ -515,10 +531,6 @@ describe('Time Planning - Manager Assignment', () => {
               }
             });
           });
-        } else {
-          cy.task('log', '[Test 3] Tags management UI not found on Sites page - skipping tag creation');
-          // Continue with rest of test without creating tag
-        }
       });
       
       cy.task('log', '[Test 3] ========== Navigating back to Time Planning Dashboard ==========');

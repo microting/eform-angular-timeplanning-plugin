@@ -247,6 +247,13 @@ describe('Dashboard assert', () => {
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder b - Dashboard Assert] Index updated successfully');
     cy.task('log', '[Folder b - Dashboard Assert] Clicking firstColumn3');
     cy.get('#firstColumn3').click();
@@ -260,6 +267,13 @@ describe('Dashboard assert', () => {
     cy.task('log', '[Folder b - Dashboard Assert] Site assigned successfully');
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call (160s timeout)');
     cy.wait('@index-update', { timeout: 160000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder b - Dashboard Assert] Index updated successfully');
     cy.wait(2000);
     cy.task('log', '[Folder b - Dashboard Assert] Clicking Timeregistrering menu again');
@@ -425,6 +439,13 @@ describe('Dashboard assert', () => {
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder b - Dashboard Assert] Index updated successfully');
     cy.task('log', '[Folder b - Dashboard Assert] Clicking toolbar button');
     cy.get('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().parent().click();
@@ -435,10 +456,24 @@ describe('Dashboard assert', () => {
     cy.get('.ng-option.ng-option-marked').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder b - Dashboard Assert] Clicking backwards button');
     cy.get('#backwards').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder b - Dashboard Assert] Index updated, verifying plannedHours0 is 53:15');
     cy.get('#plannedHours0').should('include.text', '53:15');
     cy.task('log', '[Folder b - Dashboard Assert] Starting loop to verify plan texts in dashboard (7 days)');
@@ -472,11 +507,25 @@ describe('Dashboard assert', () => {
     cy.get('#forwards').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.wait(1000);
     cy.task('log', '[Folder b - Dashboard Assert] Clicking forwards button again');
     cy.get('#forwards').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.wait(1000);
     cy.task('log', '[Folder b - Dashboard Assert] Starting loop to verify next week plan texts in dashboard');
     for (let i = 0; i < planTextsNextWeek.length; i++) {
@@ -511,6 +560,13 @@ describe('Dashboard assert', () => {
     cy.get('#forwards').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.wait(1000);
     cy.task('log', '[Folder b - Dashboard Assert] Starting loop to verify future week plan texts in dashboard');
     for (let i = 0; i < planTextsFutureWeek.length; i++) {
@@ -701,16 +757,37 @@ describe('Dashboard assert', () => {
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder b - Dashboard Assert] Setting workingHoursSite to "c d"');
     cy.get('#workingHoursSite').clear().type('c d');
     cy.task('log', '[Folder b - Dashboard Assert] Selecting site option');
     cy.get('.ng-option.ng-option-marked').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder b - Dashboard Assert] Clicking backwards button');
     cy.get('#backwards').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder b - Dashboard Assert] Verifying plannedHours0=53:15');
     cy.get('#plannedHours0').should('include.text', '53:15');
     cy.task('log', '[Folder b - Dashboard Assert] Starting loop to verify updated plan texts in dashboard (last week)');
@@ -748,11 +825,25 @@ describe('Dashboard assert', () => {
     cy.get('#forwards').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.wait(500);
     cy.task('log', '[Folder b - Dashboard Assert] Clicking forwards button again');
     cy.get('#forwards').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.wait(500);
     cy.task('log', '[Folder b - Dashboard Assert] Starting loop to verify updated next week plan texts in dashboard');
     for (let i = 0; i < updatePlanTextsNextWeek.length; i++) {
@@ -787,6 +878,13 @@ describe('Dashboard assert', () => {
     cy.get('#forwards').click();
     cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.wait(500);
     cy.task('log', '[Folder b - Dashboard Assert] Starting loop to verify updated future week plan texts in dashboard');
     for (let i = 0; i < updatePlanTextsFutureWeek.length; i++) {

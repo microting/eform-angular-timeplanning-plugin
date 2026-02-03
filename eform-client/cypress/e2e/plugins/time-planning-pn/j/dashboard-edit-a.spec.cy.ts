@@ -61,6 +61,13 @@ describe('Dashboard edit values', () => {
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.task('log', '[Folder j - Auto Break Settings] Waiting for index-update API call');
     cy.wait('@index-update', {timeout: 60000});
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder j - Auto Break Settings] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder j - Auto Break Settings] Index updated successfully');
 
     cy.task('log', '[Folder j - Auto Break Settings] Clicking workingHoursSite dropdown');
@@ -69,6 +76,13 @@ describe('Dashboard edit values', () => {
     cy.get('.ng-option').contains('ac ad').click();
     cy.task('log', '[Folder j - Auto Break Settings] Waiting for index-update API call after site selection');
     cy.wait('@index-update', {timeout: 60000});
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder j - Auto Break Settings] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder j - Auto Break Settings] Site selection completed');
     
     cy.task('log', '[Folder j - Auto Break Settings] Clicking firstColumn0 to open dialog');
@@ -144,6 +158,13 @@ describe('Dashboard edit values', () => {
     cy.task('log', '[Folder j - Auto Break Settings] Site assigned successfully');
     cy.task('log', '[Folder j - Auto Break Settings] Waiting for index-update API call');
     cy.wait('@index-update', {timeout: 60000});
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder j - Auto Break Settings] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.task('log', '[Folder j - Auto Break Settings] Index updated successfully');
     cy.task('log', '[Folder j - Auto Break Settings] Verifying dialog is closed');
     cy.get('mat-dialog-container', {timeout: 500}).should('not.exist');
