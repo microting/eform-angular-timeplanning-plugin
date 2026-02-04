@@ -1091,9 +1091,15 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
       // Your original “DayOff” logic preserved
       if (changedKey !== 'DayOff') {
-        this.data.planningPrDayModels.nettoHoursOverrideActive = true;
-        this.data.planningPrDayModels.nettoHoursOverride = this.data.planningPrDayModels.planHours;
-        this.workdayForm.get('nettoHoursOverride')?.setValue(this.data.planningPrDayModels.planHours);
+        if (changedKey === 'VacationDayOff') {
+          this.data.planningPrDayModels.nettoHoursOverrideActive = true;
+          this.data.planningPrDayModels.nettoHoursOverride = (0 - this.data.planningPrDayModels.planHours);
+          this.workdayForm.get('nettoHoursOverride')?.setValue(0 - this.data.planningPrDayModels.planHours);
+        } else {
+          this.data.planningPrDayModels.nettoHoursOverrideActive = true;
+          this.data.planningPrDayModels.nettoHoursOverride = this.data.planningPrDayModels.planHours;
+          this.workdayForm.get('nettoHoursOverride')?.setValue(this.data.planningPrDayModels.planHours);
+        }
       } else {
         this.data.planningPrDayModels.nettoHoursOverrideActive = false;
       }
