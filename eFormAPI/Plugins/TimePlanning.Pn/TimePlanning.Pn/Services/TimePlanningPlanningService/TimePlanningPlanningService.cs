@@ -70,8 +70,74 @@ public class TimePlanningPlanningService(
             var assignedSites =
                 await dbContext.AssignedSites
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => x.Resigned == model.ShowResignedSites)
                     .ToListAsync().ConfigureAwait(false);
+
+            var currentUserAsync = await userService.GetCurrentUserAsync();
+            var currentUser = baseDbContext.Users
+                .Include(x => x.UserRoles)
+                .ThenInclude(x => x.Role)
+                .Single(x => x.Id == currentUserAsync.Id);
+
+            var isAdmin = currentUser.UserRoles
+                .Any(x => x.Role.Name == "admin");
+            var eFormUsersGroup = false;
+
+            if (!isAdmin)
+            {
+                var userSecurityGroups = baseDbContext.SecurityGroupUsers
+                    .Include(x => x.SecurityGroup)
+                    .Where(x => x.EformUserId == currentUser.Id)
+                    .ToList();
+                eFormUsersGroup = userSecurityGroups
+                    .Any(x => x.SecurityGroup.Name == "eForm users");
+                var eFormAdminsGroup = userSecurityGroups
+                    .Any(x => x.SecurityGroup.Name == "eForm admins");
+                isAdmin = eFormAdminsGroup || eFormUsersGroup;
+            }
+
+            if (!isAdmin && eFormUsersGroup)
+            {
+                var worker = await sdkDbContext.Workers
+                    .Include(x => x.SiteWorkers)
+                    .ThenInclude(x => x.Site)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+
+                if (worker == null)
+                {
+                    SentrySdk.CaptureMessage($"Worker with email {currentUser.Email} not found");
+                    return new OperationDataResult<List<TimePlanningPlanningModel>>(
+                        false,
+                        localizationService.GetString("ErrorWhileObtainingPlannings"));
+                }
+
+                var site = worker!.SiteWorkers.First().Site;
+                var assignedSite = assignedSites
+                    .FirstOrDefault(x => x.SiteId == site.MicrotingUid);
+                if (assignedSite == null || !assignedSite.IsManager)
+                {
+                    model.SiteId = site.MicrotingUid;
+                } else if (assignedSite.IsManager)
+                {
+                    var assignedSiteTags = await dbContext.AssignedSiteManagingTags
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.AssignedSiteId == assignedSite.Id)
+                        .Select(x => x.TagId)
+                        .ToListAsync();
+                    var assignedSiteIdsWithTags = await dbContext.AssignedSiteManagingTags
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => assignedSiteTags.Contains(x.TagId))
+                        .Select(x => x.AssignedSite.SiteId)
+                        .Distinct()
+                        .ToListAsync();
+                    assignedSites = assignedSites
+                        .Where(x => assignedSiteIdsWithTags.Contains(x.SiteId))
+                        .ToList();
+                }
+            }
+
+            assignedSites = model.ShowResignedSites ? assignedSites.Where(x => x.Resigned).ToList() : assignedSites.Where(x => !x.Resigned).ToList();
+
 
             if (model.SiteId != 0 && model.SiteId != null)
             {
