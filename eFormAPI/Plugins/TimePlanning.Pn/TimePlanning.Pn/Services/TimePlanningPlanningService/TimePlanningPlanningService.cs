@@ -147,18 +147,17 @@ public class TimePlanningPlanningService(
             // Filter by tags if provided
             if (model.TagIds != null && model.TagIds.Count > 0)
             {
-                // Get all assigned sites that have ALL of the specified tags
-                var assignedSiteIdsWithAllTags = await dbContext.AssignedSiteManagingTags
+                var sdkSitesWithAnyOfTags = await sdkDbContext.SiteTags
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => model.TagIds.Contains(x.TagId))
-                    .GroupBy(x => x.AssignedSiteId)
-                    .Where(g => g.Select(x => x.TagId).Distinct().Count() == model.TagIds.Count)
-                    .Select(g => g.Key)
+                    .Where(x => model.TagIds.Contains((int)x.TagId!))
+                    .Include(x => x.Site)
+                    .Select(x => x.Site.MicrotingUid)
+                    .Distinct()
                     .ToListAsync();
 
                 assignedSites = assignedSites
-                    .Where(x => assignedSiteIdsWithAllTags.Contains(x.Id))
-                    .ToList();
+                .Where(x => sdkSitesWithAnyOfTags.Contains(x.SiteId))
+                .ToList();
             }
 
             foreach (var assignedSite in assignedSites)
