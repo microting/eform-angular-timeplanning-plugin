@@ -196,12 +196,13 @@ describe('Time Planning - Tag Filtering', () => {
       cy.get('body').then(($dialogBody) => {
         if ($dialogBody.find('#tagSelector').length > 0) {
           cy.task('log', `[Tag Filter Tests] Found #tagSelector, selecting tags`);
-          cy.get('#tagSelector').scrollIntoView().should('be.visible').click();
-          cy.wait(500);
 
           // Select each tag in the combination
           combination.tags.forEach((tagName, tagIdx) => {
             cy.task('log', `[Tag Filter Tests] Selecting tag: ${tagName}`);
+            // Re-open dropdown for each tag selection to make .ng-option elements visible
+            cy.get('#tagSelector').scrollIntoView().should('be.visible').click();
+            cy.wait(500);
             cy.get('.ng-option').contains(tagName).click();
             cy.wait(200);
           });
