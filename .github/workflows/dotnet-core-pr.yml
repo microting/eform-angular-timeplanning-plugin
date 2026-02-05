@@ -235,4 +235,4 @@ jobs:
     - name: Build
       run: dotnet build eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.sln
     - name: Unit Tests
-      run: dotnet test --no-restore -c Release -v n eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/TimePlanning.Pn.Test.csproj
+      run: dotnet test --no-restore -c Release -v n --settings eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/test.runsettings eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/TimePlanning.Pn.Test.csproj
