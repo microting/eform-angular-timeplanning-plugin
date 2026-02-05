@@ -177,7 +177,7 @@ export const da = {
   'Loading...': 'Indlæser...',
   Variable: 'Variabel',
   'From value': 'Fra værdi',
-  'To value': 'At værdsætte',
+  'To value': 'Til værdi',
   'Is manager': 'Er leder',
   'Set this user as a manager': 'Angiv denne bruger som administrator',
   'Managing tags': 'Administration af tags',
