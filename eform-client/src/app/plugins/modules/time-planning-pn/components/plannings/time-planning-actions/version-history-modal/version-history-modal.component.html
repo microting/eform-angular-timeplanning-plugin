@@ -10,8 +10,8 @@
     <div class="versions-panel" [class.with-side-panel]="selectedGpsCoordinate || selectedSnapshot">
       <div *ngFor="let version of versionHistory.versions" class="version-section">
         <h5>
-          {{ formatDateTime(version.updatedAt) }} Values changed
-          <span *ngIf="version.updatedByUserId">by User ID: {{ version.updatedByUserId }} ({{version.version}})</span>
+          {{ formatDateTime(version.updatedAt) }} {{ 'Values changed' | translate }}
+          <span *ngIf="version.updatedByUserId">{{ 'by user' | translate }}: {{ version.updatedByUserName }} ({{version.version}})</span>
         </h5>
 
         <mtx-grid
@@ -28,7 +28,7 @@
       </div>
 
       <div *ngIf="versionHistory.versions.length === 0" class="no-versions">
-        <p>No version history available.</p>
+        <p>{{ 'No version history available.' | translate}}</p>
       </div>
     </div>
 
@@ -63,12 +63,12 @@
 <ng-template #toValueTemplate let-row>
   <ng-container *ngIf="row.fieldType === 'gps'">
     <a href="javascript:void(0)" (click)="onGpsClick(row)">
-      View on Maps ({{ row.latitude }}, {{ row.longitude }})
+      {{ 'View on Maps' | translate }} ({{ row.latitude }}, {{ row.longitude }})
     </a>
   </ng-container>
   <ng-container *ngIf="row.fieldType === 'snapshot'">
     <a href="javascript:void(0)" (click)="onSnapshotClick(row)">
-      View Snapshot
+      {{ 'View Snapshot' | translate }}
     </a>
   </ng-container>
   <ng-container *ngIf="row.fieldType === 'standard'">
@@ -79,7 +79,7 @@
 <div class="modal-body" *ngIf="loading">
   <div class="text-center">
     <div class="spinner-border" role="status">
-      <span class="sr-only">Loading...</span>
+      <span class="sr-only">{{ 'Loading...' | translate}}</span>
     </div>
   </div>
 </div>

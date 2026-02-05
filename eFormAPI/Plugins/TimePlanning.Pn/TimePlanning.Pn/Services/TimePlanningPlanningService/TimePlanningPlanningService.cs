@@ -520,6 +520,7 @@ public class TimePlanningPlanningService(
     {
         try
         {
+            var currentUserAsync = await userService.GetCurrentUserAsync();
             var planning = dbContext.PlanRegistrations
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefault(x => x.Id == id);
@@ -965,6 +966,7 @@ public class TimePlanningPlanningService(
 
             // Compute time tracking fields (seconds-based calculation)
             PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            planning.UpdatedByUserId = currentUserAsync.Id;
 
             await planning.Update(dbContext).ConfigureAwait(false);
             var todayDateMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
@@ -1483,6 +1485,7 @@ public class TimePlanningPlanningService(
 
             // Compute time tracking fields (seconds-based calculation)
             PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            planning.UpdatedByUserId = currentUser.Id;
 
             await planning.Update(dbContext).ConfigureAwait(false);
             var todayDateMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
@@ -1783,6 +1786,8 @@ public class TimePlanningPlanningService(
                         Version = currentVersion.Version,
                         UpdatedAt = currentVersion.UpdatedAt ?? DateTime.UtcNow,
                         UpdatedByUserId = currentVersion.UpdatedByUserId,
+                        UpdatedByUserName = currentVersion.UpdatedByUserId == 1 ? "System"
+                            : await userService.GetFullNameUserByUserIdAsync(currentVersion.UpdatedByUserId).ConfigureAwait(false),
                         Changes = changes
                     });
                 }
