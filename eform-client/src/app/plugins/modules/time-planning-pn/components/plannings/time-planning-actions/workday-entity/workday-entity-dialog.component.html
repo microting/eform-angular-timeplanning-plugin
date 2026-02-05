@@ -2,13 +2,13 @@
   <div mat-dialog-title>
     <div>{{ data.planningPrDayModels.siteName }} -
       {{ datePipe.transform(data.planningPrDayModels.date, 'dd.MM.yyyy') }}
-      ({{ data.planningPrDayModels.id }})</div>
+      <small class="microting-uid" matTooltip="Id">({{ data.planningPrDayModels.id }})</small></div>
     <button
       *ngIf="selectCurrentUserIsFirstUser$ | async"
 
-      class="float-end btn-secondary btn-secondary--icon-rounded-border"
+      mat-icon-button
       (click)="openVersionHistory()"
-      matTooltip="View Version History">
+      matTooltip="{{'View history' | translate}}">
       <mat-icon>history</mat-icon>
     </button>
   </div>

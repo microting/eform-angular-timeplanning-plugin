@@ -13,6 +13,7 @@ export class PlanRegistrationVersionModel {
   version: number;
   updatedAt: Date;
   updatedByUserId?: number;
+  updatedByUserName: string;
   changes: FieldChangeModel[] = [];
 }
 

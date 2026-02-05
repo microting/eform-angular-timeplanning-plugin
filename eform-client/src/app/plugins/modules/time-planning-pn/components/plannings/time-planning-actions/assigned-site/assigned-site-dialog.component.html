@@ -175,15 +175,15 @@
                       [name]="'isManager'"
                       formControlName="isManager">
           <div>
-            <div>{{ 'Is Manager' | translate }}</div>
+            <div>{{ 'Is manager' | translate }}</div>
             <small class="checkbox-description">{{ 'Set this user as a manager' | translate }}</small>
           </div>
         </mat-checkbox>
       </div>
-      
+
       <div class="d-flex flex-row" *ngIf="!data.resigned && data.isManager && selectCurrentUserIsAdmin$ | async">
         <mat-form-field class="p-1 w-100">
-          <mat-label>{{ 'Managing Tags' | translate }}</mat-label>
+          <mat-label>{{ 'Managing tags' | translate }}</mat-label>
           <mtx-select
             [items]="availableTags"
             bindLabel="name"
