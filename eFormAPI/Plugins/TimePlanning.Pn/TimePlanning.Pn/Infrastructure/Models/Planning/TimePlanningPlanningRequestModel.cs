@@ -25,6 +25,7 @@ SOFTWARE.
 namespace TimePlanning.Pn.Infrastructure.Models.Planning;
 
 using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// Class TimePlanningPlanningRequestModel.
