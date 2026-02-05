@@ -57,7 +57,7 @@ export class VersionHistoryModalComponent implements OnInit, AfterViewInit, OnDe
         field: 'fromValue',
       },
       {
-        header: this.translateService.stream('To value'),
+        header: this.translateService.stream('To new value'),
         field: 'toValue',
         cellTemplate: this.toValueTemplate,
       },
@@ -142,7 +142,14 @@ export class VersionHistoryModalComponent implements OnInit, AfterViewInit, OnDe
   }
 
   getFieldDisplayName(fieldName: string): string {
-    return fieldName.replace(/([A-Z])/g, ' $1').trim();
+    const words = fieldName.replace(/([A-Z])/g, ' $1').trim().split(/\s+/);
+    if (!words.length) {
+      return '';
+    }
+    const [first, ...rest] = words;
+    const normalizedFirst = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+    const normalizedRest = rest.map((w) => w.toLowerCase());
+    return this.translateService.instant([normalizedFirst, ...normalizedRest].join(' ').trim());
   }
 
   ngOnDestroy(): void {

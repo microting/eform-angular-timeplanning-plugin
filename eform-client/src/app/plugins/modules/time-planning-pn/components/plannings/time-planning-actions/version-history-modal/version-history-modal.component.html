@@ -1,11 +1,5 @@
-<div class="modal-header">
-  <h4 class="modal-title">Version History</h4>
-  <button type="button" class="close btn-secondary btn-secondary--icon-rounded-border" (click)="close()" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
-</div>
-
-<div class="modal-body" *ngIf="!loading && versionHistory">
+<div mat-dialog-title>{{ 'History' | translate }}</div>
+<div mat-dialog-content *ngIf="!loading && versionHistory">
   <div class="version-history-container">
     <div class="versions-panel" [class.with-side-panel]="selectedGpsCoordinate || selectedSnapshot">
       <div *ngFor="let version of versionHistory.versions" class="version-section">
@@ -56,27 +50,7 @@
   </div>
 </div>
 
-<ng-template #fieldNameTemplate let-row>
-  {{ getFieldDisplayName(row.fieldName) }}
-</ng-template>
-
-<ng-template #toValueTemplate let-row>
-  <ng-container *ngIf="row.fieldType === 'gps'">
-    <a href="javascript:void(0)" (click)="onGpsClick(row)">
-      {{ 'View on Maps' | translate }} ({{ row.latitude }}, {{ row.longitude }})
-    </a>
-  </ng-container>
-  <ng-container *ngIf="row.fieldType === 'snapshot'">
-    <a href="javascript:void(0)" (click)="onSnapshotClick(row)">
-      {{ 'View Snapshot' | translate }}
-    </a>
-  </ng-container>
-  <ng-container *ngIf="row.fieldType === 'standard'">
-    {{ row.toValue }}
-  </ng-container>
-</ng-template>
-
-<div class="modal-body" *ngIf="loading">
+<div mat-dialog-content *ngIf="loading">
   <div class="text-center">
     <div class="spinner-border" role="status">
       <span class="sr-only">{{ 'Loading...' | translate}}</span>
@@ -84,6 +58,34 @@
   </div>
 </div>
 
-<div class="modal-footer">
-  <button type="button" class="btn btn-cancel" (click)="close()">Close</button>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+  <button
+    class="btn-cancel"
+    (click)="close()"
+  >
+    {{ 'Close' | translate }}
+  </button>
+<!--  <button type="button" class="btn btn-cancel" (click)="close()">Close</button>-->
 </div>
+
+
+
+  <ng-template #fieldNameTemplate let-row>
+    {{ getFieldDisplayName(row.fieldName)}}
+  </ng-template>
+
+  <ng-template #toValueTemplate let-row>
+    <ng-container *ngIf="row.fieldType === 'gps'">
+      <a href="javascript:void(0)" (click)="onGpsClick(row)">
+        {{ 'View on Maps' | translate }} ({{ row.latitude }}, {{ row.longitude }})
+      </a>
+    </ng-container>
+    <ng-container *ngIf="row.fieldType === 'snapshot'">
+      <a href="javascript:void(0)" (click)="onSnapshotClick(row)">
+        {{ 'View Snapshot' | translate }}
+      </a>
+    </ng-container>
+    <ng-container *ngIf="row.fieldType === 'standard'">
+      {{ row.toValue }}
+    </ng-container>
+  </ng-template>

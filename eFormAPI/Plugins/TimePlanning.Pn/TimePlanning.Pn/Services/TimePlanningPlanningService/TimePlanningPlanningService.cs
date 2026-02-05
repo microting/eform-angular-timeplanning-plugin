@@ -1689,6 +1689,7 @@ public class TimePlanningPlanningService(
     {
         try
         {
+            var currentUserAsync = await userService.GetCurrentUserAsync();
             // Get the plan registration to find the associated site
             var planRegistration = await dbContext.PlanRegistrations
                 .Where(x => x.Id == planRegistrationId)
@@ -1730,7 +1731,7 @@ public class TimePlanningPlanningService(
                 var currentVersion = versions[i];
                 var previousVersion = i < versions.Count - 1 ? versions[i + 1] : null;
 
-                var changes = CompareVersions(currentVersion, previousVersion);
+                var changes = CompareVersions(currentVersion, previousVersion, currentUserAsync.Id);
 
                 // Get GPS coordinates for this version
                 if (gpsEnabled && changes.Any())
@@ -1804,7 +1805,7 @@ public class TimePlanningPlanningService(
         }
     }
 
-    private List<FieldChange> CompareVersions(PlanRegistrationVersion current, PlanRegistrationVersion? previous)
+    private List<FieldChange> CompareVersions(PlanRegistrationVersion current, PlanRegistrationVersion? previous, int currentUserId)
     {
         var changes = new List<FieldChange>();
 
@@ -1829,21 +1830,78 @@ public class TimePlanningPlanningService(
         CompareBoolField(changes, "OtherAllowedAbsence", previous?.OtherAllowedAbsence, current.OtherAllowedAbsence);
         CompareBoolField(changes, "AbsenceWithoutPermission", previous?.AbsenceWithoutPermission, current.AbsenceWithoutPermission);
 
-        CompareField(changes, "Start1Id", previous?.Start1Id.ToString(), current.Start1Id.ToString());
-        CompareField(changes, "Stop1Id", previous?.Stop1Id.ToString(), current.Stop1Id.ToString());
-        CompareField(changes, "Start2Id", previous?.Start2Id.ToString(), current.Start2Id.ToString());
-        CompareField(changes, "Stop2Id", previous?.Stop2Id.ToString(), current.Stop2Id.ToString());
-        CompareField(changes, "Start3Id", previous?.Start3Id.ToString(), current.Start3Id.ToString());
-        CompareField(changes, "Stop3Id", previous?.Stop3Id.ToString(), current.Stop3Id.ToString());
-        CompareField(changes, "Start4Id", previous?.Start4Id.ToString(), current.Start4Id.ToString());
-        CompareField(changes, "Stop4Id", previous?.Stop4Id.ToString(), current.Stop4Id.ToString());
-        CompareField(changes, "Start5Id", previous?.Start5Id.ToString(), current.Start5Id.ToString());
-        CompareField(changes, "Stop5Id", previous?.Stop5Id.ToString(), current.Stop5Id.ToString());
-        CompareField(changes, "Pause1Id", previous?.Pause1Id.ToString(), current.Pause1Id.ToString());
-        CompareField(changes, "Pause2Id", previous?.Pause2Id.ToString(), current.Pause2Id.ToString());
-        CompareField(changes, "Pause3Id", previous?.Pause3Id.ToString(), current.Pause3Id.ToString());
-        CompareField(changes, "Pause4Id", previous?.Pause4Id.ToString(), current.Pause4Id.ToString());
-        CompareField(changes, "Pause5Id", previous?.Pause5Id.ToString(), current.Pause5Id.ToString());
+        // All planned shifts and pauses
+        CompareField(changes, "PlannedStartOfShift1", previous?.PlannedStartOfShift1.ToString(), current.PlannedStartOfShift1.ToString());
+        CompareField(changes, "PlannedEndOfShift1", previous?.PlannedEndOfShift1.ToString(), current.PlannedEndOfShift1.ToString());
+        CompareField(changes, "PlannedStartOfShift2", previous?.PlannedStartOfShift2.ToString(), current.PlannedStartOfShift2.ToString());
+        CompareField(changes, "PlannedEndOfShift2", previous?.PlannedEndOfShift2.ToString(), current.PlannedEndOfShift2.ToString());
+        CompareField(changes, "PlannedStartOfShift3", previous?.PlannedStartOfShift3.ToString(), current.PlannedStartOfShift3.ToString());
+        CompareField(changes, "PlannedEndOfShift3", previous?.PlannedEndOfShift3.ToString(), current.PlannedEndOfShift3.ToString());
+        CompareField(changes, "PlannedStartOfShift4", previous?.PlannedStartOfShift4.ToString(), current.PlannedStartOfShift4.ToString());
+        CompareField(changes, "PlannedEndOfShift4", previous?.PlannedEndOfShift4.ToString(), current.PlannedEndOfShift4.ToString());
+        CompareField(changes, "PlannedStartOfShift5", previous?.PlannedStartOfShift5.ToString(), current.PlannedStartOfShift5.ToString());
+        CompareField(changes, "PlannedEndOfShift5", previous?.PlannedEndOfShift5.ToString(), current.PlannedEndOfShift5.ToString());
+        CompareField(changes, "PlannedBreakOfShift1", previous?.PlannedBreakOfShift1.ToString(), current.PlannedBreakOfShift1.ToString());
+        CompareField(changes, "PlannedBreakOfShift2", previous?.PlannedBreakOfShift2.ToString(), current.PlannedBreakOfShift2.ToString());
+        CompareField(changes, "PlannedBreakOfShift3", previous?.PlannedBreakOfShift3.ToString(), current.PlannedBreakOfShift3.ToString());
+        CompareField(changes, "PlannedBreakOfShift4", previous?.PlannedBreakOfShift4.ToString(), current.PlannedBreakOfShift4.ToString());
+        CompareField(changes, "PlannedBreakOfShift5", previous?.PlannedBreakOfShift5.ToString(), current.PlannedBreakOfShift5.ToString());
+
+        if (currentUserId == 1)
+        {
+            CompareField(changes, "Start1Id", previous?.Start1Id.ToString(), current.Start1Id.ToString());
+            CompareField(changes, "Stop1Id", previous?.Stop1Id.ToString(), current.Stop1Id.ToString());
+            CompareField(changes, "Start2Id", previous?.Start2Id.ToString(), current.Start2Id.ToString());
+            CompareField(changes, "Stop2Id", previous?.Stop2Id.ToString(), current.Stop2Id.ToString());
+            CompareField(changes, "Start3Id", previous?.Start3Id.ToString(), current.Start3Id.ToString());
+            CompareField(changes, "Stop3Id", previous?.Stop3Id.ToString(), current.Stop3Id.ToString());
+            CompareField(changes, "Start4Id", previous?.Start4Id.ToString(), current.Start4Id.ToString());
+            CompareField(changes, "Stop4Id", previous?.Stop4Id.ToString(), current.Stop4Id.ToString());
+            CompareField(changes, "Start5Id", previous?.Start5Id.ToString(), current.Start5Id.ToString());
+            CompareField(changes, "Stop5Id", previous?.Stop5Id.ToString(), current.Stop5Id.ToString());
+            CompareField(changes, "Pause1Id", previous?.Pause1Id.ToString(), current.Pause1Id.ToString());
+            CompareField(changes, "Pause2Id", previous?.Pause2Id.ToString(), current.Pause2Id.ToString());
+            CompareField(changes, "Pause3Id", previous?.Pause3Id.ToString(), current.Pause3Id.ToString());
+            CompareField(changes, "Pause4Id", previous?.Pause4Id.ToString(), current.Pause4Id.ToString());
+            CompareField(changes, "Pause5Id", previous?.Pause5Id.ToString(), current.Pause5Id.ToString());
+            CompareField(changes, "AbsenceHours", previous?.AbsenceHours.ToString(), current.AbsenceHours.ToString());
+            CompareField(changes, "EffectiveNetHours", previous?.EffectiveNetHours.ToString(), current.EffectiveNetHours.ToString());
+            CompareDateTimeField(changes, "FirstWorkStartUtc", previous?.FirstWorkStartUtc, current.FirstWorkStartUtc);
+            CompareField(changes, "HolidayHours", previous?.HolidayHours.ToString(), current.HolidayHours.ToString());
+            CompareBoolField(changes, "IsSaturday", previous?.IsSaturday, current.IsSaturday);
+            CompareBoolField(changes, "IsSunday", previous?.IsSunday, current.IsSunday);
+            CompareDateTimeField(changes, "LastWorkEndUtc", previous?.LastWorkEndUtc, current.LastWorkEndUtc);
+            CompareField(changes, "NightHours", previous?.NightHours.ToString(), current.NightHours.ToString());
+            CompareField(changes, "NormalHours", previous?.NormalHours.ToString(), current.NormalHours.ToString());
+            CompareField(changes, "OvertimeHours", previous?.OvertimeHours.ToString(), current.OvertimeHours.ToString());
+            CompareBoolField(changes, "RuleEngineCalculated", previous?.RuleEngineCalculated, current.RuleEngineCalculated);
+            CompareDateTimeField(changes, "RuleEngineCalculatedAt", previous?.RuleEngineCalculatedAt, current.RuleEngineCalculatedAt);
+            CompareField(changes, "WeekendHours", previous?.WeekendHours.ToString(), current.WeekendHours.ToString());
+            CompareField(changes, "AbsenceHoursInSeconds", previous?.AbsenceHoursInSeconds.ToString(), current.AbsenceHoursInSeconds.ToString());
+            CompareField(changes, "EffectiveNetHoursInSeconds", previous?.EffectiveNetHoursInSeconds.ToString(), current.EffectiveNetHoursInSeconds.ToString());
+            CompareField(changes, "FlexInSeconds", previous?.FlexInSeconds.ToString(), current.FlexInSeconds.ToString());
+            CompareField(changes, "HolidayHoursInSeconds", previous?.HolidayHoursInSeconds.ToString(), current.HolidayHoursInSeconds.ToString());
+            CompareField(changes, "NettoHoursOverrideInSeconds", previous?.NettoHoursOverrideInSeconds.ToString(), current.NettoHoursOverrideInSeconds.ToString());
+            CompareField(changes, "NightHoursInSeconds", previous?.NightHoursInSeconds.ToString(), current.NightHoursInSeconds.ToString());
+            CompareField(changes, "NormalHoursInSeconds", previous?.NormalHoursInSeconds.ToString(), current.NormalHoursInSeconds.ToString());
+            CompareField(changes, "OvertimeHoursInSeconds", previous?.OvertimeHoursInSeconds.ToString(), current.OvertimeHoursInSeconds.ToString());
+            CompareField(changes, "PaiedOutFlexInSeconds", previous?.PaiedOutFlexInSeconds.ToString(), current.PaiedOutFlexInSeconds.ToString());
+            CompareField(changes, "PlanHoursInSeconds", previous?.PlanHoursInSeconds.ToString(), current.PlanHoursInSeconds.ToString());
+            CompareField(changes, "SumFlexEndInSeconds", previous?.SumFlexEndInSeconds.ToString(), current.SumFlexEndInSeconds.ToString());
+            CompareField(changes, "WeekendHoursInSeconds", previous?.WeekendHoursInSeconds.ToString(), current.WeekendHoursInSeconds.ToString());
+            CompareBoolField(changes, "Reconciled", previous?.Reconciled, current.Reconciled);
+            CompareDateTimeField(changes, "ReconciledAt", previous?.ReconciledAt, current.ReconciledAt);
+            CompareBoolField(changes, "TransferredToPayroll", previous?.TransferredToPayroll, current.TransferredToPayroll);
+            CompareDateTimeField(changes, "TransferredToPayrollAt", previous?.TransferredToPayrollAt, current.TransferredToPayrollAt);
+            CompareDateTimeField(changes, "ContentHandedOverAtUtc", previous?.ContentHandedOverAtUtc, current.ContentHandedOverAtUtc);
+            CompareField(changes, "ContentHandoverFromSdkSitId", previous?.ContentHandoverFromSdkSitId.ToString(), current.ContentHandoverFromSdkSitId.ToString());
+            CompareField(changes, "ContentHandoverRequestId", previous?.ContentHandoverRequestId.ToString(), current.ContentHandoverRequestId.ToString());
+            CompareField(changes, "ContentHandoverToSdkSitId", previous?.ContentHandoverToSdkSitId.ToString(), current.ContentHandoverToSdkSitId.ToString());
+            CompareDateTimeField(changes, "AbsenceApprovedAtUtc", previous?.AbsenceApprovedAtUtc, current.AbsenceApprovedAtUtc);
+            CompareField(changes, "AbsenceApprovedBySdkSitId", previous?.AbsenceApprovedBySdkSitId.ToString(), current.AbsenceApprovedBySdkSitId.ToString());
+            CompareField(changes, "AbsenceMessageId", previous?.AbsenceMessageId.ToString(), current.AbsenceMessageId.ToString());
+            CompareField(changes, "AbsenceRequestId", previous?.AbsenceRequestId.ToString(), current.AbsenceRequestId.ToString());
+        }
 
         // Shift 1
         CompareDateTimeField(changes, "Start1StartedAt", previous?.Start1StartedAt, current.Start1StartedAt);
