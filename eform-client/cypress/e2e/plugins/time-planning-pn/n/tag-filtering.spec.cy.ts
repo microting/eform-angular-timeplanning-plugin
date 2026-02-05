@@ -141,13 +141,105 @@ describe('Time Planning - Tag Filtering', () => {
 
   /**
    * Test 2: Assign tags to sites
-   * Note: This test would require navigating to assigned sites and assigning tags
-   * The exact implementation would depend on the UI structure
+   * Assign different tag combinations to 5 sites for testing filtering
+   * Site 1: Tag-A, Tag-B
+   * Site 2: Tag-A, Tag-C
+   * Site 3: Tag-A, Tag-D
+   * Site 4: Tag-A, Tag-E
+   * Site 5: Tag-A, Tag-B, Tag-C (for testing multiple tag filter)
    */
   it('should assign tags to sites', () => {
-    cy.task('log', '[Tag Filter Tests] Assigning tags to sites...');
-    // TODO: Implement tag assignment to sites
-    // This would follow a similar pattern to the 'm' folder test
+    cy.task('log', '[Tag Filter Tests] ========== Starting tag assignment to sites ==========');
+    
+    // Define tag combinations for each site
+    const siteTagCombinations = [
+      { siteIndex: 0, tags: [tagNames[0], tagNames[1]] }, // Site 1: Tag-A, Tag-B
+      { siteIndex: 1, tags: [tagNames[0], tagNames[2]] }, // Site 2: Tag-A, Tag-C
+      { siteIndex: 2, tags: [tagNames[0], tagNames[3]] }, // Site 3: Tag-A, Tag-D
+      { siteIndex: 3, tags: [tagNames[0], tagNames[4]] }, // Site 4: Tag-A, Tag-E
+      { siteIndex: 4, tags: [tagNames[0], tagNames[1], tagNames[2]] }, // Site 5: Tag-A, Tag-B, Tag-C
+    ];
+
+    siteTagCombinations.forEach((combination, idx) => {
+      cy.task('log', `[Tag Filter Tests] Assigning tags to site ${idx + 1}: ${combination.tags.join(', ')}`);
+      
+      // 1. Navigate to the advanced/sites
+      cy.visit(`${BASE_URL}/advanced/sites`);
+      cy.wait(2000);
+      
+      // Wait for spinner to disappear
+      cy.get('body').then(($body) => {
+        if ($body.find('.overlay-spinner').length > 0) {
+          cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        }
+      });
+
+      cy.task('log', `[Tag Filter Tests] On sites page, looking for site ${idx + 1}`);
+
+      // 1.1 Click the action menu for the site in list
+      cy.get('table tbody tr').eq(combination.siteIndex).then(($row) => {
+        cy.task('log', `[Tag Filter Tests] Found site row ${idx + 1}, clicking action menu`);
+        cy.wrap($row).find('#actionMenu, button[id*="actionMenu"]').first().scrollIntoView().click();
+        cy.wait(500);
+      });
+
+      // 1.2 Click the edit button
+      cy.task('log', `[Tag Filter Tests] Clicking edit button for site ${idx + 1}`);
+      cy.get('#editSiteBtn, button[id*="edit"]').first().scrollIntoView().should('be.visible').click();
+      cy.wait(1000);
+
+      // Wait for dialog to open
+      cy.get('mat-dialog-container, [role="dialog"]').should('be.visible');
+      cy.task('log', `[Tag Filter Tests] Site edit dialog opened`);
+
+      // 1.3 Enter tags into the tag field with id "tagSelector" and select the tags
+      cy.get('body').then(($dialogBody) => {
+        if ($dialogBody.find('#tagSelector').length > 0) {
+          cy.task('log', `[Tag Filter Tests] Found #tagSelector, selecting tags`);
+          cy.get('#tagSelector').scrollIntoView().should('be.visible').click();
+          cy.wait(500);
+
+          // Select each tag in the combination
+          combination.tags.forEach((tagName, tagIdx) => {
+            cy.task('log', `[Tag Filter Tests] Selecting tag: ${tagName}`);
+            cy.get('.ng-option').contains(tagName).click();
+            cy.wait(200);
+          });
+
+          // Close dropdown
+          cy.get('body').click(0, 0);
+          cy.wait(500);
+          cy.task('log', `[Tag Filter Tests] Tags selected for site ${idx + 1}`);
+        } else {
+          cy.task('log', `[Tag Filter Tests] WARNING: #tagSelector not found in dialog`);
+        }
+      });
+
+      // 1.4 Intercept PUT to api/sites
+      cy.intercept('PUT', '**/api/sites').as('site-update');
+      
+      // 1.5 Click the "save" button with id "siteEditSaveBtn"
+      cy.task('log', `[Tag Filter Tests] Clicking save button`);
+      cy.get('#siteEditSaveBtn').scrollIntoView().should('be.visible').click();
+      
+      // 1.5 Wait for PUT call to finish
+      cy.task('log', `[Tag Filter Tests] Waiting for site-update API call`);
+      cy.wait('@site-update', { timeout: 10000 });
+      cy.task('log', `[Tag Filter Tests] Site update API call completed`);
+
+      // 1.6 Wait for spinner to disappear, following pattern from m test folder
+      cy.get('body').then(($body) => {
+        if ($body.find('.overlay-spinner').length > 0) {
+          cy.task('log', `[Tag Filter Tests] Spinner detected after save, waiting...`);
+          cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        }
+      });
+      cy.wait(1000);
+
+      cy.task('log', `[Tag Filter Tests] Successfully assigned tags to site ${idx + 1}`);
+    });
+
+    cy.task('log', '[Tag Filter Tests] ========== All tags assigned to sites successfully ==========');
   });
 
   /**
