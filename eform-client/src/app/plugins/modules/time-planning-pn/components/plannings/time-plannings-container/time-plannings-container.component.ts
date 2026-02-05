@@ -52,6 +52,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     // Load available tags
     this.getAvailableTags$ = this.settingsService
       .getAvailableTags()
+      .pipe(take(1))
       .subscribe((data) => {
         if (data && data.success) {
           this.availableTags = data.model;

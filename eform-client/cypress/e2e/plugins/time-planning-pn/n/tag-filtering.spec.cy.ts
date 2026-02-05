@@ -8,8 +8,6 @@ describe('Time Planning - Tag Filtering', () => {
     `Tag-D-${Math.random().toString(36).substring(7)}`,
     `Tag-E-${Math.random().toString(36).substring(7)}`,
   ];
-  const createdTagIds: number[] = [];
-  const siteIds: number[] = [];
 
   beforeEach(() => {
     cy.visit('http://localhost:4200');
