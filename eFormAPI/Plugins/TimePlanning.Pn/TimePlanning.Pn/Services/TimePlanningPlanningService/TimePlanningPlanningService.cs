@@ -144,6 +144,23 @@ public class TimePlanningPlanningService(
                 assignedSites = assignedSites.Where(x => x.SiteId == model.SiteId).ToList();
             }
 
+            // Filter by tags if provided
+            if (model.TagIds != null && model.TagIds.Count > 0)
+            {
+                // Get all assigned sites that have ALL of the specified tags
+                var assignedSiteIdsWithAllTags = await dbContext.AssignedSiteManagingTags
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => model.TagIds.Contains(x.TagId))
+                    .GroupBy(x => x.AssignedSiteId)
+                    .Where(g => g.Select(x => x.TagId).Distinct().Count() == model.TagIds.Count)
+                    .Select(g => g.Key)
+                    .ToListAsync();
+
+                assignedSites = assignedSites
+                    .Where(x => assignedSiteIdsWithAllTags.Contains(x.Id))
+                    .ToList();
+            }
+
             foreach (var assignedSite in assignedSites)
             {
                 Console.WriteLine($"Resigned site: {assignedSite.SiteId}, Resigned at: {assignedSite.ResignedAtDate}");

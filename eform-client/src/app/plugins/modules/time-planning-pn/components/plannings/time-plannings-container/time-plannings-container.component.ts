@@ -4,7 +4,7 @@ import { Component, OnDestroy, OnInit,
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import {Subscription, take} from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
-import {AssignedSiteModel, TimePlanningModel, TimePlanningsRequestModel} from '../../../models';
+import {AssignedSiteModel, CommonTagModel, TimePlanningModel, TimePlanningsRequestModel} from '../../../models';
 import {
   TimePlanningPnPlanningsService,
   TimePlanningPnSettingsService,
@@ -32,6 +32,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
 
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
+  availableTags: CommonTagModel[] = [];
+  selectedTagIds: number[] = [];
   showResignedSites: boolean = false;
   timePlannings: TimePlanningModel[] = [];
   selectedDate: Date = new Date();
@@ -42,10 +44,20 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   getTimePlannings$: Subscription;
   updateTimePlanning$: Subscription;
   getAvailableSites$: Subscription;
+  getAvailableTags$: Subscription;
   public selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
   locale: string;
 
   ngOnInit(): void {
+    // Load available tags
+    this.getAvailableTags$ = this.settingsService
+      .getAvailableTags()
+      .subscribe((data) => {
+        if (data && data.success) {
+          this.availableTags = data.model;
+        }
+      });
+
     if (!this.showResignedSites) {
       this.settingsService
         .getAvailableSites()
@@ -86,7 +98,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
       sort: 'Date',
       isSortDsc: true,
       siteId: this.siteId, // Default to 0 to get all sites
-      showResignedSites: this.showResignedSites
+      showResignedSites: this.showResignedSites,
+      tagIds: this.selectedTagIds.length > 0 ? this.selectedTagIds : undefined
     }
     this.getTimePlannings$ = this.planningsService
       .getPlannings(this.timePlanningsRequest)
@@ -192,6 +205,11 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
           }
         });
     }
+    this.getPlannings();
+  }
+
+  onTagsChanged($event: any) {
+    this.selectedTagIds = $event;
     this.getPlannings();
   }
 }
