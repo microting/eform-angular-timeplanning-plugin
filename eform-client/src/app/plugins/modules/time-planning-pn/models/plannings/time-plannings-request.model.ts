@@ -5,6 +5,7 @@ export class TimePlanningsRequestModel {
   isSortDsc?: boolean;
   siteId: number;
   showResignedSites?: boolean;
+  tagIds?: number[];
 
   constructor(data?: any) {
     if (data) {
@@ -14,6 +15,7 @@ export class TimePlanningsRequestModel {
       this.isSortDsc = data.isSortDsc;
       this.siteId = data.siteId;
       this.showResignedSites = data.showResignedSites;
+      this.tagIds = data.tagIds;
     }
   }
 }
