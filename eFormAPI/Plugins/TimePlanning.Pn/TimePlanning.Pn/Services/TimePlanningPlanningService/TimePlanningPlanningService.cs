@@ -1748,7 +1748,7 @@ public class TimePlanningPlanningService(
                 var currentVersion = versions[i];
                 var previousVersion = i < versions.Count - 1 ? versions[i + 1] : null;
 
-                var changes = CompareVersions(currentVersion, previousVersion, currentUserAsync.Id);
+                var changes = CompareVersions(currentVersion, previousVersion, currentUserAsync?.Id ?? 0);
 
                 // Get GPS coordinates for this version
                 if (gpsEnabled && changes.Any())
