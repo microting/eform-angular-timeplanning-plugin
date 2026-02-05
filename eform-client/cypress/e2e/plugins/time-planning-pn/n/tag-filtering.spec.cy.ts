@@ -1,5 +1,7 @@
 import loginPage from '../../../Login.page';
 
+const BASE_URL = 'http://localhost:4200';
+
 describe('Time Planning - Tag Filtering', () => {
   const tagNames = [
     `Tag-A-${Math.random().toString(36).substring(7)}`,
@@ -10,7 +12,7 @@ describe('Time Planning - Tag Filtering', () => {
   ];
 
   beforeEach(() => {
-    cy.visit('http://localhost:4200');
+    cy.visit(BASE_URL);
     loginPage.login();
   });
 
@@ -19,7 +21,7 @@ describe('Time Planning - Tag Filtering', () => {
    */
   it('should create 5 tags', () => {
     cy.task('log', '[Tag Filter Tests] Creating 5 tags...');
-    cy.visit('http://localhost:4200/advanced/sites');
+    cy.visit(`${BASE_URL}/advanced/sites`);
     cy.wait(2000);
 
     // Wait for spinner to disappear
@@ -73,7 +75,7 @@ describe('Time Planning - Tag Filtering', () => {
    */
   it('should assign tags to sites', () => {
     cy.task('log', '[Tag Filter Tests] Assigning tags to sites...');
-    cy.visit('http://localhost:4200/advanced/sites');
+    cy.visit(`${BASE_URL}/advanced/sites`);
     cy.wait(2000);
 
     // Wait for spinner to disappear

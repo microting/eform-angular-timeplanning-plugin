@@ -44,13 +44,12 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   getTimePlannings$: Subscription;
   updateTimePlanning$: Subscription;
   getAvailableSites$: Subscription;
-  getAvailableTags$: Subscription;
   public selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
   locale: string;
 
   ngOnInit(): void {
     // Load available tags
-    this.getAvailableTags$ = this.settingsService
+    this.settingsService
       .getAvailableTags()
       .pipe(take(1))
       .subscribe((data) => {
@@ -209,7 +208,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     this.getPlannings();
   }
 
-  onTagsChanged($event: any) {
+  onTagsChanged($event: number[]) {
     this.selectedTagIds = $event;
     this.getPlannings();
   }
