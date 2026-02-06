@@ -161,4 +161,6 @@ export class AssignedSiteModel {
   fifthShiftActive: boolean;
   daysBackInTimeAllowedEditingEnabled: boolean;
   daysBackInTimeAllowedEditing: number;
+  isManager: boolean;
+  managingTagIds: number[];
 }

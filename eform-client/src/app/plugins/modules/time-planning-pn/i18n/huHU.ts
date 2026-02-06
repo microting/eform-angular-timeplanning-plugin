@@ -141,4 +141,7 @@ export const huHU = {
   'Start time is required': 'Kezdési időpont megadása kötelező',
   'Start time cannot be earlier than previous shift`s end time': 'A kezdési időpont nem lehet korábbi, mint az előző műszak befejezési időpontja',
   'Create device': 'Eszköz létrehozása',
+  Maternity: 'Szülési szabadság',
+  VacationDayOff: 'Szabadnap',
+  Holiday: 'Ünnep',
 };

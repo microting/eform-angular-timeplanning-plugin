@@ -51,6 +51,20 @@
       </mat-form-field>
     </div>
     <div class="text-field--rounded">
+      <mat-form-field style="flex: 0 0 25%; min-width: 150px;">
+        <mat-label>{{ 'Tags' | translate }}</mat-label>
+        <mtx-select
+          [items]="availableTags"
+          bindLabel="name"
+          bindValue="id"
+          [multiple]="true"
+          [ngModel]="selectedTagIds"
+          (ngModelChange)="onTagsChanged($event)"
+          id="planningTags">
+        </mtx-select>
+      </mat-form-field>
+    </div>
+    <div class="text-field--rounded">
       <mat-form-field id="workingHoursRange">
         <mat-label>{{ 'Date range' | translate }}</mat-label>
         <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>

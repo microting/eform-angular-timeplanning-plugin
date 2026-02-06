@@ -141,4 +141,7 @@ export const noNO = {
   'Start time is required': 'Starttidspunkt er obligatorisk',
   'Start time cannot be earlier than previous shift`s end time': 'Starttidspunktet kan ikke være tidligere enn sluttidspunktet for forrige skift',
   'Create device': 'Opprett enhet',
+  Maternity: 'fødselspermisjon',
+  VacationDayOff: 'Fridag i ferien',
+  Holiday: 'Ferie',
 };

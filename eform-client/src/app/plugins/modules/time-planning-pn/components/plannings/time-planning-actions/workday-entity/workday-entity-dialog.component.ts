@@ -1,17 +1,21 @@
 import {Component, OnInit, TemplateRef, ViewChild,
-  inject
+  inject, OnDestroy
 } from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialog} from '@angular/material/dialog';
 import {TranslateService} from '@ngx-translate/core';
 import {DatePipe} from '@angular/common';
 import {TimePlanningMessagesEnum} from '../../../../enums';
-import {AssignedSiteModel, PlanningPrDayModel} from '../../../../models';
+import {AssignedSiteModel, PlanningPrDayModel, GpsCoordinateModel, PictureSnapshotModel} from '../../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
-import {TimePlanningPnPlanningsService} from '../../../../services';
+import {TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService} from '../../../../services';
 import {VersionHistoryModalComponent} from '../version-history-modal/version-history-modal.component';
 import {Store} from '@ngrx/store';
-import {selectCurrentUserIsFirstUser} from 'src/app/state';
+import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import validator from 'validator';
+import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
+import {TemplateFilesService} from 'src/app/common/services';
+import {Subscription} from 'rxjs';
+import { MatDialogRef } from '@angular/material/dialog';
 
 import {
   AbstractControl,
@@ -30,19 +34,27 @@ import {
   styleUrls: ['./workday-entity-dialog.component.scss'],
   standalone: false
 })
-export class WorkdayEntityDialogComponent implements OnInit {
+export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private planningsService = inject(TimePlanningPnPlanningsService);
+  private gpsCoordinatesService = inject(TimePlanningPnGpsCoordinatesService);
+  private pictureSnapshotsService = inject(TimePlanningPnPictureSnapshotsService);
   private dialog = inject(MatDialog);
   private store = inject(Store);
+  private sanitizer = inject(DomSanitizer);
+  private imageService = inject(TemplateFilesService);
   public data = inject<{
       planningPrDayModels: PlanningPrDayModel,
       assignedSiteModel: AssignedSiteModel
     }>(MAT_DIALOG_DATA);
   protected datePipe = inject(DatePipe);
   private translateService = inject(TranslateService);
+  private dialogRef = inject(MatDialogRef<WorkdayEntityDialogComponent>);
+  private originalDialogWidth: string = '600px';
+  private originalDialogHeight: string = 'auto';
 
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
+  protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
 
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   enumKeys: string[] = [];
@@ -72,12 +84,26 @@ export class WorkdayEntityDialogComponent implements OnInit {
   private readonly timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
   inputErrorMessages: Record<string, Record<string, string>> = {};
 
+  // GPS/Snapshot properties
+  selectedGpsCoordinate: { latitude: number; longitude: number } | null = null;
+  selectedSnapshot: string | null = null;
+  mapUrl: SafeResourceUrl | null = null;
+  snapshotUrl: string | null = null;
+  imageSub$: Subscription;
+  gpsDataMap: Map<string, GpsCoordinateModel> = new Map();
+  snapshotDataMap: Map<string, PictureSnapshotModel> = new Map();
+  private readonly GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
+
 
 
   ngOnInit(): void {
     // Enum-opsætning
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.nettoHoursOverrideActive = this.data.planningPrDayModels.nettoHoursOverrideActive;
+    // Store original dialog dimensions at initialization
+    const dialogConfig = this.dialogRef._containerInstance._config;
+    this.originalDialogWidth = dialogConfig.width || '600px';
+    this.originalDialogHeight = dialogConfig.height || 'auto';
 
 
     const m = this.data.planningPrDayModels;
@@ -337,6 +363,7 @@ export class WorkdayEntityDialogComponent implements OnInit {
     }
 
     this.updateDisabledStates();
+    this.loadGpsAndSnapshotData();
   }
 
   // inside class:
@@ -1064,9 +1091,15 @@ export class WorkdayEntityDialogComponent implements OnInit {
 
       // Your original “DayOff” logic preserved
       if (changedKey !== 'DayOff') {
-        this.data.planningPrDayModels.nettoHoursOverrideActive = true;
-        this.data.planningPrDayModels.nettoHoursOverride = this.data.planningPrDayModels.planHours;
-        this.workdayForm.get('nettoHoursOverride')?.setValue(this.data.planningPrDayModels.planHours);
+        if (changedKey === 'VacationDayOff') {
+          this.data.planningPrDayModels.nettoHoursOverrideActive = true;
+          this.data.planningPrDayModels.nettoHoursOverride = (0 - this.data.planningPrDayModels.planHours);
+          this.workdayForm.get('nettoHoursOverride')?.setValue(0 - this.data.planningPrDayModels.planHours);
+        } else {
+          this.data.planningPrDayModels.nettoHoursOverrideActive = true;
+          this.data.planningPrDayModels.nettoHoursOverride = this.data.planningPrDayModels.planHours;
+          this.workdayForm.get('nettoHoursOverride')?.setValue(this.data.planningPrDayModels.planHours);
+        }
       } else {
         this.data.planningPrDayModels.nettoHoursOverrideActive = false;
       }
@@ -1559,5 +1592,124 @@ export class WorkdayEntityDialogComponent implements OnInit {
       maxWidth: '1400px',
       height: '80vh'
     });
+  }
+
+  loadGpsAndSnapshotData(): void {
+    this.loadGpsOrSnapshotForRegistration(this.data.planningPrDayModels.id);
+  }
+
+  private loadGpsOrSnapshotForRegistration(registrationId: number | null): void {
+    if (!registrationId) {
+      return;
+    }
+
+    // Try to load GPS data first
+    this.gpsCoordinatesService.getByPlanRegistrationId(registrationId).subscribe({
+      next: (result) => {
+        if (result.success && result.model) {
+          // this.gpsDataMap.set(registrationId, result.model);
+          const gpsData = result.model;
+          gpsData.forEach(gpsEntry => {
+            this.gpsDataMap.set(gpsEntry.registrationType, gpsEntry);
+          });
+          this.tryLoadSnapshot(registrationId);
+        } else {
+          // If no GPS data, try snapshot
+          this.tryLoadSnapshot(registrationId);
+        }
+      },
+      error: () => {
+        // If GPS fails, try snapshot
+        this.tryLoadSnapshot(registrationId);
+      }
+    });
+  }
+
+  private tryLoadSnapshot(registrationId: number): void {
+    this.pictureSnapshotsService.getByPlanRegistrationId(registrationId).subscribe({
+      next: (snapshotResult) => {
+        if (snapshotResult.success && snapshotResult.model) {
+          const snapshotData = snapshotResult.model;
+          snapshotData.forEach(snapshotEntry => {
+            this.snapshotDataMap.set(snapshotEntry.registrationType, snapshotEntry);
+          });
+        }
+      },
+      error: () => {
+        // No snapshot either, that's okay
+      }
+    });
+  }
+
+  hasGpsData(registrationType: string | null): boolean {
+    if (!registrationType) {
+      return false;
+    }
+    return this.gpsDataMap.has(registrationType);
+  }
+
+  hasSnapshotData(registrationType: string | null): boolean {
+    if (!registrationType) {
+      return false;
+    }
+    return this.snapshotDataMap.has(registrationType);
+  }
+
+  onGpsClick(registrationType: string): void {
+    const gpsData = this.gpsDataMap.get(registrationType);
+    if (gpsData && gpsData.latitude && gpsData.longitude) {
+      this.selectedGpsCoordinate = {
+        latitude: gpsData.latitude,
+        longitude: gpsData.longitude
+      };
+      this.selectedSnapshot = null;
+      const url = this.GOOGLE_MAPS_EMBED_URL
+        .replace('{lat}', gpsData.latitude.toString())
+        .replace('{lng}', gpsData.longitude.toString());
+      this.mapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+
+      // Expand dialog width
+      this.dialogRef.updateSize('90vw', '80vh');
+    }
+  }
+
+  onSnapshotClick(registrationType: string): void {
+    const snapshotData = this.snapshotDataMap.get(registrationType);
+    if (!snapshotData || !snapshotData.pictureHash) {
+      return;
+    }
+    this.selectedSnapshot = snapshotData.pictureHash;
+    this.selectedGpsCoordinate = null;
+    this.mapUrl = null;
+    this.snapshotUrl = null;
+    this.imageSub$?.unsubscribe();
+    this.imageSub$ = this.imageService.getImage(snapshotData.fileUrl).subscribe((blob) => {
+      this.revokeSnapshotUrl();
+      this.snapshotUrl = URL.createObjectURL(blob);
+    });
+
+    // Expand dialog width
+    this.dialogRef.updateSize('90vw', '80vh');
+  }
+
+  private revokeSnapshotUrl(): void {
+    if (this.snapshotUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(this.snapshotUrl);
+    }
+  }
+
+  closePanel(): void {
+    this.selectedGpsCoordinate = null;
+    this.selectedSnapshot = null;
+    this.mapUrl = null;
+    this.snapshotUrl = null;
+
+    // Restore original dialog size
+    this.dialogRef.updateSize(this.originalDialogWidth, this.originalDialogHeight);
+  }
+
+  ngOnDestroy(): void {
+    this.imageSub$?.unsubscribe();
+    this.revokeSnapshotUrl();
   }
 }

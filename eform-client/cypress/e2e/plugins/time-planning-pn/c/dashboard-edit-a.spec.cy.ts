@@ -238,7 +238,7 @@ describe('Dashboard edit values', () => {
   it('should enable auto break calculations with empty values', () => {
     pluginPage.Navbar.goToPluginsPage();
     cy.get('#actionMenu')
-      .should('be.visible')
+      .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
     cy.get('#plugin-settings-link0').click();
@@ -259,6 +259,13 @@ describe('Dashboard edit values', () => {
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder c] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.get('#firstColumn0').click();
     cy.get('#useGoogleSheetAsDefault > div > div > input').invoke('attr', 'class').then(currentState => {
       cy.log('class: ' + currentState);

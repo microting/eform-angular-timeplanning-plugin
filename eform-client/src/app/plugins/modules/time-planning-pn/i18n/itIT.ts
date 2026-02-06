@@ -141,4 +141,7 @@ export const itIT = {
   'Start time is required': 'L&#39;orario di inizio è obbligatorio',
   'Start time cannot be earlier than previous shift`s end time': 'L&#39;ora di inizio non può essere precedente all&#39;ora di fine del turno precedente',
   'Create device': 'Crea dispositivo',
+  Maternity: 'Congedo di maternità',
+  VacationDayOff: 'Giorno di ferie',
+  Holiday: 'Vacanza',
 };

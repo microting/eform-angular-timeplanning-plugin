@@ -109,9 +109,15 @@ public class TimePlanningGpsCoordinateService(
     {
         try
         {
+            var planRegistration = await dbContext.PlanRegistrations
+                .Where(x => x.Date == model.Date)
+                .Where(x => x.SdkSitId == model.SdkSiteId)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync();
+
             var gpsCoordinate = new GpsCoordinate
             {
-                PlanRegistrationId = model.PlanRegistrationId,
+                PlanRegistrationId = planRegistration.Id,
                 Latitude = model.Latitude,
                 Longitude = model.Longitude,
                 RegistrationType = model.RegistrationType,
@@ -134,6 +140,12 @@ public class TimePlanningGpsCoordinateService(
     {
         try
         {
+            var planRegistration = await dbContext.PlanRegistrations
+                .Where(x => x.Date == model.Date)
+                .Where(x => x.SdkSitId == model.SdkSiteId)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync();
+
             var gpsCoordinate = await dbContext.GpsCoordinates
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Id == model.Id)
@@ -144,7 +156,7 @@ public class TimePlanningGpsCoordinateService(
                 return new OperationResult(false, localizationService.GetString("GpsCoordinateNotFound"));
             }
 
-            gpsCoordinate.PlanRegistrationId = model.PlanRegistrationId;
+            gpsCoordinate.PlanRegistrationId = planRegistration.Id;
             gpsCoordinate.Latitude = model.Latitude;
             gpsCoordinate.Longitude = model.Longitude;
             gpsCoordinate.RegistrationType = model.RegistrationType;

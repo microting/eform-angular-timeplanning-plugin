@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using BackendConfiguration.Pn.Integration.Test;
 using Microsoft.EntityFrameworkCore;
@@ -439,4 +440,331 @@ public class SettingsServiceTests : TestBaseSetup
         Assert.That(updatedSite2.GpsEnabled, Is.True);
         Assert.That(updatedSite2.SnapshotEnabled, Is.True);
     }
+    
+    #region Manager and Tags Tests
+
+    [Test]
+    public async Task GetAssignedSite_ReturnsIsManager_WhenSet()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 20,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Manager Test Site",
+            MicrotingUid = 20
+        };
+        await site.Create(sdkDbContext);
+
+        // Act
+        var result = await _settingsService.GetAssignedSite(20);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.IsManager, Is.True);
+        Assert.That(result.Model.ManagingTagIds, Is.Not.Null);
+        Assert.That(result.Model.ManagingTagIds.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task GetAssignedSite_LoadsManagingTags_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 21,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        // Create managing tags
+        var tag1 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 1,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag1.Create(TimePlanningPnDbContext);
+
+        var tag2 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 2,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag2.Create(TimePlanningPnDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Manager Test Site with Tags",
+            MicrotingUid = 21
+        };
+        await site.Create(sdkDbContext);
+
+        // Act
+        var result = await _settingsService.GetAssignedSite(21);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.IsManager, Is.True);
+        Assert.That(result.Model.ManagingTagIds, Is.Not.Null);
+        Assert.That(result.Model.ManagingTagIds.Count, Is.EqualTo(2));
+        Assert.That(result.Model.ManagingTagIds, Does.Contain(1));
+        Assert.That(result.Model.ManagingTagIds, Does.Contain(2));
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UpdatesIsManager_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 22,
+            IsManager = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 22,
+            IsManager = true,
+            ManagingTagIds = new System.Collections.Generic.List<int>(),
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.IsManager, Is.True);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_AddsManagingTags_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 23,
+            IsManager = true,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 23,
+            IsManager = true,
+            ManagingTagIds = new System.Collections.Generic.List<int> { 10, 20, 30 },
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var managingTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+
+        Assert.That(managingTags, Is.Not.Null);
+        Assert.That(managingTags.Count, Is.EqualTo(3));
+        Assert.That(managingTags.Any(x => x.TagId == 10), Is.True);
+        Assert.That(managingTags.Any(x => x.TagId == 20), Is.True);
+        Assert.That(managingTags.Any(x => x.TagId == 30), Is.True);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_RemovesManagingTags_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 24,
+            IsManager = true,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        // Create initial tags
+        var tag1 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 10,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag1.Create(TimePlanningPnDbContext);
+
+        var tag2 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 20,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag2.Create(TimePlanningPnDbContext);
+
+        // Update model with only one tag (removing tag 20)
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 24,
+            IsManager = true,
+            ManagingTagIds = new System.Collections.Generic.List<int> { 10 },
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var managingTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+
+        Assert.That(managingTags, Is.Not.Null);
+        Assert.That(managingTags.Count, Is.EqualTo(1));
+        Assert.That(managingTags[0].TagId, Is.EqualTo(10));
+
+        // Verify tag2 was soft-deleted
+        var allTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .ToListAsync();
+        var removedTag = allTags.FirstOrDefault(x => x.TagId == 20);
+        Assert.That(removedTag, Is.Not.Null);
+        Assert.That(removedTag.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Removed));
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UpdatesBothIsManagerAndTags_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 25,
+            IsManager = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 25,
+            IsManager = true,
+            ManagingTagIds = new System.Collections.Generic.List<int> { 100, 200 },
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.IsManager, Is.True);
+
+        var managingTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+
+        Assert.That(managingTags, Is.Not.Null);
+        Assert.That(managingTags.Count, Is.EqualTo(2));
+        Assert.That(managingTags.Any(x => x.TagId == 100), Is.True);
+        Assert.That(managingTags.Any(x => x.TagId == 200), Is.True);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_HandlesNullManagingTagIds_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 26,
+            IsManager = true,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        // Create initial tags
+        var tag1 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 5,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag1.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 26,
+            IsManager = true,
+            ManagingTagIds = null, // Null should be handled gracefully
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        // All tags should be removed when null is passed
+        var managingTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+
+        Assert.That(managingTags.Count, Is.EqualTo(0));
+    }
+
+    #endregion
 }

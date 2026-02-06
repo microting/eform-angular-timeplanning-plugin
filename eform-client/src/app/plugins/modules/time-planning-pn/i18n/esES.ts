@@ -141,4 +141,7 @@ export const esES = {
   'Start time is required': 'Se requiere hora de inicio',
   'Start time cannot be earlier than previous shift`s end time': 'La hora de inicio no puede ser anterior a la hora de finalización del turno anterior',
   'Create device': 'Crear dispositivo',
+  Maternity: 'Licencia de maternidad',
+  VacationDayOff: 'Día libre de vacaciones',
+  Holiday: 'Día festivo',
 };

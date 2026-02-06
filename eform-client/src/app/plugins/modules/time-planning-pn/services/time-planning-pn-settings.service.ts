@@ -9,7 +9,8 @@ import { ApiBaseService } from 'src/app/common/services';
 import { TimePlanningSettingsModel,
   AssignedSiteModel,
   GlobalAutoBreakSettingsModel,
-  AssignedSiteUpdateModel } from '../models';
+  AssignedSiteUpdateModel,
+  CommonTagModel } from '../models';
 
 export let TimePlanningSettingsMethods = {
   Settings: 'api/time-planning-pn/settings',
@@ -21,6 +22,7 @@ export let TimePlanningSettingsMethods = {
   UpdateAssignedSite: 'api/time-planning-pn/settings/assigned-site',
   GlobalAutoBreakCalculationSettings: 'api/time-planning-pn/settings/global-auto-break-settings',
   ResetGlobalAutoBreakCalculationSettings: 'api/time-planning-pn/settings/reset-global-auto-break-settings',
+  AvailableTags: 'api/tags/index',
 };
 
 @Injectable()
@@ -91,5 +93,9 @@ export class TimePlanningPnSettingsService {
 
   resetGlobalAutoBreakCalculationSettings(): Observable<OperationResult> {
     return this.apiBaseService.delete(TimePlanningSettingsMethods.ResetGlobalAutoBreakCalculationSettings);
+  }
+
+  getAvailableTags(): Observable<OperationDataResult<CommonTagModel[]>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.AvailableTags);
   }
 }

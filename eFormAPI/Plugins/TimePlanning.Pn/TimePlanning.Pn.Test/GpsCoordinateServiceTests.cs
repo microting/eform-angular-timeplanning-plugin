@@ -25,10 +25,10 @@ public class GpsCoordinateServiceTests : TestBaseSetup
         await base.Setup();
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
-        
+
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
-        
+
         _gpsCoordinateService = new TimePlanningGpsCoordinateService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<TimePlanningGpsCoordinateService>>(),
             TimePlanningPnDbContext,
@@ -51,7 +51,8 @@ public class GpsCoordinateServiceTests : TestBaseSetup
 
         var model = new GpsCoordinateCreateModel
         {
-            PlanRegistrationId = planRegistration.Id,
+            SdkSiteId = 1,
+            Date = planRegistration.Date,
             Latitude = 55.12345,
             Longitude = 12.54321,
             RegistrationType = "CheckIn"
@@ -170,7 +171,8 @@ public class GpsCoordinateServiceTests : TestBaseSetup
         var updateModel = new GpsCoordinateUpdateModel
         {
             Id = gpsCoordinate.Id,
-            PlanRegistrationId = planRegistration.Id,
+            SdkSiteId = 1,
+            Date = planRegistration.Date,
             Latitude = 56.00000,
             Longitude = 13.00000,
             RegistrationType = "CheckOut"

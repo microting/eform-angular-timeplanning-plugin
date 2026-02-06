@@ -47,6 +47,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'absence-requests',
+        canActivate: [AuthGuard],
+        loadChildren: () =>
+          import('./modules/absence-requests/absence-requests.module').then(
+            (m) => m.AbsenceRequestsModule
+          ),
+      },
+      {
         path: 'settings',
         canActivate: [AuthGuard],
         component: TimePlanningSettingsComponent,

@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WorkdayEntityDialogComponent } from './workday-entity-dialog.component';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { TimePlanningPnPlanningsService } from '../../../../services';
+import { TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService } from '../../../../services';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe, CommonModule } from '@angular/common';
 import { of } from 'rxjs';
@@ -10,12 +10,19 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { provideMockStore } from '@ngrx/store/testing';
+import { DomSanitizer } from '@angular/platform-browser';
+import { TemplateFilesService } from 'src/app/common/services';
 
 describe('WorkdayEntityDialogComponent', () => {
   let component: WorkdayEntityDialogComponent;
   let fixture: ComponentFixture<WorkdayEntityDialogComponent>;
   let mockPlanningsService: jest.Mocked<TimePlanningPnPlanningsService>;
   let mockTranslateService: jest.Mocked<TranslateService>;
+  let mockGpsCoordinatesService: jest.Mocked<TimePlanningPnGpsCoordinatesService>;
+  let mockPictureSnapshotsService: jest.Mocked<TimePlanningPnPictureSnapshotsService>;
+  let mockDomSanitizer: jest.Mocked<DomSanitizer>;
+  let mockTemplateFilesService: jest.Mocked<TemplateFilesService>;
+  let mockDialogRef: jest.Mocked<MatDialogRef<WorkdayEntityDialogComponent>>;
 
   const mockData = {
     planningPrDayModels: {
@@ -94,6 +101,27 @@ describe('WorkdayEntityDialogComponent', () => {
       stream: jest.fn(),
       onLangChange: of({ lang: 'en' }),
     } as any;
+    mockGpsCoordinatesService = {
+      getByPlanRegistrationId: jest.fn().mockReturnValue(of({ success: false, model: null })),
+    } as any;
+    mockPictureSnapshotsService = {
+      getByPlanRegistrationId: jest.fn().mockReturnValue(of({ success: false, model: null })),
+    } as any;
+    mockDomSanitizer = {
+      bypassSecurityTrustResourceUrl: jest.fn().mockImplementation((url) => url),
+    } as any;
+    mockTemplateFilesService = {
+      getImage: jest.fn().mockReturnValue(of(new Blob())),
+    } as any;
+    mockDialogRef = {
+      close: jest.fn(),
+      _containerInstance: {
+        _config: {
+          width: '600px',
+          height: 'auto'
+        }
+      }
+    } as any;
 
     mockTranslateService.instant.mockReturnValue('Translated');
     mockTranslateService.stream.mockReturnValue(of('Translated'));
@@ -112,8 +140,13 @@ describe('WorkdayEntityDialogComponent', () => {
           ]
         }),
         { provide: MAT_DIALOG_DATA, useValue: mockData },
+        { provide: MatDialogRef, useValue: mockDialogRef },
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },
-        { provide: TranslateService, useValue: mockTranslateService }
+        { provide: TranslateService, useValue: mockTranslateService },
+        { provide: TimePlanningPnGpsCoordinatesService, useValue: mockGpsCoordinatesService },
+        { provide: TimePlanningPnPictureSnapshotsService, useValue: mockPictureSnapshotsService },
+        { provide: DomSanitizer, useValue: mockDomSanitizer },
+        { provide: TemplateFilesService, useValue: mockTemplateFilesService }
       ]
     }).compileComponents();
 
@@ -263,7 +296,7 @@ describe('WorkdayEntityDialogComponent', () => {
   describe('Form Initialization', () => {
     it('should initialize workday form with correct structure', () => {
       component.ngOnInit();
-      
+
       expect(component.workdayForm).toBeDefined();
       expect(component.workdayForm.get('planned')).toBeDefined();
       expect(component.workdayForm.get('actual')).toBeDefined();
@@ -272,7 +305,7 @@ describe('WorkdayEntityDialogComponent', () => {
 
     it('should create shift forms for all 5 shifts', () => {
       component.ngOnInit();
-      
+
       for (let i = 1; i <= 5; i++) {
         expect(component.workdayForm.get(`planned.shift${i}`)).toBeDefined();
         expect(component.workdayForm.get(`actual.shift${i}`)).toBeDefined();
@@ -281,7 +314,7 @@ describe('WorkdayEntityDialogComponent', () => {
 
     it('should populate form with initial data values', () => {
       component.ngOnInit();
-      
+
       const plannedShift1 = component.workdayForm.get('planned.shift1');
       expect(plannedShift1?.get('start')?.value).toBe('08:00');
       expect(plannedShift1?.get('stop')?.value).toBe('17:00');
@@ -292,9 +325,9 @@ describe('WorkdayEntityDialogComponent', () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 5);
       component.data.planningPrDayModels.date = futureDate.toISOString();
-      
+
       component.ngOnInit();
-      
+
       expect(component.isInTheFuture).toBe(true);
     });
 
@@ -302,9 +335,9 @@ describe('WorkdayEntityDialogComponent', () => {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 5);
       component.data.planningPrDayModels.date = pastDate.toISOString();
-      
+
       component.ngOnInit();
-      
+
       expect(component.isInTheFuture).toBe(false);
     });
   });
@@ -312,22 +345,22 @@ describe('WorkdayEntityDialogComponent', () => {
   describe('Date Time Conversion', () => {
     it('should convert time to datetime of today', () => {
       component.ngOnInit();
-      
+
       const result = component.convertTimeToDateTimeOfToday('08:00');
-      
+
       expect(result).toBeTruthy();
       expect(result).toContain('08:00:00');
     });
 
     it('should return null for empty time', () => {
       const result = component.convertTimeToDateTimeOfToday('');
-      
+
       expect(result).toBeNull();
     });
 
     it('should return null for null time', () => {
       const result = component.convertTimeToDateTimeOfToday(null);
-      
+
       expect(result).toBeNull();
     });
   });
@@ -336,9 +369,9 @@ describe('WorkdayEntityDialogComponent', () => {
     it('should calculate todays flex as difference between actual and plan hours', () => {
       component.data.planningPrDayModels.actualHours = 9;
       component.data.planningPrDayModels.planHours = 8;
-      
+
       component.ngOnInit();
-      
+
       expect(component.todaysFlex).toBe(1);
     });
   });
@@ -346,14 +379,14 @@ describe('WorkdayEntityDialogComponent', () => {
   describe('Flag Change Handling', () => {
     it('should turn off other flags when one is turned on', () => {
       component.ngOnInit();
-      
+
       const flags = component.workdayForm.get('flags');
-      
+
       // Simulate turning on a flag (if flags exist)
       if (flags && Object.keys((flags as any).controls).length > 0) {
         const firstKey = Object.keys((flags as any).controls)[0];
         component.onFlagChange(firstKey);
-        
+
         // Verify only one flag is true
         let trueCount = 0;
         Object.keys((flags as any).controls).forEach(key => {
@@ -361,7 +394,7 @@ describe('WorkdayEntityDialogComponent', () => {
             trueCount++;
           }
         });
-        
+
         expect(trueCount).toBeLessThanOrEqual(1);
       }
     });

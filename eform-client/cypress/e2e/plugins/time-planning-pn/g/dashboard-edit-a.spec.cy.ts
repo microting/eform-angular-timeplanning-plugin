@@ -2,7 +2,8 @@ import loginPage from '../../../Login.page';
 
 describe('Dashboard edit values', () => {
   const setTimepickerValue = (selector: string, hour: string, minute: string) => {
-    cy.get(selector).click();
+    let newSelector = '[data-testid="' + selector + '"]';
+    cy.get(newSelector).click();
     cy.get('ngx-material-timepicker-face').contains(hour).click({ force: true });
     cy.get('ngx-material-timepicker-face').contains(minute).click({ force: true });
     cy.wait(1000);
@@ -18,14 +19,22 @@ describe('Dashboard edit values', () => {
 
     cy.get('mat-tree-node').contains('Dashboard').click();
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder g] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
     cy.get('#workingHoursSite').click();
     cy.get('.ng-option').contains('ac ad').click();
     cy.get('#cell0_0').click();
 
     // clean out shifts
-    ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
+    ['plannedStartOfShift1', 'plannedEndOfShift1', 'start1StartedAt', 'stop1StoppedAt'].forEach(
       (selector) => {
-        cy.get(selector)
+        let newSelector = '[data-testid="' + selector + '"]';
+        cy.get(newSelector)
           .closest('.flex-row')
           .find('button mat-icon')
           .contains('delete')
@@ -34,8 +43,8 @@ describe('Dashboard edit values', () => {
       }
     );
 
-    setTimepickerValue('#plannedStartOfShift1', '1', '00');
-    setTimepickerValue('#plannedEndOfShift1', '10', '00');
+    setTimepickerValue('plannedStartOfShift1', '1', '00');
+    setTimepickerValue('plannedEndOfShift1', '10', '00');
     cy.wait(500);
   });
 
@@ -62,9 +71,10 @@ describe('Dashboard edit values', () => {
   afterEach(() => {
     cy.get('#cell0_0').click();
 
-    ['#plannedStartOfShift1', '#plannedEndOfShift1', '#start1StartedAt', '#stop1StoppedAt'].forEach(
+    ['plannedStartOfShift1', 'plannedEndOfShift1', 'start1StartedAt', 'stop1StoppedAt'].forEach(
       (selector) => {
-        cy.get(selector)
+        let newSelector = '[data-testid="' + selector + '"]';
+        cy.get(newSelector)
           .closest('.flex-row')
           .find('button mat-icon')
           .contains('delete')

@@ -141,4 +141,7 @@ export const plPL = {
   'Start time is required': 'Wymagana jest godzina rozpoczęcia',
   'Start time cannot be earlier than previous shift`s end time': 'Godzina rozpoczęcia nie może być wcześniejsza niż godzina zakończenia poprzedniej zmiany.',
   'Create device': 'Utwórz urządzenie',
+  Maternity: 'Urlop macierzyński',
+  VacationDayOff: 'Dzień wolny od urlopu',
+  Holiday: 'Wakacje',
 };

@@ -27,6 +27,7 @@ describe('TimePlanningsContainerComponent', () => {
       getResignedSites: jest.fn(),
       getAssignedSite: jest.fn(),
       updateAssignedSite: jest.fn(),
+      getAvailableTags: jest.fn(),
     } as any;
     mockDialog = {
       open: jest.fn(),
@@ -37,6 +38,7 @@ describe('TimePlanningsContainerComponent', () => {
 
     mockStore.select.mockReturnValue(of('en-US'));
     mockSettingsService.getAvailableSites.mockReturnValue(of({ success: true, model: [] }) as any);
+    mockSettingsService.getAvailableTags.mockReturnValue(of({ success: true, model: [] }) as any);
     mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: [] }) as any);
 
     await TestBed.configureTestingModule({
@@ -122,7 +124,7 @@ describe('TimePlanningsContainerComponent', () => {
   describe('Event Handlers', () => {
     it('should call getPlannings when onTimePlanningChanged is triggered', () => {
       jest.spyOn(component, 'getPlannings');
-      
+
       component.onTimePlanningChanged({});
 
       expect(component.getPlannings).toHaveBeenCalled();
@@ -130,7 +132,7 @@ describe('TimePlanningsContainerComponent', () => {
 
     it('should call getPlannings when onAssignedSiteChanged is triggered', () => {
       jest.spyOn(component, 'getPlannings');
-      
+
       component.onAssignedSiteChanged({});
 
       expect(component.getPlannings).toHaveBeenCalled();
@@ -139,7 +141,7 @@ describe('TimePlanningsContainerComponent', () => {
     it('should update siteId and call getPlannings when onSiteChanged is triggered', () => {
       jest.spyOn(component, 'getPlannings');
       const testSiteId = 123;
-      
+
       component.onSiteChanged(testSiteId);
 
       expect(component.siteId).toBe(testSiteId);
@@ -162,7 +164,7 @@ describe('TimePlanningsContainerComponent', () => {
   describe('Show Resigned Sites', () => {
     it('should load resigned sites when showResignedSites is true', () => {
       mockSettingsService.getResignedSites.mockReturnValue(of({ success: true, model: [{ id: 1, name: 'Resigned Site' }] } as any));
-      
+
       component.onShowResignedSitesChanged({ checked: true });
 
       expect(mockSettingsService.getResignedSites).toHaveBeenCalled();
@@ -172,11 +174,63 @@ describe('TimePlanningsContainerComponent', () => {
     it('should load available sites when showResignedSites is false', () => {
       component.showResignedSites = true;
       mockSettingsService.getAvailableSites.mockReturnValue(of({ success: true, model: [{ id: 1, name: 'Available Site' }] } as any));
-      
+
       component.onShowResignedSitesChanged({ checked: false });
 
       expect(mockSettingsService.getAvailableSites).toHaveBeenCalled();
       expect(component.showResignedSites).toBe(false);
+    });
+  });
+
+  describe('Tag Filtering', () => {
+    it('should load available tags on init', () => {
+      const mockTags = [
+        { id: 1, name: 'Tag1' },
+        { id: 2, name: 'Tag2' }
+      ];
+      mockSettingsService.getAvailableTags.mockReturnValue(of({ success: true, model: mockTags } as any));
+
+      component.ngOnInit();
+
+      expect(mockSettingsService.getAvailableTags).toHaveBeenCalled();
+    });
+
+    it('should update selectedTagIds and call getPlannings when onTagsChanged is triggered', () => {
+      jest.spyOn(component, 'getPlannings');
+      const testTagIds = [1, 2, 3];
+
+      component.onTagsChanged(testTagIds);
+
+      expect(component.selectedTagIds).toEqual(testTagIds);
+      expect(component.getPlannings).toHaveBeenCalled();
+    });
+
+    it('should include tagIds in request when tags are selected', () => {
+      component.selectedTagIds = [1, 2];
+      component.dateFrom = new Date(2024, 0, 15);
+      component.dateTo = new Date(2024, 0, 21);
+
+      component.getPlannings();
+
+      expect(mockPlanningsService.getPlannings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tagIds: [1, 2]
+        })
+      );
+    });
+
+    it('should not include tagIds in request when no tags are selected', () => {
+      component.selectedTagIds = [];
+      component.dateFrom = new Date(2024, 0, 15);
+      component.dateTo = new Date(2024, 0, 21);
+
+      component.getPlannings();
+
+      expect(mockPlanningsService.getPlannings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tagIds: undefined
+        })
+      );
     });
   });
 });

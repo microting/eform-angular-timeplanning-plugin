@@ -1,11 +1,15 @@
-import { Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { TimePlanningPnPlanningsService } from '../../../../services';
-import { PlanRegistrationVersionHistoryModel, PlanRegistrationVersionModel, FieldChangeModel } from '../../../../models';
+import {Component, Inject, OnInit, inject, OnDestroy, ViewChild, TemplateRef, AfterViewInit} from '@angular/core';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
+import {TimePlanningPnPlanningsService} from '../../../../services';
+import {PlanRegistrationVersionHistoryModel, FieldChangeModel} from '../../../../models';
+import {TemplateFilesService} from 'src/app/common/services';
+import {Subscription} from 'rxjs';
+import {MtxGridColumn} from '@ng-matero/extensions/grid';
+import {TranslateService} from '@ngx-translate/core';
 
 const GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
-const PICTURE_SNAPSHOT_API_URL = '/api/time-planning-pn/picture-snapshots/';
+const PICTURE_SNAPSHOT_API_URL = '/api/template-files/get-image/';
 
 @Component({
   selector: 'app-version-history-modal',
@@ -13,23 +17,51 @@ const PICTURE_SNAPSHOT_API_URL = '/api/time-planning-pn/picture-snapshots/';
   styleUrls: ['./version-history-modal.component.scss'],
   standalone: false
 })
-export class VersionHistoryModalComponent implements OnInit {
+export class VersionHistoryModalComponent implements OnInit, AfterViewInit, OnDestroy {
   versionHistory: PlanRegistrationVersionHistoryModel;
   selectedGpsCoordinate: { latitude: number; longitude: number } | null = null;
   selectedSnapshot: string | null = null;
   mapUrl: SafeResourceUrl | null = null;
   snapshotUrl: string | null = null;
   loading = false;
+  imageSub$: Subscription;
+  tableHeaders: MtxGridColumn[] = [];
 
-  constructor(
-    public dialogRef: MatDialogRef<VersionHistoryModalComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { planRegistrationId: number },
-    private planningsService: TimePlanningPnPlanningsService,
-    private sanitizer: DomSanitizer
-  ) {}
+  @ViewChild('fieldNameTemplate', {static: false}) fieldNameTemplate!: TemplateRef<any>;
+  @ViewChild('toValueTemplate', {static: false}) toValueTemplate!: TemplateRef<any>;
+
+  private imageService = inject(TemplateFilesService);
+  public dialogRef = inject(MatDialogRef<VersionHistoryModalComponent>);
+  public data = inject(MAT_DIALOG_DATA) as { planRegistrationId: number };
+  private planningsService = inject(TimePlanningPnPlanningsService);
+  private sanitizer = inject(DomSanitizer);
+  private translateService = inject(TranslateService);
 
   ngOnInit(): void {
     this.loadVersionHistory();
+  }
+
+  ngAfterViewInit(): void {
+    this.initTableHeaders();
+  }
+
+  initTableHeaders(): void {
+    this.tableHeaders = [
+      {
+        header: this.translateService.stream('Variable'),
+        field: 'fieldName',
+        cellTemplate: this.fieldNameTemplate,
+      },
+      {
+        header: this.translateService.stream('From value'),
+        field: 'fromValue',
+      },
+      {
+        header: this.translateService.stream('To value'),
+        field: 'toValue',
+        cellTemplate: this.toValueTemplate,
+      },
+    ];
   }
 
   loadVersionHistory(): void {
@@ -62,13 +94,23 @@ export class VersionHistoryModalComponent implements OnInit {
   }
 
   onSnapshotClick(change: FieldChangeModel): void {
-    if (change.pictureHash) {
-      this.selectedSnapshot = change.pictureHash;
-      this.selectedGpsCoordinate = null;
-      this.mapUrl = null;
-      // Assuming the picture hash is a URL or we need to construct a URL to fetch the image
-      // This might need adjustment based on how snapshots are stored
-      this.snapshotUrl = `${PICTURE_SNAPSHOT_API_URL}${change.pictureHash}`;
+    if (!change.pictureHash) {
+      return;
+    }
+    this.selectedSnapshot = change.pictureHash;
+    this.selectedGpsCoordinate = null;
+    this.mapUrl = null;
+    this.snapshotUrl = null;
+    this.imageSub$?.unsubscribe();
+    this.imageSub$ = this.imageService.getImage(change.toValue).subscribe((blob) => {
+      this.revokeSnapshotUrl();
+      this.snapshotUrl = URL.createObjectURL(blob);
+    });
+  }
+
+  private revokeSnapshotUrl(): void {
+    if (this.snapshotUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(this.snapshotUrl);
     }
   }
 
@@ -84,7 +126,9 @@ export class VersionHistoryModalComponent implements OnInit {
   }
 
   formatDateTime(date: Date): string {
-    if (!date) return '';
+    if (!date) {
+      return '';
+    }
     const d = new Date(date);
     return d.toLocaleString('en-US', {
       year: 'numeric',
@@ -92,12 +136,17 @@ export class VersionHistoryModalComponent implements OnInit {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+      second: '2-digit',
       hour12: false
     });
   }
 
   getFieldDisplayName(fieldName: string): string {
-    // Convert camelCase to space-separated words
     return fieldName.replace(/([A-Z])/g, ' $1').trim();
+  }
+
+  ngOnDestroy(): void {
+    this.imageSub$?.unsubscribe();
+    this.revokeSnapshotUrl();
   }
 }

@@ -141,4 +141,7 @@ export const svSE = {
   'Start time is required': 'Starttid krävs',
   'Start time cannot be earlier than previous shift`s end time': 'Starttiden kan inte vara tidigare än föregående skifts sluttid',
   'Create device': 'Skapa enhet',
+  Maternity: 'mammaledighet',
+  VacationDayOff: 'Semesterledig dag',
+  Holiday: 'Semester',
 };

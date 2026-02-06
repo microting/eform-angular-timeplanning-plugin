@@ -190,53 +190,80 @@ const updatePlanTextsFutureWeek = [
 
 describe('Dashboard edit values', () => {
   beforeEach(() => {
+    cy.task('log', '[Folder b - Dashboard Edit A] ========== BeforeEach: Setting up test ==========');
+    cy.task('log', '[Folder b - Dashboard Edit A] Visiting homepage and logging in');
     cy.visit('http://localhost:4200');
     loginPage.login();
+    cy.task('log', '[Folder b - Dashboard Edit A] Login completed');
   });
 
   it('should edit time registration in last week', () => {
+    cy.task('log', '[Folder b - Dashboard Edit A] ========== Test: Edit time registration in last week ==========');
+    cy.task('log', '[Folder b - Dashboard Edit A] Clicking Timeregistrering menu');
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+    cy.task('log', '[Folder b - Dashboard Edit A] Setting up intercept for index-update');
     cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
+    cy.task('log', '[Folder b - Dashboard Edit A] Clicking Dashboard menu');
     cy.get('mat-tree-node').contains('Dashboard').click();
+    cy.task('log', '[Folder b - Dashboard Edit A] Clicking backwards button');
     cy.get('#backwards').click();
+    cy.task('log', '[Folder b - Dashboard Edit A] Waiting for index-update API call (160s timeout)');
     cy.wait('@index-update', { timeout: 160000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Edit A] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
+    cy.task('log', '[Folder b - Dashboard Edit A] Index updated, verifying plannedHours3 is 53:15');
     cy.get('#plannedHours3').should('include.text', '53:15');
+    cy.task('log', '[Folder b - Dashboard Edit A] Starting loop to verify plan texts (7 days)');
     for (let i = 0; i < updatePlanTexts.length; i++) {
+      cy.task('log', `[Folder b - Dashboard Edit A] Verifying day ${i}: date=${updatePlanTexts[i].date}`);
       // let plannedHoursId = `#plannedHours3_${i}`;
       // if (updatePlanTexts[i].plannedHours !== '') {
       //   cy.get(plannedHoursId).should('include.text', updatePlanTexts[i].plannedHours);
       // }
       let flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (updatePlanTexts[i].flexBalanceToDate !== '') {
+        cy.task('log', `[Folder b - Dashboard Edit A] Verifying flexBalanceToDate: ${updatePlanTexts[i].flexBalanceToDate}`);
         cy.get(flexBalanceToDateId).should('include.text', updatePlanTexts[i].flexBalanceToDate);
       }
 
       let cellId = `#cell3_${i}`;
+      cy.task('log', `[Folder b - Dashboard Edit A] Clicking cell3_${i}`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
+      cy.task('log', `[Folder b - Dashboard Edit A] Verifying plan values: planHours=${updatePlanTexts[i].calculatedHours}, flex=${updatePlanTexts[i].flexToDate}`);
       cy.get('#planHours').should('have.value', updatePlanTexts[i].calculatedHours);
-      cy.get('#plannedStartOfShift1').should('have.value', updatePlanTexts[i].plannedStartOfShift1);
-      cy.get('#plannedBreakOfShift1').should('have.value', updatePlanTexts[i].plannedBreakOfShift1);
-      cy.get('#plannedEndOfShift1').should('have.value', updatePlanTexts[i].plannedEndOfShift1);
-      cy.get('#plannedStartOfShift2').should('have.value', updatePlanTexts[i].plannedStartOfShift2);
-      cy.get('#plannedBreakOfShift2').should('have.value', updatePlanTexts[i].plannedBreakOfShift2);
-      cy.get('#plannedEndOfShift2').should('have.value', updatePlanTexts[i].plannedEndOfShift2);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', updatePlanTexts[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('have.value', updatePlanTexts[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('have.value', updatePlanTexts[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedStartOfShift2"]').should('have.value', updatePlanTexts[i].plannedStartOfShift2);
+      cy.get('[data-testid="plannedBreakOfShift2"]').should('have.value', updatePlanTexts[i].plannedBreakOfShift2);
+      cy.get('[data-testid="plannedEndOfShift2"]').should('have.value', updatePlanTexts[i].plannedEndOfShift2);
       cy.get('#flexToDate').should('have.value', updatePlanTexts[i].flexToDate);
       cy.get('#flexIncludingToday').should('have.value', updatePlanTexts[i].flexIncludingToday);
       cy.get('#nettoHours').should('have.value', updatePlanTexts[i].nettoHours);
       cy.get('#todaysFlex').should('have.value', updatePlanTexts[i].todaysFlex);
       cy.get('#paidOutFlex').should('have.value', updatePlanTexts[i].paidOutFlex);
+      cy.task('log', '[Folder b - Dashboard Edit A] Clicking cancel button');
       cy.get('#cancelButton').click();
     }
 
+    cy.task('log', '[Folder b - Dashboard Edit A] Starting loop to update planned shifts (7 days)');
     for (let i = 0; i < secondUpdatePlanTexts.length; i++) {
+      cy.task('log', `[Folder b - Dashboard Edit A] Processing day ${i}: date=${secondUpdatePlanTexts[i].date}`);
 
       let cellId = `#cell3_${i}`;
+      cy.task('log', `[Folder b - Dashboard Edit A] Clicking cell3_${i} to open dialog`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
-      cy.get(`#plannedStartOfShift1`).click();
+      cy.get('#planHours').scrollIntoView().should('be.visible');
+      cy.task('log', `[Folder b - Dashboard Edit A] Setting shift times: start1=${secondUpdatePlanTexts[i].plannedStartOfShift1}, end1=${secondUpdatePlanTexts[i].plannedEndOfShift1}`);
+      cy.get('[data-testid="plannedStartOfShift1"]').click();
       // eslint-disable-next-line max-len
       let degrees0 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift1.split(':')[0]);
       let minuteDegrees0 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift1.split(':')[1]);
@@ -246,10 +273,10 @@ describe('Dashboard edit values', () => {
         cy.get('[style="transform: rotateZ(' + minuteDegrees0 + 'deg) translateX(-50%);"] > span').click({force: true});
       }
       cy.get('.timepicker-button span').contains('Ok').click();
-      cy.get('#plannedStartOfShift1').should('have.value', secondUpdatePlanTexts[i].plannedStartOfShift1);
+      cy.get('[data-testid="plannedStartOfShift1"]').should('have.value', secondUpdatePlanTexts[i].plannedStartOfShift1);
 
 
-      cy.get(`#plannedEndOfShift1`).click();
+      cy.get('[data-testid="plannedEndOfShift1"]').click();
       // eslint-disable-next-line max-len
       let degrees1 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift1.split(':')[0]);
       let minuteDegrees1 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift1.split(':')[1]);
@@ -263,10 +290,10 @@ describe('Dashboard edit values', () => {
         cy.get('[style="transform: rotateZ(' + minuteDegrees1 + 'deg) translateX(-50%);"] > span').click({force: true});
       }
       cy.get('.timepicker-button span').contains('Ok').click();
-      cy.get('#plannedEndOfShift1').should('have.value', secondUpdatePlanTexts[i].plannedEndOfShift1);
+      cy.get('[data-testid="plannedEndOfShift1"]').should('have.value', secondUpdatePlanTexts[i].plannedEndOfShift1);
 
       if (secondUpdatePlanTexts[i].plannedBreakOfShift1 !== '00:00' || secondUpdatePlanTexts[i].plannedBreakOfShift1 !== '') {
-        cy.get(`#plannedBreakOfShift1`).click();
+        cy.get('[data-testid="plannedBreakOfShift1"]').click();
         // eslint-disable-next-line max-len
         let degrees2 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift1.split(':')[0]);
         let minuteDegrees2 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift1.split(':')[1]);
@@ -285,10 +312,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#plannedBreakOfShift1').should('have.value', secondUpdatePlanTexts[i].plannedBreakOfShift1);
+      cy.get('[data-testid="plannedBreakOfShift1"]').should('have.value', secondUpdatePlanTexts[i].plannedBreakOfShift1);
 
       if (secondUpdatePlanTexts[i].plannedStartOfShift2 !== '') {
-        cy.get(`#plannedStartOfShift2`).click();
+        cy.get('[data-testid="plannedStartOfShift2"]').click();
         // eslint-disable-next-line max-len
         let degrees3 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift2.split(':')[0]);
         let minuteDegrees3 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift2.split(':')[1]);
@@ -303,9 +330,9 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
 
-        cy.get('#plannedStartOfShift2').should('have.value', secondUpdatePlanTexts[i].plannedStartOfShift2);
+        cy.get('[data-testid="plannedStartOfShift2"]').should('have.value', secondUpdatePlanTexts[i].plannedStartOfShift2);
 
-        cy.get('#plannedEndOfShift2').click();
+        cy.get('[data-testid="plannedEndOfShift2"]').click();
         // eslint-disable-next-line max-len
         let degrees4 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift2.split(':')[0]);
         let minuteDegrees4 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedEndOfShift2.split(':')[1]);
@@ -320,9 +347,9 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
 
-        cy.get('#plannedEndOfShift2').should('have.value', secondUpdatePlanTexts[i].plannedEndOfShift2);
+        cy.get('[data-testid="plannedEndOfShift2"]').should('have.value', secondUpdatePlanTexts[i].plannedEndOfShift2);
 
-        cy.get('#plannedBreakOfShift2').click();
+        cy.get('[data-testid="plannedBreakOfShift2"]').click();
         // eslint-disable-next-line max-len
         let degrees5 = 360 / 12 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift2.split(':')[0]);
         let minuteDegrees5 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedBreakOfShift2.split(':')[1]);
@@ -341,11 +368,11 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
 
-        cy.get('#plannedBreakOfShift2').should('have.value', secondUpdatePlanTexts[i].plannedBreakOfShift2);
+        cy.get('[data-testid="plannedBreakOfShift2"]').should('have.value', secondUpdatePlanTexts[i].plannedBreakOfShift2);
       }
 
 
-
+      cy.task('log', `[Folder b - Dashboard Edit A] Verifying calculated values: flex=${secondUpdatePlanTexts[i].flexToDate}, hours=${secondUpdatePlanTexts[i].calculatedHours}`);
       cy.get('#flexToDate').should('have.value', secondUpdatePlanTexts[i].flexToDate);
       cy.get('#flexIncludingToday').should('have.value', secondUpdatePlanTexts[i].flexIncludingToday);
       cy.get('#nettoHours').should('have.value', secondUpdatePlanTexts[i].nettoHours);
@@ -353,11 +380,23 @@ describe('Dashboard edit values', () => {
       cy.get('#paidOutFlex').should('have.value', secondUpdatePlanTexts[i].paidOutFlex);
 
       cy.get('#planHours').should('have.value', secondUpdatePlanTexts[i].calculatedHours);
+      cy.task('log', '[Folder b - Dashboard Edit A] Setting up intercept for update-day');
       cy.intercept('PUT', '**/api/time-planning-pn/plannings/*').as('update-day');
+      cy.task('log', '[Folder b - Dashboard Edit A] Clicking Save button');
       cy.get('#saveButton').click();
+      cy.task('log', '[Folder b - Dashboard Edit A] Waiting for update-day API call (160s timeout)');
       cy.wait('@update-day', { timeout: 160000 });
+      cy.task('log', '[Folder b - Dashboard Edit A] Waiting for index-update API call (160s timeout)');
       cy.wait('@index-update', { timeout: 160000 });
+      // Wait for spinner after index update
+      cy.get('body').then(($body) => {
+        if ($body.find('.overlay-spinner').length > 0) {
+          cy.task('log', '[Folder b - Dashboard Edit A] Spinner detected after index-update, waiting...');
+          cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        }
+      });
       cy.wait(1000);
+      cy.task('log', `[Folder b - Dashboard Edit A] Verifying updated values displayed in dashboard`);
       let flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (secondUpdatePlanTexts[i].flexBalanceToDate !== '') {
         cy.get(flexBalanceToDateId).should('include.text', secondUpdatePlanTexts[i].flexBalanceToDate);
@@ -370,6 +409,8 @@ describe('Dashboard edit values', () => {
       }
     }
 
+    cy.task('log', '[Folder b - Dashboard Edit A] Verifying final plannedHours3 is 52:55');
     cy.get('#plannedHours3').should('include.text', '52:55');
+    cy.task('log', '[Folder b - Dashboard Edit A] Test completed successfully');
   });
 });

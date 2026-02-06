@@ -36,22 +36,22 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
     public async Task SetUp()
     {
         await base.Setup();
-        
+
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
-        
+
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
-        
+
         _options = Substitute.For<IPluginDbOptions<TimePlanningBaseSettings>>();
         _dbContextHelper = Substitute.For<ITimePlanningDbContextHelper>();
         _dbContextHelper.GetDbContext().Returns(TimePlanningPnDbContext);
-        
+
         var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
         _coreService = Substitute.For<IEFormCoreService>();
         var core = Substitute.For<Core>();
         _coreService.GetCore().Returns(Task.FromResult(core));
-        
+
         _planningService = new TimePlanningPlanningService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<TimePlanningPlanningService>>(),
             _options,
@@ -156,7 +156,7 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model, Is.Not.Null);
         Assert.That(result.Model.Versions.Count, Is.GreaterThan(0));
-        
+
         // The most recent version should show changes
         var latestVersion = result.Model.Versions.FirstOrDefault();
         if (latestVersion != null)
@@ -185,7 +185,8 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
             Date = DateTime.Now,
             SdkSitId = 1,
             CreatedByUserId = 1,
-            UpdatedByUserId = 1
+            UpdatedByUserId = 1,
+            Start1StartedAt = DateTime.Now
         };
         await planRegistration.Create(TimePlanningPnDbContext);
 
@@ -206,7 +207,7 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
         // Assert
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model.GpsEnabled, Is.True);
-        
+
         // Check if GPS coordinate is included in any version
         var hasGpsChange = result.Model.Versions
             .Any(v => v.Changes.Any(c => c.FieldType == "gps"));
@@ -254,7 +255,7 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
         // Assert
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model.GpsEnabled, Is.False);
-        
+
         // GPS coordinates should not be included when GPS is disabled
         var hasGpsChange = result.Model.Versions
             .Any(v => v.Changes.Any(c => c.FieldType == "gps"));

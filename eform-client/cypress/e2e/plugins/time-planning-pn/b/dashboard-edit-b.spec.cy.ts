@@ -124,29 +124,50 @@ const secondUpdateActualTexts = [
 
 describe('Dashboard edit values', () => {
   beforeEach(() => {
+    cy.task('log', '[Folder b - Dashboard Edit B] ========== BeforeEach: Setting up test ==========');
+    cy.task('log', '[Folder b - Dashboard Edit B] Visiting homepage and logging in');
     cy.visit('http://localhost:4200');
     loginPage.login();
+    cy.task('log', '[Folder b - Dashboard Edit B] Login completed');
   });
 
 
 
   it('should edit time registration in last week', () => {
+    cy.task('log', '[Folder b - Dashboard Edit B] ========== Test: Edit time registration in last week ==========');
+    cy.task('log', '[Folder b - Dashboard Edit B] Clicking Timeregistrering menu');
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
+    cy.task('log', '[Folder b - Dashboard Edit B] Setting up intercept for index-update');
     cy.intercept('POST', '**/api/time-planning-pn/plannings/index').as('index-update');
+    cy.task('log', '[Folder b - Dashboard Edit B] Clicking Dashboard menu');
     cy.get('mat-tree-node').contains('Dashboard').click();
+    cy.task('log', '[Folder b - Dashboard Edit B] Clicking backwards button');
     cy.get('#backwards').click();
+    cy.task('log', '[Folder b - Dashboard Edit B] Waiting for index-update API call (60s timeout)');
     cy.wait('@index-update', { timeout: 60000 });
+    // Wait for spinner after index update
+    cy.get('body').then(($body) => {
+      if ($body.find('.overlay-spinner').length > 0) {
+        cy.task('log', '[Folder b - Dashboard Edit B] Spinner detected after index-update, waiting...');
+        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+      }
+    });
+    cy.task('log', '[Folder b - Dashboard Edit B] Index updated successfully');
     // cy.get('#plannedHours0').should('include.text', '21:00');
 
+    cy.task('log', '[Folder b - Dashboard Edit B] Starting loop to edit actual time registrations (7 days)');
     for (let i = 0; i < secondUpdatePlanTexts.length; i++) {
+      cy.task('log', `[Folder b - Dashboard Edit B] Processing day ${i}: date=${secondUpdatePlanTexts[i].date}`);
 
       let cellId = `#cell3_${i}`;
+      cy.task('log', `[Folder b - Dashboard Edit B] Clicking cell3_${i} to open dialog`);
       cy.get(cellId).scrollIntoView();
       cy.get(cellId).click();
-      cy.get('#planHours').should('be.visible');
+      cy.get('#planHours').scrollIntoView().should('be.visible');
+      cy.task('log', `[Folder b - Dashboard Edit B] Setting actual times: start=${secondUpdateActualTexts[i].start1StartedAt}, stop=${secondUpdateActualTexts[i].stop1StoppedAt}`);
 
       if (secondUpdateActualTexts[i].start1StartedAt !== '' && secondUpdateActualTexts[i].start1StartedAt !== '00:00') {
-        cy.get(`#start1StartedAt`).click();
+        cy.get('[data-testid="start1StartedAt"]').click();
         // eslint-disable-next-line max-len
         let degrees0 = 360 / 12 * parseInt(secondUpdateActualTexts[i].start1StartedAt.split(':')[0]);
         let minuteDegrees0 = 360 / 60 * parseInt(secondUpdateActualTexts[i].start1StartedAt.split(':')[1]);
@@ -164,10 +185,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#start1StartedAt').should('have.value', secondUpdateActualTexts[i].start1StartedAt);
+      cy.get('[data-testid="start1StartedAt"]').should('have.value', secondUpdateActualTexts[i].start1StartedAt);
 
       if (secondUpdateActualTexts[i].stop1StoppedAt !== '' && secondUpdateActualTexts[i].stop1StoppedAt !== '00:00') {
-        cy.get(`#stop1StoppedAt`).click();
+        cy.get('[data-testid="stop1StoppedAt"]').click();
         // eslint-disable-next-line max-len
         let degrees1 = 360 / 12 * parseInt(secondUpdateActualTexts[i].stop1StoppedAt.split(':')[0]);
         let minuteDegrees1 = 360 / 60 * parseInt(secondUpdateActualTexts[i].stop1StoppedAt.split(':')[1]);
@@ -188,10 +209,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#stop1StoppedAt').should('have.value', secondUpdateActualTexts[i].stop1StoppedAt);
+      cy.get('[data-testid="stop1StoppedAt"]').should('have.value', secondUpdateActualTexts[i].stop1StoppedAt);
 
       if (secondUpdateActualTexts[i].pause1Id !== '' && secondUpdateActualTexts[i].pause1Id !== '00:00') {
-        cy.get(`#pause1Id`).click();
+        cy.get('[data-testid="pause1Id"]').click();
         // eslint-disable-next-line max-len
         let degrees2 = 360 / 12 * parseInt(secondUpdateActualTexts[i].pause1Id.split(':')[0]);
         let minuteDegrees2 = 360 / 60 * parseInt(secondUpdateActualTexts[i].pause1Id.split(':')[1]);
@@ -211,13 +232,13 @@ describe('Dashboard edit values', () => {
           cy.get('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         cy.get('.timepicker-button span').contains('Ok').click();
-        cy.get('#pause1Id').should('have.value', secondUpdateActualTexts[i].pause1Id);
+        cy.get('[data-testid="pause1Id"]').should('have.value', secondUpdateActualTexts[i].pause1Id);
       } else {
-        cy.get('#pause1Id').should('have.value', '');
+        cy.get('[data-testid="pause1Id"]').should('have.value', '');
       }
 
       if (secondUpdateActualTexts[i].start2StartedAt !== '' && secondUpdateActualTexts[i].start2StartedAt !== '00:00') {
-        cy.get(`#start2StartedAt`).click();
+        cy.get('[data-testid="start2StartedAt"]').click();
         // eslint-disable-next-line max-len
         let degrees3 = 360 / 12 * parseInt(secondUpdateActualTexts[i].start2StartedAt.split(':')[0]);
         let minuteDegrees3 = 360 / 60 * parseInt(secondUpdateActualTexts[i].start2StartedAt.split(':')[1]);
@@ -238,10 +259,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#start2StartedAt').should('have.value', secondUpdateActualTexts[i].start2StartedAt);
+      cy.get('[data-testid="start2StartedAt"]').should('have.value', secondUpdateActualTexts[i].start2StartedAt);
 
       if (secondUpdateActualTexts[i].stop2StoppedAt !== '' && secondUpdateActualTexts[i].stop2StoppedAt !== '00:00' ) {
-        cy.get(`#stop2StoppedAt`).click();
+        cy.get('[data-testid="stop2StoppedAt"]').click();
         // eslint-disable-next-line max-len
         let degrees4 = 360 / 12 * parseInt(secondUpdateActualTexts[i].stop2StoppedAt.split(':')[0]);
         let minuteDegrees4 = 360 / 60 * parseInt(secondUpdateActualTexts[i].stop2StoppedAt.split(':')[1]);
@@ -262,10 +283,10 @@ describe('Dashboard edit values', () => {
         }
         cy.get('.timepicker-button span').contains('Ok').click();
       }
-      cy.get('#stop2StoppedAt').should('have.value', secondUpdateActualTexts[i].stop2StoppedAt);
+      cy.get('[data-testid="stop2StoppedAt"]').should('have.value', secondUpdateActualTexts[i].stop2StoppedAt);
 
       if (secondUpdateActualTexts[i].pause2Id !== '' && secondUpdateActualTexts[i].pause2Id !== '00:00') {
-        cy.get(`#pause2Id`).click();
+        cy.get('[data-testid="pause2Id"]').click();
         // eslint-disable-next-line max-len
         let degrees5 = 360 / 12 * parseInt(secondUpdateActualTexts[i].pause2Id.split(':')[0]);
         let minuteDegrees5 = 360 / 60 * parseInt(secondUpdateActualTexts[i].pause2Id.split(':')[1]);
@@ -285,10 +306,11 @@ describe('Dashboard edit values', () => {
           cy.get('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         cy.get('.timepicker-button span').contains('Ok').click();
-        cy.get('#pause2Id').should('have.value', secondUpdateActualTexts[i].pause2Id);
+        cy.get('[data-testid="pause2Id"]').should('have.value', secondUpdateActualTexts[i].pause2Id);
       } else {
-        cy.get('#pause2Id').should('have.value', '');
+        cy.get('[data-testid="pause2Id"]').should('have.value', '');
       }
+      cy.task('log', `[Folder b - Dashboard Edit B] Verifying calculated values`);
       cy.get('#flexToDate').should('have.value', secondUpdateActualTexts[i].flexToDate);
       cy.get('#flexIncludingToday').should('have.value', secondUpdateActualTexts[i].flexIncludingToday);
       cy.get('#nettoHours').should('have.value', secondUpdateActualTexts[i].nettoHours);
@@ -297,16 +319,29 @@ describe('Dashboard edit values', () => {
 
 
       cy.get('#planHours').should('have.value', secondUpdateActualTexts[i].calculatedHours);
+      cy.task('log', '[Folder b - Dashboard Edit B] Setting up intercept for update-day');
       cy.intercept('PUT', '**/api/time-planning-pn/plannings/*').as('update-day');
+      cy.task('log', '[Folder b - Dashboard Edit B] Clicking Save button');
       cy.get('#saveButton').click();
+      cy.task('log', '[Folder b - Dashboard Edit B] Waiting for update-day API call (160s timeout)');
       cy.wait('@update-day', { timeout: 160000 });
+      cy.task('log', '[Folder b - Dashboard Edit B] Waiting for index-update API call (160s timeout)');
       cy.wait('@index-update', { timeout: 160000 });
+      // Wait for spinner after index update
+      cy.get('body').then(($body) => {
+        if ($body.find('.overlay-spinner').length > 0) {
+          cy.task('log', '[Folder b - Dashboard Edit B] Spinner detected after index-update, waiting...');
+          cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
+        }
+      });
       cy.wait(1000);
+      cy.task('log', `[Folder b - Dashboard Edit B] Verifying updated flexBalanceToDate: ${secondUpdateActualTexts[i].flexBalanceToDate}`);
       let flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (secondUpdateActualTexts[i].flexBalanceToDate !== '') {
         cy.get(flexBalanceToDateId).should('include.text', secondUpdateActualTexts[i].flexBalanceToDate);
       }
     }
 
+    cy.task('log', '[Folder b - Dashboard Edit B] Test completed successfully');
   });
 });

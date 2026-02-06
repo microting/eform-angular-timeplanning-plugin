@@ -30,6 +30,8 @@ using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
 using TimePlanning.Pn.Services.TimePlanningGpsCoordinateService;
 using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
+using TimePlanning.Pn.Services.AbsenceRequestService;
+using TimePlanning.Pn.Services.ContentHandoverService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -89,6 +91,8 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<ITimePlanningGpsCoordinateService, TimePlanningGpsCoordinateService>();
         services.AddTransient<ITimePlanningPictureSnapshotService, TimePlanningPictureSnapshotService>();
         services.AddTransient<ISettingService, TimeSettingService>();
+        services.AddTransient<IAbsenceRequestService, AbsenceRequestService>();
+        services.AddTransient<IContentHandoverService, ContentHandoverService>();
         services.AddControllers();
     }
 
@@ -607,7 +611,6 @@ public class EformTimePlanningPlugin : IEformPlugin
 
     public void SeedDatabase(string connectionString)
     {
-        // Get DbContext
         var contextFactory = new TimePlanningPnContextFactory();
         using var dbContext = contextFactory.CreateDbContext([connectionString]);
 
@@ -619,13 +622,10 @@ public class EformTimePlanningPlugin : IEformPlugin
             if (activeAssignedSite.AllowPersonalTimeRegistration)
             {
                 activeAssignedSite.EnableMobileAccess = true;
-                activeAssignedSite.Update(dbContext);
-                dbContext.SaveChanges();
+                activeAssignedSite.Update(dbContext).GetAwaiter().GetResult();
             }
         }
 
-
-        // Seed configuration
         TimePlanningPluginSeed.SeedData(dbContext);
     }
 

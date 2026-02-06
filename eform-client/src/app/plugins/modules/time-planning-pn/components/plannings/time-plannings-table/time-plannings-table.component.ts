@@ -12,9 +12,8 @@ import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
 import {DatePipe} from '@angular/common';
 import * as R from 'ramda';
 import {TimePlanningMessagesEnum} from '../../../enums';
-import {Store} from "@ngrx/store";
-import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from "src/app/state";
-import {AndroidIcon, iOSIcon} from "src/app/common/const";
+import {Store} from '@ngrx/store';
+import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -251,7 +250,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
           if (result && result.success) {
             this.dialog.open(AssignedSiteDialogComponent, {
               data: result.model,
-              minWidth: '50%',
+              minWidth: 1024,
+              minHeight: 500
             })
               .afterClosed().subscribe((data: any) => {
               if (data !== '' && data !== undefined) {
@@ -316,6 +316,11 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
       if (result && result.success) {
         this.dialog.open(WorkdayEntityDialogComponent, {
           data: {planningPrDayModels: cellData, assignedSiteModel: result.model},
+          minWidth: 1024,
+          minHeight: 500,
+          maxWidth: '95vw',  // Add this
+          maxHeight: '95vh', // Add this
+          panelClass: 'time-planning-dialog'
         })
           .afterClosed().subscribe((data: any) => {
           if (data !== '' && data !== undefined) {

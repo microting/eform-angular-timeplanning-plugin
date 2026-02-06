@@ -141,4 +141,7 @@ export const ukUA = {
   'Start time is required': 'Потрібно вказати час початку',
   'Start time cannot be earlier than previous shift`s end time': 'Час початку не може бути раніше часу закінчення попередньої зміни',
   'Create device': 'Створити пристрій',
+  Maternity: 'Декретна відпустка',
+  VacationDayOff: 'Вихідний день',
+  Holiday: 'Свято',
 };
