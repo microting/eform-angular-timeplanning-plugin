@@ -11,6 +11,16 @@ describe('Time Planning - Tag Filtering', () => {
     `Tag-E-${Date.now()}-${Math.random().toString(36).substring(7)}`,
   ];
 
+
+  // Define tag combinations for each site
+  let siteTagCombinations = [
+    { siteIndex: 0, tags: [tagNames[0], tagNames[1]], sitename: '' }, // Site 1: Tag-A, Tag-B
+    { siteIndex: 1, tags: [tagNames[0], tagNames[2]], sitename: '' }, // Site 2: Tag-A, Tag-C
+    { siteIndex: 2, tags: [tagNames[0], tagNames[3]], sitename: '' }, // Site 3: Tag-A, Tag-D
+    { siteIndex: 3, tags: [tagNames[0], tagNames[4]], sitename: '' }, // Site 4: Tag-A, Tag-E
+    { siteIndex: 4, tags: [tagNames[0], tagNames[1], tagNames[2]], sitename: '' }, // Site 5: Tag-A, Tag-B, Tag-C
+  ];
+
   beforeEach(() => {
     cy.visit(BASE_URL);
     loginPage.login();
@@ -21,7 +31,7 @@ describe('Time Planning - Tag Filtering', () => {
    */
   const createTag = (tagName) => {
     cy.task('log', `[Tag Filter Tests] Creating tag: ${tagName}`);
-    
+
     // Navigate to Advanced > Sites to access tags management
     cy.visit(`${BASE_URL}/advanced/sites`);
     cy.task('log', '[Tag Filter Tests] Visited /advanced/sites, waiting for page load');
@@ -129,7 +139,7 @@ describe('Time Planning - Tag Filtering', () => {
    */
   it('should create 5 tags', () => {
     cy.task('log', '[Tag Filter Tests] ========== Starting tag creation ==========');
-    
+
     // Create each tag one by one following the pattern from 'm' folder
     tagNames.forEach((tagName, index) => {
       cy.task('log', `[Tag Filter Tests] Creating tag ${index + 1} of 5`);
@@ -150,23 +160,15 @@ describe('Time Planning - Tag Filtering', () => {
    */
   it('should assign tags to sites', () => {
     cy.task('log', '[Tag Filter Tests] ========== Starting tag assignment to sites ==========');
-    
-    // Define tag combinations for each site
-    const siteTagCombinations = [
-      { siteIndex: 0, tags: [tagNames[0], tagNames[1]] }, // Site 1: Tag-A, Tag-B
-      { siteIndex: 1, tags: [tagNames[0], tagNames[2]] }, // Site 2: Tag-A, Tag-C
-      { siteIndex: 2, tags: [tagNames[0], tagNames[3]] }, // Site 3: Tag-A, Tag-D
-      { siteIndex: 3, tags: [tagNames[0], tagNames[4]] }, // Site 4: Tag-A, Tag-E
-      { siteIndex: 4, tags: [tagNames[0], tagNames[1], tagNames[2]] }, // Site 5: Tag-A, Tag-B, Tag-C
-    ];
+
 
     siteTagCombinations.forEach((combination, idx) => {
       cy.task('log', `[Tag Filter Tests] Assigning tags to site ${idx + 1}: ${combination.tags.join(', ')}`);
-      
+
       // 1. Navigate to the advanced/sites
       cy.visit(`${BASE_URL}/advanced/sites`);
       cy.wait(2000);
-      
+
       // Wait for spinner to disappear
       cy.get('body').then(($body) => {
         if ($body.find('.overlay-spinner').length > 0) {
@@ -177,9 +179,13 @@ describe('Time Planning - Tag Filtering', () => {
       cy.task('log', `[Tag Filter Tests] On sites page, looking for site ${idx + 1}`);
 
       // 1.1 Click the action menu for the site in list
-      cy.get('table tbody tr').eq(combination.siteIndex).then(($row) => {
-        cy.task('log', `[Tag Filter Tests] Found site row ${idx + 1}, clicking action menu`);
-        cy.wrap($row).find('#actionMenu, button[id*="actionMenu"]').first().scrollIntoView().click();
+      // `siteIndex` now refers to rows after the first entry
+      cy.get('table tbody tr').then(($rows) => {
+        const targetRow = $rows.slice(1).get(combination.siteIndex);
+        cy.wrap(targetRow).within(() => {
+          cy.task('log', `[Tag Filter Tests] Found site row ${idx + 1}, clicking action menu`);
+          cy.get('#actionMenu, button[id*="actionMenu"]').first().scrollIntoView().click();
+        });
         cy.wait(500);
       });
 
@@ -194,35 +200,33 @@ describe('Time Planning - Tag Filtering', () => {
 
       // 1.3 Enter tags into the tag field with id "tagSelector" and select the tags
       cy.get('body').then(($dialogBody) => {
-        if ($dialogBody.find('#tagSelector').length > 0) {
-          cy.task('log', `[Tag Filter Tests] Found #tagSelector, selecting tags`);
+        const siteNameForRow = $dialogBody.find('#siteName').eq(idx + 2);
+        combination.sitename = siteNameForRow.length ? siteNameForRow.text().trim() : '';
+        cy.task('log', `[Tag Filter Tests] Found #tagSelector, selecting tags`);
 
-          // Select each tag in the combination
-          combination.tags.forEach((tagName, tagIdx) => {
-            cy.task('log', `[Tag Filter Tests] Selecting tag: ${tagName}`);
-            // Re-open dropdown for each tag selection to make .ng-option elements visible
-            cy.get('#tagSelector').scrollIntoView().should('be.visible').click();
-            cy.wait(500);
-            cy.get('.ng-option').contains(tagName).click();
-            cy.wait(200);
-          });
-
-          // Close dropdown
-          cy.get('body').click(0, 0);
+        // Select each tag in the combination
+        combination.tags.forEach((tagName, tagIdx) => {
+          cy.task('log', `[Tag Filter Tests] Selecting tag: ${tagName}`);
+          // Re-open dropdown for each tag selection to make .ng-option elements visible
+          cy.get('#tagSelector').scrollIntoView().should('be.visible').click();
           cy.wait(500);
-          cy.task('log', `[Tag Filter Tests] Tags selected for site ${idx + 1}`);
-        } else {
-          cy.task('log', `[Tag Filter Tests] WARNING: #tagSelector not found in dialog`);
-        }
+          cy.get('.ng-option').contains(tagName).click();
+          cy.wait(200);
+        });
+
+        // Close dropdown
+        cy.get('body').click(0, 0);
+        cy.wait(500);
+        cy.task('log', `[Tag Filter Tests] Tags selected for site ${idx + 1}`);
       });
 
       // 1.4 Intercept PUT to api/sites
       cy.intercept('PUT', '**/api/sites').as('site-update');
-      
+
       // 1.5 Click the "save" button with id "siteEditSaveBtn"
       cy.task('log', `[Tag Filter Tests] Clicking save button`);
       cy.get('#siteEditSaveBtn').scrollIntoView().should('be.visible').click();
-      
+
       // 1.5 Wait for PUT call to finish
       cy.task('log', `[Tag Filter Tests] Waiting for site-update API call`);
       cy.wait('@site-update', { timeout: 10000 });
@@ -248,7 +252,7 @@ describe('Time Planning - Tag Filtering', () => {
    */
   it('should show all assigned sites on dashboard', () => {
     cy.task('log', '[Tag Filter Tests] Navigating to dashboard...');
-    
+
     // Navigate to Time Planning Dashboard
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
     cy.wait(500);
@@ -282,7 +286,7 @@ describe('Time Planning - Tag Filtering', () => {
    */
   it('should filter by single tag', () => {
     cy.task('log', '[Tag Filter Tests] Testing single tag filter...');
-    
+
     // Navigate to dashboard
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
     cy.wait(500);
@@ -298,19 +302,34 @@ describe('Time Planning - Tag Filtering', () => {
       }
     });
 
-    cy.wait(2000);
+    // cy.wait(2000);
 
     // Check if tag filter exists
     cy.get('body').then(($body) => {
-      if ($body.find('#planningTags').length > 0) {
-        cy.task('log', '[Tag Filter Tests] Found #planningTags filter');
-        cy.get('#planningTags').should('be.visible').click();
+      cy.task('log', '[Tag Filter Tests] Found #planningTags filter');
+      siteTagCombinations.forEach((combination, idx) => {
+        cy.task('log', `[Tag Filter Tests] Testing filter for tag: ${combination.tags[0]} (Site: ${combination.sitename})`);
+        cy.get('#planningTags').scrollIntoView().should('be.visible').click();
         cy.wait(500);
-        
-        cy.task('log', '[Tag Filter Tests] Tag filter dropdown should be open');
-      } else {
-        cy.task('log', '[Tag Filter Tests] Tag filter not found on dashboard');
-      }
+        cy.get('.ng-option').contains(combination.tags[0]).click();
+        if ($body.find('.overlay-spinner').length > 0) {
+          cy.get('.overlay-spinner', { timeout: 30000 }).should('not.be.visible');
+        }
+
+        // Verify that the correct site is shown for this tag
+        cy.get('body').then(($body) => {
+          if ($body.find('app-time-plannings-table').length > 0) {
+            cy.task('log', '[Tag Filter Tests] Planning table visible, checking for filtered site');
+            cy.get('app-time-plannings-table').should('be.visible');
+            cy.get('app-time-plannings-table').should('contain', combination.sitename);
+          } else {
+            cy.task('log', '[Tag Filter Tests] ERROR: Planning table not found after applying tag filter');
+          }
+        });
+        cy.wait(500);
+
+      });
+      cy.task('log', '[Tag Filter Tests] Tag filter dropdown should be open');
     });
 
     cy.task('log', '[Tag Filter Tests] Single tag filter test completed');
@@ -321,7 +340,7 @@ describe('Time Planning - Tag Filtering', () => {
    */
   it('should filter by multiple tags', () => {
     cy.task('log', '[Tag Filter Tests] Testing multiple tag filter (AND logic)...');
-    
+
     // Navigate to dashboard
     cy.get('mat-nested-tree-node').contains('Timeregistrering').click();
     cy.wait(500);

@@ -138,7 +138,6 @@ public class TimePlanningPlanningService(
 
             assignedSites = model.ShowResignedSites ? assignedSites.Where(x => x.Resigned).ToList() : assignedSites.Where(x => !x.Resigned).ToList();
 
-
             if (model.SiteId != 0 && model.SiteId != null)
             {
                 assignedSites = assignedSites.Where(x => x.SiteId == model.SiteId).ToList();
@@ -149,7 +148,7 @@ public class TimePlanningPlanningService(
             {
                 var sdkSitesWithAnyOfTags = await sdkDbContext.SiteTags
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .Where(x => model.TagIds.Contains((int)x.TagId!))
+                    .Where(x => model.TagIds.Contains((int)x.TagId))
                     .Include(x => x.Site)
                     .Select(x => x.Site.MicrotingUid)
                     .Distinct()
