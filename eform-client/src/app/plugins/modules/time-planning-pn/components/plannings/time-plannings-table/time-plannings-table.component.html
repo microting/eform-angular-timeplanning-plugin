@@ -321,13 +321,14 @@
 
     <!-- Right Icons -->
     <div class="plan-icons">
-      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 2 || row.planningPrDayModels[col.field]?.message === 11" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">flight</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 2" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">flight</mat-icon>
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 10" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">pregnant_woman</mat-icon>
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 3 || row.planningPrDayModels[col.field]?.message === 7 || row.planningPrDayModels[col.field]?.message === 8" class="red-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">sick</mat-icon>
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 1" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">event_busy</mat-icon>
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 4" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">school</mat-icon>
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 5" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">event_busy</mat-icon>
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 9" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">outdoor_grill</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 11" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">clock_arrow_down</mat-icon>
       <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 12" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">luggage</mat-icon>
     </div>
   </div>
