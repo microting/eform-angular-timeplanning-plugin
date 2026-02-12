@@ -1090,18 +1090,14 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
       this.data.planningPrDayModels.message = TimePlanningMessagesEnum[changedKey as keyof typeof TimePlanningMessagesEnum];
 
       // Your original “DayOff” logic preserved
-      if (changedKey !== 'DayOff') {
-        if (changedKey === 'VacationDayOff') {
-          this.data.planningPrDayModels.nettoHoursOverrideActive = true;
-          this.data.planningPrDayModels.nettoHoursOverride = 0;
-          this.workdayForm.get('nettoHoursOverride')?.setValue(0);
-        } else {
-          this.data.planningPrDayModels.nettoHoursOverrideActive = true;
-          this.data.planningPrDayModels.nettoHoursOverride = this.data.planningPrDayModels.planHours;
-          this.workdayForm.get('nettoHoursOverride')?.setValue(this.data.planningPrDayModels.planHours);
-        }
+      if (changedKey === 'DayOff' || changedKey === 'VacationDayOff') {
+        this.data.planningPrDayModels.nettoHoursOverrideActive = true;
+        this.data.planningPrDayModels.nettoHoursOverride = 0;
+        this.workdayForm.get('nettoHoursOverride')?.setValue(0);
       } else {
-        this.data.planningPrDayModels.nettoHoursOverrideActive = false;
+        this.data.planningPrDayModels.nettoHoursOverrideActive = true;
+        this.data.planningPrDayModels.nettoHoursOverride = this.data.planningPrDayModels.planHours;
+        this.workdayForm.get('nettoHoursOverride')?.setValue(this.data.planningPrDayModels.planHours);
       }
     } else {
       // If user unticks the active one, clear message/override
