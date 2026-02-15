@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microting.eForm.Infrastructure.Constants;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
@@ -34,7 +35,7 @@ namespace TimePlanning.Pn.Test
                 Name = "Test Pay Rule Set",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await payRuleSet.Create(TimePlanningPnDbContext);
 
@@ -65,17 +66,17 @@ namespace TimePlanning.Pn.Test
                 Name = "Test Pay Rule Set",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await payRuleSet.Create(TimePlanningPnDbContext);
 
             var rule = new PayDayTypeRule
             {
                 PayRuleSetId = payRuleSet.Id,
-                DayType = (DayType)1, // Saturday
+                DayType = (DayType)1, // Weekend
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await rule.Create(TimePlanningPnDbContext);
 
@@ -107,7 +108,7 @@ namespace TimePlanning.Pn.Test
                 Name = "Pay Rule Set",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await payRuleSet.Create(TimePlanningPnDbContext);
 
@@ -117,25 +118,25 @@ namespace TimePlanning.Pn.Test
                 DayType = (DayType)0, // Weekday
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await rule.Create(TimePlanningPnDbContext);
 
             var updateModel = new PayDayTypeRuleUpdateModel
             {
-                DayType = "Sunday"
+                DayType = "Weekend"
             };
 
             // Act
             var result = await _payDayTypeRuleService.Update(rule.Id, updateModel);
 
             // Assert
-            Assert.That(result.Success, Is.True);
+            Assert.That(result.Success, Is.True, $"Update failed: {result.Message}");
             
             var updatedRule = await TimePlanningPnDbContext.PayDayTypeRules
                 .FirstOrDefaultAsync(r => r.Id == rule.Id);
             Assert.That(updatedRule, Is.Not.Null);
-            Assert.That(updatedRule.DayType, Is.EqualTo((DayType)2)); // Sunday
+            Assert.That(updatedRule.DayType, Is.EqualTo((DayType)1)); // Weekend
         }
 
         [Test]
@@ -163,17 +164,17 @@ namespace TimePlanning.Pn.Test
                 Name = "Test Pay Rule Set",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await payRuleSet.Create(TimePlanningPnDbContext);
 
             var rule = new PayDayTypeRule
             {
                 PayRuleSetId = payRuleSet.Id,
-                DayType = (DayType)3, // PublicHoliday
+                DayType = (DayType)2, // Holiday
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await rule.Create(TimePlanningPnDbContext);
 
@@ -186,7 +187,7 @@ namespace TimePlanning.Pn.Test
             var deletedRule = await TimePlanningPnDbContext.PayDayTypeRules
                 .FirstOrDefaultAsync(r => r.Id == rule.Id);
             Assert.That(deletedRule, Is.Not.Null);
-            Assert.That(deletedRule.WorkflowState, Is.EqualTo("removed"));
+            Assert.That(deletedRule.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Removed));
         }
 
         [Test]
@@ -208,7 +209,7 @@ namespace TimePlanning.Pn.Test
                 Name = "Test Pay Rule Set",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await payRuleSet.Create(TimePlanningPnDbContext);
 
@@ -218,17 +219,17 @@ namespace TimePlanning.Pn.Test
                 DayType = (DayType)0, // Weekday
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await rule1.Create(TimePlanningPnDbContext);
 
             var rule2 = new PayDayTypeRule
             {
                 PayRuleSetId = payRuleSet.Id,
-                DayType = (DayType)1, // Saturday
+                DayType = (DayType)1, // Weekend
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await rule2.Create(TimePlanningPnDbContext);
 
@@ -256,7 +257,7 @@ namespace TimePlanning.Pn.Test
                 Name = "Pay Rule Set 1",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await payRuleSet1.Create(TimePlanningPnDbContext);
 
@@ -265,7 +266,7 @@ namespace TimePlanning.Pn.Test
                 Name = "Pay Rule Set 2",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await payRuleSet2.Create(TimePlanningPnDbContext);
 
@@ -275,7 +276,7 @@ namespace TimePlanning.Pn.Test
                 DayType = (DayType)0, // Weekday
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await rule1.Create(TimePlanningPnDbContext);
 
@@ -285,7 +286,7 @@ namespace TimePlanning.Pn.Test
                 DayType = (DayType)1, // Saturday
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await rule2.Create(TimePlanningPnDbContext);
 
@@ -314,7 +315,7 @@ namespace TimePlanning.Pn.Test
                 Name = "Test Pay Rule Set",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await payRuleSet.Create(TimePlanningPnDbContext);
 
@@ -324,22 +325,24 @@ namespace TimePlanning.Pn.Test
                 DayType = (DayType)0, // Weekday
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "created"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await activeRule.Create(TimePlanningPnDbContext);
 
             var deletedRule = new PayDayTypeRule
             {
                 PayRuleSetId = payRuleSet.Id,
-                DayType = (DayType)1, // Saturday
+                DayType = (DayType)1, // Weekend
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                WorkflowState = "removed"
+                WorkflowState = Constants.WorkflowStates.Created
             };
             await deletedRule.Create(TimePlanningPnDbContext);
+            await deletedRule.Delete(TimePlanningPnDbContext);
 
             var requestModel = new PayDayTypeRulesRequestModel
             {
+                PayRuleSetId = payRuleSet.Id,
                 Offset = 0,
                 PageSize = 10
             };
