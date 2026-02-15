@@ -6,3 +6,8 @@ export * from './time-planning-pn-flexes.service';
 export * from './time-planning-pn-gps-coordinates.service';
 export * from './time-planning-pn-picture-snapshots.service';
 export * from './time-planning-pn-absence-requests.service';
+export * from './time-planning-pn-break-policies.service';
+export * from './time-planning-pn-pay-rule-sets.service';
+export * from './time-planning-pn-pay-day-type-rules.service';
+export * from './time-planning-pn-pay-tier-rules.service';
+export * from './time-planning-pn-pay-time-band-rules.service';
