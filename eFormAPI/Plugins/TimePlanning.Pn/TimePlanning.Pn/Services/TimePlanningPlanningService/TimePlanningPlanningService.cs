@@ -124,15 +124,17 @@ public class TimePlanningPlanningService(
                         .Where(x => x.AssignedSiteId == assignedSite.Id)
                         .Select(x => x.TagId)
                         .ToListAsync();
-                    var assignedSiteIdsWithTags = await dbContext.AssignedSiteManagingTags
+                    var assignedSiteIdsWithTags = await sdkDbContext.SiteTags
+                        .Include(x => x.Site)
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => assignedSiteTags.Contains(x.TagId))
-                        .Select(x => x.AssignedSite.SiteId)
+                        .Where(x => assignedSiteTags.Contains((int)x.TagId!))
+                        .Select(x => x.Site.MicrotingUid)
                         .Distinct()
                         .ToListAsync();
                     assignedSites = assignedSites
                         .Where(x => assignedSiteIdsWithTags.Contains(x.SiteId))
                         .ToList();
+                    assignedSites.Add(assignedSite);
                 }
             }
 
