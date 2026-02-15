@@ -34,6 +34,7 @@ using TimePlanning.Pn.Services.AbsenceRequestService;
 using TimePlanning.Pn.Services.ContentHandoverService;
 using TimePlanning.Pn.Services.BreakPolicyService;
 using TimePlanning.Pn.Services.PayRuleSetService;
+using TimePlanning.Pn.Services.PayDayTypeRuleService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -97,6 +98,7 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<IContentHandoverService, ContentHandoverService>();
         services.AddTransient<IBreakPolicyService, BreakPolicyService>();
         services.AddTransient<IPayRuleSetService, PayRuleSetService>();
+        services.AddTransient<IPayDayTypeRuleService, PayDayTypeRuleService>();
         services.AddControllers();
     }
 
