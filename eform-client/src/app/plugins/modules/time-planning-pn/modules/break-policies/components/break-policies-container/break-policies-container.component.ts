@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
 import {
-  BreakPolicyModel,
+  BreakPolicySimpleModel,
   BreakPoliciesRequestModel,
 } from '../../../../models';
 import { TimePlanningPnBreakPoliciesService } from '../../../../services';
@@ -21,7 +21,7 @@ export class BreakPoliciesContainerComponent implements OnInit, OnDestroy {
     offset: 0,
     pageSize: 10,
   };
-  breakPolicies: BreakPolicyModel[] = [];
+  breakPolicies: BreakPolicySimpleModel[] = [];
   totalBreakPolicies = 0;
 
   getBreakPolicies$: Subscription;
