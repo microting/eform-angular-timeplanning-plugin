@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using BackendConfiguration.Pn.Integration.Test;
+
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
