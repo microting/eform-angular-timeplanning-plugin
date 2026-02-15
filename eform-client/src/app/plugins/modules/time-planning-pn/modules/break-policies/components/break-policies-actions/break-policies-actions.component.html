@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>
+  {{ mode === 'create' ? 'Create Break Policy' : mode === 'edit' ? 'Edit Break Policy' : 'Delete Break Policy' | translate }}
+</h2>
+
+<mat-dialog-content *ngIf="mode !== 'delete'">
+  <form [formGroup]="breakPolicyForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'Name' | translate }}</mat-label>
+      <input matInput formControlName="name" required />
+      <mat-error *ngIf="breakPolicyForm.get('name').hasError('required')">
+        {{ 'Name is required' | translate }}
+      </mat-error>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-content *ngIf="mode === 'delete'">
+  <p>{{ 'Are you sure you want to delete this break policy?' | translate }}</p>
+  <p><strong>{{ breakPolicy?.name }}</strong></p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">{{ 'Cancel' | translate }}</button>
+  <button
+    mat-raised-button
+    [color]="mode === 'delete' ? 'warn' : 'primary'"
+    (click)="onSubmit()"
+    [disabled]="mode !== 'delete' && breakPolicyForm.invalid"
+  >
+    {{ mode === 'create' ? 'Create' : mode === 'edit' ? 'Save' : 'Delete' | translate }}
+  </button>
+</mat-dialog-actions>

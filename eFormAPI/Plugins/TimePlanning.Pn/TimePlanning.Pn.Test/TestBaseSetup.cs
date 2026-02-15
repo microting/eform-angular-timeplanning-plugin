@@ -11,7 +11,7 @@ using Testcontainers.MariaDb;
 using TimePlanning.Pn.Infrastructure.Data.Seed;
 
 #nullable enable
-namespace BackendConfiguration.Pn.Integration.Test;
+namespace TimePlanning.Pn.Test;
 
 public abstract class TestBaseSetup
 {

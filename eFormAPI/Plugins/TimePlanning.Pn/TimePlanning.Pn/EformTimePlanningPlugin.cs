@@ -32,6 +32,11 @@ using TimePlanning.Pn.Services.TimePlanningGpsCoordinateService;
 using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
 using TimePlanning.Pn.Services.AbsenceRequestService;
 using TimePlanning.Pn.Services.ContentHandoverService;
+using TimePlanning.Pn.Services.BreakPolicyService;
+using TimePlanning.Pn.Services.PayRuleSetService;
+using TimePlanning.Pn.Services.PayDayTypeRuleService;
+using TimePlanning.Pn.Services.PayTierRuleService;
+using TimePlanning.Pn.Services.PayTimeBandRuleService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -93,6 +98,11 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<ISettingService, TimeSettingService>();
         services.AddTransient<IAbsenceRequestService, AbsenceRequestService>();
         services.AddTransient<IContentHandoverService, ContentHandoverService>();
+        services.AddTransient<IBreakPolicyService, BreakPolicyService>();
+        services.AddTransient<IPayRuleSetService, PayRuleSetService>();
+        services.AddTransient<IPayDayTypeRuleService, PayDayTypeRuleService>();
+        services.AddTransient<IPayTierRuleService, PayTierRuleService>();
+        services.AddTransient<IPayTimeBandRuleService, PayTimeBandRuleService>();
         services.AddControllers();
     }
 

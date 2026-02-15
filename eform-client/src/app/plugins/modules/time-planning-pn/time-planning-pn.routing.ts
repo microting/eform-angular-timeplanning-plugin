@@ -55,6 +55,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'break-policies',
+        canActivate: [AuthGuard],
+        loadChildren: () =>
+          import('./modules/break-policies/break-policies.module').then(
+            (m) => m.BreakPoliciesModule
+          ),
+      },
+      {
         path: 'settings',
         canActivate: [AuthGuard],
         component: TimePlanningSettingsComponent,
