@@ -1,0 +1,16 @@
+<div class="table-actions">
+  <button mat-raised-button color="primary" (click)="openCreateModal()">
+    <mat-icon>add</mat-icon>
+    {{ 'Create Break Policy' | translate }}
+  </button>
+</div>
+
+<mtx-grid
+  [data]="breakPolicies"
+  [columns]="columns"
+  [length]="totalBreakPolicies"
+  [pageSize]="10"
+  [pageSizeOptions]="[10, 20, 50, 100]"
+  [showPaginator]="true"
+  (page)="onPaginateChange($event)"
+></mtx-grid>

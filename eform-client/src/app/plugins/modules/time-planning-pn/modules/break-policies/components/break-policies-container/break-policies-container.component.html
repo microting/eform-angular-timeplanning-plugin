@@ -1,0 +1,19 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-12">
+      <h1>{{ 'Break Policies' | translate }}</h1>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <app-break-policies-table
+        [breakPolicies]="breakPolicies"
+        [totalBreakPolicies]="totalBreakPolicies"
+        (pageChanged)="onPageChanged($event)"
+        (breakPolicyCreated)="onBreakPolicyCreated()"
+        (breakPolicyUpdated)="onBreakPolicyUpdated()"
+        (breakPolicyDeleted)="onBreakPolicyDeleted()"
+      ></app-break-policies-table>
+    </div>
+  </div>
+</div>
