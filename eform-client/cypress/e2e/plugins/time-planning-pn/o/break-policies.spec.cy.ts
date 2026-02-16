@@ -6,27 +6,30 @@ describe('Break Policies Tests', () => {
     loginPage.login();
   });
 
-  it('should navigate to break policies page', () => {
-    // Navigate directly to break policies page (menu not yet seeded)
-    cy.visit('http://localhost:4200/plugins/time-planning-pn/break-policies');
+  const navigateToBreakPolicies = () => {
+    // Navigate using menu (Danish locale: Timeregistrering -> Pausepolitikker)
+    cy.get('#spinner-animation').should('not.exist');
+    cy.contains('Timeregistrering').click();
     cy.wait(500);
+    cy.contains('Pausepolitikker').click();
+    cy.wait(500);
+  };
+
+  it('should navigate to break policies page', () => {
+    navigateToBreakPolicies();
     
     cy.url().should('include', '/break-policies');
   });
 
   it('should display break policies list', () => {
-    // Navigate directly to break policies page (menu not yet seeded)
-    cy.visit('http://localhost:4200/plugins/time-planning-pn/break-policies');
-    cy.wait(500);
+    navigateToBreakPolicies();
     
     // Check that mtx-grid is present
     cy.get('mtx-grid').should('exist');
   });
 
   it('should open create modal', () => {
-    // Navigate directly to break policies page (menu not yet seeded)
-    cy.visit('http://localhost:4200/plugins/time-planning-pn/break-policies');
-    cy.wait(500);
+    navigateToBreakPolicies();
     
     cy.contains('button', 'Create Break Policy').click();
     cy.wait(500);
@@ -36,9 +39,7 @@ describe('Break Policies Tests', () => {
   });
 
   it('should create new break policy', () => {
-    // Navigate directly to break policies page (menu not yet seeded)
-    cy.visit('http://localhost:4200/plugins/time-planning-pn/break-policies');
-    cy.wait(500);
+    navigateToBreakPolicies();
     
     cy.contains('button', 'Create Break Policy').click();
     cy.wait(500);
@@ -55,9 +56,7 @@ describe('Break Policies Tests', () => {
   });
 
   it('should edit break policy', () => {
-    // Navigate directly to break policies page (menu not yet seeded)
-    cy.visit('http://localhost:4200/plugins/time-planning-pn/break-policies');
-    cy.wait(500);
+    navigateToBreakPolicies();
     
     // Click edit button on first row
     cy.get('mtx-grid').within(() => {
@@ -79,9 +78,7 @@ describe('Break Policies Tests', () => {
   });
 
   it('should delete break policy', () => {
-    // Navigate directly to break policies page (menu not yet seeded)
-    cy.visit('http://localhost:4200/plugins/time-planning-pn/break-policies');
-    cy.wait(500);
+    navigateToBreakPolicies();
     
     // Get initial count
     cy.get('mtx-grid tbody tr').its('length').then((initialCount) => {
@@ -103,9 +100,7 @@ describe('Break Policies Tests', () => {
   });
 
   it('should validate required fields', () => {
-    // Navigate directly to break policies page (menu not yet seeded)
-    cy.visit('http://localhost:4200/plugins/time-planning-pn/break-policies');
-    cy.wait(500);
+    navigateToBreakPolicies();
     
     cy.contains('button', 'Create Break Policy').click();
     cy.wait(500);

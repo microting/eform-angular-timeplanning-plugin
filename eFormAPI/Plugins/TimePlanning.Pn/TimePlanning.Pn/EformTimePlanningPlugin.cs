@@ -548,6 +548,68 @@ public class EformTimePlanningPlugin : IEformPlugin
                                 Language = LanguageNames.Danish
                             }
                         ]
+                    },
+
+                    new()
+                    {
+                        Name = "Break Policies",
+                        E2EId = "time-planning-pn-break-policies",
+                        Link = "/plugins/time-planning-pn/break-policies",
+                        Type = MenuItemTypeEnum.Link,
+                        Position = 5,
+                        MenuTemplate = new()
+                        {
+                            Name = "Break Policies",
+                            E2EId = "time-planning-pn-break-policies",
+                            DefaultLink = "/plugins/time-planning-pn/break-policies",
+                            Permissions = [],
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Break Policies",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Pausenrichtlinien",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Pausepolitikker",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+                        Translations =
+                        [
+                            new()
+                            {
+                                LocaleName = LocaleNames.English,
+                                Name = "Break Policies",
+                                Language = LanguageNames.English
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.German,
+                                Name = "Pausenrichtlinien",
+                                Language = LanguageNames.German
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.Danish,
+                                Name = "Pausepolitikker",
+                                Language = LanguageNames.Danish
+                            }
+                        ]
                     }
                 ]
             }
