@@ -10,6 +10,7 @@ import {
   BreakPoliciesTableComponent,
   BreakPoliciesActionsComponent,
 } from './components';
+import {TimePlanningPnBreakPoliciesService} from '../../services';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
@@ -42,6 +43,8 @@ import {MatSelectModule} from '@angular/material/select';
     BreakPoliciesTableComponent,
     BreakPoliciesActionsComponent,
   ],
-  providers: [],
+  providers: [
+    TimePlanningPnBreakPoliciesService,
+  ],
 })
 export class BreakPoliciesModule {}
