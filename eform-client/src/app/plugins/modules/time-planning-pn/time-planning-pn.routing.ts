@@ -63,6 +63,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'pay-rule-sets',
+        canActivate: [AuthGuard],
+        loadChildren: () =>
+          import('./modules/pay-rule-sets/pay-rule-sets.module').then(
+            (m) => m.PayRuleSetsModule
+          ),
+      },
+      {
         path: 'settings',
         canActivate: [AuthGuard],
         component: TimePlanningSettingsComponent,

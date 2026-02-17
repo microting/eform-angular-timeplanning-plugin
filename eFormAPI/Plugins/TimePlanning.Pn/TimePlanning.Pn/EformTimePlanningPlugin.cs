@@ -610,6 +610,68 @@ public class EformTimePlanningPlugin : IEformPlugin
                                 Language = LanguageNames.Danish
                             }
                         ]
+                    },
+
+                    new()
+                    {
+                        Name = "Pay Rule Sets",
+                        E2EId = "time-planning-pn-pay-rule-sets",
+                        Link = "/plugins/time-planning-pn/pay-rule-sets",
+                        Type = MenuItemTypeEnum.Link,
+                        Position = 6,
+                        MenuTemplate = new()
+                        {
+                            Name = "Pay Rule Sets",
+                            E2EId = "time-planning-pn-pay-rule-sets",
+                            DefaultLink = "/plugins/time-planning-pn/pay-rule-sets",
+                            Permissions = [],
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Pay Rule Sets",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Lohnregelwerk",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Betalingsregelsæt",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+                        Translations =
+                        [
+                            new()
+                            {
+                                LocaleName = LocaleNames.English,
+                                Name = "Pay Rule Sets",
+                                Language = LanguageNames.English
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.German,
+                                Name = "Lohnregelwerk",
+                                Language = LanguageNames.German
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.Danish,
+                                Name = "Betalingsregelsæt",
+                                Language = LanguageNames.Danish
+                            }
+                        ]
                     }
                 ]
             }
