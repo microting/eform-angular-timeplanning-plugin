@@ -4,6 +4,7 @@ import {PayRuleSetSimpleModel, PayRuleSetsRequestModel} from '../../../../models
 import {MatDialog} from '@angular/material/dialog';
 import {PayRuleSetsDeleteModalComponent} from '../pay-rule-sets-delete-modal/pay-rule-sets-delete-modal.component';
 import {PayRuleSetsCreateModalComponent} from '../pay-rule-sets-create-modal/pay-rule-sets-create-modal.component';
+import {PayRuleSetsEditModalComponent} from '../pay-rule-sets-edit-modal/pay-rule-sets-edit-modal.component';
 import {TimePlanningPnPayRuleSetsService} from '../../../../services';
 import {Subscription} from 'rxjs';
 
@@ -63,8 +64,18 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   }
 
   onEditClicked(payRuleSet: PayRuleSetSimpleModel): void {
-    // TODO: Open edit modal
-    console.log('Edit clicked', payRuleSet);
+    const dialogRef = this.dialog.open(PayRuleSetsEditModalComponent, {
+      data: { payRuleSetId: payRuleSet.id },
+      minWidth: 700,
+      maxWidth: 900,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        // Refresh the table after successful edit
+        this.getPayRuleSets();
+      }
+    });
   }
 
   onDeleteClicked(payRuleSet: PayRuleSetSimpleModel): void {

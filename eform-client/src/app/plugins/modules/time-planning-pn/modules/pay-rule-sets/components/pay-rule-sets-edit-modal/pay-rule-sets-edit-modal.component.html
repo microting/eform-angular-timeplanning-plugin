@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>{{ 'Edit Pay Rule Set' | translate }}</h2>
+
+<div mat-dialog-content *ngIf="!loading">
+  <form [formGroup]="form">
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Name' | translate }}</mat-label>
+      <input matInput formControlName="name" id="payRuleSetName" />
+      <mat-error *ngIf="form.get('name')?.hasError('required')">
+        {{ 'Name is required' | translate }}
+      </mat-error>
+      <mat-error *ngIf="form.get('name')?.hasError('minlength')">
+        {{ 'Name must be at least 2 characters' | translate }}
+      </mat-error>
+    </mat-form-field>
+
+    <app-pay-day-rule-list
+      [payDayRulesFormArray]="payDayRulesFormArray"
+      (addRule)="onAddPayDayRule()"
+      (editRule)="onEditPayDayRule($event)"
+      (deleteRule)="onDeletePayDayRule($event)">
+    </app-pay-day-rule-list>
+  </form>
+</div>
+
+<div mat-dialog-content *ngIf="loading">
+  <p>{{ 'Loading...' | translate }}</p>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()" id="cancelEditBtn">
+    {{ 'Cancel' | translate }}
+  </button>
+  <button mat-raised-button color="primary" (click)="updatePayRuleSet()" 
+          [disabled]="form.invalid || loading" id="updatePayRuleSetBtn">
+    {{ 'Update' | translate }}
+  </button>
+</div>
