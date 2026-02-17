@@ -1,6 +1,7 @@
 export * from './pay-rule-sets-container/pay-rule-sets-container.component';
 export * from './pay-rule-sets-table/pay-rule-sets-table.component';
 export * from './pay-rule-sets-delete-modal/pay-rule-sets-delete-modal.component';
+export * from './pay-rule-sets-create-modal/pay-rule-sets-create-modal.component';
 export * from './pay-day-rule-form/pay-day-rule-form.component';
 export * from './pay-day-rule-list/pay-day-rule-list.component';
 export * from './pay-day-rule-dialog/pay-day-rule-dialog.component';

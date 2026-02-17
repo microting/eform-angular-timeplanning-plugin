@@ -3,6 +3,7 @@ import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
 import {PayRuleSetSimpleModel, PayRuleSetsRequestModel} from '../../../../models';
 import {MatDialog} from '@angular/material/dialog';
 import {PayRuleSetsDeleteModalComponent} from '../pay-rule-sets-delete-modal/pay-rule-sets-delete-modal.component';
+import {PayRuleSetsCreateModalComponent} from '../pay-rule-sets-create-modal/pay-rule-sets-create-modal.component';
 import {TimePlanningPnPayRuleSetsService} from '../../../../services';
 import {Subscription} from 'rxjs';
 
@@ -48,8 +49,17 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   }
 
   onCreateClicked(): void {
-    // TODO: Open create modal
-    console.log('Create clicked');
+    const dialogRef = this.dialog.open(PayRuleSetsCreateModalComponent, {
+      minWidth: 700,
+      maxWidth: 900,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        // Refresh the table after successful create
+        this.getPayRuleSets();
+      }
+    });
   }
 
   onEditClicked(payRuleSet: PayRuleSetSimpleModel): void {
