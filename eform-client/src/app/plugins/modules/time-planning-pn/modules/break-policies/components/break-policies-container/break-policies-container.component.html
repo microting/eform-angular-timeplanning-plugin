@@ -8,12 +8,11 @@
     <div class="col-md-12">
       <app-break-policies-table
         [breakPolicies]="breakPolicies"
-        [totalBreakPolicies]="totalBreakPolicies"
-        (pageChanged)="onPageChanged($event)"
-        (breakPolicyCreated)="onBreakPolicyCreated()"
-        (breakPolicyUpdated)="onBreakPolicyUpdated()"
-        (breakPolicyDeleted)="onBreakPolicyDeleted()"
+        (createClicked)="onCreateClicked()"
+        (editClicked)="onEditClicked($event)"
+        (deleteClicked)="onDeleteClicked($event)"
       ></app-break-policies-table>
     </div>
   </div>
 </div>
+

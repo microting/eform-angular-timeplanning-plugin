@@ -1,0 +1,30 @@
+<h3 mat-dialog-title>{{'Edit Break Policy' | translate}}</h3>
+<div mat-dialog-content>
+  <form [formGroup]="breakPolicyForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'Name' | translate }}</mat-label>
+      <input matInput formControlName="name" required />
+      <mat-error *ngIf="breakPolicyForm.get('name').hasError('required')">
+        {{ 'Name is required' | translate }}
+      </mat-error>
+    </mat-form-field>
+  </form>
+</div>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+  <button
+    mat-raised-button
+    color="primary"
+    id="saveEditBtn"
+    (click)="updateBreakPolicy()"
+    [disabled]="breakPolicyForm.invalid"
+  >
+    {{'Save' | translate}}
+  </button>
+  <button
+    mat-raised-button
+    id="cancelEditBtn"
+    (click)="hide()"
+  >
+    {{'Cancel' | translate}}
+  </button>
+</div>

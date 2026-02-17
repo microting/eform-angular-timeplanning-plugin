@@ -1,8 +1,7 @@
-import { Component, EventEmitter, Input, Output, ViewChild, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MtxGridColumn } from '@ng-matero/extensions/grid';
-import { BreakPolicyModel } from '../../../../models';
-import { BreakPoliciesActionsComponent } from '../break-policies-actions/break-policies-actions.component';
+import { BreakPolicySimpleModel } from '../../../../models';
 
 @Component({
   selector: 'app-break-policies-table',
@@ -13,78 +12,32 @@ import { BreakPoliciesActionsComponent } from '../break-policies-actions/break-p
 export class BreakPoliciesTableComponent {
   private dialog = inject(MatDialog);
 
-  @Input() breakPolicies: BreakPolicyModel[] = [];
-  @Input() totalBreakPolicies = 0;
-  @Output() pageChanged = new EventEmitter<number>();
-  @Output() breakPolicyCreated = new EventEmitter<void>();
-  @Output() breakPolicyUpdated = new EventEmitter<void>();
-  @Output() breakPolicyDeleted = new EventEmitter<void>();
+  @Input() breakPolicies: BreakPolicySimpleModel[] = [];
+  @Output() createClicked = new EventEmitter<void>();
+  @Output() editClicked = new EventEmitter<BreakPolicySimpleModel>();
+  @Output() deleteClicked = new EventEmitter<BreakPolicySimpleModel>();
 
-  columns: MtxGridColumn[] = [
+  tableHeaders: MtxGridColumn[] = [
     { header: 'ID', field: 'id', sortable: true },
     { header: 'Name', field: 'name', sortable: true },
     {
       header: 'Actions',
       field: 'actions',
+      width: '120px',
+      pinned: 'right',
       type: 'button',
-      buttons: [
-        {
-          type: 'icon',
-          icon: 'edit',
-          tooltip: 'Edit',
-          click: (record: BreakPolicyModel) => this.openEditModal(record),
-        },
-        {
-          type: 'icon',
-          icon: 'delete',
-          tooltip: 'Delete',
-          color: 'warn',
-          click: (record: BreakPolicyModel) => this.openDeleteModal(record),
-        },
-      ],
     },
   ];
 
   openCreateModal() {
-    const dialogRef = this.dialog.open(BreakPoliciesActionsComponent, {
-      width: '600px',
-      data: { mode: 'create' },
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.breakPolicyCreated.emit();
-      }
-    });
+    this.createClicked.emit();
   }
 
-  openEditModal(breakPolicy: BreakPolicyModel) {
-    const dialogRef = this.dialog.open(BreakPoliciesActionsComponent, {
-      width: '600px',
-      data: { mode: 'edit', breakPolicy },
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.breakPolicyUpdated.emit();
-      }
-    });
+  openEditModal(breakPolicy: BreakPolicySimpleModel) {
+    this.editClicked.emit(breakPolicy);
   }
 
-  openDeleteModal(breakPolicy: BreakPolicyModel) {
-    const dialogRef = this.dialog.open(BreakPoliciesActionsComponent, {
-      width: '400px',
-      data: { mode: 'delete', breakPolicy },
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.breakPolicyDeleted.emit();
-      }
-    });
-  }
-
-  onPaginateChange(event: any) {
-    this.pageChanged.emit(event.pageIndex * event.pageSize);
+  openDeleteModal(breakPolicy: BreakPolicySimpleModel) {
+    this.deleteClicked.emit(breakPolicy);
   }
 }

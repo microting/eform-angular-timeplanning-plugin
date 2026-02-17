@@ -8,7 +8,9 @@ import {BreakPoliciesRouting} from './break-policies.routing';
 import {
   BreakPoliciesContainerComponent,
   BreakPoliciesTableComponent,
-  BreakPoliciesActionsComponent,
+  BreakPoliciesCreateModalComponent,
+  BreakPoliciesEditModalComponent,
+  BreakPoliciesDeleteModalComponent,
 } from './components';
 import {TimePlanningPnBreakPoliciesService} from '../../services';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
@@ -19,6 +21,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatSelectModule} from '@angular/material/select';
+import {MatMenuModule} from '@angular/material/menu';
 
 @NgModule({
   imports: [
@@ -37,14 +40,18 @@ import {MatSelectModule} from '@angular/material/select';
     MatDialogModule,
     MatTooltipModule,
     MatSelectModule,
+    MatMenuModule,
   ],
   declarations: [
     BreakPoliciesContainerComponent,
     BreakPoliciesTableComponent,
-    BreakPoliciesActionsComponent,
+    BreakPoliciesCreateModalComponent,
+    BreakPoliciesEditModalComponent,
+    BreakPoliciesDeleteModalComponent,
   ],
   providers: [
     TimePlanningPnBreakPoliciesService,
   ],
 })
 export class BreakPoliciesModule {}
+

@@ -7,10 +7,41 @@
 
 <mtx-grid
   [data]="breakPolicies"
-  [columns]="columns"
-  [length]="totalBreakPolicies"
-  [pageSize]="10"
-  [pageSizeOptions]="[10, 20, 50, 100]"
-  [showPaginator]="true"
-  (page)="onPaginateChange($event)"
+  [cellTemplate]="{actions: actionsTpl}"
+  [showPaginator]="false"
+  [pageOnFront]="false"
+  [rowStriped]="false"
+  [showToolbar]="false"
+  [showColumnMenuButton]="false"
+  id="time-planning-pn-break-policies-grid"
+  [columns]="tableHeaders"
+  noResultText="{{'No break policies found' | translate}}"
 ></mtx-grid>
+
+<ng-template #actionsTpl let-row let-i="index">
+  <div id="action-items{{i}}">
+    <button id="actionMenu" mat-icon-button [matMenuTriggerFor]="menu" matTooltip="{{ 'Actions' | translate }}">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+
+    <mat-menu #menu="matMenu">
+      <button
+        mat-menu-item
+        id="editBreakPolicyBtn-{{i}}"
+        (click)="openEditModal(row)"
+      >
+        <mat-icon>edit</mat-icon>
+        <span>{{ 'Edit break policy' | translate }}</span>
+      </button>
+      <button
+        mat-menu-item
+        id="deleteBreakPolicyBtn-{{i}}"
+        class="btn-delete-menu"
+        (click)="openDeleteModal(row)"
+      >
+        <mat-icon>delete</mat-icon>
+        <span>{{ 'Delete break policy' | translate }}</span>
+      </button>
+    </mat-menu>
+  </div>
+</ng-template>
