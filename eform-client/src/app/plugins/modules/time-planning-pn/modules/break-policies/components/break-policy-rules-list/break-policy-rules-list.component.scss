@@ -1,0 +1,81 @@
+.break-policy-rules-list {
+  margin: 16px 0;
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    button {
+      mat-icon {
+        margin-right: 4px;
+      }
+    }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 32px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    color: #666;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: #999;
+      margin-bottom: 16px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 14px;
+    }
+  }
+
+  .rules-table-container {
+    overflow-x: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+
+    .rules-table {
+      width: 100%;
+
+      th {
+        font-weight: 600;
+        background-color: #f5f5f5;
+      }
+
+      td, th {
+        padding: 12px 16px;
+      }
+
+      .mat-column-actions {
+        width: 120px;
+        text-align: center;
+
+        button {
+          margin: 0 4px;
+        }
+      }
+
+      .totals-row {
+        background-color: #fafafa;
+        border-top: 2px solid #e0e0e0;
+        font-weight: 500;
+
+        td {
+          color: #333;
+        }
+      }
+    }
+  }
+}
