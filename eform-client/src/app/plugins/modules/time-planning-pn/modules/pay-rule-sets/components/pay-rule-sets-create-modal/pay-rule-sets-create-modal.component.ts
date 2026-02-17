@@ -107,20 +107,31 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
   }
 
   createPayRuleSet(): void {
+    console.log('createPayRuleSet called');
+    console.log('Form valid:', this.form.valid);
+    console.log('Form value:', this.form.value);
+    
     if (this.form.invalid) {
+      console.log('Form is invalid, not proceeding');
+      console.log('Form errors:', this.form.errors);
       return;
     }
 
     const model = new PayRuleSetCreateModel();
     model.name = this.form.get('name')?.value;
     model.payDayRules = this.payDayRulesFormArray.value;
+    
+    console.log('Sending model to API:', JSON.stringify(model, null, 2));
 
     this.payRuleSetsService.createPayRuleSet(model).subscribe({
-      next: () => {
+      next: (response) => {
+        console.log('Create success response:', response);
         this.toastrService.success('Pay rule set created successfully');
         this.dialogRef.close(true);
       },
-      error: () => {
+      error: (error) => {
+        console.error('Create error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         this.toastrService.error('Failed to create pay rule set');
       }
     });

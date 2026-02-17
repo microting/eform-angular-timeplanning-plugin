@@ -147,7 +147,13 @@ export class PayRuleSetsEditModalComponent implements OnInit {
   }
 
   updatePayRuleSet(): void {
+    console.log('updatePayRuleSet called');
+    console.log('Form valid:', this.form.valid);
+    console.log('Form value:', this.form.value);
+    
     if (this.form.invalid) {
+      console.log('Form is invalid, not proceeding');
+      console.log('Form errors:', this.form.errors);
       return;
     }
 
@@ -155,13 +161,18 @@ export class PayRuleSetsEditModalComponent implements OnInit {
     model.id = this.payRuleSet.id;
     model.name = this.form.get('name')?.value;
     model.payDayRules = this.payDayRulesFormArray.value;
+    
+    console.log('Sending model to API:', JSON.stringify(model, null, 2));
 
     this.payRuleSetsService.updatePayRuleSet(model).subscribe({
-      next: () => {
+      next: (response) => {
+        console.log('Update success response:', response);
         this.toastrService.success('Pay rule set updated successfully');
         this.dialogRef.close(true);
       },
-      error: () => {
+      error: (error) => {
+        console.error('Update error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         this.toastrService.error('Failed to update pay rule set');
       }
     });
