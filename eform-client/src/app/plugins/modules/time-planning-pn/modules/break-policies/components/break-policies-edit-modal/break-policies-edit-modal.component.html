@@ -8,6 +8,14 @@
         {{ 'Name is required' | translate }}
       </mat-error>
     </mat-form-field>
+
+    <!-- Break Rules List -->
+    <app-break-policy-rules-list
+      [rulesFormArray]="rulesArray"
+      (addRule)="onAddRule()"
+      (editRule)="onEditRule($event)"
+      (deleteRule)="onDeleteRule($event)">
+    </app-break-policy-rules-list>
   </form>
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
