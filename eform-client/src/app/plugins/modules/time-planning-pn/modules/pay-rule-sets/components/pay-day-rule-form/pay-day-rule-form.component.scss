@@ -51,17 +51,23 @@
         }
       }
 
-      .total-percent {
-        text-align: right;
+      .help-text {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
         padding: 12px;
-        font-size: 16px;
-        background-color: #f5f5f5;
+        background-color: #e3f2fd;
         border-radius: 4px;
-        margin-top: 8px;
+        margin-top: 12px;
+        color: #1565c0;
+        font-size: 13px;
+        line-height: 1.5;
 
-        &.error {
-          background-color: #ffebee;
-          color: #c62828;
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+          margin-top: 2px;
         }
       }
     }
@@ -88,17 +94,6 @@
       }
     }
 
-    .error-message {
-      margin-top: 8px;
-      padding: 8px;
-      background-color: #ffebee;
-      border-radius: 4px;
 
-      mat-error {
-        display: block;
-        color: #c62828;
-        font-size: 14px;
-      }
-    }
   }
 }

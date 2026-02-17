@@ -10,14 +10,18 @@ import {FormGroup, FormControl, Validators, FormArray, FormBuilder, AbstractCont
 export class PayDayRuleFormComponent implements OnInit {
   @Input() payDayRuleForm!: FormGroup;
 
-  daysOfWeek = [
-    {value: 0, label: 'Sunday'},
-    {value: 1, label: 'Monday'},
-    {value: 2, label: 'Tuesday'},
-    {value: 3, label: 'Wednesday'},
-    {value: 4, label: 'Thursday'},
-    {value: 5, label: 'Friday'},
-    {value: 6, label: 'Saturday'}
+  dayCodes = [
+    {value: 'SUNDAY', label: 'Sunday'},
+    {value: 'MONDAY', label: 'Monday'},
+    {value: 'TUESDAY', label: 'Tuesday'},
+    {value: 'WEDNESDAY', label: 'Wednesday'},
+    {value: 'THURSDAY', label: 'Thursday'},
+    {value: 'FRIDAY', label: 'Friday'},
+    {value: 'SATURDAY', label: 'Saturday'},
+    {value: 'WEEKDAY', label: 'Weekday'},
+    {value: 'WEEKEND', label: 'Weekend'},
+    {value: 'HOLIDAY', label: 'Holiday'},
+    {value: 'GRUNDLOVSDAG', label: 'Grundlovsdag'}
   ];
 
   constructor(private fb: FormBuilder) {}
@@ -31,8 +35,8 @@ export class PayDayRuleFormComponent implements OnInit {
   createPayDayRuleForm(): FormGroup {
     return this.fb.group({
       id: [null],
-      dayOfWeek: [null, Validators.required],
-      payTierRules: this.fb.array([], this.percentageSumValidator)
+      dayCode: [null, Validators.required],
+      payTierRules: this.fb.array([])
     });
   }
 
@@ -40,31 +44,19 @@ export class PayDayRuleFormComponent implements OnInit {
     return this.payDayRuleForm.get('payTierRules') as FormArray;
   }
 
-  get dayOfWeek() {
-    return this.payDayRuleForm.get('dayOfWeek');
+  get dayCode() {
+    return this.payDayRuleForm.get('dayCode');
   }
 
-  percentageSumValidator(control: AbstractControl): ValidationErrors | null {
-    const formArray = control as FormArray;
-    
-    if (formArray.length === 0) {
-      return null; // Allow empty array
-    }
 
-    const total = formArray.controls
-      .map(c => c.get('tierPercent')?.value || 0)
-      .reduce((sum, val) => sum + val, 0);
-
-    return total === 100 ? null : {percentageSum: true};
-  }
 
   addTier(): void {
-    const nextTierNumber = this.payTierRules.length + 1;
+    const nextOrder = this.payTierRules.length + 1;
     const tierForm = this.fb.group({
       id: [null],
-      tierNumber: [nextTierNumber, Validators.required],
-      tierPercent: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
-      payCodeId: [null, Validators.required]
+      order: [nextOrder, Validators.required],
+      upToSeconds: [null, [Validators.min(0)]],
+      payCode: ['', Validators.required]
     });
     this.payTierRules.push(tierForm);
   }
@@ -73,29 +65,35 @@ export class PayDayRuleFormComponent implements OnInit {
     this.payTierRules.removeAt(index);
     // Renumber remaining tiers
     this.payTierRules.controls.forEach((control, idx) => {
-      control.get('tierNumber')?.setValue(idx + 1);
+      control.get('order')?.setValue(idx + 1);
     });
   }
 
-  getTierPercent(index: number): number {
-    return this.payTierRules.at(index).get('tierPercent')?.value || 0;
+  getOrder(index: number): number {
+    return this.payTierRules.at(index).get('order')?.value || 0;
   }
 
-  getTierNumber(index: number): number {
-    return this.payTierRules.at(index).get('tierNumber')?.value || 0;
+  getUpToSeconds(index: number): number | null {
+    return this.payTierRules.at(index).get('upToSeconds')?.value;
   }
 
-  getPayCodeId(index: number): number | null {
-    return this.payTierRules.at(index).get('payCodeId')?.value;
+  getPayCode(index: number): string {
+    return this.payTierRules.at(index).get('payCode')?.value || '';
   }
 
   getTierFormGroup(index: number): FormGroup {
     return this.payTierRules.at(index) as FormGroup;
   }
 
-  get totalPercent(): number {
-    return this.payTierRules.controls
-      .map(c => c.get('tierPercent')?.value || 0)
-      .reduce((sum, val) => sum + val, 0);
+  formatSeconds(seconds: number | null): string {
+    if (seconds === null || seconds === undefined) {
+      return 'No limit';
+    }
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${hours}h`;
   }
 }
