@@ -46,7 +46,7 @@
             <mat-form-field class="tier-field">
               <input matInput
                      type="number"
-                     [formControl]="getTierFormGroup(i).get('upToSeconds')"
+                     [formControl]="getTierControl(i, 'upToSeconds')"
                      min="0"
                      placeholder="28800">
               <mat-hint>{{ formatSeconds(getUpToSeconds(i)) }}</mat-hint>
@@ -61,7 +61,7 @@
             <mat-form-field class="tier-field">
               <input matInput
                      type="text"
-                     [formControl]="getTierFormGroup(i).get('payCode')"
+                     [formControl]="getTierControl(i, 'payCode')"
                      placeholder="REG">
             </mat-form-field>
           </td>

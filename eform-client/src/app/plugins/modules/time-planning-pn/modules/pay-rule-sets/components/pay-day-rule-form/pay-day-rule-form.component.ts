@@ -98,6 +98,10 @@ export class PayDayRuleFormComponent implements OnInit {
     return this.payTierRules.at(index) as FormGroup;
   }
 
+  getTierControl(index: number, controlName: string): FormControl {
+    return this.payTierRules.at(index).get(controlName) as FormControl;
+  }
+
   formatSeconds(seconds: number | null): string {
     if (seconds === null || seconds === undefined) {
       return 'No limit';
