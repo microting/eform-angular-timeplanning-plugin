@@ -30,7 +30,7 @@
 
     <!-- Tiers Table -->
     <div *ngIf="payTierRules.length > 0" class="tiers-table-container">
-      <table mat-table [dataSource]="payTierRules.controls" class="tiers-table">
+      <table mat-table [dataSource]="dataSource" class="tiers-table">
         <!-- Order Column -->
         <ng-container matColumnDef="order">
           <th mat-header-cell *matHeaderCellDef>{{ 'Order' | translate }}</th>
@@ -82,8 +82,8 @@
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="['order', 'upToSeconds', 'payCode', 'actions']"></tr>
-        <tr mat-row *matRowDef="let row; columns: ['order', 'upToSeconds', 'payCode', 'actions'];"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
       </table>
 
       <!-- Help Text -->

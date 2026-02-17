@@ -1,5 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {FormGroup, FormControl, Validators, FormArray, FormBuilder, AbstractControl, ValidationErrors} from '@angular/forms';
+import {MatTableDataSource} from '@angular/material/table';
 
 @Component({
   selector: 'app-pay-day-rule-form',
@@ -9,6 +10,9 @@ import {FormGroup, FormControl, Validators, FormArray, FormBuilder, AbstractCont
 })
 export class PayDayRuleFormComponent implements OnInit {
   @Input() payDayRuleForm!: FormGroup;
+
+  dataSource = new MatTableDataSource<AbstractControl>();
+  displayedColumns: string[] = ['order', 'upToSeconds', 'payCode', 'actions'];
 
   dayCodes = [
     {value: 'SUNDAY', label: 'Sunday'},
@@ -30,6 +34,7 @@ export class PayDayRuleFormComponent implements OnInit {
     if (!this.payDayRuleForm) {
       this.payDayRuleForm = this.createPayDayRuleForm();
     }
+    this.updateTable();
   }
 
   createPayDayRuleForm(): FormGroup {
@@ -48,7 +53,9 @@ export class PayDayRuleFormComponent implements OnInit {
     return this.payDayRuleForm.get('dayCode');
   }
 
-
+  updateTable(): void {
+    this.dataSource.data = this.payTierRules.controls;
+  }
 
   addTier(): void {
     const nextOrder = this.payTierRules.length + 1;
@@ -59,6 +66,9 @@ export class PayDayRuleFormComponent implements OnInit {
       payCode: ['', Validators.required]
     });
     this.payTierRules.push(tierForm);
+    this.updateTable();
+    this.payDayRuleForm.markAsDirty();
+    this.payDayRuleForm.updateValueAndValidity();
   }
 
   deleteTier(index: number): void {
@@ -67,6 +77,9 @@ export class PayDayRuleFormComponent implements OnInit {
     this.payTierRules.controls.forEach((control, idx) => {
       control.get('order')?.setValue(idx + 1);
     });
+    this.updateTable();
+    this.payDayRuleForm.markAsDirty();
+    this.payDayRuleForm.updateValueAndValidity();
   }
 
   getOrder(index: number): number {
