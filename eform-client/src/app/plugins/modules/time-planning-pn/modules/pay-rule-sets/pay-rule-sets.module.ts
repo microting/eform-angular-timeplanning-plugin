@@ -10,6 +10,7 @@ import {
   PayRuleSetsTableComponent,
   PayRuleSetsDeleteModalComponent,
   PayDayRuleFormComponent,
+  PayDayRuleListComponent,
 } from './components';
 import {TimePlanningPnPayRuleSetsService} from '../../services';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
@@ -48,6 +49,7 @@ import {MatTableModule} from '@angular/material/table';
     PayRuleSetsTableComponent,
     PayRuleSetsDeleteModalComponent,
     PayDayRuleFormComponent,
+    PayDayRuleListComponent,
   ],
   providers: [
     TimePlanningPnPayRuleSetsService,
