@@ -1,0 +1,104 @@
+.pay-day-rule-form {
+  padding: 16px;
+
+  .form-row {
+    margin-bottom: 16px;
+  }
+
+  .full-width {
+    width: 100%;
+  }
+
+  .tiers-section {
+    margin-top: 24px;
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
+      h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 500;
+      }
+
+      .add-tier-btn {
+        mat-icon {
+          margin-right: 4px;
+        }
+      }
+    }
+
+    .tiers-table-container {
+      margin-top: 16px;
+
+      .tiers-table {
+        width: 100%;
+        
+        .tier-field {
+          width: 100%;
+          margin: 0;
+
+          ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+            display: none;
+          }
+        }
+
+        td, th {
+          padding: 8px 12px;
+        }
+      }
+
+      .total-percent {
+        text-align: right;
+        padding: 12px;
+        font-size: 16px;
+        background-color: #f5f5f5;
+        border-radius: 4px;
+        margin-top: 8px;
+
+        &.error {
+          background-color: #ffebee;
+          color: #c62828;
+        }
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: #757575;
+      background-color: #fafafa;
+      border-radius: 4px;
+      border: 1px dashed #e0e0e0;
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+      }
+    }
+
+    .error-message {
+      margin-top: 8px;
+      padding: 8px;
+      background-color: #ffebee;
+      border-radius: 4px;
+
+      mat-error {
+        display: block;
+        color: #c62828;
+        font-size: 14px;
+      }
+    }
+  }
+}

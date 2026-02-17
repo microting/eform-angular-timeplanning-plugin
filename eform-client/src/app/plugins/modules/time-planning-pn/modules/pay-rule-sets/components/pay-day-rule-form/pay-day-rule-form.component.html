@@ -1,0 +1,108 @@
+<div [formGroup]="payDayRuleForm" class="pay-day-rule-form">
+  <!-- Day of Week Selector -->
+  <div class="form-row">
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Day of Week' | translate }}</mat-label>
+      <mat-select formControlName="dayOfWeek">
+        <mat-option *ngFor="let day of daysOfWeek" [value]="day.value">
+          {{ day.label | translate }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="dayOfWeek?.hasError('required')">
+        {{ 'Please select a day of week' | translate }}
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <!-- Pay Tiers Section -->
+  <div class="tiers-section">
+    <div class="section-header">
+      <h3>{{ 'Pay Tiers' | translate }}</h3>
+      <button mat-raised-button
+              color="primary"
+              type="button"
+              (click)="addTier()"
+              class="add-tier-btn">
+        <mat-icon>add</mat-icon>
+        {{ 'Add Tier' | translate }}
+      </button>
+    </div>
+
+    <!-- Tiers Table -->
+    <div *ngIf="payTierRules.length > 0" class="tiers-table-container">
+      <table mat-table [dataSource]="payTierRules.controls" class="tiers-table">
+        <!-- Tier Number Column -->
+        <ng-container matColumnDef="tierNumber">
+          <th mat-header-cell *matHeaderCellDef>{{ 'Tier #' | translate }}</th>
+          <td mat-cell *matCellDef="let tier; let i = index">
+            {{ getTierNumber(i) }}
+          </td>
+        </ng-container>
+
+        <!-- Percentage Column -->
+        <ng-container matColumnDef="percentage">
+          <th mat-header-cell *matHeaderCellDef>{{ 'Percentage' | translate }}</th>
+          <td mat-cell *matCellDef="let tier; let i = index">
+            <mat-form-field class="tier-field">
+              <input matInput
+                     type="number"
+                     [formControl]="getTierFormGroup(i).get('tierPercent')"
+                     min="0"
+                     max="100">
+              <span matSuffix>%</span>
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <!-- Pay Code Column -->
+        <ng-container matColumnDef="payCode">
+          <th mat-header-cell *matHeaderCellDef>{{ 'Pay Code ID' | translate }}</th>
+          <td mat-cell *matCellDef="let tier; let i = index">
+            <mat-form-field class="tier-field">
+              <input matInput
+                     type="number"
+                     [formControl]="getTierFormGroup(i).get('payCodeId')"
+                     placeholder="1">
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>{{ 'Actions' | translate }}</th>
+          <td mat-cell *matCellDef="let tier; let i = index">
+            <button mat-icon-button
+                    color="warn"
+                    type="button"
+                    (click)="deleteTier(i)"
+                    [attr.id]="'deleteTierBtn_' + i"
+                    matTooltip="{{ 'Delete tier' | translate }}">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['tierNumber', 'percentage', 'payCode', 'actions']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['tierNumber', 'percentage', 'payCode', 'actions'];"></tr>
+      </table>
+
+      <!-- Total Percentage Display -->
+      <div class="total-percent" [class.error]="payTierRules.hasError('percentageSum')">
+        <strong>{{ 'Total:' | translate }}</strong> {{ totalPercent }}%
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="payTierRules.length === 0" class="empty-state">
+      <mat-icon>info</mat-icon>
+      <p>{{ 'No tiers added yet. Click "Add Tier" to create the first tier.' | translate }}</p>
+    </div>
+
+    <!-- Validation Error -->
+    <div *ngIf="payTierRules.hasError('percentageSum')" class="error-message">
+      <mat-error>
+        {{ 'Tier percentages must sum to exactly 100%' | translate }}
+      </mat-error>
+    </div>
+  </div>
+</div>
