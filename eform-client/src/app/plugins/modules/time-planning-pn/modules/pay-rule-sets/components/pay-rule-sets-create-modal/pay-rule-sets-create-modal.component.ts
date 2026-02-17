@@ -92,7 +92,7 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
 
     return this.fb.group({
       id: [rule.id || null],
-      dayOfWeek: [rule.dayOfWeek, Validators.required],
+      dayCode: [rule.dayCode, Validators.required],
       payTierRules: tierRules
     });
   }
@@ -100,9 +100,9 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
   private createPayTierRuleFormGroup(tier: any): FormGroup {
     return this.fb.group({
       id: [tier.id || null],
-      tierNumber: [tier.tierNumber, Validators.required],
-      tierPercent: [tier.tierPercent, [Validators.required, Validators.min(0), Validators.max(100)]],
-      payCodeId: [tier.payCodeId, Validators.required]
+      order: [tier.order, Validators.required],
+      upToSeconds: [tier.upToSeconds, [Validators.min(0)]],
+      payCode: [tier.payCode, Validators.required]
     });
   }
 
