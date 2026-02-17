@@ -1,9 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatDialogRef } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
 import { BreakPolicyCreateModel } from '../../../../models';
 import { TimePlanningPnBreakPoliciesService } from '../../../../services';
+import { BreakPolicyRuleDialogComponent, BreakPolicyRuleDialogData } from '../break-policy-rule-dialog/break-policy-rule-dialog.component';
+import { BreakPolicyRuleFormValue } from '../break-policy-rules-list/break-policy-rules-list.component';
 
 @Component({
   selector: 'app-break-policies-create-modal',
@@ -15,6 +17,7 @@ export class BreakPoliciesCreateModalComponent implements OnInit {
   private breakPoliciesService = inject(TimePlanningPnBreakPoliciesService);
   private toastrService = inject(ToastrService);
   private fb = inject(FormBuilder);
+  private dialog = inject(MatDialog);
   public dialogRef = inject(MatDialogRef<BreakPoliciesCreateModalComponent>);
 
   breakPolicyForm: FormGroup;
@@ -26,7 +29,54 @@ export class BreakPoliciesCreateModalComponent implements OnInit {
   initForm() {
     this.breakPolicyForm = this.fb.group({
       name: ['', Validators.required],
+      rules: this.fb.array([]),
     });
+  }
+
+  get rulesArray(): FormArray {
+    return this.breakPolicyForm.get('rules') as FormArray;
+  }
+
+  onAddRule(): void {
+    const dialogRef = this.dialog.open(BreakPolicyRuleDialogComponent, {
+      data: { mode: 'create' } as BreakPolicyRuleDialogData,
+      width: '500px',
+    });
+
+    dialogRef.afterClosed().subscribe((result: BreakPolicyRuleFormValue) => {
+      if (result) {
+        const ruleGroup = this.fb.group({
+          id: [result.id || null],
+          breakAfterMinutes: [result.breakAfterMinutes],
+          breakDurationMinutes: [result.breakDurationMinutes],
+          paidBreakMinutes: [result.paidBreakMinutes],
+          unpaidBreakMinutes: [result.unpaidBreakMinutes],
+        });
+        this.rulesArray.push(ruleGroup);
+      }
+    });
+  }
+
+  onEditRule(index: number): void {
+    const rule = this.rulesArray.at(index).value;
+    const dialogRef = this.dialog.open(BreakPolicyRuleDialogComponent, {
+      data: { 
+        mode: 'edit',
+        rule: rule
+      } as BreakPolicyRuleDialogData,
+      width: '500px',
+    });
+
+    dialogRef.afterClosed().subscribe((result: BreakPolicyRuleFormValue) => {
+      if (result) {
+        this.rulesArray.at(index).patchValue(result);
+      }
+    });
+  }
+
+  onDeleteRule(index: number): void {
+    this.rulesArray.removeAt(index);
+    this.toastrService.info('Rule removed');
   }
 
   createBreakPolicy() {
@@ -34,7 +84,12 @@ export class BreakPoliciesCreateModalComponent implements OnInit {
 
     const model: BreakPolicyCreateModel = {
       name: this.breakPolicyForm.value.name,
-      rules: [],
+      rules: this.rulesArray.value.map((rule: BreakPolicyRuleFormValue) => ({
+        breakAfterMinutes: rule.breakAfterMinutes,
+        breakDurationMinutes: rule.breakDurationMinutes,
+        paidBreakMinutes: rule.paidBreakMinutes,
+        unpaidBreakMinutes: rule.unpaidBreakMinutes,
+      })),
     };
 
     this.breakPoliciesService.createBreakPolicy(model).subscribe((result) => {
