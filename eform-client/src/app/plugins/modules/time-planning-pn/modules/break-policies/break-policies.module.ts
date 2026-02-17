@@ -11,6 +11,9 @@ import {
   BreakPoliciesCreateModalComponent,
   BreakPoliciesEditModalComponent,
   BreakPoliciesDeleteModalComponent,
+  BreakPolicyRuleFormComponent,
+  BreakPolicyRulesListComponent,
+  BreakPolicyRuleDialogComponent,
 } from './components';
 import {TimePlanningPnBreakPoliciesService} from '../../services';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
@@ -22,6 +25,7 @@ import {MatDialogModule} from '@angular/material/dialog';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatSelectModule} from '@angular/material/select';
 import {MatMenuModule} from '@angular/material/menu';
+import {MatTableModule} from '@angular/material/table';
 
 @NgModule({
   imports: [
@@ -41,6 +45,7 @@ import {MatMenuModule} from '@angular/material/menu';
     MatTooltipModule,
     MatSelectModule,
     MatMenuModule,
+    MatTableModule,
   ],
   declarations: [
     BreakPoliciesContainerComponent,
@@ -48,10 +53,14 @@ import {MatMenuModule} from '@angular/material/menu';
     BreakPoliciesCreateModalComponent,
     BreakPoliciesEditModalComponent,
     BreakPoliciesDeleteModalComponent,
+    BreakPolicyRuleFormComponent,
+    BreakPolicyRulesListComponent,
+    BreakPolicyRuleDialogComponent,
   ],
   providers: [
     TimePlanningPnBreakPoliciesService,
   ],
 })
 export class BreakPoliciesModule {}
+
 
