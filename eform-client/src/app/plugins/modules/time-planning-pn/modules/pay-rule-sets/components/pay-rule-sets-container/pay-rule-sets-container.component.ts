@@ -1,8 +1,10 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
-import {PayRuleSetSimpleModel} from '../../../../models';
+import {PayRuleSetSimpleModel, PayRuleSetsRequestModel} from '../../../../models';
 import {MatDialog} from '@angular/material/dialog';
 import {PayRuleSetsDeleteModalComponent} from '../pay-rule-sets-delete-modal/pay-rule-sets-delete-modal.component';
+import {TimePlanningPnPayRuleSetsService} from '../../../../services';
+import {Subscription} from 'rxjs';
 
 @AutoUnsubscribe()
 @Component({
@@ -13,11 +15,36 @@ import {PayRuleSetsDeleteModalComponent} from '../pay-rule-sets-delete-modal/pay
 })
 export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   payRuleSets: PayRuleSetSimpleModel[] = [];
+  totalPayRuleSets = 0;
+  loading = false;
 
-  constructor(private dialog: MatDialog) {}
+  payRuleSetsRequest: PayRuleSetsRequestModel = {
+    offset: 0,
+    pageSize: 10,
+  };
+
+  getPayRuleSets$: Subscription;
+
+  constructor(
+    private dialog: MatDialog,
+    private payRuleSetsService: TimePlanningPnPayRuleSetsService
+  ) {}
 
   ngOnInit(): void {
-    // TODO: Load pay rule sets from service
+    this.getPayRuleSets();
+  }
+
+  getPayRuleSets(): void {
+    this.loading = true;
+    this.getPayRuleSets$ = this.payRuleSetsService
+      .getPayRuleSets(this.payRuleSetsRequest)
+      .subscribe((data) => {
+        if (data && data.success) {
+          this.payRuleSets = data.model.payRuleSets;
+          this.totalPayRuleSets = data.model.total;
+        }
+        this.loading = false;
+      });
   }
 
   onCreateClicked(): void {
@@ -38,8 +65,7 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         // Refresh the table after successful delete
-        // TODO: Reload data from service
-        console.log('Pay rule set deleted successfully');
+        this.getPayRuleSets();
       }
     });
   }

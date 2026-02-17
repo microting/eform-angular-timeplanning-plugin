@@ -13,6 +13,7 @@ export class PayRuleSetsTableComponent {
   private dialog = inject(MatDialog);
 
   @Input() payRuleSets: PayRuleSetSimpleModel[] = [];
+  @Input() loading = false;
   @Output() createClicked = new EventEmitter<void>();
   @Output() editClicked = new EventEmitter<PayRuleSetSimpleModel>();
   @Output() deleteClicked = new EventEmitter<PayRuleSetSimpleModel>();

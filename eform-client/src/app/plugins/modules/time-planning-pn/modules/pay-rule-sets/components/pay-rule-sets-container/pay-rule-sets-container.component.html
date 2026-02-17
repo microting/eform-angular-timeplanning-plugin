@@ -4,6 +4,7 @@
   
   <app-pay-rule-sets-table
     [payRuleSets]="payRuleSets"
+    [loading]="loading"
     (createClicked)="onCreateClicked()"
     (editClicked)="onEditClicked($event)"
     (deleteClicked)="onDeleteClicked($event)"
