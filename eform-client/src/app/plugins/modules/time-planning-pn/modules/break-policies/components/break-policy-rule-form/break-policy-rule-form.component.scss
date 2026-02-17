@@ -1,0 +1,27 @@
+.break-policy-rule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 0;
+
+  .form-row {
+    width: 100%;
+
+    mat-form-field {
+      width: 100%;
+    }
+  }
+
+  .error-message {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 8px;
+    color: #721c24;
+  }
+}
+
+.full-width {
+  width: 100%;
+}

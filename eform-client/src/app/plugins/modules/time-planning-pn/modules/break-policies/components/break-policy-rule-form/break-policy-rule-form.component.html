@@ -1,0 +1,72 @@
+<div [formGroup]="ruleForm" class="break-policy-rule-form">
+  <div class="form-row">
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Break after (minutes)' | translate }}</mat-label>
+      <input matInput
+             type="number"
+             formControlName="breakAfterMinutes"
+             placeholder="60"
+             min="1">
+      <mat-hint>{{ 'After how many minutes of work does this break apply?' | translate }}</mat-hint>
+      <mat-error *ngIf="breakAfterMinutes?.hasError('required')">
+        {{ 'This field is required' | translate }}
+      </mat-error>
+      <mat-error *ngIf="breakAfterMinutes?.hasError('min')">
+        {{ 'Must be at least 1 minute' | translate }}
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <div class="form-row">
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Break duration (minutes)' | translate }}</mat-label>
+      <input matInput
+             type="number"
+             formControlName="breakDurationMinutes"
+             placeholder="15"
+             min="1">
+      <mat-hint>{{ 'Total duration of the break' | translate }}</mat-hint>
+      <mat-error *ngIf="breakDurationMinutes?.hasError('required')">
+        {{ 'This field is required' | translate }}
+      </mat-error>
+      <mat-error *ngIf="breakDurationMinutes?.hasError('min')">
+        {{ 'Must be at least 1 minute' | translate }}
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <div class="form-row">
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Paid break (minutes)' | translate }}</mat-label>
+      <input matInput
+             type="number"
+             formControlName="paidBreakMinutes"
+             placeholder="15"
+             min="0">
+      <mat-hint>{{ 'How much of the break is paid?' | translate }}</mat-hint>
+      <mat-error *ngIf="paidBreakMinutes?.hasError('required')">
+        {{ 'This field is required' | translate }}
+      </mat-error>
+      <mat-error *ngIf="paidBreakMinutes?.hasError('min')">
+        {{ 'Cannot be negative' | translate }}
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <div class="form-row">
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Unpaid break (minutes)' | translate }}</mat-label>
+      <input matInput
+             type="number"
+             formControlName="unpaidBreakMinutes"
+             readonly>
+      <mat-hint>{{ 'Calculated automatically: Duration - Paid' | translate }}</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <div *ngIf="ruleForm.hasError('breakSumInvalid')" class="error-message">
+    <mat-error>
+      {{ 'Paid + Unpaid must equal Break Duration' | translate }}
+    </mat-error>
+  </div>
+</div>
