@@ -32,7 +32,7 @@ export class PayDayRuleDialogComponent implements OnInit {
   private initForm(): void {
     this.payDayRuleForm = this.fb.group({
       id: [null],
-      dayOfWeek: [0, Validators.required],
+      dayCode: [null, Validators.required],
       payTierRules: this.fb.array([])
     });
   }
@@ -41,7 +41,7 @@ export class PayDayRuleDialogComponent implements OnInit {
     if (this.data.rule) {
       this.payDayRuleForm.patchValue({
         id: this.data.rule.id || null,
-        dayOfWeek: this.data.rule.dayOfWeek || 0
+        dayCode: this.data.rule.dayCode || null
       });
 
       // Patch tier rules if they exist
@@ -50,9 +50,9 @@ export class PayDayRuleDialogComponent implements OnInit {
         this.data.rule.payTierRules.forEach((tier: any) => {
           const tierForm = this.fb.group({
             id: [tier.id || null],
-            tierNumber: [tier.tierNumber, Validators.required],
-            tierPercent: [tier.tierPercent, [Validators.required, Validators.min(0), Validators.max(100)]],
-            payCodeId: [tier.payCodeId, Validators.required]
+            order: [tier.order, Validators.required],
+            upToSeconds: [tier.upToSeconds, [Validators.min(0)]],
+            payCode: [tier.payCode, Validators.required]
           });
           tierRulesArray.push(tierForm);
         });
