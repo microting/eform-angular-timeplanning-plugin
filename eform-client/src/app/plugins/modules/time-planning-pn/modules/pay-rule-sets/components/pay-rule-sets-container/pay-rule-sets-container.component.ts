@@ -1,6 +1,8 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
-import {PayRuleSetSimpleModel} from '../../models';
+import {PayRuleSetSimpleModel} from '../../../../models';
+import {MatDialog} from '@angular/material/dialog';
+import {PayRuleSetsDeleteModalComponent} from '../pay-rule-sets-delete-modal/pay-rule-sets-delete-modal.component';
 
 @AutoUnsubscribe()
 @Component({
@@ -12,7 +14,7 @@ import {PayRuleSetSimpleModel} from '../../models';
 export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   payRuleSets: PayRuleSetSimpleModel[] = [];
 
-  constructor() {}
+  constructor(private dialog: MatDialog) {}
 
   ngOnInit(): void {
     // TODO: Load pay rule sets from service
@@ -29,8 +31,17 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   }
 
   onDeleteClicked(payRuleSet: PayRuleSetSimpleModel): void {
-    // TODO: Open delete modal
-    console.log('Delete clicked', payRuleSet);
+    const dialogRef = this.dialog.open(PayRuleSetsDeleteModalComponent, {
+      data: { selectedPayRuleSet: payRuleSet },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        // Refresh the table after successful delete
+        // TODO: Reload data from service
+        console.log('Pay rule set deleted successfully');
+      }
+    });
   }
 
   ngOnDestroy(): void {
