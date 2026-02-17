@@ -10,6 +10,7 @@ export interface BreakPolicyRuleDialogData {
 
 @Component({
   selector: 'app-break-policy-rule-dialog',
+  standalone: false,
   templateUrl: './break-policy-rule-dialog.component.html',
   styleUrls: ['./break-policy-rule-dialog.component.scss']
 })

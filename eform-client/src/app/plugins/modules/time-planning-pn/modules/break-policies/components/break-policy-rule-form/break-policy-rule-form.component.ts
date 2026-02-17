@@ -3,6 +3,7 @@ import {FormGroup, FormControl, Validators, AbstractControl, ValidationErrors} f
 
 @Component({
   selector: 'app-break-policy-rule-form',
+  standalone: false,
   templateUrl: './break-policy-rule-form.component.html',
   styleUrls: ['./break-policy-rule-form.component.scss']
 })

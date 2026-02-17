@@ -11,6 +11,7 @@ export interface BreakPolicyRuleFormValue {
 
 @Component({
   selector: 'app-break-policy-rules-list',
+  standalone: false,
   templateUrl: './break-policy-rules-list.component.html',
   styleUrls: ['./break-policy-rules-list.component.scss']
 })
