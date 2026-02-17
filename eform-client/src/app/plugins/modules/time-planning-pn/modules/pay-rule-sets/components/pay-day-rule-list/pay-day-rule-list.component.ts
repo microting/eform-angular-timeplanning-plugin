@@ -15,19 +15,23 @@ export class PayDayRuleListComponent {
   @Output() deleteRule = new EventEmitter<number>();
 
   /**
-   * Get the display name for a day of week number
+   * Get the display label for a day code
    */
-  getDayName(dayOfWeek: number): string {
-    const days = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday'
-    ];
-    return days[dayOfWeek] || 'Unknown';
+  getDayCodeLabel(dayCode: string): string {
+    const labels: { [key: string]: string } = {
+      'SUNDAY': 'Sunday',
+      'MONDAY': 'Monday',
+      'TUESDAY': 'Tuesday',
+      'WEDNESDAY': 'Wednesday',
+      'THURSDAY': 'Thursday',
+      'FRIDAY': 'Friday',
+      'SATURDAY': 'Saturday',
+      'WEEKDAY': 'Weekday',
+      'WEEKEND': 'Weekend',
+      'HOLIDAY': 'Holiday',
+      'GRUNDLOVSDAG': 'Grundlovsdag'
+    };
+    return labels[dayCode] || dayCode;
   }
 
   /**
@@ -49,11 +53,27 @@ export class PayDayRuleListComponent {
 
     return tiers.controls
       .map(tier => {
-        const percent = tier.get('tierPercent')?.value || 0;
-        const tierNum = tier.get('tierNumber')?.value || 0;
-        return `${percent}% Tier ${tierNum}`;
+        const upToSeconds = tier.get('upToSeconds')?.value;
+        const payCode = tier.get('payCode')?.value || '';
+        const timeStr = upToSeconds ? this.formatSeconds(upToSeconds) : 'unlimited';
+        return `${timeStr} → ${payCode}`;
       })
       .join(', ');
+  }
+
+  /**
+   * Format seconds into human-readable time
+   */
+  formatSeconds(seconds: number | null): string {
+    if (seconds === null || seconds === undefined) {
+      return 'No limit';
+    }
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${hours}h`;
   }
 
   /**

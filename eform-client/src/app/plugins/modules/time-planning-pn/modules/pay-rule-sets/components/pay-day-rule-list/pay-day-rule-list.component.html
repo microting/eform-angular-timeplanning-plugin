@@ -25,9 +25,9 @@
     
     <!-- Day Column -->
     <ng-container matColumnDef="day">
-      <th mat-header-cell *matHeaderCellDef>{{ 'Day' | translate }}</th>
+      <th mat-header-cell *matHeaderCellDef>{{ 'Day Code' | translate }}</th>
       <td mat-cell *matCellDef="let rule; let i = index">
-        {{ getDayName(getRuleFormGroup(i).get('dayOfWeek')?.value) }}
+        {{ getDayCodeLabel(getRuleFormGroup(i).get('dayCode')?.value) }}
       </td>
     </ng-container>
 
