@@ -7,6 +7,7 @@ import {EformSharedModule} from 'src/app/common/modules/eform-shared/eform-share
 import {PayRuleSetsRouting} from './pay-rule-sets.routing';
 import {
   PayRuleSetsContainerComponent,
+  PayRuleSetsTableComponent,
 } from './components';
 import {TimePlanningPnPayRuleSetsService} from '../../services';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
@@ -42,6 +43,7 @@ import {MatTableModule} from '@angular/material/table';
   ],
   declarations: [
     PayRuleSetsContainerComponent,
+    PayRuleSetsTableComponent,
   ],
   providers: [
     TimePlanningPnPayRuleSetsService,

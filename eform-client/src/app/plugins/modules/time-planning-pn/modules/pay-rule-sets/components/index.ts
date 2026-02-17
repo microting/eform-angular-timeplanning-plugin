@@ -1,1 +1,2 @@
 export * from './pay-rule-sets-container/pay-rule-sets-container.component';
+export * from './pay-rule-sets-table/pay-rule-sets-table.component';
