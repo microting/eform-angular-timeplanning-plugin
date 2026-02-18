@@ -10,6 +10,7 @@ using System.Collections.Generic;
 
 public class PayRuleSetUpdateModel
 {
+    public int Id { get; set; }
     public string Name { get; set; }
     public List<PayDayRuleModel> PayDayRules { get; set; } = new List<PayDayRuleModel>();
 }
