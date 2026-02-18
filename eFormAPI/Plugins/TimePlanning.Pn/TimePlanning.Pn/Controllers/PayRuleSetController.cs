@@ -44,6 +44,34 @@ public class PayRuleSetController : Controller
     [Authorize(Roles = EformRole.Admin)]
     public async Task<OperationResult> Create([FromBody] PayRuleSetCreateModel model)
     {
+        // Debug logging
+        Console.WriteLine($"[PayRuleSetController.Create] Model is null: {model == null}");
+        
+        if (model != null)
+        {
+            Console.WriteLine($"[PayRuleSetController.Create] Model.Name: {model.Name}");
+            Console.WriteLine($"[PayRuleSetController.Create] Model.PayDayRules count: {model.PayDayRules?.Count ?? 0}");
+            if (model.PayDayRules != null)
+            {
+                foreach (var rule in model.PayDayRules)
+                {
+                    Console.WriteLine($"[PayRuleSetController.Create]   - DayCode: {rule.DayCode}, PayTierRules: {rule.PayTierRules?.Count ?? 0}");
+                }
+            }
+        }
+        
+        if (!ModelState.IsValid)
+        {
+            Console.WriteLine("[PayRuleSetController.Create] ModelState is INVALID:");
+            foreach (var state in ModelState)
+            {
+                foreach (var error in state.Value.Errors)
+                {
+                    Console.WriteLine($"  - {state.Key}: {error.ErrorMessage}");
+                }
+            }
+        }
+        
         return await _payRuleSetService.Create(model);
     }
 
@@ -51,6 +79,35 @@ public class PayRuleSetController : Controller
     [Authorize(Roles = EformRole.Admin)]
     public async Task<OperationResult> Update(int id, [FromBody] PayRuleSetUpdateModel model)
     {
+        // Debug logging
+        Console.WriteLine($"[PayRuleSetController.Update] Called with id: {id}");
+        Console.WriteLine($"[PayRuleSetController.Update] Model is null: {model == null}");
+        
+        if (model != null)
+        {
+            Console.WriteLine($"[PayRuleSetController.Update] Model.Name: {model.Name}");
+            Console.WriteLine($"[PayRuleSetController.Update] Model.PayDayRules count: {model.PayDayRules?.Count ?? 0}");
+            if (model.PayDayRules != null)
+            {
+                foreach (var rule in model.PayDayRules)
+                {
+                    Console.WriteLine($"[PayRuleSetController.Update]   - DayCode: {rule.DayCode}, PayTierRules: {rule.PayTierRules?.Count ?? 0}");
+                }
+            }
+        }
+        
+        if (!ModelState.IsValid)
+        {
+            Console.WriteLine("[PayRuleSetController.Update] ModelState is INVALID:");
+            foreach (var state in ModelState)
+            {
+                foreach (var error in state.Value.Errors)
+                {
+                    Console.WriteLine($"  - {state.Key}: {error.ErrorMessage}");
+                }
+            }
+        }
+        
         return await _payRuleSetService.Update(id, model);
     }
 
