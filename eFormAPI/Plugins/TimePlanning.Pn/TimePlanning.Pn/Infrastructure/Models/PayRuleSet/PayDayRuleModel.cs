@@ -24,6 +24,9 @@ SOFTWARE.
 
 namespace TimePlanning.Pn.Infrastructure.Models.PayRuleSet;
 
+using System.Collections.Generic;
+using PayTierRule;
+
 /// <summary>
 /// Day-specific pay rule model (nested in PayRuleSet)
 /// </summary>
@@ -32,4 +35,5 @@ public class PayDayRuleModel
     public int Id { get; set; }
     public int PayRuleSetId { get; set; }
     public string DayCode { get; set; } // SUNDAY, SATURDAY, WEEKDAY, HOLIDAY, GRUNDLOVSDAG
+    public List<PayTierRuleModel> PayTierRules { get; set; } = new List<PayTierRuleModel>();
 }
