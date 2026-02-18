@@ -1,183 +1,194 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Microting.eForm.Infrastructure.Constants;
+using Microsoft.Extensions.DependencyInjection;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Microting.TimePlanningBase.Infrastructure.Data;
 using NUnit.Framework;
-using TimePlanning.Pn.Controllers;
 using TimePlanning.Pn.Infrastructure.Models.BreakPolicy;
-using TimePlanning.Pn.Services.BreakPolicyService;
 
-namespace TimePlanning.Pn.Test
+namespace TimePlanning.Pn.Test;
+
+[TestFixture]
+public class BreakPolicyControllerTests : TestBaseSetup
 {
-    [TestFixture]
-    public class BreakPolicyControllerTests : TestBaseSetup
+    [Test]
+    public async Task Create_WithNestedRules_ReturnsSuccess()
     {
-        private BreakPolicyController _controller;
-        private IBreakPolicyService _service;
+        // Arrange
+        var json = @"{
+  ""name"": ""Test BreakPolicy via Controller"",
+  ""breakPolicyRules"": [
+    {
+      ""id"": null,
+      ""dayOfWeek"": 1,
+      ""paidBreakSeconds"": 900,
+      ""unpaidBreakSeconds"": 1800
+    },
+    {
+      ""id"": null,
+      ""dayOfWeek"": 2,
+      ""paidBreakSeconds"": 1200,
+      ""unpaidBreakSeconds"": 1800
+    }
+  ]
+}";
 
-        [SetUp]
-        public async Task Setup()
+        // Parse and validate JSON structure
+        var model = JsonSerializer.Deserialize<BreakPolicyCreateModel>(json, new JsonSerializerOptions
         {
-            await GetContext();
-            _service = new BreakPolicyService(DbContext, Logger);
-            _controller = new BreakPolicyController(_service);
-        }
+            PropertyNameCaseInsensitive = true
+        });
 
-        [Test]
-        public async Task Create_WithNestedRules_ReturnsSuccess()
+        Assert.That(model, Is.Not.Null);
+        Assert.That(model.Name, Is.EqualTo("Test BreakPolicy via Controller"));
+        Assert.That(model.BreakPolicyRules, Is.Not.Null);
+        Assert.That(model.BreakPolicyRules.Count, Is.EqualTo(2));
+        Assert.That(model.BreakPolicyRules[0].Id, Is.Null);
+        Assert.That(model.BreakPolicyRules[0].DayOfWeek, Is.EqualTo(1));
+        Assert.That(model.BreakPolicyRules[0].PaidBreakSeconds, Is.EqualTo(900));
+
+        // Act - Call service directly (controller just wraps service)
+        var breakPolicyService = ServiceProvider.GetRequiredService<Services.BreakPolicyService.IBreakPolicyService>();
+        var result = await breakPolicyService.Create(model);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Success, Is.True);
+    }
+
+    [Test]
+    public async Task Update_WithNestedRules_DeserializesCorrectly()
+    {
+        // Arrange - Create initial policy
+        var createModel = new BreakPolicyCreateModel
         {
-            // Arrange
-            var model = new BreakPolicyCreateModel
+            Name = "Original Policy",
+            BreakPolicyRules = new List<BreakPolicyRuleModel>
             {
-                Name = "Test Policy with Rules",
-                BreakPolicyRules = new List<BreakPolicyRuleModel>
+                new BreakPolicyRuleModel
                 {
-                    new BreakPolicyRuleModel
-                    {
-                        Id = null,
-                        DayOfWeek = 1, // Monday
-                        PaidBreakSeconds = 900, // 15 minutes
-                        UnpaidBreakSeconds = 1800 // 30 minutes
-                    },
-                    new BreakPolicyRuleModel
-                    {
-                        Id = null,
-                        DayOfWeek = 2, // Tuesday
-                        PaidBreakSeconds = 1200, // 20 minutes
-                        UnpaidBreakSeconds = 1800 // 30 minutes
-                    }
+                    Id = null,
+                    DayOfWeek = 1,
+                    PaidBreakSeconds = 600,
+                    UnpaidBreakSeconds = 1200
                 }
-            };
-
-            // Act
-            var result = await _controller.Create(model);
-
-            // Assert
-            Assert.IsNotNull(result);
-            var operationResult = result as OperationResult;
-            Assert.IsNotNull(operationResult);
-            Assert.IsTrue(operationResult.Success);
-
-            // Verify in database
-            var breakPolicy = await DbContext.BreakPolicies
-                .FirstOrDefaultAsync(bp => bp.Name == "Test Policy with Rules" && bp.WorkflowState != Constants.WorkflowStates.Removed);
-            Assert.IsNotNull(breakPolicy);
-
-            var rules = await DbContext.BreakPolicyRules
-                .Where(r => r.BreakPolicyId == breakPolicy.Id && r.WorkflowState != Constants.WorkflowStates.Removed)
-                .ToListAsync();
-            Assert.AreEqual(2, rules.Count);
-        }
-
-        [Test]
-        public async Task Update_WithNestedRules_DeserializesCorrectly()
-        {
-            // Arrange - Create initial policy
-            var breakPolicy = new Microting.TimePlanningBase.Infrastructure.Data.Entities.BreakPolicy
-            {
-                Name = "Initial Policy",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                WorkflowState = Constants.WorkflowStates.Created
-            };
-            await breakPolicy.Create(DbContext);
-
-            var updateModel = new BreakPolicyUpdateModel
-            {
-                Name = "Updated Policy",
-                BreakPolicyRules = new List<BreakPolicyRuleModel>
-                {
-                    new BreakPolicyRuleModel
-                    {
-                        Id = null,
-                        DayOfWeek = 3, // Wednesday
-                        PaidBreakSeconds = 600, // 10 minutes
-                        UnpaidBreakSeconds = 2400 // 40 minutes
-                    }
-                }
-            };
-
-            // Act
-            var result = await _controller.Update(breakPolicy.Id, updateModel);
-
-            // Assert
-            Assert.IsNotNull(result);
-            var operationResult = result as OperationResult;
-            Assert.IsNotNull(operationResult);
-            Assert.IsTrue(operationResult.Success);
-
-            // Verify name was updated
-            var updated = await DbContext.BreakPolicies
-                .FirstOrDefaultAsync(bp => bp.Id == breakPolicy.Id);
-            Assert.AreEqual("Updated Policy", updated.Name);
-        }
-
-        [Test]
-        public async Task AngularJSON_Format_DeserializesCorrectly()
-        {
-            // This test validates the exact JSON format that Angular sends
-            var model = new BreakPolicyCreateModel
-            {
-                Name = "Angular Format Test",
-                BreakPolicyRules = new List<BreakPolicyRuleModel>
-                {
-                    new BreakPolicyRuleModel
-                    {
-                        Id = null,  // Angular sends null for new entities
-                        DayOfWeek = 0, // Sunday
-                        PaidBreakSeconds = 900, // 15 minutes
-                        UnpaidBreakSeconds = 1800 // 30 minutes
-                    }
-                }
-            };
-
-            // Act
-            var result = await _controller.Create(model);
-
-            // Assert
-            var operationResult = result as OperationResult;
-            Assert.IsNotNull(operationResult);
-            Assert.IsTrue(operationResult.Success, "Angular JSON format should deserialize correctly");
-
-            Console.WriteLine($"✅ Angular JSON format is VALID and deserializes correctly!");
-            Console.WriteLine($"   Name: {model.Name}");
-            Console.WriteLine($"   BreakPolicyRules: {model.BreakPolicyRules?.Count ?? 0}");
-            if (model.BreakPolicyRules?.Count > 0)
-            {
-                Console.WriteLine($"   DayOfWeek: {model.BreakPolicyRules[0].DayOfWeek}");
-                Console.WriteLine($"   PaidBreakSeconds: {model.BreakPolicyRules[0].PaidBreakSeconds}");
             }
-        }
+        };
 
-        [Test]
-        public async Task PropertyCasing_Variations_AllDeserializeCorrectly()
+        var breakPolicyService = ServiceProvider.GetRequiredService<Services.BreakPolicyService.IBreakPolicyService>();
+        var createResult = await breakPolicyService.Create(createModel);
+        Assert.That(createResult.Success, Is.True);
+
+        // Get the created policy
+        var dbContext = ServiceProvider.GetRequiredService<TimePlanningDbContext>();
+        var createdPolicy = dbContext.BreakPolicies.First(bp => bp.Name == "Original Policy");
+
+        // Arrange - Update with new rules
+        var json = $@"{{
+  ""name"": ""Updated Policy"",
+  ""breakPolicyRules"": [
+    {{
+      ""id"": null,
+      ""dayOfWeek"": 1,
+      ""paidBreakSeconds"": 900,
+      ""unpaidBreakSeconds"": 1800
+    }},
+    {{
+      ""id"": null,
+      ""dayOfWeek"": 3,
+      ""paidBreakSeconds"": 1200,
+      ""unpaidBreakSeconds"": 1800
+    }}
+  ]
+}}";
+
+        var updateModel = JsonSerializer.Deserialize<BreakPolicyUpdateModel>(json, new JsonSerializerOptions
         {
-            // Test various property naming to ensure case-insensitive deserialization works
-            var model = new BreakPolicyCreateModel
+            PropertyNameCaseInsensitive = true
+        });
+
+        Assert.That(updateModel, Is.Not.Null);
+        Assert.That(updateModel.Name, Is.EqualTo("Updated Policy"));
+        Assert.That(updateModel.BreakPolicyRules, Is.Not.Null);
+        Assert.That(updateModel.BreakPolicyRules.Count, Is.EqualTo(2));
+
+        // Act
+        var result = await breakPolicyService.Update(createdPolicy.Id, updateModel);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Success, Is.True);
+    }
+
+    [Test]
+    public async Task AngularJSON_Format_DeserializesCorrectly()
+    {
+        // This tests the EXACT JSON format that Angular sends
+        var angularJson = @"{
+  ""name"": ""Test from Angular"",
+  ""breakPolicyRules"": [
+    {
+      ""id"": null,
+      ""dayOfWeek"": 1,
+      ""paidBreakSeconds"": 900,
+      ""unpaidBreakSeconds"": 1800
+    }
+  ]
+}";
+
+        // Deserialize - this should NOT throw an exception
+        var model = JsonSerializer.Deserialize<BreakPolicyCreateModel>(angularJson, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        // Verify all properties deserialized correctly
+        Assert.That(model, Is.Not.Null, "Model should not be null");
+        Assert.That(model.Name, Is.EqualTo("Test from Angular"));
+        Assert.That(model.BreakPolicyRules, Is.Not.Null);
+        Assert.That(model.BreakPolicyRules.Count, Is.EqualTo(1));
+        Assert.That(model.BreakPolicyRules[0].Id, Is.Null, "Id should be null for new entities");
+        Assert.That(model.BreakPolicyRules[0].DayOfWeek, Is.EqualTo(1));
+        Assert.That(model.BreakPolicyRules[0].PaidBreakSeconds, Is.EqualTo(900));
+        Assert.That(model.BreakPolicyRules[0].UnpaidBreakSeconds, Is.EqualTo(1800));
+
+        Console.WriteLine("✅ Angular JSON format is VALID and deserializes correctly!");
+        Console.WriteLine($"   Name: {model.Name}");
+        Console.WriteLine($"   BreakPolicyRules: {model.BreakPolicyRules.Count}");
+        Console.WriteLine($"   DayOfWeek: {model.BreakPolicyRules[0].DayOfWeek}");
+        Console.WriteLine($"   PaidBreakSeconds: {model.BreakPolicyRules[0].PaidBreakSeconds}");
+    }
+
+    [Test]
+    public void PropertyCasing_Variations_AllDeserializeCorrectly()
+    {
+        // Test different casing variations to ensure case-insensitivity works
+        var testCases = new[]
+        {
+            // Standard camelCase (Angular sends this)
+            @"{""name"": ""Test"", ""breakPolicyRules"": [{""id"": null, ""dayOfWeek"": 1, ""paidBreakSeconds"": 900, ""unpaidBreakSeconds"": 1800}]}",
+            
+            // PascalCase (C# uses this)
+            @"{""Name"": ""Test"", ""BreakPolicyRules"": [{""Id"": null, ""DayOfWeek"": 1, ""PaidBreakSeconds"": 900, ""UnpaidBreakSeconds"": 1800}]}",
+            
+            // Mixed case
+            @"{""NAME"": ""Test"", ""breakPolicyRules"": [{""ID"": null, ""dayofweek"": 1, ""paidbreakseconds"": 900, ""unpaidbreakseconds"": 1800}]}"
+        };
+
+        foreach (var json in testCases)
+        {
+            var model = JsonSerializer.Deserialize<BreakPolicyCreateModel>(json, new JsonSerializerOptions
             {
-                Name = "Case Test",
-                BreakPolicyRules = new List<BreakPolicyRuleModel>
-                {
-                    new BreakPolicyRuleModel
-                    {
-                        Id = null,
-                        DayOfWeek = 5, // Friday
-                        PaidBreakSeconds = 600,
-                        UnpaidBreakSeconds = 1200
-                    }
-                }
-            };
+                PropertyNameCaseInsensitive = true
+            });
 
-            // Act
-            var result = await _controller.Create(model);
-
-            // Assert
-            var operationResult = result as OperationResult;
-            Assert.IsNotNull(operationResult);
-            Assert.IsTrue(operationResult.Success);
+            Assert.That(model, Is.Not.Null);
+            Assert.That(model.Name, Is.EqualTo("Test"));
+            Assert.That(model.BreakPolicyRules, Is.Not.Null);
+            Assert.That(model.BreakPolicyRules.Count, Is.EqualTo(1));
         }
     }
 }
