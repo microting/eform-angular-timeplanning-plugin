@@ -7,6 +7,7 @@ Copyright (c) 2007 - 2021 Microting A/S
 namespace TimePlanning.Pn.Services.PayRuleSetService;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure.Models.PayRuleSet;
