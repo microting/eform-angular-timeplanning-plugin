@@ -219,8 +219,8 @@ public class PayRuleSetService : IPayRuleSetService
 
             // Process PayDayRules from model
             var modelPayDayRuleIds = model.PayDayRules?
-                .Where(pdr => pdr.Id > 0)
-                .Select(pdr => pdr.Id)
+                .Where(pdr => pdr.Id.HasValue && pdr.Id.Value > 0)
+                .Select(pdr => pdr.Id.Value)
                 .ToList() ?? new List<int>();
 
             // Delete PayDayRules that are not in the model
@@ -243,10 +243,10 @@ public class PayRuleSetService : IPayRuleSetService
                 {
                     PayDayRule payDayRule;
                     
-                    if (dayRuleModel.Id > 0)
+                    if (dayRuleModel.Id.HasValue && dayRuleModel.Id.Value > 0)
                     {
                         // Update existing PayDayRule
-                        payDayRule = existingPayDayRules.FirstOrDefault(pdr => pdr.Id == dayRuleModel.Id);
+                        payDayRule = existingPayDayRules.FirstOrDefault(pdr => pdr.Id == dayRuleModel.Id.Value);
                         if (payDayRule != null)
                         {
                             payDayRule.DayCode = dayRuleModel.DayCode;
@@ -279,8 +279,8 @@ public class PayRuleSetService : IPayRuleSetService
                         .ToList();
 
                     var modelTierRuleIds = dayRuleModel.PayTierRules?
-                        .Where(ptr => ptr.Id > 0)
-                        .Select(ptr => ptr.Id)
+                        .Where(ptr => ptr.Id.HasValue && ptr.Id.Value > 0)
+                        .Select(ptr => ptr.Id.Value)
                         .ToList() ?? new List<int>();
 
                     // Delete PayTierRules not in the model
@@ -294,10 +294,10 @@ public class PayRuleSetService : IPayRuleSetService
                     {
                         foreach (var tierRuleModel in dayRuleModel.PayTierRules)
                         {
-                            if (tierRuleModel.Id > 0)
+                            if (tierRuleModel.Id.HasValue && tierRuleModel.Id.Value > 0)
                             {
                                 // Update existing PayTierRule
-                                var existingTierRule = existingTierRules.FirstOrDefault(ptr => ptr.Id == tierRuleModel.Id);
+                                var existingTierRule = existingTierRules.FirstOrDefault(ptr => ptr.Id == tierRuleModel.Id.Value);
                                 if (existingTierRule != null)
                                 {
                                     existingTierRule.Order = tierRuleModel.Order;

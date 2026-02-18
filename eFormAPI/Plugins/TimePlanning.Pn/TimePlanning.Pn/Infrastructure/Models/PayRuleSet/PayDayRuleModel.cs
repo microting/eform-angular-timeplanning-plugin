@@ -32,7 +32,7 @@ using PayTierRule;
 /// </summary>
 public class PayDayRuleModel
 {
-    public int Id { get; set; }
+    public int? Id { get; set; }  // Changed to nullable to accept null from Angular for new entities
     public int PayRuleSetId { get; set; }
     public string DayCode { get; set; } // SUNDAY, SATURDAY, WEEKDAY, HOLIDAY, GRUNDLOVSDAG
     public List<PayTierRuleModel> PayTierRules { get; set; } = new List<PayTierRuleModel>();

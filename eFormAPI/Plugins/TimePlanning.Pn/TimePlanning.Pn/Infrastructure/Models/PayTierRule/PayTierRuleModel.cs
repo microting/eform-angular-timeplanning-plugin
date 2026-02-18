@@ -8,7 +8,7 @@ namespace TimePlanning.Pn.Infrastructure.Models.PayTierRule;
 
 public class PayTierRuleModel
 {
-    public int Id { get; set; }
+    public int? Id { get; set; }  // Changed to nullable to accept null from Angular for new entities
     public int PayDayRuleId { get; set; }
     public int Order { get; set; }
     public int? UpToSeconds { get; set; }
