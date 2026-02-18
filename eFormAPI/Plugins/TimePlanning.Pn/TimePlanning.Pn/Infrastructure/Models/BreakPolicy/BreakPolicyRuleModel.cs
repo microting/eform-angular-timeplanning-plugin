@@ -38,12 +38,12 @@ public class BreakPolicyRuleModel
     public int DayOfWeek { get; set; }
     
     /// <summary>
-    /// Paid break time in seconds per day
+    /// Paid break time in minutes per day
     /// </summary>
-    public int PaidBreakSeconds { get; set; }
+    public int PaidBreakMinutes { get; set; }
     
     /// <summary>
-    /// Unpaid break time in seconds per day
+    /// Unpaid break time in minutes per day
     /// </summary>
-    public int UnpaidBreakSeconds { get; set; }
+    public int UnpaidBreakMinutes { get; set; }
 }

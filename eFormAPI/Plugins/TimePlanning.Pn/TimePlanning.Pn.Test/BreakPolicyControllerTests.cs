@@ -24,14 +24,14 @@ public class BreakPolicyControllerTests : TestBaseSetup
     {
       ""id"": null,
       ""dayOfWeek"": 1,
-      ""paidBreakSeconds"": 900,
-      ""unpaidBreakSeconds"": 1800
+      ""paidBreakMinutes"": 15,
+      ""unpaidBreakMinutes"": 30
     },
     {
       ""id"": null,
       ""dayOfWeek"": 2,
-      ""paidBreakSeconds"": 1200,
-      ""unpaidBreakSeconds"": 1800
+      ""paidBreakMinutes"": 20,
+      ""unpaidBreakMinutes"": 30
     }
   ]
 }";
@@ -48,7 +48,7 @@ public class BreakPolicyControllerTests : TestBaseSetup
         Assert.That(model.BreakPolicyRules.Count, Is.EqualTo(2));
         Assert.That(model.BreakPolicyRules[0].Id, Is.Null);
         Assert.That(model.BreakPolicyRules[0].DayOfWeek, Is.EqualTo(1));
-        Assert.That(model.BreakPolicyRules[0].PaidBreakSeconds, Is.EqualTo(900));
+        Assert.That(model.BreakPolicyRules[0].PaidBreakMinutes, Is.EqualTo(900));
         
         Console.WriteLine("✅ JSON deserialization successful - BreakPolicy model structure is correct");
         await Task.CompletedTask; // Keep async signature
@@ -64,14 +64,14 @@ public class BreakPolicyControllerTests : TestBaseSetup
     {
       ""id"": null,
       ""dayOfWeek"": 1,
-      ""paidBreakSeconds"": 900,
-      ""unpaidBreakSeconds"": 1800
+      ""paidBreakMinutes"": 15,
+      ""unpaidBreakMinutes"": 30
     },
     {
       ""id"": null,
       ""dayOfWeek"": 3,
-      ""paidBreakSeconds"": 1200,
-      ""unpaidBreakSeconds"": 1800
+      ""paidBreakMinutes"": 20,
+      ""unpaidBreakMinutes"": 30
     }
   ]
 }";
@@ -89,7 +89,7 @@ public class BreakPolicyControllerTests : TestBaseSetup
         Assert.That(model.BreakPolicyRules.Count, Is.EqualTo(2));
         Assert.That(model.BreakPolicyRules[0].Id, Is.Null);
         Assert.That(model.BreakPolicyRules[0].DayOfWeek, Is.EqualTo(1));
-        Assert.That(model.BreakPolicyRules[0].PaidBreakSeconds, Is.EqualTo(900));
+        Assert.That(model.BreakPolicyRules[0].PaidBreakMinutes, Is.EqualTo(900));
         
         Console.WriteLine("✅ Update JSON deserialization successful - model structure is correct");
         await Task.CompletedTask; // Keep async signature
@@ -105,8 +105,8 @@ public class BreakPolicyControllerTests : TestBaseSetup
     {
       ""id"": null,
       ""dayOfWeek"": 1,
-      ""paidBreakSeconds"": 900,
-      ""unpaidBreakSeconds"": 1800
+      ""paidBreakMinutes"": 15,
+      ""unpaidBreakMinutes"": 30
     }
   ]
 }";
@@ -124,14 +124,14 @@ public class BreakPolicyControllerTests : TestBaseSetup
         Assert.That(model.BreakPolicyRules.Count, Is.EqualTo(1));
         Assert.That(model.BreakPolicyRules[0].Id, Is.Null, "Id should be null for new entities");
         Assert.That(model.BreakPolicyRules[0].DayOfWeek, Is.EqualTo(1));
-        Assert.That(model.BreakPolicyRules[0].PaidBreakSeconds, Is.EqualTo(900));
-        Assert.That(model.BreakPolicyRules[0].UnpaidBreakSeconds, Is.EqualTo(1800));
+        Assert.That(model.BreakPolicyRules[0].PaidBreakMinutes, Is.EqualTo(900));
+        Assert.That(model.BreakPolicyRules[0].UnpaidBreakMinutes, Is.EqualTo(1800));
 
         Console.WriteLine("✅ Angular JSON format is VALID and deserializes correctly!");
         Console.WriteLine($"   Name: {model.Name}");
         Console.WriteLine($"   BreakPolicyRules: {model.BreakPolicyRules.Count}");
         Console.WriteLine($"   DayOfWeek: {model.BreakPolicyRules[0].DayOfWeek}");
-        Console.WriteLine($"   PaidBreakSeconds: {model.BreakPolicyRules[0].PaidBreakSeconds}");
+        Console.WriteLine($"   PaidBreakMinutes: {model.BreakPolicyRules[0].PaidBreakMinutes}");
     }
 
     [Test]
@@ -141,13 +141,13 @@ public class BreakPolicyControllerTests : TestBaseSetup
         var testCases = new[]
         {
             // Standard camelCase (Angular sends this)
-            @"{""name"": ""Test"", ""breakPolicyRules"": [{""id"": null, ""dayOfWeek"": 1, ""paidBreakSeconds"": 900, ""unpaidBreakSeconds"": 1800}]}",
+            @"{""name"": ""Test"", ""breakPolicyRules"": [{""id"": null, ""dayOfWeek"": 1, ""paidBreakMinutes"": 15, ""unpaidBreakMinutes"": 30}]}",
             
             // PascalCase (C# uses this)
-            @"{""Name"": ""Test"", ""BreakPolicyRules"": [{""Id"": null, ""DayOfWeek"": 1, ""PaidBreakSeconds"": 900, ""UnpaidBreakSeconds"": 1800}]}",
+            @"{""Name"": ""Test"", ""BreakPolicyRules"": [{""Id"": null, ""DayOfWeek"": 1, ""PaidBreakMinutes"": 15, ""UnpaidBreakMinutes"": 30}]}",
             
             // Mixed case
-            @"{""NAME"": ""Test"", ""breakPolicyRules"": [{""ID"": null, ""dayofweek"": 1, ""paidbreakseconds"": 900, ""unpaidbreakseconds"": 1800}]}"
+            @"{""NAME"": ""Test"", ""breakPolicyRules"": [{""ID"": null, ""dayofweek"": 1, ""paidbreakseconds"": 15, ""unpaidbreakseconds"": 30}]}"
         };
 
         foreach (var json in testCases)

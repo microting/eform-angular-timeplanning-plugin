@@ -159,8 +159,8 @@ public class BreakPolicyService : IBreakPolicyService
                     {
                         BreakPolicyId = breakPolicy.Id,
                         DayOfWeek = (DayOfWeek)ruleModel.DayOfWeek,
-                        // Note: PaidBreakSeconds and UnpaidBreakSeconds don't exist in entity yet
-                        // They're stored in the model but not persisted to database
+                        PaidBreakMinutes = ruleModel.PaidBreakMinutes,
+                        UnpaidBreakMinutes = ruleModel.UnpaidBreakMinutes,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow,
                         WorkflowState = Constants.WorkflowStates.Created
@@ -229,7 +229,8 @@ public class BreakPolicyService : IBreakPolicyService
                         if (existingRule != null)
                         {
                             existingRule.DayOfWeek = (DayOfWeek)ruleModel.DayOfWeek;
-                            // Note: PaidBreakSeconds and UnpaidBreakSeconds don't exist in entity
+                            existingRule.PaidBreakMinutes = ruleModel.PaidBreakMinutes;
+                            existingRule.UnpaidBreakMinutes = ruleModel.UnpaidBreakMinutes;
                             existingRule.UpdatedAt = DateTime.UtcNow;
                             await existingRule.Update(_dbContext);
                         }
@@ -241,7 +242,8 @@ public class BreakPolicyService : IBreakPolicyService
                         {
                             BreakPolicyId = id,
                             DayOfWeek = (DayOfWeek)ruleModel.DayOfWeek,
-                            // Note: PaidBreakSeconds and UnpaidBreakSeconds don't exist in entity
+                            PaidBreakMinutes = ruleModel.PaidBreakMinutes,
+                            UnpaidBreakMinutes = ruleModel.UnpaidBreakMinutes,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow,
                             WorkflowState = Constants.WorkflowStates.Created

@@ -1,8 +1,7 @@
 export class BreakPolicyRuleModel {
   id: number;
   breakPolicyId?: number;
-  breakAfterMinutes: number;
-  breakDurationMinutes: number;
+  dayOfWeek: number; // 0-6 (Sunday-Saturday)
   paidBreakMinutes: number;
   unpaidBreakMinutes: number;
 }

@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {FormGroup, FormControl, Validators, AbstractControl, ValidationErrors} from '@angular/forms';
+import {FormGroup, FormControl, Validators} from '@angular/forms';
 
 @Component({
   selector: 'app-break-policy-rule-form',
@@ -10,64 +10,33 @@ import {FormGroup, FormControl, Validators, AbstractControl, ValidationErrors} f
 export class BreakPolicyRuleFormComponent implements OnInit {
   @Input() ruleForm!: FormGroup;
 
+  daysOfWeek = [
+    { value: 0, label: 'Sunday' },
+    { value: 1, label: 'Monday' },
+    { value: 2, label: 'Tuesday' },
+    { value: 3, label: 'Wednesday' },
+    { value: 4, label: 'Thursday' },
+    { value: 5, label: 'Friday' },
+    { value: 6, label: 'Saturday' }
+  ];
+
   ngOnInit(): void {
     if (!this.ruleForm) {
       this.ruleForm = this.createRuleForm();
     }
-    
-    // Watch for changes to update unpaid automatically
-    this.ruleForm.get('breakDurationMinutes')?.valueChanges.subscribe(() => {
-      this.updateUnpaidBreak();
-    });
-    
-    this.ruleForm.get('paidBreakMinutes')?.valueChanges.subscribe(() => {
-      this.updateUnpaidBreak();
-    });
   }
 
   createRuleForm(): FormGroup {
     return new FormGroup({
       id: new FormControl<number | null>(null),
-      breakAfterMinutes: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
-      breakDurationMinutes: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+      dayOfWeek: new FormControl<number | null>(null, [Validators.required]),
       paidBreakMinutes: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
-      unpaidBreakMinutes: new FormControl<number | null>({value: null, disabled: true}),
-    }, {validators: this.breakSumValidator});
+      unpaidBreakMinutes: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
+    });
   }
 
-  breakSumValidator(control: AbstractControl): ValidationErrors | null {
-    const group = control as FormGroup;
-    const duration = group.get('breakDurationMinutes')?.value;
-    const paid = group.get('paidBreakMinutes')?.value;
-    const unpaid = group.get('unpaidBreakMinutes')?.value;
-
-    if (duration == null || paid == null || unpaid == null) {
-      return null; // Don't validate if values are not set yet
-    }
-
-    if (paid + unpaid !== duration) {
-      return {breakSumInvalid: true};
-    }
-
-    return null;
-  }
-
-  updateUnpaidBreak(): void {
-    const duration = this.ruleForm.get('breakDurationMinutes')?.value;
-    const paid = this.ruleForm.get('paidBreakMinutes')?.value;
-
-    if (duration != null && paid != null) {
-      const unpaid = duration - paid;
-      this.ruleForm.get('unpaidBreakMinutes')?.setValue(unpaid, {emitEvent: false});
-    }
-  }
-
-  get breakAfterMinutes() {
-    return this.ruleForm.get('breakAfterMinutes');
-  }
-
-  get breakDurationMinutes() {
-    return this.ruleForm.get('breakDurationMinutes');
+  get dayOfWeek() {
+    return this.ruleForm.get('dayOfWeek');
   }
 
   get paidBreakMinutes() {
