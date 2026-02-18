@@ -158,13 +158,14 @@ export class PayRuleSetsEditModalComponent implements OnInit {
     }
 
     const model = new PayRuleSetUpdateModel();
-    model.id = this.payRuleSet.id;
+    // Do NOT set model.id - it will be passed separately
     model.name = this.form.get('name')?.value;
     model.payDayRules = this.payDayRulesFormArray.value;
     
     console.log('Sending model to API:', JSON.stringify(model, null, 2));
+    console.log('With ID:', this.payRuleSet.id);
 
-    this.payRuleSetsService.updatePayRuleSet(model).subscribe({
+    this.payRuleSetsService.updatePayRuleSet(this.payRuleSet.id, model).subscribe({
       next: (response) => {
         console.log('Update success response:', response);
         this.toastrService.success('Pay rule set updated successfully');

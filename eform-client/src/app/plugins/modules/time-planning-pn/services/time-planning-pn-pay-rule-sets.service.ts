@@ -37,8 +37,8 @@ export class TimePlanningPnPayRuleSetsService {
     return this.apiBaseService.post(PayRuleSetMethods.PayRuleSets, model);
   }
 
-  updatePayRuleSet(model: PayRuleSetUpdateModel): Observable<OperationResult> {
-    return this.apiBaseService.put(`${PayRuleSetMethods.PayRuleSets}/${model.id}`, model);
+  updatePayRuleSet(id: number, model: PayRuleSetUpdateModel): Observable<OperationResult> {
+    return this.apiBaseService.put(`${PayRuleSetMethods.PayRuleSets}/${id}`, model);
   }
 
   deletePayRuleSet(id: number): Observable<OperationResult> {

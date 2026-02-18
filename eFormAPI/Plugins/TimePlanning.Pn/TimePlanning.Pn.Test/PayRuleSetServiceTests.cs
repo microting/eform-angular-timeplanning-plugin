@@ -433,7 +433,6 @@ public class PayRuleSetServiceTests : TestBaseSetup
         // Update model with modified nested data
         var updateModel = new PayRuleSetUpdateModel
         {
-            Id = payRuleSet.Id,
             Name = "Updated Name",
             PayDayRules = new System.Collections.Generic.List<PayDayRuleModel>
             {
@@ -508,7 +507,6 @@ public class PayRuleSetServiceTests : TestBaseSetup
 
         var updateModel = new PayRuleSetUpdateModel
         {
-            Id = payRuleSet.Id,
             Name = "Test Pay Rule Set",
             PayDayRules = new System.Collections.Generic.List<PayDayRuleModel>
             {
@@ -587,7 +585,6 @@ public class PayRuleSetServiceTests : TestBaseSetup
         // Update model with only one PayDayRule (removing SUNDAY)
         var updateModel = new PayRuleSetUpdateModel
         {
-            Id = payRuleSet.Id,
             Name = "Test Pay Rule Set",
             PayDayRules = new System.Collections.Generic.List<PayDayRuleModel>
             {

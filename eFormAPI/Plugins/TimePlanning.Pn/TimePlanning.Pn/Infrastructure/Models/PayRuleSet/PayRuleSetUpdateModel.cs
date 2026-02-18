@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 public class PayRuleSetUpdateModel
 {
-    public int Id { get; set; }
+    // Id is passed in the URL route, not in the model body
     public string Name { get; set; }
     public List<PayDayRuleModel> PayDayRules { get; set; } = new List<PayDayRuleModel>();
 }
