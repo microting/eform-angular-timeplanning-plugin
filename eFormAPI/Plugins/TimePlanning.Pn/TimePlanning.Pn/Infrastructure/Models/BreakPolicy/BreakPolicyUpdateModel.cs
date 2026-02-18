@@ -24,6 +24,8 @@ SOFTWARE.
 
 namespace TimePlanning.Pn.Infrastructure.Models.BreakPolicy;
 
+using System.Collections.Generic;
+
 /// <summary>
 /// Model for updating an existing break policy
 /// </summary>
@@ -31,4 +33,5 @@ public class BreakPolicyUpdateModel
 {
     public string Name { get; set; }
     public string Description { get; set; }
+    public List<BreakPolicyRuleModel> BreakPolicyRules { get; set; } = new List<BreakPolicyRuleModel>();
 }

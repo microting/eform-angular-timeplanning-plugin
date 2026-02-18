@@ -29,8 +29,8 @@ namespace TimePlanning.Pn.Infrastructure.Models.BreakPolicy;
 /// </summary>
 public class BreakPolicyRuleModel
 {
-    public int Id { get; set; }
-    public int BreakPolicyId { get; set; }
+    public int? Id { get; set; }
+    public int? BreakPolicyId { get; set; }
     
     /// <summary>
     /// Day of week (0-6: Sunday-Saturday)

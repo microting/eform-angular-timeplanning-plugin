@@ -25,6 +25,7 @@ SOFTWARE.
 namespace TimePlanning.Pn.Services.BreakPolicyService;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure.Models.BreakPolicy;
@@ -149,6 +150,25 @@ public class BreakPolicyService : IBreakPolicyService
 
             await breakPolicy.Create(_dbContext);
 
+            // Create nested BreakPolicyRules if provided
+            if (model.BreakPolicyRules != null && model.BreakPolicyRules.Any())
+            {
+                foreach (var ruleModel in model.BreakPolicyRules)
+                {
+                    var rule = new BreakPolicyRule
+                    {
+                        BreakPolicyId = breakPolicy.Id,
+                        DayOfWeek = (DayOfWeek)ruleModel.DayOfWeek,
+                        // Note: PaidBreakSeconds and UnpaidBreakSeconds don't exist in entity yet
+                        // They're stored in the model but not persisted to database
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        WorkflowState = Constants.WorkflowStates.Created
+                    };
+                    await rule.Create(_dbContext);
+                }
+            }
+
             return new OperationResult(true, "Break policy created successfully");
         }
         catch (Exception ex)
@@ -175,6 +195,61 @@ public class BreakPolicyService : IBreakPolicyService
             breakPolicy.UpdatedAt = DateTime.UtcNow;
 
             await breakPolicy.Update(_dbContext);
+
+            // Handle nested BreakPolicyRules
+            if (model.BreakPolicyRules != null)
+            {
+                // Get existing rules
+                var existingRules = await _dbContext.BreakPolicyRules
+                    .Where(r => r.BreakPolicyId == id && r.WorkflowState != Constants.WorkflowStates.Removed)
+                    .ToListAsync();
+
+                // Get list of rule IDs in the model (ones we want to keep/update)
+                var modelRuleIds = model.BreakPolicyRules
+                    .Where(r => r.Id.HasValue && r.Id.Value > 0)
+                    .Select(r => r.Id.Value)
+                    .ToList();
+
+                // Delete rules that are not in the model
+                foreach (var existingRule in existingRules)
+                {
+                    if (!modelRuleIds.Contains(existingRule.Id))
+                    {
+                        await existingRule.Delete(_dbContext);
+                    }
+                }
+
+                // Update existing or create new rules
+                foreach (var ruleModel in model.BreakPolicyRules)
+                {
+                    if (ruleModel.Id.HasValue && ruleModel.Id.Value > 0)
+                    {
+                        // Update existing rule
+                        var existingRule = existingRules.FirstOrDefault(r => r.Id == ruleModel.Id.Value);
+                        if (existingRule != null)
+                        {
+                            existingRule.DayOfWeek = (DayOfWeek)ruleModel.DayOfWeek;
+                            // Note: PaidBreakSeconds and UnpaidBreakSeconds don't exist in entity
+                            existingRule.UpdatedAt = DateTime.UtcNow;
+                            await existingRule.Update(_dbContext);
+                        }
+                    }
+                    else
+                    {
+                        // Create new rule
+                        var newRule = new BreakPolicyRule
+                        {
+                            BreakPolicyId = id,
+                            DayOfWeek = (DayOfWeek)ruleModel.DayOfWeek,
+                            // Note: PaidBreakSeconds and UnpaidBreakSeconds don't exist in entity
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
+                            WorkflowState = Constants.WorkflowStates.Created
+                        };
+                        await newRule.Create(_dbContext);
+                    }
+                }
+            }
 
             return new OperationResult(true, "Break policy updated successfully");
         }
