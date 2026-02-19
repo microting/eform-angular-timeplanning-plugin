@@ -3,8 +3,7 @@ import {FormArray, FormGroup} from '@angular/forms';
 
 export interface BreakPolicyRuleFormValue {
   id?: number | null;
-  breakAfterMinutes: number;
-  breakDurationMinutes: number;
+  dayOfWeek: number;
   paidBreakMinutes: number;
   unpaidBreakMinutes: number;
 }
@@ -21,7 +20,7 @@ export class BreakPolicyRulesListComponent {
   @Output() editRule = new EventEmitter<number>();
   @Output() deleteRule = new EventEmitter<number>();
 
-  displayedColumns: string[] = ['breakAfter', 'duration', 'paid', 'unpaid', 'actions'];
+  displayedColumns: string[] = ['dayOfWeek', 'paid', 'unpaid', 'actions'];
 
   get rules(): FormGroup[] {
     return this.rulesFormArray?.controls as FormGroup[] || [];
@@ -47,14 +46,12 @@ export class BreakPolicyRulesListComponent {
     return rule.value as BreakPolicyRuleFormValue;
   }
 
-  // Calculate total minutes for summary
-  getTotalBreakMinutes(): number {
-    return this.rules.reduce((total, rule) => {
-      const value = this.getRuleValue(rule);
-      return total + (value.breakDurationMinutes || 0);
-    }, 0);
+  getDayName(dayOfWeek: number): string {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[dayOfWeek] || '';
   }
 
+  // Calculate total minutes for summary
   getTotalPaidMinutes(): number {
     return this.rules.reduce((total, rule) => {
       const value = this.getRuleValue(rule);

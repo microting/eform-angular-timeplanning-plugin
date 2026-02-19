@@ -17,24 +17,13 @@
 
   <div *ngIf="hasRules" class="rules-table-container">
     <table mat-table [dataSource]="rules" class="rules-table">
-      <!-- Break After Column -->
-      <ng-container matColumnDef="breakAfter">
-        <th mat-header-cell *matHeaderCellDef>{{ 'Break After' | translate }}</th>
+      <!-- Day of Week Column -->
+      <ng-container matColumnDef="dayOfWeek">
+        <th mat-header-cell *matHeaderCellDef>{{ 'Day of Week' | translate }}</th>
         <td mat-cell *matCellDef="let rule">
-          {{ getRuleValue(rule).breakAfterMinutes }} {{ 'min' | translate }}
+          {{ getDayName(getRuleValue(rule).dayOfWeek) | translate }}
         </td>
         <td mat-footer-cell *matFooterCellDef></td>
-      </ng-container>
-
-      <!-- Duration Column -->
-      <ng-container matColumnDef="duration">
-        <th mat-header-cell *matHeaderCellDef>{{ 'Duration' | translate }}</th>
-        <td mat-cell *matCellDef="let rule">
-          {{ getRuleValue(rule).breakDurationMinutes }} {{ 'min' | translate }}
-        </td>
-        <td mat-footer-cell *matFooterCellDef>
-          <strong>{{ getTotalBreakMinutes() }} {{ 'min' | translate }}</strong>
-        </td>
       </ng-container>
 
       <!-- Paid Column -->

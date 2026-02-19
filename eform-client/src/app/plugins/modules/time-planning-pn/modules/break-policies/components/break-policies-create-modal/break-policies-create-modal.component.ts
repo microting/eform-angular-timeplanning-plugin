@@ -47,8 +47,7 @@ export class BreakPoliciesCreateModalComponent implements OnInit {
       if (result) {
         const ruleGroup = this.fb.group({
           id: [result.id || null],
-          breakAfterMinutes: [result.breakAfterMinutes],
-          breakDurationMinutes: [result.breakDurationMinutes],
+          dayOfWeek: [result.dayOfWeek],
           paidBreakMinutes: [result.paidBreakMinutes],
           unpaidBreakMinutes: [result.unpaidBreakMinutes],
         });
@@ -84,9 +83,8 @@ export class BreakPoliciesCreateModalComponent implements OnInit {
 
     const model: BreakPolicyCreateModel = {
       name: this.breakPolicyForm.value.name,
-      rules: this.rulesArray.value.map((rule: BreakPolicyRuleFormValue) => ({
-        breakAfterMinutes: rule.breakAfterMinutes,
-        breakDurationMinutes: rule.breakDurationMinutes,
+      breakPolicyRules: this.rulesArray.value.map((rule: BreakPolicyRuleFormValue) => ({
+        dayOfWeek: rule.dayOfWeek,
         paidBreakMinutes: rule.paidBreakMinutes,
         unpaidBreakMinutes: rule.unpaidBreakMinutes,
       })),

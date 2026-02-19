@@ -43,8 +43,7 @@ export class BreakPoliciesEditModalComponent implements OnInit {
       this.selectedBreakPolicy.rules.forEach(rule => {
         const ruleGroup = this.fb.group({
           id: [rule.id],
-          breakAfterMinutes: [rule.breakAfterMinutes],
-          breakDurationMinutes: [rule.breakDurationMinutes],
+          dayOfWeek: [rule.dayOfWeek],
           paidBreakMinutes: [rule.paidBreakMinutes],
           unpaidBreakMinutes: [rule.unpaidBreakMinutes],
         });
@@ -67,8 +66,7 @@ export class BreakPoliciesEditModalComponent implements OnInit {
       if (result) {
         const ruleGroup = this.fb.group({
           id: [result.id || null],
-          breakAfterMinutes: [result.breakAfterMinutes],
-          breakDurationMinutes: [result.breakDurationMinutes],
+          dayOfWeek: [result.dayOfWeek],
           paidBreakMinutes: [result.paidBreakMinutes],
           unpaidBreakMinutes: [result.unpaidBreakMinutes],
         });
@@ -103,18 +101,16 @@ export class BreakPoliciesEditModalComponent implements OnInit {
     if (this.breakPolicyForm.invalid) return;
 
     const model: BreakPolicyUpdateModel = {
-      id: this.selectedBreakPolicy.id,
       name: this.breakPolicyForm.value.name,
-      rules: this.rulesArray.value.map((rule: BreakPolicyRuleFormValue) => ({
-        id: rule.id || undefined,
-        breakAfterMinutes: rule.breakAfterMinutes,
-        breakDurationMinutes: rule.breakDurationMinutes,
+      breakPolicyRules: this.rulesArray.value.map((rule: BreakPolicyRuleFormValue) => ({
+        id: rule.id || null,
+        dayOfWeek: rule.dayOfWeek,
         paidBreakMinutes: rule.paidBreakMinutes,
         unpaidBreakMinutes: rule.unpaidBreakMinutes,
       })),
     };
 
-    this.breakPoliciesService.updateBreakPolicy(model).subscribe((result) => {
+    this.breakPoliciesService.updateBreakPolicy(this.selectedBreakPolicy.id, model).subscribe((result) => {
       if (result.success) {
         this.toastrService.success('Break policy updated successfully');
         this.hide(true);
