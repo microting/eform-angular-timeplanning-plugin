@@ -1,0 +1,77 @@
+<div class="break-policy-rules-list">
+  <div class="header">
+    <h3>{{ 'Break Rules' | translate }}</h3>
+    <button mat-raised-button
+            color="primary"
+            (click)="onAddRule()"
+            id="addRuleBtn">
+      <mat-icon>add</mat-icon>
+      {{ 'Add Rule' | translate }}
+    </button>
+  </div>
+
+  <div *ngIf="!hasRules" class="empty-state">
+    <mat-icon>info</mat-icon>
+    <p>{{ 'No break rules defined. Click "Add Rule" to create one.' | translate }}</p>
+  </div>
+
+  <div *ngIf="hasRules" class="rules-table-container">
+    <table mat-table [dataSource]="rules" class="rules-table">
+      <!-- Day of Week Column -->
+      <ng-container matColumnDef="dayOfWeek">
+        <th mat-header-cell *matHeaderCellDef>{{ 'Day of Week' | translate }}</th>
+        <td mat-cell *matCellDef="let rule">
+          {{ getDayName(getRuleValue(rule).dayOfWeek) | translate }}
+        </td>
+        <td mat-footer-cell *matFooterCellDef></td>
+      </ng-container>
+
+      <!-- Paid Column -->
+      <ng-container matColumnDef="paid">
+        <th mat-header-cell *matHeaderCellDef>{{ 'Paid' | translate }}</th>
+        <td mat-cell *matCellDef="let rule">
+          {{ getRuleValue(rule).paidBreakMinutes }} {{ 'min' | translate }}
+        </td>
+        <td mat-footer-cell *matFooterCellDef>
+          <strong>{{ getTotalPaidMinutes() }} {{ 'min' | translate }}</strong>
+        </td>
+      </ng-container>
+
+      <!-- Unpaid Column -->
+      <ng-container matColumnDef="unpaid">
+        <th mat-header-cell *matHeaderCellDef>{{ 'Unpaid' | translate }}</th>
+        <td mat-cell *matCellDef="let rule">
+          {{ getRuleValue(rule).unpaidBreakMinutes }} {{ 'min' | translate }}
+        </td>
+        <td mat-footer-cell *matFooterCellDef>
+          <strong>{{ getTotalUnpaidMinutes() }} {{ 'min' | translate }}</strong>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'Actions' | translate }}</th>
+        <td mat-cell *matCellDef="let rule; let i = index">
+          <button mat-icon-button
+                  (click)="onEditRule(i)"
+                  [id]="'editRuleBtn-' + i"
+                  matTooltip="{{ 'Edit rule' | translate }}">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button
+                  (click)="onDeleteRule(i)"
+                  [id]="'deleteRuleBtn-' + i"
+                  matTooltip="{{ 'Delete rule' | translate }}"
+                  color="warn">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+        <td mat-footer-cell *matFooterCellDef></td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr mat-footer-row *matFooterRowDef="displayedColumns" class="totals-row"></tr>
+    </table>
+  </div>
+</div>
