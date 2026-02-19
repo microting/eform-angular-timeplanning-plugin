@@ -75,6 +75,19 @@ public static class TimePlanningPluginSeed
 
         dbContext.SaveChanges();
 
+        // loop over permissions in db and update the names if not correct
+        foreach (var permission in dbContext.PluginPermissions.Where(x => x.ClaimName.StartsWith("time_planning")))
+        {
+            var seedPermission = TimePlanningPermissionsSeedData.Data.FirstOrDefault(x => x.ClaimName == permission.ClaimName);
+            if (seedPermission != null && seedPermission.PermissionName != permission.PermissionName)
+            {
+                permission.PermissionName = seedPermission.PermissionName;
+                permission.UpdatedAt = DateTime.UtcNow;
+                permission.Version += 1;
+                dbContext.PluginPermissions.Update(permission);
+            }
+        }
+
         var seedMessages = new TimePlanningSeedMessages();
 
         foreach (Message message in seedMessages.Data)
