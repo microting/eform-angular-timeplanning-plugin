@@ -39,8 +39,8 @@ export class BreakPoliciesEditModalComponent implements OnInit {
 
   loadRules() {
     const rulesArray = this.breakPolicyForm.get('rules') as FormArray;
-    if (this.selectedBreakPolicy.rules && this.selectedBreakPolicy.rules.length > 0) {
-      this.selectedBreakPolicy.rules.forEach(rule => {
+    if (this.selectedBreakPolicy.breakPolicyRules && this.selectedBreakPolicy.breakPolicyRules.length > 0) {
+      this.selectedBreakPolicy.breakPolicyRules.forEach(rule => {
         const ruleGroup = this.fb.group({
           id: [rule.id],
           dayOfWeek: [rule.dayOfWeek],
