@@ -489,49 +489,49 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     const dayGroup = fg.get(day) as FormGroup;
 
     switch (day) {
-      case 'monday':
+      case 'Monday':
         dayGroup.patchValue({
           breakMinutesDivider: this.getConvertedValue(this.globalAutoBreakSettings.mondayBreakMinutesDivider),
           breakMinutesPrDivider: this.getConvertedValue(this.globalAutoBreakSettings.mondayBreakMinutesPrDivider),
           breakMinutesUpperLimit: this.getConvertedValue(this.globalAutoBreakSettings.mondayBreakMinutesUpperLimit),
         });
         break;
-      case 'tuesday':
+      case 'Tuesday':
         dayGroup.patchValue({
           breakMinutesDivider: this.getConvertedValue(this.globalAutoBreakSettings.tuesdayBreakMinutesDivider),
           breakMinutesPrDivider: this.getConvertedValue(this.globalAutoBreakSettings.tuesdayBreakMinutesPrDivider),
           breakMinutesUpperLimit: this.getConvertedValue(this.globalAutoBreakSettings.tuesdayBreakMinutesUpperLimit),
         });
         break;
-      case 'wednesday':
+      case 'Wednesday':
         dayGroup.patchValue({
           breakMinutesDivider: this.getConvertedValue(this.globalAutoBreakSettings.wednesdayBreakMinutesDivider),
           breakMinutesPrDivider: this.getConvertedValue(this.globalAutoBreakSettings.wednesdayBreakMinutesPrDivider),
           breakMinutesUpperLimit: this.getConvertedValue(this.globalAutoBreakSettings.wednesdayBreakMinutesUpperLimit),
         });
         break;
-      case 'thursday':
+      case 'Thursday':
         dayGroup.patchValue({
           breakMinutesDivider: this.getConvertedValue(this.globalAutoBreakSettings.thursdayBreakMinutesDivider),
           breakMinutesPrDivider: this.getConvertedValue(this.globalAutoBreakSettings.thursdayBreakMinutesPrDivider),
           breakMinutesUpperLimit: this.getConvertedValue(this.globalAutoBreakSettings.thursdayBreakMinutesUpperLimit),
         });
         break;
-      case 'friday':
+      case 'Friday':
         dayGroup.patchValue({
           breakMinutesDivider: this.getConvertedValue(this.globalAutoBreakSettings.fridayBreakMinutesDivider),
           breakMinutesPrDivider: this.getConvertedValue(this.globalAutoBreakSettings.fridayBreakMinutesPrDivider),
           breakMinutesUpperLimit: this.getConvertedValue(this.globalAutoBreakSettings.fridayBreakMinutesUpperLimit),
         });
         break;
-      case 'saturday':
+      case 'Saturday':
         dayGroup.patchValue({
           breakMinutesDivider: this.getConvertedValue(this.globalAutoBreakSettings.saturdayBreakMinutesDivider),
           breakMinutesPrDivider: this.getConvertedValue(this.globalAutoBreakSettings.saturdayBreakMinutesPrDivider),
           breakMinutesUpperLimit: this.getConvertedValue(this.globalAutoBreakSettings.saturdayBreakMinutesUpperLimit),
         });
         break;
-      case 'sunday':
+      case 'Sunday':
         dayGroup.patchValue({
           breakMinutesDivider: this.getConvertedValue(this.globalAutoBreakSettings.sundayBreakMinutesDivider),
           breakMinutesPrDivider: this.getConvertedValue(this.globalAutoBreakSettings.sundayBreakMinutesPrDivider),

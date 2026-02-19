@@ -240,7 +240,7 @@ describe('AssignedSiteDialogComponent', () => {
     it('should create shift forms for each day of the week', () => {
       component.ngOnInit();
 
-      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
       const firstShift = component.assignedSiteForm.get('firstShift');
 
       days.forEach(day => {
@@ -267,13 +267,13 @@ describe('AssignedSiteDialogComponent', () => {
       );
     });
 
-    it('should copy break settings from global settings for monday', () => {
+    it('should copy break settings from global settings for Monday', () => {
       // Reinitialize to get the new global settings
       component.ngOnInit();
 
-      component.copyBreakSettings('monday');
+      component.copyBreakSettings('Monday');
 
-      const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('monday');
+      const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('Monday');
       expect(mondayBreak?.get('breakMinutesDivider')?.value).toBe('08:00');
       expect(mondayBreak?.get('breakMinutesPrDivider')?.value).toBe('00:30');
       expect(mondayBreak?.get('breakMinutesUpperLimit')?.value).toBe('01:00');
@@ -282,10 +282,10 @@ describe('AssignedSiteDialogComponent', () => {
     it('should handle missing global settings gracefully', () => {
       component['globalAutoBreakSettings'] = null;
 
-      component.copyBreakSettings('monday');
+      component.copyBreakSettings('Monday');
 
       // Should not throw error and should not modify values
-      const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('monday');
+      const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('Monday');
       expect(mondayBreak).toBeDefined();
     });
   });
@@ -339,19 +339,19 @@ describe('AssignedSiteDialogComponent', () => {
     it('should return plan hours form group', () => {
       const planHoursGroup = component.getPlanHoursFormGroup();
       expect(planHoursGroup).toBeDefined();
-      expect(planHoursGroup.get('monday')).toBeDefined();
+      expect(planHoursGroup.get('Monday')).toBeDefined();
     });
 
     it('should return auto break settings form group', () => {
       const autoBreakGroup = component.getAutoBreakSettingsFormGroup();
       expect(autoBreakGroup).toBeDefined();
-      expect(autoBreakGroup.get('monday')).toBeDefined();
+      expect(autoBreakGroup.get('Monday')).toBeDefined();
     });
 
     it('should return first shift form group', () => {
       const firstShiftGroup = component.getFirstShiftFormGroup();
       expect(firstShiftGroup).toBeDefined();
-      expect(firstShiftGroup.get('monday')).toBeDefined();
+      expect(firstShiftGroup.get('Monday')).toBeDefined();
     });
 
     it('should return second shift form group', () => {
@@ -417,7 +417,7 @@ describe('AssignedSiteDialogComponent', () => {
         isManager: true,
         managingTagIds: [1, 2]
       };
-      
+
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         declarations: [AssignedSiteDialogComponent],
@@ -430,15 +430,15 @@ describe('AssignedSiteDialogComponent', () => {
           { provide: Store, useValue: mockStore },
         ]
       }).compileComponents();
-      
+
       const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
       const newComponent = newFixture.componentInstance;
       // Call ngOnInit to initialize the form without rendering the template
       newComponent.ngOnInit();
-      
+
       const isManagerControl = newComponent.assignedSiteForm.get('isManager');
       const managingTagIdsControl = newComponent.assignedSiteForm.get('managingTagIds');
-      
+
       expect(isManagerControl?.value).toBe(true);
       expect(managingTagIdsControl?.value).toEqual([1, 2]);
     });
