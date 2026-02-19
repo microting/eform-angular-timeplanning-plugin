@@ -48,7 +48,8 @@ public class BreakPolicyControllerTests : TestBaseSetup
         Assert.That(model.BreakPolicyRules.Count, Is.EqualTo(2));
         Assert.That(model.BreakPolicyRules[0].Id, Is.Null);
         Assert.That(model.BreakPolicyRules[0].DayOfWeek, Is.EqualTo(1));
-        Assert.That(model.BreakPolicyRules[0].PaidBreakMinutes, Is.EqualTo(900));
+        Assert.That(model.BreakPolicyRules[0].PaidBreakMinutes, Is.EqualTo(15));
+        Assert.That(model.BreakPolicyRules[0].UnpaidBreakMinutes, Is.EqualTo(30));
         
         Console.WriteLine("✅ JSON deserialization successful - BreakPolicy model structure is correct");
         await Task.CompletedTask; // Keep async signature
@@ -89,7 +90,8 @@ public class BreakPolicyControllerTests : TestBaseSetup
         Assert.That(model.BreakPolicyRules.Count, Is.EqualTo(2));
         Assert.That(model.BreakPolicyRules[0].Id, Is.Null);
         Assert.That(model.BreakPolicyRules[0].DayOfWeek, Is.EqualTo(1));
-        Assert.That(model.BreakPolicyRules[0].PaidBreakMinutes, Is.EqualTo(900));
+        Assert.That(model.BreakPolicyRules[0].PaidBreakMinutes, Is.EqualTo(15));
+        Assert.That(model.BreakPolicyRules[0].UnpaidBreakMinutes, Is.EqualTo(30));
         
         Console.WriteLine("✅ Update JSON deserialization successful - model structure is correct");
         await Task.CompletedTask; // Keep async signature
@@ -124,8 +126,8 @@ public class BreakPolicyControllerTests : TestBaseSetup
         Assert.That(model.BreakPolicyRules.Count, Is.EqualTo(1));
         Assert.That(model.BreakPolicyRules[0].Id, Is.Null, "Id should be null for new entities");
         Assert.That(model.BreakPolicyRules[0].DayOfWeek, Is.EqualTo(1));
-        Assert.That(model.BreakPolicyRules[0].PaidBreakMinutes, Is.EqualTo(900));
-        Assert.That(model.BreakPolicyRules[0].UnpaidBreakMinutes, Is.EqualTo(1800));
+        Assert.That(model.BreakPolicyRules[0].PaidBreakMinutes, Is.EqualTo(15));
+        Assert.That(model.BreakPolicyRules[0].UnpaidBreakMinutes, Is.EqualTo(30));
 
         Console.WriteLine("✅ Angular JSON format is VALID and deserializes correctly!");
         Console.WriteLine($"   Name: {model.Name}");
