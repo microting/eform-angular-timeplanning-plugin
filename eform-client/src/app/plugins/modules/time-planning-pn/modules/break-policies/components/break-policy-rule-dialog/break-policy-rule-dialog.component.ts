@@ -36,10 +36,9 @@ export class BreakPolicyRuleDialogComponent implements OnInit {
   createRuleForm(): FormGroup {
     return new FormGroup({
       id: new FormControl<number | null>(null),
-      breakAfterMinutes: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
-      breakDurationMinutes: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+      dayOfWeek: new FormControl<number | null>(null, [Validators.required]),
       paidBreakMinutes: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
-      unpaidBreakMinutes: new FormControl<number | null>({value: null, disabled: true}),
+      unpaidBreakMinutes: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
     });
   }
 
@@ -57,12 +56,7 @@ export class BreakPolicyRuleDialogComponent implements OnInit {
 
   onSave(): void {
     if (this.ruleForm.valid) {
-      // Enable unpaidBreakMinutes temporarily to get its value
-      this.ruleForm.get('unpaidBreakMinutes')?.enable();
-      const ruleValue = this.ruleForm.value;
-      this.ruleForm.get('unpaidBreakMinutes')?.disable();
-      
-      this.dialogRef.close(ruleValue);
+      this.dialogRef.close(this.ruleForm.value);
     }
   }
 }
