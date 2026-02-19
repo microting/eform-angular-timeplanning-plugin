@@ -118,9 +118,9 @@ public class BreakPolicyService : IBreakPolicyService
                 {
                     Id = r.Id,
                     BreakPolicyId = r.BreakPolicyId,
-                    DayOfWeek = (int)r.DayOfWeek, // Cast enum to int
-                    PaidBreakSeconds = 0, // TODO: Map actual field when schema is known
-                    UnpaidBreakSeconds = 0 // TODO: Map actual field when schema is known
+                    DayOfWeek = (int)r.DayOfWeek,
+                    PaidBreakMinutes = r.PaidBreakMinutes,
+                    UnpaidBreakMinutes = r.UnpaidBreakMinutes
                 }).ToList()
             };
 
