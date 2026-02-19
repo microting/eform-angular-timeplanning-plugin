@@ -43,9 +43,9 @@ export class BreakPoliciesEditModalComponent implements OnInit {
       this.selectedBreakPolicy.breakPolicyRules.forEach(rule => {
         const ruleGroup = this.fb.group({
           id: [rule.id],
-          dayOfWeek: [rule.dayOfWeek],
-          paidBreakMinutes: [rule.paidBreakMinutes],
-          unpaidBreakMinutes: [rule.unpaidBreakMinutes],
+          dayOfWeek: [rule.dayOfWeek, Validators.required],
+          paidBreakMinutes: [rule.paidBreakMinutes, [Validators.required, Validators.min(0)]],
+          unpaidBreakMinutes: [rule.unpaidBreakMinutes, [Validators.required, Validators.min(0)]],
         });
         rulesArray.push(ruleGroup);
       });
@@ -66,9 +66,9 @@ export class BreakPoliciesEditModalComponent implements OnInit {
       if (result) {
         const ruleGroup = this.fb.group({
           id: [result.id || null],
-          dayOfWeek: [result.dayOfWeek],
-          paidBreakMinutes: [result.paidBreakMinutes],
-          unpaidBreakMinutes: [result.unpaidBreakMinutes],
+          dayOfWeek: [result.dayOfWeek, Validators.required],
+          paidBreakMinutes: [result.paidBreakMinutes, [Validators.required, Validators.min(0)]],
+          unpaidBreakMinutes: [result.unpaidBreakMinutes, [Validators.required, Validators.min(0)]],
         });
         this.rulesArray.push(ruleGroup);
       }

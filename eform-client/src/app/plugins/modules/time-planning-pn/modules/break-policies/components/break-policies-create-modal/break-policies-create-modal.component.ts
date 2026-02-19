@@ -47,9 +47,9 @@ export class BreakPoliciesCreateModalComponent implements OnInit {
       if (result) {
         const ruleGroup = this.fb.group({
           id: [result.id || null],
-          dayOfWeek: [result.dayOfWeek],
-          paidBreakMinutes: [result.paidBreakMinutes],
-          unpaidBreakMinutes: [result.unpaidBreakMinutes],
+          dayOfWeek: [result.dayOfWeek, Validators.required],
+          paidBreakMinutes: [result.paidBreakMinutes, [Validators.required, Validators.min(0)]],
+          unpaidBreakMinutes: [result.unpaidBreakMinutes, [Validators.required, Validators.min(0)]],
         });
         this.rulesArray.push(ruleGroup);
       }
