@@ -64,7 +64,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
       this.data.resignedAtDate = today.toISOString();
     }
 
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     // autoBreakSettings group
     const autoBreakGroup = days.reduce((acc, day) => {
