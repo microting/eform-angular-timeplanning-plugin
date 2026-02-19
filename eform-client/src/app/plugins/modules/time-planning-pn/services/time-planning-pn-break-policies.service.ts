@@ -37,8 +37,8 @@ export class TimePlanningPnBreakPoliciesService {
     return this.apiBaseService.post(BreakPolicyMethods.BreakPolicies, model);
   }
 
-  updateBreakPolicy(model: BreakPolicyUpdateModel): Observable<OperationResult> {
-    return this.apiBaseService.put(`${BreakPolicyMethods.BreakPolicies}/${model.id}`, model);
+  updateBreakPolicy(id: number, model: BreakPolicyUpdateModel): Observable<OperationResult> {
+    return this.apiBaseService.put(`${BreakPolicyMethods.BreakPolicies}/${id}`, model);
   }
 
   deleteBreakPolicy(id: number): Observable<OperationResult> {
