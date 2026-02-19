@@ -85,7 +85,7 @@ describe('TimePlanningPnBreakPoliciesService', () => {
     it('should call apiBaseService.post with correct parameters', (done) => {
       const mockModel = {
         name: 'New Policy',
-        rules: []
+        breakPolicyRules: []
       };
       const mockResponse = { success: true };
       mockApiBaseService.post.mockReturnValue(of(mockResponse as any));
@@ -105,14 +105,13 @@ describe('TimePlanningPnBreakPoliciesService', () => {
   describe('updateBreakPolicy', () => {
     it('should call apiBaseService.put with correct parameters', (done) => {
       const mockModel = {
-        id: 123,
         name: 'Updated Policy',
-        rules: []
+        breakPolicyRules: []
       };
       const mockResponse = { success: true };
       mockApiBaseService.put.mockReturnValue(of(mockResponse as any));
 
-      service.updateBreakPolicy(mockModel).subscribe(result => {
+      service.updateBreakPolicy(123, mockModel).subscribe(result => {
         expect(result).toEqual(mockResponse as any);
         done();
       });
@@ -124,11 +123,11 @@ describe('TimePlanningPnBreakPoliciesService', () => {
     });
 
     it('should construct correct URL with id parameter', () => {
-      const mockModel = { id: 456, name: 'Test', rules: [] };
+      const mockModel = { name: 'Test', breakPolicyRules: [] };
       const mockResponse = { success: true };
       mockApiBaseService.put.mockReturnValue(of(mockResponse as any));
 
-      service.updateBreakPolicy(mockModel).subscribe();
+      service.updateBreakPolicy(456, mockModel).subscribe();
 
       expect(mockApiBaseService.put).toHaveBeenCalledWith(
         'api/time-planning-pn/break-policies/456',
