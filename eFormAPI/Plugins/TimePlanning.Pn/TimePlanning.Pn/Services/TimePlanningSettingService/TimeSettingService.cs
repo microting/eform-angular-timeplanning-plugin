@@ -699,7 +699,8 @@ public class TimeSettingService(
             dbAssignedSite.TuesdayBreakMinutesUpperLimit = site.AutoBreakSettings.Tuesday.BreakMinutesUpperLimit;
             dbAssignedSite.WednesdayBreakMinutesDivider = site.AutoBreakSettings.Wednesday.BreakMinutesDivider;
             dbAssignedSite.WednesdayBreakMinutesPrDivider = site.AutoBreakSettings.Wednesday.BreakMinutesPrDivider;
-            dbAssignedSite.WednesdayBreakMinutesUpperLimit = site.AutoBreakSettings.Wednesday.BreakMinutesUpperLimit;
+            dbAssignedSite.WednesdayBreakMinutesUpperLimit =
+                site.AutoBreakSettings.Wednesday.BreakMinutesUpperLimit;
             dbAssignedSite.ThursdayBreakMinutesDivider = site.AutoBreakSettings.Thursday.BreakMinutesDivider;
             dbAssignedSite.ThursdayBreakMinutesPrDivider = site.AutoBreakSettings.Thursday.BreakMinutesPrDivider;
             dbAssignedSite.ThursdayBreakMinutesUpperLimit = site.AutoBreakSettings.Thursday.BreakMinutesUpperLimit;
@@ -712,25 +713,6 @@ public class TimeSettingService(
             dbAssignedSite.SundayBreakMinutesDivider = site.AutoBreakSettings.Sunday.BreakMinutesDivider;
             dbAssignedSite.SundayBreakMinutesPrDivider = site.AutoBreakSettings.Sunday.BreakMinutesPrDivider;
             dbAssignedSite.SundayBreakMinutesUpperLimit = site.AutoBreakSettings.Sunday.BreakMinutesUpperLimit;
-            // dbAssignedSite.WednesdayBreakMinutesDivider = site.WednesdayBreakMinutesDivider;
-            // dbAssignedSite.ThursdayBreakMinutesDivider = site.ThursdayBreakMinutesDivider;
-            // dbAssignedSite.FridayBreakMinutesDivider = site.FridayBreakMinutesDivider;
-            // dbAssignedSite.SaturdayBreakMinutesDivider = site.SaturdayBreakMinutesDivider;
-            // dbAssignedSite.SundayBreakMinutesDivider = site.SundayBreakMinutesDivider;
-            // dbAssignedSite.MondayBreakMinutesPrDivider = site.MondayBreakMinutesPrDivider;
-            // dbAssignedSite.TuesdayBreakMinutesPrDivider = site.TuesdayBreakMinutesPrDivider;
-            // dbAssignedSite.WednesdayBreakMinutesPrDivider = site.WednesdayBreakMinutesPrDivider;
-            // dbAssignedSite.ThursdayBreakMinutesPrDivider = site.ThursdayBreakMinutesPrDivider;
-            // dbAssignedSite.FridayBreakMinutesPrDivider = site.FridayBreakMinutesPrDivider;
-            // dbAssignedSite.SaturdayBreakMinutesPrDivider = site.SaturdayBreakMinutesPrDivider;
-            // dbAssignedSite.SundayBreakMinutesPrDivider = site.SundayBreakMinutesPrDivider;
-            // dbAssignedSite.MondayBreakMinutesUpperLimit = site.MondayBreakMinutesUpperLimit;
-            // dbAssignedSite.TuesdayBreakMinutesUpperLimit = site.TuesdayBreakMinutesUpperLimit;
-            // dbAssignedSite.WednesdayBreakMinutesUpperLimit = site.WednesdayBreakMinutesUpperLimit;
-            // dbAssignedSite.ThursdayBreakMinutesUpperLimit = site.ThursdayBreakMinutesUpperLimit;
-            // dbAssignedSite.FridayBreakMinutesUpperLimit = site.FridayBreakMinutesUpperLimit;
-            // dbAssignedSite.SaturdayBreakMinutesUpperLimit = site.SaturdayBreakMinutesUpperLimit;
-            // dbAssignedSite.SundayBreakMinutesUpperLimit = site.SundayBreakMinutesUpperLimit;
         }
         dbAssignedSite.MondayPlanHours = site.MondayPlanHours;
         dbAssignedSite.TuesdayPlanHours = site.TuesdayPlanHours;
