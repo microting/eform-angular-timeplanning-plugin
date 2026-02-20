@@ -1,0 +1,102 @@
+<div [formGroup]="payDayRuleForm" class="pay-day-rule-form">
+  <!-- Day Code Selector -->
+  <div class="form-row">
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Day Code' | translate }}</mat-label>
+      <mat-select formControlName="dayCode">
+        <mat-option *ngFor="let day of dayCodes" [value]="day.value">
+          {{ day.label | translate }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="dayCode?.hasError('required')">
+        {{ 'Please select a day code' | translate }}
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <!-- Pay Tiers Section -->
+  <div class="tiers-section">
+    <div class="section-header">
+      <h3>{{ 'Pay Tiers' | translate }}</h3>
+      <button mat-raised-button
+              color="primary"
+              type="button"
+              (click)="addTier()"
+              class="add-tier-btn">
+        <mat-icon>add</mat-icon>
+        {{ 'Add Tier' | translate }}
+      </button>
+    </div>
+
+    <!-- Tiers Table -->
+    <div *ngIf="payTierRules.length > 0" class="tiers-table-container">
+      <table mat-table [dataSource]="dataSource" class="tiers-table">
+        <!-- Order Column -->
+        <ng-container matColumnDef="order">
+          <th mat-header-cell *matHeaderCellDef>{{ 'Order' | translate }}</th>
+          <td mat-cell *matCellDef="let tier; let i = index">
+            {{ getOrder(i) }}
+          </td>
+        </ng-container>
+
+        <!-- Up To Seconds Column -->
+        <ng-container matColumnDef="upToSeconds">
+          <th mat-header-cell *matHeaderCellDef>{{ 'Up To (seconds)' | translate }}</th>
+          <td mat-cell *matCellDef="let tier; let i = index">
+            <mat-form-field class="tier-field">
+              <input matInput
+                     type="number"
+                     [formControl]="getTierControl(i, 'upToSeconds')"
+                     min="0"
+                     placeholder="28800">
+              <mat-hint>{{ formatSeconds(getUpToSeconds(i)) }}</mat-hint>
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <!-- Pay Code Column -->
+        <ng-container matColumnDef="payCode">
+          <th mat-header-cell *matHeaderCellDef>{{ 'Pay Code' | translate }}</th>
+          <td mat-cell *matCellDef="let tier; let i = index">
+            <mat-form-field class="tier-field">
+              <input matInput
+                     type="text"
+                     [formControl]="getTierControl(i, 'payCode')"
+                     placeholder="REG">
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>{{ 'Actions' | translate }}</th>
+          <td mat-cell *matCellDef="let tier; let i = index">
+            <button mat-icon-button
+                    color="warn"
+                    type="button"
+                    (click)="deleteTier(i)"
+                    [attr.id]="'deleteTierBtn_' + i"
+                    matTooltip="{{ 'Delete tier' | translate }}">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <!-- Help Text -->
+      <div class="help-text">
+        <mat-icon>info</mat-icon>
+        <span>{{ 'Tiers define time thresholds. E.g., Tier 1: up to 28800 seconds (8 hours) = Regular pay. Leave "Up To" empty for unlimited.' | translate }}</span>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="payTierRules.length === 0" class="empty-state">
+      <mat-icon>info</mat-icon>
+      <p>{{ 'No tiers added yet. Click "Add Tier" to create the first tier.' | translate }}</p>
+    </div>
+  </div>
+</div>

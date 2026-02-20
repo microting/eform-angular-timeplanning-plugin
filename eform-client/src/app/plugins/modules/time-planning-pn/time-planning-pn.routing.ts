@@ -55,6 +55,22 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'break-policies',
+        canActivate: [AuthGuard],
+        loadChildren: () =>
+          import('./modules/break-policies/break-policies.module').then(
+            (m) => m.BreakPoliciesModule
+          ),
+      },
+      {
+        path: 'pay-rule-sets',
+        canActivate: [AuthGuard],
+        loadChildren: () =>
+          import('./modules/pay-rule-sets/pay-rule-sets.module').then(
+            (m) => m.PayRuleSetsModule
+          ),
+      },
+      {
         path: 'settings',
         canActivate: [AuthGuard],
         component: TimePlanningSettingsComponent,

@@ -32,6 +32,11 @@ using TimePlanning.Pn.Services.TimePlanningGpsCoordinateService;
 using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
 using TimePlanning.Pn.Services.AbsenceRequestService;
 using TimePlanning.Pn.Services.ContentHandoverService;
+using TimePlanning.Pn.Services.BreakPolicyService;
+using TimePlanning.Pn.Services.PayRuleSetService;
+using TimePlanning.Pn.Services.PayDayTypeRuleService;
+using TimePlanning.Pn.Services.PayTierRuleService;
+using TimePlanning.Pn.Services.PayTimeBandRuleService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -93,6 +98,11 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<ISettingService, TimeSettingService>();
         services.AddTransient<IAbsenceRequestService, AbsenceRequestService>();
         services.AddTransient<IContentHandoverService, ContentHandoverService>();
+        services.AddTransient<IBreakPolicyService, BreakPolicyService>();
+        services.AddTransient<IPayRuleSetService, PayRuleSetService>();
+        services.AddTransient<IPayDayTypeRuleService, PayDayTypeRuleService>();
+        services.AddTransient<IPayTierRuleService, PayTierRuleService>();
+        services.AddTransient<IPayTimeBandRuleService, PayTimeBandRuleService>();
         services.AddControllers();
     }
 
@@ -535,6 +545,130 @@ public class EformTimePlanningPlugin : IEformPlugin
                             {
                                 LocaleName = LocaleNames.Danish,
                                 Name = "Timer",
+                                Language = LanguageNames.Danish
+                            }
+                        ]
+                    },
+
+                    new()
+                    {
+                        Name = "Break Policies",
+                        E2EId = "time-planning-pn-break-policies",
+                        Link = "/plugins/time-planning-pn/break-policies",
+                        Type = MenuItemTypeEnum.Link,
+                        Position = 5,
+                        MenuTemplate = new()
+                        {
+                            Name = "Break Policies",
+                            E2EId = "time-planning-pn-break-policies",
+                            DefaultLink = "/plugins/time-planning-pn/break-policies",
+                            Permissions = [],
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Break Policies",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Pausenrichtlinien",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Pausepolitikker",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+                        Translations =
+                        [
+                            new()
+                            {
+                                LocaleName = LocaleNames.English,
+                                Name = "Break Policies",
+                                Language = LanguageNames.English
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.German,
+                                Name = "Pausenrichtlinien",
+                                Language = LanguageNames.German
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.Danish,
+                                Name = "Pausepolitikker",
+                                Language = LanguageNames.Danish
+                            }
+                        ]
+                    },
+
+                    new()
+                    {
+                        Name = "Pay Rule Sets",
+                        E2EId = "time-planning-pn-pay-rule-sets",
+                        Link = "/plugins/time-planning-pn/pay-rule-sets",
+                        Type = MenuItemTypeEnum.Link,
+                        Position = 6,
+                        MenuTemplate = new()
+                        {
+                            Name = "Pay Rule Sets",
+                            E2EId = "time-planning-pn-pay-rule-sets",
+                            DefaultLink = "/plugins/time-planning-pn/pay-rule-sets",
+                            Permissions = [],
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Pay Rule Sets",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Lohnregelwerk",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Betalingsregelsæt",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+                        Translations =
+                        [
+                            new()
+                            {
+                                LocaleName = LocaleNames.English,
+                                Name = "Pay Rule Sets",
+                                Language = LanguageNames.English
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.German,
+                                Name = "Lohnregelwerk",
+                                Language = LanguageNames.German
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.Danish,
+                                Name = "Betalingsregelsæt",
                                 Language = LanguageNames.Danish
                             }
                         ]
