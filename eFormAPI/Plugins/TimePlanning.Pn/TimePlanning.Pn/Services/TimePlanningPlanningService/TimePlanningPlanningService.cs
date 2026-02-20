@@ -570,6 +570,8 @@ public class TimePlanningPlanningService(
             planning.NettoHoursOverride = model.NettoHoursOverride;
             planning.NettoHoursOverrideActive = model.NettoHoursOverrideActive;
 
+            planning = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planning);
+
             if (!planning.PlanChangedByAdmin)
             {
                 var entry = dbContext.Entry(planning);
@@ -1804,7 +1806,7 @@ public class TimePlanningPlanningService(
                         Version = currentVersion.Version,
                         UpdatedAt = currentVersion.UpdatedAt ?? DateTime.UtcNow,
                         UpdatedByUserId = currentVersion.UpdatedByUserId,
-                        UpdatedByUserName = currentVersion.UpdatedByUserId == 1 ? "System"
+                        UpdatedByUserName = currentVersion.UpdatedByUserId == 0 ? "System"
                             : await userService.GetFullNameUserByUserIdAsync(currentVersion.UpdatedByUserId).ConfigureAwait(false),
                         Changes = changes
                     });
@@ -1827,6 +1829,7 @@ public class TimePlanningPlanningService(
         var changes = new List<FieldChange>();
 
         // Compare all relevant fields
+        CompareBoolField(changes, "PlanChangedByAdmin", previous?.PlanChangedByAdmin, current.PlanChangedByAdmin);
         CompareField(changes, "PlanText", previous?.PlanText, current.PlanText);
         CompareField(changes, "PlanHours", previous?.PlanHours.ToString(), current.PlanHours.ToString());
         CompareField(changes, "NettoHours", previous?.NettoHours.ToString(), current.NettoHours.ToString());

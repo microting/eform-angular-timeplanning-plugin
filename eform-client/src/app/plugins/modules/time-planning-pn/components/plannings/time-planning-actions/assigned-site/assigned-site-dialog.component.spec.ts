@@ -240,7 +240,7 @@ describe('AssignedSiteDialogComponent', () => {
     it('should create shift forms for each day of the week', () => {
       component.ngOnInit();
 
-      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
       const firstShift = component.assignedSiteForm.get('firstShift');
 
       days.forEach(day => {
@@ -267,13 +267,13 @@ describe('AssignedSiteDialogComponent', () => {
       );
     });
 
-    it('should copy break settings from global settings for Monday', () => {
+    it('should copy break settings from global settings for monday', () => {
       // Reinitialize to get the new global settings
       component.ngOnInit();
 
-      component.copyBreakSettings('Monday');
+      component.copyBreakSettings('monday');
 
-      const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('Monday');
+      const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('monday');
       expect(mondayBreak?.get('breakMinutesDivider')?.value).toBe('08:00');
       expect(mondayBreak?.get('breakMinutesPrDivider')?.value).toBe('00:30');
       expect(mondayBreak?.get('breakMinutesUpperLimit')?.value).toBe('01:00');
@@ -282,10 +282,10 @@ describe('AssignedSiteDialogComponent', () => {
     it('should handle missing global settings gracefully', () => {
       component['globalAutoBreakSettings'] = null;
 
-      component.copyBreakSettings('Monday');
+      component.copyBreakSettings('monday');
 
       // Should not throw error and should not modify values
-      const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('Monday');
+      const mondayBreak = component.assignedSiteForm.get('autoBreakSettings')?.get('monday');
       expect(mondayBreak).toBeDefined();
     });
   });
@@ -339,19 +339,19 @@ describe('AssignedSiteDialogComponent', () => {
     it('should return plan hours form group', () => {
       const planHoursGroup = component.getPlanHoursFormGroup();
       expect(planHoursGroup).toBeDefined();
-      expect(planHoursGroup.get('Monday')).toBeDefined();
+      expect(planHoursGroup.get('monday')).toBeDefined();
     });
 
     it('should return auto break settings form group', () => {
       const autoBreakGroup = component.getAutoBreakSettingsFormGroup();
       expect(autoBreakGroup).toBeDefined();
-      expect(autoBreakGroup.get('Monday')).toBeDefined();
+      expect(autoBreakGroup.get('monday')).toBeDefined();
     });
 
     it('should return first shift form group', () => {
       const firstShiftGroup = component.getFirstShiftFormGroup();
       expect(firstShiftGroup).toBeDefined();
-      expect(firstShiftGroup.get('Monday')).toBeDefined();
+      expect(firstShiftGroup.get('monday')).toBeDefined();
     });
 
     it('should return second shift form group', () => {
