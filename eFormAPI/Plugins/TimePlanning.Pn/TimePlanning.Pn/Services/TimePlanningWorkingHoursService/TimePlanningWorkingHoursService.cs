@@ -35,6 +35,7 @@ using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
+using TimePlanning.Pn.Infrastructure.Data.Seed.Data;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
 
 namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
@@ -2416,6 +2417,8 @@ public class TimePlanningWorkingHoursService(
                 #region TotalSheetSetup
 
                 WorksheetPart totalWorksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId1");
+                var seedMessages = new TimePlanningSeedMessages().Data;
+
                 var totalHeaders = new[]
                 {
                     Translations.From,
@@ -2436,6 +2439,19 @@ public class TimePlanningWorkingHoursService(
                 foreach (var header in totalHeaders)
                 {
                     totalHeaderStrings.Add(localizationService.GetString(header));
+                }
+
+                // Add a column header for each seed message
+                var currentLanguage = await userService.GetCurrentUserLanguage();
+                foreach (var seedMessage in seedMessages)
+                {
+                    var messageHeader = currentLanguage.LanguageCode switch
+                    {
+                        "da" => seedMessage.DaName,
+                        "de" => seedMessage.DeName,
+                        _ => seedMessage.EnName
+                    };
+                    totalHeaderStrings.Add(messageHeader);
                 }
 
                 Worksheet totalWorksheet1 = new Worksheet()
@@ -2704,6 +2720,21 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateCell(hasAnyCommentFromWorker ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
                     totalRow.Append(CreateCell(hasAnyMessage ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
                     totalRow.Append(CreateNumericCell(sumHoursSaturday));
+
+                    // Add netto hours sum for each seed message
+                    var workerDays = content.Model.Skip(1).ToList();
+                    foreach (var seedMessage in seedMessages)
+                    {
+                        var messageNettoHours = workerDays
+                            .Where(x => x.Message == seedMessage.Id && x.NettoHoursOverrideActive == false)
+                            .Sum(x => x.NettoHours);
+                        var messageNettoHoursOverride = workerDays
+                            .Where(x => x.Message == seedMessage.Id && x.NettoHoursOverrideActive)
+                            .Sum(x => x.NettoHoursOverride);
+
+                        totalRow.Append(CreateNumericCell(messageNettoHours + messageNettoHoursOverride));
+                    }
+
                     totalSheetData1.Append(totalRow);
                     totalRowIndex++;
 
@@ -2713,7 +2744,7 @@ public class TimePlanningWorkingHoursService(
 
                 #region TotalSheetFinalize
 
-                var totalColumnLetter = GetColumnLetter(totalHeaders.Length);
+                var totalColumnLetter = GetColumnLetter(totalHeaderStrings.Count);
                 AutoFilter totalAutoFilter1 = new AutoFilter() { Reference = $"A1:{totalColumnLetter}{totalRowIndex}" };
                 totalAutoFilter1.SetAttribute(new OpenXmlAttribute("xr", "uid",
                     "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
