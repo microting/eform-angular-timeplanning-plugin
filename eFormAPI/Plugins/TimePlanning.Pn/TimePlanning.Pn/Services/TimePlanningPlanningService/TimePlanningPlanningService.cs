@@ -170,11 +170,11 @@ public class TimePlanningPlanningService(
             var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
             var todayMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
             var datesInPeriod = new List<DateTime>();
-            var date = model.DateFrom;
-            while (date <= model.DateTo)
+            var date = midnightOfDateFrom;
+            while (date <= midnightOfDateTo)
             {
-                datesInPeriod.Add(date.Value);
-                date = date.Value.AddDays(1);
+                datesInPeriod.Add(date);
+                date = date.AddDays(1);
             }
 
             var usersList = await baseDbContext.Users
