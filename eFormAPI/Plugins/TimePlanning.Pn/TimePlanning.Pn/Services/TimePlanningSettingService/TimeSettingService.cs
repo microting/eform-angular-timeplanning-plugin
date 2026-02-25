@@ -729,7 +729,14 @@ public class TimeSettingService(
         dbAssignedSite.DaysBackInTimeAllowedEditingEnabled = site.DaysBackInTimeAllowedEditingEnabled;
         dbAssignedSite.Resigned = site.Resigned;
         dbAssignedSite.ResignedAtDate = site.ResignedAtDate;
-        dbAssignedSite.GpsEnabled = site.GpsEnabled;
+
+        var globalSettings = await dbContext.PluginConfigurationValues.FirstOrDefaultAsync(x => x.Name == "TimePlanningBaseSettings:GpsEnabled");
+        if (globalSettings != null)
+        {
+            dbAssignedSite.GpsEnabled = globalSettings.Value == "1";
+        }
+
+        // dbAssignedSite.GpsEnabled = site.GpsEnabled;
         dbAssignedSite.SnapshotEnabled = site.SnapshotEnabled;
         dbAssignedSite.IsManager = site.IsManager;
 
