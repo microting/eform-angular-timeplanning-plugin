@@ -730,7 +730,7 @@ public class TimeSettingService(
         dbAssignedSite.Resigned = site.Resigned;
         dbAssignedSite.ResignedAtDate = site.ResignedAtDate;
 
-        var globalSettings = await dbContext.PluginConfigurationValues.FirstOrDefaultAsync(x => x.Name == "TimePlanningBaseSettings:GpsEnabled");
+        var globalSettings = await dbContext.PluginConfigurationValues.AsNoTracking().FirstOrDefaultAsync(x => x.Name == "TimePlanningBaseSettings:GpsEnabled");
         if (globalSettings != null)
         {
             dbAssignedSite.GpsEnabled = globalSettings.Value == "1";
