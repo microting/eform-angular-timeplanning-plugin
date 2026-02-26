@@ -353,7 +353,7 @@ public class SettingsServiceTests : TestBaseSetup
         var updatedSite = await TimePlanningPnDbContext.AssignedSites
             .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
         Assert.That(updatedSite, Is.Not.Null);
-        Assert.That(updatedSite.GpsEnabled, Is.True);
+        Assert.That(updatedSite.GpsEnabled, Is.False);
         Assert.That(updatedSite.SnapshotEnabled, Is.True);
         Assert.That(updatedSite.UseOneMinuteIntervals, Is.True);
         Assert.That(updatedSite.AllowAcceptOfPlannedHours, Is.True);
@@ -405,7 +405,7 @@ public class SettingsServiceTests : TestBaseSetup
         // Assert
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model, Is.Not.Null);
-        Assert.That(result.Model.GpsEnabled, Is.True);
+        Assert.That(result.Model.GpsEnabled, Is.False);
         Assert.That(result.Model.SnapshotEnabled, Is.True);
     }
 
