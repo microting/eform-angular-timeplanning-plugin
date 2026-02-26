@@ -156,15 +156,29 @@ public class SettingsServiceTests : TestBaseSetup
             UseGoogleSheetAsDefault = true
         };
 
-        var pluginConfigurationValue = new PluginConfigurationValue
+        var pluginConfigurationValue = await TimePlanningPnDbContext!.PluginConfigurationValues
+            .FirstOrDefaultAsync(x => x.Name == "TimePlanningBaseSettings:GpsEnabled" && x.WorkflowState != Constants.WorkflowStates.Removed);
+
+        if (pluginConfigurationValue == null)
         {
-            Name = "TimePlanningBaseSettings:GpsEnabled",
-            Value = "1",
-            CreatedByUserId = 1,
-            UpdatedByUserId = 1
-        };
-        TimePlanningPnDbContext!.Add(pluginConfigurationValue);
-        await TimePlanningPnDbContext.SaveChangesAsync();
+            pluginConfigurationValue = new PluginConfigurationValue
+            {
+                Name = "TimePlanningBaseSettings:GpsEnabled",
+                Value = "1",
+                WorkflowState = Constants.WorkflowStates.Created,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            };
+            TimePlanningPnDbContext.Add(pluginConfigurationValue);
+            await TimePlanningPnDbContext.SaveChangesAsync().ConfigureAwait(false);
+        }
+        else
+        {
+            pluginConfigurationValue!.Value = "1";
+            await TimePlanningPnDbContext.SaveChangesAsync().ConfigureAwait(false);
+        }
 
         // Act
         var result = await _settingsService.UpdateAssignedSite(updateModel);
