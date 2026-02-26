@@ -417,7 +417,7 @@ describe('AssignedSiteDialogComponent', () => {
         isManager: true,
         managingTagIds: [1, 2]
       };
-      
+
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         declarations: [AssignedSiteDialogComponent],
@@ -430,15 +430,15 @@ describe('AssignedSiteDialogComponent', () => {
           { provide: Store, useValue: mockStore },
         ]
       }).compileComponents();
-      
+
       const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
       const newComponent = newFixture.componentInstance;
       // Call ngOnInit to initialize the form without rendering the template
       newComponent.ngOnInit();
-      
+
       const isManagerControl = newComponent.assignedSiteForm.get('isManager');
       const managingTagIdsControl = newComponent.assignedSiteForm.get('managingTagIds');
-      
+
       expect(isManagerControl?.value).toBe(true);
       expect(managingTagIdsControl?.value).toEqual([1, 2]);
     });

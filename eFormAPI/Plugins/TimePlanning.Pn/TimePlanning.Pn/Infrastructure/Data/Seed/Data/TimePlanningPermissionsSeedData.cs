@@ -46,6 +46,31 @@ public static class TimePlanningPermissionsSeedData
         {
             PermissionName = "Obtain working hours",
             ClaimName = TimePlanningClaims.GetWorkingHours
+        },
+        new PluginPermission
+        {
+            PermissionName = "Obtain plannings",
+            ClaimName = TimePlanningClaims.GetPlanning
+        },
+        new PluginPermission
+        {
+            PermissionName = "Create plannings",
+            ClaimName = TimePlanningClaims.CreatePlanning
+        },
+        new PluginPermission
+        {
+            PermissionName = "Edit plannings",
+            ClaimName = TimePlanningClaims.EditPlanning
+        },
+        new PluginPermission
+        {
+            PermissionName = "Is a manager",
+            ClaimName = TimePlanningClaims.IsManager
+        },
+        new PluginPermission
+        {
+            PermissionName = "Is a payroll manager",
+            ClaimName = TimePlanningClaims.IsPayRollManager
         }
     };
 }

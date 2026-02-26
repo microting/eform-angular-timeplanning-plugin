@@ -39,8 +39,6 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
   public availableTags: CommonTagModel[] = [];
 
-  
-
   ngDoCheck(): void {
     if (this.hasDataChanged()) {
       // this.calculateHours();
@@ -56,10 +54,10 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
         this.globalAutoBreakSettings = result.model;
       }
     });
-    
+
     // Load available tags from eForm core API via service
     this.loadAvailableTags();
-    
+
     if (!this.data.resigned) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -292,7 +290,6 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     );
   }
 
-
   calculateDayHours(
     start: number,
     end: number,
@@ -353,7 +350,6 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.calculateHours();
     this.previousData = { ...this.data };
   }
-
 
   updateAssignedSite() {
     const f = this.assignedSiteForm;
@@ -586,5 +582,4 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
       }
     });
   }
-
 }

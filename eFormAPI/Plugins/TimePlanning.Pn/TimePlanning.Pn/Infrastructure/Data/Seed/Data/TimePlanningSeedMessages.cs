@@ -82,9 +82,9 @@ public class TimePlanningSeedMessages
         {
             Id = 11,
             Name = "VacationDayOff",
-            DaName = "Ferie fridag",
-            EnName = "Vacation day off",
-            DeName = "Ferie fridag Tag"
+            DaName = "Afspadsering",
+            EnName = "Time off",
+            DeName = "Freizeit"
         },
         new Message
         {

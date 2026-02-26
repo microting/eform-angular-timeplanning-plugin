@@ -32,6 +32,7 @@ public class PlanRegistrationVersionModel
     public int Version { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int? UpdatedByUserId { get; set; }
+    public string UpdatedByUserName { get; set; }
     public List<FieldChange> Changes { get; set; } = [];
 }
 

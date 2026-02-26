@@ -76,7 +76,7 @@ export class TimePlanningPnSettingsService {
     );
   }
 
-  getAssignedSite(siteId: number): Observable<OperationDataResult<AssignedSiteModel[]>> {
+  getAssignedSite(siteId: number): Observable<OperationDataResult<AssignedSiteModel>> {
     return this.apiBaseService.get(TimePlanningSettingsMethods.GetAssignedSites + '?siteId=' + siteId);
   }
 
