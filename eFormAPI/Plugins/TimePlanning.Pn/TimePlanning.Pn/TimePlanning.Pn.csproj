@@ -27,7 +27,7 @@
       <PackageReference Include="Google.Apis.Sheets.v4" Version="1.73.0.4061" />
       <PackageReference Include="Microting.eForm" Version="10.0.14" />
       <PackageReference Include="Microting.EformAngularFrontendBase" Version="10.0.14" />
-      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.12" />
+      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.13" />
       <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
       <PackageReference Include="Microting.TimePlanningBase" Version="10.0.20" />
       <PackageReference Include="Sentry" Version="6.1.0" />
