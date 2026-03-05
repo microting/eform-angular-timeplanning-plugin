@@ -25,6 +25,7 @@ SOFTWARE.
 namespace TimePlanning.Pn.Infrastructure.Models.PayRuleSet;
 
 using System.Collections.Generic;
+using TimePlanning.Pn.Infrastructure.Models.PayDayTypeRule;
 
 /// <summary>
 /// Full pay rule set model with nested day rules
@@ -34,4 +35,5 @@ public class PayRuleSetModel
     public int Id { get; set; }
     public string Name { get; set; }
     public List<PayDayRuleModel> PayDayRules { get; set; }
+    public List<PayDayTypeRuleModel> PayDayTypeRules { get; set; }
 }

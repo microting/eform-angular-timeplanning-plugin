@@ -15,13 +15,13 @@ export class PayDayRuleFormComponent implements OnInit {
   displayedColumns: string[] = ['order', 'upToSeconds', 'payCode', 'actions'];
 
   dayCodes = [
-    {value: 'SUNDAY', label: 'Sunday'},
     {value: 'MONDAY', label: 'Monday'},
     {value: 'TUESDAY', label: 'Tuesday'},
     {value: 'WEDNESDAY', label: 'Wednesday'},
     {value: 'THURSDAY', label: 'Thursday'},
     {value: 'FRIDAY', label: 'Friday'},
     {value: 'SATURDAY', label: 'Saturday'},
+    {value: 'SUNDAY', label: 'Sunday'},
     {value: 'WEEKDAY', label: 'Weekday'},
     {value: 'WEEKEND', label: 'Weekend'},
     {value: 'HOLIDAY', label: 'Holiday'},

@@ -1,21 +1,21 @@
-// Global style for the select panel overlay (rendered outside the component)
-::ng-deep .day-code-select-panel.mat-mdc-select-panel {
-  max-height: 600px !important;
-  overflow-y: auto !important;
+mat-dialog-content {
+  min-width: 1024px;
+  max-width: 1440px;
+  padding: 20px;
 }
 
-.pay-day-rule-form {
-  padding: 16px;
+mat-dialog-actions {
+  padding: 16px 24px;
+  margin: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
 
-  .form-row {
-    margin-bottom: 16px;
-  }
-
+.day-type-rule-form {
   .full-width {
     width: 100%;
   }
 
-  .tiers-section {
+  .time-bands-section {
     margin-top: 24px;
 
     .section-header {
@@ -29,21 +29,15 @@
         font-size: 18px;
         font-weight: 500;
       }
-
-      .add-tier-btn {
-        mat-icon {
-          margin-right: 4px;
-        }
-      }
     }
 
-    .tiers-table-container {
+    .time-bands-table-container {
       margin-top: 16px;
 
-      .tiers-table {
+      .time-bands-table {
         width: 100%;
 
-        .tier-field {
+        .band-field {
           width: 100%;
           margin: 0;
 
@@ -99,7 +93,6 @@
         font-size: 14px;
       }
     }
-
-
   }
 }
+

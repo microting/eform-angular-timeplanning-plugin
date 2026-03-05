@@ -8,9 +8,10 @@ namespace TimePlanning.Pn.Infrastructure.Models.PayTimeBandRule;
 
 public class PayTimeBandRuleModel
 {
-    public int Id { get; set; }
+    public int? Id { get; set; }
     public int PayDayTypeRuleId { get; set; }
     public int StartSecondOfDay { get; set; }
     public int EndSecondOfDay { get; set; }
     public string PayCode { get; set; }
+    public int Priority { get; set; }
 }

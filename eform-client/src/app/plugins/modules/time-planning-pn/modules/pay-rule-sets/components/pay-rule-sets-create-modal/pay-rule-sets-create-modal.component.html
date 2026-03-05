@@ -20,18 +20,30 @@
         (deleteRule)="onDeletePayDayRule($event)">
       </app-pay-day-rule-list>
     </div>
+
+    <div class="day-type-rules-section">
+      <app-day-type-rule-list
+        [dayTypeRulesFormArray]="payDayTypeRulesFormArray"
+        (addRule)="onAddDayTypeRule()"
+        (editRule)="onEditDayTypeRule($event)"
+        (deleteRule)="onDeleteDayTypeRule($event)">
+      </app-day-type-rule-list>
+    </div>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-button (click)="cancel()" id="cancelCreateBtn">
-    Cancel
+  <button
+    class="btn-cancel"
+    mat-dialog-close
+    (click)="cancel()"
+    id="cancelCreateBtn">
+    {{ 'Cancel' | translate }}
   </button>
-  <button 
-    mat-raised-button 
-    color="primary" 
-    (click)="createPayRuleSet()" 
+  <button
+    class="btn-primary btn-primary--icon-left"
+    (click)="createPayRuleSet()"
     [disabled]="form.invalid"
     id="createPayRuleSetBtn">
-    Create
+    <span>{{ 'Create' | translate }}</span>
   </button>
 </mat-dialog-actions>

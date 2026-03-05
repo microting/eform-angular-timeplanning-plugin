@@ -14,6 +14,8 @@ import {
   PayDayRuleFormComponent,
   PayDayRuleListComponent,
   PayDayRuleDialogComponent,
+  DayTypeRuleListComponent,
+  DayTypeRuleDialogComponent,
 } from './components';
 import {TimePlanningPnPayRuleSetsService} from '../../services';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
@@ -26,6 +28,7 @@ import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatSelectModule} from '@angular/material/select';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatTableModule} from '@angular/material/table';
+import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
 
 @NgModule({
   imports: [
@@ -46,6 +49,7 @@ import {MatTableModule} from '@angular/material/table';
     MatSelectModule,
     MatMenuModule,
     MatTableModule,
+    NgxMaterialTimepickerModule,
   ],
   declarations: [
     PayRuleSetsContainerComponent,
@@ -56,6 +60,8 @@ import {MatTableModule} from '@angular/material/table';
     PayDayRuleFormComponent,
     PayDayRuleListComponent,
     PayDayRuleDialogComponent,
+    DayTypeRuleListComponent,
+    DayTypeRuleDialogComponent,
   ],
   providers: [
     TimePlanningPnPayRuleSetsService,

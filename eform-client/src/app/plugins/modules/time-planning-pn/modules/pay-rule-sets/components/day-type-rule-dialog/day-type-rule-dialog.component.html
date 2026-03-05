@@ -1,0 +1,179 @@
+<h2 mat-dialog-title>{{ dialogTitle }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="dayTypeRuleForm" class="day-type-rule-form">
+    <!-- Day Type Selector -->
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Day Type' | translate }}</mat-label>
+      <mat-select formControlName="dayType" panelClass="day-type-select-panel">
+        <mat-option *ngFor="let type of dayTypes" [value]="type.value">
+          {{ type.label | translate }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="dayTypeRuleForm.get('dayType')?.hasError('required')">
+        {{ 'Please select a day type' | translate }}
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Default Pay Code -->
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Default Pay Code' | translate }}</mat-label>
+      <input matInput formControlName="defaultPayCode" placeholder="NORM">
+      <mat-error *ngIf="dayTypeRuleForm.get('defaultPayCode')?.hasError('required')">
+        {{ 'Default pay code is required' | translate }}
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Priority -->
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Priority' | translate }}</mat-label>
+      <input matInput type="number" formControlName="priority" min="0">
+      <mat-error *ngIf="dayTypeRuleForm.get('priority')?.hasError('required')">
+        {{ 'Priority is required' | translate }}
+      </mat-error>
+      <mat-error *ngIf="dayTypeRuleForm.get('priority')?.hasError('min')">
+        {{ 'Priority must be 0 or greater' | translate }}
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Time Band Rules Section -->
+    <div class="time-bands-section">
+      <div class="section-header">
+        <h3>{{ 'Time Band Rules' | translate }}</h3>
+        <button
+          class="btn-primary btn-primary--icon-left"
+                type="button"
+                (click)="addTimeBand()">
+          <mat-icon>add</mat-icon>
+          {{ 'Add Time Band' | translate }}
+        </button>
+      </div>
+
+      <!-- Time Bands Table -->
+      <div *ngIf="timeBandRulesArray.length > 0" class="time-bands-table-container">
+        <table mat-table [dataSource]="timeBandDataSource" class="time-bands-table">
+          <!-- Start Time Column -->
+          <ng-container matColumnDef="startTime">
+            <th mat-header-cell *matHeaderCellDef>{{ 'Start' | translate }}</th>
+            <td mat-cell *matCellDef="let band; let i = index">
+              <mat-form-field class="band-field">
+                <mat-label>{{ 'Start' | translate }}</mat-label>
+                <input matInput
+                       readonly
+                       [ngxTimepicker]="startPicker"
+                       [format]="24"
+                       [formControl]="getTimeBandControl(i, 'startTime')"
+                       placeholder="00:00">
+                <ngx-material-timepicker
+                  #startPicker
+                  [format]="24"
+                  [defaultTime]="getTimeBandControl(i, 'startTime').value"
+                  [minutesGap]="5"
+                  (timeChanged)="onStartTimeChanged(i, $event)">
+                </ngx-material-timepicker>
+              </mat-form-field>
+            </td>
+          </ng-container>
+
+          <!-- End Time Column -->
+          <ng-container matColumnDef="endTime">
+            <th mat-header-cell *matHeaderCellDef>{{ 'End' | translate }}</th>
+            <td mat-cell *matCellDef="let band; let i = index">
+              <mat-form-field class="band-field">
+                <mat-label>{{ 'End' | translate }}</mat-label>
+                <input matInput
+                       readonly
+                       [ngxTimepicker]="endPicker"
+                       [format]="24"
+                       [formControl]="getTimeBandControl(i, 'endTime')"
+                       placeholder="00:00">
+                <ngx-material-timepicker
+                  #endPicker
+                  [format]="24"
+                  [defaultTime]="getTimeBandControl(i, 'endTime').value"
+                  [minutesGap]="5"
+                  (timeChanged)="onEndTimeChanged(i, $event)">
+                </ngx-material-timepicker>
+              </mat-form-field>
+            </td>
+          </ng-container>
+
+          <!-- Pay Code Column -->
+          <ng-container matColumnDef="payCode">
+            <th mat-header-cell *matHeaderCellDef>{{ 'Pay Code' | translate }}</th>
+            <td mat-cell *matCellDef="let band; let i = index">
+              <mat-form-field class="band-field">
+                <input matInput
+                       type="text"
+                       [formControl]="getTimeBandControl(i, 'payCode')"
+                       placeholder="OT">
+              </mat-form-field>
+            </td>
+          </ng-container>
+
+          <!-- Priority Column -->
+          <ng-container matColumnDef="priority">
+            <th mat-header-cell *matHeaderCellDef>{{ 'Priority' | translate }}</th>
+            <td mat-cell *matCellDef="let band; let i = index">
+              <mat-form-field class="band-field">
+                <input matInput
+                       type="number"
+                       [formControl]="getTimeBandControl(i, 'priority')"
+                       min="0"
+                       placeholder="0">
+              </mat-form-field>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>{{ 'Actions' | translate }}</th>
+            <td mat-cell *matCellDef="let band; let i = index">
+              <button mat-icon-button
+                      color="warn"
+                      type="button"
+                      (click)="deleteTimeBand(i)"
+                      [attr.id]="'deleteTimeBandBtn_' + i"
+                      matTooltip="{{ 'Delete time band' | translate }}">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="timeBandColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: timeBandColumns;"></tr>
+        </table>
+
+        <!-- Help Text -->
+        <div class="help-text">
+          <mat-icon>info</mat-icon>
+          <span>{{ 'Time bands define pay code overrides for specific time ranges within the day. Use the time picker to select start and end times.' | translate }}</span>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="timeBandRulesArray.length === 0" class="empty-state">
+        <mat-icon>info</mat-icon>
+        <p>{{ 'No time bands added yet. The default pay code will apply for the entire day.' | translate }}</p>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    class="btn-cancel"
+    mat-dialog-close
+    id="cancelDayTypeRuleBtn"
+    (click)="cancel()">
+    Cancel
+  </button>
+  <button
+    class="btn-primary btn-primary--icon-left"
+    id="saveDayTypeRuleBtn"
+    [disabled]="!dayTypeRuleForm.valid"
+    (click)="save()">
+    Save
+  </button>
+</mat-dialog-actions>
+
