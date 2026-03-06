@@ -2713,12 +2713,12 @@ public class TimePlanningWorkingHoursService(
                     // NettoHours column now shows normal hours only
                     totalRow.Append(CreateNumericCell(normalHours));
 
-                    var hasAnyCommentFromWorker = content.Model.Skip(1).ToList().Any(x => !string.IsNullOrEmpty(x.CommentWorker));
-                    var hasAnyMessage = content.Model.Skip(1).ToList().Any(x => x.Message != null);
+                    var countCommentFromWorker = content.Model.Skip(1).ToList().Count(x => !string.IsNullOrEmpty(x.CommentWorker));
+                    var countMessages = content.Model.Skip(1).ToList().Count(x => x.Message != null);
 
                     totalRow.Append(CreateNumericCell(sumHoursSundayAndHoliday));
-                    totalRow.Append(CreateCell(hasAnyCommentFromWorker ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
-                    totalRow.Append(CreateCell(hasAnyMessage ? localizationService.GetString(Translations.Yes) : localizationService.GetString(Translations.No)));
+                    totalRow.Append(CreateNumericCell(countCommentFromWorker));
+                    totalRow.Append(CreateNumericCell(countMessages));
                     totalRow.Append(CreateNumericCell(sumHoursSaturday));
 
                     // Add netto hours sum for each seed message
