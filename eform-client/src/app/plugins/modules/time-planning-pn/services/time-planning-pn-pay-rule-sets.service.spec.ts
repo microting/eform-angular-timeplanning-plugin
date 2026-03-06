@@ -70,7 +70,7 @@ describe('TimePlanningPnPayRuleSetsService', () => {
 
   describe('updatePayRuleSet', () => {
     it('should call apiBaseService.put with correct parameters', (done) => {
-      const mockModel = { name: 'Updated', payDayRules: [] };
+      const mockModel = { name: 'Updated', payDayRules: [], payDayTypeRules: [] };
       const mockResponse = { success: true };
       mockApiBaseService.put.mockReturnValue(of(mockResponse as any));
 
