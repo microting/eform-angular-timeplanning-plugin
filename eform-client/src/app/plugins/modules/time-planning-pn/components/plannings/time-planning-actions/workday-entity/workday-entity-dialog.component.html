@@ -135,14 +135,14 @@
 
         <ng-template #trackingButtons let-key="key">
           <button
-            *ngIf="(selectAuthIsAdmin$ | async) === true && hasGpsData(key)"
+            *ngIf="hasGpsData(key)"
             mat-icon-button
             color="primary"
             (click)="onGpsClick(key)"
             matTooltip="{{'View GPS Location' | translate}}">
             <mat-icon>location_on</mat-icon>
           </button>
-          <button *ngIf="(selectAuthIsAdmin$ | async) === true && hasSnapshotData(key)"
+          <button *ngIf="hasSnapshotData(key)"
             mat-icon-button
             color="primary"
             (click)="onSnapshotClick(key)"
