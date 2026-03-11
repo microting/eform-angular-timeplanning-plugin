@@ -1,5 +1,5 @@
 import {
-  ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output,
+  AfterViewChecked, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output,
   SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
   inject
 } from '@angular/core';
@@ -23,7 +23,7 @@ import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
   standalone: false
 
 })
-export class TimePlanningsTableComponent implements OnInit, OnChanges {
+export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterViewChecked {
   private store = inject(Store);
   private planningsService = inject(TimePlanningPnPlanningsService);
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
@@ -31,6 +31,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   private translateService = inject(TranslateService);
   protected datePipe = inject(DatePipe);
   private cdr = inject(ChangeDetectorRef);
+  private el = inject(ElementRef);
 
   @Input() timePlannings: TimePlanningModel[] = [];
   @Input() dateFrom!: Date;
@@ -46,6 +47,10 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
   @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
   protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
+
+  // Highlight & scroll tracking
+  private pendingHighlight: { siteId: number; field: string | null } | null = null;
+  private highlightApplied = false;
 
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
@@ -65,6 +70,43 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         this.dateTo = changes.dateTo.currentValue;
         this.updateTableHeaders();
       }
+    }
+    if (changes.timePlannings && this.pendingHighlight) {
+      this.highlightApplied = false;
+    }
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.pendingHighlight && !this.highlightApplied && this.timePlannings?.length) {
+      const rowIndex = this.timePlannings.findIndex(tp => tp.siteId === this.pendingHighlight.siteId);
+      if (rowIndex >= 0) {
+        this.highlightApplied = true;
+        const field = this.pendingHighlight.field;
+        this.pendingHighlight = null;
+        setTimeout(() => this.scrollAndHighlightCell(rowIndex, field), 300);
+      }
+    }
+  }
+
+  private scrollAndHighlightCell(rowIndex: number, field: string | null): void {
+    let targetEl: HTMLElement | null;
+    if (field !== null) {
+      // Day column cell
+      targetEl = this.el.nativeElement.querySelector(`#cell${rowIndex}_${field}`);
+    } else {
+      // First column (name)
+      targetEl = this.el.nativeElement.querySelector(`#firstColumn${rowIndex}`);
+    }
+
+    if (targetEl) {
+      // Find the parent td/th for the highlight
+      const cell = targetEl.closest('td') || targetEl.closest('th') || targetEl;
+
+      // Scroll both horizontally and vertically
+      cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+      cell.classList.add('highlight-cell');
+      setTimeout(() => cell.classList.remove('highlight-cell'), 3000);
     }
   }
 
@@ -299,6 +341,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
                   this.convertStringToMinutes(data.autoBreakSettings.sunday.breakMinutesUpperLimit as string);
                 this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
                   if (result && result.success) {
+                    this.pendingHighlight = { siteId: siteId, field: null };
+                    this.highlightApplied = false;
                     this.assignedSiteChanged.emit(data);
                   }
                 });
@@ -324,6 +368,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges {
         })
           .afterClosed().subscribe((data: any) => {
           if (data !== '' && data !== undefined) {
+            this.pendingHighlight = { siteId, field };
+            this.highlightApplied = false;
             this.planningsService.updatePlanning(data.planningPrDayModels, data.planningPrDayModels.id).subscribe(result => {
               if (result && result.success) {
                 this.timePlanningChanged.emit(data);
