@@ -51,8 +51,8 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
 
   onCreateClicked(): void {
     const dialogRef = this.dialog.open(PayRuleSetsCreateModalComponent, {
-      minWidth: 700,
-      maxWidth: 900,
+      minWidth: 1280,
+      maxWidth: 1440,
     });
 
     dialogRef.afterClosed().subscribe((result) => {
@@ -66,8 +66,8 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   onEditClicked(payRuleSet: PayRuleSetSimpleModel): void {
     const dialogRef = this.dialog.open(PayRuleSetsEditModalComponent, {
       data: { payRuleSetId: payRuleSet.id },
-      minWidth: 700,
-      maxWidth: 900,
+      minWidth: 1280,
+      maxWidth: 1440,
     });
 
     dialogRef.afterClosed().subscribe((result) => {

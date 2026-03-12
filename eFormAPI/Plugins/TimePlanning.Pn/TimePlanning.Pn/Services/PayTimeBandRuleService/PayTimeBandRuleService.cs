@@ -95,7 +95,8 @@ public class PayTimeBandRuleService : IPayTimeBandRuleService
                 PayDayTypeRuleId = rule.PayDayTypeRuleId,
                 StartSecondOfDay = rule.StartSecondOfDay,
                 EndSecondOfDay = rule.EndSecondOfDay,
-                PayCode = rule.PayCode
+                PayCode = rule.PayCode,
+                Priority = rule.Priority
             };
 
             return new OperationDataResult<PayTimeBandRuleModel>(true, model);
@@ -119,6 +120,7 @@ public class PayTimeBandRuleService : IPayTimeBandRuleService
                 StartSecondOfDay = model.StartSecondOfDay,
                 EndSecondOfDay = model.EndSecondOfDay,
                 PayCode = model.PayCode,
+                Priority = model.Priority,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 WorkflowState = Constants.WorkflowStates.Created
@@ -150,6 +152,7 @@ public class PayTimeBandRuleService : IPayTimeBandRuleService
             rule.StartSecondOfDay = model.StartSecondOfDay;
             rule.EndSecondOfDay = model.EndSecondOfDay;
             rule.PayCode = model.PayCode;
+            rule.Priority = model.Priority;
             rule.UpdatedAt = DateTime.UtcNow;
 
             await rule.Update(_dbContext);

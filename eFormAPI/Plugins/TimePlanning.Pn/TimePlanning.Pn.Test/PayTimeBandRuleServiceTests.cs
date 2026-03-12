@@ -49,7 +49,7 @@ public class PayTimeBandRuleServiceTests : TestBaseSetup
         var payDayTypeRule = new PayDayTypeRule
         {
             PayRuleSetId = payRuleSet.Id,
-            DayType = DayType.Weekday,
+            DayType = DayType.Monday,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             WorkflowState = Constants.WorkflowStates.Created
@@ -93,7 +93,7 @@ public class PayTimeBandRuleServiceTests : TestBaseSetup
         var payDayTypeRule = new PayDayTypeRule
         {
             PayRuleSetId = payRuleSet.Id,
-            DayType = DayType.Weekday,
+            DayType = DayType.Monday,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             WorkflowState = Constants.WorkflowStates.Created
@@ -150,7 +150,7 @@ public class PayTimeBandRuleServiceTests : TestBaseSetup
         var payDayTypeRule = new PayDayTypeRule
         {
             PayRuleSetId = payRuleSet.Id,
-            DayType = DayType.Weekday,
+            DayType = DayType.Monday,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             WorkflowState = Constants.WorkflowStates.Created
@@ -224,7 +224,7 @@ public class PayTimeBandRuleServiceTests : TestBaseSetup
         var payDayTypeRule = new PayDayTypeRule
         {
             PayRuleSetId = payRuleSet.Id,
-            DayType = DayType.Weekday,
+            DayType = DayType.Monday,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             WorkflowState = Constants.WorkflowStates.Created
@@ -282,7 +282,7 @@ public class PayTimeBandRuleServiceTests : TestBaseSetup
         var payDayTypeRule = new PayDayTypeRule
         {
             PayRuleSetId = payRuleSet.Id,
-            DayType = DayType.Weekday,
+            DayType = DayType.Monday,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             WorkflowState = Constants.WorkflowStates.Created
@@ -345,7 +345,7 @@ public class PayTimeBandRuleServiceTests : TestBaseSetup
         var payDayTypeRule1 = new PayDayTypeRule
         {
             PayRuleSetId = payRuleSet.Id,
-            DayType = DayType.Weekday,
+            DayType = DayType.Monday,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             WorkflowState = Constants.WorkflowStates.Created
@@ -355,7 +355,7 @@ public class PayTimeBandRuleServiceTests : TestBaseSetup
         var payDayTypeRule2 = new PayDayTypeRule
         {
             PayRuleSetId = payRuleSet.Id,
-            DayType = DayType.Weekday,
+            DayType = DayType.Monday,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             WorkflowState = Constants.WorkflowStates.Created
@@ -418,7 +418,7 @@ public class PayTimeBandRuleServiceTests : TestBaseSetup
         var payDayTypeRule = new PayDayTypeRule
         {
             PayRuleSetId = payRuleSet.Id,
-            DayType = DayType.Weekday,
+            DayType = DayType.Monday,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             WorkflowState = Constants.WorkflowStates.Created
@@ -495,7 +495,7 @@ public class PayTimeBandRuleServiceTests : TestBaseSetup
         var payDayTypeRule = new PayDayTypeRule
         {
             PayRuleSetId = payRuleSet.Id,
-            DayType = DayType.Weekday,
+            DayType = DayType.Monday,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             WorkflowState = Constants.WorkflowStates.Created

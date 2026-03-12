@@ -2,11 +2,9 @@
   <div class="header">
     <h3>{{ 'Pay Day Rules' | translate }}</h3>
     <button
-      mat-raised-button
-      color="primary"
+      class="btn-primary btn-primary--icon-left"
       (click)="onAddRule()"
       id="addDayBtn">
-      <mat-icon>add</mat-icon>
       {{ 'Add Day' | translate }}
     </button>
   </div>
@@ -22,7 +20,7 @@
     [dataSource]="payDayRulesFormArray.controls"
     *ngIf="payDayRulesFormArray.length > 0"
     class="rules-table">
-    
+
     <!-- Day Column -->
     <ng-container matColumnDef="day">
       <th mat-header-cell *matHeaderCellDef>{{ 'Day Code' | translate }}</th>
@@ -35,7 +33,7 @@
     <ng-container matColumnDef="tiers">
       <th mat-header-cell *matHeaderCellDef>{{ 'Tiers' | translate }}</th>
       <td mat-cell *matCellDef="let rule; let i = index">
-        {{ getTierCount(getRuleFormGroup(i)) }} 
+        {{ getTierCount(getRuleFormGroup(i)) }}
         {{ getTierCount(getRuleFormGroup(i)) === 1 ? ('tier' | translate) : ('tiers' | translate) }}
       </td>
     </ng-container>
@@ -75,7 +73,7 @@
   </table>
 
   <div class="summary" *ngIf="payDayRulesFormArray.length > 0">
-    {{ 'Total' | translate }}: {{ payDayRulesFormArray.length }} 
+    {{ 'Total' | translate }}: {{ payDayRulesFormArray.length }}
     {{ payDayRulesFormArray.length === 1 ? ('day configured' | translate) : ('days configured' | translate) }}
   </div>
 </div>

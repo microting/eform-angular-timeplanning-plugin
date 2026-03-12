@@ -10,6 +10,7 @@ using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 using TimePlanning.Pn.Services.TimePlanningSettingService;
@@ -33,14 +34,14 @@ public class SettingsServiceTests : TestBaseSetup
         await base.Setup();
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
-        
+
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
-        
+
         _coreService = Substitute.For<IEFormCoreService>();
         var core = await GetCore();
         _coreService.GetCore().Returns(core);
-        
+
         _options = Substitute.For<IPluginDbOptions<TimePlanningBaseSettings>>();
         _options.Value.Returns(new TimePlanningBaseSettings
         {
@@ -49,7 +50,7 @@ public class SettingsServiceTests : TestBaseSetup
             GpsEnabled = "0",
             SnapshotEnabled = "0"
         });
-        
+
         _settingsService = new TimeSettingService(
             _options,
             TimePlanningPnDbContext,
@@ -117,6 +118,67 @@ public class SettingsServiceTests : TestBaseSetup
             SnapshotEnabled = false,
             UseGoogleSheetAsDefault = true
         };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.GpsEnabled, Is.False);
+        Assert.That(updatedSite.SnapshotEnabled, Is.False);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UpdatesGlobalGpsEnabled_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 2,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 2,
+            GpsEnabled = true,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true
+        };
+
+        var pluginConfigurationValue = await TimePlanningPnDbContext!.PluginConfigurationValues
+            .FirstOrDefaultAsync(x => x.Name == "TimePlanningBaseSettings:GpsEnabled" && x.WorkflowState != Constants.WorkflowStates.Removed);
+
+        if (pluginConfigurationValue == null)
+        {
+            pluginConfigurationValue = new PluginConfigurationValue
+            {
+                Name = "TimePlanningBaseSettings:GpsEnabled",
+                Value = "1",
+                WorkflowState = Constants.WorkflowStates.Created,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            };
+            TimePlanningPnDbContext.Add(pluginConfigurationValue);
+            await TimePlanningPnDbContext.SaveChangesAsync().ConfigureAwait(false);
+        }
+        else
+        {
+            pluginConfigurationValue!.Value = "1";
+            await TimePlanningPnDbContext.SaveChangesAsync().ConfigureAwait(false);
+        }
 
         // Act
         var result = await _settingsService.UpdateAssignedSite(updateModel);
@@ -201,7 +263,7 @@ public class SettingsServiceTests : TestBaseSetup
         var updatedSite = await TimePlanningPnDbContext.AssignedSites
             .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
         Assert.That(updatedSite, Is.Not.Null);
-        Assert.That(updatedSite.GpsEnabled, Is.True);
+        Assert.That(updatedSite.GpsEnabled, Is.False);
         Assert.That(updatedSite.SnapshotEnabled, Is.True);
     }
 
@@ -305,7 +367,7 @@ public class SettingsServiceTests : TestBaseSetup
         var updatedSite = await TimePlanningPnDbContext.AssignedSites
             .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
         Assert.That(updatedSite, Is.Not.Null);
-        Assert.That(updatedSite.GpsEnabled, Is.True);
+        Assert.That(updatedSite.GpsEnabled, Is.False);
         Assert.That(updatedSite.SnapshotEnabled, Is.True);
         Assert.That(updatedSite.UseOneMinuteIntervals, Is.True);
         Assert.That(updatedSite.AllowAcceptOfPlannedHours, Is.True);
@@ -439,7 +501,7 @@ public class SettingsServiceTests : TestBaseSetup
         Assert.That(updatedSite2.GpsEnabled, Is.True);
         Assert.That(updatedSite2.SnapshotEnabled, Is.True);
     }
-    
+
     #region Manager and Tags Tests
 
     [Test]

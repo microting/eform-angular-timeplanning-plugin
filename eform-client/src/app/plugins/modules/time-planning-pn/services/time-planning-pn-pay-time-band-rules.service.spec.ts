@@ -56,9 +56,9 @@ describe('TimePlanningPnPayTimeBandRulesService', () => {
 
   describe('getPayTimeBandRule', () => {
     it('should call apiBaseService.get with correct id', (done) => {
-      const mockResponse = { 
-        success: true, 
-        model: { id: 123, payDayTypeRuleId: 1, startSecondOfDay: 0, endSecondOfDay: 43200, payCode: 'DAY' } 
+      const mockResponse = {
+        success: true,
+        model: { id: 123, payDayTypeRuleId: 1, startSecondOfDay: 0, endSecondOfDay: 43200, payCode: 'DAY' }
       };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
 
@@ -73,7 +73,7 @@ describe('TimePlanningPnPayTimeBandRulesService', () => {
 
   describe('createPayTimeBandRule', () => {
     it('should call apiBaseService.post with correct parameters', (done) => {
-      const mockModel = { payDayTypeRuleId: 1, startSecondOfDay: 0, endSecondOfDay: 43200, payCode: 'DAY' };
+      const mockModel = { payDayTypeRuleId: 1, startSecondOfDay: 0, endSecondOfDay: 43200, payCode: 'DAY', priority: 1 };
       const mockResponse = { success: true };
       mockApiBaseService.post.mockReturnValue(of(mockResponse as any));
 
@@ -88,7 +88,7 @@ describe('TimePlanningPnPayTimeBandRulesService', () => {
 
   describe('updatePayTimeBandRule', () => {
     it('should call apiBaseService.put with correct parameters', (done) => {
-      const mockModel = { id: 123, payDayTypeRuleId: 1, startSecondOfDay: 43200, endSecondOfDay: 86400, payCode: 'NIGHT' };
+      const mockModel = { id: 123, payDayTypeRuleId: 1, startSecondOfDay: 43200, endSecondOfDay: 86400, payCode: 'NIGHT', priority: 1 };
       const mockResponse = { success: true };
       mockApiBaseService.put.mockReturnValue(of(mockResponse as any));
 

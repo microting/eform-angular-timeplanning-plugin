@@ -3,7 +3,7 @@
   <div class="form-row">
     <mat-form-field class="full-width">
       <mat-label>{{ 'Day Code' | translate }}</mat-label>
-      <mat-select formControlName="dayCode">
+      <mat-select formControlName="dayCode" panelClass="day-code-select-panel">
         <mat-option *ngFor="let day of dayCodes" [value]="day.value">
           {{ day.label | translate }}
         </mat-option>
@@ -18,12 +18,10 @@
   <div class="tiers-section">
     <div class="section-header">
       <h3>{{ 'Pay Tiers' | translate }}</h3>
-      <button mat-raised-button
-              color="primary"
+      <button
+        class="btn-primary btn-primary--icon-left"
               type="button"
-              (click)="addTier()"
-              class="add-tier-btn">
-        <mat-icon>add</mat-icon>
+              (click)="addTier()">
         {{ 'Add Tier' | translate }}
       </button>
     </div>
@@ -62,7 +60,7 @@
               <input matInput
                      type="text"
                      [formControl]="getTierControl(i, 'payCode')"
-                     placeholder="REG">
+                     placeholder="NORM">
             </mat-form-field>
           </td>
         </ng-container>

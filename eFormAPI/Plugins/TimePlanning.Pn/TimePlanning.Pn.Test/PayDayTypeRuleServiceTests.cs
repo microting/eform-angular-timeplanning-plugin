@@ -42,7 +42,7 @@ namespace TimePlanning.Pn.Test
             var model = new PayDayTypeRuleCreateModel
             {
                 PayRuleSetId = payRuleSet.Id,
-                DayType = "Weekday"
+                DayType = "Monday"
             };
 
             // Act
@@ -115,7 +115,7 @@ namespace TimePlanning.Pn.Test
             var rule = new PayDayTypeRule
             {
                 PayRuleSetId = payRuleSet.Id,
-                DayType = (DayType)0, // Weekday
+                DayType = (DayType)0, // Monday
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 WorkflowState = Constants.WorkflowStates.Created
@@ -124,7 +124,7 @@ namespace TimePlanning.Pn.Test
 
             var updateModel = new PayDayTypeRuleUpdateModel
             {
-                DayType = "Weekend"
+                DayType = "Tuesday"
             };
 
             // Act
@@ -132,11 +132,11 @@ namespace TimePlanning.Pn.Test
 
             // Assert
             Assert.That(result.Success, Is.True, $"Update failed: {result.Message}");
-            
+
             var updatedRule = await TimePlanningPnDbContext.PayDayTypeRules
                 .FirstOrDefaultAsync(r => r.Id == rule.Id);
             Assert.That(updatedRule, Is.Not.Null);
-            Assert.That(updatedRule.DayType, Is.EqualTo((DayType)1)); // Weekend
+            Assert.That(updatedRule.DayType, Is.EqualTo((DayType)1)); // Tuesday
         }
 
         [Test]
@@ -145,7 +145,7 @@ namespace TimePlanning.Pn.Test
             // Arrange
             var updateModel = new PayDayTypeRuleUpdateModel
             {
-                DayType = "Weekday"
+                DayType = "Monday"
             };
 
             // Act
@@ -183,7 +183,7 @@ namespace TimePlanning.Pn.Test
 
             // Assert
             Assert.That(result.Success, Is.True);
-            
+
             var deletedRule = await TimePlanningPnDbContext.PayDayTypeRules
                 .FirstOrDefaultAsync(r => r.Id == rule.Id);
             Assert.That(deletedRule, Is.Not.Null);

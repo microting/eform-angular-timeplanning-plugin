@@ -6,3 +6,5 @@ export * from './pay-rule-sets-edit-modal/pay-rule-sets-edit-modal.component';
 export * from './pay-day-rule-form/pay-day-rule-form.component';
 export * from './pay-day-rule-list/pay-day-rule-list.component';
 export * from './pay-day-rule-dialog/pay-day-rule-dialog.component';
+export * from './day-type-rule-list/day-type-rule-list.component';
+export * from './day-type-rule-dialog/day-type-rule-dialog.component';
