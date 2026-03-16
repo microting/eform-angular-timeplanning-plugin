@@ -212,4 +212,16 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     this.selectedTagIds = $event;
     this.getPlannings();
   }
+
+  /**
+   * Called by the table component when it has finished rendering
+   * the highlighted row/cell in the DOM. This guarantees both the service
+   * call and the mtx-grid rendering are complete before we consider the
+   * highlight cycle done.
+   */
+  onHighlightedRowRendered(): void {
+    // Highlight cleanup is handled inside the table component's scrollAndHighlightCell.
+    // This handler exists for consistency with the report-container pattern and can be
+    // extended if the container needs to react to the completed highlight.
+  }
 }

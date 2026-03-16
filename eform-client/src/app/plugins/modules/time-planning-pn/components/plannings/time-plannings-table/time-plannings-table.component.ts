@@ -51,6 +51,8 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   // Highlight & scroll tracking
   private pendingHighlight: { siteId: number; field: string | null } | null = null;
   private highlightApplied = false;
+  private waitingForFreshData = false;
+  @Output() highlightedRowRendered: EventEmitter<void> = new EventEmitter<void>();
 
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
@@ -71,19 +73,24 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
         this.updateTableHeaders();
       }
     }
-    if (changes.timePlannings && this.pendingHighlight) {
+    if (changes.timePlannings && this.waitingForFreshData && this.pendingHighlight) {
+      // Fresh data has arrived after highlight was requested — now we can scroll
+      this.waitingForFreshData = false;
       this.highlightApplied = false;
     }
   }
 
   ngAfterViewChecked(): void {
-    if (this.pendingHighlight && !this.highlightApplied && this.timePlannings?.length) {
+    if (this.pendingHighlight && !this.highlightApplied && !this.waitingForFreshData && this.timePlannings?.length) {
       const rowIndex = this.timePlannings.findIndex(tp => tp.siteId === this.pendingHighlight.siteId);
       if (rowIndex >= 0) {
         this.highlightApplied = true;
         const field = this.pendingHighlight.field;
         this.pendingHighlight = null;
-        setTimeout(() => this.scrollAndHighlightCell(rowIndex, field), 300);
+        setTimeout(() => {
+          this.scrollAndHighlightCell(rowIndex, field);
+          this.highlightedRowRendered.emit();
+        }, 300);
       }
     }
   }
@@ -343,6 +350,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
                   if (result && result.success) {
                     this.pendingHighlight = { siteId: siteId, field: null };
                     this.highlightApplied = false;
+                    this.waitingForFreshData = true;
                     this.assignedSiteChanged.emit(data);
                   }
                 });
@@ -370,6 +378,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
           if (data !== '' && data !== undefined) {
             this.pendingHighlight = { siteId, field };
             this.highlightApplied = false;
+            this.waitingForFreshData = true;
             this.planningsService.updatePlanning(data.planningPrDayModels, data.planningPrDayModels.id).subscribe(result => {
               if (result && result.success) {
                 this.timePlanningChanged.emit(data);
