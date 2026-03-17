@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit,
   inject
 } from '@angular/core';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
-import {Subscription, take} from 'rxjs';
+import {Subscription, take, forkJoin} from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
 import {AssignedSiteModel, CommonTagModel, TimePlanningModel, TimePlanningsRequestModel} from '../../../models';
 import {
@@ -83,24 +83,26 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     });
   }
 
-  getPlannings() {
+  private buildTimePlanningsRequest() {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     if (!this.dateFrom) {
       this.dateFrom = startOfWeek(now, { weekStartsOn: 1 });
       this.dateTo = endOfWeek(now, { weekStartsOn: 1 });
     }
-    //const dateFrom = format(startOfWeek(now, { weekStartsOn: 1 }), PARSING_DATE_FORMAT);
-    //const dateTo = format(endOfWeek(now, { weekStartsOn: 1 }), PARSING_DATE_FORMAT);
     this.timePlanningsRequest = {
       dateFrom: format(this.dateFrom, PARSING_DATE_FORMAT),
       dateTo: format(this.dateTo, PARSING_DATE_FORMAT),
       sort: 'Date',
       isSortDsc: true,
-      siteId: this.siteId, // Default to 0 to get all sites
+      siteId: this.siteId,
       showResignedSites: this.showResignedSites,
       tagIds: this.selectedTagIds.length > 0 ? this.selectedTagIds : undefined
-    }
+    };
+  }
+
+  getPlannings() {
+    this.buildTimePlanningsRequest();
     this.getTimePlannings$ = this.planningsService
       .getPlannings(this.timePlanningsRequest)
       .subscribe((data) => {
@@ -186,26 +188,21 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
 
   onShowResignedSitesChanged($event: any) {
     this.showResignedSites = $event.checked;
-    if (!this.showResignedSites) {
-      this.settingsService
-        .getAvailableSites()
-        .subscribe((data) => {
-          if (data && data.success) {
-            this.availableSites = data.model;
-
-          }
-        });
-    } else {
-      this.getAvailableSites$ = this.settingsService
-        .getResignedSites()
-        .subscribe((data) => {
-          if (data && data.success) {
-            this.availableSites = data.model;
-
-          }
-        });
-    }
-    this.getPlannings();
+    this.buildTimePlanningsRequest();
+    const sitesCall$ = this.showResignedSites
+      ? this.settingsService.getResignedSites()
+      : this.settingsService.getAvailableSites();
+    this.getTimePlannings$ = forkJoin([
+      sitesCall$,
+      this.planningsService.getPlannings(this.timePlanningsRequest),
+    ]).subscribe(([sitesResult, planningsResult]) => {
+      if (sitesResult && sitesResult.success) {
+        this.availableSites = sitesResult.model;
+      }
+      if (planningsResult && planningsResult.success) {
+        this.timePlannings = planningsResult.model;
+      }
+    });
   }
 
   onTagsChanged($event: number[]) {
