@@ -236,7 +236,7 @@ pn-playwright-test:
         retention-days: 2
 ```
 
-**SQL file note:** Only groups `a` and `d` carry their own SQL files. Groups `b` and `c` carry no SQL files and inherit state from a prior test run. All other groups use the SQL from group `a`. This is why the DB setup step uses `if: matrix.test == 'd'` / `if: matrix.test != 'd'` rather than referencing per-group SQL. The SQL files are copied into the `playwright/` folder alongside the test files for the groups that have them (a and d).
+**SQL file note:** Groups `b` and `c` carry no SQL files. Groups `e`–`o` each carry their own `420_SDK.sql` and `420_eform-angular-time-planning-plugin.sql` files that contain different seed data from group `a`. However, the existing Cypress CI (and therefore this Playwright CI job) follows the same established pattern: only group `a`'s SQL is loaded for all non-`d` groups. The tests in groups `e`–`o` are designed to work from group `a`'s base seed, relying on the `activate-plugin.spec.ts` within each group to set up any additional required state at runtime. The SQL files in those groups exist for local development reference but are not loaded by CI. Only groups `a` and `d` provide SQL files that CI actually loads.
 
 ---
 
