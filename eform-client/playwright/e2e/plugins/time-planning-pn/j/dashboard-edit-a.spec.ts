@@ -85,9 +85,11 @@ test.describe('Dashboard edit values', () => {
     ).toBeVisible();
     await page.locator('.mat-mdc-tab').filter({ hasText: 'Auto break calculation settings' })
       .click({ force: true });
+    await page.waitForTimeout(2000);
 
     // Click all refresh buttons (Monday-Sunday)
     const loadDefaultsBtns = page.locator('button[id$="LoadDefaults"]');
+    await expect(loadDefaultsBtns.first()).toBeVisible({ timeout: 10000 });
     const btnCount = await loadDefaultsBtns.count();
     expect(btnCount).toBeGreaterThanOrEqual(1);
     for (let i = 0; i < btnCount; i++) {

@@ -271,7 +271,7 @@ test.describe('Dashboard assert', () => {
     // Wait for spinner before clicking toolbar button
     await waitForSpinner(page);
     await page.locator('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().locator('..').click();
-    await page.locator('#workingHoursSite').fill('c d');
+    await page.locator('#workingHoursSite').locator('input').fill('c d');
     await page.locator('.ng-option.ng-option-marked').click();
 
     const updatePromise = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
@@ -405,7 +405,7 @@ test.describe('Dashboard assert', () => {
 
     await page.locator('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().locator('..').click();
 
-    await page.locator('#workingHoursSite').fill('c d');
+    await page.locator('#workingHoursSite').locator('input').fill('c d');
     await page.locator('.ng-option.ng-option-marked').click();
     const indexUpdatePromise4 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
     await indexUpdatePromise4;
@@ -521,7 +521,7 @@ test.describe('Dashboard assert', () => {
     await page.locator('mat-tree-node').filter({ hasText: 'Timeregistrering' }).click();
     await waitForSpinner(page);
     await page.locator('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().locator('..').click();
-    await page.locator('#workingHoursSite').fill('c d');
+    await page.locator('#workingHoursSite').locator('input').fill('c d');
     await page.locator('.ng-option.ng-option-marked').click();
 
     const updatePromise = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
@@ -640,7 +640,7 @@ test.describe('Dashboard assert', () => {
     await indexUpdatePromise;
     await waitForSpinner(page);
 
-    await page.locator('#workingHoursSite').fill('c d');
+    await page.locator('#workingHoursSite').locator('input').fill('c d');
     await page.locator('.ng-option.ng-option-marked').click();
     const indexUpdatePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
     await indexUpdatePromise2;

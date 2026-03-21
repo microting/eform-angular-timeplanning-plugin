@@ -12,7 +12,7 @@ const setTimepickerValue = async (page: import('@playwright/test').Page, selecto
   await page.locator(newSelector).click();
 
   // Click hour on the timepicker face
-  const hourDegrees = 360 / 12 * parseInt(hour);
+  const hourDegrees = 360 / 12 * (parseInt(hour) % 12);
   if (hourDegrees === 0) {
     await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
   } else {
@@ -33,10 +33,10 @@ const setTimepickerValue = async (page: import('@playwright/test').Page, selecto
 const assertInputError = async (page: import('@playwright/test').Page, errorTestId: string, expectedMessage: string) => {
   await page.waitForTimeout(1000);
   await expect(
-    page.locator(`[data-testid="${errorTestId}"]`)
+    page.locator(`[data-testid="${errorTestId}"]`).first()
   ).toBeVisible();
   await expect(
-    page.locator(`[data-testid="${errorTestId}"]`)
+    page.locator(`[data-testid="${errorTestId}"]`).first()
   ).toContainText(expectedMessage);
 };
 

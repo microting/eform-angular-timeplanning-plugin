@@ -45,8 +45,8 @@ test.describe('Time Planning - Leave policies', () => {
       .locator('..')
       .click();
 
-    await page.locator('#workingHoursSite').clear();
-    await page.locator('#workingHoursSite').fill(testSiteSearchText);
+    await page.locator('#workingHoursSite').locator('input').clear();
+    await page.locator('#workingHoursSite').locator('input').fill(testSiteSearchText);
 
     const planningsIndexResponse2 = page.waitForResponse(
       (resp) => resp.url().includes('/api/time-planning-pn/plannings/index') && resp.status() === 200

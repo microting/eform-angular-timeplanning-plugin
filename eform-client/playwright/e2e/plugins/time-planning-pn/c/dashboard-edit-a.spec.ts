@@ -291,8 +291,8 @@ test.describe('Dashboard edit values', () => {
     await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
     await page.locator('mat-tree-node').filter({ hasText: 'Timeregistrering' }).click();
     await page.locator('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().locator('..').click();
-    await page.locator('#workingHoursSite').clear();
-    await page.locator('#workingHoursSite').fill('c d');
+    await page.locator('#workingHoursSite').locator('input').clear();
+    await page.locator('#workingHoursSite').locator('input').fill('c d');
     await page.locator('.ng-option.ng-option-marked').click();
 
     const updatePromise = page.waitForResponse(

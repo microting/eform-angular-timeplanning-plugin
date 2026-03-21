@@ -40,10 +40,7 @@ test.describe('Time planning plugin working hours export', () => {
     ]);
     const downloadPath = await download.path();
 
-    // Fixture lives in cypress/fixtures/ — relative path from this file's deployed location
-    // (eform-client/playwright/e2e/plugins/time-planning-pn/a/)
-    // to eform-client/cypress/fixtures/
-    const fixturesPath = path.join(__dirname, '../../../../../cypress/fixtures', `${fileNameExcelReport}.xlsx`);
+    const fixturesPath = path.join(__dirname, `${fileNameExcelReport}.xlsx`);
 
     const generatedContent = fs.readFileSync(downloadPath!);
     const fixtureContent = fs.readFileSync(fixturesPath);
