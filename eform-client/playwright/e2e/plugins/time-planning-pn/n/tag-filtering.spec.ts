@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../../Login.page';
-import { PluginPage } from '../../../Plugin.page';
 
 const BASE_URL = 'http://localhost:4200';
 

@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../../Login.page';
-import { PluginPage } from '../../../Plugin.page';
 
 test.describe('Time Planning - Manager Assignment', () => {
   test.beforeEach(async ({ page }) => {
