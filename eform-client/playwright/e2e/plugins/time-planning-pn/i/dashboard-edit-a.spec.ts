@@ -58,7 +58,12 @@ test.describe('Dashboard edit values', () => {
     await setTimepickerValue(page, 'plannedStartOfShift1', '8', '00');
     await setTimepickerValue(page, 'plannedEndOfShift1', '4', '00');
 
+    // Ensure any lingering overlay is dismissed
+    await page.keyboard.press('Escape');
     await page.waitForTimeout(1000);
+
+    // Wait for save button to become enabled
+    await page.locator('#saveButton:not([disabled])').waitFor({ timeout: 15000 });
 
     const savePromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT'
@@ -103,6 +108,9 @@ test.describe('Dashboard edit values', () => {
   });
 
   test.afterEach(async ({ page }) => {
+    // Dismiss any lingering overlay
+    await page.keyboard.press('Escape');
+    await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     await page.locator('#cell0_0').click();
 
     for (const selector of ['plannedStartOfShift1', 'plannedEndOfShift1', 'start1StartedAt', 'stop1StoppedAt']) {

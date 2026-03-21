@@ -193,7 +193,7 @@ test.describe('Enable Backend Config plugin', () => {
       }
       if (minuteDegrees > 0) {
         await page.waitForTimeout(1000);
-        await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
+        await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').last().click({ force: true });
       }
       await page.waitForTimeout(500);
       await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
@@ -216,7 +216,7 @@ test.describe('Enable Backend Config plugin', () => {
       }
       if (minuteDegrees > 0) {
         await page.waitForTimeout(1000);
-        await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
+        await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').last().click({ force: true });
       }
       await page.waitForTimeout(500);
       await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
@@ -239,7 +239,7 @@ test.describe('Enable Backend Config plugin', () => {
       }
       if (minuteDegrees > 0) {
         await page.waitForTimeout(1000);
-        await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
+        await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').last().click({ force: true });
       }
       await page.waitForTimeout(500);
       await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();

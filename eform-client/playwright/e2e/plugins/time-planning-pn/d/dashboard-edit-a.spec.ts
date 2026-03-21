@@ -81,10 +81,11 @@ test.describe('Dashboard edit values', () => {
     );
     await page.locator('#saveButton').click();
     await savePromise;
+    await page.waitForTimeout(1000);
   });
 
   test.afterEach(async ({ page }) => {
-    await page.locator('#cell0_0').waitFor({ state: 'attached', timeout: 15000 });
+    await page.locator('#cell0_0').waitFor({ state: 'visible', timeout: 15000 });
     await page.locator('#cell0_0').scrollIntoViewIfNeeded();
     await page.locator('#cell0_0').click();
 
