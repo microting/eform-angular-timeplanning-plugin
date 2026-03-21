@@ -1,6 +1,43 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { LoginPage } from '../../../Login.page';
 import { PluginPage } from '../../../Plugin.page';
+
+async function clickTimepickerValue(page: Page, inputId: string, timeStr: string): Promise<void> {
+  const [hourStr, minuteStr] = timeStr.split(':');
+  await page.locator(`#${inputId}`).click();
+
+  const clockFace = page.locator('.clock-face');
+  await clockFace.waitFor({ state: 'visible', timeout: 5000 });
+  const box = await clockFace.boundingBox();
+  const centerX = box!.x + box!.width / 2;
+  const centerY = box!.y + box!.height / 2;
+
+  // Click hour
+  const hourNum = parseInt(hourStr);
+  const hourAngle = (hourNum % 12) * 30;
+  const isInnerRing = hourNum === 0 || hourNum > 12;
+  const hourRadius = isInnerRing ? 70 : 105;
+  const hourRad = hourAngle * Math.PI / 180;
+  await page.mouse.click(
+    centerX + hourRadius * Math.sin(hourRad),
+    centerY - hourRadius * Math.cos(hourRad)
+  );
+
+  await page.waitForTimeout(500);
+
+  // Click minute
+  const minuteNum = parseInt(minuteStr);
+  const minuteAngle = minuteNum * 6;
+  const minuteRadius = 105;
+  const minuteRad = minuteAngle * Math.PI / 180;
+  await page.mouse.click(
+    centerX + minuteRadius * Math.sin(minuteRad),
+    centerY - minuteRadius * Math.cos(minuteRad)
+  );
+
+  await page.waitForTimeout(500);
+  await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
+}
 
 test.describe('Enable Backend Config plugin', () => {
   test.beforeEach(async ({ page }) => {
@@ -183,20 +220,7 @@ test.describe('Enable Backend Config plugin', () => {
       const dividerClass = await breakMinutesDividerInputField.getAttribute('class') ?? '';
       expect(dividerClass).not.toContain('mat-form-field-disabled');
 
-      await page.locator(`#${breakMinutesDividerFieldId}`).click();
-      let degrees = 360 / 12 * (parseInt(newDayBreakMinutesDividerValues[index].split(':')[0]) % 12);
-      let minuteDegrees = 360 / 60 * parseInt(newDayBreakMinutesDividerValues[index].split(':')[1]);
-      if (degrees === 0) {
-        await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
-      } else {
-        await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
-      }
-      if (minuteDegrees > 0) {
-        await page.waitForTimeout(1000);
-        await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').last().click({ force: true });
-      }
-      await page.waitForTimeout(500);
-      await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
+      await clickTimepickerValue(page, breakMinutesDividerFieldId, newDayBreakMinutesDividerValues[index]);
 
       const breakMinutesPrDividerFieldId = `${day}BreakMinutesPrDivider`;
       const breakMinutesPrDividerInputField = page.locator(`#${breakMinutesPrDividerFieldId}`);
@@ -206,20 +230,7 @@ test.describe('Enable Backend Config plugin', () => {
       const prDividerClass = await breakMinutesPrDividerInputField.getAttribute('class') ?? '';
       expect(prDividerClass).not.toContain('mat-form-field-disabled');
 
-      await page.locator(`#${breakMinutesPrDividerFieldId}`).click();
-      degrees = 360 / 12 * (parseInt(newDayBreakMinutesPrDividerValues[index].split(':')[0]) % 12);
-      minuteDegrees = 360 / 60 * parseInt(newDayBreakMinutesPrDividerValues[index].split(':')[1]);
-      if (degrees === 0) {
-        await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
-      } else {
-        await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
-      }
-      if (minuteDegrees > 0) {
-        await page.waitForTimeout(1000);
-        await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').last().click({ force: true });
-      }
-      await page.waitForTimeout(500);
-      await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
+      await clickTimepickerValue(page, breakMinutesPrDividerFieldId, newDayBreakMinutesPrDividerValues[index]);
 
       const breakMinutesUpperLimitFieldId = `${day}BreakMinutesUpperLimit`;
       const breakMinutesUpperLimitInputField = page.locator(`#${breakMinutesUpperLimitFieldId}`);
@@ -229,20 +240,7 @@ test.describe('Enable Backend Config plugin', () => {
       const upperLimitClass = await breakMinutesUpperLimitInputField.getAttribute('class') ?? '';
       expect(upperLimitClass).not.toContain('mat-form-field-disabled');
 
-      await page.locator(`#${breakMinutesUpperLimitFieldId}`).click();
-      degrees = 360 / 12 * (parseInt(newDayBreakMinutesUpperLimitValues[index].split(':')[0]) % 12);
-      minuteDegrees = 360 / 60 * parseInt(newDayBreakMinutesUpperLimitValues[index].split(':')[1]);
-      if (degrees === 0) {
-        await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
-      } else {
-        await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
-      }
-      if (minuteDegrees > 0) {
-        await page.waitForTimeout(1000);
-        await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').last().click({ force: true });
-      }
-      await page.waitForTimeout(500);
-      await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
+      await clickTimepickerValue(page, breakMinutesUpperLimitFieldId, newDayBreakMinutesUpperLimitValues[index]);
     }
 
     const [updateResp] = await Promise.all([

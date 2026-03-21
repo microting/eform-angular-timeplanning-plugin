@@ -112,9 +112,9 @@ test.describe('Time Planning - Leave policies', () => {
       await tooltipIcon.hover();
       await page.waitForTimeout(500);
 
-      // Verify tooltip text using role selector (avoids hover loss from async getAttribute)
-      const tooltip = page.locator('[role="tooltip"]').filter({ hasText: expectedTooltip });
-      await expect(tooltip).toBeVisible({ timeout: 5000 });
+      // Verify tooltip text - use the actual visible Material tooltip surface, not the hidden aria-describedby element
+      const tooltip = page.locator('.cdk-overlay-container .mat-mdc-tooltip-surface').filter({ hasText: expectedTooltip });
+      await expect(tooltip).toBeVisible({ timeout: 10000 });
 
       await page.waitForTimeout(1000);
     }

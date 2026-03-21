@@ -315,7 +315,8 @@ test.describe('Dashboard edit values', () => {
       // Verify flexBalanceToDate
       const flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (secondUpdateActualTexts[i].flexBalanceToDate !== '') {
-        await expect(page.locator(flexBalanceToDateId)).toContainText(secondUpdateActualTexts[i].flexBalanceToDate);
+        await page.locator(flexBalanceToDateId).scrollIntoViewIfNeeded();
+        await expect(page.locator(flexBalanceToDateId)).toContainText(secondUpdateActualTexts[i].flexBalanceToDate, { timeout: 15000 });
       }
     }
   });

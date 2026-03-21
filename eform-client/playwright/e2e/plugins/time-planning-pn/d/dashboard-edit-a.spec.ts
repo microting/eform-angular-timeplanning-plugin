@@ -11,22 +11,39 @@ const setTimepickerValue = async (page: import('@playwright/test').Page, selecto
   const newSelector = `[data-testid="${selector}"]`;
   await page.locator(newSelector).click();
 
-  // Click hour on the timepicker face
-  const hourDegrees = 360 / 12 * (parseInt(hour) % 12);
-  if (hourDegrees === 0) {
-    // Hour 0 / 12 is at 720deg (inner ring)
-    await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
-  } else {
-    await page.locator(`[style="transform: rotateZ(${hourDegrees}deg) translateX(-50%);"] > span`).click();
-  }
+  // Wait for clock face to appear
+  const clockFace = page.locator('.clock-face');
+  await clockFace.waitFor({ state: 'visible', timeout: 5000 });
+  const box = await clockFace.boundingBox();
+  if (!box) throw new Error('Clock face not found');
+  const centerX = box.x + box.width / 2;
+  const centerY = box.y + box.height / 2;
 
-  // Click minute on the timepicker face
-  const minuteDegrees = 360 / 60 * parseInt(minute);
-  if (minuteDegrees > 0) {
-    await page.locator(`[style="transform: rotateZ(${minuteDegrees}deg) translateX(-50%);"] > span`).click({ force: true });
-  }
+  // Click hour on clock face using coordinates
+  // For 24h format: hours 1-12 outer ring (~105px), 0 and 13-23 inner ring (~70px)
+  const hourNum = parseInt(hour);
+  const hourAngle = (hourNum % 12) * 30;
+  const isInnerRing = hourNum === 0 || hourNum > 12;
+  const hourRadius = isInnerRing ? 70 : 105;
+  const hourRad = hourAngle * Math.PI / 180;
+  await page.mouse.click(
+    centerX + hourRadius * Math.sin(hourRad),
+    centerY - hourRadius * Math.cos(hourRad)
+  );
 
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(500);
+
+  // Click minute on clock face using coordinates
+  const minuteNum = parseInt(minute);
+  const minuteAngle = minuteNum * 6;
+  const minuteRadius = 105;
+  const minuteRad = minuteAngle * Math.PI / 180;
+  await page.mouse.click(
+    centerX + minuteRadius * Math.sin(minuteRad),
+    centerY - minuteRadius * Math.cos(minuteRad)
+  );
+
+  await page.waitForTimeout(500);
   await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
 };
 
