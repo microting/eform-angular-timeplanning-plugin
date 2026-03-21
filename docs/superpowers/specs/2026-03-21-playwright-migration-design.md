@@ -60,14 +60,16 @@ All shared helpers live in `eform-angular-frontend`. They mirror the Cypress equ
 
 Class-based page object. Receives a Playwright `Page` instance via constructor. Replaces `cy.get()` with `page.locator()` and `cy.intercept().wait()` with `page.waitForResponse()`.
 
+The existing `LoginConstants` file lives at `eform-client/e2e/Constants/LoginConstants.ts` and uses a default export. The Playwright page object references it via a relative path from `playwright/e2e/`:
+
 ```typescript
 import { Page } from '@playwright/test';
-import { LoginConstants } from '../Constants/LoginConstants';
+import loginConstants from '../../e2e/Constants/LoginConstants';
 
 export class LoginPage {
   constructor(private page: Page) {}
 
-  async login(username = LoginConstants.username, password = LoginConstants.password) {
+  async login(username = loginConstants.username, password = loginConstants.password) {
     await this.page.fill('#username', username);
     await this.page.fill('#password', password);
     await Promise.all([
@@ -111,6 +113,7 @@ export { expect } from '@playwright/test';
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
+  testDir: 'playwright/e2e',
   use: {
     baseURL: 'http://localhost:4200',
     viewport: { width: 1920, height: 1080 },
@@ -124,6 +127,8 @@ export default defineConfig({
   timeout: 120000,
 });
 ```
+
+`testDir: 'playwright/e2e'` scopes Playwright's file scan to the test tree only, preventing it from scanning the full Angular project tree after the CI copy step.
 
 Chromium only during the transition period. Multi-browser support added later once all plugins are migrated.
 
@@ -142,11 +147,20 @@ pn-playwright-test:
     matrix:
       test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o]
   steps:
-    # ... same Docker stack setup as pn-test (MariaDB, RabbitMQ, app container) ...
+    # ... same Docker stack setup as pn-test:
+    #     checkout, extract branch, download artifact, docker load,
+    #     create network, start MariaDB, start RabbitMQ, sleep 15,
+    #     start app container (> docker_run_log 2>&1 &)
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
         node-version: 22
+    - name: Preparing Frontend checkout
+      uses: actions/checkout@v3
+      with:
+        repository: microting/eform-angular-frontend
+        ref: ${{ steps.extract_branch.outputs.branch }}
+        path: eform-angular-frontend
     - name: Copy dependencies
       run: |
         cp -av eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn \
@@ -161,12 +175,58 @@ pn-playwright-test:
       run: cd eform-angular-frontend/eform-client && yarn install
     - name: Install Playwright browsers
       run: cd eform-angular-frontend/eform-client && npx playwright install --with-deps chromium
-    - name: DB setup
-      # Same cypress-io/github-action DB setup step as pn-test
+    - name: Get standard output
+      run: cat docker_run_log
+    - name: DB Configuration
+      uses: cypress-io/github-action@v4
+      with:
+        start: echo 'hi'
+        wait-on: "http://localhost:4200"
+        wait-on-timeout: 120
+        browser: chrome
+        record: false
+        spec: cypress/e2e/db/*
+        config-file: cypress.config.ts
+        working-directory: eform-angular-frontend/eform-client
+        command-prefix: "--"
+    - name: Change rabbitmq hostname
+      run: docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
+    - name: Create database
+      if: matrix.test == 'd'
+      run: |
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_Angular.EformPlugins set Status = 1'
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'create database `420_eform-angular-time-planning-plugin`'
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK \
+          < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/d/420_SDK.sql
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin \
+          < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/d/420_eform-angular-time-planning-plugin.sql
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
+    - name: Create database
+      if: matrix.test != 'd'
+      run: |
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_Angular.EformPlugins set Status = 1'
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'create database `420_eform-angular-time-planning-plugin`'
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK \
+          < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/a/420_SDK.sql
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin \
+          < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/a/420_eform-angular-time-planning-plugin.sql
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
+    - name: Wait for app
+      run: npx wait-on http://localhost:4200 --timeout 120000
     - name: ${{ matrix.test }} playwright test
       run: |
         cd eform-angular-frontend/eform-client
         npx playwright test playwright/e2e/plugins/time-planning-pn/${{ matrix.test }}/
+    - name: Stop the newly built Docker container
+      run: docker stop my-container
+    - name: Get standard output
+      run: |
+        cat docker_run_log
+        result=`cat docker_run_log | grep "Now listening on: http://0.0.0.0:5000" -m 1 | wc -l`
+        if [ $result -ne 1 ];then exit 1; fi
+    - name: Get standard output
+      if: ${{ failure() }}
+      run: cat docker_run_log
     - name: Archive Playwright report
       if: failure()
       uses: actions/upload-artifact@v4
@@ -176,7 +236,7 @@ pn-playwright-test:
         retention-days: 2
 ```
 
-The DB setup step (SQL import + RabbitMQ config) is identical to the Cypress job — SQL files are co-located with the test group and copied in as part of the `playwright/` folder.
+**SQL file note:** Only groups `a` and `d` carry their own SQL files. Groups `b` and `c` carry no SQL files and inherit state from a prior test run. All other groups use the SQL from group `a`. This is why the DB setup step uses `if: matrix.test == 'd'` / `if: matrix.test != 'd'` rather than referencing per-group SQL. The SQL files are copied into the `playwright/` folder alongside the test files for the groups that have them (a and d).
 
 ---
 
@@ -187,10 +247,10 @@ The DB setup step (SQL import + RabbitMQ config) is identical to the Cypress job
 2. Add `playwright/e2e/Login.page.ts`, `Plugin.page.ts`, `helper-functions.ts`, `fixtures.ts`
 3. Add `playwright` and `@playwright/test` to `package.json` devDependencies
 
-### Phase 2: Port tests group by group (this repo)
-4. Port group `a` — get CI green before proceeding
-5. Port groups `b`–`o` one at a time, verifying each group in CI
-6. Add `pn-playwright-test` CI job to `dotnet-core-master.yml` and `dotnet-core-pr.yml`
+### Phase 2: CI job + tests (this repo)
+4. Add `pn-playwright-test` CI job to `dotnet-core-master.yml` and `dotnet-core-pr.yml` — this must exist before any group can be verified green
+5. Port group `a` — verify it passes in CI before proceeding
+6. Port groups `b`–`o` one at a time, verifying each group in CI
 
 ### Phase 3: Validation gate
 7. All 15 Playwright CI jobs must be green
