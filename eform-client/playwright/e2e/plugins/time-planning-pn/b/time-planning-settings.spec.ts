@@ -92,7 +92,7 @@ test.describe('Enable Backend Config plugin', () => {
     const autoBreakCalculationToggle = page.locator('#autoBreakCalculationActiveToggle');
     await autoBreakCalculationToggle.scrollIntoViewIfNeeded();
     await expect(autoBreakCalculationToggle).toBeVisible();
-    await expect(autoBreakCalculationToggle).not.toBeChecked();
+    await expect(autoBreakCalculationToggle.locator('button[role="switch"]')).toHaveAttribute('aria-checked', 'false');
     await autoBreakCalculationToggle.click();
     const autoBreakCalculationToggleButton = page.locator('#autoBreakCalculationActiveToggle div button');
     await expect(autoBreakCalculationToggleButton).toHaveAttribute('aria-checked', 'true');
@@ -159,7 +159,7 @@ test.describe('Enable Backend Config plugin', () => {
     const autoBreakCalculationToggle = page.locator('#autoBreakCalculationActiveToggle');
     await autoBreakCalculationToggle.scrollIntoViewIfNeeded();
     await expect(autoBreakCalculationToggle).toBeVisible();
-    await expect(autoBreakCalculationToggle).not.toBeChecked();
+    await expect(autoBreakCalculationToggle.locator('button[role="switch"]')).toHaveAttribute('aria-checked', 'false');
     await autoBreakCalculationToggle.click();
     const autoBreakCalculationToggleButton = page.locator('#autoBreakCalculationActiveToggle div button');
     await expect(autoBreakCalculationToggleButton).toHaveAttribute('aria-checked', 'true');

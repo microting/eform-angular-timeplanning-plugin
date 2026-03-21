@@ -84,6 +84,7 @@ test.describe('Dashboard edit values', () => {
   });
 
   test.afterEach(async ({ page }) => {
+    await page.locator('#cell0_0').waitFor({ state: 'attached', timeout: 15000 });
     await page.locator('#cell0_0').scrollIntoViewIfNeeded();
     await page.locator('#cell0_0').click();
 

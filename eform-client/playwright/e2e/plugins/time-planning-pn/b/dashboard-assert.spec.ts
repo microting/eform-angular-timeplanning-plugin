@@ -309,17 +309,14 @@ test.describe('Dashboard assert', () => {
     await expect(page.locator('#sumFlex7 input')).toHaveValue(/41\.45/);
 
     // Next week
-    const updatePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
     await whPage.dateFormInput().click();
-    await updatePromise2;
-    await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 });
+    const updatePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
     await selectDateRangeOnNewDatePicker(
       page,
       filtersNextWeek[0].dateRange.yearFrom, filtersNextWeek[0].dateRange.monthFrom, filtersNextWeek[0].dateRange.dayFrom,
       filtersNextWeek[0].dateRange.yearTo, filtersNextWeek[0].dateRange.monthTo, filtersNextWeek[0].dateRange.dayTo
     );
-    const updatePromise3 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
-    await updatePromise3;
+    await updatePromise2;
     await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 });
 
     await expect(page.locator('#sumFlex0 input')).toHaveValue(/41\.45/);
@@ -560,17 +557,14 @@ test.describe('Dashboard assert', () => {
     await expect(page.locator('#sumFlex7 input')).toHaveValue(/76\.45/);
 
     // Next week
-    const updatePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
     await whPage.dateFormInput().click();
-    await updatePromise2;
-    await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 });
+    const updatePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
     await selectDateRangeOnNewDatePicker(
       page,
       filtersNextWeek[0].dateRange.yearFrom, filtersNextWeek[0].dateRange.monthFrom, filtersNextWeek[0].dateRange.dayFrom,
       filtersNextWeek[0].dateRange.yearTo, filtersNextWeek[0].dateRange.monthTo, filtersNextWeek[0].dateRange.dayTo
     );
-    const updatePromise3 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
-    await updatePromise3;
+    await updatePromise2;
     await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 });
 
     await expect(page.locator('#sumFlex0 input')).toHaveValue(/44\.2/);

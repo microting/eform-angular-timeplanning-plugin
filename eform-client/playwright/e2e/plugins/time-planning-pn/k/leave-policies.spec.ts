@@ -76,11 +76,13 @@ test.describe('Time Planning - Leave policies', () => {
       }
 
       // Click the target leave policy checkbox
-      await page.locator('#flags mat-checkbox .mdc-label')
-        .filter({ hasText: labelInFlags })
+      await page.locator('#flags mat-checkbox')
+        .filter({ has: page.getByText(labelInFlags, { exact: true }) })
+        .locator('.mdc-label')
         .scrollIntoViewIfNeeded();
-      await page.locator('#flags mat-checkbox .mdc-label')
-        .filter({ hasText: labelInFlags })
+      await page.locator('#flags mat-checkbox')
+        .filter({ has: page.getByText(labelInFlags, { exact: true }) })
+        .locator('.mdc-label')
         .click({ force: true });
 
       // Save and wait for responses

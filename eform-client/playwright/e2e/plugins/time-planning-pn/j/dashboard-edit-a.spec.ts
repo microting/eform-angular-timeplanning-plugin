@@ -53,12 +53,11 @@ test.describe('Dashboard edit values', () => {
     await indexUpdatePromise;
     await waitForSpinner(page);
 
-    await page.locator('#workingHoursSite').click();
-    await page.locator('.ng-option').filter({ hasText: 'ac ad' }).click();
-
     const indexUpdatePromise2 = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST'
     );
+    await page.locator('#workingHoursSite').click();
+    await page.locator('.ng-option').filter({ hasText: 'ac ad' }).click();
     await indexUpdatePromise2;
     await waitForSpinner(page);
 

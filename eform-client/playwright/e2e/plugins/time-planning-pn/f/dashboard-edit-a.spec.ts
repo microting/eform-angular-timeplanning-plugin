@@ -9,6 +9,8 @@ async function waitForSpinner(page: import('@playwright/test').Page) {
 
 const setTimepickerValue = async (page: import('@playwright/test').Page, selector: string, hour: string, minute: string) => {
   const newSelector = `[data-testid="${selector}"]`;
+  await page.locator(newSelector).waitFor({ state: 'visible' });
+  await expect(page.locator(newSelector)).toBeEnabled({ timeout: 10000 });
   await page.locator(newSelector).click();
 
   // Click hour on the timepicker face
@@ -31,13 +33,9 @@ const setTimepickerValue = async (page: import('@playwright/test').Page, selecto
 
 // Get error message for a given input path
 const assertInputError = async (page: import('@playwright/test').Page, errorTestId: string, expectedMessage: string) => {
-  await page.waitForTimeout(1000);
-  await expect(
-    page.locator(`[data-testid="${errorTestId}"]`).first()
-  ).toBeVisible();
-  await expect(
-    page.locator(`[data-testid="${errorTestId}"]`).first()
-  ).toContainText(expectedMessage);
+  const errorLocator = page.locator(`[data-testid="${errorTestId}"]`).first();
+  await errorLocator.waitFor({ state: 'visible', timeout: 15000 });
+  await expect(errorLocator).toContainText(expectedMessage);
 };
 
 test.describe('Dashboard edit values', () => {

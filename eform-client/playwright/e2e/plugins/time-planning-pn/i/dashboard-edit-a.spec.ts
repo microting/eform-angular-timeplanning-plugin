@@ -49,13 +49,12 @@ test.describe('Dashboard edit values', () => {
   });
 
   test('should edit time planned in last week', async ({ page }) => {
-    // Planned time
+    // Planned time — use 12h-clock-compatible values (8:00 to 4:00 = 8h shift)
     await page.locator('#cell0_0').click();
 
-    await setTimepickerValue(page, 'plannedStartOfShift1', '1', '00');
-    await setTimepickerValue(page, 'plannedEndOfShift1', '23', '35');
+    await setTimepickerValue(page, 'plannedStartOfShift1', '8', '00');
+    await setTimepickerValue(page, 'plannedEndOfShift1', '4', '00');
 
-    await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click({ force: true });
     await page.waitForTimeout(1000);
 
     const savePromise = page.waitForResponse(
@@ -66,14 +65,20 @@ test.describe('Dashboard edit values', () => {
 
     await page.locator('#cell0_0').click();
 
-    // Read the exact value from #flexToDate and set it to #paidOutFlex
+    // Read the exact value from #flexToDate and dynamically calculate paidOutFlex
     const flexToDateEl = page.locator('#flexToDate');
     const rawVal = await flexToDateEl.evaluate((el: HTMLInputElement | HTMLElement) => {
       return (el as HTMLInputElement).value !== undefined ? (el as HTMLInputElement).value : el.textContent;
     });
     const cleaned = (rawVal || '').trim().replace(',', '.');
-    const parsedValue = parseFloat(cleaned || '0').toFixed(2);
-    const actualValue = (parseFloat(parsedValue) - 22.58).toFixed(2);
+    const flexToDate = parseFloat(cleaned || '0');
+    // Read planHours to know the actual shift duration the system calculated
+    const planHoursEl = page.locator('#planHours');
+    const planHoursRaw = await planHoursEl.evaluate((el: HTMLInputElement | HTMLElement) => {
+      return (el as HTMLInputElement).value !== undefined ? (el as HTMLInputElement).value : el.textContent;
+    });
+    const planHours = parseFloat((planHoursRaw || '0').trim().replace(',', '.'));
+    const actualValue = (flexToDate - planHours).toFixed(2);
 
     await page.locator('#paidOutFlex').scrollIntoViewIfNeeded();
     await expect(page.locator('#paidOutFlex')).toBeVisible();
