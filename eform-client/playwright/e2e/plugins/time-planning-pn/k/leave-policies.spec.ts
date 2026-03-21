@@ -109,18 +109,15 @@ test.describe('Time Planning - Leave policies', () => {
       await dayCell.scrollIntoViewIfNeeded();
       const tooltipIcon = dayCell.locator('.plan-icons mat-icon.mat-mdc-tooltip-trigger').first();
       await tooltipIcon.scrollIntoViewIfNeeded();
-      await tooltipIcon.hover({ force: true });
-
+      await tooltipIcon.hover();
       await page.waitForTimeout(1000);
 
       // Read tooltip id and verify tooltip text
       const tooltipId = await tooltipIcon.getAttribute('aria-describedby');
       expect(tooltipId, 'tooltip id should be set on icon').toBeTruthy();
 
-      await page.waitForTimeout(500);
-
       const tooltip = page.locator(`#${tooltipId}`);
-      await expect(tooltip).toBeVisible();
+      await expect(tooltip).toBeVisible({ timeout: 5000 });
       await expect(tooltip).toContainText(expectedTooltip);
 
       await page.waitForTimeout(1000);

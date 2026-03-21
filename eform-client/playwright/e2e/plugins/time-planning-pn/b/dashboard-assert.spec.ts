@@ -586,20 +586,20 @@ test.describe('Dashboard assert', () => {
       await page.locator(id).locator('input').fill(updatePlanTextsNextWeek[i].text);
     }
 
-    await page.locator('#workingHoursSave').click();
     const savePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours') && r.request().method() === 'PUT');
+    await page.locator('#workingHoursSave').click();
     await savePromise2;
     await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 });
     await expect(page.locator('#sumFlex7 input')).toHaveValue(/12\.2/);
 
     // Future week
     await whPage.dateFormInput().click();
+    const updatePromise4 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
     await selectDateRangeOnNewDatePicker(
       page,
       filtersFutureWeek[0].dateRange.yearFrom, filtersFutureWeek[0].dateRange.monthFrom, filtersFutureWeek[0].dateRange.dayFrom,
       filtersFutureWeek[0].dateRange.yearTo, filtersFutureWeek[0].dateRange.monthTo, filtersFutureWeek[0].dateRange.dayTo
     );
-    const updatePromise4 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours/index') && r.request().method() === 'POST');
     await updatePromise4;
     await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 });
 

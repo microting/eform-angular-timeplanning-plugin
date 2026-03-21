@@ -27,6 +27,9 @@ const setTimepickerValue = async (page: import('@playwright/test').Page, selecto
 
   await page.waitForTimeout(1000);
   await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
+  // Wait for the timepicker overlay to fully close
+  await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(500);
 };
 
 test.describe('Dashboard edit values', () => {

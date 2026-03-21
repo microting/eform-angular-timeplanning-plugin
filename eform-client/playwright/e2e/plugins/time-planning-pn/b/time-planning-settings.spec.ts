@@ -184,13 +184,18 @@ test.describe('Enable Backend Config plugin', () => {
       expect(dividerClass).not.toContain('mat-form-field-disabled');
 
       await page.locator(`#${breakMinutesDividerFieldId}`).click();
-      let degrees = 360 / 12 * parseInt(newDayBreakMinutesDividerValues[index].split(':')[0]);
+      let degrees = 360 / 12 * (parseInt(newDayBreakMinutesDividerValues[index].split(':')[0]) % 12);
       let minuteDegrees = 360 / 60 * parseInt(newDayBreakMinutesDividerValues[index].split(':')[1]);
-      await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
+      if (degrees === 0) {
+        await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
+      } else {
+        await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
+      }
       if (minuteDegrees > 0) {
         await page.waitForTimeout(1000);
         await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
       }
+      await page.waitForTimeout(500);
       await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
 
       const breakMinutesPrDividerFieldId = `${day}BreakMinutesPrDivider`;
@@ -202,12 +207,18 @@ test.describe('Enable Backend Config plugin', () => {
       expect(prDividerClass).not.toContain('mat-form-field-disabled');
 
       await page.locator(`#${breakMinutesPrDividerFieldId}`).click();
-      degrees = 360 / 12 * parseInt(newDayBreakMinutesPrDividerValues[index].split(':')[0]);
+      degrees = 360 / 12 * (parseInt(newDayBreakMinutesPrDividerValues[index].split(':')[0]) % 12);
       minuteDegrees = 360 / 60 * parseInt(newDayBreakMinutesPrDividerValues[index].split(':')[1]);
-      await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
+      if (degrees === 0) {
+        await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
+      } else {
+        await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
+      }
       if (minuteDegrees > 0) {
+        await page.waitForTimeout(1000);
         await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
       }
+      await page.waitForTimeout(500);
       await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
 
       const breakMinutesUpperLimitFieldId = `${day}BreakMinutesUpperLimit`;
@@ -219,12 +230,18 @@ test.describe('Enable Backend Config plugin', () => {
       expect(upperLimitClass).not.toContain('mat-form-field-disabled');
 
       await page.locator(`#${breakMinutesUpperLimitFieldId}`).click();
-      degrees = 360 / 12 * parseInt(newDayBreakMinutesUpperLimitValues[index].split(':')[0]);
+      degrees = 360 / 12 * (parseInt(newDayBreakMinutesUpperLimitValues[index].split(':')[0]) % 12);
       minuteDegrees = 360 / 60 * parseInt(newDayBreakMinutesUpperLimitValues[index].split(':')[1]);
-      await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
+      if (degrees === 0) {
+        await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
+      } else {
+        await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
+      }
       if (minuteDegrees > 0) {
+        await page.waitForTimeout(1000);
         await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
       }
+      await page.waitForTimeout(500);
       await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
     }
 
