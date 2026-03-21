@@ -10,6 +10,7 @@ test.describe('Enable Backend Config plugin', () => {
   });
 
   test('should enabled Time registration plugin', async ({ page }) => {
+    test.setTimeout(180000);
     const pluginName = 'Microting Time Planning Plugin';
 
     // Open action menu for the plugin

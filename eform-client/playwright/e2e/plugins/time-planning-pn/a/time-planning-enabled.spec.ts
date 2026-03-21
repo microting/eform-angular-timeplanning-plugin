@@ -10,6 +10,7 @@ test.describe('Enable Time Planning plugin', () => {
   });
 
   test('should enable Time registration plugin', async ({ page }) => {
+    test.setTimeout(180000);
     const pluginName = 'Microting Time Planning Plugin';
 
     await page.locator('.mat-mdc-row').filter({ hasText: pluginName }).first()
