@@ -124,10 +124,17 @@ test.describe('Dashboard edit values', () => {
     await page.locator('#saveButton').click({ force: true });
     await savePromise2;
 
+    // Reopen the cell and wait for it to fully expand
     await page.locator('#cell0_0').click();
-    await page.waitForTimeout(1000);
+    // If clicking closed it (was already open), click again to reopen
+    const flexField = page.locator('#flexIncludingToday');
+    if (await flexField.isVisible().catch(() => false) === false) {
+      await page.waitForTimeout(500);
+      await page.locator('#cell0_0').click();
+    }
+    await flexField.waitFor({ state: 'visible', timeout: 10000 });
 
-    await expect(page.locator('#flexIncludingToday')).toHaveValue('0.00');
+    await expect(flexField).toHaveValue('0.00');
 
     await page.locator('#saveButton').click();
   });
