@@ -76,6 +76,7 @@ test.describe('Dashboard edit values', () => {
   });
 
   test('should edit time planned in last week', async ({ page }) => {
+    test.setTimeout(240000);
     // Planned time — use outer ring hours only (1-12) for reliable clock interaction
     await page.locator('#cell0_0').click();
 

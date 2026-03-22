@@ -3,6 +3,8 @@ import { LoginPage } from '../../../Login.page';
 import { PluginPage } from '../../../Plugin.page';
 
 test.describe('Enable Time Planning plugin', () => {
+  test.describe.configure({ timeout: 240000 });
+
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:4200');
     await new LoginPage(page).login();

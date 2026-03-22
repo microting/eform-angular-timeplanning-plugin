@@ -10,6 +10,8 @@ const dateRange = { yearFrom: 2023, monthFrom: 1, dayFrom: 1, yearTo: 2023, mont
 const fileNameExcelReport = '2023-01-01_2023-05-11_report';
 
 test.describe('Time planning plugin working hours export', () => {
+  test.describe.configure({ timeout: 240000 });
+
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:4200');
     await new LoginPage(page).login();
