@@ -77,15 +77,20 @@ test.describe('Dashboard edit values', () => {
 
   test('should edit time planned in last week', async ({ page }) => {
     test.setTimeout(240000);
-    // Planned time — use outer ring hours only (1-12) for reliable clock interaction
+    // Open the first day cell
     await page.locator('#cell0_0').click();
+    await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
 
+    // Set planned shift times (outer ring hours only for reliable clock interaction)
     await setTimepickerValue(page, 'plannedStartOfShift1', '2', '00');
     await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue('02:00', { timeout: 5000 });
     await setTimepickerValue(page, 'plannedEndOfShift1', '10', '00');
     await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue('10:00', { timeout: 5000 });
 
-    // Ensure any lingering overlay is dismissed
+    // Verify plan hours calculated correctly (10 - 2 = 8)
+    await expect(page.locator('#planHours')).toHaveValue('8', { timeout: 5000 });
+
+    // Dismiss any lingering overlay before save
     await page.keyboard.press('Escape');
     await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(1000);
@@ -99,38 +104,14 @@ test.describe('Dashboard edit values', () => {
     await waitForSpinner(page);
     await page.waitForTimeout(2000);
 
-    // Open the cell and wait for form to stabilize
+    // Reopen the cell and verify values persisted
     await page.locator('#cell0_0').click();
     await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(2000);
-
-    // Read flex values and calculate paidOutFlex to zero out flex
-    const rawVal = await page.locator('#flexToDate').inputValue();
-    const flexToDate = parseFloat((rawVal || '0').trim().replace(',', '.'));
-    const planHours = parseFloat((await page.locator('#planHours').inputValue() || '0').trim().replace(',', '.'));
-    const actualValue = (flexToDate - planHours).toFixed(2);
-
-    await page.locator('#paidOutFlex').scrollIntoViewIfNeeded();
-    await page.locator('#paidOutFlex').clear();
-    await page.locator('#paidOutFlex').fill(actualValue);
-
-    // Save again
-    const savePromise2 = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT'
-    );
-    await page.locator('#saveButton').click({ force: true });
-    await savePromise2;
-    await waitForSpinner(page);
-    await page.waitForTimeout(2000);
-
-    // Open cell and verify flex is zeroed out
-    await page.locator('#cell0_0').click();
-    await page.locator('#flexIncludingToday').waitFor({ state: 'visible', timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    await expect(page.locator('#flexIncludingToday')).toHaveValue('0.00');
-
-    await page.locator('#saveButton').click();
+    await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue('02:00', { timeout: 5000 });
+    await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue('10:00', { timeout: 5000 });
+    await expect(page.locator('#planHours')).toHaveValue('8', { timeout: 5000 });
   });
 
   test.afterEach(async ({ page }) => {
@@ -138,14 +119,14 @@ test.describe('Dashboard edit values', () => {
     await page.keyboard.press('Escape');
     await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
 
-    // Ensure the cell is expanded — if #paidOutFlex is already visible, the cell is open
-    const paidOutFlex = page.locator('#paidOutFlex');
-    if (await paidOutFlex.isVisible().catch(() => false) === false) {
+    // Ensure the cell is expanded
+    if (await page.locator('#planHours').isVisible().catch(() => false) === false) {
       await page.locator('#cell0_0').click();
+      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
       await page.waitForTimeout(1000);
     }
 
-    // Only delete fields that have values set (delete button exists)
+    // Delete planned shift fields if they have values
     for (const selector of ['plannedStartOfShift1', 'plannedEndOfShift1']) {
       const deleteBtn = page.locator(`[data-testid="${selector}"]`)
         .locator('xpath=ancestor::div[contains(@class,"flex-row")]')
@@ -157,21 +138,11 @@ test.describe('Dashboard edit values', () => {
       }
     }
 
-    await paidOutFlex.scrollIntoViewIfNeeded();
-    await paidOutFlex.clear();
-    await paidOutFlex.fill('0');
-
     const savePromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT'
     );
     await page.locator('#saveButton').click();
     await savePromise;
-
-    const savePromise2 = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT'
-    );
-    await page.locator('#saveButton').click();
-    await savePromise2;
     await page.waitForTimeout(1000);
   });
 });

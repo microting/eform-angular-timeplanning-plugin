@@ -145,10 +145,12 @@ test.describe('Dashboard edit values', () => {
 
     for (let i = 0; i < secondUpdatePlanTexts.length; i++) {
       const cellId = `#cell3_${i}`;
+      await page.locator(cellId).waitFor({ state: 'visible', timeout: 15000 });
       await page.locator(cellId).scrollIntoViewIfNeeded();
       await page.locator(cellId).click();
+      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForTimeout(500);
       await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toBeVisible();
 
       // Set start1StartedAt
       if (secondUpdateActualTexts[i].start1StartedAt !== '' && secondUpdateActualTexts[i].start1StartedAt !== '00:00') {
@@ -315,6 +317,7 @@ test.describe('Dashboard edit values', () => {
       // Verify flexBalanceToDate
       const flexBalanceToDateId = `#flexBalanceToDate3_${i}`;
       if (secondUpdateActualTexts[i].flexBalanceToDate !== '') {
+        await page.locator(flexBalanceToDateId).waitFor({ state: 'visible', timeout: 15000 });
         await page.locator(flexBalanceToDateId).scrollIntoViewIfNeeded();
         await expect(page.locator(flexBalanceToDateId)).toContainText(secondUpdateActualTexts[i].flexBalanceToDate, { timeout: 15000 });
       }
