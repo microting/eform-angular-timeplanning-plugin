@@ -6,34 +6,43 @@ async function clickTimepickerValue(page: Page, inputId: string, timeStr: string
   const [hourStr, minuteStr] = timeStr.split(':');
   await page.locator(`#${inputId}`).click();
 
-  const clockFace = page.locator('.clock-face');
-  await clockFace.waitFor({ state: 'visible', timeout: 5000 });
-  const box = await clockFace.boundingBox();
-  const centerX = box!.x + box!.width / 2;
-  const centerY = box!.y + box!.height / 2;
+  // Clock face is 290x290px, center at (145, 145)
+  const cx = 145;
+  const cy = 145;
 
-  // Click hour
+  // Wait for hour clock face
+  const hourClockFace = page.locator('.clock-face');
+  await hourClockFace.waitFor({ state: 'visible', timeout: 5000 });
+
+  // Click hour using position relative to clock face element
   const hourNum = parseInt(hourStr);
   const hourAngle = (hourNum % 12) * 30;
-  const isInnerRing = hourNum === 0 || hourNum > 12;
-  const hourRadius = isInnerRing ? 70 : 105;
+  const isInner = hourNum === 0 || hourNum > 12;
+  const hourR = isInner ? 60 : 100;
   const hourRad = hourAngle * Math.PI / 180;
-  await page.mouse.click(
-    centerX + hourRadius * Math.sin(hourRad),
-    centerY - hourRadius * Math.cos(hourRad)
-  );
+  await hourClockFace.click({
+    position: {
+      x: Math.round(cx + hourR * Math.sin(hourRad)),
+      y: Math.round(cy - hourR * Math.cos(hourRad))
+    }
+  });
 
+  // Wait for minute face to render
   await page.waitForTimeout(500);
+  const minuteClockFace = page.locator('.clock-face');
+  await minuteClockFace.waitFor({ state: 'visible', timeout: 5000 });
 
   // Click minute
   const minuteNum = parseInt(minuteStr);
   const minuteAngle = minuteNum * 6;
-  const minuteRadius = 105;
+  const minuteR = 100;
   const minuteRad = minuteAngle * Math.PI / 180;
-  await page.mouse.click(
-    centerX + minuteRadius * Math.sin(minuteRad),
-    centerY - minuteRadius * Math.cos(minuteRad)
-  );
+  await minuteClockFace.click({
+    position: {
+      x: Math.round(cx + minuteR * Math.sin(minuteRad)),
+      y: Math.round(cy - minuteR * Math.cos(minuteRad))
+    }
+  });
 
   await page.waitForTimeout(500);
   await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
