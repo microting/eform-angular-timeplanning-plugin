@@ -95,26 +95,20 @@ test.describe('Dashboard edit values', () => {
     );
     await page.locator('#saveButton').click();
     await savePromise;
+    await waitForSpinner(page);
 
     await page.locator('#cell0_0').click();
+    // Wait for the detail panel to fully render and stabilize
+    await page.locator('#paidOutFlex').waitFor({ state: 'visible', timeout: 15000 });
+    await page.waitForTimeout(1000);
 
     // Read the exact value from #flexToDate and dynamically calculate paidOutFlex
-    const flexToDateEl = page.locator('#flexToDate');
-    const rawVal = await flexToDateEl.evaluate((el: HTMLInputElement | HTMLElement) => {
-      return (el as HTMLInputElement).value !== undefined ? (el as HTMLInputElement).value : el.textContent;
-    });
-    const cleaned = (rawVal || '').trim().replace(',', '.');
-    const flexToDate = parseFloat(cleaned || '0');
-    // Read planHours to know the actual shift duration the system calculated
-    const planHoursEl = page.locator('#planHours');
-    const planHoursRaw = await planHoursEl.evaluate((el: HTMLInputElement | HTMLElement) => {
-      return (el as HTMLInputElement).value !== undefined ? (el as HTMLInputElement).value : el.textContent;
-    });
-    const planHours = parseFloat((planHoursRaw || '0').trim().replace(',', '.'));
+    const rawVal = await page.locator('#flexToDate').inputValue();
+    const flexToDate = parseFloat((rawVal || '0').trim().replace(',', '.'));
+    const planHours = parseFloat((await page.locator('#planHours').inputValue() || '0').trim().replace(',', '.'));
     const actualValue = (flexToDate - planHours).toFixed(2);
 
     await page.locator('#paidOutFlex').scrollIntoViewIfNeeded();
-    await expect(page.locator('#paidOutFlex')).toBeVisible();
     await page.locator('#paidOutFlex').clear();
     await page.locator('#paidOutFlex').fill(actualValue);
 
