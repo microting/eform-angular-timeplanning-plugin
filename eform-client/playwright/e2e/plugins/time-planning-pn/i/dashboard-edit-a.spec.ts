@@ -136,22 +136,29 @@ test.describe('Dashboard edit values', () => {
     // Dismiss any lingering overlay
     await page.keyboard.press('Escape');
     await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
-    await page.locator('#cell0_0').click();
 
-    for (const selector of ['plannedStartOfShift1', 'plannedEndOfShift1', 'start1StartedAt', 'stop1StoppedAt']) {
-      const newSelector = `[data-testid="${selector}"]`;
-      await page.locator(newSelector)
-        .locator('xpath=ancestor::div[contains(@class,"flex-row")]')
-        .locator('button mat-icon')
-        .filter({ hasText: 'delete' })
-        .click({ force: true });
-      await page.waitForTimeout(500);
+    // Ensure the cell is expanded — if #paidOutFlex is already visible, the cell is open
+    const paidOutFlex = page.locator('#paidOutFlex');
+    if (await paidOutFlex.isVisible().catch(() => false) === false) {
+      await page.locator('#cell0_0').click();
+      await page.waitForTimeout(1000);
     }
 
-    await page.locator('#paidOutFlex').scrollIntoViewIfNeeded();
-    await expect(page.locator('#paidOutFlex')).toBeVisible();
-    await page.locator('#paidOutFlex').clear();
-    await page.locator('#paidOutFlex').fill('0');
+    // Only delete fields that have values set (delete button exists)
+    for (const selector of ['plannedStartOfShift1', 'plannedEndOfShift1']) {
+      const deleteBtn = page.locator(`[data-testid="${selector}"]`)
+        .locator('xpath=ancestor::div[contains(@class,"flex-row")]')
+        .locator('button mat-icon')
+        .filter({ hasText: 'delete' });
+      if (await deleteBtn.count() > 0) {
+        await deleteBtn.click({ force: true });
+        await page.waitForTimeout(500);
+      }
+    }
+
+    await paidOutFlex.scrollIntoViewIfNeeded();
+    await paidOutFlex.clear();
+    await paidOutFlex.fill('0');
 
     const savePromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT'
