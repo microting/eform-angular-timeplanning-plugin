@@ -76,18 +76,18 @@ test.describe('Dashboard edit values', () => {
   });
 
   test('should edit time planned in last week', async ({ page }) => {
-    // Planned time — 24h format: 08:00 to 16:00 = 8h shift
+    // Planned time — use outer ring hours only (1-12) for reliable clock interaction
     await page.locator('#cell0_0').click();
 
-    await setTimepickerValue(page, 'plannedStartOfShift1', '8', '00');
-    await setTimepickerValue(page, 'plannedEndOfShift1', '16', '00');
+    await setTimepickerValue(page, 'plannedStartOfShift1', '2', '00');
+    await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue('02:00', { timeout: 5000 });
+    await setTimepickerValue(page, 'plannedEndOfShift1', '10', '00');
+    await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue('10:00', { timeout: 5000 });
 
     // Ensure any lingering overlay is dismissed
     await page.keyboard.press('Escape');
+    await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(1000);
-
-    // Wait for save button to become enabled
-    await page.locator('#saveButton:not([disabled])').waitFor({ timeout: 15000 });
 
     const savePromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT'
