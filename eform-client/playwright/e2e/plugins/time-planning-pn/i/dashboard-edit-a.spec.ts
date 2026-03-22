@@ -90,23 +90,19 @@ test.describe('Dashboard edit values', () => {
     await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(1000);
 
-    // Save and wait for both the PUT response and the subsequent index refresh
-    const indexPromise = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST'
-    );
+    // Save
     const savePromise = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/plannings/') && !r.url().includes('/index') && r.request().method() === 'PUT'
+      r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT'
     );
     await page.locator('#saveButton').click();
     await savePromise;
-    await indexPromise;
     await waitForSpinner(page);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
-    // Open the cell and wait for form fields to be present
+    // Open the cell and wait for form to stabilize
     await page.locator('#cell0_0').click();
-    await page.locator('#flexToDate').waitFor({ state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(500);
+    await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+    await page.waitForTimeout(2000);
 
     // Read flex values and calculate paidOutFlex to zero out flex
     const rawVal = await page.locator('#flexToDate').inputValue();
@@ -118,22 +114,19 @@ test.describe('Dashboard edit values', () => {
     await page.locator('#paidOutFlex').clear();
     await page.locator('#paidOutFlex').fill(actualValue);
 
-    // Save and wait for index refresh again
-    const indexPromise2 = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST'
-    );
+    // Save again
     const savePromise2 = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/plannings/') && !r.url().includes('/index') && r.request().method() === 'PUT'
+      r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT'
     );
     await page.locator('#saveButton').click({ force: true });
     await savePromise2;
-    await indexPromise2;
     await waitForSpinner(page);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
     // Open cell and verify flex is zeroed out
     await page.locator('#cell0_0').click();
     await page.locator('#flexIncludingToday').waitFor({ state: 'visible', timeout: 15000 });
+    await page.waitForTimeout(1000);
 
     await expect(page.locator('#flexIncludingToday')).toHaveValue('0.00');
 

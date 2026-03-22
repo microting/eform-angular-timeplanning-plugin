@@ -422,8 +422,9 @@ test.describe('Dashboard assert', () => {
       const cellId = `#cell0_${i}`;
       await page.locator(cellId).scrollIntoViewIfNeeded();
       await page.locator(cellId).click();
+      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForTimeout(500);
       await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toBeVisible();
       await expect(page.locator('#planHours')).toHaveValue(planTexts[i].calculatedHours);
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(planTexts[i].plannedStartOfShift1);
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(planTexts[i].plannedBreakOfShift1);
@@ -459,8 +460,9 @@ test.describe('Dashboard assert', () => {
       const cellId = `#cell0_${i}`;
       await page.locator(cellId).scrollIntoViewIfNeeded();
       await page.locator(cellId).click();
+      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForTimeout(500);
       await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toBeVisible();
       await expect(page.locator('#planHours')).toHaveValue(planTextsNextWeek[i].calculatedHours);
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(planTextsNextWeek[i].plannedStartOfShift1);
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(planTextsNextWeek[i].plannedBreakOfShift1);
@@ -494,8 +496,9 @@ test.describe('Dashboard assert', () => {
       const cellId = `#cell0_${i}`;
       await page.locator(cellId).scrollIntoViewIfNeeded();
       await page.locator(cellId).click();
+      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForTimeout(500);
       await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toBeVisible();
       await expect(page.locator('#planHours')).toHaveValue(planTextsFutureWeek[i].calculatedHours);
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(planTextsFutureWeek[i].plannedStartOfShift1);
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(planTextsFutureWeek[i].plannedBreakOfShift1);
@@ -656,8 +659,9 @@ test.describe('Dashboard assert', () => {
       const cellId = `#cell0_${i}`;
       await page.locator(cellId).scrollIntoViewIfNeeded();
       await page.locator(cellId).click();
+      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForTimeout(500);
       await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toBeVisible();
       await expect(page.locator('#planHours')).toHaveValue(new RegExp(updatePlanTexts[i].calculatedHours));
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(new RegExp(updatePlanTexts[i].plannedStartOfShift1));
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(new RegExp(updatePlanTexts[i].plannedBreakOfShift1));
@@ -694,8 +698,9 @@ test.describe('Dashboard assert', () => {
       }
 
       await page.locator(cellId).click();
+      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForTimeout(500);
       await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toBeVisible();
       await expect(page.locator('#planHours')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].calculatedHours));
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].plannedStartOfShift1));
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].plannedBreakOfShift1));
@@ -730,8 +735,9 @@ test.describe('Dashboard assert', () => {
         await expect(page.locator(secondShiftId)).toContainText(updatePlanTextsFutureWeek[i].secondShift!);
       }
       await page.locator(cellId).click();
+      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForTimeout(500);
       await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toBeVisible();
       await expect(page.locator('#planHours')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].calculatedHours));
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].plannedStartOfShift1));
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].plannedBreakOfShift1));
