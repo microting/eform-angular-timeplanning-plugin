@@ -23,7 +23,7 @@ async function clickTimepickerValue(page: Page, inputId: string, timeStr: string
   await hourClockFace.click({
     position: {
       x: Math.round(cx + hourR * Math.sin(hourRad)),
-      y: Math.round(cy - hourR * Math.cos(hourRad))
+      y: Math.round(cy - hourR * Math.cos(hourRad)) + (Math.abs(Math.cos(hourRad)) < 0.01 ? 1 : 0)
     }
   });
 
@@ -40,7 +40,7 @@ async function clickTimepickerValue(page: Page, inputId: string, timeStr: string
   await minuteClockFace.click({
     position: {
       x: Math.round(cx + minuteR * Math.sin(minuteRad)),
-      y: Math.round(cy - minuteR * Math.cos(minuteRad))
+      y: Math.round(cy - minuteR * Math.cos(minuteRad)) + (Math.abs(Math.cos(minuteRad)) < 0.01 ? 1 : 0)
     }
   });
 

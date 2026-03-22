@@ -28,7 +28,7 @@ const setTimepickerValue = async (page: import('@playwright/test').Page, selecto
   await hourClockFace.click({
     position: {
       x: Math.round(cx + hourR * Math.sin(hourRad)),
-      y: Math.round(cy - hourR * Math.cos(hourRad))
+      y: Math.round(cy - hourR * Math.cos(hourRad)) + (Math.abs(Math.cos(hourRad)) < 0.01 ? 1 : 0)
     }
   });
 
@@ -45,7 +45,7 @@ const setTimepickerValue = async (page: import('@playwright/test').Page, selecto
   await minuteClockFace.click({
     position: {
       x: Math.round(cx + minuteR * Math.sin(minuteRad)),
-      y: Math.round(cy - minuteR * Math.cos(minuteRad))
+      y: Math.round(cy - minuteR * Math.cos(minuteRad)) + (Math.abs(Math.cos(minuteRad)) < 0.01 ? 1 : 0)
     }
   });
 
@@ -76,11 +76,11 @@ test.describe('Dashboard edit values', () => {
   });
 
   test('should edit time planned in last week', async ({ page }) => {
-    // Planned time — use 12h-clock-compatible values (8:00 to 4:00 = 8h shift)
+    // Planned time — 24h format: 08:00 to 16:00 = 8h shift
     await page.locator('#cell0_0').click();
 
     await setTimepickerValue(page, 'plannedStartOfShift1', '8', '00');
-    await setTimepickerValue(page, 'plannedEndOfShift1', '4', '00');
+    await setTimepickerValue(page, 'plannedEndOfShift1', '16', '00');
 
     // Ensure any lingering overlay is dismissed
     await page.keyboard.press('Escape');
