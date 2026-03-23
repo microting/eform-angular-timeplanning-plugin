@@ -76,10 +76,10 @@ test.describe('Dashboard edit values', () => {
   });
 
   test('should edit time planned in last week', async ({ page }) => {
-    test.setTimeout(240000);
-    // Open the first day cell
+    // Open the first day cell (opens a MatDialog)
     await page.locator('#cell0_0').click();
-    await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+    // Wait for mtx-grid shift template to render inside the dialog
+    await page.locator('[data-testid="plannedStartOfShift1"]').waitFor({ state: 'visible', timeout: 15000 });
 
     // Set planned shift times (outer ring hours only for reliable clock interaction)
     await setTimepickerValue(page, 'plannedStartOfShift1', '2', '00');
@@ -90,41 +90,38 @@ test.describe('Dashboard edit values', () => {
     // Verify plan hours calculated correctly (10 - 2 = 8)
     await expect(page.locator('#planHours')).toHaveValue('8', { timeout: 5000 });
 
-    // Dismiss any lingering overlay before save
-    await page.keyboard.press('Escape');
-    await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
-    await page.waitForTimeout(1000);
-
-    // Save
+    // Save (mat-dialog-close closes the dialog automatically)
     const savePromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT'
     );
     await page.locator('#saveButton').click();
     await savePromise;
+    // Wait for dialog to close and table to stabilize
+    await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
     await waitForSpinner(page);
     await page.waitForTimeout(2000);
 
-    // Reopen the cell and verify values persisted
+    // Reopen the dialog and verify values persisted
     await page.locator('#cell0_0').click();
-    await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+    // Wait for the shift template to fully render in the new dialog
+    await page.locator('[data-testid="plannedStartOfShift1"]').waitFor({ state: 'visible', timeout: 15000 });
     await page.waitForTimeout(1000);
 
-    await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue('02:00', { timeout: 5000 });
+    await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue('02:00', { timeout: 10000 });
     await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue('10:00', { timeout: 5000 });
     await expect(page.locator('#planHours')).toHaveValue('8', { timeout: 5000 });
   });
 
   test.afterEach(async ({ page }) => {
-    // Dismiss any lingering overlay
+    // Close any open dialog
     await page.keyboard.press('Escape');
     await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(1000);
 
-    // Ensure the cell is expanded
-    if (await page.locator('#planHours').isVisible().catch(() => false) === false) {
-      await page.locator('#cell0_0').click();
-      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
-      await page.waitForTimeout(1000);
-    }
+    // Open dialog to clean up
+    await page.locator('#cell0_0').click();
+    await page.locator('[data-testid="plannedStartOfShift1"]').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(500);
 
     // Delete planned shift fields if they have values
     for (const selector of ['plannedStartOfShift1', 'plannedEndOfShift1']) {
