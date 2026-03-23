@@ -422,10 +422,10 @@ test.describe('Dashboard assert', () => {
       const cellId = `#cell0_${i}`;
       await page.locator(cellId).scrollIntoViewIfNeeded();
       await page.locator(cellId).click();
-      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.locator('mat-dialog-container #planHours').waitFor({ state: 'visible', timeout: 15000 });
       await page.waitForTimeout(500);
-      await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toHaveValue(planTexts[i].calculatedHours);
+      await page.locator('mat-dialog-container #planHours').scrollIntoViewIfNeeded();
+      await expect(page.locator('mat-dialog-container #planHours')).toHaveValue(planTexts[i].calculatedHours);
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(planTexts[i].plannedStartOfShift1);
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(planTexts[i].plannedBreakOfShift1);
       await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue(planTexts[i].plannedEndOfShift1);
@@ -460,10 +460,10 @@ test.describe('Dashboard assert', () => {
       const cellId = `#cell0_${i}`;
       await page.locator(cellId).scrollIntoViewIfNeeded();
       await page.locator(cellId).click();
-      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.locator('mat-dialog-container #planHours').waitFor({ state: 'visible', timeout: 15000 });
       await page.waitForTimeout(500);
-      await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toHaveValue(planTextsNextWeek[i].calculatedHours);
+      await page.locator('mat-dialog-container #planHours').scrollIntoViewIfNeeded();
+      await expect(page.locator('mat-dialog-container #planHours')).toHaveValue(planTextsNextWeek[i].calculatedHours);
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(planTextsNextWeek[i].plannedStartOfShift1);
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(planTextsNextWeek[i].plannedBreakOfShift1);
       await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue(planTextsNextWeek[i].plannedEndOfShift1);
@@ -471,6 +471,7 @@ test.describe('Dashboard assert', () => {
       await expect(page.locator('[data-testid="plannedBreakOfShift2"]')).toHaveValue(planTextsNextWeek[i].plannedBreakOfShift2);
       await expect(page.locator('[data-testid="plannedEndOfShift2"]')).toHaveValue(planTextsNextWeek[i].plannedEndOfShift2);
       await page.locator('#cancelButton').click();
+      await page.locator('mat-dialog-container').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     }
 
     // Navigate forwards for future week
@@ -496,10 +497,10 @@ test.describe('Dashboard assert', () => {
       const cellId = `#cell0_${i}`;
       await page.locator(cellId).scrollIntoViewIfNeeded();
       await page.locator(cellId).click();
-      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.locator('mat-dialog-container #planHours').waitFor({ state: 'visible', timeout: 15000 });
       await page.waitForTimeout(500);
-      await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toHaveValue(planTextsFutureWeek[i].calculatedHours);
+      await page.locator('mat-dialog-container #planHours').scrollIntoViewIfNeeded();
+      await expect(page.locator('mat-dialog-container #planHours')).toHaveValue(planTextsFutureWeek[i].calculatedHours);
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(planTextsFutureWeek[i].plannedStartOfShift1);
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(planTextsFutureWeek[i].plannedBreakOfShift1);
       await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue(planTextsFutureWeek[i].plannedEndOfShift1);
@@ -507,6 +508,7 @@ test.describe('Dashboard assert', () => {
       await expect(page.locator('[data-testid="plannedBreakOfShift2"]')).toHaveValue(planTextsFutureWeek[i].plannedBreakOfShift2);
       await expect(page.locator('[data-testid="plannedEndOfShift2"]')).toHaveValue(planTextsFutureWeek[i].plannedEndOfShift2);
       await page.locator('#cancelButton').click();
+      await page.locator('mat-dialog-container').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     }
   });
 
@@ -659,10 +661,10 @@ test.describe('Dashboard assert', () => {
       const cellId = `#cell0_${i}`;
       await page.locator(cellId).scrollIntoViewIfNeeded();
       await page.locator(cellId).click();
-      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.locator('mat-dialog-container #planHours').waitFor({ state: 'visible', timeout: 15000 });
       await page.waitForTimeout(500);
-      await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toHaveValue(new RegExp(updatePlanTexts[i].calculatedHours));
+      await page.locator('mat-dialog-container #planHours').scrollIntoViewIfNeeded();
+      await expect(page.locator('mat-dialog-container #planHours')).toHaveValue(new RegExp(updatePlanTexts[i].calculatedHours));
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(new RegExp(updatePlanTexts[i].plannedStartOfShift1));
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(new RegExp(updatePlanTexts[i].plannedBreakOfShift1));
       await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue(new RegExp(updatePlanTexts[i].plannedEndOfShift1));
@@ -698,10 +700,10 @@ test.describe('Dashboard assert', () => {
       }
 
       await page.locator(cellId).click();
-      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.locator('mat-dialog-container #planHours').waitFor({ state: 'visible', timeout: 15000 });
       await page.waitForTimeout(500);
-      await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].calculatedHours));
+      await page.locator('mat-dialog-container #planHours').scrollIntoViewIfNeeded();
+      await expect(page.locator('mat-dialog-container #planHours')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].calculatedHours));
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].plannedStartOfShift1));
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].plannedBreakOfShift1));
       await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].plannedEndOfShift1));
@@ -709,6 +711,7 @@ test.describe('Dashboard assert', () => {
       await expect(page.locator('[data-testid="plannedBreakOfShift2"]')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].plannedBreakOfShift2));
       await expect(page.locator('[data-testid="plannedEndOfShift2"]')).toHaveValue(new RegExp(updatePlanTextsNextWeek[i].plannedEndOfShift2));
       await page.locator('#cancelButton').click();
+      await page.locator('mat-dialog-container').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     }
 
     // Navigate forwards for future week
@@ -735,10 +738,10 @@ test.describe('Dashboard assert', () => {
         await expect(page.locator(secondShiftId)).toContainText(updatePlanTextsFutureWeek[i].secondShift!);
       }
       await page.locator(cellId).click();
-      await page.locator('#planHours').waitFor({ state: 'visible', timeout: 15000 });
+      await page.locator('mat-dialog-container #planHours').waitFor({ state: 'visible', timeout: 15000 });
       await page.waitForTimeout(500);
-      await page.locator('#planHours').scrollIntoViewIfNeeded();
-      await expect(page.locator('#planHours')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].calculatedHours));
+      await page.locator('mat-dialog-container #planHours').scrollIntoViewIfNeeded();
+      await expect(page.locator('mat-dialog-container #planHours')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].calculatedHours));
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].plannedStartOfShift1));
       await expect(page.locator('[data-testid="plannedBreakOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].plannedBreakOfShift1));
       await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].plannedEndOfShift1));
@@ -746,6 +749,7 @@ test.describe('Dashboard assert', () => {
       await expect(page.locator('[data-testid="plannedBreakOfShift2"]')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].plannedBreakOfShift2));
       await expect(page.locator('[data-testid="plannedEndOfShift2"]')).toHaveValue(new RegExp(updatePlanTextsFutureWeek[i].plannedEndOfShift2));
       await page.locator('#cancelButton').click();
+      await page.locator('mat-dialog-container').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     }
   });
 });
