@@ -753,11 +753,12 @@ public class EformTimePlanningPlugin : IEformPlugin
 
         foreach (var activeAssignedSite in activeAssignedSites)
         {
+            activeAssignedSite.UseGoogleSheetAsDefault = true;
             if (activeAssignedSite.AllowPersonalTimeRegistration)
             {
                 activeAssignedSite.EnableMobileAccess = true;
-                activeAssignedSite.Update(dbContext).GetAwaiter().GetResult();
             }
+            activeAssignedSite.Update(dbContext).GetAwaiter().GetResult();
         }
 
         TimePlanningPluginSeed.SeedData(dbContext);

@@ -274,7 +274,7 @@ describe('Dashboard assert', () => {
         cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with checkbox click');
       }
     });
-    cy.get('#useGoogleSheetAsDefault').click();
+    // cy.get('#useGoogleSheetAsDefault').click();
     cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('assign-site');
     cy.task('log', '[Folder b - Dashboard Assert] Clicking Save button');
     // Wait for spinner before clicking Save button
