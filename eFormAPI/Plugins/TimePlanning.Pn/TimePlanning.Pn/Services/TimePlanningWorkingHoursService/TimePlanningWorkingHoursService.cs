@@ -2366,6 +2366,7 @@ public class TimePlanningWorkingHoursService(
         {
             var siteIds = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Resigned == false)
                 .Select(x => x.SiteId)
                 .Distinct()
                 .ToListAsync();
