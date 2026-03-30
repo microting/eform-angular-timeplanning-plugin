@@ -206,6 +206,20 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                 grpcModel.ManagingTagIds.AddRange(m.ManagingTagIds);
             }
 
+            if (m.AutoBreakSettings != null)
+            {
+                grpcModel.AutoBreakSettings = new Grpc.AutoBreakSettings
+                {
+                    Monday = MapBreakDay(m.AutoBreakSettings.Monday),
+                    Tuesday = MapBreakDay(m.AutoBreakSettings.Tuesday),
+                    Wednesday = MapBreakDay(m.AutoBreakSettings.Wednesday),
+                    Thursday = MapBreakDay(m.AutoBreakSettings.Thursday),
+                    Friday = MapBreakDay(m.AutoBreakSettings.Friday),
+                    Saturday = MapBreakDay(m.AutoBreakSettings.Saturday),
+                    Sunday = MapBreakDay(m.AutoBreakSettings.Sunday),
+                };
+            }
+
             response.Model = grpcModel;
         }
 
@@ -257,5 +271,16 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
         }
 
         return response;
+    }
+
+    private static Grpc.BreakDaySettings MapBreakDay(Infrastructure.Models.Settings.Day? day)
+    {
+        if (day == null) return new Grpc.BreakDaySettings();
+        return new Grpc.BreakDaySettings
+        {
+            BreakMinutesDivider = day.BreakMinutesDivider,
+            BreakMinutesPrDivider = day.BreakMinutesPrDivider,
+            BreakMinutesUpperLimit = day.BreakMinutesUpperLimit,
+        };
     }
 }
