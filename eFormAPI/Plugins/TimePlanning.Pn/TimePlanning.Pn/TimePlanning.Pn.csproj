@@ -31,6 +31,12 @@
       <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
       <PackageReference Include="Microting.TimePlanningBase" Version="10.0.25" />
       <PackageReference Include="Sentry" Version="6.3.0" />
+      <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Protobuf Include="Protos\common.proto" GrpcServices="Server" ProtoRoot="Protos" />
+      <Protobuf Include="Protos\settings.proto" GrpcServices="Server" ProtoRoot="Protos" />
     </ItemGroup>
 
     <ItemGroup>

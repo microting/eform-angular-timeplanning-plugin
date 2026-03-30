@@ -71,6 +71,7 @@ using Services.TimePlanningSettingService;
 using Services.TimePlanningLocalizationService;
 using Services.TimePlanningPlanningService;
 using Services.TimePlanningWorkingHoursService;
+using Services.GrpcServices;
 
 public class EformTimePlanningPlugin : IEformPlugin
 {
@@ -88,6 +89,7 @@ public class EformTimePlanningPlugin : IEformPlugin
 
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddGrpc();
         services.AddTransient<ITimePlanningLocalizationService, TimePlanningLocalizationService>();
         services.AddTransient<ITimePlanningPlanningService, TimePlanningPlanningService>();
         services.AddTransient<ITimePlanningWorkingHoursService, TimePlanningWorkingHoursService>();
@@ -203,6 +205,11 @@ public class EformTimePlanningPlugin : IEformPlugin
 
     public void Configure(IApplicationBuilder appBuilder)
     {
+        appBuilder.UseRouting();
+        appBuilder.UseEndpoints(endpoints =>
+        {
+            endpoints.MapGrpcService<TimePlanningSettingsGrpcService>();
+        });
     }
 
     public List<PluginMenuItemModel> GetNavigationMenu(IServiceProvider serviceProvider)
