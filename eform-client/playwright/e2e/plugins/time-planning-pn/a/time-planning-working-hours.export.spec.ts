@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Login.page';
+import { LoginPage } from '../../../Page objects/Login.page';
 import { TimePlanningWorkingHoursPage } from '../TimePlanningWorkingHours.page';
 import { selectDateRangeOnNewDatePicker, selectValueInNgSelector } from '../../../helper-functions';
 import * as XLSX from 'xlsx';

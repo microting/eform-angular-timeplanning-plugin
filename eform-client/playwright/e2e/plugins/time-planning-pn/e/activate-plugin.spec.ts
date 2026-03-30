@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Login.page';
-import { PluginPage } from '../../../Plugin.page';
+import { LoginPage } from '../../../Page objects/Login.page';
+import { PluginPage } from '../../../Page objects/Plugin.page';
 
 test.describe('Enable Backend Config plugin', () => {
   test.beforeEach(async ({ page }) => {

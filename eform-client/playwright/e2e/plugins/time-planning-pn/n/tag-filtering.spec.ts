@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Login.page';
+import { LoginPage } from '../../../Page objects/Login.page';
 
 const BASE_URL = 'http://localhost:4200';
 

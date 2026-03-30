@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Login.page';
-import { PluginPage } from '../../../Plugin.page';
+import { LoginPage } from '../../../Page objects/Login.page';
+import { PluginPage } from '../../../Page objects/Plugin.page';
 
 async function waitForSpinner(page: import('@playwright/test').Page) {
   if (await page.locator('.overlay-spinner').count() > 0) {

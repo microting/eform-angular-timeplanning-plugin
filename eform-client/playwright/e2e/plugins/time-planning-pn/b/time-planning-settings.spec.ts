@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
-import { LoginPage } from '../../../Login.page';
-import { PluginPage } from '../../../Plugin.page';
+import { LoginPage } from '../../../Page objects/Login.page';
+import { PluginPage } from '../../../Page objects/Plugin.page';
 
 async function clickTimepickerValue(page: Page, inputId: string, timeStr: string): Promise<void> {
   const [hourStr, minuteStr] = timeStr.split(':');

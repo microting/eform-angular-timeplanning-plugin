@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Login.page';
+import { LoginPage } from '../../../Page objects/Login.page';
 
 test.describe('Time Planning - Manager Assignment', () => {
   test.beforeEach(async ({ page }) => {

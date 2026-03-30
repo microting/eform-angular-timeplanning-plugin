@@ -1,6 +1,6 @@
 // Temporarily disabled tests — ported from Cypress as-is (all commented out in source)
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Login.page';
+import { LoginPage } from '../../../Page objects/Login.page';
 
 // test.describe('Break Policies Tests', () => {
 //   test.beforeEach(async ({ page }) => {
