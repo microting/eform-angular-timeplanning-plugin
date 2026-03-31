@@ -249,22 +249,8 @@ test.describe('Dashboard assert', () => {
     await indexUpdatePromise;
     await waitForSpinner(page);
 
-    // Wait for spinner before clicking firstColumn3
-    await waitForSpinner(page);
-    await page.locator('#firstColumn3').click();
-    // Wait for spinner before clicking checkbox
-    await waitForSpinner(page);
     // useGoogleSheetAsDefault is now enabled by default in seed (commit e86d3a1b)
-    // await page.locator('#useGoogleSheetAsDefault').click();
-    // Wait for spinner before clicking Save button
-    await waitForSpinner(page);
-    const assignSitePromise = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
-    await page.locator('#saveButton').click();
-    await assignSitePromise;
-    const indexUpdatePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
-    await indexUpdatePromise2;
-    await waitForSpinner(page);
-    await page.waitForTimeout(2000);
+    // so no need to open dialog and toggle it
 
     // Wait for spinner before clicking Timeregistrering menu
     await waitForSpinner(page);
