@@ -254,7 +254,8 @@ test.describe('Dashboard assert', () => {
     await page.locator('#firstColumn3').click();
     // Wait for spinner before clicking checkbox
     await waitForSpinner(page);
-    await page.locator('#useGoogleSheetAsDefault').click();
+    // useGoogleSheetAsDefault is now enabled by default in seed (commit e86d3a1b)
+    // await page.locator('#useGoogleSheetAsDefault').click();
     // Wait for spinner before clicking Save button
     await waitForSpinner(page);
     const assignSitePromise = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
@@ -338,8 +339,8 @@ test.describe('Dashboard assert', () => {
       await page.locator(id).locator('input').fill(planTextsNextWeek[i].text);
     }
 
-    await page.locator('#workingHoursSave').click();
     const savePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours') && r.request().method() === 'PUT');
+    await page.locator('#workingHoursSave').click();
     await savePromise2;
     await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 });
     await expect(page.locator('#sumFlex7 input')).toHaveValue(/-14\.55/);
@@ -374,8 +375,8 @@ test.describe('Dashboard assert', () => {
       await page.locator(id).locator('input').fill(planTextsFutureWeek[i].text);
     }
 
-    await page.locator('#workingHoursSave').click();
     const savePromise3 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/working-hours') && r.request().method() === 'PUT');
+    await page.locator('#workingHoursSave').click();
     await savePromise3;
     await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 });
     await page.locator('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().locator('..').click();
