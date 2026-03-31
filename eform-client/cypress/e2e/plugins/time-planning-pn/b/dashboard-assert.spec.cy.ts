@@ -255,51 +255,8 @@ describe('Dashboard assert', () => {
       }
     });
     cy.task('log', '[Folder b - Dashboard Assert] Index updated successfully');
-    cy.task('log', '[Folder b - Dashboard Assert] Clicking firstColumn3');
-    // Wait for spinner before clicking firstColumn3
-    cy.get('body').then(($body) => {
-      if ($body.find('.overlay-spinner').length > 0) {
-        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before firstColumn3 click, waiting...');
-        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
-        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with firstColumn3 click');
-      }
-    });
-    cy.get('#firstColumn3').click();
-    cy.task('log', '[Folder b - Dashboard Assert] Clicking useGoogleSheetAsDefault checkbox');
-    // Wait for spinner before clicking checkbox
-    cy.get('body').then(($body) => {
-      if ($body.find('.overlay-spinner').length > 0) {
-        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before checkbox click, waiting...');
-        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
-        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with checkbox click');
-      }
-    });
-    // cy.get('#useGoogleSheetAsDefault').click();
-    cy.intercept('PUT', '**/api/time-planning-pn/settings/assigned-site').as('assign-site');
-    cy.task('log', '[Folder b - Dashboard Assert] Clicking Save button');
-    // Wait for spinner before clicking Save button
-    cy.get('body').then(($body) => {
-      if ($body.find('.overlay-spinner').length > 0) {
-        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected before Save button click, waiting...');
-        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
-        cy.task('log', '[Folder b - Dashboard Assert] Spinner gone, proceeding with Save button click');
-      }
-    });
-    cy.get('#saveButton').click();
-    cy.task('log', '[Folder b - Dashboard Assert] Waiting for assign-site API call');
-    cy.wait('@assign-site', {timeout: 60000});
-    cy.task('log', '[Folder b - Dashboard Assert] Site assigned successfully');
-    cy.task('log', '[Folder b - Dashboard Assert] Waiting for index-update API call (160s timeout)');
-    cy.wait('@index-update', { timeout: 160000 });
-    // Wait for spinner after index update
-    cy.get('body').then(($body) => {
-      if ($body.find('.overlay-spinner').length > 0) {
-        cy.task('log', '[Folder b - Dashboard Assert] Spinner detected after index-update, waiting...');
-        cy.get('.overlay-spinner', {timeout: 30000}).should('not.be.visible');
-      }
-    });
-    cy.task('log', '[Folder b - Dashboard Assert] Index updated successfully');
-    cy.wait(2000);
+    // useGoogleSheetAsDefault is now enabled by default in seed (commit e86d3a1b)
+    // so no need to open dialog and toggle it
     cy.task('log', '[Folder b - Dashboard Assert] Clicking Timeregistrering menu again');
     // Wait for spinner before clicking Timeregistrering menu
     cy.get('body').then(($body) => {
