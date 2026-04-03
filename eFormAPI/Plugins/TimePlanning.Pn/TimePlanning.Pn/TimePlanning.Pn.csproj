@@ -37,6 +37,9 @@
     <ItemGroup>
       <Protobuf Include="Protos\common.proto" GrpcServices="Server" ProtoRoot="Protos" />
       <Protobuf Include="Protos\settings.proto" GrpcServices="Server" ProtoRoot="Protos" />
+      <Protobuf Include="Protos\auth.proto" GrpcServices="Server" ProtoRoot="Protos" />
+      <Protobuf Include="Protos\working_hours.proto" GrpcServices="Server" ProtoRoot="Protos" />
+      <Protobuf Include="Protos\plannings.proto" GrpcServices="Server" ProtoRoot="Protos" />
     </ItemGroup>
 
     <ItemGroup>

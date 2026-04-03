@@ -1,0 +1,177 @@
+syntax = "proto3";
+
+package timeplanning;
+
+import "common.proto";
+
+option csharp_namespace = "TimePlanning.Pn.Grpc";
+
+message ReadWorkingHoursRequest {
+  string token = 1;
+  int32 sdk_site_id = 2;
+  string date = 3;
+  DeviceMetadata device = 4;
+}
+
+message WorkingHoursModel {
+  int32 id = 1;
+  int32 sdk_site_id = 2;
+  string date = 3;
+  string plan_text = 4;
+  int32 plan_hours = 5;
+
+  // Shift 1
+  int32 start1_id = 6;
+  string start1_started_at = 7;
+  int32 stop1_id = 8;
+  string stop1_stopped_at = 9;
+  int32 pause1_id = 10;
+  string pause1_started_at = 11;
+  string pause1_stopped_at = 12;
+  int32 shift1_pause_number = 13;
+  string pause10_started_at = 14;
+  string pause10_stopped_at = 15;
+  string pause11_started_at = 16;
+  string pause11_stopped_at = 17;
+  string pause12_started_at = 18;
+  string pause12_stopped_at = 19;
+  string pause13_started_at = 20;
+  string pause13_stopped_at = 21;
+  string pause14_started_at = 22;
+  string pause14_stopped_at = 23;
+  string pause15_started_at = 24;
+  string pause15_stopped_at = 25;
+  string pause16_started_at = 26;
+  string pause16_stopped_at = 27;
+  string pause17_started_at = 28;
+  string pause17_stopped_at = 29;
+  string pause18_started_at = 30;
+  string pause18_stopped_at = 31;
+  string pause19_started_at = 32;
+  string pause19_stopped_at = 33;
+  string pause100_started_at = 34;
+  string pause100_stopped_at = 35;
+  string pause101_started_at = 36;
+  string pause101_stopped_at = 37;
+  string pause102_started_at = 38;
+  string pause102_stopped_at = 39;
+
+  // Shift 2
+  int32 start2_id = 40;
+  string start2_started_at = 41;
+  int32 stop2_id = 42;
+  string stop2_stopped_at = 43;
+  int32 pause2_id = 44;
+  string pause2_started_at = 45;
+  string pause2_stopped_at = 46;
+  int32 shift2_pause_number = 47;
+  string pause20_started_at = 48;
+  string pause20_stopped_at = 49;
+  string pause21_started_at = 50;
+  string pause21_stopped_at = 51;
+  string pause22_started_at = 52;
+  string pause22_stopped_at = 53;
+  string pause23_started_at = 54;
+  string pause23_stopped_at = 55;
+  string pause24_started_at = 56;
+  string pause24_stopped_at = 57;
+  string pause25_started_at = 58;
+  string pause25_stopped_at = 59;
+  string pause26_started_at = 60;
+  string pause26_stopped_at = 61;
+  string pause27_started_at = 62;
+  string pause27_stopped_at = 63;
+  string pause28_started_at = 64;
+  string pause28_stopped_at = 65;
+  string pause29_started_at = 66;
+  string pause29_stopped_at = 67;
+  string pause200_started_at = 68;
+  string pause200_stopped_at = 69;
+  string pause201_started_at = 70;
+  string pause201_stopped_at = 71;
+  string pause202_started_at = 72;
+  string pause202_stopped_at = 73;
+
+  string comment = 74;
+
+  // Shift 3
+  int32 start3_id = 75;
+  string start3_started_at = 76;
+  int32 stop3_id = 77;
+  string stop3_stopped_at = 78;
+  int32 pause3_id = 79;
+  string pause3_started_at = 80;
+  string pause3_stopped_at = 81;
+
+  // Shift 4
+  int32 start4_id = 82;
+  string start4_started_at = 83;
+  int32 stop4_id = 84;
+  string stop4_stopped_at = 85;
+  int32 pause4_id = 86;
+  string pause4_started_at = 87;
+  string pause4_stopped_at = 88;
+
+  // Shift 5
+  int32 start5_id = 89;
+  string start5_started_at = 90;
+  int32 stop5_id = 91;
+  string stop5_stopped_at = 92;
+  int32 pause5_id = 93;
+  string pause5_started_at = 94;
+  string pause5_stopped_at = 95;
+
+  double net_working_hours = 96;
+  double flex_hours = 97;
+  double paid_out_flex = 98;
+  string message = 99;
+  double sum_flex_start = 100;
+  double sum_flex_end = 101;
+}
+
+message ReadWorkingHoursResponse {
+  bool success = 1;
+  string message = 2;
+  WorkingHoursModel model = 3;
+}
+
+message UpdateWorkingHoursRequest {
+  string token = 1;
+  int32 sdk_site_id = 2;
+  string date = 3;
+  WorkingHoursModel model = 4;
+  DeviceMetadata device = 5;
+}
+
+message UpdateWorkingHoursResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CalculateHoursSummaryRequest {
+  string start_date = 1;
+  string end_date = 2;
+  DeviceMetadata device = 3;
+}
+
+message HoursSummaryModel {
+  double total_worked_hours = 1;
+  double total_worked_minutes = 2;
+  double total_planned_hours = 3;
+  double total_planned_minutes = 4;
+  double total_flex_hours = 5;
+  double total_flex_minutes = 6;
+  double paid_out_flex = 7;
+}
+
+message CalculateHoursSummaryResponse {
+  bool success = 1;
+  string message = 2;
+  HoursSummaryModel model = 3;
+}
+
+service TimePlanningWorkingHoursService {
+  rpc ReadWorkingHours(ReadWorkingHoursRequest) returns (ReadWorkingHoursResponse);
+  rpc UpdateWorkingHours(UpdateWorkingHoursRequest) returns (UpdateWorkingHoursResponse);
+  rpc CalculateHoursSummary(CalculateHoursSummaryRequest) returns (CalculateHoursSummaryResponse);
+}
