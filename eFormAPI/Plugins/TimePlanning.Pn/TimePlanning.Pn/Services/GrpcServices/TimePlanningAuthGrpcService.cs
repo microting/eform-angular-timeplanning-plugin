@@ -21,7 +21,7 @@ public class TimePlanningAuthGrpcService : TimePlanningAuthService.TimePlanningA
     {
         var model = new TimePlanningRegistrationDeviceActivateModel
         {
-            CustomerNo = int.Parse(request.CustomerNo),
+            CustomerNo = int.TryParse(request.CustomerNo, out var custNo) ? custNo : 0,
             OtCode = request.OtCode
         };
 

@@ -3,6 +3,8 @@ syntax = "proto3";
 package timeplanning;
 
 import "common.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
 
 option csharp_namespace = "TimePlanning.Pn.Grpc";
 
