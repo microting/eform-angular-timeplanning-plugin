@@ -209,6 +209,9 @@ public class EformTimePlanningPlugin : IEformPlugin
         appBuilder.UseEndpoints(endpoints =>
         {
             endpoints.MapGrpcService<TimePlanningSettingsGrpcService>();
+            endpoints.MapGrpcService<TimePlanningAuthGrpcService>();
+            endpoints.MapGrpcService<TimePlanningWorkingHoursGrpcService>();
+            endpoints.MapGrpcService<TimePlanningPlanningsGrpcService>();
         });
     }
 
