@@ -111,7 +111,7 @@ public class TimePlanningAuthGrpcService : TimePlanningAuthService.TimePlanningA
         }
     }
 
-    private object? ResolveAuthService()
+    protected virtual object? ResolveAuthService()
     {
         var authServiceType = Type.GetType(
             "eFormAPI.Web.Abstractions.IAuthService, eFormAPI.Web");
