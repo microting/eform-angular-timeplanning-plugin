@@ -27,8 +27,8 @@ public class TimePlanningAbsenceRequestGrpcService
             var model = new AbsenceRequestCreateModel
             {
                 RequestedBySdkSitId = request.RequestedBySdkSiteId,
-                DateFrom = DateTime.Parse(request.DateFrom),
-                DateTo = DateTime.Parse(request.DateTo),
+                DateFrom = DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture),
+                DateTo = DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture),
                 MessageId = request.MessageId,
                 RequestComment = request.RequestComment,
             };

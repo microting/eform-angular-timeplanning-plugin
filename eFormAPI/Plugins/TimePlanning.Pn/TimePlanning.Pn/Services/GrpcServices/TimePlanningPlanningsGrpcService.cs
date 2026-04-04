@@ -25,8 +25,8 @@ public class TimePlanningPlanningsGrpcService
     {
         var requestModel = new TimePlanningPlanningRequestModel
         {
-            DateFrom = DateTime.Parse(request.DateFrom),
-            DateTo = DateTime.Parse(request.DateTo),
+            DateFrom = DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture),
+            DateTo = DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture),
             Sort = request.Sort,
             IsSortDsc = request.IsSortDsc,
         };
@@ -94,8 +94,8 @@ public class TimePlanningPlanningsGrpcService
         {
             var requestModel = new TimePlanningPlanningRequestModel
             {
-                DateFrom = string.IsNullOrEmpty(request.DateFrom) ? null : DateTime.Parse(request.DateFrom),
-                DateTo = string.IsNullOrEmpty(request.DateTo) ? null : DateTime.Parse(request.DateTo),
+                DateFrom = string.IsNullOrEmpty(request.DateFrom) ? null : DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture),
+                DateTo = string.IsNullOrEmpty(request.DateTo) ? null : DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture),
                 SiteId = request.SiteId == 0 ? null : request.SiteId,
                 Sort = request.Sort,
                 IsSortDsc = request.IsSortDsc,

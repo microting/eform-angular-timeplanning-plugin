@@ -159,6 +159,27 @@ public class TimePlanningAbsenceRequestGrpcServiceTests
     }
 
     [Test]
+    public async Task CancelAbsenceRequest_DelegatesToService()
+    {
+        _absenceRequestService.CancelAsync(Arg.Any<int>(), Arg.Any<int>())
+            .Returns(new OperationResult(true, "Cancelled"));
+
+        var request = new CancelAbsenceRequestRequest
+        {
+            AbsenceRequestId = 42,
+            RequestedBySdkSiteId = 7,
+        };
+
+        var response = await _grpcService.CancelAbsenceRequest(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(response.Message, Is.EqualTo("Cancelled"));
+
+        await _absenceRequestService.Received(1).CancelAsync(42, 7);
+    }
+
+    [Test]
     public async Task GetAbsenceRequestInbox_ReturnsList()
     {
         var list = new List<CsAbsenceRequestModel>

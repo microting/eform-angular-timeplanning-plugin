@@ -156,6 +156,27 @@ public class TimePlanningContentHandoverGrpcServiceTests
     }
 
     [Test]
+    public async Task CancelContentHandover_DelegatesToService()
+    {
+        _service.CancelAsync(Arg.Any<int>(), Arg.Any<int>())
+            .Returns(new OperationResult(true, "Cancelled"));
+
+        var request = new CancelContentHandoverRequest
+        {
+            RequestId = 42,
+            CurrentSdkSiteId = 10,
+        };
+
+        var response = await _grpcService.CancelContentHandover(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(response.Message, Is.EqualTo("Cancelled"));
+
+        await _service.Received(1).CancelAsync(42, 10);
+    }
+
+    [Test]
     public async Task GetContentHandoverInbox_ReturnsList()
     {
         var items = new List<CsContentHandoverRequestModel>
