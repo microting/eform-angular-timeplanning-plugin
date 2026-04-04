@@ -164,4 +164,134 @@ public class TimePlanningPlanningsGrpcServiceTests
         Assert.That(response.Success, Is.True);
         Assert.That(response.Model.PlanningPrDayModels, Has.Count.EqualTo(0));
     }
+
+    [Test]
+    public async Task IndexPlannings_Success_ReturnsListWithNewFields()
+    {
+        var models = new List<TimePlanningPlanningModel>
+        {
+            new()
+            {
+                SiteId = 5,
+                SiteName = "John",
+                SoftwareVersion = "1.0",
+                DeviceModel = "Pixel",
+                DeviceManufacturer = "Google",
+                AvatarUrl = "",
+                PlannedHours = 8,
+                PlannedMinutes = 0,
+                CurrentWorkedHours = 4,
+                CurrentWorkedMinutes = 30,
+                PercentageCompleted = 56,
+                SoftwareVersionIsValid = true,
+                PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>
+                {
+                    new()
+                    {
+                        Id = 10,
+                        Date = new DateTime(2026, 4, 3),
+                        PlanText = "Work",
+                        PlanHours = 8,
+                        ActualHours = 4.5,
+                        Difference = -3.5,
+                        SiteId = 5,
+                    }
+                }
+            }
+        };
+
+        _planningService.Index(Arg.Any<TimePlanningPlanningRequestModel>())
+            .Returns(new OperationDataResult<List<TimePlanningPlanningModel>>(true, models));
+
+        var request = new IndexPlanningsRequest
+        {
+            DateFrom = "2026-04-01",
+            DateTo = "2026-04-07",
+            Sort = "Date",
+            IsSortDsc = false,
+        };
+
+        var response = await _grpcService.IndexPlannings(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(response.Models, Has.Count.EqualTo(1));
+        var m = response.Models[0];
+        Assert.That(m.SiteId, Is.EqualTo(5));
+        Assert.That(m.SiteName, Is.EqualTo("John"));
+        Assert.That(m.SoftwareVersion, Is.EqualTo("1.0"));
+        Assert.That(m.DeviceModel, Is.EqualTo("Pixel"));
+        Assert.That(m.DeviceManufacturer, Is.EqualTo("Google"));
+        Assert.That(m.PlanningPrDayModels, Has.Count.EqualTo(1));
+        Assert.That(m.PlanningPrDayModels[0].PlanText, Is.EqualTo("Work"));
+    }
+
+    [Test]
+    public async Task IndexPlannings_Failure_ReturnsError()
+    {
+        _planningService.Index(Arg.Any<TimePlanningPlanningRequestModel>())
+            .Returns(new OperationDataResult<List<TimePlanningPlanningModel>>(false, "Not found"));
+
+        var response = await _grpcService.IndexPlannings(
+            new IndexPlanningsRequest { DateFrom = "2026-04-01", DateTo = "2026-04-07" },
+            TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.False);
+        Assert.That(response.Message, Is.EqualTo("Not found"));
+    }
+
+    [Test]
+    public async Task UpdatePlanning_Success_DelegatesToService()
+    {
+        _planningService.Update(Arg.Any<int>(), Arg.Any<TimePlanningPlanningPrDayModel>())
+            .Returns(new OperationResult(true, "Updated"));
+
+        var request = new UpdatePlanningRequest
+        {
+            PlanningId = 99,
+            Model = new Grpc.PlanningPrDayModel
+            {
+                Id = 42,
+                Date = Timestamp.FromDateTime(DateTime.SpecifyKind(new DateTime(2026, 4, 3), DateTimeKind.Utc)),
+                PlanText = "Meeting",
+                PlanHours = 4,
+                SdkSiteId = 5,
+            }
+        };
+
+        var response = await _grpcService.UpdatePlanning(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _planningService.Received(1).Update(
+            99,
+            Arg.Is<TimePlanningPlanningPrDayModel>(m =>
+                m.Id == 42 &&
+                m.PlanText == "Meeting" &&
+                m.SiteId == 5));
+    }
+
+    [Test]
+    public async Task UpdatePlanning_Failure_ReturnsError()
+    {
+        _planningService.Update(Arg.Any<int>(), Arg.Any<TimePlanningPlanningPrDayModel>())
+            .Returns(new OperationResult(false, "Forbidden"));
+
+        var request = new UpdatePlanningRequest
+        {
+            PlanningId = 1,
+            Model = new Grpc.PlanningPrDayModel
+            {
+                Id = 1,
+                Date = Timestamp.FromDateTime(DateTime.SpecifyKind(new DateTime(2026, 4, 3), DateTimeKind.Utc)),
+            }
+        };
+
+        var response = await _grpcService.UpdatePlanning(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.False);
+        Assert.That(response.Message, Is.EqualTo("Forbidden"));
+    }
 }

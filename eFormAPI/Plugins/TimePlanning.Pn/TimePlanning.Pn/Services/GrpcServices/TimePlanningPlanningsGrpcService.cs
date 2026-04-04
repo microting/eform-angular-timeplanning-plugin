@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
@@ -83,6 +85,98 @@ public class TimePlanningPlanningsGrpcService
             Success = result.Success,
             Message = result.Message ?? ""
         };
+    }
+
+    public override async Task<IndexPlanningsResponse> IndexPlannings(
+        IndexPlanningsRequest request, ServerCallContext context)
+    {
+        try
+        {
+            var requestModel = new TimePlanningPlanningRequestModel
+            {
+                DateFrom = string.IsNullOrEmpty(request.DateFrom) ? null : DateTime.Parse(request.DateFrom),
+                DateTo = string.IsNullOrEmpty(request.DateTo) ? null : DateTime.Parse(request.DateTo),
+                SiteId = request.SiteId == 0 ? null : request.SiteId,
+                Sort = request.Sort,
+                IsSortDsc = request.IsSortDsc,
+                ShowResignedSites = request.ShowResignedSites,
+                TagIds = request.TagIds.ToList(),
+            };
+
+            var result = await _planningService.Index(requestModel);
+
+            var response = new IndexPlanningsResponse
+            {
+                Success = result.Success,
+                Message = result.Message ?? ""
+            };
+
+            if (result.Success && result.Model != null)
+            {
+                foreach (var m in result.Model)
+                {
+                    var grpcModel = new PlanningsByUserModel
+                    {
+                        SiteId = m.SiteId,
+                        AvatarUrl = m.AvatarUrl ?? "",
+                        CurrentWorkedHours = m.CurrentWorkedHours,
+                        CurrentWorkedMinutes = m.CurrentWorkedMinutes,
+                        PercentageCompleted = m.PercentageCompleted,
+                        PlannedHours = m.PlannedHours,
+                        PlannedMinutes = m.PlannedMinutes,
+                        SoftwareVersionIsValid = m.SoftwareVersionIsValid,
+                        SiteName = m.SiteName ?? "",
+                        SoftwareVersion = m.SoftwareVersion ?? "",
+                        DeviceModel = m.DeviceModel ?? "",
+                        DeviceManufacturer = m.DeviceManufacturer ?? "",
+                    };
+
+                    if (m.PlanningPrDayModels != null)
+                    {
+                        foreach (var day in m.PlanningPrDayModels)
+                        {
+                            grpcModel.PlanningPrDayModels.Add(MapDayToGrpc(day));
+                        }
+                    }
+
+                    response.Models.Add(grpcModel);
+                }
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            return new IndexPlanningsResponse
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public override async Task<UpdatePlanningResponse> UpdatePlanning(
+        UpdatePlanningRequest request, ServerCallContext context)
+    {
+        try
+        {
+            var model = MapDayFromGrpc(request.Model);
+            var result = await _planningService.Update(request.PlanningId, model);
+
+            return new UpdatePlanningResponse
+            {
+                Success = result.Success,
+                Message = result.Message ?? ""
+            };
+        }
+        catch (Exception ex)
+        {
+            return new UpdatePlanningResponse
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
     }
 
     private static string FormatDateTime(DateTime? dt) =>
