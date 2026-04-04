@@ -40,6 +40,8 @@
       <Protobuf Include="Protos\auth.proto" GrpcServices="Server" ProtoRoot="Protos" />
       <Protobuf Include="Protos\working_hours.proto" GrpcServices="Server" ProtoRoot="Protos" />
       <Protobuf Include="Protos\plannings.proto" GrpcServices="Server" ProtoRoot="Protos" />
+      <Protobuf Include="Protos\absence_request.proto" GrpcServices="Server" ProtoRoot="Protos" />
+      <Protobuf Include="Protos\content_handover.proto" GrpcServices="Server" ProtoRoot="Protos" />
     </ItemGroup>
 
     <ItemGroup>

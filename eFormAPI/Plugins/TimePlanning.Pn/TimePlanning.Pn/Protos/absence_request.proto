@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package timeplanning;
+
+import "common.proto";
+
+option csharp_namespace = "TimePlanning.Pn.Grpc";
+
+message CreateAbsenceRequestRequest {
+  int32 requested_by_sdk_site_id = 1;
+  string date_from = 2;
+  string date_to = 3;
+  int32 message_id = 4;
+  string request_comment = 5;
+  DeviceMetadata device = 6;
+}
+
+message AbsenceDecisionRequest {
+  int32 absence_request_id = 1;
+  int32 manager_sdk_sit_id = 2;
+  string decision_comment = 3;
+  DeviceMetadata device = 4;
+}
+
+message CancelAbsenceRequestRequest {
+  int32 absence_request_id = 1;
+  int32 requested_by_sdk_site_id = 2;
+  DeviceMetadata device = 3;
+}
+
+message GetAbsenceRequestsRequest {
+  int32 sdk_site_id = 1;
+  DeviceMetadata device = 2;
+}
+
+message AbsenceRequestDayModel {
+  string date = 1;
+  int32 message_id = 2;
+}
+
+message AbsenceRequestModel {
+  int32 id = 1;
+  int32 requested_by_sdk_site_id = 2;
+  string date_from = 3;
+  string date_to = 4;
+  string status = 5;
+  string requested_at_utc = 6;
+  string decided_at_utc = 7;
+  int32 decided_by_sdk_site_id = 8;
+  string request_comment = 9;
+  string decision_comment = 10;
+  repeated AbsenceRequestDayModel days = 11;
+}
+
+message AbsenceRequestResponse {
+  bool success = 1;
+  string message = 2;
+  AbsenceRequestModel model = 3;
+}
+
+message AbsenceRequestListResponse {
+  bool success = 1;
+  string message = 2;
+  repeated AbsenceRequestModel models = 3;
+}
+
+service TimePlanningAbsenceRequestService {
+  rpc CreateAbsenceRequest(CreateAbsenceRequestRequest) returns (AbsenceRequestResponse);
+  rpc ApproveAbsenceRequest(AbsenceDecisionRequest) returns (OperationResponse);
+  rpc RejectAbsenceRequest(AbsenceDecisionRequest) returns (OperationResponse);
+  rpc CancelAbsenceRequest(CancelAbsenceRequestRequest) returns (OperationResponse);
+  rpc GetAbsenceRequestInbox(GetAbsenceRequestsRequest) returns (AbsenceRequestListResponse);
+  rpc GetMyAbsenceRequests(GetAbsenceRequestsRequest) returns (AbsenceRequestListResponse);
+}

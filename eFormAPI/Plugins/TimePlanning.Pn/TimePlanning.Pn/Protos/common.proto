@@ -19,3 +19,8 @@ message DeviceMetadata {
   string manufacturer = 3;
   string os_version = 4;
 }
+
+message OperationResponse {
+  bool success = 1;
+  string message = 2;
+}
