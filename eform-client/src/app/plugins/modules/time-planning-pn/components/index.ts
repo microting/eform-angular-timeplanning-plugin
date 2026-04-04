@@ -1,3 +1,2 @@
-export * from './settings';
-export * from './plannings';
-export * from './flexes';
+export * from './settings/time-planning-settings/time-planning-settings.component';
+export * from './plannings'

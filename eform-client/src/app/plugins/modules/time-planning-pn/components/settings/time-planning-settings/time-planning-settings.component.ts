@@ -1,189 +1,83 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  OnDestroy,
-  OnInit,
-  ViewChild,
+import {Component, OnDestroy, OnInit,
+  inject
 } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
-import {
-  SitesService,
-  FoldersService,
-  EFormService,
-} from 'src/app/common/services';
-import {
-  FolderDto,
-  SiteNameDto,
-  TemplateListModel,
-  TemplateRequestModel,
-} from 'src/app/common/models';
-import { composeFolderName } from 'src/app/common/helpers';
-import { TimePlanningSettingsModel } from '../../../models';
-import { TimePlanningPnSettingsService } from '../../../services';
-import {
-  TimePlanningSettingsFoldersModalComponent,
-  TimePlanningSettingsAddSiteModalComponent,
-  TimePlanningSettingsRemoveSiteModalComponent,
-} from '../../../components';
+import {Subscription} from 'rxjs';
+import {TimePlanningPnSettingsService} from '../../../services';
+import {TimePlanningSettingsModel} from '../../../models';
+import {selectCurrentUserIsFirstUser} from 'src/app/state';
+import {Store} from '@ngrx/store';
 
-@AutoUnsubscribe()
 @Component({
-  selector: 'app-time-planning-settings',
-  templateUrl: './time-planning-settings.component.html',
-  styleUrls: ['./time-planning-settings.component.scss'],
+    selector: 'app-time-planning-settings',
+    templateUrl: './time-planning-settings.component.html',
+    styleUrls: ['./time-planning-settings.component.scss'],
+    standalone: false
 })
 export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
-  @ViewChild('removeSiteModal')
-  removeSiteModal: TimePlanningSettingsRemoveSiteModalComponent;
-  @ViewChild('addSiteModal')
-  addSiteModal: TimePlanningSettingsAddSiteModalComponent;
-  @ViewChild('foldersModal', { static: false })
-  foldersModal: TimePlanningSettingsFoldersModalComponent;
-  timePlanningSettingsModel: TimePlanningSettingsModel = new TimePlanningSettingsModel();
-  sites: SiteNameDto[] = [];
-  foldersTreeDto: FolderDto[] = [];
-  foldersDto: FolderDto[] = [];
-  templateRequestModel: TemplateRequestModel = new TemplateRequestModel();
-  // typeahead = new EventEmitter<string>();
-  // templatesModel: TemplateListModel = new TemplateListModel();
+  private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
+  private store = inject(Store);
 
-  settingsSub$: Subscription;
-  sitesSub$: Subscription;
-  foldersSubTree$: Subscription;
-  foldersSub$: Subscription;
-  folderUpdateSub$: Subscription;
+  getSettings$: Subscription;
+  settingsModel: TimePlanningSettingsModel = new TimePlanningSettingsModel();
+  previousData: TimePlanningSettingsModel = new TimePlanningSettingsModel();
+  public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
-  constructor(
-    private settingsService: TimePlanningPnSettingsService,
-    private sitesService: SitesService,
-    private eFormService: EFormService,
-    private cd: ChangeDetectorRef,
-    private foldersService: FoldersService
-  ) {
-    // this.typeahead
-    //   .pipe(
-    //     debounceTime(200),
-    //     switchMap((term) => {
-    //       this.templateRequestModel.nameFilter = term;
-    //       return this.eFormService.getAll(this.templateRequestModel);
-    //     })
-    //   )
-    //   .subscribe((items) => {
-    //     this.templatesModel = items.model;
-    //     this.cd.markForCheck();
-    //   });
-  }
+  
 
-  ngOnInit(): void {
+  ngOnInit() {
+    this.previousData = {...this.settingsModel};
     this.getSettings();
-    // this.getAllEforms();
   }
 
-  // getAllEforms() {
-  //   this.eFormService.getAll(this.templateRequestModel).subscribe((items) => {
-  //     this.templatesModel = items.model;
-  //   });
-  // }
+  ngOnDestroy() {
+  }
 
   getSettings() {
-    this.settingsSub$ = this.settingsService
-      .getAllSettings()
-      .subscribe((data) => {
-        if (data && data.success) {
-          this.timePlanningSettingsModel = data.model;
-          this.loadAllFoldersTree();
-        }
-      });
-  }
-
-  getSites() {
-    this.sitesSub$ = this.sitesService.getAllSites().subscribe((data) => {
+    this.getSettings$ = this.timePlanningPnSettingsService.getAllSettings().subscribe((data) => {
       if (data && data.success) {
-        this.sites = data.model;
-        this.loadFlatFolders();
+        this.settingsModel = data.model;
       }
     });
   }
 
-  loadAllFoldersTree() {
-    this.foldersSubTree$ = this.foldersService
-      .getAllFolders()
-      .subscribe((operation) => {
-        if (operation && operation.success) {
-          this.foldersTreeDto = operation.model;
-          this.getSites();
-        }
-      });
-  }
 
-  loadFlatFolders() {
-    this.foldersSub$ = this.foldersService
-      .getAllFoldersList()
-      .subscribe((operation) => {
-        if (operation && operation.success) {
-          this.foldersDto = operation.model;
-        }
-      });
-  }
-
-  showAddNewSiteModal() {
-    this.addSiteModal.show(
-      this.sites,
-      this.timePlanningSettingsModel.assignedSites
-    );
-  }
-
-  showRemoveSiteModal(selectedSiteId: number) {
-    this.removeSiteModal.show(
-      this.sites.find((x) => x.siteUId === selectedSiteId)
-    );
-  }
-
-  openFoldersModal() {
-    this.foldersModal.show(this.timePlanningSettingsModel.folderId);
-  }
-
-  onFolderSelected(folderDto: FolderDto) {
-    if (folderDto) {
-      this.updateFolder(folderDto.id);
+  getConvertedValue(minutes: number, compareMinutes?: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    let result = `${this.padZero(hours)}:${this.padZero(mins)}`;
+    if (result === '00:00' && (compareMinutes === 0 || compareMinutes === undefined || compareMinutes === null)) {
+      result = '';
     }
+    return result;
   }
 
-  getFolderName(): string {
-    return this.timePlanningSettingsModel.folderId === null
-      ? ''
-      : composeFolderName(
-          this.timePlanningSettingsModel.folderId,
-          this.foldersDto
-        );
+  setMinutes(event: any, field: string): void {
+    const [hours, mins] = event.split(':').map(Number);
+    this.settingsModel[field] = (hours * 60) + mins;
+    // this.calculateHours();
+    this.previousData = {...this.settingsModel};
   }
 
-  updateFolder(folderDtoId: number) {
-    this.folderUpdateSub$ = this.settingsService
-      .updateSettingsFolder(folderDtoId)
-      .subscribe((operation) => {
-        if (operation && operation.success) {
-          this.getSettings();
-        }
-      });
+  private padZero(num: number): string {
+    return num < 10 ? `0${num}` : `${num}`;
   }
 
-  getNameSite(id: number) {
-    const index = this.sites.findIndex((x) => x.siteUId === id);
-    if (index !== -1) {
-      return this.sites[index].siteName;
+  updateGoogleSheetSettings() {
+    if (this.settingsModel.dayOfPayment > 28) {
+      this.settingsModel.dayOfPayment = 28;
     }
+    this.timePlanningPnSettingsService.updateSettings(this.settingsModel).subscribe((data) => {
+      if (data && data.success) {
+        this.getSettings();
+      }
+    });
   }
 
-  // updateEform(eformId: number) {
-  //   this.settingsService.updateSettingsEform(eformId).subscribe((operation) => {
-  //     if (operation && operation.success) {
-  //       this.getSettings();
-  //     }
-  //   });
-  // }
-
-  ngOnDestroy(): void {}
+  resetGlobalAutoBreakCalculationSettings() {
+    this.timePlanningPnSettingsService.resetGlobalAutoBreakCalculationSettings().subscribe((data) => {
+      if (data && data.success) {
+        this.getSettings();
+      }
+    })
+  }
 }

@@ -18,74 +18,110 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Controllers
+using System.Collections.Generic;
+using Microting.TimePlanningBase.Infrastructure.Const;
+
+namespace TimePlanning.Pn.Controllers;
+
+using System.Threading.Tasks;
+using Infrastructure.Models.Settings;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Services.TimePlanningSettingService;
+
+[Route("api/time-planning-pn/settings")]
+public class TimePlanningSettingsController(ISettingService settingService) : Controller
 {
-    using System.Threading.Tasks;
-    using Castle.Core;
-    using Infrastructure.Models.Settings;
-    using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.Mvc;
-    using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
-    using Services.TimePlanningSettingService;
-
-    [Route("api/time-planning-pn/settings")]
-    public class TimePlanningSettingsController : Controller
+    [HttpGet]
+    [Authorize(Roles = EformRole.Admin)]
+    public async Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
     {
-        private readonly ISettingService _settingService;
+        return await settingService.GetSettings();
+    }
 
-        public TimePlanningSettingsController(ISettingService settingService)
-        {
-            _settingService = settingService;
-        }
+    [HttpPut]
+    [Authorize(Roles = EformRole.Admin)]
+    public async Task<OperationResult> UpdateSettings([FromBody] TimePlanningSettingsModel timePlanningSettingsModel)
+    {
+        return await settingService.UpdateSettings(timePlanningSettingsModel);
+    }
 
-        [HttpGet]
-        [Authorize(Roles = EformRole.Admin)]
-        public async Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
-        {
-            return await _settingService.GetSettings();
-        }
+    // [HttpPut]
+    // [Route("sites")]
+    // [Authorize(Roles = EformRole.Admin)]
+    // public async Task<OperationResult> AddSite([FromBody] int siteId)
+    // {
+    //     return await settingService.AddSite(siteId);
+    // }
 
-        [HttpPut]
-        [Route("folder")]
-        [Authorize(Roles = EformRole.Admin)]
-        public async Task<OperationResult> UpdateFolder([FromBody] int folderId)
-        {
-            return await _settingService.UpdateFolder(folderId);
-        }
+    // [HttpDelete]
+    // [Route("sites")]
+    // [Authorize(Roles = EformRole.User)]
+    // public async Task<OperationResult> DeleteSite(int siteId)
+    // {
+    //     return await settingService.DeleteSite(siteId);
+    // }
 
+    [HttpGet]
+    [Route("sites")]
+    [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
+    public async Task<OperationDataResult<List<Site>>> GetAvailableSites()
+    {
+        return await settingService.GetAvailableSites(null);
+    }
 
-        [HttpPut]
-        [Route("sites")]
-        [Authorize(Roles = EformRole.Admin)]
-        public async Task<OperationResult> AddSite([FromBody] int siteId)
-        {
-            return await _settingService.AddSite(siteId);
-        }
+    [HttpGet]
+    [Route("resigned-sites")]
+    [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
+    public async Task<OperationDataResult<List<Site>>> GetResignedSites()
+    {
+        return await settingService.GetResignedSites();
+    }
 
+    [HttpGet]
+    [Route("registration-sites")]
+    public async Task<OperationDataResult<List<Site>>> RegistrationSites(string token)
+    {
+        return await settingService.GetAvailableSites(token);
+    }
 
-/*        [HttpPut]
-        [Route("eform")]
-        [Authorize(Roles = EformRole.Admin)]
-        public async Task<OperationResult> UpdateEform([FromBody] int eformId)
-        {
-            return await _settingService.UpdateEform(eformId);
-        }*/
+    [HttpGet]
+    [Route("assigned-sites")]
+    [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
+    public async Task<OperationDataResult<AssignedSite>> GetAssignedSite(int siteId)
+    {
+        return await settingService.GetAssignedSite(siteId);
+    }
 
-        [HttpDelete]
-        [Route("sites")]
-        [Authorize(Roles = EformRole.Admin)]
-        public async Task<OperationResult> DeleteSite(int siteId)
-        {
-            return await _settingService.DeleteSite(siteId);
-        }
+    [HttpGet]
+    [Route("assigned-site")]
+    public async Task<OperationDataResult<AssignedSite>> GetAssignedSiteByCurrentUserName()
+    {
+        return await settingService.GetAssignedSiteByCurrentUserName();
+    }
 
-        [HttpGet]
-        [Route("sites")]
-        [Authorize(Roles = EformRole.Admin)]
-        public async Task<OperationResult> GetAvailableSites()
-        {
-            return await _settingService.GetAvailableites();
-        }
+    [HttpPut]
+    [Route("assigned-site")]
+    [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
+    public async Task<OperationResult> UpdateAssignedSite([FromBody] AssignedSite site)
+    {
+        return await settingService.UpdateAssignedSite(site);
+    }
+
+    [HttpGet]
+    [Route("global-auto-break-settings")]
+    public async Task<OperationDataResult<GlobalAutoBreakSettings>> GetGlobalAutoBreakSettings()
+    {
+        return await settingService.GetGlobalAutoBreakSettings();
+    }
+
+    [HttpDelete]
+    [Route("reset-global-auto-break-settings")]
+    [Authorize(Roles = EformRole.Admin)]
+    public OperationResult ResetGlobalAutoBreakSettings()
+    {
+        return settingService.ResetGlobalAutoBreakSettings();
     }
 }

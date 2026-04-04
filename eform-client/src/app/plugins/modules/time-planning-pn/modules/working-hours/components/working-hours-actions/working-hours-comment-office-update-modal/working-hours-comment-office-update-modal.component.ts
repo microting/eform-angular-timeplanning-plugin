@@ -1,22 +1,29 @@
-import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
-import { FormGroup } from '@angular/forms';
+import {Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
+import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
+import {FormGroup} from '@angular/forms';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
 @AutoUnsubscribe()
 @Component({
-  selector: 'app-working-hours-comment-office-update-modal',
-  templateUrl: './working-hours-comment-office-update-modal.component.html',
-  styleUrls: ['./working-hours-comment-office-update-modal.component.scss'],
+    selector: 'app-working-hours-comment-office-update-modal',
+    templateUrl: './working-hours-comment-office-update-modal.component.html',
+    styleUrls: ['./working-hours-comment-office-update-modal.component.scss'],
+    standalone: false
 })
 export class WorkingHoursCommentOfficeUpdateModalComponent
   implements OnInit, OnDestroy {
-  @ViewChild('frame', { static: false }) frame;
-  @Input() workingHoursForm: FormGroup;
+  public dialogRef = inject(MatDialogRef<WorkingHoursCommentOfficeUpdateModalComponent>);
+  public workingHoursForm = inject<FormGroup>(MAT_DIALOG_DATA);
+
   commentOffice: string;
 
-  constructor() {}
+  
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.commentOffice = this.workingHoursForm.get('commentOffice').value;
+  }
 
   get date(): Date {
     return this.workingHoursForm.get('date').value;
@@ -26,19 +33,15 @@ export class WorkingHoursCommentOfficeUpdateModalComponent
     return this.workingHoursForm.get('workerName').value;
   }
 
-  show(): void {
-    this.commentOffice = this.workingHoursForm.get('commentOffice').value;
-    this.frame.show();
-  }
-
   save() {
     this.workingHoursForm.get('commentOffice').setValue(this.commentOffice);
     this.hide();
   }
 
   hide() {
-    this.frame.hide();
+    this.dialogRef.close();
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void {
+  }
 }

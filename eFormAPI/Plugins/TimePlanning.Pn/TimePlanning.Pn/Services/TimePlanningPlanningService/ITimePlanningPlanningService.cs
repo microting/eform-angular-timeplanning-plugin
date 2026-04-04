@@ -22,17 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.TimePlanningPlanningService
+#nullable enable
+namespace TimePlanning.Pn.Services.TimePlanningPlanningService;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Infrastructure.Models.Planning;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+
+public interface ITimePlanningPlanningService
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.Planning;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+    Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(TimePlanningPlanningRequestModel model);
+    //
+    // Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model);
+    Task<OperationResult> Update(int id, TimePlanningPlanningPrDayModel model);
+    Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserName(TimePlanningPlanningRequestModel model, string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion);
 
-    public interface ITimePlanningPlanningService
-    {
-        Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(TimePlanningPlanningRequestModel model);
-
-        Task<OperationResult> UpdateCreatePlanning(TimePlanningPlanningUpdateModel model);
-    }
+    Task<OperationResult> UpdateByCurrentUserNam(TimePlanningPlanningPrDayModel model);
+    Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId);
 }

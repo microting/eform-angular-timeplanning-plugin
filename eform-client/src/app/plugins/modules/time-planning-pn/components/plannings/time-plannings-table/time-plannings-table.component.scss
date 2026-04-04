@@ -1,0 +1,64 @@
+.hours-info {
+  margin-left: 10px; /* Adjust the margin as needed */
+  text-wrap: pretty;
+}
+
+.hours-info strong {
+  display: block;
+  max-width: 150px;
+}
+
+.comment {
+  display: flex;
+  max-width: 250px;
+}
+
+.first-column {
+  min-width: 220px !important;
+}
+
+.time-dashboard table {
+  height: 100%;
+}
+
+.time-dashboard table td {
+  //background-color: var(--tp-td-bg);
+  border-right: 1px solid var(--tp-border);
+  border-bottom: 1px solid var(--tp-border);
+  color: var(--tp-text);
+}
+
+.time-dashboard table tr th {
+  //background-color: var(--tp-th-bg) !important;
+  font-size: 14px;
+  font-weight: 500;
+  border-right: 1px solid var(--tp-border);
+  border-top: 1px solid var(--tp-border);
+  border-left: 1px solid var(--tp-border);
+  color: var(--tp-text);
+}
+
+@keyframes highlightCellFade {
+  0% {
+    outline: 4px solid #fbc02d;
+    outline-offset: -4px;
+    box-shadow: inset 0 0 0 2000px rgba(255, 249, 196, 0.5);
+  }
+  70% {
+    outline: 4px solid #fbc02d;
+    outline-offset: -4px;
+    box-shadow: inset 0 0 0 2000px rgba(255, 249, 196, 0.5);
+  }
+  100% {
+    outline: 4px solid transparent;
+    outline-offset: -4px;
+    box-shadow: inset 0 0 0 2000px rgba(255, 249, 196, 0);
+  }
+}
+
+.highlight-cell {
+  animation: highlightCellFade 3s ease-out !important;
+  position: relative;
+  z-index: 1;
+}
+

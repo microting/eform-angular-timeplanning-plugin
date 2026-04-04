@@ -1,0 +1,15 @@
+<eform-new-subheader>
+  <button
+    class="btn-primary btn-primary--icon-left"
+    id="registrationDeviceCreateBtn"
+    (click)="openCreateModal()"
+  >
+    {{ 'Create device' | translate }}
+  </button>
+</eform-new-subheader>
+
+<app-registration-devices-table
+  [registrationDevices]="registrationDevices"
+  (filtersChanged)="onRegistrationDevicesFiltersChanged($event)"
+  (updateRegistrationDevices)="onUpdateRegistrationDevices()"
+  [tainted]="tainted"></app-registration-devices-table>

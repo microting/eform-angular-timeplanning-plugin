@@ -3,6 +3,8 @@ import { Observable } from 'rxjs';
 import { OperationDataResult, OperationResult } from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
 import {
+  TimeFlexesModel,
+  TimeFlexesUpdateModel,
   TimePlanningModel,
   TimePlanningsRequestModel,
   TimePlanningsUpdateModel,
@@ -10,8 +12,8 @@ import {
 } from '../models';
 
 export let TimePlanningPnFlexesMethods = {
-  Flexes: 'api/time-planning-pn/flexes',
-  FlexesIndex: 'api/time-planning-pn/flexes/index',
+  IndexFlex: 'api/time-planning-pn/flex/index',
+  Flex: 'api/time-planning-pn/flex',
 };
 
 @Injectable({
@@ -55,4 +57,12 @@ export class TimePlanningPnFlexesService {
   //     model
   //   );
   // }
+
+  getFlexes(): Observable<OperationDataResult<TimeFlexesModel[]>> {
+    return this.apiBaseService.get(TimePlanningPnFlexesMethods.IndexFlex);
+  }
+
+  updateFlexes(model: TimeFlexesUpdateModel[]): Observable<OperationResult> {
+    return this.apiBaseService.put(TimePlanningPnFlexesMethods.Flex, model);
+  }
 }

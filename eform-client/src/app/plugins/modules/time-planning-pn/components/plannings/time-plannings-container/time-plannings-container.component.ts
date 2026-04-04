@@ -1,86 +1,224 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
-import { Subscription } from 'rxjs';
+import {Subscription, take, forkJoin} from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
-import { TimePlanningsStateService } from '../store';
-import { TimePlanningModel, TimePlanningsRequestModel } from '../../../models';
+import {AssignedSiteModel, CommonTagModel, TimePlanningModel, TimePlanningsRequestModel} from '../../../models';
 import {
   TimePlanningPnPlanningsService,
   TimePlanningPnSettingsService,
 } from '../../../services';
+import {startOfWeek, endOfWeek, format} from 'date-fns';
+import {ExcelIcon, iOSIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
+import {Store} from '@ngrx/store';
+import {selectCurrentUserLocale} from 'src/app/state';
+import {MatDialog} from '@angular/material/dialog';
+import {DownloadExcelDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
+import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 
 @AutoUnsubscribe()
 @Component({
   selector: 'app-time-plannings-container',
   templateUrl: './time-plannings-container.component.html',
   styleUrls: ['./time-plannings-container.component.scss'],
+  standalone: false
 })
 export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
+  private store = inject(Store);
+  private planningsService = inject(TimePlanningPnPlanningsService);
+  private settingsService = inject(TimePlanningPnSettingsService);
+  private dialog = inject(MatDialog);
+
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
+  availableTags: CommonTagModel[] = [];
+  selectedTagIds: number[] = [];
+  showResignedSites: boolean = false;
   timePlannings: TimePlanningModel[] = [];
+  selectedDate: Date = new Date();
+  dateFrom: Date;
+  dateTo: Date;
+  siteId: number = null; // Default to 0 to get all sites
 
   getTimePlannings$: Subscription;
   updateTimePlanning$: Subscription;
   getAvailableSites$: Subscription;
-
-  constructor(
-    private planningsService: TimePlanningPnPlanningsService,
-    private planningsStateService: TimePlanningsStateService,
-    private settingsService: TimePlanningPnSettingsService
-  ) {}
+  public selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
+  locale: string;
 
   ngOnInit(): void {
-    this.getAvailableSites();
-  }
-
-  getAvailableSites() {
-    this.getAvailableSites$ = this.settingsService
-      .getAvailableSites()
+    // Load available tags
+    this.settingsService
+      .getAvailableTags()
+      .pipe(take(1))
       .subscribe((data) => {
         if (data && data.success) {
-          this.availableSites = data.model;
+          this.availableTags = data.model;
         }
       });
+
+    if (!this.showResignedSites) {
+      this.settingsService
+        .getAvailableSites()
+        .subscribe((data) => {
+          if (data && data.success) {
+            this.availableSites = data.model;
+
+          }
+        });
+    } else {
+      this.getAvailableSites$ = this.settingsService
+        .getResignedSites()
+        .subscribe((data) => {
+          if (data && data.success) {
+            this.availableSites = data.model;
+
+          }
+        });
+    }
+    this.selectCurrentUserLocale$.pipe(take(1)).subscribe((locale) => {
+      this.locale = locale;
+      this.getPlannings();
+    });
   }
 
-  getPlannings(model: TimePlanningsRequestModel) {
-    this.getTimePlannings$ = this.planningsStateService
-      .getPlannings(model)
+  private buildTimePlanningsRequest() {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    if (!this.dateFrom) {
+      this.dateFrom = startOfWeek(now, { weekStartsOn: 1 });
+      this.dateTo = endOfWeek(now, { weekStartsOn: 1 });
+    }
+    this.timePlanningsRequest = {
+      dateFrom: format(this.dateFrom, PARSING_DATE_FORMAT),
+      dateTo: format(this.dateTo, PARSING_DATE_FORMAT),
+      sort: 'Date',
+      isSortDsc: true,
+      siteId: this.siteId,
+      showResignedSites: this.showResignedSites,
+      tagIds: this.selectedTagIds.length > 0 ? this.selectedTagIds : undefined
+    };
+  }
+
+  getPlannings() {
+    this.buildTimePlanningsRequest();
+    this.getTimePlannings$ = this.planningsService
+      .getPlannings(this.timePlanningsRequest)
       .subscribe((data) => {
         if (data && data.success) {
           this.timePlannings = data.model;
         }
       });
-  }
-
-  onTimePlanningsFiltersChanged(model: TimePlanningsRequestModel) {
-    this.timePlanningsRequest = { ...model };
-    this.getPlannings(model);
-  }
-
-  onUpdateTimePlanning(model: TimePlanningModel) {
-    this.updateTimePlanning$ = this.planningsService
-      .updatePlanning({
-        siteId: this.timePlanningsRequest.siteId,
-        date: model.date,
-        planText: model.planText,
-        message: model.message,
-        planHours: model.planHours,
-      })
-      .subscribe((data) => {
-        if (data && data.success) {
-          this.getPlannings(this.timePlanningsRequest);
-        }
-      });
-  }
-
-  ngOnDestroy(): void {}
-
-  onSortChanged(sort: string) {
-    this.planningsStateService.onSortTable(sort);
-    if (this.timePlanningsRequest) {
-      this.getPlannings(this.timePlanningsRequest);
     }
+
+  ngOnDestroy(): void {
+  }
+
+  goBackward() {
+    const tempEndDate = new Date(this.dateTo);
+    tempEndDate.setHours(0, 0, 0, 0);
+
+    let daysCount = (Math.floor((tempEndDate.getTime() - this.dateFrom.getTime()) / (1000 * 3600 * 24)) * -1) -1;
+    this.dateFrom = this.addDays(this.dateFrom, daysCount);
+    this.dateTo = this.addDays(this.dateTo, daysCount);
+    this.getPlannings();
+  }
+
+  openDownloadExcelDialog() {
+          const dialogRef = this.dialog.open(DownloadExcelDialogComponent, {
+            width: '600px',
+            data: this.availableSites,
+          });
+          dialogRef.afterClosed().subscribe((result) => {
+            // if (result) {
+            //   this.getPlannings();
+            // }
+          });
+  }
+
+  goForward() {
+    const tempEndDate = new Date(this.dateTo);
+    tempEndDate.setHours(0, 0, 0, 0);
+    let daysCount = Math.floor((tempEndDate.getTime() - this.dateFrom.getTime()) / (1000 * 3600 * 24)) +1;
+    this.dateFrom = this.addDays(this.dateFrom, daysCount);
+    this.dateTo = this.addDays(this.dateTo, daysCount);
+    this.getPlannings();
+  }
+
+  private addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  formatDateRange(): string {
+    const options = { year: 'numeric', month: 'numeric', day: 'numeric' } as const;
+    //const from = this.dateFrom.toLocaleDateString(undefined, options);
+    const from = format(this.dateFrom, 'dd.MM.yyyy');
+    //const to = this.dateTo.toLocaleDateString(undefined, options);
+    const to = format(this.dateTo, 'dd.MM.yyyy');
+    return `${from} - ${to}`;
+  }
+
+  onTimePlanningChanged($event: any) {
+    this.getPlannings();
+  }
+
+  onAssignedSiteChanged($event: any) {
+    this.getPlannings();
+  }
+
+  onSiteChanged($event: any) {
+    this.siteId = $event;
+    this.getPlannings();
+  }
+
+  updateDateFrom(dateFrom: MatDatepickerInputEvent<any, any>) {
+    this.dateFrom = dateFrom.value;
+  }
+
+  updateDateTo(dateTo: MatDatepickerInputEvent<any, any>) {
+    if (dateTo.value) {
+      this.dateTo = dateTo.value;
+      this.dateTo.setHours(23, 59, 59, 999);
+      this.getPlannings();
+    }
+  }
+
+  onShowResignedSitesChanged($event: any) {
+    this.showResignedSites = $event.checked;
+    this.buildTimePlanningsRequest();
+    const sitesCall$ = this.showResignedSites
+      ? this.settingsService.getResignedSites()
+      : this.settingsService.getAvailableSites();
+    this.getTimePlannings$ = forkJoin([
+      sitesCall$,
+      this.planningsService.getPlannings(this.timePlanningsRequest),
+    ]).subscribe(([sitesResult, planningsResult]) => {
+      if (sitesResult && sitesResult.success) {
+        this.availableSites = sitesResult.model;
+      }
+      if (planningsResult && planningsResult.success) {
+        this.timePlannings = planningsResult.model;
+      }
+    });
+  }
+
+  onTagsChanged($event: number[]) {
+    this.selectedTagIds = $event;
+    this.getPlannings();
+  }
+
+  /**
+   * Called by the table component when it has finished rendering
+   * the highlighted row/cell in the DOM. This guarantees both the service
+   * call and the mtx-grid rendering are complete before we consider the
+   * highlight cycle done.
+   */
+  onHighlightedRowRendered(): void {
+    // Highlight cleanup is handled inside the table component's scrollAndHighlightCell.
+    // This handler exists for consistency with the report-container pattern and can be
+    // extended if the container needs to react to the completed highlight.
   }
 }

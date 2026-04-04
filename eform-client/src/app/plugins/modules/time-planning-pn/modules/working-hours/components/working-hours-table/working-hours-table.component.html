@@ -1,25 +1,76 @@
-<div class="row p-1 table-responsive no-gutters scrollable-xy-block">
-  <table
-    mdbTable
-    striped="true"
-    hover="true"
-    small="true"
-    class="z-depth-1 text-center"
+<ng-template #toolbarTpl>
+  <app-working-hours-header
+    [workingHoursRequest]="workingHoursRequest"
+    [tainted]="tainted"
+    [availableSites]="availableSites"
+    (filtersChanged)="filtersChanged.emit($event)"
+    (updateWorkingHours)="updateWorkingHours.emit()"
+  ></app-working-hours-header>
+</ng-template>
+
+<mtx-grid
+  id="time-planning-pn-working-hours-grid"
+  [data]="workingHoursFormArray.controls"
+  [columns]="tableHeaders"
+  [showPaginator]="false"
+  [pageOnFront]="false"
+  [rowStriped]="false"
+  [showToolbar]="true"
+  [showColumnMenuButton]="false"
+  [toolbarTemplate]="toolbarTpl"
+  [rowClassFormatter]="rowClassFormatter"
+  noResultText="{{'Select period and worker to show plan' | translate}}"
+  style="max-height: 80vh;"
+>
+</mtx-grid>
+
+<ng-template #shiftSelectorTpl let-row let-index="index" let-col="colDef">
+  <mat-form-field [formGroup]="row" style="width: 100%;">
+    <mtx-select
+      [items]="hoursPickerArray"
+      [appendTo]="'body'"
+      bindValue="id"
+      bindLabel="value"
+      placeholder="{{'Select' | translate}}"
+      [formControlName]="col.field"
+      class="shift-select"
+    ></mtx-select>
+  </mat-form-field>
+</ng-template>
+
+<ng-template #inputTextTpl let-row let-index="index" let-col="colDef">
+  <mat-form-field
+    id="{{col.field}}{{index}}"
+    [formGroup]="row"
+    (click)="col.field === 'commentOffice' ? openEditCommentOfficeModal(row) : undefined"
   >
-    <thead table-headers [tableHeaders]="tableHeaders"></thead>
-    <tbody id="tableBody">
-      <ng-container
-        *ngFor="
-          let workingHoursForm of workingHoursFormArray.controls;
-          let i = index
-        "
-      >
-        <tr
-          working-hours-table-row
-          [workingHoursForm]="workingHoursForm"
-          [workingHoursFormIndex]="i"
-        ></tr>
-      </ng-container>
-    </tbody>
-  </table>
-</div>
+    <input
+      matInput
+      type="text"
+      [formControlName]="col.field"
+      height="100%"
+    >
+  </mat-form-field>
+</ng-template>
+
+<ng-template #inputNumberTpl let-row let-index="index" let-col="colDef">
+  <mat-form-field class="hours-input" [formGroup]="row" style="background-color: transparent !important;"
+                  id="{{col.field}}{{index}}">
+    <input matInput type="number" step="0.05" id="planHoursInput" [formControlName]="col.field">
+  </mat-form-field>
+</ng-template>
+
+<ng-template #messageSelectorTpl let-row let-index="index" let-col="colDef">
+  <mat-form-field style="min-width: 160px" [formGroup]="row">
+    <mtx-select
+      [appendTo]="'body'"
+      [items]="messages"
+      bindLabel="value"
+      bindValue="id"
+      [clearable]="false"
+      formControlName="{{col.field}}"
+      dropdownPosition="top"
+      [placeholder]="'Message' | translate"
+    ></mtx-select>
+  </mat-form-field>
+</ng-template>

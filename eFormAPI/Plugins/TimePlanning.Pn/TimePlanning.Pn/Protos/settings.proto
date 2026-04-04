@@ -1,0 +1,267 @@
+syntax = "proto3";
+
+package timeplanning;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "TimePlanning.Pn.Grpc";
+
+// Matches C# AutoBreakSettings.Day
+message BreakDaySettings {
+  int32 break_minutes_divider = 1;
+  int32 break_minutes_pr_divider = 2;
+  int32 break_minutes_upper_limit = 3;
+}
+
+// Matches C# AutoBreakSettings
+message AutoBreakSettings {
+  BreakDaySettings monday = 1;
+  BreakDaySettings tuesday = 2;
+  BreakDaySettings wednesday = 3;
+  BreakDaySettings thursday = 4;
+  BreakDaySettings friday = 5;
+  BreakDaySettings saturday = 6;
+  BreakDaySettings sunday = 7;
+}
+
+// Matches C# AssignedSite (143 properties)
+// Field numbers are stable — never reuse a number
+message AssignedSite {
+  int32 id = 1;
+  string site_name = 2;
+  int32 site_id = 3;
+  google.protobuf.Int32Value case_microting_uid = 4;
+
+  // Shift 1 schedule (Monday-Sunday)
+  google.protobuf.Int32Value start_monday = 5;
+  google.protobuf.Int32Value end_monday = 6;
+  google.protobuf.Int32Value break_monday = 7;
+  google.protobuf.Int32Value start_tuesday = 8;
+  google.protobuf.Int32Value end_tuesday = 9;
+  google.protobuf.Int32Value break_tuesday = 10;
+  google.protobuf.Int32Value start_wednesday = 11;
+  google.protobuf.Int32Value end_wednesday = 12;
+  google.protobuf.Int32Value break_wednesday = 13;
+  google.protobuf.Int32Value start_thursday = 14;
+  google.protobuf.Int32Value end_thursday = 15;
+  google.protobuf.Int32Value break_thursday = 16;
+  google.protobuf.Int32Value start_friday = 17;
+  google.protobuf.Int32Value end_friday = 18;
+  google.protobuf.Int32Value break_friday = 19;
+  google.protobuf.Int32Value start_saturday = 20;
+  google.protobuf.Int32Value end_saturday = 21;
+  google.protobuf.Int32Value break_saturday = 22;
+  google.protobuf.Int32Value start_sunday = 23;
+  google.protobuf.Int32Value end_sunday = 24;
+  google.protobuf.Int32Value break_sunday = 25;
+
+  bool resigned = 26;
+  google.protobuf.Timestamp resigned_at_date = 27;
+
+  // Break calculation settings per day
+  int32 monday_break_minutes_divider = 28;
+  int32 monday_break_minutes_pr_divider = 29;
+  int32 tuesday_break_minutes_divider = 30;
+  int32 tuesday_break_minutes_pr_divider = 31;
+  int32 wednesday_break_minutes_divider = 32;
+  int32 wednesday_break_minutes_pr_divider = 33;
+  int32 thursday_break_minutes_divider = 34;
+  int32 thursday_break_minutes_pr_divider = 35;
+  int32 friday_break_minutes_divider = 36;
+  int32 friday_break_minutes_pr_divider = 37;
+  int32 saturday_break_minutes_divider = 38;
+  int32 saturday_break_minutes_pr_divider = 39;
+  int32 sunday_break_minutes_divider = 40;
+  int32 sunday_break_minutes_pr_divider = 41;
+
+  bool global_auto_break_calculation_active = 42;
+  bool auto_break_calculation_active = 43;
+
+  int32 monday_break_minutes_upper_limit = 44;
+  int32 tuesday_break_minutes_upper_limit = 45;
+  int32 wednesday_break_minutes_upper_limit = 46;
+  int32 thursday_break_minutes_upper_limit = 47;
+  int32 friday_break_minutes_upper_limit = 48;
+  int32 saturday_break_minutes_upper_limit = 49;
+  int32 sunday_break_minutes_upper_limit = 50;
+
+  bool use_one_minute_intervals = 51;
+  bool allow_accept_of_planned_hours = 52;
+  bool allow_edit_of_registrations = 53;
+  bool allow_personal_time_registration = 54;
+
+  // Shift 2 schedule (Monday-Sunday)
+  google.protobuf.Int32Value start_monday_2nd_shift = 55;
+  google.protobuf.Int32Value end_monday_2nd_shift = 56;
+  google.protobuf.Int32Value break_monday_2nd_shift = 57;
+  google.protobuf.Int32Value start_tuesday_2nd_shift = 58;
+  google.protobuf.Int32Value end_tuesday_2nd_shift = 59;
+  google.protobuf.Int32Value break_tuesday_2nd_shift = 60;
+  google.protobuf.Int32Value start_wednesday_2nd_shift = 61;
+  google.protobuf.Int32Value end_wednesday_2nd_shift = 62;
+  google.protobuf.Int32Value break_wednesday_2nd_shift = 63;
+  google.protobuf.Int32Value start_thursday_2nd_shift = 64;
+  google.protobuf.Int32Value end_thursday_2nd_shift = 65;
+  google.protobuf.Int32Value break_thursday_2nd_shift = 66;
+  google.protobuf.Int32Value start_friday_2nd_shift = 67;
+  google.protobuf.Int32Value end_friday_2nd_shift = 68;
+  google.protobuf.Int32Value break_friday_2nd_shift = 69;
+  google.protobuf.Int32Value start_saturday_2nd_shift = 70;
+  google.protobuf.Int32Value end_saturday_2nd_shift = 71;
+  google.protobuf.Int32Value break_saturday_2nd_shift = 72;
+  google.protobuf.Int32Value start_sunday_2nd_shift = 73;
+  google.protobuf.Int32Value end_sunday_2nd_shift = 74;
+  google.protobuf.Int32Value break_sunday_2nd_shift = 75;
+
+  // Shift 3 schedule (Monday-Sunday)
+  google.protobuf.Int32Value start_monday_3rd_shift = 76;
+  google.protobuf.Int32Value end_monday_3rd_shift = 77;
+  google.protobuf.Int32Value break_monday_3rd_shift = 78;
+  google.protobuf.Int32Value start_tuesday_3rd_shift = 79;
+  google.protobuf.Int32Value end_tuesday_3rd_shift = 80;
+  google.protobuf.Int32Value break_tuesday_3rd_shift = 81;
+  google.protobuf.Int32Value start_wednesday_3rd_shift = 82;
+  google.protobuf.Int32Value end_wednesday_3rd_shift = 83;
+  google.protobuf.Int32Value break_wednesday_3rd_shift = 84;
+  google.protobuf.Int32Value start_thursday_3rd_shift = 85;
+  google.protobuf.Int32Value end_thursday_3rd_shift = 86;
+  google.protobuf.Int32Value break_thursday_3rd_shift = 87;
+  google.protobuf.Int32Value start_friday_3rd_shift = 88;
+  google.protobuf.Int32Value end_friday_3rd_shift = 89;
+  google.protobuf.Int32Value break_friday_3rd_shift = 90;
+  google.protobuf.Int32Value start_saturday_3rd_shift = 91;
+  google.protobuf.Int32Value end_saturday_3rd_shift = 92;
+  google.protobuf.Int32Value break_saturday_3rd_shift = 93;
+  google.protobuf.Int32Value start_sunday_3rd_shift = 94;
+  google.protobuf.Int32Value end_sunday_3rd_shift = 95;
+  google.protobuf.Int32Value break_sunday_3rd_shift = 96;
+
+  // Shift 4 schedule (Monday-Sunday)
+  google.protobuf.Int32Value start_monday_4th_shift = 97;
+  google.protobuf.Int32Value end_monday_4th_shift = 98;
+  google.protobuf.Int32Value break_monday_4th_shift = 99;
+  google.protobuf.Int32Value start_tuesday_4th_shift = 100;
+  google.protobuf.Int32Value end_tuesday_4th_shift = 101;
+  google.protobuf.Int32Value break_tuesday_4th_shift = 102;
+  google.protobuf.Int32Value start_wednesday_4th_shift = 103;
+  google.protobuf.Int32Value end_wednesday_4th_shift = 104;
+  google.protobuf.Int32Value break_wednesday_4th_shift = 105;
+  google.protobuf.Int32Value start_thursday_4th_shift = 106;
+  google.protobuf.Int32Value end_thursday_4th_shift = 107;
+  google.protobuf.Int32Value break_thursday_4th_shift = 108;
+  google.protobuf.Int32Value start_friday_4th_shift = 109;
+  google.protobuf.Int32Value end_friday_4th_shift = 110;
+  google.protobuf.Int32Value break_friday_4th_shift = 111;
+  google.protobuf.Int32Value start_saturday_4th_shift = 112;
+  google.protobuf.Int32Value end_saturday_4th_shift = 113;
+  google.protobuf.Int32Value break_saturday_4th_shift = 114;
+  google.protobuf.Int32Value start_sunday_4th_shift = 115;
+  google.protobuf.Int32Value end_sunday_4th_shift = 116;
+  google.protobuf.Int32Value break_sunday_4th_shift = 117;
+
+  // Shift 5 schedule (Monday-Sunday)
+  google.protobuf.Int32Value start_monday_5th_shift = 118;
+  google.protobuf.Int32Value end_monday_5th_shift = 119;
+  google.protobuf.Int32Value break_monday_5th_shift = 120;
+  google.protobuf.Int32Value start_tuesday_5th_shift = 121;
+  google.protobuf.Int32Value end_tuesday_5th_shift = 122;
+  google.protobuf.Int32Value break_tuesday_5th_shift = 123;
+  google.protobuf.Int32Value start_wednesday_5th_shift = 124;
+  google.protobuf.Int32Value end_wednesday_5th_shift = 125;
+  google.protobuf.Int32Value break_wednesday_5th_shift = 126;
+  google.protobuf.Int32Value start_thursday_5th_shift = 127;
+  google.protobuf.Int32Value end_thursday_5th_shift = 128;
+  google.protobuf.Int32Value break_thursday_5th_shift = 129;
+  google.protobuf.Int32Value start_friday_5th_shift = 130;
+  google.protobuf.Int32Value end_friday_5th_shift = 131;
+  google.protobuf.Int32Value break_friday_5th_shift = 132;
+  google.protobuf.Int32Value start_saturday_5th_shift = 133;
+  google.protobuf.Int32Value end_saturday_5th_shift = 134;
+  google.protobuf.Int32Value break_saturday_5th_shift = 135;
+  google.protobuf.Int32Value start_sunday_5th_shift = 136;
+  google.protobuf.Int32Value end_sunday_5th_shift = 137;
+  google.protobuf.Int32Value break_sunday_5th_shift = 138;
+
+  bool use_google_sheet_as_default = 139;
+  bool use_only_plan_hours = 140;
+  int32 monday_plan_hours = 141;
+  int32 tuesday_plan_hours = 142;
+  int32 wednesday_plan_hours = 143;
+  int32 thursday_plan_hours = 144;
+  int32 friday_plan_hours = 145;
+  int32 saturday_plan_hours = 146;
+  int32 sunday_plan_hours = 147;
+
+  bool use_punch_clock = 148;
+  bool use_detailed_pause_editing = 149;
+  bool use_punch_clock_with_allow_registering_in_history = 150;
+  int32 day_of_payment = 151;
+  bool third_shift_active = 152;
+  bool fourth_shift_active = 153;
+  bool fifth_shift_active = 154;
+  bool days_back_in_time_allowed_editing_enabled = 155;
+  int32 days_back_in_time_allowed_editing = 156;
+  bool gps_enabled = 157;
+  bool snapshot_enabled = 158;
+  bool is_manager = 159;
+  repeated int32 managing_tag_ids = 160;
+  AutoBreakSettings auto_break_settings = 161;
+
+  bool enforce_end_of_shift_before_allow_registration = 162;
+}
+
+// Matches C# Site model
+message Site {
+  int32 site_id = 1;
+  string site_name = 2;
+  string first_name = 3;
+  string last_name = 4;
+  int32 customer_no = 5;
+  int32 otp_code = 6;
+  int32 unit_id = 7;
+  int32 worker_uid = 8;
+  string email = 9;
+  string pin_code = 10;
+  string default_language = 11;
+  bool hours_started = 12;
+  bool pause_started = 13;
+  bool auto_break_calculation_active = 14;
+  string avatar_url = 15;
+  bool third_shift_active = 16;
+  bool fourth_shift_active = 17;
+  bool fifth_shift_active = 18;
+  bool snapshot_enabled = 19;
+  bool resigned = 20;
+  google.protobuf.Timestamp resigned_at_date = 21;
+}
+
+// Response wrappers matching C# OperationDataResult<T>
+message GetAssignedSiteResponse {
+  bool success = 1;
+  string message = 2;
+  AssignedSite model = 3;
+}
+
+message GetRegistrationSitesResponse {
+  bool success = 1;
+  string message = 2;
+  repeated Site model = 3;
+}
+
+// Request messages
+message GetAssignedSiteRequest {}
+
+message GetRegistrationSitesRequest {
+  string token = 1;
+}
+
+// gRPC service definition
+service TimePlanningSettingsService {
+  // Maps to GET /api/time-planning-pn/settings/assigned-site
+  rpc GetAssignedSite(GetAssignedSiteRequest) returns (GetAssignedSiteResponse);
+
+  // Maps to GET /api/time-planning-pn/settings/registration-sites
+  rpc GetRegistrationSites(GetRegistrationSitesRequest) returns (GetRegistrationSitesResponse);
+}

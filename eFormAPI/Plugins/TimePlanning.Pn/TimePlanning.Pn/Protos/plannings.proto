@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package timeplanning;
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+import "working_hours.proto";
+
+option csharp_namespace = "TimePlanning.Pn.Grpc";
+
+message PlanningPrDayModel {
+  int32 id = 1;
+  google.protobuf.Timestamp date = 2;
+  string plan_text = 3;
+  int32 plan_hours = 4;
+  double net_working_hours = 5;
+  double flex_hours = 6;
+  double paid_out_flex = 7;
+  string message = 8;
+  double sum_flex_start = 9;
+  double sum_flex_end = 10;
+  string comment = 11;
+  int32 sdk_site_id = 12;
+
+  string start1_started_at = 13;
+  string stop1_stopped_at = 14;
+  string pause1_started_at = 15;
+  string pause1_stopped_at = 16;
+  string start2_started_at = 17;
+  string stop2_stopped_at = 18;
+  string pause2_started_at = 19;
+  string pause2_stopped_at = 20;
+  string start3_started_at = 21;
+  string stop3_stopped_at = 22;
+  string pause3_started_at = 23;
+  string pause3_stopped_at = 24;
+  string start4_started_at = 25;
+  string stop4_stopped_at = 26;
+  string pause4_started_at = 27;
+  string pause4_stopped_at = 28;
+  string start5_started_at = 29;
+  string stop5_stopped_at = 30;
+  string pause5_started_at = 31;
+  string pause5_stopped_at = 32;
+
+  int32 start1_id = 33;
+  int32 stop1_id = 34;
+  int32 pause1_id = 35;
+  int32 start2_id = 36;
+  int32 stop2_id = 37;
+  int32 pause2_id = 38;
+  int32 start3_id = 39;
+  int32 stop3_id = 40;
+  int32 pause3_id = 41;
+  int32 start4_id = 42;
+  int32 stop4_id = 43;
+  int32 pause4_id = 44;
+  int32 start5_id = 45;
+  int32 stop5_id = 46;
+  int32 pause5_id = 47;
+
+  int32 break1_shift = 48;
+  int32 break2_shift = 49;
+  int32 break3_shift = 50;
+  int32 break4_shift = 51;
+  int32 break5_shift = 52;
+}
+
+message GetPlanningsByUserRequest {
+  string date_from = 1;
+  string date_to = 2;
+  string sort = 3;
+  bool is_sort_dsc = 4;
+  DeviceMetadata device = 5;
+}
+
+message GetPlanningsByUserResponse {
+  bool success = 1;
+  string message = 2;
+  PlanningsByUserModel model = 3;
+}
+
+message PlanningsByUserModel {
+  repeated PlanningPrDayModel planning_pr_day_models = 1;
+  int32 site_id = 2;
+  string avatar_url = 3;
+  int32 current_worked_hours = 4;
+  int32 current_worked_minutes = 5;
+  double percentage_completed = 6;
+  int32 planned_hours = 7;
+  int32 planned_minutes = 8;
+  bool software_version_is_valid = 9;
+}
+
+message UpdatePlanningByCurrentUserRequest {
+  PlanningPrDayModel model = 1;
+}
+
+message UpdatePlanningByCurrentUserResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+service TimePlanningPlanningsService {
+  rpc GetPlanningsByUser(GetPlanningsByUserRequest) returns (GetPlanningsByUserResponse);
+  rpc UpdatePlanningByCurrentUser(UpdatePlanningByCurrentUserRequest) returns (UpdatePlanningByCurrentUserResponse);
+}

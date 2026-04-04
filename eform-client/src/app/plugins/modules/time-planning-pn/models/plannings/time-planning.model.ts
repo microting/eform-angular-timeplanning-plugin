@@ -1,23 +1,18 @@
-import { TimePlanningMessagesEnum } from '../../enums';
+import {PlanningPrDayModel} from './planning-pr-day.model';
 
 export class TimePlanningModel {
-  workerName: string;
-  weekDay: number;
-  date: string;
-  planText: string;
-  planHours: number;
-  message: TimePlanningMessagesEnum;
-  shift1Start: number;
-  shift1Pause: number;
-  shift1Stop: number;
-  shift2Start: number;
-  shift2Pause: number;
-  shift2Stop: number;
-  nettoHours: number;
-  flexHours: number;
-  sumFlex: number;
-  paidOutFlex: number;
-  commentWorker: string;
-  commentOffice: string;
-  commentOfficeAll: string;
+
+  siteId: number;
+  siteName: string;
+  avatarUrl: string;
+  planningPrDayModels: PlanningPrDayModel[] = [];
+  plannedHours: number;
+  plannedMinutes: number;
+  currentWorkedHours: number;
+  currentWorkedMinutes: number;
+  percentageCompleted: number;
+  SoftwareVersion: string;
+  deviceModel: string;
+  deviceManufacturer: string;
+  softwareVersionIsValid: boolean;
 }

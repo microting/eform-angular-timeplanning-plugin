@@ -1,0 +1,24 @@
+<eform-new-subheader>
+  <div class="d-flex flex-row justify-content-center align-items-center gap-12">
+    <button
+      class="btn-secondary btn-secondary--icon-rounded-border"
+      id="resetBtn"
+      (click)="resetFlexPlanning()"
+      matTooltip="{{ 'Reset' | translate }}"
+    >
+      <mat-icon>restart_alt</mat-icon>
+    </button>
+    <div class="line-vert"></div>
+    <button
+      class="btn-primary btn-primary--icon-left"
+      id="flexPlanningSaveBtn"
+      (click)="saveFlexPlanning()"
+    >{{ 'Save' | translate }}
+    </button>
+  </div>
+</eform-new-subheader>
+
+<app-time-flexes-table
+  [flexPlannings]="timePlannings"
+  (flexPlanningChanged)="onUpdateFlexPlanning($event)"
+></app-time-flexes-table>

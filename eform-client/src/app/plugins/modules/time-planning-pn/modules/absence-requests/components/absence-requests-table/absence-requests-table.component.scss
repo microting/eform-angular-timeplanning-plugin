@@ -1,0 +1,19 @@
+.action-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.status-pending {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.status-approved {
+  color: #4caf50;
+  font-weight: 500;
+}
+
+.status-rejected {
+  color: #f44336;
+  font-weight: 500;
+}

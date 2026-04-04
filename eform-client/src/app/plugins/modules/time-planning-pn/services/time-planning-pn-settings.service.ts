@@ -6,13 +6,23 @@ import {
   SiteDto,
 } from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
-import { TimePlanningSettingsModel } from '../models';
+import { TimePlanningSettingsModel,
+  AssignedSiteModel,
+  GlobalAutoBreakSettingsModel,
+  AssignedSiteUpdateModel,
+  CommonTagModel } from '../models';
 
 export let TimePlanningSettingsMethods = {
   Settings: 'api/time-planning-pn/settings',
   SettingsSites: 'api/time-planning-pn/settings/sites',
+  ResignedSites: 'api/time-planning-pn/settings/resigned-sites',
   SettingsFolder: 'api/time-planning-pn/settings/folder',
   SettingsEform: 'api/time-planning-pn/settings/eform',
+  GetAssignedSites: 'api/time-planning-pn/settings/assigned-sites',
+  UpdateAssignedSite: 'api/time-planning-pn/settings/assigned-site',
+  GlobalAutoBreakCalculationSettings: 'api/time-planning-pn/settings/global-auto-break-settings',
+  ResetGlobalAutoBreakCalculationSettings: 'api/time-planning-pn/settings/reset-global-auto-break-settings',
+  AvailableTags: 'api/tags/index',
 };
 
 @Injectable()
@@ -23,8 +33,19 @@ export class TimePlanningPnSettingsService {
     return this.apiBaseService.get(TimePlanningSettingsMethods.Settings);
   }
 
+  updateSettings(model: TimePlanningSettingsModel): Observable<OperationResult> {
+    return this.apiBaseService.put(
+      TimePlanningSettingsMethods.Settings,
+      model
+    );
+  }
+
   getAvailableSites(): Observable<OperationDataResult<SiteDto[]>> {
     return this.apiBaseService.get(TimePlanningSettingsMethods.SettingsSites);
+  }
+
+  getResignedSites(): Observable<OperationDataResult<SiteDto[]>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.ResignedSites);
   }
 
   addSiteToSettings(siteId: number): Observable<OperationResult> {
@@ -53,5 +74,28 @@ export class TimePlanningPnSettingsService {
       TimePlanningSettingsMethods.SettingsEform,
       eformId
     );
+  }
+
+  getAssignedSite(siteId: number): Observable<OperationDataResult<AssignedSiteModel>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.GetAssignedSites + '?siteId=' + siteId);
+  }
+
+  updateAssignedSite(model: AssignedSiteModel): Observable<OperationResult> {
+    return this.apiBaseService.put(
+      TimePlanningSettingsMethods.UpdateAssignedSite,
+      model
+    );
+  }
+
+  getGlobalAutoBreakCalculationSettings(): Observable<OperationDataResult<GlobalAutoBreakSettingsModel>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.GlobalAutoBreakCalculationSettings);
+  }
+
+  resetGlobalAutoBreakCalculationSettings(): Observable<OperationResult> {
+    return this.apiBaseService.delete(TimePlanningSettingsMethods.ResetGlobalAutoBreakCalculationSettings);
+  }
+
+  getAvailableTags(): Observable<OperationDataResult<CommonTagModel[]>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.AvailableTags);
   }
 }

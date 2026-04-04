@@ -1,0 +1,444 @@
+<form [formGroup]="workdayForm">
+  <div mat-dialog-title>
+    <div>{{ data.planningPrDayModels.siteName }} -
+      {{ datePipe.transform(data.planningPrDayModels.date, 'dd.MM.yyyy') }}
+      <small class="microting-uid" matTooltip="Id">({{ data.planningPrDayModels.id }})</small></div>
+    <button
+      *ngIf="selectAuthIsAdmin$ | async"
+
+      mat-icon-button
+      (click)="openVersionHistory()"
+      matTooltip="{{'View history' | translate}}">
+      <mat-icon>history</mat-icon>
+    </button>
+  </div>
+
+  <div mat-dialog-content>
+    <div class="workday-dialog-container">
+      <div class="main-content" [class.with-side-panel]="selectedGpsCoordinate || selectedSnapshot">
+        <br/>
+        <mtx-grid
+          [columns]="tableHeaders"
+          [data]="shiftData"
+          [showPaginator]="false"
+          [pageOnFront]="false"
+          [rowStriped]="false"
+          [showToolbar]="false">
+        </mtx-grid>
+
+        <ng-template #plannedShiftTemplate let-shiftId="shiftId">
+          <ng-container [formGroupName]="'planned'">
+            <div [formGroupName]="'shift' + shiftId">
+              <mat-error *ngFor="let error of getInputErrors('planned.shift' + shiftId)">
+                <small>{{ error }}</small>
+              </mat-error>
+
+              <div class="flex-row">
+                <mat-form-field>
+                  <mat-label>{{ 'Start' | translate }}</mat-label>
+                  <input
+                    matInput
+                    readonly
+                    [ngxTimepicker]="plannedStartPicker"
+                    [format]="24"
+                    formControlName="start"
+                    [attr.data-testid]="'plannedStartOfShift' + shiftId"/>
+                  <ngx-material-timepicker
+                    #plannedStartPicker
+                    [format]="24"
+                    [defaultTime]="workdayForm.get('planned.shift' + shiftId + '.start')?.value"
+                    [minutesGap]="5"
+                    (closed)="calculatePlanHours()">
+                  </ngx-material-timepicker>
+                </mat-form-field>
+                <button mat-icon-button color="warn" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 1)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              <mat-error
+                *ngFor="let error of getInputErrors('planned.shift' + shiftId + '.start')"
+                [attr.data-testid]="'plannedStartOfShift' + shiftId + '-Error'">
+                <small>{{ error }}</small>
+              </mat-error>
+
+              <div class="flex-row">
+                <mat-form-field>
+                  <mat-label>{{ 'Pause' | translate }}</mat-label>
+                  <input
+                    matInput
+                    readonly
+                    [ngxTimepicker]="plannedPausePicker"
+                    [format]="24"
+                    formControlName="break"
+                    [min]="'00:00'"
+                    [max]="getMaxDifference(
+                                    workdayForm.get('planned.shift' + shiftId + '.start')?.value,
+                                    workdayForm.get('planned.shift' + shiftId + '.stop')?.value
+                                  )"
+                    [attr.data-testid]="'plannedBreakOfShift' + shiftId"/>
+                  <ngx-material-timepicker
+                    #plannedPausePicker
+                    [format]="24"
+                    [defaultTime]="workdayForm.get('planned.shift' + shiftId + '.break')?.value"
+                    [minutesGap]="5"
+                    (closed)="calculatePlanHours()">
+                  </ngx-material-timepicker>
+                </mat-form-field>
+                <button mat-icon-button color="warn" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 2)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              <mat-error
+                *ngFor="let error of getInputErrors('planned.shift' + shiftId + '.break')"
+                [attr.data-testid]="'plannedBreakOfShift' + shiftId + '-Error'">
+                <small>{{ error }}</small>
+              </mat-error>
+
+              <div class="flex-row">
+                <mat-form-field>
+                  <mat-label>{{ 'Stop' | translate }}</mat-label>
+                  <input
+                    matInput
+                    readonly
+                    [ngxTimepicker]="plannedStopPicker"
+                    [format]="24"
+                    formControlName="stop"
+                    [attr.data-testid]="'plannedEndOfShift' + shiftId"/>
+                  <ngx-material-timepicker
+                    #plannedStopPicker
+                    [format]="24"
+                    [defaultTime]="workdayForm.get('planned.shift' + shiftId + '.stop')?.value"
+                    [minutesGap]="5"
+                    (closed)="calculatePlanHours()">
+                  </ngx-material-timepicker>
+                </mat-form-field>
+                <button mat-icon-button color="warn" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 3)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              <mat-error
+                *ngFor="let error of getInputErrors('planned.shift' + shiftId + '.stop')"
+                [attr.data-testid]="'plannedEndOfShift' + shiftId + '-Error'">
+                <small>{{ error }}</small>
+              </mat-error>
+            </div>
+          </ng-container>
+        </ng-template>
+
+        <ng-template #plannedColumnTemplate let-row let-col="colDef">
+          <ng-container
+            *ngIf="row['shiftId'] as shiftId"
+            [ngTemplateOutlet]="plannedShiftTemplate"
+            [ngTemplateOutletContext]="{ shiftId: shiftId }">
+          </ng-container>
+        </ng-template>
+
+        <ng-template #trackingButtons let-key="key">
+          <button
+            *ngIf="hasGpsData(key)"
+            mat-icon-button
+            color="primary"
+            (click)="onGpsClick(key)"
+            matTooltip="{{'View GPS Location' | translate}}">
+            <mat-icon>location_on</mat-icon>
+          </button>
+          <button *ngIf="hasSnapshotData(key)"
+            mat-icon-button
+            color="primary"
+            (click)="onSnapshotClick(key)"
+            matTooltip="{{'View Snapshot' | translate}}">
+            <mat-icon>photo_camera</mat-icon>
+          </button>
+        </ng-template>
+
+        <ng-template
+          #actualShiftTemplate
+          let-shiftId="shiftId"
+          let-startKey="startKey"
+          let-pauseKey="pauseKey"
+          let-stopKey="stopKey">
+          <ng-container [formGroupName]="'actual'">
+            <div [formGroupName]="'shift' + shiftId">
+              <mat-error *ngFor="let error of getInputErrors('actual.shift' + shiftId)">
+                <small>{{ error }}</small>
+              </mat-error>
+
+              <div class="flex-row">
+                <mat-form-field>
+                  <mat-label>{{ 'Start' | translate }}</mat-label>
+                  <input
+                    matInput
+                    readonly
+                    [ngxTimepicker]="actualStartPicker"
+                    [format]="24"
+                    formControlName="start"
+                    [attr.data-testid]="'start' + shiftId + 'StartedAt'"/>
+                  <ngx-material-timepicker
+                    #actualStartPicker
+                    [format]="24"
+                    [minutesGap]="5"
+                    [defaultTime]="workdayForm.get('actual.shift' + shiftId + '.start')?.value"
+                    (closed)="calculatePlanHours()">
+                  </ngx-material-timepicker>
+                </mat-form-field>
+                <button mat-icon-button color="warn" (click)="resetActualTimes((+shiftId - 1) * 3 + 1)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+                <ng-container
+                  [ngTemplateOutlet]="trackingButtons"
+                  [ngTemplateOutletContext]="{ key: startKey }">
+                </ng-container>
+              </div>
+              <mat-error
+                *ngFor="let error of getInputErrors('actual.shift' + shiftId + '.start')"
+                [attr.data-testid]="'start' + shiftId + 'StartedAt-Error'">
+                <small>{{ error }}</small>
+              </mat-error>
+
+              <div class="flex-row">
+                <mat-form-field>
+                  <mat-label>{{ 'Pause' | translate }}</mat-label>
+                  <input
+                    matInput
+                    readonly
+                    [ngxTimepicker]="actualPausePicker"
+                    [format]="24"
+                    formControlName="pause"
+                    [min]="'00:00'"
+                    [max]="getMaxDifference(
+                                    workdayForm.get('actual.shift' + shiftId + '.start')?.value,
+                                    workdayForm.get('actual.shift' + shiftId + '.stop')?.value
+                                  )"
+                    [attr.data-testid]="'pause' + shiftId + 'Id'"/>
+                  <ngx-material-timepicker
+                    #actualPausePicker
+                    [format]="24"
+                    [minutesGap]="5"
+                    [defaultTime]="workdayForm.get('actual.shift' + shiftId + '.pause')?.value"
+                    (closed)="calculatePlanHours()">
+                  </ngx-material-timepicker>
+                </mat-form-field>
+                <button mat-icon-button color="warn" (click)="resetActualTimes((+shiftId - 1) * 3 + 2)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+                <ng-container
+                  [ngTemplateOutlet]="trackingButtons"
+                  [ngTemplateOutletContext]="{ key: pauseKey }">
+                </ng-container>
+              </div>
+              <mat-error
+                *ngFor="let error of getInputErrors('actual.shift' + shiftId + '.pause')"
+                [attr.data-testid]="'pause' + shiftId + 'Id-Error'">
+                <small>{{ error }}</small>
+              </mat-error>
+
+              <div class="flex-row">
+                <mat-form-field>
+                  <mat-label>{{ 'Stop' | translate }}</mat-label>
+                  <input
+                    matInput
+                    readonly
+                    [ngxTimepicker]="actualStopPicker"
+                    [format]="24"
+                    formControlName="stop"
+                    [attr.data-testid]="'stop' + shiftId + 'StoppedAt'"/>
+                  <ngx-material-timepicker
+                    #actualStopPicker
+                    [format]="24"
+                    [minutesGap]="5"
+                    [defaultTime]="workdayForm.get('actual.shift' + shiftId + '.stop')?.value"
+                    (closed)="calculatePlanHours()">
+                  </ngx-material-timepicker>
+                </mat-form-field>
+                <button mat-icon-button color="warn" (click)="resetActualTimes((+shiftId - 1) * 3 + 3)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+                <ng-container
+                  [ngTemplateOutlet]="trackingButtons"
+                  [ngTemplateOutletContext]="{ key: stopKey }">
+                </ng-container>
+              </div>
+              <mat-error
+                *ngFor="let error of getInputErrors('actual.shift' + shiftId + '.stop')"
+                [attr.data-testid]="'stop' + shiftId + 'StoppedAt-Error'">
+                <small>{{ error }}</small>
+              </mat-error>
+            </div>
+          </ng-container>
+        </ng-template>
+
+        <ng-template #actualColumnTemplate let-row let-col="colDef">
+          <ng-container
+            *ngIf="({
+                            '1': !isInTheFuture,
+                            '2': !isInTheFuture,
+                            '3': data.assignedSiteModel.thirdShiftActive === true,
+                            '4': data.assignedSiteModel.fourthShiftActive === true,
+                            '5': data.assignedSiteModel.fifthShiftActive === true
+                          })[row['shiftId']]"
+            [ngTemplateOutlet]="actualShiftTemplate"
+            [ngTemplateOutletContext]="{
+                            shiftId: row['shiftId'],
+                            startKey: 'Start' + row['shiftId'] + 'StartedAt',
+                            pauseKey: 'Pause' + row['shiftId'] + 'StartedAt',
+                            stopKey: 'Stop' + row['shiftId'] + 'StoppedAt'
+                          }">
+          </ng-container>
+        </ng-template>
+
+          <div class="d-flex flex-column gap-4 py-4">
+
+            <mat-form-field *ngIf="!isInTheFuture">
+              <mat-label>{{ 'Flex balance at start of day' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                id="flexToDate"
+                readonly
+                disabled
+                [value]="data.planningPrDayModels.sumFlexStart.toFixed(2)"/>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>{{ 'Plan hours' | translate }}</mat-label>
+              <input
+                matInput
+                type="number"
+                id="planHours"
+                formControlName="planHours"
+                (change)="calculatePlanHours()"/>
+              <mat-error data-testid="planHours-Error"  *ngIf="workdayForm.hasError('tooManyHours')">
+                Total planned hours cannot exceed 24
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field *ngIf="!isInTheFuture">
+              <mat-label>{{ 'NettoHours' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                id="nettoHours"
+                readonly
+                disabled
+                [value]="data.planningPrDayModels.actualHours.toFixed(2)"/>
+            </mat-form-field>
+
+            <mat-form-field *ngIf="!isInTheFuture && data.planningPrDayModels.nettoHoursOverrideActive">
+              <mat-label>{{ 'NettoHours override' | translate }}</mat-label>
+              <input
+                matInput
+                type="number"
+                id="nettoHoursOverride"
+                formControlName="nettoHoursOverride"
+                (change)="calculatePlanHours()"/>
+            </mat-form-field>
+
+            <br *ngIf="data.planningPrDayModels.nettoHoursOverrideActive"/>
+            <mat-form-field *ngIf="!isInTheFuture">
+              <mat-label>{{ 'Flex' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                id="todaysFlex"
+                readonly
+                disabled
+                [value]="todaysFlex.toFixed(2)"/>
+            </mat-form-field>
+
+            <mat-form-field *ngIf="!isInTheFuture">
+              <mat-label>{{ 'PaidOutFlex' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                id="paidOutFlex"
+                formControlName="paidOutFlex"
+                (change)="calculatePlanHours()"/>
+            </mat-form-field>
+
+            <mat-form-field *ngIf="!isInTheFuture">
+              <mat-label>{{ 'Flex balance to date' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                id="flexIncludingToday"
+                readonly
+                disabled
+                [value]="data.planningPrDayModels.sumFlexEnd.toFixed(2)"/>
+            </mat-form-field>
+
+            <p *ngIf="data.planningPrDayModels.workerComment">
+              <strong>{{ 'CommentWorker' | translate }}:</strong>
+              {{ data.planningPrDayModels.workerComment }}
+            </p>
+          </div>
+
+          <div id="flags" formGroupName="flags" class="d-flex flex-column gap-4">
+            <ng-container *ngFor="let key of enumKeys">
+              <ng-container *ngIf="key !== 'Blank' && key !== 'Care'">
+                <mat-checkbox
+                  [formControlName]="key"
+                  (change)="onFlagChange(key)"
+                >
+                  {{ key | translate }}
+                </mat-checkbox>
+              </ng-container>
+            </ng-container>
+          </div>
+
+          <br/><br/>
+          <mat-form-field>
+            <mat-label>{{ 'CommentOffice' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              id="CommentOffice"
+              formControlName="commentOffice"/>
+          </mat-form-field>
+
+          <br/>
+      </div>
+
+      <div class="side-panel" *ngIf="selectedGpsCoordinate || selectedSnapshot">
+        <div class="side-panel-header">
+          <button type="button" class="close" (click)="closePanel()" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="side-panel-content">
+          <div *ngIf="selectedGpsCoordinate && mapUrl" class="map-container">
+            <iframe
+              [src]="mapUrl"
+              width="100%"
+              height="40%"
+              style="border:0"
+              allowfullscreen>
+            </iframe>
+          </div>
+          <div *ngIf="selectedSnapshot && snapshotUrl" class="snapshot-container">
+            <img [src]="snapshotUrl" alt="Snapshot" class="snapshot-image"/>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div mat-dialog-actions class="d-flex flex-row justify-content-end">
+    <button
+      class="btn-cancel"
+      mat-dialog-close
+      id="cancelButton"
+      (click)="onCancel()">
+      {{ 'Cancel' | translate }}
+    </button>
+
+    <button
+      class="btn-primary btn-primary--icon-left"
+      id="saveButton"
+      (click)="onUpdateWorkDayEntity()"
+      [disabled]="workdayForm.invalid"
+      [mat-dialog-close]="data"
+    >
+      <span>{{ 'Save' | translate }}</span>
+    </button>
+  </div>
+</form>

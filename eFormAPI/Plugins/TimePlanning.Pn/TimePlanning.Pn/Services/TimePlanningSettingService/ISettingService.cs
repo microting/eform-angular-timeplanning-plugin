@@ -22,26 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.TimePlanningSettingService
+#nullable enable
+using JetBrains.Annotations;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+
+namespace TimePlanning.Pn.Services.TimePlanningSettingService;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Infrastructure.Models.Settings;
+using Microting.eForm.Dto;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+
+public interface ISettingService
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.Settings;
-    using Microting.eForm.Dto;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+    Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings();
 
-    public interface ISettingService
-    {
-        Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings();
+    Task<OperationResult> UpdateSettings(TimePlanningSettingsModel timePlanningSettingsModel);
 
-        Task<OperationResult> UpdateEform(int eformId);
+    // Task<OperationResult> AddSite(int siteId);
 
-        Task<OperationResult> AddSite(int siteId);
+    // Task<OperationResult> DeleteSite(int siteId);
 
-        Task<OperationResult> UpdateFolder(int folderId);
-
-        Task<OperationResult> DeleteSite(int siteId);
-
-        Task<OperationDataResult<List<SiteDto>>> GetAvailableites();
-    }
+    Task<OperationDataResult<List<Site>>> GetAvailableSites(string? token);
+    Task<OperationDataResult<AssignedSite>> GetAssignedSite(int siteId);
+    Task<OperationResult> UpdateAssignedSite(AssignedSite site);
+    Task<OperationDataResult<AssignedSite>> GetAssignedSiteByCurrentUserName();
+    Task<OperationDataResult<GlobalAutoBreakSettings>> GetGlobalAutoBreakSettings();
+    OperationResult ResetGlobalAutoBreakSettings();
+    Task<OperationDataResult<List<Site>>> GetResignedSites();
 }

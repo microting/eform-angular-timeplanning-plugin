@@ -1,38 +1,39 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit,
+  inject
+} from '@angular/core';
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { Subscription } from 'rxjs';
 import { SiteDto } from 'src/app/common/models';
 import {
-  TimePlanningModel,
-  TimePlanningsRequestModel,
-} from 'src/app/plugins/modules/time-planning-pn/models';
-import {
   TimePlanningPnSettingsService,
   TimePlanningPnWorkingHoursService,
 } from '../../../../services';
+import {WorkingHourRequestModel, WorkingHourModel} from '../../../../models';
 
 @AutoUnsubscribe()
 @Component({
-  selector: 'app-working-hours-container',
-  templateUrl: './working-hours-container.component.html',
-  styleUrls: ['./working-hours-container.component.scss'],
+    selector: 'app-working-hours-container',
+    templateUrl: './working-hours-container.component.html',
+    styleUrls: ['./working-hours-container.component.scss'],
+    standalone: false
 })
 export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
+  private workingHoursService = inject(TimePlanningPnWorkingHoursService);
+  private settingsService = inject(TimePlanningPnSettingsService);
+
   workingHoursFormArray: FormArray = new FormArray([]);
-  workingHoursRequest: TimePlanningsRequestModel;
+  workingHoursRequest: WorkingHourRequestModel;
   availableSites: SiteDto[] = [];
-  workingHours: TimePlanningModel[] = [];
+  workingHours: WorkingHourModel[] = [];
 
   getWorkingHours$: Subscription;
   updateWorkingHours$: Subscription;
   getAvailableSites$: Subscription;
   workingHoursGroupSub$: Subscription[] = [];
+  tainted = false;
 
-  constructor(
-    private workingHoursService: TimePlanningPnWorkingHoursService,
-    private settingsService: TimePlanningPnSettingsService
-  ) {}
+
 
   ngOnInit(): void {
     this.getAvailableSites();
@@ -48,22 +49,34 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
       });
   }
 
-  getWorkingHours(model: TimePlanningsRequestModel) {
-    this.workingHoursFormArray.clear();
-    this.getWorkingHours$ = this.workingHoursService
-      .getWorkingHours(model)
-      .subscribe((data) => {
-        if (data && data.success) {
-          this.workingHours = data.model;
-          this.initializeWorkingHoursFormArray(data.model);
-        }
-      });
+  getWorkingHours(model: WorkingHourRequestModel) {
+    if (model.siteId === undefined || model.siteId === null) {
+      this.workingHours = [];
+      this.workingHoursFormArray = new FormArray([]);
+      //this.initializeWorkingHoursFormArray([]);
+    } else {
+      this.getWorkingHours$ = this.workingHoursService
+        .getWorkingHours(model)
+        .subscribe((data) => {
+          if (data && data.success) {
+            this.workingHours = data.model;
+            this.initializeWorkingHoursFormArray(data.model);
+          }
+        });
+    }
   }
 
-  initializeWorkingHoursFormArray(workingHours: TimePlanningModel[]) {
+  initializeWorkingHoursFormArray(workingHours: WorkingHourModel[]) {
+    this.workingHoursFormArray.clear();
     workingHours.map((x) => {
-      this.workingHoursFormArray.push(
+      this.workingHoursFormArray.controls = [
+        ...this.workingHoursFormArray.controls,
         new FormGroup({
+          id: new FormControl(x.id),
+          createdAt: new FormControl(x.createdAt),
+          updatedAt: new FormControl(x.updatedAt),
+          isWeekend: new FormControl(x.isWeekend),
+          isLocked: new FormControl(x.isLocked),
           workerName: new FormControl(x.workerName),
           weekDay: new FormControl(x.weekDay),
           date: new FormControl(x.date),
@@ -81,25 +94,23 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
             disabled: true,
           }),
           flexHours: new FormControl({
-            value: x.flexHours ? x.flexHours : 0,
+            value: this.calculateFlexHours(x.nettoHours, x.planHours),
             disabled: true,
           }),
           sumFlex: new FormControl({
-            value: x.sumFlex ? x.sumFlex : 0,
+            value: x.sumFlexEnd ? x.sumFlexEnd : 0,
             disabled: true,
           }),
           paidOutFlex: new FormControl(x.paidOutFlex ? x.paidOutFlex : 0),
-          commentWorker: new FormControl(
-            x.commentWorker ? x.commentWorker : ''
+          commentWorker: new FormControl({
+              value: x.commentWorker ? x.commentWorker : '',
+              disabled: true,
+            }
           ),
-          commentOffice: new FormControl(
-            x.commentOffice ? x.commentOffice : ''
-          ),
-          commentOfficeAll: new FormControl(
-            x.commentOfficeAll ? x.commentOfficeAll : ''
-          ),
-        })
-      );
+          commentOffice: new FormControl(x.commentOffice ? x.commentOffice : ''),
+          commentOfficeAll: new FormControl(x.commentOfficeAll ? x.commentOfficeAll : ''),
+        }),
+      ];
     });
 
     if (this.workingHoursGroupSub$.length > 0) {
@@ -108,22 +119,27 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
       }
     }
     if (this.workingHoursFormArray.length > 0) {
+      this.tainted = false;
+      let i = 0;
       for (const group of this.workingHoursFormArray.controls) {
-        this.workingHoursGroupSub$.push(
-          group.get('flexHours').valueChanges.subscribe(() => {
-            this.recalculateSumFlex();
-          })
-        );
-        this.workingHoursGroupSub$.push(
-          group.get('paidOutFlex').valueChanges.subscribe(() => {
-            this.recalculateSumFlex();
-          })
-        );
+        if (i > 0) {
+          this.workingHoursGroupSub$.push(
+            group.get('flexHours').valueChanges.subscribe(() => {
+              this.recalculateSumFlex();
+            })
+          );
+          this.workingHoursGroupSub$.push(
+            group.get('paidOutFlex').valueChanges.subscribe(() => {
+              this.recalculateSumFlex();
+            })
+          );
+        }
+        i++;
       }
     }
   }
 
-  onWorkingHoursFiltersChanged(model: TimePlanningsRequestModel) {
+  onWorkingHoursFiltersChanged(model: WorkingHourRequestModel) {
     this.workingHoursRequest = { ...model };
     this.getWorkingHours(model);
   }
@@ -135,23 +151,52 @@ export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
         plannings: this.workingHoursFormArray.getRawValue(),
       })
       .subscribe((data) => {
-        // TODO: REMOVE
-        // if (data && data.success) {
-        //   this.getWorkingHours(this.workingHoursRequest);
-        // }
+        this.tainted = false;
       });
   }
 
-  recalculateSumFlex() {
-    debugger;
+  recalculateSumFlex(initialize = false) {
+    this.tainted = true;
     let sumFlex = 0;
+    let isFirst = true;
     for (const formGroup of this.workingHoursFormArray.controls) {
-      const flexHours = formGroup.get('flexHours').value;
-      const paidOutFlex = formGroup.get('paidOutFlex').value;
-      sumFlex =
-        sumFlex + (flexHours ? flexHours : 0) - (paidOutFlex ? paidOutFlex : 0);
-      formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
+      const isLocked = formGroup.get('isLocked').value;
+      if (!isFirst) {
+        const flexHours = formGroup.get('flexHours').value;
+        let paidOutFlex = formGroup.get('paidOutFlex').value;
+        if (typeof paidOutFlex === 'string') {
+          paidOutFlex = paidOutFlex.replace(',', '.');
+          //formGroup.setValue({ paidOutFlex: paidOutFlex });
+        }
+        if (initialize) {
+          sumFlex = formGroup.get('sumFlex').value;
+        } else {
+          sumFlex = sumFlex + (flexHours ? flexHours : 0) - (paidOutFlex ? paidOutFlex : 0);
+          if (formGroup.get('sumFlex').value !== sumFlex) {
+            formGroup.get('sumFlex').setValue(+sumFlex.toFixed(2));
+          } else {
+            this.tainted = false;
+          }
+        }
+      } else {
+        isFirst = false;
+        if (isLocked !== true)
+        {
+          const paidOutFlex = formGroup.get('paidOutFlex').value;
+          sumFlex = formGroup.get('sumFlex').value;
+          sumFlex = sumFlex - (paidOutFlex ? paidOutFlex : 0);
+        } else {
+          sumFlex = formGroup.get('sumFlex').value;
+        }
+      }
     }
+    if (initialize) {
+      this.tainted = false;
+    }
+  }
+
+  calculateFlexHours(nettoHours: number, planHours: number) {
+    return +(nettoHours - planHours).toFixed(2);
   }
 
   ngOnDestroy(): void {

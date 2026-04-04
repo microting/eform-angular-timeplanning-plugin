@@ -22,46 +22,55 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data
-{
-    using System.Collections.Generic;
-    using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
-    using Microting.TimePlanningBase.Infrastructure.Const;
+namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data;
 
-    public static class TimePlanningPermissionsSeedData
+using System.Collections.Generic;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
+using Microting.TimePlanningBase.Infrastructure.Const;
+
+public static class TimePlanningPermissionsSeedData
+{
+    public static IEnumerable<PluginPermission> Data => new[]
     {
-        public static IEnumerable<PluginPermission> Data => new[]
+        new PluginPermission
         {
-            new PluginPermission
-            {
-                PermissionName = "Access ItemsPlanning Plugin",
-                ClaimName = TimePlanningClaims.AccessTimePlanningPlugin
-            },
-            new PluginPermission
-            {
-                PermissionName = "Create Notification Rules",
-                ClaimName = TimePlanningClaims.CreatePlanning
-            },
-            new PluginPermission
-            {
-                PermissionName = "Edit Planning",
-                ClaimName = TimePlanningClaims.EditPlanning
-            },
-            new PluginPermission
-            {
-                PermissionName = "Obtain plannings",
-                ClaimName = TimePlanningClaims.GetPlanning
-            },
-            new PluginPermission
-            {
-                PermissionName = "Obtain flex",
-                ClaimName = TimePlanningClaims.GetFlex
-            },
-            new PluginPermission
-            {
-                PermissionName = "Obtain working hours",
-                ClaimName = TimePlanningClaims.GetWorkingHours
-            },
-        };
-    }
+            PermissionName = "Access Time Plannings Plugin",
+            ClaimName = TimePlanningClaims.AccessTimePlanningPlugin
+        },
+        new PluginPermission
+        {
+            PermissionName = "Obtain flex",
+            ClaimName = TimePlanningClaims.GetFlex
+        },
+        new PluginPermission
+        {
+            PermissionName = "Obtain working hours",
+            ClaimName = TimePlanningClaims.GetWorkingHours
+        },
+        new PluginPermission
+        {
+            PermissionName = "Obtain plannings",
+            ClaimName = TimePlanningClaims.GetPlanning
+        },
+        new PluginPermission
+        {
+            PermissionName = "Create plannings",
+            ClaimName = TimePlanningClaims.CreatePlanning
+        },
+        new PluginPermission
+        {
+            PermissionName = "Edit plannings",
+            ClaimName = TimePlanningClaims.EditPlanning
+        },
+        new PluginPermission
+        {
+            PermissionName = "Is a manager",
+            ClaimName = TimePlanningClaims.IsManager
+        },
+        new PluginPermission
+        {
+            PermissionName = "Is a payroll manager",
+            ClaimName = TimePlanningClaims.IsPayRollManager
+        }
+    };
 }

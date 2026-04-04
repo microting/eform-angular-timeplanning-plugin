@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<root>
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:element name="root" msdata:IsDataSet="true">
+
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="Shift 1: start" xml:space="preserve">
+        <value>Skift 1: start</value>
+    </data>
+    <data name="PlanText" xml:space="preserve">
+        <value>Plan tekst</value>
+    </data>
+    <data name="PlanHours" xml:space="preserve">
+        <value>Plan timer</value>
+    </data>
+    <data name="Shift 1: pause" xml:space="preserve">
+        <value>Skift 1: pause</value>
+    </data>
+    <data name="Comment office" xml:space="preserve">
+        <value>Fra kontor</value>
+    </data>
+    <data name="Comment office all" xml:space="preserve">
+        <value>Info kontor alle</value>
+    </data>
+    <data name="Comments" xml:space="preserve">
+        <value>Fra medarbejder</value>
+    </data>
+    <data name="Date" xml:space="preserve">
+        <value>Dato</value>
+    </data>
+    <data name="Flex" xml:space="preserve">
+        <value>Flex</value>
+    </data>
+    <data name="Message" xml:space="preserve">
+        <value>Melding</value>
+    </data>
+    <data name="NettoHours" xml:space="preserve">
+        <value>Timer netto</value>
+    </data>
+    <data name="PaidOutFlex" xml:space="preserve">
+        <value>Flex udbetalt</value>
+    </data>
+    <data name="Shift 1: end" xml:space="preserve">
+        <value>Skift 1: stop</value>
+    </data>
+    <data name="Shift 2: end" xml:space="preserve">
+        <value>Skift 2: stop</value>
+    </data>
+    <data name="Shift 2: pause" xml:space="preserve">
+        <value>Skift 2: pause</value>
+    </data>
+    <data name="Shift 2: start" xml:space="preserve">
+        <value>Skift 2: start</value>
+    </data>
+    <data name="SumFlexEnd" xml:space="preserve">
+        <value>Flex sum end</value>
+    </data>
+    <data name="Worker" xml:space="preserve">
+        <value>Medarbejder</value>
+    </data>
+    <data name="DayOfWeek" xml:space="preserve">
+        <value>Ugedag</value>
+    </data>
+    <data name="SumFlexStart" xml:space="preserve">
+        <value>Flex sum</value>
+    </data>
+    <data name="Employee no" xml:space="preserve">
+        <value>Medarbejder nr.</value>
+    </data>
+    <data name="PlanRegistrationFound" xml:space="preserve">
+        <value>Registrering hentet</value>
+    </data>
+    <data name="From" xml:space="preserve">
+        <value>Fra</value>
+    </data>
+    <data name="To" xml:space="preserve">
+        <value>Til</value>
+    </data>
+    <data name="Shift 3: end" xml:space="preserve">
+        <value>Skift 3: stop</value>
+    </data>
+    <data name="Shift 3: pause" xml:space="preserve">
+        <value>Skift 3: pause</value>
+    </data>
+    <data name="Shift 3: start" xml:space="preserve">
+        <value>Skift 3: start</value>
+    </data>
+    <data name="Shift 4: end" xml:space="preserve">
+        <value>Skift 4: stop</value>
+    </data>
+    <data name="Shift 4: pause" xml:space="preserve">
+        <value>Skift 4: pause</value>
+    </data>
+    <data name="Shift 4: start" xml:space="preserve">
+        <value>Skift 4: start</value>
+    </data>
+    <data name="Shift 5: end" xml:space="preserve">
+        <value>Skift 5: stop</value>
+    </data>
+    <data name="Shift 5: pause" xml:space="preserve">
+        <value>Skift 5: pause</value>
+    </data>
+    <data name="Shift 5: start" xml:space="preserve">
+        <value>Skift 5: start</value>
+    </data>
+    <data name="TokenNotFound" xml:space="preserve">
+        <value>Token blen ikke fundet</value>
+    </data>
+    <data name="Week number" xml:space="preserve">
+        <value>Uge nr</value>
+    </data>
+    <data name="Hours Saturday" xml:space="preserve">
+        <value>Timer lørdag</value>
+    </data>
+    <data name="Hours Sunday" xml:space="preserve">
+        <value>Søn- og helligdagstimer</value>
+    </data>
+    <data name="Yes" xml:space="preserve">
+        <value>Ja</value>
+    </data>
+    <data name="No" xml:space="preserve">
+        <value>Nej</value>
+    </data>
+    <data name="Total Hours" xml:space="preserve">
+        <value>Total timer</value>
+    </data>
+    <data name="Normal Hours" xml:space="preserve">
+        <value>Normal timer</value>
+    </data>
+</root>

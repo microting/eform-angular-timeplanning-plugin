@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package timeplanning;
+
+option csharp_namespace = "TimePlanning.Pn.Grpc";
+
+// Matches C# OperationResult
+message OperationResult {
+  bool success = 1;
+  string message = 2;
+}
+
+// Matches C# OperationDataResult<T> — generic payloads use oneof
+message Empty {}
+
+message DeviceMetadata {
+  string software_version = 1;
+  string device_model = 2;
+  string manufacturer = 3;
+  string os_version = 4;
+}

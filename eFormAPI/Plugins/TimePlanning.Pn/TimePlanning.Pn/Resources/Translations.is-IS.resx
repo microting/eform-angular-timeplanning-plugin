@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:schema id="root">
+        <xs:element name="root" ns1:IsDataSet="true">
+
+        </xs:element>
+    </xs:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="Shift 1: start" xml:space="preserve">
+        <value>Vakt 1: byrjun</value>
+    </data>
+    <data name="PlanText" xml:space="preserve">
+        <value>Áætlunartexti</value>
+    </data>
+    <data name="PlanHours" xml:space="preserve">
+        <value>Áætlaðar klukkustundir</value>
+    </data>
+    <data name="Shift 1: pause" xml:space="preserve">
+        <value>Vakt 1: hlé</value>
+    </data>
+    <data name="Shift 1: end" xml:space="preserve">
+        <value>Vakt 1: endir</value>
+    </data>
+    <data name="Shift 2: start" xml:space="preserve">
+        <value>Vakt 2: byrjun</value>
+    </data>
+    <data name="Shift 2: pause" xml:space="preserve">
+        <value>Vakt 2: hlé</value>
+    </data>
+    <data name="Shift 2: end" xml:space="preserve">
+        <value>Vakt 2: endir</value>
+    </data>
+    <data name="NettoHours" xml:space="preserve">
+        <value>Nettó klukkustundir</value>
+    </data>
+    <data name="Flex" xml:space="preserve">
+        <value>Flex</value>
+    </data>
+    <data name="SumFlexStart" xml:space="preserve">
+        <value>Flex samtals byrjun</value>
+    </data>
+    <data name="SumFlexEnd" xml:space="preserve">
+        <value>Flex samtals endir</value>
+    </data>
+    <data name="PaidOutFlex" xml:space="preserve">
+        <value>Greitt út flex</value>
+    </data>
+    <data name="Message" xml:space="preserve">
+        <value>Skilaboð</value>
+    </data>
+    <data name="Comments" xml:space="preserve">
+        <value>Athugasemdir</value>
+    </data>
+    <data name="Comment office" xml:space="preserve">
+        <value>Athugasemd skrifstofa</value>
+    </data>
+    <data name="Comment office all" xml:space="preserve">
+        <value>Athugasemd skrifstofa allir</value>
+    </data>
+    <data name="Date" xml:space="preserve">
+        <value>Dagsetning</value>
+    </data>
+    <data name="Worker" xml:space="preserve">
+        <value>Starfsmaður</value>
+    </data>
+    <data name="DayOfWeek" xml:space="preserve">
+        <value>Vikudagur</value>
+    </data>
+    <data name="Employee no" xml:space="preserve">
+        <value>Starfsmannanúmer</value>
+    </data>
+    <data name="PlanRegistrationFound" xml:space="preserve">
+        <value>Áætlunarskráning fannst</value>
+    </data>
+    <data name="From" xml:space="preserve">
+        <value>Frá</value>
+    </data>
+    <data name="To" xml:space="preserve">
+        <value>Til</value>
+    </data>
+    <data name="TokenNotFound" xml:space="preserve">
+        <value>Tákn fannst ekki</value>
+    </data>
+    <data name="Shift 3: start" xml:space="preserve">
+        <value>Vakt 3: byrjun</value>
+    </data>
+    <data name="Shift 3: end" xml:space="preserve">
+        <value>Vakt 3: endir</value>
+    </data>
+    <data name="Shift 3: pause" xml:space="preserve">
+        <value>Vakt 3: hlé</value>
+    </data>
+    <data name="Shift 4: start" xml:space="preserve">
+        <value>Vakt 4: byrjun</value>
+    </data>
+    <data name="Shift 4: end" xml:space="preserve">
+        <value>Vakt 4: endir</value>
+    </data>
+    <data name="Shift 4: pause" xml:space="preserve">
+        <value>Vakt 4: hlé</value>
+    </data>
+    <data name="Shift 5: start" xml:space="preserve">
+        <value>Vakt 5: byrjun</value>
+    </data>
+    <data name="Shift 5: end" xml:space="preserve">
+        <value>Vakt 5: endir</value>
+    </data>
+    <data name="Shift 5: pause" xml:space="preserve">
+        <value>Vakt 5: hlé</value>
+    </data>
+    <data name="Week number" xml:space="preserve">
+        <value>Vikutala</value>
+    </data>
+    <data name="Hours Saturday" xml:space="preserve">
+        <value>Klukkustundir laugardagur</value>
+    </data>
+    <data name="Hours Sunday" xml:space="preserve">
+        <value>Sunnudagur og frídagstímar</value>
+    </data>
+    <data name="Yes" xml:space="preserve">
+        <value>Já</value>
+    </data>
+    <data name="No" xml:space="preserve">
+        <value>Nei</value>
+    </data>
+    <data name="Total Hours" xml:space="preserve">
+        <value>Heildarstundir</value>
+    </data>
+</root>

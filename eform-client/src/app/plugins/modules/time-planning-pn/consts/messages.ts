@@ -35,12 +35,12 @@ export function messages(
         TimePlanningMessagesEnum[TimePlanningMessagesEnum.LeaveOfAbsence]
       ),
     },
-    {
-      id: TimePlanningMessagesEnum.Care,
-      value: translate.instant(
-        TimePlanningMessagesEnum[TimePlanningMessagesEnum.Care]
-      ),
-    },
+    // {
+    //   id: TimePlanningMessagesEnum.Care,
+    //   value: translate.instant(
+    //     TimePlanningMessagesEnum[TimePlanningMessagesEnum.Care]
+    //   ),
+    // },
     {
       id: TimePlanningMessagesEnum.Children1stSick,
       value: translate.instant(
@@ -53,11 +53,34 @@ export function messages(
         TimePlanningMessagesEnum[TimePlanningMessagesEnum.Children2stSick]
       ),
     },
+
     {
-      id: TimePlanningMessagesEnum.TimeOff,
+      id: TimePlanningMessagesEnum.Maternity,
       value: translate.instant(
-        TimePlanningMessagesEnum[TimePlanningMessagesEnum.TimeOff]
+        TimePlanningMessagesEnum[TimePlanningMessagesEnum.Maternity]
       ),
+    },
+    {
+      id: TimePlanningMessagesEnum.VacationDayOff,
+      value: translate.instant(
+        TimePlanningMessagesEnum[TimePlanningMessagesEnum.VacationDayOff]
+      ),
+    },
+    {
+      id: TimePlanningMessagesEnum.Holiday,
+      value: translate.instant(
+        TimePlanningMessagesEnum[TimePlanningMessagesEnum.Holiday]
+      ),
+    },
+    // {
+    //   id: TimePlanningMessagesEnum.TimeOff,
+    //   value: translate.instant(
+    //     TimePlanningMessagesEnum[TimePlanningMessagesEnum.TimeOff]
+    //   ),
+    // },
+    {
+      id: TimePlanningMessagesEnum.Blank,
+      value: ' ',
     },
   ];
 }

@@ -22,12 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.TimePlanningLocalizationService
-{
-    public interface ITimePlanningLocalizationService
-    {
-        string GetString(string key);
+namespace TimePlanning.Pn.Services.TimePlanningLocalizationService;
 
-        string GetString(string format, params object[] args);
-    }
+public interface ITimePlanningLocalizationService
+{
+    string GetString(string key);
+
+    string GetString(string format, params object[] args);
 }

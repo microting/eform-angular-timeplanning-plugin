@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package timeplanning;
+
+import "common.proto";
+
+option csharp_namespace = "TimePlanning.Pn.Grpc";
+
+message ActivateDeviceRequest {
+  string customer_no = 1;
+  string ot_code = 2;
+}
+
+message ActivateDeviceResponse {
+  bool success = 1;
+  string message = 2;
+  ActivateDeviceModel model = 3;
+}
+
+message ActivateDeviceModel {
+  string token = 1;
+}
+
+service TimePlanningAuthService {
+  rpc ActivateDevice(ActivateDeviceRequest) returns (ActivateDeviceResponse);
+}

@@ -22,37 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Services.TimePlanningLocalizationService
+namespace TimePlanning.Pn.Services.TimePlanningLocalizationService;
+
+using Microsoft.Extensions.Localization;
+using Microting.eFormApi.BasePn.Localization.Abstractions;
+using Pn;
+
+public class TimePlanningLocalizationService(IEformLocalizerFactory factory) : ITimePlanningLocalizationService
 {
-    using Microsoft.Extensions.Localization;
-    using Microting.eFormApi.BasePn.Localization.Abstractions;
-    using Pn;
+    private readonly IStringLocalizer _localizer = factory.Create(typeof(EformTimePlanningPlugin));
 
-    public class TimePlanningLocalizationService : ITimePlanningLocalizationService
+    // ReSharper disable once SuggestBaseTypeForParameter
+
+    public string GetString(string key)
     {
-        private readonly IStringLocalizer _localizer;
+        var str = _localizer[key];
+        return str.Value;
+    }
 
-        // ReSharper disable once SuggestBaseTypeForParameter
-        public TimePlanningLocalizationService(IEformLocalizerFactory factory)
+    public string GetString(string format, params object[] args)
+    {
+        var message = _localizer[format];
+        if (message?.Value == null)
         {
-            _localizer = factory.Create(typeof(EformTimePlanningPlugin));
+            return null;
         }
 
-        public string GetString(string key)
-        {
-            var str = _localizer[key];
-            return str.Value;
-        }
-
-        public string GetString(string format, params object[] args)
-        {
-            var message = _localizer[format];
-            if (message?.Value == null)
-            {
-                return null;
-            }
-
-            return string.Format(message.Value, args);
-        }
+        return string.Format(message.Value, args);
     }
 }

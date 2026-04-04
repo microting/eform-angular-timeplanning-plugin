@@ -18,37 +18,64 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Controllers
+#nullable enable
+namespace TimePlanning.Pn.Controllers;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Infrastructure.Models.Planning;
+using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Services.TimePlanningPlanningService;
+
+[Route("api/time-planning-pn/plannings")]
+public class TimePlanningPlanningController(ITimePlanningPlanningService planningService) : Controller
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Infrastructure.Models.Planning;
-    using Microsoft.AspNetCore.Mvc;
-    using Microting.eFormApi.BasePn.Infrastructure.Models.API;
-    using Services.TimePlanningPlanningService;
+    private readonly ITimePlanningPlanningService _planningService = planningService;
 
-    [Route("api/time-planning-pn/plannings")]
-    public class TimePlanningPlanningController : Controller
+    [HttpPost]
+    [Route("index")]
+    public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(
+        [FromBody] TimePlanningPlanningRequestModel model)
     {
-        private readonly ITimePlanningPlanningService _planningService;
+        return await _planningService.Index(model);
+    }
 
-        public TimePlanningPlanningController(ITimePlanningPlanningService planningService)
+    [HttpPut]
+    [Route("{id}")]
+    public async Task<OperationResult> Update(int id, [FromBody] TimePlanningPlanningPrDayModel model)
+    {
+        return await _planningService.Update(id, model);
+    }
+
+    [HttpPut]
+    [Route("update-by-current-user")]
+    public async Task<IActionResult> UpdateByCurrentUserNam([FromBody] TimePlanningPlanningPrDayModel model)
+    {
+        var result = await _planningService.UpdateByCurrentUserNam(model);
+        if (result.Success)
         {
-            _planningService = planningService;
+            return Ok(result);
         }
 
-        [HttpPost]
-        [Route("index")]
-        public async Task<OperationDataResult<List<TimePlanningPlanningModel>>> Index(
-            [FromBody] TimePlanningPlanningRequestModel model)
+        if (result.Message == "AssignedSiteNotFound")
         {
-            return await _planningService.Index(model);
+            return NotFound(new OperationResult(false, "Assigned site not found."));
         }
+        return BadRequest(new OperationResult(false, result.Message));
+    }
 
-        [HttpPut]
-        public async Task<OperationResult> UpdateCreatePlannings([FromBody] TimePlanningPlanningUpdateModel model)
-        {
-            return await _planningService.UpdateCreatePlanning(model);
-        }
+    [HttpGet]
+    [Route("get-by-user")]
+    public async Task<OperationDataResult<TimePlanningPlanningModel>> IndexByCurrentUserNam(TimePlanningPlanningRequestModel model, string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion)
+    {
+        return await _planningService.IndexByCurrentUserName(model, softwareVersion, deviceModel, manufacturer, osVersion);
+    }
+
+    [HttpGet]
+    [Route("{planRegistrationId}/version-history")]
+    public async Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId)
+    {
+        return await _planningService.GetVersionHistory(planRegistrationId);
     }
 }

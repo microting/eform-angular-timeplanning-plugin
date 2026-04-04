@@ -3,12 +3,14 @@ import { Observable } from 'rxjs';
 import { OperationDataResult, OperationResult } from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
 import {
+  PlanningPrDayModel,
   TimeFlexesModel,
   TimeFlexesUpdateModel,
   TimePlanningModel,
   TimePlanningsRequestModel,
   TimePlanningsUpdateModel,
   TimePlanningUpdateModel,
+  PlanRegistrationVersionHistoryModel,
 } from '../models';
 
 export let TimePlanningPnPlanningsMethods = {
@@ -16,15 +18,14 @@ export let TimePlanningPnPlanningsMethods = {
   SimplePlannings: 'api/time-planning-pn/plannings/index',
   IndexWorkingHours: 'api/time-planning-pn/working-hours/index',
   WorkingHours: 'api/time-planning-pn/working-hours',
-  IndexFlex: 'api/time-planning-pn/flex/index',
-  Flex: 'api/time-planning-pn/flex',
 };
 
 @Injectable({
   providedIn: 'root',
 })
 export class TimePlanningPnPlanningsService {
-  constructor(private apiBaseService: ApiBaseService) {}
+  constructor(private apiBaseService: ApiBaseService) {
+  }
 
   getPlannings(
     model: TimePlanningsRequestModel
@@ -35,36 +36,20 @@ export class TimePlanningPnPlanningsService {
     );
   }
 
-  getWorkingHours(
-    model: TimePlanningsRequestModel
-  ): Observable<OperationDataResult<TimePlanningModel[]>> {
-    return this.apiBaseService.post(
-      TimePlanningPnPlanningsMethods.IndexWorkingHours,
-      model
-    );
-  }
-
-  updatePlanning(model: TimePlanningUpdateModel): Observable<OperationResult> {
-    return this.apiBaseService.put(
-      TimePlanningPnPlanningsMethods.Plannings,
-      model
-    );
-  }
-
-  updateWorkingHours(
-    model: TimePlanningsUpdateModel
+  updatePlanning(
+    model: PlanningPrDayModel, id: number
   ): Observable<OperationResult> {
     return this.apiBaseService.put(
-      TimePlanningPnPlanningsMethods.WorkingHours,
+      TimePlanningPnPlanningsMethods.Plannings + '/' + id,
       model
     );
   }
 
-  getFlexes(): Observable<OperationDataResult<TimeFlexesModel[]>> {
-    return this.apiBaseService.get(TimePlanningPnPlanningsMethods.IndexFlex);
-  }
-
-  updateFlexes(model: TimeFlexesUpdateModel): Observable<OperationResult> {
-    return this.apiBaseService.put(TimePlanningPnPlanningsMethods.Flex, model);
+  getVersionHistory(
+    planRegistrationId: number
+  ): Observable<OperationDataResult<PlanRegistrationVersionHistoryModel>> {
+    return this.apiBaseService.get(
+      TimePlanningPnPlanningsMethods.Plannings + '/' + planRegistrationId + '/version-history'
+    );
   }
 }

@@ -1,0 +1,88 @@
+<div class="day-type-rules-container">
+  <div class="header">
+    <h3>{{ 'Day Type Rules' | translate }}</h3>
+    <button
+      class="btn-primary btn-primary--icon-left"
+      (click)="onAddRule()"
+      id="addDayTypeBtn">
+      {{ 'Add Day Type' | translate }}
+    </button>
+  </div>
+
+  <div *ngIf="dayTypeRulesFormArray.length === 0" class="empty-state">
+    <mat-icon>info</mat-icon>
+    <p>{{ 'No day type rules configured yet.' | translate }}</p>
+    <p class="hint">{{ 'Click "Add Day Type" to create your first rule.' | translate }}</p>
+  </div>
+
+  <table
+    mat-table
+    [dataSource]="dataSource"
+    *ngIf="dayTypeRulesFormArray.length > 0"
+    class="rules-table">
+
+    <!-- Day Type Column -->
+    <ng-container matColumnDef="dayType">
+      <th mat-header-cell *matHeaderCellDef>{{ 'Day Type' | translate }}</th>
+      <td mat-cell *matCellDef="let rule; let i = index">
+        {{ getDayTypeLabel(getRuleFormGroup(i).get('dayType')?.value) }}
+      </td>
+    </ng-container>
+
+    <!-- Default Pay Code Column -->
+    <ng-container matColumnDef="defaultPayCode">
+      <th mat-header-cell *matHeaderCellDef>{{ 'Default Pay Code' | translate }}</th>
+      <td mat-cell *matCellDef="let rule; let i = index">
+        {{ getRuleFormGroup(i).get('defaultPayCode')?.value }}
+      </td>
+    </ng-container>
+
+    <!-- Priority Column -->
+    <ng-container matColumnDef="priority">
+      <th mat-header-cell *matHeaderCellDef>{{ 'Priority' | translate }}</th>
+      <td mat-cell *matCellDef="let rule; let i = index">
+        {{ getRuleFormGroup(i).get('priority')?.value }}
+      </td>
+    </ng-container>
+
+    <!-- Time Bands Column -->
+    <ng-container matColumnDef="timeBands">
+      <th mat-header-cell *matHeaderCellDef>{{ 'Time Bands' | translate }}</th>
+      <td mat-cell *matCellDef="let rule; let i = index">
+        {{ getTimeBandCount(getRuleFormGroup(i)) }}
+        {{ getTimeBandCount(getRuleFormGroup(i)) === 1 ? ('band' | translate) : ('bands' | translate) }}
+      </td>
+    </ng-container>
+
+    <!-- Actions Column -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>{{ 'Actions' | translate }}</th>
+      <td mat-cell *matCellDef="let rule; let i = index">
+        <button
+          mat-icon-button
+          (click)="onEditRule(i)"
+          [id]="'editDayTypeBtn_' + i"
+          matTooltip="{{ 'Edit' | translate }}">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="onDeleteRule(i)"
+          [id]="'deleteDayTypeBtn_' + i"
+          matTooltip="{{ 'Delete' | translate }}">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="['dayType', 'defaultPayCode', 'priority', 'timeBands', 'actions']"></tr>
+    <tr mat-row *matRowDef="let row; columns: ['dayType', 'defaultPayCode', 'priority', 'timeBands', 'actions'];"></tr>
+  </table>
+
+  <div class="summary" *ngIf="dayTypeRulesFormArray.length > 0">
+    {{ 'Total' | translate }}: {{ dayTypeRulesFormArray.length }}
+    {{ dayTypeRulesFormArray.length === 1 ? ('day type configured' | translate) : ('day types configured' | translate) }}
+  </div>
+</div>
+

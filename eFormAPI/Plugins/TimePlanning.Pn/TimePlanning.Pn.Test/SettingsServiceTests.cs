@@ -1,0 +1,831 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microting.eForm.Infrastructure.Constants;
+using Microting.eFormApi.BasePn.Abstractions;
+using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using NSubstitute;
+using NUnit.Framework;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
+using TimePlanning.Pn.Infrastructure.Models.Settings;
+using TimePlanning.Pn.Services.TimePlanningLocalizationService;
+using TimePlanning.Pn.Services.TimePlanningSettingService;
+using AssignedSiteModel = TimePlanning.Pn.Infrastructure.Models.Settings.AssignedSite;
+using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
+
+namespace TimePlanning.Pn.Test;
+
+[TestFixture]
+public class SettingsServiceTests : TestBaseSetup
+{
+    private ISettingService _settingsService;
+    private IUserService _userService;
+    private ITimePlanningLocalizationService _localizationService;
+    private IEFormCoreService _coreService;
+    private IPluginDbOptions<TimePlanningBaseSettings> _options;
+
+    [SetUp]
+    public async Task SetUp()
+    {
+        await base.Setup();
+        _userService = Substitute.For<IUserService>();
+        _userService.UserId.Returns(1);
+
+        _localizationService = Substitute.For<ITimePlanningLocalizationService>();
+        _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
+
+        _coreService = Substitute.For<IEFormCoreService>();
+        var core = await GetCore();
+        _coreService.GetCore().Returns(core);
+
+        _options = Substitute.For<IPluginDbOptions<TimePlanningBaseSettings>>();
+        _options.Value.Returns(new TimePlanningBaseSettings
+        {
+            AutoBreakCalculationActive = "0",
+            DayOfPayment = 20,
+            GpsEnabled = "0",
+            SnapshotEnabled = "0"
+        });
+
+        _settingsService = new TimeSettingService(
+            _options,
+            TimePlanningPnDbContext,
+            Substitute.For<ILogger<TimeSettingService>>(),
+            _userService,
+            _localizationService,
+            null,
+            _coreService);
+    }
+
+    [Test]
+    public async Task GetAssignedSite_ReturnsAssignedSite_WithGpsAndSnapshotFlags()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 1,
+            GpsEnabled = true,
+            SnapshotEnabled = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Test Site",
+            MicrotingUid = 1
+        };
+        await site.Create(sdkDbContext);
+
+        // Act
+        var result = await _settingsService.GetAssignedSite(1);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.SiteId, Is.EqualTo(1));
+        Assert.That(result.Model.GpsEnabled, Is.True);
+        Assert.That(result.Model.SnapshotEnabled, Is.False);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UpdatesGpsEnabled_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 2,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 2,
+            GpsEnabled = true,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.GpsEnabled, Is.False);
+        Assert.That(updatedSite.SnapshotEnabled, Is.False);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UpdatesGlobalGpsEnabled_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 2,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 2,
+            GpsEnabled = true,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true
+        };
+
+        var pluginConfigurationValue = await TimePlanningPnDbContext!.PluginConfigurationValues
+            .FirstOrDefaultAsync(x => x.Name == "TimePlanningBaseSettings:GpsEnabled" && x.WorkflowState != Constants.WorkflowStates.Removed);
+
+        if (pluginConfigurationValue == null)
+        {
+            pluginConfigurationValue = new PluginConfigurationValue
+            {
+                Name = "TimePlanningBaseSettings:GpsEnabled",
+                Value = "1",
+                WorkflowState = Constants.WorkflowStates.Created,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            };
+            TimePlanningPnDbContext.Add(pluginConfigurationValue);
+            await TimePlanningPnDbContext.SaveChangesAsync().ConfigureAwait(false);
+        }
+        else
+        {
+            pluginConfigurationValue!.Value = "1";
+            await TimePlanningPnDbContext.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.GpsEnabled, Is.True);
+        Assert.That(updatedSite.SnapshotEnabled, Is.False);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UpdatesSnapshotEnabled_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 3,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 3,
+            GpsEnabled = false,
+            SnapshotEnabled = true,
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.GpsEnabled, Is.False);
+        Assert.That(updatedSite.SnapshotEnabled, Is.True);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UpdatesBothGpsAndSnapshotEnabled_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 4,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 4,
+            GpsEnabled = true,
+            SnapshotEnabled = true,
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.GpsEnabled, Is.False);
+        Assert.That(updatedSite.SnapshotEnabled, Is.True);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_CanDisableBothFlags_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 5,
+            GpsEnabled = true,
+            SnapshotEnabled = true,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 5,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.GpsEnabled, Is.False);
+        Assert.That(updatedSite.SnapshotEnabled, Is.False);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_ReturnsFalse_WhenSiteNotFound()
+    {
+        // Arrange
+        var updateModel = new AssignedSiteModel
+        {
+            Id = 999,
+            SiteId = 999,
+            GpsEnabled = true,
+            SnapshotEnabled = true,
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.False);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_PreservesOtherProperties_WhenUpdatingGpsAndSnapshotFlags()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 6,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            UseOneMinuteIntervals = true,
+            AllowAcceptOfPlannedHours = true,
+            AllowEditOfRegistrations = true,
+            StartMonday = 480,
+            EndMonday = 960,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 6,
+            GpsEnabled = true,
+            SnapshotEnabled = true,
+            UseGoogleSheetAsDefault = true,
+            UseOneMinuteIntervals = true,
+            AllowAcceptOfPlannedHours = true,
+            AllowEditOfRegistrations = true,
+            StartMonday = 480,
+            EndMonday = 960
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.GpsEnabled, Is.False);
+        Assert.That(updatedSite.SnapshotEnabled, Is.True);
+        Assert.That(updatedSite.UseOneMinuteIntervals, Is.True);
+        Assert.That(updatedSite.AllowAcceptOfPlannedHours, Is.True);
+        Assert.That(updatedSite.AllowEditOfRegistrations, Is.True);
+        Assert.That(updatedSite.StartMonday, Is.EqualTo(480));
+        Assert.That(updatedSite.EndMonday, Is.EqualTo(960));
+    }
+
+    [Test]
+    public async Task GetSettings_ReturnsGpsAndSnapshotEnabledSettings()
+    {
+        // Arrange
+        _options.Value.Returns(new TimePlanningBaseSettings
+        {
+            AutoBreakCalculationActive = "0",
+            DayOfPayment = 20,
+            GpsEnabled = "1",
+            SnapshotEnabled = "1",
+            MondayBreakMinutesDivider = "180",
+            MondayBreakMinutesPrDivider = "30",
+            TuesdayBreakMinutesDivider = "180",
+            TuesdayBreakMinutesPrDivider = "30",
+            WednesdayBreakMinutesDivider = "180",
+            WednesdayBreakMinutesPrDivider = "30",
+            ThursdayBreakMinutesDivider = "180",
+            ThursdayBreakMinutesPrDivider = "30",
+            FridayBreakMinutesDivider = "180",
+            FridayBreakMinutesPrDivider = "30",
+            SaturdayBreakMinutesDivider = "120",
+            SaturdayBreakMinutesPrDivider = "30",
+            SundayBreakMinutesDivider = "120",
+            SundayBreakMinutesPrDivider = "30",
+            MondayBreakMinutesUpperLimit = "60",
+            TuesdayBreakMinutesUpperLimit = "60",
+            WednesdayBreakMinutesUpperLimit = "60",
+            ThursdayBreakMinutesUpperLimit = "60",
+            FridayBreakMinutesUpperLimit = "60",
+            SaturdayBreakMinutesUpperLimit = "60",
+            SundayBreakMinutesUpperLimit = "60",
+            ShowCalculationsAsNumber = "1",
+            DaysBackInTimeAllowedEditingEnabled = "0",
+            DaysBackInTimeAllowedEditing = 2,
+            GoogleSheetId = ""
+        });
+
+        // Act
+        var result = await _settingsService.GetSettings();
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.GpsEnabled, Is.True);
+        Assert.That(result.Model.SnapshotEnabled, Is.True);
+    }
+
+    [Test]
+    public async Task UpdateSettings_UpdatesAllAssignedSites_WithGpsAndSnapshotSettings()
+    {
+        // Arrange
+        var assignedSite1 = new AssignedSiteEntity
+        {
+            SiteId = 10,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite1.Create(TimePlanningPnDbContext);
+
+        var assignedSite2 = new AssignedSiteEntity
+        {
+            SiteId = 11,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite2.Create(TimePlanningPnDbContext);
+
+        var settingsModel = new TimePlanningSettingsModel
+        {
+            GoogleSheetId = "",
+            GpsEnabled = true,
+            SnapshotEnabled = true,
+            MondayBreakMinutesDivider = 180,
+            MondayBreakMinutesPrDivider = 30,
+            TuesdayBreakMinutesDivider = 180,
+            TuesdayBreakMinutesPrDivider = 30,
+            WednesdayBreakMinutesDivider = 180,
+            WednesdayBreakMinutesPrDivider = 30,
+            ThursdayBreakMinutesDivider = 180,
+            ThursdayBreakMinutesPrDivider = 30,
+            FridayBreakMinutesDivider = 180,
+            FridayBreakMinutesPrDivider = 30,
+            SaturdayBreakMinutesDivider = 120,
+            SaturdayBreakMinutesPrDivider = 30,
+            SundayBreakMinutesDivider = 120,
+            SundayBreakMinutesPrDivider = 30,
+            MondayBreakMinutesUpperLimit = 60,
+            TuesdayBreakMinutesUpperLimit = 60,
+            WednesdayBreakMinutesUpperLimit = 60,
+            ThursdayBreakMinutesUpperLimit = 60,
+            FridayBreakMinutesUpperLimit = 60,
+            SaturdayBreakMinutesUpperLimit = 60,
+            SundayBreakMinutesUpperLimit = 60,
+            AutoBreakCalculationActive = false,
+            ShowCalculationsAsNumber = true,
+            DayOfPayment = 20,
+            DaysBackInTimeAllowedEditingEnabled = false,
+            DaysBackInTimeAllowedEditing = 2
+        };
+
+        // Act
+        var result = await _settingsService.UpdateSettings(settingsModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite1 = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite1.Id);
+        var updatedSite2 = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite2.Id);
+
+        Assert.That(updatedSite1, Is.Not.Null);
+        Assert.That(updatedSite1.GpsEnabled, Is.True);
+        Assert.That(updatedSite1.SnapshotEnabled, Is.True);
+
+        Assert.That(updatedSite2, Is.Not.Null);
+        Assert.That(updatedSite2.GpsEnabled, Is.True);
+        Assert.That(updatedSite2.SnapshotEnabled, Is.True);
+    }
+
+    #region Manager and Tags Tests
+
+    [Test]
+    public async Task GetAssignedSite_ReturnsIsManager_WhenSet()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 20,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Manager Test Site",
+            MicrotingUid = 20
+        };
+        await site.Create(sdkDbContext);
+
+        // Act
+        var result = await _settingsService.GetAssignedSite(20);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.IsManager, Is.True);
+        Assert.That(result.Model.ManagingTagIds, Is.Not.Null);
+        Assert.That(result.Model.ManagingTagIds.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task GetAssignedSite_LoadsManagingTags_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 21,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        // Create managing tags
+        var tag1 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 1,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag1.Create(TimePlanningPnDbContext);
+
+        var tag2 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 2,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag2.Create(TimePlanningPnDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Manager Test Site with Tags",
+            MicrotingUid = 21
+        };
+        await site.Create(sdkDbContext);
+
+        // Act
+        var result = await _settingsService.GetAssignedSite(21);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.IsManager, Is.True);
+        Assert.That(result.Model.ManagingTagIds, Is.Not.Null);
+        Assert.That(result.Model.ManagingTagIds.Count, Is.EqualTo(2));
+        Assert.That(result.Model.ManagingTagIds, Does.Contain(1));
+        Assert.That(result.Model.ManagingTagIds, Does.Contain(2));
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UpdatesIsManager_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 22,
+            IsManager = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 22,
+            IsManager = true,
+            ManagingTagIds = new System.Collections.Generic.List<int>(),
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.IsManager, Is.True);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_AddsManagingTags_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 23,
+            IsManager = true,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 23,
+            IsManager = true,
+            ManagingTagIds = new System.Collections.Generic.List<int> { 10, 20, 30 },
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var managingTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+
+        Assert.That(managingTags, Is.Not.Null);
+        Assert.That(managingTags.Count, Is.EqualTo(3));
+        Assert.That(managingTags.Any(x => x.TagId == 10), Is.True);
+        Assert.That(managingTags.Any(x => x.TagId == 20), Is.True);
+        Assert.That(managingTags.Any(x => x.TagId == 30), Is.True);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_RemovesManagingTags_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 24,
+            IsManager = true,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        // Create initial tags
+        var tag1 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 10,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag1.Create(TimePlanningPnDbContext);
+
+        var tag2 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 20,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag2.Create(TimePlanningPnDbContext);
+
+        // Update model with only one tag (removing tag 20)
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 24,
+            IsManager = true,
+            ManagingTagIds = new System.Collections.Generic.List<int> { 10 },
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var managingTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+
+        Assert.That(managingTags, Is.Not.Null);
+        Assert.That(managingTags.Count, Is.EqualTo(1));
+        Assert.That(managingTags[0].TagId, Is.EqualTo(10));
+
+        // Verify tag2 was soft-deleted
+        var allTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .ToListAsync();
+        var removedTag = allTags.FirstOrDefault(x => x.TagId == 20);
+        Assert.That(removedTag, Is.Not.Null);
+        Assert.That(removedTag.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Removed));
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UpdatesBothIsManagerAndTags_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 25,
+            IsManager = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 25,
+            IsManager = true,
+            ManagingTagIds = new System.Collections.Generic.List<int> { 100, 200 },
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.IsManager, Is.True);
+
+        var managingTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+
+        Assert.That(managingTags, Is.Not.Null);
+        Assert.That(managingTags.Count, Is.EqualTo(2));
+        Assert.That(managingTags.Any(x => x.TagId == 100), Is.True);
+        Assert.That(managingTags.Any(x => x.TagId == 200), Is.True);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_HandlesNullManagingTagIds_Successfully()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 26,
+            IsManager = true,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        // Create initial tags
+        var tag1 = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 5,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await tag1.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 26,
+            IsManager = true,
+            ManagingTagIds = null, // Null should be handled gracefully
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        // All tags should be removed when null is passed
+        var managingTags = await TimePlanningPnDbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+
+        Assert.That(managingTags.Count, Is.EqualTo(0));
+    }
+
+    #endregion
+}

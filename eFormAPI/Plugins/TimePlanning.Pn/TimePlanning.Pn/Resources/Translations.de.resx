@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:schema id="root">
+        <xs:element name="root" ns1:IsDataSet="true">
+
+        </xs:element>
+    </xs:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="Shift 1: start" xml:space="preserve">
+        <value>Schicht 1: Start</value>
+    </data>
+    <data name="PlanText" xml:space="preserve">
+        <value>Plantext</value>
+    </data>
+    <data name="PlanHours" xml:space="preserve">
+        <value>Planstunden</value>
+    </data>
+    <data name="Shift 1: pause" xml:space="preserve">
+        <value>Schicht 1: Pause</value>
+    </data>
+    <data name="Shift 1: end" xml:space="preserve">
+        <value>Schicht 1: Ende</value>
+    </data>
+    <data name="Shift 2: start" xml:space="preserve">
+        <value>Schicht 2: Start</value>
+    </data>
+    <data name="Shift 2: pause" xml:space="preserve">
+        <value>Schicht 2: Pause</value>
+    </data>
+    <data name="Shift 2: end" xml:space="preserve">
+        <value>Schicht 2: Ende</value>
+    </data>
+    <data name="NettoHours" xml:space="preserve">
+        <value>Nettostunden</value>
+    </data>
+    <data name="Flex" xml:space="preserve">
+        <value>Flex</value>
+    </data>
+    <data name="SumFlexStart" xml:space="preserve">
+        <value>Flex-Summe Start</value>
+    </data>
+    <data name="SumFlexEnd" xml:space="preserve">
+        <value>Flex-Summe Ende</value>
+    </data>
+    <data name="PaidOutFlex" xml:space="preserve">
+        <value>Ausgezahlte Flex</value>
+    </data>
+    <data name="Message" xml:space="preserve">
+        <value>Nachricht</value>
+    </data>
+    <data name="Comments" xml:space="preserve">
+        <value>Kommentare</value>
+    </data>
+    <data name="Comment office" xml:space="preserve">
+        <value>Kommentar Büro</value>
+    </data>
+    <data name="Comment office all" xml:space="preserve">
+        <value>Kommentar Büro alle</value>
+    </data>
+    <data name="Date" xml:space="preserve">
+        <value>Datum</value>
+    </data>
+    <data name="Worker" xml:space="preserve">
+        <value>Mitarbeiter</value>
+    </data>
+    <data name="DayOfWeek" xml:space="preserve">
+        <value>Wochentag</value>
+    </data>
+    <data name="Employee no" xml:space="preserve">
+        <value>Mitarbeiter Nr.</value>
+    </data>
+    <data name="PlanRegistrationFound" xml:space="preserve">
+        <value>Planregistrierung gefunden</value>
+    </data>
+    <data name="From" xml:space="preserve">
+        <value>Von</value>
+    </data>
+    <data name="To" xml:space="preserve">
+        <value>Bis</value>
+    </data>
+    <data name="TokenNotFound" xml:space="preserve">
+        <value>Token nicht gefunden</value>
+    </data>
+    <data name="Shift 3: start" xml:space="preserve">
+        <value>Schicht 3: Start</value>
+    </data>
+    <data name="Shift 3: end" xml:space="preserve">
+        <value>Schicht 3: Ende</value>
+    </data>
+    <data name="Shift 3: pause" xml:space="preserve">
+        <value>Schicht 3: Pause</value>
+    </data>
+    <data name="Shift 4: start" xml:space="preserve">
+        <value>Schicht 4: Start</value>
+    </data>
+    <data name="Shift 4: end" xml:space="preserve">
+        <value>Schicht 4: Ende</value>
+    </data>
+    <data name="Shift 4: pause" xml:space="preserve">
+        <value>Schicht 4: Pause</value>
+    </data>
+    <data name="Shift 5: start" xml:space="preserve">
+        <value>Schicht 5: Start</value>
+    </data>
+    <data name="Shift 5: end" xml:space="preserve">
+        <value>Schicht 5: Ende</value>
+    </data>
+    <data name="Shift 5: pause" xml:space="preserve">
+        <value>Schicht 5: Pause</value>
+    </data>
+    <data name="Week number" xml:space="preserve">
+        <value>Wochennummer</value>
+    </data>
+    <data name="Hours Saturday" xml:space="preserve">
+        <value>Samstag Stunden</value>
+    </data>
+    <data name="Hours Sunday" xml:space="preserve">
+        <value>Sonntag- und Feiertagsstunden</value>
+    </data>
+    <data name="Yes" xml:space="preserve">
+        <value>Ja</value>
+    </data>
+    <data name="No" xml:space="preserve">
+        <value>Nein</value>
+    </data>
+    <data name="Total Hours" xml:space="preserve">
+        <value>Gesamtstunden</value>
+    </data>
+</root>

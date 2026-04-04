@@ -1,53 +1,335 @@
-<div class="row p-1 table-responsive no-gutters">
-  <table
-    mdbTable
-    striped="true"
-    hover="true"
-    small="true"
-    class="z-depth-1 text-center"
-  >
+<mtx-grid
+  id="main-header-text"
+  [data]="timePlannings"
+  [columns]="tableHeaders"
+  [showPaginator]="false"
+  [pageOnFront]="false"
+  [rowStriped]="false"
+  [showToolbar]="false"
+  class="time-dashboard"
+>
+</mtx-grid>
 
-    <thead
-      table-headers
-      [tableHeaders]="tableHeaders"
-      (sortChanged)="sortTable($event)"
-      [sort]="planningsStateService.getSort() | async"
-    ></thead>
-    <tbody id="tableBody">
-      <ng-container *ngFor="let timePlanning of timePlannings; let i = index">
-        <tr time-planning-table-row
-          [index]="i"
-          [weekDay]="timePlanning.weekDay"
-          [date]="timePlanning.date"
-          [message]="timePlanning.message"
-          [planHours]="timePlanning.planHours"
-          [planText]="timePlanning.planText"
-          (messageChanged)="
-            onTimePlanningChanged(
-              timePlanning.planHours,
-              timePlanning.planText,
-              $event,
-              timePlanning
-            )
-          "
-          (planHoursChanged)="
-            onTimePlanningChanged(
-              $event,
-              timePlanning.planText,
-              timePlanning.message,
-              timePlanning
-            )
-          "
-          (planTextChanged)="
-            onTimePlanningChanged(
-              timePlanning.planHours,
-              $event,
-              timePlanning.message,
-              timePlanning
-            )
-          "
-        ></tr>
+<ng-template #firstColumnTemplate let-row let-col="colDef" let-index="index">
+  <ng-container *ngIf="(selectAuthIsAdmin$ | async) === true">
+    <div class="first-column" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
+      <div class="progress-container">
+        <ng-container *ngIf="row['avatarUrl'] === null">
+          <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+            <div class="avatar" [style.background-image]="'url(https://www.gravatar.com/avatar/?d=retro&s=32)'"></div>
+            <ng-container *ngIf="row['softwareVersionIsValid'] === false">
+                <span [matTooltip]="'Needs update!' | translate " class="material-symbols-outlined">
+                  <mat-icon class="red-warning-avatar-icon">error</mat-icon>
+                </span>
+            </ng-container>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="row['avatarUrl'] !== null">
+          <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+            <div class="avatar" [style.background-image]="'url(' + row['avatarUrl'] + ')'"></div>
+            <ng-container *ngIf="row['softwareVersionIsValid'] === false">
+                <span [matTooltip]="'Needs update!' | translate " class="material-symbols-outlined">
+                  <mat-icon class="red-warning-avatar-icon">error</mat-icon>
+                </span>
+            </ng-container>
+          </div>
+        </ng-container>
+        <br>
+        <div class="hours-info">
+          <strong>{{ row[col.field] }}</strong>
+          <div *ngIf="row['plannedHours'] !== 0" id="plannedHours{{index}}">
+            <span [matTooltip]="'Planned working hours' | translate ">
+            {{ padZero(row['plannedHours']) }}:{{ padZero(row['plannedMinutes']) }}
+            </span>
+            <span *ngIf="row['currentWorkedHours'] !== 0" [matTooltip]="'Actual' | translate ">
+              (
+              {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+              )
+            </span>
+          </div>
+          <div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
+            <span *ngIf="row['currentWorkedHours'] !== 0" [matTooltip]="'Actual' | translate ">
+              (
+              {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+              )
+            </span>
+          </div>
+          <div>
+            <div>
+              <ng-container *ngIf="row['deviceManufacturer'] === 'iOS' ">
+                <span [matTooltip]="row['deviceModel']" class="device-icon">
+                  <mat-icon svgIcon="ios-icon"></mat-icon>
+                </span>
+              </ng-container>
+              <ng-container *ngIf="row['deviceManufacturer'] !== 'iOS' ">
+                <span [matTooltip]="row['deviceModel']" class="device-icon">
+                  <mat-icon svgIcon="android-icon"></mat-icon>
+                </span>
+              </ng-container>
+              {{row['softwareVersion']}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="(selectAuthIsAdmin$ | async) === false">
+    <div class="first-column" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
+      <div class="progress-container">
+        <ng-container *ngIf="row['avatarUrl'] === null">
+          <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+            <div class="avatar" [style.background-image]="'url(https://www.gravatar.com/avatar/?d=retro&s=32)'"></div>
+            <ng-container *ngIf="row['softwareVersionIsValid'] === false">
+                <span [matTooltip]="'Needs update!' | translate " class="material-symbols-outlined">
+                  <mat-icon class="red-warning-avatar-icon">error</mat-icon>
+                </span>
+            </ng-container>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="row['avatarUrl'] !== null">
+          <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
+            <div class="avatar" [style.background-image]="'url(' + row['avatarUrl'] + ')'"></div>
+            <ng-container *ngIf="row['softwareVersionIsValid'] === false">
+                <span [matTooltip]="'Needs update!' | translate " class="material-symbols-outlined">
+                  <mat-icon class="red-warning-avatar-icon">error</mat-icon>
+                </span>
+            </ng-container>
+          </div>
+        </ng-container>
+        <br>
+        <div class="hours-info">
+          <strong>{{ row[col.field] }}</strong>
+          <div *ngIf="row['plannedHours'] !== 0" id="plannedHours{{index}}">
+            {{ padZero(row['plannedHours']) }}:{{ padZero(row['plannedMinutes']) }}
+
+            <ng-container *ngIf="row['currentWorkedHours'] !== 0">
+              (
+              {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+              )
+            </ng-container>
+          </div>
+          <div *ngIf="row['plannedHours'] === 0 && row['currentWorkedHours'] !== 0" id="currentWorkedHours{{index}}">
+            <ng-container *ngIf="row['currentWorkedHours'] !== 0">
+              (
+              {{ padZero(row['currentWorkedHours']) }}:{{ padZero(row['currentWorkedMinutes']) }}
+              )
+            </ng-container>
+          </div>
+          <div>
+            <div>
+              <ng-container *ngIf="row['deviceManufacturer'] === 'iOS' ">
+                <span [matTooltip]="row['deviceModel']" class="device-icon">
+                  <mat-icon svgIcon="ios-icon"></mat-icon>
+                </span>
+              </ng-container>
+              <ng-container *ngIf="row['deviceManufacturer'] !== 'iOS' ">
+                <span [matTooltip]="row['deviceModel']" class="device-icon">
+                  <mat-icon svgIcon="android-icon"></mat-icon>
+                </span>
+              </ng-container>
+              {{row['softwareVersion']}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</ng-template>
+
+<ng-template #dayColumnTemplate let-row let-col="colDef" let-index="index">
+  <div class="plan-container" (click)="onDayColumnClick(row, col.field)" id="cell{{index}}_{{col.field}}">
+    <!-- Left Content -->
+    <div class="plan-content">
+      <!--<div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>-->
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0">
+        <span id="firstShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          <strong>
+            {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
+            {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift1) }} /
+            {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}
+          </strong>
+        </span>
+      </div>
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.plannedEndOfShift1 !== 0 ">
+        <span id="firstShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          <strong>
+            {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift1) }} -
+            {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift1) }} /
+            {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift1) }}
+          </strong>
+        </span>
+      </div>
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0 && row.planningPrDayModels[col.field]?.plannedEndOfShift1 === 0 && row.planningPrDayModels[col.field]?.planHours !== 0">
+        <span id="plannedHours{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          <strong>
+            {{ convertHoursToTime(row.planningPrDayModels[col.field]?.planHours) }}
+          </strong>
+        </span>
+      </div>
+
+      <div class="plan-text"
+           *ngIf="row.planningPrDayModels[col.field]?.start1StartedAt !== null" id="firstShiftActual{{index}}_{{col.field}}">
+        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login</mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start1StartedAt, 'HH:mm', 'UTC') }}
+        <span *ngIf="row.planningPrDayModels[col.field]?.stop1StoppedAt !== null"> -
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start1StartedAt, row.planningPrDayModels[col.field]?.stop1StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+        </span>
+        <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start1StartedAt) && row.planningPrDayModels[col.field]?.stop1StoppedAt === null"> -
+          <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
+        </span>
+      </div>
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift2 !== 0">
+        <span id="secondShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift2) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift2) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift2) }}
+        </span>
+      </div>
+      <div class="plan-text"
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift" id="secondShiftActual{{index}}_{{col.field}}">
+        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start2StartedAt, 'HH:mm', 'UTC') }}
+        <span *ngIf="row.planningPrDayModels[col.field]?.stop2StoppedAt !== null"> -
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start2StartedAt, row.planningPrDayModels[col.field]?.stop2StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+        </span>
+        <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start2StartedAt) && row.planningPrDayModels[col.field]?.stop2StoppedAt === null"> -
+          <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
+        </span>
+      </div>
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift3 !== 0">
+        <span id="thirdShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift3) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift3) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift3) }}
+        </span>
+      </div>
+      <div class="plan-text"
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start3StartedAt != null" id="thirdShiftActual{{index}}_{{col.field}}">
+        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start3StartedAt, 'HH:mm', 'UTC') }}
+        <span *ngIf="row.planningPrDayModels[col.field]?.stop3StoppedAt !== null"> -
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start3StartedAt, row.planningPrDayModels[col.field]?.stop3StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+        </span>
+        <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start3StartedAt) && row.planningPrDayModels[col.field]?.stop3StoppedAt === null"> -
+          <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
+        </span>
+      </div>
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift4 !== 0">
+        <span id="fourthShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift4) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift4) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift4) }}
+        </span>
+      </div>
+      <div class="plan-text"
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start4StartedAt != null" id="fourthShiftActual{{index}}_{{col.field}}">
+        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start4StartedAt, 'HH:mm', 'UTC') }}
+        <span *ngIf="row.planningPrDayModels[col.field]?.stop4StoppedAt !== null"> -
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start4StartedAt, row.planningPrDayModels[col.field]?.stop4StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+        </span>
+        <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start4StartedAt) && row.planningPrDayModels[col.field]?.stop4StoppedAt === null"> -
+          <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
+        </span>
+      </div>
+
+      <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift5 !== 0">
+        <span id="fifthShift{{index}}_{{col.field}}">
+          <mat-icon class="neutral-icon" [matTooltip]="'Planned working hours' | translate ">calendar_month</mat-icon>
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedStartOfShift5) }} -
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedEndOfShift5) }} /
+          {{ convertMinutesToTime(row.planningPrDayModels[col.field]?.plannedBreakOfShift5) }}
+        </span>
+      </div>
+      <div class="plan-text"
+           *ngIf="row.planningPrDayModels[col.field]?.isDoubleShift && row.planningPrDayModels[col.field]?.start5StartedAt != null" id="fifthShiftActual{{index}}_{{col.field}}">
+        <mat-icon class="neutral-icon" [matTooltip]="'Worktime start' | translate ">login </mat-icon> {{ datePipe.transform(row.planningPrDayModels[col.field]?.start5StartedAt, 'HH:mm', 'UTC') }}
+        <span *ngIf="row.planningPrDayModels[col.field]?.stop5StoppedAt !== null"> -
+          {{ getStopTimeDisplay(row.planningPrDayModels[col.field]?.start5StartedAt, row.planningPrDayModels[col.field]?.stop5StoppedAt) }} <mat-icon class="neutral-icon" [matTooltip]="'Worktime stop' | translate ">logout</mat-icon>
+        </span>
+        <span *ngIf="isInOlderThanToday(row.planningPrDayModels[col.field]?.start5StartedAt) && row.planningPrDayModels[col.field]?.stop5StoppedAt === null"> -
+          <mat-icon class="neutral-icon" [matTooltip]="'Shift not stopped by user!' | translate ">warning</mat-icon>
+        </span>
+      </div>
+
+      <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
+        <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
+          <div>
+            <span id="totalBreakTime{{index}}_{{col.field}}" [matTooltip]="'Total breaktime' | translate "><mat-icon class="neutral-icon">pause</mat-icon>{{ convertMinutesToTime(row.planningPrDayModels[col.field]?.pauseMinutes) }}</span>
+          </div>
+        </div>
       </ng-container>
-    </tbody>
-  </table>
-</div>
+
+      <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
+        <ng-container *ngIf="!row.planningPrDayModels[col.field]?.nettoHoursOverrideActive">
+          <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
+            <div>
+              <span id="totalWorkingHours{{index}}_{{col.field}}" [matTooltip]="'Total working hours' | translate "><mat-icon class="neutral-icon">schedule</mat-icon>{{ row.planningPrDayModels[col.field]?.actualHours.toFixed(2) }}</span>
+            </div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="row.planningPrDayModels[col.field]?.nettoHoursOverrideActive">
+          <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.nettoHoursOverride !== 0">
+            <div>
+              <span id="totalWorkingHours{{index}}_{{col.field}}" [matTooltip]="'NettoHours override' | translate "><mat-icon class="neutral-icon">schedule</mat-icon>{{ row.planningPrDayModels[col.field]?.nettoHoursOverride.toFixed(2) }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
+        <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.paidOutFlex !== 0">
+          <div>
+            <span id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'PaidOutFlex' | translate "><mat-icon class="neutral-icon">payments</mat-icon>{{ row.planningPrDayModels[col.field]?.paidOutFlex }}</span>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="Date.parse(row.planningPrDayModels[col.field]?.date) < Date.now()">
+        <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0 || row.planningPrDayModels[col.field]?.planHours !== 0 || row.planningPrDayModels[col.field]?.start1StartedAt !== null">
+          <div>
+            <span id="flexBalanceToDate{{index}}_{{col.field}}" [matTooltip]="'Flex balance to date' | translate "><mat-icon class="neutral-icon">swap_vert</mat-icon>{{ normalizeFlex(row.planningPrDayModels[col.field]?.sumFlexEnd) }}</span>
+          </div>
+        </div>
+      </ng-container>
+      <div class="comment" *ngIf="row.planningPrDayModels[col.field]?.workerComment !== null && row.planningPrDayModels[col.field]?.workerComment !== ''">
+        <div>
+          <span id="commentWorker{{index}}_{{col.field}}" [matTooltip]="'CommentWorker' | translate "><mat-icon class="neutral-icon">face</mat-icon></span>
+          {{row.planningPrDayModels[col.field]?.workerComment}}
+        </div>
+      </div>
+      <div class="comment" *ngIf="row.planningPrDayModels[col.field]?.commentOffice !== null && row.planningPrDayModels[col.field]?.commentOffice !== ''">
+        <div>
+          <span id="commentOffice{{index}}_{{col.field}}"><mat-icon class="neutral-icon" [matTooltip]="'CommentOffice' | translate ">gite</mat-icon></span>
+          {{row.planningPrDayModels[col.field]?.commentOffice}}
+        </div>
+      </div>
+      <div class="plan-text"  *ngIf="selectCurrentUserIsFirstUser$ | async">
+        <div>
+          <small class="grey-text">
+            (id: {{ row.planningPrDayModels[col.field]?.id }})
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Icons -->
+    <div class="plan-icons">
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 2" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">flight</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 10" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">pregnant_woman</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 3 || row.planningPrDayModels[col.field]?.message === 7 || row.planningPrDayModels[col.field]?.message === 8" class="red-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">sick</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 1" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">event_busy</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 4" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">school</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 5" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">event_busy</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 9" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">outdoor_grill</mat-icon>
+      <mat-icon fontSet="material-symbols-outlined" *ngIf="row.planningPrDayModels[col.field]?.message === 11" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">clock_arrow_down</mat-icon>
+      <mat-icon *ngIf="row.planningPrDayModels[col.field]?.message === 12" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">luggage</mat-icon>
+    </div>
+  </div>
+</ng-template>

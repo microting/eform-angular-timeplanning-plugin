@@ -22,20 +22,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.Planning
+using System.Collections.Generic;
+
+namespace TimePlanning.Pn.Infrastructure.Models.Planning;
+
+public class TimePlanningPlanningModel
 {
-    public class TimePlanningPlanningModel
-    {
-        //public int SiteId { get; set; }
-
-        public int WeekDay { get; set; }
-
-        public string Date { get; set; }
-
-        public string PlanText { get; set; }
-
-        public double PlanHours { get; set; }
-
-        public int? Message { get; set; }
-    }
+    public int SiteId { get; set; }
+    public string SiteName { get; set; }
+    public string AvatarUrl { get; set; }
+    public int PlannedHours { get; set; }
+    public int PlannedMinutes { get; set; }
+    public int CurrentWorkedHours { get; set; }
+    public int CurrentWorkedMinutes { get; set; }
+    public int PercentageCompleted { get; set; }
+    public string SoftwareVersion { get; set; }
+    public string DeviceModel { get; set; }
+    public string DeviceManufacturer { get; set; }
+    public bool SoftwareVersionIsValid { get; set; }
+    public List<TimePlanningPlanningPrDayModel> PlanningPrDayModels { get; set; }
 }

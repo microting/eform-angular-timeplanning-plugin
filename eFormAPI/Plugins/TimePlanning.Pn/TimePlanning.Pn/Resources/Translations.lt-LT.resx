@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:schema id="root">
+        <xs:element name="root" ns1:IsDataSet="true">
+
+        </xs:element>
+    </xs:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="Shift 1: start" xml:space="preserve">
+        <value>Pamaina 1: pradžia</value>
+    </data>
+    <data name="PlanText" xml:space="preserve">
+        <value>Plano tekstas</value>
+    </data>
+    <data name="PlanHours" xml:space="preserve">
+        <value>Plano valandos</value>
+    </data>
+    <data name="Shift 1: pause" xml:space="preserve">
+        <value>Pamaina 1: pertrauka</value>
+    </data>
+    <data name="Shift 1: end" xml:space="preserve">
+        <value>Pamaina 1: pabaiga</value>
+    </data>
+    <data name="Shift 2: start" xml:space="preserve">
+        <value>Pamaina 2: pradžia</value>
+    </data>
+    <data name="Shift 2: pause" xml:space="preserve">
+        <value>Pamaina 2: pertrauka</value>
+    </data>
+    <data name="Shift 2: end" xml:space="preserve">
+        <value>Pamaina 2: pabaiga</value>
+    </data>
+    <data name="NettoHours" xml:space="preserve">
+        <value>Neto valandos</value>
+    </data>
+    <data name="Flex" xml:space="preserve">
+        <value>Flex</value>
+    </data>
+    <data name="SumFlexStart" xml:space="preserve">
+        <value>Flex suma pradžia</value>
+    </data>
+    <data name="SumFlexEnd" xml:space="preserve">
+        <value>Flex suma pabaiga</value>
+    </data>
+    <data name="PaidOutFlex" xml:space="preserve">
+        <value>Išmokėtas flex</value>
+    </data>
+    <data name="Message" xml:space="preserve">
+        <value>Pranešimas</value>
+    </data>
+    <data name="Comments" xml:space="preserve">
+        <value>Komentarai</value>
+    </data>
+    <data name="Comment office" xml:space="preserve">
+        <value>Komentaras biuras</value>
+    </data>
+    <data name="Comment office all" xml:space="preserve">
+        <value>Komentaras biuras visi</value>
+    </data>
+    <data name="Date" xml:space="preserve">
+        <value>Data</value>
+    </data>
+    <data name="Worker" xml:space="preserve">
+        <value>Darbuotojas</value>
+    </data>
+    <data name="DayOfWeek" xml:space="preserve">
+        <value>Savaitės diena</value>
+    </data>
+    <data name="Employee no" xml:space="preserve">
+        <value>Darbuotojo nr</value>
+    </data>
+    <data name="PlanRegistrationFound" xml:space="preserve">
+        <value>Plano registracija rasta</value>
+    </data>
+    <data name="From" xml:space="preserve">
+        <value>Nuo</value>
+    </data>
+    <data name="To" xml:space="preserve">
+        <value>Iki</value>
+    </data>
+    <data name="TokenNotFound" xml:space="preserve">
+        <value>Žetonas nerastas</value>
+    </data>
+    <data name="Shift 3: start" xml:space="preserve">
+        <value>Pamaina 3: pradžia</value>
+    </data>
+    <data name="Shift 3: end" xml:space="preserve">
+        <value>Pamaina 3: pabaiga</value>
+    </data>
+    <data name="Shift 3: pause" xml:space="preserve">
+        <value>Pamaina 3: pertrauka</value>
+    </data>
+    <data name="Shift 4: start" xml:space="preserve">
+        <value>Pamaina 4: pradžia</value>
+    </data>
+    <data name="Shift 4: end" xml:space="preserve">
+        <value>Pamaina 4: pabaiga</value>
+    </data>
+    <data name="Shift 4: pause" xml:space="preserve">
+        <value>Pamaina 4: pertrauka</value>
+    </data>
+    <data name="Shift 5: start" xml:space="preserve">
+        <value>Pamaina 5: pradžia</value>
+    </data>
+    <data name="Shift 5: end" xml:space="preserve">
+        <value>Pamaina 5: pabaiga</value>
+    </data>
+    <data name="Shift 5: pause" xml:space="preserve">
+        <value>Pamaina 5: pertrauka</value>
+    </data>
+    <data name="Week number" xml:space="preserve">
+        <value>Savaitės numeris</value>
+    </data>
+    <data name="Hours Saturday" xml:space="preserve">
+        <value>Šeštadienio valandos</value>
+    </data>
+    <data name="Hours Sunday" xml:space="preserve">
+        <value>Sekmadienio ir švenčių valandos</value>
+    </data>
+    <data name="Yes" xml:space="preserve">
+        <value>Taip</value>
+    </data>
+    <data name="No" xml:space="preserve">
+        <value>Ne</value>
+    </data>
+    <data name="Total Hours" xml:space="preserve">
+        <value>Iš viso valandų</value>
+    </data>
+</root>

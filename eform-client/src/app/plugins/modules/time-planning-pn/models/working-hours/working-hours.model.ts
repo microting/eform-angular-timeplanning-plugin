@@ -1,6 +1,6 @@
-import { TimePlanningModel } from '../plannings';
+import {WorkingHourModel} from './working-hour.model';
 
 export class WorkingHoursModel {
   siteId: number;
-  plannings: TimePlanningModel[] = [];
+  plannings: WorkingHourModel[] = [];
 }
