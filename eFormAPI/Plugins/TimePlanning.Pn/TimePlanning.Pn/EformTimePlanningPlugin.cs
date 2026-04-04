@@ -212,6 +212,8 @@ public class EformTimePlanningPlugin : IEformPlugin
             endpoints.MapGrpcService<TimePlanningAuthGrpcService>();
             endpoints.MapGrpcService<TimePlanningWorkingHoursGrpcService>();
             endpoints.MapGrpcService<TimePlanningPlanningsGrpcService>();
+            endpoints.MapGrpcService<TimePlanningAbsenceRequestGrpcService>();
+            endpoints.MapGrpcService<TimePlanningContentHandoverGrpcService>();
         });
     }
 
