@@ -22,7 +22,7 @@ public class TimePlanningWorkingHoursGrpcService
     {
         var result = await _workingHoursService.Read(
             request.SdkSiteId,
-            DateTime.Parse(request.Date),
+            DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture),
             request.Token);
 
         var response = new ReadWorkingHoursResponse
@@ -43,7 +43,7 @@ public class TimePlanningWorkingHoursGrpcService
         UpdateWorkingHoursRequest request, ServerCallContext context)
     {
         var model = MapFromGrpc(request.Model, request.Device);
-        model.Date = DateTime.Parse(request.Date);
+        model.Date = DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture);
 
         var result = await _workingHoursService.UpdateWorkingHour(
             request.SdkSiteId,
@@ -62,8 +62,8 @@ public class TimePlanningWorkingHoursGrpcService
     {
         var device = request.Device;
         var result = await _workingHoursService.CalculateHoursSummary(
-            DateTime.Parse(request.StartDate),
-            DateTime.Parse(request.EndDate),
+            DateTime.Parse(request.StartDate, System.Globalization.CultureInfo.InvariantCulture),
+            DateTime.Parse(request.EndDate, System.Globalization.CultureInfo.InvariantCulture),
             device?.SoftwareVersion,
             device?.DeviceModel,
             device?.Manufacturer,

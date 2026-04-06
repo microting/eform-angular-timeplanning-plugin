@@ -90,6 +90,10 @@ message PlanningsByUserModel {
   int32 planned_hours = 7;
   int32 planned_minutes = 8;
   bool software_version_is_valid = 9;
+  string site_name = 10;
+  string software_version = 11;
+  string device_model = 12;
+  string device_manufacturer = 13;
 }
 
 message UpdatePlanningByCurrentUserRequest {
@@ -101,7 +105,37 @@ message UpdatePlanningByCurrentUserResponse {
   string message = 2;
 }
 
+message IndexPlanningsRequest {
+  string date_from = 1;
+  string date_to = 2;
+  int32 site_id = 3;
+  string sort = 4;
+  bool is_sort_dsc = 5;
+  bool show_resigned_sites = 6;
+  repeated int32 tag_ids = 7;
+  DeviceMetadata device = 8;
+}
+
+message IndexPlanningsResponse {
+  bool success = 1;
+  string message = 2;
+  repeated PlanningsByUserModel models = 3;
+}
+
+message UpdatePlanningRequest {
+  int32 planning_id = 1;
+  PlanningPrDayModel model = 2;
+  DeviceMetadata device = 3;
+}
+
+message UpdatePlanningResponse {
+  bool success = 1;
+  string message = 2;
+}
+
 service TimePlanningPlanningsService {
   rpc GetPlanningsByUser(GetPlanningsByUserRequest) returns (GetPlanningsByUserResponse);
   rpc UpdatePlanningByCurrentUser(UpdatePlanningByCurrentUserRequest) returns (UpdatePlanningByCurrentUserResponse);
+  rpc IndexPlannings(IndexPlanningsRequest) returns (IndexPlanningsResponse);
+  rpc UpdatePlanning(UpdatePlanningRequest) returns (UpdatePlanningResponse);
 }

@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package timeplanning;
+
+import "common.proto";
+
+option csharp_namespace = "TimePlanning.Pn.Grpc";
+
+message CreateContentHandoverRequest {
+  int32 from_plan_registration_id = 1;
+  int32 to_sdk_site_id = 2;
+  string request_comment = 3;
+  DeviceMetadata device = 4;
+}
+
+message ContentHandoverDecisionRequest {
+  int32 request_id = 1;
+  int32 current_sdk_site_id = 2;
+  string decision_comment = 3;
+  DeviceMetadata device = 4;
+}
+
+message CancelContentHandoverRequest {
+  int32 request_id = 1;
+  int32 current_sdk_site_id = 2;
+  DeviceMetadata device = 3;
+}
+
+message GetContentHandoverRequestsRequest {
+  int32 sdk_site_id = 1;
+  DeviceMetadata device = 2;
+}
+
+message ContentHandoverRequestModel {
+  int32 id = 1;
+  int32 from_sdk_site_id = 2;
+  int32 to_sdk_site_id = 3;
+  string date = 4;
+  int32 from_plan_registration_id = 5;
+  int32 to_plan_registration_id = 6;
+  string status = 7;
+  string requested_at_utc = 8;
+  string responded_at_utc = 9;
+  string request_comment = 10;
+  string decision_comment = 11;
+}
+
+message ContentHandoverResponse {
+  bool success = 1;
+  string message = 2;
+  ContentHandoverRequestModel model = 3;
+}
+
+message ContentHandoverListResponse {
+  bool success = 1;
+  string message = 2;
+  repeated ContentHandoverRequestModel models = 3;
+}
+
+service TimePlanningContentHandoverService {
+  rpc CreateContentHandover(CreateContentHandoverRequest) returns (ContentHandoverResponse);
+  rpc AcceptContentHandover(ContentHandoverDecisionRequest) returns (OperationResponse);
+  rpc RejectContentHandover(ContentHandoverDecisionRequest) returns (OperationResponse);
+  rpc CancelContentHandover(CancelContentHandoverRequest) returns (OperationResponse);
+  rpc GetContentHandoverInbox(GetContentHandoverRequestsRequest) returns (ContentHandoverListResponse);
+  rpc GetMyContentHandovers(GetContentHandoverRequestsRequest) returns (ContentHandoverListResponse);
+}
