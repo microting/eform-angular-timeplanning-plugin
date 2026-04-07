@@ -254,7 +254,32 @@ public class AbsenceRequestServiceTests : TestBaseSetup
     [Test]
     public async Task GetInboxAsync_ReturnsPendingRequests()
     {
-        // Arrange - Set up manager with tag-based filtering
+        // Arrange - Set up SDK DB first: site + tag
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var workerSdkSite = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Worker Site",
+            MicrotingUid = 1
+        };
+        await workerSdkSite.Create(sdkDbContext);
+
+        var tag = new Microting.eForm.Infrastructure.Data.Entities.Tag
+        {
+            Name = "TestTag"
+        };
+        await tag.Create(sdkDbContext);
+
+        var siteTag = new Microting.eForm.Infrastructure.Data.Entities.SiteTag
+        {
+            SiteId = workerSdkSite.Id,
+            TagId = tag.Id
+        };
+        await sdkDbContext.SiteTags.AddAsync(siteTag);
+        await sdkDbContext.SaveChangesAsync();
+
+        // Set up manager with tag-based filtering
         var managerSite = new AssignedSiteEntity
         {
             SiteId = 2,
@@ -267,30 +292,11 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         var managingTag = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
         {
             AssignedSiteId = managerSite.Id,
-            TagId = 100,
+            TagId = tag.Id,
             CreatedByUserId = 1,
             UpdatedByUserId = 1
         };
         await managingTag.Create(TimePlanningPnDbContext);
-
-        // Set up SDK DB: site + tag linking requesting worker (siteId=1) to tag 100
-        var core = await _coreService.GetCore();
-        var sdkDbContext = core.DbContextHelper.GetDbContext();
-
-        var workerSdkSite = new Microting.eForm.Infrastructure.Data.Entities.Site
-        {
-            Name = "Worker Site",
-            MicrotingUid = 1
-        };
-        await workerSdkSite.Create(sdkDbContext);
-
-        var siteTag = new Microting.eForm.Infrastructure.Data.Entities.SiteTag
-        {
-            SiteId = workerSdkSite.Id,
-            TagId = 100
-        };
-        await sdkDbContext.SiteTags.AddAsync(siteTag);
-        await sdkDbContext.SaveChangesAsync();
 
         // Create pending and approved requests from worker site (siteId=1)
         var pending = new AbsenceRequest
