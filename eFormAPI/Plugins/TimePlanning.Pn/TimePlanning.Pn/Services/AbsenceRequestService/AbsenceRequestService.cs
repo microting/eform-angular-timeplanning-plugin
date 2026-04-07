@@ -37,6 +37,8 @@ using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.eForm.Infrastructure.Constants;
+using Microting.eFormApi.BasePn.Infrastructure.Helpers;
 using TimePlanningLocalizationService;
 
 public class AbsenceRequestService : IAbsenceRequestService
@@ -45,17 +47,20 @@ public class AbsenceRequestService : IAbsenceRequestService
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly IUserService _userService;
     private readonly ITimePlanningLocalizationService _localizationService;
+    private readonly IEFormCoreService _coreService;
 
     public AbsenceRequestService(
         ILogger<AbsenceRequestService> logger,
         TimePlanningPnDbContext dbContext,
         IUserService userService,
-        ITimePlanningLocalizationService localizationService)
+        ITimePlanningLocalizationService localizationService,
+        IEFormCoreService coreService)
     {
         _logger = logger;
         _dbContext = dbContext;
         _userService = userService;
         _localizationService = localizationService;
+        _coreService = coreService;
     }
 
     public async Task<OperationDataResult<AbsenceRequestModel>> CreateAsync(AbsenceRequestCreateModel model)
@@ -260,9 +265,36 @@ public class AbsenceRequestService : IAbsenceRequestService
     {
         try
         {
+            // Check if the requesting user is a manager
+            var assignedSite = await _dbContext.AssignedSites
+                .FirstOrDefaultAsync(a => a.SiteId == managerSdkSitId);
+
+            if (assignedSite == null || !assignedSite.IsManager)
+            {
+                return new OperationDataResult<List<AbsenceRequestModel>>(true, new List<AbsenceRequestModel>());
+            }
+
+            // Get the manager's managing tag IDs
+            var managingTagIds = await _dbContext.AssignedSiteManagingTags
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.AssignedSiteId == assignedSite.Id)
+                .Select(x => x.TagId)
+                .ToListAsync();
+
+            // Find all site IDs that share any of the manager's tags
+            var sdkCore = await _coreService.GetCore();
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+            var managedSiteIds = await sdkDbContext.SiteTags
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => managingTagIds.Contains((int)x.TagId!))
+                .Select(x => x.Site.MicrotingUid)
+                .Distinct()
+                .ToListAsync();
+
             var requests = await _dbContext.AbsenceRequests
                 .Include(ar => ar.Days)
                 .Where(ar => ar.Status == AbsenceRequestStatus.Pending)
+                .Where(ar => managedSiteIds.Contains(ar.RequestedBySdkSitId))
                 .OrderByDescending(ar => ar.RequestedAtUtc)
                 .ToListAsync();
 
