@@ -324,6 +324,7 @@ public class TimeSettingService(
                             newSite.AvatarUrl = user.ProfilePictureSnapshot != null
                                 ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
                                 : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+                            newSite.PhoneNumber = user.PhoneNumber ?? "";
                         }
                         sites.Add(newSite);
                     }
@@ -604,6 +605,7 @@ public class TimeSettingService(
                             newSite.AvatarUrl = user.ProfilePictureSnapshot != null
                                 ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
                                 : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+                            newSite.PhoneNumber = user.PhoneNumber ?? "";
                         }
                         sites.Add(newSite);
                     }

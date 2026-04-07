@@ -265,6 +265,7 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                     Resigned = site.Resigned,
                     ResignedAtDate = Timestamp.FromDateTime(
                         DateTime.SpecifyKind(site.ResignedAtDate, DateTimeKind.Utc)),
+                    PhoneNumber = site.PhoneNumber ?? "",
                 };
                 response.Model.Add(grpcSite);
             }

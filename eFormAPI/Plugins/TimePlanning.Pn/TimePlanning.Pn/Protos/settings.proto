@@ -235,6 +235,7 @@ message Site {
   bool snapshot_enabled = 19;
   bool resigned = 20;
   google.protobuf.Timestamp resigned_at_date = 21;
+  string phone_number = 22;
 }
 
 // Response wrappers matching C# OperationDataResult<T>

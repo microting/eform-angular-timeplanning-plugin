@@ -27,4 +27,5 @@ public class Site
     public bool Resigned { get; set; }
 
     public DateTime ResignedAtDate { get; set; }
+    public string? PhoneNumber { get; set; }
 }
