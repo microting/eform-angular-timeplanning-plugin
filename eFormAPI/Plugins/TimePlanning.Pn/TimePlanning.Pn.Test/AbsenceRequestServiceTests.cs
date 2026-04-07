@@ -34,7 +34,8 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
             TimePlanningPnDbContext,
             _userService,
-            _localizationService);
+            _localizationService,
+            Substitute.For<Microting.eFormApi.BasePn.Abstractions.IEFormCoreService>());
     }
 
     [Test]
