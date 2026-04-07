@@ -7,9 +7,11 @@ using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
+using Microting.eForm.Infrastructure.Constants;
 using TimePlanning.Pn.Infrastructure.Models.AbsenceRequest;
 using TimePlanning.Pn.Services.AbsenceRequestService;
 using TimePlanning.Pn.Services.TimePlanningLocalizationService;
+using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
 
 namespace TimePlanning.Pn.Test;
 
@@ -19,6 +21,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
     private IAbsenceRequestService _absenceRequestService;
     private IUserService _userService;
     private ITimePlanningLocalizationService _localizationService;
+    private IEFormCoreService _coreService;
 
     [SetUp]
     public async Task SetUp()
@@ -30,11 +33,16 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
 
+        _coreService = Substitute.For<Microting.eFormApi.BasePn.Abstractions.IEFormCoreService>();
+        var core = await GetCore();
+        _coreService.GetCore().Returns(Task.FromResult(core));
+
         _absenceRequestService = new AbsenceRequestService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
             TimePlanningPnDbContext,
             _userService,
-            _localizationService);
+            _localizationService,
+            _coreService);
     }
 
     [Test]
@@ -246,7 +254,45 @@ public class AbsenceRequestServiceTests : TestBaseSetup
     [Test]
     public async Task GetInboxAsync_ReturnsPendingRequests()
     {
-        // Arrange - Create pending and approved requests
+        // Arrange - Set up manager with tag-based filtering
+        var managerSite = new AssignedSiteEntity
+        {
+            SiteId = 2,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await managerSite.Create(TimePlanningPnDbContext);
+
+        var managingTag = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = managerSite.Id,
+            TagId = 100,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await managingTag.Create(TimePlanningPnDbContext);
+
+        // Set up SDK DB: site + tag linking requesting worker (siteId=1) to tag 100
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var workerSdkSite = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Worker Site",
+            MicrotingUid = 1
+        };
+        await workerSdkSite.Create(sdkDbContext);
+
+        var siteTag = new Microting.eForm.Infrastructure.Data.Entities.SiteTag
+        {
+            SiteId = workerSdkSite.Id,
+            TagId = 100
+        };
+        await sdkDbContext.SiteTags.AddAsync(siteTag);
+        await sdkDbContext.SaveChangesAsync();
+
+        // Create pending and approved requests from worker site (siteId=1)
         var pending = new AbsenceRequest
         {
             RequestedBySdkSitId = 1,

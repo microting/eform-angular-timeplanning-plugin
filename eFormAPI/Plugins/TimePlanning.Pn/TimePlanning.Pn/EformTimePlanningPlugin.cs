@@ -684,6 +684,68 @@ public class EformTimePlanningPlugin : IEformPlugin
                                 Language = LanguageNames.Danish
                             }
                         ]
+                    },
+
+                    new()
+                    {
+                        Name = "Absence Requests",
+                        E2EId = "time-planning-pn-absence-requests",
+                        Link = "/plugins/time-planning-pn/absence-requests",
+                        Type = MenuItemTypeEnum.Link,
+                        Position = 7,
+                        MenuTemplate = new()
+                        {
+                            Name = "Absence Requests",
+                            E2EId = "time-planning-pn-absence-requests",
+                            DefaultLink = "/plugins/time-planning-pn/absence-requests",
+                            Permissions = [],
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Absence Requests",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Abwesenheitsanträge",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Fraværsanmodninger",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+                        Translations =
+                        [
+                            new()
+                            {
+                                LocaleName = LocaleNames.English,
+                                Name = "Absence Requests",
+                                Language = LanguageNames.English
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.German,
+                                Name = "Abwesenheitsanträge",
+                                Language = LanguageNames.German
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.Danish,
+                                Name = "Fraværsanmodninger",
+                                Language = LanguageNames.Danish
+                            }
+                        ]
                     }
                 ]
             }

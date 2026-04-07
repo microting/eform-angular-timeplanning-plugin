@@ -127,6 +127,7 @@ public class TimePlanningPlanningsGrpcServiceTests
                 PlanHours = 0,
                 SdkSiteId = 7,
                 Comment = "On holiday",
+                WorkerComment = "On holiday",
             }
         };
 

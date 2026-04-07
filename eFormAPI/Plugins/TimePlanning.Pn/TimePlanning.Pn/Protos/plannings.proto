@@ -64,6 +64,97 @@ message PlanningPrDayModel {
   int32 break3_shift = 50;
   int32 break4_shift = 51;
   int32 break5_shift = 52;
+
+  // Fields added for full REST parity
+  string site_name = 53;
+  int32 week_day = 54;
+  double actual_hours = 55;
+  double difference = 56;
+  double pause_minutes = 57;
+  bool work_day_started = 58;
+  bool work_day_ended = 59;
+  bool plan_hours_matched = 60;
+  int32 planned_start_of_shift1 = 61;
+  int32 planned_end_of_shift1 = 62;
+  int32 planned_break_of_shift1 = 63;
+  int32 planned_start_of_shift2 = 64;
+  int32 planned_end_of_shift2 = 65;
+  int32 planned_break_of_shift2 = 66;
+  int32 planned_start_of_shift3 = 67;
+  int32 planned_end_of_shift3 = 68;
+  int32 planned_break_of_shift3 = 69;
+  int32 planned_start_of_shift4 = 70;
+  int32 planned_end_of_shift4 = 71;
+  int32 planned_break_of_shift4 = 72;
+  int32 planned_start_of_shift5 = 73;
+  int32 planned_end_of_shift5 = 74;
+  int32 planned_break_of_shift5 = 75;
+  bool is_double_shift = 76;
+  bool on_vacation = 77;
+  bool sick = 78;
+  bool other_allowed_absence = 79;
+  bool absence_without_permission = 80;
+  string comment_office = 81;
+  string worker_comment = 82;
+
+  // Detailed pause timestamps for shift 1
+  string pause10_started_at = 83;
+  string pause10_stopped_at = 84;
+  string pause11_started_at = 85;
+  string pause11_stopped_at = 86;
+  string pause12_started_at = 87;
+  string pause12_stopped_at = 88;
+  string pause13_started_at = 89;
+  string pause13_stopped_at = 90;
+  string pause14_started_at = 91;
+  string pause14_stopped_at = 92;
+  string pause15_started_at = 93;
+  string pause15_stopped_at = 94;
+  string pause16_started_at = 95;
+  string pause16_stopped_at = 96;
+  string pause17_started_at = 97;
+  string pause17_stopped_at = 98;
+  string pause18_started_at = 99;
+  string pause18_stopped_at = 100;
+  string pause19_started_at = 101;
+  string pause19_stopped_at = 102;
+  string pause100_started_at = 103;
+  string pause100_stopped_at = 104;
+  string pause101_started_at = 105;
+  string pause101_stopped_at = 106;
+  string pause102_started_at = 107;
+  string pause102_stopped_at = 108;
+
+  // Detailed pause timestamps for shift 2
+  string pause20_started_at = 109;
+  string pause20_stopped_at = 110;
+  string pause21_started_at = 111;
+  string pause21_stopped_at = 112;
+  string pause22_started_at = 113;
+  string pause22_stopped_at = 114;
+  string pause23_started_at = 115;
+  string pause23_stopped_at = 116;
+  string pause24_started_at = 117;
+  string pause24_stopped_at = 118;
+  string pause25_started_at = 119;
+  string pause25_stopped_at = 120;
+  string pause26_started_at = 121;
+  string pause26_stopped_at = 122;
+  string pause27_started_at = 123;
+  string pause27_stopped_at = 124;
+  string pause28_started_at = 125;
+  string pause28_stopped_at = 126;
+  string pause29_started_at = 127;
+  string pause29_stopped_at = 128;
+  string pause200_started_at = 129;
+  string pause200_stopped_at = 130;
+  string pause201_started_at = 131;
+  string pause201_stopped_at = 132;
+  string pause202_started_at = 133;
+  string pause202_stopped_at = 134;
+
+  double netto_hours_override = 135;
+  bool netto_hours_override_active = 136;
 }
 
 message GetPlanningsByUserRequest {
