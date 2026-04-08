@@ -226,10 +226,10 @@ async function setPlannedShiftTimes(
   page: Page,
   shiftId: number,
   start: string,
-  pause: string,
   stop: string,
+  pause: string,
 ): Promise<void> {
-  // Order matters: break is disabled until start+stop are set
+  // Order: start → stop → break (break is disabled until start+stop are set)
   await setTimepickerValue(page, `plannedStartOfShift${shiftId}`, start);
   await setTimepickerValue(page, `plannedEndOfShift${shiftId}`, stop);
   await setTimepickerValue(page, `plannedBreakOfShift${shiftId}`, pause);
@@ -361,31 +361,31 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     // ---- Step 4: Enter planned shift times for Monday (day index 0) ----
     // Use AM hours only (1-12) to stay on the outer clock ring
     await openWorkdayDialog(page, 0, 0);
-    await setPlannedShiftTimes(page, 1, '06:00', '12:00', '00:30');
+    await setPlannedShiftTimes(page, 1, '06:00', '12:00', '01:00');
     await setPlanHours(page, 6);
     await saveWorkdayDialog(page);
 
     // ---- Step 5: Tuesday (day index 1) ----
     await openWorkdayDialog(page, 0, 1);
-    await setPlannedShiftTimes(page, 1, '06:00', '12:00', '00:30');
+    await setPlannedShiftTimes(page, 1, '06:00', '12:00', '01:00');
     await setPlanHours(page, 6);
     await saveWorkdayDialog(page);
 
     // ---- Step 6: Wednesday (day index 2) ----
     await openWorkdayDialog(page, 0, 2);
-    await setPlannedShiftTimes(page, 1, '07:00', '12:00', '00:30');
+    await setPlannedShiftTimes(page, 1, '07:00', '12:00', '01:00');
     await setPlanHours(page, 5);
     await saveWorkdayDialog(page);
 
     // ---- Step 7: Thursday (day index 3) ----
     await openWorkdayDialog(page, 0, 3);
-    await setPlannedShiftTimes(page, 1, '06:00', '12:00', '00:30');
+    await setPlannedShiftTimes(page, 1, '06:00', '12:00', '01:00');
     await setPlanHours(page, 6);
     await saveWorkdayDialog(page);
 
     // ---- Step 8: Friday (day index 4) ----
     await openWorkdayDialog(page, 0, 4);
-    await setPlannedShiftTimes(page, 1, '07:00', '12:00', '00:30');
+    await setPlannedShiftTimes(page, 1, '07:00', '12:00', '01:00');
     await setPlanHours(page, 5);
     await saveWorkdayDialog(page);
 
