@@ -1,12 +1,13 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
-import {PayRuleSetSimpleModel, PayRuleSetsRequestModel} from '../../../../models';
+import {PayRuleSetSimpleModel, PayRuleSetsRequestModel, PAY_RULE_SET_PRESETS} from '../../../../models';
 import {MatDialog} from '@angular/material/dialog';
 import {PayRuleSetsDeleteModalComponent} from '../pay-rule-sets-delete-modal/pay-rule-sets-delete-modal.component';
 import {PayRuleSetsCreateModalComponent} from '../pay-rule-sets-create-modal/pay-rule-sets-create-modal.component';
 import {PayRuleSetsEditModalComponent} from '../pay-rule-sets-edit-modal/pay-rule-sets-edit-modal.component';
 import {TimePlanningPnPayRuleSetsService} from '../../../../services';
 import {Subscription} from 'rxjs';
+import {ToastrService} from 'ngx-toastr';
 
 @AutoUnsubscribe()
 @Component({
@@ -29,7 +30,8 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
 
   constructor(
     private dialog: MatDialog,
-    private payRuleSetsService: TimePlanningPnPayRuleSetsService
+    private payRuleSetsService: TimePlanningPnPayRuleSetsService,
+    private toastrService: ToastrService
   ) {}
 
   ngOnInit(): void {
@@ -53,6 +55,7 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(PayRuleSetsCreateModalComponent, {
       minWidth: 1280,
       maxWidth: 1440,
+      data: { existingNames: this.payRuleSets.map(p => p.name) },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
@@ -79,6 +82,12 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   }
 
   onDeleteClicked(payRuleSet: PayRuleSetSimpleModel): void {
+    const isLockedPreset = PAY_RULE_SET_PRESETS.some(p => p.locked && p.name === payRuleSet.name);
+    if (isLockedPreset) {
+      this.toastrService.error('Cannot delete - this overenskomst is a locked preset and cannot be removed');
+      return;
+    }
+
     const dialogRef = this.dialog.open(PayRuleSetsDeleteModalComponent, {
       data: { selectedPayRuleSet: payRuleSet },
     });
