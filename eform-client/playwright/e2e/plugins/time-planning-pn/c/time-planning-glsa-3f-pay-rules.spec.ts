@@ -358,40 +358,35 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
       await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 }).catch(() => {});
     }
 
-    // ---- Step 4: Enter shift times for Monday (day index 0) ----
+    // ---- Step 4: Enter planned shift times for Monday (day index 0) ----
+    // Use AM hours only (1-12) to stay on the outer clock ring
     await openWorkdayDialog(page, 0, 0);
-
-    // Set planned shift 1: 07:00 start, 00:30 break, 15:30 stop
-    await setPlannedShiftTimes(page, 1, '07:00', '00:30', '15:30');
-
-    // Set plan hours
-    await setPlanHours(page, 8);
-
-    // Save the workday dialog
+    await setPlannedShiftTimes(page, 1, '06:00', '12:00', '00:30');
+    await setPlanHours(page, 6);
     await saveWorkdayDialog(page);
 
-    // ---- Step 5: Enter shift times for Tuesday (day index 1) ----
+    // ---- Step 5: Tuesday (day index 1) ----
     await openWorkdayDialog(page, 0, 1);
-    await setPlannedShiftTimes(page, 1, '07:00', '00:30', '15:30');
-    await setPlanHours(page, 8);
+    await setPlannedShiftTimes(page, 1, '06:00', '12:00', '00:30');
+    await setPlanHours(page, 6);
     await saveWorkdayDialog(page);
 
-    // ---- Step 6: Enter shift times for Wednesday (day index 2) ----
+    // ---- Step 6: Wednesday (day index 2) ----
     await openWorkdayDialog(page, 0, 2);
-    await setPlannedShiftTimes(page, 1, '07:00', '00:30', '15:30');
-    await setPlanHours(page, 8);
+    await setPlannedShiftTimes(page, 1, '07:00', '12:00', '00:30');
+    await setPlanHours(page, 5);
     await saveWorkdayDialog(page);
 
-    // ---- Step 7: Enter shift times for Thursday with overtime (day index 3) ----
+    // ---- Step 7: Thursday (day index 3) ----
     await openWorkdayDialog(page, 0, 3);
-    await setPlannedShiftTimes(page, 1, '07:00', '00:30', '17:00');
-    await setPlanHours(page, 8);
+    await setPlannedShiftTimes(page, 1, '06:00', '12:00', '00:30');
+    await setPlanHours(page, 6);
     await saveWorkdayDialog(page);
 
-    // ---- Step 8: Enter shift times for Friday (day index 4) ----
+    // ---- Step 8: Friday (day index 4) ----
     await openWorkdayDialog(page, 0, 4);
-    await setPlannedShiftTimes(page, 1, '07:00', '00:30', '15:00');
-    await setPlanHours(page, 8);
+    await setPlannedShiftTimes(page, 1, '07:00', '12:00', '00:30');
+    await setPlanHours(page, 5);
     await saveWorkdayDialog(page);
 
     // ---- Step 9: Export Excel and verify basic structure ----
