@@ -37,57 +37,32 @@ const targetSunday = getSunday(targetMonday);
  * Uses the mat-tree navigation approach (matching translated text).
  * Falls back to ID-based approach if tree nodes are available.
  */
+/**
+ * Navigation uses the proven pattern from dashboard-edit-b.spec.ts:
+ * mat-nested-tree-node for parent menu, mat-tree-node for sub-items.
+ */
 async function expandPluginMenu(page: Page): Promise<void> {
-  // The plugin menu uses mat-nested-tree-node. The Danish label is "Timeregistrering".
-  // Try ID-based approach first (works when IDs are rendered by host app)
-  const menuItem = page.locator('#time-planning-pn');
-  if (await menuItem.isVisible().catch(() => false)) {
-    const subItem = page.locator('#time-planning-pn-pay-rule-sets');
-    if (!await subItem.isVisible().catch(() => false)) {
-      await menuItem.click();
-      await subItem.waitFor({ state: 'visible', timeout: 10000 });
-    }
-    return;
-  }
-
-  // Fallback: use tree-node text matching (works with translated labels)
-  const treeNode = page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' });
-  await treeNode.waitFor({ state: 'visible', timeout: 30000 });
-  await treeNode.click();
+  await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
 }
 
 async function navigateToPayRuleSets(page: Page): Promise<void> {
   await expandPluginMenu(page);
-
-  // Try ID first, then fallback to text
-  const byId = page.locator('#time-planning-pn-pay-rule-sets');
-  if (await byId.isVisible().catch(() => false)) {
-    await byId.click();
-  } else {
-    await page.locator('mat-tree-node').filter({ hasText: 'Pay Rule Sets' }).click();
-  }
-
-  // Wait for the pay rule sets page to load
-  await page.locator('#time-planning-pn-pay-rule-sets-grid, .table-actions')
-    .first().waitFor({ state: 'visible', timeout: 30000 });
+  const responsePromise = page.waitForResponse(
+    r => r.url().includes('/api/time-planning-pn/pay-rule-sets') && r.request().method() === 'GET',
+  );
+  await page.locator('mat-tree-node').filter({ hasText: 'Pay Rule Sets' }).click();
+  await responsePromise;
+  await page.locator('#time-planning-pn-pay-rule-sets-grid')
+    .waitFor({ state: 'visible', timeout: 30000 });
 }
 
 async function navigateToPlannings(page: Page): Promise<void> {
   await expandPluginMenu(page);
-
-  // Try ID first, then fallback to text
-  const byId = page.locator('#time-planning-pn-planning');
-  if (await byId.isVisible().catch(() => false)) {
-    await byId.click();
-  } else {
-    await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
-  }
-
-  // Wait for the plannings index API call to complete
-  await page.waitForResponse(
+  const indexPromise = page.waitForResponse(
     r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST',
-    { timeout: 30000 },
-  ).catch(() => {});
+  );
+  await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
+  await indexPromise;
 
   // Wait for spinner to disappear if present
   if (await page.locator('.overlay-spinner').count() > 0) {
@@ -183,28 +158,46 @@ async function assignPayRuleSetToWorker(
  * The inputs are readonly and open a timepicker overlay when clicked.
  * We use evaluate to set the value directly on the input and dispatch events.
  */
+/**
+ * Set a time value using the ngx-material-timepicker clock face.
+ * Uses the proven rotateZ degree-based selector pattern from dashboard-edit-b.spec.ts.
+ *
+ * Clock face: hours use rotateZ(360/12 * h), minutes use rotateZ(360/60 * m).
+ * Special cases: hour 0 → 720deg, minute 0 → 360deg.
+ */
 async function setTimepickerValue(
   page: Page,
   testId: string,
   timeValue: string,
 ): Promise<void> {
+  const [hours, minutes] = timeValue.split(':').map(Number);
   const input = page.locator(`[data-testid="${testId}"]`);
   await input.waitFor({ state: 'visible', timeout: 10000 });
+  await input.click();
 
-  // The ngx-material-timepicker renders readonly inputs that open a clock overlay.
-  // The overlay is unreliable in CI (stays hidden). Instead, set the value directly
-  // on the input and dispatch events so Angular picks up the change.
-  await input.evaluate((el: HTMLInputElement, val: string) => {
-    // Set the native input value
-    el.value = val;
-    el.removeAttribute('readonly');
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-    el.setAttribute('readonly', '');
-  }, timeValue);
+  // Select hour on the clock face
+  const hourDegrees = 360 / 12 * hours;
+  if (hourDegrees === 0) {
+    await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
+  } else if (hourDegrees > 360) {
+    await page.locator(`[style="height: 85px; transform: rotateZ(${hourDegrees}deg) translateX(-50%);"] > span`).click();
+  } else {
+    await page.locator(`[style="transform: rotateZ(${hourDegrees}deg) translateX(-50%);"] > span`).click();
+  }
 
-  // Small wait for Angular change detection
-  await page.waitForTimeout(200);
+  // Select minute on the clock face
+  const minuteDegrees = 360 / 60 * minutes;
+  if (minuteDegrees === 0) {
+    await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+  } else {
+    await page.locator(`[style="transform: rotateZ(${minuteDegrees}deg) translateX(-50%);"] > span`).click({ force: true });
+  }
+
+  // Confirm
+  await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
+
+  // Verify the value was set
+  await expect(input).toHaveValue(timeValue);
 }
 
 /**
@@ -252,7 +245,11 @@ async function setPlanHours(page: Page, hours: number): Promise<void> {
  * Save and close the workday entity dialog.
  */
 async function saveWorkdayDialog(page: Page): Promise<void> {
+  const updatePromise = page.waitForResponse(
+    r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT',
+  );
   await page.locator('mat-dialog-container #saveButton').click();
+  await updatePromise;
   await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
 }
 
