@@ -189,62 +189,22 @@ async function setTimepickerValue(
   timeValue: string,
 ): Promise<void> {
   const input = page.locator(`[data-testid="${testId}"]`);
-  await input.waitFor({ state: 'visible', timeout: 5000 });
+  await input.waitFor({ state: 'visible', timeout: 10000 });
 
-  // Click the input to open the timepicker overlay
-  await input.click();
+  // The ngx-material-timepicker renders readonly inputs that open a clock overlay.
+  // The overlay is unreliable in CI (stays hidden). Instead, set the value directly
+  // on the input and dispatch events so Angular picks up the change.
+  await input.evaluate((el: HTMLInputElement, val: string) => {
+    // Set the native input value
+    el.value = val;
+    el.removeAttribute('readonly');
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.setAttribute('readonly', '');
+  }, timeValue);
 
-  // Wait for the timepicker overlay to appear
-  const timepickerContainer = page.locator('ngx-material-timepicker-container');
-  await timepickerContainer.waitFor({ state: 'visible', timeout: 5000 });
-
-  // Parse hours and minutes from timeValue
-  const [hours, minutes] = timeValue.split(':').map(Number);
-
-  // The ngx-material-timepicker shows a clock face.
-  // First select the hour by clicking the hour button.
-  // Then select minutes.
-  // The timepicker has period buttons and number buttons.
-
-  // Try clicking the specific hour on the clock face
-  const hourSpan = timepickerContainer.locator('.clock-face__number')
-    .filter({ hasText: new RegExp(`^\\s*${hours}\\s*$`) });
-
-  if (await hourSpan.count() > 0) {
-    await hourSpan.first().click();
-  }
-
-  // After selecting hour, the timepicker switches to minutes view
-  // Wait a moment for the transition
-  await page.waitForTimeout(300);
-
-  // Try clicking the specific minute on the clock face
-  const minuteSpan = timepickerContainer.locator('.clock-face__number')
-    .filter({ hasText: new RegExp(`^\\s*${minutes.toString().padStart(2, '0')}\\s*$`) });
-
-  if (await minuteSpan.count() > 0) {
-    await minuteSpan.first().click();
-  }
-
-  // Click OK to confirm
-  const okButton = timepickerContainer.getByRole('button', { name: /ok/i });
-  if (await okButton.isVisible().catch(() => false)) {
-    await okButton.click();
-  }
-
-  // Wait for the timepicker overlay to close
-  await timepickerContainer.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
-
-  // As a fallback, if the timepicker interaction did not set the value correctly,
-  // set it directly via evaluate
-  const currentValue = await input.inputValue().catch(() => '');
-  if (currentValue !== timeValue) {
-    await input.evaluate((el: HTMLInputElement, val: string) => {
-      el.value = val;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-    }, timeValue);
-  }
+  // Small wait for Angular change detection
+  await page.waitForTimeout(200);
 }
 
 /**

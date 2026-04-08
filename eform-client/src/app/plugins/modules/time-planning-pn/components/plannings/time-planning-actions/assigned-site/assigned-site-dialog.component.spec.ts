@@ -436,6 +436,7 @@ describe('AssignedSiteDialogComponent', () => {
           FormBuilder,
           { provide: MAT_DIALOG_DATA, useValue: dataWithManager },
           { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
           { provide: Store, useValue: mockStore },
         ]
       }).compileComponents();
