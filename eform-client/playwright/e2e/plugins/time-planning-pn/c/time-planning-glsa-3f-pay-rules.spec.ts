@@ -175,7 +175,8 @@ async function setTimepickerValue(
   const [hours, minutes] = timeValue.split(':').map(Number);
   const input = page.locator(`[data-testid="${testId}"]`);
   await input.waitFor({ state: 'visible', timeout: 10000 });
-  await input.click();
+  // The timepicker input is readonly and may be disabled - force click
+  await input.click({ force: true });
 
   // Select hour on the clock face
   const hourDegrees = 360 / 12 * hours;
@@ -228,9 +229,10 @@ async function setPlannedShiftTimes(
   pause: string,
   stop: string,
 ): Promise<void> {
+  // Order matters: break is disabled until start+stop are set
   await setTimepickerValue(page, `plannedStartOfShift${shiftId}`, start);
-  await setTimepickerValue(page, `plannedBreakOfShift${shiftId}`, pause);
   await setTimepickerValue(page, `plannedEndOfShift${shiftId}`, stop);
+  await setTimepickerValue(page, `plannedBreakOfShift${shiftId}`, pause);
 }
 
 /**
