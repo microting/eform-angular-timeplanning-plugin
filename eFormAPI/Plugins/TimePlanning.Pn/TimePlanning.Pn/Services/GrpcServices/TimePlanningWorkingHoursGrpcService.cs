@@ -85,7 +85,12 @@ public class TimePlanningWorkingHoursGrpcService
                 TotalPlannedMinutes = (result.Model.TotalPlanHours % 1) * 60,
                 TotalFlexHours = result.Model.Difference,
                 TotalFlexMinutes = (result.Model.Difference % 1) * 60,
-                PaidOutFlex = 0
+                PaidOutFlex = 0,
+                VacationDays = result.Model.VacationDays,
+                SickDays = result.Model.SickDays,
+                OtherAbsenceDays = result.Model.OtherAbsenceDays,
+                AbsenceWithoutPermissionDays = result.Model.AbsenceWithoutPermissionDays,
+                SundayHolidayHours = result.Model.SundayHolidayHours
             };
         }
 

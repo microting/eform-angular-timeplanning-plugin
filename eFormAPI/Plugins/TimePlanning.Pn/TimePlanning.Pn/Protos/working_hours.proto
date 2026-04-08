@@ -164,6 +164,11 @@ message HoursSummaryModel {
   double total_flex_hours = 5;
   double total_flex_minutes = 6;
   double paid_out_flex = 7;
+  int32 vacation_days = 8;
+  int32 sick_days = 9;
+  int32 other_absence_days = 10;
+  int32 absence_without_permission_days = 11;
+  double sunday_holiday_hours = 12;
 }
 
 message CalculateHoursSummaryResponse {

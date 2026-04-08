@@ -658,11 +658,25 @@ public class TimePlanningWorkingHoursService(
             var totalNettoHours = planRegistrations.Sum(x => x.NettoHours);
             var difference = totalNettoHours - totalPlanHours;
 
+            var vacationDays = planRegistrations.Count(x => x.OnVacation);
+            var sickDays = planRegistrations.Count(x => x.Sick);
+            var otherAbsenceDays = planRegistrations.Count(x => x.OtherAllowedAbsence);
+            var absenceWithoutPermissionDays = planRegistrations.Count(x => x.AbsenceWithoutPermission);
+
+            var sundayHolidayHours = planRegistrations
+                .Where(x => x.IsSunday || PlanRegistrationHelper.IsOfficialHoliday(x.Date))
+                .Sum(x => x.NettoHours);
+
             var summary = new TimePlanningHoursSummaryModel
             {
                 TotalPlanHours = totalPlanHours,
                 TotalNettoHours = totalNettoHours,
-                Difference = difference
+                Difference = difference,
+                VacationDays = vacationDays,
+                SickDays = sickDays,
+                OtherAbsenceDays = otherAbsenceDays,
+                AbsenceWithoutPermissionDays = absenceWithoutPermissionDays,
+                SundayHolidayHours = sundayHolidayHours
             };
 
             if (model != null)
