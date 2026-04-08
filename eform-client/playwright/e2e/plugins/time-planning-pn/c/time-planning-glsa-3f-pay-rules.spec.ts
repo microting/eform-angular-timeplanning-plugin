@@ -46,22 +46,24 @@ async function expandPluginMenu(page: Page): Promise<void> {
 }
 
 async function navigateToPayRuleSets(page: Page): Promise<void> {
-  await expandPluginMenu(page);
+  // Pay Rule Sets has no sidebar menu item - navigate via direct URL
   const responsePromise = page.waitForResponse(
     r => r.url().includes('/api/time-planning-pn/pay-rule-sets') && r.request().method() === 'GET',
   );
-  await page.locator('mat-tree-node').filter({ hasText: 'Pay Rule Sets' }).click();
+  await page.goto('http://localhost:4200/plugins/time-planning-pn/pay-rule-sets');
   await responsePromise;
   await page.locator('#time-planning-pn-pay-rule-sets-grid')
     .waitFor({ state: 'visible', timeout: 30000 });
 }
 
 async function navigateToPlannings(page: Page): Promise<void> {
+  // Use the proven pattern from dashboard-edit-b.spec.ts
   await expandPluginMenu(page);
   const indexPromise = page.waitForResponse(
     r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST',
   );
   await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
+  await page.locator('#backwards').click();
   await indexPromise;
 
   // Wait for spinner to disappear if present
