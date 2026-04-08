@@ -196,6 +196,23 @@
         </mat-form-field>
       </div>
 
+      <!-- Pay Rule Set selector -->
+      <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsAdmin$ | async">
+        <mat-form-field class="p-1 w-100">
+          <mat-label>{{ 'Pay Rule Set' | translate }}</mat-label>
+          <mtx-select
+            [items]="availablePayRuleSets"
+            bindLabel="name"
+            bindValue="id"
+            [multiple]="false"
+            [clearable]="true"
+            placeholder="{{ 'None' | translate }}"
+            formControlName="payRuleSetId">
+          </mtx-select>
+          <mat-hint>{{ 'Select the pay rule set for this worker' | translate }}</mat-hint>
+        </mat-form-field>
+      </div>
+
       <div class="d-flex flex-row">
         <mat-checkbox class="p-1"
                       [id]="'resigned'"

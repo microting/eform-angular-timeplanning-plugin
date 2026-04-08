@@ -168,6 +168,7 @@ public class AssignedSite
     public bool GpsEnabled { get; set; }
     public bool SnapshotEnabled { get; set; }
     public bool IsManager { get; set; }
+    public int? PayRuleSetId { get; set; }
     public List<int> ManagingTagIds { get; set; } = new List<int>();
     public AutoBreakSettings AutoBreakSettings { get; set; }
 
@@ -327,6 +328,7 @@ public class AssignedSite
             GpsEnabled = model.GpsEnabled,
             SnapshotEnabled = model.SnapshotEnabled,
             IsManager = model.IsManager,
+            PayRuleSetId = model.PayRuleSetId,
             ManagingTagIds = new List<int>(), // Loaded separately in GetAssignedSite
         };
     }

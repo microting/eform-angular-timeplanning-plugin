@@ -648,6 +648,7 @@ public class TimeSettingService(
         dbAssignedSite.UsePunchClock = site.UsePunchClock;
         dbAssignedSite.UseDetailedPauseEditing = site.UseDetailedPauseEditing;
         dbAssignedSite.AutoBreakCalculationActive = site.AutoBreakCalculationActive;
+        dbAssignedSite.PayRuleSetId = site.PayRuleSetId;
 
         dbAssignedSite.StartMonday = site.StartMonday;
         dbAssignedSite.StartTuesday = site.StartTuesday;

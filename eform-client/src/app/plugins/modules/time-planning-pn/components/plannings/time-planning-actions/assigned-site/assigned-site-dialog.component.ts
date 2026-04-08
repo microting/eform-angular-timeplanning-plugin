@@ -4,10 +4,10 @@ import {Component, DoCheck, OnInit,
 import {
   MAT_DIALOG_DATA
 } from '@angular/material/dialog';
-import {AssignedSiteModel, CommonTagModel, GlobalAutoBreakSettingsModel} from '../../../../models';
+import {AssignedSiteModel, CommonTagModel, GlobalAutoBreakSettingsModel, PayRuleSetSimpleModel} from '../../../../models';
 import {selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {Store} from '@ngrx/store';
-import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
+import {TimePlanningPnSettingsService, TimePlanningPnPayRuleSetsService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {
   AbstractControl,
   FormBuilder,
@@ -29,6 +29,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private fb = inject(FormBuilder);
   public data = inject<AssignedSiteModel>(MAT_DIALOG_DATA);
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
+  private payRuleSetsService = inject(TimePlanningPnPayRuleSetsService);
   private store = inject(Store);
 
   assignedSiteForm!: FormGroup;
@@ -38,6 +39,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
   public availableTags: CommonTagModel[] = [];
+  public availablePayRuleSets: PayRuleSetSimpleModel[] = [];
 
   ngDoCheck(): void {
     if (this.hasDataChanged()) {
@@ -57,6 +59,9 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
 
     // Load available tags from eForm core API via service
     this.loadAvailableTags();
+
+    // Load available pay rule sets
+    this.loadPayRuleSets();
 
     if (!this.data.resigned) {
       const today = new Date();
@@ -178,6 +183,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
       ),
       isManager: new FormControl(this.data.isManager ?? false),
       managingTagIds: new FormControl(this.data.managingTagIds ?? []),
+      payRuleSetId: new FormControl(this.data.payRuleSetId ?? null),
       planHours: this.fb.group(planHoursGroup),
       autoBreakSettings: this.fb.group(autoBreakGroup),
       firstShift: this.fb.group(firstShiftGroup),
@@ -567,6 +573,20 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
 
   getFifthShiftFormGroup(): FormGroup {
     return this.assignedSiteForm.get('fifthShift') as FormGroup;
+  }
+
+  loadPayRuleSets(): void {
+    this.payRuleSetsService.getPayRuleSets({offset: 0, pageSize: 1000}).subscribe({
+      next: (result) => {
+        if (result && result.success) {
+          this.availablePayRuleSets = result.model?.payRuleSets || [];
+        }
+      },
+      error: (error) => {
+        console.error('Error loading pay rule sets:', error);
+        this.availablePayRuleSets = [];
+      }
+    });
   }
 
   loadAvailableTags(): void {

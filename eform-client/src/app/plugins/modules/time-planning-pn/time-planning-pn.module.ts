@@ -10,7 +10,8 @@ import {TimePlanningPnLayoutComponent} from './layouts';
 import {
   TimePlanningPnPlanningsService, TimePlanningPnRegistrationDevicesService,
   TimePlanningPnSettingsService,
-  TimePlanningPnFlexesService
+  TimePlanningPnFlexesService,
+  TimePlanningPnPayRuleSetsService
 } from './services';
 import {
   TimePlanningsContainerComponent, TimePlanningSettingsComponent, TimePlanningsTableComponent,
@@ -105,6 +106,7 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     TimePlanningPnPlanningsService,
     TimePlanningPnRegistrationDevicesService,
     TimePlanningPnFlexesService,
+    TimePlanningPnPayRuleSetsService,
     { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { subscriptSizing: 'dynamic' } }
   ],
 })

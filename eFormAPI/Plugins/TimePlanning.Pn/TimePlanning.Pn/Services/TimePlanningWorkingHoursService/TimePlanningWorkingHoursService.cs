@@ -36,6 +36,7 @@ using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Data.Seed.Data;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
 
 namespace TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
@@ -2051,12 +2052,68 @@ public class TimePlanningWorkingHoursService(
 
             var isFifthShiftEnabled = assignedSite.FifthShiftActive;
 
+            // Load PayRuleSet with day rules and tiers for pay code generation
+            PayRuleSet payRuleSet = null;
+            if (assignedSite.PayRuleSetId.HasValue)
+            {
+                payRuleSet = await dbContext.PayRuleSets
+                    .Include(p => p.DayRules)
+                    .ThenInclude(d => d.Tiers)
+                    .FirstOrDefaultAsync(p => p.Id == assignedSite.PayRuleSetId.Value);
+            }
+
             Thread.CurrentThread.CurrentUICulture = new CultureInfo(language.LanguageCode);
             var culture = new CultureInfo(language.LanguageCode);
             Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
 
             var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
             var filePath = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
+
+            // Fetch data early so we can pre-compute pay lines for header discovery
+            var content = await Index(model);
+            if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
+
+            // remove the first entry from the content.Model
+            var timePlannings = content.Model.Skip(1).ToList();
+
+            // Pre-compute pay lines for each day and collect unique pay codes
+            var payLinesByDate = new Dictionary<DateTime, List<PlanRegistrationPayLine>>();
+            var allPayCodes = new List<string>();
+
+            if (payRuleSet != null)
+            {
+                foreach (var planning in timePlannings)
+                {
+                    var nettoHours = planning.NettoHoursOverrideActive
+                        ? planning.NettoHoursOverride
+                        : planning.NettoHours;
+                    var totalSeconds = (int)(nettoHours * 3600);
+
+                    if (totalSeconds <= 0)
+                    {
+                        payLinesByDate[planning.Date] = new List<PlanRegistrationPayLine>();
+                        continue;
+                    }
+
+                    var dayCode = GetDayCodeForDate(planning.Date);
+                    var payLines = PayLineGenerator.GeneratePayLines(
+                        planning.Id ?? 0,
+                        dayCode,
+                        totalSeconds,
+                        payRuleSet,
+                        DateTime.UtcNow);
+
+                    payLinesByDate[planning.Date] = payLines;
+
+                    foreach (var pl in payLines)
+                    {
+                        if (!allPayCodes.Contains(pl.PayCode))
+                        {
+                            allPayCodes.Add(pl.PayCode);
+                        }
+                    }
+                }
+            }
 
             using (SpreadsheetDocument
                    document = SpreadsheetDocument.Create(filePath, SpreadsheetDocumentType.Workbook))
@@ -2132,6 +2189,12 @@ public class TimePlanningWorkingHoursService(
                     headerStrings.Add(localizationService.GetString(header));
                 }
 
+                // Add pay code columns as dynamic headers
+                foreach (var payCode in allPayCodes)
+                {
+                    headerStrings.Add(payCode);
+                }
+
                 Worksheet worksheet1 = new Worksheet()
                     { MCAttributes = new MarkupCompatibilityAttributes() { Ignorable = "x14ac xr xr2 xr3" } };
                 worksheet1.AddNamespaceDeclaration("r",
@@ -2173,14 +2236,6 @@ public class TimePlanningWorkingHoursService(
 
                 sheetData1.Append(row1);
 
-                // Fetch data
-                var content = await Index(model);
-                if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
-
-                // remove the first entry from the content.Model
-                var timePlannings = content.Model.Skip(1).ToList();
-
-                //var timePlannings = content.Model;
                 var plr = new PlanRegistration();
 
                 // Fill data
@@ -2189,11 +2244,26 @@ public class TimePlanningWorkingHoursService(
                 {
                     var dataRow = new Row() { RowIndex = (uint)rowIndex };
                     FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled);
+
+                    // Append pay code values for this day
+                    if (allPayCodes.Count > 0)
+                    {
+                        var dayPayLines = payLinesByDate.ContainsKey(planning.Date)
+                            ? payLinesByDate[planning.Date]
+                            : new List<PlanRegistrationPayLine>();
+
+                        foreach (var payCode in allPayCodes)
+                        {
+                            var payLine = dayPayLines.FirstOrDefault(pl => pl.PayCode == payCode);
+                            dataRow.Append(CreateNumericCell(payLine?.Hours ?? 0));
+                        }
+                    }
+
                     sheetData1.Append(dataRow);
                     rowIndex++;
                 }
 
-                var columnLetter = GetColumnLetter(headers.Length);
+                var columnLetter = GetColumnLetter(headerStrings.Count);
                 AutoFilter autoFilter1 = new AutoFilter() { Reference = $"A1:{columnLetter}{rowIndex}" };
                 autoFilter1.SetAttribute(new OpenXmlAttribute("xr", "uid",
                     "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
@@ -3132,5 +3202,36 @@ public class TimePlanningWorkingHoursService(
         }
 
         return columnLetter;
+    }
+
+    /// <summary>
+    /// Classify the date and return the day code for pay rule matching.
+    /// Returns: SUNDAY, SATURDAY, HOLIDAY, GRUNDLOVSDAG, or WEEKDAY
+    /// </summary>
+    private static string GetDayCodeForDate(DateTime date)
+    {
+        // Check if it's Grundlovsdag (June 5th) - highest priority
+        if (date.Month == 6 && date.Day == 5)
+        {
+            return "GRUNDLOVSDAG";
+        }
+
+        // Check against holiday configuration for official holidays
+        if (PlanRegistrationHelper.IsOfficialHoliday(date))
+        {
+            return "HOLIDAY";
+        }
+
+        if (date.DayOfWeek == DayOfWeek.Sunday)
+        {
+            return "SUNDAY";
+        }
+
+        if (date.DayOfWeek == DayOfWeek.Saturday)
+        {
+            return "SATURDAY";
+        }
+
+        return "WEEKDAY";
     }
 }
