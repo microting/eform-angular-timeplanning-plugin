@@ -6,7 +6,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4200',
     viewport: { width: 1920, height: 1080 },
-    video: 'retain-on-failure',
+    video: 'on',
     screenshot: 'only-on-failure',
   },
   reporter: [
