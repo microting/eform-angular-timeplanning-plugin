@@ -1,14 +1,62 @@
-<h2 mat-dialog-title>Create Pay Rule Set</h2>
+<h2 mat-dialog-title>{{ 'Create Pay Rule Set' | translate }}</h2>
 <mat-dialog-content>
-  <form [formGroup]="form">
+  <!-- Preset dropdown -->
+  <mat-form-field class="full-width preset-selector-field">
+    <mat-label>{{ 'Overenskomst' | translate }}</mat-label>
+    <mat-select [(value)]="selectedPreset" (selectionChange)="onPresetChanged($event.value)" id="presetSelector">
+      <mat-option [value]="null">-- {{ 'Blank (custom rules)' | translate }} --</mat-option>
+      <mat-optgroup *ngFor="let group of presetGroups" [label]="group">
+        <mat-option *ngFor="let preset of getPresetsForGroup(group)" [value]="preset">
+          {{ preset.label }}
+        </mat-option>
+      </mat-optgroup>
+    </mat-select>
+  </mat-form-field>
+
+  <!-- Locked preset: read-only view -->
+  <div *ngIf="isLocked" class="locked-preset-view">
+    <div class="lock-banner">
+      <mat-icon>lock</mat-icon>
+      <span>{{ 'This is a fixed overenskomst. Rules cannot be edited.' | translate }}</span>
+    </div>
+
+    <div class="preset-name">
+      <strong>{{ 'Name' | translate }}:</strong> {{ selectedPreset.name }}
+    </div>
+
+    <!-- Read-only Pay Day Rules summary -->
+    <div class="rules-summary" *ngIf="selectedPreset.payDayRules.length > 0">
+      <h4>{{ 'Pay Day Rules' | translate }}</h4>
+      <table class="summary-table">
+        <tr *ngFor="let rule of selectedPreset.payDayRules">
+          <td class="day-code">{{ rule.dayCode }}</td>
+          <td class="tiers">{{ formatTierChain(rule.payTierRules) }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Read-only Day Type Rules summary -->
+    <div class="rules-summary" *ngIf="selectedPreset.payDayTypeRules.length > 0">
+      <h4>{{ 'Day Type Rules' | translate }}</h4>
+      <table class="summary-table">
+        <tr *ngFor="let rule of selectedPreset.payDayTypeRules">
+          <td class="day-type">{{ rule.dayType }}</td>
+          <td class="bands">{{ formatTimeBands(rule.timeBandRules) }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Blank/custom: full editing form (existing behavior) -->
+  <form [formGroup]="form" *ngIf="!isLocked">
     <mat-form-field class="full-width">
-      <mat-label>Name</mat-label>
+      <mat-label>{{ 'Name' | translate }}</mat-label>
       <input matInput formControlName="name" id="createPayRuleSetName" />
       <mat-error *ngIf="form.get('name')?.hasError('required')">
-        Name is required
+        {{ 'Name is required' | translate }}
       </mat-error>
       <mat-error *ngIf="form.get('name')?.hasError('minlength')">
-        Name must be at least 2 characters
+        {{ 'Name must be at least 2 characters' | translate }}
       </mat-error>
     </mat-form-field>
 
@@ -42,7 +90,7 @@
   <button
     class="btn-primary btn-primary--icon-left"
     (click)="createPayRuleSet()"
-    [disabled]="form.invalid"
+    [disabled]="!isLocked && form.invalid"
     id="createPayRuleSetBtn">
     <span>{{ 'Create' | translate }}</span>
   </button>

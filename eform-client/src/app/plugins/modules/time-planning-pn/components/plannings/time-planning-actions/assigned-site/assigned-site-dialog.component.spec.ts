@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AssignedSiteDialogComponent } from './assigned-site-dialog.component';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { TimePlanningPnSettingsService } from '../../../../services';
+import { TimePlanningPnSettingsService, TimePlanningPnPayRuleSetsService } from '../../../../services';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -13,6 +13,7 @@ describe('AssignedSiteDialogComponent', () => {
   let component: AssignedSiteDialogComponent;
   let fixture: ComponentFixture<AssignedSiteDialogComponent>;
   let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
+  let mockPayRuleSetsService: jest.Mocked<TimePlanningPnPayRuleSetsService>;
   let mockStore: jest.Mocked<Store>;
 
   const mockAssignedSiteData = {
@@ -35,6 +36,7 @@ describe('AssignedSiteDialogComponent', () => {
     resignedAtDate: new Date().toISOString(),
     isManager: false,
     managingTagIds: [],
+    payRuleSetId: null,
     mondayPlanHours: 0,
     tuesdayPlanHours: 0,
     wednesdayPlanHours: 0,
@@ -61,6 +63,9 @@ describe('AssignedSiteDialogComponent', () => {
       getAssignedSite: jest.fn(),
       getAvailableTags: jest.fn(),
     } as any;
+    mockPayRuleSetsService = {
+      getPayRuleSets: jest.fn(),
+    } as any;
     mockStore = {
       select: jest.fn(),
     } as any;
@@ -72,6 +77,9 @@ describe('AssignedSiteDialogComponent', () => {
     mockSettingsService.getAvailableTags.mockReturnValue(
       of({ success: true, model: [] }) as any
     );
+    mockPayRuleSetsService.getPayRuleSets.mockReturnValue(
+      of({ success: true, model: { payRuleSets: [], total: 0 } }) as any
+    );
 
     await TestBed.configureTestingModule({
       declarations: [AssignedSiteDialogComponent],
@@ -81,6 +89,7 @@ describe('AssignedSiteDialogComponent', () => {
         FormBuilder,
         { provide: MAT_DIALOG_DATA, useValue: mockAssignedSiteData },
         { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+        { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
         { provide: Store, useValue: mockStore },
       ]
     }).compileComponents();
@@ -427,6 +436,7 @@ describe('AssignedSiteDialogComponent', () => {
           FormBuilder,
           { provide: MAT_DIALOG_DATA, useValue: dataWithManager },
           { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
           { provide: Store, useValue: mockStore },
         ]
       }).compileComponents();
