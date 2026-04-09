@@ -52,18 +52,27 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   }
 
   onCreateClicked(): void {
-    const dialogRef = this.dialog.open(PayRuleSetsCreateModalComponent, {
-      minWidth: 1280,
-      maxWidth: 1440,
-      data: { existingNames: this.payRuleSets.map(p => p.name) },
-    });
+    // Fetch all pay rule set names (not just the current page) for singleton filtering
+    this.payRuleSetsService
+      .getPayRuleSets({ offset: 0, pageSize: 10000 })
+      .subscribe((allData) => {
+        const allNames = allData && allData.success
+          ? allData.model.payRuleSets.map(p => p.name)
+          : this.payRuleSets.map(p => p.name);
 
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        // Refresh the table after successful create
-        this.getPayRuleSets();
-      }
-    });
+        const dialogRef = this.dialog.open(PayRuleSetsCreateModalComponent, {
+          minWidth: 1280,
+          maxWidth: 1440,
+          data: { existingNames: allNames },
+        });
+
+        dialogRef.afterClosed().subscribe((result) => {
+          if (result) {
+            // Refresh the table after successful create
+            this.getPayRuleSets();
+          }
+        });
+      });
   }
 
   onEditClicked(payRuleSet: PayRuleSetSimpleModel): void {

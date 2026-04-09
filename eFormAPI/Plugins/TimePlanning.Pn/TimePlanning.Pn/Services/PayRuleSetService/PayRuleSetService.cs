@@ -22,6 +22,29 @@ using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 
 public class PayRuleSetService : IPayRuleSetService
 {
+    private static readonly HashSet<string> LockedPresetNames = new HashSet<string>
+    {
+        "GLS-A / 3F - Jordbrug Standard",
+        "GLS-A / 3F - Jordbrug Dyrehold",
+        "GLS-A / 3F - Jordbrug Elev u18",
+        "GLS-A / 3F - Jordbrug Elev o18",
+        "GLS-A / 3F - Jordbrug Elev u18 Dyrehold",
+        "GLS-A / 3F - Gartneri Standard",
+        "GLS-A / 3F - Gartneri Elev u18",
+        "GLS-A / 3F - Gartneri Elev o18",
+        "GLS-A / 3F - Skovbrug Standard",
+        "GLS-A / 3F - Skovbrug Elev u18",
+        "GLS-A / 3F - Skovbrug Elev o18",
+        "KA / Krifa - Landbrug Svine/Kvaeg Standard",
+        "KA / Krifa - Landbrug Svine/Kvaeg Elev",
+        "KA / Krifa - Landbrug Plantebrug Standard",
+        "KA / Krifa - Landbrug Plantebrug Elev",
+        "KA / Krifa - Landbrug Maskinstation Standard",
+        "KA / Krifa - Landbrug Maskinstation Elev",
+        "KA / Krifa - Gron Standard",
+        "KA / Krifa - Gron Elev"
+    };
+
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<PayRuleSetService> _logger;
 
@@ -547,6 +570,11 @@ public class PayRuleSetService : IPayRuleSetService
             if (payRuleSet == null)
             {
                 return new OperationResult(false, "Pay rule set not found");
+            }
+
+            if (LockedPresetNames.Contains(payRuleSet.Name))
+            {
+                return new OperationResult(false, "Cannot delete - this overenskomst is a locked preset and cannot be removed");
             }
 
             await payRuleSet.Delete(_dbContext);
