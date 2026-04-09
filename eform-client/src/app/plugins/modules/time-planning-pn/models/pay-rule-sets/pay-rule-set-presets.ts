@@ -64,7 +64,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-standard',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Standard',
-    name: 'GLS-A / 3F - Jordbrug Standard',
+    name: 'GLS-A / 3F - Jordbrug Standard 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -114,7 +114,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-dyrehold',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Dyrehold',
-    name: 'GLS-A / 3F - Jordbrug Dyrehold',
+    name: 'GLS-A / 3F - Jordbrug Dyrehold 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -180,7 +180,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-elev-u18',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Elev (under 18)',
-    name: 'GLS-A / 3F - Jordbrug Elev u18',
+    name: 'GLS-A / 3F - Jordbrug Elev u18 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -224,7 +224,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-elev-o18',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Elev (over 18)',
-    name: 'GLS-A / 3F - Jordbrug Elev o18',
+    name: 'GLS-A / 3F - Jordbrug Elev o18 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -269,7 +269,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-elev-u18-dyrehold',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Elev u18 Dyrehold',
-    name: 'GLS-A / 3F - Jordbrug Elev u18 Dyrehold',
+    name: 'GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -313,7 +313,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-gartneri-standard',
     group: 'GLS-A / 3F',
     label: 'Gartneri - Standard',
-    name: 'GLS-A / 3F - Gartneri Standard',
+    name: 'GLS-A / 3F - Gartneri Standard 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -363,7 +363,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-gartneri-elev-u18',
     group: 'GLS-A / 3F',
     label: 'Gartneri - Elev (under 18)',
-    name: 'GLS-A / 3F - Gartneri Elev u18',
+    name: 'GLS-A / 3F - Gartneri Elev u18 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -407,7 +407,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-gartneri-elev-o18',
     group: 'GLS-A / 3F',
     label: 'Gartneri - Elev (over 18)',
-    name: 'GLS-A / 3F - Gartneri Elev o18',
+    name: 'GLS-A / 3F - Gartneri Elev o18 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -452,7 +452,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-skovbrug-standard',
     group: 'GLS-A / 3F',
     label: 'Skovbrug - Standard',
-    name: 'GLS-A / 3F - Skovbrug Standard',
+    name: 'GLS-A / 3F - Skovbrug Standard 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -502,7 +502,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-skovbrug-elev-u18',
     group: 'GLS-A / 3F',
     label: 'Skovbrug - Elev (under 18)',
-    name: 'GLS-A / 3F - Skovbrug Elev u18',
+    name: 'GLS-A / 3F - Skovbrug Elev u18 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -546,7 +546,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-skovbrug-elev-o18',
     group: 'GLS-A / 3F',
     label: 'Skovbrug - Elev (over 18)',
-    name: 'GLS-A / 3F - Skovbrug Elev o18',
+    name: 'GLS-A / 3F - Skovbrug Elev o18 2024-2026',
     locked: true,
     payDayRules: [
       {
@@ -591,7 +591,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'ka-landbrug-svine-standard',
     group: 'KA / Krifa',
     label: 'Landbrug Svine/Kvaeg - Standard',
-    name: 'KA / Krifa - Landbrug Svine/Kvaeg Standard',
+    name: 'KA / Krifa - Landbrug Svine/Kvaeg Standard 2025-2028',
     locked: true,
     payDayRules: [
       {
@@ -629,7 +629,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'ka-landbrug-svine-elev',
     group: 'KA / Krifa',
     label: 'Landbrug Svine/Kvaeg - Elev',
-    name: 'KA / Krifa - Landbrug Svine/Kvaeg Elev',
+    name: 'KA / Krifa - Landbrug Svine/Kvaeg Elev 2025-2028',
     locked: true,
     payDayRules: [
       {
@@ -673,7 +673,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'ka-landbrug-plante-standard',
     group: 'KA / Krifa',
     label: 'Landbrug Plantebrug - Standard',
-    name: 'KA / Krifa - Landbrug Plantebrug Standard',
+    name: 'KA / Krifa - Landbrug Plantebrug Standard 2025-2028',
     locked: true,
     payDayRules: [
       {
@@ -711,7 +711,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'ka-landbrug-plante-elev',
     group: 'KA / Krifa',
     label: 'Landbrug Plantebrug - Elev',
-    name: 'KA / Krifa - Landbrug Plantebrug Elev',
+    name: 'KA / Krifa - Landbrug Plantebrug Elev 2025-2028',
     locked: true,
     payDayRules: [
       {
@@ -755,7 +755,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'ka-landbrug-maskin-standard',
     group: 'KA / Krifa',
     label: 'Landbrug Maskinstation - Standard',
-    name: 'KA / Krifa - Landbrug Maskinstation Standard',
+    name: 'KA / Krifa - Landbrug Maskinstation Standard 2025-2028',
     locked: true,
     payDayRules: [
       {
@@ -793,7 +793,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'ka-landbrug-maskin-elev',
     group: 'KA / Krifa',
     label: 'Landbrug Maskinstation - Elev',
-    name: 'KA / Krifa - Landbrug Maskinstation Elev',
+    name: 'KA / Krifa - Landbrug Maskinstation Elev 2025-2028',
     locked: true,
     payDayRules: [
       {
@@ -837,7 +837,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'ka-gron-standard',
     group: 'KA / Krifa',
     label: 'Gron - Standard',
-    name: 'KA / Krifa - Gron Standard',
+    name: 'KA / Krifa - Gron Standard 2025-2028',
     locked: true,
     payDayRules: [
       {
@@ -903,7 +903,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'ka-gron-elev',
     group: 'KA / Krifa',
     label: 'Gron - Elev',
-    name: 'KA / Krifa - Gron Elev',
+    name: 'KA / Krifa - Gron Elev 2025-2028',
     locked: true,
     payDayRules: [
       {
