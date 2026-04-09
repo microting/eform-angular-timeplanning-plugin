@@ -387,4 +387,45 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     await expect(grid.getByText('GLS-A / 3F - Jordbrug Standard')).toBeVisible({ timeout: 10000 });
     await expect(grid.getByText('GLS-A / 3F - Jordbrug Dyrehold')).toBeVisible({ timeout: 10000 });
   });
+
+  // -----------------------------------------------------------------------
+  // Scenario 3 - KA/Krifa Landbrug Svine/Kvaeg preset
+  // -----------------------------------------------------------------------
+  test('Scenario 3: KA/Krifa preset - create Landbrug Svine/Kvaeg Standard', async ({ page }) => {
+    await navigateToPayRuleSets(page);
+    await openCreatePayRuleSetModal(page);
+
+    // Select KA/Krifa preset - this verifies the new group appears
+    await selectPreset(page, 'Landbrug Svine/Kvaeg - Standard');
+
+    const dialog = page.locator('mat-dialog-container');
+    await expect(dialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
+    await expect(dialog.locator('.preset-name')).toContainText('KA / Krifa - Landbrug Svine/Kvaeg Standard');
+    await expect(dialog.locator('.rules-summary').first()).toBeVisible({ timeout: 5000 });
+
+    await submitCreatePayRuleSet(page);
+
+    const grid = page.locator('#time-planning-pn-pay-rule-sets-grid');
+    await grid.waitFor({ state: 'visible', timeout: 10000 });
+    await expect(grid.getByText('KA / Krifa - Landbrug Svine/Kvaeg Standard')).toBeVisible({ timeout: 10000 });
+  });
+
+  // -----------------------------------------------------------------------
+  // Scenario 4 - GLS-A Gartneri preset
+  // -----------------------------------------------------------------------
+  test('Scenario 4: GLS-A Gartneri preset - create and verify in grid', async ({ page }) => {
+    await navigateToPayRuleSets(page);
+    await openCreatePayRuleSetModal(page);
+
+    await selectPreset(page, 'Gartneri - Standard');
+
+    const dialog = page.locator('mat-dialog-container');
+    await expect(dialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
+    await expect(dialog.locator('.preset-name')).toContainText('GLS-A / 3F - Gartneri Standard');
+
+    await submitCreatePayRuleSet(page);
+
+    const grid = page.locator('#time-planning-pn-pay-rule-sets-grid');
+    await expect(grid.getByText('GLS-A / 3F - Gartneri Standard')).toBeVisible({ timeout: 10000 });
+  });
 });
