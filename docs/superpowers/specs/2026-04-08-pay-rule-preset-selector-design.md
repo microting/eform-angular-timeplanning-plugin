@@ -10,7 +10,7 @@ Creating a Pay Rule Set manually requires adding each day rule, tier, and time b
 2. Locked presets (e.g., GLS-A / 3F) are fully non-editable - no name field, no rule editing, just select and create
 3. Read-only summary of rules shown when a locked preset is selected
 4. Singleton behavior - already-created presets disappear from the dropdown
-5. Locked presets are deletable only if no worker is assigned to them; on delete they reappear in the dropdown
+5. Locked presets cannot be deleted in the current implementation. A future enhancement may add conditional deletion when no workers are assigned.
 6. "Blank (custom rules)" option preserves the current full-editing behavior
 7. Future extensibility for editable presets (base template + local adjustments) - not in scope now but the data model should not preclude it
 
@@ -91,11 +91,10 @@ Rule values match the existing `GlsAFixtureHelper.cs` backend fixtures exactly.
 
 ### Delete Guard on Locked Presets
 
-In the pay-rule-sets-table component, when delete is clicked for a rule set:
+The current implementation blocks all deletes on locked presets. In the pay-rule-sets-table component, when delete is clicked for a rule set:
 1. Check if the rule set name matches a known locked preset name
-2. If yes, check if any AssignedSite references this PayRuleSetId
-3. If workers are assigned: show error "Cannot delete - assigned to N worker(s)"
-4. If no workers assigned: allow delete. The preset reappears in the create dropdown on next modal open.
+2. If yes, block the delete and show an error message indicating locked presets cannot be deleted
+3. A future enhancement may add conditional deletion when no workers are assigned, allowing the preset to reappear in the create dropdown
 
 Note: The "is this a locked preset?" check uses name matching against the preset constants. This is simpler than adding a `isLocked` DB field and sufficient since locked preset names are deterministic.
 
