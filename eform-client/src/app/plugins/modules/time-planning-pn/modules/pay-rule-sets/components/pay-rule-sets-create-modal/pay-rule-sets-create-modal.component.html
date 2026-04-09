@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>{{ 'Create Pay Rule Set' | translate }}</h2>
 <mat-dialog-content>
   <!-- Preset dropdown -->
-  <mat-form-field class="full-width" style="margin-bottom: 16px;">
+  <mat-form-field class="full-width preset-selector-field">
     <mat-label>{{ 'Overenskomst' | translate }}</mat-label>
     <mat-select [(value)]="selectedPreset" (selectionChange)="onPresetChanged($event.value)" id="presetSelector">
       <mat-option [value]="null">-- {{ 'Blank (custom rules)' | translate }} --</mat-option>

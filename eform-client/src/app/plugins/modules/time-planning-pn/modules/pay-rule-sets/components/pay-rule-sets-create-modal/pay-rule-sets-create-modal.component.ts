@@ -95,7 +95,7 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
   }
 
   formatTierChain(tiers: Array<{ order: number; upToSeconds: number | null; payCode: string }>): string {
-    return tiers
+    return [...tiers]
       .sort((a, b) => a.order - b.order)
       .map(t => {
         if (t.upToSeconds != null) {
