@@ -274,6 +274,54 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
         return response;
     }
 
+    public override async Task<GetRegistrationSitesResponse> GetRegistrationSitesByCurrentUser(
+        GetRegistrationSitesByCurrentUserRequest request, ServerCallContext context)
+    {
+        var result = await _settingService.GetAvailableSitesByCurrentUser();
+
+        var response = new GetRegistrationSitesResponse
+        {
+            Success = result.Success,
+            Message = result.Message ?? ""
+        };
+
+        if (result.Success && result.Model != null)
+        {
+            foreach (var site in result.Model)
+            {
+                var grpcSite = new Grpc.Site
+                {
+                    SiteId = site.SiteId,
+                    SiteName = site.SiteName ?? "",
+                    FirstName = site.FirstName ?? "",
+                    LastName = site.LastName ?? "",
+                    CustomerNo = site.CustomerNo.GetValueOrDefault(),
+                    OtpCode = site.OtpCode.GetValueOrDefault(),
+                    UnitId = site.UnitId.GetValueOrDefault(),
+                    WorkerUid = site.WorkerUid.GetValueOrDefault(),
+                    Email = site.Email ?? "",
+                    PinCode = site.PinCode ?? "",
+                    DefaultLanguage = site.DefaultLanguage ?? "",
+                    HoursStarted = site.HoursStarted,
+                    PauseStarted = site.PauseStarted,
+                    AutoBreakCalculationActive = site.AutoBreakCalculationActive,
+                    AvatarUrl = site.AvatarUrl ?? "",
+                    ThirdShiftActive = site.ThirdShiftActive,
+                    FourthShiftActive = site.FourthShiftActive,
+                    FifthShiftActive = site.FifthShiftActive,
+                    SnapshotEnabled = site.SnapshotEnabled,
+                    Resigned = site.Resigned,
+                    ResignedAtDate = Timestamp.FromDateTime(
+                        DateTime.SpecifyKind(site.ResignedAtDate, DateTimeKind.Utc)),
+                    PhoneNumber = site.PhoneNumber ?? "",
+                };
+                response.Model.Add(grpcSite);
+            }
+        }
+
+        return response;
+    }
+
     private static Grpc.BreakDaySettings MapBreakDay(Infrastructure.Models.Settings.Day? day)
     {
         if (day == null) return new Grpc.BreakDaySettings();

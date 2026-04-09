@@ -258,6 +258,8 @@ message GetRegistrationSitesRequest {
   string token = 1;
 }
 
+message GetRegistrationSitesByCurrentUserRequest {}
+
 // gRPC service definition
 service TimePlanningSettingsService {
   // Maps to GET /api/time-planning-pn/settings/assigned-site
@@ -265,4 +267,7 @@ service TimePlanningSettingsService {
 
   // Maps to GET /api/time-planning-pn/settings/registration-sites
   rpc GetRegistrationSites(GetRegistrationSitesRequest) returns (GetRegistrationSitesResponse);
+
+  // Personal mode — uses JWT auth, no device token needed
+  rpc GetRegistrationSitesByCurrentUser(GetRegistrationSitesByCurrentUserRequest) returns (GetRegistrationSitesResponse);
 }
