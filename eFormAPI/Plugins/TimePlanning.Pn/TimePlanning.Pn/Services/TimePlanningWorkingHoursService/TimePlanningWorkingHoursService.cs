@@ -3444,34 +3444,54 @@ public class TimePlanningWorkingHoursService(
     }
 
     /// <summary>
-    /// Yields each populated shift's (startSecondOfDay, stopSecondOfDay) pair.
-    /// Skips shifts without both start and stop, and shifts with stop &lt;= start.
+    /// Yields each populated shift's (startSecondOfDay, stopSecondOfDay) pair for
+    /// time-band pay line attribution.
     ///
-    /// IMPORTANT: TimePlanningWorkingHoursModel.Shift{N}Start/Stop are NOT
-    /// seconds-of-day. They are 1-based indices into a 288-element array of
-    /// 5-minute slots (see PlanRegistration.Options): index 1 = 00:00, index 49 = 04:00,
-    /// index 289 = 24:00. Conversion to seconds-of-day: (slot - 1) * 300.
+    /// Source of truth is the real DateTime in Start{N}StartedAt / Stop{N}StoppedAt.
+    /// The Shift{N}Start / Shift{N}Stop slot fields (1-based 5-minute indices into
+    /// PlanRegistration.Options) are LEGACY — kept in sync alongside the real timestamps
+    /// purely for backwards compatibility with old consumers, and never used for payroll
+    /// calculations here. If a shift has no real timestamps populated, it has no
+    /// recorded clock time and contributes no time-band pay lines.
     /// </summary>
     private static IEnumerable<(int Start, int Stop)> EnumerateShiftSegments(TimePlanningWorkingHoursModel dayModel)
     {
-        if (dayModel.Shift1Start.HasValue && dayModel.Shift1Stop.HasValue && dayModel.Shift1Stop > dayModel.Shift1Start)
-            yield return (SlotToSeconds(dayModel.Shift1Start.Value), SlotToSeconds(dayModel.Shift1Stop.Value));
-        if (dayModel.Shift2Start.HasValue && dayModel.Shift2Stop.HasValue && dayModel.Shift2Stop > dayModel.Shift2Start)
-            yield return (SlotToSeconds(dayModel.Shift2Start.Value), SlotToSeconds(dayModel.Shift2Stop.Value));
-        if (dayModel.Shift3Start.HasValue && dayModel.Shift3Stop.HasValue && dayModel.Shift3Stop > dayModel.Shift3Start)
-            yield return (SlotToSeconds(dayModel.Shift3Start.Value), SlotToSeconds(dayModel.Shift3Stop.Value));
-        if (dayModel.Shift4Start.HasValue && dayModel.Shift4Stop.HasValue && dayModel.Shift4Stop > dayModel.Shift4Start)
-            yield return (SlotToSeconds(dayModel.Shift4Start.Value), SlotToSeconds(dayModel.Shift4Stop.Value));
-        if (dayModel.Shift5Start.HasValue && dayModel.Shift5Stop.HasValue && dayModel.Shift5Stop > dayModel.Shift5Start)
-            yield return (SlotToSeconds(dayModel.Shift5Start.Value), SlotToSeconds(dayModel.Shift5Stop.Value));
+        var shift1 = ResolveShiftSeconds(dayModel.Start1StartedAt, dayModel.Stop1StoppedAt);
+        if (shift1.HasValue) yield return shift1.Value;
+
+        var shift2 = ResolveShiftSeconds(dayModel.Start2StartedAt, dayModel.Stop2StoppedAt);
+        if (shift2.HasValue) yield return shift2.Value;
+
+        var shift3 = ResolveShiftSeconds(dayModel.Start3StartedAt, dayModel.Stop3StoppedAt);
+        if (shift3.HasValue) yield return shift3.Value;
+
+        var shift4 = ResolveShiftSeconds(dayModel.Start4StartedAt, dayModel.Stop4StoppedAt);
+        if (shift4.HasValue) yield return shift4.Value;
+
+        var shift5 = ResolveShiftSeconds(dayModel.Start5StartedAt, dayModel.Stop5StoppedAt);
+        if (shift5.HasValue) yield return shift5.Value;
     }
 
     /// <summary>
-    /// Converts a 1-based 5-minute slot index (matching PlanRegistration.Options)
-    /// into seconds since midnight. Slot 1 = 00:00 (0s), slot 49 = 04:00 (14400s),
-    /// slot 289 = 24:00 (86400s).
+    /// Resolves a single shift's (start, stop) seconds-of-day from real wall-clock
+    /// DateTime values. Returns null when either timestamp is missing or the duration
+    /// is non-positive. For shifts that span midnight, the stop is clamped to end of day
+    /// because pay rules are scoped per-day.
     /// </summary>
-    private static int SlotToSeconds(int slot) => (slot - 1) * 300;
+    private static (int Start, int Stop)? ResolveShiftSeconds(DateTime? realStart, DateTime? realStop)
+    {
+        if (!realStart.HasValue || !realStop.HasValue)
+        {
+            return null;
+        }
+
+        var startSec = (int)realStart.Value.TimeOfDay.TotalSeconds;
+        var stopSec = realStop.Value.Date > realStart.Value.Date
+            ? 86400
+            : (int)realStop.Value.TimeOfDay.TotalSeconds;
+
+        return stopSec > startSec ? (startSec, stopSec) : null;
+    }
 
     /// <summary>
     /// Aggregates pay lines with the same PayCode by summing seconds and hours.
