@@ -49,12 +49,21 @@ test.describe('Time planning plugin working hours export', () => {
 
     const wbGenerated = XLSX.read(generatedContent, { type: 'buffer' });
     const sheetGenerated = wbGenerated.Sheets[wbGenerated.SheetNames[0]];
-    const jsonGenerated = XLSX.utils.sheet_to_json(sheetGenerated, { header: 1 });
+    const jsonGenerated = XLSX.utils.sheet_to_json(sheetGenerated, { header: 1 }) as any[][];
 
     const wbFixture = XLSX.read(fixtureContent, { type: 'buffer' });
     const sheetFixture = wbFixture.Sheets[wbFixture.SheetNames[0]];
-    const jsonFixture = XLSX.utils.sheet_to_json(sheetFixture, { header: 1 });
+    const jsonFixture = XLSX.utils.sheet_to_json(sheetFixture, { header: 1 }) as any[][];
 
-    expect(jsonGenerated).toEqual(jsonFixture);
+    // The export now appends a trailing "Total" row summing PlanHours / NettoHours / Flex / PaidOutFlex
+    // and every dynamic pay-code column. The fixture does not include this row, so we compare
+    // the data portion separately and then validate the totals row independently.
+    const generatedTotalsRow = jsonGenerated[jsonGenerated.length - 1];
+    const generatedDataRows = jsonGenerated.slice(0, -1);
+
+    expect(generatedDataRows).toEqual(jsonFixture);
+
+    // The first cell of the totals row should be the localized "Total" label.
+    expect(generatedTotalsRow[0]).toBe('Total');
   });
 });

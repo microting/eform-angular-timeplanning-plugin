@@ -88,7 +88,7 @@ public class PayRuleSetServiceTests : TestBaseSetup
 
         // Assert
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Message, Does.Contain("not found"));
+        Assert.That(result.Message, Does.Contain("NotFound"));
     }
 
     [Test]
@@ -134,7 +134,7 @@ public class PayRuleSetServiceTests : TestBaseSetup
 
         // Assert
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Message, Does.Contain("not found"));
+        Assert.That(result.Message, Does.Contain("NotFound"));
     }
 
     [Test]
@@ -170,7 +170,7 @@ public class PayRuleSetServiceTests : TestBaseSetup
 
         // Assert
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Message, Does.Contain("not found"));
+        Assert.That(result.Message, Does.Contain("NotFound"));
     }
 
     [Test]
