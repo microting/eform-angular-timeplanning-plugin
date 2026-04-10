@@ -8,6 +8,7 @@ import {PayRuleSetsEditModalComponent} from '../pay-rule-sets-edit-modal/pay-rul
 import {TimePlanningPnPayRuleSetsService} from '../../../../services';
 import {Subscription} from 'rxjs';
 import {ToastrService} from 'ngx-toastr';
+import {TranslateService} from '@ngx-translate/core';
 
 @AutoUnsubscribe()
 @Component({
@@ -31,7 +32,8 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   constructor(
     private dialog: MatDialog,
     private payRuleSetsService: TimePlanningPnPayRuleSetsService,
-    private toastrService: ToastrService
+    private toastrService: ToastrService,
+    private translateService: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -93,7 +95,7 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   onDeleteClicked(payRuleSet: PayRuleSetSimpleModel): void {
     const isLockedPreset = PAY_RULE_SET_PRESETS.some(p => p.locked && p.name === payRuleSet.name);
     if (isLockedPreset) {
-      this.toastrService.error('Cannot delete - this overenskomst is a locked preset and cannot be removed');
+      this.toastrService.error(this.translateService.instant('Cannot delete locked preset'));
       return;
     }
 

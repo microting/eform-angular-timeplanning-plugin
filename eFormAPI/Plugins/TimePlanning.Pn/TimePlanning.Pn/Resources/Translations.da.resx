@@ -141,4 +141,34 @@
     <data name="Normal Hours" xml:space="preserve">
         <value>Normal timer</value>
     </data>
+    <data name="PayRuleSetNotFound" xml:space="preserve">
+        <value>Lønregelsæt blev ikke fundet</value>
+    </data>
+    <data name="PayRuleSetCreatedSuccessfully" xml:space="preserve">
+        <value>Lønregelsæt oprettet</value>
+    </data>
+    <data name="PayRuleSetUpdatedSuccessfully" xml:space="preserve">
+        <value>Lønregelsæt opdateret</value>
+    </data>
+    <data name="PayRuleSetDeletedSuccessfully" xml:space="preserve">
+        <value>Lønregelsæt slettet</value>
+    </data>
+    <data name="CannotDeleteLockedPreset" xml:space="preserve">
+        <value>Kan ikke slette – denne overenskomst er en låst skabelon og kan ikke fjernes</value>
+    </data>
+    <data name="ErrorGettingPayRuleSets" xml:space="preserve">
+        <value>Fejl ved hentning af lønregelsæt</value>
+    </data>
+    <data name="ErrorReadingPayRuleSet" xml:space="preserve">
+        <value>Fejl ved indlæsning af lønregelsæt</value>
+    </data>
+    <data name="ErrorCreatingPayRuleSet" xml:space="preserve">
+        <value>Fejl ved oprettelse af lønregelsæt</value>
+    </data>
+    <data name="ErrorUpdatingPayRuleSet" xml:space="preserve">
+        <value>Fejl ved opdatering af lønregelsæt</value>
+    </data>
+    <data name="ErrorDeletingPayRuleSet" xml:space="preserve">
+        <value>Fejl ved sletning af lønregelsæt</value>
+    </data>
 </root>

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDialog } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
+import { TranslateService } from '@ngx-translate/core';
 import { TimePlanningPnPayRuleSetsService } from '../../../../services';
 import { PayRuleSetUpdateModel, PayRuleSetModel } from '../../../../models';
 import { PayDayRuleDialogComponent, PayDayRuleDialogData } from '../pay-day-rule-dialog/pay-day-rule-dialog.component';
@@ -28,6 +29,7 @@ export class PayRuleSetsEditModalComponent implements OnInit {
     private dialog: MatDialog,
     private payRuleSetsService: TimePlanningPnPayRuleSetsService,
     private toastrService: ToastrService,
+    private translateService: TranslateService,
     public dialogRef: MatDialogRef<PayRuleSetsEditModalComponent>,
     @Inject(MAT_DIALOG_DATA) public data: PayRuleSetsEditModalData
   ) {}
@@ -56,7 +58,7 @@ export class PayRuleSetsEditModalComponent implements OnInit {
         }
       },
       error: () => {
-        this.toastrService.error('Failed to load pay rule set');
+        this.toastrService.error(this.translateService.instant('Failed to load pay rule set'));
         this.dialogRef.close();
       }
     });
@@ -256,13 +258,13 @@ export class PayRuleSetsEditModalComponent implements OnInit {
     this.payRuleSetsService.updatePayRuleSet(this.payRuleSet.id, model).subscribe({
       next: (response) => {
         console.log('Update success response:', response);
-        this.toastrService.success('Pay rule set updated successfully');
+        this.toastrService.success(this.translateService.instant('Pay rule set updated successfully'));
         this.dialogRef.close(true);
       },
       error: (error) => {
         console.error('Update error:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
-        this.toastrService.error('Failed to update pay rule set');
+        this.toastrService.error(this.translateService.instant('Failed to update pay rule set'));
       }
     });
   }

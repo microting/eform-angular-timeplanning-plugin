@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MtxGridColumn } from '@ng-matero/extensions/grid';
+import { TranslateService } from '@ngx-translate/core';
 import { PayRuleSetSimpleModel } from '../../../../models';
 
 @Component({
@@ -9,8 +10,9 @@ import { PayRuleSetSimpleModel } from '../../../../models';
   styleUrls: ['./pay-rule-sets-table.component.scss'],
   standalone: false
 })
-export class PayRuleSetsTableComponent {
+export class PayRuleSetsTableComponent implements OnInit {
   private dialog = inject(MatDialog);
+  private translateService = inject(TranslateService);
 
   @Input() payRuleSets: PayRuleSetSimpleModel[] = [];
   @Input() loading = false;
@@ -18,17 +20,21 @@ export class PayRuleSetsTableComponent {
   @Output() editClicked = new EventEmitter<PayRuleSetSimpleModel>();
   @Output() deleteClicked = new EventEmitter<PayRuleSetSimpleModel>();
 
-  tableHeaders: MtxGridColumn[] = [
-    { header: 'ID', field: 'id', sortable: true },
-    { header: 'Name', field: 'name', sortable: true },
-    {
-      header: 'Actions',
-      field: 'actions',
-      width: '120px',
-      pinned: 'right',
-      type: 'button',
-    },
-  ];
+  tableHeaders: MtxGridColumn[] = [];
+
+  ngOnInit(): void {
+    this.tableHeaders = [
+      { header: this.translateService.instant('ID'), field: 'id', sortable: true },
+      { header: this.translateService.instant('Name'), field: 'name', sortable: true },
+      {
+        header: this.translateService.instant('Actions'),
+        field: 'actions',
+        width: '120px',
+        pinned: 'right',
+        type: 'button',
+      },
+    ];
+  }
 
   openCreateModal() {
     this.createClicked.emit();

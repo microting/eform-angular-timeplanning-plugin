@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
+import { TranslateService } from '@ngx-translate/core';
 import { PayRuleSetModel } from '../../../../models';
 import { TimePlanningPnPayRuleSetsService } from '../../../../services';
 
@@ -13,6 +14,7 @@ import { TimePlanningPnPayRuleSetsService } from '../../../../services';
 export class PayRuleSetsDeleteModalComponent implements OnInit {
   private payRuleSetsService = inject(TimePlanningPnPayRuleSetsService);
   private toastrService = inject(ToastrService);
+  private translateService = inject(TranslateService);
   public dialogRef = inject(MatDialogRef<PayRuleSetsDeleteModalComponent>);
   private model = inject<{ selectedPayRuleSet: PayRuleSetModel }>(MAT_DIALOG_DATA);
 
@@ -27,10 +29,10 @@ export class PayRuleSetsDeleteModalComponent implements OnInit {
       .deletePayRuleSet(this.selectedPayRuleSet.id)
       .subscribe((result) => {
         if (result.success) {
-          this.toastrService.success('Pay rule set deleted successfully');
+          this.toastrService.success(this.translateService.instant('Pay rule set deleted successfully'));
           this.hide(true);
         } else {
-          this.toastrService.error('Failed to delete pay rule set');
+          this.toastrService.error(this.translateService.instant('Failed to delete pay rule set'));
         }
       });
   }

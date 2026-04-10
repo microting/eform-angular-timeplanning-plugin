@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDialog } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
+import { TranslateService } from '@ngx-translate/core';
 import { TimePlanningPnPayRuleSetsService } from '../../../../services';
 import { PayRuleSetCreateModel, PAY_RULE_SET_PRESETS, PayRuleSetPreset } from '../../../../models';
 import { PayDayRuleDialogComponent, PayDayRuleDialogData } from '../pay-day-rule-dialog/pay-day-rule-dialog.component';
@@ -24,6 +25,7 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
     private dialog: MatDialog,
     private payRuleSetsService: TimePlanningPnPayRuleSetsService,
     private toastrService: ToastrService,
+    private translateService: TranslateService,
     public dialogRef: MatDialogRef<PayRuleSetsCreateModalComponent>,
     @Optional() @Inject(MAT_DIALOG_DATA) public data: { existingNames: string[] } | null
   ) {}
@@ -275,23 +277,23 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
   }
 
   createPayRuleSet(): void {
-    if (!this.isLocked && this.form.invalid) {
+    if (this.form.invalid) {
       return;
     }
 
     const model = new PayRuleSetCreateModel();
-    model.name = this.isLocked ? this.selectedPreset!.name : this.form.get('name')?.value;
+    model.name = this.form.get('name')?.value;
     model.payDayRules = this.payDayRulesFormArray.value;
     model.payDayTypeRules = this.payDayTypeRulesFormArray.value;
 
     this.payRuleSetsService.createPayRuleSet(model).subscribe({
       next: (response) => {
-        this.toastrService.success('Pay rule set created successfully');
+        this.toastrService.success(this.translateService.instant('Pay rule set created successfully'));
         this.dialogRef.close(true);
       },
       error: (error) => {
         console.error('Create error:', error);
-        this.toastrService.error('Failed to create pay rule set');
+        this.toastrService.error(this.translateService.instant('Failed to create pay rule set'));
       }
     });
   }

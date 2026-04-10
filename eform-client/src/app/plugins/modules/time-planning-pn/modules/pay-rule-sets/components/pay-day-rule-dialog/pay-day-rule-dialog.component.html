@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>{{ dialogTitle }}</h2>
+<h2 mat-dialog-title>{{ dialogTitle | translate }}</h2>
 
 <mat-dialog-content>
   <app-pay-day-rule-form [payDayRuleForm]="payDayRuleForm"></app-pay-day-rule-form>
@@ -10,13 +10,13 @@
     mat-dialog-close
     id="cancelPayDayRuleBtn"
     (click)="cancel()">
-    Cancel
+    {{ 'Cancel' | translate }}
   </button>
   <button
     class="btn-primary btn-primary--icon-left"
     id="savePayDayRuleBtn"
     [disabled]="!payDayRuleForm.valid"
     (click)="save()">
-    Save
+    {{ 'Save' | translate }}
   </button>
 </mat-dialog-actions>

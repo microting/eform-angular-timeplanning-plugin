@@ -592,7 +592,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     group: 'KA / Krifa',
     label: 'Landbrug Svine/Kvaeg - Standard',
     name: 'KA / Krifa - Landbrug Svine/Kvaeg Standard 2025-2028',
-    locked: true,
+    locked: false,
     payDayRules: [
       {
         dayCode: 'WEEKDAY',
@@ -630,7 +630,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     group: 'KA / Krifa',
     label: 'Landbrug Svine/Kvaeg - Elev',
     name: 'KA / Krifa - Landbrug Svine/Kvaeg Elev 2025-2028',
-    locked: true,
+    locked: false,
     payDayRules: [
       {
         dayCode: 'WEEKDAY',
@@ -674,7 +674,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     group: 'KA / Krifa',
     label: 'Landbrug Plantebrug - Standard',
     name: 'KA / Krifa - Landbrug Plantebrug Standard 2025-2028',
-    locked: true,
+    locked: false,
     payDayRules: [
       {
         dayCode: 'WEEKDAY',
@@ -712,7 +712,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     group: 'KA / Krifa',
     label: 'Landbrug Plantebrug - Elev',
     name: 'KA / Krifa - Landbrug Plantebrug Elev 2025-2028',
-    locked: true,
+    locked: false,
     payDayRules: [
       {
         dayCode: 'WEEKDAY',
@@ -756,7 +756,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     group: 'KA / Krifa',
     label: 'Landbrug Maskinstation - Standard',
     name: 'KA / Krifa - Landbrug Maskinstation Standard 2025-2028',
-    locked: true,
+    locked: false,
     payDayRules: [
       {
         dayCode: 'WEEKDAY',
@@ -794,7 +794,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     group: 'KA / Krifa',
     label: 'Landbrug Maskinstation - Elev',
     name: 'KA / Krifa - Landbrug Maskinstation Elev 2025-2028',
-    locked: true,
+    locked: false,
     payDayRules: [
       {
         dayCode: 'WEEKDAY',
@@ -838,7 +838,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     group: 'KA / Krifa',
     label: 'Gron - Standard',
     name: 'KA / Krifa - Gron Standard 2025-2028',
-    locked: true,
+    locked: false,
     payDayRules: [
       {
         dayCode: 'WEEKDAY',
@@ -904,7 +904,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     group: 'KA / Krifa',
     label: 'Gron - Elev',
     name: 'KA / Krifa - Gron Elev 2025-2028',
-    locked: true,
+    locked: false,
     payDayRules: [
       {
         dayCode: 'WEEKDAY',

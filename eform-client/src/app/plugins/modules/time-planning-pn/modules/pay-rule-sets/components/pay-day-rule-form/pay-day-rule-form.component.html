@@ -47,7 +47,7 @@
                      [formControl]="getTierControl(i, 'upToSeconds')"
                      min="0"
                      placeholder="28800">
-              <mat-hint>{{ formatSeconds(getUpToSeconds(i)) }}</mat-hint>
+              <mat-hint>{{ formatSeconds(getUpToSeconds(i)) | translate }}</mat-hint>
             </mat-form-field>
           </td>
         </ng-container>

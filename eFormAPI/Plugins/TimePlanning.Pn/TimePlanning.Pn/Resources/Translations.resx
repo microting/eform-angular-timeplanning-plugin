@@ -141,4 +141,34 @@
     <data name="Normal Hours" xml:space="preserve">
         <value>Normal Hours</value>
     </data>
+    <data name="PayRuleSetNotFound" xml:space="preserve">
+        <value>Pay rule set not found</value>
+    </data>
+    <data name="PayRuleSetCreatedSuccessfully" xml:space="preserve">
+        <value>Pay rule set created successfully</value>
+    </data>
+    <data name="PayRuleSetUpdatedSuccessfully" xml:space="preserve">
+        <value>Pay rule set updated successfully</value>
+    </data>
+    <data name="PayRuleSetDeletedSuccessfully" xml:space="preserve">
+        <value>Pay rule set deleted successfully</value>
+    </data>
+    <data name="CannotDeleteLockedPreset" xml:space="preserve">
+        <value>Cannot delete - this overenskomst is a locked preset and cannot be removed</value>
+    </data>
+    <data name="ErrorGettingPayRuleSets" xml:space="preserve">
+        <value>Error while getting pay rule sets</value>
+    </data>
+    <data name="ErrorReadingPayRuleSet" xml:space="preserve">
+        <value>Error while reading pay rule set</value>
+    </data>
+    <data name="ErrorCreatingPayRuleSet" xml:space="preserve">
+        <value>Error while creating pay rule set</value>
+    </data>
+    <data name="ErrorUpdatingPayRuleSet" xml:space="preserve">
+        <value>Error while updating pay rule set</value>
+    </data>
+    <data name="ErrorDeletingPayRuleSet" xml:space="preserve">
+        <value>Error while deleting pay rule set</value>
+    </data>
 </root>
