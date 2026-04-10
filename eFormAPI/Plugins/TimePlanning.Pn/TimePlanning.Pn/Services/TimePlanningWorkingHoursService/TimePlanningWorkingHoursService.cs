@@ -2297,7 +2297,7 @@ public class TimePlanningWorkingHoursService(
 
                 // Append totals row
                 var totalsRow = new Row { RowIndex = (uint)rowIndex };
-                totalsRow.Append(CreateCell(localizationService.GetString("PayRuleSetTotalRow"))); // EmployeeNo column → "Total" label
+                totalsRow.Append(CreateCell((Resources.Translations.ResourceManager.GetString("PayRuleSetTotalRow") ?? "Total"))); // EmployeeNo column → "Total" label
                 totalsRow.Append(CreateCell(string.Empty)); // Worker
                 totalsRow.Append(CreateCell(string.Empty)); // DayOfWeek
                 totalsRow.Append(CreateCell(string.Empty)); // Date
@@ -2925,7 +2925,7 @@ public class TimePlanningWorkingHoursService(
 
                     // Append per-site totals row at the bottom of the per-site sheet
                     var siteTotalsRow = new Row { RowIndex = (uint)rowIndex };
-                    siteTotalsRow.Append(CreateCell(localizationService.GetString("PayRuleSetTotalRow")));
+                    siteTotalsRow.Append(CreateCell((Resources.Translations.ResourceManager.GetString("PayRuleSetTotalRow") ?? "Total")));
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Worker
                     siteTotalsRow.Append(CreateCell(string.Empty)); // DayOfWeek
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Date
