@@ -40,15 +40,6 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
     return this.selectedPreset?.locked ?? false;
   }
 
-  get presetGroups(): string[] {
-    const groups = new Set(this.availablePresets.map(p => p.group));
-    return Array.from(groups);
-  }
-
-  getPresetsForGroup(group: string): PayRuleSetPreset[] {
-    return this.availablePresets.filter(p => p.group === group);
-  }
-
   onPresetChanged(preset: PayRuleSetPreset | null): void {
     this.selectedPreset = preset;
 

@@ -3,14 +3,18 @@
   <!-- Preset dropdown -->
   <mat-form-field class="full-width preset-selector-field">
     <mat-label>{{ 'Overenskomst' | translate }}</mat-label>
-    <mat-select [(value)]="selectedPreset" (selectionChange)="onPresetChanged($event.value)" id="presetSelector">
-      <mat-option [value]="null">-- {{ 'Blank (custom rules)' | translate }} --</mat-option>
-      <mat-optgroup *ngFor="let group of presetGroups" [label]="group">
-        <mat-option *ngFor="let preset of getPresetsForGroup(group)" [value]="preset">
-          {{ preset.label }}
-        </mat-option>
-      </mat-optgroup>
-    </mat-select>
+    <mtx-select
+      [ngModel]="selectedPreset"
+      (ngModelChange)="onPresetChanged($event)"
+      [items]="availablePresets"
+      bindLabel="label"
+      groupBy="group"
+      [clearable]="true"
+      [searchable]="true"
+      appendTo="body"
+      id="presetSelector"
+      placeholder="{{ 'Blank (custom rules)' | translate }}">
+    </mtx-select>
   </mat-form-field>
 
   <!-- Locked preset: read-only view -->

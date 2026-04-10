@@ -89,20 +89,22 @@ async function openCreatePayRuleSetModal(page: Page): Promise<void> {
 
 /**
  * Select a preset from the #presetSelector dropdown in the create modal.
- * The dropdown uses mat-select with mat-optgroup.
+ * The dropdown uses mtx-select (ng-select) with groupBy, rendered via
+ * ng-dropdown-panel appended to body.
  */
 async function selectPreset(page: Page, presetLabel: string): Promise<void> {
-  const dialog = page.locator('mat-dialog-container');
+  // Click the preset selector to open the dropdown
+  await page.locator('#presetSelector').click();
 
-  // Click the preset selector to open the dropdown overlay
-  await dialog.locator('#presetSelector').click();
+  // Wait for the ng-dropdown-panel to appear (appended to body)
+  const dropdown = page.locator('ng-dropdown-panel');
+  await dropdown.waitFor({ state: 'visible', timeout: 10000 });
 
-  // Wait for the mat-select overlay panel to appear
-  const panel = page.locator('.cdk-overlay-pane mat-option');
-  await panel.first().waitFor({ state: 'visible', timeout: 10000 });
+  // Click the option matching the label
+  await dropdown.locator('.ng-option').filter({ hasText: presetLabel }).first().click();
 
-  // Select the matching option by label text
-  await page.locator('mat-option').filter({ hasText: presetLabel }).click();
+  // Wait for the dropdown to close
+  await dropdown.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
 }
 
 /**
