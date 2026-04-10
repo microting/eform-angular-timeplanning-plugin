@@ -320,7 +320,7 @@ public class TimeSettingService(
                         .Where(x => x.Id == siteWorker.WorkerId)
                         .FirstOrDefaultAsync();
                     var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
-                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                    var language = await sdkDbContext.Languages.FirstOrDefaultAsync(x => x.Id == site.LanguageId);
                     if (worker != null)
                     {
 
@@ -382,13 +382,13 @@ public class TimeSettingService(
                             SiteName = site.Name,
                             FirstName = worker.FirstName,
                             LastName = worker.LastName,
-                            CustomerNo = unit!.CustomerNo,
-                            OtpCode = unit.OtpCode,
-                            UnitId = unit.MicrotingUid,
+                            CustomerNo = unit?.CustomerNo ?? 0,
+                            OtpCode = unit?.OtpCode ?? 0,
+                            UnitId = unit?.MicrotingUid,
                             WorkerUid = worker.MicrotingUid,
                             Email = worker.Email,
                             PinCode = worker.PinCode,
-                            DefaultLanguage = language.LanguageCode,
+                            DefaultLanguage = language?.LanguageCode ?? "en",
                             HoursStarted = hoursStarted,
                             PauseStarted = pauseStarted,
                             AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
@@ -399,8 +399,9 @@ public class TimeSettingService(
                             ResignedAtDate = assignedSite.ResignedAtDate,
                             SnapshotEnabled = assignedSite.SnapshotEnabled
                         };
-                        var user = await baseDbContext.Users
-                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+                        var normalizedSiteName = (site.Name ?? "").Replace(" ", "").ToLower();
+                        var user = baseDbContext == null ? null : await baseDbContext.Users
+                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == normalizedSiteName)
                             .FirstOrDefaultAsync().ConfigureAwait(false);
                         if (user != null)
                         {
@@ -447,17 +448,18 @@ public class TimeSettingService(
                 var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
                     x.MicrotingUid == assignedSite.SiteId);
                 if (site == null) continue;
-                {
-                    var siteWorker = await sdkDbContext.SiteWorkers
-                        .Where(x => x.SiteId == site.Id)
-                        .FirstAsync();
-                    var worker = await sdkDbContext.Workers
-                        .Where(x => x.Id == siteWorker.WorkerId)
-                        .FirstOrDefaultAsync();
-                    var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
-                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
-                    if (worker != null)
-                    {
+                var siteWorker = await sdkDbContext.SiteWorkers
+                    .Where(x => x.SiteId == site.Id)
+                    .FirstOrDefaultAsync();
+                if (siteWorker == null) continue;
+                var worker = await sdkDbContext.Workers
+                    .Where(x => x.Id == siteWorker.WorkerId)
+                    .FirstOrDefaultAsync();
+                if (worker == null) continue;
+                var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
+                var language = await sdkDbContext.Languages
+                    .FirstOrDefaultAsync(x => x.Id == site.LanguageId);
+
                         var today = DateTime.UtcNow.Date;
                         var midnight = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
                         var planRegistrationForToday = await dbContext.PlanRegistrations
@@ -516,13 +518,13 @@ public class TimeSettingService(
                             SiteName = site.Name,
                             FirstName = worker.FirstName,
                             LastName = worker.LastName,
-                            CustomerNo = unit!.CustomerNo,
-                            OtpCode = unit.OtpCode,
-                            UnitId = unit.MicrotingUid,
+                            CustomerNo = unit?.CustomerNo ?? 0,
+                            OtpCode = unit?.OtpCode ?? 0,
+                            UnitId = unit?.MicrotingUid,
                             WorkerUid = worker.MicrotingUid,
                             Email = worker.Email,
                             PinCode = worker.PinCode,
-                            DefaultLanguage = language.LanguageCode,
+                            DefaultLanguage = language?.LanguageCode ?? "en",
                             HoursStarted = hoursStarted,
                             PauseStarted = pauseStarted,
                             AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
@@ -533,8 +535,9 @@ public class TimeSettingService(
                             ResignedAtDate = assignedSite.ResignedAtDate,
                             SnapshotEnabled = assignedSite.SnapshotEnabled
                         };
-                        var user = await baseDbContext.Users
-                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+                        var normalizedSiteName = (site.Name ?? "").Replace(" ", "").ToLower();
+                        var user = baseDbContext == null ? null : await baseDbContext.Users
+                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == normalizedSiteName)
                             .FirstOrDefaultAsync().ConfigureAwait(false);
                         if (user != null)
                         {
@@ -544,8 +547,6 @@ public class TimeSettingService(
                             newSite.PhoneNumber = user.PhoneNumber ?? "";
                         }
                         sites.Add(newSite);
-                    }
-                }
             }
 
             sites = sites.OrderBy(x => x.SiteName).ToList();
@@ -736,7 +737,7 @@ public class TimeSettingService(
                         .Where(x => x.Id == siteWorker.WorkerId)
                         .FirstOrDefaultAsync();
                     var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
-                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                    var language = await sdkDbContext.Languages.FirstOrDefaultAsync(x => x.Id == site.LanguageId);
                     if (worker != null)
                     {
 
@@ -798,13 +799,13 @@ public class TimeSettingService(
                             SiteName = site.Name,
                             FirstName = worker.FirstName,
                             LastName = worker.LastName,
-                            CustomerNo = unit!.CustomerNo,
-                            OtpCode = unit.OtpCode,
-                            UnitId = unit.MicrotingUid,
+                            CustomerNo = unit?.CustomerNo ?? 0,
+                            OtpCode = unit?.OtpCode ?? 0,
+                            UnitId = unit?.MicrotingUid,
                             WorkerUid = worker.MicrotingUid,
                             Email = worker.Email,
                             PinCode = worker.PinCode,
-                            DefaultLanguage = language.LanguageCode,
+                            DefaultLanguage = language?.LanguageCode ?? "en",
                             HoursStarted = hoursStarted,
                             PauseStarted = pauseStarted,
                             AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
@@ -814,8 +815,9 @@ public class TimeSettingService(
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
                         };
-                        var user = await baseDbContext.Users
-                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+                        var normalizedSiteName = (site.Name ?? "").Replace(" ", "").ToLower();
+                        var user = baseDbContext == null ? null : await baseDbContext.Users
+                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == normalizedSiteName)
                             .FirstOrDefaultAsync().ConfigureAwait(false);
                         if (user != null)
                         {
