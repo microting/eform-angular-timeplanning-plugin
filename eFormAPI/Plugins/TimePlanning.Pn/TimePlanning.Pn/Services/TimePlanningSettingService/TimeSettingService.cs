@@ -223,6 +223,89 @@ public class TimeSettingService(
                 .Where(x => x.Resigned != true)
                 .ToListAsync();
 
+            // Filter sites by current user when called from browser (not device token)
+            if (token == null)
+            {
+                var currentUserAsync = await userService.GetCurrentUserAsync();
+                var currentUser = baseDbContext.Users
+                    .Include(x => x.UserRoles)
+                    .ThenInclude(x => x.Role)
+                    .Single(x => x.Id == currentUserAsync.Id);
+
+                var isAdmin = currentUser.UserRoles.Any(x => x.Role.Name == "admin");
+
+                if (!isAdmin)
+                {
+                    var userSecurityGroups = baseDbContext.SecurityGroupUsers
+                        .Include(x => x.SecurityGroup)
+                        .Where(x => x.EformUserId == currentUser.Id)
+                        .ToList();
+                    var eFormAdminsGroup = userSecurityGroups
+                        .Any(x => x.SecurityGroup.Name == "eForm admins");
+                    isAdmin = eFormAdminsGroup;
+                }
+
+                if (!isAdmin)
+                {
+                    var worker = await sdkDbContext.Workers
+                        .Include(x => x.SiteWorkers)
+                        .ThenInclude(x => x.Site)
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+
+                    if (worker != null && worker.SiteWorkers.Any())
+                    {
+                        var workerSite = worker.SiteWorkers.First().Site;
+                        var assignedSite = assignedSites
+                            .FirstOrDefault(x => x.SiteId == workerSite.MicrotingUid);
+
+                        if (assignedSite != null && assignedSite.IsManager)
+                        {
+                            var managingTagIds = await dbContext.AssignedSiteManagingTags
+                                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                .Where(x => x.AssignedSiteId == assignedSite.Id)
+                                .Select(x => x.TagId)
+                                .ToListAsync();
+
+                            if (managingTagIds.Any())
+                            {
+                                var taggedSiteIds = await sdkDbContext.SiteTags
+                                    .Include(x => x.Site)
+                                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                    .Where(x => managingTagIds.Contains((int)x.TagId!))
+                                    .Select(x => x.Site.MicrotingUid)
+                                    .Distinct()
+                                    .ToListAsync();
+
+                                assignedSites = assignedSites
+                                    .Where(x => taggedSiteIds.Contains(x.SiteId))
+                                    .ToList();
+                                if (assignedSites.All(x => x.Id != assignedSite.Id))
+                                {
+                                    assignedSites.Add(assignedSite);
+                                }
+                            }
+                            else
+                            {
+                                assignedSites = [assignedSite];
+                            }
+                        }
+                        else if (assignedSite != null)
+                        {
+                            assignedSites = [assignedSite];
+                        }
+                        else
+                        {
+                            assignedSites = [];
+                        }
+                    }
+                    else
+                    {
+                        assignedSites = [];
+                    }
+                }
+            }
+
             var sites = new List<Site>();
             foreach (var assignedSite in assignedSites)
             {

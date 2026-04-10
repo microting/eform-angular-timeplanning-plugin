@@ -64,7 +64,9 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
         .subscribe((data) => {
           if (data && data.success) {
             this.availableSites = data.model;
-
+            if (this.availableSites.length === 1) {
+              this.siteId = this.availableSites[0].siteId;
+            }
           }
         });
     } else {
@@ -73,7 +75,9 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
         .subscribe((data) => {
           if (data && data.success) {
             this.availableSites = data.model;
-
+            if (this.availableSites.length === 1) {
+              this.siteId = this.availableSites[0].siteId;
+            }
           }
         });
     }

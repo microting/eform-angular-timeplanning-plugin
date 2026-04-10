@@ -80,22 +80,18 @@ public class TimePlanningPlanningService(
 
             var isAdmin = currentUser.UserRoles
                 .Any(x => x.Role.Name == "admin");
-            var eFormUsersGroup = false;
-
             if (!isAdmin)
             {
                 var userSecurityGroups = baseDbContext.SecurityGroupUsers
                     .Include(x => x.SecurityGroup)
                     .Where(x => x.EformUserId == currentUser.Id)
                     .ToList();
-                eFormUsersGroup = userSecurityGroups
-                    .Any(x => x.SecurityGroup.Name == "eForm users");
                 var eFormAdminsGroup = userSecurityGroups
                     .Any(x => x.SecurityGroup.Name == "eForm admins");
-                isAdmin = eFormAdminsGroup || eFormUsersGroup;
+                isAdmin = eFormAdminsGroup;
             }
 
-            if (!isAdmin && eFormUsersGroup)
+            if (!isAdmin)
             {
                 var worker = await sdkDbContext.Workers
                     .Include(x => x.SiteWorkers)
