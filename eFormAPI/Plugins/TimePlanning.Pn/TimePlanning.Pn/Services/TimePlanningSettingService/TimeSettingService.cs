@@ -223,8 +223,9 @@ public class TimeSettingService(
                 .Where(x => x.Resigned != true)
                 .ToListAsync();
 
-            // Filter sites by current user when called from browser (not device token)
-            if (token == null)
+            // Filter sites by current user when called from browser (not device token).
+            // Skip entirely when baseDbContext is null (unit-test wiring).
+            if (token == null && baseDbContext != null)
             {
                 var currentUserAsync = await userService.GetCurrentUserAsync();
                 var currentUser = baseDbContext.Users
