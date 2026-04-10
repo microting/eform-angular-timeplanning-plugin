@@ -42,7 +42,25 @@ public class PayRuleSetService : IPayRuleSetService
         "KA / Krifa - Landbrug Maskinstation Standard 2025-2028",
         "KA / Krifa - Landbrug Maskinstation Elev 2025-2028",
         "KA / Krifa - Gron Standard 2025-2028",
-        "KA / Krifa - Gron Elev 2025-2028"
+        "KA / Krifa - Gron Elev 2025-2028",
+        "GLS-A / 3F - Golf Standard 2024-2026",
+        "GLS-A / 3F - Golf Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Fjerkrae Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Fjerkrae Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Grovvare Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Grovvare Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Gulerod Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Gulerod Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Kartoffelmel Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Kartoffelmel Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Kartoffelsorter Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Kartoffelsorter Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Lucerne Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Lucerne Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Minkfoder Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Minkfoder Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Ovrige Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Ovrige Elev 2024-2026"
     };
 
     private readonly TimePlanningPnDbContext _dbContext;

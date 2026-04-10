@@ -941,4 +941,706 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     ],
     payDayTypeRules: [],
   },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Golf presets (2)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // Preset 20: Golf - Standard
+  {
+    key: 'glsa-golf-standard',
+    group: 'GLS-A / 3F',
+    label: 'Golf - Standard',
+    name: 'GLS-A / 3F - Golf Standard 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'OVERTIME_100' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 21: Golf - Elev
+  {
+    key: 'glsa-golf-elev',
+    group: 'GLS-A / 3F',
+    label: 'Golf - Elev',
+    name: 'GLS-A / 3F - Golf Elev 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_OVERTIME_100' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_SAT_OVERTIME_100' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_SUN_OT_100' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_HOL_OT_100' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Agroindustri presets (16 = 8 sub-sectors x Standard + Elev)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // Preset 22: Agroindustri Fjerkrae - Standard
+  {
+    key: 'glsa-agro-fjerkrae-standard',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Fjerkrae - Standard',
+    name: 'GLS-A / 3F - Agroindustri Fjerkrae Standard 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_30' },
+          { order: 3, upToSeconds: 37440, payCode: 'OVERTIME_50' },
+          { order: 4, upToSeconds: null, payCode: 'OVERTIME_100' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 23: Agroindustri Fjerkrae - Elev
+  {
+    key: 'glsa-agro-fjerkrae-elev',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Fjerkrae - Elev',
+    name: 'GLS-A / 3F - Agroindustri Fjerkrae Elev 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_SAT_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_SUN_OT_100' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_HOL_OT_100' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 24: Agroindustri Grovvare - Standard
+  {
+    key: 'glsa-agro-grovvare-standard',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Grovvare - Standard',
+    name: 'GLS-A / 3F - Agroindustri Grovvare Standard 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 37440, payCode: 'OVERTIME_40' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_100' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 25: Agroindustri Grovvare - Elev
+  {
+    key: 'glsa-agro-grovvare-elev',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Grovvare - Elev',
+    name: 'GLS-A / 3F - Agroindustri Grovvare Elev 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_OVERTIME_40' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_SAT_OVERTIME_40' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_SUN_OT_100' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_HOL_OT_100' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 26: Agroindustri Gulerod - Standard
+  {
+    key: 'glsa-agro-gulerod-standard',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Gulerod - Standard',
+    name: 'GLS-A / 3F - Agroindustri Gulerod Standard 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_30' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 27: Agroindustri Gulerod - Elev
+  {
+    key: 'glsa-agro-gulerod-elev',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Gulerod - Elev',
+    name: 'GLS-A / 3F - Agroindustri Gulerod Elev 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_SAT_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_SUN_OT_100' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_HOL_OT_100' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 28: Agroindustri Kartoffelmel - Standard
+  {
+    key: 'glsa-agro-kartoffelmel-standard',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Kartoffelmel - Standard',
+    name: 'GLS-A / 3F - Agroindustri Kartoffelmel Standard 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_30' },
+          { order: 3, upToSeconds: 37440, payCode: 'OVERTIME_50' },
+          { order: 4, upToSeconds: null, payCode: 'OVERTIME_100' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 29: Agroindustri Kartoffelmel - Elev
+  {
+    key: 'glsa-agro-kartoffelmel-elev',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Kartoffelmel - Elev',
+    name: 'GLS-A / 3F - Agroindustri Kartoffelmel Elev 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_SAT_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_SUN_OT_100' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_HOL_OT_100' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 30: Agroindustri Kartoffelsorter - Standard
+  {
+    key: 'glsa-agro-kartoffelsorter-standard',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Kartoffelsorter - Standard',
+    name: 'GLS-A / 3F - Agroindustri Kartoffelsorter Standard 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_30' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 31: Agroindustri Kartoffelsorter - Elev
+  {
+    key: 'glsa-agro-kartoffelsorter-elev',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Kartoffelsorter - Elev',
+    name: 'GLS-A / 3F - Agroindustri Kartoffelsorter Elev 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_SAT_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_SUN_OT_100' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_HOL_OT_100' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 32: Agroindustri Lucerne - Standard
+  {
+    key: 'glsa-agro-lucerne-standard',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Lucerne - Standard',
+    name: 'GLS-A / 3F - Agroindustri Lucerne Standard 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_30' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 33: Agroindustri Lucerne - Elev
+  {
+    key: 'glsa-agro-lucerne-elev',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Lucerne - Elev',
+    name: 'GLS-A / 3F - Agroindustri Lucerne Elev 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_SAT_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_SUN_OT_100' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_HOL_OT_100' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 34: Agroindustri Minkfoder - Standard
+  {
+    key: 'glsa-agro-minkfoder-standard',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Minkfoder - Standard',
+    name: 'GLS-A / 3F - Agroindustri Minkfoder Standard 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_30' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 35: Agroindustri Minkfoder - Elev
+  {
+    key: 'glsa-agro-minkfoder-elev',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Minkfoder - Elev',
+    name: 'GLS-A / 3F - Agroindustri Minkfoder Elev 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_SAT_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_SUN_OT_100' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_HOL_OT_100' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 36: Agroindustri Ovrige - Standard
+  {
+    key: 'glsa-agro-ovrige-standard',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Ovrige - Standard',
+    name: 'GLS-A / 3F - Agroindustri Ovrige Standard 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_30' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 37: Agroindustri Ovrige - Elev
+  {
+    key: 'glsa-agro-ovrige-elev',
+    group: 'GLS-A / 3F',
+    label: 'Agroindustri Ovrige - Elev',
+    name: 'GLS-A / 3F - Agroindustri Ovrige Elev 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 28800, payCode: 'ELEV_SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'ELEV_SAT_OVERTIME_30' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_SUN_OT_100' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ELEV_HOL_OT_100' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'GRUNDLOVSDAG' }],
+      },
+    ],
+    payDayTypeRules: [],
+  },
 ];
