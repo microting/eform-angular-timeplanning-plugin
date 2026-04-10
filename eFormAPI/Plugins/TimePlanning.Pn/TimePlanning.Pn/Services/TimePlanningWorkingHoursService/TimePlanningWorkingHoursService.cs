@@ -3446,20 +3446,32 @@ public class TimePlanningWorkingHoursService(
     /// <summary>
     /// Yields each populated shift's (startSecondOfDay, stopSecondOfDay) pair.
     /// Skips shifts without both start and stop, and shifts with stop &lt;= start.
+    ///
+    /// IMPORTANT: TimePlanningWorkingHoursModel.Shift{N}Start/Stop are NOT
+    /// seconds-of-day. They are 1-based indices into a 288-element array of
+    /// 5-minute slots (see PlanRegistration.Options): index 1 = 00:00, index 49 = 04:00,
+    /// index 289 = 24:00. Conversion to seconds-of-day: (slot - 1) * 300.
     /// </summary>
     private static IEnumerable<(int Start, int Stop)> EnumerateShiftSegments(TimePlanningWorkingHoursModel dayModel)
     {
         if (dayModel.Shift1Start.HasValue && dayModel.Shift1Stop.HasValue && dayModel.Shift1Stop > dayModel.Shift1Start)
-            yield return (dayModel.Shift1Start.Value, dayModel.Shift1Stop.Value);
+            yield return (SlotToSeconds(dayModel.Shift1Start.Value), SlotToSeconds(dayModel.Shift1Stop.Value));
         if (dayModel.Shift2Start.HasValue && dayModel.Shift2Stop.HasValue && dayModel.Shift2Stop > dayModel.Shift2Start)
-            yield return (dayModel.Shift2Start.Value, dayModel.Shift2Stop.Value);
+            yield return (SlotToSeconds(dayModel.Shift2Start.Value), SlotToSeconds(dayModel.Shift2Stop.Value));
         if (dayModel.Shift3Start.HasValue && dayModel.Shift3Stop.HasValue && dayModel.Shift3Stop > dayModel.Shift3Start)
-            yield return (dayModel.Shift3Start.Value, dayModel.Shift3Stop.Value);
+            yield return (SlotToSeconds(dayModel.Shift3Start.Value), SlotToSeconds(dayModel.Shift3Stop.Value));
         if (dayModel.Shift4Start.HasValue && dayModel.Shift4Stop.HasValue && dayModel.Shift4Stop > dayModel.Shift4Start)
-            yield return (dayModel.Shift4Start.Value, dayModel.Shift4Stop.Value);
+            yield return (SlotToSeconds(dayModel.Shift4Start.Value), SlotToSeconds(dayModel.Shift4Stop.Value));
         if (dayModel.Shift5Start.HasValue && dayModel.Shift5Stop.HasValue && dayModel.Shift5Stop > dayModel.Shift5Start)
-            yield return (dayModel.Shift5Start.Value, dayModel.Shift5Stop.Value);
+            yield return (SlotToSeconds(dayModel.Shift5Start.Value), SlotToSeconds(dayModel.Shift5Stop.Value));
     }
+
+    /// <summary>
+    /// Converts a 1-based 5-minute slot index (matching PlanRegistration.Options)
+    /// into seconds since midnight. Slot 1 = 00:00 (0s), slot 49 = 04:00 (14400s),
+    /// slot 289 = 24:00 (86400s).
+    /// </summary>
+    private static int SlotToSeconds(int slot) => (slot - 1) * 300;
 
     /// <summary>
     /// Aggregates pay lines with the same PayCode by summing seconds and hours.
