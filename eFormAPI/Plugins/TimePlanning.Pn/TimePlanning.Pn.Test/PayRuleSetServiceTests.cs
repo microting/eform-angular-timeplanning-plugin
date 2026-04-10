@@ -16,6 +16,7 @@ using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Models.PayRuleSet;
 using TimePlanning.Pn.Infrastructure.Models.PayTierRule;
 using TimePlanning.Pn.Services.PayRuleSetService;
+using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 
 namespace TimePlanning.Pn.Test;
 
@@ -28,9 +29,13 @@ public class PayRuleSetServiceTests : TestBaseSetup
     public new async Task Setup()
     {
         await base.Setup();
+        var localizationService = Substitute.For<ITimePlanningLocalizationService>();
+        localizationService.GetString(Arg.Any<string>())
+            .Returns(call => call.Arg<string>());
         _service = new PayRuleSetService(
             TimePlanningPnDbContext,
-            Substitute.For<ILogger<PayRuleSetService>>());
+            Substitute.For<ILogger<PayRuleSetService>>(),
+            localizationService);
     }
 
     [Test]

@@ -171,4 +171,7 @@
     <data name="ErrorDeletingPayRuleSet" xml:space="preserve">
         <value>Error while deleting pay rule set</value>
     </data>
+    <data name="PayRuleSetTotalRow" xml:space="preserve">
+        <value>Total</value>
+    </data>
 </root>

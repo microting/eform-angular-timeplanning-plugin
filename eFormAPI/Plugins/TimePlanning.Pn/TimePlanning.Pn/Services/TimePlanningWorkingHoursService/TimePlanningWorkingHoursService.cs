@@ -659,25 +659,11 @@ public class TimePlanningWorkingHoursService(
             var totalNettoHours = planRegistrations.Sum(x => x.NettoHours);
             var difference = totalNettoHours - totalPlanHours;
 
-            var vacationDays = planRegistrations.Count(x => x.OnVacation);
-            var sickDays = planRegistrations.Count(x => x.Sick);
-            var otherAbsenceDays = planRegistrations.Count(x => x.OtherAllowedAbsence);
-            var absenceWithoutPermissionDays = planRegistrations.Count(x => x.AbsenceWithoutPermission);
-
-            var sundayHolidayHours = planRegistrations
-                .Where(x => x.IsSunday || PlanRegistrationHelper.IsOfficialHoliday(x.Date))
-                .Sum(x => x.NettoHours);
-
             var summary = new TimePlanningHoursSummaryModel
             {
                 TotalPlanHours = totalPlanHours,
                 TotalNettoHours = totalNettoHours,
-                Difference = difference,
-                VacationDays = vacationDays,
-                SickDays = sickDays,
-                OtherAbsenceDays = otherAbsenceDays,
-                AbsenceWithoutPermissionDays = absenceWithoutPermissionDays,
-                SundayHolidayHours = sundayHolidayHours
+                Difference = difference
             };
 
             if (model != null)
@@ -2052,13 +2038,15 @@ public class TimePlanningWorkingHoursService(
 
             var isFifthShiftEnabled = assignedSite.FifthShiftActive;
 
-            // Load PayRuleSet with day rules and tiers for pay code generation
+            // Load PayRuleSet with day rules + tiers AND day type rules + time bands
             PayRuleSet payRuleSet = null;
             if (assignedSite.PayRuleSetId.HasValue)
             {
                 payRuleSet = await dbContext.PayRuleSets
                     .Include(p => p.DayRules)
                     .ThenInclude(d => d.Tiers)
+                    .Include(p => p.DayTypeRules)
+                    .ThenInclude(d => d.TimeBandRules)
                     .FirstOrDefaultAsync(p => p.Id == assignedSite.PayRuleSetId.Value);
             }
 
@@ -2089,19 +2077,12 @@ public class TimePlanningWorkingHoursService(
                         : planning.NettoHours;
                     var totalSeconds = (int)(nettoHours * 3600);
 
-                    if (totalSeconds <= 0)
-                    {
-                        payLinesByDate[planning.Date] = new List<PlanRegistrationPayLine>();
-                        continue;
-                    }
-
-                    var dayCode = GetDayCodeForDate(planning.Date);
-                    var payLines = PayLineGenerator.GeneratePayLines(
+                    var payLines = CalculatePayLinesForDay(
                         planning.Id ?? 0,
-                        dayCode,
+                        planning.Date,
+                        planning,
                         totalSeconds,
-                        payRuleSet,
-                        DateTime.UtcNow);
+                        payRuleSet);
 
                     payLinesByDate[planning.Date] = payLines;
 
@@ -2238,6 +2219,13 @@ public class TimePlanningWorkingHoursService(
 
                 var plr = new PlanRegistration();
 
+                // Running totals for the totals row
+                double totalPlanHours = 0;
+                double totalNettoHours = 0;
+                double totalFlexHours = 0;
+                double totalPaidOutFlex = 0;
+                var totalsByPayCode = allPayCodes.ToDictionary(p => p, p => 0.0);
+
                 // Fill data
                 int rowIndex = 2;
                 foreach (var planning in timePlannings)
@@ -2246,12 +2234,12 @@ public class TimePlanningWorkingHoursService(
                     FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled);
 
                     // Append pay code values for this day
+                    var dayPayLines = payLinesByDate.ContainsKey(planning.Date)
+                        ? payLinesByDate[planning.Date]
+                        : new List<PlanRegistrationPayLine>();
+
                     if (allPayCodes.Count > 0)
                     {
-                        var dayPayLines = payLinesByDate.ContainsKey(planning.Date)
-                            ? payLinesByDate[planning.Date]
-                            : new List<PlanRegistrationPayLine>();
-
                         foreach (var payCode in allPayCodes)
                         {
                             var payLine = dayPayLines.FirstOrDefault(pl => pl.PayCode == payCode);
@@ -2261,7 +2249,74 @@ public class TimePlanningWorkingHoursService(
 
                     sheetData1.Append(dataRow);
                     rowIndex++;
+
+                    // Accumulate totals
+                    totalPlanHours += planning.PlanHours;
+                    totalNettoHours += planning.NettoHoursOverrideActive
+                        ? planning.NettoHoursOverride
+                        : planning.NettoHours;
+                    totalFlexHours += planning.FlexHours;
+                    if (!string.IsNullOrEmpty(planning.PaidOutFlex)
+                        && double.TryParse(planning.PaidOutFlex.Replace(",", "."),
+                            NumberStyles.Any, CultureInfo.InvariantCulture, out var paidOut))
+                    {
+                        totalPaidOutFlex += paidOut;
+                    }
+                    foreach (var pl in dayPayLines)
+                    {
+                        if (totalsByPayCode.ContainsKey(pl.PayCode))
+                        {
+                            totalsByPayCode[pl.PayCode] += pl.Hours;
+                        }
+                    }
                 }
+
+                // Append totals row
+                var totalsRow = new Row { RowIndex = (uint)rowIndex };
+                totalsRow.Append(CreateCell(localizationService.GetString("PayRuleSetTotalRow"))); // EmployeeNo column → "Total" label
+                totalsRow.Append(CreateCell(string.Empty)); // Worker
+                totalsRow.Append(CreateCell(string.Empty)); // DayOfWeek
+                totalsRow.Append(CreateCell(string.Empty)); // Date
+                totalsRow.Append(CreateCell(string.Empty)); // Week
+                totalsRow.Append(CreateCell(string.Empty)); // PlanText
+                totalsRow.Append(CreateNumericCell(totalPlanHours)); // PlanHours
+                totalsRow.Append(CreateCell(string.Empty)); // Shift1 Start
+                totalsRow.Append(CreateCell(string.Empty)); // Shift1 Stop
+                totalsRow.Append(CreateCell(string.Empty)); // Shift1 Pause
+                totalsRow.Append(CreateCell(string.Empty)); // Shift2 Start
+                totalsRow.Append(CreateCell(string.Empty)); // Shift2 Stop
+                totalsRow.Append(CreateCell(string.Empty)); // Shift2 Pause
+                totalsRow.Append(CreateNumericCell(totalNettoHours)); // NettoHours
+                totalsRow.Append(CreateNumericCell(totalFlexHours)); // FlexHours
+                totalsRow.Append(CreateCell(string.Empty)); // SumFlexEnd (running balance, not summable)
+                totalsRow.Append(CreateNumericCell(totalPaidOutFlex)); // PaidOutFlex
+                totalsRow.Append(CreateCell(string.Empty)); // Message
+                totalsRow.Append(CreateCell(string.Empty)); // CommentWorker
+                totalsRow.Append(CreateCell(string.Empty)); // CommentOffice
+                if (isThirdShiftEnabled)
+                {
+                    totalsRow.Append(CreateCell(string.Empty));
+                    totalsRow.Append(CreateCell(string.Empty));
+                    totalsRow.Append(CreateCell(string.Empty));
+                }
+                if (isFourthShiftEnabled)
+                {
+                    totalsRow.Append(CreateCell(string.Empty));
+                    totalsRow.Append(CreateCell(string.Empty));
+                    totalsRow.Append(CreateCell(string.Empty));
+                }
+                if (isFifthShiftEnabled)
+                {
+                    totalsRow.Append(CreateCell(string.Empty));
+                    totalsRow.Append(CreateCell(string.Empty));
+                    totalsRow.Append(CreateCell(string.Empty));
+                }
+                foreach (var payCode in allPayCodes)
+                {
+                    totalsRow.Append(CreateNumericCell(totalsByPayCode[payCode]));
+                }
+                sheetData1.Append(totalsRow);
+                rowIndex++;
 
                 var columnLetter = GetColumnLetter(headerStrings.Count);
                 AutoFilter autoFilter1 = new AutoFilter() { Reference = $"A1:{columnLetter}{rowIndex}" };
@@ -2470,6 +2525,81 @@ public class TimePlanningWorkingHoursService(
             var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
+            // Pre-pass: for every site, load PayRuleSet, fetch working hours, compute pay lines per day,
+            // and collect the global union of pay codes used across all sites in this report.
+            // Cached so the per-site sheet writing and Total sheet writing both consume the same data.
+            var perSiteCache = new Dictionary<int, AllWorkersSiteCache>();
+            var allPayCodes = new List<string>();
+            for (int i = 0; i < siteIds.Count; i++)
+            {
+                var siteForCache = await sdkContext.Sites.SingleOrDefaultAsync(x =>
+                    x.MicrotingUid == siteIds[i] && x.WorkflowState != Constants.WorkflowStates.Removed);
+                if (siteForCache == null) continue;
+
+                var assignedSiteForCache = await dbContext.AssignedSites
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .FirstOrDefaultAsync(x => x.SiteId == siteForCache.MicrotingUid);
+                if (assignedSiteForCache == null) continue;
+
+                PayRuleSet payRuleSetForCache = null;
+                if (assignedSiteForCache.PayRuleSetId.HasValue)
+                {
+                    payRuleSetForCache = await dbContext.PayRuleSets
+                        .Include(p => p.DayRules)
+                        .ThenInclude(d => d.Tiers)
+                        .Include(p => p.DayTypeRules)
+                        .ThenInclude(d => d.TimeBandRules)
+                        .FirstOrDefaultAsync(p => p.Id == assignedSiteForCache.PayRuleSetId.Value);
+                }
+
+                var dataResult = await Index(new TimePlanningWorkingHoursRequestModel
+                {
+                    DateFrom = model.DateFrom,
+                    DateTo = model.DateTo,
+                    SiteId = (int)siteForCache.MicrotingUid!
+                });
+                if (!dataResult.Success) return new OperationDataResult<Stream>(false, dataResult.Message);
+
+                var siteTimePlannings = dataResult.Model.Skip(1).ToList();
+
+                var payLinesByDate = new Dictionary<DateTime, List<PlanRegistrationPayLine>>();
+                if (payRuleSetForCache != null)
+                {
+                    foreach (var planning in siteTimePlannings)
+                    {
+                        var nettoHours = planning.NettoHoursOverrideActive
+                            ? planning.NettoHoursOverride
+                            : planning.NettoHours;
+                        var totalSeconds = (int)(nettoHours * 3600);
+
+                        var payLines = CalculatePayLinesForDay(
+                            planning.Id ?? 0,
+                            planning.Date,
+                            planning,
+                            totalSeconds,
+                            payRuleSetForCache);
+
+                        payLinesByDate[planning.Date] = payLines;
+                        foreach (var pl in payLines)
+                        {
+                            if (!allPayCodes.Contains(pl.PayCode))
+                            {
+                                allPayCodes.Add(pl.PayCode);
+                            }
+                        }
+                    }
+                }
+
+                perSiteCache[siteIds[i]] = new AllWorkersSiteCache
+                {
+                    Site = siteForCache,
+                    AssignedSite = assignedSiteForCache,
+                    PayRuleSet = payRuleSetForCache,
+                    TimePlannings = siteTimePlannings,
+                    PayLinesByDate = payLinesByDate
+                };
+            }
+
             using (var document =
                    SpreadsheetDocument.Create(resultDocument, SpreadsheetDocumentType.Workbook))
             {
@@ -2512,18 +2642,19 @@ public class TimePlanningWorkingHoursService(
                     Translations.Worker,
                     Translations.PlanHours,
                     Translations.NettoHours,
-                    // Translations.Total_Hours,
                     Translations.SumFlexStart,
-                    Translations.Normal_Hours,
-                    Translations.Hours_Sunday,
                     Translations.Comments,
-                    Translations.Message,
-                    Translations.Hours_Saturday
+                    Translations.Message
                 };
                 List<string> totalHeaderStrings = new List<string>();
                 foreach (var header in totalHeaders)
                 {
                     totalHeaderStrings.Add(localizationService.GetString(header));
+                }
+                // Append one column header per pay code discovered across all sites
+                foreach (var payCode in allPayCodes)
+                {
+                    totalHeaderStrings.Add(payCode);
                 }
 
                 // Add a column header for each seed message
@@ -2655,6 +2786,11 @@ public class TimePlanningWorkingHoursService(
                     {
                         headerStrings.Add(localizationService.GetString(header));
                     }
+                    // Append one column header per pay code discovered across all sites
+                    foreach (var payCode in allPayCodes)
+                    {
+                        headerStrings.Add(payCode);
+                    }
 
                     Worksheet worksheet1 = new Worksheet()
                         { MCAttributes = new MarkupCompatibilityAttributes() { Ignorable = "x14ac xr xr2 xr3" } };
@@ -2698,19 +2834,18 @@ public class TimePlanningWorkingHoursService(
 
                     sheetData1.Append(row1);
 
-                    // Fetch data
-                    var content = await Index(new TimePlanningWorkingHoursRequestModel
-                    {
-                        DateFrom = model.DateFrom,
-                        DateTo = model.DateTo,
-                        SiteId = (int)site!.MicrotingUid!
-                    });
-                    if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
-
-                    //var timePlannings = content.Model;
-
-                    var timePlannings = content.Model.Skip(1).ToList();
+                    // Use cached working-hours data + per-day pay lines computed in the pre-pass
+                    perSiteCache.TryGetValue(siteIds[i], out var cache);
+                    var timePlannings = cache?.TimePlannings ?? new List<TimePlanningWorkingHoursModel>();
+                    var siteContent = new OperationDataResult<List<TimePlanningWorkingHoursModel>>(true, timePlannings);
                     var plr = new PlanRegistration();
+
+                    // Per-site running totals
+                    double siteTotalPlanHours = 0;
+                    double siteTotalNettoHours = 0;
+                    double siteTotalFlexHours = 0;
+                    double siteTotalPaidOutFlex = 0;
+                    var siteTotalsByPayCode = allPayCodes.ToDictionary(p => p, p => 0.0);
 
                     // Fill data
                     int rowIndex = 2;
@@ -2720,7 +2855,38 @@ public class TimePlanningWorkingHoursService(
                         try
                         {
                             FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled);
+
+                            // Append pay code values for this day
+                            var dayPayLines = (cache != null && cache.PayLinesByDate.ContainsKey(planning.Date))
+                                ? cache.PayLinesByDate[planning.Date]
+                                : new List<PlanRegistrationPayLine>();
+                            foreach (var payCode in allPayCodes)
+                            {
+                                var payLine = dayPayLines.FirstOrDefault(pl => pl.PayCode == payCode);
+                                dataRow.Append(CreateNumericCell(payLine?.Hours ?? 0));
+                            }
+
                             sheetData1.Append(dataRow);
+
+                            // Accumulate per-site totals
+                            siteTotalPlanHours += planning.PlanHours;
+                            siteTotalNettoHours += planning.NettoHoursOverrideActive
+                                ? planning.NettoHoursOverride
+                                : planning.NettoHours;
+                            siteTotalFlexHours += planning.FlexHours;
+                            if (!string.IsNullOrEmpty(planning.PaidOutFlex)
+                                && double.TryParse(planning.PaidOutFlex.Replace(",", "."),
+                                    NumberStyles.Any, CultureInfo.InvariantCulture, out var paidOut))
+                            {
+                                siteTotalPaidOutFlex += paidOut;
+                            }
+                            foreach (var pl in dayPayLines)
+                            {
+                                if (siteTotalsByPayCode.ContainsKey(pl.PayCode))
+                                {
+                                    siteTotalsByPayCode[pl.PayCode] += pl.Hours;
+                                }
+                            }
                         }
                         catch (Exception e)
                         {
@@ -2733,7 +2899,54 @@ public class TimePlanningWorkingHoursService(
                         rowIndex++;
                     }
 
-                    var columnLetter = GetColumnLetter(headers.Length);
+                    // Append per-site totals row at the bottom of the per-site sheet
+                    var siteTotalsRow = new Row { RowIndex = (uint)rowIndex };
+                    siteTotalsRow.Append(CreateCell(localizationService.GetString("PayRuleSetTotalRow")));
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Worker
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // DayOfWeek
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Date
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Week
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // PlanText
+                    siteTotalsRow.Append(CreateNumericCell(siteTotalPlanHours)); // PlanHours
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Shift1 Start
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Shift1 Stop
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Shift1 Pause
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Shift2 Start
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Shift2 Stop
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Shift2 Pause
+                    siteTotalsRow.Append(CreateNumericCell(siteTotalNettoHours)); // NettoHours
+                    siteTotalsRow.Append(CreateNumericCell(siteTotalFlexHours)); // FlexHours
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // SumFlexStart
+                    siteTotalsRow.Append(CreateNumericCell(siteTotalPaidOutFlex)); // PaidOutFlex
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Message
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // CommentWorker
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // CommentOffice
+                    if (isThirdShiftEnabled)
+                    {
+                        siteTotalsRow.Append(CreateCell(string.Empty));
+                        siteTotalsRow.Append(CreateCell(string.Empty));
+                        siteTotalsRow.Append(CreateCell(string.Empty));
+                    }
+                    if (isFourthShiftEnabled)
+                    {
+                        siteTotalsRow.Append(CreateCell(string.Empty));
+                        siteTotalsRow.Append(CreateCell(string.Empty));
+                        siteTotalsRow.Append(CreateCell(string.Empty));
+                    }
+                    if (isFifthShiftEnabled)
+                    {
+                        siteTotalsRow.Append(CreateCell(string.Empty));
+                        siteTotalsRow.Append(CreateCell(string.Empty));
+                        siteTotalsRow.Append(CreateCell(string.Empty));
+                    }
+                    foreach (var payCode in allPayCodes)
+                    {
+                        siteTotalsRow.Append(CreateNumericCell(siteTotalsByPayCode[payCode]));
+                    }
+                    sheetData1.Append(siteTotalsRow);
+                    rowIndex++;
+
+                    var columnLetter = GetColumnLetter(headerStrings.Count);
                     AutoFilter autoFilter1 = new AutoFilter() { Reference = $"A1:{columnLetter}{rowIndex}" };
                     autoFilter1.SetAttribute(new OpenXmlAttribute("xr", "uid",
                         "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
@@ -2755,65 +2968,28 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateDateCell(model.DateTo));
                     totalRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
                     totalRow.Append(CreateCell(site.Name));
-                    totalRow.Append(CreateNumericCell(content.Model.Skip(1).ToList().Sum(x => x.PlanHours)));
+                    totalRow.Append(CreateNumericCell(siteTotalPlanHours));
+                    totalRow.Append(CreateNumericCell(siteTotalNettoHours));
+                    totalRow.Append(CreateNumericCell(timePlannings.Count > 0 ? timePlannings.Last().SumFlexEnd : 0.0));
 
-                    // Calculate total hours (with overrides)
-                    var nettoHoursTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive == false).Sum(x => x.NettoHours);
-                    var nettoHoursOverrideTotal = content.Model.Skip(1).ToList().Where(x => x.NettoHoursOverrideActive).Sum(x => x.NettoHoursOverride);
-                    var totalHours = nettoHoursTotal + nettoHoursOverrideTotal;
-
-                    // totalRow.Append(CreateNumericCell(nettoHoursTotal)); // Total Hours column
-                    totalRow.Append(CreateNumericCell(totalHours)); // Total Hours column
-                    totalRow.Append(CreateNumericCell(content.Model.Last().SumFlexEnd));
-                    var sumHoursSaturday = content.Model.Skip(1).Where(x => x.IsSaturday).Select(x => x.NettoHours).Sum();
-
-                    // Calculate Sunday and Holiday hours
-                    // Include: Sundays + all holidays (but for Grundlovsdag only count hours after 12:00)
-                    var sumHoursSundayAndHoliday = 0.0;
-                    foreach (var day in content.Model.Skip(1).ToList())
-                    {
-                        // Check if it's Sunday or a holiday
-                        var isSundayOrHoliday = day.IsSunday || PlanRegistrationHelper.IsOfficialHoliday(day.Date);
-
-                        if (isSundayOrHoliday)
-                        {
-                            // Special handling for Grundlovsdag - only count hours after 12:00
-                            if (PlanRegistrationHelper.IsGrundlovsdag(day.Date))
-                            {
-                                // Calculate hours after 12:00
-                                var hoursAfterNoon = CalculateHoursAfterNoon(day);
-                                sumHoursSundayAndHoliday += hoursAfterNoon;
-                            }
-                            else
-                            {
-                                // For other Sundays/holidays, count all hours
-                                sumHoursSundayAndHoliday += day.NettoHours;
-                            }
-                        }
-                    }
-
-                    // Calculate normal hours (total hours minus Sunday/holiday hours)
-                    var normalHours = totalHours - sumHoursSundayAndHoliday;
-
-                    // NettoHours column now shows normal hours only
-                    totalRow.Append(CreateNumericCell(normalHours));
-
-                    var countCommentFromWorker = content.Model.Skip(1).ToList().Count(x => !string.IsNullOrEmpty(x.CommentWorker));
-                    var countMessages = content.Model.Skip(1).ToList().Count(x => x.Message != null);
-
-                    totalRow.Append(CreateNumericCell(sumHoursSundayAndHoliday));
+                    var countCommentFromWorker = timePlannings.Count(x => !string.IsNullOrEmpty(x.CommentWorker));
+                    var countMessages = timePlannings.Count(x => x.Message != null);
                     totalRow.Append(CreateNumericCell(countCommentFromWorker));
                     totalRow.Append(CreateNumericCell(countMessages));
-                    totalRow.Append(CreateNumericCell(sumHoursSaturday));
+
+                    // Append per-pay-code total for this worker (matches the dynamic columns added to the headers)
+                    foreach (var payCode in allPayCodes)
+                    {
+                        totalRow.Append(CreateNumericCell(siteTotalsByPayCode[payCode]));
+                    }
 
                     // Add netto hours sum for each seed message
-                    var workerDays = content.Model.Skip(1).ToList();
                     foreach (var seedMessage in seedMessages)
                     {
-                        var messageNettoHours = workerDays
+                        var messageNettoHours = timePlannings
                             .Where(x => x.Message == seedMessage.Id && x.NettoHoursOverrideActive == false)
                             .Sum(x => x.NettoHours);
-                        var messageNettoHoursOverride = workerDays
+                        var messageNettoHoursOverride = timePlannings
                             .Where(x => x.Message == seedMessage.Id && x.NettoHoursOverrideActive)
                             .Sum(x => x.NettoHoursOverride);
 
@@ -3233,5 +3409,142 @@ public class TimePlanningWorkingHoursService(
         }
 
         return "WEEKDAY";
+    }
+
+    /// <summary>
+    /// Resolves the <see cref="DayType"/> for a given date and pre-computed day code.
+    /// Returns false for GRUNDLOVSDAG (no DayType equivalent — only tier rules apply).
+    /// HOLIDAY → DayType.Holiday regardless of weekday.
+    /// </summary>
+    private static bool TryGetDayType(DateTime date, string dayCode, out DayType dayType)
+    {
+        if (dayCode == "GRUNDLOVSDAG")
+        {
+            dayType = DayType.Monday; // unused
+            return false;
+        }
+
+        if (dayCode == "HOLIDAY")
+        {
+            dayType = DayType.Holiday;
+            return true;
+        }
+
+        switch (date.DayOfWeek)
+        {
+            case DayOfWeek.Monday: dayType = DayType.Monday; return true;
+            case DayOfWeek.Tuesday: dayType = DayType.Tuesday; return true;
+            case DayOfWeek.Wednesday: dayType = DayType.Wednesday; return true;
+            case DayOfWeek.Thursday: dayType = DayType.Thursday; return true;
+            case DayOfWeek.Friday: dayType = DayType.Friday; return true;
+            case DayOfWeek.Saturday: dayType = DayType.Saturday; return true;
+            case DayOfWeek.Sunday: dayType = DayType.Sunday; return true;
+            default: dayType = DayType.Monday; return false;
+        }
+    }
+
+    /// <summary>
+    /// Yields each populated shift's (startSecondOfDay, stopSecondOfDay) pair.
+    /// Skips shifts without both start and stop, and shifts with stop &lt;= start.
+    /// </summary>
+    private static IEnumerable<(int Start, int Stop)> EnumerateShiftSegments(TimePlanningWorkingHoursModel dayModel)
+    {
+        if (dayModel.Shift1Start.HasValue && dayModel.Shift1Stop.HasValue && dayModel.Shift1Stop > dayModel.Shift1Start)
+            yield return (dayModel.Shift1Start.Value, dayModel.Shift1Stop.Value);
+        if (dayModel.Shift2Start.HasValue && dayModel.Shift2Stop.HasValue && dayModel.Shift2Stop > dayModel.Shift2Start)
+            yield return (dayModel.Shift2Start.Value, dayModel.Shift2Stop.Value);
+        if (dayModel.Shift3Start.HasValue && dayModel.Shift3Stop.HasValue && dayModel.Shift3Stop > dayModel.Shift3Start)
+            yield return (dayModel.Shift3Start.Value, dayModel.Shift3Stop.Value);
+        if (dayModel.Shift4Start.HasValue && dayModel.Shift4Stop.HasValue && dayModel.Shift4Stop > dayModel.Shift4Start)
+            yield return (dayModel.Shift4Start.Value, dayModel.Shift4Stop.Value);
+        if (dayModel.Shift5Start.HasValue && dayModel.Shift5Stop.HasValue && dayModel.Shift5Stop > dayModel.Shift5Start)
+            yield return (dayModel.Shift5Start.Value, dayModel.Shift5Stop.Value);
+    }
+
+    /// <summary>
+    /// Aggregates pay lines with the same PayCode by summing seconds and hours.
+    /// Preserves PlanRegistrationId / PayRuleSetId / CalculatedAt from the first occurrence.
+    /// </summary>
+    private static List<PlanRegistrationPayLine> MergeByPayCode(List<PlanRegistrationPayLine> lines)
+    {
+        return lines
+            .GroupBy(l => l.PayCode)
+            .Select(g => new PlanRegistrationPayLine
+            {
+                PlanRegistrationId = g.First().PlanRegistrationId,
+                PayCode = g.Key,
+                HoursInSeconds = g.Sum(x => x.HoursInSeconds),
+                Hours = g.Sum(x => x.Hours),
+                PayRuleSetId = g.First().PayRuleSetId,
+                CalculatedAt = g.First().CalculatedAt
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Calculates pay lines for a single day, choosing time-band rules when defined
+    /// for the day's DayType, otherwise falling back to tier-based logic on totalSeconds.
+    /// Returns an empty list if payRuleSet is null.
+    /// </summary>
+    /// <param name="planRegistrationId">PlanRegistration ID to stamp on the pay lines</param>
+    /// <param name="date">The date the work was performed</param>
+    /// <param name="dayModel">Day model with shift Start/Stop seconds for time-band routing</param>
+    /// <param name="totalSeconds">Pre-computed total worked seconds (after override + pause adjustment) for tier path</param>
+    /// <param name="payRuleSet">The PayRuleSet to apply (loaded with DayRules+Tiers AND DayTypeRules+TimeBandRules)</param>
+    /// <summary>
+    /// Internal cache used by the all-workers Excel export so the per-site sheet
+    /// generation and the Total sheet generation share a single computed pay-line dataset.
+    /// </summary>
+    private sealed class AllWorkersSiteCache
+    {
+        public Microting.eForm.Infrastructure.Data.Entities.Site Site { get; set; }
+        public AssignedSite AssignedSite { get; set; }
+        public PayRuleSet PayRuleSet { get; set; }
+        public List<TimePlanningWorkingHoursModel> TimePlannings { get; set; }
+        public Dictionary<DateTime, List<PlanRegistrationPayLine>> PayLinesByDate { get; set; }
+    }
+
+    private static List<PlanRegistrationPayLine> CalculatePayLinesForDay(
+        int planRegistrationId,
+        DateTime date,
+        TimePlanningWorkingHoursModel dayModel,
+        int totalSeconds,
+        PayRuleSet payRuleSet)
+    {
+        if (payRuleSet == null)
+        {
+            return new List<PlanRegistrationPayLine>();
+        }
+
+        var dayCode = GetDayCodeForDate(date);
+
+        // Time-band path: if PayRuleSet defines time-band rules for the day type, use them.
+        if (TryGetDayType(date, dayCode, out var dayType))
+        {
+            var hasTimeBandRule = payRuleSet.DayTypeRules?
+                .Any(r => r.DayType == dayType
+                    && r.TimeBandRules != null
+                    && r.TimeBandRules.Any()) ?? false;
+
+            if (hasTimeBandRule)
+            {
+                var bandResults = new List<PlanRegistrationPayLine>();
+                foreach (var (start, stop) in EnumerateShiftSegments(dayModel))
+                {
+                    bandResults.AddRange(PayLineGenerator.GenerateTimeBandPayLines(
+                        planRegistrationId, dayType, start, stop, payRuleSet, DateTime.UtcNow));
+                }
+                return MergeByPayCode(bandResults);
+            }
+        }
+
+        // Tier path: existing behavior — split totalSeconds across DayRule tiers.
+        if (totalSeconds <= 0)
+        {
+            return new List<PlanRegistrationPayLine>();
+        }
+
+        return PayLineGenerator.GeneratePayLines(
+            planRegistrationId, dayCode, totalSeconds, payRuleSet, DateTime.UtcNow);
     }
 }
