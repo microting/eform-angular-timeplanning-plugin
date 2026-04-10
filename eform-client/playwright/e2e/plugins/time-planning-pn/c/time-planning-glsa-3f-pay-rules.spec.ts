@@ -80,10 +80,12 @@ async function navigateToPlannings(page: Page): Promise<void> {
 // ---------------------------------------------------------------------------
 
 /**
- * Open the create pay rule set modal by clicking the "Create Pay Rule Set" button.
+ * Open the create pay rule set modal by clicking the trigger button.
+ * Uses the stable #openCreatePayRuleSetBtn id rather than the accessible name,
+ * which would break under non-English UI locales.
  */
 async function openCreatePayRuleSetModal(page: Page): Promise<void> {
-  await page.getByRole('button', { name: /Create Pay Rule Set/i }).click();
+  await page.locator('#openCreatePayRuleSetBtn').click();
   await page.locator('mat-dialog-container').waitFor({ state: 'visible', timeout: 10000 });
 }
 
