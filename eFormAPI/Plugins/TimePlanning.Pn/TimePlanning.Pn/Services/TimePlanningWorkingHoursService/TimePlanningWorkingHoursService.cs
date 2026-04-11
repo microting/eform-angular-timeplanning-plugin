@@ -765,6 +765,17 @@ public class TimePlanningWorkingHoursService(
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
 
+        // Guard: when both editing flags are disabled, the worker is not allowed
+        // to mutate their own registrations from the mobile app.
+        if (assignedSite != null
+            && !assignedSite.AllowEditOfRegistrations
+            && !assignedSite.DaysBackInTimeAllowedEditingEnabled)
+        {
+            return new OperationResult(
+                false,
+                localizationService.GetString("EditingNotAllowedForWorker"));
+        }
+
         var todayAtMidnight = model.Date;
 
         var planRegistration = await dbContext.PlanRegistrations

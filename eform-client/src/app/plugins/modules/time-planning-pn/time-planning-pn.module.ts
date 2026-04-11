@@ -44,6 +44,7 @@ import {NgxMaskDirective} from 'ngx-mask';
 import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {MatCheckbox} from '@angular/material/checkbox';
+import {MatRadioButton, MatRadioGroup} from '@angular/material/radio';
 import {MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle} from '@angular/material/dialog';
 import {MtxSelect} from '@ng-matero/extensions/select';
 
@@ -66,6 +67,8 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     MtxSelect,
     MatCard,
     MatCheckbox,
+    MatRadioGroup,
+    MatRadioButton,
     MatCardContent,
     MatIconButton,
     MatFormField,

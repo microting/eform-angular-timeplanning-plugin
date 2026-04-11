@@ -306,4 +306,39 @@ export const da = {
   'days configured': 'dage konfigureret',
   'day type configured': 'dagtype konfigureret',
   'day types configured': 'dagtyper konfigureret',
+  'Employee status': 'Medarbejderstatus',
+  'Break calculation': 'Pauseberegning',
+  'Mobile registration': 'Mobilregistrering',
+  'Shifts': 'Vagter',
+  'Payroll rules': 'Lønregler',
+  'Hide employee from daily operations. Requires a resignation date. All settings below are hidden.':
+    'Skjul medarbejder fra daglig drift. Kræver fratrædelsesdato. Alle indstillinger nedenfor skjules.',
+  'Breaks are calculated automatically from the rule set. Manual break entry on shift tabs is disabled.':
+    'Pauser beregnes automatisk ud fra regelsættet. Manuel pauseindtastning på vagt-fanerne deaktiveres.',
+  'Main switch. When active, select registration method and editing policy below.':
+    'Hovedkontakt. Når denne er aktiv, vælges registreringsmetode og redigeringspolitik nedenfor.',
+  'How working time is captured': 'Sådan registreres arbejdstiden',
+  'Manual entry': 'Manuel indtastning',
+  'The employee enters start, stop and break for each workday themselves.':
+    'Medarbejderen indtaster selv start, stop og pause for hver arbejdsdag.',
+  'Start/Stop buttons record work and breaks automatically as the day progresses.':
+    'Start/Stop-knapper registrerer arbejde og pauser automatisk, efterhånden som dagen forløber.',
+  'Allow entry of forgotten days': 'Tillad indtastning af glemte dage',
+  'The employee can retroactively register work hours they forgot to clock in/out on.':
+    'Medarbejderen kan bagud-registrere arbejdstimer de har glemt at stemple ind/ud på.',
+  'May the employee edit past registrations?': 'Må medarbejderen redigere tidligere registreringer?',
+  'No editing allowed': 'Nej — ingen redigering tilladt',
+  'Once a registration is saved, the employee can no longer change it. Errors must be corrected by a manager.':
+    'Når en registrering er gemt, kan medarbejderen ikke længere ændre den. Fejl rettes af en leder.',
+  'Yes, until the last payroll run': 'Ja, frem til seneste lønkørsel',
+  'Locks on 19th': 'Låser d. 19.',
+  'The employee can edit all registrations that fall after the last payroll run. Registrations up to and including the 19th of the month are locked when payroll runs. Older registrations cannot be changed.':
+    'Medarbejderen kan rette alle registreringer der ligger efter den seneste lønkørsel. Registreringer til og med d. 19. i måneden låses når lønnen kører. Ældre registreringer kan ikke ændres.',
+  '(Cutoff date is currently fixed at the 19th — will become configurable in a future version.)':
+    '(Skæringsdato er p.t. fast d. 19. — bliver konfigurerbar i kommende version.)',
+  'Yes, but only the last 2 days': 'Ja, men kun de seneste 2 dage',
+  'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.':
+    'Medarbejderen kan kun rette registreringer inden for et rullende vindue på 2 dage. Alt ældre end 2 dage låses automatisk — uafhængigt af lønkørsel.',
+  'Editing is not allowed when both editing options are disabled for this worker.':
+    'Redigering er ikke tilladt, når begge redigeringsmuligheder er slået fra for denne medarbejder.',
 };

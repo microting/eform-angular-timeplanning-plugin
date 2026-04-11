@@ -174,4 +174,7 @@
     <data name="PayRuleSetTotalRow" xml:space="preserve">
         <value>Total</value>
     </data>
+    <data name="EditingNotAllowedForWorker" xml:space="preserve">
+        <value>Editing is not allowed when both editing options are disabled for this worker.</value>
+    </data>
 </root>

@@ -199,6 +199,14 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.assignedSiteForm.valueChanges.subscribe(formValue => {
       Object.assign(this.data, formValue);
     });
+
+    // Normalize mutually-exclusive flag combinations that old flat-checkbox
+    // data might contain (e.g. both usePunchClock and allowAcceptOfPlannedHours
+    // set to true). Derives the current radio value and writes it back so the
+    // stored flags match the displayed selection exactly.
+    this.onEntryMethodChange(this.entryMethod);
+    this.onEditingPolicyChange(this.editingPolicy);
+
     this.calculateHours();
   }
 
@@ -573,6 +581,67 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
 
   getFifthShiftFormGroup(): FormGroup {
     return this.assignedSiteForm.get('fifthShift') as FormGroup;
+  }
+
+  /**
+   * Axis 1 — how working time is captured.
+   * Maps the two underlying flags (usePunchClock, allowAcceptOfPlannedHours)
+   * onto a single 3-value radio control. These flags are mutually exclusive
+   * in the UI by construction.
+   */
+  get entryMethod(): 'manual' | 'punchClock' | 'acceptPlanned' {
+    if (this.data.usePunchClock) {
+      return 'punchClock';
+    }
+    if (this.data.allowAcceptOfPlannedHours) {
+      return 'acceptPlanned';
+    }
+    return 'manual';
+  }
+
+  onEntryMethodChange(value: 'manual' | 'punchClock' | 'acceptPlanned'): void {
+    const f = this.assignedSiteForm;
+    const punch = value === 'punchClock';
+    const accept = value === 'acceptPlanned';
+    f.get('usePunchClock')?.setValue(punch);
+    f.get('allowAcceptOfPlannedHours')?.setValue(accept);
+    // Mirror onto this.data immediately so template *ngIf bindings that read
+    // from data (instead of form) react in the same change-detection tick.
+    this.data.usePunchClock = punch;
+    this.data.allowAcceptOfPlannedHours = accept;
+    // The "allow entry of forgotten days" sub-option only makes sense under punch clock
+    if (!punch) {
+      f.get('usePunchClockWithAllowRegisteringInHistory')?.setValue(false);
+      this.data.usePunchClockWithAllowRegisteringInHistory = false;
+    }
+  }
+
+  /**
+   * Axis 2 — editing policy for past registrations.
+   * Maps two boolean flags (allowEditOfRegistrations, daysBackInTimeAllowedEditingEnabled)
+   * onto a single 3-value radio control:
+   *   locked          → both false
+   *   untilPayroll    → allowEditOfRegistrations=true, daysBack=false
+   *   twoDaysRolling  → both true
+   */
+  get editingPolicy(): 'locked' | 'untilPayroll' | 'twoDaysRolling' {
+    if (this.data.daysBackInTimeAllowedEditingEnabled) {
+      return 'twoDaysRolling';
+    }
+    if (this.data.allowEditOfRegistrations) {
+      return 'untilPayroll';
+    }
+    return 'locked';
+  }
+
+  onEditingPolicyChange(value: 'locked' | 'untilPayroll' | 'twoDaysRolling'): void {
+    const f = this.assignedSiteForm;
+    const allowEdit = value !== 'locked';
+    const daysBack = value === 'twoDaysRolling';
+    f.get('allowEditOfRegistrations')?.setValue(allowEdit);
+    f.get('daysBackInTimeAllowedEditingEnabled')?.setValue(daysBack);
+    this.data.allowEditOfRegistrations = allowEdit;
+    this.data.daysBackInTimeAllowedEditingEnabled = daysBack;
   }
 
   loadPayRuleSets(): void {
