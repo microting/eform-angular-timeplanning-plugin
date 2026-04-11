@@ -202,9 +202,11 @@ public class TimePlanningAbsenceRequestGrpcServiceTests
             },
         };
 
-        _absenceRequestService.GetInboxAsync(5)
+        _absenceRequestService.GetInboxAsync()
             .Returns(new OperationDataResult<List<CsAbsenceRequestModel>>(true, list));
 
+        // SdkSiteId is ignored by the handler — the service now resolves
+        // the caller's site from the JWT.
         var request = new GetAbsenceRequestsRequest { SdkSiteId = 5 };
 
         var response = await _grpcService.GetAbsenceRequestInbox(

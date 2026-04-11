@@ -142,7 +142,10 @@ public class TimePlanningContentHandoverGrpcService
     {
         try
         {
-            var result = await _contentHandoverService.GetInboxAsync(request.SdkSiteId);
+            // sdk site id is derived from the JWT inside the service; the
+            // client-supplied request.SdkSiteId is intentionally ignored so
+            // a malicious client cannot peek at another worker's inbox.
+            var result = await _contentHandoverService.GetInboxAsync();
 
             var response = new ContentHandoverListResponse
             {

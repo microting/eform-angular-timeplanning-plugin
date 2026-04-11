@@ -193,9 +193,11 @@ public class TimePlanningContentHandoverGrpcServiceTests
             }
         };
 
-        _service.GetInboxAsync(20)
+        _service.GetInboxAsync()
             .Returns(new OperationDataResult<List<CsContentHandoverRequestModel>>(true, items));
 
+        // SdkSiteId is ignored by the handler — the service resolves it
+        // from the JWT.
         var request = new GetContentHandoverRequestsRequest { SdkSiteId = 20 };
 
         var response = await _grpcService.GetContentHandoverInbox(

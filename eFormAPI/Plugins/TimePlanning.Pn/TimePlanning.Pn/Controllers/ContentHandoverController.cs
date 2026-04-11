@@ -69,9 +69,10 @@ public class ContentHandoverController(IContentHandoverService contentHandoverSe
 
     [HttpGet]
     [Route("handover-requests/inbox")]
-    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInbox(int toSdkSitId)
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInbox()
     {
-        return await _contentHandoverService.GetInboxAsync(toSdkSitId);
+        // Caller's SDK site is derived from the JWT inside the service.
+        return await _contentHandoverService.GetInboxAsync();
     }
 
     [HttpGet]

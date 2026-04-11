@@ -37,6 +37,13 @@ public interface IAbsenceRequestService
     Task<OperationResult> ApproveAsync(int absenceRequestId, AbsenceRequestDecisionModel model);
     Task<OperationResult> RejectAsync(int absenceRequestId, AbsenceRequestDecisionModel model);
     Task<OperationResult> CancelAsync(int absenceRequestId, int requestedBySdkSitId);
-    Task<OperationDataResult<List<AbsenceRequestModel>>> GetInboxAsync(int managerSdkSitId);
+    /// <summary>
+    /// Returns the inbox of pending absence requests visible to the currently
+    /// authenticated manager. The caller's SDK site is resolved from the JWT
+    /// (via the authenticated user's email → Workers → SiteWorkers → Site),
+    /// not from any client-supplied value, so the client cannot impersonate
+    /// other managers by echoing a different sdkSiteId.
+    /// </summary>
+    Task<OperationDataResult<List<AbsenceRequestModel>>> GetInboxAsync();
     Task<OperationDataResult<List<AbsenceRequestModel>>> GetMineAsync(int requestedBySdkSitId);
 }

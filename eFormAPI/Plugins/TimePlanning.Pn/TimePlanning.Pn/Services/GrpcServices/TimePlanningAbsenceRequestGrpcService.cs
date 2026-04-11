@@ -145,7 +145,10 @@ public class TimePlanningAbsenceRequestGrpcService
     {
         try
         {
-            var result = await _absenceRequestService.GetInboxAsync(request.SdkSiteId);
+            // sdk site id is derived from the JWT inside the service; the
+            // client-supplied request.SdkSiteId is intentionally ignored so
+            // a malicious client cannot peek at another manager's inbox.
+            var result = await _absenceRequestService.GetInboxAsync();
 
             var response = new AbsenceRequestListResponse
             {

@@ -66,9 +66,10 @@ public class AbsenceRequestsController(IAbsenceRequestService absenceRequestServ
 
     [HttpGet]
     [Route("inbox")]
-    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetInbox(int managerSdkSitId)
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetInbox()
     {
-        return await _absenceRequestService.GetInboxAsync(managerSdkSitId);
+        // Caller's SDK site is derived from the JWT inside the service.
+        return await _absenceRequestService.GetInboxAsync();
     }
 
     [HttpGet]

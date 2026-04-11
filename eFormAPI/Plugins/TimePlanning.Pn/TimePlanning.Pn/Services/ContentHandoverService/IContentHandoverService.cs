@@ -37,7 +37,13 @@ public interface IContentHandoverService
     Task<OperationResult> AcceptAsync(int requestId, int currentSdkSitId, ContentHandoverDecisionModel model);
     Task<OperationResult> RejectAsync(int requestId, int currentSdkSitId, ContentHandoverDecisionModel model);
     Task<OperationResult> CancelAsync(int requestId, int currentSdkSitId);
-    Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync(int toSdkSitId);
+    /// <summary>
+    /// Returns pending handover requests addressed to the currently
+    /// authenticated caller's SDK site. The caller's site is resolved from
+    /// the JWT, not from any client-supplied value, so a client cannot
+    /// inspect another worker's inbox.
+    /// </summary>
+    Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync();
     Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync(int fromSdkSitId);
     Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date);
 }

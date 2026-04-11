@@ -477,10 +477,18 @@ public class ContentHandoverService : IContentHandoverService
         }
     }
 
-    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync(int toSdkSitId)
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync()
     {
         try
         {
+            // Resolve the caller's SDK site from the JWT — client-supplied
+            // ids are intentionally ignored to prevent inbox-peeking.
+            var toSdkSitId = await ResolveCallerSdkSiteIdAsync();
+            if (toSdkSitId == 0)
+            {
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(true, new List<ContentHandoverRequestModel>());
+            }
+
             var requests = await _dbContext.PlanRegistrationContentHandoverRequests
                 .Where(r => r.ToSdkSitId == toSdkSitId && r.Status == HandoverRequestStatus.Pending)
                 .OrderByDescending(r => r.RequestedAtUtc)
@@ -491,10 +499,36 @@ public class ContentHandoverService : IContentHandoverService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting handover inbox for worker {WorkerId}", toSdkSitId);
+            _logger.LogError(ex, "Error getting handover inbox for authenticated caller");
             return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                 _localizationService.GetString("ErrorGettingHandoverRequests"));
         }
+    }
+
+    /// <summary>
+    /// Resolves the authenticated caller's SDK site id (MicrotingUid) from
+    /// the JWT. Returns 0 if the caller has no worker/site record. Callers
+    /// should treat 0 as "no inbox visibility".
+    /// </summary>
+    private async Task<int> ResolveCallerSdkSiteIdAsync()
+    {
+        var currentUserAsync = await _userService.GetCurrentUserAsync();
+        var currentUser = _baseDbContext.Users.Single(x => x.Id == currentUserAsync.Id);
+
+        var sdkCore = await _core.GetCore();
+        var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+
+        var worker = await sdkDbContext.Workers
+            .Include(x => x.SiteWorkers)
+            .ThenInclude(x => x.Site)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+
+        if (worker == null || worker.SiteWorkers.Count == 0)
+        {
+            return 0;
+        }
+        return worker.SiteWorkers.First().Site.MicrotingUid ?? 0;
     }
 
     public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync(int fromSdkSitId)
