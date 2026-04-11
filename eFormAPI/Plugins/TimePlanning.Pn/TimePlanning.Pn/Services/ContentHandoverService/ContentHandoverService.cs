@@ -33,10 +33,13 @@ using Infrastructure.Helpers;
 using Infrastructure.Models.ContentHandover;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microting.eForm.Infrastructure.Constants;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Sentry;
 using TimePlanningLocalizationService;
 
 public class ContentHandoverService : IContentHandoverService
@@ -45,17 +48,128 @@ public class ContentHandoverService : IContentHandoverService
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly IUserService _userService;
     private readonly ITimePlanningLocalizationService _localizationService;
+    private readonly IEFormCoreService _core;
+    private readonly BaseDbContext _baseDbContext;
 
     public ContentHandoverService(
         ILogger<ContentHandoverService> logger,
         TimePlanningPnDbContext dbContext,
         IUserService userService,
-        ITimePlanningLocalizationService localizationService)
+        ITimePlanningLocalizationService localizationService,
+        IEFormCoreService core,
+        BaseDbContext baseDbContext)
     {
         _logger = logger;
         _dbContext = dbContext;
         _userService = userService;
         _localizationService = localizationService;
+        _core = core;
+        _baseDbContext = baseDbContext;
+    }
+
+    public async Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date)
+    {
+        try
+        {
+            var sdkCore = await _core.GetCore();
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+
+            var currentUserAsync = await _userService.GetCurrentUserAsync();
+            var currentUser = _baseDbContext.Users
+                .Single(x => x.Id == currentUserAsync.Id);
+
+            var worker = await sdkDbContext.Workers
+                .Include(x => x.SiteWorkers)
+                .ThenInclude(x => x.Site)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+
+            if (worker == null)
+            {
+                SentrySdk.CaptureMessage($"Worker with email {currentUser.Email} not found");
+                return new OperationDataResult<List<HandoverCoworkerModel>>(
+                    false,
+                    _localizationService.GetString("ErrorWhileObtainingPlannings"));
+            }
+
+            var callerSite = worker.SiteWorkers.First().Site;
+
+            var callerTagIds = await sdkDbContext.SiteTags
+                .Where(x => x.SiteId == callerSite.Id
+                            && x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Select(x => (int)x.TagId!)
+                .ToListAsync();
+
+            if (callerTagIds.Count == 0)
+            {
+                return new OperationDataResult<List<HandoverCoworkerModel>>(true, new List<HandoverCoworkerModel>());
+            }
+
+            var candidateRaw = await sdkDbContext.SiteTags
+                .Include(x => x.Site)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed
+                            && x.SiteId != callerSite.Id
+                            && callerTagIds.Contains((int)x.TagId!))
+                .Select(x => new { x.Site.MicrotingUid, SiteName = x.Site.Name })
+                .Distinct()
+                .ToListAsync();
+
+            var candidateSites = candidateRaw
+                .Where(x => x.MicrotingUid.HasValue)
+                .Select(x => new { MicrotingUid = x.MicrotingUid!.Value, x.SiteName })
+                .GroupBy(x => x.MicrotingUid)
+                .Select(g => g.First())
+                .ToList();
+
+            if (candidateSites.Count == 0)
+            {
+                return new OperationDataResult<List<HandoverCoworkerModel>>(true, new List<HandoverCoworkerModel>());
+            }
+
+            var candidateMicrotingUids = candidateSites.Select(x => x.MicrotingUid).ToList();
+
+            var activeAssignedSiteIds = await _dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed
+                            && x.Resigned != true
+                            && candidateMicrotingUids.Contains(x.SiteId))
+                .Select(x => x.SiteId)
+                .ToListAsync();
+
+            var activeCandidates = candidateSites
+                .Where(x => activeAssignedSiteIds.Contains(x.MicrotingUid))
+                .ToList();
+
+            if (activeCandidates.Count == 0)
+            {
+                return new OperationDataResult<List<HandoverCoworkerModel>>(true, new List<HandoverCoworkerModel>());
+            }
+
+            var targetDate = date.Date;
+            var activeCandidateSiteIds = activeCandidates.Select(x => x.MicrotingUid).ToList();
+
+            var planRegistrations = await _dbContext.PlanRegistrations
+                .Where(pr => activeCandidateSiteIds.Contains(pr.SdkSitId) && pr.Date == targetDate)
+                .Select(pr => new { pr.Id, pr.SdkSitId })
+                .ToListAsync();
+
+            var result = activeCandidates
+                .Select(c => new HandoverCoworkerModel
+                {
+                    SdkSiteId = c.MicrotingUid,
+                    SiteName = c.SiteName ?? string.Empty,
+                    PlanRegistrationId = planRegistrations
+                        .FirstOrDefault(pr => pr.SdkSitId == c.MicrotingUid)?.Id ?? 0
+                })
+                .ToList();
+
+            return new OperationDataResult<List<HandoverCoworkerModel>>(true, result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting handover eligible coworkers");
+            return new OperationDataResult<List<HandoverCoworkerModel>>(false,
+                _localizationService.GetString("ErrorGettingHandoverRequests"));
+        }
     }
 
     public async Task<OperationDataResult<ContentHandoverRequestModel>> CreateAsync(

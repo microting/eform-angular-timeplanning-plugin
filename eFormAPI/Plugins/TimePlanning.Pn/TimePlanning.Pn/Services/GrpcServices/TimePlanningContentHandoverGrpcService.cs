@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using Grpc.Core;
 using TimePlanning.Pn.Grpc;
@@ -195,6 +196,55 @@ public class TimePlanningContentHandoverGrpcService
         catch (Exception ex)
         {
             return new ContentHandoverListResponse
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public override async Task<GetHandoverEligibleCoworkersResponse> GetHandoverEligibleCoworkers(
+        GetHandoverEligibleCoworkersRequest request, ServerCallContext context)
+    {
+        try
+        {
+            if (!DateTime.TryParse(request.Date, CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                    out var parsedDate))
+            {
+                return new GetHandoverEligibleCoworkersResponse
+                {
+                    Success = false,
+                    Message = "Invalid date"
+                };
+            }
+
+            var result = await _contentHandoverService.GetHandoverEligibleCoworkersAsync(parsedDate);
+
+            var response = new GetHandoverEligibleCoworkersResponse
+            {
+                Success = result.Success,
+                Message = result.Message ?? ""
+            };
+
+            if (result.Success && result.Model != null)
+            {
+                foreach (var item in result.Model)
+                {
+                    response.Coworkers.Add(new HandoverCoworker
+                    {
+                        SdkSiteId = item.SdkSiteId,
+                        SiteName = item.SiteName ?? "",
+                        PlanRegistrationId = item.PlanRegistrationId
+                    });
+                }
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            return new GetHandoverEligibleCoworkersResponse
             {
                 Success = false,
                 Message = ex.Message

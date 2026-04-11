@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
@@ -29,11 +30,43 @@ public class ContentHandoverServiceTests : TestBaseSetup
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
 
+        // Provide a non-null BaseDbContext substitute so the ctor-injected field never NREs.
+        // Mirrors the pattern used in PlanRegistrationVersionHistoryTests.
+        var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
+
         _contentHandoverService = new ContentHandoverService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<ContentHandoverService>>(),
             TimePlanningPnDbContext,
             _userService,
-            _localizationService);
+            _localizationService,
+            Substitute.For<Microting.eFormApi.BasePn.Abstractions.IEFormCoreService>(),
+            baseDbContext);
+    }
+
+    // GetHandoverEligibleCoworkersAsync exercises the real SDK MicrotingDbContext (Workers,
+    // SiteTags, SiteWorkers) AND the AngularFrontendBase Users table. Seeding all three against
+    // the existing mariadb testcontainer harness is non-trivial and outside the scope of this
+    // fix. These tests are placeholders for a follow-up task to wire real Worker/SiteTag/User
+    // seeding so the happy-path, gate-path, and worker-not-found paths can be covered.
+    [Test]
+    [Ignore("Follow-up: wire real sdk Worker/SiteTag + BaseDbContext.Users seeding for GetHandoverEligibleCoworkersAsync happy-path test")]
+    public Task GetHandoverEligibleCoworkersAsync_HappyPath_ReturnsCoworkerSharingTag()
+    {
+        return Task.CompletedTask;
+    }
+
+    [Test]
+    [Ignore("Follow-up: wire real sdk Worker/SiteTag + BaseDbContext.Users seeding for GetHandoverEligibleCoworkersAsync gate-path test")]
+    public Task GetHandoverEligibleCoworkersAsync_GatePath_ReturnsEmptyWhenNoSharedTag()
+    {
+        return Task.CompletedTask;
+    }
+
+    [Test]
+    [Ignore("Follow-up: wire real BaseDbContext.Users seeding for GetHandoverEligibleCoworkersAsync worker-not-found test")]
+    public Task GetHandoverEligibleCoworkersAsync_WorkerNotFound_ReturnsFailure()
+    {
+        return Task.CompletedTask;
     }
 
     [Test]

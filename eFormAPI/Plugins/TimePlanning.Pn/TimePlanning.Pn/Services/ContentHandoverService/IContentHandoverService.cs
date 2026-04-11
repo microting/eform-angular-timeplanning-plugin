@@ -25,6 +25,7 @@ SOFTWARE.
 #nullable enable
 namespace TimePlanning.Pn.Services.ContentHandoverService;
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure.Models.ContentHandover;
@@ -38,4 +39,5 @@ public interface IContentHandoverService
     Task<OperationResult> CancelAsync(int requestId, int currentSdkSitId);
     Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync(int toSdkSitId);
     Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync(int fromSdkSitId);
+    Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date);
 }

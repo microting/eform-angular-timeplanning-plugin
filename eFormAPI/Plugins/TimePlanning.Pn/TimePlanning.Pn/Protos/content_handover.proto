@@ -57,6 +57,23 @@ message ContentHandoverListResponse {
   repeated ContentHandoverRequestModel models = 3;
 }
 
+message GetHandoverEligibleCoworkersRequest {
+  string date = 1;
+  DeviceMetadata device = 2;
+}
+
+message HandoverCoworker {
+  int32 sdk_site_id = 1;
+  string site_name = 2;
+  int32 plan_registration_id = 3;
+}
+
+message GetHandoverEligibleCoworkersResponse {
+  bool success = 1;
+  string message = 2;
+  repeated HandoverCoworker coworkers = 3;
+}
+
 service TimePlanningContentHandoverService {
   rpc CreateContentHandover(CreateContentHandoverRequest) returns (ContentHandoverResponse);
   rpc AcceptContentHandover(ContentHandoverDecisionRequest) returns (OperationResponse);
@@ -64,4 +81,5 @@ service TimePlanningContentHandoverService {
   rpc CancelContentHandover(CancelContentHandoverRequest) returns (OperationResponse);
   rpc GetContentHandoverInbox(GetContentHandoverRequestsRequest) returns (ContentHandoverListResponse);
   rpc GetMyContentHandovers(GetContentHandoverRequestsRequest) returns (ContentHandoverListResponse);
+  rpc GetHandoverEligibleCoworkers(GetHandoverEligibleCoworkersRequest) returns (GetHandoverEligibleCoworkersResponse);
 }
