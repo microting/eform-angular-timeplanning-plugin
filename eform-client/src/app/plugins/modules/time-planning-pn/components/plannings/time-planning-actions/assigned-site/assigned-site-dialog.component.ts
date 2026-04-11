@@ -208,6 +208,14 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.onEditingPolicyChange(this.editingPolicy);
 
     this.calculateHours();
+
+    // Re-baseline after normalization: the setValue calls above fired
+    // valueChanges, which Object.assigns the whole form back into `this.data`
+    // (including form controls initialised from a fresh Date object). That
+    // counts as a difference from the previousData snapshot captured before
+    // the form was built, so hasDataChanged() would return true immediately
+    // after ngOnInit. Capture again here so it reflects the true baseline.
+    this.previousData = {...this.data};
   }
 
   setAutoBreakValue(day: string, control: string, value: string) {
