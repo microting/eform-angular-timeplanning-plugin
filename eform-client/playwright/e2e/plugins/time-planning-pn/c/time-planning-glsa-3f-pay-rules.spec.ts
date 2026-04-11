@@ -365,19 +365,21 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
 
     const dialog = page.locator('mat-dialog-container');
 
-    // Open the preset dropdown
+    // Open the preset dropdown (mtx-select renders via ng-dropdown-panel appended to body)
     await dialog.locator('#presetSelector').click();
+    const dropdown = page.locator('ng-dropdown-panel');
+    await dropdown.waitFor({ state: 'visible', timeout: 10000 });
+    await dropdown.locator('.ng-option').first().waitFor({ state: 'visible', timeout: 10000 });
 
-    // Wait for the dropdown panel
-    const options = page.locator('mat-option');
-    await options.first().waitFor({ state: 'visible', timeout: 10000 });
-
-    // Verify "Jordbrug - Standard" is NOT available (already created)
-    const standardOption = page.locator('mat-option').filter({ hasText: 'Jordbrug - Standard' });
+    // Verify "Jordbrug - Standard" is NOT available (already created).
+    // Use an exact-match filter so "Jordbrug - Standard" doesn't match
+    // "Jordbrug - Standard ..." or similar labels.
+    const standardOption = dropdown.locator('.ng-option').filter({ hasText: /^Jordbrug - Standard$/ });
     await expect(standardOption).toHaveCount(0);
 
     // ---- Step 3: Select "Jordbrug - Dyrehold" preset ----
-    await page.locator('mat-option').filter({ hasText: 'Jordbrug - Dyrehold' }).click();
+    await dropdown.locator('.ng-option').filter({ hasText: 'Jordbrug - Dyrehold' }).first().click();
+    await dropdown.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
 
     // Verify the locked preset view is shown
     await expect(dialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
@@ -402,10 +404,13 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     // Select KA/Krifa preset - this verifies the new group appears
     await selectPreset(page, 'Landbrug Svine/Kvaeg - Standard');
 
+    // KA/Krifa Landbrug presets are unlocked, so the editable form renders
+    // (not the lock-banner). onPresetChanged fills the name input with the
+    // preset's full name — verify that instead of the locked-view elements.
     const dialog = page.locator('mat-dialog-container');
-    await expect(dialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
-    await expect(dialog.locator('.preset-name')).toContainText('KA / Krifa - Landbrug Svine/Kvaeg Standard 2025-2028');
-    await expect(dialog.locator('.rules-summary').first()).toBeVisible({ timeout: 5000 });
+    const nameInput = dialog.locator('#createPayRuleSetName');
+    await expect(nameInput).toBeVisible({ timeout: 5000 });
+    await expect(nameInput).toHaveValue('KA / Krifa - Landbrug Svine/Kvaeg Standard 2025-2028');
 
     await submitCreatePayRuleSet(page);
 
