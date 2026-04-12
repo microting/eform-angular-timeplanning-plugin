@@ -144,7 +144,7 @@ test.describe('Enable Backend Config plugin', () => {
     await expect(autoBreakCalculationToggleButton).toHaveAttribute('aria-checked', 'true');
 
     const enabledInputFields = page.locator('.flex-cards.mt-4 mat-form-field');
-    await expect(enabledInputFields).toHaveCount(22);
+    await expect(enabledInputFields).toHaveCount(24);
     await expect(enabledInputFields.first()).toBeVisible();
     const enabledClass = await enabledInputFields.first().getAttribute('class');
     expect(enabledClass).not.toContain('mat-form-field-disabled');
@@ -211,7 +211,7 @@ test.describe('Enable Backend Config plugin', () => {
     await expect(autoBreakCalculationToggleButton).toHaveAttribute('aria-checked', 'true');
 
     const enabledInputFields = page.locator('.flex-cards.mt-4 mat-form-field');
-    await expect(enabledInputFields).toHaveCount(22);
+    await expect(enabledInputFields).toHaveCount(24);
     await expect(enabledInputFields.first()).toBeVisible();
     const enabledClass = await enabledInputFields.first().getAttribute('class');
     expect(enabledClass).not.toContain('mat-form-field-disabled');
