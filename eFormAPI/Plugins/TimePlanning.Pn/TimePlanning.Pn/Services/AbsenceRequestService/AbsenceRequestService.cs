@@ -40,6 +40,7 @@ using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
+using TimePlanning.Pn.Services.PushNotificationService;
 using TimePlanningLocalizationService;
 
 public class AbsenceRequestService : IAbsenceRequestService
@@ -50,6 +51,7 @@ public class AbsenceRequestService : IAbsenceRequestService
     private readonly ITimePlanningLocalizationService _localizationService;
     private readonly IEFormCoreService _coreService;
     private readonly BaseDbContext _baseDbContext;
+    private readonly IPushNotificationService _pushNotificationService;
 
     public AbsenceRequestService(
         ILogger<AbsenceRequestService> logger,
@@ -57,7 +59,8 @@ public class AbsenceRequestService : IAbsenceRequestService
         IUserService userService,
         ITimePlanningLocalizationService localizationService,
         IEFormCoreService coreService,
-        BaseDbContext baseDbContext)
+        BaseDbContext baseDbContext,
+        IPushNotificationService pushNotificationService)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -65,6 +68,7 @@ public class AbsenceRequestService : IAbsenceRequestService
         _localizationService = localizationService;
         _coreService = coreService;
         _baseDbContext = baseDbContext;
+        _pushNotificationService = pushNotificationService;
     }
 
     /// <summary>
@@ -159,6 +163,47 @@ public class AbsenceRequestService : IAbsenceRequestService
                 .FirstAsync(ar => ar.Id == absenceRequest.Id);
 
             var resultModel = MapToModel(createdRequest);
+
+            // Fire-and-forget push to manager(s)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // Find managers for this worker's tags
+                    var sdkCore = await _coreService.GetCore();
+                    var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+                    var workerTagIds = await sdkDbContext.SiteTags
+                        .Where(x => x.Site.MicrotingUid == model.RequestedBySdkSitId
+                                    && x.WorkflowState != Microting.eForm.Infrastructure.Constants.Constants.WorkflowStates.Removed)
+                        .Select(x => (int)x.TagId!)
+                        .ToListAsync();
+
+                    var managerSiteIds = await _dbContext.AssignedSiteManagingTags
+                        .Where(x => x.WorkflowState != Microting.eForm.Infrastructure.Constants.Constants.WorkflowStates.Removed
+                                    && workerTagIds.Contains(x.TagId))
+                        .Select(x => x.AssignedSite!.SiteId)
+                        .Distinct()
+                        .ToListAsync();
+
+                    foreach (var managerSiteId in managerSiteIds)
+                    {
+                        await _pushNotificationService.SendToSiteAsync(
+                            managerSiteId,
+                            "New absence request",
+                            "A worker has requested time off",
+                            new Dictionary<string, string>
+                            {
+                                { "type", "absence_created" },
+                                { "absenceRequestId", createdRequest.Id.ToString() }
+                            });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for absence request creation");
+                }
+            });
+
             return new OperationDataResult<AbsenceRequestModel>(true, resultModel);
         }
         catch (Exception ex)
@@ -207,6 +252,29 @@ public class AbsenceRequestService : IAbsenceRequestService
                 await ApplyAbsenceToPlanRegistration(request, day);
             }
 
+            // Fire-and-forget push to requester
+            var requesterSdkSitId = request.RequestedBySdkSitId;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _pushNotificationService.SendToSiteAsync(
+                        requesterSdkSitId,
+                        "Absence request approved",
+                        "Your absence request has been approved",
+                        new Dictionary<string, string>
+                        {
+                            { "type", "absence_decided" },
+                            { "action", "approved" },
+                            { "absenceRequestId", absenceRequestId.ToString() }
+                        });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for absence approval");
+                }
+            });
+
             return new OperationResult(true);
         }
         catch (Exception ex)
@@ -239,6 +307,29 @@ public class AbsenceRequestService : IAbsenceRequestService
             request.DecisionComment = model.DecisionComment;
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
+
+            // Fire-and-forget push to requester
+            var requesterSdkSitId = request.RequestedBySdkSitId;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _pushNotificationService.SendToSiteAsync(
+                        requesterSdkSitId,
+                        "Absence request rejected",
+                        "Your absence request has been rejected",
+                        new Dictionary<string, string>
+                        {
+                            { "type", "absence_decided" },
+                            { "action", "rejected" },
+                            { "absenceRequestId", absenceRequestId.ToString() }
+                        });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for absence rejection");
+                }
+            });
 
             return new OperationResult(true);
         }

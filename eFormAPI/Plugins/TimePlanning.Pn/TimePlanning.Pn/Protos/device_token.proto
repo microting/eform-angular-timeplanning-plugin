@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package timeplanning;
+
+import "common.proto";
+
+option csharp_namespace = "TimePlanning.Pn.Grpc";
+
+message RegisterDeviceTokenRequest {
+  string token = 1;
+  string platform = 2;
+  int32 sdk_site_id = 3;
+}
+
+message UnregisterDeviceTokenRequest {
+  string token = 1;
+}
+
+service TimePlanningDeviceTokenService {
+  rpc RegisterDeviceToken(RegisterDeviceTokenRequest) returns (OperationResponse);
+  rpc UnregisterDeviceToken(UnregisterDeviceTokenRequest) returns (OperationResponse);
+}

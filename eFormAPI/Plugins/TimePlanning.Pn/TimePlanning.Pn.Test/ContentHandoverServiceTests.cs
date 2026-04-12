@@ -40,7 +40,8 @@ public class ContentHandoverServiceTests : TestBaseSetup
             _userService,
             _localizationService,
             Substitute.For<Microting.eFormApi.BasePn.Abstractions.IEFormCoreService>(),
-            baseDbContext);
+            baseDbContext,
+            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
     }
 
     // GetHandoverEligibleCoworkersAsync exercises the real SDK MicrotingDbContext (Workers,

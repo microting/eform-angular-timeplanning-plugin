@@ -50,7 +50,8 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             _userService,
             _localizationService,
             _coreService,
-            baseDbContext);
+            baseDbContext,
+            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
     }
 
     [Test]

@@ -40,6 +40,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
+using TimePlanning.Pn.Services.PushNotificationService;
 using TimePlanningLocalizationService;
 
 public class ContentHandoverService : IContentHandoverService
@@ -50,6 +51,7 @@ public class ContentHandoverService : IContentHandoverService
     private readonly ITimePlanningLocalizationService _localizationService;
     private readonly IEFormCoreService _core;
     private readonly BaseDbContext _baseDbContext;
+    private readonly IPushNotificationService _pushNotificationService;
 
     public ContentHandoverService(
         ILogger<ContentHandoverService> logger,
@@ -57,7 +59,8 @@ public class ContentHandoverService : IContentHandoverService
         IUserService userService,
         ITimePlanningLocalizationService localizationService,
         IEFormCoreService core,
-        BaseDbContext baseDbContext)
+        BaseDbContext baseDbContext,
+        IPushNotificationService pushNotificationService)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -65,6 +68,7 @@ public class ContentHandoverService : IContentHandoverService
         _localizationService = localizationService;
         _core = core;
         _baseDbContext = baseDbContext;
+        _pushNotificationService = pushNotificationService;
     }
 
     public async Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date)
@@ -243,6 +247,28 @@ public class ContentHandoverService : IContentHandoverService
 
             await request.Create(_dbContext);
 
+            // Fire-and-forget push to recipient
+            var toSdkSitId = model.ToSdkSitId;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _pushNotificationService.SendToSiteAsync(
+                        toSdkSitId,
+                        "New handover request",
+                        "A coworker wants to hand over content to you",
+                        new Dictionary<string, string>
+                        {
+                            { "type", "handover_created" },
+                            { "handoverRequestId", request.Id.ToString() }
+                        });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for handover creation");
+                }
+            });
+
             var resultModel = MapToModel(request);
             return new OperationDataResult<ContentHandoverRequestModel>(true, resultModel);
         }
@@ -386,6 +412,29 @@ public class ContentHandoverService : IContentHandoverService
                     // Continue - recalculation failure should not prevent handover
                 }
 
+                // Fire-and-forget push to sender
+                var fromSdkSitId = request.FromSdkSitId;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _pushNotificationService.SendToSiteAsync(
+                            fromSdkSitId,
+                            "Handover accepted",
+                            "Your content handover request has been accepted",
+                            new Dictionary<string, string>
+                            {
+                                { "type", "handover_decided" },
+                                { "action", "accepted" },
+                                { "handoverRequestId", requestId.ToString() }
+                            });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error sending push notification for handover acceptance");
+                    }
+                });
+
                 return new OperationResult(true);
             }
             catch (Exception ex)
@@ -431,6 +480,29 @@ public class ContentHandoverService : IContentHandoverService
             request.DecisionComment = model.DecisionComment;
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
+
+            // Fire-and-forget push to sender
+            var fromSdkSitId = request.FromSdkSitId;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _pushNotificationService.SendToSiteAsync(
+                        fromSdkSitId,
+                        "Handover rejected",
+                        "Your content handover request has been rejected",
+                        new Dictionary<string, string>
+                        {
+                            { "type", "handover_decided" },
+                            { "action", "rejected" },
+                            { "handoverRequestId", requestId.ToString() }
+                        });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for handover rejection");
+                }
+            });
 
             return new OperationResult(true);
         }
