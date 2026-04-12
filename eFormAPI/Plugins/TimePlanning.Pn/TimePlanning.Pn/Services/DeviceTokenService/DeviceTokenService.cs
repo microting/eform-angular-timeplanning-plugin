@@ -2,18 +2,19 @@ namespace TimePlanning.Pn.Services.DeviceTokenService;
 
 using System;
 using System.Threading.Tasks;
-using Infrastructure.Models.DeviceToken;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Microting.TimePlanningBase.Infrastructure.Data;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 
 public class DeviceTokenService : IDeviceTokenService
 {
-    private readonly DeviceTokenDbContext _dbContext;
+    private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<DeviceTokenService> _logger;
 
     public DeviceTokenService(
-        DeviceTokenDbContext dbContext,
+        TimePlanningPnDbContext dbContext,
         ILogger<DeviceTokenService> logger)
     {
         _dbContext = dbContext;
@@ -31,9 +32,7 @@ public class DeviceTokenService : IDeviceTokenService
             {
                 existing.SdkSiteId = sdkSiteId;
                 existing.Platform = platform;
-                existing.UpdatedAt = DateTime.UtcNow;
-                existing.WorkflowState = "created";
-                _dbContext.DeviceTokens.Update(existing);
+                await existing.Update(_dbContext);
             }
             else
             {
@@ -42,14 +41,9 @@ public class DeviceTokenService : IDeviceTokenService
                     SdkSiteId = sdkSiteId,
                     Token = token,
                     Platform = platform,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    WorkflowState = "created"
                 };
-                await _dbContext.DeviceTokens.AddAsync(deviceToken);
+                await deviceToken.Create(_dbContext);
             }
-
-            await _dbContext.SaveChangesAsync();
             return new OperationResult(true);
         }
         catch (Exception ex)
@@ -68,8 +62,7 @@ public class DeviceTokenService : IDeviceTokenService
 
             if (existing != null)
             {
-                _dbContext.DeviceTokens.Remove(existing);
-                await _dbContext.SaveChangesAsync();
+                await existing.Delete(_dbContext);
             }
 
             return new OperationResult(true);

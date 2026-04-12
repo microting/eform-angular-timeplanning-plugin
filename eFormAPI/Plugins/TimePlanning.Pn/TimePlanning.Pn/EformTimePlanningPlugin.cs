@@ -40,7 +40,6 @@ using TimePlanning.Pn.Services.PayTimeBandRuleService;
 using TimePlanning.Pn.Services.PayrollExportService;
 using TimePlanning.Pn.Services.DeviceTokenService;
 using TimePlanning.Pn.Services.PushNotificationService;
-using TimePlanning.Pn.Infrastructure.Models.DeviceToken;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -192,14 +191,6 @@ public class EformTimePlanningPlugin : IEformPlugin
             }));
 
 
-        services.AddDbContext<DeviceTokenDbContext>(o =>
-            o.UseMySql(connectionString, new MariaDbServerVersion(
-                ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
-            {
-                builder.EnableRetryOnFailure();
-                builder.MigrationsAssembly(PluginAssembly().FullName);
-            }));
-
         services.AddDbContext<BaseDbContext>(
             o => o.UseMySql(frontendBaseConnectionString, new MariaDbServerVersion(
                 ServerVersion.AutoDetect(frontendBaseConnectionString)), mySqlOptionsAction: builder =>
@@ -213,23 +204,6 @@ public class EformTimePlanningPlugin : IEformPlugin
         Console.WriteLine("Starting to migrate TimePlanningPnDbContext to latest version");
         context.Database.Migrate();
         Console.WriteLine("TimePlanningPnDbContext migrated to latest version");
-
-        // Ensure DeviceTokens table exists (raw SQL to avoid EnsureCreated conflicts)
-        Console.WriteLine("Ensuring DeviceTokens table exists");
-        context.Database.ExecuteSqlRaw(@"
-            CREATE TABLE IF NOT EXISTS `DeviceTokens` (
-                `Id` int NOT NULL AUTO_INCREMENT,
-                `SdkSiteId` int NOT NULL,
-                `Token` varchar(512) NOT NULL,
-                `Platform` varchar(16) NOT NULL,
-                `CreatedAt` datetime(6) NOT NULL,
-                `UpdatedAt` datetime(6) NOT NULL,
-                `WorkflowState` varchar(50) NULL DEFAULT 'created',
-                PRIMARY KEY (`Id`),
-                UNIQUE INDEX `IX_DeviceTokens_Token` (`Token`),
-                INDEX `IX_DeviceTokens_SdkSiteId` (`SdkSiteId`)
-            ) CHARACTER SET=utf8mb4;
-        ");
 
         // Seed database
         SeedDatabase(connectionString);

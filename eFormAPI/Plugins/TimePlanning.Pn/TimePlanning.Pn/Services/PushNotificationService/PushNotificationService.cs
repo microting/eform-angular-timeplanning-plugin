@@ -7,27 +7,28 @@ using System.Threading.Tasks;
 using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
 using Google.Apis.Auth.OAuth2;
-using Infrastructure.Models.DeviceToken;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microting.eForm.Infrastructure.Constants;
+using Microting.TimePlanningBase.Infrastructure.Data;
 
 public class PushNotificationService : IPushNotificationService
 {
-    private readonly DeviceTokenDbContext _dbContext;
+    private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<PushNotificationService> _logger;
     private readonly bool _isEnabled;
 
     public PushNotificationService(
-        DeviceTokenDbContext dbContext,
-        IConfiguration configuration,
+        TimePlanningPnDbContext dbContext,
         ILogger<PushNotificationService> logger)
     {
         _dbContext = dbContext;
         _logger = logger;
 
-        var serviceAccountPath = configuration["Firebase:ServiceAccountPath"];
-        if (!string.IsNullOrWhiteSpace(serviceAccountPath) && System.IO.File.Exists(serviceAccountPath))
+        var serviceAccountJson = _dbContext.PluginConfigurationValues
+            .FirstOrDefault(x => x.Name == "TimePlanningBaseSettings:FirebaseServiceAccountJson")?.Value;
+
+        if (!string.IsNullOrWhiteSpace(serviceAccountJson))
         {
             try
             {
@@ -35,7 +36,7 @@ public class PushNotificationService : IPushNotificationService
                 {
                     FirebaseApp.Create(new AppOptions
                     {
-                        Credential = GoogleCredential.FromFile(serviceAccountPath)
+                        Credential = GoogleCredential.FromJson(serviceAccountJson)
                     });
                 }
                 _isEnabled = true;
@@ -50,8 +51,8 @@ public class PushNotificationService : IPushNotificationService
         else
         {
             _logger.LogWarning(
-                "Firebase:ServiceAccountPath not configured or file not found. " +
-                "Push notifications are disabled (SendToSiteAsync will be a no-op)");
+                "TimePlanningBaseSettings:FirebaseServiceAccountJson not configured. " +
+                "Push notifications are disabled");
             _isEnabled = false;
         }
     }
@@ -73,7 +74,7 @@ public class PushNotificationService : IPushNotificationService
         try
         {
             var tokens = await _dbContext.DeviceTokens
-                .Where(dt => dt.SdkSiteId == targetSdkSiteId && dt.WorkflowState == "created")
+                .Where(dt => dt.SdkSiteId == targetSdkSiteId && dt.WorkflowState == Constants.WorkflowStates.Created)
                 .ToListAsync();
 
             if (tokens.Count == 0)
@@ -106,8 +107,7 @@ public class PushNotificationService : IPushNotificationService
                     _logger.LogInformation(
                         "Removing stale device token {TokenId} for SdkSiteId {SdkSiteId}: {Error}",
                         deviceToken.Id, targetSdkSiteId, fex.MessagingErrorCode);
-                    _dbContext.DeviceTokens.Remove(deviceToken);
-                    await _dbContext.SaveChangesAsync();
+                    await deviceToken.Delete(_dbContext);
                 }
                 catch (Exception ex)
                 {
