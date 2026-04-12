@@ -74,7 +74,7 @@ test.describe('Enable Backend Config plugin', () => {
     expect(googleSheetClass).not.toContain('mat-form-field-disabled');
 
     const disabledInputFields = page.locator('.flex-cards.mt-4 mat-form-field');
-    await expect(disabledInputFields).toHaveCount(22);
+    await expect(disabledInputFields).toHaveCount(24);
     const disabledClass = await disabledInputFields.first().getAttribute('class');
     expect(disabledClass).toContain('mat-form-field-disabled');
 
@@ -169,7 +169,7 @@ test.describe('Enable Backend Config plugin', () => {
     expect(googleSheetClass).not.toContain('mat-form-field-disabled');
 
     const disabledInputFields = page.locator('.flex-cards.mt-4 mat-form-field');
-    await expect(disabledInputFields).toHaveCount(22);
+    await expect(disabledInputFields).toHaveCount(24);
     await expect(disabledInputFields.first()).toBeVisible();
     const disabledClass = await disabledInputFields.first().getAttribute('class');
     expect(disabledClass).toContain('mat-form-field-disabled');
