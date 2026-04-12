@@ -26,6 +26,12 @@ test.describe('Dashboard edit values', () => {
     await page.locator('#plugin-settings-link0').click();
     await settingsGetPromise;
 
+    // Wait for payroll settings to finish loading (async call that causes re-render)
+    await page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/payroll/settings') && r.request().method() === 'GET'
+    ).catch(() => {});
+    await page.waitForTimeout(500);
+
     // Check autoBreakCalculationActiveToggle state and enable if needed
     const toggleBtn = page.locator('#autoBreakCalculationActiveToggle button[role="switch"]');
     const isChecked = await toggleBtn.getAttribute('aria-checked');
