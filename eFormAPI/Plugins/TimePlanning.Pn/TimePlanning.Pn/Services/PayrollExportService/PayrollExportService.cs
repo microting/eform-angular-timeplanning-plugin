@@ -67,15 +67,35 @@ public class PayrollExportService : IPayrollExportService
                 };
             }
 
-            // Resolve Worker.EmployeeNo from the eForm SDK context
+            // Resolve Worker.EmployeeNo via Site → SiteWorker → Worker
             var sdkCore = await _coreHelper.GetCore();
             var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
             var siteIds = payLines.Select(x => x.PlanRegistration.SdkSitId).Distinct().ToList();
-            var sites = await sdkDbContext.Sites
-                .Where(s => siteIds.Contains(s.MicrotingUid!.Value))
-                .Select(s => new { s.MicrotingUid, s.Name, EmployeeNo = s.EmployeeNo ?? string.Empty })
+            var siteWorkerData = await sdkDbContext.SiteWorkers
+                .Include(sw => sw.Worker)
+                .Where(sw => sw.SiteId.HasValue
+                    && siteIds.Contains(
+                        sdkDbContext.Sites
+                            .Where(s => s.Id == sw.SiteId)
+                            .Select(s => s.MicrotingUid!.Value)
+                            .FirstOrDefault())
+                    && sw.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync();
-            var siteLookup = sites.ToDictionary(s => s.MicrotingUid!.Value, s => s);
+
+            // Build a lookup from Site.MicrotingUid → Worker info
+            var siteToMicrotingUid = await sdkDbContext.Sites
+                .Where(s => siteIds.Contains(s.MicrotingUid!.Value))
+                .ToDictionaryAsync(s => s.Id, s => new { s.MicrotingUid, s.Name });
+
+            var siteLookup = siteWorkerData
+                .Where(sw => sw.SiteId.HasValue && siteToMicrotingUid.ContainsKey(sw.SiteId!.Value))
+                .ToDictionary(
+                    sw => siteToMicrotingUid[sw.SiteId!.Value].MicrotingUid!.Value,
+                    sw => new
+                    {
+                        Name = siteToMicrotingUid[sw.SiteId!.Value].Name,
+                        EmployeeNo = sw.Worker?.EmployeeNo ?? string.Empty
+                    });
 
             var workerGroups = payLines
                 .GroupBy(x => x.PlanRegistration.SdkSitId)
