@@ -30,10 +30,12 @@ test.describe('Payroll export', () => {
     const payrollCard = page.locator('mat-card').filter({ hasText: /Payroll integration|L\u00f8nintegration/ });
     await payrollCard.scrollIntoViewIfNeeded();
 
-    // Select DanL\u00f8n
+    // Select DanLøn via mtx-select (ng-select) dropdown
     const payrollSystemSelect = page.locator('#payrollSystemSelect');
     await payrollSystemSelect.click();
-    await page.locator('.cdk-overlay-container').locator('mat-option, ngx-dropdown-panel .ngx-option, mtx-option').filter({ hasText: 'DanL\u00f8n' }).click();
+    const dropdown = page.locator('ng-dropdown-panel');
+    await dropdown.waitFor({ state: 'visible', timeout: 10000 });
+    await dropdown.locator('.ng-option').filter({ hasText: 'DanLøn' }).first().click();
 
     // Set cutoff day to 19
     const cutoffDayInput = page.locator('#payrollCutoffDay');

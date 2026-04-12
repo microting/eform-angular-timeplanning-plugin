@@ -12,7 +12,7 @@ import {
 import {startOfWeek, endOfWeek, format} from 'date-fns';
 import {ExcelIcon, iOSIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {Store} from '@ngrx/store';
-import {selectCurrentUserLocale} from 'src/app/state';
+import {selectCurrentUserLocale, selectCurrentUserIsAdmin} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
 import {DownloadExcelDialogComponent, PayrollExportDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
@@ -35,6 +35,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   availableTags: CommonTagModel[] = [];
   selectedTagIds: number[] = [];
   showResignedSites: boolean = false;
+  isAdmin: boolean = false;
   payrollSystem: number = 0;
   payrollCutoffDay: number = 19;
   timePlannings: TimePlanningModel[] = [];
@@ -88,11 +89,16 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
       this.getPlannings();
     });
 
-    // Load payroll settings to determine if export button should be shown
-    this.settingsService.getPayrollSettings().pipe(take(1)).subscribe((data) => {
-      if (data && data.success && data.model) {
-        this.payrollSystem = data.model.payrollSystem || 0;
-        this.payrollCutoffDay = data.model.cutoffDay || 19;
+    // Load payroll settings only for admins — export is admin-gated
+    this.store.select(selectCurrentUserIsAdmin).pipe(take(1)).subscribe((admin) => {
+      this.isAdmin = admin;
+      if (admin) {
+        this.settingsService.getPayrollSettings().pipe(take(1)).subscribe((data) => {
+          if (data && data.success && data.model) {
+            this.payrollSystem = data.model.payrollSystem || 0;
+            this.payrollCutoffDay = data.model.cutoffDay || 19;
+          }
+        });
       }
     });
   }

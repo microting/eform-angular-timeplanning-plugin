@@ -84,7 +84,7 @@
       <mat-icon svgIcon="file-excel"></mat-icon>
     </button>
     <button
-      *ngIf="payrollSystem !== 0"
+      *ngIf="isAdmin && payrollSystem !== 0"
       id="payroll-export"
       class="btn-secondary btn-secondary--icon-rounded-border"
       (click)="openPayrollExportDialog()"

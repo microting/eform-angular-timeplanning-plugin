@@ -46,8 +46,9 @@ test.describe('Payroll settings', () => {
     // Open the payroll system dropdown and select DanL\u00f8n (value: 1)
     const payrollSystemSelect = page.locator('#payrollSystemSelect');
     await payrollSystemSelect.click();
-    await page.locator('ngx-mat-select-search, .cdk-overlay-container').waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
-    await page.locator('.cdk-overlay-container').locator('mat-option, ngx-dropdown-panel .ngx-option, mtx-option').filter({ hasText: 'DanL\u00f8n' }).click();
+    const dropdown = page.locator('ng-dropdown-panel');
+    await dropdown.waitFor({ state: 'visible', timeout: 10000 });
+    await dropdown.locator('.ng-option').filter({ hasText: 'DanLøn' }).first().click();
 
     // Save payroll settings
     const [updateResp] = await Promise.all([

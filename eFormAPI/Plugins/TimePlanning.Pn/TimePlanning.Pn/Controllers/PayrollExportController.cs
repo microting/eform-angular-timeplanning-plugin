@@ -2,13 +2,14 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using TimePlanning.Pn.Models.PayrollExport;
 using TimePlanning.Pn.Services.PayrollExportService;
 
 namespace TimePlanning.Pn.Controllers;
 
-[Authorize]
+[Authorize(Roles = EformRole.Admin)]
 [Route("api/time-planning-pn/payroll")]
 public class PayrollExportController : Controller
 {
