@@ -30,10 +30,10 @@
         </mat-checkbox>
       </div>
 
-      <!-- ========= Payroll rules ========= -->
-      <h3 class="section-header" *ngIf="!data.resigned && selectCurrentUserIsAdmin$ | async">{{ 'Payroll rules' | translate }}</h3>
+      <!-- ========= Payroll rules (hidden when no pay rule sets exist) ========= -->
+      <h3 class="section-header" *ngIf="!data.resigned && availablePayRuleSets.length > 0 && selectCurrentUserIsAdmin$ | async">{{ 'Payroll rules' | translate }}</h3>
 
-      <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsAdmin$ | async">
+      <div class="d-flex flex-row" *ngIf="!data.resigned && availablePayRuleSets.length > 0 && selectCurrentUserIsAdmin$ | async">
         <mat-form-field class="p-1 w-100">
           <mat-label>{{ 'Pay Rule Set' | translate }}</mat-label>
           <mtx-select
