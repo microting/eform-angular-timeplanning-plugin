@@ -84,6 +84,14 @@
       <mat-icon svgIcon="file-excel"></mat-icon>
     </button>
     <button
+      *ngIf="payrollSystem !== 0"
+      id="payroll-export"
+      class="btn-secondary btn-secondary--icon-rounded-border"
+      (click)="openPayrollExportDialog()"
+      matTooltip="{{ 'Export to payroll' | translate }}">
+      <mat-icon>payments</mat-icon>
+    </button>
+    <button
       class="btn-secondary btn-secondary--icon-rounded-border"
       id="workingHoursReload"
       [matTooltip]="'Reload table' | translate"

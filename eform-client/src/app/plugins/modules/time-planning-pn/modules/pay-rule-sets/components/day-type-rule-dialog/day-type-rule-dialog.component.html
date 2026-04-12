@@ -111,6 +111,19 @@
             </td>
           </ng-container>
 
+          <!-- Payroll Code Column -->
+          <ng-container matColumnDef="payrollCode">
+            <th mat-header-cell *matHeaderCellDef>{{ 'Payroll code' | translate }}</th>
+            <td mat-cell *matCellDef="let band; let i = index">
+              <mat-form-field class="band-field">
+                <input matInput
+                       type="text"
+                       [formControl]="getTimeBandControl(i, 'payrollCode')"
+                       placeholder="">
+              </mat-form-field>
+            </td>
+          </ng-container>
+
           <!-- Priority Column -->
           <ng-container matColumnDef="priority">
             <th mat-header-cell *matHeaderCellDef>{{ 'Priority' | translate }}</th>

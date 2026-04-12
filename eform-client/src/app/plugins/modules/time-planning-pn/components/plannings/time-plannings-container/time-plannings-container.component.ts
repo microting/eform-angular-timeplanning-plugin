@@ -14,7 +14,7 @@ import {ExcelIcon, iOSIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {Store} from '@ngrx/store';
 import {selectCurrentUserLocale} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
-import {DownloadExcelDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
+import {DownloadExcelDialogComponent, PayrollExportDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 
 @AutoUnsubscribe()
@@ -35,6 +35,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   availableTags: CommonTagModel[] = [];
   selectedTagIds: number[] = [];
   showResignedSites: boolean = false;
+  payrollSystem: number = 0;
+  payrollCutoffDay: number = 19;
   timePlannings: TimePlanningModel[] = [];
   selectedDate: Date = new Date();
   dateFrom: Date;
@@ -84,6 +86,14 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     this.selectCurrentUserLocale$.pipe(take(1)).subscribe((locale) => {
       this.locale = locale;
       this.getPlannings();
+    });
+
+    // Load payroll settings to determine if export button should be shown
+    this.settingsService.getPayrollSettings().pipe(take(1)).subscribe((data) => {
+      if (data && data.success && data.model) {
+        this.payrollSystem = data.model.payrollSystem || 0;
+        this.payrollCutoffDay = data.model.cutoffDay || 19;
+      }
     });
   }
 
@@ -139,6 +149,21 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
             //   this.getPlannings();
             // }
           });
+  }
+
+  openPayrollExportDialog() {
+    const dialogRef = this.dialog.open(PayrollExportDialogComponent, {
+      width: '600px',
+      data: {
+        cutoffDay: this.payrollCutoffDay,
+        payrollSystem: this.payrollSystem,
+      },
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.getPlannings();
+      }
+    });
   }
 
   goForward() {

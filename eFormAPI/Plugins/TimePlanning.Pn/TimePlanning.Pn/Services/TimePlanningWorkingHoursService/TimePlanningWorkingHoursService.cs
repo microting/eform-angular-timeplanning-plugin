@@ -3540,6 +3540,7 @@ public class TimePlanningWorkingHoursService(
             {
                 PlanRegistrationId = g.First().PlanRegistrationId,
                 PayCode = g.Key,
+                PayrollCode = g.First().PayrollCode,
                 HoursInSeconds = g.Sum(x => x.HoursInSeconds),
                 Hours = g.Sum(x => x.Hours),
                 PayRuleSetId = g.First().PayRuleSetId,

@@ -4,3 +4,4 @@ export * from './time-planning-actions/assigned-site/assigned-site-dialog.compon
 export * from './time-planning-actions/workday-entity/workday-entity-dialog.component';
 export * from './time-planning-actions/download-excel/download-excel-dialog.component';
 export * from './time-planning-actions/version-history-modal/version-history-modal.component';
+export * from './time-planning-actions/payroll-export/payroll-export-dialog.component';

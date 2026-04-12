@@ -3,4 +3,5 @@ export class PayTierRuleCreateModel {
   order: number;
   upToSeconds: number | null;
   payCode: string;
+  payrollCode?: string;
 }

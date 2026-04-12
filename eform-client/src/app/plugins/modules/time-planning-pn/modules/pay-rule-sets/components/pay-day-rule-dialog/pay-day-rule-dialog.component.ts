@@ -52,7 +52,8 @@ export class PayDayRuleDialogComponent implements OnInit {
             id: [tier.id || null],
             order: [tier.order, Validators.required],
             upToSeconds: [tier.upToSeconds, [Validators.min(0)]],
-            payCode: [tier.payCode, Validators.required]
+            payCode: [tier.payCode, Validators.required],
+            payrollCode: [tier.payrollCode || '']
           });
           tierRulesArray.push(tierForm);
         });

@@ -2,3 +2,4 @@ export * from 'src/app/plugins/modules/time-planning-pn/components/plannings/tim
 export * from './workday-entity/workday-entity-dialog.component';
 export * from './download-excel/download-excel-dialog.component';
 export * from './version-history-modal/version-history-modal.component';
+export * from './payroll-export/payroll-export-dialog.component';

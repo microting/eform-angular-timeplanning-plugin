@@ -37,6 +37,7 @@ using TimePlanning.Pn.Services.PayRuleSetService;
 using TimePlanning.Pn.Services.PayDayTypeRuleService;
 using TimePlanning.Pn.Services.PayTierRuleService;
 using TimePlanning.Pn.Services.PayTimeBandRuleService;
+using TimePlanning.Pn.Services.PayrollExportService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -105,6 +106,7 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<IPayDayTypeRuleService, PayDayTypeRuleService>();
         services.AddTransient<IPayTierRuleService, PayTierRuleService>();
         services.AddTransient<IPayTimeBandRuleService, PayTimeBandRuleService>();
+        services.AddTransient<IPayrollExportService, PayrollExportService>();
         services.AddControllers();
     }
 

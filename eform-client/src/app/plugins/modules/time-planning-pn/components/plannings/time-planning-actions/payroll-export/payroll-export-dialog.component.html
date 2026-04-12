@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>{{ 'Export payroll period' | translate }}</h2>
+
+<mat-dialog-content>
+  <div class="row">
+    <div class="col-6">
+      <mat-form-field class="w-100">
+        <mat-label>{{ 'Start' | translate }}</mat-label>
+        <input matInput [matDatepicker]="startPicker" [(ngModel)]="periodStart" (dateChange)="loadPreview()">
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+    <div class="col-6">
+      <mat-form-field class="w-100">
+        <mat-label>{{ 'End' | translate }}</mat-label>
+        <input matInput [matDatepicker]="endPicker" [(ngModel)]="periodEnd" (dateChange)="loadPreview()">
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center p-3">
+    {{ 'Loading...' | translate }}
+  </div>
+
+  <div *ngIf="!loading && preview" class="mt-2">
+    <p>{{ preview.workerCount }} {{ 'workers' | translate }}, {{ preview.payLineCount }} {{ 'pay lines' | translate }}</p>
+
+    <div *ngIf="alreadyExported" class="alert alert-warning mt-2">
+      <mat-icon>warning</mat-icon>
+      {{ 'Some registrations in this period were already exported on' | translate }} {{ alreadyExportedDate }}
+    </div>
+  </div>
+
+  <div *ngIf="!loading && preview && preview.payLineCount === 0" class="alert alert-info mt-2">
+    <mat-icon>info</mat-icon>
+    {{ 'No payroll codes configured' | translate }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    class="btn-cancel"
+    id="cancelPayrollExportBtn"
+    (click)="onCancel()">
+    {{ 'Cancel' | translate }}
+  </button>
+  <button
+    class="btn-primary btn-primary--icon-left"
+    id="confirmPayrollExportBtn"
+    [disabled]="loading || exporting"
+    (click)="onExport()">
+    <span *ngIf="!alreadyExported">{{ 'Export to payroll' | translate }}</span>
+    <span *ngIf="alreadyExported">{{ 'Export anyway' | translate }}</span>
+  </button>
+</mat-dialog-actions>

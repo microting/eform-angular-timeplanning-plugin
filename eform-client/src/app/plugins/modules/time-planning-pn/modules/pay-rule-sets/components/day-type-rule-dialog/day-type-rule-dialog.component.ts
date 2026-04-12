@@ -18,7 +18,7 @@ export class DayTypeRuleDialogComponent implements OnInit {
   dayTypeRuleForm!: FormGroup;
 
   timeBandDataSource = new MatTableDataSource<AbstractControl>();
-  timeBandColumns: string[] = ['startTime', 'endTime', 'payCode', 'priority', 'actions'];
+  timeBandColumns: string[] = ['startTime', 'endTime', 'payCode', 'payrollCode', 'priority', 'actions'];
 
   dayTypes = [
     { value: 'Monday', label: 'Monday' },
@@ -103,6 +103,7 @@ export class DayTypeRuleDialogComponent implements OnInit {
       startTime: [this.secondsToTimeString(band.startSecondOfDay), Validators.required],
       endTime: [this.secondsToTimeString(band.endSecondOfDay), Validators.required],
       payCode: [band.payCode || '', Validators.required],
+      payrollCode: [band.payrollCode || ''],
       priority: [band.priority ?? 0, [Validators.required, Validators.min(0)]]
     });
   }
@@ -168,6 +169,7 @@ export class DayTypeRuleDialogComponent implements OnInit {
         startSecondOfDay: band.startSecondOfDay,
         endSecondOfDay: band.endSecondOfDay,
         payCode: band.payCode,
+        payrollCode: band.payrollCode,
         priority: band.priority
       }));
       this.dialogRef.close(value);

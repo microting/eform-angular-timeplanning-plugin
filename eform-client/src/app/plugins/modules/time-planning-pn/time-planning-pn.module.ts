@@ -11,12 +11,14 @@ import {
   TimePlanningPnPlanningsService, TimePlanningPnRegistrationDevicesService,
   TimePlanningPnSettingsService,
   TimePlanningPnFlexesService,
-  TimePlanningPnPayRuleSetsService
+  TimePlanningPnPayRuleSetsService,
+  TimePlanningPnPayrollExportService
 } from './services';
 import {
   TimePlanningsContainerComponent, TimePlanningSettingsComponent, TimePlanningsTableComponent,
   AssignedSiteDialogComponent,
-  WorkdayEntityDialogComponent, DownloadExcelDialogComponent, VersionHistoryModalComponent
+  WorkdayEntityDialogComponent, DownloadExcelDialogComponent, VersionHistoryModalComponent,
+  PayrollExportDialogComponent
 } from './components';
 import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
 import {
@@ -103,6 +105,7 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     VersionHistoryModalComponent,
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
+    PayrollExportDialogComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,
@@ -110,6 +113,7 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     TimePlanningPnRegistrationDevicesService,
     TimePlanningPnFlexesService,
     TimePlanningPnPayRuleSetsService,
+    TimePlanningPnPayrollExportService,
     { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { subscriptSizing: 'dynamic' } }
   ],
 })

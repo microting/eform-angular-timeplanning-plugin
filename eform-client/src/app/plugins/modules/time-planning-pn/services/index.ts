@@ -11,3 +11,4 @@ export * from './time-planning-pn-pay-rule-sets.service';
 export * from './time-planning-pn-pay-day-type-rules.service';
 export * from './time-planning-pn-pay-tier-rules.service';
 export * from './time-planning-pn-pay-time-band-rules.service';
+export * from './time-planning-pn-payroll-export.service';

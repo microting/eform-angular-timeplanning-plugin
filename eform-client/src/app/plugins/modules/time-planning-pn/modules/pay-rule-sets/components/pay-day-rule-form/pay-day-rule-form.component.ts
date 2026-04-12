@@ -12,7 +12,7 @@ export class PayDayRuleFormComponent implements OnInit {
   @Input() payDayRuleForm!: FormGroup;
 
   dataSource = new MatTableDataSource<AbstractControl>();
-  displayedColumns: string[] = ['order', 'upToSeconds', 'payCode', 'actions'];
+  displayedColumns: string[] = ['order', 'upToSeconds', 'payCode', 'payrollCode', 'actions'];
 
   dayCodes = [
     {value: 'MONDAY', label: 'Monday'},
@@ -63,7 +63,8 @@ export class PayDayRuleFormComponent implements OnInit {
       id: [null],
       order: [nextOrder, Validators.required],
       upToSeconds: [null, [Validators.min(0)]],
-      payCode: ['', Validators.required]
+      payCode: ['', Validators.required],
+      payrollCode: ['']
     });
     this.payTierRules.push(tierForm);
     this.updateTable();
