@@ -28,6 +28,7 @@ describe('TimePlanningsContainerComponent', () => {
       getAssignedSite: jest.fn(),
       updateAssignedSite: jest.fn(),
       getAvailableTags: jest.fn(),
+      getPayrollSettings: jest.fn(),
     } as any;
     mockDialog = {
       open: jest.fn(),
@@ -39,6 +40,7 @@ describe('TimePlanningsContainerComponent', () => {
     mockStore.select.mockReturnValue(of('en-US'));
     mockSettingsService.getAvailableSites.mockReturnValue(of({ success: true, model: [] }) as any);
     mockSettingsService.getAvailableTags.mockReturnValue(of({ success: true, model: [] }) as any);
+    mockSettingsService.getPayrollSettings.mockReturnValue(of({ success: true, model: { payrollSystem: 0, cutoffDay: 19 } }) as any);
     mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: [] }) as any);
 
     await TestBed.configureTestingModule({

@@ -3,6 +3,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ToastrModule } from 'ngx-toastr';
 import { PayrollExportDialogComponent } from './payroll-export-dialog.component';
 import { TimePlanningPnPayrollExportService } from '../../../../services';
 import { of } from 'rxjs';
@@ -31,7 +32,7 @@ describe('PayrollExportDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [PayrollExportDialogComponent],
-      imports: [TranslateModule.forRoot(), HttpClientTestingModule],
+      imports: [TranslateModule.forRoot(), HttpClientTestingModule, ToastrModule.forRoot()],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: mockDialogData },
@@ -95,7 +96,7 @@ describe('PayrollExportDialogComponent', () => {
       TestBed.resetTestingModule();
       await TestBed.configureTestingModule({
         declarations: [PayrollExportDialogComponent],
-        imports: [TranslateModule.forRoot(), HttpClientTestingModule],
+        imports: [TranslateModule.forRoot(), HttpClientTestingModule, ToastrModule.forRoot()],
         schemas: [NO_ERRORS_SCHEMA],
         providers: [
           { provide: MAT_DIALOG_DATA, useValue: { cutoffDay: 0, payrollSystem: 1 } },
