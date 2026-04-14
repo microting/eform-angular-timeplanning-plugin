@@ -100,6 +100,30 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     await indexPromise;
     await waitForSpinner(page);
 
+    // Shifts 3-5 are only rendered in the workday-entity dialog when the
+    // assigned site has thirdShiftActive / fourthShiftActive / fifthShiftActive
+    // flipped on (see workday-entity-dialog.component.ts:354-363). CI seed
+    // defaults them all to false, so we open the assigned-site dialog first
+    // and enable the three cascading checkboxes before editing the day.
+    await page.locator('#firstColumn0').click();
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+
+    for (const id of ['#thirdShiftActive', '#fourthShiftActive', '#fifthShiftActive']) {
+      const cb = page.locator(`${id} input[type="checkbox"]`);
+      await cb.waitFor({ state: 'attached', timeout: 10000 });
+      if (!(await cb.isChecked())) {
+        await page.locator(id).click({ force: true });
+      }
+      await expect(cb).toBeChecked();
+    }
+
+    const assignSitePromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
+    await page.locator('#saveButton').click({ force: true });
+    await assignSitePromise;
+    await waitForSpinner(page);
+    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
+
     // Pick any visible day cell — column 3 (worker index), first date in the range.
     const cellId = '#cell3_0';
     await page.locator(cellId).scrollIntoViewIfNeeded();
