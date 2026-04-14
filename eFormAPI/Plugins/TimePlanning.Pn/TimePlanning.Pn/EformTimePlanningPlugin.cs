@@ -110,7 +110,7 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<IPayTimeBandRuleService, PayTimeBandRuleService>();
         services.AddTransient<IPayrollExportService, PayrollExportService>();
         services.AddTransient<IDeviceTokenService, DeviceTokenService>();
-        services.AddSingleton<IPushNotificationService, PushNotificationService>();
+        services.AddScoped<IPushNotificationService, PushNotificationService>();
         services.AddControllers();
     }
 
