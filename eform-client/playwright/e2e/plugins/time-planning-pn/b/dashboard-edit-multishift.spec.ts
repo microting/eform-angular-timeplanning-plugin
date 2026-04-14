@@ -26,15 +26,11 @@ async function waitForSpinner(page: Page) {
 
 async function pickTime(page: Page, timeStr: string) {
   const [h, m] = timeStr.split(':').map(s => parseInt(s, 10));
-  const hourDeg = (360 / 12) * (h % 12);
+  const hourDeg = (360 / 12) * h;
   const minuteDeg = (360 / 60) * m;
 
-  // For hours ≥ 12 the Material time picker uses the inner ring (height 85px).
-  if (h >= 12) {
+  if (hourDeg > 360) {
     await page.locator(`[style="height: 85px; transform: rotateZ(${hourDeg}deg) translateX(-50%);"] > span`).click();
-  } else if (hourDeg === 0) {
-    // "12" sits at 0deg on the outer ring
-    await page.locator(`[style="transform: rotateZ(0deg) translateX(-50%);"] > span`).click();
   } else {
     await page.locator(`[style="transform: rotateZ(${hourDeg}deg) translateX(-50%);"] > span`).click();
   }
@@ -59,12 +55,14 @@ async function setShift(page: Page, shiftId: 1|2|3|4|5, start: string, end: stri
   await expect(page.locator(`[data-testid="plannedBreakOfShift${shiftId}"]`)).toHaveValue(breakStr);
 }
 
+// Times chosen to avoid hour==0 (the Material timepicker's "12" selector
+// sits at a non-rotateZ position that breaks the degree-math helper above).
 const allFiveShifts = [
-  { id: 1 as const, start: '00:00', end: '01:00', break: '00:05' },
-  { id: 2 as const, start: '02:00', end: '03:00', break: '00:10' },
-  { id: 3 as const, start: '04:00', end: '05:00', break: '00:15' },
-  { id: 4 as const, start: '06:00', end: '07:00', break: '00:20' },
-  { id: 5 as const, start: '07:00', end: '08:00', break: '00:25' },
+  { id: 1 as const, start: '01:00', end: '02:00', break: '00:05' },
+  { id: 2 as const, start: '03:00', end: '04:00', break: '00:10' },
+  { id: 3 as const, start: '05:00', end: '06:00', break: '00:15' },
+  { id: 4 as const, start: '07:00', end: '08:00', break: '00:20' },
+  { id: 5 as const, start: '09:00', end: '10:00', break: '00:25' },
 ];
 
 test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () => {

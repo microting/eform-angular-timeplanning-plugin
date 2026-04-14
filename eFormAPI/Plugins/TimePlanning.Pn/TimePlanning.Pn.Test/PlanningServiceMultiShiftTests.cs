@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
+using Microting.eFormApi.BasePn.Infrastructure.Models.Auth;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
 using NSubstitute;
@@ -35,6 +36,7 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
 
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
+        _userService.GetCurrentUserAsync().Returns(new EformUser { Id = 1 });
 
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
