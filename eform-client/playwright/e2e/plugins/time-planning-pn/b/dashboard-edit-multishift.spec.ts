@@ -25,19 +25,40 @@ async function waitForSpinner(page: Page) {
 }
 
 async function pickTime(page: Page, timeStr: string) {
-  const [h, m] = timeStr.split(':').map(s => parseInt(s, 10));
-  const hourDeg = (360 / 12) * h;
-  const minuteDeg = (360 / 60) * m;
+  // Position-based clock-face clicks (same approach as time-planning-settings.spec.ts).
+  // Works uniformly for h=0 (break times), unlike rotateZ-selector strategies.
+  const [hourStr, minuteStr] = timeStr.split(':');
+  const h = parseInt(hourStr, 10);
+  const m = parseInt(minuteStr, 10);
 
-  if (hourDeg > 360) {
-    await page.locator(`[style="height: 85px; transform: rotateZ(${hourDeg}deg) translateX(-50%);"] > span`).click();
-  } else {
-    await page.locator(`[style="transform: rotateZ(${hourDeg}deg) translateX(-50%);"] > span`).click();
-  }
+  const cx = 145, cy = 145;
 
-  if (minuteDeg > 0) {
-    await page.locator(`[style="transform: rotateZ(${minuteDeg}deg) translateX(-50%);"] > span`).click({ force: true });
-  }
+  const hourFace = page.locator('.clock-face');
+  await hourFace.first().waitFor({ state: 'visible', timeout: 5000 });
+  const hourAngle = (h % 12) * 30;
+  const hourR = (h === 0 || h > 12) ? 60 : 100;
+  const hourRad = hourAngle * Math.PI / 180;
+  await hourFace.first().click({
+    position: {
+      x: Math.round(cx + hourR * Math.sin(hourRad)),
+      y: Math.round(cy - hourR * Math.cos(hourRad)) + (Math.abs(Math.cos(hourRad)) < 0.01 ? 1 : 0),
+    },
+  });
+
+  await page.waitForTimeout(500);
+  const minuteFace = page.locator('.clock-face');
+  await minuteFace.first().waitFor({ state: 'visible', timeout: 5000 });
+  const minuteAngle = m * 6;
+  const minuteR = 100;
+  const minuteRad = minuteAngle * Math.PI / 180;
+  await minuteFace.first().click({
+    position: {
+      x: Math.round(cx + minuteR * Math.sin(minuteRad)),
+      y: Math.round(cy - minuteR * Math.cos(minuteRad)) + (Math.abs(Math.cos(minuteRad)) < 0.01 ? 1 : 0),
+    },
+  });
+
+  await page.waitForTimeout(500);
   await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
 }
 
