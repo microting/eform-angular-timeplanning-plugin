@@ -570,6 +570,15 @@ public class TimePlanningPlanningService(
             planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
             planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
             planning.PlannedEndOfShift2 = model.PlannedEndOfShift2;
+            planning.PlannedStartOfShift3 = model.PlannedStartOfShift3;
+            planning.PlannedBreakOfShift3 = model.PlannedBreakOfShift3;
+            planning.PlannedEndOfShift3 = model.PlannedEndOfShift3;
+            planning.PlannedStartOfShift4 = model.PlannedStartOfShift4;
+            planning.PlannedBreakOfShift4 = model.PlannedBreakOfShift4;
+            planning.PlannedEndOfShift4 = model.PlannedEndOfShift4;
+            planning.PlannedStartOfShift5 = model.PlannedStartOfShift5;
+            planning.PlannedBreakOfShift5 = model.PlannedBreakOfShift5;
+            planning.PlannedEndOfShift5 = model.PlannedEndOfShift5;
             planning.CommentOffice = model.CommentOffice;
             planning.NettoHoursOverride = model.NettoHoursOverride;
             planning.NettoHoursOverrideActive = model.NettoHoursOverrideActive;
@@ -1124,6 +1133,22 @@ public class TimePlanningPlanningService(
                     false,
                     localizationService.GetString("PlanningNotFound"));
             }
+
+            planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
+            planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
+            planning.PlannedEndOfShift1   = model.PlannedEndOfShift1;
+            planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
+            planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
+            planning.PlannedEndOfShift2   = model.PlannedEndOfShift2;
+            planning.PlannedStartOfShift3 = model.PlannedStartOfShift3;
+            planning.PlannedBreakOfShift3 = model.PlannedBreakOfShift3;
+            planning.PlannedEndOfShift3   = model.PlannedEndOfShift3;
+            planning.PlannedStartOfShift4 = model.PlannedStartOfShift4;
+            planning.PlannedBreakOfShift4 = model.PlannedBreakOfShift4;
+            planning.PlannedEndOfShift4   = model.PlannedEndOfShift4;
+            planning.PlannedStartOfShift5 = model.PlannedStartOfShift5;
+            planning.PlannedBreakOfShift5 = model.PlannedBreakOfShift5;
+            planning.PlannedEndOfShift5   = model.PlannedEndOfShift5;
 
             if (!assignedSite.UseDetailedPauseEditing)
             {
