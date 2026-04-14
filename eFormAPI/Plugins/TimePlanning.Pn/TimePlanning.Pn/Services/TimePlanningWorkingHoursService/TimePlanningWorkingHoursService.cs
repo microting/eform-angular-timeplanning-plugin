@@ -535,11 +535,17 @@ public class TimePlanningWorkingHoursService(
         var currentUserAsync = await userService.GetCurrentUserAsync();
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
-        var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
+        var userEmail = (currentUser.Email ?? "").Trim().ToLower();
         var core = await coreHelper.GetCore();
         var sdkContext = core.DbContextHelper.GetDbContext();
-        var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
-            x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
+        var sdkWorker = await sdkContext.Workers.FirstOrDefaultAsync(x =>
+            x.Email.ToLower() == userEmail &&
+            x.WorkflowState != Constants.WorkflowStates.Removed);
+        var sdkSiteWorker = sdkWorker == null ? null : await sdkContext.SiteWorkers.FirstOrDefaultAsync(x =>
+            x.WorkerId == sdkWorker.Id &&
+            x.WorkflowState != Constants.WorkflowStates.Removed);
+        var sdkSite = sdkSiteWorker == null ? null : await sdkContext.Sites.FirstOrDefaultAsync(x =>
+            x.Id == sdkSiteWorker.SiteId &&
             x.WorkflowState != Constants.WorkflowStates.Removed);
 
         if (sdkSite == null)
@@ -663,9 +669,15 @@ public class TimePlanningWorkingHoursService(
             var currentUserAsync = await userService.GetCurrentUserAsync();
             var currentUser = baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
-            var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-            var sdkSite = await sdkContext.Sites.SingleOrDefaultAsync(x =>
-                x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
+            var userEmail = (currentUser.Email ?? "").Trim().ToLower();
+            var sdkWorker = await sdkContext.Workers.FirstOrDefaultAsync(x =>
+                x.Email.ToLower() == userEmail &&
+                x.WorkflowState != Constants.WorkflowStates.Removed);
+            var sdkSiteWorker = sdkWorker == null ? null : await sdkContext.SiteWorkers.FirstOrDefaultAsync(x =>
+                x.WorkerId == sdkWorker.Id &&
+                x.WorkflowState != Constants.WorkflowStates.Removed);
+            var sdkSite = sdkSiteWorker == null ? null : await sdkContext.Sites.FirstOrDefaultAsync(x =>
+                x.Id == sdkSiteWorker.SiteId &&
                 x.WorkflowState != Constants.WorkflowStates.Removed);
 
             if (sdkSite == null)
@@ -749,9 +761,15 @@ public class TimePlanningWorkingHoursService(
         var currentUserAsync = await userService.GetCurrentUserAsync();
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
-        var fullName = currentUser.FirstName.Trim() + " " + currentUser.LastName.Trim();
-        var sdkSite = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
-            x.Name.Replace(" ", "") == fullName.Replace(" ", "") &&
+        var userEmail = (currentUser.Email ?? "").Trim().ToLower();
+        var sdkWorker = await sdkDbContext.Workers.FirstOrDefaultAsync(x =>
+            x.Email.ToLower() == userEmail &&
+            x.WorkflowState != Constants.WorkflowStates.Removed);
+        var sdkSiteWorker = sdkWorker == null ? null : await sdkDbContext.SiteWorkers.FirstOrDefaultAsync(x =>
+            x.WorkerId == sdkWorker.Id &&
+            x.WorkflowState != Constants.WorkflowStates.Removed);
+        var sdkSite = sdkSiteWorker == null ? null : await sdkDbContext.Sites.FirstOrDefaultAsync(x =>
+            x.Id == sdkSiteWorker.SiteId &&
             x.WorkflowState != Constants.WorkflowStates.Removed);
 
         if (sdkSite == null)

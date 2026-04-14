@@ -400,17 +400,17 @@ public class TimeSettingService(
                             ResignedAtDate = assignedSite.ResignedAtDate,
                             SnapshotEnabled = assignedSite.SnapshotEnabled
                         };
-                        var normalizedSiteName = (site.Name ?? "").Replace(" ", "").ToLower();
-                        var user = baseDbContext == null ? null : await baseDbContext.Users
-                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == normalizedSiteName)
+                        var workerEmail = (worker.Email ?? "").Trim().ToLower();
+                        var user = baseDbContext == null || string.IsNullOrEmpty(workerEmail) ? null : await baseDbContext.Users
+                            .Where(x => x.Email.ToLower() == workerEmail)
                             .FirstOrDefaultAsync().ConfigureAwait(false);
                         if (user != null)
                         {
                             newSite.AvatarUrl = user.ProfilePictureSnapshot != null
                                 ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
                                 : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
-                            newSite.PhoneNumber = user.PhoneNumber ?? "";
                         }
+                        newSite.PhoneNumber = worker.PhoneNumber ?? "";
                         sites.Add(newSite);
                     }
                 }
@@ -536,17 +536,17 @@ public class TimeSettingService(
                             ResignedAtDate = assignedSite.ResignedAtDate,
                             SnapshotEnabled = assignedSite.SnapshotEnabled
                         };
-                        var normalizedSiteName = (site.Name ?? "").Replace(" ", "").ToLower();
-                        var user = baseDbContext == null ? null : await baseDbContext.Users
-                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == normalizedSiteName)
+                        var workerEmail = (worker.Email ?? "").Trim().ToLower();
+                        var user = baseDbContext == null || string.IsNullOrEmpty(workerEmail) ? null : await baseDbContext.Users
+                            .Where(x => x.Email.ToLower() == workerEmail)
                             .FirstOrDefaultAsync().ConfigureAwait(false);
                         if (user != null)
                         {
                             newSite.AvatarUrl = user.ProfilePictureSnapshot != null
                                 ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
                                 : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
-                            newSite.PhoneNumber = user.PhoneNumber ?? "";
                         }
+                        newSite.PhoneNumber = worker.PhoneNumber ?? "";
                         sites.Add(newSite);
             }
 
@@ -816,17 +816,17 @@ public class TimeSettingService(
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
                         };
-                        var normalizedSiteName = (site.Name ?? "").Replace(" ", "").ToLower();
-                        var user = baseDbContext == null ? null : await baseDbContext.Users
-                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == normalizedSiteName)
+                        var workerEmail = (worker.Email ?? "").Trim().ToLower();
+                        var user = baseDbContext == null || string.IsNullOrEmpty(workerEmail) ? null : await baseDbContext.Users
+                            .Where(x => x.Email.ToLower() == workerEmail)
                             .FirstOrDefaultAsync().ConfigureAwait(false);
                         if (user != null)
                         {
                             newSite.AvatarUrl = user.ProfilePictureSnapshot != null
                                 ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
                                 : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
-                            newSite.PhoneNumber = user.PhoneNumber ?? "";
                         }
+                        newSite.PhoneNumber = worker.PhoneNumber ?? "";
                         sites.Add(newSite);
                     }
                 }

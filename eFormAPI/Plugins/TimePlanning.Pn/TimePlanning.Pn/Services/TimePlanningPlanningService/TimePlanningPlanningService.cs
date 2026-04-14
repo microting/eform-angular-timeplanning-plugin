@@ -179,6 +179,12 @@ public class TimePlanningPlanningService(
             var sitesList = await sdkDbContext.Sites
                 .AsNoTracking()
                 .ToListAsync().ConfigureAwait(false);
+            var siteWorkersList = await sdkDbContext.SiteWorkers
+                .AsNoTracking()
+                .ToListAsync().ConfigureAwait(false);
+            var workersList = await sdkDbContext.Workers
+                .AsNoTracking()
+                .ToListAsync().ConfigureAwait(false);
 
             var tasks = assignedSites.Select(async dbAssignedSite =>
             {
@@ -200,10 +206,11 @@ public class TimePlanningPlanningService(
                     PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
                 };
 
-                // do a lookup in the baseDbContext.Users where the concat string of FirstName and LastName toLowerCase() is equal to the site.Name toLowerCase()
-                // if we find a user, we take the user.EmailSha256 and set the siteModel.AvatarUrl to the gravatar url with the sha256
-                var user = usersList.FirstOrDefault(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() ==
-                                                site.Name.Replace(" ", "").ToLower());
+                var siteWorker = siteWorkersList.FirstOrDefault(x => x.SiteId == site.Id);
+                var worker = siteWorker != null ? workersList.FirstOrDefault(x => x.Id == siteWorker.WorkerId) : null;
+                var workerEmail = (worker?.Email ?? "").Trim().ToLower();
+                var user = string.IsNullOrEmpty(workerEmail) ? null
+                    : usersList.FirstOrDefault(x => (x.Email ?? "").Trim().ToLower() == workerEmail);
                 if (user != null)
                 {
                     siteModel.AvatarUrl = user.ProfilePictureSnapshot != null
@@ -418,8 +425,9 @@ public class TimePlanningPlanningService(
             siteModel.SoftwareVersionIsValid = false;
         }
 
-        var user = await baseDbContext.Users
-            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+        var workerEmail2 = (worker.Email ?? "").Trim().ToLower();
+        var user = string.IsNullOrEmpty(workerEmail2) ? null : await baseDbContext.Users
+            .Where(x => x.Email.ToLower() == workerEmail2)
             .FirstOrDefaultAsync().ConfigureAwait(false);
         if (user != null)
         {
@@ -562,6 +570,15 @@ public class TimePlanningPlanningService(
             planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
             planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
             planning.PlannedEndOfShift2 = model.PlannedEndOfShift2;
+            planning.PlannedStartOfShift3 = model.PlannedStartOfShift3;
+            planning.PlannedBreakOfShift3 = model.PlannedBreakOfShift3;
+            planning.PlannedEndOfShift3 = model.PlannedEndOfShift3;
+            planning.PlannedStartOfShift4 = model.PlannedStartOfShift4;
+            planning.PlannedBreakOfShift4 = model.PlannedBreakOfShift4;
+            planning.PlannedEndOfShift4 = model.PlannedEndOfShift4;
+            planning.PlannedStartOfShift5 = model.PlannedStartOfShift5;
+            planning.PlannedBreakOfShift5 = model.PlannedBreakOfShift5;
+            planning.PlannedEndOfShift5 = model.PlannedEndOfShift5;
             planning.CommentOffice = model.CommentOffice;
             planning.NettoHoursOverride = model.NettoHoursOverride;
             planning.NettoHoursOverrideActive = model.NettoHoursOverrideActive;
@@ -1116,6 +1133,22 @@ public class TimePlanningPlanningService(
                     false,
                     localizationService.GetString("PlanningNotFound"));
             }
+
+            planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
+            planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
+            planning.PlannedEndOfShift1   = model.PlannedEndOfShift1;
+            planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
+            planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
+            planning.PlannedEndOfShift2   = model.PlannedEndOfShift2;
+            planning.PlannedStartOfShift3 = model.PlannedStartOfShift3;
+            planning.PlannedBreakOfShift3 = model.PlannedBreakOfShift3;
+            planning.PlannedEndOfShift3   = model.PlannedEndOfShift3;
+            planning.PlannedStartOfShift4 = model.PlannedStartOfShift4;
+            planning.PlannedBreakOfShift4 = model.PlannedBreakOfShift4;
+            planning.PlannedEndOfShift4   = model.PlannedEndOfShift4;
+            planning.PlannedStartOfShift5 = model.PlannedStartOfShift5;
+            planning.PlannedBreakOfShift5 = model.PlannedBreakOfShift5;
+            planning.PlannedEndOfShift5   = model.PlannedEndOfShift5;
 
             if (!assignedSite.UseDetailedPauseEditing)
             {
