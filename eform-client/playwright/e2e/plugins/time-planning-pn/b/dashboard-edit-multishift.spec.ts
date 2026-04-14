@@ -108,7 +108,7 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     // — those bindings reflect the snapshot passed into the dialog, so each
     // new checkbox only materialises after a save + reopen cycle.
     for (const id of ['thirdShiftActive', 'fourthShiftActive', 'fifthShiftActive']) {
-      await page.locator('#firstColumn0').click();
+      await page.locator('#firstColumn3').click();
       await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
 
       const cb = page.locator(`#${id} input[type="checkbox"]`);
@@ -126,7 +126,8 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
       await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
     }
 
-    // Pick any visible day cell — column 3 (worker index), first date in the range.
+    // Day cell id is `cell{rowIndex}_{colField}` — row 3 matches the worker
+    // whose assigned-site row (#firstColumn3) we just configured above.
     const cellId = '#cell3_0';
     await page.locator(cellId).scrollIntoViewIfNeeded();
     await page.locator(cellId).click();
