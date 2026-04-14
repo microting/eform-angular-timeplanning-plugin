@@ -6,19 +6,8 @@
   >
     <mat-tab label="{{'General' | translate }}" >
 
-      <div class="d-flex flex-row" *ngIf="!data.resigned && selectCurrentUserIsFirstUser$ | async">
-        <mat-checkbox class="p-1"
-                      [id]="'useGoogleSheetAsDefault'"
-                      [name]="'useGoogleSheetAsDefault'"
-                      formControlName="useGoogleSheetAsDefault">
-          <div>
-            <div>{{ 'Use Google Sheet as default' | translate }}</div>
-            <small class="checkbox-description"></small>
-          </div>
-        </mat-checkbox>
-      </div>
       <div class="d-flex flex-row"
-           *ngIf="!data.resigned && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+           *ngIf="!data.resigned && selectCurrentUserIsFirstUser$ | async">
         <mat-checkbox class="p-1"
                       [id]="'useOnlyPlanHours'"
                       [name]="'useOnlyPlanHours'"
@@ -237,7 +226,7 @@
       </div>
     </mat-tab>
     <mat-tab label="{{'Plan hours' | translate }} "
-             *ngIf="data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="data.useOnlyPlanHours && selectCurrentUserIsFirstUser$ | async">
       <div formGroupName="planHours">
         <div class="d-flex flex-row"
              *ngFor="let day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']">
@@ -330,7 +319,7 @@
       </div>
     </mat-tab>
     <mat-tab  label="{{'1st shift' | translate }}"
-             *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="!data.useOnlyPlanHours && selectCurrentUserIsFirstUser$ | async">
       <div [formGroupName]="'firstShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
@@ -390,7 +379,7 @@
       </div>
     </mat-tab>
     <mat-tab  label="{{'2nd shift' | translate }}"
-             *ngIf="!data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="!data.useOnlyPlanHours && selectCurrentUserIsFirstUser$ | async">
       <div [formGroupName]="'secondShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
@@ -450,7 +439,7 @@
       </div>
     </mat-tab>
     <mat-tab label="{{'3rd shift' | translate }}"
-             *ngIf="data.thirdShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="data.thirdShiftActive && !data.useOnlyPlanHours && selectCurrentUserIsFirstUser$ | async">
       <div [formGroupName]="'thirdShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
@@ -510,7 +499,7 @@
       </div>
     </mat-tab>
     <mat-tab label="{{'4th shift' | translate }}"
-             *ngIf="data.thirdShiftActive && data.fourthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="data.thirdShiftActive && data.fourthShiftActive && !data.useOnlyPlanHours && selectCurrentUserIsFirstUser$ | async">
       <div [formGroupName]="'fourthShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
@@ -570,7 +559,7 @@
       </div>
     </mat-tab>
     <mat-tab label="{{'5th shift' | translate }}"
-             *ngIf="data.thirdShiftActive && data.fourthShiftActive && data.fifthShiftActive && !data.useOnlyPlanHours && !data.useGoogleSheetAsDefault && selectCurrentUserIsFirstUser$ | async">
+             *ngIf="data.thirdShiftActive && data.fourthShiftActive && data.fifthShiftActive && !data.useOnlyPlanHours && selectCurrentUserIsFirstUser$ | async">
       <div [formGroupName]="'fifthShift'">
       <ng-container *ngIf="selectCurrentUserIsAdmin$ | async">
         <div class="d-flex flex-row"
