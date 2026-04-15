@@ -48,7 +48,8 @@ public class TimePlanningContentHandoverGrpcServiceTests
         _service.CreateAsync(
                 Arg.Any<int>(),
                 Arg.Any<ContentHandoverRequestCreateModel>())
-            .Returns(new OperationDataResult<CsContentHandoverRequestModel>(true, csModel));
+            .Returns(new OperationDataResult<List<CsContentHandoverRequestModel>>(
+                true, new List<CsContentHandoverRequestModel> { csModel }));
 
         var request = new CreateContentHandoverRequest
         {
@@ -64,6 +65,9 @@ public class TimePlanningContentHandoverGrpcServiceTests
         Assert.That(response.Success, Is.True);
         Assert.That(response.Model, Is.Not.Null);
         Assert.That(response.Model.Id, Is.EqualTo(42));
+        // New contract: `models` is populated alongside the defensive `model`.
+        Assert.That(response.Models, Has.Count.EqualTo(1));
+        Assert.That(response.Models[0].Id, Is.EqualTo(42));
         Assert.That(response.Model.FromSdkSiteId, Is.EqualTo(10));
         Assert.That(response.Model.ToSdkSiteId, Is.EqualTo(20));
         Assert.That(response.Model.Date, Is.EqualTo("2026-04-03T00:00:00"));
@@ -82,7 +86,7 @@ public class TimePlanningContentHandoverGrpcServiceTests
         _service.CreateAsync(
                 Arg.Any<int>(),
                 Arg.Any<ContentHandoverRequestCreateModel>())
-            .Returns(new OperationDataResult<CsContentHandoverRequestModel>(false, "Something went wrong"));
+            .Returns(new OperationDataResult<List<CsContentHandoverRequestModel>>(false, "Something went wrong"));
 
         var request = new CreateContentHandoverRequest
         {
@@ -234,5 +238,105 @@ public class TimePlanningContentHandoverGrpcServiceTests
         Assert.That(response.Models, Has.Count.EqualTo(1));
         Assert.That(response.Models[0].Id, Is.EqualTo(5));
         Assert.That(response.Models[0].Status, Is.EqualTo("Accepted"));
+    }
+
+    [Test]
+    public async Task CreateContentHandover_FansOutRepeatedModels_WhenShiftIndicesProvided()
+    {
+        var csModels = new List<CsContentHandoverRequestModel>
+        {
+            new()
+            {
+                Id = 101,
+                FromSdkSitId = 10,
+                ToSdkSitId = 20,
+                Date = new DateTime(2026, 4, 3),
+                FromPlanRegistrationId = 100,
+                ToPlanRegistrationId = 200,
+                Status = "Pending",
+                RequestedAtUtc = new DateTime(2026, 4, 3, 12, 0, 0),
+                RequestComment = "Partial 1",
+                ShiftIndex = 1
+            },
+            new()
+            {
+                Id = 102,
+                FromSdkSitId = 10,
+                ToSdkSitId = 20,
+                Date = new DateTime(2026, 4, 3),
+                FromPlanRegistrationId = 100,
+                ToPlanRegistrationId = 200,
+                Status = "Pending",
+                RequestedAtUtc = new DateTime(2026, 4, 3, 12, 0, 0),
+                RequestComment = "Partial 2",
+                ShiftIndex = 2
+            }
+        };
+
+        ContentHandoverRequestCreateModel? captured = null;
+        _service.CreateAsync(
+                Arg.Any<int>(),
+                Arg.Do<ContentHandoverRequestCreateModel>(m => captured = m))
+            .Returns(new OperationDataResult<List<CsContentHandoverRequestModel>>(true, csModels));
+
+        var request = new CreateContentHandoverRequest
+        {
+            FromPlanRegistrationId = 100,
+            ToSdkSiteId = 20,
+            RequestComment = "Partial handover",
+            ShiftIndices = { 1, 2 }
+        };
+
+        var response = await _grpcService.CreateContentHandover(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(captured, Is.Not.Null);
+        Assert.That(captured!.ShiftIndices, Is.EquivalentTo(new[] { 1, 2 }));
+
+        Assert.That(response.Models, Has.Count.EqualTo(2));
+        Assert.That(response.Models[0].Id, Is.EqualTo(101));
+        Assert.That(response.Models[0].ShiftIndex, Is.EqualTo(1));
+        Assert.That(response.Models[1].Id, Is.EqualTo(102));
+        Assert.That(response.Models[1].ShiftIndex, Is.EqualTo(2));
+
+        // `model` stays populated defensively (first item) for legacy clients.
+        Assert.That(response.Model, Is.Not.Null);
+        Assert.That(response.Model.Id, Is.EqualTo(101));
+    }
+
+    [Test]
+    public async Task GetHandoverEligibleCoworkers_PassesShiftIndicesToService()
+    {
+        List<int>? capturedShiftIndices = null;
+        DateTime capturedDate = default;
+
+        _service.GetHandoverEligibleCoworkersAsync(
+                Arg.Do<DateTime>(d => capturedDate = d),
+                Arg.Do<List<int>>(s => capturedShiftIndices = s))
+            .Returns(new OperationDataResult<List<HandoverCoworkerModel>>(
+                true, new List<HandoverCoworkerModel>
+                {
+                    new() { SdkSiteId = 20, SiteName = "Alice", PlanRegistrationId = 200 }
+                }));
+
+        var request = new GetHandoverEligibleCoworkersRequest
+        {
+            Date = "2026-04-03T00:00:00Z",
+            ShiftIndices = { 0, 2 }
+        };
+
+        var response = await _grpcService.GetHandoverEligibleCoworkers(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(capturedShiftIndices, Is.Not.Null);
+        Assert.That(capturedShiftIndices!, Is.EquivalentTo(new[] { 0, 2 }));
+        Assert.That(capturedDate.Date, Is.EqualTo(new DateTime(2026, 4, 3)));
+        Assert.That(response.Coworkers, Has.Count.EqualTo(1));
+        Assert.That(response.Coworkers[0].SdkSiteId, Is.EqualTo(20));
+
+        await _service.Received(1).GetHandoverEligibleCoworkersAsync(
+            Arg.Any<DateTime>(), Arg.Any<List<int>>());
     }
 }

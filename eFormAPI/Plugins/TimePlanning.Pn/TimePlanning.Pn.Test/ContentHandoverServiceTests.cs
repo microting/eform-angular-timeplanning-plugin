@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
@@ -108,9 +109,11 @@ public class ContentHandoverServiceTests : TestBaseSetup
         // Assert
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model, Is.Not.Null);
-        Assert.That(result.Model.Status, Is.EqualTo("Pending"));
-        Assert.That(result.Model.FromSdkSitId, Is.EqualTo(1));
-        Assert.That(result.Model.ToSdkSitId, Is.EqualTo(2));
+        Assert.That(result.Model.Count, Is.EqualTo(1));
+        Assert.That(result.Model[0].Status, Is.EqualTo("Pending"));
+        Assert.That(result.Model[0].FromSdkSitId, Is.EqualTo(1));
+        Assert.That(result.Model[0].ToSdkSitId, Is.EqualTo(2));
+        Assert.That(result.Model[0].ShiftIndex, Is.Null);
     }
 
     [Test]
@@ -485,5 +488,219 @@ public class ContentHandoverServiceTests : TestBaseSetup
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model.Count, Is.EqualTo(1));
         Assert.That(result.Model[0].FromSdkSitId, Is.EqualTo(1));
+    }
+
+    // ---------------------------------------------------------------
+    // Partial-shift handover tests.
+    // ---------------------------------------------------------------
+
+    private async Task<(PlanRegistration source, PlanRegistration target)> SeedPartialShiftPairAsync(DateTime date)
+    {
+        var source = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 1,
+            PlannedStartOfShift1 = 8 * 60,
+            PlannedEndOfShift1 = 12 * 60,
+            PlannedStartOfShift2 = 13 * 60,
+            PlannedEndOfShift2 = 17 * 60,
+            PlannedStartOfShift3 = 18 * 60,
+            PlannedEndOfShift3 = 21 * 60,
+            PlanHoursInSeconds = 11 * 3600,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await source.Create(TimePlanningPnDbContext);
+
+        var target = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 2,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await target.Create(TimePlanningPnDbContext);
+        return (source, target);
+    }
+
+    [Test]
+    public async Task CreateAsync_SingleShift_CreatesOneRowWithShiftIndex()
+    {
+        var date = new DateTime(2024, 2, 1);
+        var (source, _) = await SeedPartialShiftPairAsync(date);
+
+        var result = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 2 } });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model.Count, Is.EqualTo(1));
+        Assert.That(result.Model[0].ShiftIndex, Is.EqualTo(2));
+
+        // Source/target planning untouched (pending only).
+        var s = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(source.Id);
+        Assert.That(s.PlannedEndOfShift2, Is.EqualTo(17 * 60));
+    }
+
+    [Test]
+    public async Task CreateAsync_MultiShift_CreatesRowPerShift()
+    {
+        var date = new DateTime(2024, 2, 2);
+        var (source, _) = await SeedPartialShiftPairAsync(date);
+
+        var result = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1, 3 } });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model.Count, Is.EqualTo(2));
+        Assert.That(result.Model.Select(m => m.ShiftIndex).OrderBy(x => x),
+            Is.EqualTo(new int?[] { 1, 3 }));
+    }
+
+    [Test]
+    public async Task CreateAsync_MultiShift_AllOrNothing_WhenOneInvalid()
+    {
+        var date = new DateTime(2024, 2, 3);
+        var (source, _) = await SeedPartialShiftPairAsync(date);
+
+        // Shift 4 on source is empty — invalid.
+        var result = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1, 4 } });
+
+        Assert.That(result.Success, Is.False);
+        // Per-shift error message should name the failing shift so the UI can
+        // show which one blocked the batch.
+        Assert.That(result.Message, Does.Contain("Shift 4"));
+
+        var rows = await TimePlanningPnDbContext.PlanRegistrationContentHandoverRequests
+            .Where(r => r.FromPlanRegistrationId == source.Id)
+            .ToListAsync();
+        Assert.That(rows, Is.Empty, "No rows should have been persisted (validation pre-flight blocks the whole batch)");
+    }
+
+    [Test]
+    public async Task CreateAsync_DifferentShifts_AreAllowed_SameShift_IsBlocked()
+    {
+        var date = new DateTime(2024, 2, 4);
+        var (source, _) = await SeedPartialShiftPairAsync(date);
+
+        var first = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1 } });
+        Assert.That(first.Success, Is.True);
+
+        // Different shift: allowed.
+        var second = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 2 } });
+        Assert.That(second.Success, Is.True, second.Message);
+
+        // Same shift again: blocked.
+        var third = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1 } });
+        Assert.That(third.Success, Is.False);
+    }
+
+    [Test]
+    public async Task CreateAsync_PendingFullDay_BlocksPartial_AndViceVersa()
+    {
+        var dateA = new DateTime(2024, 2, 5);
+        var (sourceA, _) = await SeedPartialShiftPairAsync(dateA);
+        var fullDay = await _contentHandoverService.CreateAsync(sourceA.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2 });
+        Assert.That(fullDay.Success, Is.True);
+
+        var partialBlocked = await _contentHandoverService.CreateAsync(sourceA.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1 } });
+        Assert.That(partialBlocked.Success, Is.False);
+
+        // Separate date to test the other direction.
+        var dateB = new DateTime(2024, 2, 6);
+        var (sourceB, _) = await SeedPartialShiftPairAsync(dateB);
+        var partial = await _contentHandoverService.CreateAsync(sourceB.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 2 } });
+        Assert.That(partial.Success, Is.True);
+
+        var fullDayBlocked = await _contentHandoverService.CreateAsync(sourceB.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2 });
+        Assert.That(fullDayBlocked.Success, Is.False);
+    }
+
+    [Test]
+    public async Task AcceptAsync_SingleShift_MovesOnlyThatShift()
+    {
+        var date = new DateTime(2024, 2, 7);
+        var (source, target) = await SeedPartialShiftPairAsync(date);
+
+        var create = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 2 } });
+        Assert.That(create.Success, Is.True);
+
+        var requestId = create.Model[0].Id;
+        var accept = await _contentHandoverService.AcceptAsync(requestId, 2,
+            new ContentHandoverDecisionModel { DecisionComment = "ok" });
+        Assert.That(accept.Success, Is.True, accept.Message);
+
+        var s = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(source.Id);
+        var t = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(target.Id);
+
+        // Shift 2 moved
+        Assert.That(s.PlannedEndOfShift2, Is.EqualTo(0));
+        Assert.That(t.PlannedEndOfShift2, Is.EqualTo(17 * 60));
+        // Shift 1 and 3 untouched on source
+        Assert.That(s.PlannedEndOfShift1, Is.EqualTo(12 * 60));
+        Assert.That(s.PlannedEndOfShift3, Is.EqualTo(21 * 60));
+    }
+
+    [Test]
+    public async Task AcceptAllShifts_EquivalentToFullDay()
+    {
+        var date = new DateTime(2024, 2, 8);
+        var (source, target) = await SeedPartialShiftPairAsync(date);
+
+        var create = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1, 2, 3 } });
+        Assert.That(create.Success, Is.True, create.Message);
+
+        foreach (var m in create.Model)
+        {
+            var res = await _contentHandoverService.AcceptAsync(m.Id, 2,
+                new ContentHandoverDecisionModel { DecisionComment = "ok" });
+            Assert.That(res.Success, Is.True, res.Message);
+        }
+
+        var s = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(source.Id);
+        var t = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(target.Id);
+
+        Assert.That(s.PlannedEndOfShift1, Is.EqualTo(0));
+        Assert.That(s.PlannedEndOfShift2, Is.EqualTo(0));
+        Assert.That(s.PlannedEndOfShift3, Is.EqualTo(0));
+        Assert.That(t.PlannedEndOfShift1, Is.EqualTo(12 * 60));
+        Assert.That(t.PlannedEndOfShift2, Is.EqualTo(17 * 60));
+        Assert.That(t.PlannedEndOfShift3, Is.EqualTo(21 * 60));
+    }
+
+    [Test]
+    public async Task RejectOneOfN_LeavesRemainingPending()
+    {
+        var date = new DateTime(2024, 2, 9);
+        var (source, _) = await SeedPartialShiftPairAsync(date);
+
+        var create = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1, 2 } });
+        Assert.That(create.Success, Is.True);
+
+        var shift1Id = create.Model.Single(m => m.ShiftIndex == 1).Id;
+        var shift2Id = create.Model.Single(m => m.ShiftIndex == 2).Id;
+
+        var rej = await _contentHandoverService.RejectAsync(shift1Id, 2,
+            new ContentHandoverDecisionModel { DecisionComment = "no" });
+        Assert.That(rej.Success, Is.True);
+
+        var reloaded1 = await TimePlanningPnDbContext.PlanRegistrationContentHandoverRequests.FindAsync(shift1Id);
+        var reloaded2 = await TimePlanningPnDbContext.PlanRegistrationContentHandoverRequests.FindAsync(shift2Id);
+        Assert.That(reloaded1.Status, Is.EqualTo(HandoverRequestStatus.Rejected));
+        Assert.That(reloaded2.Status, Is.EqualTo(HandoverRequestStatus.Pending));
+
+        // Shift 1 still on source (not moved).
+        var s = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(source.Id);
+        Assert.That(s.PlannedEndOfShift1, Is.EqualTo(12 * 60));
     }
 }

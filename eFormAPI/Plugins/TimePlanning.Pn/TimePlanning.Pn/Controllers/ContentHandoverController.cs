@@ -39,8 +39,8 @@ public class ContentHandoverController(IContentHandoverService contentHandoverSe
 
     [HttpPost]
     [Route("plan-registrations/{id}/handover-requests")]
-    public async Task<OperationDataResult<ContentHandoverRequestModel>> Create(
-        int id, 
+    public async Task<OperationDataResult<System.Collections.Generic.List<ContentHandoverRequestModel>>> Create(
+        int id,
         [FromBody] ContentHandoverRequestCreateModel model)
     {
         return await _contentHandoverService.CreateAsync(id, model);
