@@ -496,6 +496,19 @@ public class ContentHandoverServiceTests : TestBaseSetup
 
     private async Task<(PlanRegistration source, PlanRegistration target)> SeedPartialShiftPairAsync(DateTime date)
     {
+        // Accept path recomputes derived fields via PlanRegistrationHelper, which
+        // requires an AssignedSite row per SdkSitId. Seed both before the plan rows.
+        if (!await TimePlanningPnDbContext.AssignedSites.AnyAsync(a => a.SiteId == 1))
+        {
+            await new AssignedSite { SiteId = 1, CreatedByUserId = 1, UpdatedByUserId = 1 }
+                .Create(TimePlanningPnDbContext);
+        }
+        if (!await TimePlanningPnDbContext.AssignedSites.AnyAsync(a => a.SiteId == 2))
+        {
+            await new AssignedSite { SiteId = 2, CreatedByUserId = 1, UpdatedByUserId = 1 }
+                .Create(TimePlanningPnDbContext);
+        }
+
         var source = new PlanRegistration
         {
             Date = date,
