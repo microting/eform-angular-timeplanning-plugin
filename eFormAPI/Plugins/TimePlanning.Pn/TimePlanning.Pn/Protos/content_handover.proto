@@ -11,6 +11,7 @@ message CreateContentHandoverRequest {
   int32 to_sdk_site_id = 2;
   string request_comment = 3;
   DeviceMetadata device = 4;
+  repeated int32 shift_indices = 5;
 }
 
 message ContentHandoverDecisionRequest {
@@ -43,12 +44,14 @@ message ContentHandoverRequestModel {
   string responded_at_utc = 9;
   string request_comment = 10;
   string decision_comment = 11;
+  int32 shift_index = 12;
 }
 
 message ContentHandoverResponse {
   bool success = 1;
   string message = 2;
   ContentHandoverRequestModel model = 3;
+  repeated ContentHandoverRequestModel models = 4;
 }
 
 message ContentHandoverListResponse {
@@ -60,6 +63,7 @@ message ContentHandoverListResponse {
 message GetHandoverEligibleCoworkersRequest {
   string date = 1;
   DeviceMetadata device = 2;
+  repeated int32 shift_indices = 3;
 }
 
 message HandoverCoworker {

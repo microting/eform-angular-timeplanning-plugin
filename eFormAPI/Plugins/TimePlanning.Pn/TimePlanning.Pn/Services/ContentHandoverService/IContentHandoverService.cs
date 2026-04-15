@@ -33,7 +33,8 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
 public interface IContentHandoverService
 {
-    Task<OperationDataResult<ContentHandoverRequestModel>> CreateAsync(int fromPlanRegistrationId, ContentHandoverRequestCreateModel model);
+    Task<OperationDataResult<List<ContentHandoverRequestModel>>> CreateAsync(int fromPlanRegistrationId, ContentHandoverRequestCreateModel model);
+    Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date, List<int> shiftIndices);
     Task<OperationResult> AcceptAsync(int requestId, int currentSdkSitId, ContentHandoverDecisionModel model);
     Task<OperationResult> RejectAsync(int requestId, int currentSdkSitId, ContentHandoverDecisionModel model);
     Task<OperationResult> CancelAsync(int requestId, int currentSdkSitId);

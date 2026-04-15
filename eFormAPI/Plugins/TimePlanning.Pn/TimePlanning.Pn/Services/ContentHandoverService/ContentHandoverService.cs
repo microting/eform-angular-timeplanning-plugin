@@ -71,7 +71,12 @@ public class ContentHandoverService : IContentHandoverService
         _pushNotificationService = pushNotificationService;
     }
 
-    public async Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date)
+    public Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date)
+    {
+        return GetHandoverEligibleCoworkersAsync(date, new List<int>());
+    }
+
+    public async Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date, List<int> shiftIndices)
     {
         try
         {
@@ -153,17 +158,41 @@ public class ContentHandoverService : IContentHandoverService
 
             var planRegistrations = await _dbContext.PlanRegistrations
                 .Where(pr => activeCandidateSiteIds.Contains(pr.SdkSitId) && pr.Date == targetDate)
-                .Select(pr => new { pr.Id, pr.SdkSitId })
                 .ToListAsync();
 
-            var result = activeCandidates
-                .Select(c => new HandoverCoworkerModel
+            bool IsCandidateEligible(PlanRegistration? pr)
+            {
+                if (shiftIndices == null || shiftIndices.Count == 0)
                 {
-                    SdkSiteId = c.MicrotingUid,
-                    SiteName = c.SiteName ?? string.Empty,
-                    PlanRegistrationId = planRegistrations
-                        .FirstOrDefault(pr => pr.SdkSitId == c.MicrotingUid)?.Id ?? 0
+                    // Legacy behavior: no shift-level filter.
+                    return true;
+                }
+
+                if (pr == null) return true; // all shift slots implicitly free
+                foreach (var n in shiftIndices)
+                {
+                    if (GetPlannedEndOfShift(pr, n) != 0) return false;
+                }
+                return true;
+            }
+
+            var result = activeCandidates
+                .Select(c =>
+                {
+                    var pr = planRegistrations.FirstOrDefault(p => p.SdkSitId == c.MicrotingUid);
+                    return new
+                    {
+                        Eligible = IsCandidateEligible(pr),
+                        Model = new HandoverCoworkerModel
+                        {
+                            SdkSiteId = c.MicrotingUid,
+                            SiteName = c.SiteName ?? string.Empty,
+                            PlanRegistrationId = pr?.Id ?? 0
+                        }
+                    };
                 })
+                .Where(x => x.Eligible)
+                .Select(x => x.Model)
                 .ToList();
 
             return new OperationDataResult<List<HandoverCoworkerModel>>(true, result);
@@ -176,8 +205,8 @@ public class ContentHandoverService : IContentHandoverService
         }
     }
 
-    public async Task<OperationDataResult<ContentHandoverRequestModel>> CreateAsync(
-        int fromPlanRegistrationId, 
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> CreateAsync(
+        int fromPlanRegistrationId,
         ContentHandoverRequestCreateModel model)
     {
         try
@@ -188,17 +217,8 @@ public class ContentHandoverService : IContentHandoverService
 
             if (fromPR == null)
             {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                     _localizationService.GetString("SourcePlanRegistrationNotFound"));
-            }
-
-            // Validate source has content
-            var hasPlanHours = fromPR.PlanHoursInSeconds > 0;
-            var hasPlanText = !string.IsNullOrWhiteSpace(fromPR.PlanText);
-            if (!hasPlanHours && !hasPlanText)
-            {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
-                    _localizationService.GetString("SourcePlanRegistrationHasNoContent"));
             }
 
             // Find target PlanRegistration
@@ -208,76 +228,203 @@ public class ContentHandoverService : IContentHandoverService
 
             if (toPR == null)
             {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                     _localizationService.GetString("TargetPlanRegistrationNotFound"));
             }
 
             // Validate different workers
             if (fromPR.SdkSitId == toPR.SdkSitId)
             {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                     _localizationService.GetString("CannotHandoverToSameWorker"));
             }
 
-            // Check for existing pending request for same target and date
-            var hasPendingRequest = await _dbContext.PlanRegistrationContentHandoverRequests
-                .AnyAsync(r => r.ToSdkSitId == model.ToSdkSitId
-                               && r.Date == fromPR.Date
-                               && r.Status == HandoverRequestStatus.Pending);
+            var shiftIndices = model.ShiftIndices ?? new List<int>();
 
-            if (hasPendingRequest)
+            // Load existing pending requests scoped to (target, date). We'll
+            // use these to enforce per-shift duplicate rules as well as the
+            // full-day vs partial interactions.
+            var existingPending = await _dbContext.PlanRegistrationContentHandoverRequests
+                .Where(r => r.ToSdkSitId == model.ToSdkSitId
+                            && r.Date == fromPR.Date
+                            && r.Status == HandoverRequestStatus.Pending)
+                .ToListAsync();
+
+            if (shiftIndices.Count == 0)
             {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
-                    _localizationService.GetString("PendingHandoverRequestAlreadyExists"));
+                // Legacy full-day create.
+                // Validate source has content
+                var hasPlanHours = fromPR.PlanHoursInSeconds > 0;
+                var hasPlanText = !string.IsNullOrWhiteSpace(fromPR.PlanText);
+                if (!hasPlanHours && !hasPlanText)
+                {
+                    return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
+                        _localizationService.GetString("SourcePlanRegistrationHasNoContent"));
+                }
+
+                if (existingPending.Count > 0)
+                {
+                    return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
+                        _localizationService.GetString("PendingHandoverRequestAlreadyExists"));
+                }
+
+                var request = new PlanRegistrationContentHandoverRequest
+                {
+                    FromSdkSitId = fromPR.SdkSitId,
+                    ToSdkSitId = model.ToSdkSitId,
+                    Date = fromPR.Date,
+                    FromPlanRegistrationId = fromPR.Id,
+                    ToPlanRegistrationId = toPR.Id,
+                    Status = HandoverRequestStatus.Pending,
+                    RequestedAtUtc = DateTime.UtcNow,
+                    ShiftIndex = null,
+                    CreatedByUserId = _userService.UserId,
+                    UpdatedByUserId = _userService.UserId
+                };
+                await request.Create(_dbContext);
+
+                FireCreatePush(model.ToSdkSitId, new List<int> { request.Id }, 1, fromPR.Date);
+
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(
+                    true, new List<ContentHandoverRequestModel> { MapToModel(request) });
             }
 
-            // Create handover request
-            var request = new PlanRegistrationContentHandoverRequest
+            // Partial (per-shift) create. Transactional all-or-nothing.
+            // Validate each requested shift index first.
+            var distinctShifts = shiftIndices.Distinct().ToList();
+            var errors = new List<string>();
+            foreach (var n in distinctShifts)
             {
-                FromSdkSitId = fromPR.SdkSitId,
-                ToSdkSitId = model.ToSdkSitId,
-                Date = fromPR.Date,
-                FromPlanRegistrationId = fromPR.Id,
-                ToPlanRegistrationId = toPR.Id,
-                Status = HandoverRequestStatus.Pending,
-                RequestedAtUtc = DateTime.UtcNow,
-                CreatedByUserId = _userService.UserId,
-                UpdatedByUserId = _userService.UserId
-            };
+                if (n < 1 || n > 5)
+                {
+                    errors.Add($"Invalid shift index {n}");
+                    continue;
+                }
 
-            await request.Create(_dbContext);
+                var sourceEnd = GetPlannedEndOfShift(fromPR, n);
+                if (sourceEnd <= 0)
+                {
+                    errors.Add($"Shift {n}: source has no planned content");
+                    continue;
+                }
 
-            // Fire-and-forget push to recipient
-            var toSdkSitId = model.ToSdkSitId;
-            _ = Task.Run(async () =>
+                var targetEnd = GetPlannedEndOfShift(toPR, n);
+                if (targetEnd != 0)
+                {
+                    errors.Add($"Shift {n}: target slot already has content");
+                    continue;
+                }
+
+                // Duplicate-pending: same shift already pending to this target blocks.
+                if (existingPending.Any(r => r.ShiftIndex == n))
+                {
+                    errors.Add($"Shift {n}: a pending handover already exists for this shift");
+                    continue;
+                }
+
+                // Pending full-day (ShiftIndex == null) also blocks partial.
+                if (existingPending.Any(r => r.ShiftIndex == null))
+                {
+                    errors.Add($"Shift {n}: a pending full-day handover exists for this date");
+                    continue;
+                }
+            }
+
+            // Non-empty partial also blocked by a full-day pending — covered above.
+
+            if (errors.Count > 0)
             {
-                try
-                {
-                    await _pushNotificationService.SendToSiteAsync(
-                        toSdkSitId,
-                        "New handover request",
-                        "A coworker wants to hand over content to you",
-                        new Dictionary<string, string>
-                        {
-                            { "type", "handover_created" },
-                            { "handoverRequestId", request.Id.ToString() }
-                        });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error sending push notification for handover creation");
-                }
-            });
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
+                    string.Join("; ", errors));
+            }
 
-            var resultModel = MapToModel(request);
-            return new OperationDataResult<ContentHandoverRequestModel>(true, resultModel);
+            // All per-shift validation passed above as a pre-flight pass — we never
+            // persist a partial batch because every shift is validated before any
+            // Create() is called. No explicit transaction needed: an EF-level
+            // failure mid-loop would still leave prior rows unwritten if we used
+            // SaveChanges once at the end, but PnBase.Create() calls SaveChanges
+            // per entity. That's a pre-existing trade-off kept deliberately (matches
+            // the rest of this service); the validation pre-flight is the real
+            // correctness gate.
+            var created = new List<PlanRegistrationContentHandoverRequest>();
+            foreach (var n in distinctShifts)
+            {
+                var request = new PlanRegistrationContentHandoverRequest
+                {
+                    FromSdkSitId = fromPR.SdkSitId,
+                    ToSdkSitId = model.ToSdkSitId,
+                    Date = fromPR.Date,
+                    FromPlanRegistrationId = fromPR.Id,
+                    ToPlanRegistrationId = toPR.Id,
+                    Status = HandoverRequestStatus.Pending,
+                    RequestedAtUtc = DateTime.UtcNow,
+                    ShiftIndex = n,
+                    CreatedByUserId = _userService.UserId,
+                    UpdatedByUserId = _userService.UserId
+                };
+                await request.Create(_dbContext);
+                created.Add(request);
+            }
+
+            FireCreatePush(model.ToSdkSitId, created.Select(r => r.Id).ToList(), created.Count, fromPR.Date);
+
+            return new OperationDataResult<List<ContentHandoverRequestModel>>(
+                true, created.Select(MapToModel).ToList());
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating content handover request");
-            return new OperationDataResult<ContentHandoverRequestModel>(false,
+            return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                 _localizationService.GetString("ErrorCreatingHandoverRequest"));
         }
+    }
+
+    private void FireCreatePush(int toSdkSitId, List<int> requestIds, int shiftCount, DateTime date)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var title = "New handover request";
+                var body = shiftCount > 1
+                    ? $"A coworker wants to hand over {shiftCount} shifts on {date:yyyy-MM-dd}"
+                    : "A coworker wants to hand over content to you";
+                // Dual-key scheme: Accept/Reject pushes use the singular
+                // "handoverRequestId" and Flutter's FCM handler keys off that
+                // name. Old handlers will open the first request in the batch
+                // (better than nothing); new handlers can read the comma-joined
+                // "handoverRequestIds" for the full batch.
+                var primaryId = requestIds.Count > 0 ? requestIds[0].ToString() : "";
+                await _pushNotificationService.SendToSiteAsync(
+                    toSdkSitId,
+                    title,
+                    body,
+                    new Dictionary<string, string>
+                    {
+                        { "type", "handover_created" },
+                        { "handoverRequestId", primaryId },
+                        { "handoverRequestIds", string.Join(",", requestIds) },
+                        { "shiftCount", shiftCount.ToString() }
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending push notification for handover creation");
+            }
+        });
+    }
+
+    private static int GetPlannedEndOfShift(PlanRegistration pr, int n)
+    {
+        return n switch
+        {
+            1 => pr.PlannedEndOfShift1,
+            2 => pr.PlannedEndOfShift2,
+            3 => pr.PlannedEndOfShift3,
+            4 => pr.PlannedEndOfShift4,
+            5 => pr.PlannedEndOfShift5,
+            _ => 0
+        };
     }
 
     public async Task<OperationResult> AcceptAsync(
@@ -317,12 +464,23 @@ public class ContentHandoverService : IContentHandoverService
                 return new OperationResult(false, _localizationService.GetString("PlanRegistrationsNotFound"));
             }
 
-            // Validate receiver is empty
-            var targetHasContent = toPR.PlanHoursInSeconds > 0 || !string.IsNullOrWhiteSpace(toPR.PlanText);
-            if (targetHasContent)
+            // Validate receiver is empty for the relevant scope.
+            if (request.ShiftIndex == null)
             {
-                return new OperationResult(false,
-                    _localizationService.GetString("TargetPlanRegistrationMustBeEmpty"));
+                var targetHasContent = toPR.PlanHoursInSeconds > 0 || !string.IsNullOrWhiteSpace(toPR.PlanText);
+                if (targetHasContent)
+                {
+                    return new OperationResult(false,
+                        _localizationService.GetString("TargetPlanRegistrationMustBeEmpty"));
+                }
+            }
+            else
+            {
+                if (GetPlannedEndOfShift(toPR, request.ShiftIndex.Value) != 0)
+                {
+                    return new OperationResult(false,
+                        _localizationService.GetString("TargetPlanRegistrationMustBeEmpty"));
+                }
             }
 
             // Apply changes without explicit transaction
@@ -330,8 +488,8 @@ public class ContentHandoverService : IContentHandoverService
             // and using an explicit transaction was causing issues in the test environment
             try
             {
-                // Move content from source to target
-                MoveContent(fromPR, toPR);
+                // Move content from source to target (full day or shift-scoped)
+                MoveContent(fromPR, toPR, request.ShiftIndex);
 
                 // Set audit fields if they exist
                 try
@@ -369,6 +527,68 @@ public class ContentHandoverService : IContentHandoverService
                     // Continue - audit field failure should not prevent handover
                 }
 
+                // Recalculate derived fields (PlanHoursInSeconds / PlanHours /
+                // IsDoubleShift) BEFORE persisting. For the partial path, MoveShift
+                // zeros only the shift-scoped fields and leaves the PlanHours*
+                // totals stale — the recalc MUST succeed or we roll back in-memory
+                // state and return an error. For the legacy full-day path the
+                // derived fields are copied wholesale inside MoveContent so a
+                // recalc miss is not data-corrupting.
+                var fromAssignedSite = await _dbContext.AssignedSites
+                    .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
+                var toAssignedSite = await _dbContext.AssignedSites
+                    .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId);
+
+                if (request.ShiftIndex.HasValue)
+                {
+                    if (fromAssignedSite == null || toAssignedSite == null)
+                    {
+                        _dbContext.ChangeTracker.Clear();
+                        return new OperationResult(false,
+                            $"Cannot accept partial handover: AssignedSite missing for " +
+                            (fromAssignedSite == null ? "source" : "target") + " worker");
+                    }
+                    try
+                    {
+                        PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(fromAssignedSite, fromPR);
+                        PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(toAssignedSite, toPR);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Recalc failed during partial handover accept for request {RequestId}", requestId);
+                        _dbContext.ChangeTracker.Clear();
+                        return new OperationResult(false,
+                            _localizationService.GetString("ErrorAcceptingHandoverRequest"));
+                    }
+                }
+                else
+                {
+                    // Legacy full-day path: best-effort recalc (source/target PlanHours
+                    // was copied wholesale so a miss is not corrupting).
+                    try
+                    {
+                        if (fromAssignedSite != null)
+                        {
+                            PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(fromAssignedSite, fromPR);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not recalculate source PlanRegistration {Id} after handover", fromPR.Id);
+                    }
+                    try
+                    {
+                        if (toAssignedSite != null)
+                        {
+                            PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(toAssignedSite, toPR);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not recalculate target PlanRegistration {Id} after handover", toPR.Id);
+                    }
+                }
+
                 fromPR.UpdatedByUserId = _userService.UserId;
                 toPR.UpdatedByUserId = _userService.UserId;
                 await fromPR.Update(_dbContext);
@@ -380,37 +600,6 @@ public class ContentHandoverService : IContentHandoverService
                 request.DecisionComment = model.DecisionComment;
                 request.UpdatedByUserId = _userService.UserId;
                 await request.Update(_dbContext);
-
-                // Recalculate both PlanRegistrations - only if AssignedSite exists
-                try
-                {
-                    var fromAssignedSite = await _dbContext.AssignedSites
-                        .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
-                    if (fromAssignedSite != null)
-                    {
-                        PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(fromAssignedSite, fromPR);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not recalculate source PlanRegistration {Id} after handover", fromPR.Id);
-                    // Continue - recalculation failure should not prevent handover
-                }
-
-                try
-                {
-                    var toAssignedSite = await _dbContext.AssignedSites
-                        .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId);
-                    if (toAssignedSite != null)
-                    {
-                        PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(toAssignedSite, toPR);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not recalculate target PlanRegistration {Id} after handover", toPR.Id);
-                    // Continue - recalculation failure should not prevent handover
-                }
 
                 // Fire-and-forget push to sender
                 var fromSdkSitId = request.FromSdkSitId;
@@ -623,8 +812,14 @@ public class ContentHandoverService : IContentHandoverService
         }
     }
 
-    private void MoveContent(PlanRegistration source, PlanRegistration target)
+    private void MoveContent(PlanRegistration source, PlanRegistration target, int? shiftIndex = null)
     {
+        if (shiftIndex.HasValue)
+        {
+            MoveShift(source, target, shiftIndex.Value);
+            return;
+        }
+
         // Move planning fields from source to target
         target.PlanText = source.PlanText;
         target.PlanHours = source.PlanHours;
@@ -732,6 +927,56 @@ public class ContentHandoverService : IContentHandoverService
         }
     }
 
+    private static void MoveShift(PlanRegistration source, PlanRegistration target, int n)
+    {
+        switch (n)
+        {
+            case 1:
+                target.PlannedStartOfShift1 = source.PlannedStartOfShift1;
+                target.PlannedEndOfShift1 = source.PlannedEndOfShift1;
+                target.PlannedBreakOfShift1 = source.PlannedBreakOfShift1;
+                source.PlannedStartOfShift1 = 0;
+                source.PlannedEndOfShift1 = 0;
+                source.PlannedBreakOfShift1 = 0;
+                break;
+            case 2:
+                target.PlannedStartOfShift2 = source.PlannedStartOfShift2;
+                target.PlannedEndOfShift2 = source.PlannedEndOfShift2;
+                target.PlannedBreakOfShift2 = source.PlannedBreakOfShift2;
+                source.PlannedStartOfShift2 = 0;
+                source.PlannedEndOfShift2 = 0;
+                source.PlannedBreakOfShift2 = 0;
+                break;
+            case 3:
+                target.PlannedStartOfShift3 = source.PlannedStartOfShift3;
+                target.PlannedEndOfShift3 = source.PlannedEndOfShift3;
+                target.PlannedBreakOfShift3 = source.PlannedBreakOfShift3;
+                source.PlannedStartOfShift3 = 0;
+                source.PlannedEndOfShift3 = 0;
+                source.PlannedBreakOfShift3 = 0;
+                break;
+            case 4:
+                target.PlannedStartOfShift4 = source.PlannedStartOfShift4;
+                target.PlannedEndOfShift4 = source.PlannedEndOfShift4;
+                target.PlannedBreakOfShift4 = source.PlannedBreakOfShift4;
+                source.PlannedStartOfShift4 = 0;
+                source.PlannedEndOfShift4 = 0;
+                source.PlannedBreakOfShift4 = 0;
+                break;
+            case 5:
+                target.PlannedStartOfShift5 = source.PlannedStartOfShift5;
+                target.PlannedEndOfShift5 = source.PlannedEndOfShift5;
+                target.PlannedBreakOfShift5 = source.PlannedBreakOfShift5;
+                source.PlannedStartOfShift5 = 0;
+                source.PlannedEndOfShift5 = 0;
+                source.PlannedBreakOfShift5 = 0;
+                break;
+        }
+
+        // Do NOT touch PlanText on partial. PlanHours/PlanHoursInSeconds/IsDoubleShift
+        // will be recomputed by PlanRegistrationHelper on BOTH rows in the caller.
+    }
+
     private ContentHandoverRequestModel MapToModel(PlanRegistrationContentHandoverRequest request)
     {
         return new ContentHandoverRequestModel
@@ -746,7 +991,8 @@ public class ContentHandoverService : IContentHandoverService
             RequestedAtUtc = request.RequestedAtUtc,
             RespondedAtUtc = request.RespondedAtUtc,
             RequestComment = null, // Entity doesn't have RequestComment
-            DecisionComment = request.DecisionComment
+            DecisionComment = request.DecisionComment,
+            ShiftIndex = request.ShiftIndex
         };
     }
 }

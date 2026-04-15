@@ -27,7 +27,8 @@ public class TimePlanningContentHandoverGrpcService
             var model = new ContentHandoverRequestCreateModel
             {
                 ToSdkSitId = request.ToSdkSiteId,
-                RequestComment = request.RequestComment
+                RequestComment = request.RequestComment,
+                ShiftIndices = new System.Collections.Generic.List<int>(request.ShiftIndices)
             };
 
             var result = await _contentHandoverService.CreateAsync(request.FromPlanRegistrationId, model);
@@ -40,7 +41,19 @@ public class TimePlanningContentHandoverGrpcService
 
             if (result.Success && result.Model != null)
             {
-                response.Model = MapToGrpc(result.Model);
+                // Populate BOTH `model` (first row) for legacy/ancient clients AND
+                // `models` (full list) for new clients. For the single-row legacy
+                // full-day path this is a list of one; for partial multi-shift it
+                // is the N created rows and `model` is the first as a defensive
+                // fallback.
+                foreach (var item in result.Model)
+                {
+                    response.Models.Add(MapToGrpc(item));
+                }
+                if (result.Model.Count > 0)
+                {
+                    response.Model = MapToGrpc(result.Model[0]);
+                }
             }
 
             return response;
@@ -222,7 +235,8 @@ public class TimePlanningContentHandoverGrpcService
                 };
             }
 
-            var result = await _contentHandoverService.GetHandoverEligibleCoworkersAsync(parsedDate);
+            var shiftIndices = new System.Collections.Generic.List<int>(request.ShiftIndices);
+            var result = await _contentHandoverService.GetHandoverEligibleCoworkersAsync(parsedDate, shiftIndices);
 
             var response = new GetHandoverEligibleCoworkersResponse
             {
@@ -269,7 +283,8 @@ public class TimePlanningContentHandoverGrpcService
             RequestedAtUtc = m.RequestedAtUtc.ToString("yyyy-MM-ddTHH:mm:ss"),
             RespondedAtUtc = m.RespondedAtUtc?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
             RequestComment = m.RequestComment ?? "",
-            DecisionComment = m.DecisionComment ?? ""
+            DecisionComment = m.DecisionComment ?? "",
+            ShiftIndex = m.ShiftIndex ?? 0
         };
     }
 }

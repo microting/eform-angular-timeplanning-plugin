@@ -25,8 +25,11 @@ SOFTWARE.
 #nullable enable
 namespace TimePlanning.Pn.Infrastructure.Models.ContentHandover;
 
+using System.Collections.Generic;
+
 public class ContentHandoverRequestCreateModel
 {
     public int ToSdkSitId { get; set; }
     public string? RequestComment { get; set; }
+    public List<int> ShiftIndices { get; set; } = new();
 }
