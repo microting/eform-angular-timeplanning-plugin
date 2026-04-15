@@ -76,7 +76,7 @@ Total: 33 classes (8 SDK-heavy + 25 non-SDK). 243 tests split across 8 jobs.
 
 ### Filter strings
 
-Each shard's `filter` value is `FullyQualifiedName~Cls1|FullyQualifiedName~Cls2|...`. The concrete strings are committed into the workflow YAML verbatim (see Implementation section for the eight filter lines).
+Each shard's `filter` value is `FullyQualifiedName=TimePlanning.Pn.Test.Cls1|FullyQualifiedName=TimePlanning.Pn.Test.Cls2|...` (exact match, per the rationale above). The concrete strings are committed into the workflow YAML verbatim.
 
 ## Isolation
 
