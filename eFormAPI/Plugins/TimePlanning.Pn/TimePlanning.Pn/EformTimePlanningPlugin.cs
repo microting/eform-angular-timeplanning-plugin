@@ -178,7 +178,7 @@ public class EformTimePlanningPlugin : IEformPlugin
 
         _connectionString = connectionString;
         services.AddSingleton<ITimePlanningDbContextHelper>(provider => new TimePlanningDbContextHelper(_connectionString));
-        services.AddDbContext<TimePlanningPnDbContext>(o =>
+        services.AddDbContextPool<TimePlanningPnDbContext>(o =>
             o.UseMySql(connectionString, new MariaDbServerVersion(
                 ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
             {
