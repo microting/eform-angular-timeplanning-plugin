@@ -176,24 +176,11 @@ public class EformTimePlanningPlugin : IEformPlugin
         }
 
 
-        var frontendBaseConnectionString = connectionString.Replace(
-            "eform-angular-time-planning-plugin",
-            "Angular");
-
         _connectionString = connectionString;
         services.AddSingleton<ITimePlanningDbContextHelper>(provider => new TimePlanningDbContextHelper(_connectionString));
         services.AddDbContext<TimePlanningPnDbContext>(o =>
             o.UseMySql(connectionString, new MariaDbServerVersion(
                 ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
-            {
-                builder.EnableRetryOnFailure();
-                builder.MigrationsAssembly(PluginAssembly().FullName);
-            }));
-
-
-        services.AddDbContext<BaseDbContext>(
-            o => o.UseMySql(frontendBaseConnectionString, new MariaDbServerVersion(
-                ServerVersion.AutoDetect(frontendBaseConnectionString)), mySqlOptionsAction: builder =>
             {
                 builder.EnableRetryOnFailure();
                 builder.MigrationsAssembly(PluginAssembly().FullName);
