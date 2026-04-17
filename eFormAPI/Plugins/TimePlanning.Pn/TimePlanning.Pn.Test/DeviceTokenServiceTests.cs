@@ -2,7 +2,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microting.TimePlanningBase.Infrastructure.Data;
 using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Services.DeviceTokenService;
@@ -10,28 +9,18 @@ using TimePlanning.Pn.Services.DeviceTokenService;
 namespace TimePlanning.Pn.Test;
 
 [TestFixture]
-public class DeviceTokenServiceTests
+public class DeviceTokenServiceTests : TestBaseSetup
 {
-    private TimePlanningPnDbContext _dbContext = null!;
     private DeviceTokenService _service = null!;
 
     [SetUp]
-    public void SetUp()
+    public async Task SetUp()
     {
-        var options = new DbContextOptionsBuilder<TimePlanningPnDbContext>()
-            .UseInMemoryDatabase(databaseName: $"DeviceTokenTestDb_{TestContext.CurrentContext.Test.Name}")
-            .Options;
-        _dbContext = new TimePlanningPnDbContext(options);
-        _service = new DeviceTokenService(
-            _dbContext,
-            Substitute.For<ILogger<DeviceTokenService>>());
-    }
+        await base.Setup();
 
-    [TearDown]
-    public void TearDown()
-    {
-        _dbContext.Database.EnsureDeleted();
-        _dbContext.Dispose();
+        _service = new DeviceTokenService(
+            TimePlanningPnDbContext!,
+            Substitute.For<ILogger<DeviceTokenService>>());
     }
 
     [Test]
@@ -41,7 +30,7 @@ public class DeviceTokenServiceTests
 
         Assert.That(result.Success, Is.True);
 
-        var stored = await _dbContext.DeviceTokens.SingleAsync();
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.SingleAsync();
         Assert.That(stored.SdkSiteId, Is.EqualTo(42));
         Assert.That(stored.Token, Is.EqualTo("fcm-token-abc"));
         Assert.That(stored.Platform, Is.EqualTo("android"));
@@ -55,9 +44,9 @@ public class DeviceTokenServiceTests
         var result = await _service.RegisterAsync(2, "dup-token", "ios");
 
         Assert.That(result.Success, Is.True);
-        Assert.That(await _dbContext.DeviceTokens.CountAsync(), Is.EqualTo(1));
+        Assert.That(await TimePlanningPnDbContext!.DeviceTokens.CountAsync(), Is.EqualTo(1));
 
-        var stored = await _dbContext.DeviceTokens.SingleAsync();
+        var stored = await TimePlanningPnDbContext.DeviceTokens.SingleAsync();
         Assert.That(stored.SdkSiteId, Is.EqualTo(2));
         Assert.That(stored.Platform, Is.EqualTo("ios"));
     }
@@ -66,7 +55,7 @@ public class DeviceTokenServiceTests
     public async Task UnregisterAsync_ExistingToken_IsRemoved()
     {
         await _service.RegisterAsync(1, "remove-me", "android");
-        Assert.That(await _dbContext.DeviceTokens.CountAsync(), Is.EqualTo(1));
+        Assert.That(await TimePlanningPnDbContext!.DeviceTokens.CountAsync(), Is.EqualTo(1));
 
         var result = await _service.UnregisterAsync("remove-me");
 
