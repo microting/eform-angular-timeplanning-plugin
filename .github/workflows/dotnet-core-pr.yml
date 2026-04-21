@@ -71,7 +71,7 @@ jobs:
           echo "To enable unit tests, ensure Jest is configured in the frontend repository."
           exit 0
         fi
-        
+
         # Run Jest tests for time-planning-pn plugin
         echo "Running Jest tests for time-planning-pn plugin..."
         npm run test:unit -- --testPathPatterns=time-planning-pn --coverage --collectCoverageFrom='src/app/plugins/modules/time-planning-pn/**/*.ts' --coveragePathIgnorePatterns='\.spec\.ts$'
@@ -193,6 +193,26 @@ jobs:
         retention-days: 2
   test-dotnet:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - name: a
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.AbsenceRequestServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.CanaryInAColeMine"
+          - name: b
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PictureSnapshotServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.ContentHandoverServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.DanLonFileExporterTests|FullyQualifiedName=TimePlanning.Pn.Test.DataLonFileExporterTests"
+          - name: c
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanningServiceMultiShiftTests|FullyQualifiedName=TimePlanning.Pn.Test.DeviceTokenServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GpsCoordinateServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayDayTypeRuleServiceTests"
+          - name: d
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationVersionHistoryTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayTierRuleServiceTests"
+          - name: e
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PushNotificationIntegrationTests|FullyQualifiedName=TimePlanning.Pn.Test.PayTimeBandRuleServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperComputationTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperHolidayTests"
+          - name: f
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceExtendedTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperReadBySiteAndDateTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperTests|FullyQualifiedName=TimePlanning.Pn.Test.PushNotificationServiceTests"
+          - name: g
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServicePhoneNumberTests|FullyQualifiedName=TimePlanning.Pn.Test.TimePlanningWorkingHoursExportTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAbsenceRequestGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAuthGrpcServiceTests"
+          - name: h
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningContentHandoverGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningPlanningsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningSettingsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningWorkingHoursGrpcServiceTests"
     steps:
     - uses: actions/checkout@v3
     - name: Create docker network
@@ -213,5 +233,18 @@ jobs:
         dotnet-version: 10.0.x
     - name: Build
       run: dotnet build eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.sln
-    - name: Unit Tests
-      run: dotnet test --no-restore -c Release -v n --settings eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/test.runsettings eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/TimePlanning.Pn.Test.csproj
+    - name: Unit Tests (shard ${{ matrix.shard.name }})
+      run: dotnet test --no-restore -c Release -v n --settings eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/test.runsettings --filter "${{ matrix.shard.filter }}" eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/TimePlanning.Pn.Test.csproj
+  test-dotnet-gate:
+    needs: test-dotnet
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Verify all shards passed
+      env:
+        SHARD_RESULT: ${{ needs.test-dotnet.result }}
+      run: |
+        if [ "$SHARD_RESULT" != "success" ]; then
+          echo "test-dotnet matrix result: $SHARD_RESULT"
+          exit 1
+        fi
