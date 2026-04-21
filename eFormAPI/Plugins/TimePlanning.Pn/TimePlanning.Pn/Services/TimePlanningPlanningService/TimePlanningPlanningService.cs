@@ -89,6 +89,29 @@ public class TimePlanningPlanningService(
                 var eFormAdminsGroup = userSecurityGroups
                     .Any(x => x.SecurityGroup.Name == "eForm admins");
                 isAdmin = eFormAdminsGroup;
+                if (!isAdmin)
+                {
+                    var isEformUsersGroup = userSecurityGroups
+                        .Any(x => x.SecurityGroup.Name == "eForm users");
+                    var isKunTidGroup = userSecurityGroups
+                        .Any(x => x.SecurityGroup.Name == "Kun tid");
+                    if (isEformUsersGroup && !isKunTidGroup)
+                    {
+                        // Fallback: when no user in the system is configured as a manager,
+                        // grant "eForm users" members the admin-for-visibility view on this
+                        // endpoint so the planning dashboard isn't empty in that degenerate
+                        // state. Users also in "Kun tid" (time-registration device users with
+                        // WebAccess) are explicitly excluded and stay restricted to own site.
+                        var anyManagerExists = await dbContext.AssignedSites
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .AnyAsync(x => x.IsManager)
+                            .ConfigureAwait(false);
+                        if (!anyManagerExists)
+                        {
+                            isAdmin = true;
+                        }
+                    }
+                }
             }
 
             if (!isAdmin)
