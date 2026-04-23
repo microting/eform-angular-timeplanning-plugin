@@ -339,4 +339,147 @@ public class TimePlanningContentHandoverGrpcServiceTests
         await _service.Received(1).GetHandoverEligibleCoworkersAsync(
             Arg.Any<DateTime>(), Arg.Any<List<int>>());
     }
+
+    [Test]
+    public async Task GetHandoverEligibleCoworkers_ParsesDartLocalDateTime()
+    {
+        // Dart's toIso8601String() on a local DateTime produces this format — no timezone suffix.
+        // This is what the Flutter app actually sends.
+        DateTime capturedDate = default;
+
+        _service.GetHandoverEligibleCoworkersAsync(
+                Arg.Do<DateTime>(d => capturedDate = d),
+                Arg.Any<List<int>>())
+            .Returns(new OperationDataResult<List<HandoverCoworkerModel>>(
+                true, new List<HandoverCoworkerModel>
+                {
+                    new() { SdkSiteId = 20, SiteName = "Alice", PlanRegistrationId = 200 }
+                }));
+
+        var request = new GetHandoverEligibleCoworkersRequest
+        {
+            Date = "2026-04-23T00:00:00.000",
+            ShiftIndices = { 0 }
+        };
+
+        var response = await _grpcService.GetHandoverEligibleCoworkers(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(capturedDate.Date, Is.EqualTo(new DateTime(2026, 4, 23)));
+    }
+
+    [Test]
+    public async Task GetHandoverEligibleCoworkers_ParsesDartUtcDateTime()
+    {
+        // Dart's toIso8601String() on a UTC DateTime appends "Z".
+        DateTime capturedDate = default;
+
+        _service.GetHandoverEligibleCoworkersAsync(
+                Arg.Do<DateTime>(d => capturedDate = d),
+                Arg.Any<List<int>>())
+            .Returns(new OperationDataResult<List<HandoverCoworkerModel>>(
+                true, new List<HandoverCoworkerModel>
+                {
+                    new() { SdkSiteId = 20, SiteName = "Alice", PlanRegistrationId = 200 }
+                }));
+
+        var request = new GetHandoverEligibleCoworkersRequest
+        {
+            Date = "2026-04-23T00:00:00.000Z",
+            ShiftIndices = { 0 }
+        };
+
+        var response = await _grpcService.GetHandoverEligibleCoworkers(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(capturedDate.Date, Is.EqualTo(new DateTime(2026, 4, 23)));
+    }
+
+    [Test]
+    public async Task GetHandoverEligibleCoworkers_ParsesIso8601WithoutMilliseconds()
+    {
+        DateTime capturedDate = default;
+
+        _service.GetHandoverEligibleCoworkersAsync(
+                Arg.Do<DateTime>(d => capturedDate = d),
+                Arg.Any<List<int>>())
+            .Returns(new OperationDataResult<List<HandoverCoworkerModel>>(
+                true, new List<HandoverCoworkerModel>
+                {
+                    new() { SdkSiteId = 20, SiteName = "Alice", PlanRegistrationId = 200 }
+                }));
+
+        var request = new GetHandoverEligibleCoworkersRequest
+        {
+            Date = "2026-04-23T00:00:00Z",
+            ShiftIndices = { 0 }
+        };
+
+        var response = await _grpcService.GetHandoverEligibleCoworkers(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(capturedDate.Date, Is.EqualTo(new DateTime(2026, 4, 23)));
+    }
+
+    [Test]
+    public async Task GetHandoverEligibleCoworkers_ParsesDateOnly()
+    {
+        DateTime capturedDate = default;
+
+        _service.GetHandoverEligibleCoworkersAsync(
+                Arg.Do<DateTime>(d => capturedDate = d),
+                Arg.Any<List<int>>())
+            .Returns(new OperationDataResult<List<HandoverCoworkerModel>>(
+                true, new List<HandoverCoworkerModel>
+                {
+                    new() { SdkSiteId = 20, SiteName = "Alice", PlanRegistrationId = 200 }
+                }));
+
+        var request = new GetHandoverEligibleCoworkersRequest
+        {
+            Date = "2026-04-23",
+            ShiftIndices = { 0 }
+        };
+
+        var response = await _grpcService.GetHandoverEligibleCoworkers(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(capturedDate.Date, Is.EqualTo(new DateTime(2026, 4, 23)));
+    }
+
+    [Test]
+    public async Task GetHandoverEligibleCoworkers_EmptyString_ReturnsFailure()
+    {
+        var request = new GetHandoverEligibleCoworkersRequest
+        {
+            Date = "",
+            ShiftIndices = { 0 }
+        };
+
+        var response = await _grpcService.GetHandoverEligibleCoworkers(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.False);
+        Assert.That(response.Message, Is.EqualTo("Invalid date"));
+    }
+
+    [Test]
+    public async Task GetHandoverEligibleCoworkers_GarbageString_ReturnsFailure()
+    {
+        var request = new GetHandoverEligibleCoworkersRequest
+        {
+            Date = "not-a-date",
+            ShiftIndices = { 0 }
+        };
+
+        var response = await _grpcService.GetHandoverEligibleCoworkers(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.False);
+        Assert.That(response.Message, Is.EqualTo("Invalid date"));
+    }
 }
