@@ -198,7 +198,6 @@ public class EformTimePlanningPlugin : IEformPlugin
 
     public void Configure(IApplicationBuilder appBuilder)
     {
-        appBuilder.UseRouting();
         appBuilder.UseEndpoints(endpoints =>
         {
             endpoints.MapGrpcService<TimePlanningSettingsGrpcService>();
