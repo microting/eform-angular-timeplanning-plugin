@@ -341,38 +341,13 @@ public class TimePlanningContentHandoverGrpcServiceTests
     }
 
     [Test]
-    public async Task GetHandoverEligibleCoworkers_ParsesDartLocalDateTime()
-    {
-        // Dart's toIso8601String() on a local DateTime produces this format — no timezone suffix.
-        // This is what the Flutter app actually sends.
-        DateTime capturedDate = default;
-
-        _service.GetHandoverEligibleCoworkersAsync(
-                Arg.Do<DateTime>(d => capturedDate = d),
-                Arg.Any<List<int>>())
-            .Returns(new OperationDataResult<List<HandoverCoworkerModel>>(
-                true, new List<HandoverCoworkerModel>
-                {
-                    new() { SdkSiteId = 20, SiteName = "Alice", PlanRegistrationId = 200 }
-                }));
-
-        var request = new GetHandoverEligibleCoworkersRequest
-        {
-            Date = "2026-04-23T00:00:00.000",
-            ShiftIndices = { 0 }
-        };
-
-        var response = await _grpcService.GetHandoverEligibleCoworkers(
-            request, TestServerCallContextFactory.Create());
-
-        Assert.That(response.Success, Is.True);
-        Assert.That(capturedDate.Date, Is.EqualTo(new DateTime(2026, 4, 23)));
-    }
-
-    [Test]
     public async Task GetHandoverEligibleCoworkers_ParsesDartUtcDateTime()
     {
-        // Dart's toIso8601String() on a UTC DateTime appends "Z".
+        // This is the EXACT string Dart's DateTime.utc(2026,4,23).toIso8601String()
+        // produces. All dates in transport are UTC, so this is the only format
+        // the Flutter app should ever send. The Dart test in
+        // content_handover_service_test.dart asserts this same string.
+        const string dartUtcDateString = "2026-04-23T00:00:00.000Z";
         DateTime capturedDate = default;
 
         _service.GetHandoverEligibleCoworkersAsync(
@@ -386,7 +361,7 @@ public class TimePlanningContentHandoverGrpcServiceTests
 
         var request = new GetHandoverEligibleCoworkersRequest
         {
-            Date = "2026-04-23T00:00:00.000Z",
+            Date = dartUtcDateString,
             ShiftIndices = { 0 }
         };
 
