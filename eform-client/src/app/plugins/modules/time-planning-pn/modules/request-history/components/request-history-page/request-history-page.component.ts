@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { TimePlanningPnRequestHistoryService, RequestHistoryQueryParams } from '../../../../services';
-import { Subscription, forkJoin } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
 import { MtxGridColumn } from '@ng-matero/extensions/grid';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
@@ -41,22 +42,12 @@ export class RequestHistoryPageComponent implements OnInit, OnDestroy {
   filterFromDate = '';
   filterToDate = '';
 
-  // Pagination
-  pageIndex = 0;
-  pageSize = 25;
-  totalItems = 0;
-
   loadSub$: Subscription;
 
   private _tableHeaders: MtxGridColumn[];
 
   get tableHeaders(): MtxGridColumn[] {
     return this._tableHeaders;
-  }
-
-  get pagedRows(): RequestHistoryRow[] {
-    const start = this.pageIndex * this.pageSize;
-    return this.filteredRows.slice(start, start + this.pageSize);
   }
 
   ngOnInit(): void {
@@ -76,7 +67,6 @@ export class RequestHistoryPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {}
 
   applyFilters(): void {
-    this.pageIndex = 0;
     this.loadData();
   }
 
@@ -95,8 +85,22 @@ export class RequestHistoryPageComponent implements OnInit, OnDestroy {
     }
 
     this.loadSub$ = forkJoin({
-      handovers: this.requestHistoryService.getAllHandoverRequests(params),
-      absences: this.requestHistoryService.getAllAbsenceRequests(params),
+      handovers: this.requestHistoryService.getAllHandoverRequests(params).pipe(
+        catchError(() => {
+          this.toastrService.error(
+            this.translateService.instant('Error loading handover requests')
+          );
+          return of({ success: false, model: [] });
+        })
+      ),
+      absences: this.requestHistoryService.getAllAbsenceRequests(params).pipe(
+        catchError(() => {
+          this.toastrService.error(
+            this.translateService.instant('Error loading absence requests')
+          );
+          return of({ success: false, model: [] });
+        })
+      ),
     }).subscribe({
       next: ({ handovers, absences }) => {
         const merged: RequestHistoryRow[] = [];
@@ -164,11 +168,5 @@ export class RequestHistoryPageComponent implements OnInit, OnDestroy {
     }
 
     this.filteredRows = result;
-    this.totalItems = result.length;
-  }
-
-  onPageChange(event: any): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
   }
 }
