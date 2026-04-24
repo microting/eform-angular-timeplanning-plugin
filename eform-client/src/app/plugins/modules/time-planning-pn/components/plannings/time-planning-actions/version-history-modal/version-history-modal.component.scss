@@ -31,7 +31,7 @@
   font-size: 14px;
 
   th {
-    background-color: #f8f9fa;
+    background-color: var(--surface-subtle, #f8f9fa);
     font-weight: 600;
   }
 
@@ -43,7 +43,7 @@
 
 .side-panel {
   flex: 0 0 50%;
-  border-left: 1px solid #dee2e6;
+  border-left: 1px solid var(--border, #dee2e6);
   padding-left: 20px;
   display: flex;
   flex-direction: column;
@@ -74,11 +74,11 @@
 .no-versions {
   text-align: center;
   padding: 40px;
-  color: #6c757d;
+  color: var(--text-tertiary, #6c757d);
 }
 
 .modal-header {
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--border, #dee2e6);
   padding: 15px 20px;
 
   .modal-title {
@@ -93,12 +93,12 @@
 }
 
 .modal-footer {
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid var(--border, #dee2e6);
   padding: 15px 20px;
 }
 
 a {
-  color: #007bff;
+  color: var(--link, #007bff);
   text-decoration: none;
 
   &:hover {
