@@ -28,7 +28,9 @@ namespace TimePlanning.Pn.Controllers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure.Models.AbsenceRequest;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Services.AbsenceRequestService;
 
@@ -77,5 +79,14 @@ public class AbsenceRequestsController(IAbsenceRequestService absenceRequestServ
     public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetMine(int requestedBySdkSitId)
     {
         return await _absenceRequestService.GetMineAsync(requestedBySdkSitId);
+    }
+
+    [HttpGet]
+    [Authorize(Roles = EformRole.Admin)]
+    [Route("all")]
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetAll(
+        string? status, string? fromDate, string? toDate, int? sdkSiteId)
+    {
+        return await _absenceRequestService.GetAllAsync(status, fromDate, toDate, sdkSiteId);
     }
 }

@@ -465,9 +465,19 @@ public class ContentHandoverService : IContentHandoverService
             }
 
             // Validate receiver is empty for the relevant scope.
+            // A target that only carries a message (e.g. vacation / MessageId)
+            // but has no actual shift content is eligible — the message is
+            // preserved and the shift data is written alongside it.
             if (request.ShiftIndex == null)
             {
-                var targetHasContent = toPR.PlanHoursInSeconds > 0 || !string.IsNullOrWhiteSpace(toPR.PlanText);
+                var targetHasShiftContent =
+                    (toPR.PlannedStartOfShift1 != 0 && toPR.PlannedEndOfShift1 != 0) ||
+                    (toPR.PlannedStartOfShift2 != 0 && toPR.PlannedEndOfShift2 != 0) ||
+                    (toPR.PlannedStartOfShift3 != 0 && toPR.PlannedEndOfShift3 != 0) ||
+                    (toPR.PlannedStartOfShift4 != 0 && toPR.PlannedEndOfShift4 != 0) ||
+                    (toPR.PlannedStartOfShift5 != 0 && toPR.PlannedEndOfShift5 != 0);
+                var targetHasContent = targetHasShiftContent ||
+                                       (!string.IsNullOrWhiteSpace(toPR.PlanText) && toPR.MessageId == null);
                 if (targetHasContent)
                 {
                     return new OperationResult(false,
@@ -527,13 +537,13 @@ public class ContentHandoverService : IContentHandoverService
                     // Continue - audit field failure should not prevent handover
                 }
 
-                // Recalculate derived fields (PlanHoursInSeconds / PlanHours /
-                // IsDoubleShift) BEFORE persisting. For the partial path, MoveShift
-                // zeros only the shift-scoped fields and leaves the PlanHours*
-                // totals stale — the recalc MUST succeed or we roll back in-memory
-                // state and return an error. For the legacy full-day path the
-                // derived fields are copied wholesale inside MoveContent so a
-                // recalc miss is not data-corrupting.
+                // Recalculate PlanHours / PlanHoursInSeconds from the five
+                // planned shift slots on BOTH registrations so the totals
+                // reflect the moved shift data.
+                PlanRegistrationHelper.RecalculatePlanHoursFromShifts(fromPR);
+                PlanRegistrationHelper.RecalculatePlanHoursFromShifts(toPR);
+
+                // Recalculate pause / break fields.
                 var fromAssignedSite = await _dbContext.AssignedSites
                     .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
                 var toAssignedSite = await _dbContext.AssignedSites
@@ -563,8 +573,7 @@ public class ContentHandoverService : IContentHandoverService
                 }
                 else
                 {
-                    // Legacy full-day path: best-effort recalc (source/target PlanHours
-                    // was copied wholesale so a miss is not corrupting).
+                    // Full-day path: best-effort pause recalc.
                     try
                     {
                         if (fromAssignedSite != null)
@@ -807,6 +816,80 @@ public class ContentHandoverService : IContentHandoverService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting handover requests for worker {WorkerId}", fromSdkSitId);
+            return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
+                _localizationService.GetString("ErrorGettingHandoverRequests"));
+        }
+    }
+
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetAllAsync(
+        string? status, string? fromDate, string? toDate, int? sdkSiteId)
+    {
+        try
+        {
+            var query = _dbContext.PlanRegistrationContentHandoverRequests
+                .AsQueryable();
+
+            // Filter by status
+            if (!string.IsNullOrWhiteSpace(status) &&
+                Enum.TryParse<HandoverRequestStatus>(status, ignoreCase: true, out var parsedStatus))
+            {
+                query = query.Where(r => r.Status == parsedStatus);
+            }
+
+            // Filter by date range (request Date field)
+            if (!string.IsNullOrWhiteSpace(fromDate) && DateTime.TryParse(fromDate, out var from))
+            {
+                var fromUtc = from.Date;
+                query = query.Where(r => r.Date >= fromUtc);
+            }
+
+            if (!string.IsNullOrWhiteSpace(toDate) && DateTime.TryParse(toDate, out var to))
+            {
+                var toUtc = to.Date;
+                query = query.Where(r => r.Date <= toUtc);
+            }
+
+            // Filter by sdkSiteId — matches EITHER FromSdkSitId OR ToSdkSitId
+            if (sdkSiteId.HasValue)
+            {
+                var siteId = sdkSiteId.Value;
+                query = query.Where(r => r.FromSdkSitId == siteId || r.ToSdkSitId == siteId);
+            }
+
+            var requests = await query
+                .OrderByDescending(r => r.RequestedAtUtc)
+                .ToListAsync();
+
+            // Resolve worker names from SDK sites
+            var allSiteIds = requests
+                .SelectMany(r => new[] { r.FromSdkSitId, r.ToSdkSitId })
+                .Distinct()
+                .ToList();
+
+            var siteNameLookup = new Dictionary<int, string>();
+            if (allSiteIds.Count > 0)
+            {
+                var sdkCore = await _core.GetCore();
+                var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+                siteNameLookup = await sdkDbContext.Sites
+                    .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
+                    .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
+                    .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
+            }
+
+            var models = requests.Select(r =>
+            {
+                var model = MapToModel(r);
+                model.FromWorkerName = siteNameLookup.GetValueOrDefault(r.FromSdkSitId);
+                model.ToWorkerName = siteNameLookup.GetValueOrDefault(r.ToSdkSitId);
+                return model;
+            }).ToList();
+
+            return new OperationDataResult<List<ContentHandoverRequestModel>>(true, models);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all handover requests");
             return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                 _localizationService.GetString("ErrorGettingHandoverRequests"));
         }
