@@ -739,6 +739,68 @@ public class EformTimePlanningPlugin : IEformPlugin
                                 Language = LanguageNames.Danish
                             }
                         ]
+                    },
+
+                    new()
+                    {
+                        Name = "Request History",
+                        E2EId = "time-planning-pn-request-history",
+                        Link = "/plugins/time-planning-pn/request-history",
+                        Type = MenuItemTypeEnum.Link,
+                        Position = 8,
+                        MenuTemplate = new()
+                        {
+                            Name = "Request History",
+                            E2EId = "time-planning-pn-request-history",
+                            DefaultLink = "/plugins/time-planning-pn/request-history",
+                            Permissions = [],
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Request History",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Antragshistorie",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Anmodningshistorik",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+                        Translations =
+                        [
+                            new()
+                            {
+                                LocaleName = LocaleNames.English,
+                                Name = "Request History",
+                                Language = LanguageNames.English
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.German,
+                                Name = "Antragshistorie",
+                                Language = LanguageNames.German
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.Danish,
+                                Name = "Anmodningshistorik",
+                                Language = LanguageNames.Danish
+                            }
+                        ]
                     }
                 ]
             }
@@ -804,6 +866,15 @@ public class EformTimePlanningPlugin : IEformPlugin
                     Link = "/plugins/time-planning-pn/working-hours/mobile-working-hours",
                     Position = 4,
                     Guards = [TimePlanningClaims.GetFlex]
+                },
+
+                new()
+                {
+                    Name = localizationService.GetString("Request History"),
+                    E2EId = "time-planning-pn-request-history",
+                    Link = "/plugins/time-planning-pn/request-history",
+                    Position = 5,
+                    Guards = [TimePlanningClaims.AccessTimePlanningPlugin]
                 }
             ]
         });

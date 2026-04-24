@@ -288,6 +288,41 @@ public static class PlanRegistrationHelper
         return planning;
     }
 
+    /// <summary>
+    /// Recalculates PlanHours and PlanHoursInSeconds from the five planned
+    /// shift slots.  This must be called after MoveShift / MoveContent so
+    /// that the totals on both the source and target PlanRegistrations stay
+    /// consistent.
+    ///
+    /// This method is only called post-handover, when shift data has been
+    /// physically relocated between PlanRegistrations. The UseOnlyPlanHours
+    /// guard is intentionally omitted because the manually-set PlanHours
+    /// value would be stale after shifts have been moved. Likewise the
+    /// MessageId guard is omitted for the same reason -- the old MessageId
+    /// no longer reflects the new shift layout.
+    /// </summary>
+    public static void RecalculatePlanHoursFromShifts(PlanRegistration pr)
+    {
+        var totalMinutes = 0;
+
+        if (pr.PlannedStartOfShift1 != 0 && pr.PlannedEndOfShift1 != 0)
+            totalMinutes += pr.PlannedEndOfShift1 - pr.PlannedStartOfShift1 - pr.PlannedBreakOfShift1;
+
+        if (pr.PlannedStartOfShift2 != 0 && pr.PlannedEndOfShift2 != 0)
+            totalMinutes += pr.PlannedEndOfShift2 - pr.PlannedStartOfShift2 - pr.PlannedBreakOfShift2;
+
+        if (pr.PlannedStartOfShift3 != 0 && pr.PlannedEndOfShift3 != 0)
+            totalMinutes += pr.PlannedEndOfShift3 - pr.PlannedStartOfShift3 - pr.PlannedBreakOfShift3;
+
+        if (pr.PlannedStartOfShift4 != 0 && pr.PlannedEndOfShift4 != 0)
+            totalMinutes += pr.PlannedEndOfShift4 - pr.PlannedStartOfShift4 - pr.PlannedBreakOfShift4;
+
+        if (pr.PlannedStartOfShift5 != 0 && pr.PlannedEndOfShift5 != 0)
+            totalMinutes += pr.PlannedEndOfShift5 - pr.PlannedStartOfShift5 - pr.PlannedBreakOfShift5;
+
+        pr.PlanHours = totalMinutes / 60.0;
+        pr.PlanHoursInSeconds = totalMinutes * 60;
+    }
 
     public static async Task<TimePlanningPlanningModel> UpdatePlanRegistrationsInPeriod(
         List<PlanRegistration> planningsInPeriod,

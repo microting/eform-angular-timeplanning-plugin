@@ -453,6 +453,89 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
     }
 
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetAllAsync(
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100)
+    {
+        try
+        {
+            var query = _dbContext.AbsenceRequests
+                .Include(ar => ar.Days)
+                .AsQueryable();
+
+            // Filter by status
+            if (!string.IsNullOrWhiteSpace(status) &&
+                Enum.TryParse<AbsenceRequestStatus>(status, ignoreCase: true, out var parsedStatus))
+            {
+                query = query.Where(ar => ar.Status == parsedStatus);
+            }
+
+            // Filter by date range
+            if (!string.IsNullOrWhiteSpace(fromDate) && DateTime.TryParse(fromDate, out var from))
+            {
+                var fromUtc = from.Date;
+                query = query.Where(ar => ar.DateTo >= fromUtc);
+            }
+
+            if (!string.IsNullOrWhiteSpace(toDate) && DateTime.TryParse(toDate, out var to))
+            {
+                var toUtc = to.Date;
+                query = query.Where(ar => ar.DateFrom <= toUtc);
+            }
+
+            // Filter by sdkSiteId — matches RequestedBySdkSitId
+            if (sdkSiteId.HasValue)
+            {
+                query = query.Where(ar => ar.RequestedBySdkSitId == sdkSiteId.Value);
+            }
+
+            var requests = await query
+                .OrderByDescending(ar => ar.RequestedAtUtc)
+                .Skip(page * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Resolve worker names from SDK sites
+            var allSiteIds = requests
+                .Select(ar => ar.RequestedBySdkSitId)
+                .Union(requests
+                    .Where(ar => ar.DecidedBySdkSitId.HasValue)
+                    .Select(ar => ar.DecidedBySdkSitId!.Value))
+                .Distinct()
+                .ToList();
+
+            var siteNameLookup = new Dictionary<int, string>();
+            if (allSiteIds.Count > 0)
+            {
+                var sdkCore = await _coreService.GetCore();
+                var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+                siteNameLookup = await sdkDbContext.Sites
+                    .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
+                    .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
+                    .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
+            }
+
+            var models = requests.Select(ar =>
+            {
+                var model = MapToModel(ar);
+                model.RequestedByWorkerName = siteNameLookup.GetValueOrDefault(ar.RequestedBySdkSitId);
+                if (ar.DecidedBySdkSitId.HasValue)
+                {
+                    model.DecidedByWorkerName = siteNameLookup.GetValueOrDefault(ar.DecidedBySdkSitId.Value);
+                }
+                return model;
+            }).ToList();
+
+            return new OperationDataResult<List<AbsenceRequestModel>>(true, models);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all absence requests");
+            return new OperationDataResult<List<AbsenceRequestModel>>(false,
+                _localizationService.GetString("ErrorGettingAbsenceRequests"));
+        }
+    }
+
     private async Task ApplyAbsenceToPlanRegistration(AbsenceRequest request, AbsenceRequestDay day)
     {
         try

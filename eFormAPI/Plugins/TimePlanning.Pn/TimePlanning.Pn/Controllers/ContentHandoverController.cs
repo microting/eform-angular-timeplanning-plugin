@@ -28,7 +28,9 @@ namespace TimePlanning.Pn.Controllers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure.Models.ContentHandover;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Services.ContentHandoverService;
 
@@ -80,5 +82,15 @@ public class ContentHandoverController(IContentHandoverService contentHandoverSe
     public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMine(int fromSdkSitId)
     {
         return await _contentHandoverService.GetMineAsync(fromSdkSitId);
+    }
+
+    [HttpGet]
+    [Authorize(Roles = EformRole.Admin)]
+    [Route("handover-requests/all")]
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetAll(
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100)
+    {
+        return await _contentHandoverService.GetAllAsync(status, fromDate, toDate, sdkSiteId, page, pageSize);
     }
 }
