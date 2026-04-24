@@ -86,10 +86,11 @@ public class ContentHandoverController(IContentHandoverService contentHandoverSe
 
     [HttpGet]
     [Authorize(Roles = EformRole.Admin)]
-    [Route("content-handover-requests/all")]
+    [Route("handover-requests/all")]
     public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetAll(
-        string? status, string? fromDate, string? toDate, int? sdkSiteId)
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100)
     {
-        return await _contentHandoverService.GetAllAsync(status, fromDate, toDate, sdkSiteId);
+        return await _contentHandoverService.GetAllAsync(status, fromDate, toDate, sdkSiteId, page, pageSize);
     }
 }

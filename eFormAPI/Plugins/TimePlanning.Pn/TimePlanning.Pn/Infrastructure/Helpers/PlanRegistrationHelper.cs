@@ -293,6 +293,13 @@ public static class PlanRegistrationHelper
     /// shift slots.  This must be called after MoveShift / MoveContent so
     /// that the totals on both the source and target PlanRegistrations stay
     /// consistent.
+    ///
+    /// This method is only called post-handover, when shift data has been
+    /// physically relocated between PlanRegistrations. The UseOnlyPlanHours
+    /// guard is intentionally omitted because the manually-set PlanHours
+    /// value would be stale after shifts have been moved. Likewise the
+    /// MessageId guard is omitted for the same reason -- the old MessageId
+    /// no longer reflects the new shift layout.
     /// </summary>
     public static void RecalculatePlanHoursFromShifts(PlanRegistration pr)
     {

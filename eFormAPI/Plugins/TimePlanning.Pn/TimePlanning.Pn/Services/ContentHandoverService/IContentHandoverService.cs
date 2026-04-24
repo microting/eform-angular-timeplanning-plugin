@@ -52,5 +52,6 @@ public interface IContentHandoverService
     /// Intended for admin/manager use — no user-scoping is applied.
     /// </summary>
     Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetAllAsync(
-        string? status, string? fromDate, string? toDate, int? sdkSiteId);
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100);
 }

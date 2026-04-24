@@ -11,7 +11,7 @@ export interface RequestHistoryQueryParams {
 }
 
 export let TimePlanningPnRequestHistoryMethods = {
-  GetAllHandovers: 'api/time-planning-pn/content-handover-requests/all',
+  GetAllHandovers: 'api/time-planning-pn/handover-requests/all',
   GetAllAbsences: 'api/time-planning-pn/absence-requests/all',
 };
 

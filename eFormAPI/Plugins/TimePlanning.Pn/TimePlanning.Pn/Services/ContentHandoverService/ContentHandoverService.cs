@@ -822,7 +822,8 @@ public class ContentHandoverService : IContentHandoverService
     }
 
     public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetAllAsync(
-        string? status, string? fromDate, string? toDate, int? sdkSiteId)
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100)
     {
         try
         {
@@ -858,6 +859,8 @@ public class ContentHandoverService : IContentHandoverService
 
             var requests = await query
                 .OrderByDescending(r => r.RequestedAtUtc)
+                .Skip(page * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             // Resolve worker names from SDK sites

@@ -51,5 +51,6 @@ public interface IAbsenceRequestService
     /// Intended for admin/manager use — no user-scoping is applied.
     /// </summary>
     Task<OperationDataResult<List<AbsenceRequestModel>>> GetAllAsync(
-        string? status, string? fromDate, string? toDate, int? sdkSiteId);
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100);
 }

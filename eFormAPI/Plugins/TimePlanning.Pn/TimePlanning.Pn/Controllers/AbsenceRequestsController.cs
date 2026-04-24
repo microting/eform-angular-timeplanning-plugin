@@ -85,8 +85,9 @@ public class AbsenceRequestsController(IAbsenceRequestService absenceRequestServ
     [Authorize(Roles = EformRole.Admin)]
     [Route("all")]
     public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetAll(
-        string? status, string? fromDate, string? toDate, int? sdkSiteId)
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100)
     {
-        return await _absenceRequestService.GetAllAsync(status, fromDate, toDate, sdkSiteId);
+        return await _absenceRequestService.GetAllAsync(status, fromDate, toDate, sdkSiteId, page, pageSize);
     }
 }
