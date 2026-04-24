@@ -1,0 +1,80 @@
+<eform-new-subheader>
+  <div class="subheader-title">
+    {{ 'Request History' | translate }}
+  </div>
+</eform-new-subheader>
+
+<div class="filter-bar">
+  <mat-form-field>
+    <mat-label>{{ 'Type' | translate }}</mat-label>
+    <select matNativeControl [(ngModel)]="filterType">
+      <option value="">{{ 'All' | translate }}</option>
+      <option value="Handover">{{ 'Handover' | translate }}</option>
+      <option value="Absence">{{ 'Absence' | translate }}</option>
+    </select>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'Status' | translate }}</mat-label>
+    <select matNativeControl [(ngModel)]="filterStatus">
+      <option value="">{{ 'All' | translate }}</option>
+      <option value="Pending">{{ 'Pending' | translate }}</option>
+      <option value="Approved">{{ 'Approved' | translate }}</option>
+      <option value="Rejected">{{ 'Rejected' | translate }}</option>
+      <option value="Cancelled">{{ 'Cancelled' | translate }}</option>
+    </select>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'Date From' | translate }}</mat-label>
+    <input matInput type="date" [(ngModel)]="filterFromDate" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'Date To' | translate }}</mat-label>
+    <input matInput type="date" [(ngModel)]="filterToDate" />
+  </mat-form-field>
+
+  <button mat-raised-button color="primary" (click)="applyFilters()" id="applyFiltersBtn">
+    {{ 'Apply' | translate }}
+  </button>
+</div>
+
+<mtx-grid
+  [data]="pagedRows"
+  [cellTemplate]="{ type: typeTpl, status: statusTpl }"
+  [showPaginator]="true"
+  [pageOnFront]="true"
+  [length]="totalItems"
+  [pageIndex]="pageIndex"
+  [pageSize]="pageSize"
+  [pageSizeOptions]="[10, 25, 50, 100]"
+  (page)="onPageChange($event)"
+  [rowStriped]="false"
+  [showToolbar]="false"
+  [showColumnMenuButton]="false"
+  [loading]="isLoading"
+  id="time-planning-pn-request-history-grid"
+  [columns]="tableHeaders"
+  noResultText="{{ 'No requests found' | translate }}"
+></mtx-grid>
+
+<ng-template #typeTpl let-row>
+  <span class="type-badge" [ngClass]="{
+    'type-handover': row.type === 'Handover',
+    'type-absence': row.type === 'Absence'
+  }">
+    {{ row.type | translate }}
+  </span>
+</ng-template>
+
+<ng-template #statusTpl let-row>
+  <span [ngClass]="{
+    'status-pending': row.status === 'Pending',
+    'status-approved': row.status === 'Approved',
+    'status-rejected': row.status === 'Rejected',
+    'status-cancelled': row.status === 'Cancelled'
+  }">
+    {{ row.status | translate }}
+  </span>
+</ng-template>
