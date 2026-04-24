@@ -537,12 +537,6 @@ public class ContentHandoverService : IContentHandoverService
                     // Continue - audit field failure should not prevent handover
                 }
 
-                // Recalculate PlanHours / PlanHoursInSeconds from the five
-                // planned shift slots on BOTH registrations so the totals
-                // reflect the moved shift data.
-                PlanRegistrationHelper.RecalculatePlanHoursFromShifts(fromPR);
-                PlanRegistrationHelper.RecalculatePlanHoursFromShifts(toPR);
-
                 // Recalculate pause / break fields.
                 var fromAssignedSite = await _dbContext.AssignedSites
                     .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
@@ -551,6 +545,13 @@ public class ContentHandoverService : IContentHandoverService
 
                 if (request.ShiftIndex.HasValue)
                 {
+                    // Recalculate PlanHours / PlanHoursInSeconds from the five
+                    // planned shift slots on BOTH registrations so the totals
+                    // reflect the moved shift data. Only needed for partial-shift
+                    // handovers; full-day MoveContent copies PlanHours directly.
+                    PlanRegistrationHelper.RecalculatePlanHoursFromShifts(fromPR);
+                    PlanRegistrationHelper.RecalculatePlanHoursFromShifts(toPR);
+
                     if (fromAssignedSite == null || toAssignedSite == null)
                     {
                         _dbContext.ChangeTracker.Clear();
