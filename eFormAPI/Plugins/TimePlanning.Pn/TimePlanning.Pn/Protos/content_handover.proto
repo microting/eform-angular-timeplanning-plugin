@@ -45,6 +45,8 @@ message ContentHandoverRequestModel {
   string request_comment = 10;
   string decision_comment = 11;
   int32 shift_index = 12;
+  int32 shift_start_time = 13;
+  int32 shift_end_time = 14;
 }
 
 message ContentHandoverResponse {
