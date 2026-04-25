@@ -284,7 +284,9 @@ public class TimePlanningContentHandoverGrpcService
             RespondedAtUtc = m.RespondedAtUtc?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
             RequestComment = m.RequestComment ?? "",
             DecisionComment = m.DecisionComment ?? "",
-            ShiftIndex = m.ShiftIndex ?? 0
+            ShiftIndex = m.ShiftIndex ?? 0,
+            ShiftStartTime = m.ShiftStartTime ?? 0,
+            ShiftEndTime = m.ShiftEndTime ?? 0
         };
     }
 }

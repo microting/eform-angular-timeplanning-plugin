@@ -286,7 +286,7 @@ public class ContentHandoverService : IContentHandoverService
                 FireCreatePush(model.ToSdkSitId, new List<int> { request.Id }, 1, fromPR.Date);
 
                 return new OperationDataResult<List<ContentHandoverRequestModel>>(
-                    true, new List<ContentHandoverRequestModel> { MapToModel(request) });
+                    true, new List<ContentHandoverRequestModel> { MapToModel(request, fromPR) });
             }
 
             // Partial (per-shift) create. Transactional all-or-nothing.
@@ -369,7 +369,7 @@ public class ContentHandoverService : IContentHandoverService
             FireCreatePush(model.ToSdkSitId, created.Select(r => r.Id).ToList(), created.Count, fromPR.Date);
 
             return new OperationDataResult<List<ContentHandoverRequestModel>>(
-                true, created.Select(MapToModel).ToList());
+                true, created.Select(r => MapToModel(r, fromPR)).ToList());
         }
         catch (Exception ex)
         {
@@ -423,6 +423,19 @@ public class ContentHandoverService : IContentHandoverService
             3 => pr.PlannedEndOfShift3,
             4 => pr.PlannedEndOfShift4,
             5 => pr.PlannedEndOfShift5,
+            _ => 0
+        };
+    }
+
+    private static int GetPlannedStartOfShift(PlanRegistration pr, int n)
+    {
+        return n switch
+        {
+            1 => pr.PlannedStartOfShift1,
+            2 => pr.PlannedStartOfShift2,
+            3 => pr.PlannedStartOfShift3,
+            4 => pr.PlannedStartOfShift4,
+            5 => pr.PlannedStartOfShift5,
             _ => 0
         };
     }
@@ -765,7 +778,16 @@ public class ContentHandoverService : IContentHandoverService
                 .OrderByDescending(r => r.RequestedAtUtc)
                 .ToListAsync();
 
-            var models = requests.Select(MapToModel).ToList();
+            var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
+            var planRegistrations = await _dbContext.PlanRegistrations
+                .Where(p => prIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
+            var models = requests.Select(r =>
+            {
+                planRegistrations.TryGetValue(r.FromPlanRegistrationId, out var fromPR);
+                return MapToModel(r, fromPR);
+            }).ToList();
             return new OperationDataResult<List<ContentHandoverRequestModel>>(true, models);
         }
         catch (Exception ex)
@@ -811,7 +833,16 @@ public class ContentHandoverService : IContentHandoverService
                 .OrderByDescending(r => r.RequestedAtUtc)
                 .ToListAsync();
 
-            var models = requests.Select(MapToModel).ToList();
+            var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
+            var planRegistrations = await _dbContext.PlanRegistrations
+                .Where(p => prIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
+            var models = requests.Select(r =>
+            {
+                planRegistrations.TryGetValue(r.FromPlanRegistrationId, out var fromPR);
+                return MapToModel(r, fromPR);
+            }).ToList();
             return new OperationDataResult<List<ContentHandoverRequestModel>>(true, models);
         }
         catch (Exception ex)
@@ -881,9 +912,15 @@ public class ContentHandoverService : IContentHandoverService
                     .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
             }
 
+            var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
+            var planRegistrations = await _dbContext.PlanRegistrations
+                .Where(p => prIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
             var models = requests.Select(r =>
             {
-                var model = MapToModel(r);
+                planRegistrations.TryGetValue(r.FromPlanRegistrationId, out var fromPR);
+                var model = MapToModel(r, fromPR);
                 model.FromWorkerName = siteNameLookup.GetValueOrDefault(r.FromSdkSitId);
                 model.ToWorkerName = siteNameLookup.GetValueOrDefault(r.ToSdkSitId);
                 return model;
@@ -1064,8 +1101,19 @@ public class ContentHandoverService : IContentHandoverService
         // will be recomputed by PlanRegistrationHelper on BOTH rows in the caller.
     }
 
-    private ContentHandoverRequestModel MapToModel(PlanRegistrationContentHandoverRequest request)
+    private ContentHandoverRequestModel MapToModel(
+        PlanRegistrationContentHandoverRequest request,
+        PlanRegistration? fromPlanRegistration = null)
     {
+        int? shiftStartTime = null;
+        int? shiftEndTime = null;
+
+        if (fromPlanRegistration != null && request.ShiftIndex is > 0)
+        {
+            shiftStartTime = GetPlannedStartOfShift(fromPlanRegistration, request.ShiftIndex.Value);
+            shiftEndTime = GetPlannedEndOfShift(fromPlanRegistration, request.ShiftIndex.Value);
+        }
+
         return new ContentHandoverRequestModel
         {
             Id = request.Id,
@@ -1079,7 +1127,9 @@ public class ContentHandoverService : IContentHandoverService
             RespondedAtUtc = request.RespondedAtUtc,
             RequestComment = null, // Entity doesn't have RequestComment
             DecisionComment = request.DecisionComment,
-            ShiftIndex = request.ShiftIndex
+            ShiftIndex = request.ShiftIndex,
+            ShiftStartTime = shiftStartTime,
+            ShiftEndTime = shiftEndTime
         };
     }
 }
