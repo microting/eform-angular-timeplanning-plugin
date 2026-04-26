@@ -1428,9 +1428,10 @@ public class TimePlanningWorkingHoursService(
             return await UpdateWorkingHour(model).ConfigureAwait(false);
         }
 
+        RegistrationDevice? registrationDevice = null;
         if (token != null)
         {
-            var registrationDevice = await dbContext.RegistrationDevices
+            registrationDevice = await dbContext.RegistrationDevices
                 .Where(x => x.Token == token).FirstOrDefaultAsync();
             if (registrationDevice == null)
             {
@@ -1709,7 +1710,7 @@ public class TimePlanningWorkingHoursService(
                 Flex = 0,
                 WorkerComment = model.CommentWorker,
                 SdkSitId = sdkSiteId!.Value,
-                RegistrationDeviceId = registrationDevice.Id,
+                RegistrationDeviceId = registrationDevice?.Id,
                 Shift1PauseNumber = model.Shift1PauseNumber,
                 Shift2PauseNumber = model.Shift2PauseNumber,
             };
@@ -1796,7 +1797,7 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Stop5Id = model.Shift5Stop ?? 0;
             planRegistration.Pause5Id = model.Shift5Pause ?? 0;
             planRegistration.WorkerComment = model.CommentWorker;
-            planRegistration.RegistrationDeviceId = registrationDevice.Id;
+            planRegistration.RegistrationDeviceId = registrationDevice?.Id;
 
             planRegistration.Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
                 ? null

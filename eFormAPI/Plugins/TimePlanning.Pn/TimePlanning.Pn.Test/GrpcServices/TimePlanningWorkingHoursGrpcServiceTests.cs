@@ -196,4 +196,243 @@ public class TimePlanningWorkingHoursGrpcServiceTests
         Assert.That(response.Model.Stop1StoppedAt, Is.EqualTo(""));
         Assert.That(response.Model.Pause10StartedAt, Is.EqualTo(""));
     }
+
+    [Test]
+    public async Task UpdateWorkingHours_PersonalMode_PassesNullSdkSiteIdAndNullToken()
+    {
+        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+            .Returns(new OperationResult(true, "Updated"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            SdkSiteId = 0,
+            Token = "",
+            Date = "2026-04-26",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+                Comment = "Personal update",
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).UpdateWorkingHour(
+            null,
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
+            null);
+    }
+
+    [Test]
+    public async Task UpdateWorkingHours_KioskMode_PassesSdkSiteIdAndToken()
+    {
+        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+            .Returns(new OperationResult(true, "Updated"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            SdkSiteId = 42,
+            Token = "device-abc-123",
+            Date = "2026-04-26",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+                Comment = "Kiosk update",
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).UpdateWorkingHour(
+            42,
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
+            "device-abc-123");
+    }
+
+    [Test]
+    public async Task UpdateWorkingHours_PersonalMode_MapsModelFieldsCorrectly()
+    {
+        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+            .Returns(new OperationResult(true, "Updated"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            SdkSiteId = 0,
+            Token = "",
+            Date = "2026-04-26",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+                Start1StartedAt = "2026-04-26T08:00:00",
+                Stop1StoppedAt = "2026-04-26T16:00:00",
+                Comment = "Morning shift",
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).UpdateWorkingHour(
+            null,
+            Arg.Is<TimePlanningWorkingHoursUpdateModel>(m =>
+                m.Date == DateTime.Parse("2026-04-26") &&
+                m.Shift1Start == 101 &&
+                m.Start1StartedAt == "2026-04-26T08:00:00" &&
+                m.Stop1StoppedAt == "2026-04-26T16:00:00" &&
+                m.CommentWorker == "Morning shift"),
+            null);
+    }
+
+    [Test]
+    public async Task UpdateWorkingHours_KioskMode_MapsDeviceMetadataToModel()
+    {
+        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+            .Returns(new OperationResult(true, "Updated"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            SdkSiteId = 42,
+            Token = "device-abc-123",
+            Date = "2026-04-26",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+                Comment = "Kiosk shift",
+            },
+            Device = new Grpc.DeviceMetadata
+            {
+                SoftwareVersion = "4.0.7",
+                DeviceModel = "Pixel 8",
+                Manufacturer = "Google",
+                OsVersion = "Android 15",
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).UpdateWorkingHour(
+            Arg.Any<int?>(),
+            Arg.Is<TimePlanningWorkingHoursUpdateModel>(m =>
+                m.SoftwareVersion == "4.0.7" &&
+                m.Model == "Pixel 8" &&
+                m.Manufacturer == "Google" &&
+                m.OsVersion == "Android 15"),
+            Arg.Any<string>());
+    }
+
+    [Test]
+    public async Task UpdateWorkingHours_PersonalMode_ServiceFailure_ReturnsErrorMessage()
+    {
+        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+            .Returns(new OperationResult(false, "User not found"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            SdkSiteId = 0,
+            Token = "",
+            Date = "2026-04-26",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+                Comment = "Failing request",
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.False);
+        Assert.That(response.Message, Is.EqualTo("User not found"));
+    }
+
+    [Test]
+    public async Task UpdateWorkingHours_KioskMode_InvalidToken_ReturnsTokenNotFound()
+    {
+        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+            .Returns(new OperationResult(false, "Token not found"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            SdkSiteId = 42,
+            Token = "invalid-token",
+            Date = "2026-04-26",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.False);
+        Assert.That(response.Message, Is.EqualTo("Token not found"));
+    }
+
+    [Test]
+    public async Task UpdateWorkingHours_EmptyTokenWithNonZeroSdkSiteId_SdkSiteIdPassesThrough()
+    {
+        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+            .Returns(new OperationResult(true, "Updated"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            SdkSiteId = 7,
+            Token = "",
+            Date = "2026-04-26",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).UpdateWorkingHour(
+            7,
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
+            null);
+    }
+
+    [Test]
+    public async Task UpdateWorkingHours_NonEmptyTokenWithZeroSdkSiteId_TokenPassesThrough()
+    {
+        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+            .Returns(new OperationResult(true, "Updated"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            SdkSiteId = 0,
+            Token = "abc",
+            Date = "2026-04-26",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).UpdateWorkingHour(
+            null,
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
+            "abc");
+    }
 }
