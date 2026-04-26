@@ -1426,22 +1426,24 @@ public class TimePlanningWorkingHoursService(
         if (token == null && sdkSiteId == null)
         {
             return await UpdateWorkingHour(model).ConfigureAwait(false);
-            //return new OperationResult(false, "Token not found");
         }
 
-        var registrationDevice = await dbContext.RegistrationDevices
-            .Where(x => x.Token == token).FirstOrDefaultAsync();
-        if (registrationDevice == null)
+        if (token != null)
         {
-            return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
+            var registrationDevice = await dbContext.RegistrationDevices
+                .Where(x => x.Token == token).FirstOrDefaultAsync();
+            if (registrationDevice == null)
+            {
+                return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
+            }
+
+            registrationDevice.OsVersion = model.OsVersion;
+            registrationDevice.Model = model.Model;
+            registrationDevice.Manufacturer = model.Manufacturer;
+            registrationDevice.SoftwareVersion = model.SoftwareVersion;
+
+            await registrationDevice.Update(dbContext);
         }
-
-        registrationDevice.OsVersion = model.OsVersion;
-        registrationDevice.Model = model.Model;
-        registrationDevice.Manufacturer = model.Manufacturer;
-        registrationDevice.SoftwareVersion = model.SoftwareVersion;
-
-        await registrationDevice.Update(dbContext);
 
         var todayAtMidnight = model.Date;
 

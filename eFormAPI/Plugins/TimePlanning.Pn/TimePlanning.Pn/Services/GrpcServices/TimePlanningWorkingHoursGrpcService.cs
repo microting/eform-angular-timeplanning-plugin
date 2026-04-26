@@ -45,10 +45,12 @@ public class TimePlanningWorkingHoursGrpcService
         var model = MapFromGrpc(request.Model, request.Device);
         model.Date = DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture);
 
+        var token = string.IsNullOrEmpty(request.Token) ? null : request.Token;
+        int? sdkSiteId = request.SdkSiteId == 0 ? null : request.SdkSiteId;
         var result = await _workingHoursService.UpdateWorkingHour(
-            request.SdkSiteId,
+            sdkSiteId,
             model,
-            request.Token);
+            token);
 
         return new UpdateWorkingHoursResponse
         {
