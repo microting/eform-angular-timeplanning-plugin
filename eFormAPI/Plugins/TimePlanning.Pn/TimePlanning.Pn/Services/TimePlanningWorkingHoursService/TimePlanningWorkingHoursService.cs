@@ -1426,22 +1426,25 @@ public class TimePlanningWorkingHoursService(
         if (token == null && sdkSiteId == null)
         {
             return await UpdateWorkingHour(model).ConfigureAwait(false);
-            //return new OperationResult(false, "Token not found");
         }
 
-        var registrationDevice = await dbContext.RegistrationDevices
-            .Where(x => x.Token == token).FirstOrDefaultAsync();
-        if (registrationDevice == null)
+        RegistrationDevice? registrationDevice = null;
+        if (token != null)
         {
-            return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
+            registrationDevice = await dbContext.RegistrationDevices
+                .Where(x => x.Token == token).FirstOrDefaultAsync();
+            if (registrationDevice == null)
+            {
+                return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
+            }
+
+            registrationDevice.OsVersion = model.OsVersion;
+            registrationDevice.Model = model.Model;
+            registrationDevice.Manufacturer = model.Manufacturer;
+            registrationDevice.SoftwareVersion = model.SoftwareVersion;
+
+            await registrationDevice.Update(dbContext);
         }
-
-        registrationDevice.OsVersion = model.OsVersion;
-        registrationDevice.Model = model.Model;
-        registrationDevice.Manufacturer = model.Manufacturer;
-        registrationDevice.SoftwareVersion = model.SoftwareVersion;
-
-        await registrationDevice.Update(dbContext);
 
         var todayAtMidnight = model.Date;
 
@@ -1707,7 +1710,7 @@ public class TimePlanningWorkingHoursService(
                 Flex = 0,
                 WorkerComment = model.CommentWorker,
                 SdkSitId = sdkSiteId!.Value,
-                RegistrationDeviceId = registrationDevice.Id,
+                RegistrationDeviceId = registrationDevice?.Id,
                 Shift1PauseNumber = model.Shift1PauseNumber,
                 Shift2PauseNumber = model.Shift2PauseNumber,
             };
@@ -1794,7 +1797,7 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Stop5Id = model.Shift5Stop ?? 0;
             planRegistration.Pause5Id = model.Shift5Pause ?? 0;
             planRegistration.WorkerComment = model.CommentWorker;
-            planRegistration.RegistrationDeviceId = registrationDevice.Id;
+            planRegistration.RegistrationDeviceId = registrationDevice?.Id;
 
             planRegistration.Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
                 ? null
