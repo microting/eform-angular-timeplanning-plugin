@@ -754,6 +754,52 @@ public class TimePlanningWorkingHoursService(
             result);
     }
 
+    public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> ReadFullByCurrentUser(
+        DateTime dateTime,
+        string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion)
+    {
+        var currentUserAsync = await userService.GetCurrentUserAsync();
+        var currentUser = baseDbContext.Users
+            .Single(x => x.Id == currentUserAsync.Id);
+
+        if (deviceModel != null)
+        {
+            currentUser.TimeRegistrationModel = deviceModel;
+            currentUser.TimeRegistrationManufacturer = manufacturer;
+            currentUser.TimeRegistrationSoftwareVersion = softwareVersion;
+            currentUser.TimeRegistrationOsVersion = osVersion;
+            await baseDbContext.SaveChangesAsync();
+        }
+
+        var userEmail = (currentUser.Email ?? "").Trim().ToLower();
+        var core = await coreHelper.GetCore();
+        var sdkContext = core.DbContextHelper.GetDbContext();
+        var sdkWorker = await sdkContext.Workers.FirstOrDefaultAsync(x =>
+            x.Email.ToLower() == userEmail &&
+            x.WorkflowState != Constants.WorkflowStates.Removed);
+        var sdkSiteWorker = sdkWorker == null ? null : await sdkContext.SiteWorkers.FirstOrDefaultAsync(x =>
+            x.WorkerId == sdkWorker.Id &&
+            x.WorkflowState != Constants.WorkflowStates.Removed);
+        var sdkSite = sdkSiteWorker == null ? null : await sdkContext.Sites.FirstOrDefaultAsync(x =>
+            x.Id == sdkSiteWorker.SiteId &&
+            x.WorkflowState != Constants.WorkflowStates.Removed);
+
+        if (sdkSite == null)
+        {
+            return new OperationDataResult<TimePlanningWorkingHoursModel>(false,
+                localizationService.GetString("SiteNotFound"), null!);
+        }
+
+        var result = await PlanRegistrationHelper.ReadBySiteAndDate(dbContext, sdkSite.MicrotingUid!.Value, dateTime, null);
+        if (result == null)
+        {
+            return new OperationDataResult<TimePlanningWorkingHoursModel>(false,
+                localizationService.GetString("PlanRegistrationNotFound"), null!);
+        }
+        return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
+            result);
+    }
+
     public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
     {
         var sdkCore = await coreHelper.GetCore();
@@ -1421,30 +1467,21 @@ public class TimePlanningWorkingHoursService(
     }
 
     public async Task<OperationResult> UpdateWorkingHour(int? sdkSiteId, TimePlanningWorkingHoursUpdateModel model,
-        string? token)
+        string token)
     {
-        if (token == null && sdkSiteId == null)
+        var registrationDevice = await dbContext.RegistrationDevices
+            .Where(x => x.Token == token).FirstOrDefaultAsync();
+        if (registrationDevice == null)
         {
-            return await UpdateWorkingHour(model).ConfigureAwait(false);
+            return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
         }
 
-        RegistrationDevice? registrationDevice = null;
-        if (token != null)
-        {
-            registrationDevice = await dbContext.RegistrationDevices
-                .Where(x => x.Token == token).FirstOrDefaultAsync();
-            if (registrationDevice == null)
-            {
-                return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
-            }
+        registrationDevice.OsVersion = model.OsVersion;
+        registrationDevice.Model = model.Model;
+        registrationDevice.Manufacturer = model.Manufacturer;
+        registrationDevice.SoftwareVersion = model.SoftwareVersion;
 
-            registrationDevice.OsVersion = model.OsVersion;
-            registrationDevice.Model = model.Model;
-            registrationDevice.Manufacturer = model.Manufacturer;
-            registrationDevice.SoftwareVersion = model.SoftwareVersion;
-
-            await registrationDevice.Update(dbContext);
-        }
+        await registrationDevice.Update(dbContext);
 
         var todayAtMidnight = model.Date;
 

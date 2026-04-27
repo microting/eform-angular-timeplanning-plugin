@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using TimePlanning.Pn.Grpc;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
 using TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
@@ -20,10 +21,25 @@ public class TimePlanningWorkingHoursGrpcService
     public override async Task<ReadWorkingHoursResponse> ReadWorkingHours(
         ReadWorkingHoursRequest request, ServerCallContext context)
     {
-        var result = await _workingHoursService.Read(
-            request.SdkSiteId,
-            DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture),
-            request.Token);
+        var token = string.IsNullOrEmpty(request.Token) ? null : request.Token;
+        var date = DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture);
+
+        OperationDataResult<Infrastructure.Models.WorkingHours.Index.TimePlanningWorkingHoursModel> result;
+        if (token == null)
+        {
+            // Personal mode -- resolve user from JWT
+            result = await _workingHoursService.ReadFullByCurrentUser(
+                date,
+                request.Device?.SoftwareVersion,
+                request.Device?.DeviceModel,
+                request.Device?.Manufacturer,
+                request.Device?.OsVersion);
+        }
+        else
+        {
+            // Kiosk mode -- device token lookup
+            result = await _workingHoursService.Read(request.SdkSiteId, date, token);
+        }
 
         var response = new ReadWorkingHoursResponse
         {
@@ -46,11 +62,19 @@ public class TimePlanningWorkingHoursGrpcService
         model.Date = DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture);
 
         var token = string.IsNullOrEmpty(request.Token) ? null : request.Token;
-        int? sdkSiteId = request.SdkSiteId == 0 ? null : request.SdkSiteId;
-        var result = await _workingHoursService.UpdateWorkingHour(
-            sdkSiteId,
-            model,
-            token);
+
+        Microting.eFormApi.BasePn.Infrastructure.Models.API.OperationResult result;
+        if (token == null)
+        {
+            // Personal mode -- 1-param overload uses JWT
+            result = await _workingHoursService.UpdateWorkingHour(model);
+        }
+        else
+        {
+            // Kiosk mode -- 3-param overload uses device token
+            int? sdkSiteId = request.SdkSiteId == 0 ? null : request.SdkSiteId;
+            result = await _workingHoursService.UpdateWorkingHour(sdkSiteId, model, token);
+        }
 
         return new UpdateWorkingHoursResponse
         {
