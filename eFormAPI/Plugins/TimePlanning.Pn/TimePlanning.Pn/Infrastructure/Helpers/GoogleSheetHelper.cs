@@ -268,8 +268,11 @@ public class GoogleSheetHelper
                         planHours = planHours.Replace(",", ".");
                     }
 
-                    double parsedPlanHours = double.Parse(planHours, NumberStyles.AllowDecimalPoint,
-                        NumberFormatInfo.InvariantInfo);
+                    if (!double.TryParse(planHours, NumberStyles.AllowDecimalPoint,
+                            NumberFormatInfo.InvariantInfo, out var parsedPlanHours))
+                    {
+                        parsedPlanHours = 0;
+                    }
 
                     var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
