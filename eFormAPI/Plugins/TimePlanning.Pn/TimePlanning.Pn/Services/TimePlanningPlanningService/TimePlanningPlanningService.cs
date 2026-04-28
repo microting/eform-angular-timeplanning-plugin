@@ -423,11 +423,12 @@ public class TimePlanningPlanningService(
         var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
         var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
         var todayMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
-        var date = model.DateFrom;
-        while (date <= model.DateTo)
+        var midnightOfDateToForLoop = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 0, 0, 0);
+        var date = midnightOfDateFrom;
+        while (date <= midnightOfDateToForLoop)
         {
-            datesInPeriod.Add(date.Value);
-            date = date.Value.AddDays(1);
+            datesInPeriod.Add(date);
+            date = date.AddDays(1);
         }
 
         var siteModel = new TimePlanningPlanningModel

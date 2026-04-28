@@ -744,12 +744,15 @@ public class TimePlanningWorkingHoursService(
     public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime,
         string token)
     {
+        Console.WriteLine($"[DEBUG-GRPC-READ] Read(sdkSiteId={sdkSiteId}, dateTime={dateTime:yyyy-MM-dd}, token={token[..Math.Min(8, token.Length)]}) called");
         var result = await PlanRegistrationHelper.ReadBySiteAndDate(dbContext, sdkSiteId, dateTime, token);
         if (result == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate returned null for sdkSiteId={sdkSiteId}, dateTime={dateTime:yyyy-MM-dd}");
             return new OperationDataResult<TimePlanningWorkingHoursModel>(false,
                 localizationService.GetString("PlanRegistrationNotFound"), null!);
         }
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate returned model: Id={result.Id}, SdkSiteId={result.SdkSiteId}, Date={result.Date:yyyy-MM-dd}, Start1={result.Shift1Start}, Stop1={result.Shift1Stop}, Start1StartedAt={result.Start1StartedAt}, Stop1StoppedAt={result.Stop1StoppedAt}");
         return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
             result);
     }
@@ -758,9 +761,11 @@ public class TimePlanningWorkingHoursService(
         DateTime dateTime,
         string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion)
     {
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadFullByCurrentUser called: dateTime={dateTime:yyyy-MM-dd}");
         var currentUserAsync = await userService.GetCurrentUserAsync();
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
+        Console.WriteLine($"[DEBUG-GRPC-READ] Current user: Id={currentUserAsync.Id}, email={currentUser.Email}");
 
         if (deviceModel != null)
         {
@@ -774,52 +779,71 @@ public class TimePlanningWorkingHoursService(
         var userEmail = (currentUser.Email ?? "").Trim().ToLower();
         var core = await coreHelper.GetCore();
         var sdkContext = core.DbContextHelper.GetDbContext();
-        var sdkWorker = await sdkContext.Workers.FirstOrDefaultAsync(x =>
+        var sdkWorker = await sdkContext.Workers.AsNoTracking().FirstOrDefaultAsync(x =>
             x.Email.ToLower() == userEmail &&
             x.WorkflowState != Constants.WorkflowStates.Removed);
-        var sdkSiteWorker = sdkWorker == null ? null : await sdkContext.SiteWorkers.FirstOrDefaultAsync(x =>
+        Console.WriteLine($"[DEBUG-GRPC-READ] sdkWorker found: {sdkWorker != null}, Id={sdkWorker?.Id}");
+        var sdkSiteWorker = sdkWorker == null ? null : await sdkContext.SiteWorkers.AsNoTracking().FirstOrDefaultAsync(x =>
             x.WorkerId == sdkWorker.Id &&
             x.WorkflowState != Constants.WorkflowStates.Removed);
-        var sdkSite = sdkSiteWorker == null ? null : await sdkContext.Sites.FirstOrDefaultAsync(x =>
+        Console.WriteLine($"[DEBUG-GRPC-READ] sdkSiteWorker found: {sdkSiteWorker != null}, SiteId={sdkSiteWorker?.SiteId}");
+        var sdkSite = sdkSiteWorker == null ? null : await sdkContext.Sites.AsNoTracking().FirstOrDefaultAsync(x =>
             x.Id == sdkSiteWorker.SiteId &&
             x.WorkflowState != Constants.WorkflowStates.Removed);
+        Console.WriteLine($"[DEBUG-GRPC-READ] sdkSite found: {sdkSite != null}, MicrotingUid={sdkSite?.MicrotingUid}");
 
         if (sdkSite == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-READ] EARLY RETURN: sdkSite is null");
             return new OperationDataResult<TimePlanningWorkingHoursModel>(false,
                 localizationService.GetString("SiteNotFound"), null!);
         }
 
+        Console.WriteLine($"[DEBUG-GRPC-READ] Calling ReadBySiteAndDate: sdkSiteId={sdkSite.MicrotingUid!.Value}, dateTime={dateTime:yyyy-MM-dd}, token=null");
         var result = await PlanRegistrationHelper.ReadBySiteAndDate(dbContext, sdkSite.MicrotingUid!.Value, dateTime, null);
         if (result == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate returned null");
             return new OperationDataResult<TimePlanningWorkingHoursModel>(false,
                 localizationService.GetString("PlanRegistrationNotFound"), null!);
         }
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate returned: Id={result.Id}, SdkSiteId={result.SdkSiteId}, Date={result.Date:yyyy-MM-dd}, Start1={result.Shift1Start}, Stop1={result.Shift1Stop}, Start1StartedAt={result.Start1StartedAt}, Stop1StoppedAt={result.Stop1StoppedAt}");
         return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
             result);
     }
 
     public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
     {
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] === UpdateWorkingHour (PERSONAL mode, 1-param) entered ===");
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] model.Date={model.Date:yyyy-MM-dd}, Shift1Start={model.Shift1Start}, Shift1Stop={model.Shift1Stop}, Shift1Pause={model.Shift1Pause}");
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] model.Start1StartedAt={model.Start1StartedAt}, model.Stop1StoppedAt={model.Stop1StoppedAt}");
+
         var sdkCore = await coreHelper.GetCore();
         var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
         var currentUserAsync = await userService.GetCurrentUserAsync();
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         var userEmail = (currentUser.Email ?? "").Trim().ToLower();
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] Current user: Id={currentUserAsync.Id}, email={userEmail}");
+
         var sdkWorker = await sdkDbContext.Workers.FirstOrDefaultAsync(x =>
             x.Email.ToLower() == userEmail &&
             x.WorkflowState != Constants.WorkflowStates.Removed);
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] sdkWorker found: {sdkWorker != null}, Id={sdkWorker?.Id}");
+
         var sdkSiteWorker = sdkWorker == null ? null : await sdkDbContext.SiteWorkers.FirstOrDefaultAsync(x =>
             x.WorkerId == sdkWorker.Id &&
             x.WorkflowState != Constants.WorkflowStates.Removed);
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] sdkSiteWorker found: {sdkSiteWorker != null}, SiteId={sdkSiteWorker?.SiteId}");
+
         var sdkSite = sdkSiteWorker == null ? null : await sdkDbContext.Sites.FirstOrDefaultAsync(x =>
             x.Id == sdkSiteWorker.SiteId &&
             x.WorkflowState != Constants.WorkflowStates.Removed);
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] sdkSite found: {sdkSite != null}, MicrotingUid={sdkSite?.MicrotingUid}");
 
         if (sdkSite == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] EARLY RETURN: sdkSite is null, returning SiteNotFound");
             return new OperationResult(
                 false,
                 localizationService.GetString("SiteNotFound"));
@@ -828,6 +852,7 @@ public class TimePlanningWorkingHoursService(
         var assignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] assignedSite found: {assignedSite != null}, AllowEdit={assignedSite?.AllowEditOfRegistrations}, DaysBackEnabled={assignedSite?.DaysBackInTimeAllowedEditingEnabled}");
 
         // Guard: when both editing flags are disabled, the worker is not allowed
         // to mutate their own registrations from the mobile app.
@@ -835,21 +860,26 @@ public class TimePlanningWorkingHoursService(
             && !assignedSite.AllowEditOfRegistrations
             && !assignedSite.DaysBackInTimeAllowedEditingEnabled)
         {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] EARLY RETURN: editing not allowed for worker (AllowEdit=false, DaysBack=false)");
             return new OperationResult(
                 false,
                 localizationService.GetString("EditingNotAllowedForWorker"));
         }
 
         var todayAtMidnight = model.Date;
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] Querying PlanRegistrations: Date={todayAtMidnight:yyyy-MM-dd}, SdkSitId={sdkSite.MicrotingUid}");
 
         var planRegistration = await dbContext.PlanRegistrations
             .Where(x => x.Date == todayAtMidnight)
             .Where(x => x.SdkSitId == sdkSite.MicrotingUid)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync();
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] DB lookup result: planRegistration found={planRegistration != null}, Id={planRegistration?.Id}, WorkflowState={planRegistration?.WorkflowState}");
 
         if (planRegistration == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] planRegistration is NULL -- will CREATE new row for Date={model.Date:yyyy-MM-dd}, SdkSitId={sdkSite.MicrotingUid}");
+            model.Date = new DateTime(model.Date.Year, model.Date.Month, model.Date.Day, 0, 0, 0);
             planRegistration = new PlanRegistration
             {
                 MessageId = null,
@@ -1157,10 +1187,13 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.SumFlexStart = 0;
             }
 
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL CREATE: Before planRegistration.Create(dbContext) -- SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
             await planRegistration.Create(dbContext).ConfigureAwait(false);
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL CREATE: After planRegistration.Create -- Id={planRegistration.Id}, WorkflowState={planRegistration.WorkflowState}");
         }
         else
         {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL UPDATE: planRegistration EXISTS -- will UPDATE existing row Id={planRegistration.Id}, Date={planRegistration.Date:yyyy-MM-dd}, current Start1Id={planRegistration.Start1Id}, current Stop1Id={planRegistration.Stop1Id}");
             planRegistration.UpdatedByUserId = userService.UserId;
             planRegistration.Pause1Id = model.Shift1Pause ?? 0;
             planRegistration.Pause2Id = model.Shift2Pause ?? 0;
@@ -1460,21 +1493,29 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.SumFlexStart = 0;
             }
 
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL UPDATE: Before planRegistration.Update(dbContext) -- Id={planRegistration.Id}, SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
             await planRegistration.Update(dbContext).ConfigureAwait(false);
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL UPDATE: After planRegistration.Update -- Id={planRegistration.Id}, WorkflowState={planRegistration.WorkflowState}");
         }
 
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL mode: returning OperationResult(true)");
         return new OperationResult(true);
     }
 
     public async Task<OperationResult> UpdateWorkingHour(int? sdkSiteId, TimePlanningWorkingHoursUpdateModel model,
         string token)
     {
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] === UpdateWorkingHour (KIOSK mode, 3-param) entered === sdkSiteId={sdkSiteId}, Date={model.Date:yyyy-MM-dd}, token={token[..Math.Min(8, token.Length)]}...");
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK: model.Shift1Start={model.Shift1Start}, Shift1Stop={model.Shift1Stop}, Shift1Pause={model.Shift1Pause}, Start1StartedAt={model.Start1StartedAt}, Stop1StoppedAt={model.Stop1StoppedAt}");
+
         var registrationDevice = await dbContext.RegistrationDevices
             .Where(x => x.Token == token).FirstOrDefaultAsync();
         if (registrationDevice == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK: EARLY RETURN -- Token not found in RegistrationDevices");
             return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
         }
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK: registrationDevice found, Id={registrationDevice.Id}");
 
         registrationDevice.OsVersion = model.OsVersion;
         registrationDevice.Model = model.Model;
@@ -1484,15 +1525,19 @@ public class TimePlanningWorkingHoursService(
         await registrationDevice.Update(dbContext);
 
         var todayAtMidnight = model.Date;
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK: Querying PlanRegistrations: Date={todayAtMidnight:yyyy-MM-dd}, SdkSitId={sdkSiteId}");
 
         var planRegistration = await dbContext.PlanRegistrations
             .Where(x => x.Date == todayAtMidnight)
             .Where(x => x.SdkSitId == sdkSiteId)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync();
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK: DB lookup result: planRegistration found={planRegistration != null}, Id={planRegistration?.Id}, WorkflowState={planRegistration?.WorkflowState}");
 
         if (planRegistration == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK CREATE: planRegistration is NULL -- will CREATE new row");
+            model.Date = new DateTime(model.Date.Year, model.Date.Month, model.Date.Day, 0, 0, 0);
             planRegistration = new PlanRegistration
             {
                 MessageId = null,
@@ -1813,10 +1858,13 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.SumFlexStart = 0;
             }
 
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK CREATE: Before planRegistration.Create(dbContext) -- SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
             await planRegistration.Create(dbContext).ConfigureAwait(false);
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK CREATE: After planRegistration.Create -- Id={planRegistration.Id}, WorkflowState={planRegistration.WorkflowState}");
         }
         else
         {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK UPDATE: planRegistration EXISTS -- will UPDATE existing row Id={planRegistration.Id}, Date={planRegistration.Date:yyyy-MM-dd}, current Start1Id={planRegistration.Start1Id}, current Stop1Id={planRegistration.Stop1Id}");
             planRegistration.UpdatedByUserId = userService.UserId;
             planRegistration.Pause1Id = model.Shift1Pause ?? 0;
             planRegistration.Pause2Id = model.Shift2Pause ?? 0;
@@ -2105,9 +2153,12 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.SumFlexStart = 0;
             }
 
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK UPDATE: Before planRegistration.Update(dbContext) -- Id={planRegistration.Id}, SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
             await planRegistration.Update(dbContext).ConfigureAwait(false);
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK UPDATE: After planRegistration.Update -- Id={planRegistration.Id}, WorkflowState={planRegistration.WorkflowState}");
         }
 
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK mode: returning OperationResult(true)");
         return new OperationResult(true);
     }
 
