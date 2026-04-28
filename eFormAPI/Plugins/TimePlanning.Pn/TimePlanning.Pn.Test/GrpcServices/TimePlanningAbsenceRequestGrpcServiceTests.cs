@@ -75,7 +75,7 @@ public class TimePlanningAbsenceRequestGrpcServiceTests
         Assert.That(response.Model.DateTo, Is.EqualTo("2026-04-12T00:00:00"));
         Assert.That(response.Model.Status, Is.EqualTo("Pending"));
         Assert.That(response.Model.RequestedAtUtc, Is.EqualTo("2026-04-03T10:30:00"));
-        Assert.That(response.Model.DecidedAtUtc, Is.EqualTo(""));
+        Assert.That(response.Model.DecidedAtUtc, Is.Null);
         Assert.That(response.Model.DecidedBySdkSiteId, Is.EqualTo(0));
         Assert.That(response.Model.RequestComment, Is.EqualTo("Vacation"));
         Assert.That(response.Model.DecisionComment, Is.EqualTo(""));

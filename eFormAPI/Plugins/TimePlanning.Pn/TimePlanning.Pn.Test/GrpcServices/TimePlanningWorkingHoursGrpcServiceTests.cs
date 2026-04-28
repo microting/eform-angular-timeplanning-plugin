@@ -200,7 +200,9 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     [Test]
     public async Task UpdateWorkingHours_PersonalMode_PassesNullSdkSiteIdAndNullToken()
     {
-        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+        // Personal mode (empty token) routes to the 1-param UpdateWorkingHour
+        // overload (JWT-based user lookup) per 0ad1af89.
+        _whService.UpdateWorkingHour(Arg.Any<TimePlanningWorkingHoursUpdateModel>())
             .Returns(new OperationResult(true, "Updated"));
 
         var request = new UpdateWorkingHoursRequest
@@ -221,9 +223,11 @@ public class TimePlanningWorkingHoursGrpcServiceTests
         Assert.That(response.Success, Is.True);
 
         await _whService.Received(1).UpdateWorkingHour(
-            null,
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>());
+        await _whService.DidNotReceive().UpdateWorkingHour(
+            Arg.Any<int?>(),
             Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
-            null);
+            Arg.Any<string>());
     }
 
     [Test]
@@ -258,7 +262,8 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     [Test]
     public async Task UpdateWorkingHours_PersonalMode_MapsModelFieldsCorrectly()
     {
-        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+        // Personal mode (empty token) routes to the 1-param UpdateWorkingHour overload.
+        _whService.UpdateWorkingHour(Arg.Any<TimePlanningWorkingHoursUpdateModel>())
             .Returns(new OperationResult(true, "Updated"));
 
         var request = new UpdateWorkingHoursRequest
@@ -281,14 +286,12 @@ public class TimePlanningWorkingHoursGrpcServiceTests
         Assert.That(response.Success, Is.True);
 
         await _whService.Received(1).UpdateWorkingHour(
-            null,
             Arg.Is<TimePlanningWorkingHoursUpdateModel>(m =>
                 m.Date == DateTime.Parse("2026-04-26") &&
                 m.Shift1Start == 101 &&
                 m.Start1StartedAt == "2026-04-26T08:00:00" &&
                 m.Stop1StoppedAt == "2026-04-26T16:00:00" &&
-                m.CommentWorker == "Morning shift"),
-            null);
+                m.CommentWorker == "Morning shift"));
     }
 
     [Test]
@@ -334,7 +337,8 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     [Test]
     public async Task UpdateWorkingHours_PersonalMode_ServiceFailure_ReturnsErrorMessage()
     {
-        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+        // Personal mode (empty token) routes to the 1-param UpdateWorkingHour overload.
+        _whService.UpdateWorkingHour(Arg.Any<TimePlanningWorkingHoursUpdateModel>())
             .Returns(new OperationResult(false, "User not found"));
 
         var request = new UpdateWorkingHoursRequest
@@ -381,9 +385,11 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     }
 
     [Test]
-    public async Task UpdateWorkingHours_EmptyTokenWithNonZeroSdkSiteId_SdkSiteIdPassesThrough()
+    public async Task UpdateWorkingHours_EmptyTokenWithNonZeroSdkSiteId_RoutesToPersonalMode()
     {
-        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+        // After 0ad1af89, empty/whitespace token is the sole personal-mode trigger.
+        // SdkSiteId is ignored when token is empty (user is resolved via JWT).
+        _whService.UpdateWorkingHour(Arg.Any<TimePlanningWorkingHoursUpdateModel>())
             .Returns(new OperationResult(true, "Updated"));
 
         var request = new UpdateWorkingHoursRequest
@@ -402,10 +408,13 @@ public class TimePlanningWorkingHoursGrpcServiceTests
 
         Assert.That(response.Success, Is.True);
 
+        // Personal-mode 1-param overload is called; 3-param kiosk overload is not.
         await _whService.Received(1).UpdateWorkingHour(
-            7,
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>());
+        await _whService.DidNotReceive().UpdateWorkingHour(
+            Arg.Any<int?>(),
             Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
-            null);
+            Arg.Any<string>());
     }
 
     [Test]

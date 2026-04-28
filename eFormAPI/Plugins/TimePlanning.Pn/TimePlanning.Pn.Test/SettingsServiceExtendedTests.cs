@@ -74,15 +74,16 @@ public class SettingsServiceExtendedTests : TestBaseSetup
     }
 
     [Test]
-    public async Task GetAvailableSites_NullToken_ReturnsSuccess()
+    public async Task GetAvailableSites_NullToken_ReturnsTokenNotFound()
     {
-        // Act — null token skips the device token check
+        // Act — after 0ad1af89, GetAvailableSites is strictly device-token-only
+        // (browser/personal mode now uses GetAvailableSitesByCurrentUser).
+        // A null token falls through the RegistrationDevices lookup and matches no device.
         var result = await _settingsService.GetAvailableSites(null);
 
-        // Assert — succeeds even with no sites
-        Assert.That(result.Success, Is.True);
-        Assert.That(result.Model, Is.Not.Null);
-        Assert.That(result.Model.Count, Is.EqualTo(0));
+        // Assert — null token is treated like any other unknown token
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Token not found"));
     }
 
     [Test]
