@@ -21,6 +21,45 @@ message ActivateDeviceModel {
   string token = 1;
 }
 
+// Request/Response for personal login (username/password).
+// Field numbers MUST match the Dart-side proto (proto/auth.proto) exactly so
+// wire compatibility is preserved.
+message AuthenticateUserRequest {
+  string username = 1;
+  string password = 2;
+  string grant_type = 3;
+}
+
+message AuthenticateUserResponse {
+  bool success = 1;
+  string message = 2;
+  AuthUserModel model = 3;
+}
+
+message AuthUserModel {
+  string access_token = 1;
+  string first_name = 2;
+  string last_name = 3;
+}
+
+// Request/Response for token refresh.
+// The current Bearer JWT is conveyed via gRPC `authorization` metadata
+// (the Dart-side AuthInterceptor injects it), the body is intentionally
+// empty — matching the JSON oracle GET /api/auth/token/refresh.
+message RefreshTokenRequest {}
+
+message RefreshTokenResponse {
+  bool success = 1;
+  string message = 2;
+  AuthUserModel model = 3;
+}
+
 service TimePlanningAuthService {
   rpc ActivateDevice(ActivateDeviceRequest) returns (ActivateDeviceResponse);
+
+  // Maps to POST /api/auth/token
+  rpc AuthenticateUser(AuthenticateUserRequest) returns (AuthenticateUserResponse);
+
+  // Maps to GET /api/auth/token/refresh
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 }
