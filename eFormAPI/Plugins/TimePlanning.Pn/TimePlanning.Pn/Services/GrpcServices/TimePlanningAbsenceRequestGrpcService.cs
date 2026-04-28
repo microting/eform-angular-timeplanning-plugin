@@ -27,8 +27,10 @@ public class TimePlanningAbsenceRequestGrpcService
             var model = new AbsenceRequestCreateModel
             {
                 RequestedBySdkSitId = request.RequestedBySdkSiteId,
-                DateFrom = DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture),
-                DateTo = DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture),
+                DateFrom = DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
+                DateTo = DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
                 MessageId = request.MessageId,
                 RequestComment = request.RequestComment,
             };
@@ -209,20 +211,40 @@ public class TimePlanningAbsenceRequestGrpcService
         }
     }
 
+    // AbsenceRequest-specific date format: matches Newtonsoft.Json's serialization
+    // behavior. Newtonsoft only emits the trailing 'Z' when DateTime.Kind == Utc;
+    // the EF Pomelo MySQL provider materializes DateTime values with
+    // Kind == Unspecified, so the JSON read-path drops the Z. To keep the gRPC
+    // envelope diff-equal to JSON for both write-path values (Kind=Utc, e.g.
+    // freshly-set DateTime.UtcNow) and read-path values (Kind=Unspecified,
+    // loaded from MySQL), the Z suffix is conditional on Kind. Microsecond
+    // precision (FFFFFF) is preserved unconditionally.
+    private static string FormatAbsenceDateUtc(DateTime dt) =>
+        dt.Kind == DateTimeKind.Utc
+            ? dt.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFZ")
+            : dt.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFF");
+
+    private static string FormatAbsenceDateUtcOrNull(DateTime? dt) =>
+        dt == null ? null : FormatAbsenceDateUtc(dt.Value);
+
     private static Grpc.AbsenceRequestModel MapToGrpc(CsAbsenceRequestModel m)
     {
         var grpc = new Grpc.AbsenceRequestModel
         {
             Id = m.Id,
             RequestedBySdkSiteId = m.RequestedBySdkSitId,
-            DateFrom = m.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"),
-            DateTo = m.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"),
+            DateFrom = FormatAbsenceDateUtc(m.DateFrom),
+            DateTo = FormatAbsenceDateUtc(m.DateTo),
             Status = m.Status ?? "",
-            RequestedAtUtc = m.RequestedAtUtc.ToString("yyyy-MM-ddTHH:mm:ss"),
-            DecidedAtUtc = m.DecidedAtUtc?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
-            DecidedBySdkSiteId = m.DecidedBySdkSitId ?? 0,
+            RequestedAtUtc = FormatAbsenceDateUtc(m.RequestedAtUtc),
+            // Wrapped fields — leave null when source is null so proto3 hasField
+            // semantics propagate to the dart converter.
+            DecidedAtUtc = FormatAbsenceDateUtcOrNull(m.DecidedAtUtc),
+            DecidedBySdkSiteId = m.DecidedBySdkSitId,
             RequestComment = m.RequestComment ?? "",
-            DecisionComment = m.DecisionComment ?? "",
+            DecisionComment = m.DecisionComment,
+            RequestedByWorkerName = m.RequestedByWorkerName,
+            DecidedByWorkerName = m.DecidedByWorkerName,
         };
 
         if (m.Days != null)
@@ -231,7 +253,7 @@ public class TimePlanningAbsenceRequestGrpcService
             {
                 grpc.Days.Add(new Grpc.AbsenceRequestDayModel
                 {
-                    Date = day.Date.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    Date = FormatAbsenceDateUtc(day.Date),
                     MessageId = day.MessageId,
                 });
             }

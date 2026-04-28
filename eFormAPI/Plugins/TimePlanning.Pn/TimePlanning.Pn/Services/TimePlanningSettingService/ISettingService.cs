@@ -44,7 +44,7 @@ public interface ISettingService
 
     // Task<OperationResult> DeleteSite(int siteId);
 
-    Task<OperationDataResult<List<Site>>> GetAvailableSites(string? token);
+    Task<OperationDataResult<List<Site>>> GetAvailableSites(string token);
     Task<OperationDataResult<List<Site>>> GetAvailableSitesByCurrentUser();
     Task<OperationDataResult<AssignedSite>> GetAssignedSite(int siteId);
     Task<OperationResult> UpdateAssignedSite(AssignedSite site);

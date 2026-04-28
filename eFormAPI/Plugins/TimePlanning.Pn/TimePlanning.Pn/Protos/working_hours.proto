@@ -20,7 +20,7 @@ message WorkingHoursModel {
   int32 sdk_site_id = 2;
   string date = 3;
   string plan_text = 4;
-  int32 plan_hours = 5;
+  double plan_hours = 5;
 
   // Shift 1
   int32 start1_id = 6;

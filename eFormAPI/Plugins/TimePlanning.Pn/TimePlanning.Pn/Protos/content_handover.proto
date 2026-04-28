@@ -3,6 +3,7 @@ syntax = "proto3";
 package timeplanning;
 
 import "common.proto";
+import "google/protobuf/wrappers.proto";
 
 option csharp_namespace = "TimePlanning.Pn.Grpc";
 
@@ -41,12 +42,18 @@ message ContentHandoverRequestModel {
   int32 to_plan_registration_id = 6;
   string status = 7;
   string requested_at_utc = 8;
-  string responded_at_utc = 9;
-  string request_comment = 10;
-  string decision_comment = 11;
-  int32 shift_index = 12;
-  int32 shift_start_time = 13;
-  int32 shift_end_time = 14;
+  // Wrapped — JSON envelope sends null until the request is decided / when
+  // optional comments / shift slot are absent. proto3 default ("" / 0) would
+  // collapse to a non-null value and break the contract diff.
+  google.protobuf.StringValue responded_at_utc = 9;
+  google.protobuf.StringValue request_comment = 10;
+  google.protobuf.StringValue decision_comment = 11;
+  google.protobuf.Int32Value shift_index = 12;
+  google.protobuf.Int32Value shift_start_time = 13;
+  google.protobuf.Int32Value shift_end_time = 14;
+  // JSON envelope from GetAllAsync includes worker names; null on Create.
+  google.protobuf.StringValue from_worker_name = 15;
+  google.protobuf.StringValue to_worker_name = 16;
 }
 
 message ContentHandoverResponse {

@@ -200,7 +200,9 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     [Test]
     public async Task UpdateWorkingHours_PersonalMode_PassesNullSdkSiteIdAndNullToken()
     {
-        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+        // Personal mode (empty token) routes to the 1-param UpdateWorkingHour
+        // overload (JWT-based user lookup) per 0ad1af89.
+        _whService.UpdateWorkingHour(Arg.Any<TimePlanningWorkingHoursUpdateModel>())
             .Returns(new OperationResult(true, "Updated"));
 
         var request = new UpdateWorkingHoursRequest
@@ -221,9 +223,11 @@ public class TimePlanningWorkingHoursGrpcServiceTests
         Assert.That(response.Success, Is.True);
 
         await _whService.Received(1).UpdateWorkingHour(
-            null,
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>());
+        await _whService.DidNotReceive().UpdateWorkingHour(
+            Arg.Any<int?>(),
             Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
-            null);
+            Arg.Any<string>());
     }
 
     [Test]
@@ -258,7 +262,8 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     [Test]
     public async Task UpdateWorkingHours_PersonalMode_MapsModelFieldsCorrectly()
     {
-        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+        // Personal mode (empty token) routes to the 1-param UpdateWorkingHour overload.
+        _whService.UpdateWorkingHour(Arg.Any<TimePlanningWorkingHoursUpdateModel>())
             .Returns(new OperationResult(true, "Updated"));
 
         var request = new UpdateWorkingHoursRequest
@@ -281,14 +286,12 @@ public class TimePlanningWorkingHoursGrpcServiceTests
         Assert.That(response.Success, Is.True);
 
         await _whService.Received(1).UpdateWorkingHour(
-            null,
             Arg.Is<TimePlanningWorkingHoursUpdateModel>(m =>
                 m.Date == DateTime.Parse("2026-04-26") &&
                 m.Shift1Start == 101 &&
                 m.Start1StartedAt == "2026-04-26T08:00:00" &&
                 m.Stop1StoppedAt == "2026-04-26T16:00:00" &&
-                m.CommentWorker == "Morning shift"),
-            null);
+                m.CommentWorker == "Morning shift"));
     }
 
     [Test]
@@ -334,7 +337,8 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     [Test]
     public async Task UpdateWorkingHours_PersonalMode_ServiceFailure_ReturnsErrorMessage()
     {
-        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+        // Personal mode (empty token) routes to the 1-param UpdateWorkingHour overload.
+        _whService.UpdateWorkingHour(Arg.Any<TimePlanningWorkingHoursUpdateModel>())
             .Returns(new OperationResult(false, "User not found"));
 
         var request = new UpdateWorkingHoursRequest
@@ -381,9 +385,11 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     }
 
     [Test]
-    public async Task UpdateWorkingHours_EmptyTokenWithNonZeroSdkSiteId_SdkSiteIdPassesThrough()
+    public async Task UpdateWorkingHours_EmptyTokenWithNonZeroSdkSiteId_RoutesToPersonalMode()
     {
-        _whService.UpdateWorkingHour(Arg.Any<int?>(), Arg.Any<TimePlanningWorkingHoursUpdateModel>(), Arg.Any<string>())
+        // After 0ad1af89, empty/whitespace token is the sole personal-mode trigger.
+        // SdkSiteId is ignored when token is empty (user is resolved via JWT).
+        _whService.UpdateWorkingHour(Arg.Any<TimePlanningWorkingHoursUpdateModel>())
             .Returns(new OperationResult(true, "Updated"));
 
         var request = new UpdateWorkingHoursRequest
@@ -402,10 +408,13 @@ public class TimePlanningWorkingHoursGrpcServiceTests
 
         Assert.That(response.Success, Is.True);
 
+        // Personal-mode 1-param overload is called; 3-param kiosk overload is not.
         await _whService.Received(1).UpdateWorkingHour(
-            7,
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>());
+        await _whService.DidNotReceive().UpdateWorkingHour(
+            Arg.Any<int?>(),
             Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
-            null);
+            Arg.Any<string>());
     }
 
     [Test]
@@ -434,5 +443,144 @@ public class TimePlanningWorkingHoursGrpcServiceTests
             null,
             Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
             "abc");
+    }
+
+    // ── Routing tests: personal vs kiosk mode dispatch ──
+
+    [Test]
+    public async Task ReadWorkingHours_PersonalMode_EmptyToken_CallsReadFullByCurrentUser()
+    {
+        var model = new TimePlanningWorkingHoursModel
+        {
+            Id = 1,
+            SdkSiteId = 7,
+            Date = new DateTime(2026, 4, 3),
+        };
+
+        _whService.ReadFullByCurrentUser(
+                Arg.Any<DateTime>(),
+                Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(new OperationDataResult<TimePlanningWorkingHoursModel>(true, model));
+
+        var request = new ReadWorkingHoursRequest
+        {
+            Token = "",
+            SdkSiteId = 7,
+            Date = "2026-04-03"
+        };
+
+        var response = await _grpcService.ReadWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).ReadFullByCurrentUser(
+            Arg.Any<DateTime>(),
+            Arg.Any<string?>(), Arg.Any<string?>(),
+            Arg.Any<string?>(), Arg.Any<string?>());
+
+        await _whService.DidNotReceive().Read(
+            Arg.Any<int>(), Arg.Any<DateTime>(), Arg.Any<string>());
+    }
+
+    [Test]
+    public async Task ReadWorkingHours_KioskMode_NonEmptyToken_CallsRead()
+    {
+        var model = new TimePlanningWorkingHoursModel
+        {
+            Id = 1,
+            SdkSiteId = 7,
+            Date = new DateTime(2026, 4, 3),
+        };
+
+        _whService.Read(7, Arg.Any<DateTime>(), "abc123device")
+            .Returns(new OperationDataResult<TimePlanningWorkingHoursModel>(true, model));
+
+        var request = new ReadWorkingHoursRequest
+        {
+            Token = "abc123device",
+            SdkSiteId = 7,
+            Date = "2026-04-03"
+        };
+
+        var response = await _grpcService.ReadWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).Read(7, Arg.Any<DateTime>(), "abc123device");
+
+        await _whService.DidNotReceive().ReadFullByCurrentUser(
+            Arg.Any<DateTime>(),
+            Arg.Any<string?>(), Arg.Any<string?>(),
+            Arg.Any<string?>(), Arg.Any<string?>());
+    }
+
+    [Test]
+    public async Task UpdateWorkingHours_PersonalMode_EmptyToken_Calls1ParamUpdateWorkingHour()
+    {
+        _whService.UpdateWorkingHour(Arg.Any<TimePlanningWorkingHoursUpdateModel>())
+            .Returns(new OperationResult(true, "Updated"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            Token = "",
+            SdkSiteId = 0,
+            Date = "2026-04-03",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+                Comment = "Personal mode update",
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).UpdateWorkingHour(
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>());
+
+        await _whService.DidNotReceive().UpdateWorkingHour(
+            Arg.Any<int?>(),
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
+            Arg.Any<string>());
+    }
+
+    [Test]
+    public async Task UpdateWorkingHours_KioskMode_NonEmptyToken_Calls3ParamUpdateWorkingHour()
+    {
+        _whService.UpdateWorkingHour(
+                Arg.Any<int?>(),
+                Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
+                Arg.Any<string>())
+            .Returns(new OperationResult(true, "Updated"));
+
+        var request = new UpdateWorkingHoursRequest
+        {
+            Token = "abc123device",
+            SdkSiteId = 42,
+            Date = "2026-04-03",
+            Model = new Grpc.WorkingHoursModel
+            {
+                Start1Id = 101,
+                Comment = "Kiosk mode update",
+            }
+        };
+
+        var response = await _grpcService.UpdateWorkingHours(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+
+        await _whService.Received(1).UpdateWorkingHour(
+            Arg.Any<int?>(),
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>(),
+            "abc123device");
+
+        await _whService.DidNotReceive().UpdateWorkingHour(
+            Arg.Any<TimePlanningWorkingHoursUpdateModel>());
     }
 }

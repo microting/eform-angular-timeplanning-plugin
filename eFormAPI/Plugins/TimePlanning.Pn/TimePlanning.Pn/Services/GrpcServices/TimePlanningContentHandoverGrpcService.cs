@@ -269,6 +269,24 @@ public class TimePlanningContentHandoverGrpcService
         }
     }
 
+    // ContentHandover-specific date format: matches Newtonsoft.Json's
+    // serialization behavior. Newtonsoft only emits the trailing 'Z' when
+    // DateTime.Kind == Utc; the EF Pomelo MySQL provider materializes
+    // DateTime values with Kind == Unspecified, so the JSON read-path drops
+    // the Z. To keep the gRPC envelope diff-equal to JSON for both
+    // write-path values (Kind=Utc, e.g. freshly-set DateTime.UtcNow) and
+    // read-path values (Kind=Unspecified, loaded from MySQL), the Z suffix
+    // is conditional on Kind. Microsecond precision (FFFFFF) is preserved
+    // unconditionally. Mirror of FormatAbsenceDateUtc in the AbsenceRequest
+    // gRPC service.
+    private static string FormatContentHandoverDateUtc(DateTime dt) =>
+        dt.Kind == DateTimeKind.Utc
+            ? dt.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFZ")
+            : dt.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFF");
+
+    private static string FormatContentHandoverDateUtcOrNull(DateTime? dt) =>
+        dt == null ? null : FormatContentHandoverDateUtc(dt.Value);
+
     private static Grpc.ContentHandoverRequestModel MapToGrpc(CsContentHandoverRequestModel m)
     {
         return new Grpc.ContentHandoverRequestModel
@@ -280,13 +298,17 @@ public class TimePlanningContentHandoverGrpcService
             FromPlanRegistrationId = m.FromPlanRegistrationId,
             ToPlanRegistrationId = m.ToPlanRegistrationId,
             Status = m.Status ?? "",
-            RequestedAtUtc = m.RequestedAtUtc.ToString("yyyy-MM-ddTHH:mm:ss"),
-            RespondedAtUtc = m.RespondedAtUtc?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
-            RequestComment = m.RequestComment ?? "",
-            DecisionComment = m.DecisionComment ?? "",
-            ShiftIndex = m.ShiftIndex ?? 0,
-            ShiftStartTime = m.ShiftStartTime ?? 0,
-            ShiftEndTime = m.ShiftEndTime ?? 0
+            RequestedAtUtc = FormatContentHandoverDateUtc(m.RequestedAtUtc),
+            // Wrapped fields — leave null when source is null so proto3
+            // hasField semantics propagate to the dart converter.
+            RespondedAtUtc = FormatContentHandoverDateUtcOrNull(m.RespondedAtUtc),
+            RequestComment = m.RequestComment,
+            DecisionComment = m.DecisionComment,
+            ShiftIndex = m.ShiftIndex,
+            ShiftStartTime = m.ShiftStartTime,
+            ShiftEndTime = m.ShiftEndTime,
+            FromWorkerName = m.FromWorkerName,
+            ToWorkerName = m.ToWorkerName,
         };
     }
 }

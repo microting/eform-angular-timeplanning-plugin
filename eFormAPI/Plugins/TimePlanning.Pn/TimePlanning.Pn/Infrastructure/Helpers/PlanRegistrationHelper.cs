@@ -2175,20 +2175,27 @@ public static class PlanRegistrationHelper
         TimePlanningPnDbContext dbContext, int sdkSiteId, DateTime dateTime,
         string token)
     {
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: sdkSiteId={sdkSiteId}, dateTime={dateTime:yyyy-MM-dd HH:mm:ss}, dateTime.Kind={dateTime.Kind}, token={(token == null ? "NULL" : token[..Math.Min(8, token.Length)] + "...")}");
+
         if (token != null)
         {
             var registrationDevice = await dbContext.RegistrationDevices
+                .AsNoTracking()
                 .Where(x => x.Token == token).FirstOrDefaultAsync();
             if (registrationDevice == null)
             {
+                Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: EARLY RETURN null -- token not found in RegistrationDevices");
                 return null;
             }
+            Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: registrationDevice found, Id={registrationDevice.Id}");
         }
 
         // var today = DateTime.UtcNow;
-        var midnight = dateTime;
+        var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: Querying PlanRegistrations WHERE Date={midnight:yyyy-MM-dd HH:mm:ss} AND SdkSitId={sdkSiteId} AND WorkflowState != Removed");
 
         var planRegistration = await dbContext.PlanRegistrations
+            .AsNoTracking()
             .Where(x => x.Date == midnight)
             .Where(x => x.SdkSitId == sdkSiteId)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -2196,6 +2203,7 @@ public static class PlanRegistrationHelper
 
         if (planRegistration == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: planRegistration NOT FOUND in DB -- returning EMPTY in-memory model (all zeros)");
             var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
             {
                 SdkSiteId = sdkSiteId,
@@ -2226,6 +2234,8 @@ public static class PlanRegistrationHelper
             // return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Plan registration not found",
             //     null);
         }
+
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: planRegistration FOUND IN DB -- Id={planRegistration.Id}, Date={planRegistration.Date:yyyy-MM-dd HH:mm:ss}, SdkSitId={planRegistration.SdkSitId}, WorkflowState={planRegistration.WorkflowState}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
 
         var timePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
         {
