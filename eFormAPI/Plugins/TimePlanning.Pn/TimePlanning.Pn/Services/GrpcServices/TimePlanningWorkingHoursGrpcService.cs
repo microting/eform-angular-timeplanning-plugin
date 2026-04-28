@@ -22,11 +22,16 @@ public class TimePlanningWorkingHoursGrpcService
         ReadWorkingHoursRequest request, ServerCallContext context)
     {
         var token = string.IsNullOrEmpty(request.Token) ? null : request.Token;
-        var date = DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture);
+        var date = DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal);
+        date = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0);
+
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadWorkingHours called: date={request.Date}, sdkSiteId={request.SdkSiteId}, token={(token == null ? "NULL (personal mode)" : token[..Math.Min(8, token.Length)] + "...")}");
 
         OperationDataResult<Infrastructure.Models.WorkingHours.Index.TimePlanningWorkingHoursModel> result;
         if (token == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-READ] Entering PERSONAL mode branch (ReadFullByCurrentUser)");
             // Personal mode -- resolve user from JWT
             result = await _workingHoursService.ReadFullByCurrentUser(
                 date,
@@ -37,8 +42,19 @@ public class TimePlanningWorkingHoursGrpcService
         }
         else
         {
+            Console.WriteLine($"[DEBUG-GRPC-READ] Entering KIOSK mode branch (Read) with sdkSiteId={request.SdkSiteId}");
             // Kiosk mode -- device token lookup
             result = await _workingHoursService.Read(request.SdkSiteId, date, token);
+        }
+
+        Console.WriteLine($"[DEBUG-GRPC-READ] Service returned: success={result.Success}, message={result.Message ?? "null"}");
+        if (result.Success && result.Model != null)
+        {
+            Console.WriteLine($"[DEBUG-GRPC-READ] Model from service: Id={result.Model.Id}, SdkSiteId={result.Model.SdkSiteId}, Date={result.Model.Date:yyyy-MM-dd}, Start1={result.Model.Shift1Start}, Stop1={result.Model.Shift1Stop}, Pause1={result.Model.Shift1Pause}, Start1StartedAt={result.Model.Start1StartedAt}, Stop1StoppedAt={result.Model.Stop1StoppedAt}, NettoHours={result.Model.NettoHours}");
+        }
+        else
+        {
+            Console.WriteLine($"[DEBUG-GRPC-READ] No model returned (success={result.Success}, model is null={result.Model == null})");
         }
 
         var response = new ReadWorkingHoursResponse
@@ -58,14 +74,31 @@ public class TimePlanningWorkingHoursGrpcService
     public override async Task<UpdateWorkingHoursResponse> UpdateWorkingHours(
         UpdateWorkingHoursRequest request, ServerCallContext context)
     {
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] UpdateWorkingHours RPC called");
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] request.Date={request.Date}, request.SdkSiteId={request.SdkSiteId}, request.Token={(string.IsNullOrEmpty(request.Token) ? "NULL" : request.Token[..Math.Min(8, request.Token.Length)] + "...")}");
+        if (request.Model != null)
+        {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] request.Model: Start1Id={request.Model.Start1Id}, Stop1Id={request.Model.Stop1Id}, Pause1Id={request.Model.Pause1Id}, Start1StartedAt={request.Model.Start1StartedAt}, Stop1StoppedAt={request.Model.Stop1StoppedAt}, Comment={request.Model.Comment}");
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] request.Model shifts 2-5: Start2Id={request.Model.Start2Id}, Stop2Id={request.Model.Stop2Id}, Start3Id={request.Model.Start3Id}, Stop3Id={request.Model.Stop3Id}");
+        }
+        else
+        {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] WARNING: request.Model is NULL");
+        }
+
         var model = MapFromGrpc(request.Model, request.Device);
-        model.Date = DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture);
+        model.Date = DateTime.Parse(request.Date, System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal);
+        model.Date = new DateTime(model.Date.Year, model.Date.Month, model.Date.Day, 0, 0, 0);
+
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] After MapFromGrpc: Date={model.Date:yyyy-MM-dd}, Shift1Start={model.Shift1Start}, Shift1Stop={model.Shift1Stop}, Shift1Pause={model.Shift1Pause}, Start1StartedAt={model.Start1StartedAt}, Stop1StoppedAt={model.Stop1StoppedAt}, CommentWorker={model.CommentWorker}");
 
         var token = string.IsNullOrEmpty(request.Token) ? null : request.Token;
 
         Microting.eFormApi.BasePn.Infrastructure.Models.API.OperationResult result;
         if (token == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] Entering PERSONAL mode branch (1-param UpdateWorkingHour)");
             // Personal mode -- 1-param overload uses JWT
             result = await _workingHoursService.UpdateWorkingHour(model);
         }
@@ -73,8 +106,11 @@ public class TimePlanningWorkingHoursGrpcService
         {
             // Kiosk mode -- 3-param overload uses device token
             int? sdkSiteId = request.SdkSiteId == 0 ? null : request.SdkSiteId;
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] Entering KIOSK mode branch (3-param UpdateWorkingHour) with sdkSiteId={sdkSiteId}");
             result = await _workingHoursService.UpdateWorkingHour(sdkSiteId, model, token);
         }
+
+        Console.WriteLine($"[DEBUG-GRPC-UPDATE] Service returned: success={result.Success}, message={result.Message ?? "null"}");
 
         return new UpdateWorkingHoursResponse
         {
@@ -88,8 +124,10 @@ public class TimePlanningWorkingHoursGrpcService
     {
         var device = request.Device;
         var result = await _workingHoursService.CalculateHoursSummary(
-            DateTime.Parse(request.StartDate, System.Globalization.CultureInfo.InvariantCulture),
-            DateTime.Parse(request.EndDate, System.Globalization.CultureInfo.InvariantCulture),
+            DateTime.Parse(request.StartDate, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
+            DateTime.Parse(request.EndDate, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
             device?.SoftwareVersion,
             device?.DeviceModel,
             device?.Manufacturer,
@@ -124,7 +162,7 @@ public class TimePlanningWorkingHoursGrpcService
     }
 
     private static string FormatDateTime(DateTime? dt) =>
-        dt?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "";
+        dt?.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFF") ?? "";
 
     private static Grpc.WorkingHoursModel MapToGrpc(
         Infrastructure.Models.WorkingHours.Index.TimePlanningWorkingHoursModel m)
@@ -135,7 +173,7 @@ public class TimePlanningWorkingHoursGrpcService
             SdkSiteId = m.SdkSiteId,
             Date = m.Date.ToString("yyyy-MM-dd"),
             PlanText = m.PlanText ?? "",
-            PlanHours = (int)m.PlanHours,
+            PlanHours = m.PlanHours,
             // Shift 1
             Start1Id = m.Shift1Start ?? 0,
             Start1StartedAt = FormatDateTime(m.Start1StartedAt),

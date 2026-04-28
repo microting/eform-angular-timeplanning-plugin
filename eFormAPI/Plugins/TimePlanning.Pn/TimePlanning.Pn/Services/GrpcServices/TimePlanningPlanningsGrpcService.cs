@@ -25,8 +25,10 @@ public class TimePlanningPlanningsGrpcService
     {
         var requestModel = new TimePlanningPlanningRequestModel
         {
-            DateFrom = DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture),
-            DateTo = DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture),
+            DateFrom = DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
+            DateTo = DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
             Sort = request.Sort,
             IsSortDsc = request.IsSortDsc,
         };
@@ -58,6 +60,7 @@ public class TimePlanningPlanningsGrpcService
                 PlannedHours = m.PlannedHours,
                 PlannedMinutes = m.PlannedMinutes,
                 SoftwareVersionIsValid = m.SoftwareVersionIsValid,
+                SiteName = m.SiteName ?? "",
             };
 
             if (m.PlanningPrDayModels != null)
@@ -94,8 +97,10 @@ public class TimePlanningPlanningsGrpcService
         {
             var requestModel = new TimePlanningPlanningRequestModel
             {
-                DateFrom = string.IsNullOrEmpty(request.DateFrom) ? null : DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture),
-                DateTo = string.IsNullOrEmpty(request.DateTo) ? null : DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture),
+                DateFrom = string.IsNullOrEmpty(request.DateFrom) ? null : DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
+                DateTo = string.IsNullOrEmpty(request.DateTo) ? null : DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
                 SiteId = request.SiteId == 0 ? null : request.SiteId,
                 Sort = request.Sort,
                 IsSortDsc = request.IsSortDsc,
@@ -180,7 +185,7 @@ public class TimePlanningPlanningsGrpcService
     }
 
     private static string FormatDateTime(DateTime? dt) =>
-        dt?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "";
+        dt?.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFF") ?? "";
 
     private static Grpc.PlanningPrDayModel MapDayToGrpc(TimePlanningPlanningPrDayModel m)
     {
@@ -189,7 +194,7 @@ public class TimePlanningPlanningsGrpcService
             Id = m.Id,
             Date = Timestamp.FromDateTime(DateTime.SpecifyKind(m.Date, DateTimeKind.Utc)),
             PlanText = m.PlanText ?? "",
-            PlanHours = (int)m.PlanHours,
+            PlanHours = m.PlanHours,
             NetWorkingHours = m.ActualHours,
             FlexHours = m.Difference,
             PaidOutFlex = m.PaidOutFlex,
@@ -270,8 +275,8 @@ public class TimePlanningPlanningsGrpcService
             Sick = m.Sick,
             OtherAllowedAbsence = m.OtherAllowedAbsence,
             AbsenceWithoutPermission = m.AbsenceWithoutPermission,
-            CommentOffice = m.CommentOffice ?? "",
-            WorkerComment = m.WorkerComment ?? "",
+            CommentOffice = m.CommentOffice,
+            WorkerComment = m.WorkerComment,
             // Detailed pause timestamps for shift 1
             Pause10StartedAt = FormatDateTime(m.Pause10StartedAt),
             Pause10StoppedAt = FormatDateTime(m.Pause10StoppedAt),
@@ -479,5 +484,8 @@ public class TimePlanningPlanningsGrpcService
     }
 
     private static DateTime? ParseDateTime(string s) =>
-        string.IsNullOrEmpty(s) ? null : DateTime.Parse(s);
+        string.IsNullOrEmpty(s)
+            ? null
+            : DateTime.Parse(s, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal);
 }
