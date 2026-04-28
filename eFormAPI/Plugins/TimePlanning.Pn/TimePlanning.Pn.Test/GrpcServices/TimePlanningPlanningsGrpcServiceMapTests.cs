@@ -914,10 +914,10 @@ public class TimePlanningPlanningsGrpcServiceMapTests
         Assert.That(result.SiteId, Is.EqualTo(0));
         Assert.That(result.Date, Is.EqualTo(DateTime.MinValue));
 
-        // Text defaults (proto default "" maps straight through)
+        // Text defaults (proto default "" maps straight through; StringValue-wrapped fields default to null when not set)
         Assert.That(result.PlanText, Is.EqualTo(""));
-        Assert.That(result.CommentOffice, Is.EqualTo(""));
-        Assert.That(result.WorkerComment, Is.EqualTo(""));
+        Assert.That(result.CommentOffice, Is.Null);
+        Assert.That(result.WorkerComment, Is.Null);
         Assert.That(result.SiteName, Is.EqualTo(""));
 
         // Numeric defaults
