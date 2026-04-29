@@ -855,12 +855,14 @@ public class TimePlanningWorkingHoursService(
         Console.WriteLine($"[DEBUG-GRPC-UPDATE] assignedSite found: {assignedSite != null}, AllowEdit={assignedSite?.AllowEditOfRegistrations}, DaysBackEnabled={assignedSite?.DaysBackInTimeAllowedEditingEnabled}");
 
         // Guard: when both editing flags are disabled, the worker is not allowed
-        // to mutate their own registrations from the mobile app.
+        // to mutate their own registrations from the mobile app — except for
+        // today's registration, which is the punchclock-equivalent flow.
+        var today = DateTime.Now.Date;
         if (assignedSite != null
             && !assignedSite.AllowEditOfRegistrations
-            && !assignedSite.DaysBackInTimeAllowedEditingEnabled)
+            && !assignedSite.DaysBackInTimeAllowedEditingEnabled
+            && model.Date.Date != today)
         {
-            Console.WriteLine($"[DEBUG-GRPC-UPDATE] EARLY RETURN: editing not allowed for worker (AllowEdit=false, DaysBack=false)");
             return new OperationResult(
                 false,
                 localizationService.GetString("EditingNotAllowedForWorker"));
