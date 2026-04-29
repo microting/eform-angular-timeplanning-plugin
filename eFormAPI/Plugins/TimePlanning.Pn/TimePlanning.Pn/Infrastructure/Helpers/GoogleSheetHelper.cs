@@ -986,6 +986,48 @@ public class GoogleSheetHelper
                             }
                         }
 
+                        var calculatedPlanHoursInMinutes = 0;
+                        var originalPlanHours = planRegistration.PlanHours;
+                        if (planRegistration.PlannedStartOfShift1 != 0 && planRegistration.PlannedEndOfShift1 != 0)
+                        {
+                            calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift1 -
+                                                            planRegistration.PlannedStartOfShift1 -
+                                                            planRegistration.PlannedBreakOfShift1;
+                            planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                        }
+
+                        if (planRegistration.PlannedStartOfShift2 != 0 && planRegistration.PlannedEndOfShift2 != 0)
+                        {
+                            calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift2 -
+                                                            planRegistration.PlannedStartOfShift2 -
+                                                            planRegistration.PlannedBreakOfShift2;
+                            planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                        }
+
+                        if (planRegistration.PlannedStartOfShift3 != 0 && planRegistration.PlannedEndOfShift3 != 0)
+                        {
+                            calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift3 -
+                                                            planRegistration.PlannedStartOfShift3 -
+                                                            planRegistration.PlannedBreakOfShift3;
+                            planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                        }
+
+                        if (planRegistration.PlannedStartOfShift4 != 0 && planRegistration.PlannedEndOfShift4 != 0)
+                        {
+                            calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift4 -
+                                                            planRegistration.PlannedStartOfShift4 -
+                                                            planRegistration.PlannedBreakOfShift4;
+                            planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                        }
+
+                        if (planRegistration.PlannedStartOfShift5 != 0 && planRegistration.PlannedEndOfShift5 != 0)
+                        {
+                            calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift5 -
+                                                            planRegistration.PlannedStartOfShift5 -
+                                                            planRegistration.PlannedBreakOfShift5;
+                            planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
+                        }
+
                         if (preTimePlanning != null)
                         {
                             planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
