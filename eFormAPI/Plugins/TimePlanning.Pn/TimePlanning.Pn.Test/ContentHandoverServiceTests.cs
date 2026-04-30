@@ -654,9 +654,14 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var s = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(source.Id);
         var t = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(target.Id);
 
-        // Shift 2 moved
+        // Shift 2 moved off source
         Assert.That(s.PlannedEndOfShift2, Is.EqualTo(0));
-        Assert.That(t.PlannedEndOfShift2, Is.EqualTo(17 * 60));
+        // Receiver had no shifts; moved shift (13-17) lands in first free slot
+        // (slot 1) and sort-by-start is a no-op for a single shift.
+        Assert.That(t.PlannedStartOfShift1, Is.EqualTo(13 * 60));
+        Assert.That(t.PlannedEndOfShift1, Is.EqualTo(17 * 60));
+        Assert.That(t.PlannedEndOfShift2, Is.EqualTo(0));
+        Assert.That(t.PlannedEndOfShift3, Is.EqualTo(0));
         // Shift 1 and 3 untouched on source
         Assert.That(s.PlannedEndOfShift1, Is.EqualTo(12 * 60));
         Assert.That(s.PlannedEndOfShift3, Is.EqualTo(21 * 60));
