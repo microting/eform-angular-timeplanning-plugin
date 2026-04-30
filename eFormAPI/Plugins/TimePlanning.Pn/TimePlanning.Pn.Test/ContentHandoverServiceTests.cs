@@ -716,4 +716,90 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var s = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(source.Id);
         Assert.That(s.PlannedEndOfShift1, Is.EqualTo(12 * 60));
     }
+
+    // Regression: previously MoveContent used reflection to clear non-nullable
+    // PlannedStart/End/BreakOfShift{1..5} ints by calling SetValue(source, null),
+    // which threw ArgumentException and was swallowed by a try/catch. The result
+    // was that the sender's shift columns stayed populated even though PlanHours
+    // and PlanText were nulled directly. UI symptom: planHours changed but the
+    // shift bar still showed on the sender's day.
+    [Test]
+    public async Task AcceptAsync_FullDay_TransfersAllShiftIntsAndZerosSource()
+    {
+        // Arrange
+        var date = new DateTime(2024, 1, 1);
+        var sourcePR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 1,
+            PlanHours = 8,
+            PlanHoursInSeconds = 28800,
+            PlanText = "Important work",
+            PlannedStartOfShift1 = 8 * 3600,
+            PlannedEndOfShift1 = 16 * 3600,
+            PlannedBreakOfShift1 = 30 * 60,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await sourcePR.Create(TimePlanningPnDbContext);
+
+        var targetPR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 2,
+            PlanHours = 0,
+            PlanHoursInSeconds = 0,
+            PlanText = null,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await targetPR.Create(TimePlanningPnDbContext);
+
+        var request = new PlanRegistrationContentHandoverRequest
+        {
+            FromSdkSitId = 1,
+            ToSdkSitId = 2,
+            Date = date,
+            FromPlanRegistrationId = sourcePR.Id,
+            ToPlanRegistrationId = targetPR.Id,
+            Status = HandoverRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await request.Create(TimePlanningPnDbContext);
+
+        var model = new ContentHandoverDecisionModel
+        {
+            DecisionComment = "Accepted"
+        };
+
+        // Act
+        var result = await _contentHandoverService.AcceptAsync(request.Id, 2, model);
+
+        // Assert
+        Assert.That(result.Success, Is.True, $"Expected success but got error: {result.Message}");
+
+        var updatedSource = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(sourcePR.Id);
+        var updatedTarget = await TimePlanningPnDbContext.PlanRegistrations.FindAsync(targetPR.Id);
+
+        // Source shift1 ints zeroed (the regression).
+        Assert.That(updatedSource.PlannedStartOfShift1, Is.EqualTo(0),
+            "Source PlannedStartOfShift1 must be zeroed after full-day handover");
+        Assert.That(updatedSource.PlannedEndOfShift1, Is.EqualTo(0),
+            "Source PlannedEndOfShift1 must be zeroed after full-day handover");
+        Assert.That(updatedSource.PlannedBreakOfShift1, Is.EqualTo(0),
+            "Source PlannedBreakOfShift1 must be zeroed after full-day handover");
+
+        // Target receives the seeded shift1 values.
+        Assert.That(updatedTarget.PlannedStartOfShift1, Is.EqualTo(8 * 3600));
+        Assert.That(updatedTarget.PlannedEndOfShift1, Is.EqualTo(16 * 3600));
+        Assert.That(updatedTarget.PlannedBreakOfShift1, Is.EqualTo(30 * 60));
+
+        // PlanHours / PlanText behaviour preserved (matches AcceptAsync_MovesContent_FromSourceToTarget).
+        Assert.That(updatedSource.PlanHoursInSeconds, Is.EqualTo(0));
+        Assert.That(updatedSource.PlanText, Is.Null);
+        Assert.That(updatedTarget.PlanHoursInSeconds, Is.EqualTo(28800));
+        Assert.That(updatedTarget.PlanText, Is.EqualTo("Important work"));
+    }
 }
