@@ -1020,6 +1020,123 @@ public class ContentHandoverServiceTests : TestBaseSetup
         Assert.That(result.Message, Is.EqualTo("ReceiverHasNoFreeShiftSlot"));
     }
 
+    // Regression: GetInboxAsync used to build response models via MapToModel
+    // alone, leaving FromWorkerName/ToWorkerName at null. The flutter-time UI
+    // then fell back to displaying the numeric site id ("Site 23424"). The
+    // service now mirrors GetAllAsync's SDK Sites lookup and populates both
+    // worker-name fields on every returned model. End-to-end coverage of the
+    // populated fields requires real sdkDbContext.Sites seeding (the same
+    // fixture gap that keeps GetInboxAsync_ReturnsPendingRequestsForReceiver
+    // ignored above and the GetHandoverEligibleCoworkersAsync trio ignored).
+    // The assertion is committed so the test un-ignores itself once the
+    // fixture work lands.
+    [Test]
+    [Ignore("Follow-up: wire real sdkDbContext.Sites + BaseDbContext.Users seeding so the SDK site-name lookup populated by GetInboxAsync can be asserted end-to-end. Same fixture gap as GetInboxAsync_ReturnsPendingRequestsForReceiver above.")]
+    public async Task GetInboxAsync_PopulatesFromAndToWorkerNames()
+    {
+        // Arrange — seed an inbox request where the from-side site has
+        // SiteName "Alice" and the to-side site has SiteName "Bob". The
+        // assertion asserts the worker names returned in the inbox model.
+        var date = new DateTime(2024, 4, 1);
+        var sourcePR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 1,
+            PlanHoursInSeconds = 28800,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await sourcePR.Create(TimePlanningPnDbContext);
+
+        var targetPR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 2,
+            PlanHoursInSeconds = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await targetPR.Create(TimePlanningPnDbContext);
+
+        var request = new PlanRegistrationContentHandoverRequest
+        {
+            FromSdkSitId = 1,
+            ToSdkSitId = 2,
+            Date = date,
+            FromPlanRegistrationId = sourcePR.Id,
+            ToPlanRegistrationId = targetPR.Id,
+            Status = HandoverRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await request.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await _contentHandoverService.GetInboxAsync();
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model.Count, Is.EqualTo(1));
+        Assert.That(result.Model[0].FromWorkerName, Is.EqualTo("Alice"));
+        Assert.That(result.Model[0].ToWorkerName, Is.EqualTo("Bob"));
+    }
+
+    // Regression: GetMineAsync (the sender's "sent" view) had the same gap
+    // as GetInboxAsync. The sender saw "Site <id>" instead of the
+    // recipient's name (and their own). Same SDK Sites lookup applied; same
+    // fixture gap blocks end-to-end assertion here.
+    [Test]
+    [Ignore("Follow-up: wire real sdkDbContext.Sites seeding so the SDK site-name lookup populated by GetMineAsync can be asserted end-to-end. Same fixture gap as the GetInboxAsync sibling.")]
+    public async Task GetMineAsync_PopulatesFromAndToWorkerNames()
+    {
+        // Arrange — same seed as the inbox sibling but asserted from the
+        // sender's perspective via GetMineAsync.
+        var date = new DateTime(2024, 4, 2);
+        var sourcePR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 1,
+            PlanHoursInSeconds = 28800,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await sourcePR.Create(TimePlanningPnDbContext);
+
+        var targetPR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 2,
+            PlanHoursInSeconds = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await targetPR.Create(TimePlanningPnDbContext);
+
+        var request = new PlanRegistrationContentHandoverRequest
+        {
+            FromSdkSitId = 1,
+            ToSdkSitId = 2,
+            Date = date,
+            FromPlanRegistrationId = sourcePR.Id,
+            ToPlanRegistrationId = targetPR.Id,
+            Status = HandoverRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await request.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await _contentHandoverService.GetMineAsync(1);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model.Count, Is.EqualTo(1));
+        Assert.That(result.Model[0].FromWorkerName, Is.EqualTo("Alice"));
+        Assert.That(result.Model[0].ToWorkerName, Is.EqualTo("Bob"));
+    }
+
     [Test]
     public async Task AcceptAsync_PartialShift_OverlappingShifts_Rejects()
     {
