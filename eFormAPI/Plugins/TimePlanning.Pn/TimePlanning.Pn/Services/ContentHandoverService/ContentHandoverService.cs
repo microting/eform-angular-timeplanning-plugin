@@ -948,107 +948,46 @@ public class ContentHandoverService : IContentHandoverService
         target.PlanText = source.PlanText;
         target.PlanHours = source.PlanHours;
         target.PlanHoursInSeconds = source.PlanHoursInSeconds;
-        
-        // Try to move planned shift fields if they exist
-        try
-        {
-            var prType = source.GetType();
-            
-            for (int i = 1; i <= 5; i++)
-            {
-                var startProp = prType.GetProperty($"PlannedStartOfShift{i}");
-                if (startProp != null && startProp.CanRead && startProp.CanWrite)
-                {
-                    var value = startProp.GetValue(source);
-                    startProp.SetValue(target, value);
-                }
-                
-                var endProp = prType.GetProperty($"PlannedEndOfShift{i}");
-                if (endProp != null && endProp.CanRead && endProp.CanWrite)
-                {
-                    var value = endProp.GetValue(source);
-                    endProp.SetValue(target, value);
-                }
-                
-                var breakProp = prType.GetProperty($"PlannedBreakOfShift{i}");
-                if (breakProp != null && breakProp.CanRead && breakProp.CanWrite)
-                {
-                    var value = breakProp.GetValue(source);
-                    breakProp.SetValue(target, value);
-                }
-            }
-            
-            var isDoubleShiftProp = prType.GetProperty("IsDoubleShift");
-            if (isDoubleShiftProp != null && isDoubleShiftProp.CanRead && isDoubleShiftProp.CanWrite)
-            {
-                var value = isDoubleShiftProp.GetValue(source);
-                isDoubleShiftProp.SetValue(target, value);
-            }
-        }
-        catch
-        {
-            // Ignore if properties don't exist
-        }
+
+        // Move all five planned shift slots from source to target
+        target.PlannedStartOfShift1 = source.PlannedStartOfShift1;
+        target.PlannedEndOfShift1 = source.PlannedEndOfShift1;
+        target.PlannedBreakOfShift1 = source.PlannedBreakOfShift1;
+        target.PlannedStartOfShift2 = source.PlannedStartOfShift2;
+        target.PlannedEndOfShift2 = source.PlannedEndOfShift2;
+        target.PlannedBreakOfShift2 = source.PlannedBreakOfShift2;
+        target.PlannedStartOfShift3 = source.PlannedStartOfShift3;
+        target.PlannedEndOfShift3 = source.PlannedEndOfShift3;
+        target.PlannedBreakOfShift3 = source.PlannedBreakOfShift3;
+        target.PlannedStartOfShift4 = source.PlannedStartOfShift4;
+        target.PlannedEndOfShift4 = source.PlannedEndOfShift4;
+        target.PlannedBreakOfShift4 = source.PlannedBreakOfShift4;
+        target.PlannedStartOfShift5 = source.PlannedStartOfShift5;
+        target.PlannedEndOfShift5 = source.PlannedEndOfShift5;
+        target.PlannedBreakOfShift5 = source.PlannedBreakOfShift5;
+        target.IsDoubleShift = source.IsDoubleShift;
 
         // Clear the moved fields on source
         source.PlanText = null;
         source.PlanHours = 0;
         source.PlanHoursInSeconds = 0;
-        
-        // Try to clear planned shift fields if they exist
-        try
-        {
-            var prType = source.GetType();
-            var plannedStartOfShift1Prop = prType.GetProperty("PlannedStartOfShift1");
-            if (plannedStartOfShift1Prop != null && plannedStartOfShift1Prop.CanWrite)
-            {
-                plannedStartOfShift1Prop.SetValue(source, null);
-            }
-            
-            var plannedEndOfShift1Prop = prType.GetProperty("PlannedEndOfShift1");
-            if (plannedEndOfShift1Prop != null && plannedEndOfShift1Prop.CanWrite)
-            {
-                plannedEndOfShift1Prop.SetValue(source, null);
-            }
-            
-            var plannedBreakOfShift1Prop = prType.GetProperty("PlannedBreakOfShift1");
-            if (plannedBreakOfShift1Prop != null && plannedBreakOfShift1Prop.CanWrite)
-            {
-                plannedBreakOfShift1Prop.SetValue(source, null);
-            }
-            
-            // Repeat for shifts 2-5
-            for (int i = 2; i <= 5; i++)
-            {
-                var startProp = prType.GetProperty($"PlannedStartOfShift{i}");
-                if (startProp != null && startProp.CanWrite)
-                {
-                    startProp.SetValue(source, null);
-                }
-                
-                var endProp = prType.GetProperty($"PlannedEndOfShift{i}");
-                if (endProp != null && endProp.CanWrite)
-                {
-                    endProp.SetValue(source, null);
-                }
-                
-                var breakProp = prType.GetProperty($"PlannedBreakOfShift{i}");
-                if (breakProp != null && breakProp.CanWrite)
-                {
-                    breakProp.SetValue(source, null);
-                }
-            }
-            
-            var isDoubleShiftProp = prType.GetProperty("IsDoubleShift");
-            if (isDoubleShiftProp != null && isDoubleShiftProp.CanWrite)
-            {
-                isDoubleShiftProp.SetValue(source, false);
-            }
-        }
-        catch
-        {
-            // Ignore if properties don't exist or can't be set
-        }
+
+        source.PlannedStartOfShift1 = 0;
+        source.PlannedEndOfShift1 = 0;
+        source.PlannedBreakOfShift1 = 0;
+        source.PlannedStartOfShift2 = 0;
+        source.PlannedEndOfShift2 = 0;
+        source.PlannedBreakOfShift2 = 0;
+        source.PlannedStartOfShift3 = 0;
+        source.PlannedEndOfShift3 = 0;
+        source.PlannedBreakOfShift3 = 0;
+        source.PlannedStartOfShift4 = 0;
+        source.PlannedEndOfShift4 = 0;
+        source.PlannedBreakOfShift4 = 0;
+        source.PlannedStartOfShift5 = 0;
+        source.PlannedEndOfShift5 = 0;
+        source.PlannedBreakOfShift5 = 0;
+        source.IsDoubleShift = false;
     }
 
     private static void MoveShift(PlanRegistration source, PlanRegistration target, int n)
