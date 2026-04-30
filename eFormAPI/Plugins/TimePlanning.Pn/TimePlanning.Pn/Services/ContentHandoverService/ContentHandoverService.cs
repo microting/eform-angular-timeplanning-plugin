@@ -851,22 +851,10 @@ public class ContentHandoverService : IContentHandoverService
                 .OrderByDescending(r => r.RequestedAtUtc)
                 .ToListAsync();
 
-            // Resolve worker names from SDK sites
-            var allSiteIds = requests
-                .SelectMany(r => new[] { r.FromSdkSitId, r.ToSdkSitId })
-                .Distinct()
-                .ToList();
-
-            var siteNameLookup = new Dictionary<int, string>();
-            if (allSiteIds.Count > 0)
-            {
-                var sdkCore = await _core.GetCore();
-                var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
-                siteNameLookup = await sdkDbContext.Sites
-                    .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
-                    .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
-                    .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
-            }
+            // Resolve worker names from SDK sites. Wrap in a defensive
+            // try/catch so a transient SDK hiccup degrades to "names blank"
+            // (UI falls back to id) rather than failing the whole inbox load.
+            var siteNameLookup = await TryResolveSiteNameLookupAsync(requests);
 
             var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
             var planRegistrations = await _dbContext.PlanRegistrations
@@ -888,6 +876,45 @@ public class ContentHandoverService : IContentHandoverService
             _logger.LogError(ex, "Error getting handover inbox for authenticated caller");
             return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                 _localizationService.GetString("ErrorGettingHandoverRequests"));
+        }
+    }
+
+    /// <summary>
+    /// Builds an SDK MicrotingUid -> SiteName lookup for the union of
+    /// FromSdkSitId/ToSdkSitId across the supplied requests. Returns an
+    /// empty dictionary on any failure (transient SDK error, missing core,
+    /// etc.) so the caller can degrade gracefully — worker names are a
+    /// presentation enrichment, not load-bearing data, and the personal
+    /// inbox/sent endpoints are hot paths that must not fail the whole
+    /// listing on a name-lookup hiccup.
+    /// </summary>
+    private async Task<Dictionary<int, string>> TryResolveSiteNameLookupAsync(
+        IReadOnlyList<PlanRegistrationContentHandoverRequest> requests)
+    {
+        var allSiteIds = requests
+            .SelectMany(r => new[] { r.FromSdkSitId, r.ToSdkSitId })
+            .Distinct()
+            .ToList();
+
+        if (allSiteIds.Count == 0)
+        {
+            return new Dictionary<int, string>();
+        }
+
+        try
+        {
+            var sdkCore = await _core.GetCore();
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+            return await sdkDbContext.Sites
+                .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
+                .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
+                .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to resolve SDK site names for handover listing; falling back to empty lookup");
+            return new Dictionary<int, string>();
         }
     }
 
@@ -926,22 +953,11 @@ public class ContentHandoverService : IContentHandoverService
                 .OrderByDescending(r => r.RequestedAtUtc)
                 .ToListAsync();
 
-            // Resolve worker names from SDK sites
-            var allSiteIds = requests
-                .SelectMany(r => new[] { r.FromSdkSitId, r.ToSdkSitId })
-                .Distinct()
-                .ToList();
-
-            var siteNameLookup = new Dictionary<int, string>();
-            if (allSiteIds.Count > 0)
-            {
-                var sdkCore = await _core.GetCore();
-                var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
-                siteNameLookup = await sdkDbContext.Sites
-                    .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
-                    .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
-                    .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
-            }
+            // Resolve worker names from SDK sites. Wrap in a defensive
+            // try/catch so a transient SDK hiccup degrades to "names blank"
+            // (UI falls back to id) rather than failing the whole sent-list
+            // load.
+            var siteNameLookup = await TryResolveSiteNameLookupAsync(requests);
 
             var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
             var planRegistrations = await _dbContext.PlanRegistrations
