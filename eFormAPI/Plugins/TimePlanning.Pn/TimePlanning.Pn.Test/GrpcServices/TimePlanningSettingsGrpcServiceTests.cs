@@ -81,7 +81,7 @@ public class TimePlanningSettingsGrpcServiceTests
             },
         };
 
-        _settingService.GetAvailableSitesByCurrentUser()
+        _settingService.GetAllRegistrationSitesByCurrentUser()
             .Returns(new OperationDataResult<List<Infrastructure.Models.Settings.Site>>(
                 true, "OK", sites));
 
@@ -144,7 +144,7 @@ public class TimePlanningSettingsGrpcServiceTests
     [Test]
     public async Task GetRegistrationSitesByCurrentUser_Failure_ReturnsErrorMessage()
     {
-        _settingService.GetAvailableSitesByCurrentUser()
+        _settingService.GetAllRegistrationSitesByCurrentUser()
             .Returns(new OperationDataResult<List<Infrastructure.Models.Settings.Site>>(
                 false, "Access denied"));
 
@@ -161,7 +161,7 @@ public class TimePlanningSettingsGrpcServiceTests
     [Test]
     public async Task GetRegistrationSitesByCurrentUser_EmptyList_ReturnsSuccessWithNoSites()
     {
-        _settingService.GetAvailableSitesByCurrentUser()
+        _settingService.GetAllRegistrationSitesByCurrentUser()
             .Returns(new OperationDataResult<List<Infrastructure.Models.Settings.Site>>(
                 true, "OK", new List<Infrastructure.Models.Settings.Site>()));
 
