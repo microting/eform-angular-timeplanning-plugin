@@ -440,7 +440,7 @@ public class TimePlanningPlanningService(
 
         try
         {
-            siteModel.SoftwareVersionIsValid = Version.TryParse(currentUser.TimeRegistrationSoftwareVersion, out var v2) && v2 >= new Version(3, 1, 1, 4);
+            siteModel.SoftwareVersionIsValid = Version.TryParse(currentUser.TimeRegistrationSoftwareVersion, out var v2) && v2 >= new Version(4,0,0,0);
         }
         catch (Exception)
         {
