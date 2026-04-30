@@ -177,4 +177,10 @@
     <data name="EditingNotAllowedForWorker" xml:space="preserve">
         <value>Redigering er ikke tilladt, når begge redigeringsmuligheder er slået fra for denne medarbejder.</value>
     </data>
+    <data name="ReceiverHasNoFreeShiftSlot" xml:space="preserve">
+        <value>Den valgte kollega har allerede 5 planlagte vagter på denne dato.</value>
+    </data>
+    <data name="ShiftOverlapsExistingShift" xml:space="preserve">
+        <value>Den overdragne vagt overlapper en eksisterende vagt i kollegaens planlægning.</value>
+    </data>
 </root>

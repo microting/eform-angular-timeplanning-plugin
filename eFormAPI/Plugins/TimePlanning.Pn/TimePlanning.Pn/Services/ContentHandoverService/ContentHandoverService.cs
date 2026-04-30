@@ -160,6 +160,34 @@ public class ContentHandoverService : IContentHandoverService
                 .Where(pr => activeCandidateSiteIds.Contains(pr.SdkSitId) && pr.Date == targetDate)
                 .ToListAsync();
 
+            // Resolve the caller's PlanRegistration on the same date so we can
+            // read the actual time windows of the sender's shifts that are
+            // candidates for handover. Without this, we can't tell whether
+            // a receiver's existing shift would overlap.
+            int? callerSdkSitId = callerSite.MicrotingUid;
+            PlanRegistration? callerPr = null;
+            if (callerSdkSitId.HasValue)
+            {
+                callerPr = await _dbContext.PlanRegistrations
+                    .FirstOrDefaultAsync(pr => pr.SdkSitId == callerSdkSitId.Value && pr.Date == targetDate);
+            }
+
+            // Build the list of (start, end) windows for each requested sender
+            // shift index. Empty/zero windows are dropped — they cannot overlap
+            // anything and cannot be handed over.
+            var senderShiftWindows = new List<(int start, int end)>();
+            if (shiftIndices != null && shiftIndices.Count > 0 && callerPr != null)
+            {
+                foreach (var n in shiftIndices.Distinct())
+                {
+                    var s = GetShift(callerPr, n);
+                    if (s.start != 0 || s.end != 0)
+                    {
+                        senderShiftWindows.Add((s.start, s.end));
+                    }
+                }
+            }
+
             bool IsCandidateEligible(PlanRegistration? pr)
             {
                 if (shiftIndices == null || shiftIndices.Count == 0)
@@ -168,10 +196,36 @@ public class ContentHandoverService : IContentHandoverService
                     return true;
                 }
 
-                if (pr == null) return true; // all shift slots implicitly free
-                foreach (var n in shiftIndices)
+                if (pr == null)
                 {
-                    if (GetPlannedEndOfShift(pr, n) != 0) return false;
+                    // No PlanRegistration on that date: all 5 slots implicitly
+                    // free, so as long as the sender shifts themselves don't
+                    // mutually overlap (caller responsibility) we're good.
+                    return true;
+                }
+
+                // Count free slots on the receiver. The merge-into-first-free
+                // semantic needs at least one free slot per sender shift.
+                var freeSlots = 0;
+                for (var i = 1; i <= 5; i++)
+                {
+                    if (IsShiftEmpty(pr, i)) freeSlots++;
+                }
+
+                if (senderShiftWindows.Count == 0)
+                {
+                    // Sender has no actual content for the requested indices —
+                    // fall back to the legacy "at least one free slot" check
+                    // so we don't over-restrict the picker.
+                    return freeSlots >= shiftIndices.Distinct().Count();
+                }
+
+                if (freeSlots < senderShiftWindows.Count) return false;
+
+                // No sender shift may overlap any existing receiver shift.
+                foreach (var w in senderShiftWindows)
+                {
+                    if (OverlapsAnyShift(pr, w.start, w.end)) return false;
                 }
                 return true;
             }
@@ -499,10 +553,21 @@ public class ContentHandoverService : IContentHandoverService
             }
             else
             {
-                if (GetPlannedEndOfShift(toPR, request.ShiftIndex.Value) != 0)
+                // Partial-shift accept: the sender's shift n is merged into the
+                // receiver's first free slot rather than positionally overwriting
+                // slot n. Reject only when (a) the receiver has no free slot at
+                // all, or (b) the candidate shift's time window overlaps an
+                // existing shift on the receiver.
+                var (cStart, cEnd, _) = GetShift(fromPR, request.ShiftIndex.Value);
+                if (FindFirstFreeSlot(toPR) == 0)
                 {
                     return new OperationResult(false,
-                        _localizationService.GetString("TargetPlanRegistrationMustBeEmpty"));
+                        _localizationService.GetString("ReceiverHasNoFreeShiftSlot"));
+                }
+                if (OverlapsAnyShift(toPR, cStart, cEnd))
+                {
+                    return new OperationResult(false,
+                        _localizationService.GetString("ShiftOverlapsExistingShift"));
                 }
             }
 
@@ -992,52 +1057,107 @@ public class ContentHandoverService : IContentHandoverService
 
     private static void MoveShift(PlanRegistration source, PlanRegistration target, int n)
     {
-        switch (n)
+        var (start, end, breakLen) = GetShift(source, n);
+        var freeSlot = FindFirstFreeSlot(target);
+        if (freeSlot == 0)
         {
-            case 1:
-                target.PlannedStartOfShift1 = source.PlannedStartOfShift1;
-                target.PlannedEndOfShift1 = source.PlannedEndOfShift1;
-                target.PlannedBreakOfShift1 = source.PlannedBreakOfShift1;
-                source.PlannedStartOfShift1 = 0;
-                source.PlannedEndOfShift1 = 0;
-                source.PlannedBreakOfShift1 = 0;
-                break;
-            case 2:
-                target.PlannedStartOfShift2 = source.PlannedStartOfShift2;
-                target.PlannedEndOfShift2 = source.PlannedEndOfShift2;
-                target.PlannedBreakOfShift2 = source.PlannedBreakOfShift2;
-                source.PlannedStartOfShift2 = 0;
-                source.PlannedEndOfShift2 = 0;
-                source.PlannedBreakOfShift2 = 0;
-                break;
-            case 3:
-                target.PlannedStartOfShift3 = source.PlannedStartOfShift3;
-                target.PlannedEndOfShift3 = source.PlannedEndOfShift3;
-                target.PlannedBreakOfShift3 = source.PlannedBreakOfShift3;
-                source.PlannedStartOfShift3 = 0;
-                source.PlannedEndOfShift3 = 0;
-                source.PlannedBreakOfShift3 = 0;
-                break;
-            case 4:
-                target.PlannedStartOfShift4 = source.PlannedStartOfShift4;
-                target.PlannedEndOfShift4 = source.PlannedEndOfShift4;
-                target.PlannedBreakOfShift4 = source.PlannedBreakOfShift4;
-                source.PlannedStartOfShift4 = 0;
-                source.PlannedEndOfShift4 = 0;
-                source.PlannedBreakOfShift4 = 0;
-                break;
-            case 5:
-                target.PlannedStartOfShift5 = source.PlannedStartOfShift5;
-                target.PlannedEndOfShift5 = source.PlannedEndOfShift5;
-                target.PlannedBreakOfShift5 = source.PlannedBreakOfShift5;
-                source.PlannedStartOfShift5 = 0;
-                source.PlannedEndOfShift5 = 0;
-                source.PlannedBreakOfShift5 = 0;
-                break;
+            // Caller (AcceptAsync partial guard) is expected to have validated
+            // free-slot availability. Defensive no-op so we never silently
+            // overwrite an existing shift on the receiver.
+            return;
         }
+        SetShift(target, freeSlot, start, end, breakLen);
+        SetShift(source, n, 0, 0, 0);
+        SortShiftsByStart(target);
 
         // Do NOT touch PlanText on partial. PlanHours/PlanHoursInSeconds/IsDoubleShift
         // will be recomputed by PlanRegistrationHelper on BOTH rows in the caller.
+    }
+
+    // Returns the (start, end, breakLen) tuple for slot n on the row, or (0, 0, 0) if empty.
+    private static (int start, int end, int breakLen) GetShift(PlanRegistration row, int n)
+    {
+        return n switch
+        {
+            1 => (row.PlannedStartOfShift1, row.PlannedEndOfShift1, row.PlannedBreakOfShift1),
+            2 => (row.PlannedStartOfShift2, row.PlannedEndOfShift2, row.PlannedBreakOfShift2),
+            3 => (row.PlannedStartOfShift3, row.PlannedEndOfShift3, row.PlannedBreakOfShift3),
+            4 => (row.PlannedStartOfShift4, row.PlannedEndOfShift4, row.PlannedBreakOfShift4),
+            5 => (row.PlannedStartOfShift5, row.PlannedEndOfShift5, row.PlannedBreakOfShift5),
+            _ => (0, 0, 0),
+        };
+    }
+
+    private static void SetShift(PlanRegistration row, int n, int start, int end, int breakLen)
+    {
+        switch (n)
+        {
+            case 1: row.PlannedStartOfShift1 = start; row.PlannedEndOfShift1 = end; row.PlannedBreakOfShift1 = breakLen; break;
+            case 2: row.PlannedStartOfShift2 = start; row.PlannedEndOfShift2 = end; row.PlannedBreakOfShift2 = breakLen; break;
+            case 3: row.PlannedStartOfShift3 = start; row.PlannedEndOfShift3 = end; row.PlannedBreakOfShift3 = breakLen; break;
+            case 4: row.PlannedStartOfShift4 = start; row.PlannedEndOfShift4 = end; row.PlannedBreakOfShift4 = breakLen; break;
+            case 5: row.PlannedStartOfShift5 = start; row.PlannedEndOfShift5 = end; row.PlannedBreakOfShift5 = breakLen; break;
+        }
+    }
+
+    // True when slot n is empty (both Start and End == 0).
+    private static bool IsShiftEmpty(PlanRegistration row, int n)
+    {
+        var s = GetShift(row, n);
+        return s.start == 0 && s.end == 0;
+    }
+
+    private static int FindFirstFreeSlot(PlanRegistration row)
+    {
+        for (var i = 1; i <= 5; i++)
+        {
+            if (IsShiftEmpty(row, i)) return i;
+        }
+        return 0;
+    }
+
+    // Time-window overlap test on minute-since-midnight ints. Adjacent (a.End == b.Start) is NOT overlap.
+    private static bool ShiftsOverlap(int aStart, int aEnd, int bStart, int bEnd)
+    {
+        return aStart < bEnd && bStart < aEnd;
+    }
+
+    // Returns true if the candidate (start..end) overlaps any non-empty shift on row,
+    // optionally ignoring slot `ignoreSlot` (used when checking after a clear on source).
+    private static bool OverlapsAnyShift(PlanRegistration row, int candidateStart, int candidateEnd, int ignoreSlot = 0)
+    {
+        if (candidateStart == 0 && candidateEnd == 0) return false;
+        for (var i = 1; i <= 5; i++)
+        {
+            if (i == ignoreSlot) continue;
+            var s = GetShift(row, i);
+            if (s.start == 0 && s.end == 0) continue;
+            if (ShiftsOverlap(candidateStart, candidateEnd, s.start, s.end)) return true;
+        }
+        return false;
+    }
+
+    // Sorts all 5 slots on row by start time, putting empty slots last.
+    private static void SortShiftsByStart(PlanRegistration row)
+    {
+        var shifts = new List<(int start, int end, int breakLen)>();
+        for (var i = 1; i <= 5; i++)
+        {
+            var s = GetShift(row, i);
+            if (s.start != 0 || s.end != 0) shifts.Add(s);
+        }
+        shifts.Sort((a, b) => a.start.CompareTo(b.start));
+        for (var i = 1; i <= 5; i++)
+        {
+            if (i - 1 < shifts.Count)
+            {
+                SetShift(row, i, shifts[i - 1].start, shifts[i - 1].end, shifts[i - 1].breakLen);
+            }
+            else
+            {
+                SetShift(row, i, 0, 0, 0);
+            }
+        }
     }
 
     private ContentHandoverRequestModel MapToModel(
