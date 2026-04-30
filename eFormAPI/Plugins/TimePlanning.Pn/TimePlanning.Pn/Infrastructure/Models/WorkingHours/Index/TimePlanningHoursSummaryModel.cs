@@ -4,6 +4,7 @@ public class TimePlanningHoursSummaryModel
 {
     public double TotalPlanHours { get; set; }
     public double TotalNettoHours { get; set; }
+    public double TotalPaidOutFlex { get; set; }
     public double Difference { get; set; }
     public int VacationDays { get; set; }
     public int SickDays { get; set; }
