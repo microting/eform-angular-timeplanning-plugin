@@ -277,7 +277,11 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
     public override async Task<GetRegistrationSitesResponse> GetRegistrationSitesByCurrentUser(
         GetRegistrationSitesByCurrentUserRequest request, ServerCallContext context)
     {
-        var result = await _settingService.GetAvailableSitesByCurrentUser();
+        // Mobile gRPC entry point: return the complete unfiltered coworker list.
+        // The web admin JSON path (TimePlanningSettingsController) still calls the
+        // filtered GetAvailableSitesByCurrentUser so the manager-tag filter
+        // (PR #1524) continues to apply there.
+        var result = await _settingService.GetAllRegistrationSitesByCurrentUser();
 
         var response = new GetRegistrationSitesResponse
         {

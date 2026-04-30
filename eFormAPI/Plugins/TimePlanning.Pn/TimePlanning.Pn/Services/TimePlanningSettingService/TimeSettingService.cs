@@ -440,23 +440,82 @@ public class TimeSettingService(
                 }
             }
 
-            var sites = new List<Site>();
-            foreach (var assignedSite in assignedSites)
-            {
-                var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
-                    x.MicrotingUid == assignedSite.SiteId);
-                if (site == null) continue;
-                var siteWorker = await sdkDbContext.SiteWorkers
-                    .Where(x => x.SiteId == site.Id)
-                    .FirstOrDefaultAsync();
-                if (siteWorker == null) continue;
-                var worker = await sdkDbContext.Workers
-                    .Where(x => x.Id == siteWorker.WorkerId)
-                    .FirstOrDefaultAsync();
-                if (worker == null) continue;
-                var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
-                var language = await sdkDbContext.Languages
-                    .FirstOrDefaultAsync(x => x.Id == site.LanguageId);
+            var sites = await BuildSitesFromAssignedSitesAsync(assignedSites, sdkDbContext);
+
+            return new OperationDataResult<List<Site>>(true, sites);
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            Console.WriteLine(e);
+            logger.LogError(e.Message);
+            return new OperationDataResult<List<Site>>(
+                false,
+                localizationService.GetString("ErrorWhileObtainingSites"));
+        }
+    }
+
+    /// <summary>
+    /// Mobile gRPC entry point — returns the complete unfiltered coworker list.
+    /// Mirrors <see cref="GetAvailableSitesByCurrentUser"/> but skips the manager-tag
+    /// filter block. Resigned/removed/workflow-state guards still apply.
+    /// </summary>
+    public async Task<OperationDataResult<List<Site>>> GetAllRegistrationSitesByCurrentUser()
+    {
+        try
+        {
+            var core1 = await core.GetCore();
+            var sdkDbContext = core1.DbContextHelper.GetDbContext();
+            var assignedSites = await dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Resigned != true)
+                .ToListAsync();
+
+            // No manager-tag filter here: mobile clients always receive the full list.
+
+            var sites = await BuildSitesFromAssignedSitesAsync(assignedSites, sdkDbContext);
+
+            return new OperationDataResult<List<Site>>(true, sites);
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            Console.WriteLine(e);
+            logger.LogError(e.Message);
+            return new OperationDataResult<List<Site>>(
+                false,
+                localizationService.GetString("ErrorWhileObtainingSites"));
+        }
+    }
+
+    /// <summary>
+    /// Builds the response <see cref="Site"/> list from a (possibly filtered) collection
+    /// of <see cref="AssignedSite"/> rows. Shared by the JSON web admin path
+    /// (<see cref="GetAvailableSitesByCurrentUser"/>) and the unfiltered mobile gRPC
+    /// path (<see cref="GetAllRegistrationSitesByCurrentUser"/>).
+    /// </summary>
+    private async Task<List<Site>> BuildSitesFromAssignedSitesAsync(
+        List<Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite> assignedSites,
+        Microting.eForm.Infrastructure.MicrotingDbContext sdkDbContext)
+    {
+        var sites = new List<Site>();
+        foreach (var assignedSite in assignedSites)
+        {
+            var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
+                x.MicrotingUid == assignedSite.SiteId);
+            if (site == null) continue;
+            var siteWorker = await sdkDbContext.SiteWorkers
+                .Where(x => x.SiteId == site.Id)
+                .FirstOrDefaultAsync();
+            if (siteWorker == null) continue;
+            var worker = await sdkDbContext.Workers
+                .Where(x => x.Id == siteWorker.WorkerId)
+                .FirstOrDefaultAsync();
+            if (worker == null) continue;
+            var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
+            var language = await sdkDbContext.Languages
+                .FirstOrDefaultAsync(x => x.Id == site.LanguageId);
 
                         var today = DateTime.UtcNow.Date;
                         var midnight = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
@@ -545,21 +604,10 @@ public class TimeSettingService(
                         }
                         newSite.PhoneNumber = worker.PhoneNumber ?? "";
                         sites.Add(newSite);
-            }
-
-            sites = sites.OrderBy(x => x.SiteName).ToList();
-
-            return new OperationDataResult<List<Site>>(true, sites);
         }
-        catch (Exception e)
-        {
-            SentrySdk.CaptureException(e);
-            Console.WriteLine(e);
-            logger.LogError(e.Message);
-            return new OperationDataResult<List<Site>>(
-                false,
-                localizationService.GetString("ErrorWhileObtainingSites"));
-        }
+
+        sites = sites.OrderBy(x => x.SiteName).ToList();
+        return sites;
     }
 
     public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSite(int siteId)

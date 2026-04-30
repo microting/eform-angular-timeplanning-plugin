@@ -299,4 +299,286 @@ public class SettingsServiceExtendedTests : TestBaseSetup
         Assert.That(s.HoursStarted, Is.False);
         Assert.That(s.PauseStarted, Is.False);
     }
+
+    // --- GetAllRegistrationSitesByCurrentUser tests ---
+    // Mobile gRPC entry point: must return the complete unfiltered coworker
+    // list. The web admin JSON path keeps the manager-tag filter; this method
+    // ignores it. Resigned/removed/workflow-state guards still apply.
+
+    [Test]
+    public async Task GetAllRegistrationSitesByCurrentUser_ReturnsAllSites_IgnoringManagerTagFilter()
+    {
+        // Arrange — seed 4 candidate sites with different tag associations.
+        // Manager-tag filtering is *out of scope* for this entry point, so all
+        // four must come back regardless of which (if any) tag they carry.
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var language = await sdkDbContext.Languages.FirstOrDefaultAsync();
+        if (language == null)
+        {
+            language = new Microting.eForm.Infrastructure.Data.Entities.Language
+            {
+                LanguageCode = "en",
+                Name = "English"
+            };
+            await language.Create(sdkDbContext);
+        }
+
+        for (var i = 0; i < 4; i++)
+        {
+            var siteUid = 1000 + i;
+            var workerUid = 2000 + i;
+            var siteWorkerUid = 3000 + i;
+            var unitUid = 4000 + i;
+
+            var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+            {
+                Name = $"Coworker {i}",
+                MicrotingUid = siteUid,
+                LanguageId = language.Id
+            };
+            await site.Create(sdkDbContext);
+
+            var worker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+            {
+                FirstName = $"First{i}",
+                LastName = $"Last{i}",
+                Email = $"coworker{i}@test.com",
+                MicrotingUid = workerUid
+            };
+            await worker.Create(sdkDbContext);
+
+            var siteWorker = new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+            {
+                SiteId = site.Id,
+                WorkerId = worker.Id,
+                MicrotingUid = siteWorkerUid
+            };
+            await siteWorker.Create(sdkDbContext);
+
+            var unit = new Microting.eForm.Infrastructure.Data.Entities.Unit
+            {
+                SiteId = site.Id,
+                MicrotingUid = unitUid,
+                CustomerNo = 1,
+                OtpCode = 1
+            };
+            await unit.Create(sdkDbContext);
+
+            var assigned = new AssignedSiteEntity
+            {
+                SiteId = siteUid,
+                Resigned = false,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            };
+            await assigned.Create(TimePlanningPnDbContext);
+        }
+
+        // Act
+        var result = await _settingsService.GetAllRegistrationSitesByCurrentUser();
+
+        // Assert — all 4 sites returned, no manager-tag culling.
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Count, Is.EqualTo(4));
+        var siteIds = result.Model.Select(x => x.SiteId).OrderBy(x => x).ToList();
+        Assert.That(siteIds, Is.EqualTo(new[] { 1000, 1001, 1002, 1003 }));
+    }
+
+    [Test]
+    public async Task GetAllRegistrationSitesByCurrentUser_StillExcludesResignedAndRemoved()
+    {
+        // Arrange — 2 active + 1 resigned + 1 workflow-state-removed.
+        // The unfiltered mobile path must still respect those guards.
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var language = await sdkDbContext.Languages.FirstOrDefaultAsync();
+        if (language == null)
+        {
+            language = new Microting.eForm.Infrastructure.Data.Entities.Language
+            {
+                LanguageCode = "en",
+                Name = "English"
+            };
+            await language.Create(sdkDbContext);
+        }
+
+        async Task SeedSdkSiteAsync(int siteUid, int workerUid, int siteWorkerUid, int unitUid, string label)
+        {
+            var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+            {
+                Name = label,
+                MicrotingUid = siteUid,
+                LanguageId = language.Id
+            };
+            await site.Create(sdkDbContext);
+
+            var worker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+            {
+                FirstName = label,
+                LastName = "Worker",
+                Email = $"{label.ToLower().Replace(' ', '_')}@test.com",
+                MicrotingUid = workerUid
+            };
+            await worker.Create(sdkDbContext);
+
+            var siteWorker = new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+            {
+                SiteId = site.Id,
+                WorkerId = worker.Id,
+                MicrotingUid = siteWorkerUid
+            };
+            await siteWorker.Create(sdkDbContext);
+
+            var unit = new Microting.eForm.Infrastructure.Data.Entities.Unit
+            {
+                SiteId = site.Id,
+                MicrotingUid = unitUid,
+                CustomerNo = 1,
+                OtpCode = 1
+            };
+            await unit.Create(sdkDbContext);
+        }
+
+        await SeedSdkSiteAsync(5000, 6000, 7000, 8000, "Active1");
+        await SeedSdkSiteAsync(5001, 6001, 7001, 8001, "Active2");
+        await SeedSdkSiteAsync(5002, 6002, 7002, 8002, "Resigned1");
+        await SeedSdkSiteAsync(5003, 6003, 7003, 8003, "Removed1");
+
+        var active1 = new AssignedSiteEntity
+        {
+            SiteId = 5000,
+            Resigned = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await active1.Create(TimePlanningPnDbContext);
+
+        var active2 = new AssignedSiteEntity
+        {
+            SiteId = 5001,
+            Resigned = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await active2.Create(TimePlanningPnDbContext);
+
+        var resigned = new AssignedSiteEntity
+        {
+            SiteId = 5002,
+            Resigned = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await resigned.Create(TimePlanningPnDbContext);
+
+        var removed = new AssignedSiteEntity
+        {
+            SiteId = 5003,
+            Resigned = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await removed.Create(TimePlanningPnDbContext);
+        // Soft-delete via Delete() so WorkflowState becomes Removed.
+        await removed.Delete(TimePlanningPnDbContext);
+
+        // Act
+        var result = await _settingsService.GetAllRegistrationSitesByCurrentUser();
+
+        // Assert — only the two active sites come back.
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Count, Is.EqualTo(2));
+        var siteIds = result.Model.Select(x => x.SiteId).OrderBy(x => x).ToList();
+        Assert.That(siteIds, Is.EqualTo(new[] { 5000, 5001 }));
+    }
+
+    [Test]
+    public async Task GetAllRegistrationSitesByCurrentUser_NonManager_StillReceivesAllPeers()
+    {
+        // The manager-only restriction lives in GetAvailableSitesByCurrentUser
+        // (web admin JSON path). For the mobile gRPC entry point there is no
+        // such gate: even a non-manager caller (no AssignedSite.IsManager flag
+        // set on any row) must receive every peer's site.
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var language = await sdkDbContext.Languages.FirstOrDefaultAsync();
+        if (language == null)
+        {
+            language = new Microting.eForm.Infrastructure.Data.Entities.Language
+            {
+                LanguageCode = "en",
+                Name = "English"
+            };
+            await language.Create(sdkDbContext);
+        }
+
+        for (var i = 0; i < 3; i++)
+        {
+            var siteUid = 9000 + i;
+            var workerUid = 9100 + i;
+            var siteWorkerUid = 9200 + i;
+            var unitUid = 9300 + i;
+
+            var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+            {
+                Name = $"Peer {i}",
+                MicrotingUid = siteUid,
+                LanguageId = language.Id
+            };
+            await site.Create(sdkDbContext);
+
+            var worker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+            {
+                FirstName = $"Peer{i}",
+                LastName = "Worker",
+                Email = $"peer{i}@test.com",
+                MicrotingUid = workerUid
+            };
+            await worker.Create(sdkDbContext);
+
+            var siteWorker = new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+            {
+                SiteId = site.Id,
+                WorkerId = worker.Id,
+                MicrotingUid = siteWorkerUid
+            };
+            await siteWorker.Create(sdkDbContext);
+
+            var unit = new Microting.eForm.Infrastructure.Data.Entities.Unit
+            {
+                SiteId = site.Id,
+                MicrotingUid = unitUid,
+                CustomerNo = 1,
+                OtpCode = 1
+            };
+            await unit.Create(sdkDbContext);
+
+            // No IsManager flag — every assigned site is a regular non-manager row.
+            var assigned = new AssignedSiteEntity
+            {
+                SiteId = siteUid,
+                Resigned = false,
+                IsManager = false,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            };
+            await assigned.Create(TimePlanningPnDbContext);
+        }
+
+        // Act
+        var result = await _settingsService.GetAllRegistrationSitesByCurrentUser();
+
+        // Assert — non-manager caller still receives every peer's site.
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Count, Is.EqualTo(3));
+        var siteIds = result.Model.Select(x => x.SiteId).OrderBy(x => x).ToList();
+        Assert.That(siteIds, Is.EqualTo(new[] { 9000, 9001, 9002 }));
+    }
 }
