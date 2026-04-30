@@ -851,6 +851,23 @@ public class ContentHandoverService : IContentHandoverService
                 .OrderByDescending(r => r.RequestedAtUtc)
                 .ToListAsync();
 
+            // Resolve worker names from SDK sites
+            var allSiteIds = requests
+                .SelectMany(r => new[] { r.FromSdkSitId, r.ToSdkSitId })
+                .Distinct()
+                .ToList();
+
+            var siteNameLookup = new Dictionary<int, string>();
+            if (allSiteIds.Count > 0)
+            {
+                var sdkCore = await _core.GetCore();
+                var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+                siteNameLookup = await sdkDbContext.Sites
+                    .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
+                    .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
+                    .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
+            }
+
             var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
             var planRegistrations = await _dbContext.PlanRegistrations
                 .Where(p => prIds.Contains(p.Id))
@@ -859,7 +876,10 @@ public class ContentHandoverService : IContentHandoverService
             var models = requests.Select(r =>
             {
                 planRegistrations.TryGetValue(r.FromPlanRegistrationId, out var fromPR);
-                return MapToModel(r, fromPR);
+                var model = MapToModel(r, fromPR);
+                model.FromWorkerName = siteNameLookup.GetValueOrDefault(r.FromSdkSitId);
+                model.ToWorkerName = siteNameLookup.GetValueOrDefault(r.ToSdkSitId);
+                return model;
             }).ToList();
             return new OperationDataResult<List<ContentHandoverRequestModel>>(true, models);
         }
@@ -906,6 +926,23 @@ public class ContentHandoverService : IContentHandoverService
                 .OrderByDescending(r => r.RequestedAtUtc)
                 .ToListAsync();
 
+            // Resolve worker names from SDK sites
+            var allSiteIds = requests
+                .SelectMany(r => new[] { r.FromSdkSitId, r.ToSdkSitId })
+                .Distinct()
+                .ToList();
+
+            var siteNameLookup = new Dictionary<int, string>();
+            if (allSiteIds.Count > 0)
+            {
+                var sdkCore = await _core.GetCore();
+                var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+                siteNameLookup = await sdkDbContext.Sites
+                    .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
+                    .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
+                    .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
+            }
+
             var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
             var planRegistrations = await _dbContext.PlanRegistrations
                 .Where(p => prIds.Contains(p.Id))
@@ -914,7 +951,10 @@ public class ContentHandoverService : IContentHandoverService
             var models = requests.Select(r =>
             {
                 planRegistrations.TryGetValue(r.FromPlanRegistrationId, out var fromPR);
-                return MapToModel(r, fromPR);
+                var model = MapToModel(r, fromPR);
+                model.FromWorkerName = siteNameLookup.GetValueOrDefault(r.FromSdkSitId);
+                model.ToWorkerName = siteNameLookup.GetValueOrDefault(r.ToSdkSitId);
+                return model;
             }).ToList();
             return new OperationDataResult<List<ContentHandoverRequestModel>>(true, models);
         }
