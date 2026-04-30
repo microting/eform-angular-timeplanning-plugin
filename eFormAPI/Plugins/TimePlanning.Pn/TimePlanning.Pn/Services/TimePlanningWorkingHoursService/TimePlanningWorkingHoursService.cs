@@ -693,13 +693,22 @@ public class TimePlanningWorkingHoursService(
 
             var totalPlanHours = planRegistrations.Sum(x => x.PlanHours);
             var totalNettoHours = planRegistrations.Sum(x => x.NettoHours);
-            var difference = totalNettoHours - totalPlanHours;
+            var totalPaidOutFlex = planRegistrations.Sum(x => x.PaiedOutFlex);
+            // The flex balance shown on the period status hero card is a point-in-time
+            // read of the last day's stored SumFlexEnd, not a recomputation of
+            // sum(NettoHours) - sum(PlanHours). The latter ignores opening balance
+            // and mid-period payouts.
+            var lastDay = planRegistrations
+                .OrderByDescending(x => x.Date)
+                .FirstOrDefault();
+            var endOfPeriodFlex = lastDay?.SumFlexEnd ?? 0;
 
             var summary = new TimePlanningHoursSummaryModel
             {
                 TotalPlanHours = totalPlanHours,
                 TotalNettoHours = totalNettoHours,
-                Difference = difference
+                TotalPaidOutFlex = totalPaidOutFlex,
+                Difference = endOfPeriodFlex
             };
 
             if (model != null)

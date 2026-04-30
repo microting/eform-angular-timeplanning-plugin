@@ -175,6 +175,72 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     }
 
     [Test]
+    public async Task CalculateHoursSummary_MapsTotalPaidOutFlex()
+    {
+        // Verifies the gRPC handler forwards TotalPaidOutFlex from the service
+        // model to the proto's paid_out_flex field instead of hardcoding 0.
+        var summaryModel = new TimePlanningHoursSummaryModel
+        {
+            TotalPlanHours = 40.0,
+            TotalNettoHours = 38.5,
+            TotalPaidOutFlex = 2.0,
+            Difference = 3.5,
+        };
+
+        _whService.CalculateHoursSummary(
+                Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(new OperationDataResult<TimePlanningHoursSummaryModel>(true, summaryModel));
+
+        var request = new CalculateHoursSummaryRequest
+        {
+            StartDate = "2026-04-01",
+            EndDate = "2026-04-07",
+        };
+
+        var response = await _grpcService.CalculateHoursSummary(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(response.Model, Is.Not.Null);
+        Assert.That(response.Model.PaidOutFlex, Is.EqualTo(2.0));
+    }
+
+    [Test]
+    public async Task CalculateHoursSummary_TotalFlexHours_TrustsServiceDifferenceVerbatim()
+    {
+        // Documents the new semantic: Difference now carries the last-day SumFlexEnd
+        // (end-of-period balance), not the recomputed sum(NettoHours) - sum(PlanHours).
+        // The gRPC handler must forward whatever the service returns without recomputing.
+        var summaryModel = new TimePlanningHoursSummaryModel
+        {
+            TotalPlanHours = 40.0,    // Period plan sum
+            TotalNettoHours = 38.5,   // Period net sum
+            TotalPaidOutFlex = 0.0,
+            Difference = 12.75,       // End-of-period flex balance, NOT 38.5 - 40.0
+        };
+
+        _whService.CalculateHoursSummary(
+                Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(new OperationDataResult<TimePlanningHoursSummaryModel>(true, summaryModel));
+
+        var request = new CalculateHoursSummaryRequest
+        {
+            StartDate = "2026-04-01",
+            EndDate = "2026-04-07",
+        };
+
+        var response = await _grpcService.CalculateHoursSummary(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.True);
+        Assert.That(response.Model, Is.Not.Null);
+        Assert.That(response.Model.TotalFlexHours, Is.EqualTo(12.75));
+        Assert.That(response.Model.TotalFlexMinutes, Is.EqualTo(0.75 * 60));
+    }
+
+    [Test]
     public async Task ReadWorkingHours_NullDateTimeFields_MappedAsEmptyStrings()
     {
         var model = new TimePlanningWorkingHoursModel
