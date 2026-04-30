@@ -177,4 +177,10 @@
     <data name="EditingNotAllowedForWorker" xml:space="preserve">
         <value>Editing is not allowed when both editing options are disabled for this worker.</value>
     </data>
+    <data name="ReceiverHasNoFreeShiftSlot" xml:space="preserve">
+        <value>The selected coworker already has 5 planned shifts on this date.</value>
+    </data>
+    <data name="ShiftOverlapsExistingShift" xml:space="preserve">
+        <value>The transferred shift overlaps an existing shift on the coworker's planning.</value>
+    </data>
 </root>
