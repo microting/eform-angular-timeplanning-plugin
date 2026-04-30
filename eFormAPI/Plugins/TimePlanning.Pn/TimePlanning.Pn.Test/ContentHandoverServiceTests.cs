@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -69,6 +70,35 @@ public class ContentHandoverServiceTests : TestBaseSetup
     public Task GetHandoverEligibleCoworkersAsync_WorkerNotFound_ReturnsFailure()
     {
         return Task.CompletedTask;
+    }
+
+    // Regression: GetHandoverEligibleCoworkersAsync must return the eligible
+    // list sorted alphabetically by SiteName under Danish locale. The picker in
+    // flutter-time renders the list verbatim, so insertion-order output produced
+    // a scrambled UI (Lars, Søren, Anita, Ditte, ...). The service now applies
+    // OrderBy with a da-DK StringComparer; in Danish, Æ/Ø/Å come AFTER Z, in
+    // that order. Seeding the SDK Workers/SiteTags + BaseDbContext.Users path is
+    // out of scope here (the three sibling cases above are still ignored for
+    // the same reason), so we pin the canonical sort by exercising the same
+    // public comparer the service uses against representative names.
+    [Test]
+    public void GetHandoverEligibleCoworkers_ReturnsListSortedAlphabeticallyByName()
+    {
+        var candidates = new List<HandoverCoworkerModel>
+        {
+            new() { SiteName = "Søren" },
+            new() { SiteName = "Anita" },
+            new() { SiteName = "Åse" },
+            new() { SiteName = "Bo" },
+            new() { SiteName = "Ærke" },
+        };
+
+        var sorted = candidates
+            .OrderBy(c => c.SiteName, ContentHandoverService.HandoverCoworkerNameComparer)
+            .Select(c => c.SiteName)
+            .ToList();
+
+        Assert.That(sorted, Is.EqualTo(new[] { "Anita", "Bo", "Søren", "Ærke", "Åse" }));
     }
 
     [Test]

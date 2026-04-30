@@ -27,6 +27,7 @@ namespace TimePlanning.Pn.Services.ContentHandoverService;
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure.Helpers;
@@ -70,6 +71,12 @@ public class ContentHandoverService : IContentHandoverService
         _baseDbContext = baseDbContext;
         _pushNotificationService = pushNotificationService;
     }
+
+    // Danish-locale, case-insensitive comparer used to sort the handover-eligible
+    // coworker list. Exposed publicly so the regression test can pin the
+    // canonical da-DK collation order (Æ/Ø/Å come AFTER Z, in that order).
+    public static readonly StringComparer HandoverCoworkerNameComparer =
+        StringComparer.Create(CultureInfo.GetCultureInfo("da-DK"), ignoreCase: true);
 
     public Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date)
     {
@@ -247,6 +254,7 @@ public class ContentHandoverService : IContentHandoverService
                 })
                 .Where(x => x.Eligible)
                 .Select(x => x.Model)
+                .OrderBy(x => x.SiteName, HandoverCoworkerNameComparer)
                 .ToList();
 
             return new OperationDataResult<List<HandoverCoworkerModel>>(true, result);
