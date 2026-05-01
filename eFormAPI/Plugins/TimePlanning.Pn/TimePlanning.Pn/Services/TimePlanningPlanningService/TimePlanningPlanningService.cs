@@ -153,9 +153,25 @@ public class TimePlanningPlanningService(
                     assignedSites = assignedSites
                         .Where(x => assignedSiteIdsWithTags.Contains(x.SiteId))
                         .ToList();
-                    assignedSites.Add(assignedSite);
+                    // Only re-add the manager's own AssignedSite if the manager-tag
+                    // filter dropped it. When the manager is in their own managed
+                    // tag (SiteTag joins the manager's own SiteId to that TagId),
+                    // it is already present and a blind Add() produced two rows
+                    // for the manager on the planning page.
+                    if (assignedSites.All(x => x.Id != assignedSite.Id))
+                    {
+                        assignedSites.Add(assignedSite);
+                    }
                 }
             }
+
+            // Defensive dedup: guarantee no duplicate AssignedSite rows reach the
+            // planning grid even if upstream filters left some in. The grid keys
+            // off SiteId per row, so dedup by Id (primary key) is enough here.
+            assignedSites = assignedSites
+                .GroupBy(x => x.Id)
+                .Select(g => g.First())
+                .ToList();
 
             assignedSites = model.ShowResignedSites ? assignedSites.Where(x => x.Resigned).ToList() : assignedSites.Where(x => !x.Resigned).ToList();
 

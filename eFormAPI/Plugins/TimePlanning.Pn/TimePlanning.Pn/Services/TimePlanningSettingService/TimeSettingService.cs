@@ -454,6 +454,14 @@ public class TimeSettingService(
                 }
             }
 
+            // Defensive dedup: BuildSitesFromAssignedSitesAsync emits one Site per
+            // input AssignedSite, so any duplicate rows here would surface twice
+            // in the planning page worker dropdown. Dedup by primary key Id.
+            assignedSites = assignedSites
+                .GroupBy(x => x.Id)
+                .Select(g => g.First())
+                .ToList();
+
             var sites = await BuildSitesFromAssignedSitesAsync(assignedSites, sdkDbContext);
 
             return new OperationDataResult<List<Site>>(true, sites);
