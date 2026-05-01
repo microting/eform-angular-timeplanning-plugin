@@ -381,62 +381,76 @@ public class TimeSettingService(
 
                 if (!isAdmin)
                 {
-                    var worker = await sdkDbContext.Workers
-                        .Include(x => x.SiteWorkers)
-                        .ThenInclude(x => x.Site)
+                    // Mirror the "no managers anywhere" fallback that
+                    // TimePlanningPlanningService.Index() uses (PR #1490). When no worker is
+                    // flagged as a manager anywhere in the system, the manager-tag filter has
+                    // nothing to filter against and would otherwise collapse non-manager users
+                    // down to just their own site. In that degenerate state, leave the full
+                    // non-resigned site list intact so the planning page isn't empty/self-only.
+                    var anyManagerExists = await dbContext.AssignedSites
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+                        .AnyAsync(x => x.IsManager);
 
-                    if (worker != null && worker.SiteWorkers.Any())
+                    if (anyManagerExists)
                     {
-                        var workerSite = worker.SiteWorkers.First().Site;
-                        var assignedSite = assignedSites
-                            .FirstOrDefault(x => x.SiteId == workerSite.MicrotingUid);
+                        var worker = await sdkDbContext.Workers
+                            .Include(x => x.SiteWorkers)
+                            .ThenInclude(x => x.Site)
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
 
-                        if (assignedSite != null && assignedSite.IsManager)
+                        if (worker != null && worker.SiteWorkers.Any())
                         {
-                            var managingTagIds = await dbContext.AssignedSiteManagingTags
-                                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                .Where(x => x.AssignedSiteId == assignedSite.Id)
-                                .Select(x => x.TagId)
-                                .ToListAsync();
+                            var workerSite = worker.SiteWorkers.First().Site;
+                            var assignedSite = assignedSites
+                                .FirstOrDefault(x => x.SiteId == workerSite.MicrotingUid);
 
-                            if (managingTagIds.Any())
+                            if (assignedSite != null && assignedSite.IsManager)
                             {
-                                var taggedSiteIds = await sdkDbContext.SiteTags
-                                    .Include(x => x.Site)
+                                var managingTagIds = await dbContext.AssignedSiteManagingTags
                                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                    .Where(x => managingTagIds.Contains((int)x.TagId!))
-                                    .Select(x => x.Site.MicrotingUid)
-                                    .Distinct()
+                                    .Where(x => x.AssignedSiteId == assignedSite.Id)
+                                    .Select(x => x.TagId)
                                     .ToListAsync();
 
-                                assignedSites = assignedSites
-                                    .Where(x => taggedSiteIds.Contains(x.SiteId))
-                                    .ToList();
-                                if (assignedSites.All(x => x.Id != assignedSite.Id))
+                                if (managingTagIds.Any())
                                 {
-                                    assignedSites.Add(assignedSite);
+                                    var taggedSiteIds = await sdkDbContext.SiteTags
+                                        .Include(x => x.Site)
+                                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                        .Where(x => managingTagIds.Contains((int)x.TagId!))
+                                        .Select(x => x.Site.MicrotingUid)
+                                        .Distinct()
+                                        .ToListAsync();
+
+                                    assignedSites = assignedSites
+                                        .Where(x => taggedSiteIds.Contains(x.SiteId))
+                                        .ToList();
+                                    if (assignedSites.All(x => x.Id != assignedSite.Id))
+                                    {
+                                        assignedSites.Add(assignedSite);
+                                    }
+                                }
+                                else
+                                {
+                                    assignedSites = [assignedSite];
                                 }
                             }
-                            else
+                            else if (assignedSite != null)
                             {
                                 assignedSites = [assignedSite];
                             }
-                        }
-                        else if (assignedSite != null)
-                        {
-                            assignedSites = [assignedSite];
+                            else
+                            {
+                                assignedSites = [];
+                            }
                         }
                         else
                         {
                             assignedSites = [];
                         }
                     }
-                    else
-                    {
-                        assignedSites = [];
-                    }
+                    // else: no managers exist anywhere -> leave assignedSites unfiltered
                 }
             }
 
