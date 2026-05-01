@@ -140,4 +140,54 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
             Assert.That(reloaded.PlannedBreakOfShift5, Is.EqualTo(25));
         });
     }
+
+    [Test]
+    public async Task Update_ClearsPause1WhenSetToNull_PersistsZero()
+    {
+        // Arrange — site with simple pause editing (the buggy code path)
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 901,
+            UseDetailedPauseEditing = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        // Seed a PlanRegistration with non-zero Pause1Id (5 = 25 minutes).
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 901,
+            Date = DateTime.UtcNow.Date,
+            Pause1Id = 5,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        // Build the update model the way the trashcan-clear path sends it:
+        // Pause1Id = null, all other shift1 fields preserved.
+        var model = new TimePlanningPlanningPrDayModel
+        {
+            Id = planning.Id,
+            Date = planning.Date,
+            CommentOffice = "",
+            Pause1Id = null,
+            PlannedStartOfShift1 = 0, PlannedEndOfShift1 = 60, PlannedBreakOfShift1 = 5
+        };
+
+        // Act
+        var result = await _service.Update(planning.Id, model);
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+
+        var reloaded = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking()
+            .FirstAsync(x => x.Id == planning.Id);
+
+        // The bug was: server's `?? planning.Pause1Id` kept the old 5 instead
+        // of clearing to 0. After the fix, null on the wire must persist as 0.
+        Assert.That(reloaded.Pause1Id, Is.EqualTo(0));
+    }
 }

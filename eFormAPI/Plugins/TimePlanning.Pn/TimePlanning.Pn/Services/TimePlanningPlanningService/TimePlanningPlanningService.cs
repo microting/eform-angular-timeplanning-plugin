@@ -634,11 +634,11 @@ public class TimePlanningPlanningService(
 
             if (!assignedSite.UseDetailedPauseEditing)
             {
-                planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;
-                planning.Pause2Id = model.Pause2Id ?? planning.Pause2Id;
-                planning.Pause3Id = model.Pause3Id ?? planning.Pause3Id;
-                planning.Pause4Id = model.Pause4Id ?? planning.Pause4Id;
-                planning.Pause5Id = model.Pause5Id ?? planning.Pause5Id;
+                planning.Pause1Id = model.Pause1Id ?? 0;
+                planning.Pause2Id = model.Pause2Id ?? 0;
+                planning.Pause3Id = model.Pause3Id ?? 0;
+                planning.Pause4Id = model.Pause4Id ?? 0;
+                planning.Pause5Id = model.Pause5Id ?? 0;
             }
             else
             {
@@ -1191,11 +1191,11 @@ public class TimePlanningPlanningService(
 
             if (!assignedSite.UseDetailedPauseEditing)
             {
-                planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;
-                planning.Pause2Id = model.Pause2Id ?? planning.Pause2Id;
-                planning.Pause3Id = model.Pause3Id ?? planning.Pause3Id;
-                planning.Pause4Id = model.Pause4Id ?? planning.Pause4Id;
-                planning.Pause5Id = model.Pause5Id ?? planning.Pause5Id;
+                planning.Pause1Id = model.Pause1Id ?? 0;
+                planning.Pause2Id = model.Pause2Id ?? 0;
+                planning.Pause3Id = model.Pause3Id ?? 0;
+                planning.Pause4Id = model.Pause4Id ?? 0;
+                planning.Pause5Id = model.Pause5Id ?? 0;
             }
             else
             {
