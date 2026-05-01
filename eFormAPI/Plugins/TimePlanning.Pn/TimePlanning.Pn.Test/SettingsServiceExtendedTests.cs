@@ -759,7 +759,219 @@ public class SettingsServiceExtendedTests : TestBaseSetup
         // Assert — non-manager caller is filtered down to its own site.
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model, Is.Not.Null);
-        Assert.That(result.Model.Count, Is.EqualTo(1));
         Assert.That(result.Model[0].SiteId, Is.EqualTo(12001));
+        Assert.That(result.Model.Count, Is.EqualTo(1));
+    }
+
+    // --- Manager-in-own-tag duplicate regression ---
+    // Reproducer for the bug where a manager who is the only manager and is
+    // listed inside their own managed tag (AssignedSiteManagingTags(TagId=10)
+    // + SiteTags(SiteId=ownSite.MicrotingUid, TagId=10)) appeared TWICE on
+    // /plugins/time-planning-pn/planning. Root cause was
+    // TimePlanningPlanningService.Index() calling assignedSites.Add(assignedSite)
+    // unconditionally after the manager-tag filter — see line ~156 — which
+    // produced two rows when the tag-filter already kept the manager's own
+    // site. The same shape of bug could surface in
+    // GetAvailableSitesByCurrentUser if the dedup at lines 429-432 ever
+    // missed a path, so we add a defensive GroupBy(Id) sweep at the end of
+    // the method and assert here that the dropdown stays unique.
+    //
+    // These tests follow the same [Ignore] carve-out as the manager-tag
+    // tests above: the current fixture passes null for baseDbContext, which
+    // skips the (!isAdmin) branch entirely. The defensive dedup runs even
+    // under null baseDbContext but can't be observed without seeded
+    // duplicates produced by that branch. Tests are written for future
+    // fixture work that wires real BaseDbContext seeding.
+
+    [Test]
+    [Ignore("Follow-up: wire real BaseDbContext seeding (ApplicationUser + UserRoles + SecurityGroups) so the (!isAdmin) branch in GetAvailableSitesByCurrentUser can be exercised. Reproduces the planning-page double-row bug for the dropdown path; the underlying duplicate originates in TimePlanningPlanningService.Index() (now also fixed). End-to-end coverage is via the playwright dashboard test.")]
+    public async Task GetAvailableSitesByCurrentUser_ManagerOwnSiteInOwnTag_ReturnsManagerOnce()
+    {
+        // Arrange — single manager whose own site is tagged with the same
+        // tag the manager manages. Pre-fix this caused two AssignedSite
+        // rows to reach BuildSitesFromAssignedSitesAsync and emitted the
+        // manager twice in the response.
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var language = await sdkDbContext.Languages.FirstOrDefaultAsync();
+        if (language == null)
+        {
+            language = new Microting.eForm.Infrastructure.Data.Entities.Language
+            {
+                LanguageCode = "en",
+                Name = "English"
+            };
+            await language.Create(sdkDbContext);
+        }
+
+        // Manager's site
+        var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Solo Manager",
+            MicrotingUid = 13000,
+            LanguageId = language.Id
+        };
+        await site.Create(sdkDbContext);
+
+        var worker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+        {
+            FirstName = "Solo",
+            LastName = "Manager",
+            Email = "solo@test.com",
+            MicrotingUid = 13100
+        };
+        await worker.Create(sdkDbContext);
+
+        var siteWorker = new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+        {
+            SiteId = site.Id,
+            WorkerId = worker.Id,
+            MicrotingUid = 13200
+        };
+        await siteWorker.Create(sdkDbContext);
+
+        var unit = new Microting.eForm.Infrastructure.Data.Entities.Unit
+        {
+            SiteId = site.Id,
+            MicrotingUid = 13300,
+            CustomerNo = 1,
+            OtpCode = 1
+        };
+        await unit.Create(sdkDbContext);
+
+        var assigned = new AssignedSiteEntity
+        {
+            SiteId = 13000,
+            Resigned = false,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assigned.Create(TimePlanningPnDbContext);
+
+        // Manager manages tag 10
+        var managingTag = new AssignedSiteManagingTag
+        {
+            AssignedSiteId = assigned.Id,
+            TagId = 10,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await managingTag.Create(TimePlanningPnDbContext);
+
+        // The manager's OWN site also carries tag 10 — this is the trigger.
+        var siteTag = new Microting.eForm.Infrastructure.Data.Entities.SiteTag
+        {
+            SiteId = site.Id,
+            TagId = 10
+        };
+        await siteTag.Create(sdkDbContext);
+
+        // Act — call as the solo manager.
+        var result = await _settingsService.GetAvailableSitesByCurrentUser();
+
+        // Assert — manager appears exactly once, not twice.
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Count, Is.EqualTo(1));
+        Assert.That(result.Model.Single().SiteId, Is.EqualTo(13000));
+    }
+
+    [Test]
+    [Ignore("Follow-up: wire real BaseDbContext seeding (ApplicationUser + UserRoles + SecurityGroups) so the (!isAdmin) branch in GetAvailableSitesByCurrentUser can be exercised. Same fixture gap as the other manager-tag tests in this file.")]
+    public async Task GetAvailableSitesByCurrentUser_ManagerWithMultipleTagsOnOwnSite_ReturnsOnce()
+    {
+        // Arrange — manager manages tags 10 and 20; the manager's own site
+        // carries BOTH tags. Without dedup the SiteTags query would return
+        // the same SiteId twice (one row per tag) — Distinct() in the EF
+        // query already collapses that to one — and the manager's own
+        // AssignedSite would still be added an extra time by the
+        // unconditional Add() shape (now fixed).
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var language = await sdkDbContext.Languages.FirstOrDefaultAsync();
+        if (language == null)
+        {
+            language = new Microting.eForm.Infrastructure.Data.Entities.Language
+            {
+                LanguageCode = "en",
+                Name = "English"
+            };
+            await language.Create(sdkDbContext);
+        }
+
+        var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Multi-Tag Manager",
+            MicrotingUid = 14000,
+            LanguageId = language.Id
+        };
+        await site.Create(sdkDbContext);
+
+        var worker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+        {
+            FirstName = "Multi",
+            LastName = "Manager",
+            Email = "multi@test.com",
+            MicrotingUid = 14100
+        };
+        await worker.Create(sdkDbContext);
+
+        var siteWorker = new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+        {
+            SiteId = site.Id,
+            WorkerId = worker.Id,
+            MicrotingUid = 14200
+        };
+        await siteWorker.Create(sdkDbContext);
+
+        var unit = new Microting.eForm.Infrastructure.Data.Entities.Unit
+        {
+            SiteId = site.Id,
+            MicrotingUid = 14300,
+            CustomerNo = 1,
+            OtpCode = 1
+        };
+        await unit.Create(sdkDbContext);
+
+        var assigned = new AssignedSiteEntity
+        {
+            SiteId = 14000,
+            Resigned = false,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assigned.Create(TimePlanningPnDbContext);
+
+        foreach (var tagId in new[] { 10, 20 })
+        {
+            var managingTag = new AssignedSiteManagingTag
+            {
+                AssignedSiteId = assigned.Id,
+                TagId = tagId,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            };
+            await managingTag.Create(TimePlanningPnDbContext);
+
+            var siteTag = new Microting.eForm.Infrastructure.Data.Entities.SiteTag
+            {
+                SiteId = site.Id,
+                TagId = tagId
+            };
+            await siteTag.Create(sdkDbContext);
+        }
+
+        // Act
+        var result = await _settingsService.GetAvailableSitesByCurrentUser();
+
+        // Assert — still exactly one entry, even with multiple matching tags.
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Count, Is.EqualTo(1));
+        Assert.That(result.Model.Single().SiteId, Is.EqualTo(14000));
     }
 }
