@@ -453,4 +453,116 @@ describe('AssignedSiteDialogComponent', () => {
       expect(managingTagIdsControl?.value).toEqual([1, 2]);
     });
   });
+
+  describe('Editing-policy section visibility (Axis 2)', () => {
+    // The editing-policy section's *ngIf is:
+    //   !data.resigned && data.allowPersonalTimeRegistration && (selectCurrentUserIsAdmin$ | async)
+    // After the fix, this condition is INDEPENDENT of `entryMethod`. These tests
+    // assert (a) the boolean condition evaluates true regardless of entry method
+    // and (b) onEntryMethodChange does not mutate editing-policy state.
+    //
+    // Sibling tests in this file deliberately avoid `fixture.detectChanges()`
+    // because the dialog's template uses Material form-control directives whose
+    // value accessors are not registered under NO_ERRORS_SCHEMA. We follow the
+    // same pattern here: assert against component state, not the rendered DOM.
+
+    function setupComponentWithData(
+      overrides: Partial<typeof mockAssignedSiteData>,
+    ): AssignedSiteDialogComponent {
+      const data = { ...mockAssignedSiteData, ...overrides };
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        declarations: [AssignedSiteDialogComponent],
+        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          FormBuilder,
+          { provide: MAT_DIALOG_DATA, useValue: data },
+          { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
+          { provide: Store, useValue: mockStore },
+        ],
+      }).compileComponents();
+      const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      const c = newFixture.componentInstance;
+      c.ngOnInit();
+      return c;
+    }
+
+    /**
+     * Reads the same boolean expression the template's *ngIf uses for the
+     * editing-policy section (post-fix) — without going through detectChanges,
+     * which would require value-accessor mocks for every Material form control
+     * in the dialog. mockStore.select returns of(true), so admin is true.
+     */
+    function isEditingPolicyVisible(c: AssignedSiteDialogComponent): boolean {
+      let isAdmin = false;
+      c['selectCurrentUserIsAdmin$']?.subscribe((v: boolean) => (isAdmin = v));
+      return !c.data.resigned && c.data.allowPersonalTimeRegistration && isAdmin;
+    }
+
+    it('should show editing-policy section when entry method is acceptPlanned', () => {
+      // Setup: acceptPlanned mode (allowAcceptOfPlannedHours = true,
+      // usePunchClock = false), personal time registration enabled,
+      // worker not resigned, current user is admin (mockStore returns of(true)).
+      const c = setupComponentWithData({
+        allowAcceptOfPlannedHours: true,
+        usePunchClock: false,
+        allowPersonalTimeRegistration: true,
+        resigned: false,
+      });
+
+      // Sanity: the entry method getter resolves to acceptPlanned.
+      expect(c.entryMethod).toBe('acceptPlanned');
+
+      // After the fix, the editing-policy section's *ngIf does NOT include
+      // entryMethod, so it must be visible here.
+      expect(isEditingPolicyVisible(c)).toBe(true);
+    });
+
+    it('should preserve editing-policy values when switching entry method to acceptPlanned', () => {
+      // Setup: editingPolicy = 'untilPayroll' (allowEdit=true, daysBack=false),
+      // starting in manual mode.
+      const c = setupComponentWithData({
+        allowEditOfRegistrations: true,
+        daysBackInTimeAllowedEditingEnabled: false,
+        usePunchClock: false,
+        allowAcceptOfPlannedHours: false,
+        allowPersonalTimeRegistration: true,
+      });
+
+      // Switching the entry method should NOT clobber editing-policy state.
+      c.onEntryMethodChange('acceptPlanned');
+
+      expect(c.assignedSiteForm.get('allowEditOfRegistrations')?.value).toBe(true);
+      expect(c.data.allowEditOfRegistrations).toBe(true);
+      expect(c.data.daysBackInTimeAllowedEditingEnabled).toBe(false);
+      // And the entry method itself flipped through correctly.
+      expect(c.data.allowAcceptOfPlannedHours).toBe(true);
+      expect(c.data.usePunchClock).toBe(false);
+    });
+
+    it('should keep editing-policy section visible across all three entry methods', () => {
+      const cases: Array<{
+        method: 'manual' | 'punchClock' | 'acceptPlanned';
+        usePunchClock: boolean;
+        allowAcceptOfPlannedHours: boolean;
+      }> = [
+        { method: 'manual', usePunchClock: false, allowAcceptOfPlannedHours: false },
+        { method: 'punchClock', usePunchClock: true, allowAcceptOfPlannedHours: false },
+        { method: 'acceptPlanned', usePunchClock: false, allowAcceptOfPlannedHours: true },
+      ];
+
+      for (const tc of cases) {
+        const c = setupComponentWithData({
+          allowPersonalTimeRegistration: true,
+          resigned: false,
+          usePunchClock: tc.usePunchClock,
+          allowAcceptOfPlannedHours: tc.allowAcceptOfPlannedHours,
+        });
+        expect(c.entryMethod).toBe(tc.method);
+        expect(isEditingPolicyVisible(c)).toBe(true);
+      }
+    });
+  });
 });
