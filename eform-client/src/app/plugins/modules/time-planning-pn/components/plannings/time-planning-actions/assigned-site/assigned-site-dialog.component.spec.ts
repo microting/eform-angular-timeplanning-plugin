@@ -6,6 +6,7 @@ import { TimePlanningPnSettingsService, TimePlanningPnPayRuleSetsService } from 
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { TranslateModule } from '@ngx-translate/core';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
@@ -451,6 +452,108 @@ describe('AssignedSiteDialogComponent', () => {
 
       expect(isManagerControl?.value).toBe(true);
       expect(managingTagIdsControl?.value).toEqual([1, 2]);
+    });
+  });
+
+  describe('Editing-policy section visibility (Axis 2)', () => {
+    // Helper: spin up a fresh fixture with the given AssignedSite data overrides,
+    // run ngOnInit, run detectChanges, and return the rendered debug element.
+    // Mirrors the TestBed.resetTestingModule pattern used in
+    // "should preserve isManager value from data".
+    function createFixtureWithData(
+      overrides: Partial<typeof mockAssignedSiteData>,
+    ): ComponentFixture<AssignedSiteDialogComponent> {
+      const data = { ...mockAssignedSiteData, ...overrides };
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        declarations: [AssignedSiteDialogComponent],
+        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          FormBuilder,
+          { provide: MAT_DIALOG_DATA, useValue: data },
+          { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
+          { provide: Store, useValue: mockStore },
+        ],
+      }).compileComponents();
+      const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      newFixture.detectChanges();
+      return newFixture;
+    }
+
+    it('should show editing-policy section when entry method is acceptPlanned', () => {
+      // Setup: acceptPlanned mode (allowAcceptOfPlannedHours = true,
+      // usePunchClock = false), personal time registration enabled,
+      // worker not resigned, current user is admin (mockStore returns of(true)).
+      const f = createFixtureWithData({
+        allowAcceptOfPlannedHours: true,
+        usePunchClock: false,
+        allowPersonalTimeRegistration: true,
+        resigned: false,
+      });
+
+      // The two `mobile-axis` divs are: ① "How working time is captured"
+      // and ② "May the employee edit past registrations?".
+      // Both should be in the DOM in acceptPlanned mode after the fix.
+      const axes = f.debugElement.queryAll(By.css('.mobile-axis'));
+      expect(axes.length).toBe(2);
+
+      // Confirm the second axis is the editing-policy one by its label text.
+      const labels = f.debugElement.queryAll(By.css('.axis-label')).map(d => d.nativeElement.textContent);
+      expect(labels.some((t: string) => t.includes('May the employee edit past registrations?'))).toBe(true);
+    });
+
+    it('should preserve editing-policy values when switching entry method to acceptPlanned', () => {
+      // Setup: editingPolicy = 'untilPayroll' (allowEdit=true, daysBack=false),
+      // starting in manual mode.
+      const f = createFixtureWithData({
+        allowEditOfRegistrations: true,
+        daysBackInTimeAllowedEditingEnabled: false,
+        usePunchClock: false,
+        allowAcceptOfPlannedHours: false,
+        allowPersonalTimeRegistration: true,
+      });
+      const c = f.componentInstance;
+
+      // Switching the entry method should NOT clobber editing-policy state.
+      c.onEntryMethodChange('acceptPlanned');
+
+      expect(c.assignedSiteForm.get('allowEditOfRegistrations')?.value).toBe(true);
+      expect(c.data.allowEditOfRegistrations).toBe(true);
+      expect(c.data.daysBackInTimeAllowedEditingEnabled).toBe(false);
+      // And the entry method itself flipped through correctly.
+      expect(c.data.allowAcceptOfPlannedHours).toBe(true);
+      expect(c.data.usePunchClock).toBe(false);
+    });
+
+    it('should keep editing-policy section visible across all three entry methods', () => {
+      const cases: Array<{
+        method: 'manual' | 'punchClock' | 'acceptPlanned';
+        usePunchClock: boolean;
+        allowAcceptOfPlannedHours: boolean;
+      }> = [
+        { method: 'manual', usePunchClock: false, allowAcceptOfPlannedHours: false },
+        { method: 'punchClock', usePunchClock: true, allowAcceptOfPlannedHours: false },
+        { method: 'acceptPlanned', usePunchClock: false, allowAcceptOfPlannedHours: true },
+      ];
+
+      for (const tc of cases) {
+        const f = createFixtureWithData({
+          allowPersonalTimeRegistration: true,
+          resigned: false,
+          usePunchClock: tc.usePunchClock,
+          allowAcceptOfPlannedHours: tc.allowAcceptOfPlannedHours,
+        });
+
+        const labels = f.debugElement
+          .queryAll(By.css('.axis-label'))
+          .map(d => d.nativeElement.textContent);
+        const hasEditingPolicy = labels.some((t: string) =>
+          t.includes('May the employee edit past registrations?'),
+        );
+        expect(hasEditingPolicy).toBe(true);
+      }
     });
   });
 });

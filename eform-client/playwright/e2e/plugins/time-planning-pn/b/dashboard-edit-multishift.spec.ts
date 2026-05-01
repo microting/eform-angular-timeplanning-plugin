@@ -172,4 +172,77 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
 
     await page.locator('#cancelButton').click();
   });
+
+  /**
+   * Regression guard for the assigned-site dialog "edit past registrations"
+   * radio group: it must remain visible and editable when entry method is
+   * acceptPlanned. Prior bug: an *ngIf clause in the template hid the entire
+   * editing-policy section under acceptPlanned mode, even though the server
+   * persists allowEditOfRegistrations independently of allowAcceptOfPlannedHours.
+   */
+  test('editing-policy stays visible and persists when acceptPlanned is selected', async ({ page }) => {
+    await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
+    const indexPromise = page.waitForResponse(r =>
+      r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
+    await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
+    await indexPromise;
+    await waitForSpinner(page);
+
+    // Open the assigned-site dialog for the third worker (matches the
+    // multishift test's #firstColumn3 convention so the two tests don't
+    // clobber each other across the same shard).
+    await page.locator('#firstColumn3').click();
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+
+    // The entry-method + editing-policy radios are gated behind
+    // allowPersonalTimeRegistration. Make sure it's enabled (idempotent).
+    const personalCb = page.locator('#allowPersonalTimeRegistration input[type="checkbox"]');
+    await personalCb.waitFor({ state: 'attached', timeout: 10000 });
+    if (!(await personalCb.isChecked())) {
+      await page.locator('#allowPersonalTimeRegistration').click({ force: true });
+    }
+    await expect(personalCb).toBeChecked();
+
+    // Click the acceptPlanned radio — pick the inner clickable label/input
+    // because the Material radio button host wraps a hidden input.
+    const acceptPlannedRadio = page.locator('mat-radio-button[value="acceptPlanned"]');
+    await acceptPlannedRadio.scrollIntoViewIfNeeded();
+    await acceptPlannedRadio.locator('label').first().click({ force: true });
+
+    // Assert the editing-policy section is in the DOM. The two radio groups
+    // each render their own mat-radio-group; the second one carries the
+    // editing-policy values (locked / untilPayroll / twoDaysRolling).
+    await expect(page.locator('mat-radio-button[value="untilPayroll"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('mat-radio-button[value="twoDaysRolling"]')).toBeVisible();
+
+    // Pick "Yes, until the last payroll run" (untilPayroll).
+    await page.locator('mat-radio-button[value="untilPayroll"]').locator('label').first()
+      .click({ force: true });
+
+    // Save and wait for the PUT to land + the dashboard re-index.
+    const assignSitePromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
+    await page.locator('#saveButton').click({ force: true });
+    await assignSitePromise;
+    await waitForSpinner(page);
+    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
+
+    // Re-open the dialog and assert both choices round-tripped.
+    await page.locator('#firstColumn3').click();
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+
+    // acceptPlanned still selected.
+    await expect(
+      page.locator('mat-radio-button[value="acceptPlanned"] input[type="radio"]'),
+    ).toBeChecked();
+
+    // Editing-policy section is still rendered (the previously-broken case)…
+    await expect(page.locator('mat-radio-button[value="untilPayroll"]')).toBeVisible();
+    // …and untilPayroll is the persisted choice.
+    await expect(
+      page.locator('mat-radio-button[value="untilPayroll"] input[type="radio"]'),
+    ).toBeChecked();
+
+    await page.locator('#cancelButton').click();
+  });
 });

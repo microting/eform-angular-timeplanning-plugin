@@ -111,9 +111,9 @@
         </div>
       </div>
 
-      <!-- Axis 2: Editing policy (not applicable under "accept planned hours" mode) -->
+      <!-- Axis 2: Editing policy -->
       <div class="mobile-axis"
-           *ngIf="!data.resigned && data.allowPersonalTimeRegistration && entryMethod !== 'acceptPlanned' && selectCurrentUserIsAdmin$ | async">
+           *ngIf="!data.resigned && data.allowPersonalTimeRegistration && (selectCurrentUserIsAdmin$ | async)">
         <div class="axis-label">② {{ 'May the employee edit past registrations?' | translate }}</div>
         <mat-radio-group class="radio-group-vertical"
                          [value]="editingPolicy"
