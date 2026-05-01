@@ -581,4 +581,185 @@ public class SettingsServiceExtendedTests : TestBaseSetup
         var siteIds = result.Model.Select(x => x.SiteId).OrderBy(x => x).ToList();
         Assert.That(siteIds, Is.EqualTo(new[] { 9000, 9001, 9002 }));
     }
+
+    // --- "no managers anywhere" fallback for GetAvailableSitesByCurrentUser ---
+    // Mirror of the TimePlanningPlanningService.Index() fallback that PR #1490
+    // introduced. Both manager-tag-filter tests below need a real BaseDbContext
+    // with seeded ApplicationUser + UserRoles + SecurityGroups so the
+    // (!isAdmin) branch actually runs against a known caller. The current test
+    // fixture passes null for baseDbContext, which skips the filter block
+    // entirely and makes the manager-vs-non-manager branches unobservable
+    // here. Same fixture gap that ContentHandoverService tests carve out via
+    // [Ignore]. Behavior is exercised end-to-end by the
+    // eform-backendconfiguration-plugin playwright test
+    // (time-registration-dashboard-visibility.spec.ts) for the
+    // manager-exists path.
+
+    [Test]
+    [Ignore("Follow-up: wire real BaseDbContext seeding (ApplicationUser + UserRoles + SecurityGroups) so the (!isAdmin) branch in GetAvailableSitesByCurrentUser can be exercised. The fix itself (anyManagerExists predicate) mirrors TimePlanningPlanningService.Index() (PR #1490) and is observed end-to-end by the planning page when no AssignedSite has IsManager=true.")]
+    public async Task GetAvailableSitesByCurrentUser_NoManagersAnywhere_ReturnsAllSites()
+    {
+        // Arrange — three AssignedSites, all IsManager=false. The caller is
+        // one of the non-managers. With no manager configured anywhere in
+        // the system, the manager-tag filter should be bypassed and the full
+        // non-resigned site list should come back.
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var language = await sdkDbContext.Languages.FirstOrDefaultAsync();
+        if (language == null)
+        {
+            language = new Microting.eForm.Infrastructure.Data.Entities.Language
+            {
+                LanguageCode = "en",
+                Name = "English"
+            };
+            await language.Create(sdkDbContext);
+        }
+
+        for (var i = 0; i < 3; i++)
+        {
+            var siteUid = 11000 + i;
+            var workerUid = 11100 + i;
+            var siteWorkerUid = 11200 + i;
+            var unitUid = 11300 + i;
+
+            var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+            {
+                Name = $"NoMgr {i}",
+                MicrotingUid = siteUid,
+                LanguageId = language.Id
+            };
+            await site.Create(sdkDbContext);
+
+            var worker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+            {
+                FirstName = $"NoMgr{i}",
+                LastName = "Worker",
+                Email = $"nomgr{i}@test.com",
+                MicrotingUid = workerUid
+            };
+            await worker.Create(sdkDbContext);
+
+            var siteWorker = new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+            {
+                SiteId = site.Id,
+                WorkerId = worker.Id,
+                MicrotingUid = siteWorkerUid
+            };
+            await siteWorker.Create(sdkDbContext);
+
+            var unit = new Microting.eForm.Infrastructure.Data.Entities.Unit
+            {
+                SiteId = site.Id,
+                MicrotingUid = unitUid,
+                CustomerNo = 1,
+                OtpCode = 1
+            };
+            await unit.Create(sdkDbContext);
+
+            var assigned = new AssignedSiteEntity
+            {
+                SiteId = siteUid,
+                Resigned = false,
+                IsManager = false,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            };
+            await assigned.Create(TimePlanningPnDbContext);
+        }
+
+        // Act — call as one of the non-managers (e.g. nomgr0@test.com).
+        var result = await _settingsService.GetAvailableSitesByCurrentUser();
+
+        // Assert — all three sites come back, not just the caller's own.
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Count, Is.EqualTo(3));
+        var siteIds = result.Model.Select(x => x.SiteId).OrderBy(x => x).ToList();
+        Assert.That(siteIds, Is.EqualTo(new[] { 11000, 11001, 11002 }));
+    }
+
+    [Test]
+    [Ignore("Follow-up: wire real BaseDbContext seeding (ApplicationUser + UserRoles + SecurityGroups) so the (!isAdmin) branch in GetAvailableSitesByCurrentUser can be exercised. Manager-exists path is covered end-to-end by eform-backendconfiguration-plugin's time-registration-dashboard-visibility.spec.ts.")]
+    public async Task GetAvailableSitesByCurrentUser_ManagerExists_NonManagerSeesOnlySelf()
+    {
+        // Arrange — three AssignedSites, one of them IsManager=true. The
+        // caller is a non-manager and should be filtered down to only its
+        // own site (existing pre-fix behavior, must remain unchanged).
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var language = await sdkDbContext.Languages.FirstOrDefaultAsync();
+        if (language == null)
+        {
+            language = new Microting.eForm.Infrastructure.Data.Entities.Language
+            {
+                LanguageCode = "en",
+                Name = "English"
+            };
+            await language.Create(sdkDbContext);
+        }
+
+        for (var i = 0; i < 3; i++)
+        {
+            var siteUid = 12000 + i;
+            var workerUid = 12100 + i;
+            var siteWorkerUid = 12200 + i;
+            var unitUid = 12300 + i;
+
+            var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+            {
+                Name = $"WithMgr {i}",
+                MicrotingUid = siteUid,
+                LanguageId = language.Id
+            };
+            await site.Create(sdkDbContext);
+
+            var worker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+            {
+                FirstName = $"WithMgr{i}",
+                LastName = "Worker",
+                Email = $"withmgr{i}@test.com",
+                MicrotingUid = workerUid
+            };
+            await worker.Create(sdkDbContext);
+
+            var siteWorker = new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+            {
+                SiteId = site.Id,
+                WorkerId = worker.Id,
+                MicrotingUid = siteWorkerUid
+            };
+            await siteWorker.Create(sdkDbContext);
+
+            var unit = new Microting.eForm.Infrastructure.Data.Entities.Unit
+            {
+                SiteId = site.Id,
+                MicrotingUid = unitUid,
+                CustomerNo = 1,
+                OtpCode = 1
+            };
+            await unit.Create(sdkDbContext);
+
+            var assigned = new AssignedSiteEntity
+            {
+                SiteId = siteUid,
+                Resigned = false,
+                IsManager = i == 0, // first row is the manager
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            };
+            await assigned.Create(TimePlanningPnDbContext);
+        }
+
+        // Act — call as a non-manager (e.g. withmgr1@test.com).
+        var result = await _settingsService.GetAvailableSitesByCurrentUser();
+
+        // Assert — non-manager caller is filtered down to its own site.
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Count, Is.EqualTo(1));
+        Assert.That(result.Model[0].SiteId, Is.EqualTo(12001));
+    }
 }
