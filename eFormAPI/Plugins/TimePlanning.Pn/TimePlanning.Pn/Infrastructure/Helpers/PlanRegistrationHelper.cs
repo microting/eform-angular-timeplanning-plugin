@@ -118,10 +118,26 @@ public static class PlanRegistrationHelper
     public static PlanRegistration CalculatePauseAutoBreakCalculationActive(
         AssignedSite assignedSite, PlanRegistration planning)
     {
+        // Phase 1 note (auto-break, write path):
+        // -------------------------------------------------------------------
+        // Auto-break pauses are COMPUTED from day-of-week rules (divider /
+        // pr-divider / upper-limit), not OBSERVED. There is no real punch
+        // marking when the worker started or stopped the pause -- the rule
+        // simply says "deduct N minutes of pause for a shift of M minutes
+        // worked on this weekday". So even when UseOneMinuteIntervals is
+        // on, we do NOT fabricate Pause1StartedAt / Pause1StoppedAt
+        // timestamps for an auto-computed pause: there is no real-world
+        // signal to anchor them to. The legacy `Pause1Id` int (in 5-minute
+        // multiples) stays the source of truth for auto-break, and Phase 2
+        // will read it back when computing NettoHours. The DateTime pause
+        // fields remain reserved for OBSERVED pauses (worker explicitly
+        // started/stopped a break on the kiosk / mobile), which already
+        // travel through the `Pause*StartedAt` write path in
+        // `UpdateWorkingHour`.
         if (assignedSite.UseOneMinuteIntervals)
         {
-            // TODO Phase 1+2: compute pause auto-break from DateTime stamps with second precision.
-            // For Phase 0, fall through to existing 5-minute logic to preserve behavior.
+            // No-op for auto-break specifically; fall through to the
+            // existing 5-minute logic which sets Pause1Id. See note above.
         }
         if (assignedSite.AutoBreakCalculationActive)
         {
@@ -376,14 +392,37 @@ public static class PlanRegistrationHelper
             {
                 // FIXME: This is a workaround, it should be removed when the frontend is fixed.
                 planRegistration.Start1Id /= 5 + 1;
-                planRegistration.Start1StartedAt = planRegistration.Date.AddMinutes(planRegistration.Start1Id * 5);
+                // Phase 1: when UseOneMinuteIntervals is on AND a precise stamp is
+                // already populated, preserve it instead of snapping back to the
+                // 5-minute index. Existing flag-off behavior is byte-identical:
+                // the int Id is corrected and StartedAt is backfilled from it.
+                // When the flag is on but StartedAt is null, fall through to the
+                // backfill so legacy rows without precise stamps still get one.
+                if (dbAssignedSite.UseOneMinuteIntervals && planRegistration.Start1StartedAt.HasValue)
+                {
+                    // Phase 1: precise DateTime stamp wins; do NOT overwrite it
+                    // with the 5-minute snap derived from Start1Id.
+                }
+                else
+                {
+                    planRegistration.Start1StartedAt = planRegistration.Date.AddMinutes(planRegistration.Start1Id * 5);
+                }
             }
 
             if (planRegistration.Stop1Id > 289 )
             {
                 // FIXME: This is a workaround, it should be removed when the frontend is fixed.
                 planRegistration.Stop1Id /= 5 + 1;
-                planRegistration.Stop1StoppedAt = planRegistration.Date.AddMinutes(planRegistration.Stop1Id * 5);
+                // Phase 1: same fork as Start1 above for the stop stamp.
+                if (dbAssignedSite.UseOneMinuteIntervals && planRegistration.Stop1StoppedAt.HasValue)
+                {
+                    // Phase 1: precise DateTime stamp wins; do NOT overwrite it
+                    // with the 5-minute snap derived from Stop1Id.
+                }
+                else
+                {
+                    planRegistration.Stop1StoppedAt = planRegistration.Date.AddMinutes(planRegistration.Stop1Id * 5);
+                }
             }
             planRegistration.IsSaturday = midnight.DayOfWeek == DayOfWeek.Saturday;
             planRegistration.IsSunday = midnight.DayOfWeek == DayOfWeek.Sunday;
