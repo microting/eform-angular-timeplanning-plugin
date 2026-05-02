@@ -47,7 +47,7 @@
                     #plannedStartPicker
                     [format]="24"
                     [defaultTime]="workdayForm.get('planned.shift' + shiftId + '.start')?.value"
-                    [minutesGap]="5"
+                    [minutesGap]="useOneMinuteIntervals ? 1 : 5"
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
@@ -80,7 +80,7 @@
                     #plannedPausePicker
                     [format]="24"
                     [defaultTime]="workdayForm.get('planned.shift' + shiftId + '.break')?.value"
-                    [minutesGap]="5"
+                    [minutesGap]="useOneMinuteIntervals ? 1 : 5"
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
@@ -108,7 +108,7 @@
                     #plannedStopPicker
                     [format]="24"
                     [defaultTime]="workdayForm.get('planned.shift' + shiftId + '.stop')?.value"
-                    [minutesGap]="5"
+                    [minutesGap]="useOneMinuteIntervals ? 1 : 5"
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
@@ -176,7 +176,7 @@
                   <ngx-material-timepicker
                     #actualStartPicker
                     [format]="24"
-                    [minutesGap]="5"
+                    [minutesGap]="useOneMinuteIntervals ? 1 : 5"
                     [defaultTime]="workdayForm.get('actual.shift' + shiftId + '.start')?.value"
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
@@ -213,7 +213,7 @@
                   <ngx-material-timepicker
                     #actualPausePicker
                     [format]="24"
-                    [minutesGap]="5"
+                    [minutesGap]="useOneMinuteIntervals ? 1 : 5"
                     [defaultTime]="workdayForm.get('actual.shift' + shiftId + '.pause')?.value"
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
@@ -245,7 +245,7 @@
                   <ngx-material-timepicker
                     #actualStopPicker
                     [format]="24"
-                    [minutesGap]="5"
+                    [minutesGap]="useOneMinuteIntervals ? 1 : 5"
                     [defaultTime]="workdayForm.get('actual.shift' + shiftId + '.stop')?.value"
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>

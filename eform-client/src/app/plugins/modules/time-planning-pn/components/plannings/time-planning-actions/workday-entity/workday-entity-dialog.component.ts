@@ -64,6 +64,17 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   // Reactive form
   workdayForm!: FormGroup;
 
+  /**
+   * Phase 4: pulls UseOneMinuteIntervals off the assigned-site model passed
+   * into the dialog. Drives the six ngx-material-timepicker `[minutesGap]`
+   * bindings — when on, the picker steps in 1-minute increments instead of
+   * 5-minute snap (sub-minute INPUT is deferred per Q2(c); only DISPLAY
+   * shows seconds today).
+   */
+  get useOneMinuteIntervals(): boolean {
+    return this.data?.assignedSiteModel?.useOneMinuteIntervals ?? false;
+  }
+
   // UI / beregningsfelter
   isInTheFuture = false;
   maxPause1Id = 0;

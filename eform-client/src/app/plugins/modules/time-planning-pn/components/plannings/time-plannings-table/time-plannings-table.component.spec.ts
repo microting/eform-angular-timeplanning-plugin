@@ -374,4 +374,111 @@ describe('TimePlanningsTableComponent', () => {
       expect(result).toBe('10:30');
     });
   });
+
+  // ------------------------------------------------------------------
+  // Phase 4 — second-precision display when UseOneMinuteIntervals is on
+  // ------------------------------------------------------------------
+  describe('formatStamp (Phase 4)', () => {
+    it('returns empty string when value is falsy', () => {
+      expect(component.formatStamp({ useOneMinuteIntervals: true }, null)).toBe('');
+      expect(component.formatStamp({ useOneMinuteIntervals: true }, undefined as any)).toBe('');
+      expect(component.formatStamp({ useOneMinuteIntervals: true }, '')).toBe('');
+    });
+
+    it("uses HH:mm format when row.useOneMinuteIntervals is false", () => {
+      const transformSpy = jest
+        .spyOn(component['datePipe'], 'transform')
+        .mockReturnValue('07:03');
+      const result = component.formatStamp(
+        { useOneMinuteIntervals: false },
+        '2026-05-15T07:03:53Z',
+      );
+      expect(transformSpy).toHaveBeenCalledWith('2026-05-15T07:03:53Z', 'HH:mm', 'UTC');
+      expect(result).toBe('07:03');
+    });
+
+    it("uses HH:mm:ss format when row.useOneMinuteIntervals is true", () => {
+      const transformSpy = jest
+        .spyOn(component['datePipe'], 'transform')
+        .mockReturnValue('07:03:53');
+      const result = component.formatStamp(
+        { useOneMinuteIntervals: true },
+        '2026-05-15T07:03:53Z',
+      );
+      expect(transformSpy).toHaveBeenCalledWith('2026-05-15T07:03:53Z', 'HH:mm:ss', 'UTC');
+      expect(result).toBe('07:03:53');
+    });
+
+    it("falls back to HH:mm when row is null/undefined (defensive)", () => {
+      const transformSpy = jest
+        .spyOn(component['datePipe'], 'transform')
+        .mockReturnValue('07:03');
+      const result = component.formatStamp(null as any, '2026-05-15T07:03:53Z');
+      expect(transformSpy).toHaveBeenCalledWith('2026-05-15T07:03:53Z', 'HH:mm', 'UTC');
+      expect(result).toBe('07:03');
+    });
+  });
+
+  describe('getStopTimeDisplayWithSeconds (Phase 4)', () => {
+    it('returns empty string when either timestamp is falsy', () => {
+      expect(
+        component.getStopTimeDisplayWithSeconds({ useOneMinuteIntervals: true }, null, '2026-05-15T10:00:00Z'),
+      ).toBe('');
+      expect(
+        component.getStopTimeDisplayWithSeconds({ useOneMinuteIntervals: true }, '2026-05-15T08:00:00Z', null),
+      ).toBe('');
+    });
+
+    it('returns 24:00 when stop is on a later day regardless of flag', () => {
+      expect(
+        component.getStopTimeDisplayWithSeconds(
+          { useOneMinuteIntervals: true },
+          '2026-05-15T23:00:00Z',
+          '2026-05-16T01:00:00Z',
+        ),
+      ).toBe('24:00');
+    });
+
+    it("uses HH:mm format when flag off (legacy parity)", () => {
+      const transformSpy = jest
+        .spyOn(component['datePipe'], 'transform')
+        .mockReturnValue('15:30');
+      const result = component.getStopTimeDisplayWithSeconds(
+        { useOneMinuteIntervals: false },
+        '2026-05-15T07:00:00Z',
+        '2026-05-15T15:30:11Z',
+      );
+      expect(transformSpy).toHaveBeenCalledWith('2026-05-15T15:30:11Z', 'HH:mm', 'UTC');
+      expect(result).toBe('15:30');
+    });
+
+    it("uses HH:mm:ss format when flag on", () => {
+      const transformSpy = jest
+        .spyOn(component['datePipe'], 'transform')
+        .mockReturnValue('15:30:11');
+      const result = component.getStopTimeDisplayWithSeconds(
+        { useOneMinuteIntervals: true },
+        '2026-05-15T07:00:00Z',
+        '2026-05-15T15:30:11Z',
+      );
+      expect(transformSpy).toHaveBeenCalledWith('2026-05-15T15:30:11Z', 'HH:mm:ss', 'UTC');
+      expect(result).toBe('15:30:11');
+    });
+  });
+
+  describe('convertHoursToTimeWithSeconds (Phase 4)', () => {
+    it('formats whole-hour values with seconds suffix', () => {
+      expect(component.convertHoursToTimeWithSeconds(8)).toBe('08:00:00');
+    });
+
+    it('handles fractional hours that include sub-minute precision', () => {
+      // 7h 3m 53s → 7 + 3/60 + 53/3600 ≈ 7.06472222...
+      const sevenThreeFiftyThree = 7 + 3 / 60 + 53 / 3600;
+      expect(component.convertHoursToTimeWithSeconds(sevenThreeFiftyThree)).toBe('07:03:53');
+    });
+
+    it('emits negative sign for negative values', () => {
+      expect(component.convertHoursToTimeWithSeconds(-1.5)).toBe('-1:30:00');
+    });
+  });
 });

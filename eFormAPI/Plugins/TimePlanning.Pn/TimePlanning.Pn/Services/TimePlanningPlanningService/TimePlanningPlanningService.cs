@@ -242,6 +242,9 @@ public class TimePlanningPlanningService(
                 {
                     SiteId = dbAssignedSite.SiteId,
                     SiteName = site.Name,
+                    // Phase 4: per-row mirror of the assigned-site flag drives the
+                    // web admin's HH:mm vs HH:mm:ss display path in the plannings table.
+                    UseOneMinuteIntervals = dbAssignedSite.UseOneMinuteIntervals,
                     PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
                 };
 
@@ -451,6 +454,9 @@ public class TimePlanningPlanningService(
         {
             SiteId = (int)site.MicrotingUid!,
             SiteName = site.Name,
+            // Phase 4: per-row mirror of the assigned-site flag drives the
+            // web admin's HH:mm vs HH:mm:ss display path in the plannings table.
+            UseOneMinuteIntervals = dbAssignedSite.UseOneMinuteIntervals,
             PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
         };
 

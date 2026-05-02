@@ -40,5 +40,13 @@ public class TimePlanningPlanningModel
     public string DeviceModel { get; set; }
     public string DeviceManufacturer { get; set; }
     public bool SoftwareVersionIsValid { get; set; }
+    /// <summary>
+    /// Phase 4: per-row mirror of <c>AssignedSite.UseOneMinuteIntervals</c>.
+    /// The web admin plannings table reads this to decide whether to display
+    /// actual stamps (<c>start1StartedAt</c> etc.) at <c>HH:mm:ss</c> rather
+    /// than the legacy <c>HH:mm</c>. Default <c>false</c> preserves byte-
+    /// identical behavior on rows whose site has the flag off.
+    /// </summary>
+    public bool UseOneMinuteIntervals { get; set; }
     public List<TimePlanningPlanningPrDayModel> PlanningPrDayModels { get; set; }
 }
