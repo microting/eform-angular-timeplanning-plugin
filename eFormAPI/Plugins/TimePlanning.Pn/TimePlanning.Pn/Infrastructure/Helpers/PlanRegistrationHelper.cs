@@ -118,6 +118,11 @@ public static class PlanRegistrationHelper
     public static PlanRegistration CalculatePauseAutoBreakCalculationActive(
         AssignedSite assignedSite, PlanRegistration planning)
     {
+        if (assignedSite.UseOneMinuteIntervals)
+        {
+            // TODO Phase 1+2: compute pause auto-break from DateTime stamps with second precision.
+            // For Phase 0, fall through to existing 5-minute logic to preserve behavior.
+        }
         if (assignedSite.AutoBreakCalculationActive)
         {
             var minutesActualAtWork =
@@ -303,6 +308,7 @@ public static class PlanRegistrationHelper
     /// </summary>
     public static void RecalculatePlanHoursFromShifts(PlanRegistration pr)
     {
+        // Existing 5-min path (planned shifts stay minute-precision per plan)
         var totalMinutes = 0;
 
         if (pr.PlannedStartOfShift1 != 0 && pr.PlannedEndOfShift1 != 0)
@@ -322,6 +328,23 @@ public static class PlanRegistrationHelper
 
         pr.PlanHours = totalMinutes / 60.0;
         pr.PlanHoursInSeconds = totalMinutes * 60;
+    }
+
+    /// <summary>
+    /// Phase 0 plumbing overload threading the UseOneMinuteIntervals flag.
+    /// Per the rollout plan, planned-shift precision stays minute-only, so
+    /// this overload simply delegates to the existing 1-arg method regardless
+    /// of the flag. The parameter is kept for symmetry with other helpers and
+    /// to future-proof if planned-shift precision ever changes.
+    /// </summary>
+    public static void RecalculatePlanHoursFromShifts(PlanRegistration pr, bool useOneMinuteIntervals)
+    {
+        if (useOneMinuteIntervals)
+        {
+            // TODO Phase 1+2 (if ever needed): planned-shift precision is currently
+            // out of scope; fall through to the existing minute-precision path.
+        }
+        RecalculatePlanHoursFromShifts(pr);
     }
 
     public static async Task<TimePlanningPlanningModel> UpdatePlanRegistrationsInPeriod(
