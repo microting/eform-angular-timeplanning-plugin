@@ -780,4 +780,101 @@ public class PlanRegistrationHelperTests
         //   Assert.That(row.SumFlexEnd, Is.EqualTo(row.SumFlexEndInSeconds / 3600.0).Within(0.0001));
         Assert.Pass("Captured for future fixture work; see XML doc above.");
     }
+
+    // ------------------------------------------------------------------
+    // Phase 4 — web admin display + Excel export: HH:mm:ss when flag on
+    // ------------------------------------------------------------------
+    //
+    // The fork lives in a private helper on
+    //   TimePlanningWorkingHoursService.GetShiftTime(plr, shift, actualStamp, useOneMinuteIntervals)
+    // which is called from FillDataRow when emitting Excel cells. The
+    // existing 2-arg overload (Options[] lookup) is left untouched; the new
+    // 4-arg overload formats `actualStamp` as `HH:mm:ss` when both
+    // `useOneMinuteIntervals` and `actualStamp.HasValue` are true, and falls
+    // through to the 2-arg overload otherwise.
+    //
+    // Because the helper is `private` and the test fixture has no
+    // `InternalsVisibleTo` attribute, the contract is captured here as the
+    // documented carve-out (mirroring the Phase 0/1/2 patterns above) so
+    // that the assertion intent survives any future refactor that exposes
+    // the helper for direct testing.
+
+    /// <summary>
+    /// Phase 4 contract: when <c>UseOneMinuteIntervals</c> is on AND a
+    /// precise <c>actualStamp</c> is supplied, the new
+    /// <c>GetShiftTime(plr, shift, actualStamp, useOneMinuteIntervals)</c>
+    /// overload returns the stamp formatted as <c>HH:mm:ss</c> rather than
+    /// the legacy 5-minute <c>plr.Options[shift - 1]</c> lookup.
+    /// </summary>
+    [Test]
+    [Ignore("Phase 4 carve-out: GetShiftTime is private on TimePlanningWorkingHoursService and the fixture has no InternalsVisibleTo; assertion captured for future fixture work.")]
+    public void GetShiftTime_FlagOnWithActualStamp_ReturnsHHmmss()
+    {
+        // Arrange / Act / Assert (intent, to be enabled when the helper is
+        // exposed via InternalsVisibleTo or extracted to a testable seam):
+        //
+        //   var plr = new PlanRegistration
+        //   {
+        //       Start1Id = 84, // 5-min idx 84 → "07:00" via Options[83]
+        //       Start1StartedAt = new DateTime(2026, 5, 15, 7, 3, 53),
+        //   };
+        //   var resultFlagOn  = service.GetShiftTimeForTest(plr, plr.Start1Id, plr.Start1StartedAt, useOneMinuteIntervals: true);
+        //   var resultFlagOff = service.GetShiftTimeForTest(plr, plr.Start1Id, plr.Start1StartedAt, useOneMinuteIntervals: false);
+        //
+        //   Assert.That(resultFlagOn,  Is.EqualTo("07:03:53"));
+        //   Assert.That(resultFlagOff, Is.EqualTo("07:00")); // Options[83] = legacy snap
+        Assert.Pass("Captured for future fixture work; see XML doc above.");
+    }
+
+    /// <summary>
+    /// Phase 4 contract: the Excel dashboard export
+    /// (<c>GenerateExcelDashboard</c>) emits <c>HH:mm:ss</c> string cells
+    /// for shift start/stop columns when the row's <c>AssignedSite</c> has
+    /// <c>UseOneMinuteIntervals</c> on, sourced from the precise
+    /// <c>Start1StartedAt</c>/<c>Stop1StoppedAt</c> stamps. With the flag
+    /// off, cell values must remain byte-identical to the legacy 5-minute
+    /// <c>Options[]</c> lookup.
+    /// </summary>
+    [Test]
+    [Ignore("Phase 4 carve-out: GenerateExcelDashboard requires the full Excel/SDK/DB fixture not wired here; assertion captured for future fixture work.")]
+    public void GenerateExcelDashboard_FlagOn_FormatsShiftCellsAsHHmmss()
+    {
+        // Arrange / Act / Assert (intent, to be enabled when fixture lands):
+        //
+        //   var assignedSite = new AssignedSite { SiteId = 950, UseOneMinuteIntervals = true };
+        //   var planning = new PlanRegistration
+        //   {
+        //       SdkSitId = 950,
+        //       Date = new DateTime(2026, 5, 15, 0, 0, 0),
+        //       Start1Id = 84,
+        //       Stop1Id = 187,
+        //       Start1StartedAt = new DateTime(2026, 5, 15, 7, 3, 53),
+        //       Stop1StoppedAt = new DateTime(2026, 5, 15, 15, 30, 11),
+        //       PlanHours = 8.0,
+        //   };
+        //   await assignedSite.Create(TimePlanningPnDbContext);
+        //   await planning.Create(TimePlanningPnDbContext);
+        //
+        //   var stream = await service.GenerateExcelDashboard(new TimePlanningWorkingHoursRequestModel
+        //   {
+        //       SiteId = 950,
+        //       DateFrom = new DateTime(2026, 5, 15, 0, 0, 0),
+        //       DateTo   = new DateTime(2026, 5, 15, 0, 0, 0),
+        //   });
+        //
+        //   using var pkg = new ExcelPackage(stream);
+        //   var sheet = pkg.Workbook.Worksheets.First();
+        //   // Shift1Start column is the 8th cell on data row 2 (1-indexed).
+        //   Assert.That(sheet.Cells[2, 8].Text,  Is.EqualTo("07:03:53"));
+        //   Assert.That(sheet.Cells[2, 9].Text,  Is.EqualTo("15:30:11"));
+        //
+        //   // Flip the flag back off → cells must show the legacy 5-min Options[] strings.
+        //   assignedSite.UseOneMinuteIntervals = false;
+        //   await assignedSite.Update(TimePlanningPnDbContext);
+        //   var stream2 = await service.GenerateExcelDashboard(...);
+        //   using var pkg2 = new ExcelPackage(stream2);
+        //   Assert.That(pkg2.Workbook.Worksheets.First().Cells[2, 8].Text, Is.EqualTo("07:00"));
+        //   Assert.That(pkg2.Workbook.Worksheets.First().Cells[2, 9].Text, Is.EqualTo("15:30"));
+        Assert.Pass("Captured for future fixture work; see XML doc above.");
+    }
 }

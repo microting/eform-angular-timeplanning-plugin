@@ -2532,7 +2532,7 @@ public class TimePlanningWorkingHoursService(
                 foreach (var planning in timePlannings)
                 {
                     var dataRow = new Row() { RowIndex = (uint)rowIndex };
-                    FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled);
+                    FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, assignedSite.UseOneMinuteIntervals);
 
                     // Append pay code values for this day
                     var dayPayLines = payLinesByDate.ContainsKey(planning.Date)
@@ -2651,7 +2651,7 @@ public class TimePlanningWorkingHoursService(
     }
 
     private void FillDataRow(Row dataRow, Worker worker, Microting.eForm.Infrastructure.Data.Entities.Site site, CultureInfo culture,
-        TimePlanningWorkingHoursModel planning, PlanRegistration plr, Language language, bool isThirdShiftEnabled, bool isFourthShiftEnabled, bool isFifthShiftEnabled)
+        TimePlanningWorkingHoursModel planning, PlanRegistration plr, Language language, bool isThirdShiftEnabled, bool isFourthShiftEnabled, bool isFifthShiftEnabled, bool useOneMinuteIntervals = false)
     {
         try {
             dataRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
@@ -2661,12 +2661,16 @@ public class TimePlanningWorkingHoursService(
             dataRow.Append(CreateWeekNumberCell(planning.Date));
             dataRow.Append(CreateCell(planning.PlanText));
             dataRow.Append(CreateNumericCell(planning.PlanHours));
-            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start)));
-            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Stop)));
-            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Pause)));
-            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start)));
-            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop)));
-            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Pause)));
+            // Phase 4: when UseOneMinuteIntervals is on, format actual stamps (start/stop)
+            // from the precise DateTime stamps with second precision; pause columns have
+            // no single representative stamp in the legacy 5-min Options[] view, so they
+            // pass actualStamp=null and fall through to the existing 2-arg lookup.
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start, planning.Start1StartedAt, useOneMinuteIntervals)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Stop, planning.Stop1StoppedAt, useOneMinuteIntervals)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Pause, null, useOneMinuteIntervals)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start, planning.Start2StartedAt, useOneMinuteIntervals)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop, planning.Stop2StoppedAt, useOneMinuteIntervals)));
+            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Pause, null, useOneMinuteIntervals)));
             dataRow.Append(CreateNumericCell(planning.NettoHoursOverrideActive ? planning.NettoHoursOverride : planning.NettoHours));
             dataRow.Append(CreateNumericCell(planning.FlexHours));
             dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
@@ -2678,21 +2682,21 @@ public class TimePlanningWorkingHoursService(
             dataRow.Append(CreateCell(planning.CommentOffice?.Replace("<br>", "\n")));
             if (isThirdShiftEnabled)
             {
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Start)));
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Stop)));
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Pause)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Start, planning.Start3StartedAt, useOneMinuteIntervals)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Stop, planning.Stop3StoppedAt, useOneMinuteIntervals)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Pause, null, useOneMinuteIntervals)));
             }
             if (isFourthShiftEnabled)
             {
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Start)));
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Stop)));
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Pause)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Start, planning.Start4StartedAt, useOneMinuteIntervals)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Stop, planning.Stop4StoppedAt, useOneMinuteIntervals)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Pause, null, useOneMinuteIntervals)));
             }
             if (isFifthShiftEnabled)
             {
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Start)));
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Stop)));
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Pause)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Start, planning.Start5StartedAt, useOneMinuteIntervals)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Stop, planning.Stop5StoppedAt, useOneMinuteIntervals)));
+                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Pause, null, useOneMinuteIntervals)));
             }
         }
         catch (Exception ex)
@@ -2751,6 +2755,24 @@ public class TimePlanningWorkingHoursService(
             return "24:00";
         }
         return shift > 0 ? plr.Options[(int)shift - 1] : "";
+    }
+
+    /// <summary>
+    /// Phase 4 second-precision overload: when <paramref name="useOneMinuteIntervals"/>
+    /// is on AND a precise <paramref name="actualStamp"/> is available, format the
+    /// stamp as <c>HH:mm:ss</c> directly (sourcing the value from
+    /// <c>PlanRegistration.Start1StartedAt</c> / <c>Stop1StoppedAt</c> / etc.
+    /// instead of the legacy 5-minute <c>plr.Options</c> lookup). For every
+    /// other case (flag off OR no actual stamp) this delegates to the existing
+    /// 2-arg method so the byte-identical 5-minute path is preserved.
+    /// </summary>
+    private string GetShiftTime(PlanRegistration plr, int? shift, DateTime? actualStamp, bool useOneMinuteIntervals)
+    {
+        if (useOneMinuteIntervals && actualStamp.HasValue)
+        {
+            return actualStamp.Value.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+        }
+        return GetShiftTime(plr, shift);
     }
 
     private string GetMessageText(int? messageId, Language language)
@@ -3155,7 +3177,7 @@ public class TimePlanningWorkingHoursService(
                         var dataRow = new Row() { RowIndex = (uint)rowIndex };
                         try
                         {
-                            FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled);
+                            FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, cache?.AssignedSite?.UseOneMinuteIntervals ?? false);
 
                             // Append pay code values for this day
                             var dayPayLines = (cache != null && cache.PayLinesByDate.ContainsKey(planning.Date))

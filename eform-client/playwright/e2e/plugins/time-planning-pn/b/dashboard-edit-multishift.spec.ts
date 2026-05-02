@@ -307,4 +307,45 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
 
     await page.locator('#cancelButton').click();
   });
+
+  /**
+   * Phase 4 — second-precision DISPLAY: when a row's site has
+   * `useOneMinuteIntervals = true` AND the planning has a precise
+   * `start1StartedAt` stamp (e.g. 07:03:53), the plannings-table cell must
+   * render the stamp at HH:mm:ss instead of the legacy HH:mm.
+   *
+   * Server-side seeding `AssignedSite.UseOneMinuteIntervals = true` plus
+   * a planning with `Start1StartedAt = 2026-05-15 07:03:53` requires DB
+   * fixture work the CI playwright shard doesn't yet wire up (the tests
+   * here log in as admin and rely on the default seed). Captured here as
+   * a TODO so the assertion shape survives any future fixture work; the
+   * Phase 4 jest unit test on `formatStamp(...)` covers the contract for
+   * the merge-blocking path.
+   */
+  test.skip('plannings-table renders HH:mm:ss for actual stamp when site flag is on', async ({ page }) => {
+    // TODO(phase 4 fixture): seed AssignedSite.UseOneMinuteIntervals = true
+    // for the worker referenced by #cell3_0 AND a PlanRegistration row with
+    // Start1StartedAt = '2026-05-15T07:03:53Z' on a date that lands inside
+    // the dashboard's default visible range.
+    //
+    // Then the assertion shape is:
+    //
+    //   await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
+    //   await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
+    //   await waitForSpinner(page);
+    //
+    //   const cellId = '#cell3_0';
+    //   await page.locator(cellId).scrollIntoViewIfNeeded();
+    //
+    //   // The first-shift actual line is rendered with id firstShiftActual{rowIdx}_{colField}.
+    //   const firstShiftActual = page.locator('[id^="firstShiftActual"]').first();
+    //   await expect(firstShiftActual).toContainText('07:03:53');
+    //   // Negative guard — the legacy 5-min path would render '07:00' / '07:05' instead.
+    //   await expect(firstShiftActual).not.toContainText(/07:0[05]\s/);
+    //
+    // Until the fixture lands the unit test
+    //   `formatStamp (Phase 4) — uses HH:mm:ss format when row.useOneMinuteIntervals is true`
+    // covers the format-helper contract (eform-client/src/app/plugins/modules/time-planning-pn/
+    // components/plannings/time-plannings-table/time-plannings-table.component.spec.ts).
+  });
 });
