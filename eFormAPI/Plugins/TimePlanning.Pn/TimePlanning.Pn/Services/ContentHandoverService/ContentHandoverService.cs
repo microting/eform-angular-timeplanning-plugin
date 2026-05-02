@@ -635,8 +635,8 @@ public class ContentHandoverService : IContentHandoverService
                     // planned shift slots on BOTH registrations so the totals
                     // reflect the moved shift data. Only needed for partial-shift
                     // handovers; full-day MoveContent copies PlanHours directly.
-                    PlanRegistrationHelper.RecalculatePlanHoursFromShifts(fromPR);
-                    PlanRegistrationHelper.RecalculatePlanHoursFromShifts(toPR);
+                    PlanRegistrationHelper.RecalculatePlanHoursFromShifts(fromPR, fromAssignedSite?.UseOneMinuteIntervals ?? false);
+                    PlanRegistrationHelper.RecalculatePlanHoursFromShifts(toPR, toAssignedSite?.UseOneMinuteIntervals ?? false);
 
                     if (fromAssignedSite == null || toAssignedSite == null)
                     {

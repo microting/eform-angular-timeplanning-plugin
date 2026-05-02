@@ -750,6 +750,22 @@ public class TimePlanningWorkingHoursService(
         return roundedDateTime.ToString("HH:mm", CultureInfo.InvariantCulture);
     }
 
+    /// <summary>
+    /// Phase 0 plumbing overload threading the UseOneMinuteIntervals flag.
+    /// When true, future phases will switch to second-precision formatting
+    /// from a DateTime stamp (HH:mm:ss). For Phase 0 this delegates to the
+    /// existing 5-minute path so behavior is byte-identical.
+    /// </summary>
+    private static string? RoundDownToNearestFiveMinutesAndFormat(DateTime date, int minutesToAdd, bool useOneMinuteIntervals)
+    {
+        if (useOneMinuteIntervals)
+        {
+            // TODO Phase 4: format from DateTime stamp with second precision.
+            // For Phase 0, fall through to existing 5-minute logic to preserve behavior.
+        }
+        return RoundDownToNearestFiveMinutesAndFormat(date, minutesToAdd);
+    }
+
     public async Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime,
         string token)
     {
