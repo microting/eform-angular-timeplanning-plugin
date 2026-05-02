@@ -363,6 +363,165 @@ public static class PlanRegistrationHelper
         RecalculatePlanHoursFromShifts(pr);
     }
 
+    /// <summary>
+    /// Phase 2 — second-precision NettoHours computation.
+    ///
+    /// When <see cref="AssignedSite.UseOneMinuteIntervals"/> is on, this helper
+    /// computes NettoHours from DateTime deltas (precise to the second) instead
+    /// of the legacy <c>(StopId - StartId - (PauseId-1)) * 5</c> minute-tick math
+    /// in the per-call sites. Mirrors the flag-off formula in seconds:
+    ///
+    /// <code>
+    /// nettoSeconds = 0
+    /// for each shift n in 1..5:
+    ///     if (Start_n_StartedAt and Stop_n_StoppedAt are populated):
+    ///         nettoSeconds += (Stop_n_StoppedAt - Start_n_StartedAt).TotalSeconds
+    ///         if (Pause_n_StartedAt and Pause_n_StoppedAt are populated):
+    ///             nettoSeconds -= (Pause_n_StoppedAt - Pause_n_StartedAt).TotalSeconds
+    ///         else if (Pause_n_Id > 0):
+    ///             nettoSeconds -= (Pause_n_Id - 1) * 5 * 60
+    ///     else if (Stop_n_Id &gt;= Start_n_Id and Stop_n_Id != 0):
+    ///         // legacy fallback for shifts that don't have DateTime stamps
+    ///         nettoSeconds += (Stop_n_Id - Start_n_Id) * 5 * 60
+    ///         nettoSeconds -= (Pause_n_Id &gt; 0 ? Pause_n_Id - 1 : 0) * 5 * 60
+    /// </code>
+    ///
+    /// Returns the computed netto seconds. The caller writes both the
+    /// <c>*InSeconds</c> primary and back-derives the legacy <c>double</c>
+    /// hour field (<c>x = xInSeconds / 3600.0</c>) for read compatibility.
+    /// </summary>
+    public static long ComputeNettoSecondsFromDateTimeShifts(PlanRegistration pr)
+    {
+        long nettoSeconds = 0;
+
+        // Helper: compute one shift's contribution. Prefer DateTime delta when
+        // both stamps are populated; otherwise fall back to the legacy 5-min
+        // tick math so mixed-precision rows (some shifts precise, some not)
+        // still get a complete total.
+        long ShiftSeconds(DateTime? startAt, DateTime? stopAt, int startId, int stopId,
+            DateTime? pauseStartAt, DateTime? pauseStopAt, int pauseId)
+        {
+            long workSeconds;
+            if (startAt.HasValue && stopAt.HasValue && stopAt.Value > startAt.Value)
+            {
+                workSeconds = (long)(stopAt.Value - startAt.Value).TotalSeconds;
+            }
+            else if (stopId >= startId && stopId != 0)
+            {
+                workSeconds = (long)(stopId - startId) * 5 * 60;
+            }
+            else
+            {
+                return 0;
+            }
+
+            long pauseSeconds;
+            if (pauseStartAt.HasValue && pauseStopAt.HasValue && pauseStopAt.Value > pauseStartAt.Value)
+            {
+                pauseSeconds = (long)(pauseStopAt.Value - pauseStartAt.Value).TotalSeconds;
+            }
+            else if (pauseId > 0)
+            {
+                // Legacy snap fallback: Pause1Id is stored as (minutes/5 + 1)
+                pauseSeconds = (long)(pauseId - 1) * 5 * 60;
+            }
+            else
+            {
+                pauseSeconds = 0;
+            }
+
+            return workSeconds - pauseSeconds;
+        }
+
+        nettoSeconds += ShiftSeconds(pr.Start1StartedAt, pr.Stop1StoppedAt, pr.Start1Id, pr.Stop1Id,
+            pr.Pause1StartedAt, pr.Pause1StoppedAt, pr.Pause1Id);
+        nettoSeconds += ShiftSeconds(pr.Start2StartedAt, pr.Stop2StoppedAt, pr.Start2Id, pr.Stop2Id,
+            pr.Pause2StartedAt, pr.Pause2StoppedAt, pr.Pause2Id);
+        nettoSeconds += ShiftSeconds(pr.Start3StartedAt, pr.Stop3StoppedAt, pr.Start3Id, pr.Stop3Id,
+            pr.Pause3StartedAt, pr.Pause3StoppedAt, pr.Pause3Id);
+        nettoSeconds += ShiftSeconds(pr.Start4StartedAt, pr.Stop4StoppedAt, pr.Start4Id, pr.Stop4Id,
+            pr.Pause4StartedAt, pr.Pause4StoppedAt, pr.Pause4Id);
+        nettoSeconds += ShiftSeconds(pr.Start5StartedAt, pr.Stop5StoppedAt, pr.Start5Id, pr.Stop5Id,
+            pr.Pause5StartedAt, pr.Pause5StoppedAt, pr.Pause5Id);
+
+        return Math.Max(0, nettoSeconds);
+    }
+
+    /// <summary>
+    /// Phase 2 — write the second-precision NettoHours / Flex / SumFlex chain.
+    ///
+    /// Computes <c>NettoHoursInSeconds</c> from DateTime deltas (or legacy
+    /// fallback) via <see cref="ComputeNettoSecondsFromDateTimeShifts"/>,
+    /// derives <c>FlexInSeconds</c> from <c>PlanHoursInSeconds</c>, then
+    /// derives <c>SumFlexEndInSeconds</c> from the running balance plus the
+    /// computed flex minus paid-out flex. Back-derives the legacy
+    /// <c>double</c> hour fields (<c>x = xInSeconds / 3600.0</c>) so existing
+    /// read paths stay compatible.
+    ///
+    /// Mirrors the existing flag-off formula sign-for-sign:
+    ///   Flex            = NettoHours - PlanHours          (or override)
+    ///   SumFlexEnd      = SumFlexStart + NettoHours - PlanHours - PaiedOutFlex
+    ///                       (when preTimePlanning exists)
+    ///   SumFlexEnd      = NettoHours - PlanHours - PaiedOutFlex
+    ///                       (when no preTimePlanning, SumFlexStart = 0)
+    /// — but every operand is in seconds, so no precision is lost on the
+    /// way through the int columns.
+    ///
+    /// Caller passes <paramref name="sumFlexStartInSeconds"/> from the previous
+    /// day's <c>SumFlexEndInSeconds</c> (or 0 when there is no preceding row).
+    /// When the override is active, the override (in hours) is converted to
+    /// seconds via <c>* 3600</c> for the chain.
+    /// </summary>
+    /// <param name="pr">The plan registration to update in place.</param>
+    /// <param name="sumFlexStartInSeconds">
+    /// Running flex balance carried in from the previous day's
+    /// <c>SumFlexEndInSeconds</c>; pass 0 when there is no preceding row.
+    /// </param>
+    /// <param name="hasPreTimePlanning">
+    /// True when there is a preceding planning row (use the running balance);
+    /// false when this is the first row (reset SumFlexStart to 0).
+    /// </param>
+    public static void ApplyNettoFlexChainSecondPrecision(PlanRegistration pr,
+        int sumFlexStartInSeconds, bool hasPreTimePlanning)
+    {
+        var nettoSeconds = ComputeNettoSecondsFromDateTimeShifts(pr);
+        pr.NettoHoursInSeconds = (int)nettoSeconds;
+        pr.NettoHours = nettoSeconds / 3600.0;
+
+        var planHoursSeconds = pr.PlanHoursInSeconds;
+        var paiedOutFlexSeconds = pr.PaiedOutFlexInSeconds;
+
+        // Mirror the flag-off override semantics:
+        //   Flex      = (override ? NettoHoursOverride : NettoHours) - PlanHours
+        //   SumFlexEnd uses the same numerator.
+        var effectiveNettoSecondsForFlex = pr.NettoHoursOverrideActive
+            ? (long)(pr.NettoHoursOverride * 3600)
+            : nettoSeconds;
+
+        var flexSeconds = effectiveNettoSecondsForFlex - planHoursSeconds;
+        pr.FlexInSeconds = (int)flexSeconds;
+        pr.Flex = flexSeconds / 3600.0;
+
+        if (hasPreTimePlanning)
+        {
+            pr.SumFlexStartInSeconds = sumFlexStartInSeconds;
+            pr.SumFlexStart = sumFlexStartInSeconds / 3600.0;
+            var sumFlexEndSeconds = (long)sumFlexStartInSeconds
+                                    + effectiveNettoSecondsForFlex - planHoursSeconds
+                                    - paiedOutFlexSeconds;
+            pr.SumFlexEndInSeconds = (int)sumFlexEndSeconds;
+            pr.SumFlexEnd = sumFlexEndSeconds / 3600.0;
+        }
+        else
+        {
+            pr.SumFlexStartInSeconds = 0;
+            pr.SumFlexStart = 0;
+            var sumFlexEndSeconds = effectiveNettoSecondsForFlex - planHoursSeconds - paiedOutFlexSeconds;
+            pr.SumFlexEndInSeconds = (int)sumFlexEndSeconds;
+            pr.SumFlexEnd = sumFlexEndSeconds / 3600.0;
+        }
+    }
+
     public static async Task<TimePlanningPlanningModel> UpdatePlanRegistrationsInPeriod(
         List<PlanRegistration> planningsInPeriod,
         TimePlanningPlanningModel siteModel,
@@ -818,7 +977,17 @@ public static class PlanRegistrationHelper
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
-                        if (preTimePlanning != null)
+                        // Phase 2: when UseOneMinuteIntervals is on, run the
+                        // SumFlex chain in seconds (source of truth) and
+                        // back-derive doubles. Flag-off path stays byte-identical.
+                        if (dbAssignedSite.UseOneMinuteIntervals)
+                        {
+                            ApplyNettoFlexChainSecondPrecision(
+                                planRegistration,
+                                preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                                preTimePlanning != null);
+                        }
+                        else if (preTimePlanning != null)
                         {
                             planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
                             if (planRegistration.NettoHoursOverrideActive)
@@ -1139,7 +1308,17 @@ public static class PlanRegistrationHelper
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
-                        if (preTimePlanning != null)
+                        // Phase 2: when UseOneMinuteIntervals is on, run the
+                        // SumFlex chain in seconds (source of truth) and
+                        // back-derive doubles. Flag-off path stays byte-identical.
+                        if (dbAssignedSite.UseOneMinuteIntervals)
+                        {
+                            ApplyNettoFlexChainSecondPrecision(
+                                planRegistration,
+                                preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                                preTimePlanning != null);
+                        }
+                        else if (preTimePlanning != null)
                         {
                             if (planRegistration.NettoHoursOverrideActive)
                             {
@@ -1819,7 +1998,17 @@ public static class PlanRegistrationHelper
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
-                    if (preTimePlanning != null)
+                    // Phase 2: when UseOneMinuteIntervals is on, run the
+                    // SumFlex chain in seconds (source of truth) and
+                    // back-derive doubles. Flag-off path stays byte-identical.
+                    if (dbAssignedSite.UseOneMinuteIntervals)
+                    {
+                        ApplyNettoFlexChainSecondPrecision(
+                            planRegistration,
+                            preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                            preTimePlanning != null);
+                    }
+                    else if (preTimePlanning != null)
                     {
                         if (planRegistration.NettoHoursOverrideActive)
                         {
@@ -2127,7 +2316,17 @@ public static class PlanRegistrationHelper
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
-                    if (preTimePlanning != null)
+                    // Phase 2: when UseOneMinuteIntervals is on, run the
+                    // SumFlex chain in seconds (source of truth) and
+                    // back-derive doubles. Flag-off path stays byte-identical.
+                    if (dbAssignedSite.UseOneMinuteIntervals)
+                    {
+                        ApplyNettoFlexChainSecondPrecision(
+                            planRegistration,
+                            preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                            preTimePlanning != null);
+                    }
+                    else if (preTimePlanning != null)
                     {
                         if (planRegistration.NettoHoursOverrideActive)
                         {planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;

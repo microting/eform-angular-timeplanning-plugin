@@ -1004,7 +1004,6 @@ public class TimePlanningPlanningService(
             nettoMinutes *= minutesMultiplier;
 
             double hours = nettoMinutes / 60;
-            planning.NettoHours = hours;
 
             var preTimePlanning =
                 await dbContext.PlanRegistrations.AsNoTracking()
@@ -1012,24 +1011,38 @@ public class TimePlanningPlanningService(
                     .Where(x => x.Date < planning.Date
                                 && x.SdkSitId == planning.SdkSitId)
                     .OrderByDescending(x => x.Date)
-                    .FirstOrDefaultAsync() ?? new PlanRegistration
-                {
-                    SumFlexEnd = 0
-                };
+                    .FirstOrDefaultAsync();
 
-            planning.SumFlexStart = preTimePlanning.SumFlexEnd;
-            if (planning.NettoHoursOverrideActive)
+            // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
+            // from DateTime deltas (precise to the second) and write
+            // *InSeconds columns as the source of truth; back-derive the
+            // legacy double hour fields. Flag-off path stays byte-identical.
+            if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
-                planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHoursOverride -
-                                      planning.PlanHours -
-                                      planning.PaiedOutFlex;
-                planning.Flex = planning.NettoHoursOverride - planning.PlanHours;
-            } else
+                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    planning,
+                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                    preTimePlanning != null);
+            }
+            else
             {
-                planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
-                                      planning.PlanHours -
-                                      planning.PaiedOutFlex;
-                planning.Flex = planning.NettoHours - planning.PlanHours;
+                planning.NettoHours = hours;
+                var preSumFlexEnd = preTimePlanning?.SumFlexEnd ?? 0;
+                planning.SumFlexStart = preSumFlexEnd;
+                if (planning.NettoHoursOverrideActive)
+                {
+                    planning.SumFlexEnd = preSumFlexEnd + planning.NettoHoursOverride -
+                                          planning.PlanHours -
+                                          planning.PaiedOutFlex;
+                    planning.Flex = planning.NettoHoursOverride - planning.PlanHours;
+                }
+                else
+                {
+                    planning.SumFlexEnd = preSumFlexEnd + planning.NettoHours -
+                                          planning.PlanHours -
+                                          planning.PaiedOutFlex;
+                    planning.Flex = planning.NettoHours - planning.PlanHours;
+                }
             }
 
             // Ensure timestamps are populated from IDs for accurate time tracking calculation
@@ -1060,7 +1073,17 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
-                if (preTimePlanningAfterThisPlanning != null)
+                // Phase 2: when UseOneMinuteIntervals is on, replay the
+                // SumFlex chain through subsequent days using *InSeconds as
+                // the source of truth so accumulated rounding does not drift.
+                if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
+                {
+                    PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                        planningAfterThisPlanning,
+                        preTimePlanningAfterThisPlanning?.SumFlexEndInSeconds ?? 0,
+                        preTimePlanningAfterThisPlanning != null);
+                }
+                else if (preTimePlanningAfterThisPlanning != null)
                 {
                     planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
                     if (planningAfterThisPlanning.NettoHoursOverrideActive)
@@ -1548,7 +1571,6 @@ public class TimePlanningPlanningService(
             nettoMinutes *= minutesMultiplier;
 
             double hours = nettoMinutes / 60;
-            planning.NettoHours = hours;
 
             var preTimePlanning =
                 await dbContext.PlanRegistrations.AsNoTracking()
@@ -1556,16 +1578,29 @@ public class TimePlanningPlanningService(
                     .Where(x => x.Date < planning.Date
                                 && x.SdkSitId == planning.SdkSitId)
                     .OrderByDescending(x => x.Date)
-                    .FirstOrDefaultAsync() ?? new PlanRegistration
-                {
-                    SumFlexEnd = 0
-                };
+                    .FirstOrDefaultAsync();
 
-            planning.SumFlexStart = preTimePlanning.SumFlexEnd;
-            planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
-                                  planning.PlanHours -
-                                  planning.PaiedOutFlex;
-            planning.Flex = planning.NettoHours - planning.PlanHours;
+            // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
+            // from DateTime deltas (precise to the second) and write
+            // *InSeconds columns as the source of truth; back-derive the
+            // legacy double hour fields. Flag-off path stays byte-identical.
+            if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
+            {
+                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    planning,
+                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                    preTimePlanning != null);
+            }
+            else
+            {
+                planning.NettoHours = hours;
+                var preSumFlexEnd = preTimePlanning?.SumFlexEnd ?? 0;
+                planning.SumFlexStart = preSumFlexEnd;
+                planning.SumFlexEnd = preSumFlexEnd + planning.NettoHours -
+                                      planning.PlanHours -
+                                      planning.PaiedOutFlex;
+                planning.Flex = planning.NettoHours - planning.PlanHours;
+            }
 
             // Ensure timestamps are populated from IDs for accurate time tracking calculation
             EnsureTimestampsFromIds(planning);
@@ -1595,7 +1630,17 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
-                if (preTimePlanningAfterThisPlanning != null)
+                // Phase 2: when UseOneMinuteIntervals is on, replay the
+                // SumFlex chain through subsequent days using *InSeconds as
+                // the source of truth so accumulated rounding does not drift.
+                if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
+                {
+                    PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                        planningAfterThisPlanning,
+                        preTimePlanningAfterThisPlanning?.SumFlexEndInSeconds ?? 0,
+                        preTimePlanningAfterThisPlanning != null);
+                }
+                else if (preTimePlanningAfterThisPlanning != null)
                 {
                     planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
                     if (planningAfterThisPlanning.NettoHoursOverrideActive)
