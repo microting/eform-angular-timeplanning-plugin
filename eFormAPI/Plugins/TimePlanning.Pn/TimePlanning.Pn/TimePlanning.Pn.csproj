@@ -23,21 +23,21 @@
 
     <ItemGroup>
       <PackageReference Include="ExcelDataReader" Version="3.8.0" />
-      <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
+      <PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
       <PackageReference Include="Google.Apis.Sheets.v4" Version="1.73.0.4061" />
-      <PackageReference Include="Microting.eForm" Version="10.0.22" />
-      <PackageReference Include="Microting.EformAngularFrontendBase" Version="10.0.30" />
-      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.21" />
+      <PackageReference Include="Microting.eForm" Version="10.0.23" />
+      <PackageReference Include="Microting.EformAngularFrontendBase" Version="10.0.31" />
+      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.22" />
       <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
-      <PackageReference Include="Microting.TimePlanningBase" Version="10.0.43" />
+      <PackageReference Include="Microting.TimePlanningBase" Version="10.0.44" />
       <PackageReference Include="Sentry" Version="6.4.1" />
       <PackageReference Include="FirebaseAdmin" Version="3.5.0" />
-      <PackageReference Include="Grpc.AspNetCore" Version="2.76.0" />
+      <PackageReference Include="Grpc.AspNetCore" Version="2.80.0" />
       <!-- Required for TimePlanningAuthGrpcService.RefreshToken JWT minting.
            Mirrors the eFormAPI.Web auth flow without taking a project-ref on
            the host (which would violate the no-project-references rule). -->
-      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
-      <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.0.1" />
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
+      <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.18.0" />
     </ItemGroup>
 
     <ItemGroup>
