@@ -224,6 +224,21 @@
           </mat-error>
         </mat-form-field>
       </div>
+
+      <!-- ========= Advanced settings (first-user only) ========= -->
+      <h3 class="section-header" *ngIf="!data.resigned && (selectCurrentUserIsFirstUser$ | async)">{{ 'Advanced settings' | translate }}</h3>
+
+      <div class="d-flex flex-row" *ngIf="!data.resigned && (selectCurrentUserIsFirstUser$ | async)">
+        <mat-checkbox class="p-1"
+                      [id]="'useOneMinuteIntervals'"
+                      [name]="'useOneMinuteIntervals'"
+                      formControlName="useOneMinuteIntervals">
+          <div>
+            <div>{{ 'Use 1-minute intervals' | translate }}</div>
+            <small class="checkbox-description">{{ 'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.' | translate }}</small>
+          </div>
+        </mat-checkbox>
+      </div>
     </mat-tab>
     <mat-tab label="{{'Plan hours' | translate }} "
              *ngIf="data.useOnlyPlanHours && selectCurrentUserIsFirstUser$ | async">

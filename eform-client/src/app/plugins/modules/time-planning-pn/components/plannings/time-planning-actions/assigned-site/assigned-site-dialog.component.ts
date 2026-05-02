@@ -166,6 +166,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.assignedSiteForm = this.fb.group({
       useGoogleSheetAsDefault: new FormControl(this.data.useGoogleSheetAsDefault),
       useOnlyPlanHours: new FormControl(this.data.useOnlyPlanHours),
+      useOneMinuteIntervals: new FormControl(this.data.useOneMinuteIntervals ?? false),
       autoBreakCalculationActive: new FormControl(this.data.autoBreakCalculationActive),
       allowPersonalTimeRegistration: new FormControl(this.data.allowPersonalTimeRegistration),
       allowEditOfRegistrations: new FormControl(this.data.allowEditOfRegistrations),

@@ -565,4 +565,62 @@ describe('AssignedSiteDialogComponent', () => {
       }
     });
   });
+
+  describe('Use 1-minute intervals toggle', () => {
+    // The toggle's *ngIf gates on:
+    //   !data.resigned && (selectCurrentUserIsFirstUser$ | async)
+    // We follow the same no-`detectChanges` pattern adopted in PR #1538:
+    // assert against component state and observables, not the rendered DOM.
+    // Rendering the dialog under NO_ERRORS_SCHEMA hits the
+    // NG01203 "No value accessor for form control name: 'resigned'" issue
+    // because Material form-control directives aren't registered in the
+    // tested module.
+
+    function setupWithData(
+      overrides: Partial<typeof mockAssignedSiteData>,
+    ): AssignedSiteDialogComponent {
+      const data = { ...mockAssignedSiteData, ...overrides };
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        declarations: [AssignedSiteDialogComponent],
+        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          FormBuilder,
+          { provide: MAT_DIALOG_DATA, useValue: data },
+          { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
+          { provide: Store, useValue: mockStore },
+        ],
+      }).compileComponents();
+      const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      const c = newFixture.componentInstance;
+      c.ngOnInit();
+      return c;
+    }
+
+    it('should expose the useOneMinuteIntervals form control', () => {
+      const c = setupWithData({});
+      expect(c.assignedSiteForm.get('useOneMinuteIntervals')).not.toBeNull();
+    });
+
+    it('should default useOneMinuteIntervals form value to data value (false by default)', () => {
+      const cFalse = setupWithData({});
+      expect(cFalse.assignedSiteForm.get('useOneMinuteIntervals')?.value).toBe(false);
+
+      const cTrue = setupWithData({ useOneMinuteIntervals: true } as any);
+      expect(cTrue.assignedSiteForm.get('useOneMinuteIntervals')?.value).toBe(true);
+    });
+
+    it('should expose first-user state via selectCurrentUserIsFirstUser$', () => {
+      // The new section is gated by !data.resigned && (selectCurrentUserIsFirstUser$ | async);
+      // assert the observable wiring instead of rendering the DOM (see top-of-block rationale).
+      const c = setupWithData({});
+      expect(c.selectCurrentUserIsFirstUser$).toBeDefined();
+      let isFirstUser = false;
+      c.selectCurrentUserIsFirstUser$.subscribe((v: boolean) => (isFirstUser = v));
+      // mockStore.select returns of(true) for every selector; verifies the gate flows through.
+      expect(isFirstUser).toBe(true);
+    });
+  });
 });
