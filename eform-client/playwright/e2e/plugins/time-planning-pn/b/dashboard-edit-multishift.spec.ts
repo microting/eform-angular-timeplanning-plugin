@@ -245,4 +245,66 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
 
     await page.locator('#cancelButton').click();
   });
+
+  /**
+   * Regression guard for the "Use 1-minute intervals" first-user toggle in
+   * the Advanced settings section. The flag rides on AssignedSite end-to-end
+   * (entity → DTO → write mapping → angular model) and is persisted by
+   * TimeSettingService.UpdateAssignedSite. This test only verifies the UI
+   * plumbing — the toggle is dormant (no business-logic consumers yet).
+   *
+   * Gating: !data.resigned && (selectCurrentUserIsFirstUser$ | async).
+   * The CI seed logs in as admin@admin.com (LoginConstants.username), which
+   * is the first-user, so the toggle is visible in this test context.
+   */
+  test('first-user can toggle Use 1-minute intervals; persists across save+reopen', async ({ page }) => {
+    await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
+    const indexPromise = page.waitForResponse(r =>
+      r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
+    await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
+    await indexPromise;
+    await waitForSpinner(page);
+
+    // Open the assigned-site dialog for the third worker — same convention
+    // as the other tests on this shard so they don't clobber each other.
+    await page.locator('#firstColumn3').click();
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+
+    // The toggle is gated behind first-user; the CI fixture logs in as
+    // first-user, so it must be visible.
+    await expect(page.locator('#useOneMinuteIntervals')).toBeVisible({ timeout: 10000 });
+
+    const cb = page.locator('#useOneMinuteIntervals input[type="checkbox"]');
+    await cb.waitFor({ state: 'attached', timeout: 10000 });
+
+    // Capture the starting state, flip it, save, re-open, assert it persisted.
+    const wasChecked = await cb.isChecked();
+    await page.locator('#useOneMinuteIntervals').click({ force: true });
+    if (wasChecked) {
+      await expect(cb).not.toBeChecked();
+    } else {
+      await expect(cb).toBeChecked();
+    }
+
+    const assignSitePromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
+    await page.locator('#saveButton').click({ force: true });
+    await assignSitePromise;
+    await waitForSpinner(page);
+    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
+
+    // Re-open and assert the new value round-tripped.
+    await page.locator('#firstColumn3').click();
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+
+    const cbReopened = page.locator('#useOneMinuteIntervals input[type="checkbox"]');
+    await cbReopened.waitFor({ state: 'attached', timeout: 10000 });
+    if (wasChecked) {
+      await expect(cbReopened).not.toBeChecked();
+    } else {
+      await expect(cbReopened).toBeChecked();
+    }
+
+    await page.locator('#cancelButton').click();
+  });
 });
