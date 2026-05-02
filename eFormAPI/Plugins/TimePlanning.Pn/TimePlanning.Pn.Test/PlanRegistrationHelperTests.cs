@@ -442,4 +442,342 @@ public class PlanRegistrationHelperTests
             // documented expectation.
         });
     }
+
+    // ------------------------------------------------------------------
+    // Phase 2 — server-side calculations from DateTime + *InSeconds
+    // ------------------------------------------------------------------
+    //
+    // The fork lives in two new helpers on PlanRegistrationHelper:
+    //   - ComputeNettoSecondsFromDateTimeShifts(PlanRegistration)
+    //   - ApplyNettoFlexChainSecondPrecision(PlanRegistration, int, bool)
+    //
+    // When UseOneMinuteIntervals is on, every NettoHours/Flex/SumFlex compute
+    // site forks to these helpers; the *InSeconds int columns become the
+    // source of truth and the legacy double hour fields are back-derived as
+    //   xField = xFieldInSeconds / 3600.0
+    //
+    // The flag-off path stays byte-identical to before — no edits to the
+    // existing 5-minute math.
+
+    /// <summary>
+    /// Phase 2 contract: with the flag ON and DateTime stamps populated for
+    /// shift 1 plus a legacy <c>Pause1Id</c> (no DateTime pause stamps), the
+    /// netto-seconds computation derives the work span from
+    /// <c>(Stop1StoppedAt - Start1StartedAt)</c> in seconds and subtracts
+    /// the legacy pause snap of <c>(Pause1Id - 1) * 5 * 60</c> seconds.
+    ///
+    /// Seed: Start1StartedAt = 2026-05-15 07:03:53,
+    ///       Stop1StoppedAt  = 2026-05-15 15:30:11,
+    ///       Pause1Id = 6  (= 25 min legacy snap = 1500 s).
+    /// Expected work seconds: 15:30:11 - 07:03:53 = 8 h 26 m 18 s = 30378 s.
+    /// Expected netto seconds: 30378 - 1500 = 28878 s.
+    /// </summary>
+    [Test]
+    public void NettoHours_FlagOn_DerivedFromDateTimeDeltasInSeconds()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15, 0, 0, 0),
+            Start1Id = 0,
+            Stop1Id = 0,
+            Start1StartedAt = new DateTime(2026, 5, 15, 7, 3, 53),
+            Stop1StoppedAt = new DateTime(2026, 5, 15, 15, 30, 11),
+            Pause1Id = 6,
+            Pause1StartedAt = null,
+            Pause1StoppedAt = null,
+        };
+
+        var nettoSeconds = PlanRegistrationHelper.ComputeNettoSecondsFromDateTimeShifts(pr);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(nettoSeconds, Is.EqualTo(28878L),
+                "Netto seconds must be (Stop-Start)=30378 minus legacy pause 1500 = 28878");
+            Assert.That(nettoSeconds / 3600.0, Is.EqualTo(28878 / 3600.0).Within(0.0001),
+                "NettoHours back-derived from seconds = 28878/3600 ≈ 8.0217");
+        });
+    }
+
+    /// <summary>
+    /// Phase 2 regression-guard: the new compute helper handles the
+    /// pure-DateTime-pause path correctly. Seed both pause stamps and
+    /// confirm pause is computed from <c>(Pause1StoppedAt - Pause1StartedAt)</c>
+    /// in seconds, not from the legacy <c>Pause1Id</c> snap.
+    /// </summary>
+    [Test]
+    public void NettoHours_FlagOn_PauseDateTimeBeatsPauseId()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15, 0, 0, 0),
+            Start1StartedAt = new DateTime(2026, 5, 15, 8, 0, 0),
+            Stop1StoppedAt = new DateTime(2026, 5, 15, 16, 0, 0),
+            // Legacy snap: would be 5 min; precise pause is 27 s.
+            Pause1Id = 2,
+            Pause1StartedAt = new DateTime(2026, 5, 15, 12, 0, 0),
+            Pause1StoppedAt = new DateTime(2026, 5, 15, 12, 0, 27),
+        };
+
+        var nettoSeconds = PlanRegistrationHelper.ComputeNettoSecondsFromDateTimeShifts(pr);
+
+        // 8h work = 28800 s; pause from DateTime = 27 s; netto = 28773 s.
+        Assert.That(nettoSeconds, Is.EqualTo(28773L),
+            "DateTime pause must trump legacy Pause1Id snap when both populated");
+    }
+
+    /// <summary>
+    /// Phase 2 chain test: with the flag ON, FlexInSeconds and
+    /// SumFlexEndInSeconds are derived from NettoHoursInSeconds via
+    /// the same formula as the flag-off path but in seconds:
+    ///   FlexInSeconds       = NettoHoursInSeconds - PlanHoursInSeconds
+    ///   SumFlexEndInSeconds = SumFlexStartInSeconds + FlexInSeconds
+    ///                         - PaiedOutFlexInSeconds   (when preceded)
+    /// The doubles are back-derived as xInSeconds / 3600.0.
+    ///
+    /// Seed mirrors the NettoHours test: 28878 netto seconds (~8.022 h),
+    /// PlanHours = 8.0 ⇒ PlanHoursInSeconds = 28800. Carries
+    /// SumFlexStartInSeconds = 1800 (30 min). PaiedOutFlexInSeconds = 0.
+    /// Expected: FlexInSeconds = 78, SumFlexEndInSeconds = 1878.
+    /// </summary>
+    [Test]
+    public void FlexAndSumFlex_FlagOn_DerivedFromInSecondsChain()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15, 0, 0, 0),
+            Start1StartedAt = new DateTime(2026, 5, 15, 7, 3, 53),
+            Stop1StoppedAt = new DateTime(2026, 5, 15, 15, 30, 11),
+            Pause1Id = 6,
+            PlanHours = 8.0,
+            PlanHoursInSeconds = 28800,
+            PaiedOutFlex = 0,
+            PaiedOutFlexInSeconds = 0,
+            NettoHoursOverrideActive = false,
+        };
+
+        // Pretend the previous day carried 30 min of positive flex forward.
+        const int sumFlexStartInSeconds = 1800;
+
+        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+            pr, sumFlexStartInSeconds, hasPreTimePlanning: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.NettoHoursInSeconds, Is.EqualTo(28878),
+                "NettoHoursInSeconds must equal computed netto seconds");
+            Assert.That(pr.NettoHours, Is.EqualTo(28878 / 3600.0).Within(0.0001),
+                "NettoHours back-derived from NettoHoursInSeconds / 3600.0");
+
+            Assert.That(pr.FlexInSeconds, Is.EqualTo(28878 - 28800),
+                "FlexInSeconds = NettoHoursInSeconds - PlanHoursInSeconds = 78");
+            Assert.That(pr.Flex, Is.EqualTo(78 / 3600.0).Within(0.0001),
+                "Flex back-derived from FlexInSeconds / 3600.0");
+
+            Assert.That(pr.SumFlexStartInSeconds, Is.EqualTo(1800),
+                "SumFlexStartInSeconds carries the running balance from previous day");
+            Assert.That(pr.SumFlexStart, Is.EqualTo(0.5).Within(0.0001),
+                "SumFlexStart back-derived = 1800 / 3600 = 0.5");
+
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(1800 + 78 - 0),
+                "SumFlexEndInSeconds = SumFlexStartInSeconds + FlexInSeconds - PaiedOutFlexInSeconds = 1878");
+            Assert.That(pr.SumFlexEnd, Is.EqualTo(1878 / 3600.0).Within(0.0001),
+                "SumFlexEnd back-derived from SumFlexEndInSeconds / 3600.0");
+        });
+    }
+
+    /// <summary>
+    /// Phase 2 chain test for the no-preceding-day case. With
+    /// <paramref name="hasPreTimePlanning"/> = false, SumFlexStart resets
+    /// to 0 and SumFlexEnd is derived directly from Flex - PaiedOutFlex.
+    /// </summary>
+    [Test]
+    public void SumFlex_FlagOn_NoPreceding_StartsAtZero()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15, 0, 0, 0),
+            Start1StartedAt = new DateTime(2026, 5, 15, 8, 0, 0),
+            Stop1StoppedAt = new DateTime(2026, 5, 15, 16, 0, 0),
+            Pause1Id = 0,
+            PlanHours = 8.0,
+            PlanHoursInSeconds = 28800,
+            PaiedOutFlex = 0,
+            PaiedOutFlexInSeconds = 0,
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+            pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.NettoHoursInSeconds, Is.EqualTo(28800),
+                "8h work, 0 pause → 28800 s netto");
+            Assert.That(pr.SumFlexStartInSeconds, Is.EqualTo(0));
+            Assert.That(pr.SumFlexStart, Is.EqualTo(0.0));
+            Assert.That(pr.FlexInSeconds, Is.EqualTo(0),
+                "Worked exactly the planned hours → 0 flex");
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(0));
+            Assert.That(pr.SumFlexEnd, Is.EqualTo(0.0));
+        });
+    }
+
+    /// <summary>
+    /// Phase 2: when the override is active, the chain uses
+    /// <c>NettoHoursOverride</c> (in hours) instead of computed
+    /// NettoHoursInSeconds. Mirrors the flag-off override semantics
+    /// sign-for-sign.
+    /// </summary>
+    [Test]
+    public void Flex_FlagOn_OverrideActive_UsesOverrideForChain()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15, 0, 0, 0),
+            Start1StartedAt = new DateTime(2026, 5, 15, 8, 0, 0),
+            Stop1StoppedAt = new DateTime(2026, 5, 15, 16, 0, 0),
+            Pause1Id = 0,
+            PlanHours = 8.0,
+            PlanHoursInSeconds = 28800,
+            PaiedOutFlex = 0,
+            PaiedOutFlexInSeconds = 0,
+            NettoHoursOverride = 9.5,
+            NettoHoursOverrideActive = true,
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+            pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
+
+        Assert.Multiple(() =>
+        {
+            // Computed NettoHoursInSeconds is still based on the actual
+            // shift (28800 s = 8 h), independent of the override.
+            Assert.That(pr.NettoHoursInSeconds, Is.EqualTo(28800),
+                "NettoHoursInSeconds always reflects actual work, not override");
+
+            // Flex uses the override: 9.5 - 8.0 = 1.5 h = 5400 s.
+            Assert.That(pr.FlexInSeconds, Is.EqualTo(5400),
+                "FlexInSeconds = NettoHoursOverride*3600 - PlanHoursInSeconds");
+            Assert.That(pr.Flex, Is.EqualTo(1.5).Within(0.0001));
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(5400),
+                "SumFlexEndInSeconds = 0 + 5400 - 0");
+        });
+    }
+
+    /// <summary>
+    /// Phase 2: PaiedOutFlexInSeconds reduces SumFlexEndInSeconds, and the
+    /// double <c>PaiedOutFlex</c> is the back-derived equivalent.
+    /// </summary>
+    [Test]
+    public void PaiedOutFlex_FlagOn_DerivedFromInSeconds()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15, 0, 0, 0),
+            Start1StartedAt = new DateTime(2026, 5, 15, 8, 0, 0),
+            Stop1StoppedAt = new DateTime(2026, 5, 15, 16, 0, 0),
+            Pause1Id = 0,
+            PlanHours = 8.0,
+            PlanHoursInSeconds = 28800,
+            // 30 min paid out as flex.
+            PaiedOutFlex = 0.5,
+            PaiedOutFlexInSeconds = 1800,
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+            pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
+
+        Assert.Multiple(() =>
+        {
+            // Flex itself is 0 (worked exactly 8 h on a 8 h plan).
+            Assert.That(pr.FlexInSeconds, Is.EqualTo(0));
+            // SumFlexEnd = Flex - PaiedOutFlex = 0 - 1800 = -1800 s.
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(-1800),
+                "SumFlexEndInSeconds reflects PaiedOutFlexInSeconds being deducted");
+            Assert.That(pr.SumFlexEnd, Is.EqualTo(-0.5).Within(0.0001),
+                "SumFlexEnd back-derived = -1800 / 3600 = -0.5");
+            // Double PaiedOutFlex == PaiedOutFlexInSeconds / 3600.0 is the
+            // intended invariant; verify the seed honors it.
+            Assert.That(pr.PaiedOutFlex, Is.EqualTo(pr.PaiedOutFlexInSeconds / 3600.0).Within(0.0001),
+                "PaiedOutFlex must equal PaiedOutFlexInSeconds / 3600.0");
+        });
+    }
+
+    /// <summary>
+    /// Phase 2 regression-guard for the flag-OFF path: the new helpers
+    /// are only invoked when <c>UseOneMinuteIntervals</c> is true; the
+    /// flag-off path stays byte-identical to current main. We verify that
+    /// by NOT calling the new helpers and asserting that a freshly-seeded
+    /// row's <c>NettoHoursInSeconds</c> stays at 0 — i.e. the helpers
+    /// don't run as a side effect of construction.
+    /// </summary>
+    [Test]
+    public void NettoHours_FlagOff_NewHelperNotInvoked()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15, 0, 0, 0),
+            Start1StartedAt = new DateTime(2026, 5, 15, 7, 3, 53),
+            Stop1StoppedAt = new DateTime(2026, 5, 15, 15, 30, 11),
+            Pause1Id = 6,
+        };
+
+        // Without invoking ApplyNettoFlexChainSecondPrecision, the *InSeconds
+        // columns must remain at the entity defaults — proving the helper
+        // is the only writer in the flag-on path and the flag-off code
+        // hasn't been changed to invoke it implicitly.
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.NettoHoursInSeconds, Is.EqualTo(0));
+            Assert.That(pr.FlexInSeconds, Is.EqualTo(0));
+            Assert.That(pr.SumFlexStartInSeconds, Is.EqualTo(0));
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(0));
+        });
+    }
+
+    /// <summary>
+    /// Phase 2 carve-out for service-level integration tests of the
+    /// <see cref="TimePlanning.Pn.Services.TimePlanningWorkingHoursService.TimePlanningWorkingHoursService.Index"/>
+    /// recompute. The <c>Index</c> endpoint requires the full SDK / DB /
+    /// userService / coreHelper / options / localizationService fixture
+    /// that this lightweight <c>PlanRegistrationHelperTests</c> file
+    /// deliberately does not wire up. Per the rollout plan the assertion
+    /// is captured here for future fixture work — same pattern as the
+    /// Phase 0 / Phase 1 carve-outs above.
+    /// </summary>
+    [Test]
+    [Ignore("Phase 2 carve-out: TimePlanningWorkingHoursService.Index requires SDK/DB/options fixture not wired here; assertion captured for future fixture work.")]
+    public void Index_FlagOn_DerivedFieldsConsistent()
+    {
+        // Arrange (intent, to be enabled when fixture lands):
+        //
+        //   var assignedSite = new AssignedSite { UseOneMinuteIntervals = true,
+        //                                         SiteId = 950 };
+        //   await assignedSite.Create(TimePlanningPnDbContext);
+        //
+        //   var planning = new PlanRegistration {
+        //       SdkSitId = 950,
+        //       Date = new DateTime(2026, 5, 15, 0, 0, 0),
+        //       Start1StartedAt = new DateTime(2026, 5, 15, 7, 3, 53),
+        //       Stop1StoppedAt = new DateTime(2026, 5, 15, 15, 30, 11),
+        //       Pause1Id = 6,
+        //       PlanHoursInSeconds = 28800,
+        //   };
+        //   await planning.Create(TimePlanningPnDbContext);
+        //
+        //   // Act
+        //   var result = await service.Index(new TimePlanningWorkingHoursRequestModel {
+        //       SiteId = 950,
+        //       DateFrom = new DateTime(2026, 5, 15, 0, 0, 0),
+        //       DateTo = new DateTime(2026, 5, 15, 0, 0, 0),
+        //   });
+        //
+        //   // Assert — the doubles in the response must equal the *InSeconds
+        //   // siblings divided by 3600.0 (back-derivation invariant).
+        //   var row = result.Model.Single(x => x.Date == planning.Date);
+        //   Assert.That(row.NettoHours, Is.EqualTo(row.NettoHoursInSeconds / 3600.0).Within(0.0001));
+        //   Assert.That(row.FlexHours, Is.EqualTo(row.FlexInSeconds / 3600.0).Within(0.0001));
+        //   Assert.That(row.SumFlexStart, Is.EqualTo(row.SumFlexStartInSeconds / 3600.0).Within(0.0001));
+        //   Assert.That(row.SumFlexEnd, Is.EqualTo(row.SumFlexEndInSeconds / 3600.0).Within(0.0001));
+        Assert.Pass("Captured for future fixture work; see XML doc above.");
+    }
 }

@@ -91,6 +91,15 @@ public class TimePlanningWorkingHoursService(
                 })
                 .FirstAsync();
 
+            // Phase 2: look up the assigned site so we can fork the SumFlex
+            // recompute chain to use *InSeconds as the source of truth when
+            // UseOneMinuteIntervals is on.
+            var assignedSite = await dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.SiteId == model.SiteId);
+            var useOneMinuteIntervals = assignedSite?.UseOneMinuteIntervals ?? false;
+
             var timePlanningRequest = dbContext.PlanRegistrations
                 .AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -154,6 +163,14 @@ public class TimePlanningWorkingHoursService(
                     FlexHours = Math.Round(x.Flex, 2),
                     SumFlexStart = Math.Round(x.SumFlexStart, 2),
                     PaidOutFlex = x.PaiedOutFlex.ToString().Replace(",", "."),
+                    // Phase 2: carry the second-precision siblings through to the
+                    // model so the SumFlex chain below can fork to seconds-math
+                    // when UseOneMinuteIntervals is on.
+                    NettoHoursInSeconds = x.NettoHoursInSeconds,
+                    FlexInSeconds = x.FlexInSeconds,
+                    SumFlexStartInSeconds = x.SumFlexStartInSeconds,
+                    SumFlexEndInSeconds = x.SumFlexEndInSeconds,
+                    PaiedOutFlexInSeconds = x.PaiedOutFlexInSeconds,
                     Message = x.MessageId,
                     CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
                     CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
@@ -223,6 +240,12 @@ public class TimePlanningWorkingHoursService(
                         FlexHours = Math.Round(lastPlanning?.Flex ?? 0, 2),
                         SumFlexStart = lastPlanning?.SumFlexStart ?? 0,
                         PaidOutFlex = lastPlanning?.PaiedOutFlex.ToString().Replace(",", ".") ?? "0",
+                        // Phase 2: second-precision siblings for the SumFlex chain.
+                        NettoHoursInSeconds = lastPlanning?.NettoHoursInSeconds ?? 0,
+                        FlexInSeconds = lastPlanning?.FlexInSeconds ?? 0,
+                        SumFlexStartInSeconds = lastPlanning?.SumFlexStartInSeconds ?? 0,
+                        SumFlexEndInSeconds = lastPlanning?.SumFlexEndInSeconds ?? 0,
+                        PaiedOutFlexInSeconds = lastPlanning?.PaiedOutFlexInSeconds ?? 0,
                         Message = lastPlanning?.MessageId,
                         CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
                         CommentOffice = lastPlanning?.CommentOffice?.Replace("\r", "<br />"),
@@ -272,41 +295,88 @@ public class TimePlanningWorkingHoursService(
 
             var j = 0;
             double sumFlexEnd = 0;
+            // Phase 2: parallel running balance in seconds for flag-on chain.
+            int sumFlexEndInSeconds = 0;
             //double SumFlexStart = 0;
             foreach (var timePlanningWorkingHoursModel in timePlannings)
             {
                 if (j == 0)
                 {
-                    timePlanningWorkingHoursModel.SumFlexStart =
-                        Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
-                    timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
-                        timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
-                        (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
-                            ? 0
-                            : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."),
-                                CultureInfo.InvariantCulture)), 2);
-                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
-                }
-                else
-                {
-                    timePlanningWorkingHoursModel.SumFlexStart = sumFlexEnd;
-                    try
+                    if (useOneMinuteIntervals)
                     {
+                        // Phase 2: chain in seconds; back-derive doubles via /3600.0.
+                        timePlanningWorkingHoursModel.SumFlexStartInSeconds =
+                            timePlanningWorkingHoursModel.SumFlexStartInSeconds;
+                        timePlanningWorkingHoursModel.SumFlexStart =
+                            timePlanningWorkingHoursModel.SumFlexStartInSeconds / 3600.0;
+                        timePlanningWorkingHoursModel.SumFlexEndInSeconds =
+                            timePlanningWorkingHoursModel.SumFlexStartInSeconds
+                            + timePlanningWorkingHoursModel.FlexInSeconds
+                            - timePlanningWorkingHoursModel.PaiedOutFlexInSeconds;
+                        timePlanningWorkingHoursModel.SumFlexEnd =
+                            timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
+                        sumFlexEndInSeconds = timePlanningWorkingHoursModel.SumFlexEndInSeconds;
+                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                    }
+                    else
+                    {
+                        timePlanningWorkingHoursModel.SumFlexStart =
+                            Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
                         timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
                             timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
                             (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
                                 ? 0
                                 : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."),
                                     CultureInfo.InvariantCulture)), 2);
+                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                     }
-                    catch (Exception e)
+                }
+                else
+                {
+                    if (useOneMinuteIntervals)
                     {
-                        SentrySdk.CaptureException(e);
-                        logger.LogError(e.Message);
-                        logger.LogTrace(e.StackTrace);
-                    }
+                        timePlanningWorkingHoursModel.SumFlexStartInSeconds = sumFlexEndInSeconds;
+                        timePlanningWorkingHoursModel.SumFlexStart = sumFlexEndInSeconds / 3600.0;
+                        try
+                        {
+                            timePlanningWorkingHoursModel.SumFlexEndInSeconds =
+                                timePlanningWorkingHoursModel.SumFlexStartInSeconds
+                                + timePlanningWorkingHoursModel.FlexInSeconds
+                                - timePlanningWorkingHoursModel.PaiedOutFlexInSeconds;
+                            timePlanningWorkingHoursModel.SumFlexEnd =
+                                timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
+                        }
+                        catch (Exception e)
+                        {
+                            SentrySdk.CaptureException(e);
+                            logger.LogError(e.Message);
+                            logger.LogTrace(e.StackTrace);
+                        }
 
-                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                        sumFlexEndInSeconds = timePlanningWorkingHoursModel.SumFlexEndInSeconds;
+                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                    }
+                    else
+                    {
+                        timePlanningWorkingHoursModel.SumFlexStart = sumFlexEnd;
+                        try
+                        {
+                            timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
+                                timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
+                                (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                    ? 0
+                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."),
+                                        CultureInfo.InvariantCulture)), 2);
+                        }
+                        catch (Exception e)
+                        {
+                            SentrySdk.CaptureException(e);
+                            logger.LogError(e.Message);
+                            logger.LogTrace(e.StackTrace);
+                        }
+
+                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                    }
                 }
 
                 j++;
@@ -1195,23 +1265,38 @@ public class TimePlanningWorkingHoursService(
             nettoMinutes *= minutesMultiplier;
 
             double hours = nettoMinutes / 60;
-            planRegistration.NettoHours = hours;
-            planRegistration.Flex = hours - planRegistration.PlanHours;
             var preTimePlanning =
                 await dbContext.PlanRegistrations.AsNoTracking()
                     .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSite.MicrotingUid)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
-            if (preTimePlanning != null)
+
+            // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
+            // from DateTime deltas (precise to the second) and write
+            // *InSeconds columns as the source of truth; back-derive the
+            // legacy double hour fields. Flag-off path stays byte-identical.
+            if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
-                planRegistration.SumFlexEnd =
-                    preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
-                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    planRegistration,
+                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                    preTimePlanning != null);
             }
             else
             {
-                planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                planRegistration.SumFlexStart = 0;
+                planRegistration.NettoHours = hours;
+                planRegistration.Flex = hours - planRegistration.PlanHours;
+                if (preTimePlanning != null)
+                {
+                    planRegistration.SumFlexEnd =
+                        preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                }
+                else
+                {
+                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = 0;
+                }
             }
 
             Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL CREATE: Before planRegistration.Create(dbContext) -- SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
@@ -1501,23 +1586,38 @@ public class TimePlanningWorkingHoursService(
             nettoMinutes *= minutesMultiplier;
 
             double hours = nettoMinutes / 60;
-            planRegistration.NettoHours = hours;
-            planRegistration.Flex = hours - planRegistration.PlanHours;
             var preTimePlanning =
                 await dbContext.PlanRegistrations.AsNoTracking()
                     .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSite.MicrotingUid)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
-            if (preTimePlanning != null)
+
+            // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
+            // from DateTime deltas (precise to the second) and write
+            // *InSeconds columns as the source of truth; back-derive the
+            // legacy double hour fields. Flag-off path stays byte-identical.
+            if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
-                planRegistration.SumFlexEnd =
-                    preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
-                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    planRegistration,
+                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                    preTimePlanning != null);
             }
             else
             {
-                planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                planRegistration.SumFlexStart = 0;
+                planRegistration.NettoHours = hours;
+                planRegistration.Flex = hours - planRegistration.PlanHours;
+                if (preTimePlanning != null)
+                {
+                    planRegistration.SumFlexEnd =
+                        preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                }
+                else
+                {
+                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = 0;
+                }
             }
 
             Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL UPDATE: Before planRegistration.Update(dbContext) -- Id={planRegistration.Id}, SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
@@ -1866,23 +1966,38 @@ public class TimePlanningWorkingHoursService(
             nettoMinutes *= minutesMultiplier;
 
             double hours = nettoMinutes / 60;
-            planRegistration.NettoHours = hours;
-            planRegistration.Flex = hours - planRegistration.PlanHours;
             var preTimePlanning =
                 await dbContext.PlanRegistrations.AsNoTracking()
                     .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSiteId)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
-            if (preTimePlanning != null)
+
+            // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
+            // from DateTime deltas (precise to the second) and write
+            // *InSeconds columns as the source of truth; back-derive the
+            // legacy double hour fields. Flag-off path stays byte-identical.
+            if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
-                planRegistration.SumFlexEnd =
-                    preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
-                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    planRegistration,
+                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                    preTimePlanning != null);
             }
             else
             {
-                planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                planRegistration.SumFlexStart = 0;
+                planRegistration.NettoHours = hours;
+                planRegistration.Flex = hours - planRegistration.PlanHours;
+                if (preTimePlanning != null)
+                {
+                    planRegistration.SumFlexEnd =
+                        preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                }
+                else
+                {
+                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = 0;
+                }
             }
 
             Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK CREATE: Before planRegistration.Create(dbContext) -- SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
@@ -2161,23 +2276,38 @@ public class TimePlanningWorkingHoursService(
             nettoMinutes *= minutesMultiplier;
 
             double hours = nettoMinutes / 60;
-            planRegistration.NettoHours = hours;
-            planRegistration.Flex = hours - planRegistration.PlanHours;
             var preTimePlanning =
                 await dbContext.PlanRegistrations.AsNoTracking()
                     .Where(x => x.Date < planRegistration.Date && x.SdkSitId == sdkSiteId)
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .OrderByDescending(x => x.Date).FirstOrDefaultAsync();
-            if (preTimePlanning != null)
+
+            // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
+            // from DateTime deltas (precise to the second) and write
+            // *InSeconds columns as the source of truth; back-derive the
+            // legacy double hour fields. Flag-off path stays byte-identical.
+            if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
-                planRegistration.SumFlexEnd =
-                    preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
-                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    planRegistration,
+                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                    preTimePlanning != null);
             }
             else
             {
-                planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                planRegistration.SumFlexStart = 0;
+                planRegistration.NettoHours = hours;
+                planRegistration.Flex = hours - planRegistration.PlanHours;
+                if (preTimePlanning != null)
+                {
+                    planRegistration.SumFlexEnd =
+                        preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                }
+                else
+                {
+                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+                    planRegistration.SumFlexStart = 0;
+                }
             }
 
             Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK UPDATE: Before planRegistration.Update(dbContext) -- Id={planRegistration.Id}, SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
