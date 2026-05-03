@@ -88,7 +88,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,b1m,c1m,d1m,e1m,f1m,h1m,i1m]
+        test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,b1m,c1m,d1m,e1m,f1m,h1m,i1m,j1m]
     steps:
     - uses: actions/checkout@v3
       with:
