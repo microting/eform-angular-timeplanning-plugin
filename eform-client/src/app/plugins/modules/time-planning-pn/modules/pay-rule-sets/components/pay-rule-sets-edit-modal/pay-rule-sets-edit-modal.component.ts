@@ -5,7 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
 import { TranslateService } from '@ngx-translate/core';
 import { TimePlanningPnPayRuleSetsService } from '../../../../services';
-import { PayRuleSetUpdateModel, PayRuleSetModel } from '../../../../models';
+import { PayRuleSetUpdateModel, PayRuleSetModel, PAY_RULE_SET_PRESETS, PayRuleSetPreset } from '../../../../models';
 import { PayDayRuleDialogComponent, PayDayRuleDialogData } from '../pay-day-rule-dialog/pay-day-rule-dialog.component';
 import { DayTypeRuleDialogComponent, DayTypeRuleDialogData } from '../day-type-rule-dialog/day-type-rule-dialog.component';
 
@@ -23,6 +23,22 @@ export class PayRuleSetsEditModalComponent implements OnInit {
   form!: FormGroup;
   payRuleSet!: PayRuleSetModel;
   loading = true;
+
+  /**
+   * Resolves the matching locked preset for the loaded rule set, by name.
+   * Returns null when the loaded rule set is custom (or the preset is not
+   * marked locked). When non-null, the modal renders a read-only summary
+   * view instead of the editable form, matching the create modal's locked
+   * preset path.
+   */
+  get lockedPreset(): PayRuleSetPreset | null {
+    if (!this.payRuleSet) return null;
+    return PAY_RULE_SET_PRESETS.find(p => p.locked && p.name === this.payRuleSet.name) ?? null;
+  }
+
+  get isLocked(): boolean {
+    return this.lockedPreset !== null;
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -271,5 +287,38 @@ export class PayRuleSetsEditModalComponent implements OnInit {
 
   cancel(): void {
     this.dialogRef.close();
+  }
+
+  formatTierChain(tiers: Array<{ order: number; upToSeconds: number | null; payCode: string }>): string {
+    return [...tiers]
+      .sort((a, b) => a.order - b.order)
+      .map(t => {
+        if (t.upToSeconds != null) {
+          return `${t.payCode} (${this.secondsToHM(t.upToSeconds)})`;
+        }
+        return t.payCode;
+      })
+      .join(' → ');
+  }
+
+  formatTimeBands(bands: Array<{ startSecondOfDay: number; endSecondOfDay: number; payCode: string; priority: number }>): string {
+    return bands
+      .map(b => `${this.secondsToHHMM(b.startSecondOfDay)}-${this.secondsToHHMM(b.endSecondOfDay)} ${b.payCode}`)
+      .join(' | ');
+  }
+
+  private secondsToHM(seconds: number): string {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (m === 0) {
+      return `${h}h`;
+    }
+    return `${h}h${m}m`;
+  }
+
+  private secondsToHHMM(seconds: number): string {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   }
 }

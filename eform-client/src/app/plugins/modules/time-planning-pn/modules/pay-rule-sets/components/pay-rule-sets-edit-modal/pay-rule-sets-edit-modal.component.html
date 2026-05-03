@@ -1,7 +1,40 @@
 <h2 mat-dialog-title>{{ 'Edit Pay Rule Set' | translate }}</h2>
 
 <div mat-dialog-content *ngIf="!loading">
-  <form [formGroup]="form">
+  <!-- Locked preset: read-only view (mirrors create modal locked path) -->
+  <div *ngIf="isLocked && lockedPreset" class="locked-preset-view">
+    <div class="lock-banner">
+      <mat-icon>lock</mat-icon>
+      <span>{{ 'This is a fixed overenskomst. Rules cannot be edited.' | translate }}</span>
+    </div>
+
+    <div class="preset-name">
+      <strong>{{ 'Name' | translate }}:</strong> {{ payRuleSet.name }}
+    </div>
+
+    <div class="rules-summary" *ngIf="lockedPreset.payDayRules.length > 0">
+      <h4>{{ 'Pay Day Rules' | translate }}</h4>
+      <table class="summary-table">
+        <tr *ngFor="let rule of lockedPreset.payDayRules">
+          <td class="day-code">{{ rule.dayCode }}</td>
+          <td class="tiers">{{ formatTierChain(rule.payTierRules) }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="rules-summary" *ngIf="lockedPreset.payDayTypeRules.length > 0">
+      <h4>{{ 'Day Type Rules' | translate }}</h4>
+      <table class="summary-table">
+        <tr *ngFor="let rule of lockedPreset.payDayTypeRules">
+          <td class="day-type">{{ rule.dayType }}</td>
+          <td class="bands">{{ formatTimeBands(rule.timeBandRules) }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Custom (non-locked): full editing form -->
+  <form [formGroup]="form" *ngIf="!isLocked">
     <mat-form-field class="full-width">
       <mat-label>{{ 'Name' | translate }}</mat-label>
       <input matInput formControlName="name" id="payRuleSetName" />
@@ -41,6 +74,7 @@
     {{ 'Cancel' | translate }}
   </button>
   <button
+    *ngIf="!isLocked"
     class="btn-primary btn-primary--icon-left"
     (click)="updatePayRuleSet()"
     [disabled]="form.invalid || loading" id="updatePayRuleSetBtn">

@@ -248,6 +248,7 @@ export const enUS = {
   'Pay rule set deleted successfully': 'Pay rule set deleted successfully',
   'Failed to delete pay rule set': 'Failed to delete pay rule set',
   'Cannot delete locked preset': 'Cannot delete - this overenskomst is a locked preset and cannot be removed',
+  'Cannot edit locked preset': 'Cannot edit - this overenskomst is a locked preset and is read-only',
   'Create': 'Create',
   'Edit': 'Edit',
   'Delete': 'Delete',

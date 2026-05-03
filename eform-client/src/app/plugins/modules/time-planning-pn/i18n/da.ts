@@ -248,6 +248,7 @@ export const da = {
   'Pay rule set deleted successfully': 'Lønregelsæt slettet',
   'Failed to delete pay rule set': 'Kunne ikke slette lønregelsæt',
   'Cannot delete locked preset': 'Kan ikke slette – denne overenskomst er en låst skabelon',
+  'Cannot edit locked preset': 'Kan ikke redigere – denne overenskomst er en låst skabelon og er skrivebeskyttet',
   Create: 'Opret',
   Edit: 'Rediger',
   Delete: 'Slet',

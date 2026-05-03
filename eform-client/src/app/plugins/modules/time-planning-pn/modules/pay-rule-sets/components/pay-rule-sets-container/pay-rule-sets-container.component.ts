@@ -78,6 +78,12 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   }
 
   onEditClicked(payRuleSet: PayRuleSetSimpleModel): void {
+    // Locked presets (e.g. GLS-A / 3F overenskomster) are read-only. The
+    // edit modal still opens but renders a summary view; this guard is a
+    // belt-and-braces against direct calls (the table button is also
+    // disabled via isLockedPreset).
+    const isLockedPreset = PAY_RULE_SET_PRESETS.some(p => p.locked && p.name === payRuleSet.name);
+
     const dialogRef = this.dialog.open(PayRuleSetsEditModalComponent, {
       data: { payRuleSetId: payRuleSet.id },
       minWidth: 1280,
@@ -85,8 +91,8 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        // Refresh the table after successful edit
+      if (result && !isLockedPreset) {
+        // Refresh the table after successful edit (skip for locked: read-only)
         this.getPayRuleSets();
       }
     });

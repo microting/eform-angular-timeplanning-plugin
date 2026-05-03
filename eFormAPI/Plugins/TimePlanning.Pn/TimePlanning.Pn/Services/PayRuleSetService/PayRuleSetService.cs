@@ -312,6 +312,14 @@ public class PayRuleSetService : IPayRuleSetService
                 return new OperationResult(false, _localizationService.GetString("PayRuleSetNotFound"));
             }
 
+            // Locked overenskomst presets are read-only. The frontend renders a
+            // summary view in the edit modal and disables the Update button, but
+            // this server-side guard backstops direct API calls.
+            if (LockedPresetNames.Contains(payRuleSet.Name))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
+            }
+
             payRuleSet.Name = model.Name;
             payRuleSet.UpdatedAt = DateTime.UtcNow;
 

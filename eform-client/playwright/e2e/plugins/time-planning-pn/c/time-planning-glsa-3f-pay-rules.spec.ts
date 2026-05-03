@@ -437,4 +437,68 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     const grid = page.locator('#time-planning-pn-pay-rule-sets-grid');
     await expect(grid.getByText('GLS-A / 3F - Gartneri Standard 2024-2026')).toBeVisible({ timeout: 10000 });
   });
+
+  // -----------------------------------------------------------------------
+  // Scenario 5 - Locked preset is read-only
+  //
+  // Creates the GLS-A Elev u18 Dyrehold preset, then verifies that the
+  // saved row's row-action menu has Edit + Delete buttons disabled, AND
+  // that opening the edit modal (programmatically, since the button is
+  // disabled) renders the lock banner with no editable name field.
+  // -----------------------------------------------------------------------
+  test('Scenario 5: Locked preset is read-only - edit + delete buttons disabled, edit modal shows lock banner', async ({ page }) => {
+    await navigateToPayRuleSets(page);
+    await openCreatePayRuleSetModal(page);
+
+    await selectPreset(page, 'Elev u18 Dyrehold');
+
+    const createDialog = page.locator('mat-dialog-container');
+    await expect(createDialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
+    await expect(createDialog.locator('.preset-name'))
+      .toContainText('GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2024-2026');
+
+    await submitCreatePayRuleSet(page);
+
+    // Find the newly-created row in the grid
+    const grid = page.locator('#time-planning-pn-pay-rule-sets-grid');
+    await grid.waitFor({ state: 'visible', timeout: 10000 });
+    const targetText = 'GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2024-2026';
+    const row = grid.locator('mtx-grid-row, .mtx-grid-row, tr, [role="row"]').filter({ hasText: targetText });
+    await expect(row.first()).toBeVisible({ timeout: 10000 });
+
+    // Open the row-action menu and assert Edit + Delete are disabled
+    await row.first().locator('#actionMenu').click();
+    const editBtn = page.locator('button[id^="editPayRuleSetBtn-"]');
+    const deleteBtn = page.locator('button[id^="deletePayRuleSetBtn-"]');
+    await expect(editBtn).toBeVisible({ timeout: 5000 });
+    await expect(editBtn).toBeDisabled();
+    await expect(deleteBtn).toBeDisabled();
+    // Close the menu
+    await page.keyboard.press('Escape');
+
+    // Belt-and-braces: even if a future change re-enables the buttons,
+    // the modal itself must render the locked summary view (no editable
+    // name field, no Update button).
+    // Force-click the disabled edit button via JS to verify modal behavior.
+    await row.first().locator('#actionMenu').click();
+    await page.evaluate(() => {
+      const btn = document.querySelector('button[id^="editPayRuleSetBtn-"]') as HTMLButtonElement | null;
+      if (btn) {
+        btn.disabled = false;
+        btn.click();
+      }
+    });
+
+    const editDialog = page.locator('mat-dialog-container');
+    await editDialog.waitFor({ state: 'visible', timeout: 10000 });
+    // Lock banner shown
+    await expect(editDialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
+    // No editable name input
+    await expect(editDialog.locator('#payRuleSetName')).toHaveCount(0);
+    // No Update button
+    await expect(editDialog.locator('#updatePayRuleSetBtn')).toHaveCount(0);
+    // Cancel still works
+    await editDialog.locator('#cancelEditBtn').click();
+    await expect(editDialog).toHaveCount(0, { timeout: 5000 });
+  });
 });
