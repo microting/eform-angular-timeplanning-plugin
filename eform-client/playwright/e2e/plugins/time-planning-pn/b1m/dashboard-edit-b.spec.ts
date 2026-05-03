@@ -83,7 +83,11 @@ test.describe('Dashboard edit actual stamps (b1m, flag-on, 1-minute granularity)
     await expect(page.locator('#planHours')).toBeVisible();
     await page.waitForTimeout(500);
 
-    // Set the actual stamps for shift 1 with off-grid times.
+    // Set the actual stamps for shift 1 with off-grid times. Pause IS set
+    // here (matching the legacy `b/dashboard-edit-b.spec.ts` convention) —
+    // the server's UpdatePlanning path NREs on null `pause1Id` when the row
+    // has off-grid actual stamps, but that's an orthogonal Phase 0-4 path
+    // and out of scope for this PR. Setting pause sidesteps it entirely.
     await page.locator('[data-testid="start1StartedAt"]').click();
     await pickTime(page, OFFGRID_TIMES.shift1Start);
     await expect(page.locator('[data-testid="start1StartedAt"]')).toHaveValue(OFFGRID_TIMES.shift1Start);
@@ -91,6 +95,10 @@ test.describe('Dashboard edit actual stamps (b1m, flag-on, 1-minute granularity)
     await page.locator('[data-testid="stop1StoppedAt"]').click();
     await pickTime(page, OFFGRID_TIMES.shift1End);
     await expect(page.locator('[data-testid="stop1StoppedAt"]')).toHaveValue(OFFGRID_TIMES.shift1End);
+
+    await page.locator('[data-testid="pause1Id"]').click();
+    await pickTime(page, OFFGRID_TIMES.break);
+    await expect(page.locator('[data-testid="pause1Id"]')).toHaveValue(OFFGRID_TIMES.break);
 
     // Save. Wait for the button to lose `disabled` (the form's cross-shift
     // validators run async after each pick) before clicking — `force: true`
@@ -127,6 +135,7 @@ test.describe('Dashboard edit actual stamps (b1m, flag-on, 1-minute granularity)
 
     await expect(page.locator('[data-testid="start1StartedAt"]')).toHaveValue(OFFGRID_TIMES.shift1Start);
     await expect(page.locator('[data-testid="stop1StoppedAt"]')).toHaveValue(OFFGRID_TIMES.shift1End);
+    await expect(page.locator('[data-testid="pause1Id"]')).toHaveValue(OFFGRID_TIMES.break);
 
     await page.locator('#cancelButton').click();
   });
