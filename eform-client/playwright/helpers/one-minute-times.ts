@@ -13,10 +13,14 @@
  * specs — keeping a single canonical source makes it trivial to spot
  * non-aligned values that are supposed to be aligned (and vice versa).
  */
+// Shift order constraint (workday-entity-dialog.shiftWiseValidator):
+// shift{n+1}.start MUST be >= shift{n}.stop, otherwise saveButton stays
+// disabled with `hierarchyError`. Tests pick up the saved row, so all
+// values below are non-overlapping and ascending.
 export const OFFGRID_TIMES = {
   shift1Start: '08:01',
-  shift1End:   '16:08',
-  shift2Start: '12:13',
-  shift2End:   '14:47',
+  shift1End:   '11:13',
+  shift2Start: '12:17',
+  shift2End:   '16:23',
   break:       '00:27',
 } as const;
