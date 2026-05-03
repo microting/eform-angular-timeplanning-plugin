@@ -181,12 +181,31 @@ jobs:
         SHARD: ${{ matrix.test }}
       run: |
         PATCH="eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/${SHARD}/post-migration.sql"
-        if [ -f "$PATCH" ]; then
-          echo "Applying post-migration patch from $PATCH"
-          docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < "$PATCH"
-        else
+        if [ ! -f "$PATCH" ]; then
           echo "No post-migration patch for shard ${SHARD}"
+          exit 0
         fi
+        # Plugin migrations run lazily after `update EformPlugins set Status = 1`
+        # — `Wait for app` only checks the host port. Poll until the
+        # base-package migration that adds `UseOneMinuteIntervals` has landed.
+        echo "Waiting for plugin migration to add UseOneMinuteIntervals column..."
+        for i in $(seq 1 60); do
+          OUT=$(docker exec -i mariadbtest mariadb -u root --password=secretpassword -N -B -e \
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='420_eform-angular-time-planning-plugin' AND TABLE_NAME='AssignedSites' AND COLUMN_NAME='UseOneMinuteIntervals';" 2>/dev/null || echo 0)
+          if [ "$OUT" = "1" ]; then
+            echo "Column present after ${i} attempt(s)."
+            break
+          fi
+          if [ "$i" = "60" ]; then
+            echo "Timed out waiting for UseOneMinuteIntervals column. Dumping AssignedSites schema:"
+            docker exec -i mariadbtest mariadb -u root --password=secretpassword -e \
+              "SHOW COLUMNS FROM \`420_eform-angular-time-planning-plugin\`.AssignedSites;"
+            exit 1
+          fi
+          sleep 2
+        done
+        echo "Applying post-migration patch from $PATCH"
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < "$PATCH"
     - name: ${{ matrix.test }} playwright test
       run: |
         cd eform-angular-frontend/eform-client
