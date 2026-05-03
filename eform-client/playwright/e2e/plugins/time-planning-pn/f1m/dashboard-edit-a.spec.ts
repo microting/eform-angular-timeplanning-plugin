@@ -178,9 +178,11 @@ test.describe('Dashboard edit values (f1m, flag-on, off-grid validation pairs)',
   });
 
   test('should show an error when actual pause is longer than the shift duration', async ({ page }) => {
-    // 10:31 - 08:13 = 138 min shift duration; 02:47 = 167 min pause.
-    // 167 ≥ 138 ⇒ `breakTooLong` validator fires the same as the legacy
-    // f-shard pair (10:00-08:00 / 02:00 = 120 ≥ 120).
+    // 10:31 - 08:13 = 138 min shift duration; pause 02:18 = 138 min.
+    // 138 ≥ 138 ⇒ `breakTooLong` validator fires (same boundary case as
+    // legacy f-shard pair 8:00-10:00 / 2:00 ⇒ 120 ≥ 120). The pause
+    // input's `[max]=getMaxDifference(start,stop)` caps the picker at the
+    // shift duration, so we pick AT the cap to trigger the validator.
     const t = OFFGRID_TIMES_F1M.actualPauseTooLong;
     await setTimepickerValue(page, 'start1StartedAt', t.start);
     await setTimepickerValue(page, 'stop1StoppedAt', t.stop);

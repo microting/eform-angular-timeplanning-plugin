@@ -140,9 +140,14 @@ export const OFFGRID_TIMES_F1M = {
   plannedSameTime: { start: '09:43', stop: '09:43' },
   // Actual: stop-before-start (11:29 > 09:11), pause kept at 00:00.
   actualStopBefore: { start: '11:29', stop: '09:11', pause: '00:00' },
-  // Actual: pause longer than shift duration. 10:31 - 08:13 = 138 min;
-  // pause = 02:47 = 167 min ≥ 138 ⇒ trips `breakTooLong` validator.
-  actualPauseTooLong: { start: '08:13', stop: '10:31', pause: '02:47' },
+  // Actual: pause equal to shift duration (boundary case). 10:31 - 08:13 =
+  // 138 min; pause = 02:18 = 138 min ⇒ `breakMin >= duration` (138 ≥ 138)
+  // trips `breakTooLong`. Mirrors the legacy `f` shard which uses pause =
+  // shift-duration exactly (8:00-10:00 / 2:00 ⇒ 120 ≥ 120). The pause
+  // input has `[max]=getMaxDifference(start,stop)` so the timepicker caps
+  // selection at the duration; picking AT the max equals the boundary
+  // and fires the validator. Off-grid: 18 mod 5 = 3 ≠ 0.
+  actualPauseTooLong: { start: '08:13', stop: '10:31', pause: '02:18' },
   // Actual: same-start-stop (both 09:43, both nonzero), pause 00:00.
   actualSameTime: { start: '09:43', stop: '09:43', pause: '00:00' },
   // Math: midnight → off-grid hour. 00:00 → 02:24 ⇒ 144 min plan ⇒ 2.4 h.
