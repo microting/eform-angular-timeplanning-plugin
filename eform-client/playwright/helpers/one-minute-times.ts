@@ -48,3 +48,30 @@ export const OFFGRID_TIMES_C1M = {
   shift5End:   '19:33',
   break:       '00:27',
 } as const;
+
+/**
+ * d1m shard variant: late-afternoon-through-late-evening boundaries that
+ * exercise the inner-ring 13-23 hour selectors of the timepicker clock face.
+ * Where b1m sweeps the early-morning / outer-ring 1-10 range and c1m sweeps
+ * the early-afternoon transition (8 outer → 19 inner), d1m keeps every shift
+ * inside the inner ring (13-23) so the variant matrix as a whole touches the
+ * full 24-hour clock surface. Every value is non-aligned to 5 minutes so the
+ * flag-on `minutesGap=1` rendering is the only way the picker can land on
+ * these values.
+ *
+ * Same shift-order constraint as `OFFGRID_TIMES` above:
+ * shift{n+1}.start MUST be >= shift{n}.stop.
+ */
+export const OFFGRID_TIMES_D1M = {
+  shift1Start: '13:02',
+  shift1End:   '14:14',
+  shift2Start: '14:26',
+  shift2End:   '16:38',
+  shift3Start: '16:49',
+  shift3End:   '18:53',
+  shift4Start: '19:04',
+  shift4End:   '21:16',
+  shift5Start: '21:28',
+  shift5End:   '23:39',
+  break:       '00:29',
+} as const;
