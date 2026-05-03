@@ -104,3 +104,58 @@ export const OFFGRID_TIMES_E1M = {
   shift5End:   '11:46',
   break:       '00:31',
 } as const;
+
+/**
+ * f1m shard variant: validation-pair time literals for the SAVE-FAILURE
+ * (negative path) tests cloned from `f/dashboard-edit-a.spec.ts` — i.e.
+ * "stop before start", "same start/stop" and "pause longer than shift"
+ * checks. Where b1m/c1m/d1m/e1m sweep different quadrants of the clock
+ * with ascending 5-shift round-trip data, f1m's spec only fills shift 1
+ * with single-shift pairs (and a midnight-wrap math test). The contract
+ * that matters for these tests is the INVALID RELATIONSHIP between the
+ * paired times — not their position on the clock face — so each pair
+ * here intentionally preserves the same negative-path semantics as the
+ * legacy `f` shard's `'10:00' / '9:00'`-style values, just shifted to
+ * off-grid (non-multiple-of-5) minutes so the flag-on `minutesGap=1`
+ * picker is the only way to land on them.
+ *
+ * Math-friendly midnight pair (`midnight*` keys below) lands on a clean
+ * fractional planHours: `00:00 → 02:24` ⇒ 144 min ⇒ planHours = 2.4 (and
+ * the mirror `02:24 → 00:00` ⇒ 1296 min ⇒ planHours = 21.6) so the
+ * spec's `toHaveValue` assertions stay deterministic without float
+ * pretty-printing.
+ *
+ * Invalid-relationship checks (no shift-order constraint here — these
+ * pairs INTENTIONALLY violate constraints to trigger validators):
+ *   • plannedStopBefore  : start > stop
+ *   • plannedSameTime    : start === stop (both nonzero)
+ *   • actualStopBefore   : start > stop
+ *   • actualPauseTooLong : pause >= (stop - start)
+ *   • actualSameTime     : start === stop (both nonzero)
+ */
+export const OFFGRID_TIMES_F1M = {
+  // Planned: stop-before-start (10:23 > 09:17).
+  plannedStopBefore: { start: '10:23', stop: '09:17' },
+  // Planned: same-start-stop (both 09:43, both nonzero).
+  plannedSameTime: { start: '09:43', stop: '09:43' },
+  // Actual: stop-before-start (11:29 > 09:11), pause kept at 00:00.
+  actualStopBefore: { start: '11:29', stop: '09:11', pause: '00:00' },
+  // Actual: pause equal to shift duration (boundary case). 10:31 - 08:13 =
+  // 138 min; pause = 02:18 = 138 min ⇒ `breakMin >= duration` (138 ≥ 138)
+  // trips `breakTooLong`. Mirrors the legacy `f` shard which uses pause =
+  // shift-duration exactly (8:00-10:00 / 2:00 ⇒ 120 ≥ 120). The pause
+  // input has `[max]=getMaxDifference(start,stop)` so the timepicker caps
+  // selection at the duration; picking AT the max equals the boundary
+  // and fires the validator. Off-grid: 18 mod 5 = 3 ≠ 0.
+  actualPauseTooLong: { start: '08:13', stop: '10:31', pause: '02:18' },
+  // Actual: same-start-stop (both 09:43, both nonzero), pause 00:00.
+  actualSameTime: { start: '09:43', stop: '09:43', pause: '00:00' },
+  // Math: midnight → off-grid hour. 00:00 → 02:24 ⇒ 144 min plan ⇒ 2.4 h.
+  midnightToHours: { start: '00:00', stop: '02:24' },
+  // Math: off-grid hour → midnight. 02:24 → 00:00 ⇒ 1296 min plan ⇒ 21.6 h.
+  hoursToMidnight: { start: '02:24', stop: '00:00' },
+  // Computed expectations for the math tests above.
+  midnightToHoursPlan: '2.4',
+  hoursToMidnightPlan: '21.6',
+  zeroFlex: '0.00',
+} as const;
