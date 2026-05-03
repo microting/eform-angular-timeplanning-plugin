@@ -586,6 +586,21 @@ public class TimePlanningPlanningService(
     {
         try
         {
+            // Phase 2/5 fix (PR #1545 b1m round 5): the dashboard fires a PUT
+            // with only off-grid actual stamps and no planning fields. When
+            // model-binding falls through (malformed/empty body), [FromBody]
+            // hands us a null model and the very next line — model.Planned-
+            // StartOfShift1 — NRE'd inside the catch block as a generic
+            // "ErrorWhileUpdatingPlanning" 200/{success:false}. Returning a
+            // structured failure instead lets the front-end surface a real
+            // validation error rather than silently retrying the save.
+            if (model == null)
+            {
+                return new OperationResult(
+                    false,
+                    localizationService.GetString("ErrorWhileUpdatingPlanning"));
+            }
+
             var currentUserAsync = await userService.GetCurrentUserAsync();
             var planning = dbContext.PlanRegistrations
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
