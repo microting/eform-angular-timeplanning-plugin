@@ -1056,7 +1056,18 @@ public class TimePlanningPlanningService(
 
             // Compute time tracking fields (seconds-based calculation)
             PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
-            planning.UpdatedByUserId = currentUserAsync.Id;
+            // Phase 2/5 fix: GetCurrentUserAsync() does FirstOrDefaultAsync against
+            // the base AspNetUsers table and can return null (cross-tenant token,
+            // expired claim, or any code path where UserId resolves to 0). The
+            // unguarded `currentUserAsync.Id` access then NRE'd here and the
+            // catch block swallowed it as a generic "ErrorWhileUpdatingPlanning"
+            // 200/{success:false}, which is exactly the symptom PR #1545's b1m
+            // playwright variant tripped over (the dashboard waits for the
+            // /index POST that the frontend only fires after success=true).
+            // Fall back to userService.UserId so the audit field still gets
+            // a non-null int (matches the legacy flag-off path that already
+            // assigns userService.UserId at the top of Update).
+            planning.UpdatedByUserId = currentUserAsync?.Id ?? userService.UserId;
 
             await planning.Update(dbContext).ConfigureAwait(false);
             var todayDateMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
@@ -1139,8 +1150,14 @@ public class TimePlanningPlanningService(
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
-            logger.LogError(e.Message);
-            logger.LogTrace(e.StackTrace);
+            // Phase 2/5 fix: log the full exception (message + stack trace +
+            // inner exceptions) at Error level so future failures of this
+            // catch can be diagnosed from CI stdout.  The previous code only
+            // logged e.Message at Error and e.StackTrace at Trace, and the
+            // default min-level filters out Trace, which is why PR #1545's
+            // b1m run produced a bare "Object reference not set..." with no
+            // stack frame to point at the offending line.
+            logger.LogError(e, "TimePlanningPlanningService.Update failed");
             return new OperationResult(
                 false,
                 localizationService.GetString("ErrorWhileUpdatingPlanning"));
@@ -1155,6 +1172,15 @@ public class TimePlanningPlanningService(
             var sdkCore = await core.GetCore();
             var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
             var currentUserAsync = await userService.GetCurrentUserAsync();
+            if (currentUserAsync == null)
+            {
+                // Phase 2/5 fix: GetCurrentUserAsync() can return null when
+                // UserId resolves to 0 (no claim, expired token, etc.).  Without
+                // this guard the next line NRE'd on currentUserAsync.Id and the
+                // catch block swallowed it as a generic
+                // "ErrorWhileUpdatingPlanning" 200/{success:false}.
+                return new OperationResult(false, "Current user not found");
+            }
             var currentUser = baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
             var worker = await sdkDbContext.Workers
@@ -1696,8 +1722,10 @@ public class TimePlanningPlanningService(
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
-            logger.LogError(e.Message);
-            logger.LogTrace(e.StackTrace);
+            // See the matching note at the bottom of Update() — log the full
+            // exception so the catch leaves a usable stack trace in stdout
+            // for CI diagnosis.
+            logger.LogError(e, "TimePlanningPlanningService.UpdateByCurrentUserNam failed");
             return new OperationResult(
                 false,
                 localizationService.GetString("ErrorWhileUpdatingPlanning"));
