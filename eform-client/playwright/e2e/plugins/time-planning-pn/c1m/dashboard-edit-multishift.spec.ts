@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { LoginPage } from '../../../Page objects/Login.page';
-import { OFFGRID_TIMES_C1M } from '../../../helpers/one-minute-times';
+import { OFFGRID_TIMES_C1M } from '../../../../helpers/one-minute-times';
 
 /**
  * c1m variant of the multi-shift round-trip regression guard, mirroring
