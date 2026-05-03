@@ -97,7 +97,7 @@ test.describe('Dashboard edit actual stamps (b1m, flag-on, 1-minute granularity)
       r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT');
     const reindexPromise = page.waitForResponse(r =>
       r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
-    await page.locator('#saveButton').click();
+    await page.locator('#saveButton').click({ force: true });
     await updatePromise;
     await reindexPromise;
     await waitForSpinner(page);
