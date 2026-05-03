@@ -159,3 +159,42 @@ export const OFFGRID_TIMES_F1M = {
   hoursToMidnightPlan: '21.6',
   zeroFlex: '0.00',
 } as const;
+
+/**
+ * g1m shard variant: comment add/modify/remove tests cloned from
+ * `g/dashboard-edit-a.spec.ts`. The g spec asserts the comment field's
+ * round-trip through save (PUT) — its time inputs are incidental but the
+ * form's `plannedShiftDurationValidator` requires shift 1 to have a valid
+ * (start < stop) pair before `#saveButton` becomes enabled. To stay
+ * consistent with the b1m / c1m / d1m / e1m multishift-shape pattern we
+ * fill ALL FIVE shifts ascending (off-grid) so the spec exercises the
+ * `minutesGap=1` picker on every shift slot, not just shift 1.
+ *
+ * The three comment tests rely on save-state carrying across tests
+ * (`should modify a comment` reads back `'test comment'` saved by the
+ * previous test), so the same five-shift block is reused unchanged in each
+ * test's beforeEach via `setShift()`.
+ *
+ * Clock-quadrant coverage: g1m parks in late-morning to early-evening
+ * (10-19) — distinct from b1m (08-16), c1m (08-19), d1m (13-23) and e1m
+ * (01-11) so the variant matrix as a whole sweeps the full clock surface
+ * across all 1m shards. Every value is non-aligned to 5 minutes so the
+ * flag-on `minutesGap=1` rendering is the only way the picker can land on
+ * these values.
+ *
+ * Same shift-order constraint as `OFFGRID_TIMES` above:
+ * shift{n+1}.start MUST be >= shift{n}.stop.
+ */
+export const OFFGRID_TIMES_G1M = {
+  shift1Start: '10:02',
+  shift1End:   '11:14',
+  shift2Start: '11:26',
+  shift2End:   '13:38',
+  shift3Start: '13:49',
+  shift3End:   '15:53',
+  shift4Start: '16:04',
+  shift4End:   '18:16',
+  shift5Start: '18:28',
+  shift5End:   '19:39',
+  break:       '00:33',
+} as const;
