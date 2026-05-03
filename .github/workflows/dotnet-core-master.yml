@@ -176,7 +176,7 @@ jobs:
         if [ $result -ne 1 ];then exit 1; fi
     - name: Wait for app
       run: npx wait-on http://localhost:4200 --timeout 120000
-    - name: Apply post-migration SQL patch (variant shards only)
+    - name: Activate plugin then apply post-migration SQL patch (variant shards only)
       env:
         SHARD: ${{ matrix.test }}
       run: |
@@ -185,9 +185,19 @@ jobs:
           echo "No post-migration patch for shard ${SHARD}"
           exit 0
         fi
-        # Plugin migrations run lazily after `update EformPlugins set Status = 1`
-        # — `Wait for app` only checks the host port. Poll until the
-        # base-package migration that adds `UseOneMinuteIntervals` has landed.
+        # The plugin's DbContext only runs `Database.Migrate()` after the
+        # plugin is loaded by the host, which only happens after the plugin
+        # has been ENABLED through the host's plugin-management UI. Setting
+        # `EformPlugins.Status = 1` directly in the seed doesn't trigger
+        # the load — the legacy `b` shard relies on `activate-plugin.spec.ts`
+        # firing first (alphabetical order) to enable + warm up the plugin.
+        # For variant shards we run that exact spec from the legacy `b` dir
+        # before our post-migration patch, then poll for the migration to
+        # add `UseOneMinuteIntervals` and apply the patch.
+        cd eform-angular-frontend/eform-client
+        echo "Running activate-plugin.spec.ts from b/ to load + migrate the plugin DB..."
+        npx playwright test playwright/e2e/plugins/time-planning-pn/b/activate-plugin.spec.ts
+        cd -
         echo "Waiting for plugin migration to add UseOneMinuteIntervals column..."
         for i in $(seq 1 60); do
           OUT=$(docker exec -i mariadbtest mariadb -u root --password=secretpassword -N -B -e \
