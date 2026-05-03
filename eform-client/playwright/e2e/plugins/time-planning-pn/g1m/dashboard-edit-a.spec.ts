@@ -133,6 +133,13 @@ test.describe('Dashboard edit values (g1m, flag-on, comment add/modify/remove wi
     await page.locator('#workingHoursSite').click();
     await page.locator('.ng-option').filter({ hasText: 'ac ad' }).click();
 
+    // After the site filter selection the dashboard re-renders. Without a
+    // settle wait the next `#firstColumn3` click can race with the row
+    // re-rendering ("element was detached from the DOM, retrying" → 120s
+    // timeout, observed in PR #1552 round 1 g1m run).
+    await waitForSpinner(page);
+    await page.waitForTimeout(500);
+
     // Activate shifts 3-5 if not already on (b1m pattern, idempotent variant).
     // The DB state survives across tests in this `describe.serial` block,
     // so the first test does the toggling+saving, and tests 2/3 enter the
@@ -141,7 +148,11 @@ test.describe('Dashboard edit values (g1m, flag-on, comment add/modify/remove wi
     // no-op save (the form's saveButton is disabled when nothing changed).
     let needsActivation = false;
     {
-      await page.locator('#firstColumn3').click();
+      // Re-resolve via a fresh `.first()` snapshot inside the `.click()` call
+      // so Playwright's auto-retry on a stale match still finds the post-
+      // re-render element rather than the detached pre-render one.
+      await page.locator('#firstColumn3').first().scrollIntoViewIfNeeded();
+      await page.locator('#firstColumn3').first().click({ timeout: 30000 });
       await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
       for (const id of ['thirdShiftActive', 'fourthShiftActive', 'fifthShiftActive']) {
         const cb = page.locator(`#${id} input[type="checkbox"]`);
