@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q]
+        test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,b1m]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -120,6 +120,9 @@ jobs:
         cp -av eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn eform-angular-frontend/eform-client/src/app/plugins/modules/time-planning-pn
         mkdir -p eform-angular-frontend/eform-client/playwright/e2e/plugins/
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright/e2e/plugins/time-planning-pn eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn
+        if [ -d "eform-angular-timeplanning-plugin/eform-client/playwright/helpers" ]; then
+          cp -av eform-angular-timeplanning-plugin/eform-client/playwright/helpers eform-angular-frontend/eform-client/playwright/helpers
+        fi
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright.config.ts eform-angular-frontend/eform-client/playwright.config.ts
         cp -av eform-angular-timeplanning-plugin/eform-client/cypress.config.ts eform-angular-frontend/eform-client/cypress.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
@@ -140,20 +143,20 @@ jobs:
     - name: Change rabbitmq hostname
       run: docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
     - name: Create database
-      if: matrix.test == 'd'
+      env:
+        SHARD: ${{ matrix.test }}
       run: |
+        SEED_DIR="eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/${SHARD}"
+        if [ ! -f "${SEED_DIR}/420_eform-angular-time-planning-plugin.sql" ]; then
+          echo "Shard ${SHARD} has no own seed; falling back to 'a' shard seed"
+          SEED_DIR="eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/a"
+        else
+          echo "Using shard-owned seed from ${SEED_DIR}"
+        fi
         docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_Angular.EformPlugins set Status = 1'
         docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'create database `420_eform-angular-time-planning-plugin`'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/d/420_SDK.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/d/420_eform-angular-time-planning-plugin.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
-    - name: Create database
-      if: matrix.test != 'd'
-      run: |
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_Angular.EformPlugins set Status = 1'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'create database `420_eform-angular-time-planning-plugin`'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/a/420_SDK.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/a/420_eform-angular-time-planning-plugin.sql
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK < "${SEED_DIR}/420_SDK.sql"
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < "${SEED_DIR}/420_eform-angular-time-planning-plugin.sql"
         docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
     - name: Get standard output
       run: |
@@ -162,6 +165,17 @@ jobs:
         if [ $result -ne 1 ];then exit 1; fi
     - name: Wait for app
       run: npx wait-on http://localhost:4200 --timeout 120000
+    - name: Apply post-migration SQL patch (variant shards only)
+      env:
+        SHARD: ${{ matrix.test }}
+      run: |
+        PATCH="eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/${SHARD}/post-migration.sql"
+        if [ -f "$PATCH" ]; then
+          echo "Applying post-migration patch from $PATCH"
+          docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < "$PATCH"
+        else
+          echo "No post-migration patch for shard ${SHARD}"
+        fi
     - name: ${{ matrix.test }} playwright test
       run: |
         cd eform-angular-frontend/eform-client
