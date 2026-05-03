@@ -1,0 +1,13 @@
+-- Post-migration patch for the b1m variant shard.
+--
+-- The base seed (`420_eform-angular-time-planning-plugin.sql`) is an old EF
+-- baseline dump that pre-dates the `UseOneMinuteIntervals` column on
+-- `AssignedSites`. The column is added at runtime by base-package migration
+-- `20250226060341_Adding3MoreShifts` (executed by `Database.Migrate()` at
+-- plugin startup) with default value 0.
+--
+-- This patch flips the flag on for every active assigned site so the b1m
+-- shard exercises the flag-on rendering / form / picker code paths. The
+-- workflow runs this AFTER `Wait for app` (which gates on migrations being
+-- complete) and BEFORE the matrix Playwright invocation.
+UPDATE AssignedSites SET UseOneMinuteIntervals = 1 WHERE WorkflowState = 'created';

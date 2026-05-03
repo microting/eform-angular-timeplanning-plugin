@@ -24,3 +24,27 @@ export const OFFGRID_TIMES = {
   shift2End:   '16:23',
   break:       '00:27',
 } as const;
+
+/**
+ * c1m shard variant: uses afternoon/evening boundaries to exercise the
+ * lower-half hour positions on the timepicker clock face (and inner-ring
+ * 13-23 selectors). Every value is non-aligned to 5 minutes so the flag-on
+ * `minutesGap=1` rendering is the only way the picker can land on these
+ * values.
+ *
+ * Same shift-order constraint as `OFFGRID_TIMES` above:
+ * shift{n+1}.start MUST be >= shift{n}.stop.
+ */
+export const OFFGRID_TIMES_C1M = {
+  shift1Start: '08:01',
+  shift1End:   '11:13',
+  shift2Start: '12:17',
+  shift2End:   '14:23',
+  shift3Start: '14:35',
+  shift3End:   '15:42',
+  shift4Start: '15:55',
+  shift4End:   '17:08',
+  shift5Start: '17:21',
+  shift5End:   '19:33',
+  break:       '00:27',
+} as const;
