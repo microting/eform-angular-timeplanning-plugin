@@ -198,3 +198,38 @@ export const OFFGRID_TIMES_G1M = {
   shift5End:   '19:39',
   break:       '00:33',
 } as const;
+
+/**
+ * i1m shard variant: single-shift round-trip test ("edit time planned in
+ * last week") cloned from `i/dashboard-edit-a.spec.ts`. The legacy `i`
+ * shard fills ONLY `plannedStartOfShift1` + `plannedEndOfShift1` (no
+ * actual times, no shifts 2-5) — saves, reopens the dialog and asserts
+ * the values persisted. i1m mirrors that exact "shifts 1 only" shape
+ * because shifts 2-5 are gated behind per-site flags
+ * (`secondShiftActive` etc.) that this shard's `post-migration.sql`
+ * doesn't flip — only `UseOneMinuteIntervals` is flipped.
+ *
+ * Off-grid endpoints chosen to produce a clean integer `planHours`
+ * (480 min = 8 h exactly) so the display assertion stays
+ * deterministic and matches the legacy `i` shard's `planHours='8'`
+ * exactly: `15:14 - 07:14 = 8h00m`. Both endpoints have minute = 14
+ * (non-multiple of 5) so the flag-on `minutesGap=1` rendering is the
+ * only way the picker can land on them.
+ *
+ * Display assertions use `HH:mm` for the timepicker input fields
+ * (mirrors b1m / c1m / d1m / e1m / g1m precedent — the
+ * `[data-testid="plannedStartOfShift${n}"]` input control reports
+ * its value as `HH:mm`, not `HH:mm:ss`).
+ *
+ * Clock-quadrant coverage: i1m parks in early-morning-through-mid-
+ * afternoon (07-15), straddling the outer→inner ring boundary at
+ * hour 12. Distinct from b1m (08-16), c1m (08-19), d1m (13-23), e1m
+ * (01-11) and g1m (10-19) so the variant matrix as a whole touches
+ * every quadrant of the 24-hour clock surface.
+ */
+export const OFFGRID_TIMES_I1M = {
+  shift1Start: '07:14',
+  shift1End:   '15:14',
+  // Computed expectation: (15:14 - 07:14) = 480 min = 8 h exactly.
+  planHours: '8',
+} as const;
