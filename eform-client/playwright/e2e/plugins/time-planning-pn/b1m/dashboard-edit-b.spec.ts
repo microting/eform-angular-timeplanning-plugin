@@ -92,12 +92,17 @@ test.describe('Dashboard edit actual stamps (b1m, flag-on, 1-minute granularity)
     await pickTime(page, OFFGRID_TIMES.shift1End);
     await expect(page.locator('[data-testid="stop1StoppedAt"]')).toHaveValue(OFFGRID_TIMES.shift1End);
 
-    // Save.
+    // Save. Wait for the button to lose `disabled` (the form's cross-shift
+    // validators run async after each pick) before clicking — `force: true`
+    // would let Playwright dispatch the event but the browser still drops
+    // clicks on disabled <button>s, so the request never fires and the
+    // waitForResponse below would just hang.
+    await expect(page.locator('#saveButton')).toBeEnabled({ timeout: 10000 });
     const updatePromise = page.waitForResponse(r =>
       r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT');
     const reindexPromise = page.waitForResponse(r =>
       r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
-    await page.locator('#saveButton').click({ force: true });
+    await page.locator('#saveButton').click();
     await updatePromise;
     await reindexPromise;
     await waitForSpinner(page);
