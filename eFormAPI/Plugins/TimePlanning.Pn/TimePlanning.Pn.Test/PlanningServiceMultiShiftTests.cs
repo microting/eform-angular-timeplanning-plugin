@@ -311,4 +311,56 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
             Assert.That(reloaded.NettoHoursInSeconds, Is.EqualTo(11520 - 1500));
         });
     }
+
+    /// <summary>
+    /// Regression for the second NRE site PR #1545's b1m playwright variant
+    /// surfaced after PR #1546 patched the `currentUserAsync.Id` site.
+    ///
+    /// Server stack frame on b1m round 5 confirmed that `[FromBody] model`
+    /// itself can be null when the front-end PUTs a body that fails model-
+    /// binding (the dashboard sends a partial-actual-only payload that the
+    /// server treats as an empty body in some branches). The first dereference
+    /// in Update() — `planning.PlannedStartOfShift1 = model.PlannedStartOfShift1`
+    /// — then NRE'd inside the catch block as a generic 200/{success:false}.
+    ///
+    /// Post-fix: the call returns Success = false WITHOUT throwing. The
+    /// localized "ErrorWhileUpdatingPlanning" message is matched here because
+    /// the test's _localizationService is wired to echo the key back.
+    /// </summary>
+    [Test]
+    public async Task Update_NullModel_ReturnsFailureWithoutException()
+    {
+        // Arrange — seed an AssignedSite + PlanRegistration so any code path
+        // that dereferences `planning` after the null-model guard would still
+        // have something to work with. The fix must short-circuit BEFORE
+        // those lookups, but seeding makes the test robust against future
+        // refactors that move the guard around.
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 903,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 903,
+            Date = DateTime.UtcNow.Date,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        // Act — simulate the [FromBody] null path. Must not throw.
+        var result = await _service.Update(planning.Id, null);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Success, Is.False,
+            "Update(null) must return a failure result, not silently succeed.");
+        Assert.That(result.Message, Is.EqualTo("ErrorWhileUpdatingPlanning"),
+            "Localization key must match the existing catch-block fallback so " +
+            "the front-end's error surfacing is unchanged.");
+    }
 }
