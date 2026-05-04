@@ -173,53 +173,97 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard (b1m,
    * Same editing-policy regression guard as `b/`: this test has no time
    * inputs so the flag-on context is incidental; included here so the b1m
    * multishift spec mirrors the legacy file structure.
+   *
+   * Stabilization (FU-E) — same family of fixes as FU-D applied to `b/`:
+   * `#firstColumn3` triggers `getAssignedSite()` and only then opens the
+   * dialog. On slow CI the dialog can become visible before the GET
+   * commits, so the gated `*ngIf` content (editing-policy radios bound to
+   * `data.entryMethod`) is rendered with a stale form snapshot. The
+   * post-save reopen is the same race surface — the freshly-saved
+   * `acceptPlanned` value only binds after the second GET commits, so the
+   * default 5s `toBeChecked` retry can race the bind. Repro: stable run
+   * 25302103911 attempt 1 — slug `b-3e2c2-n-acceptPlanned-is-selected` —
+   * `expect(locator).toBeChecked failed — element(s) not found` on the
+   * post-reopen radio at line ~217. Attempt 2 passed.
+   *
+   * Fix is timing-only: gate every `#firstColumn3` click on the assigned-
+   * sites GET, swap `locator.waitFor({attached})` for
+   * `expect().toBeAttached()`, and bump per-assertion timeouts on the
+   * round-trip checks so reactive bindings have room to hydrate.
    */
   test('editing-policy stays visible and persists when acceptPlanned is selected', async ({ page }) => {
     await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
-    const indexPromise = page.waitForResponse(r =>
-      r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
+    const indexPromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST',
+      { timeout: 30000 });
     await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
     await indexPromise;
     await waitForSpinner(page);
 
+    // Await the GET that hydrates the dialog model BEFORE the dialog even
+    // opens. `onFirstColumnClick` fires getAssignedSite() and only then
+    // calls dialog.open(...), so this response gates whether the *ngIf-
+    // gated editing-policy radios bind to the persisted entry-method
+    // value. Without this gate the dialog can become visible before the
+    // GET commits and the radios render against a stale snapshot.
+    const getAssignedSitePromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
+        && r.url().includes('siteId=')
+        && r.request().method() === 'GET',
+      { timeout: 30000 });
     await page.locator('#firstColumn3').click();
-    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+    await getAssignedSitePromise;
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 30000 });
 
     const personalCb = page.locator('#allowPersonalTimeRegistration input[type="checkbox"]');
-    await personalCb.waitFor({ state: 'attached', timeout: 10000 });
+    // expect.toBeAttached() retries continuously and emits a richer error
+    // log than locator.waitFor() — same observable contract, better flake
+    // diagnostics.
+    await expect(personalCb).toBeAttached({ timeout: 30000 });
     if (!(await personalCb.isChecked())) {
       await page.locator('#allowPersonalTimeRegistration').click({ force: true });
     }
-    await expect(personalCb).toBeChecked();
+    await expect(personalCb).toBeChecked({ timeout: 10000 });
 
     const acceptPlannedRadio = page.locator('mat-radio-button[value="acceptPlanned"]');
     await acceptPlannedRadio.scrollIntoViewIfNeeded();
     await acceptPlannedRadio.locator('label').first().click({ force: true });
 
-    await expect(page.locator('mat-radio-button[value="untilPayroll"]')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('mat-radio-button[value="twoDaysRolling"]')).toBeVisible();
+    await expect(page.locator('mat-radio-button[value="untilPayroll"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('mat-radio-button[value="twoDaysRolling"]')).toBeVisible({ timeout: 15000 });
 
     await page.locator('mat-radio-button[value="untilPayroll"]').locator('label').first()
       .click({ force: true });
 
     const assignSitePromise = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT',
+      { timeout: 30000 });
     await page.locator('#saveButton').click({ force: true });
     await assignSitePromise;
     await waitForSpinner(page);
-    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
+    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 15000 });
 
+    // Re-open the dialog and assert both choices round-tripped. Wait for
+    // the freshly-fetched assigned-site GET so the radios bind to the
+    // persisted values before we assert (prior failure: line ~217
+    // `toBeChecked` saw the pre-bind radio in a 5s window).
+    const getAssignedSitePromise2 = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
+        && r.url().includes('siteId=')
+        && r.request().method() === 'GET',
+      { timeout: 30000 });
     await page.locator('#firstColumn3').click();
-    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+    await getAssignedSitePromise2;
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 30000 });
 
     await expect(
       page.locator('mat-radio-button[value="acceptPlanned"] input[type="radio"]'),
-    ).toBeChecked();
+    ).toBeChecked({ timeout: 15000 });
 
-    await expect(page.locator('mat-radio-button[value="untilPayroll"]')).toBeVisible();
+    await expect(page.locator('mat-radio-button[value="untilPayroll"]')).toBeVisible({ timeout: 15000 });
     await expect(
       page.locator('mat-radio-button[value="untilPayroll"] input[type="radio"]'),
-    ).toBeChecked();
+    ).toBeChecked({ timeout: 15000 });
 
     await page.locator('#cancelButton').click();
   });
