@@ -17,11 +17,25 @@
 // shift{n+1}.start MUST be >= shift{n}.stop, otherwise saveButton stays
 // disabled with `hierarchyError`. Tests pick up the saved row, so all
 // values below are non-overlapping and ascending.
+//
+// FU-B extension: shifts 3-5 added so the b1m dashboard-edit-{a,b} clones
+// can fill all five shifts ascending — matching the multishift-shape
+// pattern (shifts 3-5 are now rendered post-FU-A because the b1m
+// post-migration patch flips ThirdShiftActive / FourthShiftActive /
+// FifthShiftActive on every active assigned site). Filling all five
+// ensures the PUT body always carries non-null shift data, which was the
+// remaining hypothesis for the dropped clones'`waitForResponse` timeouts.
 export const OFFGRID_TIMES = {
   shift1Start: '08:01',
   shift1End:   '11:13',
   shift2Start: '12:17',
-  shift2End:   '16:23',
+  shift2End:   '14:23',
+  shift3Start: '14:35',
+  shift3End:   '15:42',
+  shift4Start: '15:55',
+  shift4End:   '17:08',
+  shift5Start: '17:21',
+  shift5End:   '19:33',
   break:       '00:27',
 } as const;
 
