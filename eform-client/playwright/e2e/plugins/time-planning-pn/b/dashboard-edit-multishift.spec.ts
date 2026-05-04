@@ -108,22 +108,42 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     // — those bindings reflect the snapshot passed into the dialog, so each
     // new checkbox only materialises after a save + reopen cycle.
     for (const id of ['thirdShiftActive', 'fourthShiftActive', 'fifthShiftActive']) {
+      // Wait for the GET that hydrates the dialog model BEFORE the dialog
+      // even opens. `onFirstColumnClick` fires getAssignedSite() and only
+      // then calls dialog.open(...), so this response gates whether the
+      // *ngIf-gated checkbox (fourthShiftActive needs data.thirdShiftActive,
+      // fifthShiftActive needs data.fourthShiftActive) is ever rendered.
+      // Previously the test asserted on `mat-dialog-container` visible and
+      // then hard-waited 10s for the gated input to attach; on slow CI the
+      // dialog appeared before the GET committed and the *ngIf evaluated
+      // false, blowing the wait. Awaiting the GET here is the deterministic
+      // gate.
+      const getAssignedSitePromise = page.waitForResponse(
+        r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
+          && r.url().includes('siteId=')
+          && r.request().method() === 'GET',
+        { timeout: 30000 });
       await page.locator('#firstColumn3').click();
-      await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+      await getAssignedSitePromise;
+      await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 30000 });
 
       const cb = page.locator(`#${id} input[type="checkbox"]`);
-      await cb.waitFor({ state: 'attached', timeout: 10000 });
+      // expect.toBeAttached() retries continuously and emits a richer error
+      // log than locator.waitFor() — same observable contract, better flake
+      // diagnostics.
+      await expect(cb).toBeAttached({ timeout: 30000 });
       if (!(await cb.isChecked())) {
         await page.locator(`#${id}`).click({ force: true });
       }
-      await expect(cb).toBeChecked();
+      await expect(cb).toBeChecked({ timeout: 10000 });
 
       const assignSitePromise = page.waitForResponse(
-        r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
+        r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT',
+        { timeout: 30000 });
       await page.locator('#saveButton').click({ force: true });
       await assignSitePromise;
       await waitForSpinner(page);
-      await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
+      await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 15000 });
     }
 
     // Day cell id is `cell{rowIndex}_{colField}` — row 3 matches the worker
@@ -131,7 +151,7 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     const cellId = '#cell3_0';
     await page.locator(cellId).scrollIntoViewIfNeeded();
     await page.locator(cellId).click();
-    await expect(page.locator('#planHours')).toBeVisible();
+    await expect(page.locator('#planHours')).toBeVisible({ timeout: 15000 });
 
     // Fill all 5 shifts.
     for (const s of allFiveShifts) {
@@ -139,10 +159,12 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     }
 
     // Save.
-    const updatePromise = page.waitForResponse(r =>
-      r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT');
-    const reindexPromise = page.waitForResponse(r =>
-      r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
+    const updatePromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT',
+      { timeout: 30000 });
+    const reindexPromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST',
+      { timeout: 30000 });
     await page.locator('#saveButton').click();
     await updatePromise;
     await reindexPromise;
@@ -153,21 +175,25 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     // this is the bit that failed before the fix: shifts 3-5 came back as 00:00.
     await page.locator(cellId).scrollIntoViewIfNeeded();
     await page.locator(cellId).click();
-    await expect(page.locator('#planHours')).toBeVisible();
+    await expect(page.locator('#planHours')).toBeVisible({ timeout: 15000 });
 
+    // Per-assertion 30s timeouts — the dialog opens before the form's
+    // reactive bindings finish hydrating from the just-saved planning,
+    // so the 5s default toHaveValue retry can race the bind. The
+    // assertion contract is unchanged; only the retry budget grew.
     for (const s of allFiveShifts) {
       await expect(
         page.locator(`[data-testid="plannedStartOfShift${s.id}"]`),
         `shift ${s.id} start should round-trip`
-      ).toHaveValue(s.start);
+      ).toHaveValue(s.start, { timeout: 30000 });
       await expect(
         page.locator(`[data-testid="plannedEndOfShift${s.id}"]`),
         `shift ${s.id} end should round-trip`
-      ).toHaveValue(s.end);
+      ).toHaveValue(s.end, { timeout: 30000 });
       await expect(
         page.locator(`[data-testid="plannedBreakOfShift${s.id}"]`),
         `shift ${s.id} break should round-trip`
-      ).toHaveValue(s.break);
+      ).toHaveValue(s.break, { timeout: 30000 });
     }
 
     await page.locator('#cancelButton').click();
@@ -190,14 +216,22 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
 
     // Open the assigned-site dialog for the third worker (matches the
     // multishift test's #firstColumn3 convention so the two tests don't
-    // clobber each other across the same shard).
+    // clobber each other across the same shard). Await the
+    // getAssignedSite GET so the dialog opens with hydrated data — the
+    // gated *ngIf inputs only attach once `data.*` is bound.
+    const getAssignedSitePromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
+        && r.url().includes('siteId=')
+        && r.request().method() === 'GET',
+      { timeout: 30000 });
     await page.locator('#firstColumn3').click();
-    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+    await getAssignedSitePromise;
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 30000 });
 
     // The entry-method + editing-policy radios are gated behind
     // allowPersonalTimeRegistration. Make sure it's enabled (idempotent).
     const personalCb = page.locator('#allowPersonalTimeRegistration input[type="checkbox"]');
-    await personalCb.waitFor({ state: 'attached', timeout: 10000 });
+    await expect(personalCb).toBeAttached({ timeout: 30000 });
     if (!(await personalCb.isChecked())) {
       await page.locator('#allowPersonalTimeRegistration').click({ force: true });
     }
@@ -221,15 +255,24 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
 
     // Save and wait for the PUT to land + the dashboard re-index.
     const assignSitePromise = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT',
+      { timeout: 30000 });
     await page.locator('#saveButton').click({ force: true });
     await assignSitePromise;
     await waitForSpinner(page);
-    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
+    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 15000 });
 
-    // Re-open the dialog and assert both choices round-tripped.
+    // Re-open the dialog and assert both choices round-tripped. Wait for
+    // the freshly-fetched assigned-site GET so the radios bind to the
+    // persisted values before we assert.
+    const getAssignedSitePromise2 = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
+        && r.url().includes('siteId=')
+        && r.request().method() === 'GET',
+      { timeout: 30000 });
     await page.locator('#firstColumn3').click();
-    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+    await getAssignedSitePromise2;
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 30000 });
 
     // acceptPlanned still selected.
     await expect(
@@ -267,15 +310,23 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
 
     // Open the assigned-site dialog for the third worker — same convention
     // as the other tests on this shard so they don't clobber each other.
+    // Await the GET that hydrates the dialog so first-user-gated toggle
+    // attaches synchronously after open.
+    const getAssignedSitePromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
+        && r.url().includes('siteId=')
+        && r.request().method() === 'GET',
+      { timeout: 30000 });
     await page.locator('#firstColumn3').click();
-    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+    await getAssignedSitePromise;
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 30000 });
 
     // The toggle is gated behind first-user; the CI fixture logs in as
     // first-user, so it must be visible.
-    await expect(page.locator('#useOneMinuteIntervals')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#useOneMinuteIntervals')).toBeVisible({ timeout: 30000 });
 
     const cb = page.locator('#useOneMinuteIntervals input[type="checkbox"]');
-    await cb.waitFor({ state: 'attached', timeout: 10000 });
+    await expect(cb).toBeAttached({ timeout: 30000 });
 
     // Capture the starting state, flip it, save, re-open, assert it persisted.
     const wasChecked = await cb.isChecked();
@@ -287,22 +338,32 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     }
 
     const assignSitePromise = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT',
+      { timeout: 30000 });
     await page.locator('#saveButton').click({ force: true });
     await assignSitePromise;
     await waitForSpinner(page);
-    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
+    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 15000 });
 
-    // Re-open and assert the new value round-tripped.
+    // Re-open and assert the new value round-tripped. Await the
+    // post-save GET so the freshly-persisted toggle is bound before we
+    // assert (prior failure: line 305 `toBeChecked` saw the pre-bind
+    // unchecked state in a 5s window).
+    const getAssignedSitePromise2 = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
+        && r.url().includes('siteId=')
+        && r.request().method() === 'GET',
+      { timeout: 30000 });
     await page.locator('#firstColumn3').click();
-    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+    await getAssignedSitePromise2;
+    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 30000 });
 
     const cbReopened = page.locator('#useOneMinuteIntervals input[type="checkbox"]');
-    await cbReopened.waitFor({ state: 'attached', timeout: 10000 });
+    await expect(cbReopened).toBeAttached({ timeout: 30000 });
     if (wasChecked) {
-      await expect(cbReopened).not.toBeChecked();
+      await expect(cbReopened).not.toBeChecked({ timeout: 15000 });
     } else {
-      await expect(cbReopened).toBeChecked();
+      await expect(cbReopened).toBeChecked({ timeout: 15000 });
     }
 
     await page.locator('#cancelButton').click();
