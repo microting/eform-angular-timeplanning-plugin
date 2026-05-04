@@ -10,4 +10,9 @@
 -- shard exercises the flag-on rendering / form / picker code paths. The
 -- workflow runs this AFTER `Wait for app` (which gates on migrations being
 -- complete) and BEFORE the matrix Playwright invocation.
-UPDATE AssignedSites SET UseOneMinuteIntervals = 1 WHERE WorkflowState = 'created';
+UPDATE AssignedSites
+SET UseOneMinuteIntervals = 1,
+    ThirdShiftActive = 1,
+    FourthShiftActive = 1,
+    FifthShiftActive = 1
+WHERE WorkflowState = 'created';
