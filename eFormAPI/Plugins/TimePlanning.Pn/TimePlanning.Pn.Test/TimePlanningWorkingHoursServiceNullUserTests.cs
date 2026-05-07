@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microting.eFormApi.BasePn.Abstractions;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using NSubstitute;
 using NUnit.Framework;
@@ -31,7 +32,7 @@ public class TimePlanningWorkingHoursServiceNullUserTests
     public async Task ReadFullByCurrentUser_NullCurrentUser_ReturnsUserNotFound()
     {
         var userService = Substitute.For<IUserService>();
-        userService.GetCurrentUserAsync().Returns(Task.FromResult<Microting.eFormApi.BasePn.Infrastructure.Models.Application.UserInfoModel?>(null));
+        userService.GetCurrentUserAsync().Returns(Task.FromResult<EformUser>(null!));
         var localizationService = Substitute.For<ITimePlanningLocalizationService>();
         localizationService.GetString("UserNotFound").Returns("User not found.");
 
