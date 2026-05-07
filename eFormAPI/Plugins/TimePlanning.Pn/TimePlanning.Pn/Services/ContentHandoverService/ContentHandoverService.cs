@@ -614,12 +614,32 @@ public class ContentHandoverService : IContentHandoverService
                         _localizationService.GetString("ShiftOverlapsExistingShift"));
                 }
 
+                // Lift-and-shift: capture the matching segment from sender's PlanText
+                // BEFORE we mutate either side. We apply the new sender PlanText in the
+                // sender block below; we use `liftedSegment` (or a canonical fallback)
+                // when inserting into receiver's PlanText below.
+                var (newSenderPlanText, liftedSegment) =
+                    TryRemoveSegmentByStartEnd(fromPR.PlanText, start, end);
+
                 // 3. Write to receiver.
                 SetShift(toPR, freeSlot, start, end, breakLen);
                 SortShiftsByStart(toPR);
                 PlanRegistrationHelper.RecalculatePlanHoursFromShifts(toPR, toAssignedSite?.UseOneMinuteIntervals ?? false);
                 TryRecalcPauseAutoBreak(toAssignedSite, toPR, requestId, "receiver");
                 StampReceiverAuditFields(toPR, request, nowUtc);
+
+                // Keep PlanText in sync so that downstream PlanText-parsing paths
+                // (UpdatePlanRegistrationsInPeriod with UseGoogleSheetAsDefault) don't
+                // re-derive shift columns from stale text and undo our move.
+                // Use the lifted verbatim segment if we found one; otherwise format
+                // from columns using the canonical break table.
+                var segmentToInsert = liftedSegment
+                    ?? FormatShiftSegmentForFallback(start, end, breakLen);
+                toPR.PlanText = InsertSegmentSorted(toPR.PlanText, segmentToInsert);
+
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: receiver PR {ToPRId} PlanText updated to '{PlanText}'",
+                    requestId, toPR.Id, toPR.PlanText);
 
                 _logger.LogInformation(
                     "[Handover] Accept request {RequestId}: receiver PR {ToPRId} prepared with slot {FreeSlot} = {Start}-{End}/{BreakLen}, PlanHours={PH}, PlanHoursInSeconds={PHIS}",
@@ -646,6 +666,15 @@ public class ContentHandoverService : IContentHandoverService
                 PlanRegistrationHelper.RecalculatePlanHoursFromShifts(fromPR, fromAssignedSite?.UseOneMinuteIntervals ?? false);
                 TryRecalcPauseAutoBreak(fromAssignedSite, fromPR, requestId, "sender");
                 StampSenderAuditFields(fromPR, request, nowUtc);
+
+                // Apply the new sender PlanText computed by TryRemoveSegmentByStartEnd
+                // at the top of the partial branch (lift-and-shift). The lifted
+                // segment was inserted verbatim into the receiver above.
+                fromPR.PlanText = newSenderPlanText;
+
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: sender PR {FromPRId} PlanText updated to '{PlanText}' (lifted segment: '{Lifted}')",
+                    requestId, fromPR.Id, fromPR.PlanText, liftedSegment ?? "(none — fallback)");
 
                 _logger.LogInformation(
                     "[Handover] Accept request {RequestId}: sender PR {FromPRId} slot {N} cleared, PlanHours={PH}, PlanHoursInSeconds={PHIS}",
@@ -1366,6 +1395,182 @@ public class ContentHandoverService : IContentHandoverService
                 SetShift(row, i, 0, 0, 0);
             }
         }
+    }
+
+    // Formats a (start, end, breakLen) shift triple into a PlanText segment using the
+    // canonical break-hour string that PlanRegistrationHelper.BreakTimeCalculator
+    // recognizes. Used ONLY when we couldn't find a matching segment in the sender's
+    // PlanText to lift verbatim. For breaks not on the canonical 5-minute grid, the
+    // fallback emits decimal hours but BreakTimeCalculator's "_ => 0" will drop them
+    // on the next parse — same behavior the existing system already has for off-grid
+    // breaks.
+    private static string FormatShiftSegmentForFallback(int startMin, int endMin, int breakLen)
+    {
+        var startH = startMin / 60;
+        var startM = startMin % 60;
+        var endH = endMin / 60;
+        var endM = endMin % 60;
+        return $"{startH:D2}:{startM:D2}-{endH:D2}:{endM:D2}/{FormatBreakAsCanonicalHours(breakLen)}";
+    }
+
+    // Inverse of PlanRegistrationHelper.BreakTimeCalculator. Returns the canonical
+    // PlanText break-hour string for a given break-minute count, or a best-effort
+    // decimal-hours string for non-grid values (which BreakTimeCalculator can't
+    // represent — same behavior as the existing parser for non-grid input).
+    private static string FormatBreakAsCanonicalHours(int breakMin)
+    {
+        return breakMin switch
+        {
+            0 => "0",
+            5 => "0.1",
+            10 => "0.15",
+            15 => "0.25",
+            20 => "0.3",
+            25 => "0.4",
+            30 => "0.5",
+            35 => "0.6",
+            40 => "0.7",
+            45 => "0.75",
+            50 => "0.8",
+            55 => "0.9",
+            60 => "1",
+            75 => "1.25",
+            90 => "1.5",
+            105 => "1.75",
+            120 => "2",
+            135 => "2.25",
+            150 => "2.5",
+            165 => "2.75",
+            180 => "3",
+            195 => "3.25",
+            210 => "3.5",
+            225 => "3.75",
+            240 => "4",
+            255 => "4.25",
+            270 => "4.5",
+            285 => "4.75",
+            _ => (breakMin / 60.0).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+        };
+    }
+
+    // Removes the first PlanText segment whose parsed start/end minutes equal
+    // (targetStart, targetEnd). Match is on start+end only — break is whatever
+    // the sender's text says, and we trust PlanText as the source of truth.
+    // Returns (newPlanText, removedSegment). If no match was found, removedSegment is null
+    // and newPlanText is the original (unchanged). If the result is empty, newPlanText is null.
+    private static (string? newPlanText, string? removedSegment) TryRemoveSegmentByStartEnd(
+        string? planText, int targetStart, int targetEnd)
+    {
+        if (string.IsNullOrWhiteSpace(planText)) return (planText, null);
+
+        var segments = planText.Split(';', System.StringSplitOptions.None);
+        var kept = new System.Collections.Generic.List<string>(segments.Length);
+        string? removed = null;
+
+        foreach (var seg in segments)
+        {
+            if (removed == null
+                && TryParseSegment(seg, out var s, out var e, out _)
+                && s == targetStart && e == targetEnd)
+            {
+                removed = seg;       // capture verbatim
+                continue;            // skip — this is the moved shift
+            }
+            kept.Add(seg);
+        }
+
+        if (kept.Count == 0) return (null, removed);
+        return (string.Join(";", kept), removed);
+    }
+
+    // Inserts `newSegment` into `planText` at the position that keeps segments
+    // sorted by start time. If `planText` is empty, returns just `newSegment`.
+    // Segments that fail to parse keep their original relative order at the end.
+    private static string InsertSegmentSorted(string? planText, string newSegment)
+    {
+        if (string.IsNullOrWhiteSpace(planText)) return newSegment;
+
+        if (!TryParseSegment(newSegment, out var newStart, out _, out _))
+        {
+            // Couldn't parse our own emitted segment — fall back to append.
+            return planText + ";" + newSegment;
+        }
+
+        var existing = planText.Split(';', System.StringSplitOptions.None);
+        var result = new System.Collections.Generic.List<string>(existing.Length + 1);
+        var inserted = false;
+
+        foreach (var seg in existing)
+        {
+            if (!inserted
+                && TryParseSegment(seg, out var s, out _, out _)
+                && newStart < s)
+            {
+                result.Add(newSegment);
+                inserted = true;
+            }
+            result.Add(seg);
+        }
+        if (!inserted) result.Add(newSegment);
+        return string.Join(";", result);
+    }
+
+    // Parses one PlanText segment ("h-h/b" or "h.m-h.m/b" or "hh:mm-hh:mm/b" etc.)
+    // into minutes-of-day. Returns false on parse failure (segment is non-shift text).
+    // Mirrors the regex + split logic at PlanRegistrationHelper.cs:600-625.
+    private static bool TryParseSegment(string segment, out int startMin, out int endMin, out int breakMin)
+    {
+        startMin = 0; endMin = 0; breakMin = 0;
+        if (string.IsNullOrWhiteSpace(segment)) return false;
+
+        var normalized = segment.Replace(",", ".").Trim();
+        var withBreakRegex = new System.Text.RegularExpressions.Regex(@"^(.*)-(.*)\/(.*)$");
+        var noBreakRegex = new System.Text.RegularExpressions.Regex(@"^(.*)-(.*)$");
+
+        string firstPart, secondPart, breakPart;
+        var m = withBreakRegex.Match(normalized);
+        if (m.Success)
+        {
+            firstPart = m.Groups[1].Value;
+            secondPart = m.Groups[2].Value;
+            breakPart = m.Groups[3].Value.Trim();
+        }
+        else
+        {
+            m = noBreakRegex.Match(normalized);
+            if (!m.Success) return false;
+            firstPart = m.Groups[1].Value;
+            secondPart = m.Groups[2].Value;
+            breakPart = "0";
+        }
+
+        if (!TryParseHm(firstPart, out startMin)) return false;
+        if (!TryParseHm(secondPart, out endMin)) return false;
+
+        // Break is decimal hours in PlanText (1 = 60 min, 0.5 = 30 min, 0 = no break).
+        // Parse as double then multiply by 60 to compare against PlannedBreakOfShiftN
+        // columns, which are stored in minutes.
+        if (!double.TryParse(breakPart, System.Globalization.NumberStyles.Float,
+                             System.Globalization.CultureInfo.InvariantCulture,
+                             out var breakHours))
+        {
+            return false;
+        }
+        breakMin = (int)System.Math.Round(breakHours * 60);
+        return true;
+    }
+
+    private static bool TryParseHm(string token, out int minutes)
+    {
+        minutes = 0;
+        var parts = token.Split(new[] { '.', ':', '½' },
+                                System.StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return false;
+        if (!int.TryParse(parts[0], out var h)) return false;
+        var m = 0;
+        if (parts.Length > 1 && !int.TryParse(parts[1], out m)) return false;
+        minutes = h * 60 + m;
+        return true;
     }
 
     private ContentHandoverRequestModel MapToModel(
