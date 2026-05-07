@@ -91,6 +91,12 @@ public class ContentHandoverService : IContentHandoverService
             var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
 
             var currentUserAsync = await _userService.GetCurrentUserAsync();
+            if (currentUserAsync == null)
+            {
+                return new OperationDataResult<List<HandoverCoworkerModel>>(
+                    false,
+                    _localizationService.GetString("UserNotFound"));
+            }
             var currentUser = _baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
 
@@ -926,6 +932,10 @@ public class ContentHandoverService : IContentHandoverService
     private async Task<int> ResolveCallerSdkSiteIdAsync()
     {
         var currentUserAsync = await _userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            return 0;
+        }
         var currentUser = _baseDbContext.Users.Single(x => x.Id == currentUserAsync.Id);
 
         var sdkCore = await _core.GetCore();

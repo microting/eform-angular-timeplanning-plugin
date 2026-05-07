@@ -183,7 +183,13 @@
     <data name="ShiftOverlapsExistingShift" xml:space="preserve">
         <value>The transferred shift overlaps an existing shift on the coworker's planning.</value>
     </data>
+    <data name="HandoverSourceSlotEmpty" xml:space="preserve">
+        <value>The source shift slot is empty — there is nothing to hand over.</value>
+    </data>
     <data name="CannotEditLockedPreset" xml:space="preserve">
         <value>Cannot edit - this overenskomst is a locked preset and is read-only</value>
+    </data>
+    <data name="UserNotFound" xml:space="preserve">
+        <value>User not found.</value>
     </data>
 </root>

@@ -79,6 +79,10 @@ public class AbsenceRequestService : IAbsenceRequestService
     private async Task<int> ResolveCallerSdkSiteIdAsync()
     {
         var currentUserAsync = await _userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            return 0;
+        }
         var currentUser = _baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
 

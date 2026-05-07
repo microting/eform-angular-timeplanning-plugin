@@ -183,7 +183,13 @@
     <data name="ShiftOverlapsExistingShift" xml:space="preserve">
         <value>Den overdragne vagt overlapper en eksisterende vagt i kollegaens planlægning.</value>
     </data>
+    <data name="HandoverSourceSlotEmpty" xml:space="preserve">
+        <value>Den oprindelige vagt er tom — der er intet at overdrage.</value>
+    </data>
     <data name="CannotEditLockedPreset" xml:space="preserve">
         <value>Kan ikke redigere – denne overenskomst er en låst skabelon og er skrivebeskyttet</value>
+    </data>
+    <data name="UserNotFound" xml:space="preserve">
+        <value>Bruger ikke fundet.</value>
     </data>
 </root>
