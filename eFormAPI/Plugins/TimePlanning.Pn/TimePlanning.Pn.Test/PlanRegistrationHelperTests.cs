@@ -877,4 +877,121 @@ public class PlanRegistrationHelperTests
         //   Assert.That(pkg2.Workbook.Worksheets.First().Cells[2, 9].Text, Is.EqualTo("15:30"));
         Assert.Pass("Captured for future fixture work; see XML doc above.");
     }
+
+    /// <summary>
+    /// Customer 855 regression: with UseOneMinuteIntervals = true, a 3-minute
+    /// pause stamped via Pause1StartedAt/Pause1StoppedAt must aggregate to 3 —
+    /// not be rounded to 0 by the legacy (Pause1Id * 5) - 5 formula. The
+    /// companion Pause1Id = 1 is intentionally lossy (storage formula
+    /// (3/5)+1 = 1) and must be ignored when the flag is on.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_RoundTrips3MinPause()
+    {
+        // Arrange
+        var someDate = new DateTime(2026, 5, 7, 0, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause1StartedAt = someDate.AddHours(12),
+            Pause1StoppedAt = someDate.AddHours(12).AddMinutes(3),
+            Pause1Id = 1, // lossy legacy companion (3/5)+1 = 1; must be IGNORED when flag is on
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(3));
+    }
+
+    /// <summary>
+    /// Documents the legacy lossy behavior: with UseOneMinuteIntervals = false,
+    /// a 3-minute pause stored as Pause1Id = 1 reads back as 0 minutes via the
+    /// 5-minute-tick formula. Catches accidental flag-off regressions where a
+    /// row that should be precise (flag on) silently reverts to legacy math.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_LegacyMode_3MinPauseReturns0_DocumentsLossy()
+    {
+        // Arrange
+        var someDate = new DateTime(2026, 5, 7, 0, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause1StartedAt = someDate.AddHours(12),
+            Pause1StoppedAt = someDate.AddHours(12).AddMinutes(3),
+            Pause1Id = 1, // legacy companion of a 3-min pause: (3/5)+1 = 1 → 0 min via legacy formula
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Verifies that AggregatePauseMinutes sums precise pauses across multiple
+    /// slots when UseOneMinuteIntervals is on (3 + 7 = 10 minutes).
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_SumsAcrossMultipleSlots()
+    {
+        // Arrange
+        var someDate = new DateTime(2026, 5, 7, 0, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause1StartedAt = someDate.AddHours(10),
+            Pause1StoppedAt = someDate.AddHours(10).AddMinutes(3),
+            Pause2StartedAt = someDate.AddHours(14),
+            Pause2StoppedAt = someDate.AddHours(14).AddMinutes(7),
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(10));
+    }
+
+    /// <summary>
+    /// Sanity check that the legacy 5-minute-tick path still returns the
+    /// canonical value: Pause1Id = 4 → (4 * 5) - 5 = 15 minutes.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_LegacyMode_15MinPauseReturns15()
+    {
+        // Arrange
+        var pr = new PlanRegistration
+        {
+            Pause1Id = 4, // legacy 15-minute pause: (4 * 5) - 5 = 15
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(15));
+    }
+
+    /// <summary>
+    /// When UseOneMinuteIntervals is on, the legacy Pause*Id field must be
+    /// ignored: a row with Pause1Id = 4 (legacy 15 min) but no DateTime stamps
+    /// is treated as zero pause.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_NullStampsContributeZero()
+    {
+        // Arrange
+        var pr = new PlanRegistration
+        {
+            Pause1Id = 4, // legacy 15-min pause; flag-on path must ignore this
+            // Pause1StartedAt / Pause1StoppedAt left null
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(0));
+    }
 }

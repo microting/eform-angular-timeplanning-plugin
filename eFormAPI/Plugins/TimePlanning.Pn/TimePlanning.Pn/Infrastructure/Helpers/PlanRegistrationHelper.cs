@@ -448,6 +448,50 @@ public static class PlanRegistrationHelper
     }
 
     /// <summary>
+    /// Aggregates pause minutes for a PlanRegistration.
+    ///
+    /// When useOneMinuteIntervals is true, sums the (Pause*StoppedAt - Pause*StartedAt)
+    /// DateTime deltas in seconds across all 5 pause slots that have BOTH stamps populated,
+    /// then rounds to whole minutes. This preserves second/minute precision for pauses
+    /// recorded by workers on UseOneMinuteIntervals-enabled sites (e.g. a 3-min pause
+    /// reads as 3, not 0).
+    ///
+    /// When useOneMinuteIntervals is false, falls back to the legacy 5-minute-tick
+    /// formula: for each Pause*Id &gt; 0, contribute (Pause*Id * 5) - 5 minutes. (Pause*Id
+    /// stores break in 5-minute ticks plus a +1 sentinel: Pause1Id = 1 means 0 min,
+    /// Pause1Id = 4 means 15 min, etc.)
+    /// </summary>
+    public static int AggregatePauseMinutes(PlanRegistration pr, bool useOneMinuteIntervals)
+    {
+        if (useOneMinuteIntervals)
+        {
+            long totalSeconds = 0;
+            totalSeconds += PauseSpanSeconds(pr.Pause1StartedAt, pr.Pause1StoppedAt);
+            totalSeconds += PauseSpanSeconds(pr.Pause2StartedAt, pr.Pause2StoppedAt);
+            totalSeconds += PauseSpanSeconds(pr.Pause3StartedAt, pr.Pause3StoppedAt);
+            totalSeconds += PauseSpanSeconds(pr.Pause4StartedAt, pr.Pause4StoppedAt);
+            totalSeconds += PauseSpanSeconds(pr.Pause5StartedAt, pr.Pause5StoppedAt);
+            return (int)(totalSeconds / 60); // round down to whole minutes
+        }
+
+        // Legacy 5-minute-tick path
+        var totalMinutes = 0;
+        if (pr.Pause1Id > 0) totalMinutes += (pr.Pause1Id * 5) - 5;
+        if (pr.Pause2Id > 0) totalMinutes += (pr.Pause2Id * 5) - 5;
+        if (pr.Pause3Id > 0) totalMinutes += (pr.Pause3Id * 5) - 5;
+        if (pr.Pause4Id > 0) totalMinutes += (pr.Pause4Id * 5) - 5;
+        if (pr.Pause5Id > 0) totalMinutes += (pr.Pause5Id * 5) - 5;
+        return totalMinutes;
+    }
+
+    private static long PauseSpanSeconds(DateTime? startedAt, DateTime? stoppedAt)
+    {
+        if (startedAt == null || stoppedAt == null) return 0;
+        var span = stoppedAt.Value - startedAt.Value;
+        return span.TotalSeconds > 0 ? (long)span.TotalSeconds : 0;
+    }
+
+    /// <summary>
     /// Phase 2 — write the second-precision NettoHours / Flex / SumFlex chain.
     ///
     /// Computes <c>NettoHoursInSeconds</c> from DateTime deltas (or legacy
@@ -1547,21 +1591,7 @@ public static class PlanRegistrationHelper
                 Pause5StoppedAt = planRegistration.Pause5StoppedAt
             };
 
-            planningModel.PauseMinutes += planRegistration.Pause1Id > 0
-                ? (planRegistration.Pause1Id * 5) - 5
-                : 0;
-            planningModel.PauseMinutes += planRegistration.Pause2Id > 0
-                ? (planRegistration.Pause2Id * 5) - 5
-                : 0;
-            planningModel.PauseMinutes += planRegistration.Pause3Id > 0
-                ? (planRegistration.Pause3Id * 5) - 5
-                : 0;
-            planningModel.PauseMinutes += planRegistration.Pause4Id > 0
-                ? (planRegistration.Pause4Id * 5) - 5
-                : 0;
-            planningModel.PauseMinutes += planRegistration.Pause5Id > 0
-                ? (planRegistration.Pause5Id * 5) - 5
-                : 0;
+            planningModel.PauseMinutes += AggregatePauseMinutes(planRegistration, dbAssignedSite.UseOneMinuteIntervals);
 
             // planningModel.PauseMinutes = planningModel.PauseMinutes > 0 ? planningModel.PauseMinutes - 5 : 0;
 
