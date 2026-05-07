@@ -361,6 +361,11 @@ public class TimeSettingService(
             if (baseDbContext != null)
             {
                 var currentUserAsync = await userService.GetCurrentUserAsync();
+                if (currentUserAsync == null)
+                {
+                    return new OperationDataResult<List<Site>>(false,
+                        localizationService.GetString("UserNotFound"), null!);
+                }
                 var currentUser = baseDbContext.Users
                     .Include(x => x.UserRoles)
                     .ThenInclude(x => x.Role)
@@ -673,6 +678,11 @@ public class TimeSettingService(
         var core1 = await core.GetCore();
         var sdkContext = core1.DbContextHelper.GetDbContext();
         var currentUserAsync = await userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false,
+                localizationService.GetString("UserNotFound"), null!);
+        }
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         var worker = await sdkContext.Workers

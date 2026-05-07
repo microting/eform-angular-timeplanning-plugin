@@ -603,6 +603,11 @@ public class TimePlanningWorkingHoursService(
     public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
     {
         var currentUserAsync = await userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            return new OperationDataResult<TimePlanningWorkingHourSimpleModel>(false,
+                localizationService.GetString("UserNotFound"), null!);
+        }
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         var userEmail = (currentUser.Email ?? "").Trim().ToLower();
@@ -737,6 +742,11 @@ public class TimePlanningWorkingHoursService(
             var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
             var currentUserAsync = await userService.GetCurrentUserAsync();
+            if (currentUserAsync == null)
+            {
+                return new OperationDataResult<TimePlanningHoursSummaryModel>(false,
+                    localizationService.GetString("UserNotFound"), null!);
+            }
             var currentUser = baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
             var userEmail = (currentUser.Email ?? "").Trim().ToLower();
@@ -858,6 +868,12 @@ public class TimePlanningWorkingHoursService(
     {
         Console.WriteLine($"[DEBUG-GRPC-READ] ReadFullByCurrentUser called: dateTime={dateTime:yyyy-MM-dd}");
         var currentUserAsync = await userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            Console.WriteLine($"[DEBUG-GRPC-READ] EARLY RETURN: GetCurrentUserAsync returned null (JWT missing or invalid)");
+            return new OperationDataResult<TimePlanningWorkingHoursModel>(false,
+                localizationService.GetString("UserNotFound"), null!);
+        }
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         Console.WriteLine($"[DEBUG-GRPC-READ] Current user: Id={currentUserAsync.Id}, email={currentUser.Email}");
@@ -916,6 +932,11 @@ public class TimePlanningWorkingHoursService(
         var sdkCore = await coreHelper.GetCore();
         var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
         var currentUserAsync = await userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            Console.WriteLine($"[DEBUG-GRPC-UPDATE] EARLY RETURN: GetCurrentUserAsync returned null (JWT missing or invalid)");
+            return new OperationResult(false, localizationService.GetString("UserNotFound"));
+        }
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         var userEmail = (currentUser.Email ?? "").Trim().ToLower();

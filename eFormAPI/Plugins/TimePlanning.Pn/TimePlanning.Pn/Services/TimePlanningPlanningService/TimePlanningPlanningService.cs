@@ -73,6 +73,11 @@ public class TimePlanningPlanningService(
                     .ToListAsync().ConfigureAwait(false);
 
             var currentUserAsync = await userService.GetCurrentUserAsync();
+            if (currentUserAsync == null)
+            {
+                return new OperationDataResult<List<TimePlanningPlanningModel>>(false,
+                    localizationService.GetString("UserNotFound"), null!);
+            }
             var currentUser = baseDbContext.Users
                 .Include(x => x.UserRoles)
                 .ThenInclude(x => x.Role)
@@ -399,6 +404,11 @@ public class TimePlanningPlanningService(
         var sdkCore = await core.GetCore();
         var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
         var currentUserAsync = await userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            return new OperationDataResult<TimePlanningPlanningModel>(false,
+                localizationService.GetString("UserNotFound"), null!);
+        }
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
 
