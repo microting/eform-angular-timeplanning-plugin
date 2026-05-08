@@ -964,6 +964,25 @@ public class TimePlanningPlanningService(
                 planning.Start1StartedAt = null;
             }
 
+            if (assignedSite.UseOneMinuteIntervals)
+            {
+                var exactPauses = new[]
+                {
+                    (1, model.Pause1ExactMinutes),
+                    (2, model.Pause2ExactMinutes),
+                    (3, model.Pause3ExactMinutes),
+                    (4, model.Pause4ExactMinutes),
+                    (5, model.Pause5ExactMinutes),
+                };
+                foreach (var (shift, minutes) in exactPauses)
+                {
+                    if (minutes.HasValue)
+                    {
+                        ApplyExactMinutePause(planning, shift, minutes.Value);
+                    }
+                }
+            }
+
             if (!assignedSite.UseOnlyPlanHours)
             {
                 double minutesPlanned = 0;
@@ -1875,6 +1894,137 @@ public class TimePlanningPlanningService(
             }
         }
     }
+
+    /// <summary>
+    /// Translates an admin-edited exact-minute pause duration for the given shift
+    /// into Pause*StartedAt/Pause*StoppedAt timestamps on the entity. Anchors to
+    /// the existing Pause*StartedAt when present (preserves the worker's actual
+    /// pause start) and falls back to the shift midpoint when no anchor exists.
+    /// Sub-slot pauses (pause10..pause19, pause100..pause102 for shift 1;
+    /// pause20..pause29, pause200..pause202 for shift 2) are cleared so
+    /// AggregatePauseMinutes does not double-count.
+    /// </summary>
+    private void ApplyExactMinutePause(PlanRegistration planning, int shift, int exactMinutes)
+    {
+        if (exactMinutes == 0)
+        {
+            ClearPauseTimestamps(planning, shift);
+            return;
+        }
+
+        DateTime? existingStart = shift switch
+        {
+            1 => planning.Pause1StartedAt,
+            2 => planning.Pause2StartedAt,
+            3 => planning.Pause3StartedAt,
+            4 => planning.Pause4StartedAt,
+            5 => planning.Pause5StartedAt,
+            _ => null,
+        };
+
+        DateTime startedAt;
+        if (existingStart.HasValue)
+        {
+            startedAt = existingStart.Value;
+        }
+        else
+        {
+            var (shiftStart, shiftStop) = GetShiftBounds(planning, shift);
+            if (!shiftStart.HasValue || !shiftStop.HasValue)
+            {
+                // No anchor available — skip the write rather than fabricate one.
+                return;
+            }
+            startedAt = shiftStart.Value.AddMinutes(
+                (shiftStop.Value - shiftStart.Value).TotalMinutes / 2);
+        }
+
+        var stoppedAt = startedAt.AddMinutes(exactMinutes);
+
+        ClearPauseTimestamps(planning, shift);
+
+        switch (shift)
+        {
+            case 1:
+                planning.Pause1StartedAt = startedAt;
+                planning.Pause1StoppedAt = stoppedAt;
+                break;
+            case 2:
+                planning.Pause2StartedAt = startedAt;
+                planning.Pause2StoppedAt = stoppedAt;
+                break;
+            case 3:
+                planning.Pause3StartedAt = startedAt;
+                planning.Pause3StoppedAt = stoppedAt;
+                break;
+            case 4:
+                planning.Pause4StartedAt = startedAt;
+                planning.Pause4StoppedAt = stoppedAt;
+                break;
+            case 5:
+                planning.Pause5StartedAt = startedAt;
+                planning.Pause5StoppedAt = stoppedAt;
+                break;
+        }
+    }
+
+    private static void ClearPauseTimestamps(PlanRegistration planning, int shift)
+    {
+        switch (shift)
+        {
+            case 1:
+                planning.Pause1StartedAt = null; planning.Pause1StoppedAt = null;
+                planning.Pause10StartedAt = null; planning.Pause10StoppedAt = null;
+                planning.Pause11StartedAt = null; planning.Pause11StoppedAt = null;
+                planning.Pause12StartedAt = null; planning.Pause12StoppedAt = null;
+                planning.Pause13StartedAt = null; planning.Pause13StoppedAt = null;
+                planning.Pause14StartedAt = null; planning.Pause14StoppedAt = null;
+                planning.Pause15StartedAt = null; planning.Pause15StoppedAt = null;
+                planning.Pause16StartedAt = null; planning.Pause16StoppedAt = null;
+                planning.Pause17StartedAt = null; planning.Pause17StoppedAt = null;
+                planning.Pause18StartedAt = null; planning.Pause18StoppedAt = null;
+                planning.Pause19StartedAt = null; planning.Pause19StoppedAt = null;
+                planning.Pause100StartedAt = null; planning.Pause100StoppedAt = null;
+                planning.Pause101StartedAt = null; planning.Pause101StoppedAt = null;
+                planning.Pause102StartedAt = null; planning.Pause102StoppedAt = null;
+                break;
+            case 2:
+                planning.Pause2StartedAt = null; planning.Pause2StoppedAt = null;
+                planning.Pause20StartedAt = null; planning.Pause20StoppedAt = null;
+                planning.Pause21StartedAt = null; planning.Pause21StoppedAt = null;
+                planning.Pause22StartedAt = null; planning.Pause22StoppedAt = null;
+                planning.Pause23StartedAt = null; planning.Pause23StoppedAt = null;
+                planning.Pause24StartedAt = null; planning.Pause24StoppedAt = null;
+                planning.Pause25StartedAt = null; planning.Pause25StoppedAt = null;
+                planning.Pause26StartedAt = null; planning.Pause26StoppedAt = null;
+                planning.Pause27StartedAt = null; planning.Pause27StoppedAt = null;
+                planning.Pause28StartedAt = null; planning.Pause28StoppedAt = null;
+                planning.Pause29StartedAt = null; planning.Pause29StoppedAt = null;
+                planning.Pause200StartedAt = null; planning.Pause200StoppedAt = null;
+                planning.Pause201StartedAt = null; planning.Pause201StoppedAt = null;
+                planning.Pause202StartedAt = null; planning.Pause202StoppedAt = null;
+                break;
+            case 3:
+                planning.Pause3StartedAt = null; planning.Pause3StoppedAt = null;
+                break;
+            case 4:
+                planning.Pause4StartedAt = null; planning.Pause4StoppedAt = null;
+                break;
+            case 5:
+                planning.Pause5StartedAt = null; planning.Pause5StoppedAt = null;
+                break;
+        }
+    }
+
+    private static (DateTime?, DateTime?) GetShiftBounds(PlanRegistration p, int shift) => shift switch
+    {
+        1 => (p.Start1StartedAt, p.Stop1StoppedAt),
+        2 => (p.Start2StartedAt, p.Stop2StoppedAt),
+        3 => (p.Start3StartedAt, p.Stop3StoppedAt),
+        4 => (p.Start4StartedAt, p.Stop4StoppedAt),
+        5 => (p.Start5StartedAt, p.Stop5StoppedAt),
+        _ => (null, null),
+    };
 
     public async Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId)
     {
