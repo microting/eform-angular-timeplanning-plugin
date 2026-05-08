@@ -95,6 +95,18 @@ public class TimePlanningPlanningPrDayModel
     public int? Stop5Id { get; set; }
 
     public int? Pause5Id { get; set; }
+
+    // Request-only: exact-minute pause durations under UseOneMinuteIntervals=true.
+    // Null means the client did not send the new field; backend falls back to the
+    // legacy Pause*Id (5-minute slot) write path. When set, backend translates the
+    // duration into Pause*StartedAt/Pause*StoppedAt timestamp pairs (anchor: existing
+    // Pause*StartedAt if present, else shift midpoint).
+    public int? Pause1ExactMinutes { get; set; }
+    public int? Pause2ExactMinutes { get; set; }
+    public int? Pause3ExactMinutes { get; set; }
+    public int? Pause4ExactMinutes { get; set; }
+    public int? Pause5ExactMinutes { get; set; }
+
     public int Break1Shift { get; set; }
     public int Break2Shift { get; set; }
     public int Break3Shift { get; set; }

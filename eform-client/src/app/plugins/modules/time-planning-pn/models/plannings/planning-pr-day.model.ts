@@ -127,6 +127,13 @@ export class PlanningPrDayModel {
   start5Id: number;
   stop5Id: number;
   pause5Id: number;
+  // Request-only: exact-minute pause durations sent under UseOneMinuteIntervals=true.
+  // Backend translates these into Pause*StartedAt/Pause*StoppedAt timestamp pairs.
+  pause1ExactMinutes?: number;
+  pause2ExactMinutes?: number;
+  pause3ExactMinutes?: number;
+  pause4ExactMinutes?: number;
+  pause5ExactMinutes?: number;
   nettoHoursOverride: number;
   nettoHoursOverrideActive: boolean;
 }
