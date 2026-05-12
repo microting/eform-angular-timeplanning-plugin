@@ -649,6 +649,7 @@ public class TimePlanningPlanningService(
             planning.PlannedStartOfShift5 = model.PlannedStartOfShift5;
             planning.PlannedBreakOfShift5 = model.PlannedBreakOfShift5;
             planning.PlannedEndOfShift5 = model.PlannedEndOfShift5;
+            planning.PlanText = PlanTextHelper.GeneratePlanText(planning);
             planning.CommentOffice = model.CommentOffice;
             planning.NettoHoursOverride = model.NettoHoursOverride;
             planning.NettoHoursOverrideActive = model.NettoHoursOverrideActive;
@@ -1287,6 +1288,7 @@ public class TimePlanningPlanningService(
             planning.PlannedStartOfShift5 = model.PlannedStartOfShift5;
             planning.PlannedBreakOfShift5 = model.PlannedBreakOfShift5;
             planning.PlannedEndOfShift5   = model.PlannedEndOfShift5;
+            planning.PlanText = PlanTextHelper.GeneratePlanText(planning);
 
             if (!assignedSite.UseDetailedPauseEditing)
             {
