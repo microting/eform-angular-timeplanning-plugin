@@ -10,8 +10,14 @@ import {
  * l1m shard: admin-edit round-trip of the new Start/Stop{N}ExactMinutes DTO
  * fields under UseOneMinuteIntervals=true. Pre-fix the save path produced
  * float Start{N}Id values (37.6 for `03:03`), so off-grid actuals were
- * unrepresentable from the web dialog. Covers same-day (03:03 → 11:13) and
- * cross-midnight (23:55 → 00:30) round-trips end-to-end through PUT + reopen.
+ * unrepresentable from the web dialog. Covers same-day (03:03 → 11:13)
+ * round-trip end-to-end through PUT + reopen.
+ *
+ * Note: the cross-midnight (23:55 → 00:30) case is NOT covered here — the
+ * admin dialog's shiftWiseValidator requires `stop > start` within a shift,
+ * so admins cannot enter a cross-midnight pair through the UI. The C# helper
+ * `ApplyExactMinuteStop` exists for backend defense against worker
+ * punchclock writes that already cross midnight, not admin direct entry.
  */
 
 async function waitForSpinner(page: Page) {
@@ -139,31 +145,6 @@ test.describe('Dashboard edit actual exact-minutes (l1m, flag-on, admin-edit rou
     await page.locator('#cancelButton').click();
   });
 
-  test('cross-midnight 23:55 -> 00:30 round-trips without error', async ({ page }) => {
-    await openDialogForActiveCell(page);
-
-    const t = OFFGRID_TIMES_L1M.crossMidnight;
-    await setTimepickerValue(page, 'start1StartedAt', t.start);
-    await setTimepickerValue(page, 'stop1StoppedAt', t.stop);
-
-    const updateResponse = await clickSaveAndAwaitRoundtrip(page);
-    expect(updateResponse.status(), 'cross-midnight PUT must succeed under flag-on').toBeLessThan(400);
-
-    await page.locator('#cell0_0').scrollIntoViewIfNeeded();
-    await page.locator('#cell0_0').click();
-    await expect(page.locator('#planHours')).toBeVisible();
-    await expect(
-      page.locator('[data-testid="start1StartedAt"]'),
-      'cross-midnight start should round-trip 23:55',
-    ).toHaveValue(t.start);
-    await expect(
-      page.locator('[data-testid="stop1StoppedAt"]'),
-      'cross-midnight stop should round-trip 00:30',
-    ).toHaveValue(t.stop);
-
-    await page.locator('#cancelButton').click();
-  });
-
   /**
    * Regression coverage: every shift must round-trip its off-grid values
    * exactly across save + reopen. Where the two tests above only fill
@@ -174,6 +155,8 @@ test.describe('Dashboard edit actual exact-minutes (l1m, flag-on, admin-edit rou
    * → `07:10` / `07:15`).
    */
   test('all 5 shifts off-grid round-trip preserves every value exactly', async ({ page }) => {
+    // 12 timepicker fills × ~7s each exceeds the default 120s test timeout.
+    test.setTimeout(300000);
     await openDialogForActiveCell(page);
 
     const t = OFFGRID_TIMES_L1M_FULL_5SHIFTS;

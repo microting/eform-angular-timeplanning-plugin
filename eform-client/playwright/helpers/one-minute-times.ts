@@ -249,13 +249,14 @@ export const OFFGRID_TIMES_I1M = {
 } as const;
 
 /**
- * l1m shard variant: exact-minute actual start/stop round-trip plus a
- * cross-midnight pair. Off-grid `03:03 → 11:13` covers the same-day path;
- * `23:55 → 00:30` exercises the cross-midnight branch in ApplyExactMinuteStop.
+ * l1m shard variant: exact-minute actual start/stop round-trip. Off-grid
+ * `03:03 → 11:13` covers the same-day path. (Cross-midnight admin-entered
+ * pairs are not possible through the dialog — shiftWiseValidator requires
+ * `stop > start` within a shift — so the C# `ApplyExactMinuteStop` helper's
+ * cross-midnight branch is exercised only via the worker punchclock path.)
  */
 export const OFFGRID_TIMES_L1M = {
   shift1: { start: '03:03', stop: '11:13' },
-  crossMidnight: { start: '23:55', stop: '00:30' },
 } as const;
 
 /**
