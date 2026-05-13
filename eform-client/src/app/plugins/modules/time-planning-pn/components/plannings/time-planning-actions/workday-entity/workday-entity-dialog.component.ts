@@ -1041,9 +1041,9 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
         return 289; // hvis stop er 00:00, så returner 24*60/5=288
         // return result + 1;
       }
-      return result + 1;
+      return Math.round(result + 1);
     }
-    return hours * 60 + minutes;
+    return Math.round(hours * 60 + minutes);
   }
 
   private toRawMinutes(value: string | null | undefined): number | null {
@@ -1054,6 +1054,22 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     const m = parseInt(parts[1], 10);
     if (isNaN(h) || isNaN(m)) return null;
     return h * 60 + m;
+  }
+
+  // Derive exact-minute actual span for a shift directly from the picker's form
+  // values. Used under UseOneMinuteIntervals=true so display arithmetic remains
+  // exact-minute regardless of Math.round at the wire boundary (where *Id ints
+  // are required by the ASP.NET int? deserializer).
+  private actualShiftMinutesFromForm(shift: number): number {
+    const a = this.workdayForm.get(`actual.shift${shift}`)?.value as
+      { start?: string; stop?: string; pause?: string } | undefined;
+    if (!a) return 0;
+    const start = this.toRawMinutes(a.start);
+    const stop = this.toRawMinutes(a.stop);
+    const pause = this.toRawMinutes(a.pause) ?? 0;
+    if (start === null || stop === null) return 0;
+    const span = stop >= start ? (stop - start) : (1440 - start + stop);
+    return Math.max(0, span - pause);
   }
 
   // Sum every Pause*StartedAt/Pause*StoppedAt pair attached to the given shift in
@@ -1546,38 +1562,47 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
     // Summer actual
     let actualTimeInMinutes = 0;
-    if (this.data.planningPrDayModels.stop1Id !== null) {
-      actualTimeInMinutes =
-        this.data.planningPrDayModels.stop1Id
-        - (this.data.planningPrDayModels.pause1Id > 0 ? this.data.planningPrDayModels.pause1Id - 1 : 0)
-        - this.data.planningPrDayModels.start1Id;
-    }
-    if (this.data.planningPrDayModels.stop2Id !== null) {
-      actualTimeInMinutes +=
-        this.data.planningPrDayModels.stop2Id
-        - (this.data.planningPrDayModels.pause2Id > 0 ? this.data.planningPrDayModels.pause2Id - 1 : 0)
-        - this.data.planningPrDayModels.start2Id;
-    }
-    if (this.data.planningPrDayModels.stop3Id !== null) {
-      actualTimeInMinutes +=
-        this.data.planningPrDayModels.stop3Id
-        - (this.data.planningPrDayModels.pause3Id > 0 ? this.data.planningPrDayModels.pause3Id - 1 : 0)
-        - this.data.planningPrDayModels.start3Id;
-    }
-    if (this.data.planningPrDayModels.stop4Id !== null) {
-      actualTimeInMinutes +=
-        this.data.planningPrDayModels.stop4Id
-        - (this.data.planningPrDayModels.pause4Id > 0 ? this.data.planningPrDayModels.pause4Id - 1 : 0)
-        - this.data.planningPrDayModels.start4Id;
-    }
-    if (this.data.planningPrDayModels.stop5Id !== null) {
-      actualTimeInMinutes +=
-        this.data.planningPrDayModels.stop5Id
-        - (this.data.planningPrDayModels.pause5Id > 0 ? this.data.planningPrDayModels.pause5Id - 1 : 0)
-        - this.data.planningPrDayModels.start5Id;
-    }
-    if (actualTimeInMinutes !== 0) {
-      actualTimeInMinutes *= 5;
+    if (this.useOneMinuteIntervals) {
+      // Under flag-on, derive actual minutes directly from picker form values so
+      // display arithmetic remains exact-minute regardless of Math.round at the
+      // wire boundary (required for *Id int? JSON serialization).
+      for (let i = 1; i <= 5; i++) {
+        actualTimeInMinutes += this.actualShiftMinutesFromForm(i);
+      }
+    } else {
+      if (this.data.planningPrDayModels.stop1Id !== null) {
+        actualTimeInMinutes =
+          this.data.planningPrDayModels.stop1Id
+          - (this.data.planningPrDayModels.pause1Id > 0 ? this.data.planningPrDayModels.pause1Id - 1 : 0)
+          - this.data.planningPrDayModels.start1Id;
+      }
+      if (this.data.planningPrDayModels.stop2Id !== null) {
+        actualTimeInMinutes +=
+          this.data.planningPrDayModels.stop2Id
+          - (this.data.planningPrDayModels.pause2Id > 0 ? this.data.planningPrDayModels.pause2Id - 1 : 0)
+          - this.data.planningPrDayModels.start2Id;
+      }
+      if (this.data.planningPrDayModels.stop3Id !== null) {
+        actualTimeInMinutes +=
+          this.data.planningPrDayModels.stop3Id
+          - (this.data.planningPrDayModels.pause3Id > 0 ? this.data.planningPrDayModels.pause3Id - 1 : 0)
+          - this.data.planningPrDayModels.start3Id;
+      }
+      if (this.data.planningPrDayModels.stop4Id !== null) {
+        actualTimeInMinutes +=
+          this.data.planningPrDayModels.stop4Id
+          - (this.data.planningPrDayModels.pause4Id > 0 ? this.data.planningPrDayModels.pause4Id - 1 : 0)
+          - this.data.planningPrDayModels.start4Id;
+      }
+      if (this.data.planningPrDayModels.stop5Id !== null) {
+        actualTimeInMinutes +=
+          this.data.planningPrDayModels.stop5Id
+          - (this.data.planningPrDayModels.pause5Id > 0 ? this.data.planningPrDayModels.pause5Id - 1 : 0)
+          - this.data.planningPrDayModels.start5Id;
+      }
+      if (actualTimeInMinutes !== 0) {
+        actualTimeInMinutes *= 5;
+      }
     }
     this.data.planningPrDayModels.actualHours = actualTimeInMinutes / 60;
 
