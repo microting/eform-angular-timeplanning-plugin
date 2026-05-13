@@ -981,6 +981,44 @@ public class TimePlanningPlanningService(
                         ApplyExactMinutePause(planning, shift, minutes.Value);
                     }
                 }
+
+                var exactStarts = new[]
+                {
+                    (1, model.Start1ExactMinutes),
+                    (2, model.Start2ExactMinutes),
+                    (3, model.Start3ExactMinutes),
+                    (4, model.Start4ExactMinutes),
+                    (5, model.Start5ExactMinutes),
+                };
+                foreach (var (shift, minutes) in exactStarts)
+                {
+                    if (minutes.HasValue)
+                    {
+                        ApplyExactMinuteStart(planning, shift, minutes.Value);
+                    }
+                }
+
+                var exactStops = new[]
+                {
+                    (1, model.Stop1ExactMinutes),
+                    (2, model.Stop2ExactMinutes),
+                    (3, model.Stop3ExactMinutes),
+                    (4, model.Stop4ExactMinutes),
+                    (5, model.Stop5ExactMinutes),
+                };
+                foreach (var (shift, minutes) in exactStops)
+                {
+                    if (minutes.HasValue)
+                    {
+                        ApplyExactMinuteStop(planning, shift, minutes.Value);
+                    }
+                }
+
+                // Re-derive legacy 5-min-tick Start*/Stop* Ids from the just-written
+                // exact-minute timestamps. Mirrors UpdateByCurrentUserNam under flag-on:
+                // without this, the unconditional model-supplied IDs written above stay
+                // 5-min-quantized while the *StartedAt/*StoppedAt are off-grid.
+                DeriveLegacyShiftIdsFromTimestamps(planning);
             }
 
             if (!assignedSite.UseOnlyPlanHours)
@@ -1018,40 +1056,7 @@ public class TimePlanningPlanningService(
                 planning.PlanHours = model.PlanHours;
             }
 
-            var minutesMultiplier = 5;
-            double nettoMinutes = 0;
-
-            if (planning.Stop1Id >= planning.Start1Id && planning.Stop1Id != 0)
-            {
-                nettoMinutes = planning.Stop1Id - planning.Start1Id;
-                nettoMinutes -= planning.Pause1Id > 0 ? planning.Pause1Id - 1 : 0;
-            }
-
-            if (planning.Stop2Id >= planning.Start2Id && planning.Stop2Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop2Id - planning.Start2Id;
-                nettoMinutes -= planning.Pause2Id > 0 ? planning.Pause2Id - 1 : 0;
-            }
-
-            if (planning.Stop3Id >= planning.Start3Id && planning.Stop3Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop3Id - planning.Start3Id;
-                nettoMinutes -= planning.Pause3Id > 0 ? planning.Pause3Id - 1 : 0;
-            }
-
-            if (planning.Stop4Id >= planning.Start4Id && planning.Stop4Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop4Id - planning.Start4Id;
-                nettoMinutes -= planning.Pause4Id > 0 ? planning.Pause4Id - 1 : 0;
-            }
-
-            if (planning.Stop5Id >= planning.Start5Id && planning.Stop5Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop5Id - planning.Start5Id;
-                nettoMinutes -= planning.Pause5Id > 0 ? planning.Pause5Id - 1 : 0;
-            }
-
-            nettoMinutes *= minutesMultiplier;
+            double nettoMinutes = ComputePlanningNettoMinutes(planning, assignedSite.UseOneMinuteIntervals);
 
             double hours = nettoMinutes / 60;
 
@@ -1555,96 +1560,30 @@ public class TimePlanningPlanningService(
 
             if (assignedSite.UseOneMinuteIntervals)
             {
-                planning.Start1Id = planning.Start1StartedAt != null
-                    ? planning.Start1StartedAt.Value.Hour * 12
-                      + planning.Start1StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop1Id = planning.Stop1StoppedAt != null
-                    ? planning.Stop1StoppedAt.Value.Hour * 12
-                      + planning.Stop1StoppedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Start2Id = planning.Start2StartedAt != null
-                    ? planning.Start2StartedAt.Value.Hour * 12
-                      + planning.Start2StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop2Id = planning.Stop2StoppedAt != null
-                    ? planning.Stop2StoppedAt.Value.Hour * 12
-                      + planning.Stop2StoppedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Start3Id = planning.Start3StartedAt != null
-                    ? planning.Start3StartedAt.Value.Hour * 12
-                      + planning.Start3StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop3Id = planning.Stop3StoppedAt != null
-                    ? planning.Stop3StoppedAt.Value.Hour * 12
-                      + planning.Stop3StoppedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Start4Id = planning.Start4StartedAt != null
-                    ? planning.Start4StartedAt.Value.Hour * 12
-                      + planning.Start4StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop4Id = planning.Stop4StoppedAt != null
-                    ? planning.Stop4StoppedAt.Value.Hour * 12
-                      + planning.Stop4StoppedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Start5Id = planning.Start5StartedAt != null
-                    ? planning.Start5StartedAt.Value.Hour * 12
-                      + planning.Start5StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop5Id = planning.Stop5StoppedAt != null
-                    ? planning.Stop5StoppedAt.Value.Hour * 12
-                      + planning.Stop5StoppedAt.Value.Minute / 5 + 1
-                    : 0;
+                DeriveLegacyShiftIdsFromTimestamps(planning);
             }
-
-            planning.Start1Id = model.Start1Id ?? 0;
-            planning.Stop1Id = model.Stop1Id ?? 0;
-            planning.Start2Id = model.Start2Id ?? 0;
-            planning.Stop2Id = model.Stop2Id ?? 0;
-            planning.Start3Id = model.Start3Id ?? 0;
-            planning.Stop3Id = model.Stop3Id ?? 0;
-            planning.Start4Id = model.Start4Id ?? 0;
-            planning.Stop4Id = model.Stop4Id ?? 0;
-            planning.Start5Id = model.Start5Id ?? 0;
-            planning.Stop5Id = model.Stop5Id ?? 0;
+            else
+            {
+                // Flag-off: legacy behaviour — copy IDs straight from the model.
+                // Under UseOneMinuteIntervals the IDs above were derived from
+                // timestamps and must NOT be clobbered by the (typically 0/null)
+                // model-supplied IDs from the worker-punchclock gRPC path.
+                planning.Start1Id = model.Start1Id ?? 0;
+                planning.Stop1Id = model.Stop1Id ?? 0;
+                planning.Start2Id = model.Start2Id ?? 0;
+                planning.Stop2Id = model.Stop2Id ?? 0;
+                planning.Start3Id = model.Start3Id ?? 0;
+                planning.Stop3Id = model.Stop3Id ?? 0;
+                planning.Start4Id = model.Start4Id ?? 0;
+                planning.Stop4Id = model.Stop4Id ?? 0;
+                planning.Start5Id = model.Start5Id ?? 0;
+                planning.Stop5Id = model.Stop5Id ?? 0;
+            }
             planning.WorkerComment = model.WorkerComment;
 
             planning = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planning);
 
-            var minutesMultiplier = 5;
-            double nettoMinutes = 0;
-
-            if (planning.Stop1Id >= planning.Start1Id && planning.Stop1Id != 0)
-            {
-                nettoMinutes = planning.Stop1Id - planning.Start1Id;
-                nettoMinutes -= planning.Pause1Id > 0 ? planning.Pause1Id - 1 : 0;
-            }
-
-            if (planning.Stop2Id >= planning.Start2Id && planning.Stop2Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop2Id - planning.Start2Id;
-                nettoMinutes -= planning.Pause2Id > 0 ? planning.Pause2Id - 1 : 0;
-            }
-
-            if (planning.Stop3Id >= planning.Start3Id && planning.Stop3Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop3Id - planning.Start3Id;
-                nettoMinutes -= planning.Pause3Id > 0 ? planning.Pause3Id - 1 : 0;
-            }
-
-            if (planning.Stop4Id >= planning.Start4Id && planning.Stop4Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop4Id - planning.Start4Id;
-                nettoMinutes -= planning.Pause4Id > 0 ? planning.Pause4Id - 1 : 0;
-            }
-
-            if (planning.Stop5Id >= planning.Start5Id && planning.Stop5Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop5Id - planning.Start5Id;
-                nettoMinutes -= planning.Pause5Id > 0 ? planning.Pause5Id - 1 : 0;
-            }
-
-            nettoMinutes *= minutesMultiplier;
+            double nettoMinutes = ComputePlanningNettoMinutes(planning, assignedSite.UseOneMinuteIntervals);
 
             double hours = nettoMinutes / 60;
 
@@ -1967,6 +1906,127 @@ public class TimePlanningPlanningService(
                 break;
         }
     }
+
+    /// <summary>
+    /// Writes Start{N}StartedAt as planning.Date.Date + minutes-of-day.
+    /// Under UseOneMinuteIntervals=true this is the authoritative store
+    /// for the admin-edit actual shift start (the legacy Start{N}Id
+    /// column remains a 5-minute-quantized fallback).
+    /// </summary>
+    private static void ApplyExactMinuteStart(PlanRegistration planning, int shift, int minutes)
+    {
+        var anchor = planning.Date.Date + TimeSpan.FromMinutes(minutes);
+        switch (shift)
+        {
+            case 1: planning.Start1StartedAt = anchor; break;
+            case 2: planning.Start2StartedAt = anchor; break;
+            case 3: planning.Start3StartedAt = anchor; break;
+            case 4: planning.Start4StartedAt = anchor; break;
+            case 5: planning.Start5StartedAt = anchor; break;
+        }
+    }
+
+    /// <summary>
+    /// Writes Stop{N}StoppedAt as planning.Date.Date + minutes-of-day, advancing
+    /// by one day when the stop minute is at or before the matching shift's start
+    /// (cross-midnight). Anchored to the matching Start{N}StartedAt's date when set.
+    /// </summary>
+    private static void ApplyExactMinuteStop(PlanRegistration planning, int shift, int minutes)
+    {
+        DateTime? startStamp = shift switch
+        {
+            1 => planning.Start1StartedAt,
+            2 => planning.Start2StartedAt,
+            3 => planning.Start3StartedAt,
+            4 => planning.Start4StartedAt,
+            5 => planning.Start5StartedAt,
+            _ => null,
+        };
+        var baseDate = planning.Date.Date;
+        if (startStamp.HasValue)
+        {
+            var startMinutes = (int)(startStamp.Value - startStamp.Value.Date).TotalMinutes;
+            if (minutes <= startMinutes)
+            {
+                baseDate = baseDate.AddDays(1);
+            }
+        }
+        var anchor = baseDate + TimeSpan.FromMinutes(minutes);
+        switch (shift)
+        {
+            case 1: planning.Stop1StoppedAt = anchor; break;
+            case 2: planning.Stop2StoppedAt = anchor; break;
+            case 3: planning.Stop3StoppedAt = anchor; break;
+            case 4: planning.Stop4StoppedAt = anchor; break;
+            case 5: planning.Stop5StoppedAt = anchor; break;
+        }
+    }
+
+    private static void DeriveLegacyShiftIdsFromTimestamps(PlanRegistration planning)
+    {
+        static int TickId(DateTime? ts) =>
+            ts.HasValue ? ts.Value.Hour * 12 + ts.Value.Minute / 5 + 1 : 0;
+
+        planning.Start1Id = TickId(planning.Start1StartedAt);
+        planning.Stop1Id  = TickId(planning.Stop1StoppedAt);
+        planning.Start2Id = TickId(planning.Start2StartedAt);
+        planning.Stop2Id  = TickId(planning.Stop2StoppedAt);
+        planning.Start3Id = TickId(planning.Start3StartedAt);
+        planning.Stop3Id  = TickId(planning.Stop3StoppedAt);
+        planning.Start4Id = TickId(planning.Start4StartedAt);
+        planning.Stop4Id  = TickId(planning.Stop4StoppedAt);
+        planning.Start5Id = TickId(planning.Start5StartedAt);
+        planning.Stop5Id  = TickId(planning.Stop5StoppedAt);
+    }
+
+    /// <summary>
+    /// Computes total netto minutes (raw minutes; caller divides by 60 for hours)
+    /// across all 5 shifts. Under flag-on, when both Start{N}StartedAt and
+    /// Stop{N}StoppedAt are set, uses (Stop - Start).TotalMinutes minus the
+    /// timestamp-derived pause minutes for that shift. Otherwise falls back to
+    /// the legacy ((Stop{N}Id - Start{N}Id) - max(Pause{N}Id - 1, 0)) * 5 math.
+    /// </summary>
+    private static double ComputePlanningNettoMinutes(PlanRegistration planning, bool useOneMinuteIntervals)
+    {
+        const int multiplier = 5;
+        double total = 0;
+        for (var shift = 1; shift <= 5; shift++)
+        {
+            var (startedAt, stoppedAt, pauseStarted, pauseStopped, startId, stopId, pauseId) = GetShiftTimings(planning, shift);
+
+            if (useOneMinuteIntervals && startedAt.HasValue && stoppedAt.HasValue && stoppedAt.Value > startedAt.Value)
+            {
+                var shiftMinutes = (stoppedAt.Value - startedAt.Value).TotalMinutes;
+                double pauseMinutes = 0;
+                if (pauseStarted.HasValue && pauseStopped.HasValue && pauseStopped.Value > pauseStarted.Value)
+                {
+                    pauseMinutes = (pauseStopped.Value - pauseStarted.Value).TotalMinutes;
+                }
+                total += shiftMinutes - pauseMinutes;
+            }
+            else
+            {
+                if (stopId >= startId && stopId != 0)
+                {
+                    double sm = stopId - startId;
+                    sm -= pauseId > 0 ? pauseId - 1 : 0;
+                    total += sm * multiplier;
+                }
+            }
+        }
+        return total;
+    }
+
+    private static (DateTime? StartedAt, DateTime? StoppedAt, DateTime? PauseStarted, DateTime? PauseStopped, int StartId, int StopId, int PauseId)
+        GetShiftTimings(PlanRegistration planning, int shift) => shift switch
+    {
+        1 => (planning.Start1StartedAt, planning.Stop1StoppedAt, planning.Pause1StartedAt, planning.Pause1StoppedAt, planning.Start1Id, planning.Stop1Id, planning.Pause1Id),
+        2 => (planning.Start2StartedAt, planning.Stop2StoppedAt, planning.Pause2StartedAt, planning.Pause2StoppedAt, planning.Start2Id, planning.Stop2Id, planning.Pause2Id),
+        3 => (planning.Start3StartedAt, planning.Stop3StoppedAt, planning.Pause3StartedAt, planning.Pause3StoppedAt, planning.Start3Id, planning.Stop3Id, planning.Pause3Id),
+        4 => (planning.Start4StartedAt, planning.Stop4StoppedAt, planning.Pause4StartedAt, planning.Pause4StoppedAt, planning.Start4Id, planning.Stop4Id, planning.Pause4Id),
+        5 => (planning.Start5StartedAt, planning.Stop5StoppedAt, planning.Pause5StartedAt, planning.Pause5StoppedAt, planning.Start5Id, planning.Stop5Id, planning.Pause5Id),
+        _ => (null, null, null, null, 0, 0, 0),
+    };
 
     private static void ClearPauseTimestamps(PlanRegistration planning, int shift)
     {

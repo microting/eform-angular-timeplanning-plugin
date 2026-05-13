@@ -107,6 +107,22 @@ public class TimePlanningPlanningPrDayModel
     public int? Pause4ExactMinutes { get; set; }
     public int? Pause5ExactMinutes { get; set; }
 
+    // Request-only: exact-minute start/stop times under UseOneMinuteIntervals=true.
+    // Null means the client did not send the new field; backend falls back to the
+    // legacy Start*Id/Stop*Id (5-minute slot) write path. When set, backend
+    // translates the minutes-of-day into Start*StartedAt/Stop*StoppedAt timestamps
+    // (anchor: planning.Date; cross-midnight on Stop when value <= matching Start).
+    public int? Start1ExactMinutes { get; set; }
+    public int? Start2ExactMinutes { get; set; }
+    public int? Start3ExactMinutes { get; set; }
+    public int? Start4ExactMinutes { get; set; }
+    public int? Start5ExactMinutes { get; set; }
+    public int? Stop1ExactMinutes { get; set; }
+    public int? Stop2ExactMinutes { get; set; }
+    public int? Stop3ExactMinutes { get; set; }
+    public int? Stop4ExactMinutes { get; set; }
+    public int? Stop5ExactMinutes { get; set; }
+
     public int Break1Shift { get; set; }
     public int Break2Shift { get; set; }
     public int Break3Shift { get; set; }

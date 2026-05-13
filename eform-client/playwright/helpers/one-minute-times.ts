@@ -247,3 +247,41 @@ export const OFFGRID_TIMES_I1M = {
   // Computed expectation: (15:14 - 07:14) = 480 min = 8 h exactly.
   planHours: '8',
 } as const;
+
+/**
+ * l1m shard variant: exact-minute actual start/stop round-trip. Off-grid
+ * `03:03 → 11:13` covers the same-day path. (Cross-midnight admin-entered
+ * pairs are not possible through the dialog — shiftWiseValidator requires
+ * `stop > start` within a shift — so the C# `ApplyExactMinuteStop` helper's
+ * cross-midnight branch is exercised only via the worker punchclock path.)
+ */
+export const OFFGRID_TIMES_L1M = {
+  shift1: { start: '03:03', stop: '11:13' },
+} as const;
+
+/**
+ * l1m comprehensive 5-shift round-trip — every shift gets an off-grid
+ * (non-multiple-of-5) start/stop/pause triple. Shift block ascends so
+ * shiftWiseValidator accepts the save; locks exact-minute persistence
+ * across all five shifts (not just shift 1).
+ */
+export const OFFGRID_TIMES_L1M_FULL_5SHIFTS = {
+  shift1: { start: '03:03', stop: '07:11', pause: '00:02' },
+  shift2: { start: '07:13', stop: '09:17', pause: '00:02' },
+  shift3: { start: '09:19', stop: '11:23', pause: '00:06' },
+  shift4: { start: '11:29', stop: '13:31', pause: '00:06' },
+  shift5: { start: '13:37', stop: '15:41', pause: '00:00' },
+} as const;
+
+/**
+ * l1m netto-display check — same `03:03 → 11:13` pair as
+ * `OFFGRID_TIMES_L1M.shift1` with the expected netto surfaced explicitly.
+ * 490 min / 60 ⇒ `8.17` after `.toFixed(2)`, disambiguating exact-minute
+ * from any 5-min rounding.
+ */
+export const OFFGRID_TIMES_L1M_NETTO_CHECK = {
+  shift1: { start: '03:03', stop: '11:13' },
+  // dialog renders `data.planningPrDayModels.actualHours.toFixed(2)` →
+  // 490 / 60 = 8.16666… ⇒ '8.17' after .toFixed(2).
+  expectedNetto: '8.17',
+} as const;

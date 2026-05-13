@@ -134,6 +134,16 @@ export class PlanningPrDayModel {
   pause3ExactMinutes?: number;
   pause4ExactMinutes?: number;
   pause5ExactMinutes?: number;
+  start1ExactMinutes?: number | null;
+  start2ExactMinutes?: number | null;
+  start3ExactMinutes?: number | null;
+  start4ExactMinutes?: number | null;
+  start5ExactMinutes?: number | null;
+  stop1ExactMinutes?: number | null;
+  stop2ExactMinutes?: number | null;
+  stop3ExactMinutes?: number | null;
+  stop4ExactMinutes?: number | null;
+  stop5ExactMinutes?: number | null;
   nettoHoursOverride: number;
   nettoHoursOverrideActive: boolean;
 }
