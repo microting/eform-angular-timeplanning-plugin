@@ -266,6 +266,7 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                     ResignedAtDate = Timestamp.FromDateTime(
                         DateTime.SpecifyKind(site.ResignedAtDate, DateTimeKind.Utc)),
                     PhoneNumber = site.PhoneNumber ?? "",
+                    UseOneMinuteIntervals = site.UseOneMinuteIntervals,
                 };
                 response.Model.Add(grpcSite);
             }
@@ -318,6 +319,7 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                     ResignedAtDate = Timestamp.FromDateTime(
                         DateTime.SpecifyKind(site.ResignedAtDate, DateTimeKind.Utc)),
                     PhoneNumber = site.PhoneNumber ?? "",
+                    UseOneMinuteIntervals = site.UseOneMinuteIntervals,
                 };
                 response.Model.Add(grpcSite);
             }
