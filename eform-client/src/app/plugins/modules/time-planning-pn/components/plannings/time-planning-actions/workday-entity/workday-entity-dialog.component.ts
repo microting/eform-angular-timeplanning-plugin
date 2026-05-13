@@ -1041,9 +1041,19 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
         return 289; // hvis stop er 00:00, så returner 24*60/5=288
         // return result + 1;
       }
-      return result + 1;
+      return Math.round(result + 1);
     }
-    return hours * 60 + minutes;
+    return Math.round(hours * 60 + minutes);
+  }
+
+  private toRawMinutes(value: string | null | undefined): number | null {
+    if (!value) return null;
+    const parts = value.split(':');
+    if (parts.length !== 2) return null;
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    return h * 60 + m;
   }
 
   // Sum every Pause*StartedAt/Pause*StoppedAt pair attached to the given shift in
@@ -1400,6 +1410,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.pause1Id = this.convertTimeToMinutes(a1?.pause, true) === 0 ? null : this.convertTimeToMinutes(a1?.pause, true);
     if (this.useOneMinuteIntervals) {
       this.data.planningPrDayModels.pause1ExactMinutes = this.convertTimeToMinutes(a1?.pause, false);
+      this.data.planningPrDayModels.start1ExactMinutes = this.toRawMinutes(a1?.start);
+      this.data.planningPrDayModels.stop1ExactMinutes = this.toRawMinutes(a1?.stop);
     }
     this.data.planningPrDayModels.stop1Id = this.convertTimeToMinutes(a1?.stop, true, true);
     this.data.planningPrDayModels.stop1StoppedAt = this.convertTimeToDateTimeOfToday(a1?.stop === '00:00' ? '24:00' : a1?.stop);
@@ -1410,6 +1422,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.pause2Id = this.convertTimeToMinutes(a2?.pause, true) === 0 ? null : this.convertTimeToMinutes(a2?.pause, true);
     if (this.useOneMinuteIntervals) {
       this.data.planningPrDayModels.pause2ExactMinutes = this.convertTimeToMinutes(a2?.pause, false);
+      this.data.planningPrDayModels.start2ExactMinutes = this.toRawMinutes(a2?.start);
+      this.data.planningPrDayModels.stop2ExactMinutes = this.toRawMinutes(a2?.stop);
     }
     this.data.planningPrDayModels.stop2Id = this.convertTimeToMinutes(a2?.stop, true, true);
     this.data.planningPrDayModels.stop2StoppedAt = this.convertTimeToDateTimeOfToday(a2?.stop === '00:00' ? '24:00' : a2?.stop);
@@ -1420,6 +1434,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.pause3Id = this.convertTimeToMinutes(a3?.pause, true) === 0 ? null : this.convertTimeToMinutes(a3?.pause, true);
     if (this.useOneMinuteIntervals) {
       this.data.planningPrDayModels.pause3ExactMinutes = this.convertTimeToMinutes(a3?.pause, false);
+      this.data.planningPrDayModels.start3ExactMinutes = this.toRawMinutes(a3?.start);
+      this.data.planningPrDayModels.stop3ExactMinutes = this.toRawMinutes(a3?.stop);
     }
     this.data.planningPrDayModels.stop3Id = this.convertTimeToMinutes(a3?.stop, true, true);
     this.data.planningPrDayModels.stop3StoppedAt = this.convertTimeToDateTimeOfToday(a3?.stop === '00:00' ? '24:00' : a3?.stop);
@@ -1430,6 +1446,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.pause4Id = this.convertTimeToMinutes(a4?.pause, true) === 0 ? null : this.convertTimeToMinutes(a4?.pause, true);
     if (this.useOneMinuteIntervals) {
       this.data.planningPrDayModels.pause4ExactMinutes = this.convertTimeToMinutes(a4?.pause, false);
+      this.data.planningPrDayModels.start4ExactMinutes = this.toRawMinutes(a4?.start);
+      this.data.planningPrDayModels.stop4ExactMinutes = this.toRawMinutes(a4?.stop);
     }
     this.data.planningPrDayModels.stop4Id = this.convertTimeToMinutes(a4?.stop, true, true);
     this.data.planningPrDayModels.stop4StoppedAt = this.convertTimeToDateTimeOfToday(a4?.stop === '00:00' ? '24:00' : a4?.stop);
@@ -1440,6 +1458,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.pause5Id = this.convertTimeToMinutes(a5?.pause, true) === 0 ? null : this.convertTimeToMinutes(a5?.pause, true);
     if (this.useOneMinuteIntervals) {
       this.data.planningPrDayModels.pause5ExactMinutes = this.convertTimeToMinutes(a5?.pause, false);
+      this.data.planningPrDayModels.start5ExactMinutes = this.toRawMinutes(a5?.start);
+      this.data.planningPrDayModels.stop5ExactMinutes = this.toRawMinutes(a5?.stop);
     }
     this.data.planningPrDayModels.stop5Id = this.convertTimeToMinutes(a5?.stop, true, true);
     this.data.planningPrDayModels.stop5StoppedAt = this.convertTimeToDateTimeOfToday(a5?.stop === '00:00' ? '24:00' : a5?.stop);
