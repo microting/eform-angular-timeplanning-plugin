@@ -49,6 +49,7 @@ public class TimePlanningSettingsGrpcServiceTests
                 FourthShiftActive = false,
                 FifthShiftActive = true,
                 SnapshotEnabled = false,
+                UseOneMinuteIntervals = true,
                 Resigned = false,
                 ResignedAtDate = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc),
                 AvatarUrl = "https://example.com/avatar1.png",
@@ -74,6 +75,7 @@ public class TimePlanningSettingsGrpcServiceTests
                 FourthShiftActive = true,
                 FifthShiftActive = false,
                 SnapshotEnabled = true,
+                UseOneMinuteIntervals = false,
                 Resigned = true,
                 ResignedAtDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 AvatarUrl = "https://example.com/avatar2.png",
@@ -113,6 +115,7 @@ public class TimePlanningSettingsGrpcServiceTests
         Assert.That(site1.FourthShiftActive, Is.False);
         Assert.That(site1.FifthShiftActive, Is.True);
         Assert.That(site1.SnapshotEnabled, Is.False);
+        Assert.That(site1.UseOneMinuteIntervals, Is.True);
         Assert.That(site1.Resigned, Is.False);
         Assert.That(site1.AvatarUrl, Is.EqualTo("https://example.com/avatar1.png"));
         Assert.That(site1.PhoneNumber, Is.EqualTo("+4512345678"));
@@ -136,6 +139,7 @@ public class TimePlanningSettingsGrpcServiceTests
         Assert.That(site2.FourthShiftActive, Is.True);
         Assert.That(site2.FifthShiftActive, Is.False);
         Assert.That(site2.SnapshotEnabled, Is.True);
+        Assert.That(site2.UseOneMinuteIntervals, Is.False);
         Assert.That(site2.Resigned, Is.True);
         Assert.That(site2.AvatarUrl, Is.EqualTo("https://example.com/avatar2.png"));
         Assert.That(site2.PhoneNumber, Is.EqualTo("+4587654321"));
