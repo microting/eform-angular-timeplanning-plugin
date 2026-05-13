@@ -227,23 +227,21 @@ test.describe('Dashboard edit actual exact-minutes (l1m, flag-on, admin-edit rou
   test('netto display reflects exact-minute (490 min) sum under flag-on, no 5-min quantization', async ({ page }) => {
     await openDialogForActiveCell(page);
 
-    // Isolation: the previous "all 5 shifts off-grid round-trip" test in this
-    // file persists pause1='00:02' into the same cell (cell0_0). Without
-    // wiping it here, netto = 490 - 2 = 488 ⇒ '8.13' and trips the '8.17'
-    // assertion below. Mirrors the start1StartedAt wipe in
-    // openDialogForActiveCell.
-    const pauseWipeBtn = page.locator('[data-testid="pause1Id"]')
-      .locator('xpath=ancestor::div[contains(@class,"flex-row")]')
-      .locator('button mat-icon')
-      .filter({ hasText: 'delete' });
-    if (await pauseWipeBtn.count() > 0) {
-      await pauseWipeBtn.click({ force: true });
-      await page.waitForTimeout(500);
-    }
-
     const t = OFFGRID_TIMES_L1M_NETTO_CHECK.shift1;
     await setTimepickerValue(page, 'start1StartedAt', t.start);
     await setTimepickerValue(page, 'stop1StoppedAt', t.stop);
+
+    // Isolation: the previous "all 5 shifts off-grid round-trip" test persists
+    // Pause1StartedAt/StoppedAt timestamps (pause='00:02') into cell0_0.
+    // Clicking the form's pause-delete button only patches the form value to
+    // null, which under UseOneMinuteIntervals=true sends `pause1ExactMinutes =
+    // null` to the backend — and `if (minutes.HasValue) ApplyExactMinutePause`
+    // skips clearing when null. So we must EXPLICITLY pick '00:00' here, which
+    // sends `pause1ExactMinutes = 0`, triggering ClearPauseTimestamps and
+    // nulling the leftover Pause1StartedAt/StoppedAt rows on save. Start/stop
+    // are picked first so the pause picker's [max]=getMaxDifference(start,stop)
+    // resolves to a positive duration that admits '00:00' as a valid selection.
+    await setTimepickerValue(page, 'pause1Id', '00:00');
 
     const updateResponse = await clickSaveAndAwaitRoundtrip(page);
     expect(updateResponse.status(), 'PUT must succeed under flag-on with off-grid actuals').toBeLessThan(400);
