@@ -1041,9 +1041,9 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
         return 289; // hvis stop er 00:00, så returner 24*60/5=288
         // return result + 1;
       }
-      return Math.round(result + 1);
+      return result + 1;
     }
-    return Math.round(hours * 60 + minutes);
+    return hours * 60 + minutes;
   }
 
   private toRawMinutes(value: string | null | undefined): number | null {

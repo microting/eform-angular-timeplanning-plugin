@@ -227,6 +227,20 @@ test.describe('Dashboard edit actual exact-minutes (l1m, flag-on, admin-edit rou
   test('netto display reflects exact-minute (490 min) sum under flag-on, no 5-min quantization', async ({ page }) => {
     await openDialogForActiveCell(page);
 
+    // Isolation: the previous "all 5 shifts off-grid round-trip" test in this
+    // file persists pause1='00:02' into the same cell (cell0_0). Without
+    // wiping it here, netto = 490 - 2 = 488 ⇒ '8.13' and trips the '8.17'
+    // assertion below. Mirrors the start1StartedAt wipe in
+    // openDialogForActiveCell.
+    const pauseWipeBtn = page.locator('[data-testid="pause1Id"]')
+      .locator('xpath=ancestor::div[contains(@class,"flex-row")]')
+      .locator('button mat-icon')
+      .filter({ hasText: 'delete' });
+    if (await pauseWipeBtn.count() > 0) {
+      await pauseWipeBtn.click({ force: true });
+      await page.waitForTimeout(500);
+    }
+
     const t = OFFGRID_TIMES_L1M_NETTO_CHECK.shift1;
     await setTimepickerValue(page, 'start1StartedAt', t.start);
     await setTimepickerValue(page, 'stop1StoppedAt', t.stop);
