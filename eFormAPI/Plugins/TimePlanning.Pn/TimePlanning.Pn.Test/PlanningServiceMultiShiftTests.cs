@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
+using SdkSite = Microting.eForm.Infrastructure.Data.Entities.Site;
 using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
@@ -362,5 +364,165 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
         Assert.That(result.Message, Is.EqualTo("ErrorWhileUpdatingPlanning"),
             "Localization key must match the existing catch-block fallback so " +
             "the front-end's error surfacing is unchanged.");
+    }
+
+    /// <summary>
+    /// Service-level regression for PR #1575 (commits 6ebc5fe6 + 43da9f2e). When
+    /// an AssignedSite has UseOneMinuteIntervals = true and a PlanRegistration's
+    /// only pause sits in a SUB-SLOT pair (e.g. Pause10StartedAt/Pause10StoppedAt),
+    /// the per-day model the plannings overview consumes must surface PauseMinutes
+    /// from that stamp. Before the fix the backend only iterated Pause1..Pause5
+    /// and reported Samlet pause 00:00 while the edit dialog (which already
+    /// scanned sub-slots) showed 00:03.
+    ///
+    /// Exercises the exact call chain Index() takes
+    ///   Index() → PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod()
+    ///           → PlanRegistrationHelper.AggregatePauseMinutes()
+    /// against a real TimePlanningPnDbContext, so a refactor that drops the
+    /// AggregatePauseMinutes call from UpdatePlanRegistrationsInPeriod fails
+    /// here even though the helper-level unit tests in
+    /// PlanRegistrationHelperTests.cs still pass.
+    ///
+    /// (The full Index() path additionally requires real BaseDbContext.Users +
+    /// sdkDbContext.Sites seeding for the admin-gate + per-site lookup; that
+    /// fixture is the same gap currently [Ignore]d across the suite — see
+    /// SettingsServiceExtendedTests.cs for the rationale. The call-site test
+    /// here is the smallest unit that still observes the bug end-to-end.)
+    /// </summary>
+    [Test]
+    public async Task Index_OneMinuteInterval_WithSubSlotPauseStamps_AggregatesCorrectly()
+    {
+        // Arrange — flag ON site, planning row with ONLY a sub-slot pause
+        // (Pause10*). Pause1Id stays 0 so we prove the legacy fallback isn't
+        // the thing producing the 3.
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 904,
+            UseOneMinuteIntervals = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var date = new DateTime(2026, 5, 14, 0, 0, 0, DateTimeKind.Utc);
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 904,
+            Date = date,
+            // Sub-slot pause: 12:00 → 12:03, no Pause1*.
+            Pause10StartedAt = date.AddHours(12),
+            Pause10StoppedAt = date.AddHours(12).AddMinutes(3),
+            Pause1Id = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        // Re-pull the registration the same shape Index() does (Id + Date only —
+        // UpdatePlanRegistrationsInPeriod re-fetches the full row internally).
+        var planningsInPeriod = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking()
+            .Where(x => x.SdkSitId == 904)
+            .Select(x => new PlanRegistration { Id = x.Id, Date = x.Date })
+            .ToListAsync();
+
+        var siteModel = new TimePlanningPlanningModel
+        {
+            SiteId = 904,
+            SiteName = "Test site 904",
+            UseOneMinuteIntervals = true,
+            PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
+        };
+
+        var sdkSite = new SdkSite { Name = "Test site 904", MicrotingUid = 904 };
+
+        // Act — call the exact helper Index() invokes to build the per-day models.
+        var result = await PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod(
+            planningsInPeriod,
+            siteModel,
+            TimePlanningPnDbContext,
+            assignedSite,
+            Substitute.For<ILogger<TimePlanningPlanningService>>(),
+            sdkSite,
+            date.AddDays(-1),
+            date.AddDays(1),
+            _options);
+
+        // Assert — per-day model for 2026-05-14 surfaces PauseMinutes = 3 from
+        // the sub-slot stamp pair, NOT 0 (the pre-fix observable bug).
+        var prDay = result.PlanningPrDayModels.Single(x => x.Date.Date == date.Date);
+        Assert.That(prDay.PauseMinutes, Is.EqualTo(3.0),
+            "Sub-slot pause stamps (Pause10*) must aggregate when UseOneMinuteIntervals = true.");
+    }
+
+    /// <summary>
+    /// Negative companion to Index_OneMinuteInterval_WithSubSlotPauseStamps_AggregatesCorrectly:
+    /// when UseOneMinuteIntervals = false the same row's PauseMinutes must be 0,
+    /// because the legacy 5-minute-grid path doesn't scan sub-slot DateTime
+    /// stamps — it falls back to (Pause1Id - 1) * 5, and Pause1Id = 0 yields 0.
+    ///
+    /// This pair (flag-on / flag-off with identical seed) proves the flag itself
+    /// is the toggle that flips the aggregation path through the service.
+    /// </summary>
+    [Test]
+    public async Task Index_LegacyFiveMinuteFlag_WithSubSlotPauseStamps_PauseMinutesIsZero()
+    {
+        // Arrange — flag OFF, same sub-slot pause seed as the positive test.
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 905,
+            UseOneMinuteIntervals = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var date = new DateTime(2026, 5, 14, 0, 0, 0, DateTimeKind.Utc);
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 905,
+            Date = date,
+            Pause10StartedAt = date.AddHours(12),
+            Pause10StoppedAt = date.AddHours(12).AddMinutes(3),
+            Pause1Id = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        var planningsInPeriod = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking()
+            .Where(x => x.SdkSitId == 905)
+            .Select(x => new PlanRegistration { Id = x.Id, Date = x.Date })
+            .ToListAsync();
+
+        var siteModel = new TimePlanningPlanningModel
+        {
+            SiteId = 905,
+            SiteName = "Test site 905",
+            UseOneMinuteIntervals = false,
+            PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
+        };
+
+        var sdkSite = new SdkSite { Name = "Test site 905", MicrotingUid = 905 };
+
+        // Act
+        var result = await PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod(
+            planningsInPeriod,
+            siteModel,
+            TimePlanningPnDbContext,
+            assignedSite,
+            Substitute.For<ILogger<TimePlanningPlanningService>>(),
+            sdkSite,
+            date.AddDays(-1),
+            date.AddDays(1),
+            _options);
+
+        // Assert — flag-off path can't see sub-slot stamps. With Pause1Id = 0
+        // the legacy formula (Pause1Id - 1) * 5 yields 0 (the function returns
+        // 0 when Pause1Id is zero rather than going negative).
+        var prDay = result.PlanningPrDayModels.Single(x => x.Date.Date == date.Date);
+        Assert.That(prDay.PauseMinutes, Is.EqualTo(0.0),
+            "Legacy flag-off path must NOT pick up sub-slot pause stamps.");
     }
 }
