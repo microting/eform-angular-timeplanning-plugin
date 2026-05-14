@@ -974,18 +974,208 @@ public class PlanRegistrationHelperTests
     }
 
     /// <summary>
-    /// When UseOneMinuteIntervals is on, the legacy Pause*Id field must be
-    /// ignored: a row with Pause1Id = 4 (legacy 15 min) but no DateTime stamps
-    /// is treated as zero pause.
+    /// When UseOneMinuteIntervals is on but no stamp pairs are populated,
+    /// the helper falls back to the legacy 5-minute-tick formula on the 5
+    /// main slots. This covers older flag-on rows written before stamp-pair
+    /// pauses existed. Pause1Id = 4 → (4 * 5) - 5 = 15 minutes via fallback.
     /// </summary>
     [Test]
-    public void AggregatePauseMinutes_OneMinuteInterval_NullStampsContributeZero()
+    public void AggregatePauseMinutes_OneMinuteInterval_NoStampsFallsBackToLegacyTicks()
     {
         // Arrange
         var pr = new PlanRegistration
         {
-            Pause1Id = 4, // legacy 15-min pause; flag-on path must ignore this
+            Pause1Id = 4, // legacy 15-min pause; flag-on path falls back when no stamps
             // Pause1StartedAt / Pause1StoppedAt left null
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert — legacy fallback now applies since no stamp pairs are populated.
+        Assert.That(result, Is.EqualTo(15));
+    }
+
+    /// <summary>
+    /// Customer 855 root-cause regression: with UseOneMinuteIntervals = true,
+    /// a 3-minute pause stamped in a SUB-SLOT (Pause10StartedAt / Pause10StoppedAt)
+    /// rather than the main Pause1 slot must aggregate to 3, not 0. Before the
+    /// 31-pair sub-slot scan, the backend overview rendered "Samlet pause: 00:00"
+    /// while the edit dialog (which already scanned sub-slots) showed Pause: 00:03.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_3MinPauseInPause10SubSlot()
+    {
+        // Arrange
+        var someDate = new DateTime(2026, 5, 7, 0, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause10StartedAt = someDate.AddHours(12),
+            Pause10StoppedAt = someDate.AddHours(12).AddMinutes(3),
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(3));
+    }
+
+    /// <summary>
+    /// Shift-1 multi-pause case: pauses in BOTH the main slot (Pause1) and a
+    /// sub-slot (Pause11) must sum (4 + 6 = 10). Proves the loop visits all
+    /// populated pairs, not just the first.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_SumsPause1AndPause11()
+    {
+        // Arrange
+        var someDate = new DateTime(2026, 5, 7, 0, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause1StartedAt = someDate.AddHours(10),
+            Pause1StoppedAt = someDate.AddHours(10).AddMinutes(4),
+            Pause11StartedAt = someDate.AddHours(11),
+            Pause11StoppedAt = someDate.AddHours(11).AddMinutes(6),
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(10));
+    }
+
+    /// <summary>
+    /// Shift-2 sub-slot case: pauses in Pause2 main slot AND Pause20 sub-slot
+    /// must sum (5 + 8 = 13). Mirrors the shift-1 multi-pause case for shift 2.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_SumsPause2AndPause20()
+    {
+        // Arrange
+        var someDate = new DateTime(2026, 5, 7, 0, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause2StartedAt = someDate.AddHours(13),
+            Pause2StoppedAt = someDate.AddHours(13).AddMinutes(5),
+            Pause20StartedAt = someDate.AddHours(15),
+            Pause20StoppedAt = someDate.AddHours(15).AddMinutes(8),
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(13));
+    }
+
+    /// <summary>
+    /// Shift 3 single-slot case: a pause stamped in Pause3StartedAt/Pause3StoppedAt
+    /// must aggregate to its true minute delta when the flag is on.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_Pause3SingleSlot()
+    {
+        // Arrange
+        var someDate = new DateTime(2026, 5, 7, 0, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause3StartedAt = someDate.AddHours(17),
+            Pause3StoppedAt = someDate.AddHours(17).AddMinutes(9),
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(9));
+    }
+
+    /// <summary>
+    /// Flag-on legacy fallback: a row with no stamps but Pause1Id = 2 (the legacy
+    /// 5-min companion) must return 5 minutes via the (Pause1Id * 5) - 5 formula.
+    /// Covers the older flag-on rows that pre-date the stamp-pair multi-pause flow.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_NoStamps_Pause1Id2_ReturnsFiveMinutes()
+    {
+        // Arrange
+        var pr = new PlanRegistration
+        {
+            Pause1Id = 2, // legacy 5-min companion: (2 * 5) - 5 = 5
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(5));
+    }
+
+    /// <summary>
+    /// Flag-on, every stamp and every Pause*Id is null/zero — the helper must
+    /// return 0. Guards against accidental defaults leaking nonzero output.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_EverythingEmptyReturnsZero()
+    {
+        // Arrange
+        var pr = new PlanRegistration();
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Flag-on, stamps are populated but the duration is zero
+    /// (StartedAt == StoppedAt). Even though the duration sum is 0, the
+    /// helper must NOT fall back to legacy ticks — the worker did stamp a
+    /// pause and the intended display is 0 minutes. Pause1Id = 4 (legacy
+    /// 15 min) must be ignored.
+    ///
+    /// Guards against the fallback being gated on totalSeconds == 0
+    /// instead of "no stamp observed" (Copilot review on PR #1575).
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_ZeroDurationStampDoesNotFallBackToLegacy()
+    {
+        // Arrange — stamps describe a 0-min pause (start == stop).
+        var someDate = new DateTime(2026, 5, 7, 12, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause1StartedAt = someDate,
+            Pause1StoppedAt = someDate,
+            Pause1Id = 4, // legacy 15 min — must be ignored because stamps were observed.
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert — stamps were observed, so the (0-min) stamp result wins
+        // over the legacy fallback that would otherwise return 15.
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Flag-on, stamps are populated but the duration is NEGATIVE
+    /// (StoppedAt < StartedAt — clock skew or data corruption). Same
+    /// contract as the zero-duration case: stamps were observed, so the
+    /// legacy fallback must NOT trigger.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_NegativeDurationStampDoesNotFallBackToLegacy()
+    {
+        // Arrange — stamps describe an invalid pause (stop before start).
+        var someDate = new DateTime(2026, 5, 7, 12, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause1StartedAt = someDate.AddMinutes(5),
+            Pause1StoppedAt = someDate,
+            Pause1Id = 4, // legacy 15 min — must be ignored.
         };
 
         // Act
@@ -993,5 +1183,29 @@ public class PlanRegistrationHelperTests
 
         // Assert
         Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Flag-off parity: stamps populated and legacy Pause1Id both present.
+    /// The flag-off branch must still return only the legacy tick result
+    /// (15 here) — proves the new flag-on logic did not touch the flag-off path.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_LegacyMode_StampsPopulated_StillReturnsLegacyTicks()
+    {
+        // Arrange — stamps describe a 3-min pause, Pause1Id = 4 is a legacy 15-min companion.
+        var someDate = new DateTime(2026, 5, 7, 0, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause1StartedAt = someDate.AddHours(12),
+            Pause1StoppedAt = someDate.AddHours(12).AddMinutes(3),
+            Pause1Id = 4, // legacy 15 min
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
+
+        // Assert — flag-off branch ignores stamps and uses legacy ticks only.
+        Assert.That(result, Is.EqualTo(15));
     }
 }
