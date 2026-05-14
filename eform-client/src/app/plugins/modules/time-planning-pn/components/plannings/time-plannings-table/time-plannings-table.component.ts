@@ -291,24 +291,22 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   }
 
   /**
-   * Phase 4 second-precision sibling of the inline `datePipe.transform(..., 'HH:mm', 'UTC')`
-   * calls used in the plannings table. When the row's site has
-   * <c>useOneMinuteIntervals</c> on, the actual stamp cells render at
-   * <c>HH:mm:ss</c>; otherwise falls through to the legacy <c>HH:mm</c>
-   * format so flag-off rows are byte-identical to before.
+   * Formats an actual shift timestamp for display in the plannings table.
+   * Always renders as `HH:mm`; seconds are never displayed regardless of
+   * the row's `useOneMinuteIntervals` flag. The `row` parameter is kept
+   * for call-site stability.
    */
   formatStamp(row: any, value: string | null | undefined): string {
     if (!value) {
       return '';
     }
-    const fmt = row?.useOneMinuteIntervals ? 'HH:mm:ss' : 'HH:mm';
-    return this.datePipe.transform(value, fmt, 'UTC') ?? '';
+    return this.datePipe.transform(value, 'HH:mm', 'UTC') ?? '';
   }
 
   /**
-   * Phase 4 second-precision sibling of {@link getStopTimeDisplay}. Same
-   * cross-day "24:00" guard as the legacy method, but emits seconds in the
-   * normal case when the row's site has the flag on.
+   * Stop-time display sibling of {@link getStopTimeDisplay} with the same
+   * cross-day "24:00" guard. Always renders as `HH:mm`; the `WithSeconds`
+   * suffix is a historical name — seconds are not emitted.
    */
   getStopTimeDisplayWithSeconds(row: any, startedAt: string | null, stoppedAt: string | null): string {
     if (!startedAt || !stoppedAt) {
@@ -323,8 +321,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
     ) {
       return '24:00';
     }
-    const fmt = row?.useOneMinuteIntervals ? 'HH:mm:ss' : 'HH:mm';
-    return this.datePipe.transform(stoppedAt, fmt, 'UTC') ?? '';
+    return this.datePipe.transform(stoppedAt, 'HH:mm', 'UTC') ?? '';
   }
 
   onFirstColumnClick(row: any): void {
