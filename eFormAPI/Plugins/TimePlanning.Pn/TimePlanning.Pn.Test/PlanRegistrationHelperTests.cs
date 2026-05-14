@@ -1131,6 +1131,61 @@ public class PlanRegistrationHelperTests
     }
 
     /// <summary>
+    /// Flag-on, stamps are populated but the duration is zero
+    /// (StartedAt == StoppedAt). Even though the duration sum is 0, the
+    /// helper must NOT fall back to legacy ticks — the worker did stamp a
+    /// pause and the intended display is 0 minutes. Pause1Id = 4 (legacy
+    /// 15 min) must be ignored.
+    ///
+    /// Guards against the fallback being gated on totalSeconds == 0
+    /// instead of "no stamp observed" (Copilot review on PR #1575).
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_ZeroDurationStampDoesNotFallBackToLegacy()
+    {
+        // Arrange — stamps describe a 0-min pause (start == stop).
+        var someDate = new DateTime(2026, 5, 7, 12, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause1StartedAt = someDate,
+            Pause1StoppedAt = someDate,
+            Pause1Id = 4, // legacy 15 min — must be ignored because stamps were observed.
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert — stamps were observed, so the (0-min) stamp result wins
+        // over the legacy fallback that would otherwise return 15.
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Flag-on, stamps are populated but the duration is NEGATIVE
+    /// (StoppedAt < StartedAt — clock skew or data corruption). Same
+    /// contract as the zero-duration case: stamps were observed, so the
+    /// legacy fallback must NOT trigger.
+    /// </summary>
+    [Test]
+    public void AggregatePauseMinutes_OneMinuteInterval_NegativeDurationStampDoesNotFallBackToLegacy()
+    {
+        // Arrange — stamps describe an invalid pause (stop before start).
+        var someDate = new DateTime(2026, 5, 7, 12, 0, 0);
+        var pr = new PlanRegistration
+        {
+            Pause1StartedAt = someDate.AddMinutes(5),
+            Pause1StoppedAt = someDate,
+            Pause1Id = 4, // legacy 15 min — must be ignored.
+        };
+
+        // Act
+        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
     /// Flag-off parity: stamps populated and legacy Pause1Id both present.
     /// The flag-off branch must still return only the legacy tick result
     /// (15 here) — proves the new flag-on logic did not touch the flag-off path.

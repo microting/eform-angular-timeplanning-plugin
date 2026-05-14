@@ -473,18 +473,29 @@ public static class PlanRegistrationHelper
         if (useOneMinuteIntervals)
         {
             long totalSeconds = 0;
+            var hasAnyStamp = false;
 
-            // Sum every populated stamp pair across all sub-slots for all 5 shifts.
-            // Mirrors the frontend's computeExactPauseMinutes in
-            // workday-entity-dialog.component.ts — admin overview parity.
-            foreach (var (startedAt, stoppedAt) in GetAllPauseStampPairs(pr))
+            // Walk every pause stamp pair (31 total — mirrors the frontend's
+            // computeExactPauseMinutes via the shared EnumeratePauseStampPairs
+            // source of truth that GetPauseIntervals also consumes). Track
+            // whether ANY stamp was observed independently of the duration sum,
+            // so a populated-but-zero-duration pause (start == stop) doesn't
+            // wrongly trigger the legacy-tick fallback.
+            foreach (var (startedAt, stoppedAt) in EnumeratePauseStampPairs(pr))
             {
-                totalSeconds += PauseSpanSeconds(startedAt, stoppedAt);
+                if (startedAt.HasValue || stoppedAt.HasValue)
+                {
+                    hasAnyStamp = true;
+                }
+                if (startedAt.HasValue && stoppedAt.HasValue && startedAt.Value < stoppedAt.Value)
+                {
+                    totalSeconds += (long)(stoppedAt.Value - startedAt.Value).TotalSeconds;
+                }
             }
 
-            if (totalSeconds == 0)
+            if (!hasAnyStamp)
             {
-                // Fallback: older flag-on rows without stamp pairs may still carry
+                // Older flag-on rows without any stamp data may still carry
                 // legacy 5-minute-tick IDs in the 5 main pause slots.
                 return LegacyTickMinutesAcrossMainSlots(pr);
             }
@@ -494,53 +505,6 @@ public static class PlanRegistrationHelper
 
         // Flag-off branch: legacy 5-minute-tick path.
         return LegacyTickMinutesAcrossMainSlots(pr);
-    }
-
-    /// <summary>
-    /// Yields every (StartedAt, StoppedAt) pause stamp pair the frontend's
-    /// computeExactPauseMinutes iterates: 14 for shift 1, 14 for shift 2, and one
-    /// each for shifts 3/4/5. Order intentionally mirrors
-    /// workday-entity-dialog.component.ts:getPauseTimestampPairs to keep the
-    /// backend↔frontend mapping easy to audit.
-    /// </summary>
-    private static IEnumerable<(DateTime? StartedAt, DateTime? StoppedAt)> GetAllPauseStampPairs(PlanRegistration pr)
-    {
-        // Shift 1: Pause1, Pause10..Pause19, Pause100..Pause102 (14 pairs)
-        yield return (pr.Pause1StartedAt, pr.Pause1StoppedAt);
-        yield return (pr.Pause10StartedAt, pr.Pause10StoppedAt);
-        yield return (pr.Pause11StartedAt, pr.Pause11StoppedAt);
-        yield return (pr.Pause12StartedAt, pr.Pause12StoppedAt);
-        yield return (pr.Pause13StartedAt, pr.Pause13StoppedAt);
-        yield return (pr.Pause14StartedAt, pr.Pause14StoppedAt);
-        yield return (pr.Pause15StartedAt, pr.Pause15StoppedAt);
-        yield return (pr.Pause16StartedAt, pr.Pause16StoppedAt);
-        yield return (pr.Pause17StartedAt, pr.Pause17StoppedAt);
-        yield return (pr.Pause18StartedAt, pr.Pause18StoppedAt);
-        yield return (pr.Pause19StartedAt, pr.Pause19StoppedAt);
-        yield return (pr.Pause100StartedAt, pr.Pause100StoppedAt);
-        yield return (pr.Pause101StartedAt, pr.Pause101StoppedAt);
-        yield return (pr.Pause102StartedAt, pr.Pause102StoppedAt);
-
-        // Shift 2: Pause2, Pause20..Pause29, Pause200..Pause202 (14 pairs)
-        yield return (pr.Pause2StartedAt, pr.Pause2StoppedAt);
-        yield return (pr.Pause20StartedAt, pr.Pause20StoppedAt);
-        yield return (pr.Pause21StartedAt, pr.Pause21StoppedAt);
-        yield return (pr.Pause22StartedAt, pr.Pause22StoppedAt);
-        yield return (pr.Pause23StartedAt, pr.Pause23StoppedAt);
-        yield return (pr.Pause24StartedAt, pr.Pause24StoppedAt);
-        yield return (pr.Pause25StartedAt, pr.Pause25StoppedAt);
-        yield return (pr.Pause26StartedAt, pr.Pause26StoppedAt);
-        yield return (pr.Pause27StartedAt, pr.Pause27StoppedAt);
-        yield return (pr.Pause28StartedAt, pr.Pause28StoppedAt);
-        yield return (pr.Pause29StartedAt, pr.Pause29StoppedAt);
-        yield return (pr.Pause200StartedAt, pr.Pause200StoppedAt);
-        yield return (pr.Pause201StartedAt, pr.Pause201StoppedAt);
-        yield return (pr.Pause202StartedAt, pr.Pause202StoppedAt);
-
-        // Shifts 3/4/5: single slot each
-        yield return (pr.Pause3StartedAt, pr.Pause3StoppedAt);
-        yield return (pr.Pause4StartedAt, pr.Pause4StoppedAt);
-        yield return (pr.Pause5StartedAt, pr.Pause5StoppedAt);
     }
 
     /// <summary>
@@ -2080,56 +2044,67 @@ public static class PlanRegistrationHelper
     }
 
     /// <summary>
+    /// Single source of truth for every pause stamp pair on a PlanRegistration.
+    /// Enumerates Pause1-5, Pause10-19, Pause20-29, Pause100-102, Pause200-202
+    /// — 31 pairs total. Order mirrors the frontend's
+    /// workday-entity-dialog.component.ts:getPauseTimestampPairs so the
+    /// backend↔frontend mapping is easy to audit.
+    ///
+    /// Returns raw nullable pairs so callers can distinguish "no stamp"
+    /// from "stamp with zero/negative duration"; both
+    /// <see cref="GetPauseIntervals"/> and
+    /// <see cref="AggregatePauseMinutes"/> consume this enumerator.
+    /// </summary>
+    private static IEnumerable<(DateTime? StartedAt, DateTime? StoppedAt)> EnumeratePauseStampPairs(PlanRegistration pr)
+    {
+        // Main pause intervals 1-5
+        yield return (pr.Pause1StartedAt, pr.Pause1StoppedAt);
+        yield return (pr.Pause2StartedAt, pr.Pause2StoppedAt);
+        yield return (pr.Pause3StartedAt, pr.Pause3StoppedAt);
+        yield return (pr.Pause4StartedAt, pr.Pause4StoppedAt);
+        yield return (pr.Pause5StartedAt, pr.Pause5StoppedAt);
+
+        // Extended pause intervals 10-29
+        yield return (pr.Pause10StartedAt, pr.Pause10StoppedAt);
+        yield return (pr.Pause11StartedAt, pr.Pause11StoppedAt);
+        yield return (pr.Pause12StartedAt, pr.Pause12StoppedAt);
+        yield return (pr.Pause13StartedAt, pr.Pause13StoppedAt);
+        yield return (pr.Pause14StartedAt, pr.Pause14StoppedAt);
+        yield return (pr.Pause15StartedAt, pr.Pause15StoppedAt);
+        yield return (pr.Pause16StartedAt, pr.Pause16StoppedAt);
+        yield return (pr.Pause17StartedAt, pr.Pause17StoppedAt);
+        yield return (pr.Pause18StartedAt, pr.Pause18StoppedAt);
+        yield return (pr.Pause19StartedAt, pr.Pause19StoppedAt);
+        yield return (pr.Pause20StartedAt, pr.Pause20StoppedAt);
+        yield return (pr.Pause21StartedAt, pr.Pause21StoppedAt);
+        yield return (pr.Pause22StartedAt, pr.Pause22StoppedAt);
+        yield return (pr.Pause23StartedAt, pr.Pause23StoppedAt);
+        yield return (pr.Pause24StartedAt, pr.Pause24StoppedAt);
+        yield return (pr.Pause25StartedAt, pr.Pause25StoppedAt);
+        yield return (pr.Pause26StartedAt, pr.Pause26StoppedAt);
+        yield return (pr.Pause27StartedAt, pr.Pause27StoppedAt);
+        yield return (pr.Pause28StartedAt, pr.Pause28StoppedAt);
+        yield return (pr.Pause29StartedAt, pr.Pause29StoppedAt);
+
+        // Additional pause intervals 100-102
+        yield return (pr.Pause100StartedAt, pr.Pause100StoppedAt);
+        yield return (pr.Pause101StartedAt, pr.Pause101StoppedAt);
+        yield return (pr.Pause102StartedAt, pr.Pause102StoppedAt);
+
+        // Additional pause intervals 200-202
+        yield return (pr.Pause200StartedAt, pr.Pause200StoppedAt);
+        yield return (pr.Pause201StartedAt, pr.Pause201StoppedAt);
+        yield return (pr.Pause202StartedAt, pr.Pause202StoppedAt);
+    }
+
+    /// <summary>
     /// Extract pause intervals from PlanRegistration.
-    /// Includes Pause1-5, Pause10-29, Pause100-102, Pause200-202.
-    /// Returns intervals as (StartTime, EndTime) tuples.
-    /// Ignores incomplete or invalid intervals (null or negative duration).
+    /// Consumes <see cref="EnumeratePauseStampPairs"/> and filters out incomplete
+    /// or invalid intervals (null endpoints or non-positive duration).
     /// </summary>
     private static IEnumerable<(DateTime Start, DateTime End)> GetPauseIntervals(PlanRegistration pr)
     {
-        var intervals = new (DateTime?, DateTime?)[]
-        {
-            // Main pause intervals 1-5
-            (pr.Pause1StartedAt, pr.Pause1StoppedAt),
-            (pr.Pause2StartedAt, pr.Pause2StoppedAt),
-            (pr.Pause3StartedAt, pr.Pause3StoppedAt),
-            (pr.Pause4StartedAt, pr.Pause4StoppedAt),
-            (pr.Pause5StartedAt, pr.Pause5StoppedAt),
-
-            // Extended pause intervals 10-29
-            (pr.Pause10StartedAt, pr.Pause10StoppedAt),
-            (pr.Pause11StartedAt, pr.Pause11StoppedAt),
-            (pr.Pause12StartedAt, pr.Pause12StoppedAt),
-            (pr.Pause13StartedAt, pr.Pause13StoppedAt),
-            (pr.Pause14StartedAt, pr.Pause14StoppedAt),
-            (pr.Pause15StartedAt, pr.Pause15StoppedAt),
-            (pr.Pause16StartedAt, pr.Pause16StoppedAt),
-            (pr.Pause17StartedAt, pr.Pause17StoppedAt),
-            (pr.Pause18StartedAt, pr.Pause18StoppedAt),
-            (pr.Pause19StartedAt, pr.Pause19StoppedAt),
-            (pr.Pause20StartedAt, pr.Pause20StoppedAt),
-            (pr.Pause21StartedAt, pr.Pause21StoppedAt),
-            (pr.Pause22StartedAt, pr.Pause22StoppedAt),
-            (pr.Pause23StartedAt, pr.Pause23StoppedAt),
-            (pr.Pause24StartedAt, pr.Pause24StoppedAt),
-            (pr.Pause25StartedAt, pr.Pause25StoppedAt),
-            (pr.Pause26StartedAt, pr.Pause26StoppedAt),
-            (pr.Pause27StartedAt, pr.Pause27StoppedAt),
-            (pr.Pause28StartedAt, pr.Pause28StoppedAt),
-            (pr.Pause29StartedAt, pr.Pause29StoppedAt),
-
-            // Additional pause intervals 100-102
-            (pr.Pause100StartedAt, pr.Pause100StoppedAt),
-            (pr.Pause101StartedAt, pr.Pause101StoppedAt),
-            (pr.Pause102StartedAt, pr.Pause102StoppedAt),
-
-            // Additional pause intervals 200-202
-            (pr.Pause200StartedAt, pr.Pause200StoppedAt),
-            (pr.Pause201StartedAt, pr.Pause201StoppedAt),
-            (pr.Pause202StartedAt, pr.Pause202StoppedAt)
-        };
-
-        foreach (var (start, end) in intervals)
+        foreach (var (start, end) in EnumeratePauseStampPairs(pr))
         {
             if (start.HasValue && end.HasValue && start.Value < end.Value)
             {
