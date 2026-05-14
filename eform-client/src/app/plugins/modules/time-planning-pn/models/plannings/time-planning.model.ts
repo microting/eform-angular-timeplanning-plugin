@@ -16,10 +16,11 @@ export class TimePlanningModel {
   deviceManufacturer: string;
   softwareVersionIsValid: boolean;
   /**
-   * Phase 4: mirror of the row's assigned-site UseOneMinuteIntervals flag.
-   * When true, the plannings table renders actual stamps at HH:mm:ss instead
-   * of HH:mm. Default false preserves byte-identical legacy behavior for
-   * rows whose site has the flag off.
+   * Mirror of the row's assigned-site UseOneMinuteIntervals flag. The flag now
+   * controls only (a) the wire-precision of stored start/stop timestamps and
+   * (b) the minutesGap input granularity in the workday-entity dialog (1-min
+   * vs 5-min). Displayed timestamps in the plannings table always show
+   * HH:mm regardless of the flag.
    */
   useOneMinuteIntervals: boolean;
 }
