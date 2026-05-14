@@ -451,30 +451,104 @@ public static class PlanRegistrationHelper
     /// Aggregates pause minutes for a PlanRegistration.
     ///
     /// When useOneMinuteIntervals is true, sums the (Pause*StoppedAt - Pause*StartedAt)
-    /// DateTime deltas in seconds across all 5 pause slots that have BOTH stamps populated,
-    /// then rounds to whole minutes. This preserves second/minute precision for pauses
-    /// recorded by workers on UseOneMinuteIntervals-enabled sites (e.g. a 3-min pause
-    /// reads as 3, not 0).
+    /// DateTime deltas in seconds across every populated pause stamp pair — the 5 main
+    /// slots AND all sub-slots used by the multi-pause workflow (Pause10..Pause19,
+    /// Pause100..Pause102 for shift 1; Pause20..Pause29, Pause200..Pause202 for shift 2;
+    /// Pause3/4/5 single slots for shifts 3/4/5). This mirrors the frontend admin edit
+    /// dialog's computeExactPauseMinutes (workday-entity-dialog.component.ts) so the
+    /// overview's "Samlet pause" and the per-row edit dialog agree byte-for-byte.
+    /// Total seconds are rounded down to whole minutes.
     ///
-    /// When useOneMinuteIntervals is false, falls back to the legacy 5-minute-tick
-    /// formula: for each Pause*Id &gt; 0, contribute (Pause*Id * 5) - 5 minutes. (Pause*Id
-    /// stores break in 5-minute ticks plus a +1 sentinel: Pause1Id = 1 means 0 min,
-    /// Pause1Id = 4 means 15 min, etc.)
+    /// If a flag-on row has no stamp pairs populated, falls back to the legacy
+    /// 5-minute-tick formula on the 5 main slots only (sub-slots have no *Id field):
+    /// for each Pause{1..5}Id &gt; 0, contribute (Pause{N}Id * 5) - 5 minutes. This
+    /// covers older flag-on rows written before stamp-pair pauses existed.
+    ///
+    /// When useOneMinuteIntervals is false, always uses the legacy 5-minute-tick
+    /// formula on the 5 main slots. (Pause*Id stores break in 5-minute ticks plus a
+    /// +1 sentinel: Pause1Id = 1 means 0 min, Pause1Id = 4 means 15 min, etc.)
     /// </summary>
     public static int AggregatePauseMinutes(PlanRegistration pr, bool useOneMinuteIntervals)
     {
         if (useOneMinuteIntervals)
         {
             long totalSeconds = 0;
-            totalSeconds += PauseSpanSeconds(pr.Pause1StartedAt, pr.Pause1StoppedAt);
-            totalSeconds += PauseSpanSeconds(pr.Pause2StartedAt, pr.Pause2StoppedAt);
-            totalSeconds += PauseSpanSeconds(pr.Pause3StartedAt, pr.Pause3StoppedAt);
-            totalSeconds += PauseSpanSeconds(pr.Pause4StartedAt, pr.Pause4StoppedAt);
-            totalSeconds += PauseSpanSeconds(pr.Pause5StartedAt, pr.Pause5StoppedAt);
+
+            // Sum every populated stamp pair across all sub-slots for all 5 shifts.
+            // Mirrors the frontend's computeExactPauseMinutes in
+            // workday-entity-dialog.component.ts — admin overview parity.
+            foreach (var (startedAt, stoppedAt) in GetAllPauseStampPairs(pr))
+            {
+                totalSeconds += PauseSpanSeconds(startedAt, stoppedAt);
+            }
+
+            if (totalSeconds == 0)
+            {
+                // Fallback: older flag-on rows without stamp pairs may still carry
+                // legacy 5-minute-tick IDs in the 5 main pause slots.
+                return LegacyTickMinutesAcrossMainSlots(pr);
+            }
+
             return (int)(totalSeconds / 60); // round down to whole minutes
         }
 
-        // Legacy 5-minute-tick path
+        // Flag-off branch: legacy 5-minute-tick path.
+        return LegacyTickMinutesAcrossMainSlots(pr);
+    }
+
+    /// <summary>
+    /// Yields every (StartedAt, StoppedAt) pause stamp pair the frontend's
+    /// computeExactPauseMinutes iterates: 14 for shift 1, 14 for shift 2, and one
+    /// each for shifts 3/4/5. Order intentionally mirrors
+    /// workday-entity-dialog.component.ts:getPauseTimestampPairs to keep the
+    /// backend↔frontend mapping easy to audit.
+    /// </summary>
+    private static IEnumerable<(DateTime? StartedAt, DateTime? StoppedAt)> GetAllPauseStampPairs(PlanRegistration pr)
+    {
+        // Shift 1: Pause1, Pause10..Pause19, Pause100..Pause102 (14 pairs)
+        yield return (pr.Pause1StartedAt, pr.Pause1StoppedAt);
+        yield return (pr.Pause10StartedAt, pr.Pause10StoppedAt);
+        yield return (pr.Pause11StartedAt, pr.Pause11StoppedAt);
+        yield return (pr.Pause12StartedAt, pr.Pause12StoppedAt);
+        yield return (pr.Pause13StartedAt, pr.Pause13StoppedAt);
+        yield return (pr.Pause14StartedAt, pr.Pause14StoppedAt);
+        yield return (pr.Pause15StartedAt, pr.Pause15StoppedAt);
+        yield return (pr.Pause16StartedAt, pr.Pause16StoppedAt);
+        yield return (pr.Pause17StartedAt, pr.Pause17StoppedAt);
+        yield return (pr.Pause18StartedAt, pr.Pause18StoppedAt);
+        yield return (pr.Pause19StartedAt, pr.Pause19StoppedAt);
+        yield return (pr.Pause100StartedAt, pr.Pause100StoppedAt);
+        yield return (pr.Pause101StartedAt, pr.Pause101StoppedAt);
+        yield return (pr.Pause102StartedAt, pr.Pause102StoppedAt);
+
+        // Shift 2: Pause2, Pause20..Pause29, Pause200..Pause202 (14 pairs)
+        yield return (pr.Pause2StartedAt, pr.Pause2StoppedAt);
+        yield return (pr.Pause20StartedAt, pr.Pause20StoppedAt);
+        yield return (pr.Pause21StartedAt, pr.Pause21StoppedAt);
+        yield return (pr.Pause22StartedAt, pr.Pause22StoppedAt);
+        yield return (pr.Pause23StartedAt, pr.Pause23StoppedAt);
+        yield return (pr.Pause24StartedAt, pr.Pause24StoppedAt);
+        yield return (pr.Pause25StartedAt, pr.Pause25StoppedAt);
+        yield return (pr.Pause26StartedAt, pr.Pause26StoppedAt);
+        yield return (pr.Pause27StartedAt, pr.Pause27StoppedAt);
+        yield return (pr.Pause28StartedAt, pr.Pause28StoppedAt);
+        yield return (pr.Pause29StartedAt, pr.Pause29StoppedAt);
+        yield return (pr.Pause200StartedAt, pr.Pause200StoppedAt);
+        yield return (pr.Pause201StartedAt, pr.Pause201StoppedAt);
+        yield return (pr.Pause202StartedAt, pr.Pause202StoppedAt);
+
+        // Shifts 3/4/5: single slot each
+        yield return (pr.Pause3StartedAt, pr.Pause3StoppedAt);
+        yield return (pr.Pause4StartedAt, pr.Pause4StoppedAt);
+        yield return (pr.Pause5StartedAt, pr.Pause5StoppedAt);
+    }
+
+    /// <summary>
+    /// Sums the legacy 5-minute-tick pause IDs across the 5 main slots only.
+    /// Sub-slots have no *Id field, so they cannot contribute legacy ticks.
+    /// </summary>
+    private static int LegacyTickMinutesAcrossMainSlots(PlanRegistration pr)
+    {
         var totalMinutes = 0;
         if (pr.Pause1Id > 0) totalMinutes += (pr.Pause1Id * 5) - 5;
         if (pr.Pause2Id > 0) totalMinutes += (pr.Pause2Id * 5) - 5;
