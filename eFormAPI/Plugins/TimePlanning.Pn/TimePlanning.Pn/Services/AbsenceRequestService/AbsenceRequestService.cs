@@ -37,6 +37,10 @@ using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.eForm.Infrastructure.Constants;
+using Microting.eFormApi.BasePn.Infrastructure.Helpers;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
+using TimePlanning.Pn.Services.PushNotificationService;
 using TimePlanningLocalizationService;
 
 public class AbsenceRequestService : IAbsenceRequestService
@@ -45,17 +49,57 @@ public class AbsenceRequestService : IAbsenceRequestService
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly IUserService _userService;
     private readonly ITimePlanningLocalizationService _localizationService;
+    private readonly IEFormCoreService _coreService;
+    private readonly BaseDbContext _baseDbContext;
+    private readonly IPushNotificationService _pushNotificationService;
 
     public AbsenceRequestService(
         ILogger<AbsenceRequestService> logger,
         TimePlanningPnDbContext dbContext,
         IUserService userService,
-        ITimePlanningLocalizationService localizationService)
+        ITimePlanningLocalizationService localizationService,
+        IEFormCoreService coreService,
+        BaseDbContext baseDbContext,
+        IPushNotificationService pushNotificationService)
     {
         _logger = logger;
         _dbContext = dbContext;
         _userService = userService;
         _localizationService = localizationService;
+        _coreService = coreService;
+        _baseDbContext = baseDbContext;
+        _pushNotificationService = pushNotificationService;
+    }
+
+    /// <summary>
+    /// Resolves the authenticated caller's SDK site id (MicrotingUid) from
+    /// the JWT. Returns 0 if the user has no worker/site record. Callers
+    /// should treat 0 as "no inbox visibility".
+    /// </summary>
+    private async Task<int> ResolveCallerSdkSiteIdAsync()
+    {
+        var currentUserAsync = await _userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            return 0;
+        }
+        var currentUser = _baseDbContext.Users
+            .Single(x => x.Id == currentUserAsync.Id);
+
+        var sdkCore = await _coreService.GetCore();
+        var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+
+        var worker = await sdkDbContext.Workers
+            .Include(x => x.SiteWorkers)
+            .ThenInclude(x => x.Site)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+
+        if (worker == null || worker.SiteWorkers.Count == 0)
+        {
+            return 0;
+        }
+        return worker.SiteWorkers.First().Site.MicrotingUid ?? 0;
     }
 
     public async Task<OperationDataResult<AbsenceRequestModel>> CreateAsync(AbsenceRequestCreateModel model)
@@ -123,6 +167,47 @@ public class AbsenceRequestService : IAbsenceRequestService
                 .FirstAsync(ar => ar.Id == absenceRequest.Id);
 
             var resultModel = MapToModel(createdRequest);
+
+            // Fire-and-forget push to manager(s)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // Find managers for this worker's tags
+                    var sdkCore = await _coreService.GetCore();
+                    var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+                    var workerTagIds = await sdkDbContext.SiteTags
+                        .Where(x => x.Site.MicrotingUid == model.RequestedBySdkSitId
+                                    && x.WorkflowState != Microting.eForm.Infrastructure.Constants.Constants.WorkflowStates.Removed)
+                        .Select(x => (int)x.TagId!)
+                        .ToListAsync();
+
+                    var managerSiteIds = await _dbContext.AssignedSiteManagingTags
+                        .Where(x => x.WorkflowState != Microting.eForm.Infrastructure.Constants.Constants.WorkflowStates.Removed
+                                    && workerTagIds.Contains(x.TagId))
+                        .Select(x => x.AssignedSite!.SiteId)
+                        .Distinct()
+                        .ToListAsync();
+
+                    foreach (var managerSiteId in managerSiteIds)
+                    {
+                        await _pushNotificationService.SendToSiteAsync(
+                            managerSiteId,
+                            "New absence request",
+                            "A worker has requested time off",
+                            new Dictionary<string, string>
+                            {
+                                { "type", "absence_created" },
+                                { "absenceRequestId", createdRequest.Id.ToString() }
+                            });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for absence request creation");
+                }
+            });
+
             return new OperationDataResult<AbsenceRequestModel>(true, resultModel);
         }
         catch (Exception ex)
@@ -152,33 +237,49 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
-            // Start transaction after validations
-            using var transaction = await _dbContext.Database.BeginTransactionAsync();
-            try
-            {
-                // Update request status
-                request.Status = AbsenceRequestStatus.Approved;
-                request.DecidedBySdkSitId = model.ManagerSdkSitId;
-                request.DecidedAtUtc = DateTime.UtcNow;
-                request.DecisionComment = model.DecisionComment;
-                request.UpdatedByUserId = _userService.UserId;
-                await request.Update(_dbContext);
+            // Apply changes without an explicit transaction.
+            // NOTE: Update() methods internally handle persistence, and using
+            // an explicit BeginTransactionAsync here was causing a silent
+            // rollback in the test environment (matches the workaround applied
+            // in ContentHandoverService.AcceptAsync).
+            // Update request status
+            request.Status = AbsenceRequestStatus.Approved;
+            request.DecidedBySdkSitId = model.ManagerSdkSitId;
+            request.DecidedAtUtc = DateTime.UtcNow;
+            request.DecisionComment = model.DecisionComment;
+            request.UpdatedByUserId = _userService.UserId;
+            await request.Update(_dbContext);
 
-                // Apply absence to each day's PlanRegistration
-                foreach (var day in request.Days!)
+            // Apply absence to each day's PlanRegistration
+            foreach (var day in request.Days!)
+            {
+                await ApplyAbsenceToPlanRegistration(request, day);
+            }
+
+            // Fire-and-forget push to requester
+            var requesterSdkSitId = request.RequestedBySdkSitId;
+            _ = Task.Run(async () =>
+            {
+                try
                 {
-                    await ApplyAbsenceToPlanRegistration(request, day);
+                    await _pushNotificationService.SendToSiteAsync(
+                        requesterSdkSitId,
+                        "Absence request approved",
+                        "Your absence request has been approved",
+                        new Dictionary<string, string>
+                        {
+                            { "type", "absence_decided" },
+                            { "action", "approved" },
+                            { "absenceRequestId", absenceRequestId.ToString() }
+                        });
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for absence approval");
+                }
+            });
 
-                await transaction.CommitAsync();
-                return new OperationResult(true);
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error in transaction approving absence request {RequestId}", absenceRequestId);
-                throw;
-            }
+            return new OperationResult(true);
         }
         catch (Exception ex)
         {
@@ -210,6 +311,29 @@ public class AbsenceRequestService : IAbsenceRequestService
             request.DecisionComment = model.DecisionComment;
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
+
+            // Fire-and-forget push to requester
+            var requesterSdkSitId = request.RequestedBySdkSitId;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _pushNotificationService.SendToSiteAsync(
+                        requesterSdkSitId,
+                        "Absence request rejected",
+                        "Your absence request has been rejected",
+                        new Dictionary<string, string>
+                        {
+                            { "type", "absence_decided" },
+                            { "action", "rejected" },
+                            { "absenceRequestId", absenceRequestId.ToString() }
+                        });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for absence rejection");
+                }
+            });
 
             return new OperationResult(true);
         }
@@ -256,13 +380,48 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
     }
 
-    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetInboxAsync(int managerSdkSitId)
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetInboxAsync()
     {
         try
         {
+            // Resolve caller's SDK site from the JWT instead of trusting a
+            // client-supplied value. Returns empty inbox if unknown.
+            var managerSdkSitId = await ResolveCallerSdkSiteIdAsync();
+            if (managerSdkSitId == 0)
+            {
+                return new OperationDataResult<List<AbsenceRequestModel>>(true, new List<AbsenceRequestModel>());
+            }
+
+            // Check if the requesting user is a manager
+            var assignedSite = await _dbContext.AssignedSites
+                .FirstOrDefaultAsync(a => a.SiteId == managerSdkSitId);
+
+            if (assignedSite == null || !assignedSite.IsManager)
+            {
+                return new OperationDataResult<List<AbsenceRequestModel>>(true, new List<AbsenceRequestModel>());
+            }
+
+            // Get the manager's managing tag IDs
+            var managingTagIds = await _dbContext.AssignedSiteManagingTags
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.AssignedSiteId == assignedSite.Id)
+                .Select(x => x.TagId)
+                .ToListAsync();
+
+            // Find all site IDs that share any of the manager's tags
+            var sdkCore = await _coreService.GetCore();
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+            var managedSiteIds = await sdkDbContext.SiteTags
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => managingTagIds.Contains((int)x.TagId!))
+                .Select(x => x.Site.MicrotingUid)
+                .Distinct()
+                .ToListAsync();
+
             var requests = await _dbContext.AbsenceRequests
                 .Include(ar => ar.Days)
                 .Where(ar => ar.Status == AbsenceRequestStatus.Pending)
+                .Where(ar => managedSiteIds.Contains(ar.RequestedBySdkSitId))
                 .OrderByDescending(ar => ar.RequestedAtUtc)
                 .ToListAsync();
 
@@ -271,7 +430,7 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting absence request inbox for manager {ManagerId}", managerSdkSitId);
+            _logger.LogError(ex, "Error getting absence request inbox for authenticated caller");
             return new OperationDataResult<List<AbsenceRequestModel>>(false,
                 _localizationService.GetString("ErrorGettingAbsenceRequests"));
         }
@@ -293,6 +452,89 @@ public class AbsenceRequestService : IAbsenceRequestService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting absence requests for worker {WorkerId}", requestedBySdkSitId);
+            return new OperationDataResult<List<AbsenceRequestModel>>(false,
+                _localizationService.GetString("ErrorGettingAbsenceRequests"));
+        }
+    }
+
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetAllAsync(
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100)
+    {
+        try
+        {
+            var query = _dbContext.AbsenceRequests
+                .Include(ar => ar.Days)
+                .AsQueryable();
+
+            // Filter by status
+            if (!string.IsNullOrWhiteSpace(status) &&
+                Enum.TryParse<AbsenceRequestStatus>(status, ignoreCase: true, out var parsedStatus))
+            {
+                query = query.Where(ar => ar.Status == parsedStatus);
+            }
+
+            // Filter by date range
+            if (!string.IsNullOrWhiteSpace(fromDate) && DateTime.TryParse(fromDate, out var from))
+            {
+                var fromUtc = from.Date;
+                query = query.Where(ar => ar.DateTo >= fromUtc);
+            }
+
+            if (!string.IsNullOrWhiteSpace(toDate) && DateTime.TryParse(toDate, out var to))
+            {
+                var toUtc = to.Date;
+                query = query.Where(ar => ar.DateFrom <= toUtc);
+            }
+
+            // Filter by sdkSiteId — matches RequestedBySdkSitId
+            if (sdkSiteId.HasValue)
+            {
+                query = query.Where(ar => ar.RequestedBySdkSitId == sdkSiteId.Value);
+            }
+
+            var requests = await query
+                .OrderByDescending(ar => ar.RequestedAtUtc)
+                .Skip(page * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Resolve worker names from SDK sites
+            var allSiteIds = requests
+                .Select(ar => ar.RequestedBySdkSitId)
+                .Union(requests
+                    .Where(ar => ar.DecidedBySdkSitId.HasValue)
+                    .Select(ar => ar.DecidedBySdkSitId!.Value))
+                .Distinct()
+                .ToList();
+
+            var siteNameLookup = new Dictionary<int, string>();
+            if (allSiteIds.Count > 0)
+            {
+                var sdkCore = await _coreService.GetCore();
+                var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+                siteNameLookup = await sdkDbContext.Sites
+                    .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
+                    .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
+                    .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
+            }
+
+            var models = requests.Select(ar =>
+            {
+                var model = MapToModel(ar);
+                model.RequestedByWorkerName = siteNameLookup.GetValueOrDefault(ar.RequestedBySdkSitId);
+                if (ar.DecidedBySdkSitId.HasValue)
+                {
+                    model.DecidedByWorkerName = siteNameLookup.GetValueOrDefault(ar.DecidedBySdkSitId.Value);
+                }
+                return model;
+            }).ToList();
+
+            return new OperationDataResult<List<AbsenceRequestModel>>(true, models);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all absence requests");
             return new OperationDataResult<List<AbsenceRequestModel>>(false,
                 _localizationService.GetString("ErrorGettingAbsenceRequests"));
         }

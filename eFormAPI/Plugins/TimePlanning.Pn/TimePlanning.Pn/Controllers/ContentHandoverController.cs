@@ -28,7 +28,9 @@ namespace TimePlanning.Pn.Controllers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure.Models.ContentHandover;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Services.ContentHandoverService;
 
@@ -39,8 +41,8 @@ public class ContentHandoverController(IContentHandoverService contentHandoverSe
 
     [HttpPost]
     [Route("plan-registrations/{id}/handover-requests")]
-    public async Task<OperationDataResult<ContentHandoverRequestModel>> Create(
-        int id, 
+    public async Task<OperationDataResult<System.Collections.Generic.List<ContentHandoverRequestModel>>> Create(
+        int id,
         [FromBody] ContentHandoverRequestCreateModel model)
     {
         return await _contentHandoverService.CreateAsync(id, model);
@@ -69,9 +71,10 @@ public class ContentHandoverController(IContentHandoverService contentHandoverSe
 
     [HttpGet]
     [Route("handover-requests/inbox")]
-    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInbox(int toSdkSitId)
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInbox()
     {
-        return await _contentHandoverService.GetInboxAsync(toSdkSitId);
+        // Caller's SDK site is derived from the JWT inside the service.
+        return await _contentHandoverService.GetInboxAsync();
     }
 
     [HttpGet]
@@ -79,5 +82,15 @@ public class ContentHandoverController(IContentHandoverService contentHandoverSe
     public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMine(int fromSdkSitId)
     {
         return await _contentHandoverService.GetMineAsync(fromSdkSitId);
+    }
+
+    [HttpGet]
+    [Authorize(Roles = EformRole.Admin)]
+    [Route("handover-requests/all")]
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetAll(
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100)
+    {
+        return await _contentHandoverService.GetAllAsync(status, fromDate, toDate, sdkSiteId, page, pageSize);
     }
 }

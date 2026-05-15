@@ -4,16 +4,16 @@
 }
 
 .status-pending {
-  color: #ff9800;
+  color: var(--warning, #ff9800);
   font-weight: 500;
 }
 
 .status-approved {
-  color: #4caf50;
+  color: var(--status-success, #4caf50);
   font-weight: 500;
 }
 
 .status-rejected {
-  color: #f44336;
+  color: var(--error, #f44336);
   font-weight: 500;
 }

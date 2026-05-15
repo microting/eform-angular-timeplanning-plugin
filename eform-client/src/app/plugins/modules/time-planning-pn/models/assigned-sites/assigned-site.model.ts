@@ -163,4 +163,5 @@ export class AssignedSiteModel {
   daysBackInTimeAllowedEditing: number;
   isManager: boolean;
   managingTagIds: number[];
+  payRuleSetId: number | null;
 }

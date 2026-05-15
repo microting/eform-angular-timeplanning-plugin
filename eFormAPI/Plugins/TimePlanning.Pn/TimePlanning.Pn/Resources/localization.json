@@ -215,5 +215,12 @@
         "el-GR": "Ο προγραμματισμός δεν μπορεί να επεξεργαστεί για απολυμένους υπαλλήλους",
         "is-IS": "Áætlun er ekki hægt að breyta fyrir starfslok starfsmanna"
       }
+  },
+  {
+    "Key": "CannotEditLockedPreset",
+    "LocalizedValue": {
+      "en-US": "Cannot edit - this overenskomst is a locked preset and is read-only",
+      "da": "Kan ikke redigere – denne overenskomst er en låst skabelon og er skrivebeskyttet"
+    }
   }
 ]

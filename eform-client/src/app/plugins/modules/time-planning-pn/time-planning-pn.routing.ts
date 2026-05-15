@@ -71,6 +71,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'request-history',
+        canActivate: [AuthGuard],
+        loadChildren: () =>
+          import('./modules/request-history/request-history.module').then(
+            (m) => m.RequestHistoryModule
+          ),
+      },
+      {
         path: 'settings',
         canActivate: [AuthGuard],
         component: TimePlanningSettingsComponent,

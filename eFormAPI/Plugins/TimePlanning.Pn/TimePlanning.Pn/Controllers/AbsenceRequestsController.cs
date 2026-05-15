@@ -28,7 +28,9 @@ namespace TimePlanning.Pn.Controllers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure.Models.AbsenceRequest;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Services.AbsenceRequestService;
 
@@ -66,9 +68,10 @@ public class AbsenceRequestsController(IAbsenceRequestService absenceRequestServ
 
     [HttpGet]
     [Route("inbox")]
-    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetInbox(int managerSdkSitId)
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetInbox()
     {
-        return await _absenceRequestService.GetInboxAsync(managerSdkSitId);
+        // Caller's SDK site is derived from the JWT inside the service.
+        return await _absenceRequestService.GetInboxAsync();
     }
 
     [HttpGet]
@@ -76,5 +79,15 @@ public class AbsenceRequestsController(IAbsenceRequestService absenceRequestServ
     public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetMine(int requestedBySdkSitId)
     {
         return await _absenceRequestService.GetMineAsync(requestedBySdkSitId);
+    }
+
+    [HttpGet]
+    [Authorize(Roles = EformRole.Admin)]
+    [Route("all")]
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetAll(
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100)
+    {
+        return await _absenceRequestService.GetAllAsync(status, fromDate, toDate, sdkSiteId, page, pageSize);
     }
 }

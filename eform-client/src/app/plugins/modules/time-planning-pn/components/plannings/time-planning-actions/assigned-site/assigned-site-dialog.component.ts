@@ -4,10 +4,10 @@ import {Component, DoCheck, OnInit,
 import {
   MAT_DIALOG_DATA
 } from '@angular/material/dialog';
-import {AssignedSiteModel, CommonTagModel, GlobalAutoBreakSettingsModel} from '../../../../models';
+import {AssignedSiteModel, CommonTagModel, GlobalAutoBreakSettingsModel, PayRuleSetSimpleModel} from '../../../../models';
 import {selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {Store} from '@ngrx/store';
-import {TimePlanningPnSettingsService} from 'src/app/plugins/modules/time-planning-pn/services';
+import {TimePlanningPnSettingsService, TimePlanningPnPayRuleSetsService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {
   AbstractControl,
   FormBuilder,
@@ -29,6 +29,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private fb = inject(FormBuilder);
   public data = inject<AssignedSiteModel>(MAT_DIALOG_DATA);
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
+  private payRuleSetsService = inject(TimePlanningPnPayRuleSetsService);
   private store = inject(Store);
 
   assignedSiteForm!: FormGroup;
@@ -38,6 +39,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private previousData: AssignedSiteModel;
   private globalAutoBreakSettings: GlobalAutoBreakSettingsModel;
   public availableTags: CommonTagModel[] = [];
+  public availablePayRuleSets: PayRuleSetSimpleModel[] = [];
 
   ngDoCheck(): void {
     if (this.hasDataChanged()) {
@@ -57,6 +59,9 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
 
     // Load available tags from eForm core API via service
     this.loadAvailableTags();
+
+    // Load available pay rule sets
+    this.loadPayRuleSets();
 
     if (!this.data.resigned) {
       const today = new Date();
@@ -161,6 +166,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.assignedSiteForm = this.fb.group({
       useGoogleSheetAsDefault: new FormControl(this.data.useGoogleSheetAsDefault),
       useOnlyPlanHours: new FormControl(this.data.useOnlyPlanHours),
+      useOneMinuteIntervals: new FormControl(this.data.useOneMinuteIntervals ?? false),
       autoBreakCalculationActive: new FormControl(this.data.autoBreakCalculationActive),
       allowPersonalTimeRegistration: new FormControl(this.data.allowPersonalTimeRegistration),
       allowEditOfRegistrations: new FormControl(this.data.allowEditOfRegistrations),
@@ -178,6 +184,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
       ),
       isManager: new FormControl(this.data.isManager ?? false),
       managingTagIds: new FormControl(this.data.managingTagIds ?? []),
+      payRuleSetId: new FormControl(this.data.payRuleSetId ?? null),
       planHours: this.fb.group(planHoursGroup),
       autoBreakSettings: this.fb.group(autoBreakGroup),
       firstShift: this.fb.group(firstShiftGroup),
@@ -193,7 +200,23 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     this.assignedSiteForm.valueChanges.subscribe(formValue => {
       Object.assign(this.data, formValue);
     });
+
+    // Normalize mutually-exclusive flag combinations that old flat-checkbox
+    // data might contain (e.g. both usePunchClock and allowAcceptOfPlannedHours
+    // set to true). Derives the current radio value and writes it back so the
+    // stored flags match the displayed selection exactly.
+    this.onEntryMethodChange(this.entryMethod);
+    this.onEditingPolicyChange(this.editingPolicy);
+
     this.calculateHours();
+
+    // Re-baseline after normalization: the setValue calls above fired
+    // valueChanges, which Object.assigns the whole form back into `this.data`
+    // (including form controls initialised from a fresh Date object). That
+    // counts as a difference from the previousData snapshot captured before
+    // the form was built, so hasDataChanged() would return true immediately
+    // after ngOnInit. Capture again here so it reflects the true baseline.
+    this.previousData = {...this.data};
   }
 
   setAutoBreakValue(day: string, control: string, value: string) {
@@ -567,6 +590,81 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
 
   getFifthShiftFormGroup(): FormGroup {
     return this.assignedSiteForm.get('fifthShift') as FormGroup;
+  }
+
+  /**
+   * Axis 1 — how working time is captured.
+   * Maps the two underlying flags (usePunchClock, allowAcceptOfPlannedHours)
+   * onto a single 3-value radio control. These flags are mutually exclusive
+   * in the UI by construction.
+   */
+  get entryMethod(): 'manual' | 'punchClock' | 'acceptPlanned' {
+    if (this.data.usePunchClock) {
+      return 'punchClock';
+    }
+    if (this.data.allowAcceptOfPlannedHours) {
+      return 'acceptPlanned';
+    }
+    return 'manual';
+  }
+
+  onEntryMethodChange(value: 'manual' | 'punchClock' | 'acceptPlanned'): void {
+    const f = this.assignedSiteForm;
+    const punch = value === 'punchClock';
+    const accept = value === 'acceptPlanned';
+    f.get('usePunchClock')?.setValue(punch);
+    f.get('allowAcceptOfPlannedHours')?.setValue(accept);
+    // Mirror onto this.data immediately so template *ngIf bindings that read
+    // from data (instead of form) react in the same change-detection tick.
+    this.data.usePunchClock = punch;
+    this.data.allowAcceptOfPlannedHours = accept;
+    // The "allow entry of forgotten days" sub-option only makes sense under punch clock
+    if (!punch) {
+      f.get('usePunchClockWithAllowRegisteringInHistory')?.setValue(false);
+      this.data.usePunchClockWithAllowRegisteringInHistory = false;
+    }
+  }
+
+  /**
+   * Axis 2 — editing policy for past registrations.
+   * Maps two boolean flags (allowEditOfRegistrations, daysBackInTimeAllowedEditingEnabled)
+   * onto a single 3-value radio control:
+   *   locked          → both false
+   *   untilPayroll    → allowEditOfRegistrations=true, daysBack=false
+   *   twoDaysRolling  → both true
+   */
+  get editingPolicy(): 'locked' | 'untilPayroll' | 'twoDaysRolling' {
+    if (this.data.daysBackInTimeAllowedEditingEnabled) {
+      return 'twoDaysRolling';
+    }
+    if (this.data.allowEditOfRegistrations) {
+      return 'untilPayroll';
+    }
+    return 'locked';
+  }
+
+  onEditingPolicyChange(value: 'locked' | 'untilPayroll' | 'twoDaysRolling'): void {
+    const f = this.assignedSiteForm;
+    const allowEdit = value !== 'locked';
+    const daysBack = value === 'twoDaysRolling';
+    f.get('allowEditOfRegistrations')?.setValue(allowEdit);
+    f.get('daysBackInTimeAllowedEditingEnabled')?.setValue(daysBack);
+    this.data.allowEditOfRegistrations = allowEdit;
+    this.data.daysBackInTimeAllowedEditingEnabled = daysBack;
+  }
+
+  loadPayRuleSets(): void {
+    this.payRuleSetsService.getPayRuleSets({offset: 0, pageSize: 1000}).subscribe({
+      next: (result) => {
+        if (result && result.success) {
+          this.availablePayRuleSets = result.model?.payRuleSets || [];
+        }
+      },
+      error: (error) => {
+        console.error('Error loading pay rule sets:', error);
+        this.availablePayRuleSets = [];
+      }
+    });
   }
 
   loadAvailableTags(): void {

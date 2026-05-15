@@ -1,5 +1,6 @@
 <div class="table-actions">
   <button
+    id="openCreatePayRuleSetBtn"
     class="btn-primary btn-primary--icon-left"
     (click)="openCreateModal()">
     {{ 'Create Pay Rule Set' | translate }}
@@ -30,6 +31,8 @@
       <button
         mat-menu-item
         id="editPayRuleSetBtn-{{i}}"
+        [disabled]="isLockedPreset(row)"
+        [matTooltip]="isLockedPreset(row) ? ('Cannot edit locked preset' | translate) : ''"
         (click)="openEditModal(row)"
       >
         <mat-icon>edit</mat-icon>
@@ -39,6 +42,8 @@
         mat-menu-item
         id="deletePayRuleSetBtn-{{i}}"
         class="btn-delete-menu"
+        [disabled]="isLockedPreset(row)"
+        [matTooltip]="isLockedPreset(row) ? ('Cannot delete locked preset' | translate) : ''"
         (click)="openDeleteModal(row)"
       >
         <mat-icon>delete</mat-icon>

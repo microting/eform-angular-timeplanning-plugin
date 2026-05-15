@@ -166,4 +166,56 @@ test.describe('Dashboard edit values', () => {
     await expect(page.locator('#planHours')).toHaveValue('22');
     await expect(page.locator('#todaysFlex')).toHaveValue('0.00');
   });
+
+  /**
+   * Flag-off regression guard for the admin-edit exact-minute work:
+   * setting a clean 5-min-aligned actual pair (`03:00 → 11:00`) on a
+   * flag-off worker must still save and reload correctly. The additive
+   * `Start{N}ExactMinutes` / `Stop{N}ExactMinutes` DTO fields plus the
+   * server-side `ApplyExactMinuteStart/Stop` helpers were introduced
+   * for the flag-on path — this test locks the contract that the
+   * flag-off path is bit-identical to before (i.e. our `Math.round`
+   * change and the additive DTO fields did NOT alter flag-off
+   * behavior). A regression in either direction (e.g. ExactMinutes
+   * leaking into the flag-off save path or the DTO change altering
+   * serialization defaults) would surface here as a `toHaveValue`
+   * mismatch or a save-button-disabled stall.
+   *
+   * 03:00 → 11:00 = 480 min ⇒ start1Id = (180/5)+1 = 37; stop1Id =
+   * (660/5)+1 = 133; (133-37)*5 = 480 min ⇒ actualHours = 8.00.
+   */
+  test('flag-off: clean 5-min actual pair 03:00 -> 11:00 round-trips through save + reopen', async ({ page }) => {
+    await setTimepickerValue(page, 'plannedStartOfShift1', '03', '00');
+    await setTimepickerValue(page, 'plannedEndOfShift1', '11', '00');
+    await setTimepickerValue(page, 'start1StartedAt', '03', '00');
+    await setTimepickerValue(page, 'stop1StoppedAt', '11', '00');
+
+    await expect(page.locator('#saveButton')).toBeEnabled({ timeout: 10000 });
+    const updatePromise = page.waitForResponse(r =>
+      r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT');
+    const reindexPromise = page.waitForResponse(r =>
+      r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
+    await page.locator('#saveButton').click();
+    const updateResponse = await updatePromise;
+    await reindexPromise;
+    if (await page.locator('.overlay-spinner').count() > 0) {
+      await page.locator('.overlay-spinner').waitFor({ state: 'hidden', timeout: 30000 });
+    }
+    await page.waitForTimeout(500);
+    expect(updateResponse.status(), 'flag-off PUT must succeed with clean 5-min actuals').toBeLessThan(400);
+
+    // Re-open the cell and assert the picker shows the saved clean values.
+    await page.locator('#cell0_0').scrollIntoViewIfNeeded();
+    await page.locator('#cell0_0').click();
+    await expect(page.locator('#planHours')).toBeVisible();
+    await expect(
+      page.locator('[data-testid="start1StartedAt"]'),
+      'flag-off shift1 start must round-trip 03:00 unchanged',
+    ).toHaveValue('03:00');
+    await expect(
+      page.locator('[data-testid="stop1StoppedAt"]'),
+      'flag-off shift1 stop must round-trip 11:00 unchanged',
+    ).toHaveValue('11:00');
+    await page.locator('#cancelButton').click();
+  });
 });

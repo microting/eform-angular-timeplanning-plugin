@@ -69,7 +69,7 @@ public class TimePlanningSettingsController(ISettingService settingService) : Co
     [Authorize(Policy = TimePlanningClaims.GetWorkingHours)]
     public async Task<OperationDataResult<List<Site>>> GetAvailableSites()
     {
-        return await settingService.GetAvailableSites(null);
+        return await settingService.GetAvailableSitesByCurrentUser();
     }
 
     [HttpGet]

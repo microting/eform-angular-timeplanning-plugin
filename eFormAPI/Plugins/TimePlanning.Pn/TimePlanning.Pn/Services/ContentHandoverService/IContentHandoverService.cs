@@ -25,6 +25,7 @@ SOFTWARE.
 #nullable enable
 namespace TimePlanning.Pn.Services.ContentHandoverService;
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure.Models.ContentHandover;
@@ -32,10 +33,25 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
 public interface IContentHandoverService
 {
-    Task<OperationDataResult<ContentHandoverRequestModel>> CreateAsync(int fromPlanRegistrationId, ContentHandoverRequestCreateModel model);
+    Task<OperationDataResult<List<ContentHandoverRequestModel>>> CreateAsync(int fromPlanRegistrationId, ContentHandoverRequestCreateModel model);
+    Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date, List<int> shiftIndices);
     Task<OperationResult> AcceptAsync(int requestId, int currentSdkSitId, ContentHandoverDecisionModel model);
     Task<OperationResult> RejectAsync(int requestId, int currentSdkSitId, ContentHandoverDecisionModel model);
     Task<OperationResult> CancelAsync(int requestId, int currentSdkSitId);
-    Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync(int toSdkSitId);
+    /// <summary>
+    /// Returns pending handover requests addressed to the currently
+    /// authenticated caller's SDK site. The caller's site is resolved from
+    /// the JWT, not from any client-supplied value, so a client cannot
+    /// inspect another worker's inbox.
+    /// </summary>
+    Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync();
     Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync(int fromSdkSitId);
+    Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date);
+    /// <summary>
+    /// Returns ALL content handover requests matching the optional filters.
+    /// Intended for admin/manager use — no user-scoping is applied.
+    /// </summary>
+    Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetAllAsync(
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100);
 }

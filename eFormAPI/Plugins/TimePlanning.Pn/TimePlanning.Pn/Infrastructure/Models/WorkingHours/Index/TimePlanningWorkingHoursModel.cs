@@ -54,6 +54,20 @@ public class TimePlanningWorkingHoursModel
     public double FlexHours { get; set; }
     public double SumFlexStart { get; set; }
     public double SumFlexEnd { get; set; }
+
+    /// <summary>
+    /// Phase 2 (UseOneMinuteIntervals): second-precision siblings of the
+    /// <c>NettoHours</c> / <c>FlexHours</c> / <c>SumFlexStart</c> /
+    /// <c>SumFlexEnd</c> doubles. When the flag is on these are populated
+    /// as the source of truth and the doubles above are back-derived
+    /// (<c>x = xInSeconds / 3600.0</c>). When the flag is off they remain
+    /// at 0; the doubles above stay the source of truth.
+    /// </summary>
+    public int NettoHoursInSeconds { get; set; }
+    public int FlexInSeconds { get; set; }
+    public int SumFlexStartInSeconds { get; set; }
+    public int SumFlexEndInSeconds { get; set; }
+    public int PaiedOutFlexInSeconds { get; set; }
     public bool IsSaturday { get; set; }
     public bool IsSunday { get; set; }
     public string PaidOutFlex { get; set; }

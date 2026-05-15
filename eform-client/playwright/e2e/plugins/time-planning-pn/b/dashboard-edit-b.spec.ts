@@ -307,9 +307,9 @@ test.describe('Dashboard edit values', () => {
 
       // Save
       const updateDayPromise = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/plannings/') && r.request().method() === 'PUT');
+      const indexUpdatePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
       await page.locator('#saveButton').click();
       await updateDayPromise;
-      const indexUpdatePromise2 = page.waitForResponse(r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
       await indexUpdatePromise2;
       await waitForSpinner(page);
       await page.waitForTimeout(1000);

@@ -199,20 +199,17 @@ public class TimeSettingService(
         }
     }
 
-    public async Task<OperationDataResult<List<Site>>> GetAvailableSites(string? token)
+    public async Task<OperationDataResult<List<Site>>> GetAvailableSites(string token)
     {
         try
         {
-            if (token != null)
+            var registrationDevice = await dbContext.RegistrationDevices
+                .Where(x => x.Token == token).FirstOrDefaultAsync();
+            if (registrationDevice == null)
             {
-                var registrationDevice = await dbContext.RegistrationDevices
-                    .Where(x => x.Token == token).FirstOrDefaultAsync();
-                if (registrationDevice == null)
-                {
-                    return new OperationDataResult<List<Site>>(
-                        false,
-                        "Token not found");
-                }
+                return new OperationDataResult<List<Site>>(
+                    false,
+                    "Token not found");
             }
 
             var core1 = await core.GetCore();
@@ -237,7 +234,7 @@ public class TimeSettingService(
                         .Where(x => x.Id == siteWorker.WorkerId)
                         .FirstOrDefaultAsync();
                     var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
-                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                    var language = await sdkDbContext.Languages.FirstOrDefaultAsync(x => x.Id == site.LanguageId);
                     if (worker != null)
                     {
 
@@ -299,13 +296,13 @@ public class TimeSettingService(
                             SiteName = site.Name,
                             FirstName = worker.FirstName,
                             LastName = worker.LastName,
-                            CustomerNo = unit!.CustomerNo,
-                            OtpCode = unit.OtpCode,
-                            UnitId = unit.MicrotingUid,
+                            CustomerNo = unit?.CustomerNo ?? 0,
+                            OtpCode = unit?.OtpCode ?? 0,
+                            UnitId = unit?.MicrotingUid,
                             WorkerUid = worker.MicrotingUid,
                             Email = worker.Email,
                             PinCode = worker.PinCode,
-                            DefaultLanguage = language.LanguageCode,
+                            DefaultLanguage = language?.LanguageCode ?? "en",
                             HoursStarted = hoursStarted,
                             PauseStarted = pauseStarted,
                             AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
@@ -314,10 +311,12 @@ public class TimeSettingService(
                             FifthShiftActive = assignedSite.FifthShiftActive,
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
-                            SnapshotEnabled = assignedSite.SnapshotEnabled
+                            SnapshotEnabled = assignedSite.SnapshotEnabled,
+                            UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals
                         };
-                        var user = await baseDbContext.Users
-                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+                        var workerEmail = (worker.Email ?? "").Trim().ToLower();
+                        var user = baseDbContext == null || string.IsNullOrEmpty(workerEmail) ? null : await baseDbContext.Users
+                            .Where(x => x.Email.ToLower() == workerEmail)
                             .FirstOrDefaultAsync().ConfigureAwait(false);
                         if (user != null)
                         {
@@ -325,6 +324,7 @@ public class TimeSettingService(
                                 ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
                                 : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
                         }
+                        newSite.PhoneNumber = worker.PhoneNumber ?? "";
                         sites.Add(newSite);
                     }
                 }
@@ -343,6 +343,300 @@ public class TimeSettingService(
                 false,
                 localizationService.GetString("ErrorWhileObtainingSites"));
         }
+    }
+
+    public async Task<OperationDataResult<List<Site>>> GetAvailableSitesByCurrentUser()
+    {
+        try
+        {
+            var core1 = await core.GetCore();
+            var sdkDbContext = core1.DbContextHelper.GetDbContext();
+            var assignedSites = await dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Resigned != true)
+                .ToListAsync();
+
+            // Filter sites by current user when called from browser (not device token).
+            // Skip entirely when baseDbContext is null (unit-test wiring).
+            if (baseDbContext != null)
+            {
+                var currentUserAsync = await userService.GetCurrentUserAsync();
+                if (currentUserAsync == null)
+                {
+                    return new OperationDataResult<List<Site>>(false,
+                        localizationService.GetString("UserNotFound"), null!);
+                }
+                var currentUser = baseDbContext.Users
+                    .Include(x => x.UserRoles)
+                    .ThenInclude(x => x.Role)
+                    .Single(x => x.Id == currentUserAsync.Id);
+
+                var isAdmin = currentUser.UserRoles.Any(x => x.Role.Name == "admin");
+
+                if (!isAdmin)
+                {
+                    var userSecurityGroups = baseDbContext.SecurityGroupUsers
+                        .Include(x => x.SecurityGroup)
+                        .Where(x => x.EformUserId == currentUser.Id)
+                        .ToList();
+                    var eFormAdminsGroup = userSecurityGroups
+                        .Any(x => x.SecurityGroup.Name == "eForm admins");
+                    isAdmin = eFormAdminsGroup;
+                }
+
+                if (!isAdmin)
+                {
+                    // Mirror the "no managers anywhere" fallback that
+                    // TimePlanningPlanningService.Index() uses (PR #1490). When no worker is
+                    // flagged as a manager anywhere in the system, the manager-tag filter has
+                    // nothing to filter against and would otherwise collapse non-manager users
+                    // down to just their own site. In that degenerate state, leave the full
+                    // non-resigned site list intact so the planning page isn't empty/self-only.
+                    var anyManagerExists = await dbContext.AssignedSites
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .AnyAsync(x => x.IsManager);
+
+                    if (anyManagerExists)
+                    {
+                        var worker = await sdkDbContext.Workers
+                            .Include(x => x.SiteWorkers)
+                            .ThenInclude(x => x.Site)
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+
+                        if (worker != null && worker.SiteWorkers.Any())
+                        {
+                            var workerSite = worker.SiteWorkers.First().Site;
+                            var assignedSite = assignedSites
+                                .FirstOrDefault(x => x.SiteId == workerSite.MicrotingUid);
+
+                            if (assignedSite != null && assignedSite.IsManager)
+                            {
+                                var managingTagIds = await dbContext.AssignedSiteManagingTags
+                                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                    .Where(x => x.AssignedSiteId == assignedSite.Id)
+                                    .Select(x => x.TagId)
+                                    .ToListAsync();
+
+                                if (managingTagIds.Any())
+                                {
+                                    var taggedSiteIds = await sdkDbContext.SiteTags
+                                        .Include(x => x.Site)
+                                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                                        .Where(x => managingTagIds.Contains((int)x.TagId!))
+                                        .Select(x => x.Site.MicrotingUid)
+                                        .Distinct()
+                                        .ToListAsync();
+
+                                    assignedSites = assignedSites
+                                        .Where(x => taggedSiteIds.Contains(x.SiteId))
+                                        .ToList();
+                                    if (assignedSites.All(x => x.Id != assignedSite.Id))
+                                    {
+                                        assignedSites.Add(assignedSite);
+                                    }
+                                }
+                                else
+                                {
+                                    assignedSites = [assignedSite];
+                                }
+                            }
+                            else if (assignedSite != null)
+                            {
+                                assignedSites = [assignedSite];
+                            }
+                            else
+                            {
+                                assignedSites = [];
+                            }
+                        }
+                        else
+                        {
+                            assignedSites = [];
+                        }
+                    }
+                    // else: no managers exist anywhere -> leave assignedSites unfiltered
+                }
+            }
+
+            // Defensive dedup: BuildSitesFromAssignedSitesAsync emits one Site per
+            // input AssignedSite, so any duplicate rows here would surface twice
+            // in the planning page worker dropdown. Dedup by primary key Id.
+            assignedSites = assignedSites
+                .GroupBy(x => x.Id)
+                .Select(g => g.First())
+                .ToList();
+
+            var sites = await BuildSitesFromAssignedSitesAsync(assignedSites, sdkDbContext);
+
+            return new OperationDataResult<List<Site>>(true, sites);
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            Console.WriteLine(e);
+            logger.LogError(e.Message);
+            return new OperationDataResult<List<Site>>(
+                false,
+                localizationService.GetString("ErrorWhileObtainingSites"));
+        }
+    }
+
+    /// <summary>
+    /// Mobile gRPC entry point — returns the complete unfiltered coworker list.
+    /// Mirrors <see cref="GetAvailableSitesByCurrentUser"/> but skips the manager-tag
+    /// filter block. Resigned/removed/workflow-state guards still apply.
+    /// </summary>
+    public async Task<OperationDataResult<List<Site>>> GetAllRegistrationSitesByCurrentUser()
+    {
+        try
+        {
+            var core1 = await core.GetCore();
+            var sdkDbContext = core1.DbContextHelper.GetDbContext();
+            var assignedSites = await dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Resigned != true)
+                .ToListAsync();
+
+            // No manager-tag filter here: mobile clients always receive the full list.
+
+            var sites = await BuildSitesFromAssignedSitesAsync(assignedSites, sdkDbContext);
+
+            return new OperationDataResult<List<Site>>(true, sites);
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            Console.WriteLine(e);
+            logger.LogError(e.Message);
+            return new OperationDataResult<List<Site>>(
+                false,
+                localizationService.GetString("ErrorWhileObtainingSites"));
+        }
+    }
+
+    /// <summary>
+    /// Builds the response <see cref="Site"/> list from a (possibly filtered) collection
+    /// of <see cref="AssignedSite"/> rows. Shared by the JSON web admin path
+    /// (<see cref="GetAvailableSitesByCurrentUser"/>) and the unfiltered mobile gRPC
+    /// path (<see cref="GetAllRegistrationSitesByCurrentUser"/>).
+    /// </summary>
+    private async Task<List<Site>> BuildSitesFromAssignedSitesAsync(
+        List<Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite> assignedSites,
+        Microting.eForm.Infrastructure.MicrotingDbContext sdkDbContext)
+    {
+        var sites = new List<Site>();
+        foreach (var assignedSite in assignedSites)
+        {
+            var site = await sdkDbContext.Sites.SingleOrDefaultAsync(x =>
+                x.MicrotingUid == assignedSite.SiteId);
+            if (site == null) continue;
+            var siteWorker = await sdkDbContext.SiteWorkers
+                .Where(x => x.SiteId == site.Id)
+                .FirstOrDefaultAsync();
+            if (siteWorker == null) continue;
+            var worker = await sdkDbContext.Workers
+                .Where(x => x.Id == siteWorker.WorkerId)
+                .FirstOrDefaultAsync();
+            if (worker == null) continue;
+            var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
+            var language = await sdkDbContext.Languages
+                .FirstOrDefaultAsync(x => x.Id == site.LanguageId);
+
+                        var today = DateTime.UtcNow.Date;
+                        var midnight = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
+                        var planRegistrationForToday = await dbContext.PlanRegistrations
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .Where(x => x.SdkSitId == site.MicrotingUid)
+                            .Where(x => x.Date == midnight)
+                            .FirstOrDefaultAsync();
+                        var hoursStarted = false;
+                        var pauseStarted = false;
+                        if (planRegistrationForToday != null)
+                        {
+                            hoursStarted =
+                                planRegistrationForToday is { Start1StartedAt: not null, Stop1StoppedAt: null } or
+                                    { Start2StartedAt: not null, Stop2StoppedAt: null } or
+                                    { Start3StartedAt: not null, Stop3StoppedAt: null } or
+                                    { Start4StartedAt: not null, Stop4StoppedAt: null } or
+                                    { Start5StartedAt: not null, Stop5StoppedAt: null };
+                            pauseStarted =
+                                planRegistrationForToday is
+                                    { Pause1StartedAt: not null, Pause1StoppedAt: null } or
+                                    { Pause10StartedAt: not null, Pause10StoppedAt: null } or
+                                    { Pause11StartedAt: not null, Pause11StoppedAt: null } or
+                                    { Pause12StartedAt: not null, Pause12StoppedAt: null } or
+                                    { Pause13StartedAt: not null, Pause13StoppedAt: null } or
+                                    { Pause14StartedAt: not null, Pause14StoppedAt: null } or
+                                    { Pause15StartedAt: not null, Pause15StoppedAt: null } or
+                                    { Pause16StartedAt: not null, Pause16StoppedAt: null } or
+                                    { Pause17StartedAt: not null, Pause17StoppedAt: null } or
+                                    { Pause18StartedAt: not null, Pause18StoppedAt: null } or
+                                    { Pause19StartedAt: not null, Pause19StoppedAt: null } or
+                                    { Pause100StartedAt: not null, Pause100StoppedAt: null } or
+                                    { Pause101StartedAt: not null, Pause101StoppedAt: null } or
+                                    { Pause102StartedAt: not null, Pause102StoppedAt: null } or
+                                    { Pause2StartedAt: not null, Pause2StoppedAt: null } or
+                                    { Pause20StartedAt: not null, Pause20StoppedAt: null } or
+                                    { Pause21StartedAt: not null, Pause21StoppedAt: null } or
+                                    { Pause22StartedAt: not null, Pause22StoppedAt: null } or
+                                    { Pause23StartedAt: not null, Pause23StoppedAt: null } or
+                                    { Pause24StartedAt: not null, Pause24StoppedAt: null } or
+                                    { Pause25StartedAt: not null, Pause25StoppedAt: null } or
+                                    { Pause26StartedAt: not null, Pause26StoppedAt: null } or
+                                    { Pause27StartedAt: not null, Pause27StoppedAt: null } or
+                                    { Pause28StartedAt: not null, Pause28StoppedAt: null } or
+                                    { Pause29StartedAt: not null, Pause29StoppedAt: null } or
+                                    { Pause200StartedAt: not null, Pause200StoppedAt: null } or
+                                    { Pause201StartedAt: not null, Pause201StoppedAt: null } or
+                                    { Pause202StartedAt: not null, Pause202StoppedAt: null } or
+                                    { Pause3StartedAt: not null, Pause3StoppedAt: null } or
+                                    { Pause4StartedAt: not null, Pause4StoppedAt: null } or
+                                    { Pause5StartedAt: not null, Pause5StoppedAt: null };
+                        }
+
+                        var newSite = new Site
+                        {
+                            SiteId = (int)site.MicrotingUid!,
+                            SiteName = site.Name,
+                            FirstName = worker.FirstName,
+                            LastName = worker.LastName,
+                            CustomerNo = unit?.CustomerNo ?? 0,
+                            OtpCode = unit?.OtpCode ?? 0,
+                            UnitId = unit?.MicrotingUid,
+                            WorkerUid = worker.MicrotingUid,
+                            Email = worker.Email,
+                            PinCode = worker.PinCode,
+                            DefaultLanguage = language?.LanguageCode ?? "en",
+                            HoursStarted = hoursStarted,
+                            PauseStarted = pauseStarted,
+                            AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
+                            ThirdShiftActive = assignedSite.ThirdShiftActive,
+                            FourthShiftActive = assignedSite.FourthShiftActive,
+                            FifthShiftActive = assignedSite.FifthShiftActive,
+                            Resigned = assignedSite.Resigned,
+                            ResignedAtDate = assignedSite.ResignedAtDate,
+                            SnapshotEnabled = assignedSite.SnapshotEnabled,
+                            UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals
+                        };
+                        var workerEmail = (worker.Email ?? "").Trim().ToLower();
+                        var user = baseDbContext == null || string.IsNullOrEmpty(workerEmail) ? null : await baseDbContext.Users
+                            .Where(x => x.Email.ToLower() == workerEmail)
+                            .FirstOrDefaultAsync().ConfigureAwait(false);
+                        if (user != null)
+                        {
+                            newSite.AvatarUrl = user.ProfilePictureSnapshot != null
+                                ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
+                                : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
+                        }
+                        newSite.PhoneNumber = worker.PhoneNumber ?? "";
+                        sites.Add(newSite);
+        }
+
+        sites = sites.OrderBy(x => x.SiteName).ToList();
+        return sites;
     }
 
     public async Task<OperationDataResult<Infrastructure.Models.Settings.AssignedSite>> GetAssignedSite(int siteId)
@@ -386,6 +680,11 @@ public class TimeSettingService(
         var core1 = await core.GetCore();
         var sdkContext = core1.DbContextHelper.GetDbContext();
         var currentUserAsync = await userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false,
+                localizationService.GetString("UserNotFound"), null!);
+        }
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         var worker = await sdkContext.Workers
@@ -518,7 +817,7 @@ public class TimeSettingService(
                         .Where(x => x.Id == siteWorker.WorkerId)
                         .FirstOrDefaultAsync();
                     var unit = await sdkDbContext.Units.FirstOrDefaultAsync(x => x.SiteId == site.Id);
-                    var language = await sdkDbContext.Languages.SingleAsync(x => x.Id == site.LanguageId);
+                    var language = await sdkDbContext.Languages.FirstOrDefaultAsync(x => x.Id == site.LanguageId);
                     if (worker != null)
                     {
 
@@ -580,13 +879,13 @@ public class TimeSettingService(
                             SiteName = site.Name,
                             FirstName = worker.FirstName,
                             LastName = worker.LastName,
-                            CustomerNo = unit!.CustomerNo,
-                            OtpCode = unit.OtpCode,
-                            UnitId = unit.MicrotingUid,
+                            CustomerNo = unit?.CustomerNo ?? 0,
+                            OtpCode = unit?.OtpCode ?? 0,
+                            UnitId = unit?.MicrotingUid,
                             WorkerUid = worker.MicrotingUid,
                             Email = worker.Email,
                             PinCode = worker.PinCode,
-                            DefaultLanguage = language.LanguageCode,
+                            DefaultLanguage = language?.LanguageCode ?? "en",
                             HoursStarted = hoursStarted,
                             PauseStarted = pauseStarted,
                             AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
@@ -595,9 +894,11 @@ public class TimeSettingService(
                             FifthShiftActive = assignedSite.FifthShiftActive,
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
+                            UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals,
                         };
-                        var user = await baseDbContext.Users
-                            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+                        var workerEmail = (worker.Email ?? "").Trim().ToLower();
+                        var user = baseDbContext == null || string.IsNullOrEmpty(workerEmail) ? null : await baseDbContext.Users
+                            .Where(x => x.Email.ToLower() == workerEmail)
                             .FirstOrDefaultAsync().ConfigureAwait(false);
                         if (user != null)
                         {
@@ -605,6 +906,7 @@ public class TimeSettingService(
                                 ? $"api/images/login-page-images?fileName={user.ProfilePictureSnapshot}"
                                 : $"https://www.gravatar.com/avatar/{user.EmailSha256}?s=32&d=identicon";
                         }
+                        newSite.PhoneNumber = worker.PhoneNumber ?? "";
                         sites.Add(newSite);
                     }
                 }
@@ -646,6 +948,7 @@ public class TimeSettingService(
         dbAssignedSite.UsePunchClock = site.UsePunchClock;
         dbAssignedSite.UseDetailedPauseEditing = site.UseDetailedPauseEditing;
         dbAssignedSite.AutoBreakCalculationActive = site.AutoBreakCalculationActive;
+        dbAssignedSite.PayRuleSetId = site.PayRuleSetId;
 
         dbAssignedSite.StartMonday = site.StartMonday;
         dbAssignedSite.StartTuesday = site.StartTuesday;

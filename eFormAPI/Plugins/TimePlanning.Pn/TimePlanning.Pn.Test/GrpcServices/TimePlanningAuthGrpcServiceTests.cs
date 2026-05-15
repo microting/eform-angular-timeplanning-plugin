@@ -1,5 +1,10 @@
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using Microting.eFormApi.BasePn.Abstractions;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Microting.eFormApi.BasePn.Infrastructure.Models.Application;
 using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Grpc;
@@ -15,13 +20,26 @@ namespace TimePlanning.Pn.Test.GrpcServices;
 public class TimePlanningAuthGrpcServiceTests
 {
     private ITimePlanningRegistrationDeviceService _deviceService;
+    private IUserService _userService;
+    private UserManager<EformUser> _userManager;
+    private RoleManager<EformRole> _roleManager;
+    private IOptions<EformTokenOptions> _tokenOptions;
     private TimePlanningAuthGrpcService _grpcService;
 
     [SetUp]
     public void SetUp()
     {
         _deviceService = Substitute.For<ITimePlanningRegistrationDeviceService>();
-        _grpcService = new TimePlanningAuthGrpcService(_deviceService);
+        // RefreshToken-related deps are not exercised by ActivateDevice tests;
+        // null-pass these. UserManager/RoleManager have no usable interface to
+        // substitute against, so we pass null — any test that exercises
+        // RefreshToken would need to construct real instances.
+        _userService = Substitute.For<IUserService>();
+        _userManager = null;
+        _roleManager = null;
+        _tokenOptions = Substitute.For<IOptions<EformTokenOptions>>();
+        _grpcService = new TimePlanningAuthGrpcService(
+            _deviceService, _userService, _userManager, _roleManager, _tokenOptions);
     }
 
     [Test]

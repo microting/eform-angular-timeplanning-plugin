@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AssignedSiteDialogComponent } from './assigned-site-dialog.component';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { TimePlanningPnSettingsService } from '../../../../services';
+import { TimePlanningPnSettingsService, TimePlanningPnPayRuleSetsService } from '../../../../services';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -13,6 +13,7 @@ describe('AssignedSiteDialogComponent', () => {
   let component: AssignedSiteDialogComponent;
   let fixture: ComponentFixture<AssignedSiteDialogComponent>;
   let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
+  let mockPayRuleSetsService: jest.Mocked<TimePlanningPnPayRuleSetsService>;
   let mockStore: jest.Mocked<Store>;
 
   const mockAssignedSiteData = {
@@ -35,6 +36,7 @@ describe('AssignedSiteDialogComponent', () => {
     resignedAtDate: new Date().toISOString(),
     isManager: false,
     managingTagIds: [],
+    payRuleSetId: null,
     mondayPlanHours: 0,
     tuesdayPlanHours: 0,
     wednesdayPlanHours: 0,
@@ -61,6 +63,9 @@ describe('AssignedSiteDialogComponent', () => {
       getAssignedSite: jest.fn(),
       getAvailableTags: jest.fn(),
     } as any;
+    mockPayRuleSetsService = {
+      getPayRuleSets: jest.fn(),
+    } as any;
     mockStore = {
       select: jest.fn(),
     } as any;
@@ -72,6 +77,9 @@ describe('AssignedSiteDialogComponent', () => {
     mockSettingsService.getAvailableTags.mockReturnValue(
       of({ success: true, model: [] }) as any
     );
+    mockPayRuleSetsService.getPayRuleSets.mockReturnValue(
+      of({ success: true, model: { payRuleSets: [], total: 0 } }) as any
+    );
 
     await TestBed.configureTestingModule({
       declarations: [AssignedSiteDialogComponent],
@@ -81,6 +89,7 @@ describe('AssignedSiteDialogComponent', () => {
         FormBuilder,
         { provide: MAT_DIALOG_DATA, useValue: mockAssignedSiteData },
         { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+        { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
         { provide: Store, useValue: mockStore },
       ]
     }).compileComponents();
@@ -427,6 +436,7 @@ describe('AssignedSiteDialogComponent', () => {
           FormBuilder,
           { provide: MAT_DIALOG_DATA, useValue: dataWithManager },
           { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
           { provide: Store, useValue: mockStore },
         ]
       }).compileComponents();
@@ -441,6 +451,176 @@ describe('AssignedSiteDialogComponent', () => {
 
       expect(isManagerControl?.value).toBe(true);
       expect(managingTagIdsControl?.value).toEqual([1, 2]);
+    });
+  });
+
+  describe('Editing-policy section visibility (Axis 2)', () => {
+    // The editing-policy section's *ngIf is:
+    //   !data.resigned && data.allowPersonalTimeRegistration && (selectCurrentUserIsAdmin$ | async)
+    // After the fix, this condition is INDEPENDENT of `entryMethod`. These tests
+    // assert (a) the boolean condition evaluates true regardless of entry method
+    // and (b) onEntryMethodChange does not mutate editing-policy state.
+    //
+    // Sibling tests in this file deliberately avoid `fixture.detectChanges()`
+    // because the dialog's template uses Material form-control directives whose
+    // value accessors are not registered under NO_ERRORS_SCHEMA. We follow the
+    // same pattern here: assert against component state, not the rendered DOM.
+
+    function setupComponentWithData(
+      overrides: Partial<typeof mockAssignedSiteData>,
+    ): AssignedSiteDialogComponent {
+      const data = { ...mockAssignedSiteData, ...overrides };
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        declarations: [AssignedSiteDialogComponent],
+        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          FormBuilder,
+          { provide: MAT_DIALOG_DATA, useValue: data },
+          { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
+          { provide: Store, useValue: mockStore },
+        ],
+      }).compileComponents();
+      const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      const c = newFixture.componentInstance;
+      c.ngOnInit();
+      return c;
+    }
+
+    /**
+     * Reads the same boolean expression the template's *ngIf uses for the
+     * editing-policy section (post-fix) — without going through detectChanges,
+     * which would require value-accessor mocks for every Material form control
+     * in the dialog. mockStore.select returns of(true), so admin is true.
+     */
+    function isEditingPolicyVisible(c: AssignedSiteDialogComponent): boolean {
+      let isAdmin = false;
+      c['selectCurrentUserIsAdmin$']?.subscribe((v: boolean) => (isAdmin = v));
+      return !c.data.resigned && c.data.allowPersonalTimeRegistration && isAdmin;
+    }
+
+    it('should show editing-policy section when entry method is acceptPlanned', () => {
+      // Setup: acceptPlanned mode (allowAcceptOfPlannedHours = true,
+      // usePunchClock = false), personal time registration enabled,
+      // worker not resigned, current user is admin (mockStore returns of(true)).
+      const c = setupComponentWithData({
+        allowAcceptOfPlannedHours: true,
+        usePunchClock: false,
+        allowPersonalTimeRegistration: true,
+        resigned: false,
+      });
+
+      // Sanity: the entry method getter resolves to acceptPlanned.
+      expect(c.entryMethod).toBe('acceptPlanned');
+
+      // After the fix, the editing-policy section's *ngIf does NOT include
+      // entryMethod, so it must be visible here.
+      expect(isEditingPolicyVisible(c)).toBe(true);
+    });
+
+    it('should preserve editing-policy values when switching entry method to acceptPlanned', () => {
+      // Setup: editingPolicy = 'untilPayroll' (allowEdit=true, daysBack=false),
+      // starting in manual mode.
+      const c = setupComponentWithData({
+        allowEditOfRegistrations: true,
+        daysBackInTimeAllowedEditingEnabled: false,
+        usePunchClock: false,
+        allowAcceptOfPlannedHours: false,
+        allowPersonalTimeRegistration: true,
+      });
+
+      // Switching the entry method should NOT clobber editing-policy state.
+      c.onEntryMethodChange('acceptPlanned');
+
+      expect(c.assignedSiteForm.get('allowEditOfRegistrations')?.value).toBe(true);
+      expect(c.data.allowEditOfRegistrations).toBe(true);
+      expect(c.data.daysBackInTimeAllowedEditingEnabled).toBe(false);
+      // And the entry method itself flipped through correctly.
+      expect(c.data.allowAcceptOfPlannedHours).toBe(true);
+      expect(c.data.usePunchClock).toBe(false);
+    });
+
+    it('should keep editing-policy section visible across all three entry methods', () => {
+      const cases: Array<{
+        method: 'manual' | 'punchClock' | 'acceptPlanned';
+        usePunchClock: boolean;
+        allowAcceptOfPlannedHours: boolean;
+      }> = [
+        { method: 'manual', usePunchClock: false, allowAcceptOfPlannedHours: false },
+        { method: 'punchClock', usePunchClock: true, allowAcceptOfPlannedHours: false },
+        { method: 'acceptPlanned', usePunchClock: false, allowAcceptOfPlannedHours: true },
+      ];
+
+      for (const tc of cases) {
+        const c = setupComponentWithData({
+          allowPersonalTimeRegistration: true,
+          resigned: false,
+          usePunchClock: tc.usePunchClock,
+          allowAcceptOfPlannedHours: tc.allowAcceptOfPlannedHours,
+        });
+        expect(c.entryMethod).toBe(tc.method);
+        expect(isEditingPolicyVisible(c)).toBe(true);
+      }
+    });
+  });
+
+  describe('Use 1-minute intervals toggle', () => {
+    // The toggle's *ngIf gates on:
+    //   !data.resigned && (selectCurrentUserIsFirstUser$ | async)
+    // We follow the same no-`detectChanges` pattern adopted in PR #1538:
+    // assert against component state and observables, not the rendered DOM.
+    // Rendering the dialog under NO_ERRORS_SCHEMA hits the
+    // NG01203 "No value accessor for form control name: 'resigned'" issue
+    // because Material form-control directives aren't registered in the
+    // tested module.
+
+    function setupWithData(
+      overrides: Partial<typeof mockAssignedSiteData>,
+    ): AssignedSiteDialogComponent {
+      const data = { ...mockAssignedSiteData, ...overrides };
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        declarations: [AssignedSiteDialogComponent],
+        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          FormBuilder,
+          { provide: MAT_DIALOG_DATA, useValue: data },
+          { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
+          { provide: Store, useValue: mockStore },
+        ],
+      }).compileComponents();
+      const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      const c = newFixture.componentInstance;
+      c.ngOnInit();
+      return c;
+    }
+
+    it('should expose the useOneMinuteIntervals form control', () => {
+      const c = setupWithData({});
+      expect(c.assignedSiteForm.get('useOneMinuteIntervals')).not.toBeNull();
+    });
+
+    it('should default useOneMinuteIntervals form value to data value (false by default)', () => {
+      const cFalse = setupWithData({});
+      expect(cFalse.assignedSiteForm.get('useOneMinuteIntervals')?.value).toBe(false);
+
+      const cTrue = setupWithData({ useOneMinuteIntervals: true } as any);
+      expect(cTrue.assignedSiteForm.get('useOneMinuteIntervals')?.value).toBe(true);
+    });
+
+    it('should expose first-user state via selectCurrentUserIsFirstUser$', () => {
+      // The new section is gated by !data.resigned && (selectCurrentUserIsFirstUser$ | async);
+      // assert the observable wiring instead of rendering the DOM (see top-of-block rationale).
+      const c = setupWithData({});
+      expect(c.selectCurrentUserIsFirstUser$).toBeDefined();
+      let isFirstUser = false;
+      c.selectCurrentUserIsFirstUser$.subscribe((v: boolean) => (isFirstUser = v));
+      // mockStore.select returns of(true) for every selector; verifies the gate flows through.
+      expect(isFirstUser).toBe(true);
     });
   });
 });

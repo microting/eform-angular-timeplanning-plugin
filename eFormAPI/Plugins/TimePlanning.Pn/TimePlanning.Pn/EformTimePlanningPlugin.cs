@@ -37,6 +37,9 @@ using TimePlanning.Pn.Services.PayRuleSetService;
 using TimePlanning.Pn.Services.PayDayTypeRuleService;
 using TimePlanning.Pn.Services.PayTierRuleService;
 using TimePlanning.Pn.Services.PayTimeBandRuleService;
+using TimePlanning.Pn.Services.PayrollExportService;
+using TimePlanning.Pn.Services.DeviceTokenService;
+using TimePlanning.Pn.Services.PushNotificationService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -105,6 +108,9 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<IPayDayTypeRuleService, PayDayTypeRuleService>();
         services.AddTransient<IPayTierRuleService, PayTierRuleService>();
         services.AddTransient<IPayTimeBandRuleService, PayTimeBandRuleService>();
+        services.AddTransient<IPayrollExportService, PayrollExportService>();
+        services.AddTransient<IDeviceTokenService, DeviceTokenService>();
+        services.AddScoped<IPushNotificationService, PushNotificationService>();
         services.AddControllers();
     }
 
@@ -170,24 +176,11 @@ public class EformTimePlanningPlugin : IEformPlugin
         }
 
 
-        var frontendBaseConnectionString = connectionString.Replace(
-            "eform-angular-time-planning-plugin",
-            "Angular");
-
         _connectionString = connectionString;
         services.AddSingleton<ITimePlanningDbContextHelper>(provider => new TimePlanningDbContextHelper(_connectionString));
-        services.AddDbContext<TimePlanningPnDbContext>(o =>
+        services.AddDbContextPool<TimePlanningPnDbContext>(o =>
             o.UseMySql(connectionString, new MariaDbServerVersion(
                 ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
-            {
-                builder.EnableRetryOnFailure();
-                builder.MigrationsAssembly(PluginAssembly().FullName);
-            }));
-
-
-        services.AddDbContext<BaseDbContext>(
-            o => o.UseMySql(frontendBaseConnectionString, new MariaDbServerVersion(
-                ServerVersion.AutoDetect(frontendBaseConnectionString)), mySqlOptionsAction: builder =>
             {
                 builder.EnableRetryOnFailure();
                 builder.MigrationsAssembly(PluginAssembly().FullName);
@@ -205,7 +198,6 @@ public class EformTimePlanningPlugin : IEformPlugin
 
     public void Configure(IApplicationBuilder appBuilder)
     {
-        appBuilder.UseRouting();
         appBuilder.UseEndpoints(endpoints =>
         {
             endpoints.MapGrpcService<TimePlanningSettingsGrpcService>();
@@ -214,6 +206,7 @@ public class EformTimePlanningPlugin : IEformPlugin
             endpoints.MapGrpcService<TimePlanningPlanningsGrpcService>();
             endpoints.MapGrpcService<TimePlanningAbsenceRequestGrpcService>();
             endpoints.MapGrpcService<TimePlanningContentHandoverGrpcService>();
+            endpoints.MapGrpcService<TimePlanningDeviceTokenGrpcService>();
         });
     }
 
@@ -684,6 +677,130 @@ public class EformTimePlanningPlugin : IEformPlugin
                                 Language = LanguageNames.Danish
                             }
                         ]
+                    },
+
+                    new()
+                    {
+                        Name = "Absence Requests",
+                        E2EId = "time-planning-pn-absence-requests",
+                        Link = "/plugins/time-planning-pn/absence-requests",
+                        Type = MenuItemTypeEnum.Link,
+                        Position = 7,
+                        MenuTemplate = new()
+                        {
+                            Name = "Absence Requests",
+                            E2EId = "time-planning-pn-absence-requests",
+                            DefaultLink = "/plugins/time-planning-pn/absence-requests",
+                            Permissions = [],
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Absence Requests",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Abwesenheitsanträge",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Fraværsanmodninger",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+                        Translations =
+                        [
+                            new()
+                            {
+                                LocaleName = LocaleNames.English,
+                                Name = "Absence Requests",
+                                Language = LanguageNames.English
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.German,
+                                Name = "Abwesenheitsanträge",
+                                Language = LanguageNames.German
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.Danish,
+                                Name = "Fraværsanmodninger",
+                                Language = LanguageNames.Danish
+                            }
+                        ]
+                    },
+
+                    new()
+                    {
+                        Name = "Request History",
+                        E2EId = "time-planning-pn-request-history",
+                        Link = "/plugins/time-planning-pn/request-history",
+                        Type = MenuItemTypeEnum.Link,
+                        Position = 8,
+                        MenuTemplate = new()
+                        {
+                            Name = "Request History",
+                            E2EId = "time-planning-pn-request-history",
+                            DefaultLink = "/plugins/time-planning-pn/request-history",
+                            Permissions = [],
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Request History",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Antragshistorie",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Anmodningshistorik",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+                        Translations =
+                        [
+                            new()
+                            {
+                                LocaleName = LocaleNames.English,
+                                Name = "Request History",
+                                Language = LanguageNames.English
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.German,
+                                Name = "Antragshistorie",
+                                Language = LanguageNames.German
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.Danish,
+                                Name = "Anmodningshistorik",
+                                Language = LanguageNames.Danish
+                            }
+                        ]
                     }
                 ]
             }
@@ -749,6 +866,15 @@ public class EformTimePlanningPlugin : IEformPlugin
                     Link = "/plugins/time-planning-pn/working-hours/mobile-working-hours",
                     Position = 4,
                     Guards = [TimePlanningClaims.GetFlex]
+                },
+
+                new()
+                {
+                    Name = localizationService.GetString("Request History"),
+                    E2EId = "time-planning-pn-request-history",
+                    Link = "/plugins/time-planning-pn/request-history",
+                    Position = 5,
+                    Guards = [TimePlanningClaims.AccessTimePlanningPlugin]
                 }
             ]
         });

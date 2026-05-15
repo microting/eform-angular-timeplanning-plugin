@@ -26,6 +26,12 @@ test.describe('Dashboard edit values', () => {
     await page.locator('#plugin-settings-link0').click();
     await settingsGetPromise;
 
+    // Wait for payroll settings to finish loading (async call that causes re-render)
+    await page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/payroll/settings') && r.request().method() === 'GET'
+    ).catch(() => {});
+    await page.waitForTimeout(500);
+
     // Check autoBreakCalculationActiveToggle state and enable if needed
     const toggleBtn = page.locator('#autoBreakCalculationActiveToggle button[role="switch"]');
     const isChecked = await toggleBtn.getAttribute('aria-checked');
@@ -77,12 +83,12 @@ test.describe('Dashboard edit values', () => {
     await expect(checkbox).toBeChecked();
 
     // Click the "Auto break calculation settings" tab
-    await page.locator('.mat-mdc-tab').filter({ hasText: 'Auto break calculation settings' })
+    await page.locator('.mat-mdc-tab').filter({ hasText: 'Indstillinger for automatisk pauseberegning' })
       .scrollIntoViewIfNeeded();
     await expect(
-      page.locator('.mat-mdc-tab').filter({ hasText: 'Auto break calculation settings' })
+      page.locator('.mat-mdc-tab').filter({ hasText: 'Indstillinger for automatisk pauseberegning' })
     ).toBeVisible();
-    await page.locator('.mat-mdc-tab').filter({ hasText: 'Auto break calculation settings' })
+    await page.locator('.mat-mdc-tab').filter({ hasText: 'Indstillinger for automatisk pauseberegning' })
       .click({ force: true });
     await page.waitForTimeout(2000);
 
@@ -141,12 +147,12 @@ test.describe('Dashboard edit values', () => {
     await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 5000 });
 
     // Click the "Auto break calculation settings" tab again
-    await page.locator('.mat-mdc-tab').filter({ hasText: 'Auto break calculation settings' })
+    await page.locator('.mat-mdc-tab').filter({ hasText: 'Indstillinger for automatisk pauseberegning' })
       .scrollIntoViewIfNeeded();
     await expect(
-      page.locator('.mat-mdc-tab').filter({ hasText: 'Auto break calculation settings' })
+      page.locator('.mat-mdc-tab').filter({ hasText: 'Indstillinger for automatisk pauseberegning' })
     ).toBeVisible();
-    await page.locator('.mat-mdc-tab').filter({ hasText: 'Auto break calculation settings' })
+    await page.locator('.mat-mdc-tab').filter({ hasText: 'Indstillinger for automatisk pauseberegning' })
       .click({ force: true });
 
     // Verify tab content is visible

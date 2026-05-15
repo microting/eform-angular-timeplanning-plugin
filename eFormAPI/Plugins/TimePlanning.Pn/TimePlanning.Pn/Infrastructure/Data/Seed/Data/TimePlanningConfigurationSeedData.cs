@@ -216,6 +216,11 @@ public class TimePlanningConfigurationSeedData : IPluginConfigurationSeedData
         {
             Name = $"{TimePlanningBaseSettingsName}:SnapshotEnabled",
             Value = "0"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:FirebaseServiceAccountJson",
+            Value = ""
         }
     ];
 }

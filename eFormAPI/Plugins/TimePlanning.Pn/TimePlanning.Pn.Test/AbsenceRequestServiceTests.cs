@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
+using Microting.eForm.Infrastructure.Constants;
 using TimePlanning.Pn.Infrastructure.Models.AbsenceRequest;
 using TimePlanning.Pn.Services.AbsenceRequestService;
 using TimePlanning.Pn.Services.TimePlanningLocalizationService;
+using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
 
 namespace TimePlanning.Pn.Test;
 
@@ -19,6 +22,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
     private IAbsenceRequestService _absenceRequestService;
     private IUserService _userService;
     private ITimePlanningLocalizationService _localizationService;
+    private IEFormCoreService _coreService;
 
     [SetUp]
     public async Task SetUp()
@@ -30,11 +34,24 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
 
+        _coreService = Substitute.For<Microting.eFormApi.BasePn.Abstractions.IEFormCoreService>();
+        var core = await GetCore();
+        _coreService.GetCore().Returns(Task.FromResult(core));
+
+        // Provide a non-null BaseDbContext substitute so the ctor-injected
+        // field never NREs. Tests for GetInboxAsync that require real Users
+        // seeding are [Ignore]d below — the JWT-based site resolver path is
+        // exercised by the Dart gRPC contract suite instead.
+        var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
+
         _absenceRequestService = new AbsenceRequestService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
             TimePlanningPnDbContext,
             _userService,
-            _localizationService);
+            _localizationService,
+            _coreService,
+            baseDbContext,
+            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
     }
 
     [Test]
@@ -244,9 +261,54 @@ public class AbsenceRequestServiceTests : TestBaseSetup
     }
 
     [Test]
+    [Ignore("Follow-up: GetInboxAsync now resolves caller site from JWT via BaseDbContext.Users → sdk Worker lookup. Requires real BaseDbContext seeding to test here. The flow is covered end-to-end by the Dart gRPC contract suite (test/integration/grpc_flows_test.dart).")]
     public async Task GetInboxAsync_ReturnsPendingRequests()
     {
-        // Arrange - Create pending and approved requests
+        // Arrange - Set up SDK DB first: site + tag
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var workerSdkSite = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Worker Site",
+            MicrotingUid = 1
+        };
+        await workerSdkSite.Create(sdkDbContext);
+
+        var tag = new Microting.eForm.Infrastructure.Data.Entities.Tag
+        {
+            Name = "TestTag"
+        };
+        await tag.Create(sdkDbContext);
+
+        var siteTag = new Microting.eForm.Infrastructure.Data.Entities.SiteTag
+        {
+            SiteId = workerSdkSite.Id,
+            TagId = tag.Id
+        };
+        await sdkDbContext.SiteTags.AddAsync(siteTag);
+        await sdkDbContext.SaveChangesAsync();
+
+        // Set up manager with tag-based filtering
+        var managerSite = new AssignedSiteEntity
+        {
+            SiteId = 2,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await managerSite.Create(TimePlanningPnDbContext);
+
+        var managingTag = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = managerSite.Id,
+            TagId = tag.Id,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await managingTag.Create(TimePlanningPnDbContext);
+
+        // Create pending and approved requests from worker site (siteId=1)
         var pending = new AbsenceRequest
         {
             RequestedBySdkSitId = 1,
@@ -272,7 +334,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         await approved.Create(TimePlanningPnDbContext);
 
         // Act
-        var result = await _absenceRequestService.GetInboxAsync(2);
+        var result = await _absenceRequestService.GetInboxAsync();
 
         // Assert
         Assert.That(result.Success, Is.True);

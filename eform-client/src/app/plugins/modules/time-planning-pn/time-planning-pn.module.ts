@@ -10,12 +10,15 @@ import {TimePlanningPnLayoutComponent} from './layouts';
 import {
   TimePlanningPnPlanningsService, TimePlanningPnRegistrationDevicesService,
   TimePlanningPnSettingsService,
-  TimePlanningPnFlexesService
+  TimePlanningPnFlexesService,
+  TimePlanningPnPayRuleSetsService,
+  TimePlanningPnPayrollExportService
 } from './services';
 import {
   TimePlanningsContainerComponent, TimePlanningSettingsComponent, TimePlanningsTableComponent,
   AssignedSiteDialogComponent,
-  WorkdayEntityDialogComponent, DownloadExcelDialogComponent, VersionHistoryModalComponent
+  WorkdayEntityDialogComponent, DownloadExcelDialogComponent, VersionHistoryModalComponent,
+  PayrollExportDialogComponent
 } from './components';
 import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
 import {
@@ -43,6 +46,7 @@ import {NgxMaskDirective} from 'ngx-mask';
 import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {MatCheckbox} from '@angular/material/checkbox';
+import {MatRadioButton, MatRadioGroup} from '@angular/material/radio';
 import {MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle} from '@angular/material/dialog';
 import {MtxSelect} from '@ng-matero/extensions/select';
 
@@ -65,6 +69,8 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     MtxSelect,
     MatCard,
     MatCheckbox,
+    MatRadioGroup,
+    MatRadioButton,
     MatCardContent,
     MatIconButton,
     MatFormField,
@@ -99,12 +105,15 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     VersionHistoryModalComponent,
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
+    PayrollExportDialogComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,
     TimePlanningPnPlanningsService,
     TimePlanningPnRegistrationDevicesService,
     TimePlanningPnFlexesService,
+    TimePlanningPnPayRuleSetsService,
+    TimePlanningPnPayrollExportService,
     { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { subscriptSizing: 'dynamic' } }
   ],
 })

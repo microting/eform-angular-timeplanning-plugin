@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, Optional } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDialog } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
+import { TranslateService } from '@ngx-translate/core';
 import { TimePlanningPnPayRuleSetsService } from '../../../../services';
-import { PayRuleSetCreateModel } from '../../../../models';
+import { PayRuleSetCreateModel, PAY_RULE_SET_PRESETS, PayRuleSetPreset } from '../../../../models';
 import { PayDayRuleDialogComponent, PayDayRuleDialogData } from '../pay-day-rule-dialog/pay-day-rule-dialog.component';
 import { DayTypeRuleDialogComponent, DayTypeRuleDialogData } from '../day-type-rule-dialog/day-type-rule-dialog.component';
 
@@ -16,17 +17,107 @@ import { DayTypeRuleDialogComponent, DayTypeRuleDialogData } from '../day-type-r
 })
 export class PayRuleSetsCreateModalComponent implements OnInit {
   form!: FormGroup;
+  availablePresets: PayRuleSetPreset[] = [];
+  selectedPreset: PayRuleSetPreset | null = null;
 
   constructor(
     private fb: FormBuilder,
     private dialog: MatDialog,
     private payRuleSetsService: TimePlanningPnPayRuleSetsService,
     private toastrService: ToastrService,
-    public dialogRef: MatDialogRef<PayRuleSetsCreateModalComponent>
+    private translateService: TranslateService,
+    public dialogRef: MatDialogRef<PayRuleSetsCreateModalComponent>,
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: { existingNames: string[] } | null
   ) {}
 
   ngOnInit(): void {
     this.initForm();
+    const existingNames = this.data?.existingNames || [];
+    this.availablePresets = PAY_RULE_SET_PRESETS.filter(
+      p => !existingNames.includes(p.name)
+    );
+  }
+
+  get isLocked(): boolean {
+    return this.selectedPreset?.locked ?? false;
+  }
+
+  onPresetChanged(preset: PayRuleSetPreset | null): void {
+    this.selectedPreset = preset;
+
+    // Clear existing form arrays
+    this.payDayRulesFormArray.clear();
+    this.payDayTypeRulesFormArray.clear();
+
+    if (!preset) {
+      this.form.get('name')?.setValue('');
+      return;
+    }
+
+    // Set name
+    this.form.get('name')?.setValue(preset.name);
+
+    // Populate payDayRules
+    for (const rule of preset.payDayRules) {
+      const ruleForm = this.createPayDayRuleFormGroup({
+        dayCode: rule.dayCode,
+        payTierRules: rule.payTierRules.map(t => ({
+          order: t.order,
+          upToSeconds: t.upToSeconds,
+          payCode: t.payCode,
+        })),
+      });
+      this.payDayRulesFormArray.push(ruleForm);
+    }
+
+    // Populate payDayTypeRules
+    for (const rule of preset.payDayTypeRules) {
+      const ruleForm = this.createDayTypeRuleFormGroup({
+        dayType: rule.dayType,
+        defaultPayCode: rule.defaultPayCode,
+        priority: rule.priority,
+        timeBandRules: rule.timeBandRules.map(b => ({
+          startSecondOfDay: b.startSecondOfDay,
+          endSecondOfDay: b.endSecondOfDay,
+          payCode: b.payCode,
+          priority: b.priority,
+        })),
+      });
+      this.payDayTypeRulesFormArray.push(ruleForm);
+    }
+  }
+
+  formatTierChain(tiers: Array<{ order: number; upToSeconds: number | null; payCode: string }>): string {
+    return [...tiers]
+      .sort((a, b) => a.order - b.order)
+      .map(t => {
+        if (t.upToSeconds != null) {
+          return `${t.payCode} (${this.secondsToHM(t.upToSeconds)})`;
+        }
+        return t.payCode;
+      })
+      .join(' \u2192 ');
+  }
+
+  formatTimeBands(bands: Array<{ startSecondOfDay: number; endSecondOfDay: number; payCode: string; priority: number }>): string {
+    return bands
+      .map(b => `${this.secondsToHHMM(b.startSecondOfDay)}-${this.secondsToHHMM(b.endSecondOfDay)} ${b.payCode}`)
+      .join(' | ');
+  }
+
+  private secondsToHM(seconds: number): string {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (m === 0) {
+      return `${h}h`;
+    }
+    return `${h}h${m}m`;
+  }
+
+  private secondsToHHMM(seconds: number): string {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   }
 
   private initForm(): void {
@@ -186,13 +277,7 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
   }
 
   createPayRuleSet(): void {
-    console.log('createPayRuleSet called');
-    console.log('Form valid:', this.form.valid);
-    console.log('Form value:', this.form.value);
-
     if (this.form.invalid) {
-      console.log('Form is invalid, not proceeding');
-      console.log('Form errors:', this.form.errors);
       return;
     }
 
@@ -201,18 +286,14 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
     model.payDayRules = this.payDayRulesFormArray.value;
     model.payDayTypeRules = this.payDayTypeRulesFormArray.value;
 
-    console.log('Sending model to API:', JSON.stringify(model, null, 2));
-
     this.payRuleSetsService.createPayRuleSet(model).subscribe({
       next: (response) => {
-        console.log('Create success response:', response);
-        this.toastrService.success('Pay rule set created successfully');
+        this.toastrService.success(this.translateService.instant('Pay rule set created successfully'));
         this.dialogRef.close(true);
       },
       error: (error) => {
         console.error('Create error:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
-        this.toastrService.error('Failed to create pay rule set');
+        this.toastrService.error(this.translateService.instant('Failed to create pay rule set'));
       }
     });
   }

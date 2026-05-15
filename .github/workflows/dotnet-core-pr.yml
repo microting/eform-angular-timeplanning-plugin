@@ -1,8 +1,10 @@
-name: .NET Master
+name: .NET Pull requests
 
 on:
   pull_request:
     branches: [ master, stable, angular19 ]
+    paths-ignore:
+    - '**.md'
 
 jobs:
   build:
@@ -21,11 +23,6 @@ jobs:
     - name: Copy dependencies
       run: |
         cp -av eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn eform-angular-frontend/eform-client/src/app/plugins/modules/time-planning-pn
-        cp -av eform-angular-timeplanning-plugin/eform-client/e2e/Tests/time-planning-settings eform-angular-frontend/eform-client/e2e/Tests/time-planning-settings
-        cp -av eform-angular-timeplanning-plugin/eform-client/e2e/Tests/time-planning-general eform-angular-frontend/eform-client/e2e/Tests/time-planning-general
-        cp -av eform-angular-timeplanning-plugin/eform-client/e2e/Page\ objects/TimePlanning eform-angular-frontend/eform-client/e2e/Page\ objects/TimePlanning
-        cp -av eform-angular-timeplanning-plugin/eform-client/wdio-headless-plugin-step2a.conf.ts  eform-angular-frontend/eform-client/wdio-headless-plugin-step2a.conf.ts 
-        cp -av eform-angular-timeplanning-plugin/eform-client/wdio-plugin-step2.conf.ts  eform-angular-frontend/eform-client/wdio-plugin-step2.conf.ts 
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
     - name: Copy Dockerfile
       run: cp eform-angular-timeplanning-plugin/Dockerfile .
@@ -74,151 +71,17 @@ jobs:
           echo "To enable unit tests, ensure Jest is configured in the frontend repository."
           exit 0
         fi
-        
+
         # Run Jest tests for time-planning-pn plugin
         echo "Running Jest tests for time-planning-pn plugin..."
         npm run test:unit -- --testPathPatterns=time-planning-pn --coverage --collectCoverageFrom='src/app/plugins/modules/time-planning-pn/**/*.ts' --coveragePathIgnorePatterns='\.spec\.ts$'
-  pn-test:
-    needs: build
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o]
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        path: eform-angular-timeplanning-plugin
-    - uses: actions/download-artifact@v4
-      with:
-        name: time-planning-container
-    - run: docker load -i time-planning-container.tar
-    - name: Create docker network
-      run: docker network create --driver bridge --attachable data
-    - name: Start MariaDB
-      run: |
-        docker pull mariadb:10.8
-        docker run --name mariadbtest --network data -e MYSQL_ROOT_PASSWORD=secretpassword -p 3306:3306 -d mariadb:10.8
-    - name: Start rabbitmq
-      run: |
-        docker pull rabbitmq:latest
-        docker run -d --hostname my-rabbit --name some-rabbit --network data -e RABBITMQ_DEFAULT_USER=admin -e RABBITMQ_DEFAULT_PASS=password rabbitmq:latest
-    - name: Sleep 15
-      run: sleep 15
-    - name: Start the newly build Docker container
-      id: docker-run
-      run: docker run --name my-container -p 4200:5000 --network data microtingas/time-planning-container:latest "/ConnectionString=host=mariadbtest;Database=420_Angular;user=root;password=secretpassword;port=3306;Convert Zero Datetime = true;SslMode=none;" > docker_run_log 2>&1 &
-    - name: Use Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 22
-    - name: 'Preparing Frontend checkout'
-      uses: actions/checkout@v3
-      with:
-        repository: microting/eform-angular-frontend
-        ref: stable
-        path: eform-angular-frontend
-    - name: Copy dependencies
-      run: |
-        cp -av eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn eform-angular-frontend/eform-client/src/app/plugins/modules/time-planning-pn
-        cp -av eform-angular-timeplanning-plugin/eform-client/e2e/Tests/time-planning-settings eform-angular-frontend/eform-client/e2e/Tests/time-planning-settings
-        cp -av eform-angular-timeplanning-plugin/eform-client/e2e/Tests/time-planning-general eform-angular-frontend/eform-client/e2e/Tests/time-planning-general
-        cp -av eform-angular-timeplanning-plugin/eform-client/e2e/Page\ objects/TimePlanning eform-angular-frontend/eform-client/e2e/Page\ objects/TimePlanning
-        cp -av eform-angular-timeplanning-plugin/eform-client/wdio-headless-plugin-step2a.conf.ts  eform-angular-frontend/eform-client/wdio-headless-plugin-step2a.conf.ts 
-        cp -av eform-angular-timeplanning-plugin/eform-client/wdio-plugin-step2.conf.ts  eform-angular-frontend/eform-client/wdio-plugin-step2.conf.ts 
-        mkdir -p eform-angular-frontend/eFormAPI/eFormAPI.Web/Plugins
-        mkdir -p eform-angular-frontend/eform-client/cypress/e2e/plugins/
-        mkdir -p eform-angular-frontend/eform-client/cypress/fixtures/
-        cp -av eform-angular-timeplanning-plugin/eform-client/cypress/fixtures eform-angular-frontend/eform-client/cypress
-        cp -av eform-angular-timeplanning-plugin/eform-client/cypress/e2e/plugins/time-planning-pn eform-angular-frontend/eform-client/cypress/e2e/plugins/time-planning-pn
-        cp -av eform-angular-timeplanning-plugin/eform-client/cypress.config.ts eform-angular-frontend/eform-client/cypress.config.ts
-        cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
-    - name: yarn install
-      run: cd eform-angular-frontend/eform-client && yarn install
-    - name: Create errorShots directory
-      run: mkdir eform-angular-frontend/eform-client/errorShots
-    - name: Pretest changes to work with Docker container
-      run: sed -i 's/localhost/mariadbtest/g' eform-angular-frontend/eform-client/e2e/Constants/DatabaseConfigurationConstants.ts
-    - name: Get standard output
-      run: |
-        cat docker_run_log
-    - name: DB Configuration
-      uses: cypress-io/github-action@v4
-      with:
-        start: echo 'hi'
-        wait-on: "http://localhost:4200"
-        wait-on-timeout: 120
-        browser: chrome
-        record: false
-        spec: cypress/e2e/db/*
-        config-file: cypress.config.ts
-        working-directory: eform-angular-frontend/eform-client
-        command-prefix: "--"
-    - name: Change rabbitmq hostname
-      run: docker exec -i mariadbtest mysql -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
-    - name: Create database
-      if: matrix.test == 'd'
-      run: |
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_Angular.EformPlugins set Status = 1'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'create database `420_eform-angular-time-planning-plugin`'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK < eform-angular-frontend/eform-client/cypress/e2e/plugins/time-planning-pn/d/420_SDK.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < eform-angular-frontend/eform-client/cypress/e2e/plugins/time-planning-pn/d/420_eform-angular-time-planning-plugin.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
-    - name: Create database
-      if: matrix.test != 'd'
-      run: |
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_Angular.EformPlugins set Status = 1'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'create database `420_eform-angular-time-planning-plugin`'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK < eform-angular-frontend/eform-client/cypress/e2e/plugins/time-planning-pn/a/420_SDK.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < eform-angular-frontend/eform-client/cypress/e2e/plugins/time-planning-pn/a/420_eform-angular-time-planning-plugin.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
-    - name: ${{matrix.test}} test
-      uses: cypress-io/github-action@v4
-      with:
-        start: echo 'hi'
-        wait-on: "http://localhost:4200"
-        wait-on-timeout: 120
-        browser: chrome
-        record: false
-        spec: cypress/e2e/plugins/time-planning-pn/${{matrix.test}}/*
-        config-file: cypress.config.ts
-        working-directory: eform-angular-frontend/eform-client
-        command-prefix: "--"
-    - name: Stop the newly build Docker container
-      run: docker stop my-container
-    - name: Get standard output
-      run: |
-        cat docker_run_log
-        result=`cat docker_run_log | grep "Now listening on: http://0.0.0.0:5000" -m 1 | wc -l`
-        if [ $result -ne 1 ];then exit 1; fi
-    - name: Get standard output
-      if: ${{ failure() }}
-      run: |
-        cat docker_run_log
-    - name: Archive generated Excel files
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: generated-excel-${{matrix.test}}
-        path: |
-          /home/runner/work/eform-angular-timeplanning-plugin/eform-angular-timeplanning-plugin/eform-angular-frontend/eform-client/cypress/downloads/generated-excel-report.xlsx
-        retention-days: 7
-        if-no-files-found: ignore
-    - name: Archive videos
-      if: ${{ failure() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: cypress-videos-${{matrix.test}}
-        path: |
-          /home/runner/work/eform-angular-timeplanning-plugin/eform-angular-timeplanning-plugin/eform-angular-frontend/eform-client/cypress/videos/*.mp4
-        retention-days: 2
   pn-playwright-test:
     needs: build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o]
+        test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,b1m,c1m,d1m,e1m,f1m,h1m,i1m,j1m,l1m]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -257,6 +120,9 @@ jobs:
         cp -av eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn eform-angular-frontend/eform-client/src/app/plugins/modules/time-planning-pn
         mkdir -p eform-angular-frontend/eform-client/playwright/e2e/plugins/
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright/e2e/plugins/time-planning-pn eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn
+        if [ -d "eform-angular-timeplanning-plugin/eform-client/playwright/helpers" ]; then
+          cp -av eform-angular-timeplanning-plugin/eform-client/playwright/helpers eform-angular-frontend/eform-client/playwright/helpers
+        fi
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright.config.ts eform-angular-frontend/eform-client/playwright.config.ts
         cp -av eform-angular-timeplanning-plugin/eform-client/cypress.config.ts eform-angular-frontend/eform-client/cypress.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
@@ -267,41 +133,78 @@ jobs:
     - name: Create errorShots directory
       run: mkdir eform-angular-frontend/eform-client/errorShots
     - name: Pretest changes to work with Docker container
-      run: sed -i 's/localhost/mariadbtest/g' eform-angular-frontend/eform-client/e2e/Constants/DatabaseConfigurationConstants.ts
+      run: sed -i 's/localhost/mariadbtest/g' eform-angular-frontend/eform-client/playwright/e2e/Constants/DatabaseConfigurationConstants.ts
     - name: Get standard output
       run: cat docker_run_log
+    - name: Wait for app before DB Configuration
+      run: npx wait-on http://localhost:4200 --timeout 120000
     - name: DB Configuration
-      uses: cypress-io/github-action@v4
-      with:
-        start: echo 'hi'
-        wait-on: "http://localhost:4200"
-        wait-on-timeout: 120
-        browser: chrome
-        record: false
-        spec: cypress/e2e/db/*
-        config-file: cypress.config.ts
-        working-directory: eform-angular-frontend/eform-client
-        command-prefix: "--"
+      run: cd eform-angular-frontend/eform-client && npx playwright test playwright/e2e/Tests/database-configuration/
     - name: Change rabbitmq hostname
       run: docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
     - name: Create database
-      if: matrix.test == 'd'
+      env:
+        SHARD: ${{ matrix.test }}
       run: |
+        SEED_DIR="eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/${SHARD}"
+        if [ ! -f "${SEED_DIR}/420_eform-angular-time-planning-plugin.sql" ]; then
+          echo "Shard ${SHARD} has no own seed; falling back to 'a' shard seed"
+          SEED_DIR="eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/a"
+        else
+          echo "Using shard-owned seed from ${SEED_DIR}"
+        fi
         docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_Angular.EformPlugins set Status = 1'
         docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'create database `420_eform-angular-time-planning-plugin`'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/d/420_SDK.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/d/420_eform-angular-time-planning-plugin.sql
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK < "${SEED_DIR}/420_SDK.sql"
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < "${SEED_DIR}/420_eform-angular-time-planning-plugin.sql"
         docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
-    - name: Create database
-      if: matrix.test != 'd'
+    - name: Get standard output
       run: |
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_Angular.EformPlugins set Status = 1'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'create database `420_eform-angular-time-planning-plugin`'
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_SDK < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/a/420_SDK.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/a/420_eform-angular-time-planning-plugin.sql
-        docker exec -i mariadbtest mariadb -u root --password=secretpassword -e 'update 420_SDK.Settings set Value = "my-rabbit" where Name = "rabbitMqHost"'
+        cat docker_run_log
+        result=`cat docker_run_log | grep "Now listening on:.*:5000" -m 1 | wc -l`
+        if [ $result -ne 1 ];then exit 1; fi
     - name: Wait for app
       run: npx wait-on http://localhost:4200 --timeout 120000
+    - name: Activate plugin then apply post-migration SQL patch (variant shards only)
+      env:
+        SHARD: ${{ matrix.test }}
+      run: |
+        PATCH="eform-angular-frontend/eform-client/playwright/e2e/plugins/time-planning-pn/${SHARD}/post-migration.sql"
+        if [ ! -f "$PATCH" ]; then
+          echo "No post-migration patch for shard ${SHARD}"
+          exit 0
+        fi
+        # The plugin's DbContext only runs `Database.Migrate()` after the
+        # plugin is loaded by the host, which only happens after the plugin
+        # has been ENABLED through the host's plugin-management UI. Setting
+        # `EformPlugins.Status = 1` directly in the seed doesn't trigger
+        # the load — the legacy `b` shard relies on `activate-plugin.spec.ts`
+        # firing first (alphabetical order) to enable + warm up the plugin.
+        # For variant shards we run that exact spec from the legacy `b` dir
+        # before our post-migration patch, then poll for the migration to
+        # add `UseOneMinuteIntervals` and apply the patch.
+        cd eform-angular-frontend/eform-client
+        echo "Running activate-plugin.spec.ts from b/ to load + migrate the plugin DB..."
+        npx playwright test playwright/e2e/plugins/time-planning-pn/b/activate-plugin.spec.ts
+        cd -
+        echo "Waiting for plugin migration to add UseOneMinuteIntervals column..."
+        for i in $(seq 1 60); do
+          OUT=$(docker exec -i mariadbtest mariadb -u root --password=secretpassword -N -B -e \
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='420_eform-angular-time-planning-plugin' AND TABLE_NAME='AssignedSites' AND COLUMN_NAME='UseOneMinuteIntervals';" 2>/dev/null || echo 0)
+          if [ "$OUT" = "1" ]; then
+            echo "Column present after ${i} attempt(s)."
+            break
+          fi
+          if [ "$i" = "60" ]; then
+            echo "Timed out waiting for UseOneMinuteIntervals column. Dumping AssignedSites schema:"
+            docker exec -i mariadbtest mariadb -u root --password=secretpassword -e \
+              "SHOW COLUMNS FROM \`420_eform-angular-time-planning-plugin\`.AssignedSites;"
+            exit 1
+          fi
+          sleep 2
+        done
+        echo "Applying post-migration patch from $PATCH"
+        docker exec -i mariadbtest mariadb -u root --password=secretpassword 420_eform-angular-time-planning-plugin < "$PATCH"
     - name: ${{ matrix.test }} playwright test
       run: |
         cd eform-angular-frontend/eform-client
@@ -311,13 +214,13 @@ jobs:
     - name: Get standard output
       run: |
         cat docker_run_log
-        result=`cat docker_run_log | grep "Now listening on: http://0.0.0.0:5000" -m 1 | wc -l`
+        result=`cat docker_run_log | grep "Now listening on:.*:5000" -m 1 | wc -l`
         if [ $result -ne 1 ];then exit 1; fi
     - name: Get standard output
       if: ${{ failure() }}
       run: cat docker_run_log
     - name: Archive Playwright report
-      if: failure()
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: playwright-report-${{ matrix.test }}
@@ -325,6 +228,26 @@ jobs:
         retention-days: 2
   test-dotnet:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - name: a
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.AbsenceRequestServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.CanaryInAColeMine"
+          - name: b
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PictureSnapshotServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.ContentHandoverServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.DanLonFileExporterTests|FullyQualifiedName=TimePlanning.Pn.Test.DataLonFileExporterTests"
+          - name: c
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanningServiceMultiShiftTests|FullyQualifiedName=TimePlanning.Pn.Test.DeviceTokenServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GpsCoordinateServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayDayTypeRuleServiceTests"
+          - name: d
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationVersionHistoryTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayTierRuleServiceTests"
+          - name: e
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PushNotificationIntegrationTests|FullyQualifiedName=TimePlanning.Pn.Test.PayTimeBandRuleServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperComputationTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperHolidayTests"
+          - name: f
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceExtendedTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperReadBySiteAndDateTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperTests|FullyQualifiedName=TimePlanning.Pn.Test.PushNotificationServiceTests"
+          - name: g
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServicePhoneNumberTests|FullyQualifiedName=TimePlanning.Pn.Test.TimePlanningWorkingHoursExportTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAbsenceRequestGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAuthGrpcServiceTests"
+          - name: h
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningContentHandoverGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningPlanningsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningSettingsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningWorkingHoursGrpcServiceTests"
     steps:
     - uses: actions/checkout@v3
     - name: Create docker network
@@ -345,5 +268,18 @@ jobs:
         dotnet-version: 10.0.x
     - name: Build
       run: dotnet build eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.sln
-    - name: Unit Tests
-      run: dotnet test --no-restore -c Release -v n --settings eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/test.runsettings eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/TimePlanning.Pn.Test.csproj
+    - name: Unit Tests (shard ${{ matrix.shard.name }})
+      run: dotnet test --no-restore -c Release -v n --settings eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/test.runsettings --filter "${{ matrix.shard.filter }}" eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.Test/TimePlanning.Pn.Test.csproj
+  test-dotnet-gate:
+    needs: test-dotnet
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Verify all shards passed
+      env:
+        SHARD_RESULT: ${{ needs.test-dotnet.result }}
+      run: |
+        if [ "$SHARD_RESULT" != "success" ]; then
+          echo "test-dotnet matrix result: $SHARD_RESULT"
+          exit 1
+        fi

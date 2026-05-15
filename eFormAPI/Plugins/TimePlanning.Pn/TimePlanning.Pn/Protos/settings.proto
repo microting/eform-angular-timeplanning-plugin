@@ -235,6 +235,8 @@ message Site {
   bool snapshot_enabled = 19;
   bool resigned = 20;
   google.protobuf.Timestamp resigned_at_date = 21;
+  string phone_number = 22;
+  bool use_one_minute_intervals = 23;
 }
 
 // Response wrappers matching C# OperationDataResult<T>
@@ -257,6 +259,8 @@ message GetRegistrationSitesRequest {
   string token = 1;
 }
 
+message GetRegistrationSitesByCurrentUserRequest {}
+
 // gRPC service definition
 service TimePlanningSettingsService {
   // Maps to GET /api/time-planning-pn/settings/assigned-site
@@ -264,4 +268,7 @@ service TimePlanningSettingsService {
 
   // Maps to GET /api/time-planning-pn/settings/registration-sites
   rpc GetRegistrationSites(GetRegistrationSitesRequest) returns (GetRegistrationSitesResponse);
+
+  // Personal mode — uses JWT auth, no device token needed
+  rpc GetRegistrationSitesByCurrentUser(GetRegistrationSitesByCurrentUserRequest) returns (GetRegistrationSitesResponse);
 }

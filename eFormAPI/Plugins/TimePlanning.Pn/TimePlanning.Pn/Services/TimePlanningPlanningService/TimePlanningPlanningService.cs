@@ -73,6 +73,11 @@ public class TimePlanningPlanningService(
                     .ToListAsync().ConfigureAwait(false);
 
             var currentUserAsync = await userService.GetCurrentUserAsync();
+            if (currentUserAsync == null)
+            {
+                return new OperationDataResult<List<TimePlanningPlanningModel>>(false,
+                    localizationService.GetString("UserNotFound"), null!);
+            }
             var currentUser = baseDbContext.Users
                 .Include(x => x.UserRoles)
                 .ThenInclude(x => x.Role)
@@ -80,22 +85,41 @@ public class TimePlanningPlanningService(
 
             var isAdmin = currentUser.UserRoles
                 .Any(x => x.Role.Name == "admin");
-            var eFormUsersGroup = false;
-
             if (!isAdmin)
             {
                 var userSecurityGroups = baseDbContext.SecurityGroupUsers
                     .Include(x => x.SecurityGroup)
                     .Where(x => x.EformUserId == currentUser.Id)
                     .ToList();
-                eFormUsersGroup = userSecurityGroups
-                    .Any(x => x.SecurityGroup.Name == "eForm users");
                 var eFormAdminsGroup = userSecurityGroups
                     .Any(x => x.SecurityGroup.Name == "eForm admins");
-                isAdmin = eFormAdminsGroup || eFormUsersGroup;
+                isAdmin = eFormAdminsGroup;
+                if (!isAdmin)
+                {
+                    var isEformUsersGroup = userSecurityGroups
+                        .Any(x => x.SecurityGroup.Name == "eForm users");
+                    var isKunTidGroup = userSecurityGroups
+                        .Any(x => x.SecurityGroup.Name == "Kun tid");
+                    if (isEformUsersGroup && !isKunTidGroup)
+                    {
+                        // Fallback: when no user in the system is configured as a manager,
+                        // grant "eForm users" members the admin-for-visibility view on this
+                        // endpoint so the planning dashboard isn't empty in that degenerate
+                        // state. Users also in "Kun tid" (time-registration device users with
+                        // WebAccess) are explicitly excluded and stay restricted to own site.
+                        var anyManagerExists = await dbContext.AssignedSites
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .AnyAsync(x => x.IsManager)
+                            .ConfigureAwait(false);
+                        if (!anyManagerExists)
+                        {
+                            isAdmin = true;
+                        }
+                    }
+                }
             }
 
-            if (!isAdmin && eFormUsersGroup)
+            if (!isAdmin)
             {
                 var worker = await sdkDbContext.Workers
                     .Include(x => x.SiteWorkers)
@@ -134,9 +158,25 @@ public class TimePlanningPlanningService(
                     assignedSites = assignedSites
                         .Where(x => assignedSiteIdsWithTags.Contains(x.SiteId))
                         .ToList();
-                    assignedSites.Add(assignedSite);
+                    // Only re-add the manager's own AssignedSite if the manager-tag
+                    // filter dropped it. When the manager is in their own managed
+                    // tag (SiteTag joins the manager's own SiteId to that TagId),
+                    // it is already present and a blind Add() produced two rows
+                    // for the manager on the planning page.
+                    if (assignedSites.All(x => x.Id != assignedSite.Id))
+                    {
+                        assignedSites.Add(assignedSite);
+                    }
                 }
             }
+
+            // Defensive dedup: guarantee no duplicate AssignedSite rows reach the
+            // planning grid even if upstream filters left some in. The grid keys
+            // off SiteId per row, so dedup by Id (primary key) is enough here.
+            assignedSites = assignedSites
+                .GroupBy(x => x.Id)
+                .Select(g => g.First())
+                .ToList();
 
             assignedSites = model.ShowResignedSites ? assignedSites.Where(x => x.Resigned).ToList() : assignedSites.Where(x => !x.Resigned).ToList();
 
@@ -183,6 +223,12 @@ public class TimePlanningPlanningService(
             var sitesList = await sdkDbContext.Sites
                 .AsNoTracking()
                 .ToListAsync().ConfigureAwait(false);
+            var siteWorkersList = await sdkDbContext.SiteWorkers
+                .AsNoTracking()
+                .ToListAsync().ConfigureAwait(false);
+            var workersList = await sdkDbContext.Workers
+                .AsNoTracking()
+                .ToListAsync().ConfigureAwait(false);
 
             var tasks = assignedSites.Select(async dbAssignedSite =>
             {
@@ -201,13 +247,17 @@ public class TimePlanningPlanningService(
                 {
                     SiteId = dbAssignedSite.SiteId,
                     SiteName = site.Name,
+                    // Phase 4: per-row mirror of the assigned-site flag drives the
+                    // web admin's HH:mm vs HH:mm:ss display path in the plannings table.
+                    UseOneMinuteIntervals = dbAssignedSite.UseOneMinuteIntervals,
                     PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
                 };
 
-                // do a lookup in the baseDbContext.Users where the concat string of FirstName and LastName toLowerCase() is equal to the site.Name toLowerCase()
-                // if we find a user, we take the user.EmailSha256 and set the siteModel.AvatarUrl to the gravatar url with the sha256
-                var user = usersList.FirstOrDefault(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() ==
-                                                site.Name.Replace(" ", "").ToLower());
+                var siteWorker = siteWorkersList.FirstOrDefault(x => x.SiteId == site.Id);
+                var worker = siteWorker != null ? workersList.FirstOrDefault(x => x.Id == siteWorker.WorkerId) : null;
+                var workerEmail = (worker?.Email ?? "").Trim().ToLower();
+                var user = string.IsNullOrEmpty(workerEmail) ? null
+                    : usersList.FirstOrDefault(x => (x.Email ?? "").Trim().ToLower() == workerEmail);
                 if (user != null)
                 {
                     siteModel.AvatarUrl = user.ProfilePictureSnapshot != null
@@ -218,7 +268,7 @@ public class TimePlanningPlanningService(
                     siteModel.DeviceManufacturer = user.TimeRegistrationManufacturer;
                     try
                     {
-                        siteModel.SoftwareVersionIsValid = int.Parse(user.TimeRegistrationSoftwareVersion.Replace(".", "")) >= 3114;
+                        siteModel.SoftwareVersionIsValid = Version.TryParse(user.TimeRegistrationSoftwareVersion, out var v1) && v1 >= new Version(3, 1, 1, 4);
                     }
                     catch (Exception)
                     {
@@ -354,6 +404,11 @@ public class TimePlanningPlanningService(
         var sdkCore = await core.GetCore();
         var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
         var currentUserAsync = await userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            return new OperationDataResult<TimePlanningPlanningModel>(false,
+                localizationService.GetString("UserNotFound"), null!);
+        }
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
 
@@ -397,24 +452,27 @@ public class TimePlanningPlanningService(
         var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
         var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
         var todayMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
-        var date = model.DateFrom;
-        while (date <= model.DateTo)
+        var midnightOfDateToForLoop = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 0, 0, 0);
+        var date = midnightOfDateFrom;
+        while (date <= midnightOfDateToForLoop)
         {
-            datesInPeriod.Add(date.Value);
-            date = date.Value.AddDays(1);
+            datesInPeriod.Add(date);
+            date = date.AddDays(1);
         }
 
         var siteModel = new TimePlanningPlanningModel
         {
             SiteId = (int)site.MicrotingUid!,
             SiteName = site.Name,
+            // Phase 4: per-row mirror of the assigned-site flag drives the
+            // web admin's HH:mm vs HH:mm:ss display path in the plannings table.
+            UseOneMinuteIntervals = dbAssignedSite.UseOneMinuteIntervals,
             PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
         };
 
         try
         {
-            siteModel.SoftwareVersionIsValid = currentUser.TimeRegistrationSoftwareVersion != null &&
-                                               int.Parse(currentUser.TimeRegistrationSoftwareVersion.Replace(".", "")) >= 3114;
+            siteModel.SoftwareVersionIsValid = Version.TryParse(currentUser.TimeRegistrationSoftwareVersion, out var v2) && v2 >= new Version(4,0,0,0);
         }
         catch (Exception)
         {
@@ -422,8 +480,9 @@ public class TimePlanningPlanningService(
             siteModel.SoftwareVersionIsValid = false;
         }
 
-        var user = await baseDbContext.Users
-            .Where(x => (x.FirstName + " " + x.LastName).Replace(" ", "").ToLower() == site.Name.Replace(" ", "").ToLower())
+        var workerEmail2 = (worker.Email ?? "").Trim().ToLower();
+        var user = string.IsNullOrEmpty(workerEmail2) ? null : await baseDbContext.Users
+            .Where(x => x.Email.ToLower() == workerEmail2)
             .FirstOrDefaultAsync().ConfigureAwait(false);
         if (user != null)
         {
@@ -537,6 +596,21 @@ public class TimePlanningPlanningService(
     {
         try
         {
+            // Phase 2/5 fix (PR #1545 b1m round 5): the dashboard fires a PUT
+            // with only off-grid actual stamps and no planning fields. When
+            // model-binding falls through (malformed/empty body), [FromBody]
+            // hands us a null model and the very next line — model.Planned-
+            // StartOfShift1 — NRE'd inside the catch block as a generic
+            // "ErrorWhileUpdatingPlanning" 200/{success:false}. Returning a
+            // structured failure instead lets the front-end surface a real
+            // validation error rather than silently retrying the save.
+            if (model == null)
+            {
+                return new OperationResult(
+                    false,
+                    localizationService.GetString("ErrorWhileUpdatingPlanning"));
+            }
+
             var currentUserAsync = await userService.GetCurrentUserAsync();
             var planning = dbContext.PlanRegistrations
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -566,6 +640,16 @@ public class TimePlanningPlanningService(
             planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
             planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
             planning.PlannedEndOfShift2 = model.PlannedEndOfShift2;
+            planning.PlannedStartOfShift3 = model.PlannedStartOfShift3;
+            planning.PlannedBreakOfShift3 = model.PlannedBreakOfShift3;
+            planning.PlannedEndOfShift3 = model.PlannedEndOfShift3;
+            planning.PlannedStartOfShift4 = model.PlannedStartOfShift4;
+            planning.PlannedBreakOfShift4 = model.PlannedBreakOfShift4;
+            planning.PlannedEndOfShift4 = model.PlannedEndOfShift4;
+            planning.PlannedStartOfShift5 = model.PlannedStartOfShift5;
+            planning.PlannedBreakOfShift5 = model.PlannedBreakOfShift5;
+            planning.PlannedEndOfShift5 = model.PlannedEndOfShift5;
+            planning.PlanText = PlanTextHelper.GeneratePlanText(planning);
             planning.CommentOffice = model.CommentOffice;
             planning.NettoHoursOverride = model.NettoHoursOverride;
             planning.NettoHoursOverrideActive = model.NettoHoursOverrideActive;
@@ -582,11 +666,11 @@ public class TimePlanningPlanningService(
 
             if (!assignedSite.UseDetailedPauseEditing)
             {
-                planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;
-                planning.Pause2Id = model.Pause2Id ?? planning.Pause2Id;
-                planning.Pause3Id = model.Pause3Id ?? planning.Pause3Id;
-                planning.Pause4Id = model.Pause4Id ?? planning.Pause4Id;
-                planning.Pause5Id = model.Pause5Id ?? planning.Pause5Id;
+                planning.Pause1Id = model.Pause1Id ?? 0;
+                planning.Pause2Id = model.Pause2Id ?? 0;
+                planning.Pause3Id = model.Pause3Id ?? 0;
+                planning.Pause4Id = model.Pause4Id ?? 0;
+                planning.Pause5Id = model.Pause5Id ?? 0;
             }
             else
             {
@@ -881,6 +965,63 @@ public class TimePlanningPlanningService(
                 planning.Start1StartedAt = null;
             }
 
+            if (assignedSite.UseOneMinuteIntervals)
+            {
+                var exactPauses = new[]
+                {
+                    (1, model.Pause1ExactMinutes),
+                    (2, model.Pause2ExactMinutes),
+                    (3, model.Pause3ExactMinutes),
+                    (4, model.Pause4ExactMinutes),
+                    (5, model.Pause5ExactMinutes),
+                };
+                foreach (var (shift, minutes) in exactPauses)
+                {
+                    if (minutes.HasValue)
+                    {
+                        ApplyExactMinutePause(planning, shift, minutes.Value);
+                    }
+                }
+
+                var exactStarts = new[]
+                {
+                    (1, model.Start1ExactMinutes),
+                    (2, model.Start2ExactMinutes),
+                    (3, model.Start3ExactMinutes),
+                    (4, model.Start4ExactMinutes),
+                    (5, model.Start5ExactMinutes),
+                };
+                foreach (var (shift, minutes) in exactStarts)
+                {
+                    if (minutes.HasValue)
+                    {
+                        ApplyExactMinuteStart(planning, shift, minutes.Value);
+                    }
+                }
+
+                var exactStops = new[]
+                {
+                    (1, model.Stop1ExactMinutes),
+                    (2, model.Stop2ExactMinutes),
+                    (3, model.Stop3ExactMinutes),
+                    (4, model.Stop4ExactMinutes),
+                    (5, model.Stop5ExactMinutes),
+                };
+                foreach (var (shift, minutes) in exactStops)
+                {
+                    if (minutes.HasValue)
+                    {
+                        ApplyExactMinuteStop(planning, shift, minutes.Value);
+                    }
+                }
+
+                // Re-derive legacy 5-min-tick Start*/Stop* Ids from the just-written
+                // exact-minute timestamps. Mirrors UpdateByCurrentUserNam under flag-on:
+                // without this, the unconditional model-supplied IDs written above stay
+                // 5-min-quantized while the *StartedAt/*StoppedAt are off-grid.
+                DeriveLegacyShiftIdsFromTimestamps(planning);
+            }
+
             if (!assignedSite.UseOnlyPlanHours)
             {
                 double minutesPlanned = 0;
@@ -916,43 +1057,9 @@ public class TimePlanningPlanningService(
                 planning.PlanHours = model.PlanHours;
             }
 
-            var minutesMultiplier = 5;
-            double nettoMinutes = 0;
-
-            if (planning.Stop1Id >= planning.Start1Id && planning.Stop1Id != 0)
-            {
-                nettoMinutes = planning.Stop1Id - planning.Start1Id;
-                nettoMinutes -= planning.Pause1Id > 0 ? planning.Pause1Id - 1 : 0;
-            }
-
-            if (planning.Stop2Id >= planning.Start2Id && planning.Stop2Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop2Id - planning.Start2Id;
-                nettoMinutes -= planning.Pause2Id > 0 ? planning.Pause2Id - 1 : 0;
-            }
-
-            if (planning.Stop3Id >= planning.Start3Id && planning.Stop3Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop3Id - planning.Start3Id;
-                nettoMinutes -= planning.Pause3Id > 0 ? planning.Pause3Id - 1 : 0;
-            }
-
-            if (planning.Stop4Id >= planning.Start4Id && planning.Stop4Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop4Id - planning.Start4Id;
-                nettoMinutes -= planning.Pause4Id > 0 ? planning.Pause4Id - 1 : 0;
-            }
-
-            if (planning.Stop5Id >= planning.Start5Id && planning.Stop5Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop5Id - planning.Start5Id;
-                nettoMinutes -= planning.Pause5Id > 0 ? planning.Pause5Id - 1 : 0;
-            }
-
-            nettoMinutes *= minutesMultiplier;
+            double nettoMinutes = ComputePlanningNettoMinutes(planning, assignedSite.UseOneMinuteIntervals);
 
             double hours = nettoMinutes / 60;
-            planning.NettoHours = hours;
 
             var preTimePlanning =
                 await dbContext.PlanRegistrations.AsNoTracking()
@@ -960,24 +1067,38 @@ public class TimePlanningPlanningService(
                     .Where(x => x.Date < planning.Date
                                 && x.SdkSitId == planning.SdkSitId)
                     .OrderByDescending(x => x.Date)
-                    .FirstOrDefaultAsync() ?? new PlanRegistration
-                {
-                    SumFlexEnd = 0
-                };
+                    .FirstOrDefaultAsync();
 
-            planning.SumFlexStart = preTimePlanning.SumFlexEnd;
-            if (planning.NettoHoursOverrideActive)
+            // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
+            // from DateTime deltas (precise to the second) and write
+            // *InSeconds columns as the source of truth; back-derive the
+            // legacy double hour fields. Flag-off path stays byte-identical.
+            if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
-                planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHoursOverride -
-                                      planning.PlanHours -
-                                      planning.PaiedOutFlex;
-                planning.Flex = planning.NettoHoursOverride - planning.PlanHours;
-            } else
+                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    planning,
+                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                    preTimePlanning != null);
+            }
+            else
             {
-                planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
-                                      planning.PlanHours -
-                                      planning.PaiedOutFlex;
-                planning.Flex = planning.NettoHours - planning.PlanHours;
+                planning.NettoHours = hours;
+                var preSumFlexEnd = preTimePlanning?.SumFlexEnd ?? 0;
+                planning.SumFlexStart = preSumFlexEnd;
+                if (planning.NettoHoursOverrideActive)
+                {
+                    planning.SumFlexEnd = preSumFlexEnd + planning.NettoHoursOverride -
+                                          planning.PlanHours -
+                                          planning.PaiedOutFlex;
+                    planning.Flex = planning.NettoHoursOverride - planning.PlanHours;
+                }
+                else
+                {
+                    planning.SumFlexEnd = preSumFlexEnd + planning.NettoHours -
+                                          planning.PlanHours -
+                                          planning.PaiedOutFlex;
+                    planning.Flex = planning.NettoHours - planning.PlanHours;
+                }
             }
 
             // Ensure timestamps are populated from IDs for accurate time tracking calculation
@@ -985,7 +1106,18 @@ public class TimePlanningPlanningService(
 
             // Compute time tracking fields (seconds-based calculation)
             PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
-            planning.UpdatedByUserId = currentUserAsync.Id;
+            // Phase 2/5 fix: GetCurrentUserAsync() does FirstOrDefaultAsync against
+            // the base AspNetUsers table and can return null (cross-tenant token,
+            // expired claim, or any code path where UserId resolves to 0). The
+            // unguarded `currentUserAsync.Id` access then NRE'd here and the
+            // catch block swallowed it as a generic "ErrorWhileUpdatingPlanning"
+            // 200/{success:false}, which is exactly the symptom PR #1545's b1m
+            // playwright variant tripped over (the dashboard waits for the
+            // /index POST that the frontend only fires after success=true).
+            // Fall back to userService.UserId so the audit field still gets
+            // a non-null int (matches the legacy flag-off path that already
+            // assigns userService.UserId at the top of Update).
+            planning.UpdatedByUserId = currentUserAsync?.Id ?? userService.UserId;
 
             await planning.Update(dbContext).ConfigureAwait(false);
             var todayDateMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
@@ -1008,7 +1140,17 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
-                if (preTimePlanningAfterThisPlanning != null)
+                // Phase 2: when UseOneMinuteIntervals is on, replay the
+                // SumFlex chain through subsequent days using *InSeconds as
+                // the source of truth so accumulated rounding does not drift.
+                if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
+                {
+                    PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                        planningAfterThisPlanning,
+                        preTimePlanningAfterThisPlanning?.SumFlexEndInSeconds ?? 0,
+                        preTimePlanningAfterThisPlanning != null);
+                }
+                else if (preTimePlanningAfterThisPlanning != null)
                 {
                     planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
                     if (planningAfterThisPlanning.NettoHoursOverrideActive)
@@ -1058,8 +1200,14 @@ public class TimePlanningPlanningService(
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
-            logger.LogError(e.Message);
-            logger.LogTrace(e.StackTrace);
+            // Phase 2/5 fix: log the full exception (message + stack trace +
+            // inner exceptions) at Error level so future failures of this
+            // catch can be diagnosed from CI stdout.  The previous code only
+            // logged e.Message at Error and e.StackTrace at Trace, and the
+            // default min-level filters out Trace, which is why PR #1545's
+            // b1m run produced a bare "Object reference not set..." with no
+            // stack frame to point at the offending line.
+            logger.LogError(e, "TimePlanningPlanningService.Update failed");
             return new OperationResult(
                 false,
                 localizationService.GetString("ErrorWhileUpdatingPlanning"));
@@ -1074,6 +1222,15 @@ public class TimePlanningPlanningService(
             var sdkCore = await core.GetCore();
             var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
             var currentUserAsync = await userService.GetCurrentUserAsync();
+            if (currentUserAsync == null)
+            {
+                // Phase 2/5 fix: GetCurrentUserAsync() can return null when
+                // UserId resolves to 0 (no claim, expired token, etc.).  Without
+                // this guard the next line NRE'd on currentUserAsync.Id and the
+                // catch block swallowed it as a generic
+                // "ErrorWhileUpdatingPlanning" 200/{success:false}.
+                return new OperationResult(false, "Current user not found");
+            }
             var currentUser = baseDbContext.Users
                 .Single(x => x.Id == currentUserAsync.Id);
             var worker = await sdkDbContext.Workers
@@ -1121,13 +1278,30 @@ public class TimePlanningPlanningService(
                     localizationService.GetString("PlanningNotFound"));
             }
 
+            planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
+            planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
+            planning.PlannedEndOfShift1   = model.PlannedEndOfShift1;
+            planning.PlannedStartOfShift2 = model.PlannedStartOfShift2;
+            planning.PlannedBreakOfShift2 = model.PlannedBreakOfShift2;
+            planning.PlannedEndOfShift2   = model.PlannedEndOfShift2;
+            planning.PlannedStartOfShift3 = model.PlannedStartOfShift3;
+            planning.PlannedBreakOfShift3 = model.PlannedBreakOfShift3;
+            planning.PlannedEndOfShift3   = model.PlannedEndOfShift3;
+            planning.PlannedStartOfShift4 = model.PlannedStartOfShift4;
+            planning.PlannedBreakOfShift4 = model.PlannedBreakOfShift4;
+            planning.PlannedEndOfShift4   = model.PlannedEndOfShift4;
+            planning.PlannedStartOfShift5 = model.PlannedStartOfShift5;
+            planning.PlannedBreakOfShift5 = model.PlannedBreakOfShift5;
+            planning.PlannedEndOfShift5   = model.PlannedEndOfShift5;
+            planning.PlanText = PlanTextHelper.GeneratePlanText(planning);
+
             if (!assignedSite.UseDetailedPauseEditing)
             {
-                planning.Pause1Id = model.Pause1Id ?? planning.Pause1Id;
-                planning.Pause2Id = model.Pause2Id ?? planning.Pause2Id;
-                planning.Pause3Id = model.Pause3Id ?? planning.Pause3Id;
-                planning.Pause4Id = model.Pause4Id ?? planning.Pause4Id;
-                planning.Pause5Id = model.Pause5Id ?? planning.Pause5Id;
+                planning.Pause1Id = model.Pause1Id ?? 0;
+                planning.Pause2Id = model.Pause2Id ?? 0;
+                planning.Pause3Id = model.Pause3Id ?? 0;
+                planning.Pause4Id = model.Pause4Id ?? 0;
+                planning.Pause5Id = model.Pause5Id ?? 0;
             }
             else
             {
@@ -1388,99 +1562,32 @@ public class TimePlanningPlanningService(
 
             if (assignedSite.UseOneMinuteIntervals)
             {
-                planning.Start1Id = planning.Start1StartedAt != null
-                    ? planning.Start1StartedAt.Value.Hour * 12
-                      + planning.Start1StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop1Id = planning.Stop1StoppedAt != null
-                    ? planning.Stop1StoppedAt.Value.Hour * 12
-                      + planning.Stop1StoppedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Start2Id = planning.Start2StartedAt != null
-                    ? planning.Start2StartedAt.Value.Hour * 12
-                      + planning.Start2StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop2Id = planning.Stop2StoppedAt != null
-                    ? planning.Stop2StoppedAt.Value.Hour * 12
-                      + planning.Stop2StoppedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Start3Id = planning.Start3StartedAt != null
-                    ? planning.Start3StartedAt.Value.Hour * 12
-                      + planning.Start3StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop3Id = planning.Stop3StoppedAt != null
-                    ? planning.Stop3StoppedAt.Value.Hour * 12
-                      + planning.Stop3StoppedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Start4Id = planning.Start4StartedAt != null
-                    ? planning.Start4StartedAt.Value.Hour * 12
-                      + planning.Start4StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop4Id = planning.Stop4StoppedAt != null
-                    ? planning.Stop4StoppedAt.Value.Hour * 12
-                      + planning.Stop4StoppedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Start5Id = planning.Start5StartedAt != null
-                    ? planning.Start5StartedAt.Value.Hour * 12
-                      + planning.Start5StartedAt.Value.Minute / 5 + 1
-                    : 0;
-                planning.Stop5Id = planning.Stop5StoppedAt != null
-                    ? planning.Stop5StoppedAt.Value.Hour * 12
-                      + planning.Stop5StoppedAt.Value.Minute / 5 + 1
-                    : 0;
+                DeriveLegacyShiftIdsFromTimestamps(planning);
             }
-
-            planning.Start1Id = model.Start1Id ?? 0;
-            planning.Stop1Id = model.Stop1Id ?? 0;
-            planning.Start2Id = model.Start2Id ?? 0;
-            planning.Stop2Id = model.Stop2Id ?? 0;
-            planning.Start3Id = model.Start3Id ?? 0;
-            planning.Stop3Id = model.Stop3Id ?? 0;
-            planning.Start4Id = model.Start4Id ?? 0;
-            planning.Stop4Id = model.Stop4Id ?? 0;
-            planning.Start5Id = model.Start5Id ?? 0;
-            planning.Stop5Id = model.Stop5Id ?? 0;
+            else
+            {
+                // Flag-off: legacy behaviour — copy IDs straight from the model.
+                // Under UseOneMinuteIntervals the IDs above were derived from
+                // timestamps and must NOT be clobbered by the (typically 0/null)
+                // model-supplied IDs from the worker-punchclock gRPC path.
+                planning.Start1Id = model.Start1Id ?? 0;
+                planning.Stop1Id = model.Stop1Id ?? 0;
+                planning.Start2Id = model.Start2Id ?? 0;
+                planning.Stop2Id = model.Stop2Id ?? 0;
+                planning.Start3Id = model.Start3Id ?? 0;
+                planning.Stop3Id = model.Stop3Id ?? 0;
+                planning.Start4Id = model.Start4Id ?? 0;
+                planning.Stop4Id = model.Stop4Id ?? 0;
+                planning.Start5Id = model.Start5Id ?? 0;
+                planning.Stop5Id = model.Stop5Id ?? 0;
+            }
             planning.WorkerComment = model.WorkerComment;
 
             planning = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planning);
 
-            var minutesMultiplier = 5;
-            double nettoMinutes = 0;
-
-            if (planning.Stop1Id >= planning.Start1Id && planning.Stop1Id != 0)
-            {
-                nettoMinutes = planning.Stop1Id - planning.Start1Id;
-                nettoMinutes -= planning.Pause1Id > 0 ? planning.Pause1Id - 1 : 0;
-            }
-
-            if (planning.Stop2Id >= planning.Start2Id && planning.Stop2Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop2Id - planning.Start2Id;
-                nettoMinutes -= planning.Pause2Id > 0 ? planning.Pause2Id - 1 : 0;
-            }
-
-            if (planning.Stop3Id >= planning.Start3Id && planning.Stop3Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop3Id - planning.Start3Id;
-                nettoMinutes -= planning.Pause3Id > 0 ? planning.Pause3Id - 1 : 0;
-            }
-
-            if (planning.Stop4Id >= planning.Start4Id && planning.Stop4Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop4Id - planning.Start4Id;
-                nettoMinutes -= planning.Pause4Id > 0 ? planning.Pause4Id - 1 : 0;
-            }
-
-            if (planning.Stop5Id >= planning.Start5Id && planning.Stop5Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planning.Stop5Id - planning.Start5Id;
-                nettoMinutes -= planning.Pause5Id > 0 ? planning.Pause5Id - 1 : 0;
-            }
-
-            nettoMinutes *= minutesMultiplier;
+            double nettoMinutes = ComputePlanningNettoMinutes(planning, assignedSite.UseOneMinuteIntervals);
 
             double hours = nettoMinutes / 60;
-            planning.NettoHours = hours;
 
             var preTimePlanning =
                 await dbContext.PlanRegistrations.AsNoTracking()
@@ -1488,16 +1595,29 @@ public class TimePlanningPlanningService(
                     .Where(x => x.Date < planning.Date
                                 && x.SdkSitId == planning.SdkSitId)
                     .OrderByDescending(x => x.Date)
-                    .FirstOrDefaultAsync() ?? new PlanRegistration
-                {
-                    SumFlexEnd = 0
-                };
+                    .FirstOrDefaultAsync();
 
-            planning.SumFlexStart = preTimePlanning.SumFlexEnd;
-            planning.SumFlexEnd = preTimePlanning.SumFlexEnd + planning.NettoHours -
-                                  planning.PlanHours -
-                                  planning.PaiedOutFlex;
-            planning.Flex = planning.NettoHours - planning.PlanHours;
+            // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
+            // from DateTime deltas (precise to the second) and write
+            // *InSeconds columns as the source of truth; back-derive the
+            // legacy double hour fields. Flag-off path stays byte-identical.
+            if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
+            {
+                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    planning,
+                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                    preTimePlanning != null);
+            }
+            else
+            {
+                planning.NettoHours = hours;
+                var preSumFlexEnd = preTimePlanning?.SumFlexEnd ?? 0;
+                planning.SumFlexStart = preSumFlexEnd;
+                planning.SumFlexEnd = preSumFlexEnd + planning.NettoHours -
+                                      planning.PlanHours -
+                                      planning.PaiedOutFlex;
+                planning.Flex = planning.NettoHours - planning.PlanHours;
+            }
 
             // Ensure timestamps are populated from IDs for accurate time tracking calculation
             EnsureTimestampsFromIds(planning);
@@ -1527,7 +1647,17 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
-                if (preTimePlanningAfterThisPlanning != null)
+                // Phase 2: when UseOneMinuteIntervals is on, replay the
+                // SumFlex chain through subsequent days using *InSeconds as
+                // the source of truth so accumulated rounding does not drift.
+                if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
+                {
+                    PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                        planningAfterThisPlanning,
+                        preTimePlanningAfterThisPlanning?.SumFlexEndInSeconds ?? 0,
+                        preTimePlanningAfterThisPlanning != null);
+                }
+                else if (preTimePlanningAfterThisPlanning != null)
                 {
                     planningAfterThisPlanning.SumFlexStart = preTimePlanningAfterThisPlanning.SumFlexEnd;
                     if (planningAfterThisPlanning.NettoHoursOverrideActive)
@@ -1577,8 +1707,10 @@ public class TimePlanningPlanningService(
         catch (Exception e)
         {
             SentrySdk.CaptureException(e);
-            logger.LogError(e.Message);
-            logger.LogTrace(e.StackTrace);
+            // See the matching note at the bottom of Update() — log the full
+            // exception so the catch leaves a usable stack trace in stdout
+            // for CI diagnosis.
+            logger.LogError(e, "TimePlanningPlanningService.UpdateByCurrentUserNam failed");
             return new OperationResult(
                 false,
                 localizationService.GetString("ErrorWhileUpdatingPlanning"));
@@ -1703,6 +1835,258 @@ public class TimePlanningPlanningService(
             }
         }
     }
+
+    /// <summary>
+    /// Translates an admin-edited exact-minute pause duration for the given shift
+    /// into Pause*StartedAt/Pause*StoppedAt timestamps on the entity. Anchors to
+    /// the existing Pause*StartedAt when present (preserves the worker's actual
+    /// pause start) and falls back to the shift midpoint when no anchor exists.
+    /// Sub-slot pauses (pause10..pause19, pause100..pause102 for shift 1;
+    /// pause20..pause29, pause200..pause202 for shift 2) are cleared so
+    /// AggregatePauseMinutes does not double-count.
+    /// </summary>
+    private void ApplyExactMinutePause(PlanRegistration planning, int shift, int exactMinutes)
+    {
+        if (exactMinutes == 0)
+        {
+            ClearPauseTimestamps(planning, shift);
+            return;
+        }
+
+        DateTime? existingStart = shift switch
+        {
+            1 => planning.Pause1StartedAt,
+            2 => planning.Pause2StartedAt,
+            3 => planning.Pause3StartedAt,
+            4 => planning.Pause4StartedAt,
+            5 => planning.Pause5StartedAt,
+            _ => null,
+        };
+
+        DateTime startedAt;
+        if (existingStart.HasValue)
+        {
+            startedAt = existingStart.Value;
+        }
+        else
+        {
+            var (shiftStart, shiftStop) = GetShiftBounds(planning, shift);
+            if (!shiftStart.HasValue || !shiftStop.HasValue)
+            {
+                // No anchor available — skip the write rather than fabricate one.
+                return;
+            }
+            startedAt = shiftStart.Value.AddMinutes(
+                (shiftStop.Value - shiftStart.Value).TotalMinutes / 2);
+        }
+
+        var stoppedAt = startedAt.AddMinutes(exactMinutes);
+
+        ClearPauseTimestamps(planning, shift);
+
+        switch (shift)
+        {
+            case 1:
+                planning.Pause1StartedAt = startedAt;
+                planning.Pause1StoppedAt = stoppedAt;
+                break;
+            case 2:
+                planning.Pause2StartedAt = startedAt;
+                planning.Pause2StoppedAt = stoppedAt;
+                break;
+            case 3:
+                planning.Pause3StartedAt = startedAt;
+                planning.Pause3StoppedAt = stoppedAt;
+                break;
+            case 4:
+                planning.Pause4StartedAt = startedAt;
+                planning.Pause4StoppedAt = stoppedAt;
+                break;
+            case 5:
+                planning.Pause5StartedAt = startedAt;
+                planning.Pause5StoppedAt = stoppedAt;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Writes Start{N}StartedAt as planning.Date.Date + minutes-of-day.
+    /// Under UseOneMinuteIntervals=true this is the authoritative store
+    /// for the admin-edit actual shift start (the legacy Start{N}Id
+    /// column remains a 5-minute-quantized fallback).
+    /// </summary>
+    private static void ApplyExactMinuteStart(PlanRegistration planning, int shift, int minutes)
+    {
+        var anchor = planning.Date.Date + TimeSpan.FromMinutes(minutes);
+        switch (shift)
+        {
+            case 1: planning.Start1StartedAt = anchor; break;
+            case 2: planning.Start2StartedAt = anchor; break;
+            case 3: planning.Start3StartedAt = anchor; break;
+            case 4: planning.Start4StartedAt = anchor; break;
+            case 5: planning.Start5StartedAt = anchor; break;
+        }
+    }
+
+    /// <summary>
+    /// Writes Stop{N}StoppedAt as planning.Date.Date + minutes-of-day, advancing
+    /// by one day when the stop minute is at or before the matching shift's start
+    /// (cross-midnight). Anchored to the matching Start{N}StartedAt's date when set.
+    /// </summary>
+    private static void ApplyExactMinuteStop(PlanRegistration planning, int shift, int minutes)
+    {
+        DateTime? startStamp = shift switch
+        {
+            1 => planning.Start1StartedAt,
+            2 => planning.Start2StartedAt,
+            3 => planning.Start3StartedAt,
+            4 => planning.Start4StartedAt,
+            5 => planning.Start5StartedAt,
+            _ => null,
+        };
+        var baseDate = planning.Date.Date;
+        if (startStamp.HasValue)
+        {
+            var startMinutes = (int)(startStamp.Value - startStamp.Value.Date).TotalMinutes;
+            if (minutes <= startMinutes)
+            {
+                baseDate = baseDate.AddDays(1);
+            }
+        }
+        var anchor = baseDate + TimeSpan.FromMinutes(minutes);
+        switch (shift)
+        {
+            case 1: planning.Stop1StoppedAt = anchor; break;
+            case 2: planning.Stop2StoppedAt = anchor; break;
+            case 3: planning.Stop3StoppedAt = anchor; break;
+            case 4: planning.Stop4StoppedAt = anchor; break;
+            case 5: planning.Stop5StoppedAt = anchor; break;
+        }
+    }
+
+    private static void DeriveLegacyShiftIdsFromTimestamps(PlanRegistration planning)
+    {
+        static int TickId(DateTime? ts) =>
+            ts.HasValue ? ts.Value.Hour * 12 + ts.Value.Minute / 5 + 1 : 0;
+
+        planning.Start1Id = TickId(planning.Start1StartedAt);
+        planning.Stop1Id  = TickId(planning.Stop1StoppedAt);
+        planning.Start2Id = TickId(planning.Start2StartedAt);
+        planning.Stop2Id  = TickId(planning.Stop2StoppedAt);
+        planning.Start3Id = TickId(planning.Start3StartedAt);
+        planning.Stop3Id  = TickId(planning.Stop3StoppedAt);
+        planning.Start4Id = TickId(planning.Start4StartedAt);
+        planning.Stop4Id  = TickId(planning.Stop4StoppedAt);
+        planning.Start5Id = TickId(planning.Start5StartedAt);
+        planning.Stop5Id  = TickId(planning.Stop5StoppedAt);
+    }
+
+    /// <summary>
+    /// Computes total netto minutes (raw minutes; caller divides by 60 for hours)
+    /// across all 5 shifts. Under flag-on, when both Start{N}StartedAt and
+    /// Stop{N}StoppedAt are set, uses (Stop - Start).TotalMinutes minus the
+    /// timestamp-derived pause minutes for that shift. Otherwise falls back to
+    /// the legacy ((Stop{N}Id - Start{N}Id) - max(Pause{N}Id - 1, 0)) * 5 math.
+    /// </summary>
+    private static double ComputePlanningNettoMinutes(PlanRegistration planning, bool useOneMinuteIntervals)
+    {
+        const int multiplier = 5;
+        double total = 0;
+        for (var shift = 1; shift <= 5; shift++)
+        {
+            var (startedAt, stoppedAt, pauseStarted, pauseStopped, startId, stopId, pauseId) = GetShiftTimings(planning, shift);
+
+            if (useOneMinuteIntervals && startedAt.HasValue && stoppedAt.HasValue && stoppedAt.Value > startedAt.Value)
+            {
+                var shiftMinutes = (stoppedAt.Value - startedAt.Value).TotalMinutes;
+                double pauseMinutes = 0;
+                if (pauseStarted.HasValue && pauseStopped.HasValue && pauseStopped.Value > pauseStarted.Value)
+                {
+                    pauseMinutes = (pauseStopped.Value - pauseStarted.Value).TotalMinutes;
+                }
+                total += shiftMinutes - pauseMinutes;
+            }
+            else
+            {
+                if (stopId >= startId && stopId != 0)
+                {
+                    double sm = stopId - startId;
+                    sm -= pauseId > 0 ? pauseId - 1 : 0;
+                    total += sm * multiplier;
+                }
+            }
+        }
+        return total;
+    }
+
+    private static (DateTime? StartedAt, DateTime? StoppedAt, DateTime? PauseStarted, DateTime? PauseStopped, int StartId, int StopId, int PauseId)
+        GetShiftTimings(PlanRegistration planning, int shift) => shift switch
+    {
+        1 => (planning.Start1StartedAt, planning.Stop1StoppedAt, planning.Pause1StartedAt, planning.Pause1StoppedAt, planning.Start1Id, planning.Stop1Id, planning.Pause1Id),
+        2 => (planning.Start2StartedAt, planning.Stop2StoppedAt, planning.Pause2StartedAt, planning.Pause2StoppedAt, planning.Start2Id, planning.Stop2Id, planning.Pause2Id),
+        3 => (planning.Start3StartedAt, planning.Stop3StoppedAt, planning.Pause3StartedAt, planning.Pause3StoppedAt, planning.Start3Id, planning.Stop3Id, planning.Pause3Id),
+        4 => (planning.Start4StartedAt, planning.Stop4StoppedAt, planning.Pause4StartedAt, planning.Pause4StoppedAt, planning.Start4Id, planning.Stop4Id, planning.Pause4Id),
+        5 => (planning.Start5StartedAt, planning.Stop5StoppedAt, planning.Pause5StartedAt, planning.Pause5StoppedAt, planning.Start5Id, planning.Stop5Id, planning.Pause5Id),
+        _ => (null, null, null, null, 0, 0, 0),
+    };
+
+    private static void ClearPauseTimestamps(PlanRegistration planning, int shift)
+    {
+        switch (shift)
+        {
+            case 1:
+                planning.Pause1StartedAt = null; planning.Pause1StoppedAt = null;
+                planning.Pause10StartedAt = null; planning.Pause10StoppedAt = null;
+                planning.Pause11StartedAt = null; planning.Pause11StoppedAt = null;
+                planning.Pause12StartedAt = null; planning.Pause12StoppedAt = null;
+                planning.Pause13StartedAt = null; planning.Pause13StoppedAt = null;
+                planning.Pause14StartedAt = null; planning.Pause14StoppedAt = null;
+                planning.Pause15StartedAt = null; planning.Pause15StoppedAt = null;
+                planning.Pause16StartedAt = null; planning.Pause16StoppedAt = null;
+                planning.Pause17StartedAt = null; planning.Pause17StoppedAt = null;
+                planning.Pause18StartedAt = null; planning.Pause18StoppedAt = null;
+                planning.Pause19StartedAt = null; planning.Pause19StoppedAt = null;
+                planning.Pause100StartedAt = null; planning.Pause100StoppedAt = null;
+                planning.Pause101StartedAt = null; planning.Pause101StoppedAt = null;
+                planning.Pause102StartedAt = null; planning.Pause102StoppedAt = null;
+                break;
+            case 2:
+                planning.Pause2StartedAt = null; planning.Pause2StoppedAt = null;
+                planning.Pause20StartedAt = null; planning.Pause20StoppedAt = null;
+                planning.Pause21StartedAt = null; planning.Pause21StoppedAt = null;
+                planning.Pause22StartedAt = null; planning.Pause22StoppedAt = null;
+                planning.Pause23StartedAt = null; planning.Pause23StoppedAt = null;
+                planning.Pause24StartedAt = null; planning.Pause24StoppedAt = null;
+                planning.Pause25StartedAt = null; planning.Pause25StoppedAt = null;
+                planning.Pause26StartedAt = null; planning.Pause26StoppedAt = null;
+                planning.Pause27StartedAt = null; planning.Pause27StoppedAt = null;
+                planning.Pause28StartedAt = null; planning.Pause28StoppedAt = null;
+                planning.Pause29StartedAt = null; planning.Pause29StoppedAt = null;
+                planning.Pause200StartedAt = null; planning.Pause200StoppedAt = null;
+                planning.Pause201StartedAt = null; planning.Pause201StoppedAt = null;
+                planning.Pause202StartedAt = null; planning.Pause202StoppedAt = null;
+                break;
+            case 3:
+                planning.Pause3StartedAt = null; planning.Pause3StoppedAt = null;
+                break;
+            case 4:
+                planning.Pause4StartedAt = null; planning.Pause4StoppedAt = null;
+                break;
+            case 5:
+                planning.Pause5StartedAt = null; planning.Pause5StoppedAt = null;
+                break;
+        }
+    }
+
+    private static (DateTime?, DateTime?) GetShiftBounds(PlanRegistration p, int shift) => shift switch
+    {
+        1 => (p.Start1StartedAt, p.Stop1StoppedAt),
+        2 => (p.Start2StartedAt, p.Stop2StoppedAt),
+        3 => (p.Start3StartedAt, p.Stop3StoppedAt),
+        4 => (p.Start4StartedAt, p.Stop4StoppedAt),
+        5 => (p.Start5StartedAt, p.Stop5StoppedAt),
+        _ => (null, null),
+    };
 
     public async Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId)
     {

@@ -36,8 +36,8 @@
       <mat-icon color="primary">last_page</mat-icon>
     </button>
 
-    <div class="line-vert"></div>
-    <div class="text-field--rounded">
+    <div class="line-vert" *ngIf="availableSites.length > 1"></div>
+    <div class="text-field--rounded" *ngIf="availableSites.length > 1">
       <mat-form-field style="flex: 0 0 25%; min-width: 150px;">
         <mat-label>{{ 'Worker' | translate }}</mat-label>
         <mtx-select
@@ -82,6 +82,14 @@
       (click)="openDownloadExcelDialog()"
       matTooltip="{{ 'Download Excel' | translate }}">
       <mat-icon svgIcon="file-excel"></mat-icon>
+    </button>
+    <button
+      *ngIf="isAdmin && payrollSystem !== 0"
+      id="payroll-export"
+      class="btn-secondary btn-secondary--icon-rounded-border"
+      (click)="openPayrollExportDialog()"
+      matTooltip="{{ 'Export to payroll' | translate }}">
+      <mat-icon>payments</mat-icon>
     </button>
     <button
       class="btn-secondary btn-secondary--icon-rounded-border"

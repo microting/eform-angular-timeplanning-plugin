@@ -3,6 +3,7 @@ syntax = "proto3";
 package timeplanning;
 
 import "common.proto";
+import "google/protobuf/wrappers.proto";
 
 option csharp_namespace = "TimePlanning.Pn.Grpc";
 
@@ -11,6 +12,7 @@ message CreateContentHandoverRequest {
   int32 to_sdk_site_id = 2;
   string request_comment = 3;
   DeviceMetadata device = 4;
+  repeated int32 shift_indices = 5;
 }
 
 message ContentHandoverDecisionRequest {
@@ -40,21 +42,49 @@ message ContentHandoverRequestModel {
   int32 to_plan_registration_id = 6;
   string status = 7;
   string requested_at_utc = 8;
-  string responded_at_utc = 9;
-  string request_comment = 10;
-  string decision_comment = 11;
+  // Wrapped — JSON envelope sends null until the request is decided / when
+  // optional comments / shift slot are absent. proto3 default ("" / 0) would
+  // collapse to a non-null value and break the contract diff.
+  google.protobuf.StringValue responded_at_utc = 9;
+  google.protobuf.StringValue request_comment = 10;
+  google.protobuf.StringValue decision_comment = 11;
+  google.protobuf.Int32Value shift_index = 12;
+  google.protobuf.Int32Value shift_start_time = 13;
+  google.protobuf.Int32Value shift_end_time = 14;
+  // JSON envelope from GetAllAsync includes worker names; null on Create.
+  google.protobuf.StringValue from_worker_name = 15;
+  google.protobuf.StringValue to_worker_name = 16;
 }
 
 message ContentHandoverResponse {
   bool success = 1;
   string message = 2;
   ContentHandoverRequestModel model = 3;
+  repeated ContentHandoverRequestModel models = 4;
 }
 
 message ContentHandoverListResponse {
   bool success = 1;
   string message = 2;
   repeated ContentHandoverRequestModel models = 3;
+}
+
+message GetHandoverEligibleCoworkersRequest {
+  string date = 1;
+  DeviceMetadata device = 2;
+  repeated int32 shift_indices = 3;
+}
+
+message HandoverCoworker {
+  int32 sdk_site_id = 1;
+  string site_name = 2;
+  int32 plan_registration_id = 3;
+}
+
+message GetHandoverEligibleCoworkersResponse {
+  bool success = 1;
+  string message = 2;
+  repeated HandoverCoworker coworkers = 3;
 }
 
 service TimePlanningContentHandoverService {
@@ -64,4 +94,5 @@ service TimePlanningContentHandoverService {
   rpc CancelContentHandover(CancelContentHandoverRequest) returns (OperationResponse);
   rpc GetContentHandoverInbox(GetContentHandoverRequestsRequest) returns (ContentHandoverListResponse);
   rpc GetMyContentHandovers(GetContentHandoverRequestsRequest) returns (ContentHandoverListResponse);
+  rpc GetHandoverEligibleCoworkers(GetHandoverEligibleCoworkersRequest) returns (GetHandoverEligibleCoworkersResponse);
 }

@@ -118,6 +118,27 @@ public static class PlanRegistrationHelper
     public static PlanRegistration CalculatePauseAutoBreakCalculationActive(
         AssignedSite assignedSite, PlanRegistration planning)
     {
+        // Phase 1 note (auto-break, write path):
+        // -------------------------------------------------------------------
+        // Auto-break pauses are COMPUTED from day-of-week rules (divider /
+        // pr-divider / upper-limit), not OBSERVED. There is no real punch
+        // marking when the worker started or stopped the pause -- the rule
+        // simply says "deduct N minutes of pause for a shift of M minutes
+        // worked on this weekday". So even when UseOneMinuteIntervals is
+        // on, we do NOT fabricate Pause1StartedAt / Pause1StoppedAt
+        // timestamps for an auto-computed pause: there is no real-world
+        // signal to anchor them to. The legacy `Pause1Id` int (in 5-minute
+        // multiples) stays the source of truth for auto-break, and Phase 2
+        // will read it back when computing NettoHours. The DateTime pause
+        // fields remain reserved for OBSERVED pauses (worker explicitly
+        // started/stopped a break on the kiosk / mobile), which already
+        // travel through the `Pause*StartedAt` write path in
+        // `UpdateWorkingHour`.
+        if (assignedSite.UseOneMinuteIntervals)
+        {
+            // No-op for auto-break specifically; fall through to the
+            // existing 5-minute logic which sets Pause1Id. See note above.
+        }
         if (assignedSite.AutoBreakCalculationActive)
         {
             var minutesActualAtWork =
@@ -288,6 +309,300 @@ public static class PlanRegistrationHelper
         return planning;
     }
 
+    /// <summary>
+    /// Recalculates PlanHours and PlanHoursInSeconds from the five planned
+    /// shift slots.  This must be called after MoveShift / MoveContent so
+    /// that the totals on both the source and target PlanRegistrations stay
+    /// consistent.
+    ///
+    /// This method is only called post-handover, when shift data has been
+    /// physically relocated between PlanRegistrations. The UseOnlyPlanHours
+    /// guard is intentionally omitted because the manually-set PlanHours
+    /// value would be stale after shifts have been moved. Likewise the
+    /// MessageId guard is omitted for the same reason -- the old MessageId
+    /// no longer reflects the new shift layout.
+    /// </summary>
+    public static void RecalculatePlanHoursFromShifts(PlanRegistration pr)
+    {
+        // Existing 5-min path (planned shifts stay minute-precision per plan)
+        var totalMinutes = 0;
+
+        if (pr.PlannedStartOfShift1 != 0 && pr.PlannedEndOfShift1 != 0)
+            totalMinutes += pr.PlannedEndOfShift1 - pr.PlannedStartOfShift1 - pr.PlannedBreakOfShift1;
+
+        if (pr.PlannedStartOfShift2 != 0 && pr.PlannedEndOfShift2 != 0)
+            totalMinutes += pr.PlannedEndOfShift2 - pr.PlannedStartOfShift2 - pr.PlannedBreakOfShift2;
+
+        if (pr.PlannedStartOfShift3 != 0 && pr.PlannedEndOfShift3 != 0)
+            totalMinutes += pr.PlannedEndOfShift3 - pr.PlannedStartOfShift3 - pr.PlannedBreakOfShift3;
+
+        if (pr.PlannedStartOfShift4 != 0 && pr.PlannedEndOfShift4 != 0)
+            totalMinutes += pr.PlannedEndOfShift4 - pr.PlannedStartOfShift4 - pr.PlannedBreakOfShift4;
+
+        if (pr.PlannedStartOfShift5 != 0 && pr.PlannedEndOfShift5 != 0)
+            totalMinutes += pr.PlannedEndOfShift5 - pr.PlannedStartOfShift5 - pr.PlannedBreakOfShift5;
+
+        pr.PlanHours = totalMinutes / 60.0;
+        pr.PlanHoursInSeconds = totalMinutes * 60;
+    }
+
+    /// <summary>
+    /// Phase 0 plumbing overload threading the UseOneMinuteIntervals flag.
+    /// Per the rollout plan, planned-shift precision stays minute-only, so
+    /// this overload simply delegates to the existing 1-arg method regardless
+    /// of the flag. The parameter is kept for symmetry with other helpers and
+    /// to future-proof if planned-shift precision ever changes.
+    /// </summary>
+    public static void RecalculatePlanHoursFromShifts(PlanRegistration pr, bool useOneMinuteIntervals)
+    {
+        if (useOneMinuteIntervals)
+        {
+            // TODO Phase 1+2 (if ever needed): planned-shift precision is currently
+            // out of scope; fall through to the existing minute-precision path.
+        }
+        RecalculatePlanHoursFromShifts(pr);
+    }
+
+    /// <summary>
+    /// Phase 2 — second-precision NettoHours computation.
+    ///
+    /// When <see cref="AssignedSite.UseOneMinuteIntervals"/> is on, this helper
+    /// computes NettoHours from DateTime deltas (precise to the second) instead
+    /// of the legacy <c>(StopId - StartId - (PauseId-1)) * 5</c> minute-tick math
+    /// in the per-call sites. Mirrors the flag-off formula in seconds:
+    ///
+    /// <code>
+    /// nettoSeconds = 0
+    /// for each shift n in 1..5:
+    ///     if (Start_n_StartedAt and Stop_n_StoppedAt are populated):
+    ///         nettoSeconds += (Stop_n_StoppedAt - Start_n_StartedAt).TotalSeconds
+    ///         if (Pause_n_StartedAt and Pause_n_StoppedAt are populated):
+    ///             nettoSeconds -= (Pause_n_StoppedAt - Pause_n_StartedAt).TotalSeconds
+    ///         else if (Pause_n_Id > 0):
+    ///             nettoSeconds -= (Pause_n_Id - 1) * 5 * 60
+    ///     else if (Stop_n_Id &gt;= Start_n_Id and Stop_n_Id != 0):
+    ///         // legacy fallback for shifts that don't have DateTime stamps
+    ///         nettoSeconds += (Stop_n_Id - Start_n_Id) * 5 * 60
+    ///         nettoSeconds -= (Pause_n_Id &gt; 0 ? Pause_n_Id - 1 : 0) * 5 * 60
+    /// </code>
+    ///
+    /// Returns the computed netto seconds. The caller writes both the
+    /// <c>*InSeconds</c> primary and back-derives the legacy <c>double</c>
+    /// hour field (<c>x = xInSeconds / 3600.0</c>) for read compatibility.
+    /// </summary>
+    public static long ComputeNettoSecondsFromDateTimeShifts(PlanRegistration pr)
+    {
+        long nettoSeconds = 0;
+
+        // Helper: compute one shift's contribution. Prefer DateTime delta when
+        // both stamps are populated; otherwise fall back to the legacy 5-min
+        // tick math so mixed-precision rows (some shifts precise, some not)
+        // still get a complete total.
+        long ShiftSeconds(DateTime? startAt, DateTime? stopAt, int startId, int stopId,
+            DateTime? pauseStartAt, DateTime? pauseStopAt, int pauseId)
+        {
+            long workSeconds;
+            if (startAt.HasValue && stopAt.HasValue && stopAt.Value > startAt.Value)
+            {
+                workSeconds = (long)(stopAt.Value - startAt.Value).TotalSeconds;
+            }
+            else if (stopId >= startId && stopId != 0)
+            {
+                workSeconds = (long)(stopId - startId) * 5 * 60;
+            }
+            else
+            {
+                return 0;
+            }
+
+            long pauseSeconds;
+            if (pauseStartAt.HasValue && pauseStopAt.HasValue && pauseStopAt.Value > pauseStartAt.Value)
+            {
+                pauseSeconds = (long)(pauseStopAt.Value - pauseStartAt.Value).TotalSeconds;
+            }
+            else if (pauseId > 0)
+            {
+                // Legacy snap fallback: Pause1Id is stored as (minutes/5 + 1)
+                pauseSeconds = (long)(pauseId - 1) * 5 * 60;
+            }
+            else
+            {
+                pauseSeconds = 0;
+            }
+
+            return workSeconds - pauseSeconds;
+        }
+
+        nettoSeconds += ShiftSeconds(pr.Start1StartedAt, pr.Stop1StoppedAt, pr.Start1Id, pr.Stop1Id,
+            pr.Pause1StartedAt, pr.Pause1StoppedAt, pr.Pause1Id);
+        nettoSeconds += ShiftSeconds(pr.Start2StartedAt, pr.Stop2StoppedAt, pr.Start2Id, pr.Stop2Id,
+            pr.Pause2StartedAt, pr.Pause2StoppedAt, pr.Pause2Id);
+        nettoSeconds += ShiftSeconds(pr.Start3StartedAt, pr.Stop3StoppedAt, pr.Start3Id, pr.Stop3Id,
+            pr.Pause3StartedAt, pr.Pause3StoppedAt, pr.Pause3Id);
+        nettoSeconds += ShiftSeconds(pr.Start4StartedAt, pr.Stop4StoppedAt, pr.Start4Id, pr.Stop4Id,
+            pr.Pause4StartedAt, pr.Pause4StoppedAt, pr.Pause4Id);
+        nettoSeconds += ShiftSeconds(pr.Start5StartedAt, pr.Stop5StoppedAt, pr.Start5Id, pr.Stop5Id,
+            pr.Pause5StartedAt, pr.Pause5StoppedAt, pr.Pause5Id);
+
+        return Math.Max(0, nettoSeconds);
+    }
+
+    /// <summary>
+    /// Aggregates pause minutes for a PlanRegistration.
+    ///
+    /// When useOneMinuteIntervals is true, sums the (Pause*StoppedAt - Pause*StartedAt)
+    /// DateTime deltas in seconds across every populated pause stamp pair — the 5 main
+    /// slots AND all sub-slots used by the multi-pause workflow (Pause10..Pause19,
+    /// Pause100..Pause102 for shift 1; Pause20..Pause29, Pause200..Pause202 for shift 2;
+    /// Pause3/4/5 single slots for shifts 3/4/5). This mirrors the frontend admin edit
+    /// dialog's computeExactPauseMinutes (workday-entity-dialog.component.ts) so the
+    /// overview's "Samlet pause" and the per-row edit dialog agree byte-for-byte.
+    /// Total seconds are rounded down to whole minutes.
+    ///
+    /// If a flag-on row has no stamp pairs populated, falls back to the legacy
+    /// 5-minute-tick formula on the 5 main slots only (sub-slots have no *Id field):
+    /// for each Pause{1..5}Id &gt; 0, contribute (Pause{N}Id * 5) - 5 minutes. This
+    /// covers older flag-on rows written before stamp-pair pauses existed.
+    ///
+    /// When useOneMinuteIntervals is false, always uses the legacy 5-minute-tick
+    /// formula on the 5 main slots. (Pause*Id stores break in 5-minute ticks plus a
+    /// +1 sentinel: Pause1Id = 1 means 0 min, Pause1Id = 4 means 15 min, etc.)
+    /// </summary>
+    public static int AggregatePauseMinutes(PlanRegistration pr, bool useOneMinuteIntervals)
+    {
+        if (useOneMinuteIntervals)
+        {
+            long totalSeconds = 0;
+            var hasAnyStamp = false;
+
+            // Walk every pause stamp pair (31 total — mirrors the frontend's
+            // computeExactPauseMinutes via the shared EnumeratePauseStampPairs
+            // source of truth that GetPauseIntervals also consumes). Track
+            // whether ANY stamp was observed independently of the duration sum,
+            // so a populated-but-zero-duration pause (start == stop) doesn't
+            // wrongly trigger the legacy-tick fallback.
+            foreach (var (startedAt, stoppedAt) in EnumeratePauseStampPairs(pr))
+            {
+                if (startedAt.HasValue || stoppedAt.HasValue)
+                {
+                    hasAnyStamp = true;
+                }
+                if (startedAt.HasValue && stoppedAt.HasValue && startedAt.Value < stoppedAt.Value)
+                {
+                    totalSeconds += (long)(stoppedAt.Value - startedAt.Value).TotalSeconds;
+                }
+            }
+
+            if (!hasAnyStamp)
+            {
+                // Older flag-on rows without any stamp data may still carry
+                // legacy 5-minute-tick IDs in the 5 main pause slots.
+                return LegacyTickMinutesAcrossMainSlots(pr);
+            }
+
+            return (int)(totalSeconds / 60); // round down to whole minutes
+        }
+
+        // Flag-off branch: legacy 5-minute-tick path.
+        return LegacyTickMinutesAcrossMainSlots(pr);
+    }
+
+    /// <summary>
+    /// Sums the legacy 5-minute-tick pause IDs across the 5 main slots only.
+    /// Sub-slots have no *Id field, so they cannot contribute legacy ticks.
+    /// </summary>
+    private static int LegacyTickMinutesAcrossMainSlots(PlanRegistration pr)
+    {
+        var totalMinutes = 0;
+        if (pr.Pause1Id > 0) totalMinutes += (pr.Pause1Id * 5) - 5;
+        if (pr.Pause2Id > 0) totalMinutes += (pr.Pause2Id * 5) - 5;
+        if (pr.Pause3Id > 0) totalMinutes += (pr.Pause3Id * 5) - 5;
+        if (pr.Pause4Id > 0) totalMinutes += (pr.Pause4Id * 5) - 5;
+        if (pr.Pause5Id > 0) totalMinutes += (pr.Pause5Id * 5) - 5;
+        return totalMinutes;
+    }
+
+    private static long PauseSpanSeconds(DateTime? startedAt, DateTime? stoppedAt)
+    {
+        if (startedAt == null || stoppedAt == null) return 0;
+        var span = stoppedAt.Value - startedAt.Value;
+        return span.TotalSeconds > 0 ? (long)span.TotalSeconds : 0;
+    }
+
+    /// <summary>
+    /// Phase 2 — write the second-precision NettoHours / Flex / SumFlex chain.
+    ///
+    /// Computes <c>NettoHoursInSeconds</c> from DateTime deltas (or legacy
+    /// fallback) via <see cref="ComputeNettoSecondsFromDateTimeShifts"/>,
+    /// derives <c>FlexInSeconds</c> from <c>PlanHoursInSeconds</c>, then
+    /// derives <c>SumFlexEndInSeconds</c> from the running balance plus the
+    /// computed flex minus paid-out flex. Back-derives the legacy
+    /// <c>double</c> hour fields (<c>x = xInSeconds / 3600.0</c>) so existing
+    /// read paths stay compatible.
+    ///
+    /// Mirrors the existing flag-off formula sign-for-sign:
+    ///   Flex            = NettoHours - PlanHours          (or override)
+    ///   SumFlexEnd      = SumFlexStart + NettoHours - PlanHours - PaiedOutFlex
+    ///                       (when preTimePlanning exists)
+    ///   SumFlexEnd      = NettoHours - PlanHours - PaiedOutFlex
+    ///                       (when no preTimePlanning, SumFlexStart = 0)
+    /// — but every operand is in seconds, so no precision is lost on the
+    /// way through the int columns.
+    ///
+    /// Caller passes <paramref name="sumFlexStartInSeconds"/> from the previous
+    /// day's <c>SumFlexEndInSeconds</c> (or 0 when there is no preceding row).
+    /// When the override is active, the override (in hours) is converted to
+    /// seconds via <c>* 3600</c> for the chain.
+    /// </summary>
+    /// <param name="pr">The plan registration to update in place.</param>
+    /// <param name="sumFlexStartInSeconds">
+    /// Running flex balance carried in from the previous day's
+    /// <c>SumFlexEndInSeconds</c>; pass 0 when there is no preceding row.
+    /// </param>
+    /// <param name="hasPreTimePlanning">
+    /// True when there is a preceding planning row (use the running balance);
+    /// false when this is the first row (reset SumFlexStart to 0).
+    /// </param>
+    public static void ApplyNettoFlexChainSecondPrecision(PlanRegistration pr,
+        int sumFlexStartInSeconds, bool hasPreTimePlanning)
+    {
+        var nettoSeconds = ComputeNettoSecondsFromDateTimeShifts(pr);
+        pr.NettoHoursInSeconds = (int)nettoSeconds;
+        pr.NettoHours = nettoSeconds / 3600.0;
+
+        var planHoursSeconds = pr.PlanHoursInSeconds;
+        var paiedOutFlexSeconds = pr.PaiedOutFlexInSeconds;
+
+        // Mirror the flag-off override semantics:
+        //   Flex      = (override ? NettoHoursOverride : NettoHours) - PlanHours
+        //   SumFlexEnd uses the same numerator.
+        var effectiveNettoSecondsForFlex = pr.NettoHoursOverrideActive
+            ? (long)(pr.NettoHoursOverride * 3600)
+            : nettoSeconds;
+
+        var flexSeconds = effectiveNettoSecondsForFlex - planHoursSeconds;
+        pr.FlexInSeconds = (int)flexSeconds;
+        pr.Flex = flexSeconds / 3600.0;
+
+        if (hasPreTimePlanning)
+        {
+            pr.SumFlexStartInSeconds = sumFlexStartInSeconds;
+            pr.SumFlexStart = sumFlexStartInSeconds / 3600.0;
+            var sumFlexEndSeconds = (long)sumFlexStartInSeconds
+                                    + effectiveNettoSecondsForFlex - planHoursSeconds
+                                    - paiedOutFlexSeconds;
+            pr.SumFlexEndInSeconds = (int)sumFlexEndSeconds;
+            pr.SumFlexEnd = sumFlexEndSeconds / 3600.0;
+        }
+        else
+        {
+            pr.SumFlexStartInSeconds = 0;
+            pr.SumFlexStart = 0;
+            var sumFlexEndSeconds = effectiveNettoSecondsForFlex - planHoursSeconds - paiedOutFlexSeconds;
+            pr.SumFlexEndInSeconds = (int)sumFlexEndSeconds;
+            pr.SumFlexEnd = sumFlexEndSeconds / 3600.0;
+        }
+    }
 
     public static async Task<TimePlanningPlanningModel> UpdatePlanRegistrationsInPeriod(
         List<PlanRegistration> planningsInPeriod,
@@ -318,14 +633,37 @@ public static class PlanRegistrationHelper
             {
                 // FIXME: This is a workaround, it should be removed when the frontend is fixed.
                 planRegistration.Start1Id /= 5 + 1;
-                planRegistration.Start1StartedAt = planRegistration.Date.AddMinutes(planRegistration.Start1Id * 5);
+                // Phase 1: when UseOneMinuteIntervals is on AND a precise stamp is
+                // already populated, preserve it instead of snapping back to the
+                // 5-minute index. Existing flag-off behavior is byte-identical:
+                // the int Id is corrected and StartedAt is backfilled from it.
+                // When the flag is on but StartedAt is null, fall through to the
+                // backfill so legacy rows without precise stamps still get one.
+                if (dbAssignedSite.UseOneMinuteIntervals && planRegistration.Start1StartedAt.HasValue)
+                {
+                    // Phase 1: precise DateTime stamp wins; do NOT overwrite it
+                    // with the 5-minute snap derived from Start1Id.
+                }
+                else
+                {
+                    planRegistration.Start1StartedAt = planRegistration.Date.AddMinutes(planRegistration.Start1Id * 5);
+                }
             }
 
             if (planRegistration.Stop1Id > 289 )
             {
                 // FIXME: This is a workaround, it should be removed when the frontend is fixed.
                 planRegistration.Stop1Id /= 5 + 1;
-                planRegistration.Stop1StoppedAt = planRegistration.Date.AddMinutes(planRegistration.Stop1Id * 5);
+                // Phase 1: same fork as Start1 above for the stop stamp.
+                if (dbAssignedSite.UseOneMinuteIntervals && planRegistration.Stop1StoppedAt.HasValue)
+                {
+                    // Phase 1: precise DateTime stamp wins; do NOT overwrite it
+                    // with the 5-minute snap derived from Stop1Id.
+                }
+                else
+                {
+                    planRegistration.Stop1StoppedAt = planRegistration.Date.AddMinutes(planRegistration.Stop1Id * 5);
+                }
             }
             planRegistration.IsSaturday = midnight.DayOfWeek == DayOfWeek.Saturday;
             planRegistration.IsSunday = midnight.DayOfWeek == DayOfWeek.Sunday;
@@ -341,343 +679,8 @@ public static class PlanRegistrationHelper
                         {
                             if (!string.IsNullOrEmpty(planRegistration.PlanText))
                             {
-                                var splitList = planRegistration.PlanText.Replace(",", ".").Split(';');
-                                var firsSplit = splitList[0];
-
-                                var regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                var match = regex.Match(firsSplit);
-                                if (match.Captures.Count == 0)
-                                {
-                                    regex = new Regex(@"(.*)-(.*)");
-                                    match = regex.Match(firsSplit);
-
-                                    if (match.Captures.Count == 1)
-                                    {
-                                        var firstPart = match.Groups[1].Value;
-                                        var firstPartSplit =
-                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var firstPartHours = int.Parse(firstPartSplit[0]);
-                                        var firstPartMinutes =
-                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                        var secondPart = match.Groups[2].Value;
-                                        var secondPartSplit =
-                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var secondPartHours = int.Parse(secondPartSplit[0]);
-                                        var secondPartMinutes =
-                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                        planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
-                                        planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
-
-                                        if (match.Groups.Count == 4)
-                                        {
-                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                            planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
-                                        }
-                                        else
-                                        {
-                                            planRegistration.PlannedBreakOfShift1 = 0;
-                                        }
-                                    }
-                                }
-
-                                if (match.Captures.Count == 1)
-                                {
-                                    var firstPart = match.Groups[1].Value;
-                                    var firstPartSplit =
-                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var firstPartHours = int.Parse(firstPartSplit[0]);
-                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                    var secondPart = match.Groups[2].Value;
-                                    var secondPartSplit =
-                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var secondPartHours = int.Parse(secondPartSplit[0]);
-                                    var secondPartMinutes =
-                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                    planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
-                                    planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
-
-                                    if (match.Groups.Count == 4)
-                                    {
-                                        var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                        var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                        planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
-                                    }
-                                    else
-                                    {
-                                        planRegistration.PlannedBreakOfShift1 = 0;
-                                    }
-                                }
-
-                                if (splitList.Length > 1)
-                                {
-                                    var secondSplit = splitList[1];
-                                    regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                    match = regex.Match(secondSplit);
-                                    if (match.Captures.Count == 0)
-                                    {
-                                        regex = new Regex(@"(.*)-(.*)");
-                                        match = regex.Match(secondSplit);
-
-                                        if (match.Captures.Count == 1)
-                                        {
-                                            var firstPart = match.Groups[1].Value;
-                                            var firstPartSplit =
-                                                firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                            var firstPartHours = int.Parse(firstPartSplit[0]);
-                                            var firstPartMinutes =
-                                                firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                            var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                            var secondPart = match.Groups[2].Value;
-                                            var secondPartSplit =
-                                                secondPart.Split(['.', ':', '½'],
-                                                    StringSplitOptions.RemoveEmptyEntries);
-                                            var secondPartHours = int.Parse(secondPartSplit[0]);
-                                            var secondPartMinutes =
-                                                secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                            var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                            planRegistration.PlannedStartOfShift2 = firstPartTotalMinutes;
-                                            planRegistration.PlannedEndOfShift2 = secondPartTotalMinutes;
-
-                                            if (match.Groups.Count == 4)
-                                            {
-                                                var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                                var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                                planRegistration.PlannedBreakOfShift2 = breakPartMinutes;
-                                            }
-                                            else
-                                            {
-                                                planRegistration.PlannedBreakOfShift2 = 0;
-                                            }
-                                        }
-                                    }
-
-                                    if (match.Captures.Count == 1)
-                                    {
-                                        var firstPart = match.Groups[1].Value;
-                                        var firstPartSplit =
-                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var firstPartHours = int.Parse(firstPartSplit[0]);
-                                        var firstPartMinutes =
-                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                        var secondPart = match.Groups[2].Value;
-                                        var secondPartSplit =
-                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var secondPartHours = int.Parse(secondPartSplit[0]);
-                                        var secondPartMinutes =
-                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                        planRegistration.PlannedStartOfShift2 = firstPartTotalMinutes;
-                                        planRegistration.PlannedEndOfShift2 = secondPartTotalMinutes;
-
-                                        if (match.Groups.Count == 4)
-                                        {
-                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                            planRegistration.PlannedBreakOfShift2 = breakPartMinutes;
-                                        }
-                                        else
-                                        {
-                                            planRegistration.PlannedBreakOfShift2 = 0;
-                                        }
-                                    }
-                                }
-
-                                if (splitList.Length > 2)
-                                {
-                                    var thirdSplit = splitList[2];
-                                    regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                    match = regex.Match(thirdSplit);
-                                    if (match.Captures.Count == 0)
-                                    {
-                                        regex = new Regex(@"(.*)-(.*)");
-                                        match = regex.Match(thirdSplit);
-
-                                        if (match.Captures.Count == 1)
-                                        {
-                                            var firstPart = match.Groups[1].Value;
-                                            var firstPartSplit =
-                                                firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                            var firstPartHours = int.Parse(firstPartSplit[0]);
-                                            var firstPartMinutes =
-                                                firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                            var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                            var secondPart = match.Groups[2].Value;
-                                            var secondPartSplit =
-                                                secondPart.Split(['.', ':', '½'],
-                                                    StringSplitOptions.RemoveEmptyEntries);
-                                            var secondPartHours = int.Parse(secondPartSplit[0]);
-                                            var secondPartMinutes =
-                                                secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                            var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                            planRegistration.PlannedStartOfShift3 = firstPartTotalMinutes;
-                                            planRegistration.PlannedEndOfShift3 = secondPartTotalMinutes;
-
-                                            if (match.Groups.Count == 4)
-                                            {
-                                                var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                                var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                                planRegistration.PlannedBreakOfShift3 = breakPartMinutes;
-                                            }
-                                            else
-                                            {
-                                                planRegistration.PlannedBreakOfShift3 = 0;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (splitList.Length > 3)
-                                {
-                                    var fourthSplit = splitList[3];
-                                    regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                    match = regex.Match(fourthSplit);
-                                    if (match.Captures.Count == 0)
-                                    {
-                                        regex = new Regex(@"(.*)-(.*)");
-                                        match = regex.Match(fourthSplit);
-
-                                        if (match.Captures.Count == 1)
-                                        {
-                                            var firstPart = match.Groups[1].Value;
-                                            var firstPartSplit =
-                                                firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                            var firstPartHours = int.Parse(firstPartSplit[0]);
-                                            var firstPartMinutes =
-                                                firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                            var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                            var secondPart = match.Groups[2].Value;
-                                            var secondPartSplit =
-                                                secondPart.Split(['.', ':', '½'],
-                                                    StringSplitOptions.RemoveEmptyEntries);
-                                            var secondPartHours = int.Parse(secondPartSplit[0]);
-                                            var secondPartMinutes =
-                                                secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                            var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                            planRegistration.PlannedStartOfShift4 = firstPartTotalMinutes;
-                                            planRegistration.PlannedEndOfShift4 = secondPartTotalMinutes;
-
-                                            if (match.Groups.Count == 4)
-                                            {
-                                                var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                                var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                                planRegistration.PlannedBreakOfShift4 = breakPartMinutes;
-                                            }
-                                            else
-                                            {
-                                                planRegistration.PlannedBreakOfShift4 = 0;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (splitList.Length > 4)
-                                {
-                                    var fifthSplit = splitList[4];
-                                    regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                    match = regex.Match(fifthSplit);
-                                    if (match.Captures.Count == 0)
-                                    {
-                                        regex = new Regex(@"(.*)-(.*)");
-                                        match = regex.Match(fifthSplit);
-
-                                        if (match.Captures.Count == 1)
-                                        {
-                                            var firstPart = match.Groups[1].Value;
-                                            var firstPartSplit =
-                                                firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                            var firstPartHours = int.Parse(firstPartSplit[0]);
-                                            var firstPartMinutes =
-                                                firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                            var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                            var secondPart = match.Groups[2].Value;
-                                            var secondPartSplit =
-                                                secondPart.Split(['.', ':', '½'],
-                                                    StringSplitOptions.RemoveEmptyEntries);
-                                            var secondPartHours = int.Parse(secondPartSplit[0]);
-                                            var secondPartMinutes =
-                                                secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                            var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                            planRegistration.PlannedStartOfShift5 = firstPartTotalMinutes;
-                                            planRegistration.PlannedEndOfShift5 = secondPartTotalMinutes;
-
-                                            if (match.Groups.Count == 4)
-                                            {
-                                                var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                                var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                                planRegistration.PlannedBreakOfShift5 = breakPartMinutes;
-                                            }
-                                            else
-                                            {
-                                                planRegistration.PlannedBreakOfShift5 = 0;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                var calculatedPlanHoursInMinutes = 0;
                                 var originalPlanHours = planRegistration.PlanHours;
-                                if (planRegistration.PlannedStartOfShift1 != 0 &&
-                                    planRegistration.PlannedEndOfShift1 != 0)
-                                {
-                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift1 -
-                                                                    planRegistration.PlannedStartOfShift1 -
-                                                                    planRegistration.PlannedBreakOfShift1;
-                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                                }
-
-                                if (planRegistration.PlannedStartOfShift2 != 0 &&
-                                    planRegistration.PlannedEndOfShift2 != 0)
-                                {
-                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift2 -
-                                                                    planRegistration.PlannedStartOfShift2 -
-                                                                    planRegistration.PlannedBreakOfShift2;
-                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                                }
-
-                                if (planRegistration.PlannedStartOfShift3 != 0 &&
-                                    planRegistration.PlannedEndOfShift3 != 0)
-                                {
-                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift3 -
-                                                                    planRegistration.PlannedStartOfShift3 -
-                                                                    planRegistration.PlannedBreakOfShift3;
-                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                                }
-
-                                if (planRegistration.PlannedStartOfShift4 != 0 &&
-                                    planRegistration.PlannedEndOfShift4 != 0)
-                                {
-                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift4 -
-                                                                    planRegistration.PlannedStartOfShift4 -
-                                                                    planRegistration.PlannedBreakOfShift4;
-                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                                }
-
-                                if (planRegistration.PlannedStartOfShift5 != 0 &&
-                                    planRegistration.PlannedEndOfShift5 != 0)
-                                {
-                                    calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift5 -
-                                                                    planRegistration.PlannedStartOfShift5 -
-                                                                    planRegistration.PlannedBreakOfShift5;
-                                    planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                                }
+                                PlanTextHelper.ParsePlanText(planRegistration);
 
                                 if (originalPlanHours != planRegistration.PlanHours || tainted)
                                 {
@@ -721,7 +724,17 @@ public static class PlanRegistrationHelper
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
-                        if (preTimePlanning != null)
+                        // Phase 2: when UseOneMinuteIntervals is on, run the
+                        // SumFlex chain in seconds (source of truth) and
+                        // back-derive doubles. Flag-off path stays byte-identical.
+                        if (dbAssignedSite.UseOneMinuteIntervals)
+                        {
+                            ApplyNettoFlexChainSecondPrecision(
+                                planRegistration,
+                                preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                                preTimePlanning != null);
+                        }
+                        else if (preTimePlanning != null)
                         {
                             planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
                             if (planRegistration.NettoHoursOverrideActive)
@@ -1042,7 +1055,17 @@ public static class PlanRegistrationHelper
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
-                        if (preTimePlanning != null)
+                        // Phase 2: when UseOneMinuteIntervals is on, run the
+                        // SumFlex chain in seconds (source of truth) and
+                        // back-derive doubles. Flag-off path stays byte-identical.
+                        if (dbAssignedSite.UseOneMinuteIntervals)
+                        {
+                            ApplyNettoFlexChainSecondPrecision(
+                                planRegistration,
+                                preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                                preTimePlanning != null);
+                        }
+                        else if (preTimePlanning != null)
                         {
                             if (planRegistration.NettoHoursOverrideActive)
                             {
@@ -1271,21 +1294,7 @@ public static class PlanRegistrationHelper
                 Pause5StoppedAt = planRegistration.Pause5StoppedAt
             };
 
-            planningModel.PauseMinutes += planRegistration.Pause1Id > 0
-                ? (planRegistration.Pause1Id * 5) - 5
-                : 0;
-            planningModel.PauseMinutes += planRegistration.Pause2Id > 0
-                ? (planRegistration.Pause2Id * 5) - 5
-                : 0;
-            planningModel.PauseMinutes += planRegistration.Pause3Id > 0
-                ? (planRegistration.Pause3Id * 5) - 5
-                : 0;
-            planningModel.PauseMinutes += planRegistration.Pause4Id > 0
-                ? (planRegistration.Pause4Id * 5) - 5
-                : 0;
-            planningModel.PauseMinutes += planRegistration.Pause5Id > 0
-                ? (planRegistration.Pause5Id * 5) - 5
-                : 0;
+            planningModel.PauseMinutes += AggregatePauseMinutes(planRegistration, dbAssignedSite.UseOneMinuteIntervals);
 
             // planningModel.PauseMinutes = planningModel.PauseMinutes > 0 ? planningModel.PauseMinutes - 5 : 0;
 
@@ -1361,332 +1370,8 @@ public static class PlanRegistrationHelper
                     {
                     if (!string.IsNullOrEmpty(planRegistration.PlanText))
                     {
-                            var splitList = planRegistration.PlanText.Replace(",", ".").Split(';');
-                            var firsSplit = splitList[0];
-
-                            var regex = new Regex(@"(.*)-(.*)\/(.*)");
-                            var match = regex.Match(firsSplit);
-                            if (match.Captures.Count == 0)
-                            {
-                                regex = new Regex(@"(.*)-(.*)");
-                                match = regex.Match(firsSplit);
-
-                                if (match.Captures.Count == 1)
-                                {
-                                    var firstPart = match.Groups[1].Value;
-                                    var firstPartSplit =
-                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var firstPartHours = int.Parse(firstPartSplit[0]);
-                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                    var secondPart = match.Groups[2].Value;
-                                    var secondPartSplit =
-                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var secondPartHours = int.Parse(secondPartSplit[0]);
-                                    var secondPartMinutes =
-                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                    planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
-                                    planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
-
-                                    if (match.Groups.Count == 4)
-                                    {
-                                        var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                        var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                        planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
-                                    }
-                                    else
-                                    {
-                                        planRegistration.PlannedBreakOfShift1 = 0;
-                                    }
-                                }
-                            }
-
-                            if (match.Captures.Count == 1)
-                            {
-                                var firstPart = match.Groups[1].Value;
-                                var firstPartSplit =
-                                    firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                var firstPartHours = int.Parse(firstPartSplit[0]);
-                                var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                var secondPart = match.Groups[2].Value;
-                                var secondPartSplit =
-                                    secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                var secondPartHours = int.Parse(secondPartSplit[0]);
-                                var secondPartMinutes =
-                                    secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                planRegistration.PlannedStartOfShift1 = firstPartTotalMinutes;
-                                planRegistration.PlannedEndOfShift1 = secondPartTotalMinutes;
-
-                                if (match.Groups.Count == 4)
-                                {
-                                    var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                    var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                    planRegistration.PlannedBreakOfShift1 = breakPartMinutes;
-                                }
-                                else
-                                {
-                                    planRegistration.PlannedBreakOfShift1 = 0;
-                                }
-                            }
-
-                            if (splitList.Length > 1)
-                            {
-                                var secondSplit = splitList[1];
-                                regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                match = regex.Match(secondSplit);
-                                if (match.Captures.Count == 0)
-                                {
-                                    regex = new Regex(@"(.*)-(.*)");
-                                    match = regex.Match(secondSplit);
-
-                                    if (match.Captures.Count == 1)
-                                    {
-                                        var firstPart = match.Groups[1].Value;
-                                        var firstPartSplit =
-                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var firstPartHours = int.Parse(firstPartSplit[0]);
-                                        var firstPartMinutes =
-                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                        var secondPart = match.Groups[2].Value;
-                                        var secondPartSplit =
-                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var secondPartHours = int.Parse(secondPartSplit[0]);
-                                        var secondPartMinutes =
-                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                        planRegistration.PlannedStartOfShift2 = firstPartTotalMinutes;
-                                        planRegistration.PlannedEndOfShift2 = secondPartTotalMinutes;
-
-                                        if (match.Groups.Count == 4)
-                                        {
-                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                            planRegistration.PlannedBreakOfShift2 = breakPartMinutes;
-                                        }
-                                        else
-                                        {
-                                            planRegistration.PlannedBreakOfShift2 = 0;
-                                        }
-                                    }
-                                }
-
-                                if (match.Captures.Count == 1)
-                                {
-                                    var firstPart = match.Groups[1].Value;
-                                    var firstPartSplit =
-                                        firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var firstPartHours = int.Parse(firstPartSplit[0]);
-                                    var firstPartMinutes = firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                    var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                    var secondPart = match.Groups[2].Value;
-                                    var secondPartSplit =
-                                        secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                    var secondPartHours = int.Parse(secondPartSplit[0]);
-                                    var secondPartMinutes =
-                                        secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                    var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                    planRegistration.PlannedStartOfShift2 = firstPartTotalMinutes;
-                                    planRegistration.PlannedEndOfShift2 = secondPartTotalMinutes;
-
-                                    if (match.Groups.Count == 4)
-                                    {
-                                        var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                        var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                        planRegistration.PlannedBreakOfShift2 = breakPartMinutes;
-                                    }
-                                    else
-                                    {
-                                        planRegistration.PlannedBreakOfShift2 = 0;
-                                    }
-                                }
-                            }
-
-                            if (splitList.Length > 2)
-                            {
-                                var thirdSplit = splitList[2];
-                                regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                match = regex.Match(thirdSplit);
-                                if (match.Captures.Count == 0)
-                                {
-                                    regex = new Regex(@"(.*)-(.*)");
-                                    match = regex.Match(thirdSplit);
-
-                                    if (match.Captures.Count == 1)
-                                    {
-                                        var firstPart = match.Groups[1].Value;
-                                        var firstPartSplit =
-                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var firstPartHours = int.Parse(firstPartSplit[0]);
-                                        var firstPartMinutes =
-                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                        var secondPart = match.Groups[2].Value;
-                                        var secondPartSplit =
-                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var secondPartHours = int.Parse(secondPartSplit[0]);
-                                        var secondPartMinutes =
-                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                        planRegistration.PlannedStartOfShift3 = firstPartTotalMinutes;
-                                        planRegistration.PlannedEndOfShift3 = secondPartTotalMinutes;
-
-                                        if (match.Groups.Count == 4)
-                                        {
-                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                            planRegistration.PlannedBreakOfShift3 = breakPartMinutes;
-                                        }
-                                        else
-                                        {
-                                            planRegistration.PlannedBreakOfShift3 = 0;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (splitList.Length > 3)
-                            {
-                                var fourthSplit = splitList[3];
-                                regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                match = regex.Match(fourthSplit);
-                                if (match.Captures.Count == 0)
-                                {
-                                    regex = new Regex(@"(.*)-(.*)");
-                                    match = regex.Match(fourthSplit);
-
-                                    if (match.Captures.Count == 1)
-                                    {
-                                        var firstPart = match.Groups[1].Value;
-                                        var firstPartSplit =
-                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var firstPartHours = int.Parse(firstPartSplit[0]);
-                                        var firstPartMinutes =
-                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                        var secondPart = match.Groups[2].Value;
-                                        var secondPartSplit =
-                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var secondPartHours = int.Parse(secondPartSplit[0]);
-                                        var secondPartMinutes =
-                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                        planRegistration.PlannedStartOfShift4 = firstPartTotalMinutes;
-                                        planRegistration.PlannedEndOfShift4 = secondPartTotalMinutes;
-
-                                        if (match.Groups.Count == 4)
-                                        {
-                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                            planRegistration.PlannedBreakOfShift4 = breakPartMinutes;
-                                        }
-                                        else
-                                        {
-                                            planRegistration.PlannedBreakOfShift4 = 0;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (splitList.Length > 4)
-                            {
-                                var fifthSplit = splitList[4];
-                                regex = new Regex(@"(.*)-(.*)\/(.*)");
-                                match = regex.Match(fifthSplit);
-                                if (match.Captures.Count == 0)
-                                {
-                                    regex = new Regex(@"(.*)-(.*)");
-                                    match = regex.Match(fifthSplit);
-
-                                    if (match.Captures.Count == 1)
-                                    {
-                                        var firstPart = match.Groups[1].Value;
-                                        var firstPartSplit =
-                                            firstPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var firstPartHours = int.Parse(firstPartSplit[0]);
-                                        var firstPartMinutes =
-                                            firstPartSplit.Length > 1 ? int.Parse(firstPartSplit[1]) : 0;
-                                        var firstPartTotalMinutes = firstPartHours * 60 + firstPartMinutes;
-                                        var secondPart = match.Groups[2].Value;
-                                        var secondPartSplit =
-                                            secondPart.Split(['.', ':', '½'], StringSplitOptions.RemoveEmptyEntries);
-                                        var secondPartHours = int.Parse(secondPartSplit[0]);
-                                        var secondPartMinutes =
-                                            secondPartSplit.Length > 1 ? int.Parse(secondPartSplit[1]) : 0;
-                                        var secondPartTotalMinutes = secondPartHours * 60 + secondPartMinutes;
-                                        planRegistration.PlannedStartOfShift5 = firstPartTotalMinutes;
-                                        planRegistration.PlannedEndOfShift5 = secondPartTotalMinutes;
-
-                                        if (match.Groups.Count == 4)
-                                        {
-                                            var breakPart = match.Groups[3].Value.Replace(",", ".").Trim();
-
-                                            var breakPartMinutes = BreakTimeCalculator(breakPart);
-
-                                            planRegistration.PlannedBreakOfShift5 = breakPartMinutes;
-                                        }
-                                        else
-                                        {
-                                            planRegistration.PlannedBreakOfShift5 = 0;
-                                        }
-                                    }
-                                }
-                            }
-
-                            var calculatedPlanHoursInMinutes = 0;
                             var originalPlanHours = planRegistration.PlanHours;
-                            if (planRegistration.PlannedStartOfShift1 != 0 && planRegistration.PlannedEndOfShift1 != 0)
-                            {
-                                calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift1 -
-                                                                planRegistration.PlannedStartOfShift1 -
-                                                                planRegistration.PlannedBreakOfShift1;
-                                planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                            }
-
-                            if (planRegistration.PlannedStartOfShift2 != 0 && planRegistration.PlannedEndOfShift2 != 0)
-                            {
-                                calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift2 -
-                                                                planRegistration.PlannedStartOfShift2 -
-                                                                planRegistration.PlannedBreakOfShift2;
-                                planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                            }
-
-                            if (planRegistration.PlannedStartOfShift3 != 0 && planRegistration.PlannedEndOfShift3 != 0)
-                            {
-                                calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift3 -
-                                                                planRegistration.PlannedStartOfShift3 -
-                                                                planRegistration.PlannedBreakOfShift3;
-                                planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                            }
-
-                            if (planRegistration.PlannedStartOfShift4 != 0 && planRegistration.PlannedEndOfShift4 != 0)
-                            {
-                                calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift4 -
-                                                                planRegistration.PlannedStartOfShift4 -
-                                                                planRegistration.PlannedBreakOfShift4;
-                                planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                            }
-
-                            if (planRegistration.PlannedStartOfShift5 != 0 && planRegistration.PlannedEndOfShift5 != 0)
-                            {
-                                calculatedPlanHoursInMinutes += planRegistration.PlannedEndOfShift5 -
-                                                                planRegistration.PlannedStartOfShift5 -
-                                                                planRegistration.PlannedBreakOfShift5;
-                                planRegistration.PlanHours = calculatedPlanHoursInMinutes / 60.0;
-                            }
+                            PlanTextHelper.ParsePlanText(planRegistration);
 
                             if (originalPlanHours != planRegistration.PlanHours || tainted)
                             {
@@ -1722,7 +1407,17 @@ public static class PlanRegistrationHelper
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
-                    if (preTimePlanning != null)
+                    // Phase 2: when UseOneMinuteIntervals is on, run the
+                    // SumFlex chain in seconds (source of truth) and
+                    // back-derive doubles. Flag-off path stays byte-identical.
+                    if (dbAssignedSite.UseOneMinuteIntervals)
+                    {
+                        ApplyNettoFlexChainSecondPrecision(
+                            planRegistration,
+                            preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                            preTimePlanning != null);
+                    }
+                    else if (preTimePlanning != null)
                     {
                         if (planRegistration.NettoHoursOverrideActive)
                         {
@@ -2030,7 +1725,17 @@ public static class PlanRegistrationHelper
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
-                    if (preTimePlanning != null)
+                    // Phase 2: when UseOneMinuteIntervals is on, run the
+                    // SumFlex chain in seconds (source of truth) and
+                    // back-derive doubles. Flag-off path stays byte-identical.
+                    if (dbAssignedSite.UseOneMinuteIntervals)
+                    {
+                        ApplyNettoFlexChainSecondPrecision(
+                            planRegistration,
+                            preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                            preTimePlanning != null);
+                    }
+                    else if (preTimePlanning != null)
                     {
                         if (planRegistration.NettoHoursOverrideActive)
                         {planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
@@ -2140,20 +1845,27 @@ public static class PlanRegistrationHelper
         TimePlanningPnDbContext dbContext, int sdkSiteId, DateTime dateTime,
         string token)
     {
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: sdkSiteId={sdkSiteId}, dateTime={dateTime:yyyy-MM-dd HH:mm:ss}, dateTime.Kind={dateTime.Kind}, token={(token == null ? "NULL" : token[..Math.Min(8, token.Length)] + "...")}");
+
         if (token != null)
         {
             var registrationDevice = await dbContext.RegistrationDevices
+                .AsNoTracking()
                 .Where(x => x.Token == token).FirstOrDefaultAsync();
             if (registrationDevice == null)
             {
+                Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: EARLY RETURN null -- token not found in RegistrationDevices");
                 return null;
             }
+            Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: registrationDevice found, Id={registrationDevice.Id}");
         }
 
         // var today = DateTime.UtcNow;
-        var midnight = dateTime;
+        var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: Querying PlanRegistrations WHERE Date={midnight:yyyy-MM-dd HH:mm:ss} AND SdkSitId={sdkSiteId} AND WorkflowState != Removed");
 
         var planRegistration = await dbContext.PlanRegistrations
+            .AsNoTracking()
             .Where(x => x.Date == midnight)
             .Where(x => x.SdkSitId == sdkSiteId)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -2161,6 +1873,7 @@ public static class PlanRegistrationHelper
 
         if (planRegistration == null)
         {
+            Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: planRegistration NOT FOUND in DB -- returning EMPTY in-memory model (all zeros)");
             var newTimePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
             {
                 SdkSiteId = sdkSiteId,
@@ -2191,6 +1904,8 @@ public static class PlanRegistrationHelper
             // return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Plan registration not found",
             //     null);
         }
+
+        Console.WriteLine($"[DEBUG-GRPC-READ] ReadBySiteAndDate: planRegistration FOUND IN DB -- Id={planRegistration.Id}, Date={planRegistration.Date:yyyy-MM-dd HH:mm:ss}, SdkSitId={planRegistration.SdkSitId}, WorkflowState={planRegistration.WorkflowState}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
 
         var timePlanningWorkingHoursModel = new TimePlanningWorkingHoursModel
         {
@@ -2329,56 +2044,67 @@ public static class PlanRegistrationHelper
     }
 
     /// <summary>
+    /// Single source of truth for every pause stamp pair on a PlanRegistration.
+    /// Enumerates Pause1-5, Pause10-19, Pause20-29, Pause100-102, Pause200-202
+    /// — 31 pairs total. Order mirrors the frontend's
+    /// workday-entity-dialog.component.ts:getPauseTimestampPairs so the
+    /// backend↔frontend mapping is easy to audit.
+    ///
+    /// Returns raw nullable pairs so callers can distinguish "no stamp"
+    /// from "stamp with zero/negative duration"; both
+    /// <see cref="GetPauseIntervals"/> and
+    /// <see cref="AggregatePauseMinutes"/> consume this enumerator.
+    /// </summary>
+    private static IEnumerable<(DateTime? StartedAt, DateTime? StoppedAt)> EnumeratePauseStampPairs(PlanRegistration pr)
+    {
+        // Main pause intervals 1-5
+        yield return (pr.Pause1StartedAt, pr.Pause1StoppedAt);
+        yield return (pr.Pause2StartedAt, pr.Pause2StoppedAt);
+        yield return (pr.Pause3StartedAt, pr.Pause3StoppedAt);
+        yield return (pr.Pause4StartedAt, pr.Pause4StoppedAt);
+        yield return (pr.Pause5StartedAt, pr.Pause5StoppedAt);
+
+        // Extended pause intervals 10-29
+        yield return (pr.Pause10StartedAt, pr.Pause10StoppedAt);
+        yield return (pr.Pause11StartedAt, pr.Pause11StoppedAt);
+        yield return (pr.Pause12StartedAt, pr.Pause12StoppedAt);
+        yield return (pr.Pause13StartedAt, pr.Pause13StoppedAt);
+        yield return (pr.Pause14StartedAt, pr.Pause14StoppedAt);
+        yield return (pr.Pause15StartedAt, pr.Pause15StoppedAt);
+        yield return (pr.Pause16StartedAt, pr.Pause16StoppedAt);
+        yield return (pr.Pause17StartedAt, pr.Pause17StoppedAt);
+        yield return (pr.Pause18StartedAt, pr.Pause18StoppedAt);
+        yield return (pr.Pause19StartedAt, pr.Pause19StoppedAt);
+        yield return (pr.Pause20StartedAt, pr.Pause20StoppedAt);
+        yield return (pr.Pause21StartedAt, pr.Pause21StoppedAt);
+        yield return (pr.Pause22StartedAt, pr.Pause22StoppedAt);
+        yield return (pr.Pause23StartedAt, pr.Pause23StoppedAt);
+        yield return (pr.Pause24StartedAt, pr.Pause24StoppedAt);
+        yield return (pr.Pause25StartedAt, pr.Pause25StoppedAt);
+        yield return (pr.Pause26StartedAt, pr.Pause26StoppedAt);
+        yield return (pr.Pause27StartedAt, pr.Pause27StoppedAt);
+        yield return (pr.Pause28StartedAt, pr.Pause28StoppedAt);
+        yield return (pr.Pause29StartedAt, pr.Pause29StoppedAt);
+
+        // Additional pause intervals 100-102
+        yield return (pr.Pause100StartedAt, pr.Pause100StoppedAt);
+        yield return (pr.Pause101StartedAt, pr.Pause101StoppedAt);
+        yield return (pr.Pause102StartedAt, pr.Pause102StoppedAt);
+
+        // Additional pause intervals 200-202
+        yield return (pr.Pause200StartedAt, pr.Pause200StoppedAt);
+        yield return (pr.Pause201StartedAt, pr.Pause201StoppedAt);
+        yield return (pr.Pause202StartedAt, pr.Pause202StoppedAt);
+    }
+
+    /// <summary>
     /// Extract pause intervals from PlanRegistration.
-    /// Includes Pause1-5, Pause10-29, Pause100-102, Pause200-202.
-    /// Returns intervals as (StartTime, EndTime) tuples.
-    /// Ignores incomplete or invalid intervals (null or negative duration).
+    /// Consumes <see cref="EnumeratePauseStampPairs"/> and filters out incomplete
+    /// or invalid intervals (null endpoints or non-positive duration).
     /// </summary>
     private static IEnumerable<(DateTime Start, DateTime End)> GetPauseIntervals(PlanRegistration pr)
     {
-        var intervals = new (DateTime?, DateTime?)[]
-        {
-            // Main pause intervals 1-5
-            (pr.Pause1StartedAt, pr.Pause1StoppedAt),
-            (pr.Pause2StartedAt, pr.Pause2StoppedAt),
-            (pr.Pause3StartedAt, pr.Pause3StoppedAt),
-            (pr.Pause4StartedAt, pr.Pause4StoppedAt),
-            (pr.Pause5StartedAt, pr.Pause5StoppedAt),
-
-            // Extended pause intervals 10-29
-            (pr.Pause10StartedAt, pr.Pause10StoppedAt),
-            (pr.Pause11StartedAt, pr.Pause11StoppedAt),
-            (pr.Pause12StartedAt, pr.Pause12StoppedAt),
-            (pr.Pause13StartedAt, pr.Pause13StoppedAt),
-            (pr.Pause14StartedAt, pr.Pause14StoppedAt),
-            (pr.Pause15StartedAt, pr.Pause15StoppedAt),
-            (pr.Pause16StartedAt, pr.Pause16StoppedAt),
-            (pr.Pause17StartedAt, pr.Pause17StoppedAt),
-            (pr.Pause18StartedAt, pr.Pause18StoppedAt),
-            (pr.Pause19StartedAt, pr.Pause19StoppedAt),
-            (pr.Pause20StartedAt, pr.Pause20StoppedAt),
-            (pr.Pause21StartedAt, pr.Pause21StoppedAt),
-            (pr.Pause22StartedAt, pr.Pause22StoppedAt),
-            (pr.Pause23StartedAt, pr.Pause23StoppedAt),
-            (pr.Pause24StartedAt, pr.Pause24StoppedAt),
-            (pr.Pause25StartedAt, pr.Pause25StoppedAt),
-            (pr.Pause26StartedAt, pr.Pause26StoppedAt),
-            (pr.Pause27StartedAt, pr.Pause27StoppedAt),
-            (pr.Pause28StartedAt, pr.Pause28StoppedAt),
-            (pr.Pause29StartedAt, pr.Pause29StoppedAt),
-
-            // Additional pause intervals 100-102
-            (pr.Pause100StartedAt, pr.Pause100StoppedAt),
-            (pr.Pause101StartedAt, pr.Pause101StoppedAt),
-            (pr.Pause102StartedAt, pr.Pause102StoppedAt),
-
-            // Additional pause intervals 200-202
-            (pr.Pause200StartedAt, pr.Pause200StoppedAt),
-            (pr.Pause201StartedAt, pr.Pause201StoppedAt),
-            (pr.Pause202StartedAt, pr.Pause202StoppedAt)
-        };
-
-        foreach (var (start, end) in intervals)
+        foreach (var (start, end) in EnumeratePauseStampPairs(pr))
         {
             if (start.HasValue && end.HasValue && start.Value < end.Value)
             {

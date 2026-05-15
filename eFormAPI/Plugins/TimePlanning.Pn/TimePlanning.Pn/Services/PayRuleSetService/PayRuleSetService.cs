@@ -19,18 +19,55 @@ using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 
 public class PayRuleSetService : IPayRuleSetService
 {
+    private static readonly HashSet<string> LockedPresetNames = new HashSet<string>
+    {
+        "GLS-A / 3F - Jordbrug Standard 2024-2026",
+        "GLS-A / 3F - Jordbrug Dyrehold 2024-2026",
+        "GLS-A / 3F - Jordbrug Elev u18 2024-2026",
+        "GLS-A / 3F - Jordbrug Elev o18 2024-2026",
+        "GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2024-2026",
+        "GLS-A / 3F - Gartneri Standard 2024-2026",
+        "GLS-A / 3F - Gartneri Elev u18 2024-2026",
+        "GLS-A / 3F - Gartneri Elev o18 2024-2026",
+        "GLS-A / 3F - Skovbrug Standard 2024-2026",
+        "GLS-A / 3F - Skovbrug Elev u18 2024-2026",
+        "GLS-A / 3F - Skovbrug Elev o18 2024-2026",
+        "GLS-A / 3F - Golf Standard 2024-2026",
+        "GLS-A / 3F - Golf Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Fjerkrae Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Fjerkrae Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Grovvare Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Grovvare Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Gulerod Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Gulerod Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Kartoffelmel Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Kartoffelmel Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Kartoffelsorter Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Kartoffelsorter Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Lucerne Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Lucerne Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Minkfoder Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Minkfoder Elev 2024-2026",
+        "GLS-A / 3F - Agroindustri Ovrige Standard 2024-2026",
+        "GLS-A / 3F - Agroindustri Ovrige Elev 2024-2026"
+    };
+
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<PayRuleSetService> _logger;
+    private readonly ITimePlanningLocalizationService _localizationService;
 
     public PayRuleSetService(
         TimePlanningPnDbContext dbContext,
-        ILogger<PayRuleSetService> logger)
+        ILogger<PayRuleSetService> logger,
+        ITimePlanningLocalizationService localizationService)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _localizationService = localizationService;
     }
 
     public async Task<OperationDataResult<PayRuleSetsListModel>> Index(PayRuleSetsRequestModel requestModel)
@@ -65,7 +102,7 @@ public class PayRuleSetService : IPayRuleSetService
             _logger.LogError(ex, "Error getting pay rule sets");
             return new OperationDataResult<PayRuleSetsListModel>(
                 false,
-                $"Error: {ex.Message}");
+                _localizationService.GetString("ErrorGettingPayRuleSets"));
         }
     }
 
@@ -81,7 +118,7 @@ public class PayRuleSetService : IPayRuleSetService
             {
                 return new OperationDataResult<PayRuleSetModel>(
                     false,
-                    "Pay rule set not found");
+                    _localizationService.GetString("PayRuleSetNotFound"));
             }
 
             // Load PayDayRules separately
@@ -157,7 +194,7 @@ public class PayRuleSetService : IPayRuleSetService
             _logger.LogError(ex, $"Error reading pay rule set {id}");
             return new OperationDataResult<PayRuleSetModel>(
                 false,
-                $"Error: {ex.Message}");
+                _localizationService.GetString("ErrorReadingPayRuleSet"));
         }
     }
 
@@ -254,12 +291,12 @@ public class PayRuleSetService : IPayRuleSetService
                 }
             }
 
-            return new OperationResult(true, "Pay rule set created successfully");
+            return new OperationResult(true, _localizationService.GetString("PayRuleSetCreatedSuccessfully"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating pay rule set");
-            return new OperationResult(false, $"Error: {ex.Message}");
+            return new OperationResult(false, _localizationService.GetString("ErrorCreatingPayRuleSet"));
         }
     }
 
@@ -272,7 +309,15 @@ public class PayRuleSetService : IPayRuleSetService
 
             if (payRuleSet == null)
             {
-                return new OperationResult(false, "Pay rule set not found");
+                return new OperationResult(false, _localizationService.GetString("PayRuleSetNotFound"));
+            }
+
+            // Locked overenskomst presets are read-only. The frontend renders a
+            // summary view in the edit modal and disables the Update button, but
+            // this server-side guard backstops direct API calls.
+            if (LockedPresetNames.Contains(payRuleSet.Name))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
             }
 
             payRuleSet.Name = model.Name;
@@ -528,12 +573,12 @@ public class PayRuleSetService : IPayRuleSetService
                 }
             }
 
-            return new OperationResult(true, "Pay rule set updated successfully");
+            return new OperationResult(true, _localizationService.GetString("PayRuleSetUpdatedSuccessfully"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Error updating pay rule set {id}");
-            return new OperationResult(false, $"Error: {ex.Message}");
+            return new OperationResult(false, _localizationService.GetString("ErrorUpdatingPayRuleSet"));
         }
     }
 
@@ -546,17 +591,22 @@ public class PayRuleSetService : IPayRuleSetService
 
             if (payRuleSet == null)
             {
-                return new OperationResult(false, "Pay rule set not found");
+                return new OperationResult(false, _localizationService.GetString("PayRuleSetNotFound"));
+            }
+
+            if (LockedPresetNames.Contains(payRuleSet.Name))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotDeleteLockedPreset"));
             }
 
             await payRuleSet.Delete(_dbContext);
 
-            return new OperationResult(true, "Pay rule set deleted successfully");
+            return new OperationResult(true, _localizationService.GetString("PayRuleSetDeletedSuccessfully"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Error deleting pay rule set {id}");
-            return new OperationResult(false, $"Error: {ex.Message}");
+            return new OperationResult(false, _localizationService.GetString("ErrorDeletingPayRuleSet"));
         }
     }
 }

@@ -42,6 +42,10 @@ public interface ITimePlanningWorkingHoursService
     Task<OperationDataResult<Stream>> GenerateExcelDashboard(TimePlanningWorkingHoursReportForAllWorkersRequestModel model);
     Task<OperationResult> Import(IFormFile file);
     Task<OperationDataResult<TimePlanningWorkingHoursModel>> Read(int sdkSiteId, DateTime dateTime, string token);
+    Task<OperationDataResult<TimePlanningWorkingHoursModel>> ReadFullByCurrentUser(
+        DateTime dateTime,
+        string? softwareVersion, string? deviceModel, string? manufacturer, string? osVersion);
+    Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model);
     Task<OperationResult> UpdateWorkingHour(int? sdkSiteId, TimePlanningWorkingHoursUpdateModel model, string token);
     Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion);
     Task<OperationDataResult<TimePlanningHoursSummaryModel>> CalculateHoursSummary(DateTime startDate, DateTime endDate, string? softwareVersion, string? model, string? manufacturer, string? osVersion);

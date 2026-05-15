@@ -64,6 +64,17 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   // Reactive form
   workdayForm!: FormGroup;
 
+  /**
+   * Phase 4: pulls UseOneMinuteIntervals off the assigned-site model passed
+   * into the dialog. Drives the six ngx-material-timepicker `[minutesGap]`
+   * bindings — when on, the picker steps in 1-minute increments instead of
+   * 5-minute snap (sub-minute INPUT is deferred per Q2(c); only DISPLAY
+   * shows seconds today).
+   */
+  get useOneMinuteIntervals(): boolean {
+    return this.data?.assignedSiteModel?.useOneMinuteIntervals ?? false;
+  }
+
   // UI / beregningsfelter
   isInTheFuture = false;
   maxPause1Id = 0;
@@ -165,6 +176,26 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     const stop5StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop5StoppedAt, 'HH:mm', 'UTC');
     const pause5Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause5Id * 5);
 
+    // Phase 4: under UseOneMinuteIntervals, derive the pause duration from the
+    // sum of all Pause*StartedAt/Pause*StoppedAt timestamp pairs in seconds and
+    // round to the nearest minute. When the flag is off, fall back to the legacy
+    // 5-minute-slot value so flag-off behavior stays bit-identical.
+    const pause1Exact = this.useOneMinuteIntervals
+      ? this.convertMinutesToTime(this.computeExactPauseMinutes(1))
+      : pause1Id;
+    const pause2Exact = this.useOneMinuteIntervals
+      ? this.convertMinutesToTime(this.computeExactPauseMinutes(2))
+      : pause2Id;
+    const pause3Exact = this.useOneMinuteIntervals
+      ? this.convertMinutesToTime(this.computeExactPauseMinutes(3))
+      : pause3Id;
+    const pause4Exact = this.useOneMinuteIntervals
+      ? this.convertMinutesToTime(this.computeExactPauseMinutes(4))
+      : pause4Id;
+    const pause5Exact = this.useOneMinuteIntervals
+      ? this.convertMinutesToTime(this.computeExactPauseMinutes(5))
+      : pause5Id;
+
     // Er dato i fremtiden?
     this.isInTheFuture = Date.parse(this.data.planningPrDayModels.date) > Date.now();
     this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
@@ -215,34 +246,34 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
       actual: this.fb.group({
         shift1: this.fb.group({
             start: new FormControl({value: start1StartedAt, disabled: this.isInTheFuture}),
-            pause: new FormControl({value: pause1Id, disabled: this.isInTheFuture}),
+            pause: new FormControl({value: pause1Exact, disabled: this.isInTheFuture}),
             stop: new FormControl({value: stop1StoppedAt, disabled: this.isInTheFuture}),
           },
           {validators: [this.actualShiftDurationValidator.bind(this)]},),
         shift2: this.fb.group({
             start: new FormControl({value: start2StartedAt, disabled: this.isInTheFuture}),
-            pause: new FormControl({value: pause2Id, disabled: this.isInTheFuture}),
+            pause: new FormControl({value: pause2Exact, disabled: this.isInTheFuture}),
             stop: new FormControl({value: stop2StoppedAt, disabled: this.isInTheFuture}),
           },
           {validators: [this.actualShiftDurationValidator.bind(this)]},
         ),
         shift3: this.fb.group({
             start: new FormControl({value: start3StartedAt, disabled: this.isInTheFuture}),
-            pause: new FormControl({value: pause3Id, disabled: this.isInTheFuture}),
+            pause: new FormControl({value: pause3Exact, disabled: this.isInTheFuture}),
             stop: new FormControl({value: stop3StoppedAt, disabled: this.isInTheFuture}),
           },
           {validators: [this.actualShiftDurationValidator.bind(this)]},
         ),
         shift4: this.fb.group({
             start: new FormControl({value: start4StartedAt, disabled: this.isInTheFuture}),
-            pause: new FormControl({value: pause4Id, disabled: this.isInTheFuture}),
+            pause: new FormControl({value: pause4Exact, disabled: this.isInTheFuture}),
             stop: new FormControl({value: stop4StoppedAt, disabled: this.isInTheFuture}),
           },
           {validators: [this.actualShiftDurationValidator.bind(this)]},
         ),
         shift5: this.fb.group({
             start: new FormControl({value: start5StartedAt, disabled: this.isInTheFuture}),
-            pause: new FormControl({value: pause5Id, disabled: this.isInTheFuture}),
+            pause: new FormControl({value: pause5Exact, disabled: this.isInTheFuture}),
             stop: new FormControl({value: stop5StoppedAt, disabled: this.isInTheFuture}),
           },
           {validators: [this.actualShiftDurationValidator.bind(this)]},
@@ -1010,9 +1041,94 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
         return 289; // hvis stop er 00:00, så returner 24*60/5=288
         // return result + 1;
       }
-      return result + 1;
+      return Math.round(result + 1);
     }
-    return hours * 60 + minutes;
+    return Math.round(hours * 60 + minutes);
+  }
+
+  private toRawMinutes(value: string | null | undefined): number | null {
+    if (!value) return null;
+    const parts = value.split(':');
+    if (parts.length !== 2) return null;
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    return h * 60 + m;
+  }
+
+  // Derive exact-minute actual span for a shift directly from the picker's form
+  // values. Used under UseOneMinuteIntervals=true so display arithmetic remains
+  // exact-minute regardless of Math.round at the wire boundary (where *Id ints
+  // are required by the ASP.NET int? deserializer).
+  private actualShiftMinutesFromForm(shift: number): number {
+    const a = this.workdayForm.get(`actual.shift${shift}`)?.value as
+      { start?: string; stop?: string; pause?: string } | undefined;
+    if (!a) return 0;
+    const start = this.toRawMinutes(a.start);
+    const stop = this.toRawMinutes(a.stop);
+    const pause = this.toRawMinutes(a.pause) ?? 0;
+    if (start === null || stop === null) return 0;
+    const span = stop >= start ? (stop - start) : (1440 - start + stop);
+    return Math.max(0, span - pause);
+  }
+
+  // Sum every Pause*StartedAt/Pause*StoppedAt pair attached to the given shift in
+  // seconds, then round to the nearest minute. Sub-slot pauses (pause10..pause19,
+  // pause100..pause102 for shift 1; pause20..pause29, pause200..pause202 for
+  // shift 2) accumulate into the same display value so the admin sees the full
+  // pause duration the worker actually had.
+  private computeExactPauseMinutes(shift: number): number {
+    let totalSeconds = 0;
+    for (const [start, stop] of this.getPauseTimestampPairs(shift)) {
+      if (start && stop) {
+        totalSeconds += (new Date(stop).getTime() - new Date(start).getTime()) / 1000;
+      }
+    }
+    return Math.round(totalSeconds / 60);
+  }
+
+  private getPauseTimestampPairs(shift: number): Array<[string | null, string | null]> {
+    const m = this.data.planningPrDayModels;
+    if (shift === 1) {
+      return [
+        [m.pause1StartedAt, m.pause1StoppedAt],
+        [m.pause10StartedAt, m.pause10StoppedAt],
+        [m.pause11StartedAt, m.pause11StoppedAt],
+        [m.pause12StartedAt, m.pause12StoppedAt],
+        [m.pause13StartedAt, m.pause13StoppedAt],
+        [m.pause14StartedAt, m.pause14StoppedAt],
+        [m.pause15StartedAt, m.pause15StoppedAt],
+        [m.pause16StartedAt, m.pause16StoppedAt],
+        [m.pause17StartedAt, m.pause17StoppedAt],
+        [m.pause18StartedAt, m.pause18StoppedAt],
+        [m.pause19StartedAt, m.pause19StoppedAt],
+        [m.pause100StartedAt, m.pause100StoppedAt],
+        [m.pause101StartedAt, m.pause101StoppedAt],
+        [m.pause102StartedAt, m.pause102StoppedAt],
+      ];
+    }
+    if (shift === 2) {
+      return [
+        [m.pause2StartedAt, m.pause2StoppedAt],
+        [m.pause20StartedAt, m.pause20StoppedAt],
+        [m.pause21StartedAt, m.pause21StoppedAt],
+        [m.pause22StartedAt, m.pause22StoppedAt],
+        [m.pause23StartedAt, m.pause23StoppedAt],
+        [m.pause24StartedAt, m.pause24StoppedAt],
+        [m.pause25StartedAt, m.pause25StoppedAt],
+        [m.pause26StartedAt, m.pause26StoppedAt],
+        [m.pause27StartedAt, m.pause27StoppedAt],
+        [m.pause28StartedAt, m.pause28StoppedAt],
+        [m.pause29StartedAt, m.pause29StoppedAt],
+        [m.pause200StartedAt, m.pause200StoppedAt],
+        [m.pause201StartedAt, m.pause201StoppedAt],
+        [m.pause202StartedAt, m.pause202StoppedAt],
+      ];
+    }
+    if (shift === 3) { return [[m.pause3StartedAt, m.pause3StoppedAt]]; }
+    if (shift === 4) { return [[m.pause4StartedAt, m.pause4StoppedAt]]; }
+    if (shift === 5) { return [[m.pause5StartedAt, m.pause5StoppedAt]]; }
+    return [];
   }
 
   private toMinutes(hhmm: string | null): number | null {
@@ -1308,6 +1424,11 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.start1StartedAt = this.convertTimeToDateTimeOfToday(a1?.start);
     // eslint-disable-next-line max-len
     this.data.planningPrDayModels.pause1Id = this.convertTimeToMinutes(a1?.pause, true) === 0 ? null : this.convertTimeToMinutes(a1?.pause, true);
+    if (this.useOneMinuteIntervals) {
+      this.data.planningPrDayModels.pause1ExactMinutes = this.convertTimeToMinutes(a1?.pause, false);
+      this.data.planningPrDayModels.start1ExactMinutes = this.toRawMinutes(a1?.start);
+      this.data.planningPrDayModels.stop1ExactMinutes = this.toRawMinutes(a1?.stop);
+    }
     this.data.planningPrDayModels.stop1Id = this.convertTimeToMinutes(a1?.stop, true, true);
     this.data.planningPrDayModels.stop1StoppedAt = this.convertTimeToDateTimeOfToday(a1?.stop === '00:00' ? '24:00' : a1?.stop);
 
@@ -1315,6 +1436,11 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.start2StartedAt = this.convertTimeToDateTimeOfToday(a2?.start);
     // eslint-disable-next-line max-len
     this.data.planningPrDayModels.pause2Id = this.convertTimeToMinutes(a2?.pause, true) === 0 ? null : this.convertTimeToMinutes(a2?.pause, true);
+    if (this.useOneMinuteIntervals) {
+      this.data.planningPrDayModels.pause2ExactMinutes = this.convertTimeToMinutes(a2?.pause, false);
+      this.data.planningPrDayModels.start2ExactMinutes = this.toRawMinutes(a2?.start);
+      this.data.planningPrDayModels.stop2ExactMinutes = this.toRawMinutes(a2?.stop);
+    }
     this.data.planningPrDayModels.stop2Id = this.convertTimeToMinutes(a2?.stop, true, true);
     this.data.planningPrDayModels.stop2StoppedAt = this.convertTimeToDateTimeOfToday(a2?.stop === '00:00' ? '24:00' : a2?.stop);
 
@@ -1322,6 +1448,11 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.start3StartedAt = this.convertTimeToDateTimeOfToday(a3?.start);
     // eslint-disable-next-line max-len
     this.data.planningPrDayModels.pause3Id = this.convertTimeToMinutes(a3?.pause, true) === 0 ? null : this.convertTimeToMinutes(a3?.pause, true);
+    if (this.useOneMinuteIntervals) {
+      this.data.planningPrDayModels.pause3ExactMinutes = this.convertTimeToMinutes(a3?.pause, false);
+      this.data.planningPrDayModels.start3ExactMinutes = this.toRawMinutes(a3?.start);
+      this.data.planningPrDayModels.stop3ExactMinutes = this.toRawMinutes(a3?.stop);
+    }
     this.data.planningPrDayModels.stop3Id = this.convertTimeToMinutes(a3?.stop, true, true);
     this.data.planningPrDayModels.stop3StoppedAt = this.convertTimeToDateTimeOfToday(a3?.stop === '00:00' ? '24:00' : a3?.stop);
 
@@ -1329,6 +1460,11 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.start4StartedAt = this.convertTimeToDateTimeOfToday(a4?.start);
     // eslint-disable-next-line max-len
     this.data.planningPrDayModels.pause4Id = this.convertTimeToMinutes(a4?.pause, true) === 0 ? null : this.convertTimeToMinutes(a4?.pause, true);
+    if (this.useOneMinuteIntervals) {
+      this.data.planningPrDayModels.pause4ExactMinutes = this.convertTimeToMinutes(a4?.pause, false);
+      this.data.planningPrDayModels.start4ExactMinutes = this.toRawMinutes(a4?.start);
+      this.data.planningPrDayModels.stop4ExactMinutes = this.toRawMinutes(a4?.stop);
+    }
     this.data.planningPrDayModels.stop4Id = this.convertTimeToMinutes(a4?.stop, true, true);
     this.data.planningPrDayModels.stop4StoppedAt = this.convertTimeToDateTimeOfToday(a4?.stop === '00:00' ? '24:00' : a4?.stop);
 
@@ -1336,6 +1472,11 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.start5StartedAt = this.convertTimeToDateTimeOfToday(a5?.start);
     // eslint-disable-next-line max-len
     this.data.planningPrDayModels.pause5Id = this.convertTimeToMinutes(a5?.pause, true) === 0 ? null : this.convertTimeToMinutes(a5?.pause, true);
+    if (this.useOneMinuteIntervals) {
+      this.data.planningPrDayModels.pause5ExactMinutes = this.convertTimeToMinutes(a5?.pause, false);
+      this.data.planningPrDayModels.start5ExactMinutes = this.toRawMinutes(a5?.start);
+      this.data.planningPrDayModels.stop5ExactMinutes = this.toRawMinutes(a5?.stop);
+    }
     this.data.planningPrDayModels.stop5Id = this.convertTimeToMinutes(a5?.stop, true, true);
     this.data.planningPrDayModels.stop5StoppedAt = this.convertTimeToDateTimeOfToday(a5?.stop === '00:00' ? '24:00' : a5?.stop);
 
@@ -1421,38 +1562,47 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
     // Summer actual
     let actualTimeInMinutes = 0;
-    if (this.data.planningPrDayModels.stop1Id !== null) {
-      actualTimeInMinutes =
-        this.data.planningPrDayModels.stop1Id
-        - (this.data.planningPrDayModels.pause1Id > 0 ? this.data.planningPrDayModels.pause1Id - 1 : 0)
-        - this.data.planningPrDayModels.start1Id;
-    }
-    if (this.data.planningPrDayModels.stop2Id !== null) {
-      actualTimeInMinutes +=
-        this.data.planningPrDayModels.stop2Id
-        - (this.data.planningPrDayModels.pause2Id > 0 ? this.data.planningPrDayModels.pause2Id - 1 : 0)
-        - this.data.planningPrDayModels.start2Id;
-    }
-    if (this.data.planningPrDayModels.stop3Id !== null) {
-      actualTimeInMinutes +=
-        this.data.planningPrDayModels.stop3Id
-        - (this.data.planningPrDayModels.pause3Id > 0 ? this.data.planningPrDayModels.pause3Id - 1 : 0)
-        - this.data.planningPrDayModels.start3Id;
-    }
-    if (this.data.planningPrDayModels.stop4Id !== null) {
-      actualTimeInMinutes +=
-        this.data.planningPrDayModels.stop4Id
-        - (this.data.planningPrDayModels.pause4Id > 0 ? this.data.planningPrDayModels.pause4Id - 1 : 0)
-        - this.data.planningPrDayModels.start4Id;
-    }
-    if (this.data.planningPrDayModels.stop5Id !== null) {
-      actualTimeInMinutes +=
-        this.data.planningPrDayModels.stop5Id
-        - (this.data.planningPrDayModels.pause5Id > 0 ? this.data.planningPrDayModels.pause5Id - 1 : 0)
-        - this.data.planningPrDayModels.start5Id;
-    }
-    if (actualTimeInMinutes !== 0) {
-      actualTimeInMinutes *= 5;
+    if (this.useOneMinuteIntervals) {
+      // Under flag-on, derive actual minutes directly from picker form values so
+      // display arithmetic remains exact-minute regardless of Math.round at the
+      // wire boundary (required for *Id int? JSON serialization).
+      for (let i = 1; i <= 5; i++) {
+        actualTimeInMinutes += this.actualShiftMinutesFromForm(i);
+      }
+    } else {
+      if (this.data.planningPrDayModels.stop1Id !== null) {
+        actualTimeInMinutes =
+          this.data.planningPrDayModels.stop1Id
+          - (this.data.planningPrDayModels.pause1Id > 0 ? this.data.planningPrDayModels.pause1Id - 1 : 0)
+          - this.data.planningPrDayModels.start1Id;
+      }
+      if (this.data.planningPrDayModels.stop2Id !== null) {
+        actualTimeInMinutes +=
+          this.data.planningPrDayModels.stop2Id
+          - (this.data.planningPrDayModels.pause2Id > 0 ? this.data.planningPrDayModels.pause2Id - 1 : 0)
+          - this.data.planningPrDayModels.start2Id;
+      }
+      if (this.data.planningPrDayModels.stop3Id !== null) {
+        actualTimeInMinutes +=
+          this.data.planningPrDayModels.stop3Id
+          - (this.data.planningPrDayModels.pause3Id > 0 ? this.data.planningPrDayModels.pause3Id - 1 : 0)
+          - this.data.planningPrDayModels.start3Id;
+      }
+      if (this.data.planningPrDayModels.stop4Id !== null) {
+        actualTimeInMinutes +=
+          this.data.planningPrDayModels.stop4Id
+          - (this.data.planningPrDayModels.pause4Id > 0 ? this.data.planningPrDayModels.pause4Id - 1 : 0)
+          - this.data.planningPrDayModels.start4Id;
+      }
+      if (this.data.planningPrDayModels.stop5Id !== null) {
+        actualTimeInMinutes +=
+          this.data.planningPrDayModels.stop5Id
+          - (this.data.planningPrDayModels.pause5Id > 0 ? this.data.planningPrDayModels.pause5Id - 1 : 0)
+          - this.data.planningPrDayModels.start5Id;
+      }
+      if (actualTimeInMinutes !== 0) {
+        actualTimeInMinutes *= 5;
+      }
     }
     this.data.planningPrDayModels.actualHours = actualTimeInMinutes / 60;
 

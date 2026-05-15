@@ -23,6 +23,7 @@ export let TimePlanningSettingsMethods = {
   GlobalAutoBreakCalculationSettings: 'api/time-planning-pn/settings/global-auto-break-settings',
   ResetGlobalAutoBreakCalculationSettings: 'api/time-planning-pn/settings/reset-global-auto-break-settings',
   AvailableTags: 'api/tags/index',
+  PayrollSettings: 'api/time-planning-pn/payroll/settings',
 };
 
 @Injectable()
@@ -97,5 +98,13 @@ export class TimePlanningPnSettingsService {
 
   getAvailableTags(): Observable<OperationDataResult<CommonTagModel[]>> {
     return this.apiBaseService.get(TimePlanningSettingsMethods.AvailableTags);
+  }
+
+  getPayrollSettings(): Observable<OperationDataResult<any>> {
+    return this.apiBaseService.get(TimePlanningSettingsMethods.PayrollSettings);
+  }
+
+  updatePayrollSettings(model: any): Observable<OperationResult> {
+    return this.apiBaseService.put(TimePlanningSettingsMethods.PayrollSettings, model);
   }
 }

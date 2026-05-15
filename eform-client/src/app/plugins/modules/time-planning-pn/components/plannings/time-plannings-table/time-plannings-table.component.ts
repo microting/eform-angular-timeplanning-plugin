@@ -290,6 +290,40 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
     return this.datePipe.transform(stoppedAt, 'HH:mm', 'UTC') ?? '';
   }
 
+  /**
+   * Formats an actual shift timestamp for display in the plannings table.
+   * Always renders as `HH:mm`; seconds are never displayed regardless of
+   * the row's `useOneMinuteIntervals` flag. The `row` parameter is kept
+   * for call-site stability.
+   */
+  formatStamp(row: any, value: string | null | undefined): string {
+    if (!value) {
+      return '';
+    }
+    return this.datePipe.transform(value, 'HH:mm', 'UTC') ?? '';
+  }
+
+  /**
+   * Stop-time display sibling of {@link getStopTimeDisplay} with the same
+   * cross-day "24:00" guard. Always renders as `HH:mm`; the `WithSeconds`
+   * suffix is a historical name — seconds are not emitted.
+   */
+  getStopTimeDisplayWithSeconds(row: any, startedAt: string | null, stoppedAt: string | null): string {
+    if (!startedAt || !stoppedAt) {
+      return '';
+    }
+    const startDate = new Date(startedAt);
+    const stopDate = new Date(stoppedAt);
+    if (
+      startDate.getUTCFullYear() !== stopDate.getUTCFullYear() ||
+      startDate.getUTCMonth() !== stopDate.getUTCMonth() ||
+      startDate.getUTCDate() !== stopDate.getUTCDate()
+    ) {
+      return '24:00';
+    }
+    return this.datePipe.transform(stoppedAt, 'HH:mm', 'UTC') ?? '';
+  }
+
   onFirstColumnClick(row: any): void {
     // only do something if the selectAuthIsAdmin$ is true
     this.selectAuthIsAdmin$.subscribe(value => {
@@ -409,6 +443,28 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
       return `-${hrs}:${this.padZero(mins)}`;
     }
     return `${this.padZero(hrs)}:${this.padZero(mins)}`;
+  }
+
+  /**
+   * Phase 4 second-precision sibling of {@link convertHoursToTime}. Adds a
+   * <c>:SS</c> tail for callers that want seconds-level display when the
+   * row's site has <c>UseOneMinuteIntervals</c> on. The legacy 2-component
+   * helper is intentionally left untouched so flag-off display paths remain
+   * byte-identical.
+   */
+  convertHoursToTimeWithSeconds(hours: number): string {
+    const isNegative = hours < 0;
+    if (hours < 0) {
+      hours = Math.abs(hours);
+    }
+    const totalSeconds = Math.round(hours * 3600);
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (isNegative) {
+      return `-${hrs}:${this.padZero(mins)}:${this.padZero(secs)}`;
+    }
+    return `${this.padZero(hrs)}:${this.padZero(mins)}:${this.padZero(secs)}`;
   }
 
   convertHoursToTimeWithTranslations(hours: number): string {

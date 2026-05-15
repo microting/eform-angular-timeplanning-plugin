@@ -40,4 +40,9 @@ public class ContentHandoverRequestModel
     public DateTime? RespondedAtUtc { get; set; }
     public string? RequestComment { get; set; }
     public string? DecisionComment { get; set; }
+    public int? ShiftIndex { get; set; }
+    public int? ShiftStartTime { get; set; }
+    public int? ShiftEndTime { get; set; }
+    public string? FromWorkerName { get; set; }
+    public string? ToWorkerName { get; set; }
 }

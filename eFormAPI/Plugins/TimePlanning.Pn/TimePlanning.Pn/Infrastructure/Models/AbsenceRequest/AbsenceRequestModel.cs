@@ -41,4 +41,6 @@ public class AbsenceRequestModel
     public string? RequestComment { get; set; }
     public string? DecisionComment { get; set; }
     public List<AbsenceRequestDayModel> Days { get; set; } = [];
+    public string? RequestedByWorkerName { get; set; }
+    public string? DecidedByWorkerName { get; set; }
 }

@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>{{ dialogTitle }}</h2>
+<h2 mat-dialog-title>{{ dialogTitle | translate }}</h2>
 
 <mat-dialog-content>
   <form [formGroup]="dayTypeRuleForm" class="day-type-rule-form">
@@ -111,6 +111,19 @@
             </td>
           </ng-container>
 
+          <!-- Payroll Code Column -->
+          <ng-container matColumnDef="payrollCode">
+            <th mat-header-cell *matHeaderCellDef>{{ 'Payroll code' | translate }}</th>
+            <td mat-cell *matCellDef="let band; let i = index">
+              <mat-form-field class="band-field">
+                <input matInput
+                       type="text"
+                       [formControl]="getTimeBandControl(i, 'payrollCode')"
+                       placeholder="">
+              </mat-form-field>
+            </td>
+          </ng-container>
+
           <!-- Priority Column -->
           <ng-container matColumnDef="priority">
             <th mat-header-cell *matHeaderCellDef>{{ 'Priority' | translate }}</th>
@@ -166,14 +179,14 @@
     mat-dialog-close
     id="cancelDayTypeRuleBtn"
     (click)="cancel()">
-    Cancel
+    {{ 'Cancel' | translate }}
   </button>
   <button
     class="btn-primary btn-primary--icon-left"
     id="saveDayTypeRuleBtn"
     [disabled]="!dayTypeRuleForm.valid"
     (click)="save()">
-    Save
+    {{ 'Save' | translate }}
   </button>
 </mat-dialog-actions>
 

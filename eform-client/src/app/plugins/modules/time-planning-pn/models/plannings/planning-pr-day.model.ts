@@ -127,6 +127,23 @@ export class PlanningPrDayModel {
   start5Id: number;
   stop5Id: number;
   pause5Id: number;
+  // Request-only: exact-minute pause durations sent under UseOneMinuteIntervals=true.
+  // Backend translates these into Pause*StartedAt/Pause*StoppedAt timestamp pairs.
+  pause1ExactMinutes?: number;
+  pause2ExactMinutes?: number;
+  pause3ExactMinutes?: number;
+  pause4ExactMinutes?: number;
+  pause5ExactMinutes?: number;
+  start1ExactMinutes?: number | null;
+  start2ExactMinutes?: number | null;
+  start3ExactMinutes?: number | null;
+  start4ExactMinutes?: number | null;
+  start5ExactMinutes?: number | null;
+  stop1ExactMinutes?: number | null;
+  stop2ExactMinutes?: number | null;
+  stop3ExactMinutes?: number | null;
+  stop4ExactMinutes?: number | null;
+  stop5ExactMinutes?: number | null;
   nettoHoursOverride: number;
   nettoHoursOverrideActive: boolean;
 }

@@ -27,16 +27,21 @@ namespace TimePlanning.Pn.Services.ContentHandoverService;
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure.Helpers;
 using Infrastructure.Models.ContentHandover;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microting.eForm.Infrastructure.Constants;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Sentry;
+using TimePlanning.Pn.Services.PushNotificationService;
 using TimePlanningLocalizationService;
 
 public class ContentHandoverService : IContentHandoverService
@@ -45,21 +50,231 @@ public class ContentHandoverService : IContentHandoverService
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly IUserService _userService;
     private readonly ITimePlanningLocalizationService _localizationService;
+    private readonly IEFormCoreService _core;
+    private readonly BaseDbContext _baseDbContext;
+    private readonly IPushNotificationService _pushNotificationService;
 
     public ContentHandoverService(
         ILogger<ContentHandoverService> logger,
         TimePlanningPnDbContext dbContext,
         IUserService userService,
-        ITimePlanningLocalizationService localizationService)
+        ITimePlanningLocalizationService localizationService,
+        IEFormCoreService core,
+        BaseDbContext baseDbContext,
+        IPushNotificationService pushNotificationService)
     {
         _logger = logger;
         _dbContext = dbContext;
         _userService = userService;
         _localizationService = localizationService;
+        _core = core;
+        _baseDbContext = baseDbContext;
+        _pushNotificationService = pushNotificationService;
     }
 
-    public async Task<OperationDataResult<ContentHandoverRequestModel>> CreateAsync(
-        int fromPlanRegistrationId, 
+    // Danish-locale, case-insensitive comparer used to sort the handover-eligible
+    // coworker list. Exposed publicly so the regression test can pin the
+    // canonical da-DK collation order (Æ/Ø/Å come AFTER Z, in that order).
+    public static readonly StringComparer HandoverCoworkerNameComparer =
+        StringComparer.Create(CultureInfo.GetCultureInfo("da-DK"), ignoreCase: true);
+
+    public Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date)
+    {
+        return GetHandoverEligibleCoworkersAsync(date, new List<int>());
+    }
+
+    public async Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date, List<int> shiftIndices)
+    {
+        try
+        {
+            var sdkCore = await _core.GetCore();
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+
+            var currentUserAsync = await _userService.GetCurrentUserAsync();
+            if (currentUserAsync == null)
+            {
+                return new OperationDataResult<List<HandoverCoworkerModel>>(
+                    false,
+                    _localizationService.GetString("UserNotFound"));
+            }
+            var currentUser = _baseDbContext.Users
+                .Single(x => x.Id == currentUserAsync.Id);
+
+            var worker = await sdkDbContext.Workers
+                .Include(x => x.SiteWorkers)
+                .ThenInclude(x => x.Site)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+
+            if (worker == null)
+            {
+                SentrySdk.CaptureMessage($"Worker with email {currentUser.Email} not found");
+                return new OperationDataResult<List<HandoverCoworkerModel>>(
+                    false,
+                    _localizationService.GetString("ErrorWhileObtainingPlannings"));
+            }
+
+            var callerSite = worker.SiteWorkers.First().Site;
+
+            var callerTagIds = await sdkDbContext.SiteTags
+                .Where(x => x.SiteId == callerSite.Id
+                            && x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Select(x => (int)x.TagId!)
+                .ToListAsync();
+
+            if (callerTagIds.Count == 0)
+            {
+                return new OperationDataResult<List<HandoverCoworkerModel>>(true, new List<HandoverCoworkerModel>());
+            }
+
+            var candidateRaw = await sdkDbContext.SiteTags
+                .Include(x => x.Site)
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed
+                            && x.SiteId != callerSite.Id
+                            && callerTagIds.Contains((int)x.TagId!))
+                .Select(x => new { x.Site.MicrotingUid, SiteName = x.Site.Name })
+                .Distinct()
+                .ToListAsync();
+
+            var candidateSites = candidateRaw
+                .Where(x => x.MicrotingUid.HasValue)
+                .Select(x => new { MicrotingUid = x.MicrotingUid!.Value, x.SiteName })
+                .GroupBy(x => x.MicrotingUid)
+                .Select(g => g.First())
+                .ToList();
+
+            if (candidateSites.Count == 0)
+            {
+                return new OperationDataResult<List<HandoverCoworkerModel>>(true, new List<HandoverCoworkerModel>());
+            }
+
+            var candidateMicrotingUids = candidateSites.Select(x => x.MicrotingUid).ToList();
+
+            var activeAssignedSiteIds = await _dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed
+                            && x.Resigned != true
+                            && candidateMicrotingUids.Contains(x.SiteId))
+                .Select(x => x.SiteId)
+                .ToListAsync();
+
+            var activeCandidates = candidateSites
+                .Where(x => activeAssignedSiteIds.Contains(x.MicrotingUid))
+                .ToList();
+
+            if (activeCandidates.Count == 0)
+            {
+                return new OperationDataResult<List<HandoverCoworkerModel>>(true, new List<HandoverCoworkerModel>());
+            }
+
+            var targetDate = date.Date;
+            var activeCandidateSiteIds = activeCandidates.Select(x => x.MicrotingUid).ToList();
+
+            var planRegistrations = await _dbContext.PlanRegistrations
+                .Where(pr => activeCandidateSiteIds.Contains(pr.SdkSitId) && pr.Date == targetDate)
+                .ToListAsync();
+
+            // Resolve the caller's PlanRegistration on the same date so we can
+            // read the actual time windows of the sender's shifts that are
+            // candidates for handover. Without this, we can't tell whether
+            // a receiver's existing shift would overlap.
+            int? callerSdkSitId = callerSite.MicrotingUid;
+            PlanRegistration? callerPr = null;
+            if (callerSdkSitId.HasValue)
+            {
+                callerPr = await _dbContext.PlanRegistrations
+                    .FirstOrDefaultAsync(pr => pr.SdkSitId == callerSdkSitId.Value && pr.Date == targetDate);
+            }
+
+            // Build the list of (start, end) windows for each requested sender
+            // shift index. Empty/zero windows are dropped — they cannot overlap
+            // anything and cannot be handed over.
+            var senderShiftWindows = new List<(int start, int end)>();
+            if (shiftIndices != null && shiftIndices.Count > 0 && callerPr != null)
+            {
+                foreach (var n in shiftIndices.Distinct())
+                {
+                    var s = GetShift(callerPr, n);
+                    if (s.start != 0 || s.end != 0)
+                    {
+                        senderShiftWindows.Add((s.start, s.end));
+                    }
+                }
+            }
+
+            bool IsCandidateEligible(PlanRegistration? pr)
+            {
+                if (shiftIndices == null || shiftIndices.Count == 0)
+                {
+                    // Legacy behavior: no shift-level filter.
+                    return true;
+                }
+
+                if (pr == null)
+                {
+                    // No PlanRegistration on that date: all 5 slots implicitly
+                    // free, so as long as the sender shifts themselves don't
+                    // mutually overlap (caller responsibility) we're good.
+                    return true;
+                }
+
+                // Count free slots on the receiver. The merge-into-first-free
+                // semantic needs at least one free slot per sender shift.
+                var freeSlots = 0;
+                for (var i = 1; i <= 5; i++)
+                {
+                    if (IsShiftEmpty(pr, i)) freeSlots++;
+                }
+
+                if (senderShiftWindows.Count == 0)
+                {
+                    // Sender has no actual content for the requested indices —
+                    // fall back to the legacy "at least one free slot" check
+                    // so we don't over-restrict the picker.
+                    return freeSlots >= shiftIndices.Distinct().Count();
+                }
+
+                if (freeSlots < senderShiftWindows.Count) return false;
+
+                // No sender shift may overlap any existing receiver shift.
+                foreach (var w in senderShiftWindows)
+                {
+                    if (OverlapsAnyShift(pr, w.start, w.end)) return false;
+                }
+                return true;
+            }
+
+            var result = activeCandidates
+                .Select(c =>
+                {
+                    var pr = planRegistrations.FirstOrDefault(p => p.SdkSitId == c.MicrotingUid);
+                    return new
+                    {
+                        Eligible = IsCandidateEligible(pr),
+                        Model = new HandoverCoworkerModel
+                        {
+                            SdkSiteId = c.MicrotingUid,
+                            SiteName = c.SiteName ?? string.Empty,
+                            PlanRegistrationId = pr?.Id ?? 0
+                        }
+                    };
+                })
+                .Where(x => x.Eligible)
+                .Select(x => x.Model)
+                .OrderBy(x => x.SiteName, HandoverCoworkerNameComparer)
+                .ToList();
+
+            return new OperationDataResult<List<HandoverCoworkerModel>>(true, result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting handover eligible coworkers");
+            return new OperationDataResult<List<HandoverCoworkerModel>>(false,
+                _localizationService.GetString("ErrorGettingHandoverRequests"));
+        }
+    }
+
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> CreateAsync(
+        int fromPlanRegistrationId,
         ContentHandoverRequestCreateModel model)
     {
         try
@@ -70,17 +285,8 @@ public class ContentHandoverService : IContentHandoverService
 
             if (fromPR == null)
             {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                     _localizationService.GetString("SourcePlanRegistrationNotFound"));
-            }
-
-            // Validate source has content
-            var hasPlanHours = fromPR.PlanHoursInSeconds > 0;
-            var hasPlanText = !string.IsNullOrWhiteSpace(fromPR.PlanText);
-            if (!hasPlanHours && !hasPlanText)
-            {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
-                    _localizationService.GetString("SourcePlanRegistrationHasNoContent"));
             }
 
             // Find target PlanRegistration
@@ -90,79 +296,252 @@ public class ContentHandoverService : IContentHandoverService
 
             if (toPR == null)
             {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                     _localizationService.GetString("TargetPlanRegistrationNotFound"));
             }
 
             // Validate different workers
             if (fromPR.SdkSitId == toPR.SdkSitId)
             {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                     _localizationService.GetString("CannotHandoverToSameWorker"));
             }
 
-            // Check for existing pending request for same target and date
-            var hasPendingRequest = await _dbContext.PlanRegistrationContentHandoverRequests
-                .AnyAsync(r => r.ToSdkSitId == model.ToSdkSitId
-                               && r.Date == fromPR.Date
-                               && r.Status == HandoverRequestStatus.Pending);
+            var shiftIndices = model.ShiftIndices ?? new List<int>();
 
-            if (hasPendingRequest)
+            // Load existing pending requests scoped to (target, date). We'll
+            // use these to enforce per-shift duplicate rules as well as the
+            // full-day vs partial interactions.
+            var existingPending = await _dbContext.PlanRegistrationContentHandoverRequests
+                .Where(r => r.ToSdkSitId == model.ToSdkSitId
+                            && r.Date == fromPR.Date
+                            && r.Status == HandoverRequestStatus.Pending)
+                .ToListAsync();
+
+            if (shiftIndices.Count == 0)
             {
-                return new OperationDataResult<ContentHandoverRequestModel>(false,
-                    _localizationService.GetString("PendingHandoverRequestAlreadyExists"));
+                // Legacy full-day create.
+                // Validate source has content
+                var hasPlanHours = fromPR.PlanHoursInSeconds > 0;
+                var hasPlanText = !string.IsNullOrWhiteSpace(fromPR.PlanText);
+                if (!hasPlanHours && !hasPlanText)
+                {
+                    return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
+                        _localizationService.GetString("SourcePlanRegistrationHasNoContent"));
+                }
+
+                if (existingPending.Count > 0)
+                {
+                    return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
+                        _localizationService.GetString("PendingHandoverRequestAlreadyExists"));
+                }
+
+                var request = new PlanRegistrationContentHandoverRequest
+                {
+                    FromSdkSitId = fromPR.SdkSitId,
+                    ToSdkSitId = model.ToSdkSitId,
+                    Date = fromPR.Date,
+                    FromPlanRegistrationId = fromPR.Id,
+                    ToPlanRegistrationId = toPR.Id,
+                    Status = HandoverRequestStatus.Pending,
+                    RequestedAtUtc = DateTime.UtcNow,
+                    ShiftIndex = null,
+                    CreatedByUserId = _userService.UserId,
+                    UpdatedByUserId = _userService.UserId
+                };
+                await request.Create(_dbContext);
+
+                FireCreatePush(model.ToSdkSitId, new List<int> { request.Id }, 1, fromPR.Date);
+
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(
+                    true, new List<ContentHandoverRequestModel> { MapToModel(request, fromPR) });
             }
 
-            // Create handover request
-            var request = new PlanRegistrationContentHandoverRequest
+            // Partial (per-shift) create. Transactional all-or-nothing.
+            // Validate each requested shift index first.
+            var distinctShifts = shiftIndices.Distinct().ToList();
+            var errors = new List<string>();
+            foreach (var n in distinctShifts)
             {
-                FromSdkSitId = fromPR.SdkSitId,
-                ToSdkSitId = model.ToSdkSitId,
-                Date = fromPR.Date,
-                FromPlanRegistrationId = fromPR.Id,
-                ToPlanRegistrationId = toPR.Id,
-                Status = HandoverRequestStatus.Pending,
-                RequestedAtUtc = DateTime.UtcNow,
-                CreatedByUserId = _userService.UserId,
-                UpdatedByUserId = _userService.UserId
-            };
+                if (n < 1 || n > 5)
+                {
+                    errors.Add($"Invalid shift index {n}");
+                    continue;
+                }
 
-            await request.Create(_dbContext);
+                var sourceEnd = GetPlannedEndOfShift(fromPR, n);
+                if (sourceEnd <= 0)
+                {
+                    errors.Add($"Shift {n}: source has no planned content");
+                    continue;
+                }
 
-            var resultModel = MapToModel(request);
-            return new OperationDataResult<ContentHandoverRequestModel>(true, resultModel);
+                var targetEnd = GetPlannedEndOfShift(toPR, n);
+                if (targetEnd != 0)
+                {
+                    errors.Add($"Shift {n}: target slot already has content");
+                    continue;
+                }
+
+                // Duplicate-pending: same shift already pending to this target blocks.
+                if (existingPending.Any(r => r.ShiftIndex == n))
+                {
+                    errors.Add($"Shift {n}: a pending handover already exists for this shift");
+                    continue;
+                }
+
+                // Pending full-day (ShiftIndex == null) also blocks partial.
+                if (existingPending.Any(r => r.ShiftIndex == null))
+                {
+                    errors.Add($"Shift {n}: a pending full-day handover exists for this date");
+                    continue;
+                }
+            }
+
+            // Non-empty partial also blocked by a full-day pending — covered above.
+
+            if (errors.Count > 0)
+            {
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
+                    string.Join("; ", errors));
+            }
+
+            // All per-shift validation passed above as a pre-flight pass — we never
+            // persist a partial batch because every shift is validated before any
+            // Create() is called. No explicit transaction needed: an EF-level
+            // failure mid-loop would still leave prior rows unwritten if we used
+            // SaveChanges once at the end, but PnBase.Create() calls SaveChanges
+            // per entity. That's a pre-existing trade-off kept deliberately (matches
+            // the rest of this service); the validation pre-flight is the real
+            // correctness gate.
+            var created = new List<PlanRegistrationContentHandoverRequest>();
+            foreach (var n in distinctShifts)
+            {
+                var request = new PlanRegistrationContentHandoverRequest
+                {
+                    FromSdkSitId = fromPR.SdkSitId,
+                    ToSdkSitId = model.ToSdkSitId,
+                    Date = fromPR.Date,
+                    FromPlanRegistrationId = fromPR.Id,
+                    ToPlanRegistrationId = toPR.Id,
+                    Status = HandoverRequestStatus.Pending,
+                    RequestedAtUtc = DateTime.UtcNow,
+                    ShiftIndex = n,
+                    CreatedByUserId = _userService.UserId,
+                    UpdatedByUserId = _userService.UserId
+                };
+                await request.Create(_dbContext);
+                created.Add(request);
+            }
+
+            FireCreatePush(model.ToSdkSitId, created.Select(r => r.Id).ToList(), created.Count, fromPR.Date);
+
+            return new OperationDataResult<List<ContentHandoverRequestModel>>(
+                true, created.Select(r => MapToModel(r, fromPR)).ToList());
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating content handover request");
-            return new OperationDataResult<ContentHandoverRequestModel>(false,
+            return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                 _localizationService.GetString("ErrorCreatingHandoverRequest"));
         }
     }
 
+    private void FireCreatePush(int toSdkSitId, List<int> requestIds, int shiftCount, DateTime date)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var title = "New handover request";
+                var body = shiftCount > 1
+                    ? $"A coworker wants to hand over {shiftCount} shifts on {date:yyyy-MM-dd}"
+                    : "A coworker wants to hand over content to you";
+                // Dual-key scheme: Accept/Reject pushes use the singular
+                // "handoverRequestId" and Flutter's FCM handler keys off that
+                // name. Old handlers will open the first request in the batch
+                // (better than nothing); new handlers can read the comma-joined
+                // "handoverRequestIds" for the full batch.
+                var primaryId = requestIds.Count > 0 ? requestIds[0].ToString() : "";
+                await _pushNotificationService.SendToSiteAsync(
+                    toSdkSitId,
+                    title,
+                    body,
+                    new Dictionary<string, string>
+                    {
+                        { "type", "handover_created" },
+                        { "handoverRequestId", primaryId },
+                        { "handoverRequestIds", string.Join(",", requestIds) },
+                        { "shiftCount", shiftCount.ToString() }
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending push notification for handover creation");
+            }
+        });
+    }
+
+    private static int GetPlannedEndOfShift(PlanRegistration pr, int n)
+    {
+        return n switch
+        {
+            1 => pr.PlannedEndOfShift1,
+            2 => pr.PlannedEndOfShift2,
+            3 => pr.PlannedEndOfShift3,
+            4 => pr.PlannedEndOfShift4,
+            5 => pr.PlannedEndOfShift5,
+            _ => 0
+        };
+    }
+
+    private static int GetPlannedStartOfShift(PlanRegistration pr, int n)
+    {
+        return n switch
+        {
+            1 => pr.PlannedStartOfShift1,
+            2 => pr.PlannedStartOfShift2,
+            3 => pr.PlannedStartOfShift3,
+            4 => pr.PlannedStartOfShift4,
+            5 => pr.PlannedStartOfShift5,
+            _ => 0
+        };
+    }
+
     public async Task<OperationResult> AcceptAsync(
-        int requestId, 
-        int currentSdkSitId, 
+        int requestId,
+        int currentSdkSitId,
         ContentHandoverDecisionModel model)
     {
         try
         {
+            _logger.LogInformation(
+                "[Handover] Accept request {RequestId}: entry, currentSdkSitId={CurrentSdkSitId}",
+                requestId, currentSdkSitId);
+
             // Load request
             var request = await _dbContext.PlanRegistrationContentHandoverRequests
                 .FirstOrDefaultAsync(r => r.Id == requestId);
 
             if (request == null)
             {
+                _logger.LogWarning("[Handover] Accept request {RequestId}: not found", requestId);
                 return new OperationResult(false, _localizationService.GetString("HandoverRequestNotFound"));
             }
 
             if (request.Status != HandoverRequestStatus.Pending)
             {
+                _logger.LogWarning(
+                    "[Handover] Accept request {RequestId}: rejected — status is {Status}, must be Pending",
+                    requestId, request.Status);
                 return new OperationResult(false, _localizationService.GetString("HandoverRequestMustBePending"));
             }
 
             if (request.ToSdkSitId != currentSdkSitId)
             {
+                _logger.LogWarning(
+                    "[Handover] Accept request {RequestId}: unauthorized — caller sdkSitId={CurrentSdkSitId} != request.ToSdkSitId={ToSdkSitId}",
+                    requestId, currentSdkSitId, request.ToSdkSitId);
                 return new OperationResult(false, _localizationService.GetString("UnauthorizedToAccept"));
             }
 
@@ -174,115 +553,312 @@ public class ContentHandoverService : IContentHandoverService
 
             if (fromPR == null || toPR == null)
             {
+                _logger.LogWarning(
+                    "[Handover] Accept request {RequestId}: PlanRegistrations not found (fromPRId={FromPRId} fromPRFound={FromFound}, toPRId={ToPRId} toPRFound={ToFound})",
+                    requestId, request.FromPlanRegistrationId, fromPR != null, request.ToPlanRegistrationId, toPR != null);
                 return new OperationResult(false, _localizationService.GetString("PlanRegistrationsNotFound"));
             }
 
-            // Validate receiver is empty
-            var targetHasContent = toPR.PlanHoursInSeconds > 0 || !string.IsNullOrWhiteSpace(toPR.PlanText);
-            if (targetHasContent)
+            _logger.LogInformation(
+                "[Handover] Accept request {RequestId}: loaded fromPR {FromPRId} (sdkSitId={FromSdkSitId}) and toPR {ToPRId} (sdkSitId={ToSdkSitId}), shiftIndex={ShiftIndex}",
+                requestId, fromPR.Id, fromPR.SdkSitId, toPR.Id, toPR.SdkSitId, request.ShiftIndex);
+
+            // Resolve AssignedSites once (used by recalc helpers in both paths).
+            var fromAssignedSite = await _dbContext.AssignedSites
+                .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
+            var toAssignedSite = await _dbContext.AssignedSites
+                .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId);
+
+            var nowUtc = DateTime.UtcNow;
+
+            if (request.ShiftIndex.HasValue)
             {
-                return new OperationResult(false,
-                    _localizationService.GetString("TargetPlanRegistrationMustBeEmpty"));
+                // ---------- Partial-shift path ----------
+                var n = request.ShiftIndex.Value;
+
+                // 1. Read sender slot N into local variables.
+                var (start, end, breakLen) = GetShift(fromPR, n);
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId} partial: source PR {FromPRId} slot {N} = {Start}-{End}/{BreakLen}",
+                    requestId, fromPR.Id, n, start, end, breakLen);
+
+                // Empty-source-slot guard: nothing to move means nothing to do —
+                // and the free-slot/overlap checks below would falsely "succeed"
+                // by writing zeros into the receiver.
+                if (start == 0 && end == 0)
+                {
+                    _logger.LogWarning(
+                        "[Handover] Accept request {RequestId}: source PR {FromPRId} slot {N} is empty — nothing to hand over",
+                        requestId, fromPR.Id, n);
+                    return new OperationResult(false,
+                        _localizationService.GetString("HandoverSourceSlotEmpty"));
+                }
+
+                // 2. Pre-flight validation on the receiver.
+                var freeSlot = FindFirstFreeSlot(toPR);
+                if (freeSlot == 0)
+                {
+                    _logger.LogWarning(
+                        "[Handover] Accept request {RequestId} partial: receiver PR {ToPRId} has no free shift slot",
+                        requestId, toPR.Id);
+                    return new OperationResult(false,
+                        _localizationService.GetString("ReceiverHasNoFreeShiftSlot"));
+                }
+
+                if (OverlapsAnyShift(toPR, start, end))
+                {
+                    _logger.LogWarning(
+                        "[Handover] Accept request {RequestId} partial: candidate {Start}-{End} overlaps an existing shift on receiver PR {ToPRId}",
+                        requestId, start, end, toPR.Id);
+                    return new OperationResult(false,
+                        _localizationService.GetString("ShiftOverlapsExistingShift"));
+                }
+
+                // Lift-and-shift: capture the matching segment from sender's PlanText
+                // BEFORE we mutate either side. We apply the new sender PlanText in the
+                // sender block below; we use `liftedSegment` (or a canonical fallback)
+                // when inserting into receiver's PlanText below.
+                var (newSenderPlanText, liftedSegment) =
+                    TryRemoveSegmentByStartEnd(fromPR.PlanText, start, end);
+
+                // 3. Write to receiver.
+                SetShift(toPR, freeSlot, start, end, breakLen);
+                SortShiftsByStart(toPR);
+                PlanRegistrationHelper.RecalculatePlanHoursFromShifts(toPR, toAssignedSite?.UseOneMinuteIntervals ?? false);
+                TryRecalcPauseAutoBreak(toAssignedSite, toPR, requestId, "receiver");
+                StampReceiverAuditFields(toPR, request, nowUtc);
+
+                // Keep PlanText in sync so that downstream PlanText-parsing paths
+                // (UpdatePlanRegistrationsInPeriod with UseGoogleSheetAsDefault) don't
+                // re-derive shift columns from stale text and undo our move.
+                // Use the lifted verbatim segment if we found one; otherwise format
+                // from columns using the canonical break table.
+                var segmentToInsert = liftedSegment
+                    ?? FormatShiftSegmentForFallback(start, end, breakLen);
+                toPR.PlanText = InsertSegmentSorted(toPR.PlanText, segmentToInsert);
+
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: receiver PR {ToPRId} PlanText updated to '{PlanText}'",
+                    requestId, toPR.Id, toPR.PlanText);
+
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: receiver PR {ToPRId} prepared with slot {FreeSlot} = {Start}-{End}/{BreakLen}, PlanHours={PH}, PlanHoursInSeconds={PHIS}",
+                    requestId, toPR.Id, freeSlot, start, end, breakLen, toPR.PlanHours, toPR.PlanHoursInSeconds);
+
+                // 4. PERSIST RECEIVER.
+                try
+                {
+                    await toPR.Update(_dbContext);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "[Handover] Accept request {RequestId}: receiver PR {ToPRId} persistence FAILED before any state change — request remains Pending, retry is safe",
+                        requestId, toPR.Id);
+                    throw;
+                }
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: receiver PR {ToPRId} persisted (Version={Version}, UpdatedAt={UpdatedAt:O})",
+                    requestId, toPR.Id, toPR.Version, toPR.UpdatedAt);
+
+                // 5. Clear source slot.
+                SetShift(fromPR, n, 0, 0, 0);
+                PlanRegistrationHelper.RecalculatePlanHoursFromShifts(fromPR, fromAssignedSite?.UseOneMinuteIntervals ?? false);
+                TryRecalcPauseAutoBreak(fromAssignedSite, fromPR, requestId, "sender");
+                StampSenderAuditFields(fromPR, request, nowUtc);
+
+                // Apply the new sender PlanText computed by TryRemoveSegmentByStartEnd
+                // at the top of the partial branch (lift-and-shift). The lifted
+                // segment was inserted verbatim into the receiver above.
+                fromPR.PlanText = newSenderPlanText;
+
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: sender PR {FromPRId} PlanText updated to '{PlanText}' (lifted segment: '{Lifted}')",
+                    requestId, fromPR.Id, fromPR.PlanText, liftedSegment ?? "(none — fallback)");
+
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: sender PR {FromPRId} slot {N} cleared, PlanHours={PH}, PlanHoursInSeconds={PHIS}",
+                    requestId, fromPR.Id, n, fromPR.PlanHours, fromPR.PlanHoursInSeconds);
+
+                // 6. PERSIST SENDER.
+                try
+                {
+                    await fromPR.Update(_dbContext);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "[Handover] Accept request {RequestId}: receiver PR {ToPRId} persisted but sender PR {FromPRId} persistence FAILED — DB now has duplicated shift content, MANUAL RECONCILIATION required (clear shift slot {N} on PR {FromPRId} OR remove from PR {ToPRId})",
+                        requestId, toPR.Id, fromPR.Id, n, fromPR.Id, toPR.Id);
+                    throw;
+                }
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: sender PR {FromPRId} persisted (Version={Version}, UpdatedAt={UpdatedAt:O})",
+                    requestId, fromPR.Id, fromPR.Version, fromPR.UpdatedAt);
+            }
+            else
+            {
+                // ---------- Full-day path ----------
+                // Validate receiver has no shift content. A target that only carries
+                // a message (e.g. vacation / MessageId) but no shift content is eligible.
+                var targetHasShiftContent =
+                    (toPR.PlannedStartOfShift1 != 0 && toPR.PlannedEndOfShift1 != 0) ||
+                    (toPR.PlannedStartOfShift2 != 0 && toPR.PlannedEndOfShift2 != 0) ||
+                    (toPR.PlannedStartOfShift3 != 0 && toPR.PlannedEndOfShift3 != 0) ||
+                    (toPR.PlannedStartOfShift4 != 0 && toPR.PlannedEndOfShift4 != 0) ||
+                    (toPR.PlannedStartOfShift5 != 0 && toPR.PlannedEndOfShift5 != 0);
+                var targetHasContent = targetHasShiftContent ||
+                                       (!string.IsNullOrWhiteSpace(toPR.PlanText) && toPR.MessageId == null);
+                if (targetHasContent)
+                {
+                    _logger.LogWarning(
+                        "[Handover] Accept request {RequestId} full-day: receiver PR {ToPRId} is not empty (hasShifts={HasShifts}, hasPlanText={HasPlanText})",
+                        requestId, toPR.Id, targetHasShiftContent, !string.IsNullOrWhiteSpace(toPR.PlanText));
+                    return new OperationResult(false,
+                        _localizationService.GetString("TargetPlanRegistrationMustBeEmpty"));
+                }
+
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId} full-day: copying all 5 shift slots + PlanText + PlanHours/PHIS + IsDoubleShift from sender PR {FromPRId} to receiver PR {ToPRId}",
+                    requestId, fromPR.Id, toPR.Id);
+
+                // Copy sender → receiver (all 5 slots + PlanText + PlanHours + IsDoubleShift).
+                toPR.PlanText = fromPR.PlanText;
+                toPR.PlanHours = fromPR.PlanHours;
+                toPR.PlanHoursInSeconds = fromPR.PlanHoursInSeconds;
+                toPR.PlannedStartOfShift1 = fromPR.PlannedStartOfShift1;
+                toPR.PlannedEndOfShift1 = fromPR.PlannedEndOfShift1;
+                toPR.PlannedBreakOfShift1 = fromPR.PlannedBreakOfShift1;
+                toPR.PlannedStartOfShift2 = fromPR.PlannedStartOfShift2;
+                toPR.PlannedEndOfShift2 = fromPR.PlannedEndOfShift2;
+                toPR.PlannedBreakOfShift2 = fromPR.PlannedBreakOfShift2;
+                toPR.PlannedStartOfShift3 = fromPR.PlannedStartOfShift3;
+                toPR.PlannedEndOfShift3 = fromPR.PlannedEndOfShift3;
+                toPR.PlannedBreakOfShift3 = fromPR.PlannedBreakOfShift3;
+                toPR.PlannedStartOfShift4 = fromPR.PlannedStartOfShift4;
+                toPR.PlannedEndOfShift4 = fromPR.PlannedEndOfShift4;
+                toPR.PlannedBreakOfShift4 = fromPR.PlannedBreakOfShift4;
+                toPR.PlannedStartOfShift5 = fromPR.PlannedStartOfShift5;
+                toPR.PlannedEndOfShift5 = fromPR.PlannedEndOfShift5;
+                toPR.PlannedBreakOfShift5 = fromPR.PlannedBreakOfShift5;
+                toPR.IsDoubleShift = fromPR.IsDoubleShift;
+
+                TryRecalcPauseAutoBreak(toAssignedSite, toPR, requestId, "receiver full-day");
+                StampReceiverAuditFields(toPR, request, nowUtc);
+
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId} full-day: receiver PR {ToPRId} prepared, PlanHours={PH}, PlanHoursInSeconds={PHIS}",
+                    requestId, toPR.Id, toPR.PlanHours, toPR.PlanHoursInSeconds);
+
+                // PERSIST RECEIVER.
+                try
+                {
+                    await toPR.Update(_dbContext);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "[Handover] Accept request {RequestId}: receiver PR {ToPRId} persistence FAILED before any state change — request remains Pending, retry is safe",
+                        requestId, toPR.Id);
+                    throw;
+                }
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: receiver PR {ToPRId} persisted (Version={Version}, UpdatedAt={UpdatedAt:O})",
+                    requestId, toPR.Id, toPR.Version, toPR.UpdatedAt);
+
+                // Clear sender (all 5 slots + PlanText + PlanHours + IsDoubleShift).
+                fromPR.PlanText = null;
+                fromPR.PlanHours = 0;
+                fromPR.PlanHoursInSeconds = 0;
+                fromPR.PlannedStartOfShift1 = 0;
+                fromPR.PlannedEndOfShift1 = 0;
+                fromPR.PlannedBreakOfShift1 = 0;
+                fromPR.PlannedStartOfShift2 = 0;
+                fromPR.PlannedEndOfShift2 = 0;
+                fromPR.PlannedBreakOfShift2 = 0;
+                fromPR.PlannedStartOfShift3 = 0;
+                fromPR.PlannedEndOfShift3 = 0;
+                fromPR.PlannedBreakOfShift3 = 0;
+                fromPR.PlannedStartOfShift4 = 0;
+                fromPR.PlannedEndOfShift4 = 0;
+                fromPR.PlannedBreakOfShift4 = 0;
+                fromPR.PlannedStartOfShift5 = 0;
+                fromPR.PlannedEndOfShift5 = 0;
+                fromPR.PlannedBreakOfShift5 = 0;
+                fromPR.IsDoubleShift = false;
+
+                TryRecalcPauseAutoBreak(fromAssignedSite, fromPR, requestId, "sender full-day");
+                StampSenderAuditFields(fromPR, request, nowUtc);
+
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId} full-day: sender PR {FromPRId} cleared, PlanHours={PH}, PlanHoursInSeconds={PHIS}",
+                    requestId, fromPR.Id, fromPR.PlanHours, fromPR.PlanHoursInSeconds);
+
+                // PERSIST SENDER.
+                try
+                {
+                    await fromPR.Update(_dbContext);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "[Handover] Accept request {RequestId}: receiver PR {ToPRId} persisted but sender PR {FromPRId} persistence FAILED — DB now has duplicated shift content (all 5 slots), MANUAL RECONCILIATION required (clear all 5 slots on PR {FromPRId} OR remove from PR {ToPRId})",
+                        requestId, toPR.Id, fromPR.Id, fromPR.Id, toPR.Id);
+                    throw;
+                }
+                _logger.LogInformation(
+                    "[Handover] Accept request {RequestId}: sender PR {FromPRId} persisted (Version={Version}, UpdatedAt={UpdatedAt:O})",
+                    requestId, fromPR.Id, fromPR.Version, fromPR.UpdatedAt);
             }
 
-            // Apply changes without explicit transaction
-            // NOTE: Update() methods internally handle persistence, 
-            // and using an explicit transaction was causing issues in the test environment
+            // 7. Mark request as Accepted.
+            request.Status = HandoverRequestStatus.Accepted;
+            request.RespondedAtUtc = nowUtc;
+            request.DecisionComment = model.DecisionComment;
+            request.UpdatedByUserId = _userService.UserId;
             try
             {
-                // Move content from source to target
-                MoveContent(fromPR, toPR);
-
-                // Set audit fields if they exist
-                try
-                {
-                    var prType = typeof(PlanRegistration);
-                    var contentHandoverFromProp = prType.GetProperty("ContentHandoverFromSdkSitId");
-                    if (contentHandoverFromProp != null && contentHandoverFromProp.CanWrite)
-                    {
-                        contentHandoverFromProp.SetValue(toPR, request.FromSdkSitId);
-                    }
-
-                    var contentHandoverToProp = prType.GetProperty("ContentHandoverToSdkSitId");
-                    if (contentHandoverToProp != null && contentHandoverToProp.CanWrite)
-                    {
-                        contentHandoverToProp.SetValue(fromPR, request.ToSdkSitId);
-                    }
-
-                    var contentHandoverRequestIdPropFrom = prType.GetProperty("ContentHandoverRequestId");
-                    if (contentHandoverRequestIdPropFrom != null && contentHandoverRequestIdPropFrom.CanWrite)
-                    {
-                        contentHandoverRequestIdPropFrom.SetValue(fromPR, request.Id);
-                        contentHandoverRequestIdPropFrom.SetValue(toPR, request.Id);
-                    }
-
-                    var contentHandedOverAtProp = prType.GetProperty("ContentHandedOverAtUtc");
-                    if (contentHandedOverAtProp != null && contentHandedOverAtProp.CanWrite)
-                    {
-                        contentHandedOverAtProp.SetValue(fromPR, DateTime.UtcNow);
-                        contentHandedOverAtProp.SetValue(toPR, DateTime.UtcNow);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not set audit fields");
-                    // Continue - audit field failure should not prevent handover
-                }
-
-                fromPR.UpdatedByUserId = _userService.UserId;
-                toPR.UpdatedByUserId = _userService.UserId;
-                await fromPR.Update(_dbContext);
-                await toPR.Update(_dbContext);
-
-                // Update request status
-                request.Status = HandoverRequestStatus.Accepted;
-                request.RespondedAtUtc = DateTime.UtcNow;
-                request.DecisionComment = model.DecisionComment;
-                request.UpdatedByUserId = _userService.UserId;
                 await request.Update(_dbContext);
-
-                // Recalculate both PlanRegistrations - only if AssignedSite exists
-                try
-                {
-                    var fromAssignedSite = await _dbContext.AssignedSites
-                        .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
-                    if (fromAssignedSite != null)
-                    {
-                        PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(fromAssignedSite, fromPR);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not recalculate source PlanRegistration {Id} after handover", fromPR.Id);
-                    // Continue - recalculation failure should not prevent handover
-                }
-
-                try
-                {
-                    var toAssignedSite = await _dbContext.AssignedSites
-                        .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId);
-                    if (toAssignedSite != null)
-                    {
-                        PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(toAssignedSite, toPR);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not recalculate target PlanRegistration {Id} after handover", toPR.Id);
-                    // Continue - recalculation failure should not prevent handover
-                }
-
-                return new OperationResult(true);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error accepting handover request {RequestId}", requestId);
+                _logger.LogError(ex,
+                    "[Handover] Accept request {RequestId}: both PRs persisted but request status update FAILED — request still Pending despite content moved, MANUAL RECONCILIATION required (set request {RequestId} Status=Accepted to prevent double-Accept)",
+                    requestId, requestId);
                 throw;
             }
+            _logger.LogInformation(
+                "[Handover] Accept request {RequestId}: status -> Accepted, RespondedAtUtc={RespondedAt:O}",
+                requestId, request.RespondedAtUtc);
+
+            // 8. Fire-and-forget push to sender.
+            var fromSdkSitId = request.FromSdkSitId;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _pushNotificationService.SendToSiteAsync(
+                        fromSdkSitId,
+                        "Handover accepted",
+                        "Your content handover request has been accepted",
+                        new Dictionary<string, string>
+                        {
+                            { "type", "handover_decided" },
+                            { "action", "accepted" },
+                            { "handoverRequestId", requestId.ToString() }
+                        });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for handover acceptance");
+                }
+            });
+
+            return new OperationResult(true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error accepting handover request {RequestId}", requestId);
+            _logger.LogError(ex, "[Handover] Accept request {RequestId}: unexpected error", requestId);
             return new OperationResult(false, _localizationService.GetString("ErrorAcceptingHandoverRequest"));
         }
     }
@@ -317,6 +893,29 @@ public class ContentHandoverService : IContentHandoverService
             request.DecisionComment = model.DecisionComment;
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
+
+            // Fire-and-forget push to sender
+            var fromSdkSitId = request.FromSdkSitId;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _pushNotificationService.SendToSiteAsync(
+                        fromSdkSitId,
+                        "Handover rejected",
+                        "Your content handover request has been rejected",
+                        new Dictionary<string, string>
+                        {
+                            { "type", "handover_decided" },
+                            { "action", "rejected" },
+                            { "handoverRequestId", requestId.ToString() }
+                        });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending push notification for handover rejection");
+                }
+            });
 
             return new OperationResult(true);
         }
@@ -363,24 +962,118 @@ public class ContentHandoverService : IContentHandoverService
         }
     }
 
-    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync(int toSdkSitId)
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync()
     {
         try
         {
+            // Resolve the caller's SDK site from the JWT — client-supplied
+            // ids are intentionally ignored to prevent inbox-peeking.
+            var toSdkSitId = await ResolveCallerSdkSiteIdAsync();
+            if (toSdkSitId == 0)
+            {
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(true, new List<ContentHandoverRequestModel>());
+            }
+
             var requests = await _dbContext.PlanRegistrationContentHandoverRequests
                 .Where(r => r.ToSdkSitId == toSdkSitId && r.Status == HandoverRequestStatus.Pending)
                 .OrderByDescending(r => r.RequestedAtUtc)
                 .ToListAsync();
 
-            var models = requests.Select(MapToModel).ToList();
+            // Resolve worker names from SDK sites. Wrap in a defensive
+            // try/catch so a transient SDK hiccup degrades to "names blank"
+            // (UI falls back to id) rather than failing the whole inbox load.
+            var siteNameLookup = await TryResolveSiteNameLookupAsync(requests);
+
+            var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
+            var planRegistrations = await _dbContext.PlanRegistrations
+                .Where(p => prIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
+            var models = requests.Select(r =>
+            {
+                planRegistrations.TryGetValue(r.FromPlanRegistrationId, out var fromPR);
+                var model = MapToModel(r, fromPR);
+                model.FromWorkerName = siteNameLookup.GetValueOrDefault(r.FromSdkSitId);
+                model.ToWorkerName = siteNameLookup.GetValueOrDefault(r.ToSdkSitId);
+                return model;
+            }).ToList();
             return new OperationDataResult<List<ContentHandoverRequestModel>>(true, models);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting handover inbox for worker {WorkerId}", toSdkSitId);
+            _logger.LogError(ex, "Error getting handover inbox for authenticated caller");
             return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                 _localizationService.GetString("ErrorGettingHandoverRequests"));
         }
+    }
+
+    /// <summary>
+    /// Builds an SDK MicrotingUid -> SiteName lookup for the union of
+    /// FromSdkSitId/ToSdkSitId across the supplied requests. Returns an
+    /// empty dictionary on any failure (transient SDK error, missing core,
+    /// etc.) so the caller can degrade gracefully — worker names are a
+    /// presentation enrichment, not load-bearing data, and the personal
+    /// inbox/sent endpoints are hot paths that must not fail the whole
+    /// listing on a name-lookup hiccup.
+    /// </summary>
+    private async Task<Dictionary<int, string>> TryResolveSiteNameLookupAsync(
+        IReadOnlyList<PlanRegistrationContentHandoverRequest> requests)
+    {
+        var allSiteIds = requests
+            .SelectMany(r => new[] { r.FromSdkSitId, r.ToSdkSitId })
+            .Distinct()
+            .ToList();
+
+        if (allSiteIds.Count == 0)
+        {
+            return new Dictionary<int, string>();
+        }
+
+        try
+        {
+            var sdkCore = await _core.GetCore();
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+            return await sdkDbContext.Sites
+                .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
+                .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
+                .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to resolve SDK site names for handover listing; falling back to empty lookup");
+            return new Dictionary<int, string>();
+        }
+    }
+
+    /// <summary>
+    /// Resolves the authenticated caller's SDK site id (MicrotingUid) from
+    /// the JWT. Returns 0 if the caller has no worker/site record. Callers
+    /// should treat 0 as "no inbox visibility".
+    /// </summary>
+    private async Task<int> ResolveCallerSdkSiteIdAsync()
+    {
+        var currentUserAsync = await _userService.GetCurrentUserAsync();
+        if (currentUserAsync == null)
+        {
+            return 0;
+        }
+        var currentUser = _baseDbContext.Users.Single(x => x.Id == currentUserAsync.Id);
+
+        var sdkCore = await _core.GetCore();
+        var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+
+        var worker = await sdkDbContext.Workers
+            .Include(x => x.SiteWorkers)
+            .ThenInclude(x => x.Site)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
+
+        if (worker == null || worker.SiteWorkers.Count == 0)
+        {
+            return 0;
+        }
+        return worker.SiteWorkers.First().Site.MicrotingUid ?? 0;
     }
 
     public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync(int fromSdkSitId)
@@ -392,7 +1085,25 @@ public class ContentHandoverService : IContentHandoverService
                 .OrderByDescending(r => r.RequestedAtUtc)
                 .ToListAsync();
 
-            var models = requests.Select(MapToModel).ToList();
+            // Resolve worker names from SDK sites. Wrap in a defensive
+            // try/catch so a transient SDK hiccup degrades to "names blank"
+            // (UI falls back to id) rather than failing the whole sent-list
+            // load.
+            var siteNameLookup = await TryResolveSiteNameLookupAsync(requests);
+
+            var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
+            var planRegistrations = await _dbContext.PlanRegistrations
+                .Where(p => prIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
+            var models = requests.Select(r =>
+            {
+                planRegistrations.TryGetValue(r.FromPlanRegistrationId, out var fromPR);
+                var model = MapToModel(r, fromPR);
+                model.FromWorkerName = siteNameLookup.GetValueOrDefault(r.FromSdkSitId);
+                model.ToWorkerName = siteNameLookup.GetValueOrDefault(r.ToSdkSitId);
+                return model;
+            }).ToList();
             return new OperationDataResult<List<ContentHandoverRequestModel>>(true, models);
         }
         catch (Exception ex)
@@ -403,117 +1114,478 @@ public class ContentHandoverService : IContentHandoverService
         }
     }
 
-    private void MoveContent(PlanRegistration source, PlanRegistration target)
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetAllAsync(
+        string? status, string? fromDate, string? toDate, int? sdkSiteId,
+        int page = 0, int pageSize = 100)
     {
+        try
+        {
+            var query = _dbContext.PlanRegistrationContentHandoverRequests
+                .AsQueryable();
+
+            // Filter by status
+            if (!string.IsNullOrWhiteSpace(status) &&
+                Enum.TryParse<HandoverRequestStatus>(status, ignoreCase: true, out var parsedStatus))
+            {
+                query = query.Where(r => r.Status == parsedStatus);
+            }
+
+            // Filter by date range (request Date field)
+            if (!string.IsNullOrWhiteSpace(fromDate) && DateTime.TryParse(fromDate, out var from))
+            {
+                var fromUtc = from.Date;
+                query = query.Where(r => r.Date >= fromUtc);
+            }
+
+            if (!string.IsNullOrWhiteSpace(toDate) && DateTime.TryParse(toDate, out var to))
+            {
+                var toUtc = to.Date;
+                query = query.Where(r => r.Date <= toUtc);
+            }
+
+            // Filter by sdkSiteId — matches EITHER FromSdkSitId OR ToSdkSitId
+            if (sdkSiteId.HasValue)
+            {
+                var siteId = sdkSiteId.Value;
+                query = query.Where(r => r.FromSdkSitId == siteId || r.ToSdkSitId == siteId);
+            }
+
+            var requests = await query
+                .OrderByDescending(r => r.RequestedAtUtc)
+                .Skip(page * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Resolve worker names from SDK sites
+            var allSiteIds = requests
+                .SelectMany(r => new[] { r.FromSdkSitId, r.ToSdkSitId })
+                .Distinct()
+                .ToList();
+
+            var siteNameLookup = new Dictionary<int, string>();
+            if (allSiteIds.Count > 0)
+            {
+                var sdkCore = await _core.GetCore();
+                var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+                siteNameLookup = await sdkDbContext.Sites
+                    .Where(s => s.MicrotingUid.HasValue && allSiteIds.Contains(s.MicrotingUid.Value))
+                    .Select(s => new { MicrotingUid = s.MicrotingUid!.Value, s.Name })
+                    .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
+            }
+
+            var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
+            var planRegistrations = await _dbContext.PlanRegistrations
+                .Where(p => prIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
+            var models = requests.Select(r =>
+            {
+                planRegistrations.TryGetValue(r.FromPlanRegistrationId, out var fromPR);
+                var model = MapToModel(r, fromPR);
+                model.FromWorkerName = siteNameLookup.GetValueOrDefault(r.FromSdkSitId);
+                model.ToWorkerName = siteNameLookup.GetValueOrDefault(r.ToSdkSitId);
+                return model;
+            }).ToList();
+
+            return new OperationDataResult<List<ContentHandoverRequestModel>>(true, models);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all handover requests");
+            return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
+                _localizationService.GetString("ErrorGettingHandoverRequests"));
+        }
+    }
+
+    private void MoveContent(PlanRegistration source, PlanRegistration target, int? shiftIndex = null)
+    {
+        if (shiftIndex.HasValue)
+        {
+            MoveShift(source, target, shiftIndex.Value);
+            return;
+        }
+
         // Move planning fields from source to target
         target.PlanText = source.PlanText;
         target.PlanHours = source.PlanHours;
         target.PlanHoursInSeconds = source.PlanHoursInSeconds;
-        
-        // Try to move planned shift fields if they exist
-        try
-        {
-            var prType = source.GetType();
-            
-            for (int i = 1; i <= 5; i++)
-            {
-                var startProp = prType.GetProperty($"PlannedStartOfShift{i}");
-                if (startProp != null && startProp.CanRead && startProp.CanWrite)
-                {
-                    var value = startProp.GetValue(source);
-                    startProp.SetValue(target, value);
-                }
-                
-                var endProp = prType.GetProperty($"PlannedEndOfShift{i}");
-                if (endProp != null && endProp.CanRead && endProp.CanWrite)
-                {
-                    var value = endProp.GetValue(source);
-                    endProp.SetValue(target, value);
-                }
-                
-                var breakProp = prType.GetProperty($"PlannedBreakOfShift{i}");
-                if (breakProp != null && breakProp.CanRead && breakProp.CanWrite)
-                {
-                    var value = breakProp.GetValue(source);
-                    breakProp.SetValue(target, value);
-                }
-            }
-            
-            var isDoubleShiftProp = prType.GetProperty("IsDoubleShift");
-            if (isDoubleShiftProp != null && isDoubleShiftProp.CanRead && isDoubleShiftProp.CanWrite)
-            {
-                var value = isDoubleShiftProp.GetValue(source);
-                isDoubleShiftProp.SetValue(target, value);
-            }
-        }
-        catch
-        {
-            // Ignore if properties don't exist
-        }
+
+        // Move all five planned shift slots from source to target
+        target.PlannedStartOfShift1 = source.PlannedStartOfShift1;
+        target.PlannedEndOfShift1 = source.PlannedEndOfShift1;
+        target.PlannedBreakOfShift1 = source.PlannedBreakOfShift1;
+        target.PlannedStartOfShift2 = source.PlannedStartOfShift2;
+        target.PlannedEndOfShift2 = source.PlannedEndOfShift2;
+        target.PlannedBreakOfShift2 = source.PlannedBreakOfShift2;
+        target.PlannedStartOfShift3 = source.PlannedStartOfShift3;
+        target.PlannedEndOfShift3 = source.PlannedEndOfShift3;
+        target.PlannedBreakOfShift3 = source.PlannedBreakOfShift3;
+        target.PlannedStartOfShift4 = source.PlannedStartOfShift4;
+        target.PlannedEndOfShift4 = source.PlannedEndOfShift4;
+        target.PlannedBreakOfShift4 = source.PlannedBreakOfShift4;
+        target.PlannedStartOfShift5 = source.PlannedStartOfShift5;
+        target.PlannedEndOfShift5 = source.PlannedEndOfShift5;
+        target.PlannedBreakOfShift5 = source.PlannedBreakOfShift5;
+        target.IsDoubleShift = source.IsDoubleShift;
 
         // Clear the moved fields on source
         source.PlanText = null;
         source.PlanHours = 0;
         source.PlanHoursInSeconds = 0;
-        
-        // Try to clear planned shift fields if they exist
-        try
+
+        source.PlannedStartOfShift1 = 0;
+        source.PlannedEndOfShift1 = 0;
+        source.PlannedBreakOfShift1 = 0;
+        source.PlannedStartOfShift2 = 0;
+        source.PlannedEndOfShift2 = 0;
+        source.PlannedBreakOfShift2 = 0;
+        source.PlannedStartOfShift3 = 0;
+        source.PlannedEndOfShift3 = 0;
+        source.PlannedBreakOfShift3 = 0;
+        source.PlannedStartOfShift4 = 0;
+        source.PlannedEndOfShift4 = 0;
+        source.PlannedBreakOfShift4 = 0;
+        source.PlannedStartOfShift5 = 0;
+        source.PlannedEndOfShift5 = 0;
+        source.PlannedBreakOfShift5 = 0;
+        source.IsDoubleShift = false;
+    }
+
+    private static void MoveShift(PlanRegistration source, PlanRegistration target, int n)
+    {
+        var (start, end, breakLen) = GetShift(source, n);
+        var freeSlot = FindFirstFreeSlot(target);
+        if (freeSlot == 0)
         {
-            var prType = source.GetType();
-            var plannedStartOfShift1Prop = prType.GetProperty("PlannedStartOfShift1");
-            if (plannedStartOfShift1Prop != null && plannedStartOfShift1Prop.CanWrite)
-            {
-                plannedStartOfShift1Prop.SetValue(source, null);
-            }
-            
-            var plannedEndOfShift1Prop = prType.GetProperty("PlannedEndOfShift1");
-            if (plannedEndOfShift1Prop != null && plannedEndOfShift1Prop.CanWrite)
-            {
-                plannedEndOfShift1Prop.SetValue(source, null);
-            }
-            
-            var plannedBreakOfShift1Prop = prType.GetProperty("PlannedBreakOfShift1");
-            if (plannedBreakOfShift1Prop != null && plannedBreakOfShift1Prop.CanWrite)
-            {
-                plannedBreakOfShift1Prop.SetValue(source, null);
-            }
-            
-            // Repeat for shifts 2-5
-            for (int i = 2; i <= 5; i++)
-            {
-                var startProp = prType.GetProperty($"PlannedStartOfShift{i}");
-                if (startProp != null && startProp.CanWrite)
-                {
-                    startProp.SetValue(source, null);
-                }
-                
-                var endProp = prType.GetProperty($"PlannedEndOfShift{i}");
-                if (endProp != null && endProp.CanWrite)
-                {
-                    endProp.SetValue(source, null);
-                }
-                
-                var breakProp = prType.GetProperty($"PlannedBreakOfShift{i}");
-                if (breakProp != null && breakProp.CanWrite)
-                {
-                    breakProp.SetValue(source, null);
-                }
-            }
-            
-            var isDoubleShiftProp = prType.GetProperty("IsDoubleShift");
-            if (isDoubleShiftProp != null && isDoubleShiftProp.CanWrite)
-            {
-                isDoubleShiftProp.SetValue(source, false);
-            }
+            // Caller (AcceptAsync partial guard) is expected to have validated
+            // free-slot availability. Defensive no-op so we never silently
+            // overwrite an existing shift on the receiver.
+            return;
         }
-        catch
+        SetShift(target, freeSlot, start, end, breakLen);
+        SetShift(source, n, 0, 0, 0);
+        SortShiftsByStart(target);
+
+        // Do NOT touch PlanText on partial. PlanHours/PlanHoursInSeconds/IsDoubleShift
+        // will be recomputed by PlanRegistrationHelper on BOTH rows in the caller.
+    }
+
+    // Returns the (start, end, breakLen) tuple for slot n on the row, or (0, 0, 0) if empty.
+    private static (int start, int end, int breakLen) GetShift(PlanRegistration row, int n)
+    {
+        return n switch
         {
-            // Ignore if properties don't exist or can't be set
+            1 => (row.PlannedStartOfShift1, row.PlannedEndOfShift1, row.PlannedBreakOfShift1),
+            2 => (row.PlannedStartOfShift2, row.PlannedEndOfShift2, row.PlannedBreakOfShift2),
+            3 => (row.PlannedStartOfShift3, row.PlannedEndOfShift3, row.PlannedBreakOfShift3),
+            4 => (row.PlannedStartOfShift4, row.PlannedEndOfShift4, row.PlannedBreakOfShift4),
+            5 => (row.PlannedStartOfShift5, row.PlannedEndOfShift5, row.PlannedBreakOfShift5),
+            _ => (0, 0, 0),
+        };
+    }
+
+    private static void SetShift(PlanRegistration row, int n, int start, int end, int breakLen)
+    {
+        switch (n)
+        {
+            case 1: row.PlannedStartOfShift1 = start; row.PlannedEndOfShift1 = end; row.PlannedBreakOfShift1 = breakLen; break;
+            case 2: row.PlannedStartOfShift2 = start; row.PlannedEndOfShift2 = end; row.PlannedBreakOfShift2 = breakLen; break;
+            case 3: row.PlannedStartOfShift3 = start; row.PlannedEndOfShift3 = end; row.PlannedBreakOfShift3 = breakLen; break;
+            case 4: row.PlannedStartOfShift4 = start; row.PlannedEndOfShift4 = end; row.PlannedBreakOfShift4 = breakLen; break;
+            case 5: row.PlannedStartOfShift5 = start; row.PlannedEndOfShift5 = end; row.PlannedBreakOfShift5 = breakLen; break;
         }
     }
 
-    private ContentHandoverRequestModel MapToModel(PlanRegistrationContentHandoverRequest request)
+    // True when slot n is empty (both Start and End == 0).
+    private static bool IsShiftEmpty(PlanRegistration row, int n)
     {
+        var s = GetShift(row, n);
+        return s.start == 0 && s.end == 0;
+    }
+
+    private static int FindFirstFreeSlot(PlanRegistration row)
+    {
+        for (var i = 1; i <= 5; i++)
+        {
+            if (IsShiftEmpty(row, i)) return i;
+        }
+        return 0;
+    }
+
+    // Time-window overlap test on minute-since-midnight ints. Adjacent (a.End == b.Start) is NOT overlap.
+    private static bool ShiftsOverlap(int aStart, int aEnd, int bStart, int bEnd)
+    {
+        return aStart < bEnd && bStart < aEnd;
+    }
+
+    // Returns true if the candidate (start..end) overlaps any non-empty shift on row,
+    // optionally ignoring slot `ignoreSlot` (used when checking after a clear on source).
+    private static bool OverlapsAnyShift(PlanRegistration row, int candidateStart, int candidateEnd, int ignoreSlot = 0)
+    {
+        if (candidateStart == 0 && candidateEnd == 0) return false;
+        for (var i = 1; i <= 5; i++)
+        {
+            if (i == ignoreSlot) continue;
+            var s = GetShift(row, i);
+            if (s.start == 0 && s.end == 0) continue;
+            if (ShiftsOverlap(candidateStart, candidateEnd, s.start, s.end)) return true;
+        }
+        return false;
+    }
+
+    // Stamps the receiver-side audit fields after a handover slot/full-day move.
+    // Receiver and sender share the same nowUtc so the pair times match.
+    private void StampReceiverAuditFields(PlanRegistration receiver,
+        PlanRegistrationContentHandoverRequest request,
+        DateTime nowUtc)
+    {
+        receiver.ContentHandoverFromSdkSitId = request.FromSdkSitId;
+        receiver.ContentHandoverRequestId    = request.Id;
+        receiver.ContentHandedOverAtUtc      = nowUtc;
+        receiver.UpdatedByUserId             = _userService.UserId;
+    }
+
+    // Stamps the sender-side audit fields after a handover slot/full-day move.
+    private void StampSenderAuditFields(PlanRegistration sender,
+        PlanRegistrationContentHandoverRequest request,
+        DateTime nowUtc)
+    {
+        sender.ContentHandoverToSdkSitId = request.ToSdkSitId;
+        sender.ContentHandoverRequestId  = request.Id;
+        sender.ContentHandedOverAtUtc    = nowUtc;
+        sender.UpdatedByUserId           = _userService.UserId;
+    }
+
+    // Best-effort pause/auto-break recalculation. The recalc is a presentation
+    // convenience — failure must not abort the handover, so we log and move on.
+    private void TryRecalcPauseAutoBreak(AssignedSite? site, PlanRegistration pr,
+        int requestId, string contextLabel)
+    {
+        if (site == null) return;
+        try
+        {
+            PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(site, pr);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "[Handover] Accept request {RequestId}: pause/auto-break recalc failed on {ContextLabel} PR {Id} (continuing)",
+                requestId, contextLabel, pr.Id);
+        }
+    }
+
+    // Sorts all 5 slots on row by start time, putting empty slots last.
+    private static void SortShiftsByStart(PlanRegistration row)
+    {
+        var shifts = new List<(int start, int end, int breakLen)>();
+        for (var i = 1; i <= 5; i++)
+        {
+            var s = GetShift(row, i);
+            if (s.start != 0 || s.end != 0) shifts.Add(s);
+        }
+        shifts.Sort((a, b) => a.start.CompareTo(b.start));
+        for (var i = 1; i <= 5; i++)
+        {
+            if (i - 1 < shifts.Count)
+            {
+                SetShift(row, i, shifts[i - 1].start, shifts[i - 1].end, shifts[i - 1].breakLen);
+            }
+            else
+            {
+                SetShift(row, i, 0, 0, 0);
+            }
+        }
+    }
+
+    // Formats a (start, end, breakLen) shift triple into a PlanText segment using the
+    // canonical break-hour string that PlanRegistrationHelper.BreakTimeCalculator
+    // recognizes. Used ONLY when we couldn't find a matching segment in the sender's
+    // PlanText to lift verbatim. For breaks not on the canonical 5-minute grid, the
+    // fallback emits decimal hours but BreakTimeCalculator's "_ => 0" will drop them
+    // on the next parse — same behavior the existing system already has for off-grid
+    // breaks.
+    private static string FormatShiftSegmentForFallback(int startMin, int endMin, int breakLen)
+    {
+        var startH = startMin / 60;
+        var startM = startMin % 60;
+        var endH = endMin / 60;
+        var endM = endMin % 60;
+        return $"{startH:D2}:{startM:D2}-{endH:D2}:{endM:D2}/{FormatBreakAsCanonicalHours(breakLen)}";
+    }
+
+    // Inverse of PlanRegistrationHelper.BreakTimeCalculator. Returns the canonical
+    // PlanText break-hour string for a given break-minute count, or a best-effort
+    // decimal-hours string for non-grid values (which BreakTimeCalculator can't
+    // represent — same behavior as the existing parser for non-grid input).
+    private static string FormatBreakAsCanonicalHours(int breakMin)
+    {
+        return breakMin switch
+        {
+            0 => "0",
+            5 => "0.1",
+            10 => "0.15",
+            15 => "0.25",
+            20 => "0.3",
+            25 => "0.4",
+            30 => "0.5",
+            35 => "0.6",
+            40 => "0.7",
+            45 => "0.75",
+            50 => "0.8",
+            55 => "0.9",
+            60 => "1",
+            75 => "1.25",
+            90 => "1.5",
+            105 => "1.75",
+            120 => "2",
+            135 => "2.25",
+            150 => "2.5",
+            165 => "2.75",
+            180 => "3",
+            195 => "3.25",
+            210 => "3.5",
+            225 => "3.75",
+            240 => "4",
+            255 => "4.25",
+            270 => "4.5",
+            285 => "4.75",
+            _ => (breakMin / 60.0).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+        };
+    }
+
+    // Removes the first PlanText segment whose parsed start/end minutes equal
+    // (targetStart, targetEnd). Match is on start+end only — break is whatever
+    // the sender's text says, and we trust PlanText as the source of truth.
+    // Returns (newPlanText, removedSegment). If no match was found, removedSegment is null
+    // and newPlanText is the original (unchanged). If the result is empty, newPlanText is null.
+    private static (string? newPlanText, string? removedSegment) TryRemoveSegmentByStartEnd(
+        string? planText, int targetStart, int targetEnd)
+    {
+        if (string.IsNullOrWhiteSpace(planText)) return (planText, null);
+
+        var segments = planText.Split(';', System.StringSplitOptions.None);
+        var kept = new System.Collections.Generic.List<string>(segments.Length);
+        string? removed = null;
+
+        foreach (var seg in segments)
+        {
+            if (removed == null
+                && TryParseSegment(seg, out var s, out var e, out _)
+                && s == targetStart && e == targetEnd)
+            {
+                removed = seg;       // capture verbatim
+                continue;            // skip — this is the moved shift
+            }
+            kept.Add(seg);
+        }
+
+        if (kept.Count == 0) return (null, removed);
+        return (string.Join(";", kept), removed);
+    }
+
+    // Inserts `newSegment` into `planText` at the position that keeps segments
+    // sorted by start time. If `planText` is empty, returns just `newSegment`.
+    // Segments that fail to parse keep their original relative order at the end.
+    private static string InsertSegmentSorted(string? planText, string newSegment)
+    {
+        if (string.IsNullOrWhiteSpace(planText)) return newSegment;
+
+        if (!TryParseSegment(newSegment, out var newStart, out _, out _))
+        {
+            // Couldn't parse our own emitted segment — fall back to append.
+            return planText + ";" + newSegment;
+        }
+
+        var existing = planText.Split(';', System.StringSplitOptions.None);
+        var result = new System.Collections.Generic.List<string>(existing.Length + 1);
+        var inserted = false;
+
+        foreach (var seg in existing)
+        {
+            if (!inserted
+                && TryParseSegment(seg, out var s, out _, out _)
+                && newStart < s)
+            {
+                result.Add(newSegment);
+                inserted = true;
+            }
+            result.Add(seg);
+        }
+        if (!inserted) result.Add(newSegment);
+        return string.Join(";", result);
+    }
+
+    // Parses one PlanText segment ("h-h/b" or "h.m-h.m/b" or "hh:mm-hh:mm/b" etc.)
+    // into minutes-of-day. Returns false on parse failure (segment is non-shift text).
+    // Mirrors the regex + split logic at PlanRegistrationHelper.cs:600-625.
+    private static bool TryParseSegment(string segment, out int startMin, out int endMin, out int breakMin)
+    {
+        startMin = 0; endMin = 0; breakMin = 0;
+        if (string.IsNullOrWhiteSpace(segment)) return false;
+
+        var normalized = segment.Replace(",", ".").Trim();
+        var withBreakRegex = new System.Text.RegularExpressions.Regex(@"^(.*)-(.*)\/(.*)$");
+        var noBreakRegex = new System.Text.RegularExpressions.Regex(@"^(.*)-(.*)$");
+
+        string firstPart, secondPart, breakPart;
+        var m = withBreakRegex.Match(normalized);
+        if (m.Success)
+        {
+            firstPart = m.Groups[1].Value;
+            secondPart = m.Groups[2].Value;
+            breakPart = m.Groups[3].Value.Trim();
+        }
+        else
+        {
+            m = noBreakRegex.Match(normalized);
+            if (!m.Success) return false;
+            firstPart = m.Groups[1].Value;
+            secondPart = m.Groups[2].Value;
+            breakPart = "0";
+        }
+
+        if (!TryParseHm(firstPart, out startMin)) return false;
+        if (!TryParseHm(secondPart, out endMin)) return false;
+
+        // Break is decimal hours in PlanText (1 = 60 min, 0.5 = 30 min, 0 = no break).
+        // Parse as double then multiply by 60 to compare against PlannedBreakOfShiftN
+        // columns, which are stored in minutes.
+        if (!double.TryParse(breakPart, System.Globalization.NumberStyles.Float,
+                             System.Globalization.CultureInfo.InvariantCulture,
+                             out var breakHours))
+        {
+            return false;
+        }
+        breakMin = (int)System.Math.Round(breakHours * 60);
+        return true;
+    }
+
+    private static bool TryParseHm(string token, out int minutes)
+    {
+        minutes = 0;
+        var parts = token.Split(new[] { '.', ':', '½' },
+                                System.StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return false;
+        if (!int.TryParse(parts[0], out var h)) return false;
+        var m = 0;
+        if (parts.Length > 1 && !int.TryParse(parts[1], out m)) return false;
+        minutes = h * 60 + m;
+        return true;
+    }
+
+    private ContentHandoverRequestModel MapToModel(
+        PlanRegistrationContentHandoverRequest request,
+        PlanRegistration? fromPlanRegistration = null)
+    {
+        int? shiftStartTime = null;
+        int? shiftEndTime = null;
+
+        if (fromPlanRegistration != null && request.ShiftIndex is > 0)
+        {
+            shiftStartTime = GetPlannedStartOfShift(fromPlanRegistration, request.ShiftIndex.Value);
+            shiftEndTime = GetPlannedEndOfShift(fromPlanRegistration, request.ShiftIndex.Value);
+        }
+
         return new ContentHandoverRequestModel
         {
             Id = request.Id,
@@ -526,7 +1598,10 @@ public class ContentHandoverService : IContentHandoverService
             RequestedAtUtc = request.RequestedAtUtc,
             RespondedAtUtc = request.RespondedAtUtc,
             RequestComment = null, // Entity doesn't have RequestComment
-            DecisionComment = request.DecisionComment
+            DecisionComment = request.DecisionComment,
+            ShiftIndex = request.ShiftIndex,
+            ShiftStartTime = shiftStartTime,
+            ShiftEndTime = shiftEndTime
         };
     }
 }

@@ -19,6 +19,7 @@ import {
 } from './components';
 import {TimePlanningPnPayRuleSetsService} from '../../services';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
+import {MtxSelectModule} from '@ng-matero/extensions/select';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
@@ -40,6 +41,7 @@ import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
     ReactiveFormsModule,
     PayRuleSetsRouting,
     MtxGridModule,
+    MtxSelectModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,

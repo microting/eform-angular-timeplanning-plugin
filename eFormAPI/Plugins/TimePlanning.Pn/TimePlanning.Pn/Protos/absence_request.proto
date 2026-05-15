@@ -3,6 +3,7 @@ syntax = "proto3";
 package timeplanning;
 
 import "common.proto";
+import "google/protobuf/wrappers.proto";
 
 option csharp_namespace = "TimePlanning.Pn.Grpc";
 
@@ -45,11 +46,16 @@ message AbsenceRequestModel {
   string date_to = 4;
   string status = 5;
   string requested_at_utc = 6;
-  string decided_at_utc = 7;
-  int32 decided_by_sdk_site_id = 8;
+  // Wrapped — JSON envelope sends null until decision recorded; proto3 default
+  // ("" / 0) collapses to a non-null value and breaks the contract diff.
+  google.protobuf.StringValue decided_at_utc = 7;
+  google.protobuf.Int32Value decided_by_sdk_site_id = 8;
   string request_comment = 9;
-  string decision_comment = 10;
+  google.protobuf.StringValue decision_comment = 10;
   repeated AbsenceRequestDayModel days = 11;
+  // JSON envelope from GetAllAsync includes worker names; null on Create.
+  google.protobuf.StringValue requested_by_worker_name = 12;
+  google.protobuf.StringValue decided_by_worker_name = 13;
 }
 
 message AbsenceRequestResponse {

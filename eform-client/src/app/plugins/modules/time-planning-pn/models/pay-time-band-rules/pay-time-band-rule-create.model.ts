@@ -3,5 +3,6 @@ export class PayTimeBandRuleCreateModel {
   startSecondOfDay: number;
   endSecondOfDay: number;
   payCode: string;
+  payrollCode?: string;
   priority: number;
 }

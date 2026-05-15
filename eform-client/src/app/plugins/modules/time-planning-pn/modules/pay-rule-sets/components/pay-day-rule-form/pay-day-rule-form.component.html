@@ -47,7 +47,7 @@
                      [formControl]="getTierControl(i, 'upToSeconds')"
                      min="0"
                      placeholder="28800">
-              <mat-hint>{{ formatSeconds(getUpToSeconds(i)) }}</mat-hint>
+              <mat-hint>{{ formatSeconds(getUpToSeconds(i)) | translate }}</mat-hint>
             </mat-form-field>
           </td>
         </ng-container>
@@ -61,6 +61,19 @@
                      type="text"
                      [formControl]="getTierControl(i, 'payCode')"
                      placeholder="NORM">
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <!-- Payroll Code Column -->
+        <ng-container matColumnDef="payrollCode">
+          <th mat-header-cell *matHeaderCellDef>{{ 'Payroll code' | translate }}</th>
+          <td mat-cell *matCellDef="let tier; let i = index">
+            <mat-form-field class="tier-field">
+              <input matInput
+                     type="text"
+                     [formControl]="getTierControl(i, 'payrollCode')"
+                     placeholder="">
             </mat-form-field>
           </td>
         </ng-container>

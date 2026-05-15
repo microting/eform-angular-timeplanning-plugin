@@ -276,10 +276,9 @@ test.describe('Dashboard edit values', () => {
 
     await page.locator('#firstColumn0').click();
 
-    const useGoogleSheetClass = await page.locator('#useGoogleSheetAsDefault > div > div > input').getAttribute('class');
-    if (useGoogleSheetClass !== 'mdc-checkbox__native-control mdc-checkbox--selected') {
-      await page.locator('#useGoogleSheetAsDefault').click();
-    }
+    // useGoogleSheetAsDefault is seeded true by default (commit e86d3a1b) and
+    // its toggle is now first-user-only (commit c7732b40), so the prior
+    // ensure-on block was unreachable for the admin CI user and timed out.
 
     const autoBreakClass = await page.locator('#autoBreakCalculationActive > div > div > input').getAttribute('class');
     if (autoBreakClass !== 'mdc-checkbox__native-control mdc-checkbox--selected') {

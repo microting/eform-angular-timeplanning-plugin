@@ -22,11 +22,19 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   previousData: TimePlanningSettingsModel = new TimePlanningSettingsModel();
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
+  payrollSettings: { payrollSystem: number; cutoffDay: number } = { payrollSystem: 0, cutoffDay: 19 };
+  payrollSystemOptions = [
+    { value: 0, label: 'None' },
+    { value: 1, label: 'DanLøn' },
+    { value: 2, label: 'DataLøn' }
+  ];
+
   
 
   ngOnInit() {
     this.previousData = {...this.settingsModel};
     this.getSettings();
+    this.getPayrollSettings();
   }
 
   ngOnDestroy() {
@@ -79,5 +87,27 @@ export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
         this.getSettings();
       }
     })
+  }
+
+  getPayrollSettings() {
+    this.timePlanningPnSettingsService.getPayrollSettings().subscribe((data) => {
+      if (data && data.success && data.model) {
+        this.payrollSettings = data.model;
+      }
+    });
+  }
+
+  updatePayrollSettings() {
+    if (this.payrollSettings.cutoffDay < 1) {
+      this.payrollSettings.cutoffDay = 1;
+    }
+    if (this.payrollSettings.cutoffDay > 28) {
+      this.payrollSettings.cutoffDay = 28;
+    }
+    this.timePlanningPnSettingsService.updatePayrollSettings(this.payrollSettings).subscribe((data) => {
+      if (data && data.success) {
+        this.getPayrollSettings();
+      }
+    });
   }
 }

@@ -265,6 +265,61 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                     Resigned = site.Resigned,
                     ResignedAtDate = Timestamp.FromDateTime(
                         DateTime.SpecifyKind(site.ResignedAtDate, DateTimeKind.Utc)),
+                    PhoneNumber = site.PhoneNumber ?? "",
+                    UseOneMinuteIntervals = site.UseOneMinuteIntervals,
+                };
+                response.Model.Add(grpcSite);
+            }
+        }
+
+        return response;
+    }
+
+    public override async Task<GetRegistrationSitesResponse> GetRegistrationSitesByCurrentUser(
+        GetRegistrationSitesByCurrentUserRequest request, ServerCallContext context)
+    {
+        // Mobile gRPC entry point: return the complete unfiltered coworker list.
+        // The web admin JSON path (TimePlanningSettingsController) still calls the
+        // filtered GetAvailableSitesByCurrentUser so the manager-tag filter
+        // (PR #1524) continues to apply there.
+        var result = await _settingService.GetAllRegistrationSitesByCurrentUser();
+
+        var response = new GetRegistrationSitesResponse
+        {
+            Success = result.Success,
+            Message = result.Message ?? ""
+        };
+
+        if (result.Success && result.Model != null)
+        {
+            foreach (var site in result.Model)
+            {
+                var grpcSite = new Grpc.Site
+                {
+                    SiteId = site.SiteId,
+                    SiteName = site.SiteName ?? "",
+                    FirstName = site.FirstName ?? "",
+                    LastName = site.LastName ?? "",
+                    CustomerNo = site.CustomerNo.GetValueOrDefault(),
+                    OtpCode = site.OtpCode.GetValueOrDefault(),
+                    UnitId = site.UnitId.GetValueOrDefault(),
+                    WorkerUid = site.WorkerUid.GetValueOrDefault(),
+                    Email = site.Email ?? "",
+                    PinCode = site.PinCode ?? "",
+                    DefaultLanguage = site.DefaultLanguage ?? "",
+                    HoursStarted = site.HoursStarted,
+                    PauseStarted = site.PauseStarted,
+                    AutoBreakCalculationActive = site.AutoBreakCalculationActive,
+                    AvatarUrl = site.AvatarUrl ?? "",
+                    ThirdShiftActive = site.ThirdShiftActive,
+                    FourthShiftActive = site.FourthShiftActive,
+                    FifthShiftActive = site.FifthShiftActive,
+                    SnapshotEnabled = site.SnapshotEnabled,
+                    Resigned = site.Resigned,
+                    ResignedAtDate = Timestamp.FromDateTime(
+                        DateTime.SpecifyKind(site.ResignedAtDate, DateTimeKind.Utc)),
+                    PhoneNumber = site.PhoneNumber ?? "",
+                    UseOneMinuteIntervals = site.UseOneMinuteIntervals,
                 };
                 response.Model.Add(grpcSite);
             }

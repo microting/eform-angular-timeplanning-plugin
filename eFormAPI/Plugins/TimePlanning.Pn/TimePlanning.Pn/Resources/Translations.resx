@@ -141,4 +141,55 @@
     <data name="Normal Hours" xml:space="preserve">
         <value>Normal Hours</value>
     </data>
+    <data name="PayRuleSetNotFound" xml:space="preserve">
+        <value>Pay rule set not found</value>
+    </data>
+    <data name="PayRuleSetCreatedSuccessfully" xml:space="preserve">
+        <value>Pay rule set created successfully</value>
+    </data>
+    <data name="PayRuleSetUpdatedSuccessfully" xml:space="preserve">
+        <value>Pay rule set updated successfully</value>
+    </data>
+    <data name="PayRuleSetDeletedSuccessfully" xml:space="preserve">
+        <value>Pay rule set deleted successfully</value>
+    </data>
+    <data name="CannotDeleteLockedPreset" xml:space="preserve">
+        <value>Cannot delete - this overenskomst is a locked preset and cannot be removed</value>
+    </data>
+    <data name="ErrorGettingPayRuleSets" xml:space="preserve">
+        <value>Error while getting pay rule sets</value>
+    </data>
+    <data name="ErrorReadingPayRuleSet" xml:space="preserve">
+        <value>Error while reading pay rule set</value>
+    </data>
+    <data name="ErrorCreatingPayRuleSet" xml:space="preserve">
+        <value>Error while creating pay rule set</value>
+    </data>
+    <data name="ErrorUpdatingPayRuleSet" xml:space="preserve">
+        <value>Error while updating pay rule set</value>
+    </data>
+    <data name="ErrorDeletingPayRuleSet" xml:space="preserve">
+        <value>Error while deleting pay rule set</value>
+    </data>
+    <data name="PayRuleSetTotalRow" xml:space="preserve">
+        <value>Total</value>
+    </data>
+    <data name="EditingNotAllowedForWorker" xml:space="preserve">
+        <value>Editing is not allowed when both editing options are disabled for this worker.</value>
+    </data>
+    <data name="ReceiverHasNoFreeShiftSlot" xml:space="preserve">
+        <value>The selected coworker already has 5 planned shifts on this date.</value>
+    </data>
+    <data name="ShiftOverlapsExistingShift" xml:space="preserve">
+        <value>The transferred shift overlaps an existing shift on the coworker's planning.</value>
+    </data>
+    <data name="HandoverSourceSlotEmpty" xml:space="preserve">
+        <value>The source shift slot is empty — there is nothing to hand over.</value>
+    </data>
+    <data name="CannotEditLockedPreset" xml:space="preserve">
+        <value>Cannot edit - this overenskomst is a locked preset and is read-only</value>
+    </data>
+    <data name="UserNotFound" xml:space="preserve">
+        <value>User not found.</value>
+    </data>
 </root>
