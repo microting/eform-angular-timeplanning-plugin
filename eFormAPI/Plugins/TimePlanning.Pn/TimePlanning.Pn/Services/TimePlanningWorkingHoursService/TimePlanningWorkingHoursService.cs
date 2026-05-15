@@ -2781,17 +2781,19 @@ public class TimePlanningWorkingHoursService(
     /// <summary>
     /// Phase 4 second-precision overload: when <paramref name="useOneMinuteIntervals"/>
     /// is on AND a precise <paramref name="actualStamp"/> is available, format the
-    /// stamp as <c>HH:mm:ss</c> directly (sourcing the value from
+    /// stamp as <c>HH:mm</c> directly (sourcing the value from
     /// <c>PlanRegistration.Start1StartedAt</c> / <c>Stop1StoppedAt</c> / etc.
     /// instead of the legacy 5-minute <c>plr.Options</c> lookup). For every
     /// other case (flag off OR no actual stamp) this delegates to the existing
     /// 2-arg method so the byte-identical 5-minute path is preserved.
+    /// The flag controls input granularity, not display precision — frontend
+    /// convention (<c>time-planning.model.ts</c>) is always <c>HH:mm</c>.
     /// </summary>
     private string GetShiftTime(PlanRegistration plr, int? shift, DateTime? actualStamp, bool useOneMinuteIntervals)
     {
         if (useOneMinuteIntervals && actualStamp.HasValue)
         {
-            return actualStamp.Value.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+            return actualStamp.Value.ToString("HH:mm", CultureInfo.InvariantCulture);
         }
         return GetShiftTime(plr, shift);
     }

@@ -782,16 +782,18 @@ public class PlanRegistrationHelperTests
     }
 
     // ------------------------------------------------------------------
-    // Phase 4 — web admin display + Excel export: HH:mm:ss when flag on
+    // Phase 4 — web admin display + Excel export: HH:mm when flag on
     // ------------------------------------------------------------------
     //
     // The fork lives in a private helper on
     //   TimePlanningWorkingHoursService.GetShiftTime(plr, shift, actualStamp, useOneMinuteIntervals)
     // which is called from FillDataRow when emitting Excel cells. The
     // existing 2-arg overload (Options[] lookup) is left untouched; the new
-    // 4-arg overload formats `actualStamp` as `HH:mm:ss` when both
+    // 4-arg overload formats `actualStamp` as `HH:mm` when both
     // `useOneMinuteIntervals` and `actualStamp.HasValue` are true, and falls
-    // through to the 2-arg overload otherwise.
+    // through to the 2-arg overload otherwise. Display precision is always
+    // `HH:mm` to match the frontend convention (time-planning.model.ts);
+    // the flag controls input granularity, not display precision.
     //
     // Because the helper is `private` and the test fixture has no
     // `InternalsVisibleTo` attribute, the contract is captured here as the
@@ -803,12 +805,13 @@ public class PlanRegistrationHelperTests
     /// Phase 4 contract: when <c>UseOneMinuteIntervals</c> is on AND a
     /// precise <c>actualStamp</c> is supplied, the new
     /// <c>GetShiftTime(plr, shift, actualStamp, useOneMinuteIntervals)</c>
-    /// overload returns the stamp formatted as <c>HH:mm:ss</c> rather than
-    /// the legacy 5-minute <c>plr.Options[shift - 1]</c> lookup.
+    /// overload returns the stamp formatted as <c>HH:mm</c> rather than
+    /// the legacy 5-minute <c>plr.Options[shift - 1]</c> lookup. Display
+    /// precision is always <c>HH:mm</c> to match the frontend.
     /// </summary>
     [Test]
     [Ignore("Phase 4 carve-out: GetShiftTime is private on TimePlanningWorkingHoursService and the fixture has no InternalsVisibleTo; assertion captured for future fixture work.")]
-    public void GetShiftTime_FlagOnWithActualStamp_ReturnsHHmmss()
+    public void GetShiftTime_FlagOnWithActualStamp_ReturnsHHmm()
     {
         // Arrange / Act / Assert (intent, to be enabled when the helper is
         // exposed via InternalsVisibleTo or extracted to a testable seam):
@@ -821,23 +824,24 @@ public class PlanRegistrationHelperTests
         //   var resultFlagOn  = service.GetShiftTimeForTest(plr, plr.Start1Id, plr.Start1StartedAt, useOneMinuteIntervals: true);
         //   var resultFlagOff = service.GetShiftTimeForTest(plr, plr.Start1Id, plr.Start1StartedAt, useOneMinuteIntervals: false);
         //
-        //   Assert.That(resultFlagOn,  Is.EqualTo("07:03:53"));
-        //   Assert.That(resultFlagOff, Is.EqualTo("07:00")); // Options[83] = legacy snap
+        //   Assert.That(resultFlagOn,  Is.EqualTo("07:03"));       // exact stamp, HH:mm
+        //   Assert.That(resultFlagOff, Is.EqualTo("07:00"));       // Options[83] = legacy snap
         Assert.Pass("Captured for future fixture work; see XML doc above.");
     }
 
     /// <summary>
     /// Phase 4 contract: the Excel dashboard export
-    /// (<c>GenerateExcelDashboard</c>) emits <c>HH:mm:ss</c> string cells
+    /// (<c>GenerateExcelDashboard</c>) emits <c>HH:mm</c> string cells
     /// for shift start/stop columns when the row's <c>AssignedSite</c> has
     /// <c>UseOneMinuteIntervals</c> on, sourced from the precise
     /// <c>Start1StartedAt</c>/<c>Stop1StoppedAt</c> stamps. With the flag
     /// off, cell values must remain byte-identical to the legacy 5-minute
-    /// <c>Options[]</c> lookup.
+    /// <c>Options[]</c> lookup (also <c>HH:mm</c>). Display precision is
+    /// always <c>HH:mm</c> to match the frontend convention.
     /// </summary>
     [Test]
     [Ignore("Phase 4 carve-out: GenerateExcelDashboard requires the full Excel/SDK/DB fixture not wired here; assertion captured for future fixture work.")]
-    public void GenerateExcelDashboard_FlagOn_FormatsShiftCellsAsHHmmss()
+    public void GenerateExcelDashboard_FlagOn_FormatsShiftCellsAsHHmm()
     {
         // Arrange / Act / Assert (intent, to be enabled when fixture lands):
         //
@@ -865,8 +869,8 @@ public class PlanRegistrationHelperTests
         //   using var pkg = new ExcelPackage(stream);
         //   var sheet = pkg.Workbook.Worksheets.First();
         //   // Shift1Start column is the 8th cell on data row 2 (1-indexed).
-        //   Assert.That(sheet.Cells[2, 8].Text,  Is.EqualTo("07:03:53"));
-        //   Assert.That(sheet.Cells[2, 9].Text,  Is.EqualTo("15:30:11"));
+        //   Assert.That(sheet.Cells[2, 8].Text,  Is.EqualTo("07:03"));   // precise stamp, HH:mm
+        //   Assert.That(sheet.Cells[2, 9].Text,  Is.EqualTo("15:30"));   // precise stamp, HH:mm
         //
         //   // Flip the flag back off → cells must show the legacy 5-min Options[] strings.
         //   assignedSite.UseOneMinuteIntervals = false;
