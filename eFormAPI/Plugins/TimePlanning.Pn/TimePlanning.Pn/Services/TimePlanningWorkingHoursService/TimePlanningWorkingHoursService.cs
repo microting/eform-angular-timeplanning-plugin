@@ -2769,7 +2769,7 @@ public class TimePlanningWorkingHoursService(
     }
 
 
-    private string GetShiftTime(PlanRegistration plr, int? shift)
+    internal string GetShiftTime(PlanRegistration plr, int? shift)
     {
         if (shift == 289)
         {
@@ -2789,7 +2789,7 @@ public class TimePlanningWorkingHoursService(
     /// The flag controls input granularity, not display precision — frontend
     /// convention (<c>time-planning.model.ts</c>) is always <c>HH:mm</c>.
     /// </summary>
-    private string GetShiftTime(PlanRegistration plr, int? shift, DateTime? actualStamp, bool useOneMinuteIntervals)
+    internal string GetShiftTime(PlanRegistration plr, int? shift, DateTime? actualStamp, bool useOneMinuteIntervals)
     {
         if (useOneMinuteIntervals && actualStamp.HasValue)
         {
@@ -3730,7 +3730,7 @@ public class TimePlanningWorkingHoursService(
     /// Classify the date and return the day code for pay rule matching.
     /// Returns: SUNDAY, SATURDAY, HOLIDAY, GRUNDLOVSDAG, or WEEKDAY
     /// </summary>
-    private static string GetDayCodeForDate(DateTime date)
+    internal static string GetDayCodeForDate(DateTime date)
     {
         // Check if it's Grundlovsdag (June 5th) - highest priority
         if (date.Month == 6 && date.Day == 5)
@@ -3762,7 +3762,7 @@ public class TimePlanningWorkingHoursService(
     /// Returns false for GRUNDLOVSDAG (no DayType equivalent — only tier rules apply).
     /// HOLIDAY → DayType.Holiday regardless of weekday.
     /// </summary>
-    private static bool TryGetDayType(DateTime date, string dayCode, out DayType dayType)
+    internal static bool TryGetDayType(DateTime date, string dayCode, out DayType dayType)
     {
         if (dayCode == "GRUNDLOVSDAG")
         {
@@ -3800,7 +3800,7 @@ public class TimePlanningWorkingHoursService(
     /// calculations here. If a shift has no real timestamps populated, it has no
     /// recorded clock time and contributes no time-band pay lines.
     /// </summary>
-    private static IEnumerable<(int Start, int Stop)> EnumerateShiftSegments(TimePlanningWorkingHoursModel dayModel)
+    internal static IEnumerable<(int Start, int Stop)> EnumerateShiftSegments(TimePlanningWorkingHoursModel dayModel)
     {
         var shift1 = ResolveShiftSeconds(dayModel.Start1StartedAt, dayModel.Stop1StoppedAt);
         if (shift1.HasValue) yield return shift1.Value;
@@ -3824,7 +3824,7 @@ public class TimePlanningWorkingHoursService(
     /// is non-positive. For shifts that span midnight, the stop is clamped to end of day
     /// because pay rules are scoped per-day.
     /// </summary>
-    private static (int Start, int Stop)? ResolveShiftSeconds(DateTime? realStart, DateTime? realStop)
+    internal static (int Start, int Stop)? ResolveShiftSeconds(DateTime? realStart, DateTime? realStop)
     {
         if (!realStart.HasValue || !realStop.HasValue)
         {
@@ -3883,7 +3883,7 @@ public class TimePlanningWorkingHoursService(
         public Dictionary<DateTime, List<PlanRegistrationPayLine>> PayLinesByDate { get; set; }
     }
 
-    private static List<PlanRegistrationPayLine> CalculatePayLinesForDay(
+    internal static List<PlanRegistrationPayLine> CalculatePayLinesForDay(
         int planRegistrationId,
         DateTime date,
         TimePlanningWorkingHoursModel dayModel,

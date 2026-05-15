@@ -2,6 +2,7 @@ using System;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
+using TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
 
 namespace TimePlanning.Pn.Test;
 
@@ -803,30 +804,36 @@ public class PlanRegistrationHelperTests
 
     /// <summary>
     /// Phase 4 contract: when <c>UseOneMinuteIntervals</c> is on AND a
-    /// precise <c>actualStamp</c> is supplied, the new
+    /// precise <c>actualStamp</c> is supplied, the
     /// <c>GetShiftTime(plr, shift, actualStamp, useOneMinuteIntervals)</c>
     /// overload returns the stamp formatted as <c>HH:mm</c> rather than
     /// the legacy 5-minute <c>plr.Options[shift - 1]</c> lookup. Display
-    /// precision is always <c>HH:mm</c> to match the frontend.
+    /// precision is always <c>HH:mm</c> to match the frontend. With
+    /// InternalsVisibleTo wired (TimePlanning.Pn.csproj) and the 4-arg
+    /// overload now internal, this carve-out is a live regression lock —
+    /// the helper does not touch any captured constructor field, so we
+    /// bypass the constructor via <c>RuntimeHelpers.GetUninitializedObject</c>.
     /// </summary>
     [Test]
-    [Ignore("Phase 4 carve-out: GetShiftTime is private on TimePlanningWorkingHoursService and the fixture has no InternalsVisibleTo; assertion captured for future fixture work.")]
     public void GetShiftTime_FlagOnWithActualStamp_ReturnsHHmm()
     {
-        // Arrange / Act / Assert (intent, to be enabled when the helper is
-        // exposed via InternalsVisibleTo or extracted to a testable seam):
-        //
-        //   var plr = new PlanRegistration
-        //   {
-        //       Start1Id = 84, // 5-min idx 84 → "07:00" via Options[83]
-        //       Start1StartedAt = new DateTime(2026, 5, 15, 7, 3, 53),
-        //   };
-        //   var resultFlagOn  = service.GetShiftTimeForTest(plr, plr.Start1Id, plr.Start1StartedAt, useOneMinuteIntervals: true);
-        //   var resultFlagOff = service.GetShiftTimeForTest(plr, plr.Start1Id, plr.Start1StartedAt, useOneMinuteIntervals: false);
-        //
-        //   Assert.That(resultFlagOn,  Is.EqualTo("07:03"));       // exact stamp, HH:mm
-        //   Assert.That(resultFlagOff, Is.EqualTo("07:00"));       // Options[83] = legacy snap
-        Assert.Pass("Captured for future fixture work; see XML doc above.");
+        var plr = new PlanRegistration
+        {
+            Start1Id = 97, // 1-based slot index → Options[96] = "08:00"
+            Start1StartedAt = new DateTime(2026, 5, 15, 8, 4, 42),
+        };
+        // PlanRegistration's parameterless constructor populates Options with 288
+        // 5-minute strings "00:00".."23:55"; no further setup needed.
+
+        var service = (TimePlanningWorkingHoursService)
+            System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(
+                typeof(TimePlanningWorkingHoursService));
+
+        var flagOn  = service.GetShiftTime(plr, plr.Start1Id, plr.Start1StartedAt, useOneMinuteIntervals: true);
+        var flagOff = service.GetShiftTime(plr, plr.Start1Id, plr.Start1StartedAt, useOneMinuteIntervals: false);
+
+        Assert.That(flagOn,  Is.EqualTo("08:04"), "Precise stamp 08:04:42 must format as HH:mm (no seconds)");
+        Assert.That(flagOff, Is.EqualTo("08:00"), "Flag-off must use legacy 5-min Options[96] = \"08:00\"");
     }
 
     /// <summary>
@@ -1211,5 +1218,93 @@ public class PlanRegistrationHelperTests
 
         // Assert — flag-off branch ignores stamps and uses legacy ticks only.
         Assert.That(result, Is.EqualTo(15));
+    }
+
+    // ------------------------------------------------------------------
+    // 2026-05-15 audit — exact-input regression locks for the user-
+    // reported "08:04→10:10 should be 02:06" example.
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// 5-min-aligned counterpart: legacy slot ID math on a round-minute shift
+    /// must produce the same exact arithmetic so the precise-stamp branch
+    /// and the fallback branch agree on slot boundaries. 08:00→10:00 via
+    /// Start1Id=97/Stop1Id=121 yields (121-97)*5 = 120 min = 7200 s.
+    /// </summary>
+    [Test]
+    public void ComputeNettoSecondsFromDateTimeShifts_RoundMinutes_LegacySlotPath_Returns7200()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15),
+            Start1StartedAt = null, // force legacy fallback
+            Stop1StoppedAt  = null,
+            Start1Id = 97, Stop1Id = 121, Pause1Id = 0,
+        };
+        var netto = PlanRegistrationHelper.ComputeNettoSecondsFromDateTimeShifts(pr);
+        Assert.That(netto, Is.EqualTo(7200), "Legacy slot math: (121-97)*5 = 120 min = 7200 s");
+    }
+
+    /// <summary>
+    /// User-reported regression lock: a worker clocked in at 08:04 and out at
+    /// 10:10 must produce exactly 2h06m = 126 min = 7560 s of netto, NOT a
+    /// 5-min-snapped 2h05m. Legacy ID math on Start1Id=97/Stop1Id=122 would
+    /// yield (122-97)*5 = 125 min = 7500 s, so this test pins the precise
+    /// DateTime delta path.
+    /// </summary>
+    [Test]
+    public void ComputeNettoSecondsFromDateTimeShifts_Exact_08_04_to_10_10_Returns7560()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15),
+            Start1StartedAt = new DateTime(2026, 5, 15, 8, 4, 0),
+            Stop1StoppedAt  = new DateTime(2026, 5, 15, 10, 10, 0),
+            Start1Id = 97, Stop1Id = 122, Pause1Id = 0,
+        };
+        var netto = PlanRegistrationHelper.ComputeNettoSecondsFromDateTimeShifts(pr);
+        Assert.That(netto, Is.EqualTo(7560), "08:04→10:10 = 2h06m = 7560 s (precise DateTime delta wins over legacy slot math)");
+    }
+
+    /// <summary>
+    /// <c>RecalculatePlanHoursFromShifts</c> is planned-shift only — the doc
+    /// comment at <c>PlanRegistrationHelper.cs:350-354</c> explicitly says
+    /// planned-shift precision stays minute-only. This test pins that contract:
+    /// non-5-min planned minutes (484=08:04, 610=10:10) must round-trip
+    /// without snapping, regardless of the flag.
+    /// </summary>
+    [TestCase(false, TestName = "RecalculatePlanHoursFromShifts_FlagOff_PreservesNonRoundPlannedMinutes")]
+    [TestCase(true,  TestName = "RecalculatePlanHoursFromShifts_FlagOn_PreservesNonRoundPlannedMinutes")]
+    public void RecalculatePlanHoursFromShifts_PreservesNonRoundPlannedMinutes(bool useOneMinuteIntervals)
+    {
+        var pr = new PlanRegistration
+        {
+            PlannedStartOfShift1 = 484, // 08:04 in minutes-since-midnight
+            PlannedEndOfShift1   = 610, // 10:10 in minutes-since-midnight
+            PlannedBreakOfShift1 = 0,
+        };
+        PlanRegistrationHelper.RecalculatePlanHoursFromShifts(pr, useOneMinuteIntervals);
+        Assert.That(pr.PlanHours, Is.EqualTo(2.1).Within(0.001));
+        Assert.That(pr.PlanHoursInSeconds, Is.EqualTo(7560));
+    }
+
+    /// <summary>
+    /// 5-min-aligned counterpart for <see cref="RecalculatePlanHoursFromShifts_PreservesNonRoundPlannedMinutes"/>.
+    /// Locks the round-minute (legacy) case so neither flag value drifts from
+    /// the 5-min-aligned arithmetic.
+    /// </summary>
+    [TestCase(false, TestName = "RecalculatePlanHoursFromShifts_FlagOff_RoundMinutes_Persists")]
+    [TestCase(true,  TestName = "RecalculatePlanHoursFromShifts_FlagOn_RoundMinutes_Persists")]
+    public void RecalculatePlanHoursFromShifts_PreservesRoundPlannedMinutes(bool useOneMinuteIntervals)
+    {
+        var pr = new PlanRegistration
+        {
+            PlannedStartOfShift1 = 480, // 08:00
+            PlannedEndOfShift1   = 600, // 10:00
+            PlannedBreakOfShift1 = 0,
+        };
+        PlanRegistrationHelper.RecalculatePlanHoursFromShifts(pr, useOneMinuteIntervals);
+        Assert.That(pr.PlanHours, Is.EqualTo(2.0).Within(0.001));
+        Assert.That(pr.PlanHoursInSeconds, Is.EqualTo(7200));
     }
 }

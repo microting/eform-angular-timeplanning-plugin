@@ -18,6 +18,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="TimePlanning.Pn.Test" />
+    </ItemGroup>
+
+    <ItemGroup>
       <None Remove="Resources\eForms\00. Arbejdstid.xml" />
     </ItemGroup>
 
