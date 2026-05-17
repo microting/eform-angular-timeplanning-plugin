@@ -28,13 +28,13 @@
     <ItemGroup>
       <PackageReference Include="ExcelDataReader" Version="3.8.0" />
       <PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
-      <PackageReference Include="Google.Apis.Sheets.v4" Version="1.73.0.4061" />
-      <PackageReference Include="Microting.eForm" Version="10.0.23" />
-      <PackageReference Include="Microting.EformAngularFrontendBase" Version="10.0.31" />
-      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.22" />
+      <PackageReference Include="Google.Apis.Sheets.v4" Version="1.74.0.4061" />
+      <PackageReference Include="Microting.eForm" Version="10.0.26" />
+      <PackageReference Include="Microting.EformAngularFrontendBase" Version="10.0.32" />
+      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.23" />
       <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
-      <PackageReference Include="Microting.TimePlanningBase" Version="10.0.44" />
-      <PackageReference Include="Sentry" Version="6.4.1" />
+      <PackageReference Include="Microting.TimePlanningBase" Version="10.0.45" />
+      <PackageReference Include="Sentry" Version="6.5.0" />
       <PackageReference Include="FirebaseAdmin" Version="3.5.0" />
       <PackageReference Include="Grpc.AspNetCore" Version="2.80.0" />
       <!-- Required for TimePlanningAuthGrpcService.RefreshToken JWT minting.
