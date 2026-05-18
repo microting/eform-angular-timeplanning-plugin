@@ -213,6 +213,23 @@ public class GoogleSheetHelper
         var headerRows = values?.FirstOrDefault();
         if (values is {Count: > 0})
         {
+            // Pre-load all sites and build a column-index-to-site mapping from headers
+            var allSites = await sdkDbContext.Sites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .ToListAsync();
+
+            var columnSiteMap = new Dictionary<int, Microting.eForm.Infrastructure.Data.Entities.Site>();
+            for (int col = 3; col < headerRows.Count; col += 2)
+            {
+                var siteName = headerRows[col].ToString().Split(" - ")[0].ToLower().Replace(" ", "").Trim();
+                var site = allSites.FirstOrDefault(x =>
+                    x.Name.Replace(" ", "").Replace("-", "").ToLower() == siteName);
+                if (site != null)
+                {
+                    columnSiteMap[col] = site;
+                }
+            }
+
             // Skip the header row (first row)
             for (var i = 1; i < values.Count; i++)
             {
@@ -220,16 +237,13 @@ public class GoogleSheetHelper
                 // Process each row
                 string date = row[0].ToString();
 
-                // Process the dato as date
-
                 // Parse date and validate
                 if (!DateTime.TryParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture,
-                        DateTimeStyles.None, out var _))
+                        DateTimeStyles.None, out var dateValue))
                 {
                     continue;
                 }
 
-                var dateValue = DateTime.ParseExact(date, "dd.MM.yyyy", CultureInfo.InvariantCulture);
                 Console.WriteLine($"Processing date: {dateValue}");
 
                 if (dateValue > DateTime.Now.AddDays(180))
@@ -240,19 +254,12 @@ public class GoogleSheetHelper
                 // Iterate over each pair of columns starting from the fourth column
                 for (int j = 3; j < row.Count; j += 2)
                 {
-
-                    var siteName = headerRows[j].ToString().Split(" - ").Length > 1
-                        ? headerRows[j].ToString().Split(" - ")[0].ToLower().Replace(" ", "").Trim()
-                        : headerRows[j].ToString().Split(" - ").First().ToLower().Replace(" ", "").Trim();
-                    Console.WriteLine($"Processing site: {siteName}");
-                    var site = await sdkDbContext.Sites
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .FirstOrDefaultAsync(x =>
-                            x.Name.Replace(" ", "").Replace("-", "").ToLower() == siteName);
-                    if (site == null)
+                    if (!columnSiteMap.TryGetValue(j, out var site))
                     {
                         continue;
                     }
+
+                    Console.WriteLine($"Processing site: {site.Name}");
 
                     var planHours = row.Count > j ? row[j].ToString() : string.Empty;
                     var planText = row.Count > j + 1 ? row[j + 1].ToString() : string.Empty;
