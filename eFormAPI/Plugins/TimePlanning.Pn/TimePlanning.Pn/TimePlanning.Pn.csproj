@@ -29,11 +29,11 @@
       <PackageReference Include="ExcelDataReader" Version="3.8.0" />
       <PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
       <PackageReference Include="Google.Apis.Sheets.v4" Version="1.74.0.4061" />
-      <PackageReference Include="Microting.eForm" Version="10.0.26" />
-      <PackageReference Include="Microting.EformAngularFrontendBase" Version="10.0.32" />
-      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.23" />
+      <PackageReference Include="Microting.eForm" Version="10.0.27" />
+      <PackageReference Include="Microting.EformAngularFrontendBase" Version="10.0.33" />
+      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.24" />
       <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
-      <PackageReference Include="Microting.TimePlanningBase" Version="10.0.45" />
+      <PackageReference Include="Microting.TimePlanningBase" Version="10.0.46" />
       <PackageReference Include="Sentry" Version="6.5.0" />
       <PackageReference Include="FirebaseAdmin" Version="3.5.0" />
       <PackageReference Include="Grpc.AspNetCore" Version="2.80.0" />
