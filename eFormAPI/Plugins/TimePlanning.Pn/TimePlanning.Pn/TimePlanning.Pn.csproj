@@ -56,7 +56,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Google.Protobuf" Version="3.34.1" />
+      <PackageReference Include="Google.Protobuf" Version="3.35.0" />
       <EmbeddedResource Include="Resources\eForms\00. Arbejdstid.xml" />
       <EmbeddedResource Include="Resources\localization.json" />
       <None Remove="Resources\eForms\01. Info eForm.xml" />
