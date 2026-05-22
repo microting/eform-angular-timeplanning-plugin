@@ -2871,6 +2871,12 @@ public class TimePlanningWorkingHoursService(
             var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
+            // Set CurrentUICulture so Translations.X resolves in the user's language for all
+            // downstream header/lookup calls (matches the single-worker export at line ~2375).
+            var language = await userService.GetCurrentUserLanguage();
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo(language.LanguageCode);
+            var culture = new CultureInfo(language.LanguageCode);
+
             // Pre-pass: for every site, load PayRuleSet, fetch working hours, compute pay lines per day,
             // and collect the global union of pay codes used across all sites in this report.
             // Cached so the per-site sheet writing and Total sheet writing both consume the same data.
@@ -3065,9 +3071,6 @@ public class TimePlanningWorkingHoursService(
 
                 #endregion
 
-                var language = await userService.GetCurrentUserLanguage();
-
-                var culture = new CultureInfo(language.LanguageCode);
                 for (int i = 0; i < siteIdCount; i++)
                 {
                     var site = await sdkContext.Sites.FirstOrDefaultAsync(x =>
