@@ -99,5 +99,26 @@ public static class TimePlanningPluginSeed
         }
 
         dbContext.SaveChanges();
+
+        // Heal existing Message rows that drifted from seed values (e.g. customer DBs
+        // where VacationDayOff was written with TimeOff/Maternity-style translations).
+        // The seed file is the source of truth for these system messages.
+        foreach (var seedMessage in seedMessages.Data)
+        {
+            var existing = dbContext.Messages.FirstOrDefault(x => x.Name == seedMessage.Name);
+            if (existing == null) continue;
+
+            if (existing.DaName != seedMessage.DaName
+                || existing.EnName != seedMessage.EnName
+                || existing.DeName != seedMessage.DeName)
+            {
+                existing.DaName = seedMessage.DaName;
+                existing.EnName = seedMessage.EnName;
+                existing.DeName = seedMessage.DeName;
+                dbContext.Messages.Update(existing);
+            }
+        }
+
+        dbContext.SaveChanges();
     }
 }
