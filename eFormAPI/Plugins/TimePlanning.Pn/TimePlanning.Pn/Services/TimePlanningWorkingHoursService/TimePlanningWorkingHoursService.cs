@@ -2989,8 +2989,11 @@ public class TimePlanningWorkingHoursService(
                     Translations.PlanHours,
                     Translations.NettoHours,
                     Translations.SumFlexStart,
+                    Translations.Normal_Hours,
+                    Translations.Hours_Sunday,
                     Translations.Comments,
-                    Translations.Message
+                    Translations.Message,
+                    Translations.Hours_Saturday
                 };
                 List<string> totalHeaderStrings = new List<string>();
                 foreach (var header in totalHeaders)
@@ -3318,10 +3321,28 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateNumericCell(siteTotalNettoHours));
                     totalRow.Append(CreateNumericCell(timePlannings.Count > 0 ? timePlannings.Last().SumFlexEnd : 0.0));
 
+                    // Sunday + holiday hours (Grundlovsdag only counts hours after 12:00)
+                    var sumHoursSundayAndHoliday = 0.0;
+                    foreach (var day in timePlannings)
+                    {
+                        var isSundayOrHoliday = day.IsSunday || PlanRegistrationHelper.IsOfficialHoliday(day.Date);
+                        if (!isSundayOrHoliday) continue;
+
+                        sumHoursSundayAndHoliday += PlanRegistrationHelper.IsGrundlovsdag(day.Date)
+                            ? CalculateHoursAfterNoon(day)
+                            : day.NettoHours;
+                    }
+                    var normalHours = siteTotalNettoHours - sumHoursSundayAndHoliday;
+                    var sumHoursSaturday = timePlannings.Where(x => x.IsSaturday).Sum(x => x.NettoHours);
+
+                    totalRow.Append(CreateNumericCell(normalHours));
+                    totalRow.Append(CreateNumericCell(sumHoursSundayAndHoliday));
+
                     var countCommentFromWorker = timePlannings.Count(x => !string.IsNullOrEmpty(x.CommentWorker));
                     var countMessages = timePlannings.Count(x => x.Message != null);
                     totalRow.Append(CreateNumericCell(countCommentFromWorker));
                     totalRow.Append(CreateNumericCell(countMessages));
+                    totalRow.Append(CreateNumericCell(sumHoursSaturday));
 
                     // Append per-pay-code total for this worker (matches the dynamic columns added to the headers)
                     foreach (var payCode in allPayCodes)
