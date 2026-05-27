@@ -1,9 +1,21 @@
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  align-items: center;
+  gap: 12px;
+  // align-items: end matches the canonical toolbar pattern used elsewhere
+  // (eforms-page, property-workers, etc.) so the input pills and the
+  // Apply button share a baseline. The workspace theme's mat-slide-toggle
+  // rule and stacked label still work above.
+  align-items: end;
   padding: 16px;
+
+  // Without this, each mat-form-field stretches to the full row width
+  // (1100+px) and forces every filter onto its own line. Cap each to
+  // 200px so all four fit on a single row next to the Apply button.
+  mat-form-field {
+    width: auto;
+    max-width: 200px;
+  }
 }
 
 .type-badge {
