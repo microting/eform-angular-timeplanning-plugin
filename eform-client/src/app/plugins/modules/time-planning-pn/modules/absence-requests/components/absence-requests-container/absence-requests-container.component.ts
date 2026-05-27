@@ -14,6 +14,7 @@ import { selectAuthUser } from 'src/app/state';
 @Component({
   selector: 'app-absence-requests-container',
   templateUrl: './absence-requests-container.component.html',
+  styleUrls: ['./absence-requests-container.component.scss'],
   standalone: false
 })
 export class AbsenceRequestsContainerComponent implements OnInit, OnDestroy {

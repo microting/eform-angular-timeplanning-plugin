@@ -1,9 +1,41 @@
+// Segmented control / tab-style switcher used in the subheader to flip
+// between the Inbox and "My requests" views.
+//
+// .btn-secondary alone gives plain <button> elements the browser-default
+// `border: 2px outset black` in both workspace and classic themes (no
+// `--icon-left` variant fires the proper outlined styles), and the prior
+// .active rule referenced an undefined `--primary-color` token. Override
+// both with explicit outlined/filled states pinned to the canonical
+// `--mdc-theme-primary` token used by .btn-primary across the app.
 .view-switcher {
   display: flex;
   gap: 8px;
-}
 
-.btn-secondary.active {
-  background-color: var(--primary-color);
-  color: white;
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 16px;
+    background: transparent;
+    color: var(--mdc-theme-primary);
+    border: 1px solid var(--mdc-theme-primary);
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover:not(.active) {
+      background-color: color-mix(in srgb, var(--mdc-theme-primary) 8%, transparent);
+    }
+
+    &.active {
+      background-color: var(--mdc-theme-primary);
+      // !important needed: the workspace .btn-secondary rule paints color
+      // with !important, otherwise on-primary white loses the cascade.
+      color: var(--mdc-theme-on-primary, #fff) !important;
+    }
+  }
 }
