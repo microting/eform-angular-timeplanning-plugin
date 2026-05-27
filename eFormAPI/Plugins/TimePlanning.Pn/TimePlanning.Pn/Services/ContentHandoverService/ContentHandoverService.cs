@@ -345,6 +345,7 @@ public class ContentHandoverService : IContentHandoverService
                     ToPlanRegistrationId = toPR.Id,
                     Status = HandoverRequestStatus.Pending,
                     RequestedAtUtc = DateTime.UtcNow,
+                    RequestedByComment = model.RequestComment,
                     ShiftIndex = null,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId
@@ -426,6 +427,7 @@ public class ContentHandoverService : IContentHandoverService
                     ToPlanRegistrationId = toPR.Id,
                     Status = HandoverRequestStatus.Pending,
                     RequestedAtUtc = DateTime.UtcNow,
+                    RequestedByComment = model.RequestComment,
                     ShiftIndex = n,
                     CreatedByUserId = _userService.UserId,
                     UpdatedByUserId = _userService.UserId
@@ -1597,7 +1599,7 @@ public class ContentHandoverService : IContentHandoverService
             Status = request.Status.ToString(),
             RequestedAtUtc = request.RequestedAtUtc,
             RespondedAtUtc = request.RespondedAtUtc,
-            RequestComment = null, // Entity doesn't have RequestComment
+            RequestComment = request.RequestedByComment,
             DecisionComment = request.DecisionComment,
             ShiftIndex = request.ShiftIndex,
             ShiftStartTime = shiftStartTime,

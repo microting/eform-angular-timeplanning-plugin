@@ -9,6 +9,8 @@ import { FormsModule } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatCard } from '@angular/material/card';
+import { MatChip } from '@angular/material/chips';
+import { MtxSelectModule } from '@ng-matero/extensions/select';
 import {
   RequestHistoryPageComponent
 } from './components';
@@ -25,7 +27,9 @@ import {
     MatFormField,
     MatInput,
     MatLabel,
-    MatCard
+    MatCard,
+    MatChip,
+    MtxSelectModule
   ],
   declarations: [
     RequestHistoryPageComponent
