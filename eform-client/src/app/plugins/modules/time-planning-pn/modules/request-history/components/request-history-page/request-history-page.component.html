@@ -1,44 +1,41 @@
-<eform-new-subheader>
-  <div class="subheader-title">
-    {{ 'Request History' | translate }}
+<mat-card class="eform-sub-header d-flex flex-column gap-12 mb-3 p-3" style="align-items: stretch;">
+  <h2 style="margin: 0">{{ 'Request History' | translate }}</h2>
+  <div class="d-flex flex-row flex-wrap align-items-end justify-content-end gap-12" id="time-planning-pn-request-history-filters">
+    <mat-form-field>
+      <mat-label>{{ 'Type' | translate }}</mat-label>
+      <select matNativeControl [(ngModel)]="filterType" id="requestHistoryTypeFilter">
+        <option value="">{{ 'All' | translate }}</option>
+        <option value="Handover">{{ 'Handover' | translate }}</option>
+        <option value="Absence">{{ 'Absence' | translate }}</option>
+      </select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'Status' | translate }}</mat-label>
+      <select matNativeControl [(ngModel)]="filterStatus" id="requestHistoryStatusFilter">
+        <option value="">{{ 'All' | translate }}</option>
+        <option value="Pending">{{ 'Pending' | translate }}</option>
+        <option value="Approved">{{ 'Approved' | translate }}</option>
+        <option value="Rejected">{{ 'Rejected' | translate }}</option>
+        <option value="Cancelled">{{ 'Cancelled' | translate }}</option>
+      </select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'Date From' | translate }}</mat-label>
+      <input matInput type="date" [(ngModel)]="filterFromDate" id="requestHistoryFromDate" />
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'Date To' | translate }}</mat-label>
+      <input matInput type="date" [(ngModel)]="filterToDate" id="requestHistoryToDate" />
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" (click)="applyFilters()" id="applyFiltersBtn">
+      {{ 'Apply' | translate }}
+    </button>
   </div>
-</eform-new-subheader>
-
-<div class="filter-bar" id="time-planning-pn-request-history-filters">
-  <mat-form-field>
-    <mat-label>{{ 'Type' | translate }}</mat-label>
-    <select matNativeControl [(ngModel)]="filterType" id="requestHistoryTypeFilter">
-      <option value="">{{ 'All' | translate }}</option>
-      <option value="Handover">{{ 'Handover' | translate }}</option>
-      <option value="Absence">{{ 'Absence' | translate }}</option>
-    </select>
-  </mat-form-field>
-
-  <mat-form-field>
-    <mat-label>{{ 'Status' | translate }}</mat-label>
-    <select matNativeControl [(ngModel)]="filterStatus" id="requestHistoryStatusFilter">
-      <option value="">{{ 'All' | translate }}</option>
-      <option value="Pending">{{ 'Pending' | translate }}</option>
-      <option value="Approved">{{ 'Approved' | translate }}</option>
-      <option value="Rejected">{{ 'Rejected' | translate }}</option>
-      <option value="Cancelled">{{ 'Cancelled' | translate }}</option>
-    </select>
-  </mat-form-field>
-
-  <mat-form-field>
-    <mat-label>{{ 'Date From' | translate }}</mat-label>
-    <input matInput type="date" [(ngModel)]="filterFromDate" id="requestHistoryFromDate" />
-  </mat-form-field>
-
-  <mat-form-field>
-    <mat-label>{{ 'Date To' | translate }}</mat-label>
-    <input matInput type="date" [(ngModel)]="filterToDate" id="requestHistoryToDate" />
-  </mat-form-field>
-
-  <button mat-raised-button color="primary" (click)="applyFilters()" id="applyFiltersBtn">
-    {{ 'Apply' | translate }}
-  </button>
-</div>
+</mat-card>
 
 <mtx-grid
   [data]="filteredRows"
