@@ -163,7 +163,9 @@ export const deDE = {
   Reject: 'Ablehnen',
   Pending: 'Ausstehend',
   Approved: 'Genehmigt',
+  Accepted: 'Akzeptiert',
   Rejected: 'Abgelehnt',
+  Expired: 'Abgelaufen',
   'No absence requests found': 'Keine Abwesenheitsanträge gefunden',
   'Error loading absence requests': 'Fehler beim Laden von Abwesenheitsanfragen',
   'Absence request approved successfully': 'Abwesenheitsantrag erfolgreich genehmigt',
@@ -385,6 +387,7 @@ export const deDE = {
   'Apply': 'Anwenden',
   'Cancelled': 'Storniert',
   'Date': 'Datum',
+  'Details': 'Details',
   'No requests found': 'Keine Anfragen gefunden',
   'Error loading request history': 'Fehler beim Laden der Antragshistorie',
 };

@@ -1,32 +1,36 @@
 <mat-card class="eform-sub-header d-flex flex-column gap-12 mb-3 p-3" style="align-items: stretch;">
   <h2 style="margin: 0">{{ 'Request History' | translate }}</h2>
   <div class="d-flex flex-row flex-wrap align-items-end justify-content-end gap-12" id="time-planning-pn-request-history-filters">
-    <mat-form-field>
+    <mat-form-field style="width: 200px;">
       <mat-label>{{ 'Type' | translate }}</mat-label>
-      <select matNativeControl [(ngModel)]="filterType" id="requestHistoryTypeFilter">
-        <option value="">{{ 'All' | translate }}</option>
-        <option value="Handover">{{ 'Handover' | translate }}</option>
-        <option value="Absence">{{ 'Absence' | translate }}</option>
-      </select>
+      <mtx-select
+        [items]="typeOptions"
+        bindLabel="value"
+        bindValue="id"
+        [clearable]="false"
+        [(ngModel)]="filterType"
+        id="requestHistoryTypeFilter">
+      </mtx-select>
     </mat-form-field>
 
-    <mat-form-field>
+    <mat-form-field style="width: 200px;">
       <mat-label>{{ 'Status' | translate }}</mat-label>
-      <select matNativeControl [(ngModel)]="filterStatus" id="requestHistoryStatusFilter">
-        <option value="">{{ 'All' | translate }}</option>
-        <option value="Pending">{{ 'Pending' | translate }}</option>
-        <option value="Approved">{{ 'Approved' | translate }}</option>
-        <option value="Rejected">{{ 'Rejected' | translate }}</option>
-        <option value="Cancelled">{{ 'Cancelled' | translate }}</option>
-      </select>
+      <mtx-select
+        [items]="statusOptions"
+        bindLabel="value"
+        bindValue="id"
+        [clearable]="false"
+        [(ngModel)]="filterStatus"
+        id="requestHistoryStatusFilter">
+      </mtx-select>
     </mat-form-field>
 
-    <mat-form-field>
+    <mat-form-field style="width: 170px;">
       <mat-label>{{ 'Date From' | translate }}</mat-label>
       <input matInput type="date" [(ngModel)]="filterFromDate" id="requestHistoryFromDate" />
     </mat-form-field>
 
-    <mat-form-field>
+    <mat-form-field style="width: 170px;">
       <mat-label>{{ 'Date To' | translate }}</mat-label>
       <input matInput type="date" [(ngModel)]="filterToDate" id="requestHistoryToDate" />
     </mat-form-field>
@@ -63,12 +67,11 @@
 </ng-template>
 
 <ng-template #statusTpl let-row>
-  <span [ngClass]="{
-    'status-pending': row.status === 'Pending',
-    'status-approved': row.status === 'Approved',
-    'status-rejected': row.status === 'Rejected',
-    'status-cancelled': row.status === 'Cancelled'
+  <mat-chip [ngClass]="{
+    'tag-success': row.status === 'Approved' || row.status === 'Accepted',
+    'tag-warning': row.status === 'Pending',
+    'tag-error': row.status === 'Rejected'
   }">
-    {{ row.status | translate }}
-  </span>
+    <span title="{{ row.status | translate }}">{{ row.status | translate }}</span>
+  </mat-chip>
 </ng-template>

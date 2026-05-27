@@ -161,7 +161,9 @@ export const enUS = {
   'Reject': 'Reject',
   'Pending': 'Pending',
   'Approved': 'Approved',
+  'Accepted': 'Accepted',
   'Rejected': 'Rejected',
+  'Expired': 'Expired',
   'No absence requests found': 'No absence requests found',
   'Error loading absence requests': 'Error loading absence requests',
   'Absence request approved successfully': 'Absence request approved successfully',
@@ -387,6 +389,7 @@ export const enUS = {
   'Apply': 'Apply',
   'Cancelled': 'Cancelled',
   'Date': 'Date',
+  'Details': 'Details',
   'No requests found': 'No requests found',
   'Error loading request history': 'Error loading request history',
 };

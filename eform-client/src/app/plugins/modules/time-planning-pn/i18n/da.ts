@@ -161,7 +161,9 @@ export const da = {
   Reject: 'Afvis',
   Pending: 'Afventer',
   Approved: 'Godkendt',
+  Accepted: 'Accepteret',
   Rejected: 'Afvist',
+  Expired: 'Udløbet',
   'No absence requests found': 'Ingen fraværsanmodninger fundet',
   'Error loading absence requests': 'Fejl ved indlæsning af fraværsanmodninger',
   'Absence request approved successfully': 'Fraværsanmodning godkendt',
@@ -387,6 +389,7 @@ export const da = {
   'Apply': 'Anvend',
   'Cancelled': 'Annulleret',
   'Date': 'Dato',
+  'Details': 'Detaljer',
   'No requests found': 'Ingen anmodninger fundet',
   'Error loading request history': 'Fejl ved indlæsning af anmodningshistorik',
 };
