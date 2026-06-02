@@ -55,6 +55,8 @@ using Infrastructure.Data.Seed.Data;
 using Infrastructure.Models.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microting.eFormApi.BasePn;
@@ -189,7 +191,11 @@ public class EformTimePlanningPlugin : IEformPlugin
         var contextFactory = new TimePlanningPnContextFactory();
         var context = contextFactory.CreateDbContext(new[] { connectionString });
         Console.WriteLine("Starting to migrate TimePlanningPnDbContext to latest version");
-        context.Database.Migrate();
+        var historyRepo = context.GetService<IHistoryRepository>();
+        if (!historyRepo.Exists() || context.Database.GetPendingMigrations().Any())
+        {
+            context.Database.Migrate();
+        }
         Console.WriteLine("TimePlanningPnDbContext migrated to latest version");
 
         // Seed database
