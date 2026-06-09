@@ -137,4 +137,7 @@
     <data name="Total Hours" xml:space="preserve">
         <value>Tunnit yhteensä</value>
     </data>
+    <data name="DayOverview" xml:space="preserve">
+        <value>Päiväkatsaus</value>
+    </data>
 </root>

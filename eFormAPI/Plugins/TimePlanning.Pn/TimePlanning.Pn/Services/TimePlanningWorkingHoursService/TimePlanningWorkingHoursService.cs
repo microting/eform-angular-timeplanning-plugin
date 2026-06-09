@@ -2422,15 +2422,28 @@ public class TimePlanningWorkingHoursService(
                    document = SpreadsheetDocument.Create(filePath, SpreadsheetDocumentType.Workbook))
             {
                 WorkbookPart workbookPart1 = document.AddWorkbookPart();
-                OpenXMLHelper.GenerateWorkbookPart1Content(workbookPart1, [new("Dashboard", "rId1")]);
+                OpenXMLHelper.GenerateWorkbookPart1Content(workbookPart1,
+                    [new(Translations.DayOverview, "rId1"), new("Dashboard", "rId2")]);
 
-                WorkbookStylesPart workbookStylesPart1 = workbookPart1.AddNewPart<WorkbookStylesPart>("rId3");
+                WorkbookStylesPart workbookStylesPart1 = workbookPart1.AddNewPart<WorkbookStylesPart>("rId4");
                 OpenXMLHelper.GenerateWorkbookStylesPart1Content(workbookStylesPart1);
 
-                ThemePart themePart1 = workbookPart1.AddNewPart<ThemePart>("rId2");
+                ThemePart themePart1 = workbookPart1.AddNewPart<ThemePart>("rId3");
                 OpenXMLHelper.GenerateThemePart1Content(themePart1);
 
-                WorksheetPart worksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>("rId1");
+                // Dagsoversigt (Day overview) — first tab
+                WorksheetPart dayOverviewWorksheetPart = workbookPart1.AddNewPart<WorksheetPart>("rId1");
+                var dayOverviewRows = timePlannings.Select(p => new DayOverviewRow
+                {
+                    EmployeeNo = worker.EmployeeNo ?? string.Empty,
+                    WorkerName = site.Name,
+                    Date = p.Date,
+                    Planning = p,
+                    UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals
+                }).ToList();
+                BuildDayOverviewWorksheet(dayOverviewWorksheetPart, dayOverviewRows, culture);
+
+                WorksheetPart worksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>("rId2");
 
                 var headers = new[]
                 {
@@ -2958,8 +2971,8 @@ public class TimePlanningWorkingHoursService(
                 var siteIdCount = siteIds.Count;
 
                 var worksheetNames = new List<KeyValuePair<string, string>>();
-                worksheetNames.Add(
-                    new KeyValuePair<string, string>("Total", "rId1"));
+                worksheetNames.Add(new KeyValuePair<string, string>(Translations.DayOverview, "rId1"));
+                worksheetNames.Add(new KeyValuePair<string, string>("Total", "rId2"));
 
                 for (int i = 0; i < siteIdCount; i++)
                 {
@@ -2968,22 +2981,56 @@ public class TimePlanningWorkingHoursService(
                     if (site == null) continue;
                     worksheetNames.Add(
                         new KeyValuePair<string, string>($"{site.Name.Substring(0, Math.Min(31, site.Name.Length))}",
-                            $"rId{i + 2}"));
+                            $"rId{i + 3}"));
                 }
 
                 WorkbookPart workbookPart1 = document.AddWorkbookPart();
                 OpenXMLHelper.GenerateWorkbookPart1Content(workbookPart1, worksheetNames);
 
                 WorkbookStylesPart workbookStylesPart1 =
-                    workbookPart1.AddNewPart<WorkbookStylesPart>($"rId{siteIdCount + 3}");
+                    workbookPart1.AddNewPart<WorkbookStylesPart>($"rId{siteIdCount + 4}");
                 OpenXMLHelper.GenerateWorkbookStylesPart1Content(workbookStylesPart1);
 
-                ThemePart themePart1 = workbookPart1.AddNewPart<ThemePart>($"rId{siteIdCount + 2}");
+                ThemePart themePart1 = workbookPart1.AddNewPart<ThemePart>($"rId{siteIdCount + 3}");
                 OpenXMLHelper.GenerateThemePart1Content(themePart1);
+
+                #region DayOverviewSheetSetup
+
+                WorksheetPart dayOverviewWorksheetPart = workbookPart1.AddNewPart<WorksheetPart>("rId1");
+                var dayOverviewRows = new List<DayOverviewRow>();
+                for (int i = 0; i < siteIdCount; i++)
+                {
+                    var doSite = await sdkContext.Sites.FirstOrDefaultAsync(x => x.MicrotingUid == siteIds[i]);
+                    if (doSite == null) continue;
+                    var doSiteWorker = await sdkContext.SiteWorkers.FirstAsync(x => x.SiteId == doSite.Id);
+                    var doWorker = await sdkContext.Workers.FirstAsync(x => x.Id == doSiteWorker.WorkerId);
+                    perSiteCache.TryGetValue(siteIds[i], out var doCache);
+                    var doPlannings = doCache?.TimePlannings ?? new List<TimePlanningWorkingHoursModel>();
+                    var doUseOneMinute = doCache?.AssignedSite?.UseOneMinuteIntervals ?? false;
+                    foreach (var planning in doPlannings)
+                    {
+                        dayOverviewRows.Add(new DayOverviewRow
+                        {
+                            EmployeeNo = doWorker.EmployeeNo ?? string.Empty,
+                            WorkerName = doSite.Name,
+                            Date = planning.Date,
+                            Planning = planning,
+                            UseOneMinuteIntervals = doUseOneMinute
+                        });
+                    }
+                }
+                dayOverviewRows = dayOverviewRows
+                    .OrderBy(r => r.Date)
+                    .ThenBy(r => int.TryParse(r.EmployeeNo, out var n) ? n : int.MaxValue)
+                    .ThenBy(r => r.EmployeeNo)
+                    .ToList();
+                BuildDayOverviewWorksheet(dayOverviewWorksheetPart, dayOverviewRows, culture);
+
+                #endregion
 
                 #region TotalSheetSetup
 
-                WorksheetPart totalWorksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId1");
+                WorksheetPart totalWorksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId2");
                 var seedMessages = new TimePlanningSeedMessages().Data;
 
                 var totalHeaders = new[]
@@ -3078,7 +3125,7 @@ public class TimePlanningWorkingHoursService(
                     if (site == null) continue;
                     var siteWorker = await sdkContext.SiteWorkers.FirstAsync(x => x.SiteId == site.Id);
                     var worker = await sdkContext.Workers.FirstAsync(x => x.Id == siteWorker.WorkerId);
-                    WorksheetPart worksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId{i + 2}");
+                    WorksheetPart worksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId{i + 3}");
 
                     var headers = new[]
                     {
@@ -3905,6 +3952,212 @@ public class TimePlanningWorkingHoursService(
         public PayRuleSet PayRuleSet { get; set; }
         public List<TimePlanningWorkingHoursModel> TimePlannings { get; set; }
         public Dictionary<DateTime, List<PlanRegistrationPayLine>> PayLinesByDate { get; set; }
+    }
+
+    private sealed class DayOverviewRow
+    {
+        public string EmployeeNo { get; set; }
+        public string WorkerName { get; set; }
+        public DateTime Date { get; set; }
+        public TimePlanningWorkingHoursModel Planning { get; set; }
+        public bool UseOneMinuteIntervals { get; set; }
+    }
+
+    internal double? GetShiftTimeFraction(int? shift, DateTime? actualStamp, bool useOneMinuteIntervals)
+    {
+        if (useOneMinuteIntervals && actualStamp.HasValue)
+        {
+            return actualStamp.Value.TimeOfDay.TotalMinutes / 1440.0;
+        }
+        if (!shift.HasValue || shift.Value <= 0)
+        {
+            return null;
+        }
+        if (shift.Value == 289)
+        {
+            return 1.0; // 24:00 — end of day; renders as 00:00 under hh:mm (known minor edge)
+        }
+        return (shift.Value - 1) * 5 / 1440.0;
+    }
+
+    private Cell DayOverviewStringCell(int col, uint rowIdx, string value)
+    {
+        return new Cell
+        {
+            CellReference = $"{GetColumnLetter(col)}{rowIdx}",
+            CellValue = new CellValue(value ?? string.Empty),
+            DataType = CellValues.String
+        };
+    }
+
+    private Cell DayOverviewNumberCell(int col, uint rowIdx, double value, uint? styleIndex)
+    {
+        var cell = new Cell
+        {
+            CellReference = $"{GetColumnLetter(col)}{rowIdx}",
+            CellValue = new CellValue(value.ToString(CultureInfo.InvariantCulture)),
+            DataType = CellValues.Number
+        };
+        if (styleIndex.HasValue)
+        {
+            cell.StyleIndex = styleIndex.Value;
+        }
+        return cell;
+    }
+
+    private Cell DayOverviewDateCell(int col, uint rowIdx, DateTime date)
+    {
+        return new Cell
+        {
+            CellReference = $"{GetColumnLetter(col)}{rowIdx}",
+            CellValue = new CellValue(date.ToOADate().ToString(CultureInfo.InvariantCulture)),
+            DataType = CellValues.Number,
+            StyleIndex = (UInt32Value)5U // dd/mm/yyyy
+        };
+    }
+
+    private Cell DayOverviewTimeCell(int col, uint rowIdx, double? fraction)
+    {
+        var cell = new Cell
+        {
+            CellReference = $"{GetColumnLetter(col)}{rowIdx}",
+            DataType = CellValues.Number,
+            StyleIndex = (UInt32Value)3U // hh:mm
+        };
+        if (fraction.HasValue)
+        {
+            cell.CellValue = new CellValue(fraction.Value.ToString(CultureInfo.InvariantCulture));
+        }
+        return cell;
+    }
+
+    private void BuildDayOverviewWorksheet(WorksheetPart worksheetPart, List<DayOverviewRow> rows, CultureInfo culture)
+    {
+        const int colCount = 21;
+        var headers = new[]
+        {
+            Translations.Employee_no, Translations.Worker, Translations.DayOfWeek,
+            Translations.Date, Translations.Week_number,
+            Translations.Shift_1__start, Translations.Shift_1__end, Translations.Shift_1__pause,
+            Translations.Shift_2__start, Translations.Shift_2__end, Translations.Shift_2__pause,
+            Translations.Shift_3__start, Translations.Shift_3__end, Translations.Shift_3__pause,
+            Translations.Shift_4__start, Translations.Shift_4__end, Translations.Shift_4__pause,
+            Translations.Shift_5__start, Translations.Shift_5__end, Translations.Shift_5__pause,
+            Translations.NettoHours
+        };
+
+        var worksheet = new Worksheet()
+            { MCAttributes = new MarkupCompatibilityAttributes() { Ignorable = "x14ac xr xr2 xr3" } };
+        worksheet.AddNamespaceDeclaration("r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+        worksheet.AddNamespaceDeclaration("mc", "http://schemas.openxmlformats.org/markup-compatibility/2006");
+        worksheet.AddNamespaceDeclaration("x14ac", "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac");
+        worksheet.AddNamespaceDeclaration("xr", "http://schemas.microsoft.com/office/spreadsheetml/2014/revision");
+        worksheet.AddNamespaceDeclaration("xr2", "http://schemas.microsoft.com/office/spreadsheetml/2015/revision2");
+        worksheet.AddNamespaceDeclaration("xr3", "http://schemas.microsoft.com/office/spreadsheetml/2016/revision3");
+
+        var sheetFormatProperties = new SheetFormatProperties() { DefaultRowHeight = 15D, DyDescent = 0.25D };
+
+        var columns = new Columns();
+        columns.Append(new Column() { Min = 1U, Max = 1U, Width = 18D, CustomWidth = true });
+        columns.Append(new Column() { Min = 2U, Max = 2U, Width = 15D, CustomWidth = true });
+        columns.Append(new Column() { Min = 3U, Max = 3U, Width = 10D, CustomWidth = true });
+        columns.Append(new Column() { Min = 4U, Max = 4U, Width = 11D, CustomWidth = true });
+        columns.Append(new Column() { Min = 5U, Max = 5U, Width = 8D, CustomWidth = true });
+        columns.Append(new Column() { Min = 6U, Max = 20U, Width = 13.5D, CustomWidth = true });
+        columns.Append(new Column() { Min = 21U, Max = 21U, Width = 12D, CustomWidth = true });
+
+        var sheetData = new SheetData();
+
+        var headerRow = new Row() { RowIndex = (UInt32Value)1U };
+        for (int c = 0; c < colCount; c++)
+        {
+            headerRow.Append(new Cell
+            {
+                CellReference = $"{GetColumnLetter(c + 1)}1",
+                CellValue = new CellValue(headers[c]),
+                DataType = CellValues.String,
+                StyleIndex = (UInt32Value)1U
+            });
+        }
+        sheetData.Append(headerRow);
+
+        uint rowIndex = 2;
+        foreach (var row in rows)
+        {
+            var dataRow = new Row() { RowIndex = rowIndex };
+            int c = 1;
+            dataRow.Append(DayOverviewStringCell(c++, rowIndex, row.EmployeeNo));
+            dataRow.Append(DayOverviewStringCell(c++, rowIndex, row.WorkerName));
+            dataRow.Append(DayOverviewStringCell(c++, rowIndex, row.Date.ToString("dddd", culture)));
+            dataRow.Append(DayOverviewDateCell(c++, rowIndex, row.Date));
+            var weekNumber = culture.Calendar.GetWeekOfYear(row.Date, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+            dataRow.Append(DayOverviewNumberCell(c++, rowIndex, weekNumber, null));
+
+            var p = row.Planning;
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Start, p.Start1StartedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Stop, p.Stop1StoppedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Pause, null, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Start, p.Start2StartedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Stop, p.Stop2StoppedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Pause, null, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Start, p.Start3StartedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Stop, p.Stop3StoppedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Pause, null, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift4Start, p.Start4StartedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift4Stop, p.Stop4StoppedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift4Pause, null, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift5Start, p.Start5StartedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift5Stop, p.Stop5StoppedAt, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift5Pause, null, row.UseOneMinuteIntervals)));
+
+            var netto = p.NettoHoursOverrideActive ? p.NettoHoursOverride : p.NettoHours;
+            dataRow.Append(DayOverviewNumberCell(c, rowIndex, netto, (UInt32Value)4U));
+
+            sheetData.Append(dataRow);
+            rowIndex++;
+        }
+
+        uint lastRow = rowIndex - 1; // header-only when no data => 1
+        string reference = $"A1:{GetColumnLetter(colCount)}{lastRow}";
+
+        var pageMargins = new PageMargins() { Left = 0.7D, Right = 0.7D, Top = 0.75D, Bottom = 0.75D, Header = 0.3D, Footer = 0.3D };
+
+        worksheet.Append(sheetFormatProperties);
+        worksheet.Append(columns);
+        worksheet.Append(sheetData);
+        worksheet.Append(pageMargins);
+
+        var tableDefinitionPart = worksheetPart.AddNewPart<TableDefinitionPart>("rIdDayOverviewTable");
+        var table = new Table()
+        {
+            Id = (UInt32Value)1U,
+            Name = "DayOverview",
+            DisplayName = "DayOverview",
+            Reference = reference,
+            TotalsRowShown = false
+        };
+        table.Append(new AutoFilter() { Reference = reference });
+        var tableColumns = new TableColumns() { Count = (UInt32Value)(uint)colCount };
+        for (uint tc = 1; tc <= colCount; tc++)
+        {
+            tableColumns.Append(new TableColumn() { Id = (UInt32Value)tc, Name = headers[tc - 1] });
+        }
+        table.Append(tableColumns);
+        table.Append(new TableStyleInfo()
+        {
+            Name = "TableStyleMedium2",
+            ShowFirstColumn = false,
+            ShowLastColumn = false,
+            ShowRowStripes = true,
+            ShowColumnStripes = false
+        });
+        tableDefinitionPart.Table = table;
+
+        var tableParts = new TableParts() { Count = (UInt32Value)1U };
+        tableParts.Append(new TablePart() { Id = "rIdDayOverviewTable" });
+        worksheet.Append(tableParts);
+
+        worksheetPart.Worksheet = worksheet;
     }
 
     internal static List<PlanRegistrationPayLine> CalculatePayLinesForDay(

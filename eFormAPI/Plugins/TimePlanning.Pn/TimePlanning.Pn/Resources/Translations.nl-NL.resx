@@ -137,4 +137,7 @@
     <data name="Total Hours" xml:space="preserve">
         <value>Totale uren</value>
     </data>
+    <data name="DayOverview" xml:space="preserve">
+        <value>Dagoverzicht</value>
+    </data>
 </root>

@@ -192,4 +192,7 @@
     <data name="UserNotFound" xml:space="preserve">
         <value>User not found.</value>
     </data>
+    <data name="DayOverview" xml:space="preserve">
+        <value>Day overview</value>
+    </data>
 </root>

@@ -290,5 +290,11 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("Normal Hours", resourceCulture);
             }
         }
+
+        internal static string DayOverview {
+            get {
+                return ResourceManager.GetString("DayOverview", resourceCulture);
+            }
+        }
     }
 }
