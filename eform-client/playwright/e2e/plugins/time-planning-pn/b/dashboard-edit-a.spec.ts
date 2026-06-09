@@ -224,7 +224,7 @@ test.describe('Dashboard edit values', () => {
     await indexUpdatePromise;
     await waitForSpinner(page);
 
-    await expect(page.locator('#plannedHours3')).toContainText('53 t 15 min');
+    await expect(page.locator('#plannedHours3')).toContainText('53:15');
 
     // Verify existing plan texts
     for (let i = 0; i < updatePlanTexts.length; i++) {
@@ -389,6 +389,6 @@ test.describe('Dashboard edit values', () => {
       }
     }
 
-    await expect(page.locator('#plannedHours3')).toContainText('52 t 55 min');
+    await expect(page.locator('#plannedHours3')).toContainText('52:55');
   });
 });

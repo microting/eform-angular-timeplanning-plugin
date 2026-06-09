@@ -400,7 +400,7 @@ test.describe('Dashboard assert', () => {
     await indexUpdatePromise5;
     await waitForSpinner(page);
 
-    await expect(page.locator('#plannedHours0')).toContainText('53 t 15 min');
+    await expect(page.locator('#plannedHours0')).toContainText('53:15');
 
     for (let i = 0; i < planTexts.length; i++) {
       const flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
@@ -637,7 +637,7 @@ test.describe('Dashboard assert', () => {
     await indexUpdatePromise3;
     await waitForSpinner(page);
 
-    await expect(page.locator('#plannedHours0')).toContainText('53 t 15 min');
+    await expect(page.locator('#plannedHours0')).toContainText('53:15');
 
     for (let i = 0; i < updatePlanTexts.length; i++) {
       const flexBalanceToDateId = `#flexBalanceToDate0_${i}`;
