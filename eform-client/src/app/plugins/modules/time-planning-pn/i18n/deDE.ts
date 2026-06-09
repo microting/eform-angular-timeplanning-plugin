@@ -390,4 +390,7 @@ export const deDE = {
   'Details': 'Details',
   'No requests found': 'Keine Anfragen gefunden',
   'Error loading request history': 'Fehler beim Laden der Antragshistorie',
+  t: 'h',
+  min: 'min',
+  timer: 'hrs',
 };

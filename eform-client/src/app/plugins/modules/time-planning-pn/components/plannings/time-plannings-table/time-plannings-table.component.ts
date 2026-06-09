@@ -446,6 +446,38 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   }
 
   /**
+   * Formats a decimal-hours value as "X t Y min (Z.ZZ timer)".
+   * Both parts derive from the same rounded total-minutes, so they are always
+   * internally consistent. When withDecimal is false the "(Z.ZZ timer)" part is
+   * omitted (used for planned pause/break and planned plan-hours).
+   * Accepts a number or a numeric string (paid-out flex may use a comma decimal).
+   */
+  formatDuration(hours: number | string | null | undefined, withDecimal: boolean = true): string {
+    const parsed = typeof hours === 'string'
+      ? parseFloat(hours.replace(',', '.'))
+      : hours;
+    const safe = (parsed === null || parsed === undefined || isNaN(parsed as number))
+      ? 0
+      : Number(parsed);
+
+    const totalMinutes = Math.round(Math.abs(safe) * 60);
+    const negative = safe < 0 && totalMinutes > 0;
+    const hrs = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    const sign = negative ? '-' : '';
+
+    const t = this.translateService.instant('t');
+    const min = this.translateService.instant('min');
+    const base = `${sign}${hrs} ${t} ${mins} ${min}`;
+    if (!withDecimal) {
+      return base;
+    }
+    const timer = this.translateService.instant('timer');
+    const decimal = (totalMinutes / 60).toFixed(2);
+    return `${base} (${sign}${decimal} ${timer})`;
+  }
+
+  /**
    * Phase 4 second-precision sibling of {@link convertHoursToTime}. Adds a
    * <c>:SS</c> tail for callers that want seconds-level display when the
    * row's site has <c>UseOneMinuteIntervals</c> on. The legacy 2-component

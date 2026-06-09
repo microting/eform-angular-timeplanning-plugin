@@ -387,4 +387,7 @@ export const noNO = {
   'Date': 'Date',
   'No requests found': 'No requests found',
   'Error loading request history': 'Error loading request history',
+  t: 'h',
+  min: 'min',
+  timer: 'hrs',
 };
