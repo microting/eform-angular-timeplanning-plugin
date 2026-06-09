@@ -502,6 +502,11 @@ describe('TimePlanningsTableComponent', () => {
     it('treats null/NaN as zero', () => {
       expect(component.formatDuration(null as any)).toBe('0 t 0 min (0.00 timer)');
     });
+    it('derives the decimal from the true value, not the rounded minutes', () => {
+      // 58.36 h -> minutes round to 58 t 22 min, but the decimal must stay 58.36
+      // (deriving it from rounded minutes would wrongly yield 58.37).
+      expect(component.formatDuration(58.36)).toBe('58 t 22 min (58.36 timer)');
+    });
   });
 
   // Dormant helper — production display no longer uses seconds.

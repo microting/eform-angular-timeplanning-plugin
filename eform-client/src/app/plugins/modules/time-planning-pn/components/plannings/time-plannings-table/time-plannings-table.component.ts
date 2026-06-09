@@ -447,9 +447,11 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
 
   /**
    * Formats a decimal-hours value as "X t Y min (Z.ZZ timer)".
-   * Both parts derive from the same rounded total-minutes, so they are always
-   * internally consistent. When withDecimal is false the "(Z.ZZ timer)" part is
-   * omitted (used for planned pause/break and planned plan-hours).
+   * The "X t Y min" part is the hours:minutes breakdown (minutes rounded);
+   * the "(Z.ZZ timer)" part is the true decimal-hours value rounded to 2 places
+   * (so it matches the stored value, e.g. 58.36 -> "58 t 22 min (58.36 timer)").
+   * When withDecimal is false the "(Z.ZZ timer)" part is omitted (used for
+   * planned pause/break and planned plan-hours).
    * Accepts a number or a numeric string (paid-out flex may use a comma decimal).
    */
   formatDuration(hours: number | string | null | undefined, withDecimal: boolean = true): string {
@@ -473,7 +475,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
       return base;
     }
     const timer = this.translateService.instant('timer');
-    const decimal = (totalMinutes / 60).toFixed(2);
+    const decimal = Math.abs(safe).toFixed(2);
     return `${base} (${sign}${decimal} ${timer})`;
   }
 
