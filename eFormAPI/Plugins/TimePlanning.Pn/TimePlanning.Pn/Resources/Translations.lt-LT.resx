@@ -137,4 +137,7 @@
     <data name="Total Hours" xml:space="preserve">
         <value>Iš viso valandų</value>
     </data>
+    <data name="DayOverview" xml:space="preserve">
+        <value>Dienos apžvalga</value>
+    </data>
 </root>

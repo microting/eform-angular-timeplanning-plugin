@@ -137,4 +137,7 @@
     <data name="Total Hours" xml:space="preserve">
         <value>Σύνολο ωρών</value>
     </data>
+    <data name="DayOverview" xml:space="preserve">
+        <value>Ημερήσια επισκόπηση</value>
+    </data>
 </root>

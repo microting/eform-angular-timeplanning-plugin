@@ -225,8 +225,14 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
     {
         xlsx.Position = 0;
         using var doc = SpreadsheetDocument.Open(xlsx, false);
-        var sheet = doc.WorkbookPart!.WorksheetParts.First().Worksheet;
-        var sst = doc.WorkbookPart.SharedStringTablePart?.SharedStringTable;
+        var workbookPart = doc.WorkbookPart!;
+        // The first worksheet is now "Dagsoversigt" (Day overview); resolve the
+        // Dashboard sheet explicitly by name so these assertions keep targeting it.
+        var dashboardSheet = workbookPart.Workbook.Descendants<Sheet>()
+            .First(s => s.Name == "Dashboard");
+        var dashboardPart = (WorksheetPart)workbookPart.GetPartById(dashboardSheet.Id!);
+        var sheet = dashboardPart.Worksheet;
+        var sst = workbookPart.SharedStringTablePart?.SharedStringTable;
         string CellText(Cell c)
         {
             var raw = c.CellValue?.Text ?? c.InnerText ?? "";

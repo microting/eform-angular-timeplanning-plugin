@@ -125,14 +125,27 @@ public static class OpenXMLHelper
 
         cellStyleFormats1.Append(cellFormat1);
 
-        CellFormats cellFormats1 = new CellFormats(){ Count = (UInt32Value)3U };
+        NumberingFormats numberingFormats1 = new NumberingFormats() { Count = (UInt32Value)2U };
+        numberingFormats1.Append(new NumberingFormat() { NumberFormatId = (UInt32Value)164U, FormatCode = "dd/mm/yyyy" });
+        numberingFormats1.Append(new NumberingFormat() { NumberFormatId = (UInt32Value)165U, FormatCode = "hh:mm" });
+
+        CellFormats cellFormats1 = new CellFormats(){ Count = (UInt32Value)6U };
         CellFormat cellFormat2 = new CellFormat(){ NumberFormatId = (UInt32Value)0U, FontId = (UInt32Value)0U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U };
         CellFormat cellFormat3 = new CellFormat(){ NumberFormatId = (UInt32Value)0U, FontId = (UInt32Value)1U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U, ApplyFont = true };
         CellFormat cellFormat4 = new CellFormat(){ NumberFormatId = (UInt32Value)14U, FontId = (UInt32Value)0U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U, ApplyNumberFormat = true };
+        // New: StyleIndex 3 = time hh:mm
+        CellFormat cellFormat5 = new CellFormat(){ NumberFormatId = (UInt32Value)165U, FontId = (UInt32Value)0U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U, ApplyNumberFormat = true };
+        // New: StyleIndex 4 = number 0.00 (built-in numFmtId 2)
+        CellFormat cellFormat6 = new CellFormat(){ NumberFormatId = (UInt32Value)2U, FontId = (UInt32Value)0U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U, ApplyNumberFormat = true };
+        // New: StyleIndex 5 = date dd/mm/yyyy (custom numFmtId 164)
+        CellFormat cellFormat7 = new CellFormat(){ NumberFormatId = (UInt32Value)164U, FontId = (UInt32Value)0U, FillId = (UInt32Value)0U, BorderId = (UInt32Value)0U, FormatId = (UInt32Value)0U, ApplyNumberFormat = true };
 
         cellFormats1.Append(cellFormat2);
         cellFormats1.Append(cellFormat3);
         cellFormats1.Append(cellFormat4);
+        cellFormats1.Append(cellFormat5);
+        cellFormats1.Append(cellFormat6);
+        cellFormats1.Append(cellFormat7);
 
         CellStyles cellStyles1 = new CellStyles(){ Count = (UInt32Value)1U };
         CellStyle cellStyle1 = new CellStyle(){ Name = "Normal", FormatId = (UInt32Value)0U, BuiltinId = (UInt32Value)0U };
@@ -158,6 +171,7 @@ public static class OpenXMLHelper
         stylesheetExtensionList1.Append(stylesheetExtension1);
         stylesheetExtensionList1.Append(stylesheetExtension2);
 
+        stylesheet1.Append(numberingFormats1);
         stylesheet1.Append(fonts1);
         stylesheet1.Append(fills1);
         stylesheet1.Append(borders1);

@@ -245,9 +245,9 @@ jobs:
           - name: f
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceExtendedTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperReadBySiteAndDateTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperTests|FullyQualifiedName=TimePlanning.Pn.Test.PushNotificationServiceTests"
           - name: g
-            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServicePhoneNumberTests|FullyQualifiedName=TimePlanning.Pn.Test.TimePlanningWorkingHoursExportTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAbsenceRequestGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAuthGrpcServiceTests"
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServicePhoneNumberTests|FullyQualifiedName=TimePlanning.Pn.Test.TimePlanningWorkingHoursExportTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAbsenceRequestGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAuthGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.DagsoversigtWorksheetExportTests"
           - name: h
-            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningContentHandoverGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningPlanningsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningSettingsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningWorkingHoursGrpcServiceTests"
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningContentHandoverGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningPlanningsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningSettingsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningWorkingHoursGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.WorkingHoursExcelExportE2ETests"
     steps:
     - uses: actions/checkout@v3
     - name: Create docker network

@@ -137,4 +137,7 @@
     <data name="Total Hours" xml:space="preserve">
         <value>Ukupno sati</value>
     </data>
+    <data name="DayOverview" xml:space="preserve">
+        <value>Dnevni pregled</value>
+    </data>
 </root>
