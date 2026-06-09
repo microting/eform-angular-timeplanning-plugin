@@ -467,6 +467,48 @@ describe('TimePlanningsTableComponent', () => {
     });
   });
 
+  describe('formatDuration', () => {
+    beforeEach(() => {
+      jest
+        .spyOn(component['translateService'], 'instant')
+        .mockImplementation((key: string) => key);
+    });
+
+    it('formats a sub-hour duration with decimal', () => {
+      expect(component.formatDuration(3 / 60)).toBe('0 t 3 min (0.05 timer)');
+    });
+    it('formats hours + minutes with decimal', () => {
+      expect(component.formatDuration(7.58)).toBe('7 t 35 min (7.58 timer)');
+    });
+    it('shows a whole-hour value with zero minutes', () => {
+      expect(component.formatDuration(2)).toBe('2 t 0 min (2.00 timer)');
+    });
+    it('formats a negative duration with a leading minus on both parts', () => {
+      expect(component.formatDuration(-0.53)).toBe('-0 t 32 min (-0.53 timer)');
+    });
+    it('omits the decimal part when withDecimal is false', () => {
+      expect(component.formatDuration(30 / 60, false)).toBe('0 t 30 min');
+    });
+    it('renders zero as a non-negative zero', () => {
+      expect(component.formatDuration(0)).toBe('0 t 0 min (0.00 timer)');
+      expect(component.formatDuration(-0.0001)).toBe('0 t 0 min (0.00 timer)');
+    });
+    it('carries rounding into the hour', () => {
+      expect(component.formatDuration(0.999)).toBe('1 t 0 min (1.00 timer)');
+    });
+    it('parses a numeric string (paid-out flex) and handles comma decimals', () => {
+      expect(component.formatDuration('2,00')).toBe('2 t 0 min (2.00 timer)');
+    });
+    it('treats null/NaN as zero', () => {
+      expect(component.formatDuration(null as any)).toBe('0 t 0 min (0.00 timer)');
+    });
+    it('derives the decimal from the true value, not the rounded minutes', () => {
+      // 58.36 h -> minutes round to 58 t 22 min, but the decimal must stay 58.36
+      // (deriving it from rounded minutes would wrongly yield 58.37).
+      expect(component.formatDuration(58.36)).toBe('58 t 22 min (58.36 timer)');
+    });
+  });
+
   // Dormant helper — production display no longer uses seconds.
   describe('convertHoursToTimeWithSeconds', () => {
     it('formats whole-hour values with seconds suffix', () => {

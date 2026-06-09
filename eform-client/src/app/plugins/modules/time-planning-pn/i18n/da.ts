@@ -392,4 +392,7 @@ export const da = {
   'Details': 'Detaljer',
   'No requests found': 'Ingen anmodninger fundet',
   'Error loading request history': 'Fejl ved indlæsning af anmodningshistorik',
+  t: 't',
+  min: 'min',
+  timer: 'timer',
 };

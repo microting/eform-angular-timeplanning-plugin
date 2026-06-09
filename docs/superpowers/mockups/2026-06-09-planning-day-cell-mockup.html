@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Planning day-cell — redesign mockup</title>
+
+<!-- Roboto = the app's Material body font (fidelity over novelty for an in-app component) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<!-- Material Symbols Outlined = the thin, outlined icon look from the target image -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    /* Pulled from the app's styles.scss / theme tokens */
+    --success-light: #D4EDDA;   /* green-background */
+    --error-light:   #F8D7DA;   /* red-background  */
+    --border:        #EBEFF2;   /* grey-background */
+    --text-dark:     #0F1316;
+    --text-grey:     #6b7280;
+    --red-text:      #DB0D0D;
+    --blue-text:     #0D96DB;
+    --green-text:    #2e7d32;
+    --page-bg:       #f4f6f8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 40px 32px 80px;
+    background: var(--page-bg);
+    font-family: 'Roboto', system-ui, sans-serif;
+    color: var(--text-dark);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1 {
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  .sub {
+    color: var(--text-grey);
+    font-size: 14px;
+    margin: 0 0 28px;
+    max-width: 760px;
+    line-height: 1.5;
+  }
+  .sub code {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 13px;
+  }
+
+  .board {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 36px;
+    align-items: flex-start;
+  }
+
+  .variant { width: 300px; }
+  .variant > .label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-grey);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 10px;
+  }
+  .variant > .note {
+    font-size: 12px;
+    color: var(--text-grey);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  /* ---- mimic the mtx-grid day column ---- */
+  .day-col {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(16,19,22,.04);
+  }
+  .day-head {
+    padding: 18px 16px;
+    font-weight: 500;
+    font-size: 17px;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+  }
+  .day-body { padding: 12px; }
+
+  /* ---- the cell itself (mirrors .plan-container + color classes) ---- */
+  .plan {
+    border-radius: 8px;
+    padding: 14px 14px;
+    min-height: 100px;
+    display: flex;
+    gap: 8px;
+  }
+  .plan.green { background: var(--success-light); color: var(--text-dark); }
+  .plan.grey  { background: var(--border);        color: var(--text-dark); }
+  .plan-content { flex: 1; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .row + .row { margin-top: 2px; }
+
+  .material-symbols-outlined {
+    font-size: 20px;
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+    flex: 0 0 22px;
+    text-align: center;
+    color: var(--text-dark);
+  }
+  .row .range { font-weight: 500; letter-spacing: .2px; }
+  .row .end-ic { margin-left: 4px; }
+
+  /* duration text */
+  .dur { white-space: nowrap; }
+  .dur .dec { color: var(--text-grey); }
+  .dur.neg, .dur.neg .dec { color: var(--red-text); }
+
+  /* planned row (kept, reformatted) */
+  .row.planned .material-symbols-outlined { color: var(--text-grey); }
+  .row.planned .ptext { color: var(--text-grey); font-weight: 400; }
+
+  .divider { height: 1px; background: rgba(15,19,22,.08); margin: 8px 0; }
+
+  .legend {
+    margin-top: 48px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    max-width: 760px;
+  }
+  .legend h2 { font-size: 15px; font-weight: 500; margin: 0 0 12px; }
+  .legend table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  .legend td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .legend td:first-child { color: var(--text-grey); white-space: nowrap; width: 150px; }
+  .legend code { background: var(--page-bg); border-radius: 4px; padding: 1px 6px; }
+</style>
+</head>
+<body>
+
+  <h1>Planning day-cell — redesign mockup</h1>
+  <p class="sub">
+    Re-style of the existing <code>#dayColumnTemplate</code> cell. All current rows are kept;
+    only the <strong>presentation</strong> changes: every duration value renders as
+    <code>X t Y min (Z.ZZ timer)</code>. Time-of-day stamps stay <strong>HH:mm</strong> (no seconds).
+    Icons shown in the thin Material&nbsp;Symbols Outlined style to match your image.
+  </p>
+
+  <div class="board">
+
+    <!-- A — matches the target image (a day with no plan, just actuals) -->
+    <div class="variant">
+      <div class="label">A · matches your image</div>
+      <div class="day-col">
+        <div class="day-head">I dag</div>
+        <div class="day-body">
+          <div class="plan green">
+            <div class="plan-content">
+              <div class="row">
+                <span class="material-symbols-outlined">login</span>
+                <span class="range">09:19&nbsp;-&nbsp;09:28</span>
+                <span class="material-symbols-outlined end-ic">logout</span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">login</span>
+                <span class="range">09:31&nbsp;-&nbsp;09:39</span>
+                <span class="material-symbols-outlined end-ic">logout</span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">pause</span>
+                <span class="dur">0 t 3 min <span class="dec">(0.05 timer)</span></span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">schedule</span>
+                <span class="dur">0 t 9 min <span class="dec">(0.22 timer)</span></span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">swap_vert</span>
+                <span class="dur">0 t 9 min <span class="dec">(0.22 timer)</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note">Same content as your screenshot, but times shown as HH:mm per your choice
+        (image had seconds).</div>
+    </div>
+
+    <!-- B — a fuller day: planned + actual + all duration rows + paid-out flex -->
+    <div class="variant">
+      <div class="label">B · full cell (all rows kept)</div>
+      <div class="day-col">
+        <div class="day-head">Man. 8. jun.</div>
+        <div class="day-body">
+          <div class="plan green">
+            <div class="plan-content">
+              <div class="row planned">
+                <span class="material-symbols-outlined">calendar_month</span>
+                <span class="ptext">07:00&nbsp;-&nbsp;15:00 · 0 t 30 min</span>
+              </div>
+              <div class="divider"></div>
+              <div class="row">
+                <span class="material-symbols-outlined">login</span>
+                <span class="range">06:58&nbsp;-&nbsp;15:03</span>
+                <span class="material-symbols-outlined end-ic">logout</span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">pause</span>
+                <span class="dur">0 t 30 min <span class="dec">(0.50 timer)</span></span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">schedule</span>
+                <span class="dur">7 t 35 min <span class="dec">(7.58 timer)</span></span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">payments</span>
+                <span class="dur">2 t 0 min <span class="dec">(2.00 timer)</span></span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">swap_vert</span>
+                <span class="dur">1 t 5 min <span class="dec">(1.08 timer)</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note">Planned row keeps its time range (HH:mm) and reformats the break duration.
+        Paid-out flex (<code>payments</code>) and flex balance both use the new format.</div>
+    </div>
+
+    <!-- C — negative flex + future/grey for completeness -->
+    <div class="variant">
+      <div class="label">C · negative flex</div>
+      <div class="day-col">
+        <div class="day-head">Fre. 5. jun.</div>
+        <div class="day-body">
+          <div class="plan green">
+            <div class="plan-content">
+              <div class="row">
+                <span class="material-symbols-outlined">login</span>
+                <span class="range">07:02&nbsp;-&nbsp;14:30</span>
+                <span class="material-symbols-outlined end-ic">logout</span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">pause</span>
+                <span class="dur">0 t 30 min <span class="dec">(0.50 timer)</span></span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">schedule</span>
+                <span class="dur">6 t 58 min <span class="dec">(6.97 timer)</span></span>
+              </div>
+              <div class="row">
+                <span class="material-symbols-outlined">swap_vert</span>
+                <span class="dur neg">-0 t 32 min <span class="dec">(-0.53 timer)</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note">Open question: how to render a negative duration — shown here as
+        <code>-0 t 32 min (-0.53 timer)</code> in red.</div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    <h2>Format rules in this mockup</h2>
+    <table>
+      <tr><td>Duration rows</td><td><code>X t Y min (Z.ZZ timer)</code> — hours part always shown, decimal hours to 2 places. Labels <code>t</code> / <code>min</code> / <code>timer</code> are translatable.</td></tr>
+      <tr><td>Full format</td><td>actual pause, worked/net hours, flex balance, paid-out flex.</td></tr>
+      <tr><td><code>X t Y min</code> only (no decimal)</td><td>planned pause/break &amp; planned plan-hours.</td></tr>
+      <tr><td>Time stamps</td><td>Actual start/stop and planned start/end stay <code>HH:mm</code> (no seconds).</td></tr>
+      <tr><td>Icons</td><td><code>login</code> / <code>logout</code> (shift), <code>pause</code>, <code>schedule</code> (worked), <code>swap_vert</code> (flex), <code>calendar_month</code> (planned), <code>payments</code> (paid-out flex) — Material Symbols Outlined, thin.</td></tr>
+      <tr><td>Cell colour</td><td>Existing <code>green-background</code> (#D4EDDA) for completed days — unchanged logic.</td></tr>
+    </table>
+  </div>
+
+</body>
+</html>
