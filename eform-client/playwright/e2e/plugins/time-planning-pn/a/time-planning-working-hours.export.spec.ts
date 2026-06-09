@@ -47,8 +47,11 @@ test.describe('Time planning plugin working hours export', () => {
     const generatedContent = fs.readFileSync(downloadPath!);
     const fixtureContent = fs.readFileSync(fixturesPath);
 
+    // The export now adds a localized "Dagsoversigt" (Day overview) sheet as the first tab,
+    // so the Dashboard data is no longer SheetNames[0]. Select the Dashboard sheet by name
+    // (the sheet this fixture represents) rather than by position.
     const wbGenerated = XLSX.read(generatedContent, { type: 'buffer' });
-    const sheetGenerated = wbGenerated.Sheets[wbGenerated.SheetNames[0]];
+    const sheetGenerated = wbGenerated.Sheets['Dashboard'];
     const jsonGenerated = XLSX.utils.sheet_to_json(sheetGenerated, { header: 1 }) as any[][];
 
     const wbFixture = XLSX.read(fixtureContent, { type: 'buffer' });
