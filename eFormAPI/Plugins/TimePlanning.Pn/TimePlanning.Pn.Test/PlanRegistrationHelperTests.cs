@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
@@ -1340,5 +1341,51 @@ public class PlanRegistrationHelperTests
         PlanRegistrationHelper.RecalculatePlanHoursFromShifts(pr, useOneMinuteIntervals);
         Assert.That(pr.PlanHours, Is.EqualTo(2.0).Within(0.001));
         Assert.That(pr.PlanHoursInSeconds, Is.EqualTo(7200));
+    }
+
+    [Test]
+    public void GetDeclaredPayCodes_CollectsFromAllSources_DedupsAndSkipsEmpty_OrdersTiersByOrder()
+    {
+        var ruleSet = new PayRuleSet
+        {
+            DayRules = new List<PayDayRule>
+            {
+                new PayDayRule { Tiers = new List<PayTierRule>
+                {
+                    new PayTierRule { PayCode = "B", Order = 2 },
+                    new PayTierRule { PayCode = "A", Order = 1 },
+                }},
+                new PayDayRule { Tiers = new List<PayTierRule>
+                {
+                    new PayTierRule { PayCode = "A", Order = 1 }, // duplicate
+                }},
+            },
+            DayTypeRules = new List<PayDayTypeRule>
+            {
+                new PayDayTypeRule { DefaultPayCode = "C", TimeBandRules = new List<PayTimeBandRule>
+                {
+                    new PayTimeBandRule { PayCode = "D" },
+                    new PayTimeBandRule { PayCode = "" },   // skipped
+                }},
+                new PayDayTypeRule { DefaultPayCode = null, TimeBandRules = new List<PayTimeBandRule>() }, // skipped
+            },
+            HolidayPaidOffPayCode = "E",
+        };
+
+        var codes = TimePlanningWorkingHoursService.GetDeclaredPayCodes(ruleSet);
+
+        Assert.That(codes, Is.EqualTo(new List<string> { "A", "B", "C", "D", "E" }));
+    }
+
+    [Test]
+    public void GetDeclaredPayCodes_NullRuleSet_ReturnsEmpty()
+    {
+        Assert.That(TimePlanningWorkingHoursService.GetDeclaredPayCodes(null), Is.Empty);
+    }
+
+    [Test]
+    public void GetDeclaredPayCodes_EmptyRuleSet_ReturnsEmpty()
+    {
+        Assert.That(TimePlanningWorkingHoursService.GetDeclaredPayCodes(new PayRuleSet()), Is.Empty);
     }
 }

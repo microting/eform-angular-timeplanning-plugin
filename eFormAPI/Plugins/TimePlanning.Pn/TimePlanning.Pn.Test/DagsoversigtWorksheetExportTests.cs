@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
@@ -336,6 +338,76 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
     }
 
     // ------------------------------------------------------------------
+    // 6. All-workers: each per-site sheet exposes only the pay codes DECLARED
+    //    in that site's own pay-rule-set; the Total sheet keeps the union.
+    // ------------------------------------------------------------------
+
+    [Test]
+    public async Task AllWorkers_PerSiteSheets_UseEachWorkersOwnPayRuleSetCodes()
+    {
+        var date = new DateTime(2026, 5, 15);
+
+        // Site A declares only "AAA"; Site B declares only "BBB"; Site C has no
+        // pay-rule-set at all. Each site has a worked-time registration on `date`.
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9701, employeeNo: "1", date: date,
+            useOneMinuteIntervals: false, start1Id: 97, stop1Id: 121);
+        await LinkPayRuleSetToSite(siteUid: 9701, name: "RuleSet A", payCode: "AAA");
+
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9702, employeeNo: "2", date: date,
+            useOneMinuteIntervals: false, start1Id: 97, stop1Id: 121);
+        await LinkPayRuleSetToSite(siteUid: 9702, name: "RuleSet B", payCode: "BBB");
+
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9703, employeeNo: "3", date: date,
+            useOneMinuteIntervals: false, start1Id: 97, stop1Id: 121);
+        // Site C: intentionally no LinkPayRuleSetToSite call → PayRuleSetId stays null.
+
+        var result = await _service.GenerateExcelDashboard(
+            new TimePlanningWorkingHoursReportForAllWorkersRequestModel
+            {
+                DateFrom = date,
+                DateTo = date,
+            });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model, Is.Not.Null);
+
+        try
+        {
+            result.Model!.Position = 0;
+            using var doc = SpreadsheetDocument.Open(result.Model!, false);
+            var workbookPart = doc.WorkbookPart!;
+
+            var siteAHeader = ReadHeaderRowText(workbookPart, "Site 9701");
+            var siteBHeader = ReadHeaderRowText(workbookPart, "Site 9702");
+            var siteCHeader = ReadHeaderRowText(workbookPart, "Site 9703");
+            var totalHeader = ReadHeaderRowText(workbookPart, "Total");
+
+            // Site A's sheet: only its own declared code.
+            Assert.That(siteAHeader, Does.Contain("AAA"), "Site A sheet must declare its own code AAA");
+            Assert.That(siteAHeader, Does.Not.Contain("BBB"), "Site A sheet must NOT carry Site B's code BBB");
+
+            // Site B's sheet: only its own declared code.
+            Assert.That(siteBHeader, Does.Contain("BBB"), "Site B sheet must declare its own code BBB");
+            Assert.That(siteBHeader, Does.Not.Contain("AAA"), "Site B sheet must NOT carry Site A's code AAA");
+
+            // Site C has no rule-set: neither code appears.
+            Assert.That(siteCHeader, Does.Not.Contain("AAA"), "Site C (no rule-set) must NOT carry AAA");
+            Assert.That(siteCHeader, Does.Not.Contain("BBB"), "Site C (no rule-set) must NOT carry BBB");
+
+            // Total sheet keeps the union of all codes (unchanged behavior).
+            Assert.That(totalHeader, Does.Contain("AAA"), "Total sheet must keep the union, including AAA");
+            Assert.That(totalHeader, Does.Contain("BBB"), "Total sheet must keep the union, including BBB");
+        }
+        finally
+        {
+            await result.Model!.DisposeAsync();
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
 
@@ -389,6 +461,71 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
             return sst.ElementAt(idx).InnerText;
         }
         return raw;
+    }
+
+    /// <summary>
+    /// Resolves the sheet named <paramref name="sheetName"/> from the workbook and
+    /// returns the joined text of every header cell (row 1). Pay-code headers are
+    /// plain string cells appended after the fixed columns, so a substring search
+    /// of the joined text reliably tells whether a code column is present.
+    /// </summary>
+    private static string ReadHeaderRowText(WorkbookPart workbookPart, string sheetName)
+    {
+        var sheet = workbookPart.Workbook.Descendants<Sheet>()
+            .First(s => s.Name == sheetName);
+        var part = (WorksheetPart)workbookPart.GetPartById(sheet.Id!);
+        var headerRow = part.Worksheet.Descendants<Row>().First(r => r.RowIndex! == 1U);
+        return string.Join("|", headerRow.Elements<Cell>().Select(c => CellText(c, workbookPart)));
+    }
+
+    /// <summary>
+    /// Creates a <see cref="PayRuleSet"/> declaring exactly one pay code (one
+    /// <see cref="PayDayRule"/> → one <see cref="PayTierRule"/>) and links it to the
+    /// already-seeded site's <see cref="AssignedSiteEntity"/> by setting
+    /// <c>PayRuleSetId</c>. The declared code drives the per-site sheet's pay-code
+    /// header columns regardless of worked time.
+    /// </summary>
+    private async Task LinkPayRuleSetToSite(int siteUid, string name, string payCode)
+    {
+        var payRuleSet = new PayRuleSet
+        {
+            Name = name,
+            DayRules = new List<PayDayRule>
+            {
+                new PayDayRule
+                {
+                    DayCode = "WEEKDAY",
+                    Tiers = new List<PayTierRule>
+                    {
+                        new PayTierRule { UpToSeconds = null, PayCode = payCode, PayrollCode = "100", Order = 1 }
+                    }
+                }
+            },
+            DayTypeRules = new List<PayDayTypeRule>(),
+            WorkflowState = Constants.WorkflowStates.Created,
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext!);
+
+        var assignedSite = await TimePlanningPnDbContext!.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstAsync(x => x.SiteId == siteUid);
+        assignedSite.PayRuleSetId = payRuleSet.Id;
+        await assignedSite.Update(TimePlanningPnDbContext!);
+
+        // Give the in-range registration positive NettoHours so the WEEKDAY tier
+        // emits a pay line for the declared code. The per-site COLUMN header comes
+        // from the DECLARED codes (worked time irrelevant), but the Total sheet's
+        // union is built from EMITTED pay codes, so it needs non-zero worked time.
+        var registrations = await TimePlanningPnDbContext!.PlanRegistrations
+            .Where(x => x.SdkSitId == siteUid
+                        && x.WorkflowState != Constants.WorkflowStates.Removed
+                        && x.Start1Id > 0)
+            .ToListAsync();
+        foreach (var registration in registrations)
+        {
+            registration.NettoHours = 2.0;
+            await registration.Update(TimePlanningPnDbContext!);
+        }
     }
 
     /// <summary>

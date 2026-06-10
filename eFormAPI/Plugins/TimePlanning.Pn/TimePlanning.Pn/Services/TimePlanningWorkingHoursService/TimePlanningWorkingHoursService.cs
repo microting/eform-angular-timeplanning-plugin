@@ -3190,8 +3190,12 @@ public class TimePlanningWorkingHoursService(
                     {
                         headerStrings.Add(localizationService.GetString(header));
                     }
-                    // Append one column header per pay code discovered across all sites
-                    foreach (var payCode in allPayCodes)
+                    // Per-worker pay-code columns: only the codes declared in THIS site's
+                    // pay-rule-set (empty when the site has no rule-set). The global allPayCodes
+                    // is still used by the Total sheet, which is intentionally unchanged.
+                    perSiteCache.TryGetValue(siteIds[i], out var siteCacheForCodes);
+                    var sitePayCodes = GetDeclaredPayCodes(siteCacheForCodes?.PayRuleSet);
+                    foreach (var payCode in sitePayCodes)
                     {
                         headerStrings.Add(payCode);
                     }
@@ -3264,7 +3268,7 @@ public class TimePlanningWorkingHoursService(
                             var dayPayLines = (cache != null && cache.PayLinesByDate.ContainsKey(planning.Date))
                                 ? cache.PayLinesByDate[planning.Date]
                                 : new List<PlanRegistrationPayLine>();
-                            foreach (var payCode in allPayCodes)
+                            foreach (var payCode in sitePayCodes)
                             {
                                 var payLine = dayPayLines.FirstOrDefault(pl => pl.PayCode == payCode);
                                 dataRow.Append(CreateNumericCell(payLine?.Hours ?? 0));
@@ -3343,9 +3347,9 @@ public class TimePlanningWorkingHoursService(
                         siteTotalsRow.Append(CreateCell(string.Empty));
                         siteTotalsRow.Append(CreateCell(string.Empty));
                     }
-                    foreach (var payCode in allPayCodes)
+                    foreach (var payCode in sitePayCodes)
                     {
-                        siteTotalsRow.Append(CreateNumericCell(siteTotalsByPayCode[payCode]));
+                        siteTotalsRow.Append(CreateNumericCell(siteTotalsByPayCode.GetValueOrDefault(payCode, 0)));
                     }
                     sheetData1.Append(siteTotalsRow);
                     rowIndex++;
@@ -3934,6 +3938,58 @@ public class TimePlanningWorkingHoursService(
                 CalculatedAt = g.First().CalculatedAt
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// Returns the pay codes DECLARED by a pay-rule-set, in structural order
+    /// (day-rule tiers by Order, then day-type default codes and their time-band codes,
+    /// then the holiday code), de-duplicated (first-seen wins), skipping null/empty codes.
+    /// Returns an empty list when payRuleSet is null.
+    /// </summary>
+    internal static List<string> GetDeclaredPayCodes(PayRuleSet payRuleSet)
+    {
+        var codes = new List<string>();
+        if (payRuleSet == null)
+        {
+            return codes;
+        }
+
+        void Add(string code)
+        {
+            if (!string.IsNullOrWhiteSpace(code) && !codes.Contains(code))
+            {
+                codes.Add(code);
+            }
+        }
+
+        if (payRuleSet.DayRules != null)
+        {
+            foreach (var dayRule in payRuleSet.DayRules)
+            {
+                if (dayRule.Tiers == null) continue;
+                foreach (var tier in dayRule.Tiers.OrderBy(t => t.Order))
+                {
+                    Add(tier.PayCode);
+                }
+            }
+        }
+
+        if (payRuleSet.DayTypeRules != null)
+        {
+            foreach (var dayTypeRule in payRuleSet.DayTypeRules)
+            {
+                Add(dayTypeRule.DefaultPayCode);
+                if (dayTypeRule.TimeBandRules == null) continue;
+                foreach (var timeBand in dayTypeRule.TimeBandRules)
+                {
+                    Add(timeBand.PayCode);
+                }
+            }
+        }
+
+        Add(payRuleSet.HolidayPaidOffPayCode);
+
+        return codes;
     }
 
     /// <summary>
