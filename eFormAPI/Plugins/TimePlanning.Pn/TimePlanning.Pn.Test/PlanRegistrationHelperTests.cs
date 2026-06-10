@@ -837,6 +837,40 @@ public class PlanRegistrationHelperTests
     }
 
     /// <summary>
+    /// Production regression (Excel export crash): the 2-arg
+    /// <c>GetShiftTime(plr, shift)</c> must compute the 5-minute time-of-day
+    /// arithmetically rather than indexing the fixed 288-entry
+    /// <c>plr.Options</c> list. Slot ids &gt;= 290 (cross-midnight / night
+    /// shifts, or mis-encoded device values) previously threw
+    /// IndexOutOfRange and aborted the whole export
+    /// (FillDataRow → GetShiftTime). Slot <c>s</c> encodes <c>(s-1)*5</c>
+    /// minutes; the don't-wrap convention keeps 289 → "24:00" and extends
+    /// past midnight: 290 → "24:05", 313 → "26:00".
+    /// </summary>
+    [TestCase(1, "00:00")]
+    [TestCase(91, "07:30")]
+    [TestCase(288, "23:55")]
+    [TestCase(289, "24:00")]
+    [TestCase(290, "24:05")]   // crash case before the fix
+    [TestCase(313, "26:00")]   // 02:00 next-day cross-midnight
+    [TestCase(0, "")]
+    [TestCase(null, "")]
+    public void GetShiftTime_2Arg_ComputesTimeAndHandlesOutOfRangeSlots(int? shift, string expected)
+    {
+        var plr = new PlanRegistration();
+        // PlanRegistration's parameterless constructor populates Options with 288
+        // 5-minute strings "00:00".."23:55"; the fix no longer indexes them.
+
+        var service = (TimePlanningWorkingHoursService)
+            System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(
+                typeof(TimePlanningWorkingHoursService));
+
+        var result = service.GetShiftTime(plr, shift);
+
+        Assert.That(result, Is.EqualTo(expected), $"Slot {shift} must map to {expected}");
+    }
+
+    /// <summary>
     /// Phase 4 contract: the Excel dashboard export
     /// (<c>GenerateExcelDashboard</c>) emits <c>HH:mm</c> string cells
     /// for shift start/stop columns when the row's <c>AssignedSite</c> has
