@@ -2784,11 +2784,16 @@ public class TimePlanningWorkingHoursService(
 
     internal string GetShiftTime(PlanRegistration plr, int? shift)
     {
-        if (shift == 289)
+        if (shift is null or <= 0)
         {
-            return "24:00";
+            return "";
         }
-        return shift > 0 ? plr.Options[(int)shift - 1] : "";
+        // A shift slot id encodes a 5-minute time-of-day: slot s -> (s-1)*5 minutes.
+        // Computed arithmetically instead of indexing the fixed 288-entry plr.Options,
+        // so cross-midnight / out-of-range slot ids (>= 290) don't overflow:
+        // 288 -> 23:55, 289 -> 24:00, 290 -> 24:05, 313 -> 26:00 (don't-wrap convention).
+        var minutes = (shift.Value - 1) * 5;
+        return $"{minutes / 60:00}:{minutes % 60:00}";
     }
 
     /// <summary>

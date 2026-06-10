@@ -264,8 +264,109 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
     }
 
     // ------------------------------------------------------------------
+    // 5. Regression: a cross-midnight / out-of-range shift slot id (> 289)
+    //    must not crash the export. Production bug: Stop1Id = 313 (= 02:00
+    //    next day) made GetShiftTime index past the 288-entry plr.Options
+    //    array and throw IndexOutOfRange. The all-workers path was the one
+    //    that crashed in production, so both overloads are covered.
+    // ------------------------------------------------------------------
+
+    [Test]
+    public async Task Export_WithCrossMidnightShiftSlotId_DoesNotThrow()
+    {
+        // Start1Id = 265 -> (265-1)*5 = 1320 min -> 22:00.
+        // Stop1Id  = 313 -> (313-1)*5 = 1560 min -> 26:00 (= 02:00 next day),
+        //            the > 289 case that used to overflow plr.Options and throw.
+        // Pause1Id = 295 -> (295-1)*5 = 1470 min -> 24:30; Pause always goes
+        //            through the crashing 2-arg GetShiftTime path (actualStamp
+        //            is always null for pause), so it exercises the fix too.
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9810,
+            employeeNo: "1",
+            date: new DateTime(2026, 5, 15),
+            useOneMinuteIntervals: false,
+            start1Id: 265, stop1Id: 313, pause1Id: 295);
+
+        // --- Single-worker overload ---
+        var singleResult = await _service.GenerateExcelDashboard(
+            new TimePlanningWorkingHoursRequestModel
+            {
+                SiteId = 9810,
+                DateFrom = new DateTime(2026, 5, 15),
+                DateTo = new DateTime(2026, 5, 15),
+            });
+
+        Assert.That(singleResult.Success, Is.True, singleResult.Message);
+        Assert.That(singleResult.Model, Is.Not.Null);
+        Assert.That(singleResult.Model!.Length, Is.GreaterThan(0));
+
+        // Confirm not just "no throw" but correct arithmetic output: the
+        // Shift1 Stop cell for slot 313 renders "26:00" on the Dashboard sheet.
+        var (_, shift1Stop) = ReadDashboardShift1Cells(singleResult.Model!);
+        Assert.That(shift1Stop, Is.EqualTo("26:00"),
+            "Out-of-range slot 313 must render arithmetically as 26:00, not throw");
+
+        // Release the single-worker file handle before invoking the all-workers
+        // overload. Both exports write to /tmp/results/{yyyyMMdd_HHmmss}_.xlsx and
+        // return a still-open FileStream; calling them back-to-back inside the same
+        // second would otherwise collide on the identical filename and fail with
+        // an IOException unrelated to the slot-id regression under test.
+        await singleResult.Model!.DisposeAsync();
+
+        // --- All-workers overload (the path that crashed in production) ---
+        var allResult = await _service.GenerateExcelDashboard(
+            new TimePlanningWorkingHoursReportForAllWorkersRequestModel
+            {
+                DateFrom = new DateTime(2026, 5, 15),
+                DateTo = new DateTime(2026, 5, 15),
+            });
+
+        Assert.That(allResult.Success, Is.True, allResult.Message);
+        Assert.That(allResult.Model, Is.Not.Null);
+        Assert.That(allResult.Model!.Length, Is.GreaterThan(0));
+
+        // The all-workers workbook has no "Dashboard" sheet; the positional
+        // FillDataRow layout lives on the per-site sheet, named after the site
+        // ("Site 9810"). Same 0-indexed columns: 7=Shift1Start, 8=Shift1Stop.
+        var (_, allShift1Stop) = ReadDashboardShift1Cells(allResult.Model!, "Site 9810");
+        Assert.That(allShift1Stop, Is.EqualTo("26:00"),
+            "All-workers path (the one that crashed in production) must also render slot 313 as 26:00");
+
+        await allResult.Model!.DisposeAsync();
+    }
+
+    // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Opens the xlsx stream and returns the (Shift1Start, Shift1Stop) cell text
+    /// for the first populated data row of the positional "Dashboard" sheet.
+    /// Column layout from FillDataRow (0-indexed): 7=Shift1Start, 8=Shift1Stop.
+    /// </summary>
+    private static (string Start, string Stop) ReadDashboardShift1Cells(Stream xlsx, string sheetName = "Dashboard")
+    {
+        xlsx.Position = 0;
+        using var doc = SpreadsheetDocument.Open(xlsx, false);
+        var workbookPart = doc.WorkbookPart!;
+        var dashboardSheet = workbookPart.Workbook.Descendants<Sheet>()
+            .First(s => s.Name == sheetName);
+        var dashboardPart = (WorksheetPart)workbookPart.GetPartById(dashboardSheet.Id!);
+        var rows = dashboardPart.Worksheet.Descendants<Row>().ToList();
+        foreach (var row in rows.Where(r => r.RowIndex == null || r.RowIndex! > 1U))
+        {
+            var cells = row.Elements<Cell>().ToList();
+            if (cells.Count < 9) continue;
+            var shift1Start = CellText(cells[7], workbookPart);
+            var shift1Stop = CellText(cells[8], workbookPart);
+            if (!string.IsNullOrEmpty(shift1Start) || !string.IsNullOrEmpty(shift1Stop))
+            {
+                return (shift1Start, shift1Stop);
+            }
+        }
+        return ("", "");
+    }
+
 
     private static void AssertRowDateAndEmployee(Row row, WorkbookPart wb, double expectedOaDate, string expectedEmployeeNo)
     {
@@ -297,7 +398,7 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
     /// </summary>
     private async Task SeedSiteAndPlanRegistration(
         int siteUid, string employeeNo, DateTime date, bool useOneMinuteIntervals,
-        int start1Id, int stop1Id)
+        int start1Id, int stop1Id, int pause1Id = 0)
     {
         var core = await GetCore();
         var sdkDb = core.DbContextHelper.GetDbContext();
@@ -355,7 +456,7 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
             Date = date,
             Start1Id = start1Id,
             Stop1Id = stop1Id,
-            Pause1Id = 0,
+            Pause1Id = pause1Id,
             PlanText = "",
             CommentOffice = "",
             CommentOfficeAll = "",
