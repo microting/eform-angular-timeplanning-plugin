@@ -29,11 +29,11 @@
       <PackageReference Include="ExcelDataReader" Version="3.8.0" />
       <PackageReference Include="Google.Apis.Auth" Version="1.75.0" />
       <PackageReference Include="Google.Apis.Sheets.v4" Version="1.74.0.4061" />
-      <PackageReference Include="Microting.eForm" Version="10.0.31" />
+      <PackageReference Include="Microting.eForm" Version="10.0.35" />
       <PackageReference Include="Microting.EformAngularFrontendBase" Version="10.0.35" />
-      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.28" />
+      <PackageReference Include="Microting.eFormApi.BasePn" Version="10.0.29" />
       <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
-      <PackageReference Include="Microting.TimePlanningBase" Version="10.0.50" />
+      <PackageReference Include="Microting.TimePlanningBase" Version="10.0.51" />
       <PackageReference Include="Sentry" Version="6.6.0" />
       <PackageReference Include="FirebaseAdmin" Version="3.5.0" />
       <PackageReference Include="Grpc.AspNetCore" Version="2.80.0" />
@@ -56,7 +56,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Google.Protobuf" Version="3.35.0" />
+      <PackageReference Include="Google.Protobuf" Version="3.35.1" />
       <EmbeddedResource Include="Resources\eForms\00. Arbejdstid.xml" />
       <EmbeddedResource Include="Resources\localization.json" />
       <None Remove="Resources\eForms\01. Info eForm.xml" />
