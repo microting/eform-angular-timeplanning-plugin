@@ -68,4 +68,9 @@ public class TimePlanningBaseSettings
     public int DaysBackInTimeAllowedEditing { get; set; } = 2;
     public string GpsEnabled { get; set; }
     public string SnapshotEnabled { get; set; }
+
+    // Temporary kill switch for the on-save pauseNId self-heal guard. Null/true =
+    // enabled (default). Set false once all mobile apps are on a fixed version,
+    // then remove the guard. See spec 2026-06-16-pauseid-selfheal-guard-design.md.
+    public bool? PauseIdSelfHealEnabled { get; set; }
 }
