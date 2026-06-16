@@ -45,15 +45,6 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 /// </summary>
 public static class CorruptedPauseIdRepair
 {
-    // Minutes encoded per pauseNId tick on 5-minute sites; the server contract
-    // encodes/decodes pause duration as (minutes / 5) + 1.
-    private const int MinutesPerTick = 5;
-
-    // A pause longer than the real one by more than this many minutes is
-    // treated as the absolute-tick corruption. The 5-minute off-by-one
-    // (5 min short) never trips this.
-    private const int CorruptionToleranceMinutes = 15;
-
     /// <summary>
     /// Fallback "implausibly large" span used by the anomaly heuristic when the
     /// shift-1 worked span is unknown. 12h (720 min).
@@ -184,7 +175,7 @@ public static class CorruptedPauseIdRepair
         // Only the rows we could NOT repair from timestamps qualify.
         if (result.ActualMinutes is not null) return false;
 
-        var decodedMinutes = (result.OldValue - 1) * MinutesPerTick;
+        var decodedMinutes = (result.OldValue - 1) * PauseIdCorrection.MinutesPerTick;
         var implausibleSpan = workedMinutes ?? UnknownSpanFallbackMinutes;
         return decodedMinutes > implausibleSpan;
     }
@@ -195,26 +186,28 @@ public static class CorruptedPauseIdRepair
     // the pre-logging version.
     private static SlotResult FixSlot(DateTime? start, DateTime? stop, int currentId, Action<int> assign)
     {
-        if (currentId <= 0 || start is null || stop is null || stop <= start)
-            return new SlotResult { Corrected = false, OldValue = currentId, ActualMinutes = null };
+        // Delegate the detect+correct decision to the shared single-source-of-truth
+        // helper, so the batch repair and the on-save guard apply byte-identical
+        // rules. The corrected value and the >15 min tolerance are unchanged.
+        var corrected = PauseIdCorrection.CorrectedPauseId(start, stop, currentId);
+        if (corrected is null)
+        {
+            // Preserve the actualMinutes value used by the anomaly heuristic /
+            // logging when the timestamps exist.
+            double? actual = (start.HasValue && stop.HasValue && stop.Value > start.Value)
+                ? (stop.Value - start.Value).TotalMinutes
+                : (double?)null;
+            return new SlotResult { Corrected = false, OldValue = currentId, ActualMinutes = actual };
+        }
 
-        var actualMinutes = (stop.Value - start.Value).TotalMinutes;
-        var decodedMinutes = (currentId - 1) * MinutesPerTick;
-
-        // Only repair the clear absolute-tick overstatement; ignore the
-        // known 5-minute off-by-one (out of scope).
-        if (decodedMinutes - actualMinutes <= CorruptionToleranceMinutes)
-            return new SlotResult { Corrected = false, OldValue = currentId, ActualMinutes = actualMinutes };
-
-        // Server contract: (durationMinutes / 5) + 1, matching the existing
-        // server "/5 + 1" encode (integer/truncating). actualMinutes is a
-        // double, so dividing by the int MinutesPerTick performs the same
-        // double division as the previous / 5.0 before the truncating cast.
-        var corrected = (int)(actualMinutes / MinutesPerTick) + 1;
-        if (corrected == currentId)
-            return new SlotResult { Corrected = false, OldValue = currentId, ActualMinutes = actualMinutes };
-
-        assign(corrected);
-        return new SlotResult { Corrected = true, OldValue = currentId, NewValue = corrected, ActualMinutes = actualMinutes };
+        var actualMinutes = (stop!.Value - start!.Value).TotalMinutes;
+        assign(corrected.Value);
+        return new SlotResult
+        {
+            Corrected = true,
+            OldValue = currentId,
+            NewValue = corrected.Value,
+            ActualMinutes = actualMinutes,
+        };
     }
 }
