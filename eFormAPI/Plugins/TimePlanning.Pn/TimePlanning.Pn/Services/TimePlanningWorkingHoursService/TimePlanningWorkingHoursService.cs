@@ -931,7 +931,9 @@ public class TimePlanningWorkingHoursService(
     /// with the batch repair via <see cref="PauseIdCorrection"/>. Skips 1-minute
     /// sites and obeys the <c>PauseIdSelfHealEnabled</c> kill switch (default on).
     /// </summary>
-    private void SelfHealCorruptPauseIds(PlanRegistration pr, AssignedSite? site)
+    private void SelfHealCorruptPauseIds(
+        PlanRegistration pr,
+        Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite? site)
     {
         if (site is null || site.UseOneMinuteIntervals) return;       // 5-minute sites only
         if (!(options.Value.PauseIdSelfHealEnabled ?? true)) return;  // kill switch, default on

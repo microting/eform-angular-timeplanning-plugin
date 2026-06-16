@@ -186,21 +186,19 @@ public static class CorruptedPauseIdRepair
     // the pre-logging version.
     private static SlotResult FixSlot(DateTime? start, DateTime? stop, int currentId, Action<int> assign)
     {
+        // actualMinutes drives the anomaly heuristic / logging; it is only
+        // meaningful when the timestamps exist and are ordered, otherwise null.
+        double? actualMinutes = (start.HasValue && stop.HasValue && stop.Value > start.Value)
+            ? (stop.Value - start.Value).TotalMinutes
+            : null;
+
         // Delegate the detect+correct decision to the shared single-source-of-truth
         // helper, so the batch repair and the on-save guard apply byte-identical
         // rules. The corrected value and the >15 min tolerance are unchanged.
         var corrected = PauseIdCorrection.CorrectedPauseId(start, stop, currentId);
         if (corrected is null)
-        {
-            // Preserve the actualMinutes value used by the anomaly heuristic /
-            // logging when the timestamps exist.
-            double? actual = (start.HasValue && stop.HasValue && stop.Value > start.Value)
-                ? (stop.Value - start.Value).TotalMinutes
-                : (double?)null;
-            return new SlotResult { Corrected = false, OldValue = currentId, ActualMinutes = actual };
-        }
+            return new SlotResult { Corrected = false, OldValue = currentId, ActualMinutes = actualMinutes };
 
-        var actualMinutes = (stop!.Value - start!.Value).TotalMinutes;
         assign(corrected.Value);
         return new SlotResult
         {
