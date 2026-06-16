@@ -923,6 +923,39 @@ public class TimePlanningWorkingHoursService(
             result);
     }
 
+    /// <summary>
+    /// Temporary, default-on, server-side guard: corrects a corrupt incoming
+    /// pauseNId (the absolute-stop-tick bug on 5-minute sites) from the truthful
+    /// pause timestamps before the inline netto math, so the row self-heals
+    /// regardless of the client's app version. Shares the detect+correct rule
+    /// with the batch repair via <see cref="PauseIdCorrection"/>. Skips 1-minute
+    /// sites and obeys the <c>PauseIdSelfHealEnabled</c> kill switch (default on).
+    /// </summary>
+    private void SelfHealCorruptPauseIds(
+        PlanRegistration pr,
+        Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite? site)
+    {
+        if (site is null || site.UseOneMinuteIntervals) return;       // 5-minute sites only
+        if (!(options.Value.PauseIdSelfHealEnabled ?? true)) return;  // kill switch, default on
+
+        void Heal(DateTime? start, DateTime? stop, int current, int slot, Action<int> assign)
+        {
+            var corrected = PauseIdCorrection.CorrectedPauseId(start, stop, current);
+            if (corrected is null) return;
+            assign(corrected.Value);
+            var msg = $"[PauseIdSelfHeal] site {pr.SdkSitId} {pr.Date:yyyy-MM-dd} "
+                    + $"pause{slot}: {current} -> {corrected.Value}";
+            Console.WriteLine(msg);
+            SentrySdk.CaptureMessage(msg, SentryLevel.Warning);
+        }
+
+        Heal(pr.Pause1StartedAt, pr.Pause1StoppedAt, pr.Pause1Id, 1, v => pr.Pause1Id = v);
+        Heal(pr.Pause2StartedAt, pr.Pause2StoppedAt, pr.Pause2Id, 2, v => pr.Pause2Id = v);
+        Heal(pr.Pause3StartedAt, pr.Pause3StoppedAt, pr.Pause3Id, 3, v => pr.Pause3Id = v);
+        Heal(pr.Pause4StartedAt, pr.Pause4StoppedAt, pr.Pause4Id, 4, v => pr.Pause4Id = v);
+        Heal(pr.Pause5StartedAt, pr.Pause5StoppedAt, pr.Pause5Id, 5, v => pr.Pause5Id = v);
+    }
+
     public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
     {
         Console.WriteLine($"[DEBUG-GRPC-UPDATE] === UpdateWorkingHour (PERSONAL mode, 1-param) entered ===");
@@ -1253,6 +1286,10 @@ public class TimePlanningWorkingHoursService(
 
             planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
 
+            // Self-heal a corrupt incoming pauseNId from the truthful pause
+            // timestamps before the inline netto math (5-min sites, flag on).
+            SelfHealCorruptPauseIds(planRegistration, assignedSite);
+
             if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {
                 nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
@@ -1573,6 +1610,10 @@ public class TimePlanningWorkingHoursService(
             double nettoMinutes = 0;
 
             planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
+
+            // Self-heal a corrupt incoming pauseNId from the truthful pause
+            // timestamps before the inline netto math (5-min sites, flag on).
+            SelfHealCorruptPauseIds(planRegistration, assignedSite);
 
             if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {
@@ -1954,6 +1995,10 @@ public class TimePlanningWorkingHoursService(
 
             planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
 
+            // Self-heal a corrupt incoming pauseNId from the truthful pause
+            // timestamps before the inline netto math (5-min sites, flag on).
+            SelfHealCorruptPauseIds(planRegistration, assignedSite);
+
             if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {
                 nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
@@ -2263,6 +2308,10 @@ public class TimePlanningWorkingHoursService(
                 .FirstOrDefaultAsync(x => x.SiteId == sdkSiteId!.Value);
 
             planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
+
+            // Self-heal a corrupt incoming pauseNId from the truthful pause
+            // timestamps before the inline netto math (5-min sites, flag on).
+            SelfHealCorruptPauseIds(planRegistration, assignedSite);
 
             if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
             {
