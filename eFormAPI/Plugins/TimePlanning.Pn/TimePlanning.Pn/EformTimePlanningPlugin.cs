@@ -200,6 +200,10 @@ public class EformTimePlanningPlugin : IEformPlugin
 
         // Seed database
         SeedDatabase(connectionString);
+
+        // One-shot, idempotent repair of pauseNId corruption (last 7 days,
+        // 5-minute sites). Safe to run on every startup.
+        RepairCorruptedPauseIds(connectionString);
     }
 
     public void Configure(IApplicationBuilder appBuilder)
@@ -906,6 +910,13 @@ public class EformTimePlanningPlugin : IEformPlugin
         }
 
         TimePlanningPluginSeed.SeedData(dbContext);
+    }
+
+    public void RepairCorruptedPauseIds(string connectionString)
+    {
+        var contextFactory = new TimePlanningPnContextFactory();
+        using var dbContext = contextFactory.CreateDbContext([connectionString]);
+        CorruptedPauseIdRepair.Run(dbContext).GetAwaiter().GetResult();
     }
 
     public PluginPermissionsManager GetPermissionsManager(string connectionString)
