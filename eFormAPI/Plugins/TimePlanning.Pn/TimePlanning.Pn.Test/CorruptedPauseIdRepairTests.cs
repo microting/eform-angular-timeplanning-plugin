@@ -58,26 +58,30 @@ public class CorruptedPauseIdRepairTests : TestBaseSetup
     public async Task Repair_FixesOnlyInWindow5MinCorruptedRows()
     {
         var ctx = TimePlanningPnDbContext!;
-        var today = DateTime.UtcNow.Date;
+        // Anchor window membership to the rolling payroll-lock cutoff: the day
+        // after the cutoff is in-window (repairable); the cutoff day itself is
+        // locked / out-of-window.
+        var inWindow = CorruptedPauseIdRepair.FirstUnlockedDate(DateTime.UtcNow.Date).AddDays(1);
+        var locked = CorruptedPauseIdRepair.FirstUnlockedDate(DateTime.UtcNow.Date).AddDays(-1);
 
         // 5-min site (UseOneMinuteIntervals=false) and a 1-min site.
         var fiveMinSite = await SeedAssignedSite(ctx, siteId: 100, useOneMinute: false);
         var oneMinSite = await SeedAssignedSite(ctx, siteId: 200, useOneMinute: true);
 
         // (a) corrupted in-window: 30m real pause, Pause1Id=145 (absolute 12:00 tick).
-        var corrupted = await SeedRow(ctx, fiveMinSite.SiteId, today.AddDays(-1),
+        var corrupted = await SeedRow(ctx, fiveMinSite.SiteId, inWindow,
             pauseStart: 12, pauseStopMin: 30, pause1Id: 145, work: (8, 16));
         // (b) correct in-window: 30m pause, Pause1Id=7 ((30/5)+1).
-        var correct = await SeedRow(ctx, fiveMinSite.SiteId, today.AddDays(-2),
+        var correct = await SeedRow(ctx, fiveMinSite.SiteId, inWindow,
             pauseStart: 12, pauseStopMin: 30, pause1Id: 7, work: (8, 16));
         // (c) off-by-one in-window: Pause1Id=6 (min/5, missing +1) -> must be left alone.
-        var offByOne = await SeedRow(ctx, fiveMinSite.SiteId, today.AddDays(-3),
+        var offByOne = await SeedRow(ctx, fiveMinSite.SiteId, inWindow,
             pauseStart: 12, pauseStopMin: 30, pause1Id: 6, work: (8, 16));
-        // (d) corrupted but out of window (> 7 days).
-        var oldRow = await SeedRow(ctx, fiveMinSite.SiteId, today.AddDays(-9),
+        // (d) corrupted but out of window (on/before the locked cutoff).
+        var oldRow = await SeedRow(ctx, fiveMinSite.SiteId, locked,
             pauseStart: 12, pauseStopMin: 30, pause1Id: 145, work: (8, 16));
         // (e) 1-min site, raw-minute id (30) -> not in scope.
-        var oneMin = await SeedRow(ctx, oneMinSite.SiteId, today.AddDays(-1),
+        var oneMin = await SeedRow(ctx, oneMinSite.SiteId, inWindow,
             pauseStart: 12, pauseStopMin: 30, pause1Id: 30, work: (8, 16));
 
         await CorruptedPauseIdRepair.Run(ctx);
@@ -100,7 +104,8 @@ public class CorruptedPauseIdRepairTests : TestBaseSetup
     {
         var ctx = TimePlanningPnDbContext!;
         var site = await SeedAssignedSite(ctx, siteId: 100, useOneMinute: false);
-        var row = await SeedRow(ctx, site.SiteId, DateTime.UtcNow.Date.AddDays(-1),
+        var inWindow = CorruptedPauseIdRepair.FirstUnlockedDate(DateTime.UtcNow.Date).AddDays(1);
+        var row = await SeedRow(ctx, site.SiteId, inWindow,
             pauseStart: 12, pauseStopMin: 30, pause1Id: 145, work: (8, 16));
 
         await CorruptedPauseIdRepair.Run(ctx);
@@ -128,7 +133,8 @@ public class CorruptedPauseIdRepairTests : TestBaseSetup
 
         // In-window 5-min row: corrupt absolute tick (145) but no pause
         // timestamps to repair from; shift span is a normal 08:00-16:00.
-        var row = await SeedRow(ctx, site.SiteId, DateTime.UtcNow.Date.AddDays(-1),
+        var inWindow = CorruptedPauseIdRepair.FirstUnlockedDate(DateTime.UtcNow.Date).AddDays(1);
+        var row = await SeedRow(ctx, site.SiteId, inWindow,
             pauseStart: 12, pauseStopMin: 30, pause1Id: 145, work: (8, 16),
             seedPauseTimestamps: false);
 
