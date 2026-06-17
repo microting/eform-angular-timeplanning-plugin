@@ -51,6 +51,22 @@ public static class CorruptedPauseIdRepair
     /// </summary>
     private const double UnknownSpanFallbackMinutes = 720;
 
+    /// <summary>
+    /// Earliest registration Date the repair may modify: the day AFTER the
+    /// rolling payroll-lock cutoff. Periods lock on the 21st — on/before the
+    /// 20th the cutoff is last month's 21st; from the 21st it is this month's
+    /// 21st. The cutoff day itself is locked, so we return cutoff + 1 day.
+    /// </summary>
+    public const int PayPeriodLockDay = 21;
+
+    public static DateTime FirstUnlockedDate(DateTime today)
+    {
+        var cutoff = today.Day < PayPeriodLockDay
+            ? new DateTime(today.Year, today.Month, PayPeriodLockDay).AddMonths(-1) // last month's 21st
+            : new DateTime(today.Year, today.Month, PayPeriodLockDay);              // this month's 21st
+        return cutoff.AddDays(1);
+    }
+
     public static async Task Run(TimePlanningPnDbContext dbContext)
     {
         var windowStart = DateTime.UtcNow.Date.AddDays(-7);
