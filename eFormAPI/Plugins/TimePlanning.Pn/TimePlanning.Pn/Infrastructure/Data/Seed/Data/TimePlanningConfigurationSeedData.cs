@@ -221,6 +221,16 @@ public class TimePlanningConfigurationSeedData : IPluginConfigurationSeedData
         {
             Name = $"{TimePlanningBaseSettingsName}:FirebaseServiceAccountJson",
             Value = ""
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:PauseIdSelfHealEnabled",
+            Value = "true"
+        },
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:DaysBackInTimeAllowedEditingEnabled",
+            Value = "0"
         }
     ];
 }
