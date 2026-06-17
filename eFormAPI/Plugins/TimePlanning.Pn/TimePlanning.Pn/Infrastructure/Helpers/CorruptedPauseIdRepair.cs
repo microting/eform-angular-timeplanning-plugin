@@ -12,7 +12,8 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 /// <summary>
 /// One-shot, idempotent repair for pauseNId corruption introduced by the
 /// mobile punch-clock sending the absolute stop-time tick instead of the
-/// pause duration on 5-minute sites. Scoped to the last 7 days and to
+/// pause duration on 5-minute sites. Scoped to the unlocked window (Date
+/// after the rolling payroll-lock cutoff, see FirstUnlockedDate) and to
 /// 5-minute sites. Recomputes pauseNId from the intact pause timestamps,
 /// writing only when a row is both clearly corrupted and confidently
 /// repairable. Safe to run on every startup.
