@@ -12,7 +12,8 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 /// <summary>
 /// One-shot, idempotent repair for pauseNId corruption introduced by the
 /// mobile punch-clock sending the absolute stop-time tick instead of the
-/// pause duration on 5-minute sites. Scoped to the last 7 days and to
+/// pause duration on 5-minute sites. Scoped to the unlocked window (Date
+/// after the rolling payroll-lock cutoff, see FirstUnlockedDate) and to
 /// 5-minute sites. Recomputes pauseNId from the intact pause timestamps,
 /// writing only when a row is both clearly corrupted and confidently
 /// repairable. Safe to run on every startup.
@@ -51,9 +52,25 @@ public static class CorruptedPauseIdRepair
     /// </summary>
     private const double UnknownSpanFallbackMinutes = 720;
 
+    /// <summary>
+    /// Earliest registration Date the repair may modify: the day AFTER the
+    /// rolling payroll-lock cutoff. Periods lock on the 21st — on/before the
+    /// 20th the cutoff is last month's 21st; from the 21st it is this month's
+    /// 21st. The cutoff day itself is locked, so we return cutoff + 1 day.
+    /// </summary>
+    public const int PayPeriodLockDay = 21;
+
+    public static DateTime FirstUnlockedDate(DateTime today)
+    {
+        var cutoff = today.Day < PayPeriodLockDay
+            ? new DateTime(today.Year, today.Month, PayPeriodLockDay).AddMonths(-1) // last month's 21st
+            : new DateTime(today.Year, today.Month, PayPeriodLockDay);              // this month's 21st
+        return cutoff.AddDays(1);
+    }
+
     public static async Task Run(TimePlanningPnDbContext dbContext)
     {
-        var windowStart = DateTime.UtcNow.Date.AddDays(-7);
+        var windowStart = FirstUnlockedDate(DateTime.UtcNow.Date);
 
         // 5-minute sites only.
         var fiveMinuteSiteIds = await dbContext.AssignedSites
