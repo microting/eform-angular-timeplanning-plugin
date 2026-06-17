@@ -69,7 +69,7 @@ public static class CorruptedPauseIdRepair
 
     public static async Task Run(TimePlanningPnDbContext dbContext)
     {
-        var windowStart = DateTime.UtcNow.Date.AddDays(-7);
+        var windowStart = FirstUnlockedDate(DateTime.UtcNow.Date);
 
         // 5-minute sites only.
         var fiveMinuteSiteIds = await dbContext.AssignedSites
