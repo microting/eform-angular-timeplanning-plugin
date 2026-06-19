@@ -322,7 +322,7 @@ public class ContentHandoverService : IContentHandoverService
             {
                 // Legacy full-day create.
                 // Validate source has content
-                var hasPlanHours = fromPR.PlanHoursInSeconds > 0;
+                var hasPlanHours = fromPR.PlanHoursInSeconds > 0 || fromPR.PlanHours > 0;
                 var hasPlanText = !string.IsNullOrWhiteSpace(fromPR.PlanText);
                 if (!hasPlanHours && !hasPlanText)
                 {
