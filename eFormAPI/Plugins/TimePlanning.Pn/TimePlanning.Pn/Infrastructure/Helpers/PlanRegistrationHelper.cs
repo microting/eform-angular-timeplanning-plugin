@@ -570,8 +570,18 @@ public static class PlanRegistrationHelper
         pr.NettoHoursInSeconds = (int)nettoSeconds;
         pr.NettoHours = nettoSeconds / 3600.0;
 
-        var planHoursSeconds = pr.PlanHoursInSeconds;
-        var paiedOutFlexSeconds = pr.PaiedOutFlexInSeconds;
+        // Punch-clock / scheduled days populate the double PlanHours but leave
+        // PlanHoursInSeconds at 0. Fall back to PlanHours * 3600 so flex is
+        // computed against the real plan instead of treating it as 0.
+        var planHoursSeconds = pr.PlanHoursInSeconds != 0
+            ? pr.PlanHoursInSeconds
+            : (int)Math.Round(pr.PlanHours * 3600);
+        // Production writers populate only the double PaiedOutFlex and leave
+        // PaiedOutFlexInSeconds at 0. Fall back to PaiedOutFlex * 3600 so a
+        // paid-out flex is subtracted instead of being treated as 0.
+        var paiedOutFlexSeconds = pr.PaiedOutFlexInSeconds != 0
+            ? pr.PaiedOutFlexInSeconds
+            : (int)Math.Round(pr.PaiedOutFlex * 3600);
 
         // Mirror the flag-off override semantics:
         //   Flex      = (override ? NettoHoursOverride : NettoHours) - PlanHours
