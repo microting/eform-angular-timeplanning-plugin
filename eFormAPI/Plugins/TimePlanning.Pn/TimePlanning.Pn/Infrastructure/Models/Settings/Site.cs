@@ -29,4 +29,5 @@ public class Site
     public DateTime ResignedAtDate { get; set; }
     public string? PhoneNumber { get; set; }
     public bool UseOneMinuteIntervals { get; set; }
+    public bool OverMidnight { get; set; }
 }

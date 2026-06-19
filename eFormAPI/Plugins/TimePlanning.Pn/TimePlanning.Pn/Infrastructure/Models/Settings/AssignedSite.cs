@@ -56,6 +56,7 @@ public class AssignedSite
     public int SaturdayBreakMinutesUpperLimit { get; set; }
     public int SundayBreakMinutesUpperLimit { get; set; }
     public bool UseOneMinuteIntervals { get; set; }
+    public bool OverMidnight { get; set; }
     public bool AllowAcceptOfPlannedHours { get; set; }
     public bool AllowEditOfRegistrations { get; set; }
     public bool AllowPersonalTimeRegistration { get; set; }
@@ -228,6 +229,7 @@ public class AssignedSite
             SaturdayBreakMinutesUpperLimit = model.SaturdayBreakMinutesUpperLimit,
             SundayBreakMinutesUpperLimit = model.SundayBreakMinutesUpperLimit,
             UseOneMinuteIntervals = model.UseOneMinuteIntervals,
+            OverMidnight = model.OverMidnight,
             AllowAcceptOfPlannedHours = model.AllowAcceptOfPlannedHours,
             AllowEditOfRegistrations = model.AllowEditOfRegistrations,
             AllowPersonalTimeRegistration = model.AllowPersonalTimeRegistration,
