@@ -186,6 +186,53 @@ public class ContentHandoverServiceTests : TestBaseSetup
     }
 
     [Test]
+    public async Task CreateAsync_CreatesHandoverRequest_WhenSourceHasOnlyDoublePlanHours()
+    {
+        // Regression: rows created by Google import / PlanText parsing set only the
+        // double PlanHours and leave PlanHoursInSeconds at 0. Such a source row HAS
+        // content and the handover must proceed (it was previously rejected because
+        // the content gate only inspected PlanHoursInSeconds).
+        var date = new DateTime(2024, 1, 1);
+        var sourcePR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 1,
+            PlanHours = 8, // double set
+            PlanHoursInSeconds = 0, // seconds NOT set (import/parse path)
+            PlanText = null,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await sourcePR.Create(TimePlanningPnDbContext);
+
+        var targetPR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 2,
+            PlanHoursInSeconds = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await targetPR.Create(TimePlanningPnDbContext);
+
+        var model = new ContentHandoverRequestCreateModel
+        {
+            ToSdkSitId = 2,
+            RequestComment = "Need to transfer imported plan"
+        };
+
+        // Act
+        var result = await _contentHandoverService.CreateAsync(sourcePR.Id, model);
+
+        // Assert
+        Assert.That(result.Success, Is.True, $"Expected success but got error: {result.Message}");
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Count, Is.EqualTo(1));
+        Assert.That(result.Model[0].Status, Is.EqualTo("Pending"));
+        Assert.That(result.Model[0].ShiftIndex, Is.Null);
+    }
+
+    [Test]
     public async Task AcceptAsync_MovesContent_FromSourceToTarget()
     {
         // Arrange
