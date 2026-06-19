@@ -210,6 +210,7 @@ message AssignedSite {
   AutoBreakSettings auto_break_settings = 161;
 
   bool enforce_end_of_shift_before_allow_registration = 162;
+  bool over_midnight = 163;
 }
 
 // Matches C# Site model
@@ -237,6 +238,7 @@ message Site {
   google.protobuf.Timestamp resigned_at_date = 21;
   string phone_number = 22;
   bool use_one_minute_intervals = 23;
+  bool over_midnight = 24;
 }
 
 // Response wrappers matching C# OperationDataResult<T>
