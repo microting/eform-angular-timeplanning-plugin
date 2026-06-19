@@ -588,6 +588,115 @@ public class PlanRegistrationHelperTests
     }
 
     /// <summary>
+    /// Regression: punch-clock / scheduled days populate the double
+    /// <c>PlanHours</c> but leave <c>PlanHoursInSeconds</c> at 0. The
+    /// one-minute chain must NOT treat the plan as 0 — flex has to be
+    /// computed against the populated plan, falling back to
+    /// <c>PlanHours * 3600</c> when <c>PlanHoursInSeconds</c> is 0.
+    ///
+    /// Seed: shift 08:00–15:40 = 27600 s netto (7 h 40 m), no pause.
+    /// PlanHours = 8.0 but PlanHoursInSeconds = 0 (the defect's trigger).
+    /// SumFlexStartInSeconds = 0, no PaiedOutFlex, no override.
+    ///
+    /// Correct behaviour: plan resolves to 28800 s, so
+    ///   FlexInSeconds = 27600 - 28800 = -1200  (-20 min)
+    ///   SumFlexEndInSeconds = -1200.
+    /// Buggy behaviour (plan treated as 0): FlexInSeconds = 27600.
+    /// </summary>
+    [Test]
+    public void Flex_FlagOn_PlanHoursInSecondsZero_FallsBackToPlanHours()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15, 0, 0, 0),
+            Start1StartedAt = new DateTime(2026, 5, 15, 8, 0, 0),
+            Stop1StoppedAt = new DateTime(2026, 5, 15, 15, 40, 0),
+            Pause1Id = 0,
+            // Punch-clock / scheduled day: hours populated, seconds NOT.
+            PlanHours = 8.0,
+            PlanHoursInSeconds = 0,
+            PaiedOutFlex = 0,
+            PaiedOutFlexInSeconds = 0,
+            NettoHoursOverrideActive = false,
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+            pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.NettoHoursInSeconds, Is.EqualTo(27600),
+                "7 h 40 m work, 0 pause → 27600 s netto");
+
+            // The defect makes flex = full netto (plan treated as 0).
+            // Correct: netto - plan = 27600 - 28800 = -1200.
+            Assert.That(pr.FlexInSeconds, Is.EqualTo(-1200),
+                "FlexInSeconds must subtract PlanHours-derived seconds (28800), not 0");
+            Assert.That(pr.Flex, Is.EqualTo(-1200 / 3600.0).Within(0.0001),
+                "Flex back-derived from FlexInSeconds / 3600.0");
+
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(-1200),
+                "SumFlexEndInSeconds = 0 + (-1200) - 0");
+            Assert.That(pr.SumFlexEnd, Is.EqualTo(-1200 / 3600.0).Within(0.0001),
+                "SumFlexEnd back-derived from SumFlexEndInSeconds / 3600.0");
+        });
+    }
+
+    /// <summary>
+    /// Companion to the PlanHours fallback: <c>PaiedOutFlexInSeconds</c> is
+    /// never populated in production (writers set only the double
+    /// <c>PaiedOutFlex</c>), so the one-minute chain must fall back to
+    /// <c>PaiedOutFlex * 3600</c> when <c>PaiedOutFlexInSeconds</c> is 0.
+    ///
+    /// Seed: shift 08:00–15:40 = 27600 s netto (7 h 40 m), no pause.
+    /// PlanHours = 8.0 but PlanHoursInSeconds = 0, AND
+    /// PaiedOutFlex = 1.0 (one hour paid out) but PaiedOutFlexInSeconds = 0.
+    /// SumFlexStartInSeconds = 0, no override.
+    ///
+    /// Correct behaviour: plan resolves to 28800 s and paid-out to 3600 s, so
+    ///   SumFlexEndInSeconds = 27600 - 28800 - 3600 = -4800.
+    /// Buggy behaviour (paid-out treated as 0): SumFlexEndInSeconds = -1200.
+    /// </summary>
+    [Test]
+    public void SumFlex_FlagOn_PaiedOutFlexInSecondsZero_FallsBackToPaiedOutFlex()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 5, 15, 0, 0, 0),
+            Start1StartedAt = new DateTime(2026, 5, 15, 8, 0, 0),
+            Stop1StoppedAt = new DateTime(2026, 5, 15, 15, 40, 0),
+            Pause1Id = 0,
+            // Punch-clock / scheduled day: hours populated, seconds NOT.
+            PlanHours = 8.0,
+            PlanHoursInSeconds = 0,
+            // Production writers populate only the double, never the seconds.
+            PaiedOutFlex = 1.0,
+            PaiedOutFlexInSeconds = 0,
+            NettoHoursOverrideActive = false,
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+            pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.NettoHoursInSeconds, Is.EqualTo(27600),
+                "7 h 40 m work, 0 pause → 27600 s netto");
+
+            // Flex itself is unaffected by paid-out: 27600 - 28800 = -1200.
+            Assert.That(pr.FlexInSeconds, Is.EqualTo(-1200),
+                "FlexInSeconds = netto - plan = 27600 - 28800");
+
+            // The defect ignores paid-out (treats it as 0), yielding -1200.
+            // Correct: netto - plan - paidOut = 27600 - 28800 - 3600 = -4800.
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(-4800),
+                "SumFlexEndInSeconds must subtract PaiedOutFlex-derived seconds (3600), not 0");
+            Assert.That(pr.SumFlexEnd, Is.EqualTo(-4800 / 3600.0).Within(0.0001),
+                "SumFlexEnd back-derived from SumFlexEndInSeconds / 3600.0");
+        });
+    }
+
+    /// <summary>
     /// Phase 2 chain test for the no-preceding-day case. With
     /// <paramref name="hasPreTimePlanning"/> = false, SumFlexStart resets
     /// to 0 and SumFlexEnd is derived directly from Flex - PaiedOutFlex.
