@@ -312,7 +312,8 @@ public class TimeSettingService(
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
                             SnapshotEnabled = assignedSite.SnapshotEnabled,
-                            UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals
+                            UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals,
+                            OverMidnight = assignedSite.OverMidnight
                         };
                         var workerEmail = (worker.Email ?? "").Trim().ToLower();
                         var user = baseDbContext == null || string.IsNullOrEmpty(workerEmail) ? null : await baseDbContext.Users
@@ -619,7 +620,8 @@ public class TimeSettingService(
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
                             SnapshotEnabled = assignedSite.SnapshotEnabled,
-                            UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals
+                            UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals,
+                            OverMidnight = assignedSite.OverMidnight
                         };
                         var workerEmail = (worker.Email ?? "").Trim().ToLower();
                         var user = baseDbContext == null || string.IsNullOrEmpty(workerEmail) ? null : await baseDbContext.Users
@@ -895,6 +897,7 @@ public class TimeSettingService(
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
                             UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals,
+                            OverMidnight = assignedSite.OverMidnight,
                         };
                         var workerEmail = (worker.Email ?? "").Trim().ToLower();
                         var user = baseDbContext == null || string.IsNullOrEmpty(workerEmail) ? null : await baseDbContext.Users
