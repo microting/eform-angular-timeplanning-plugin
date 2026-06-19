@@ -86,6 +86,7 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                 SaturdayBreakMinutesUpperLimit = m.SaturdayBreakMinutesUpperLimit,
                 SundayBreakMinutesUpperLimit = m.SundayBreakMinutesUpperLimit,
                 UseOneMinuteIntervals = m.UseOneMinuteIntervals,
+                OverMidnight = m.OverMidnight,
                 AllowAcceptOfPlannedHours = m.AllowAcceptOfPlannedHours,
                 AllowEditOfRegistrations = m.AllowEditOfRegistrations,
                 AllowPersonalTimeRegistration = m.AllowPersonalTimeRegistration,
@@ -267,6 +268,7 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                         DateTime.SpecifyKind(site.ResignedAtDate, DateTimeKind.Utc)),
                     PhoneNumber = site.PhoneNumber ?? "",
                     UseOneMinuteIntervals = site.UseOneMinuteIntervals,
+                    OverMidnight = site.OverMidnight,
                 };
                 response.Model.Add(grpcSite);
             }
@@ -320,6 +322,7 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                         DateTime.SpecifyKind(site.ResignedAtDate, DateTimeKind.Utc)),
                     PhoneNumber = site.PhoneNumber ?? "",
                     UseOneMinuteIntervals = site.UseOneMinuteIntervals,
+                    OverMidnight = site.OverMidnight,
                 };
                 response.Model.Add(grpcSite);
             }
