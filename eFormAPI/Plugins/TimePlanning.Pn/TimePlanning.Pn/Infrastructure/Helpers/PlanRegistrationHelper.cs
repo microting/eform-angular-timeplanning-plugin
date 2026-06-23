@@ -623,11 +623,15 @@ public static class PlanRegistrationHelper
         Site site,
         DateTime midnightOfDateFrom,
         DateTime midnightOfDateTo,
-        IPluginDbOptions<TimePlanningBaseSettings> options
+        IPluginDbOptions<TimePlanningBaseSettings> options,
+        string? messageLanguage = null
         )
     {
         var tainted = false;
         var settingsDayOfPayment = options.Value.DayOfPayment == 0 ? 20 : options.Value.DayOfPayment;
+        // Load the message catalog once (no N+1) so each day can resolve its
+        // localized label without re-querying per row.
+        var messagesById = await dbContext.Messages.AsNoTracking().ToDictionaryAsync(m => m.Id);
         var toDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
         // var dayOfPayment = toDay.Day >= settingsDayOfPayment
         //     ? new DateTime(DateTime.Now.Year, DateTime.Now.Month, settingsDayOfPayment, 0, 0, 0)
@@ -1128,6 +1132,19 @@ public static class PlanRegistrationHelper
                 }
             }
 
+            string? messageLabel = null;
+            if (planRegistration.MessageId.HasValue
+                && messagesById.TryGetValue(planRegistration.MessageId.Value, out var msg))
+            {
+                messageLabel = messageLanguage switch
+                {
+                    "da" => string.IsNullOrEmpty(msg.DaName) ? msg.Name : msg.DaName,
+                    "de" => string.IsNullOrEmpty(msg.DeName) ? msg.Name : msg.DeName,
+                    "en" => string.IsNullOrEmpty(msg.EnName) ? msg.Name : msg.EnName,
+                    _    => msg.Name,
+                };
+            }
+
             var planningModel = new TimePlanningPlanningPrDayModel
             {
                 Id = planRegistration.Id,
@@ -1136,6 +1153,7 @@ public static class PlanRegistrationHelper
                 PlanText = planRegistration.PlanText,
                 PlanHours = planRegistration.PlanHours,
                 Message = planRegistration.MessageId,
+                MessageLabel = messageLabel,
                 SiteId = dbAssignedSite.SiteId,
                 WeekDay =
                     planRegistration.Date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)planRegistration.Date.DayOfWeek,

@@ -199,6 +199,7 @@ public class TimePlanningPlanningsGrpcService
             FlexHours = m.Difference,
             PaidOutFlex = m.PaidOutFlex,
             Message = m.Message?.ToString() ?? "",
+            MessageLabel = m.MessageLabel ?? "",
             SumFlexStart = m.SumFlexStart,
             SumFlexEnd = m.SumFlexEnd,
             Comment = m.WorkerComment ?? "",
