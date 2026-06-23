@@ -39,6 +39,7 @@ public class TimePlanningPlanningPrDayModel
     public double Difference { get; set; }
     public double PauseMinutes { get; set; }
     public int? Message { get; set; }
+    public string? MessageLabel { get; set; }
     public bool WorkDayStarted { get; set; }
     public bool WorkDayEnded { get; set; }
     public bool PlanHoursMatched { get; set; }

@@ -571,6 +571,14 @@ public class TimePlanningPlanningService(
                 .ToListAsync().ConfigureAwait(false);
         }
 
+        // Resolve the site's default language so message ids can be turned into
+        // localized labels. LanguageCode is stored as e.g. "da" / "en-US" /
+        // "de-DE"; normalize to the 2-letter prefix the label switch expects.
+        var siteLanguage = await sdkDbContext.Languages
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == site.LanguageId);
+        var messageLanguage = siteLanguage?.LanguageCode?.Split('-')[0].ToLowerInvariant();
+
         siteModel = await PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod(
             planningsInPeriod,
             siteModel,
@@ -580,7 +588,8 @@ public class TimePlanningPlanningService(
             site,
             midnightOfDateFrom,
             midnightOfDateTo,
-            options);
+            options,
+            messageLanguage);
 
         siteModel.PlanningPrDayModels = model.IsSortDsc
             ? siteModel.PlanningPrDayModels.OrderByDescending(x => x.Date).ToList()

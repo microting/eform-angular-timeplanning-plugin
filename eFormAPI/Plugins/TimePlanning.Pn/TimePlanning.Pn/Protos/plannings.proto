@@ -156,6 +156,9 @@ message PlanningPrDayModel {
 
   double netto_hours_override = 135;
   bool netto_hours_override_active = 136;
+  // Localized label for `message` (resolved via the site's default language).
+  // Additive: `message` (int as string) stays unchanged.
+  string message_label = 137;
 }
 
 message GetPlanningsByUserRequest {

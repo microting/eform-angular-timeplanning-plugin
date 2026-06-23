@@ -84,7 +84,8 @@ public class ScheduleMessageReadTests : TestBaseSetup
     /// the way IndexByCurrentUserName does for "current user".
     /// </summary>
     private async Task<TimePlanningPlanningModel> ReadDaysByCurrentUser(
-        AssignedSiteEntity assignedSite, SdkSite sdkSite, DateTime from, DateTime to)
+        AssignedSiteEntity assignedSite, SdkSite sdkSite, DateTime from, DateTime to,
+        string? messageLanguage = null)
     {
         var planningsInPeriod = await TimePlanningPnDbContext!.PlanRegistrations
             .AsNoTracking()
@@ -110,7 +111,24 @@ public class ScheduleMessageReadTests : TestBaseSetup
             sdkSite,
             from,
             to,
-            _options);
+            _options,
+            messageLanguage);
+    }
+
+    /// <summary>
+    /// Inserts a Message catalog row directly, mirroring
+    /// MessagesCodeFirst / AbsenceRequestDayUTest seeding. The test container
+    /// does not run the plugin's startup message seed, so rows the assertions
+    /// rely on are inserted explicitly in Arrange.
+    /// </summary>
+    private async Task SeedMessage(int id, string name, string daName, string enName, string deName)
+    {
+        if (await TimePlanningPnDbContext!.Messages.AnyAsync(m => m.Id == id))
+        {
+            return;
+        }
+        TimePlanningPnDbContext.Messages.Add(new Message(id, name, daName, enName, deName));
+        await TimePlanningPnDbContext.SaveChangesAsync();
     }
 
     [Test]
@@ -186,5 +204,115 @@ public class ScheduleMessageReadTests : TestBaseSetup
         var prDay = result.PlanningPrDayModels.Single(x => x.Date.Date == date.Date);
         Assert.That(prDay.Message, Is.EqualTo(MessageDayOff),
             "Read path dropped MessageId for a message-only day (web shows it; app does not).");
+    }
+
+    [Test]
+    public async Task GetPlanningsByUser_MappedMessage_ResolvesDanishLabel()
+    {
+        // Arrange — a normal, app-mapped id (2 = Vacation) in a Danish site.
+        await SeedMessage(MessageVacation, "Vacation", "Ferie", "Vacation", "Ferien");
+
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 7200,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+        var sdkSite = new SdkSite { Name = "Test site 7200", MicrotingUid = 7200 };
+
+        var date = new DateTime(2026, 4, 29, 0, 0, 0, DateTimeKind.Utc);
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 7200,
+            Date = date,
+            MessageId = MessageVacation,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        // Act — read with the site language "da".
+        var result = await ReadDaysByCurrentUser(
+            assignedSite, sdkSite, date.AddDays(-1), date.AddDays(1), "da");
+
+        // Assert — the day model carries the localized label, not just the int.
+        var prDay = result.PlanningPrDayModels.Single(x => x.Date.Date == date.Date);
+        Assert.That(prDay.MessageLabel, Is.EqualTo("Ferie"),
+            "MessageLabel not resolved for a mapped id in Danish.");
+    }
+
+    [Test]
+    public async Task GetPlanningsByUser_AppUnmappedMessage_StillResolvesLabel()
+    {
+        // Arrange — an id the mobile app does NOT hard-code (the previously
+        // invisible case). It must still resolve to its localized label.
+        const int unmappedId = 42;
+        await SeedMessage(unmappedId, "Time off in lieu", "Afspadsering", "Time off in lieu", "Freizeitausgleich");
+
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 7201,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+        var sdkSite = new SdkSite { Name = "Test site 7201", MicrotingUid = 7201 };
+
+        var date = new DateTime(2026, 4, 30, 0, 0, 0, DateTimeKind.Utc);
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 7201,
+            Date = date,
+            MessageId = unmappedId,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await ReadDaysByCurrentUser(
+            assignedSite, sdkSite, date.AddDays(-1), date.AddDays(1), "da");
+
+        // Assert — label resolved even though the app has no constant for it.
+        var prDay = result.PlanningPrDayModels.Single(x => x.Date.Date == date.Date);
+        Assert.That(prDay.MessageLabel, Is.EqualTo("Afspadsering"),
+            "MessageLabel not resolved for an app-unmapped id (the symptom being fixed).");
+    }
+
+    [Test]
+    public async Task GetPlanningsByUser_NoMessage_HasNoLabel()
+    {
+        // Arrange — a day with no MessageId at all.
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 7202,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+        var sdkSite = new SdkSite { Name = "Test site 7202", MicrotingUid = 7202 };
+
+        var date = new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc);
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 7202,
+            Date = date,
+            PlanText = "8",
+            PlanHours = 8,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await ReadDaysByCurrentUser(
+            assignedSite, sdkSite, date.AddDays(-1), date.AddDays(1), "da");
+
+        // Assert — null MessageId yields no label.
+        var prDay = result.PlanningPrDayModels.Single(x => x.Date.Date == date.Date);
+        Assert.That(prDay.Message, Is.Null);
+        Assert.That(prDay.MessageLabel, Is.Null.Or.Empty,
+            "MessageLabel should be null/empty when there is no MessageId.");
     }
 }
