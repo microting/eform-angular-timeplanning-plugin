@@ -472,7 +472,7 @@ public class TimePlanningPlanningService(
 
         try
         {
-            siteModel.SoftwareVersionIsValid = Version.TryParse(currentUser.TimeRegistrationSoftwareVersion, out var v2) && v2 >= new Version(4,0,0,0);
+            siteModel.SoftwareVersionIsValid = Version.TryParse(currentUser.TimeRegistrationSoftwareVersion, out var v2) && v2 >= new Version(4,0,26);
         }
         catch (Exception)
         {
