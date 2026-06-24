@@ -268,7 +268,7 @@ public class TimePlanningPlanningService(
                     siteModel.DeviceManufacturer = user.TimeRegistrationManufacturer;
                     try
                     {
-                        siteModel.SoftwareVersionIsValid = Version.TryParse(user.TimeRegistrationSoftwareVersion, out var v1) && v1 >= new Version(3, 1, 1, 4);
+                        siteModel.SoftwareVersionIsValid = Version.TryParse(user.TimeRegistrationSoftwareVersion, out var v1) && v1 >= new Version(4,0,26);
                     }
                     catch (Exception)
                     {
