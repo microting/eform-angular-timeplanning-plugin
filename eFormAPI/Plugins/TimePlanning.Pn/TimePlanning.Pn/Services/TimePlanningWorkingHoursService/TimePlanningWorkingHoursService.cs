@@ -184,6 +184,92 @@ public class TimePlanningWorkingHoursService(
                 })
                 .ToListAsync();
 
+            // Populate the canonical per-shift total pause minutes (all slots, not
+            // just the primary Pause{N}Id) for the Excel export. ComputeShiftPauseSeconds
+            // is not EF-translatable, so materialize the pause columns for these same
+            // rows in ONE batched query (keyed by Id) and compute in memory — no N+1.
+            if (timePlannings.Count > 0)
+            {
+                var pauseRows = await timePlanningRequest
+                    .Select(x => new PlanRegistration
+                    {
+                        Id = x.Id,
+                        Pause1Id = x.Pause1Id,
+                        Pause2Id = x.Pause2Id,
+                        Pause1StartedAt = x.Pause1StartedAt,
+                        Pause1StoppedAt = x.Pause1StoppedAt,
+                        Pause10StartedAt = x.Pause10StartedAt,
+                        Pause10StoppedAt = x.Pause10StoppedAt,
+                        Pause11StartedAt = x.Pause11StartedAt,
+                        Pause11StoppedAt = x.Pause11StoppedAt,
+                        Pause12StartedAt = x.Pause12StartedAt,
+                        Pause12StoppedAt = x.Pause12StoppedAt,
+                        Pause13StartedAt = x.Pause13StartedAt,
+                        Pause13StoppedAt = x.Pause13StoppedAt,
+                        Pause14StartedAt = x.Pause14StartedAt,
+                        Pause14StoppedAt = x.Pause14StoppedAt,
+                        Pause15StartedAt = x.Pause15StartedAt,
+                        Pause15StoppedAt = x.Pause15StoppedAt,
+                        Pause16StartedAt = x.Pause16StartedAt,
+                        Pause16StoppedAt = x.Pause16StoppedAt,
+                        Pause17StartedAt = x.Pause17StartedAt,
+                        Pause17StoppedAt = x.Pause17StoppedAt,
+                        Pause18StartedAt = x.Pause18StartedAt,
+                        Pause18StoppedAt = x.Pause18StoppedAt,
+                        Pause19StartedAt = x.Pause19StartedAt,
+                        Pause19StoppedAt = x.Pause19StoppedAt,
+                        Pause100StartedAt = x.Pause100StartedAt,
+                        Pause100StoppedAt = x.Pause100StoppedAt,
+                        Pause101StartedAt = x.Pause101StartedAt,
+                        Pause101StoppedAt = x.Pause101StoppedAt,
+                        Pause102StartedAt = x.Pause102StartedAt,
+                        Pause102StoppedAt = x.Pause102StoppedAt,
+                        Pause2StartedAt = x.Pause2StartedAt,
+                        Pause2StoppedAt = x.Pause2StoppedAt,
+                        Pause20StartedAt = x.Pause20StartedAt,
+                        Pause20StoppedAt = x.Pause20StoppedAt,
+                        Pause21StartedAt = x.Pause21StartedAt,
+                        Pause21StoppedAt = x.Pause21StoppedAt,
+                        Pause22StartedAt = x.Pause22StartedAt,
+                        Pause22StoppedAt = x.Pause22StoppedAt,
+                        Pause23StartedAt = x.Pause23StartedAt,
+                        Pause23StoppedAt = x.Pause23StoppedAt,
+                        Pause24StartedAt = x.Pause24StartedAt,
+                        Pause24StoppedAt = x.Pause24StoppedAt,
+                        Pause25StartedAt = x.Pause25StartedAt,
+                        Pause25StoppedAt = x.Pause25StoppedAt,
+                        Pause26StartedAt = x.Pause26StartedAt,
+                        Pause26StoppedAt = x.Pause26StoppedAt,
+                        Pause27StartedAt = x.Pause27StartedAt,
+                        Pause27StoppedAt = x.Pause27StoppedAt,
+                        Pause28StartedAt = x.Pause28StartedAt,
+                        Pause28StoppedAt = x.Pause28StoppedAt,
+                        Pause29StartedAt = x.Pause29StartedAt,
+                        Pause29StoppedAt = x.Pause29StoppedAt,
+                        Pause200StartedAt = x.Pause200StartedAt,
+                        Pause200StoppedAt = x.Pause200StoppedAt,
+                        Pause201StartedAt = x.Pause201StartedAt,
+                        Pause201StoppedAt = x.Pause201StoppedAt,
+                        Pause202StartedAt = x.Pause202StartedAt,
+                        Pause202StoppedAt = x.Pause202StoppedAt,
+                    })
+                    .ToListAsync();
+
+                var pauseRowsById = pauseRows.ToDictionary(x => x.Id);
+                foreach (var tp in timePlannings)
+                {
+                    if (tp.Id is not { } id || !pauseRowsById.TryGetValue(id, out var pauseRow))
+                    {
+                        continue;
+                    }
+
+                    tp.Shift1PauseMinutes =
+                        PlanRegistrationHelper.ComputeShiftPauseSeconds(pauseRow, 1, useOneMinuteIntervals) / 60;
+                    tp.Shift2PauseMinutes =
+                        PlanRegistrationHelper.ComputeShiftPauseSeconds(pauseRow, 2, useOneMinuteIntervals) / 60;
+                }
+            }
+
             var totalDays = (int)(model.DateTo - model.DateFrom).TotalDays + 1;
 
             var lastPlanning = dbContext.PlanRegistrations
@@ -216,6 +302,16 @@ public class TimePlanningWorkingHoursService(
                         Shift2Start = lastPlanning?.Start2Id,
                         Shift2Stop = lastPlanning?.Stop2Id,
                         Shift2Pause = lastPlanning?.Pause2Id,
+                        // Canonical all-slots pause totals (not the legacy single Pause{N}Id)
+                        // for the carried-over previous-day row. lastPlanning is a fully
+                        // materialized PlanRegistration already in scope, so this reuses
+                        // ComputeShiftPauseSeconds with no extra query (no N+1).
+                        Shift1PauseMinutes = lastPlanning != null
+                            ? PlanRegistrationHelper.ComputeShiftPauseSeconds(lastPlanning, 1, useOneMinuteIntervals) / 60
+                            : 0,
+                        Shift2PauseMinutes = lastPlanning != null
+                            ? PlanRegistrationHelper.ComputeShiftPauseSeconds(lastPlanning, 2, useOneMinuteIntervals) / 60
+                            : 0,
                         Shift3Start = lastPlanning?.Start3Id,
                         Shift3Stop = lastPlanning?.Stop3Id,
                         Shift3Pause = lastPlanning?.Pause3Id,
@@ -956,6 +1052,50 @@ public class TimePlanningWorkingHoursService(
         Heal(pr.Pause5StartedAt, pr.Pause5StoppedAt, pr.Pause5Id, 5, v => pr.Pause5Id = v);
     }
 
+    /// <summary>
+    /// Flag-OFF netto computation (5-minute sites): work span in 5-minute ticks
+    /// per shift minus the canonical all-slots shift pause (floor-to-5min clock
+    /// tick), summed across shifts 1..5. Returns netto MINUTES. Mirrors the
+    /// per-call inline blocks in the personal/kiosk create/update paths.
+    /// </summary>
+    private static double ComputeFlagOffNettoMinutes(PlanRegistration pr)
+    {
+        const int minutesMultiplier = 5;
+        double nettoMinutes = 0;
+
+        if (pr.Stop1Id >= pr.Start1Id && pr.Stop1Id != 0)
+        {
+            nettoMinutes += (pr.Stop1Id - pr.Start1Id) * minutesMultiplier;
+            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 1, useOneMinuteIntervals: false) / 60.0;
+        }
+
+        if (pr.Stop2Id >= pr.Start2Id && pr.Stop2Id != 0)
+        {
+            nettoMinutes += (pr.Stop2Id - pr.Start2Id) * minutesMultiplier;
+            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 2, useOneMinuteIntervals: false) / 60.0;
+        }
+
+        if (pr.Stop3Id >= pr.Start3Id && pr.Stop3Id != 0)
+        {
+            nettoMinutes += (pr.Stop3Id - pr.Start3Id) * minutesMultiplier;
+            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 3, useOneMinuteIntervals: false) / 60.0;
+        }
+
+        if (pr.Stop4Id >= pr.Start4Id && pr.Stop4Id != 0)
+        {
+            nettoMinutes += (pr.Stop4Id - pr.Start4Id) * minutesMultiplier;
+            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 4, useOneMinuteIntervals: false) / 60.0;
+        }
+
+        if (pr.Stop5Id >= pr.Start5Id && pr.Stop5Id != 0)
+        {
+            nettoMinutes += (pr.Stop5Id - pr.Start5Id) * minutesMultiplier;
+            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 5, useOneMinuteIntervals: false) / 60.0;
+        }
+
+        return nettoMinutes;
+    }
+
     public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
     {
         Console.WriteLine($"[DEBUG-GRPC-UPDATE] === UpdateWorkingHour (PERSONAL mode, 1-param) entered ===");
@@ -1281,8 +1421,6 @@ public class TimePlanningWorkingHoursService(
                 Shift2PauseNumber = model.Shift2PauseNumber,
             };
 
-            var minutesMultiplier = 5;
-            double nettoMinutes = 0;
 
             planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
 
@@ -1290,37 +1428,7 @@ public class TimePlanningWorkingHoursService(
             // timestamps before the inline netto math (5-min sites, flag on).
             SelfHealCorruptPauseIds(planRegistration, assignedSite);
 
-            if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
-            {
-                nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
-                nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop2Id >= planRegistration.Start2Id && planRegistration.Stop2Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
-                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop3Id >= planRegistration.Start3Id && planRegistration.Stop3Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop3Id - planRegistration.Start3Id;
-                nettoMinutes -= planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop4Id >= planRegistration.Start4Id && planRegistration.Stop4Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop4Id - planRegistration.Start4Id;
-                nettoMinutes -= planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop5Id >= planRegistration.Start5Id && planRegistration.Stop5Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop5Id - planRegistration.Start5Id;
-                nettoMinutes -= planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0;
-            }
-
-            nettoMinutes *= minutesMultiplier;
+            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -1606,8 +1714,6 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Shift1PauseNumber = model.Shift1PauseNumber;
             planRegistration.Shift2PauseNumber = model.Shift2PauseNumber;
 
-            var minutesMultiplier = 5;
-            double nettoMinutes = 0;
 
             planRegistration = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
 
@@ -1615,37 +1721,7 @@ public class TimePlanningWorkingHoursService(
             // timestamps before the inline netto math (5-min sites, flag on).
             SelfHealCorruptPauseIds(planRegistration, assignedSite);
 
-            if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
-            {
-                nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
-                nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop2Id >= planRegistration.Start2Id && planRegistration.Stop2Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
-                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop3Id >= planRegistration.Start3Id && planRegistration.Stop3Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop3Id - planRegistration.Start3Id;
-                nettoMinutes -= planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop4Id >= planRegistration.Start4Id && planRegistration.Stop4Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop4Id - planRegistration.Start4Id;
-                nettoMinutes -= planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop5Id >= planRegistration.Start5Id && planRegistration.Stop5Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop5Id - planRegistration.Start5Id;
-                nettoMinutes -= planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0;
-            }
-
-            nettoMinutes *= minutesMultiplier;
+            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -1986,8 +2062,6 @@ public class TimePlanningWorkingHoursService(
                 Shift2PauseNumber = model.Shift2PauseNumber,
             };
 
-            var minutesMultiplier = 5;
-            double nettoMinutes = 0;
 
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -1999,37 +2073,7 @@ public class TimePlanningWorkingHoursService(
             // timestamps before the inline netto math (5-min sites, flag on).
             SelfHealCorruptPauseIds(planRegistration, assignedSite);
 
-            if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
-            {
-                nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
-                nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop2Id >= planRegistration.Start2Id && planRegistration.Stop2Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
-                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop3Id >= planRegistration.Start3Id && planRegistration.Stop3Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop3Id - planRegistration.Start3Id;
-                nettoMinutes -= planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop4Id >= planRegistration.Start4Id && planRegistration.Stop4Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop4Id - planRegistration.Start4Id;
-                nettoMinutes -= planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop5Id >= planRegistration.Start5Id && planRegistration.Stop5Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop5Id - planRegistration.Start5Id;
-                nettoMinutes -= planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0;
-            }
-
-            nettoMinutes *= minutesMultiplier;
+            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -2300,8 +2344,6 @@ public class TimePlanningWorkingHoursService(
             planRegistration.Shift1PauseNumber = model.Shift1PauseNumber;
             planRegistration.Shift2PauseNumber = model.Shift2PauseNumber;
 
-            var minutesMultiplier = 5;
-            double nettoMinutes = 0;
 
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -2313,37 +2355,7 @@ public class TimePlanningWorkingHoursService(
             // timestamps before the inline netto math (5-min sites, flag on).
             SelfHealCorruptPauseIds(planRegistration, assignedSite);
 
-            if (planRegistration.Stop1Id >= planRegistration.Start1Id && planRegistration.Stop1Id != 0)
-            {
-                nettoMinutes = planRegistration.Stop1Id - planRegistration.Start1Id;
-                nettoMinutes -= planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop2Id >= planRegistration.Start2Id && planRegistration.Stop2Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop2Id - planRegistration.Start2Id;
-                nettoMinutes -= planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop3Id >= planRegistration.Start3Id && planRegistration.Stop3Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop3Id - planRegistration.Start3Id;
-                nettoMinutes -= planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop4Id >= planRegistration.Start4Id && planRegistration.Stop4Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop4Id - planRegistration.Start4Id;
-                nettoMinutes -= planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0;
-            }
-
-            if (planRegistration.Stop5Id >= planRegistration.Start5Id && planRegistration.Stop5Id != 0)
-            {
-                nettoMinutes = nettoMinutes + planRegistration.Stop5Id - planRegistration.Start5Id;
-                nettoMinutes -= planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0;
-            }
-
-            nettoMinutes *= minutesMultiplier;
+            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -2750,10 +2762,10 @@ public class TimePlanningWorkingHoursService(
             // pass actualStamp=null and fall through to the existing 2-arg lookup.
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start, planning.Start1StartedAt, useOneMinuteIntervals)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Stop, planning.Stop1StoppedAt, useOneMinuteIntervals)));
-            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Pause, null, useOneMinuteIntervals)));
+            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift1PauseMinutes)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start, planning.Start2StartedAt, useOneMinuteIntervals)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop, planning.Stop2StoppedAt, useOneMinuteIntervals)));
-            dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Pause, null, useOneMinuteIntervals)));
+            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift2PauseMinutes)));
             dataRow.Append(CreateNumericCell(planning.NettoHoursOverrideActive ? planning.NettoHoursOverride : planning.NettoHours));
             dataRow.Append(CreateNumericCell(planning.FlexHours));
             dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
@@ -2830,6 +2842,33 @@ public class TimePlanningWorkingHoursService(
         };
     }
 
+
+    /// <summary>
+    /// Formats a total pause duration in minutes as <c>HH:mm</c> (the Dashboard
+    /// sheet's pause-cell format). Source is the canonical all-slots pause total
+    /// (<c>Shift{N}PauseMinutes</c>), not the legacy single-slot Pause{N}Id.
+    /// </summary>
+    internal static string FormatPauseMinutesAsTime(int minutes)
+    {
+        if (minutes <= 0)
+        {
+            return "";
+        }
+        return $"{minutes / 60:00}:{minutes % 60:00}";
+    }
+
+    /// <summary>
+    /// The day-fraction (minutes / 1440) of a total pause duration for the
+    /// Dagsoversigt tab, mirroring <see cref="GetShiftTimeFraction"/>'s output.
+    /// </summary>
+    internal static double? PauseMinutesAsDayFraction(int minutes)
+    {
+        if (minutes <= 0)
+        {
+            return null;
+        }
+        return minutes / 1440.0;
+    }
 
     internal string GetShiftTime(PlanRegistration plr, int? shift)
     {
@@ -4206,10 +4245,10 @@ public class TimePlanningWorkingHoursService(
             var p = row.Planning;
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Start, p.Start1StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Stop, p.Stop1StoppedAt, row.UseOneMinuteIntervals)));
-            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Pause, null, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift1PauseMinutes)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Start, p.Start2StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Stop, p.Stop2StoppedAt, row.UseOneMinuteIntervals)));
-            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Pause, null, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift2PauseMinutes)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Start, p.Start3StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Stop, p.Stop3StoppedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Pause, null, row.UseOneMinuteIntervals)));

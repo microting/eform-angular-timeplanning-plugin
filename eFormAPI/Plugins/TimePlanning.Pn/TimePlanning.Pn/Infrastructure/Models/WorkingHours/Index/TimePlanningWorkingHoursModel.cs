@@ -50,6 +50,17 @@ public class TimePlanningWorkingHoursModel
     public int? Shift5Start { get; set; }
     public int? Shift5Pause { get; set; }
     public int? Shift5Stop { get; set; }
+
+    /// <summary>
+    /// Total pause minutes for shift 1 / shift 2, computed via
+    /// <c>PlanRegistrationHelper.ComputeShiftPauseSeconds</c> so they sum EVERY
+    /// populated pause slot (primary Pause{N} plus the multi-pause sub-slots),
+    /// honoring the site's UseOneMinuteIntervals flag. The Excel export renders
+    /// these instead of the legacy <c>Shift{N}Pause</c> (Pause{N}Id-only) value,
+    /// which ignored sub-slots and under-reported multi-pause days.
+    /// </summary>
+    public int Shift1PauseMinutes { get; set; }
+    public int Shift2PauseMinutes { get; set; }
     public double NettoHours { get; set; }
     public double FlexHours { get; set; }
     public double SumFlexStart { get; set; }

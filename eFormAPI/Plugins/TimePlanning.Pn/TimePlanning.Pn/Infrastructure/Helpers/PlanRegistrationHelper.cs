@@ -397,9 +397,10 @@ public static class PlanRegistrationHelper
         // Helper: compute one shift's contribution. Prefer DateTime delta when
         // both stamps are populated; otherwise fall back to the legacy 5-min
         // tick math so mixed-precision rows (some shifts precise, some not)
-        // still get a complete total.
-        long ShiftSeconds(DateTime? startAt, DateTime? stopAt, int startId, int stopId,
-            DateTime? pauseStartAt, DateTime? pauseStopAt, int pauseId)
+        // still get a complete total. Pause is the canonical per-shift total
+        // (ALL slots, not just the primary) — second-precision because this
+        // method only runs on UseOneMinuteIntervals sites.
+        long ShiftSeconds(int shift, DateTime? startAt, DateTime? stopAt, int startId, int stopId)
         {
             long workSeconds;
             if (startAt.HasValue && stopAt.HasValue && stopAt.Value > startAt.Value)
@@ -415,118 +416,45 @@ public static class PlanRegistrationHelper
                 return 0;
             }
 
-            long pauseSeconds;
-            if (pauseStartAt.HasValue && pauseStopAt.HasValue && pauseStopAt.Value > pauseStartAt.Value)
-            {
-                pauseSeconds = (long)(pauseStopAt.Value - pauseStartAt.Value).TotalSeconds;
-            }
-            else if (pauseId > 0)
-            {
-                // Legacy snap fallback: Pause1Id is stored as (minutes/5 + 1)
-                pauseSeconds = (long)(pauseId - 1) * 5 * 60;
-            }
-            else
-            {
-                pauseSeconds = 0;
-            }
+            long pauseSeconds = ComputeShiftPauseSeconds(pr, shift, useOneMinuteIntervals: true);
 
             return workSeconds - pauseSeconds;
         }
 
-        nettoSeconds += ShiftSeconds(pr.Start1StartedAt, pr.Stop1StoppedAt, pr.Start1Id, pr.Stop1Id,
-            pr.Pause1StartedAt, pr.Pause1StoppedAt, pr.Pause1Id);
-        nettoSeconds += ShiftSeconds(pr.Start2StartedAt, pr.Stop2StoppedAt, pr.Start2Id, pr.Stop2Id,
-            pr.Pause2StartedAt, pr.Pause2StoppedAt, pr.Pause2Id);
-        nettoSeconds += ShiftSeconds(pr.Start3StartedAt, pr.Stop3StoppedAt, pr.Start3Id, pr.Stop3Id,
-            pr.Pause3StartedAt, pr.Pause3StoppedAt, pr.Pause3Id);
-        nettoSeconds += ShiftSeconds(pr.Start4StartedAt, pr.Stop4StoppedAt, pr.Start4Id, pr.Stop4Id,
-            pr.Pause4StartedAt, pr.Pause4StoppedAt, pr.Pause4Id);
-        nettoSeconds += ShiftSeconds(pr.Start5StartedAt, pr.Stop5StoppedAt, pr.Start5Id, pr.Stop5Id,
-            pr.Pause5StartedAt, pr.Pause5StoppedAt, pr.Pause5Id);
+        nettoSeconds += ShiftSeconds(1, pr.Start1StartedAt, pr.Stop1StoppedAt, pr.Start1Id, pr.Stop1Id);
+        nettoSeconds += ShiftSeconds(2, pr.Start2StartedAt, pr.Stop2StoppedAt, pr.Start2Id, pr.Stop2Id);
+        nettoSeconds += ShiftSeconds(3, pr.Start3StartedAt, pr.Stop3StoppedAt, pr.Start3Id, pr.Stop3Id);
+        nettoSeconds += ShiftSeconds(4, pr.Start4StartedAt, pr.Stop4StoppedAt, pr.Start4Id, pr.Stop4Id);
+        nettoSeconds += ShiftSeconds(5, pr.Start5StartedAt, pr.Stop5StoppedAt, pr.Start5Id, pr.Stop5Id);
 
         return Math.Max(0, nettoSeconds);
     }
 
     /// <summary>
-    /// Aggregates pause minutes for a PlanRegistration.
+    /// Aggregates total pause minutes for a PlanRegistration by summing the
+    /// canonical per-shift pause (<see cref="ComputeShiftPauseSeconds"/>) across
+    /// shifts 1-5 and rounding the total down to whole minutes.
     ///
-    /// When useOneMinuteIntervals is true, sums the (Pause*StoppedAt - Pause*StartedAt)
-    /// DateTime deltas in seconds across every populated pause stamp pair — the 5 main
-    /// slots AND all sub-slots used by the multi-pause workflow (Pause10..Pause19,
-    /// Pause100..Pause102 for shift 1; Pause20..Pause29, Pause200..Pause202 for shift 2;
-    /// Pause3/4/5 single slots for shifts 3/4/5). This mirrors the frontend admin edit
-    /// dialog's computeExactPauseMinutes (workday-entity-dialog.component.ts) so the
-    /// overview's "Samlet pause" and the per-row edit dialog agree byte-for-byte.
-    /// Total seconds are rounded down to whole minutes.
-    ///
-    /// If a flag-on row has no stamp pairs populated, falls back to the legacy
-    /// 5-minute-tick formula on the 5 main slots only (sub-slots have no *Id field):
-    /// for each Pause{1..5}Id &gt; 0, contribute (Pause{N}Id * 5) - 5 minutes. This
-    /// covers older flag-on rows written before stamp-pair pauses existed.
-    ///
-    /// When useOneMinuteIntervals is false, always uses the legacy 5-minute-tick
-    /// formula on the 5 main slots. (Pause*Id stores break in 5-minute ticks plus a
-    /// +1 sentinel: Pause1Id = 1 means 0 min, Pause1Id = 4 means 15 min, etc.)
+    /// ComputeShiftPauseSeconds is the single source of truth: per shift it walks
+    /// every populated pause slot (primary Pause{N} plus the multi-pause sub-slots)
+    /// and applies the exact stamp delta when useOneMinuteIntervals is true, or the
+    /// floor-to-5-minute clock-tick delta when it is false, falling back per shift to
+    /// the legacy Pause{N}Id tick value only when that shift has no timestamped slots.
     /// </summary>
     public static int AggregatePauseMinutes(PlanRegistration pr, bool useOneMinuteIntervals)
     {
-        if (useOneMinuteIntervals)
+        // Sum the canonical per-shift pause across all 5 shifts. The canonical
+        // method walks EVERY populated slot of each shift (primary + sub-slots),
+        // applies the exact delta (flag on) or the floor-to-5-minute clock-tick
+        // delta (flag off), and falls back per-shift to the legacy Pause{N}Id
+        // tick value only when that shift has no timestamped slots.
+        long totalSeconds = 0;
+        for (var shift = 1; shift <= 5; shift++)
         {
-            long totalSeconds = 0;
-            var hasAnyStamp = false;
-
-            // Walk every pause stamp pair (31 total — mirrors the frontend's
-            // computeExactPauseMinutes via the shared EnumeratePauseStampPairs
-            // source of truth that GetPauseIntervals also consumes). Track
-            // whether ANY stamp was observed independently of the duration sum,
-            // so a populated-but-zero-duration pause (start == stop) doesn't
-            // wrongly trigger the legacy-tick fallback.
-            foreach (var (startedAt, stoppedAt) in EnumeratePauseStampPairs(pr))
-            {
-                if (startedAt.HasValue || stoppedAt.HasValue)
-                {
-                    hasAnyStamp = true;
-                }
-                if (startedAt.HasValue && stoppedAt.HasValue && startedAt.Value < stoppedAt.Value)
-                {
-                    totalSeconds += (long)(stoppedAt.Value - startedAt.Value).TotalSeconds;
-                }
-            }
-
-            if (!hasAnyStamp)
-            {
-                // Older flag-on rows without any stamp data may still carry
-                // legacy 5-minute-tick IDs in the 5 main pause slots.
-                return LegacyTickMinutesAcrossMainSlots(pr);
-            }
-
-            return (int)(totalSeconds / 60); // round down to whole minutes
+            totalSeconds += ComputeShiftPauseSeconds(pr, shift, useOneMinuteIntervals);
         }
 
-        // Flag-off branch: legacy 5-minute-tick path.
-        return LegacyTickMinutesAcrossMainSlots(pr);
-    }
-
-    /// <summary>
-    /// Sums the legacy 5-minute-tick pause IDs across the 5 main slots only.
-    /// Sub-slots have no *Id field, so they cannot contribute legacy ticks.
-    /// </summary>
-    private static int LegacyTickMinutesAcrossMainSlots(PlanRegistration pr)
-    {
-        var totalMinutes = 0;
-        if (pr.Pause1Id > 0) totalMinutes += (pr.Pause1Id * 5) - 5;
-        if (pr.Pause2Id > 0) totalMinutes += (pr.Pause2Id * 5) - 5;
-        if (pr.Pause3Id > 0) totalMinutes += (pr.Pause3Id * 5) - 5;
-        if (pr.Pause4Id > 0) totalMinutes += (pr.Pause4Id * 5) - 5;
-        if (pr.Pause5Id > 0) totalMinutes += (pr.Pause5Id * 5) - 5;
-        return totalMinutes;
-    }
-
-    private static long PauseSpanSeconds(DateTime? startedAt, DateTime? stoppedAt)
-    {
-        if (startedAt == null || stoppedAt == null) return 0;
-        var span = stoppedAt.Value - startedAt.Value;
-        return span.TotalSeconds > 0 ? (long)span.TotalSeconds : 0;
+        return (int)(totalSeconds / 60); // round down to whole minutes
     }
 
     /// <summary>
@@ -2085,44 +2013,168 @@ public static class PlanRegistrationHelper
     /// </summary>
     private static IEnumerable<(DateTime? StartedAt, DateTime? StoppedAt)> EnumeratePauseStampPairs(PlanRegistration pr)
     {
-        // Main pause intervals 1-5
-        yield return (pr.Pause1StartedAt, pr.Pause1StoppedAt);
-        yield return (pr.Pause2StartedAt, pr.Pause2StoppedAt);
-        yield return (pr.Pause3StartedAt, pr.Pause3StoppedAt);
-        yield return (pr.Pause4StartedAt, pr.Pause4StoppedAt);
-        yield return (pr.Pause5StartedAt, pr.Pause5StoppedAt);
+        // Delegate to the per-shift enumerator so there is ONE authoritative
+        // list of the 31 pause columns. The pairs are regrouped by shift
+        // (shift 1: Pause1,10-19,100-102; shift 2: Pause2,20-29,200-202;
+        // shifts 3-5: Pause3/4/5) rather than the old flat 1-5/10-29/100-102/
+        // 200-202 order, but the only consumer (GetPauseIntervals →
+        // CalculateTotalSeconds) sums durations and is order-independent.
+        for (var shift = 1; shift <= 5; shift++)
+        {
+            foreach (var pair in EnumerateShiftPauseStampPairs(pr, shift))
+            {
+                yield return pair;
+            }
+        }
+    }
 
-        // Extended pause intervals 10-29
-        yield return (pr.Pause10StartedAt, pr.Pause10StoppedAt);
-        yield return (pr.Pause11StartedAt, pr.Pause11StoppedAt);
-        yield return (pr.Pause12StartedAt, pr.Pause12StoppedAt);
-        yield return (pr.Pause13StartedAt, pr.Pause13StoppedAt);
-        yield return (pr.Pause14StartedAt, pr.Pause14StoppedAt);
-        yield return (pr.Pause15StartedAt, pr.Pause15StoppedAt);
-        yield return (pr.Pause16StartedAt, pr.Pause16StoppedAt);
-        yield return (pr.Pause17StartedAt, pr.Pause17StoppedAt);
-        yield return (pr.Pause18StartedAt, pr.Pause18StoppedAt);
-        yield return (pr.Pause19StartedAt, pr.Pause19StoppedAt);
-        yield return (pr.Pause20StartedAt, pr.Pause20StoppedAt);
-        yield return (pr.Pause21StartedAt, pr.Pause21StoppedAt);
-        yield return (pr.Pause22StartedAt, pr.Pause22StoppedAt);
-        yield return (pr.Pause23StartedAt, pr.Pause23StoppedAt);
-        yield return (pr.Pause24StartedAt, pr.Pause24StoppedAt);
-        yield return (pr.Pause25StartedAt, pr.Pause25StoppedAt);
-        yield return (pr.Pause26StartedAt, pr.Pause26StoppedAt);
-        yield return (pr.Pause27StartedAt, pr.Pause27StoppedAt);
-        yield return (pr.Pause28StartedAt, pr.Pause28StoppedAt);
-        yield return (pr.Pause29StartedAt, pr.Pause29StoppedAt);
+    /// <summary>
+    /// Enumerates the pause stamp pairs that belong to ONE shift.
+    /// A shift can carry pauses in several slot columns:
+    ///   shift 1 → Pause1 (primary), Pause10..Pause19, Pause100..Pause102
+    ///   shift 2 → Pause2 (primary), Pause20..Pause29, Pause200..Pause202
+    ///   shift 3 → Pause3 (single slot)
+    ///   shift 4 → Pause4 (single slot)
+    ///   shift 5 → Pause5 (single slot)
+    /// The primary slot is always yielded first so callers that need the
+    /// "primary only" semantics (e.g. legacy-fallback) can take the first pair.
+    /// </summary>
+    private static IEnumerable<(DateTime? StartedAt, DateTime? StoppedAt)> EnumerateShiftPauseStampPairs(PlanRegistration pr, int shift)
+    {
+        switch (shift)
+        {
+            case 1:
+                yield return (pr.Pause1StartedAt, pr.Pause1StoppedAt);
+                yield return (pr.Pause10StartedAt, pr.Pause10StoppedAt);
+                yield return (pr.Pause11StartedAt, pr.Pause11StoppedAt);
+                yield return (pr.Pause12StartedAt, pr.Pause12StoppedAt);
+                yield return (pr.Pause13StartedAt, pr.Pause13StoppedAt);
+                yield return (pr.Pause14StartedAt, pr.Pause14StoppedAt);
+                yield return (pr.Pause15StartedAt, pr.Pause15StoppedAt);
+                yield return (pr.Pause16StartedAt, pr.Pause16StoppedAt);
+                yield return (pr.Pause17StartedAt, pr.Pause17StoppedAt);
+                yield return (pr.Pause18StartedAt, pr.Pause18StoppedAt);
+                yield return (pr.Pause19StartedAt, pr.Pause19StoppedAt);
+                yield return (pr.Pause100StartedAt, pr.Pause100StoppedAt);
+                yield return (pr.Pause101StartedAt, pr.Pause101StoppedAt);
+                yield return (pr.Pause102StartedAt, pr.Pause102StoppedAt);
+                break;
+            case 2:
+                yield return (pr.Pause2StartedAt, pr.Pause2StoppedAt);
+                yield return (pr.Pause20StartedAt, pr.Pause20StoppedAt);
+                yield return (pr.Pause21StartedAt, pr.Pause21StoppedAt);
+                yield return (pr.Pause22StartedAt, pr.Pause22StoppedAt);
+                yield return (pr.Pause23StartedAt, pr.Pause23StoppedAt);
+                yield return (pr.Pause24StartedAt, pr.Pause24StoppedAt);
+                yield return (pr.Pause25StartedAt, pr.Pause25StoppedAt);
+                yield return (pr.Pause26StartedAt, pr.Pause26StoppedAt);
+                yield return (pr.Pause27StartedAt, pr.Pause27StoppedAt);
+                yield return (pr.Pause28StartedAt, pr.Pause28StoppedAt);
+                yield return (pr.Pause29StartedAt, pr.Pause29StoppedAt);
+                yield return (pr.Pause200StartedAt, pr.Pause200StoppedAt);
+                yield return (pr.Pause201StartedAt, pr.Pause201StoppedAt);
+                yield return (pr.Pause202StartedAt, pr.Pause202StoppedAt);
+                break;
+            case 3:
+                yield return (pr.Pause3StartedAt, pr.Pause3StoppedAt);
+                break;
+            case 4:
+                yield return (pr.Pause4StartedAt, pr.Pause4StoppedAt);
+                break;
+            case 5:
+                yield return (pr.Pause5StartedAt, pr.Pause5StoppedAt);
+                break;
+        }
+    }
 
-        // Additional pause intervals 100-102
-        yield return (pr.Pause100StartedAt, pr.Pause100StoppedAt);
-        yield return (pr.Pause101StartedAt, pr.Pause101StoppedAt);
-        yield return (pr.Pause102StartedAt, pr.Pause102StoppedAt);
+    /// <summary>
+    /// The legacy 5-minute-tick integer pause field for a shift's primary slot.
+    /// Pause{N}Id stores break in 5-minute ticks plus a +1 sentinel
+    /// (Pause1Id = 1 means 0 min, Pause1Id = 4 means 15 min, etc.).
+    /// </summary>
+    private static int PrimaryPauseId(PlanRegistration pr, int shift) => shift switch
+    {
+        1 => pr.Pause1Id,
+        2 => pr.Pause2Id,
+        3 => pr.Pause3Id,
+        4 => pr.Pause4Id,
+        5 => pr.Pause5Id,
+        _ => 0
+    };
 
-        // Additional pause intervals 200-202
-        yield return (pr.Pause200StartedAt, pr.Pause200StoppedAt);
-        yield return (pr.Pause201StartedAt, pr.Pause201StoppedAt);
-        yield return (pr.Pause202StartedAt, pr.Pause202StoppedAt);
+    private static readonly long FiveMinuteTicks = TimeSpan.FromMinutes(5).Ticks;
+
+    /// <summary>
+    /// Floors a DateTime down to its absolute 5-minute grid boundary on the
+    /// timeline (NOT relative to the day) so the result is over-midnight safe.
+    /// </summary>
+    private static DateTime FloorTo5Min(DateTime dt)
+        => new DateTime(dt.Ticks - (dt.Ticks % FiveMinuteTicks), dt.Kind);
+
+    /// <summary>
+    /// Canonical per-shift pause total in SECONDS — the single source of truth
+    /// for every netto and display pause computation.
+    ///
+    /// Sums the contribution of EVERY populated pause slot that belongs to the
+    /// shift (primary Pause{N} plus its sub-slots, see
+    /// <see cref="EnumerateShiftPauseStampPairs"/>), where each slot contributes:
+    ///   • <paramref name="useOneMinuteIntervals"/> == true  → the exact
+    ///     (StoppedAt - StartedAt) delta in seconds (full precision).
+    ///   • <paramref name="useOneMinuteIntervals"/> == false → the clock-tick
+    ///     delta: floor BOTH endpoints to the absolute 5-minute grid and
+    ///     difference them — floor(stop) - floor(start), a whole number of
+    ///     5-minute units. A pause that stays inside one 5-min cell contributes
+    ///     0; it adds 5 min for each 5-minute boundary it crosses.
+    ///
+    /// Fallback: when the shift has NO slot with both timestamps present (e.g.
+    /// legacy admin-entered rows that only carry the integer field), falls back
+    /// to the legacy 5-minute-tick value of the shift's primary slot only:
+    /// (Pause{N}Id > 0 ? Pause{N}Id - 1 : 0) * 5 * 60 seconds.
+    /// </summary>
+    public static int ComputeShiftPauseSeconds(PlanRegistration r, int shift, bool useOneMinuteIntervals)
+    {
+        long totalSeconds = 0;
+        var hasTimestampedSlot = false;
+
+        foreach (var (startedAt, stoppedAt) in EnumerateShiftPauseStampPairs(r, shift))
+        {
+            // A slot only counts as "measured" — and thus suppresses the
+            // legacy-tick fallback — when BOTH endpoints are present, i.e. it is
+            // a complete, measurable interval. A deliberately zero-duration
+            // (start == stop) or invalid (stop < start) but COMPLETE pause still
+            // counts: the worker stamped a real (if zero) pause, so the intended
+            // contribution is 0 and the legacy field must not resurface.
+            // An orphaned slot (only one endpoint — e.g. kiosk crash or partial
+            // edit) is NOT a complete slot, so it does not suppress the fallback;
+            // the row correctly falls back to the legacy Pause{N}Id tick value.
+            if (startedAt.HasValue && stoppedAt.HasValue)
+            {
+                hasTimestampedSlot = true;
+            }
+
+            if (!startedAt.HasValue || !stoppedAt.HasValue || stoppedAt.Value <= startedAt.Value)
+            {
+                continue;
+            }
+
+            if (useOneMinuteIntervals)
+            {
+                totalSeconds += (long)(stoppedAt.Value - startedAt.Value).TotalSeconds;
+            }
+            else
+            {
+                var tickDelta = FloorTo5Min(stoppedAt.Value) - FloorTo5Min(startedAt.Value);
+                totalSeconds += (long)tickDelta.TotalSeconds;
+            }
+        }
+
+        if (!hasTimestampedSlot)
+        {
+            var pauseId = PrimaryPauseId(r, shift);
+            return pauseId > 0 ? (pauseId - 1) * 5 * 60 : 0;
+        }
+
+        return (int)totalSeconds;
     }
 
     /// <summary>
@@ -2218,16 +2270,18 @@ public static class PlanRegistrationHelper
         var workIntervals = GetWorkIntervals(planRegistration);
         var totalWorkSeconds = CalculateTotalSeconds(workIntervals);
 
-        // Calculate pause intervals and total pause seconds
-        // var pauseIntervals = GetPauseIntervals(planRegistration);
-        // var totalPauseSeconds = CalculateTotalSeconds(pauseIntervals);
-        long totalPauseSeconds = 0;;
-        // Sum pauses from Pause1Id to Pause5Id only for now (as we don't have timestamps for others) and these are equal to 5 min increments
-        totalPauseSeconds += (planRegistration.Pause1Id > 0 ? planRegistration.Pause1Id - 1 : 0) * 300;
-        totalPauseSeconds += (planRegistration.Pause2Id > 0 ? planRegistration.Pause2Id - 1 : 0) * 300;
-        totalPauseSeconds += (planRegistration.Pause3Id > 0 ? planRegistration.Pause3Id - 1 : 0) * 300;
-        totalPauseSeconds += (planRegistration.Pause4Id > 0 ? planRegistration.Pause4Id - 1 : 0) * 300;
-        totalPauseSeconds += (planRegistration.Pause5Id > 0 ? planRegistration.Pause5Id - 1 : 0) * 300;
+        // Calculate total pause seconds via the canonical per-shift method so
+        // ALL populated pause slots (primary Pause{N} plus the multi-pause
+        // sub-slots Pause10/11/.., Pause20/21/..) are deducted, not just the
+        // legacy primary Pause{N}Id. This is the 5-minute (flag-off) grid path:
+        // each timestamped slot contributes its floor-to-5min clock-tick delta,
+        // falling back per-shift to the legacy Pause{N}Id tick value only when a
+        // shift has no timestamped pause slots.
+        long totalPauseSeconds = 0;
+        for (var shift = 1; shift <= 5; shift++)
+        {
+            totalPauseSeconds += ComputeShiftPauseSeconds(planRegistration, shift, useOneMinuteIntervals: false);
+        }
 
         // Net work seconds = total work - total pause (cannot be negative)
         var netWorkSeconds = Math.Max(0, totalWorkSeconds - totalPauseSeconds);

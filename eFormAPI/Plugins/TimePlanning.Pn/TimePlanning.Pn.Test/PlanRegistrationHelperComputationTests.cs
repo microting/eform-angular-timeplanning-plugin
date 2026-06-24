@@ -399,11 +399,11 @@ public class PlanRegistrationHelperComputationTests
 
         // Assert
         // 8 hours work - 0.5 hours pause = 7.5 hours = 27000 seconds
-        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(28800),
+        Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(27000),
             "NettoHoursInSeconds should be 7.5 hours = 27000 seconds");
-        Assert.That(planRegistration.NettoHours, Is.EqualTo(8.0),
+        Assert.That(planRegistration.NettoHours, Is.EqualTo(7.5),
             "NettoHours should be 7.5");
-        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(28800),
+        Assert.That(planRegistration.EffectiveNetHoursInSeconds, Is.EqualTo(27000),
             "EffectiveNetHoursInSeconds should equal NettoHoursInSeconds when no override");
     }
 
