@@ -1832,14 +1832,11 @@ public class TimePlanningPlanningService(
                     localizationService.GetString("PlanRegistrationNotFound"));
             }
 
-            // Get the assigned site to check GPS and Snapshot settings
-            var assignedSite = await dbContext.AssignedSites
-                .Where(x => x.SiteId == planRegistration.SdkSitId)
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .FirstOrDefaultAsync().ConfigureAwait(false);
-
-            var gpsEnabled = assignedSite?.GpsEnabled ?? false;
-            var snapshotEnabled = assignedSite?.SnapshotEnabled ?? false;
+            // GPS/Snapshot always come from the TimePlanning GLOBAL (per-customer) settings,
+            // never from the per-site AssignedSite column, matching the serve paths in
+            // TimeSettingService.
+            var gpsEnabled = options.Value.GpsEnabled == "1";
+            var snapshotEnabled = options.Value.SnapshotEnabled == "1";
 
             // Get all versions for this plan registration, ordered by version descending (newest first)
             var versions = await dbContext.PlanRegistrationVersions
