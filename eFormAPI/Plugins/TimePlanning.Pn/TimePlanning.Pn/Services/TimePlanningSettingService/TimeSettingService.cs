@@ -167,17 +167,9 @@ public class TimeSettingService(
                 settings.SnapshotEnabled = timePlanningSettingsModel.SnapshotEnabled ? "1" : "0";
             }, dbContext, userService.UserId);
 
-            // Update all assigned sites with the new GPS and Snapshot settings
-            var assignedSites = await dbContext.AssignedSites
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .ToListAsync();
-
-            foreach (var assignedSite in assignedSites)
-            {
-                assignedSite.GpsEnabled = timePlanningSettingsModel.GpsEnabled;
-                assignedSite.SnapshotEnabled = timePlanningSettingsModel.SnapshotEnabled;
-                await assignedSite.Update(dbContext);
-            }
+            // GPS/Snapshot are now served from the GLOBAL settings written above; the
+            // per-site AssignedSite columns are no longer read on any serve path, so the
+            // old loop that fanned these values out to every AssignedSite was removed.
 
             await GoogleSheetHelper.PushToGoogleSheet(await core.GetCore(), dbContext, logger);
 
@@ -219,6 +211,11 @@ public class TimeSettingService(
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Resigned != true)
                 .ToListAsync();
+
+            // GPS/Snapshot are sourced from the TimePlanning GLOBAL (per-customer) settings,
+            // never from the per-site AssignedSite column, so newly-created sites always
+            // honour the customer-wide camera/GPS policy regardless of their per-site default.
+            var snapshotEnabledGlobal = options.Value.SnapshotEnabled == "1";
 
             var sites = new List<Site>();
             foreach (var assignedSite in assignedSites)
@@ -311,7 +308,7 @@ public class TimeSettingService(
                             FifthShiftActive = assignedSite.FifthShiftActive,
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
-                            SnapshotEnabled = assignedSite.SnapshotEnabled,
+                            SnapshotEnabled = snapshotEnabledGlobal,
                             UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals,
                             OverMidnight = assignedSite.OverMidnight
                         };
@@ -528,6 +525,11 @@ public class TimeSettingService(
         List<Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite> assignedSites,
         Microting.eForm.Infrastructure.MicrotingDbContext sdkDbContext)
     {
+        // GPS/Snapshot are sourced from the TimePlanning GLOBAL (per-customer) settings,
+        // never from the per-site AssignedSite column, so newly-created sites always
+        // honour the customer-wide camera/GPS policy regardless of their per-site default.
+        var snapshotEnabledGlobal = options.Value.SnapshotEnabled == "1";
+
         var sites = new List<Site>();
         foreach (var assignedSite in assignedSites)
         {
@@ -619,7 +621,7 @@ public class TimeSettingService(
                             FifthShiftActive = assignedSite.FifthShiftActive,
                             Resigned = assignedSite.Resigned,
                             ResignedAtDate = assignedSite.ResignedAtDate,
-                            SnapshotEnabled = assignedSite.SnapshotEnabled,
+                            SnapshotEnabled = snapshotEnabledGlobal,
                             UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals,
                             OverMidnight = assignedSite.OverMidnight
                         };
@@ -673,6 +675,12 @@ public class TimeSettingService(
         dbAssignedSite.GlobalAutoBreakCalculationActive = globalAutoBreakCalculationActive;
         dbAssignedSite.SiteName = site.Name;
 
+        // GPS comes from the TimePlanning GLOBAL (per-customer) settings, never from the
+        // per-site AssignedSite column.
+        dbAssignedSite.GpsEnabled = options.Value.GpsEnabled == "1";
+        // Snapshot is kiosk-only; always off for personal registration
+        dbAssignedSite.SnapshotEnabled = false;
+
         return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
 
     }
@@ -707,6 +715,13 @@ public class TimeSettingService(
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
         dbAssignedSite.DayOfPayment = options.Value.DayOfPayment;
+
+        // GPS comes from the TimePlanning GLOBAL (per-customer) settings, never from the
+        // per-site AssignedSite column. This is the personal-mode gRPC path
+        // (GetAssignedSite -> GetAssignedSiteByCurrentUserName).
+        dbAssignedSite.GpsEnabled = options.Value.GpsEnabled == "1";
+        // Snapshot is kiosk-only; always off for personal registration
+        dbAssignedSite.SnapshotEnabled = false;
 
         return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(true, dbAssignedSite);
     }

@@ -44,6 +44,14 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
 
         _options = Substitute.For<IPluginDbOptions<TimePlanningBaseSettings>>();
+        // GetVersionHistory now reads GPS/Snapshot from the global (per-customer) settings
+        // via options.Value (matching TimeSettingService), not from the per-site AssignedSite.
+        // Each test overrides _options.Value as needed; default both off here.
+        _options.Value.Returns(new TimePlanningBaseSettings
+        {
+            GpsEnabled = "0",
+            SnapshotEnabled = "0"
+        });
         _dbContextHelper = Substitute.For<ITimePlanningDbContextHelper>();
         _dbContextHelper.GetDbContext().Returns(TimePlanningPnDbContext);
 
@@ -73,6 +81,13 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
     public async Task GetVersionHistory_ReturnsEmptyList_WhenNoVersionsExist()
     {
         // Arrange
+        // GPS/Snapshot now come from the global settings, not the per-site AssignedSite.
+        _options.Value.Returns(new TimePlanningBaseSettings
+        {
+            GpsEnabled = "1",
+            SnapshotEnabled = "1"
+        });
+
         var assignedSite = new AssignedSiteEntity
         {
             SiteId = 1,
@@ -170,6 +185,13 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
     public async Task GetVersionHistory_IncludesGpsCoordinates_WhenGpsEnabledAndCoordinatesExist()
     {
         // Arrange
+        // GPS inclusion is now driven by the global GpsEnabled setting, not the per-site flag.
+        _options.Value.Returns(new TimePlanningBaseSettings
+        {
+            GpsEnabled = "1",
+            SnapshotEnabled = "0"
+        });
+
         var assignedSite = new AssignedSiteEntity
         {
             SiteId = 1,
@@ -218,6 +240,13 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
     public async Task GetVersionHistory_ExcludesGpsCoordinates_WhenGpsDisabled()
     {
         // Arrange
+        // GPS exclusion is now driven by the global GpsEnabled setting, not the per-site flag.
+        _options.Value.Returns(new TimePlanningBaseSettings
+        {
+            GpsEnabled = "0",
+            SnapshotEnabled = "0"
+        });
+
         var assignedSite = new AssignedSiteEntity
         {
             SiteId = 1,

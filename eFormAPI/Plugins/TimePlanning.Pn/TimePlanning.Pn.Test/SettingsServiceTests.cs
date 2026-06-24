@@ -64,6 +64,14 @@ public class SettingsServiceTests : TestBaseSetup
     [Test]
     public async Task GetAssignedSite_ReturnsAssignedSite_WithGpsAndSnapshotFlags()
     {
+        // Business-logic change: on the PERSONAL path GPS follows the GLOBAL
+        // (per-customer) setting, never the per-site AssignedSite column, and Snapshot is
+        // ALWAYS off (snapshot is kiosk-only; never taken in personal registration). The
+        // per-site column below is set to the OPPOSITE of the global to prove the served
+        // GPS value follows the global. Global defaults from SetUp are GpsEnabled="0" and
+        // SnapshotEnabled="0", so GpsEnabled is served false (global) and SnapshotEnabled
+        // is served false (always-off in personal mode) even though the per-site column
+        // has GpsEnabled=true.
         // Arrange
         var assignedSite = new AssignedSiteEntity
         {
@@ -91,7 +99,61 @@ public class SettingsServiceTests : TestBaseSetup
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model, Is.Not.Null);
         Assert.That(result.Model.SiteId, Is.EqualTo(1));
+        // GPS served from GLOBAL ("0" from SetUp), not from the per-site column.
+        Assert.That(result.Model.GpsEnabled, Is.False);
+        // Snapshot is always off on the personal path (kiosk-only).
+        Assert.That(result.Model.SnapshotEnabled, Is.False);
+    }
+
+    [Test]
+    public async Task GetAssignedSite_PersonalServesGlobalGps_ButSnapshotAlwaysOff()
+    {
+        // Spec change: on the PERSONAL path (GetAssignedSite) GPS follows the GLOBAL
+        // (per-customer) setting, never the per-site AssignedSite column, while Snapshot is
+        // ALWAYS off because snapshot is kiosk-only and is never taken in personal
+        // registration. Here global snapshot is "1" but the served value must still be
+        // false. The per-site column is the OPPOSITE of the global to prove GPS follows
+        // the global:
+        //   global   -> GpsEnabled=true (served true),  SnapshotEnabled=true (served FALSE: always-off)
+        //   per-site -> GpsEnabled=false, SnapshotEnabled=false
+        // Arrange
+        _options.Value.Returns(new TimePlanningBaseSettings
+        {
+            AutoBreakCalculationActive = "0",
+            DayOfPayment = 20,
+            GpsEnabled = "1",
+            SnapshotEnabled = "1"
+        });
+
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 7,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Test Site Global",
+            MicrotingUid = 7
+        };
+        await site.Create(sdkDbContext);
+
+        // Act
+        var result = await _settingsService.GetAssignedSite(7);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.SiteId, Is.EqualTo(7));
+        // GPS served from GLOBAL ("1"), opposite of the per-site column (false).
         Assert.That(result.Model.GpsEnabled, Is.True);
+        // Snapshot is always off on the personal path, even though global is "1".
         Assert.That(result.Model.SnapshotEnabled, Is.False);
     }
 
@@ -424,8 +486,13 @@ public class SettingsServiceTests : TestBaseSetup
     }
 
     [Test]
-    public async Task UpdateSettings_UpdatesAllAssignedSites_WithGpsAndSnapshotSettings()
+    public async Task UpdateSettings_DoesNotFanGpsAndSnapshotOutToAssignedSites()
     {
+        // Business-logic change: GPS/Snapshot now live ONLY in the GLOBAL settings and are
+        // served from there on every serve path. UpdateSettings no longer fans these values
+        // out to the per-site AssignedSite columns (that loop was removed), so the per-site
+        // columns below must stay at their original false even though the settings model
+        // sets GpsEnabled=true and SnapshotEnabled=true.
         // Arrange
         var assignedSite1 = new AssignedSiteEntity
         {
@@ -493,13 +560,15 @@ public class SettingsServiceTests : TestBaseSetup
         var updatedSite2 = await TimePlanningPnDbContext.AssignedSites
             .FirstOrDefaultAsync(x => x.Id == assignedSite2.Id);
 
+        // Per-site columns are intentionally left untouched (loop removed); GPS/Snapshot
+        // are served from the GLOBAL settings, not from these columns.
         Assert.That(updatedSite1, Is.Not.Null);
-        Assert.That(updatedSite1.GpsEnabled, Is.True);
-        Assert.That(updatedSite1.SnapshotEnabled, Is.True);
+        Assert.That(updatedSite1.GpsEnabled, Is.False);
+        Assert.That(updatedSite1.SnapshotEnabled, Is.False);
 
         Assert.That(updatedSite2, Is.Not.Null);
-        Assert.That(updatedSite2.GpsEnabled, Is.True);
-        Assert.That(updatedSite2.SnapshotEnabled, Is.True);
+        Assert.That(updatedSite2.GpsEnabled, Is.False);
+        Assert.That(updatedSite2.SnapshotEnabled, Is.False);
     }
 
     #region Manager and Tags Tests
