@@ -62,3 +62,17 @@
   z-index: 1;
 }
 
+/* Planning workday picker in one-minute mode (minutesGap=1, all 60 minutes
+   selectable): show only the 5-minute marks. Marker class is set via
+   [timepickerClass] only on the flag-on pickers, so other timepickers and the
+   minutesGap=5 pickers are unaffected. visibility:hidden keeps each minute's
+   click target + layout, so any minute is still selectable.
+
+   This rule lives here (rather than a host global stylesheet, which the plugin
+   does not own) because this component already uses ViewEncapsulation.None, so
+   its styles are emitted globally and reach the ngx-material-timepicker overlay
+   that is appended to <body> from the workday-entity dialog this table opens. */
+.timepicker.timepicker--hide-non-multiples-of-5 .clock-face__number--outer:not(:nth-child(5n+1)) > span {
+  visibility: hidden;
+}
+

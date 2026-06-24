@@ -173,4 +173,70 @@ test.describe('Dashboard edit values (b1m, flag-on, 1-minute granularity)', () =
 
     await page.locator('#cancelButton').click();
   });
+
+  test('shows only 5-minute labels on the flag-on minute clock, any minute still selectable', async ({ page }) => {
+    await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
+    const indexPromise = page.waitForResponse(r =>
+      r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
+    await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
+    await indexPromise;
+    await waitForSpinner(page);
+
+    const cellId = '#cell3_0';
+    await page.locator(cellId).scrollIntoViewIfNeeded();
+    await page.locator(cellId).click();
+    await expect(page.locator('#planHours')).toBeVisible();
+
+    // Open the shift-1 planned-start picker and advance to the MINUTE face by
+    // selecting the hour first (the clock opens on hours). Reuses the same
+    // position-based hour click as pickTime() so the minute face renders with
+    // minutesGap=1 (all 60 items).
+    await page.locator('[data-testid="plannedStartOfShift1"]').click();
+    const cx = 145, cy = 145;
+    const h: number = 9;
+    const hourFace = page.locator('.clock-face');
+    await hourFace.first().waitFor({ state: 'visible', timeout: 5000 });
+    const hourAngle = (h % 12) * 30;
+    const hourR = (h === 0 || h > 12) ? 60 : 100;
+    const hourRad = hourAngle * Math.PI / 180;
+    await hourFace.first().click({
+      position: {
+        x: Math.round(cx + hourR * Math.sin(hourRad)),
+        y: Math.round(cy - hourR * Math.cos(hourRad)) + (Math.abs(Math.cos(hourRad)) < 0.01 ? 1 : 0),
+      },
+    });
+    await page.waitForTimeout(500);
+
+    // Flag-on: only the 5-minute labels (0,5,…,55) are visible on the minute
+    // clock face; non-multiple-of-5 labels are hidden (visibility:hidden) by the
+    // .timepicker--hide-non-multiples-of-5 rule. The items remain in the DOM so
+    // selection still works — only the label <span> is hidden.
+    const minuteLabels = page.locator(
+      '.timepicker.timepicker--hide-non-multiples-of-5 .clock-face__number--outer > span');
+    await expect(minuteLabels.nth(0)).toBeVisible();   // minute 0
+    await expect(minuteLabels.nth(5)).toBeVisible();   // minute 5
+    await expect(minuteLabels.nth(1)).toBeHidden();    // minute 1 label hidden
+    await expect(minuteLabels.nth(23)).toBeHidden();   // minute 23 label hidden
+
+    // …and an off-grid minute is still selectable. Click minute 23 (off-grid)
+    // by angle and confirm — the click target is intact despite the hidden
+    // label, proving 1-minute selection is preserved.
+    const m = 23;
+    const minuteFace = page.locator('.clock-face');
+    await minuteFace.first().waitFor({ state: 'visible', timeout: 5000 });
+    const minuteAngle = m * 6;
+    const minuteR = 100;
+    const minuteRad = minuteAngle * Math.PI / 180;
+    await minuteFace.first().click({
+      position: {
+        x: Math.round(cx + minuteR * Math.sin(minuteRad)),
+        y: Math.round(cy - minuteR * Math.cos(minuteRad)) + (Math.abs(Math.cos(minuteRad)) < 0.01 ? 1 : 0),
+      },
+    });
+    await page.waitForTimeout(500);
+    await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
+    await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue('09:23');
+
+    await page.locator('#cancelButton').click();
+  });
 });
