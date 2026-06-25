@@ -376,6 +376,84 @@ describe('WorkdayEntityDialogComponent', () => {
     });
   });
 
+  describe('Pause override (Approach C) save wiring', () => {
+    // `mockData` is a single module-level object shared (by reference) across
+    // every test via MAT_DIALOG_DATA. Tests in this block write the pause
+    // override fields on `planningPrDayModels`, and the outer `beforeEach`
+    // never deep-resets that object — so without this local reset a sibling
+    // test could leave the override/Specified fields dirty and poison the next
+    // one (the historical order-dependent CI failures). Reset every field this
+    // block touches to a known-clean baseline before each test so every test is
+    // self-contained and order-independent.
+    beforeEach(() => {
+      const m = component.data.planningPrDayModels as any;
+      for (let shift = 1; shift <= 5; shift++) {
+        m[`pause${shift}OverrideMinutes`] = null;
+        m[`pause${shift}OverrideMinutesSpecified`] = false;
+      }
+      m.clearPauseOverrides = false;
+    });
+
+    it('sets pause1OverrideMinutes + Specified when the pause field changes', () => {
+      // Drive the save-wiring unit directly with an explicit zero baseline so a
+      // 45-min pause is an unambiguous change. This bypasses the form-group →
+      // value plumbing in onUpdateWorkDayEntity (which can yield undefined pause
+      // values under jsdom) and tests applyPauseOverrideForShift's change
+      // detection deterministically, free of the shared fixture.
+      const m = component.data.planningPrDayModels as any;
+      component.ngOnInit();
+
+      // current (45) !== loaded (0) → genuine change.
+      (component as any).loadedPauseMinutes = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      (component as any).applyPauseOverrideForShift(1, '00:45');
+
+      expect(m.pause1OverrideMinutesSpecified).toBe(true);
+      expect(m.pause1OverrideMinutes).toBe(45);
+    });
+
+    it('leaves Specified=false when the pause field is unchanged', () => {
+      // current === loaded → no override written. Drive the unit directly with
+      // an explicit baseline so this never depends on the shared model's state
+      // or on jsdom form-value extraction.
+      const m = component.data.planningPrDayModels as any;
+      component.ngOnInit();
+
+      (component as any).loadedPauseMinutes = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      // pauseOverrideCleared[1] is false (reset by ngOnInit), current = 0 = loaded.
+      (component as any).applyPauseOverrideForShift(1, '00:00');
+
+      expect(m.pause1OverrideMinutesSpecified).toBe(false);
+    });
+
+    it('clear affordance signals revert-to-recorded (Specified=true, override=null)', () => {
+      // resetPauseToRecorded marks shift 1 cleared and resets its picker to the
+      // recorded sum (0 here → null hh:mm). As long as the picker still shows
+      // that value, applyPauseOverrideForShift must emit Specified=true with a
+      // null override. Drive it directly with the cleared value to avoid the
+      // form-extraction path in onUpdateWorkDayEntity.
+      const m = component.data.planningPrDayModels as any;
+      component.ngOnInit();
+
+      component.resetPauseToRecorded(1);
+      const clearedMinutes = (component as any).pauseOverrideClearedMinutes[1];
+      // clearedMinutes is the raw minutes the picker was reset to (null when 0).
+      const clearedHhmm = component.convertMinutesToTime(clearedMinutes);
+      (component as any).applyPauseOverrideForShift(1, clearedHhmm);
+
+      expect(m.pause1OverrideMinutesSpecified).toBe(true);
+      expect(m.pause1OverrideMinutes).toBeNull();
+    });
+
+    it('prefers the served override for the displayed pause value', () => {
+      // Display precedence: a served override projects onto the pause picker.
+      (component.data.planningPrDayModels as any).pause1OverrideMinutes = 30;
+
+      component.ngOnInit();
+
+      expect(component.workdayForm.get('actual.shift1.pause')?.value).toBe('00:30');
+    });
+  });
+
   describe('Flag Change Handling', () => {
     it('should turn off other flags when one is turned on', () => {
       component.ngOnInit();

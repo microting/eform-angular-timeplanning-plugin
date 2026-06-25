@@ -146,4 +146,23 @@ export class PlanningPrDayModel {
   stop5ExactMinutes?: number | null;
   nettoHoursOverride: number;
   nettoHoursOverrideActive: boolean;
+  // Admin/manual pause override (Approach C). camelCase names match the C# DTO
+  // (Pause{N}OverrideMinutes / Pause{N}OverrideMinutesSpecified / ClearPauseOverrides)
+  // so JSON binds on the PUT body. null = compute pause from recorded slots;
+  // non-null = authoritative total pause MINUTES for that shift. The companion
+  // *Specified booleans distinguish "explicitly set/clear this shift" from
+  // "not sent" (int? cannot tell null from omitted on the wire). clearPauseOverrides
+  // reverts ALL five shifts to compute-from-slots in one shot. The worker's
+  // recorded Pause*StartedAt/StoppedAt are never destroyed by these.
+  pause1OverrideMinutes?: number | null;
+  pause2OverrideMinutes?: number | null;
+  pause3OverrideMinutes?: number | null;
+  pause4OverrideMinutes?: number | null;
+  pause5OverrideMinutes?: number | null;
+  pause1OverrideMinutesSpecified?: boolean;
+  pause2OverrideMinutesSpecified?: boolean;
+  pause3OverrideMinutesSpecified?: boolean;
+  pause4OverrideMinutesSpecified?: boolean;
+  pause5OverrideMinutesSpecified?: boolean;
+  clearPauseOverrides?: boolean;
 }
