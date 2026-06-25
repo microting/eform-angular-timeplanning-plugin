@@ -51,8 +51,12 @@ Add `Pause{N}OverrideMinutes` to `TimePlanningPlanningPrDayModel` (read+write) a
 
 ### Mobile app (flutter-time) — IN SCOPE
 
-- **Read (all users):** history/day views display the per-shift pause using the override when present (else the computed sum from #531). One source-of-truth helper, mirroring `ComputeShiftPauseSeconds`: override-wins-else-sum.
-- **Write (back-in-time editors only):** where the app permits editing a past shift's pause, write `pause{N}_override_minutes` (non-destructive — recorded start/stops preserved), gated to the roles/flows already allowed to edit back in time. Clearing reverts to null.
+**Unifying principle:** the override is the canonical "manually entered / edited pause total" for a shift. EVERY manual edit surface writes it; punch-clock sub-slots are preserved as documentation; reads are override-wins-else-sum everywhere.
+
+- **Read (all users):** history/day views display the per-shift pause using the override when present (else the computed sum from #531). One source-of-truth helper mirroring `ComputeShiftPauseSeconds`: override-wins-else-sum.
+- **Write — manual time-edit (non-punch-clock) flow:** this is the primary mobile write path and MUST keep working. When a worker/editor on a non-punch-clock site enters/edits a shift's pause manually, write `pause{N}_override_minutes` via the gRPC update (non-destructive). On non-punch-clock days there are typically no sub-slots, so the override simply *is* the pause; previously this relied on the legacy `Pause{N}Id`, which post-#1626/#531 is no longer authoritative when any timestamp exists — the override fixes that uniformly.
+- **Write — back-in-time editors:** the same override write applies to the role-gated flow that amends past registrations. Clearing the field reverts to null (compute-from-slots).
+- Verify against the shift edit surfaces (the manual edit widget(s) / the 25-clone shift-confirm pages) so manual pause entry routes to the override, not to a now-non-authoritative `Pause{N}Id` or a destructive slot rewrite.
 
 ## Out of scope (YAGNI)
 - No per-slot editing UI (Approach B).
