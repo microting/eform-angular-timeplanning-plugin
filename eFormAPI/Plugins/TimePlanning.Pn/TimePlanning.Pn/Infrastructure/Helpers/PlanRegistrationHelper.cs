@@ -1262,6 +1262,14 @@ public static class PlanRegistrationHelper
             planningModel.NettoHoursOverride = planRegistration.NettoHoursOverride;
             planningModel.NettoHoursOverrideActive = planRegistration.NettoHoursOverrideActive;
 
+            // Approach C READ projection: for any shift with a pause override,
+            // present a single synthesized pause pair (sum = override) and empty
+            // the sub-slots IN THE RESPONSE DTO, so the unchanged mobile app's
+            // timestamp-summing display reflects the override. The DB row
+            // (planRegistration) is read-only here — documentation preserved.
+            // PauseMinutes above is already override-aware via AggregatePauseMinutes.
+            ProjectPauseOverridesOntoDto(planningModel, planRegistration);
+
             planningsInPeriod = await dbContext.PlanRegistrations
                 .AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -1969,6 +1977,12 @@ public static class PlanRegistrationHelper
             Shift2PauseNumber = planRegistration.Shift2PauseNumber
         };
 
+        // Approach C READ projection (today path): when a shift carries a pause
+        // override, present a single synthesized pause pair and empty the
+        // sub-slots IN THE RESPONSE MODEL so the unchanged app's timestamp-summing
+        // display reflects the override. The DB row is read-only here.
+        ProjectPauseOverridesOntoWorkingHours(timePlanningWorkingHoursModel, planRegistration);
+
         return timePlanningWorkingHoursModel;
         // return new OperationDataResult<TimePlanningWorkingHoursModel>(true, "Plan registration found",
         //     timePlanningWorkingHoursModel);
@@ -2133,6 +2147,16 @@ public static class PlanRegistrationHelper
     /// </summary>
     public static int ComputeShiftPauseSeconds(PlanRegistration r, int shift, bool useOneMinuteIntervals)
     {
+        // Admin/manual pause override takes precedence: when set, it is the
+        // authoritative total pause MINUTES for the shift. The recorded
+        // Pause{N}StartedAt/StoppedAt sub-slots are preserved untouched in the DB
+        // (documentation of what the worker actually did) but are not summed here.
+        var overrideMinutes = GetShiftPauseOverrideMinutes(r, shift);
+        if (overrideMinutes.HasValue)
+        {
+            return overrideMinutes.Value * 60;
+        }
+
         long totalSeconds = 0;
         var hasTimestampedSlot = false;
 
@@ -2175,6 +2199,295 @@ public static class PlanRegistrationHelper
         }
 
         return (int)totalSeconds;
+    }
+
+    /// <summary>
+    /// Read the per-shift admin/manual pause override (in minutes) from the
+    /// registration. null = no override (compute pause from recorded slots);
+    /// non-null = authoritative total pause minutes for that shift.
+    /// </summary>
+    public static int? GetShiftPauseOverrideMinutes(PlanRegistration r, int shift)
+    {
+        return shift switch
+        {
+            1 => r.Pause1OverrideMinutes,
+            2 => r.Pause2OverrideMinutes,
+            3 => r.Pause3OverrideMinutes,
+            4 => r.Pause4OverrideMinutes,
+            5 => r.Pause5OverrideMinutes,
+            _ => null
+        };
+    }
+
+    /// <summary>
+    /// Set the per-shift admin/manual pause override (in minutes) on the
+    /// registration. null reverts to compute-from-slots.
+    /// </summary>
+    public static void SetShiftPauseOverrideMinutes(PlanRegistration r, int shift, int? minutes)
+    {
+        switch (shift)
+        {
+            case 1: r.Pause1OverrideMinutes = minutes; break;
+            case 2: r.Pause2OverrideMinutes = minutes; break;
+            case 3: r.Pause3OverrideMinutes = minutes; break;
+            case 4: r.Pause4OverrideMinutes = minutes; break;
+            case 5: r.Pause5OverrideMinutes = minutes; break;
+        }
+    }
+
+    /// <summary>
+    /// READ projection (Approach C): when a shift carries a pause override,
+    /// rewrite the OUTGOING DTO so the (unchanged) mobile app, which displays the
+    /// pause by summing the served Pause{N}StartedAt/StoppedAt timestamps, shows
+    /// the override duration. For each overridden shift the DTO gets a single
+    /// synthesized pause pair (anchored at the shift start, or midnight + the
+    /// 5-min-grid Start{N}Id when no start timestamp exists) and ALL of that
+    /// shift's sub-slot pause timestamps are emptied. The override minutes are
+    /// also surfaced on the DTO for the web dialog.
+    ///
+    /// CRITICAL: this mutates the response DTO only. The DB entity
+    /// (<paramref name="source"/>) is read-only here and never written.
+    /// </summary>
+    public static void ProjectPauseOverridesOntoDto(
+        TimePlanningPlanningPrDayModel model,
+        PlanRegistration source)
+    {
+        for (var shift = 1; shift <= 5; shift++)
+        {
+            var overrideMinutes = GetShiftPauseOverrideMinutes(source, shift);
+            // Surface the raw override on the DTO regardless (web dialog read).
+            SetDtoPauseOverrideMinutes(model, shift, overrideMinutes);
+
+            if (!overrideMinutes.HasValue)
+            {
+                continue;
+            }
+
+            var (pauseStart, pauseStop) = ComputeOverridePausePair(source, shift, overrideMinutes.Value);
+
+            EmptyShiftPauseStampsOnDto(model, shift);
+            SetDtoPrimaryPause(model, shift, pauseStart, pauseStop);
+
+            // Edit round-trip consistency (FIX 1b): reflect the override in the
+            // legacy coarse fields the client round-trips so a re-save without a
+            // pause change does NOT re-trigger the write-path inference. The read
+            // path mirrors the entity as Break{N}Shift = Pause{N}Id (raw coarse
+            // tick) and the DTO's Pause{N}Id = tick - 1; the write change-detection
+            // compares model.Break{N}Shift against the pre-edit entity Pause{N}Id.
+            // So the displayed/edited break tick must equal the override's coarse
+            // tick: (overrideMinutes / 5) + 1.
+            var coarseTick = (overrideMinutes.Value / 5) + 1;
+            SetDtoBreakShift(model, shift, coarseTick);
+            SetDtoPauseId(model, shift, coarseTick > 0 ? coarseTick - 1 : 0);
+        }
+    }
+
+    /// <summary>
+    /// READ projection for the TODAY (working-hours) path — same Approach C
+    /// contract as the history overload, but onto the
+    /// <see cref="TimePlanningWorkingHoursModel"/> the gRPC ReadWorkingHours
+    /// response is mapped from. DB entity (<paramref name="source"/>) is
+    /// read-only.
+    /// </summary>
+    public static void ProjectPauseOverridesOntoWorkingHours(
+        TimePlanningWorkingHoursModel model,
+        PlanRegistration source)
+    {
+        for (var shift = 1; shift <= 5; shift++)
+        {
+            var overrideMinutes = GetShiftPauseOverrideMinutes(source, shift);
+            if (!overrideMinutes.HasValue)
+            {
+                continue;
+            }
+
+            var (pauseStart, pauseStop) = ComputeOverridePausePair(source, shift, overrideMinutes.Value);
+
+            EmptyShiftPauseStampsOnWorkingHours(model, shift);
+            SetWorkingHoursPrimaryPause(model, shift, pauseStart, pauseStop);
+
+            // Edit round-trip consistency (FIX 1b): the working-hours model has no
+            // Break{N}Shift / Pause{N}Id; its legacy coarse pause field is
+            // Shift{N}Pause (read path sets it from Pause{N}Id). Reflect the
+            // override there as the coarse tick so a re-save round-trips stably.
+            SetWorkingHoursShiftPause(model, shift, (overrideMinutes.Value / 5) + 1);
+        }
+    }
+
+    /// <summary>
+    /// Synthesized single pause pair for an overridden shift (FIX simplifier): the
+    /// pause is anchored at the shift's start timestamp, or — when no start stamp
+    /// exists — at midnight + the 5-min-grid Start{N}Id offset (else midnight), and
+    /// runs for the override's whole minutes. Shared by both READ projection
+    /// overloads so the anchor math stays in one place.
+    /// </summary>
+    private static (DateTime Start, DateTime Stop) ComputeOverridePausePair(
+        PlanRegistration source, int shift, int overrideMinutes)
+    {
+        var midnight = source.Date.Date;
+        var (shiftStartStamp, startId) = GetShiftStartAnchor(source, shift);
+        var pauseStart = shiftStartStamp
+                         ?? (startId > 0 ? midnight.AddMinutes((startId - 1) * 5) : midnight);
+        var pauseStop = pauseStart.AddMinutes(overrideMinutes);
+        return (pauseStart, pauseStop);
+    }
+
+    private static void SetWorkingHoursShiftPause(TimePlanningWorkingHoursModel m, int shift, int coarseTick)
+    {
+        switch (shift)
+        {
+            case 1: m.Shift1Pause = coarseTick; break;
+            case 2: m.Shift2Pause = coarseTick; break;
+            case 3: m.Shift3Pause = coarseTick; break;
+            case 4: m.Shift4Pause = coarseTick; break;
+            case 5: m.Shift5Pause = coarseTick; break;
+        }
+    }
+
+    private static void SetWorkingHoursPrimaryPause(TimePlanningWorkingHoursModel m, int shift, DateTime start, DateTime stop)
+    {
+        switch (shift)
+        {
+            case 1: m.Pause1StartedAt = start; m.Pause1StoppedAt = stop; break;
+            case 2: m.Pause2StartedAt = start; m.Pause2StoppedAt = stop; break;
+            case 3: m.Pause3StartedAt = start; m.Pause3StoppedAt = stop; break;
+            case 4: m.Pause4StartedAt = start; m.Pause4StoppedAt = stop; break;
+            case 5: m.Pause5StartedAt = start; m.Pause5StoppedAt = stop; break;
+        }
+    }
+
+    private static void EmptyShiftPauseStampsOnWorkingHours(TimePlanningWorkingHoursModel m, int shift)
+    {
+        switch (shift)
+        {
+            case 1:
+                m.Pause10StartedAt = null; m.Pause10StoppedAt = null;
+                m.Pause11StartedAt = null; m.Pause11StoppedAt = null;
+                m.Pause12StartedAt = null; m.Pause12StoppedAt = null;
+                m.Pause13StartedAt = null; m.Pause13StoppedAt = null;
+                m.Pause14StartedAt = null; m.Pause14StoppedAt = null;
+                m.Pause15StartedAt = null; m.Pause15StoppedAt = null;
+                m.Pause16StartedAt = null; m.Pause16StoppedAt = null;
+                m.Pause17StartedAt = null; m.Pause17StoppedAt = null;
+                m.Pause18StartedAt = null; m.Pause18StoppedAt = null;
+                m.Pause19StartedAt = null; m.Pause19StoppedAt = null;
+                m.Pause100StartedAt = null; m.Pause100StoppedAt = null;
+                m.Pause101StartedAt = null; m.Pause101StoppedAt = null;
+                m.Pause102StartedAt = null; m.Pause102StoppedAt = null;
+                break;
+            case 2:
+                m.Pause20StartedAt = null; m.Pause20StoppedAt = null;
+                m.Pause21StartedAt = null; m.Pause21StoppedAt = null;
+                m.Pause22StartedAt = null; m.Pause22StoppedAt = null;
+                m.Pause23StartedAt = null; m.Pause23StoppedAt = null;
+                m.Pause24StartedAt = null; m.Pause24StoppedAt = null;
+                m.Pause25StartedAt = null; m.Pause25StoppedAt = null;
+                m.Pause26StartedAt = null; m.Pause26StoppedAt = null;
+                m.Pause27StartedAt = null; m.Pause27StoppedAt = null;
+                m.Pause28StartedAt = null; m.Pause28StoppedAt = null;
+                m.Pause29StartedAt = null; m.Pause29StoppedAt = null;
+                m.Pause200StartedAt = null; m.Pause200StoppedAt = null;
+                m.Pause201StartedAt = null; m.Pause201StoppedAt = null;
+                m.Pause202StartedAt = null; m.Pause202StoppedAt = null;
+                break;
+        }
+    }
+
+    private static (DateTime? Stamp, int StartId) GetShiftStartAnchor(PlanRegistration r, int shift) => shift switch
+    {
+        1 => (r.Start1StartedAt, r.Start1Id),
+        2 => (r.Start2StartedAt, r.Start2Id),
+        3 => (r.Start3StartedAt, r.Start3Id),
+        4 => (r.Start4StartedAt, r.Start4Id),
+        5 => (r.Start5StartedAt, r.Start5Id),
+        _ => (null, 0)
+    };
+
+    private static void SetDtoPauseOverrideMinutes(TimePlanningPlanningPrDayModel m, int shift, int? minutes)
+    {
+        switch (shift)
+        {
+            case 1: m.Pause1OverrideMinutes = minutes; break;
+            case 2: m.Pause2OverrideMinutes = minutes; break;
+            case 3: m.Pause3OverrideMinutes = minutes; break;
+            case 4: m.Pause4OverrideMinutes = minutes; break;
+            case 5: m.Pause5OverrideMinutes = minutes; break;
+        }
+    }
+
+    private static void SetDtoBreakShift(TimePlanningPlanningPrDayModel m, int shift, int coarseTick)
+    {
+        switch (shift)
+        {
+            case 1: m.Break1Shift = coarseTick; break;
+            case 2: m.Break2Shift = coarseTick; break;
+            case 3: m.Break3Shift = coarseTick; break;
+            case 4: m.Break4Shift = coarseTick; break;
+            case 5: m.Break5Shift = coarseTick; break;
+        }
+    }
+
+    private static void SetDtoPauseId(TimePlanningPlanningPrDayModel m, int shift, int pauseId)
+    {
+        switch (shift)
+        {
+            case 1: m.Pause1Id = pauseId; break;
+            case 2: m.Pause2Id = pauseId; break;
+            case 3: m.Pause3Id = pauseId; break;
+            case 4: m.Pause4Id = pauseId; break;
+            case 5: m.Pause5Id = pauseId; break;
+        }
+    }
+
+    private static void SetDtoPrimaryPause(TimePlanningPlanningPrDayModel m, int shift, DateTime start, DateTime stop)
+    {
+        switch (shift)
+        {
+            case 1: m.Pause1StartedAt = start; m.Pause1StoppedAt = stop; break;
+            case 2: m.Pause2StartedAt = start; m.Pause2StoppedAt = stop; break;
+            case 3: m.Pause3StartedAt = start; m.Pause3StoppedAt = stop; break;
+            case 4: m.Pause4StartedAt = start; m.Pause4StoppedAt = stop; break;
+            case 5: m.Pause5StartedAt = start; m.Pause5StoppedAt = stop; break;
+        }
+    }
+
+    private static void EmptyShiftPauseStampsOnDto(TimePlanningPlanningPrDayModel m, int shift)
+    {
+        switch (shift)
+        {
+            case 1:
+                m.Pause10StartedAt = null; m.Pause10StoppedAt = null;
+                m.Pause11StartedAt = null; m.Pause11StoppedAt = null;
+                m.Pause12StartedAt = null; m.Pause12StoppedAt = null;
+                m.Pause13StartedAt = null; m.Pause13StoppedAt = null;
+                m.Pause14StartedAt = null; m.Pause14StoppedAt = null;
+                m.Pause15StartedAt = null; m.Pause15StoppedAt = null;
+                m.Pause16StartedAt = null; m.Pause16StoppedAt = null;
+                m.Pause17StartedAt = null; m.Pause17StoppedAt = null;
+                m.Pause18StartedAt = null; m.Pause18StoppedAt = null;
+                m.Pause19StartedAt = null; m.Pause19StoppedAt = null;
+                m.Pause100StartedAt = null; m.Pause100StoppedAt = null;
+                m.Pause101StartedAt = null; m.Pause101StoppedAt = null;
+                m.Pause102StartedAt = null; m.Pause102StoppedAt = null;
+                break;
+            case 2:
+                m.Pause20StartedAt = null; m.Pause20StoppedAt = null;
+                m.Pause21StartedAt = null; m.Pause21StoppedAt = null;
+                m.Pause22StartedAt = null; m.Pause22StoppedAt = null;
+                m.Pause23StartedAt = null; m.Pause23StoppedAt = null;
+                m.Pause24StartedAt = null; m.Pause24StoppedAt = null;
+                m.Pause25StartedAt = null; m.Pause25StoppedAt = null;
+                m.Pause26StartedAt = null; m.Pause26StoppedAt = null;
+                m.Pause27StartedAt = null; m.Pause27StoppedAt = null;
+                m.Pause28StartedAt = null; m.Pause28StoppedAt = null;
+                m.Pause29StartedAt = null; m.Pause29StoppedAt = null;
+                m.Pause200StartedAt = null; m.Pause200StoppedAt = null;
+                m.Pause201StartedAt = null; m.Pause201StoppedAt = null;
+                m.Pause202StartedAt = null; m.Pause202StoppedAt = null;
+                break;
+            // Shifts 3-5 have no sub-slots; the primary pause pair is rewritten
+            // by SetDtoPrimaryPause.
+        }
     }
 
     /// <summary>

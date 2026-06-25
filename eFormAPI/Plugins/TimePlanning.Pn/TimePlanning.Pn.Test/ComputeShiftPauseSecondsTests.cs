@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
+using TimePlanning.Pn.Infrastructure.Models.Planning;
+using TimePlanning.Pn.Services.TimePlanningPlanningService;
 
 namespace TimePlanning.Pn.Test;
 
@@ -189,5 +192,338 @@ public class ComputeShiftPauseSecondsTests
         };
         Assert.That(PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false), Is.EqualTo(900),
             "Half-record (StartedAt only) must not suppress the legacy PauseId fallback");
+    }
+
+    // ---- Approach C: pause override ----
+
+    /// <summary>
+    /// Override wins over the recorded slot sum. The 16288 shape sums to 30 min
+    /// across the shift-1 slots, but an override of 12 min must replace it
+    /// entirely (the slots stay in the entity as documentation, but are not
+    /// summed). Holds in BOTH flag modes — the override short-circuits before
+    /// any slot math.
+    /// </summary>
+    [TestCase(true)]
+    [TestCase(false)]
+    public void Override_WinsOverSlotSum(bool useOneMinuteIntervals)
+    {
+        var reg = BuildRow16288Shape();
+        reg.Pause1OverrideMinutes = 12;
+
+        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals);
+
+        Assert.That(result, Is.EqualTo(12 * 60),
+            "Override must replace the slot sum entirely.");
+    }
+
+    /// <summary>
+    /// Override of 0 means an explicit zero pause for the shift, even though the
+    /// recorded slots would otherwise sum to 30 min.
+    /// </summary>
+    [TestCase(true)]
+    [TestCase(false)]
+    public void Override_Zero_MeansZeroPause(bool useOneMinuteIntervals)
+    {
+        var reg = BuildRow16288Shape();
+        reg.Pause1OverrideMinutes = 0;
+
+        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals);
+
+        Assert.That(result, Is.EqualTo(0),
+            "Override = 0 means zero pause, not the slot sum.");
+    }
+
+    /// <summary>
+    /// Null override (the default) leaves the existing slot-sum behavior intact:
+    /// shift 1 OFF = 30 min, exactly as the non-override tests assert.
+    /// </summary>
+    [Test]
+    public void Override_Null_FallsBackToSlotSum()
+    {
+        var reg = BuildRow16288Shape();
+        reg.Pause1OverrideMinutes = null;
+
+        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false);
+
+        Assert.That(result, Is.EqualTo(30 * 60),
+            "Null override must fall back to the all-slots sum (30 min).");
+    }
+
+    /// <summary>
+    /// A non-null override on shift 1 must NOT leak into shift 2's computation —
+    /// shift 2 (no override) still sums its own slot (5 min OFF).
+    /// </summary>
+    [Test]
+    public void Override_IsPerShift_DoesNotLeakAcrossShifts()
+    {
+        var reg = BuildRow16288Shape();
+        reg.Pause1OverrideMinutes = 99;
+
+        var shift2 = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 2, useOneMinuteIntervals: false);
+
+        Assert.That(shift2, Is.EqualTo(5 * 60),
+            "Shift 2 has no override and must still sum its own slot (5 min).");
+    }
+}
+
+/// <summary>
+/// No-Docker unit locks for the pause-override WRITE path (Approach C, Phase 2):
+/// the change-detection inference (FIX 1), the explicit web clear (FIX 2), the
+/// exact-minute-wins ordering (FIX 4), and EnsureTimestampsFromIds not fabricating
+/// observation timestamps under an active override (FIX 3). These exercise the
+/// service's internal helpers directly (InternalsVisibleTo) with no DB.
+/// </summary>
+[TestFixture]
+public class PauseOverrideInferenceTests
+{
+    private static readonly DateTime Date = new(2026, 6, 19, 0, 0, 0, DateTimeKind.Utc);
+
+    private static ISet<int> NoneHandled() => new HashSet<int>();
+
+    /// <summary>
+    /// FIX 1 (the 16288-shape unit-mismatch bug). A punch-clock row whose recorded
+    /// slots sum to a NON-5-minute total (33 min on a one-minute site) and whose
+    /// legacy Pause1Id is 0. The client round-trips Break1Shift = pre-edit Pause1Id
+    /// = 0 (the value the read path emits) while only start/stop changed. The
+    /// override must STAY NULL (no spurious lock) and netto must keep reflecting the
+    /// recorded slot sum.
+    ///
+    /// Pre-fix the baseline compared the coarse tick (0) against the exact slot-sum
+    /// (33); 0 ≠ 33 ALWAYS locked an override on every save. The fix compares
+    /// Break1Shift against the pre-edit Pause1Id instead.
+    /// </summary>
+    [Test]
+    public void Inference_EditOnlyStartStop_NonFiveMinSlotSum_LeavesOverrideNull()
+    {
+        var reg = new PlanRegistration
+        {
+            Date = Date,
+            Pause1Id = 0,
+            // Two recorded sub-slots summing to 33 min exactly (one-minute site).
+            Pause1StartedAt = Date.AddHours(10),
+            Pause1StoppedAt = Date.AddHours(10).AddMinutes(13),
+            Pause10StartedAt = Date.AddHours(11),
+            Pause10StoppedAt = Date.AddHours(11).AddMinutes(20),
+        };
+        // Sanity: the slot sum is 33 min, not a 5-min multiple.
+        Assert.That(PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, true),
+            Is.EqualTo(33 * 60), "Pre-condition: slot sum is 33 min.");
+
+        var preEditShownTicks = TimePlanningPlanningService.CaptureCurrentShiftShownTicks(reg);
+        var model = new TimePlanningPlanningPrDayModel { Break1Shift = 0 }; // == pre-edit Pause1Id
+
+        TimePlanningPlanningService.ApplyInferredPauseOverrides(reg, model, preEditShownTicks, NoneHandled());
+
+        Assert.That(reg.Pause1OverrideMinutes, Is.Null,
+            "Unchanged pause (Break == pre-edit Pause1Id) must NOT lock an override.");
+        Assert.That(PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, true),
+            Is.EqualTo(33 * 60), "Netto pause still reflects the recorded slot sum.");
+    }
+
+    /// <summary>
+    /// FIX 1: editing the pause to a new coarse value (Break1Shift differs from the
+    /// pre-edit Pause1Id) DOES set the override to (Break1Shift - 1) * 5 minutes.
+    /// </summary>
+    [Test]
+    public void Inference_PauseChanged_SetsOverride()
+    {
+        var reg = new PlanRegistration { Date = Date, Pause1Id = 2 }; // pre-edit tick 2 (= 5 min)
+        var preEditShownTicks = TimePlanningPlanningService.CaptureCurrentShiftShownTicks(reg);
+        var model = new TimePlanningPlanningPrDayModel { Break1Shift = 5 }; // (5-1)*5 = 20 min
+
+        TimePlanningPlanningService.ApplyInferredPauseOverrides(reg, model, preEditShownTicks, NoneHandled());
+
+        Assert.That(reg.Pause1OverrideMinutes, Is.EqualTo(20),
+            "Changed Break1Shift (5 ≠ pre-edit 2) sets override to (5-1)*5 = 20 min.");
+    }
+
+    /// <summary>
+    /// IDEMPOTENT RE-SAVE (conf 82 corruption). A shift already carries a
+    /// non-5-multiple exact override (33 min, set via the one-minute path). The
+    /// read path serves Break1Shift = (33/5)+1 = 7. On a later UNRELATED save (only
+    /// start/stop changed) the client round-trips that served tick (7). The
+    /// captured pre-edit SHOWN tick is also 7, so inference must NOT fire and the
+    /// exact 33-min override must SURVIVE — not be silently rounded down to
+    /// (7-1)*5 = 30. (Pre-fix the baseline was the raw Pause1Id = 6, so 7 ≠ 6 fired
+    /// inference and corrupted 33 → 30 on every save.)
+    /// </summary>
+    [Test]
+    public void Inference_ReSaveSameShownTick_NonFiveMinOverride_StaysExact()
+    {
+        var reg = new PlanRegistration
+        {
+            Date = Date,
+            Pause1OverrideMinutes = 33, // exact one-minute override (not a 5-multiple)
+            Pause1Id = 6, // raw legacy tick differs from the served shown tick (7)
+        };
+        var preEditShownTicks = TimePlanningPlanningService.CaptureCurrentShiftShownTicks(reg);
+        // Sanity: the captured shown tick mirrors the read projection ((33/5)+1 = 7).
+        Assert.That(preEditShownTicks[1], Is.EqualTo(7),
+            "Pre-condition: shown tick = (33/5)+1 = 7 (the value the client round-trips).");
+
+        // Unrelated re-save: client submits the served tick unchanged.
+        var model = new TimePlanningPlanningPrDayModel { Break1Shift = 7 };
+
+        TimePlanningPlanningService.ApplyInferredPauseOverrides(reg, model, preEditShownTicks, NoneHandled());
+
+        Assert.That(reg.Pause1OverrideMinutes, Is.EqualTo(33),
+            "Re-save with the served shown tick is idempotent: the exact 33-min override survives (not rounded to 30).");
+    }
+
+    /// <summary>
+    /// RE-EDIT of an already-overridden shift still works. Same exact 33-min
+    /// override (shown as tick 7), but the user picks a genuinely different break
+    /// value (Break1Shift = 9). 9 ≠ shown tick 7 → user changed the pause →
+    /// the override updates to (9-1)*5 = 40 min.
+    /// </summary>
+    [Test]
+    public void Inference_ReEditOverriddenShift_DifferentTick_UpdatesOverride()
+    {
+        var reg = new PlanRegistration
+        {
+            Date = Date,
+            Pause1OverrideMinutes = 33,
+            Pause1Id = 6,
+        };
+        var preEditShownTicks = TimePlanningPlanningService.CaptureCurrentShiftShownTicks(reg);
+        var model = new TimePlanningPlanningPrDayModel { Break1Shift = 9 }; // (9-1)*5 = 40 min
+
+        TimePlanningPlanningService.ApplyInferredPauseOverrides(reg, model, preEditShownTicks, NoneHandled());
+
+        Assert.That(reg.Pause1OverrideMinutes, Is.EqualTo(40),
+            "Re-editing to a different break tick (9 ≠ shown 7) updates the override to (9-1)*5 = 40 min.");
+    }
+
+    /// <summary>
+    /// FIX 2: an explicit web clear (ClearPauseOverrides) reverts an active override
+    /// back to null (compute-from-slots), and SKIPS inference for that shift, so the
+    /// pause falls back to the recorded slot sum.
+    /// </summary>
+    [Test]
+    public void ExplicitClear_RevertsOverrideToNull_FallsBackToSlotSum()
+    {
+        var reg = new PlanRegistration
+        {
+            Date = Date,
+            Pause1OverrideMinutes = 12, // an active override...
+            Pause1Id = 0,
+            // ...over recorded slots summing to 5 min (OFF grid: 19:13:26 -> 19:16:52).
+            Pause1StartedAt = new DateTime(2026, 6, 19, 19, 13, 26, DateTimeKind.Utc),
+            Pause1StoppedAt = new DateTime(2026, 6, 19, 19, 16, 52, DateTimeKind.Utc),
+        };
+        var preEditShownTicks = TimePlanningPlanningService.CaptureCurrentShiftShownTicks(reg);
+        // Web sends an explicit clear; Break1Shift would otherwise look "changed".
+        var model = new TimePlanningPlanningPrDayModel { ClearPauseOverrides = true, Break1Shift = 99 };
+
+        TimePlanningPlanningService.ApplyInferredPauseOverrides(reg, model, preEditShownTicks, NoneHandled());
+
+        Assert.That(reg.Pause1OverrideMinutes, Is.Null,
+            "Explicit clear must revert the override to null.");
+        Assert.That(PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, false),
+            Is.EqualTo(5 * 60), "After clear, pause falls back to the recorded slot sum (5 min).");
+    }
+
+    /// <summary>
+    /// FIX 2: a per-shift explicit value signal (Pause{N}OverrideMinutesSpecified
+    /// with a value) sets that exact override and skips inference for the shift.
+    /// </summary>
+    [Test]
+    public void ExplicitPerShiftValue_SetsOverride_SkipsInference()
+    {
+        var reg = new PlanRegistration { Date = Date, Pause1Id = 0 };
+        var preEditShownTicks = TimePlanningPlanningService.CaptureCurrentShiftShownTicks(reg);
+        var model = new TimePlanningPlanningPrDayModel
+        {
+            Pause1OverrideMinutes = 25,
+            Pause1OverrideMinutesSpecified = true,
+            Break1Shift = 3, // would infer 10 min, but the explicit value wins
+        };
+
+        TimePlanningPlanningService.ApplyInferredPauseOverrides(reg, model, preEditShownTicks, NoneHandled());
+
+        Assert.That(reg.Pause1OverrideMinutes, Is.EqualTo(25),
+            "Explicit per-shift value wins over the Break1Shift inference.");
+    }
+
+    /// <summary>
+    /// FIX 4: a shift whose override was already set by the flag-ON exact-minute
+    /// path (passed in the handled set) must NOT be overwritten by the coarse
+    /// Break{N}Shift inference — the exact-minute value wins.
+    /// </summary>
+    [Test]
+    public void ExactMinuteHandledShift_NotOverwrittenByInference()
+    {
+        var reg = new PlanRegistration { Date = Date, Pause1Id = 0 };
+        // Simulate the exact-minute loop having set 33 min on shift 1.
+        PlanRegistrationHelper.SetShiftPauseOverrideMinutes(reg, 1, 33);
+        var preEditShownTicks = TimePlanningPlanningService.CaptureCurrentShiftShownTicks(reg);
+        var handled = new HashSet<int> { 1 };
+        var model = new TimePlanningPlanningPrDayModel { Break1Shift = 5 }; // would infer 20 min
+
+        TimePlanningPlanningService.ApplyInferredPauseOverrides(reg, model, preEditShownTicks, handled);
+
+        Assert.That(reg.Pause1OverrideMinutes, Is.EqualTo(33),
+            "Exact-minute override must survive; inference must skip the handled shift.");
+    }
+
+    /// <summary>
+    /// FIX 3: EnsureTimestampsFromIds must NOT fabricate Pause{N}StartedAt/StoppedAt
+    /// for a shift carrying an active override, even when the legacy Pause{N}Id is
+    /// non-zero and the observation columns are empty. The override drives the
+    /// total; the documentation columns stay untouched (here: null).
+    /// </summary>
+    [Test]
+    public void EnsureTimestampsFromIds_OverrideActive_DoesNotFabricatePauseStamps()
+    {
+        var reg = new PlanRegistration
+        {
+            Date = Date,
+            Start1StartedAt = Date.AddHours(8),
+            Stop1StoppedAt = Date.AddHours(16),
+            Pause1Id = 4, // legacy 15-min tick that WOULD synthesize a pause pair...
+            Pause1OverrideMinutes = 10, // ...but an override is active.
+            Pause1StartedAt = null,
+            Pause1StoppedAt = null,
+        };
+
+        TimePlanningPlanningService.EnsureTimestampsFromIds(reg);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(reg.Pause1StartedAt, Is.Null,
+                "Under an active override the pause start must NOT be fabricated from Pause1Id.");
+            Assert.That(reg.Pause1StoppedAt, Is.Null,
+                "Under an active override the pause stop must NOT be fabricated from Pause1Id.");
+        });
+    }
+
+    /// <summary>
+    /// FIX 3 negative companion: with NO override, the legacy Pause{N}Id synthesis
+    /// still runs (existing behavior preserved).
+    /// </summary>
+    [Test]
+    public void EnsureTimestampsFromIds_NoOverride_StillSynthesizesFromPauseId()
+    {
+        var reg = new PlanRegistration
+        {
+            Date = Date,
+            Start1StartedAt = Date.AddHours(8),
+            Stop1StoppedAt = Date.AddHours(16),
+            Pause1Id = 4, // (4-1)*5 = 15 min
+            Pause1OverrideMinutes = null,
+            Pause1StartedAt = null,
+            Pause1StoppedAt = null,
+        };
+
+        TimePlanningPlanningService.EnsureTimestampsFromIds(reg);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(reg.Pause1StartedAt, Is.Not.Null,
+                "With no override the legacy synthesis still runs.");
+            Assert.That(
+                (reg.Pause1StoppedAt!.Value - reg.Pause1StartedAt!.Value).TotalMinutes,
+                Is.EqualTo(15), "Synthesized pause spans (Pause1Id-1)*5 = 15 min.");
+        });
     }
 }
