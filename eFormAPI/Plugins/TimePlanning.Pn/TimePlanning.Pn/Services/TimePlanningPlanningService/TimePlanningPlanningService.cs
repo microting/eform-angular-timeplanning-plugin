@@ -643,6 +643,17 @@ public class TimePlanningPlanningService(
                     localizationService.GetString("PlanningCannotBeEditedForResignedSite"));
             }
 
+            // Snapshot each shift's PRE-EDIT legacy coarse pause tick (Pause{N}Id)
+            // BEFORE the model is applied, so the pause-override inference can
+            // change-detect an admin pause edit (Approach C) by comparing the
+            // submitted Break{N}Shift against this tick — without locking an
+            // override when only start/stop changed (16288-shape rows), and
+            // idempotently for non-5-multiple overrides on unrelated re-saves.
+            var preEditShownTicks = CaptureCurrentShiftShownTicks(planning);
+            // Shifts whose override was set by the flag-ON exact-minute path; the
+            // inference must not overwrite them (FIX 4 — exact-minute wins).
+            var exactHandledShifts = new HashSet<int>();
+
             planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
             planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
             planning.PlannedEndOfShift1 = model.PlannedEndOfShift1;
@@ -874,7 +885,16 @@ public class TimePlanningPlanningService(
                 {
                     if (minutes.HasValue)
                     {
-                        ApplyExactMinutePause(planning, shift, minutes.Value);
+                        // Approach C: an exact-minute pause edit on a one-minute
+                        // site sets the per-shift override instead of clearing +
+                        // synthesizing the recorded pause timestamps. The worker's
+                        // recorded Pause*StartedAt/StoppedAt are preserved as
+                        // documentation; the override is the authoritative total.
+                        PlanRegistrationHelper.SetShiftPauseOverrideMinutes(planning, shift, minutes.Value);
+                        // FIX 4: mark this shift handled so the later inference
+                        // (ApplyInferredPauseOverrides) does not overwrite the
+                        // exact-minute value with a coarse Break{N}Shift-derived one.
+                        exactHandledShifts.Add(shift);
                     }
                 }
 
@@ -951,6 +971,13 @@ public class TimePlanningPlanningService(
             } else {
                 planning.PlanHours = model.PlanHours;
             }
+
+            // Approach C: infer the per-shift pause override from the submitted
+            // Break{N}Shift (change-detected against the pre-edit Pause{N}Id) or
+            // honor an explicit web clear/value signal. Exact-minute shifts already
+            // set above are skipped (FIX 4). Never touches the recorded
+            // Pause*StartedAt/StoppedAt timestamps.
+            ApplyInferredPauseOverrides(planning, model, preEditShownTicks, exactHandledShifts);
 
             double nettoMinutes = ComputePlanningNettoMinutes(planning, assignedSite.UseOneMinuteIntervals);
 
@@ -1173,6 +1200,17 @@ public class TimePlanningPlanningService(
                     localizationService.GetString("PlanningNotFound"));
             }
 
+            // Snapshot each shift's PRE-EDIT EFFECTIVE SHOWN coarse tick (override →
+            // (override/5)+1, else Pause{N}Id) BEFORE the model is applied, so the
+            // pause-override inference can change-detect a manual pause edit
+            // (Approach C) by comparing the submitted Break{N}Shift against this
+            // tick — without locking an override when only start/stop changed
+            // (16288-shape rows), and idempotently for non-5-multiple overrides.
+            var preEditShownTicks = CaptureCurrentShiftShownTicks(planning);
+            // UpdateByCurrentUserNam has no flag-ON exact-minute pause loop, so no
+            // shift is pre-handled; pass an empty set for the FIX 4 contract.
+            var exactHandledShifts = new HashSet<int>();
+
             planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
             planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
             planning.PlannedEndOfShift1   = model.PlannedEndOfShift1;
@@ -1312,6 +1350,12 @@ public class TimePlanningPlanningService(
 
             planning = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planning);
 
+            // Approach C: infer the per-shift pause override from the submitted
+            // Break{N}Shift (change-detected against the pre-edit Pause{N}Id) or
+            // honor an explicit web clear/value signal. Never touches the recorded
+            // Pause*StartedAt/StoppedAt timestamps.
+            ApplyInferredPauseOverrides(planning, model, preEditShownTicks, exactHandledShifts);
+
             double nettoMinutes = ComputePlanningNettoMinutes(planning, assignedSite.UseOneMinuteIntervals);
 
             double hours = nettoMinutes / 60;
@@ -1449,7 +1493,7 @@ public class TimePlanningPlanningService(
     /// This allows ComputeTimeTrackingFields to work with both ID-based and timestamp-based data.
     /// IDs use 5-minute intervals, so timestamps are rounded to nearest 5 minutes.
     /// </summary>
-    private void EnsureTimestampsFromIds(PlanRegistration planning)
+    internal static void EnsureTimestampsFromIds(PlanRegistration planning)
     {
         var midnight = new DateTime(planning.Date.Year, planning.Date.Month, planning.Date.Day, 0, 0, 0);
 
@@ -1499,8 +1543,13 @@ public class TimePlanningPlanningService(
             planning.Stop5StoppedAt = midnight.AddMinutes((planning.Stop5Id - 1) * 5);
         }
 
-        // Convert Pause IDs to timestamps if timestamps are missing
-        if (planning.Pause1StartedAt == null && planning.Pause1StoppedAt == null && planning.Pause1Id > 0)
+        // Convert Pause IDs to timestamps if timestamps are missing.
+        // FIX 3: never fabricate documentation timestamps for a shift carrying a
+        // pause override — the override (not the stale Pause{N}Id) drives the
+        // total, and the observation columns must reflect only real recorded
+        // pauses, not a synthesized pair derived from the coarse legacy field.
+        if (planning.Pause1OverrideMinutes == null
+            && planning.Pause1StartedAt == null && planning.Pause1StoppedAt == null && planning.Pause1Id > 0)
         {
             // Assume pause starts after start and lasts for the specified duration
             // We'll place it at the midpoint of the shift for simplicity
@@ -1514,7 +1563,8 @@ public class TimePlanningPlanningService(
             }
         }
 
-        if (planning.Pause2StartedAt == null && planning.Pause2StoppedAt == null && planning.Pause2Id > 0)
+        if (planning.Pause2OverrideMinutes == null
+            && planning.Pause2StartedAt == null && planning.Pause2StoppedAt == null && planning.Pause2Id > 0)
         {
             var pauseDurationMinutes = (planning.Pause2Id - 1) * 5;
             if (planning.Start2StartedAt != null && planning.Stop2StoppedAt != null)
@@ -1526,7 +1576,8 @@ public class TimePlanningPlanningService(
             }
         }
 
-        if (planning.Pause3StartedAt == null && planning.Pause3StoppedAt == null && planning.Pause3Id > 0)
+        if (planning.Pause3OverrideMinutes == null
+            && planning.Pause3StartedAt == null && planning.Pause3StoppedAt == null && planning.Pause3Id > 0)
         {
             var pauseDurationMinutes = (planning.Pause3Id - 1) * 5;
             if (planning.Start3StartedAt != null && planning.Stop3StoppedAt != null)
@@ -1538,7 +1589,8 @@ public class TimePlanningPlanningService(
             }
         }
 
-        if (planning.Pause4StartedAt == null && planning.Pause4StoppedAt == null && planning.Pause4Id > 0)
+        if (planning.Pause4OverrideMinutes == null
+            && planning.Pause4StartedAt == null && planning.Pause4StoppedAt == null && planning.Pause4Id > 0)
         {
             var pauseDurationMinutes = (planning.Pause4Id - 1) * 5;
             if (planning.Start4StartedAt != null && planning.Stop4StoppedAt != null)
@@ -1550,7 +1602,8 @@ public class TimePlanningPlanningService(
             }
         }
 
-        if (planning.Pause5StartedAt == null && planning.Pause5StoppedAt == null && planning.Pause5Id > 0)
+        if (planning.Pause5OverrideMinutes == null
+            && planning.Pause5StartedAt == null && planning.Pause5StoppedAt == null && planning.Pause5Id > 0)
         {
             var pauseDurationMinutes = (planning.Pause5Id - 1) * 5;
             if (planning.Start5StartedAt != null && planning.Stop5StoppedAt != null)
@@ -1560,79 +1613,6 @@ public class TimePlanningPlanningService(
                 planning.Pause5StartedAt = shiftMidpoint;
                 planning.Pause5StoppedAt = shiftMidpoint.AddMinutes(pauseDurationMinutes);
             }
-        }
-    }
-
-    /// <summary>
-    /// Translates an admin-edited exact-minute pause duration for the given shift
-    /// into Pause*StartedAt/Pause*StoppedAt timestamps on the entity. Anchors to
-    /// the existing Pause*StartedAt when present (preserves the worker's actual
-    /// pause start) and falls back to the shift midpoint when no anchor exists.
-    /// Sub-slot pauses (pause10..pause19, pause100..pause102 for shift 1;
-    /// pause20..pause29, pause200..pause202 for shift 2) are cleared so
-    /// AggregatePauseMinutes does not double-count.
-    /// </summary>
-    private void ApplyExactMinutePause(PlanRegistration planning, int shift, int exactMinutes)
-    {
-        if (exactMinutes == 0)
-        {
-            ClearPauseTimestamps(planning, shift);
-            return;
-        }
-
-        DateTime? existingStart = shift switch
-        {
-            1 => planning.Pause1StartedAt,
-            2 => planning.Pause2StartedAt,
-            3 => planning.Pause3StartedAt,
-            4 => planning.Pause4StartedAt,
-            5 => planning.Pause5StartedAt,
-            _ => null,
-        };
-
-        DateTime startedAt;
-        if (existingStart.HasValue)
-        {
-            startedAt = existingStart.Value;
-        }
-        else
-        {
-            var (shiftStart, shiftStop) = GetShiftBounds(planning, shift);
-            if (!shiftStart.HasValue || !shiftStop.HasValue)
-            {
-                // No anchor available — skip the write rather than fabricate one.
-                return;
-            }
-            startedAt = shiftStart.Value.AddMinutes(
-                (shiftStop.Value - shiftStart.Value).TotalMinutes / 2);
-        }
-
-        var stoppedAt = startedAt.AddMinutes(exactMinutes);
-
-        ClearPauseTimestamps(planning, shift);
-
-        switch (shift)
-        {
-            case 1:
-                planning.Pause1StartedAt = startedAt;
-                planning.Pause1StoppedAt = stoppedAt;
-                break;
-            case 2:
-                planning.Pause2StartedAt = startedAt;
-                planning.Pause2StoppedAt = stoppedAt;
-                break;
-            case 3:
-                planning.Pause3StartedAt = startedAt;
-                planning.Pause3StoppedAt = stoppedAt;
-                break;
-            case 4:
-                planning.Pause4StartedAt = startedAt;
-                planning.Pause4StoppedAt = stoppedAt;
-                break;
-            case 5:
-                planning.Pause5StartedAt = startedAt;
-                planning.Pause5StoppedAt = stoppedAt;
-                break;
         }
     }
 
@@ -1709,6 +1689,142 @@ public class TimePlanningPlanningService(
     }
 
     /// <summary>
+    /// Capture each shift's PRE-EDIT EFFECTIVE shown coarse tick from the persisted
+    /// entity BEFORE the model is applied. This MUST mirror exactly what the read
+    /// path (<see cref="PlanRegistrationHelper.ProjectPauseOverridesOntoDto"/>)
+    /// emits as Break{N}Shift, because that is the value the client round-trips:
+    ///   • override set    → (Pause{N}OverrideMinutes / 5) + 1
+    ///   • no override     → raw Pause{N}Id
+    /// <see cref="ApplyInferredPauseOverrides"/> change-detects an admin/manual
+    /// pause edit by comparing model.Break{N}Shift against this shown tick. Using
+    /// the SHOWN tick (not the raw Pause{N}Id) is what makes a re-save IDEMPOTENT
+    /// for a non-5-multiple override (e.g. 33 → served tick 7): an unrelated save
+    /// round-trips Break{N}Shift = 7 == shown tick, so inference leaves the exact
+    /// override untouched instead of rounding it down to (7-1)*5 = 30. It also
+    /// avoids spuriously locking an override when only start/stop changed on a row
+    /// whose slot-sum is not a 5-minute multiple (16288 shape).
+    /// </summary>
+    internal static int[] CaptureCurrentShiftShownTicks(PlanRegistration planning)
+    {
+        var ticks = new int[6]; // index 0 unused; shifts are 1..5
+        for (var shift = 1; shift <= 5; shift++)
+        {
+            var overrideMinutes = PlanRegistrationHelper.GetShiftPauseOverrideMinutes(planning, shift);
+            ticks[shift] = overrideMinutes.HasValue
+                ? (overrideMinutes.Value / 5) + 1
+                : GetShiftPauseId(planning, shift);
+        }
+        return ticks;
+    }
+
+    private static int GetShiftPauseId(PlanRegistration planning, int shift) => shift switch
+    {
+        1 => planning.Pause1Id,
+        2 => planning.Pause2Id,
+        3 => planning.Pause3Id,
+        4 => planning.Pause4Id,
+        5 => planning.Pause5Id,
+        _ => 0
+    };
+
+    /// <summary>
+    /// Change-detected, NON-destructive pause override inference (Approach C).
+    ///
+    /// Precedence per shift:
+    ///  1. EXPLICIT web signal (FIX 2): when the dialog marks a shift as explicitly
+    ///     specified (<see cref="TimePlanningPlanningPrDayModel.ClearPauseOverrides"/>
+    ///     or the per-shift Pause{N}OverrideMinutesSpecified flag), honor it
+    ///     directly — a value sets the override, an explicit clear reverts to null
+    ///     (compute-from-slots) — and SKIP inference for that shift.
+    ///  2. EXACT-minute path (FIX 4): a shift already handled by the flag-ON
+    ///     exact-minute loop is in <paramref name="handledShifts"/>; its override
+    ///     must win, so inference skips it.
+    ///  3. INFERENCE: derive the submitted coarse tick from Break{N}Shift and
+    ///     compare it against the PRE-EDIT EFFECTIVE SHOWN tick
+    ///     (<paramref name="preEditShownTicks"/>) — the same value the read path
+    ///     round-trips (override → (override/5)+1, else raw Pause{N}Id). Only when
+    ///     they DIFFER does the user-changed-the-pause signal fire and set the
+    ///     override to (Break{N}Shift - 1) * 5 minutes (Break{N}Shift == 0 →
+    ///     override 0). When equal, the override is left UNTOUCHED so (a) editing
+    ///     only start/stop never spuriously locks one and (b) an unrelated re-save
+    ///     of a row with a non-5-multiple override (e.g. 33, shown as tick 7) is
+    ///     IDEMPOTENT — the exact override survives instead of rounding to 30. A
+    ///     genuine re-edit (Break{N}Shift differs from the shown tick) still updates
+    ///     the override.
+    ///
+    /// This never touches any Pause*StartedAt/StoppedAt timestamps — the worker's
+    /// recorded pauses are preserved as documentation.
+    /// </summary>
+    internal static void ApplyInferredPauseOverrides(
+        PlanRegistration planning,
+        TimePlanningPlanningPrDayModel model,
+        int[] preEditShownTicks,
+        ISet<int> handledShifts)
+    {
+        for (var shift = 1; shift <= 5; shift++)
+        {
+            // (1) Explicit web signal wins (set value or explicit clear → null).
+            if (model.ClearPauseOverrides || GetModelOverrideSpecified(model, shift))
+            {
+                PlanRegistrationHelper.SetShiftPauseOverrideMinutes(
+                    planning, shift, model.ClearPauseOverrides ? null : GetModelPauseOverrideMinutes(model, shift));
+                continue;
+            }
+
+            // (2) Exact-minute path already set this shift's override; do not clobber.
+            if (handledShifts.Contains(shift))
+            {
+                continue;
+            }
+
+            // (3) Inference: compare the submitted coarse tick against the pre-edit
+            //     EFFECTIVE SHOWN tick (the same value the read path round-trips).
+            //     Equal → the user did not touch the pause → leave the override
+            //     as-is (idempotent: a non-5-multiple override survives a re-save).
+            var breakShift = GetModelBreakShift(model, shift);
+            if (breakShift == preEditShownTicks[shift])
+            {
+                continue;
+            }
+
+            // Changed: Break{N}Shift > 0 → (Break{N}Shift - 1) * 5 minutes;
+            // Break{N}Shift == 0 → empty pause → 0 minutes.
+            var submittedMinutes = breakShift > 0 ? (breakShift - 1) * 5 : 0;
+            PlanRegistrationHelper.SetShiftPauseOverrideMinutes(planning, shift, submittedMinutes);
+        }
+    }
+
+    private static int GetModelBreakShift(TimePlanningPlanningPrDayModel model, int shift) => shift switch
+    {
+        1 => model.Break1Shift,
+        2 => model.Break2Shift,
+        3 => model.Break3Shift,
+        4 => model.Break4Shift,
+        5 => model.Break5Shift,
+        _ => 0
+    };
+
+    private static int? GetModelPauseOverrideMinutes(TimePlanningPlanningPrDayModel model, int shift) => shift switch
+    {
+        1 => model.Pause1OverrideMinutes,
+        2 => model.Pause2OverrideMinutes,
+        3 => model.Pause3OverrideMinutes,
+        4 => model.Pause4OverrideMinutes,
+        5 => model.Pause5OverrideMinutes,
+        _ => null
+    };
+
+    private static bool GetModelOverrideSpecified(TimePlanningPlanningPrDayModel model, int shift) => shift switch
+    {
+        1 => model.Pause1OverrideMinutesSpecified,
+        2 => model.Pause2OverrideMinutesSpecified,
+        3 => model.Pause3OverrideMinutesSpecified,
+        4 => model.Pause4OverrideMinutesSpecified,
+        5 => model.Pause5OverrideMinutesSpecified,
+        _ => false
+    };
+
+    /// <summary>
     /// Computes total netto minutes (raw minutes; caller divides by 60 for hours)
     /// across all 5 shifts. Under flag-on, when both Start{N}StartedAt and
     /// Stop{N}StoppedAt are set, uses (Stop - Start).TotalMinutes minus the
@@ -1723,13 +1839,26 @@ public class TimePlanningPlanningService(
         {
             var (startedAt, stoppedAt, pauseStarted, pauseStopped, startId, stopId, pauseId) = GetShiftTimings(planning, shift);
 
+            // Admin/manual pause override wins: when set, it is the authoritative
+            // total pause MINUTES for the shift, replacing both the one-minute
+            // timestamp delta and the legacy (Pause{N}Id-1)*5 tick deduction.
+            var overrideMinutes = PlanRegistrationHelper.GetShiftPauseOverrideMinutes(planning, shift);
+
             if (useOneMinuteIntervals && startedAt.HasValue && stoppedAt.HasValue && stoppedAt.Value > startedAt.Value)
             {
                 var shiftMinutes = (stoppedAt.Value - startedAt.Value).TotalMinutes;
-                double pauseMinutes = 0;
-                if (pauseStarted.HasValue && pauseStopped.HasValue && pauseStopped.Value > pauseStarted.Value)
+                double pauseMinutes;
+                if (overrideMinutes.HasValue)
+                {
+                    pauseMinutes = overrideMinutes.Value;
+                }
+                else if (pauseStarted.HasValue && pauseStopped.HasValue && pauseStopped.Value > pauseStarted.Value)
                 {
                     pauseMinutes = (pauseStopped.Value - pauseStarted.Value).TotalMinutes;
+                }
+                else
+                {
+                    pauseMinutes = 0;
                 }
                 total += shiftMinutes - pauseMinutes;
             }
@@ -1737,9 +1866,9 @@ public class TimePlanningPlanningService(
             {
                 if (stopId >= startId && stopId != 0)
                 {
-                    double sm = stopId - startId;
-                    sm -= pauseId > 0 ? pauseId - 1 : 0;
-                    total += sm * multiplier;
+                    double sm = (stopId - startId) * (double)multiplier;
+                    sm -= overrideMinutes ?? (pauseId > 0 ? (pauseId - 1) * multiplier : 0);
+                    total += sm;
                 }
             }
         }
@@ -1755,64 +1884,6 @@ public class TimePlanningPlanningService(
         4 => (planning.Start4StartedAt, planning.Stop4StoppedAt, planning.Pause4StartedAt, planning.Pause4StoppedAt, planning.Start4Id, planning.Stop4Id, planning.Pause4Id),
         5 => (planning.Start5StartedAt, planning.Stop5StoppedAt, planning.Pause5StartedAt, planning.Pause5StoppedAt, planning.Start5Id, planning.Stop5Id, planning.Pause5Id),
         _ => (null, null, null, null, 0, 0, 0),
-    };
-
-    private static void ClearPauseTimestamps(PlanRegistration planning, int shift)
-    {
-        switch (shift)
-        {
-            case 1:
-                planning.Pause1StartedAt = null; planning.Pause1StoppedAt = null;
-                planning.Pause10StartedAt = null; planning.Pause10StoppedAt = null;
-                planning.Pause11StartedAt = null; planning.Pause11StoppedAt = null;
-                planning.Pause12StartedAt = null; planning.Pause12StoppedAt = null;
-                planning.Pause13StartedAt = null; planning.Pause13StoppedAt = null;
-                planning.Pause14StartedAt = null; planning.Pause14StoppedAt = null;
-                planning.Pause15StartedAt = null; planning.Pause15StoppedAt = null;
-                planning.Pause16StartedAt = null; planning.Pause16StoppedAt = null;
-                planning.Pause17StartedAt = null; planning.Pause17StoppedAt = null;
-                planning.Pause18StartedAt = null; planning.Pause18StoppedAt = null;
-                planning.Pause19StartedAt = null; planning.Pause19StoppedAt = null;
-                planning.Pause100StartedAt = null; planning.Pause100StoppedAt = null;
-                planning.Pause101StartedAt = null; planning.Pause101StoppedAt = null;
-                planning.Pause102StartedAt = null; planning.Pause102StoppedAt = null;
-                break;
-            case 2:
-                planning.Pause2StartedAt = null; planning.Pause2StoppedAt = null;
-                planning.Pause20StartedAt = null; planning.Pause20StoppedAt = null;
-                planning.Pause21StartedAt = null; planning.Pause21StoppedAt = null;
-                planning.Pause22StartedAt = null; planning.Pause22StoppedAt = null;
-                planning.Pause23StartedAt = null; planning.Pause23StoppedAt = null;
-                planning.Pause24StartedAt = null; planning.Pause24StoppedAt = null;
-                planning.Pause25StartedAt = null; planning.Pause25StoppedAt = null;
-                planning.Pause26StartedAt = null; planning.Pause26StoppedAt = null;
-                planning.Pause27StartedAt = null; planning.Pause27StoppedAt = null;
-                planning.Pause28StartedAt = null; planning.Pause28StoppedAt = null;
-                planning.Pause29StartedAt = null; planning.Pause29StoppedAt = null;
-                planning.Pause200StartedAt = null; planning.Pause200StoppedAt = null;
-                planning.Pause201StartedAt = null; planning.Pause201StoppedAt = null;
-                planning.Pause202StartedAt = null; planning.Pause202StoppedAt = null;
-                break;
-            case 3:
-                planning.Pause3StartedAt = null; planning.Pause3StoppedAt = null;
-                break;
-            case 4:
-                planning.Pause4StartedAt = null; planning.Pause4StoppedAt = null;
-                break;
-            case 5:
-                planning.Pause5StartedAt = null; planning.Pause5StoppedAt = null;
-                break;
-        }
-    }
-
-    private static (DateTime?, DateTime?) GetShiftBounds(PlanRegistration p, int shift) => shift switch
-    {
-        1 => (p.Start1StartedAt, p.Stop1StoppedAt),
-        2 => (p.Start2StartedAt, p.Stop2StoppedAt),
-        3 => (p.Start3StartedAt, p.Stop3StoppedAt),
-        4 => (p.Start4StartedAt, p.Stop4StoppedAt),
-        5 => (p.Start5StartedAt, p.Stop5StoppedAt),
-        _ => (null, null),
     };
 
     public async Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId)

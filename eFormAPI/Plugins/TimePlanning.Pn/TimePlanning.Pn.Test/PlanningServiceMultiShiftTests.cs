@@ -456,6 +456,373 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
     }
 
     /// <summary>
+    /// Phase 2 pause-override regression (16288 shape). A UseDetailedPauseEditing=false,
+    /// UseOneMinuteIntervals=false site has a shift-1 day with multiple recorded pause
+    /// sub-slots (Pause1 + Pause10 + Pause11) summing to ~30 min, plus a real Start1/Stop1
+    /// 08:00-16:00 work span. The admin edits the shift-1 pause total to a DIFFERENT value
+    /// (Break1Shift = 3 → (3-1)*5 = 10 min).
+    ///
+    /// Pre-fix (#1626 source-of-truth-from-slots): ComputeShiftPauseSeconds sums the
+    /// surviving sub-slots (30 min) and ignores the admin's edit, so the reloaded
+    /// NettoHoursInSeconds is 28800-1800 = 27000.
+    ///
+    /// Post-fix (override): the edit sets Pause1OverrideMinutes = 10, ComputeShiftPause-
+    /// Seconds returns 10*60, and the reloaded NettoHoursInSeconds is 28800-600 = 28200.
+    /// CRITICALLY the recorded Pause10/Pause11 timestamps must STILL be present in the DB
+    /// (non-destructive — the worker's record is documentation).
+    /// </summary>
+    [Test]
+    public async Task Update_AdminEditsPauseTotal_OverridesSlotSum_NonDestructive()
+    {
+        // Arrange — common config: flag-off, simple pause editing.
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 906,
+            UseOneMinuteIntervals = false,
+            UseDetailedPauseEditing = false,
+            UseOnlyPlanHours = false,
+            AutoBreakCalculationActive = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var date = new DateTime(2026, 4, 29, 0, 0, 0, DateTimeKind.Utc); // Wednesday
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 906,
+            Date = date,
+            // Real work span 08:00-16:00 (8h = 28800s).
+            Start1StartedAt = date.AddHours(8),
+            Stop1StoppedAt = date.AddHours(16),
+            Start1Id = 97,   // 08:00 in 5-min grid
+            Stop1Id = 193,   // 16:00 in 5-min grid
+            // Three recorded pause sub-slots summing to 30 min (5-min grid).
+            Pause1StartedAt = date.AddHours(12).AddMinutes(30),
+            Pause1StoppedAt = date.AddHours(12).AddMinutes(40),
+            Pause10StartedAt = date.AddHours(12),
+            Pause10StoppedAt = date.AddHours(12).AddMinutes(10),
+            Pause11StartedAt = date.AddHours(12).AddMinutes(10),
+            Pause11StoppedAt = date.AddHours(12).AddMinutes(20),
+            Pause1Id = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        // Sanity: pre-edit the slot sum is 30 min.
+        Assert.That(
+            PlanRegistrationHelper.ComputeShiftPauseSeconds(planning, 1, false),
+            Is.EqualTo(30 * 60),
+            "Pre-condition: the three sub-slots must sum to 30 min.");
+
+        // Admin edits the shift-1 pause total to 10 min via Break1Shift.
+        // Break1Shift encodes (value-1)*5 minutes → 3 → 10 min.
+        var model = new TimePlanningPlanningPrDayModel
+        {
+            Id = planning.Id,
+            Date = date,
+            CommentOffice = "",
+            Break1Shift = 3,
+            // Round-trip the recorded timestamps untouched (as the dialog does).
+            Start1StartedAt = planning.Start1StartedAt,
+            Stop1StoppedAt = planning.Stop1StoppedAt,
+            Start1Id = 97,
+            Stop1Id = 193,
+        };
+
+        // Act
+        var result = await _service.Update(planning.Id, model);
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+
+        var reloaded = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking()
+            .FirstAsync(x => x.Id == planning.Id);
+
+        Assert.Multiple(() =>
+        {
+            // Effective pause reflects the EDIT (10 min), not the stale slot sum (30 min).
+            Assert.That(reloaded.Pause1OverrideMinutes, Is.EqualTo(10),
+                "Admin edit must set the per-shift override to 10 min.");
+            Assert.That(
+                PlanRegistrationHelper.ComputeShiftPauseSeconds(reloaded, 1, false),
+                Is.EqualTo(10 * 60),
+                "ComputeShiftPauseSeconds must honor the override, not sum slots.");
+            Assert.That(reloaded.NettoHoursInSeconds, Is.EqualTo(28800 - 600),
+                "Netto must subtract the 10-min override, not the 30-min slot sum.");
+
+            // Non-destructive: every recorded pause timestamp must still be present.
+            Assert.That(reloaded.Pause10StartedAt, Is.EqualTo(date.AddHours(12)));
+            Assert.That(reloaded.Pause10StoppedAt, Is.EqualTo(date.AddHours(12).AddMinutes(10)));
+            Assert.That(reloaded.Pause11StartedAt, Is.EqualTo(date.AddHours(12).AddMinutes(10)));
+            Assert.That(reloaded.Pause11StoppedAt, Is.EqualTo(date.AddHours(12).AddMinutes(20)));
+            Assert.That(reloaded.Pause1StartedAt, Is.EqualTo(date.AddHours(12).AddMinutes(30)));
+            Assert.That(reloaded.Pause1StoppedAt, Is.EqualTo(date.AddHours(12).AddMinutes(40)));
+        });
+    }
+
+    /// <summary>
+    /// Change-detection guard (FIX 1 — the 16288-shape unit-mismatch bug). A
+    /// punch-clock row's recorded slots sum to 30 min while its legacy Pause1Id is
+    /// 0 (sub-slots only). The dialog round-trips Break1Shift = Pause1Id = 0 (the
+    /// value the READ path emits) and only nudges the stop time later (16:00 →
+    /// 17:00). Because the submitted Break1Shift equals the PRE-EDIT Pause1Id,
+    /// change-detection must see "pause unchanged" and NOT lock an override — the
+    /// row keeps computing pause from its recorded slots.
+    ///
+    /// Pre-fix the baseline compared the coarse tick against the exact slot-sum
+    /// (30 min); since 0-tick ≠ 30 it ALWAYS spuriously locked an override on every
+    /// save. The fix compares Break1Shift against the pre-edit Pause1Id instead.
+    /// </summary>
+    [Test]
+    public async Task Update_EditOnlyStartStop_DoesNotSetOverride()
+    {
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 907,
+            UseOneMinuteIntervals = false,
+            UseDetailedPauseEditing = false,
+            UseOnlyPlanHours = false,
+            AutoBreakCalculationActive = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var date = new DateTime(2026, 4, 29, 0, 0, 0, DateTimeKind.Utc);
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 907,
+            Date = date,
+            Start1StartedAt = date.AddHours(8),
+            Stop1StoppedAt = date.AddHours(16),
+            Start1Id = 97,
+            Stop1Id = 193,
+            // 30 min of recorded pause across three slots (5-min grid).
+            Pause1StartedAt = date.AddHours(12).AddMinutes(30),
+            Pause1StoppedAt = date.AddHours(12).AddMinutes(40),
+            Pause10StartedAt = date.AddHours(12),
+            Pause10StoppedAt = date.AddHours(12).AddMinutes(10),
+            Pause11StartedAt = date.AddHours(12).AddMinutes(10),
+            Pause11StoppedAt = date.AddHours(12).AddMinutes(20),
+            Pause1Id = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        // The dialog round-trips Break1Shift = pre-edit Pause1Id (0) — the value
+        // the READ path emits for this no-override row — while only nudging the
+        // stop time later (16:00 → 17:00).
+        var model = new TimePlanningPlanningPrDayModel
+        {
+            Id = planning.Id,
+            Date = date,
+            CommentOffice = "",
+            Break1Shift = 0, // == pre-edit Pause1Id (0) → pause unchanged
+            Start1StartedAt = date.AddHours(8),
+            Stop1StoppedAt = date.AddHours(17),
+            Start1Id = 97,
+            Stop1Id = 205,
+        };
+
+        var result = await _service.Update(planning.Id, model);
+        Assert.That(result.Success, Is.True, result.Message);
+
+        var reloaded = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking()
+            .FirstAsync(x => x.Id == planning.Id);
+
+        Assert.That(reloaded.Pause1OverrideMinutes, Is.Null,
+            "Unchanged pause total must not lock an override.");
+        Assert.That(
+            PlanRegistrationHelper.ComputeShiftPauseSeconds(reloaded, 1, false),
+            Is.EqualTo(30 * 60),
+            "Pause still computed from the recorded slots (30 min).");
+    }
+
+    /// <summary>
+    /// Setting the pause to empty (Break1Shift = 0) on a row whose pre-edit
+    /// Pause1Id was non-zero is a genuine CHANGE (0 ≠ pre-edit tick), so the
+    /// inference sets the override to 0 (explicit empty pause) WITHOUT deleting the
+    /// recorded sub-slot timestamps. (When the pre-edit Pause1Id is already 0,
+    /// Break1Shift = 0 is indistinguishable from "unchanged" and the web uses the
+    /// explicit clear signal instead — see Update_ExplicitClear_RevertsToNull.)
+    /// </summary>
+    [Test]
+    public async Task Update_ClearPause_SetsZeroOverride_NonDestructive()
+    {
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 908,
+            UseOneMinuteIntervals = false,
+            UseDetailedPauseEditing = false,
+            UseOnlyPlanHours = false,
+            AutoBreakCalculationActive = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var date = new DateTime(2026, 4, 29, 0, 0, 0, DateTimeKind.Utc);
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 908,
+            Date = date,
+            Start1StartedAt = date.AddHours(8),
+            Stop1StoppedAt = date.AddHours(16),
+            Start1Id = 97,
+            Stop1Id = 193,
+            Pause10StartedAt = date.AddHours(12),
+            Pause10StoppedAt = date.AddHours(12).AddMinutes(10),
+            Pause11StartedAt = date.AddHours(12).AddMinutes(10),
+            Pause11StoppedAt = date.AddHours(12).AddMinutes(20),
+            Pause1Id = 3, // pre-edit coarse tick (= 10 min); read path emits Break1Shift = 3
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        var model = new TimePlanningPlanningPrDayModel
+        {
+            Id = planning.Id,
+            Date = date,
+            CommentOffice = "",
+            Break1Shift = 0, // cleared (0 ≠ pre-edit 3) → empty pause → override 0
+            Start1StartedAt = date.AddHours(8),
+            Stop1StoppedAt = date.AddHours(16),
+            Start1Id = 97,
+            Stop1Id = 193,
+        };
+
+        var result = await _service.Update(planning.Id, model);
+        Assert.That(result.Success, Is.True, result.Message);
+
+        var reloaded = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking()
+            .FirstAsync(x => x.Id == planning.Id);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(reloaded.Pause1OverrideMinutes, Is.EqualTo(0),
+                "Clearing the pause sets an explicit zero override.");
+            Assert.That(
+                PlanRegistrationHelper.ComputeShiftPauseSeconds(reloaded, 1, false),
+                Is.EqualTo(0),
+                "Effective pause is zero.");
+            Assert.That(reloaded.NettoHoursInSeconds, Is.EqualTo(28800),
+                "Full 8h with no pause deducted.");
+            // Non-destructive: recorded timestamps intact.
+            Assert.That(reloaded.Pause10StartedAt, Is.EqualTo(date.AddHours(12)));
+            Assert.That(reloaded.Pause11StoppedAt, Is.EqualTo(date.AddHours(12).AddMinutes(20)));
+        });
+    }
+
+    /// <summary>
+    /// Read-projection seam (history path): a row carrying a pause override is
+    /// projected onto the outgoing per-day DTO as a single synthesized pause pair
+    /// (Pause1StartedAt..StoppedAt summing to the override, anchored at the shift
+    /// start), with the sub-slot DTO fields emptied — while the real DB row keeps
+    /// every recorded timestamp.
+    /// </summary>
+    [Test]
+    public async Task Index_OverrideSet_DtoCarriesSynthesizedPause_SubSlotsEmpty_DbUnchanged()
+    {
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 909,
+            UseOneMinuteIntervals = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var date = new DateTime(2026, 5, 14, 0, 0, 0, DateTimeKind.Utc);
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 909,
+            Date = date,
+            Start1StartedAt = date.AddHours(8),
+            Stop1StoppedAt = date.AddHours(16),
+            Start1Id = 97,
+            // Recorded sub-slots (30 min) that must survive in the DB...
+            Pause10StartedAt = date.AddHours(12),
+            Pause10StoppedAt = date.AddHours(12).AddMinutes(10),
+            Pause11StartedAt = date.AddHours(12).AddMinutes(10),
+            Pause11StoppedAt = date.AddHours(12).AddMinutes(20),
+            Pause1StartedAt = date.AddHours(12).AddMinutes(30),
+            Pause1StoppedAt = date.AddHours(12).AddMinutes(40),
+            // ...but the override says 15 min.
+            Pause1OverrideMinutes = 15,
+            Pause1Id = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        var planningsInPeriod = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking()
+            .Where(x => x.SdkSitId == 909)
+            .Select(x => new PlanRegistration { Id = x.Id, Date = x.Date })
+            .ToListAsync();
+
+        var siteModel = new TimePlanningPlanningModel
+        {
+            SiteId = 909,
+            SiteName = "Test site 909",
+            UseOneMinuteIntervals = false,
+            PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
+        };
+        var sdkSite = new SdkSite { Name = "Test site 909", MicrotingUid = 909 };
+
+        var result = await PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod(
+            planningsInPeriod,
+            siteModel,
+            TimePlanningPnDbContext,
+            assignedSite,
+            Substitute.For<ILogger<TimePlanningPlanningService>>(),
+            sdkSite,
+            date.AddDays(-1),
+            date.AddDays(1),
+            _options);
+
+        var prDay = result.PlanningPrDayModels.Single(x => x.Date.Date == date.Date);
+
+        Assert.Multiple(() =>
+        {
+            // DTO: synthesized single pause pair anchored at shift start, 15 min long.
+            Assert.That(prDay.Pause1OverrideMinutes, Is.EqualTo(15));
+            Assert.That(prDay.Pause1StartedAt, Is.EqualTo(date.AddHours(8)));
+            Assert.That(prDay.Pause1StoppedAt, Is.EqualTo(date.AddHours(8).AddMinutes(15)));
+            // DTO sub-slots emptied so the app's timestamp sum equals the override.
+            Assert.That(prDay.Pause10StartedAt, Is.Null);
+            Assert.That(prDay.Pause11StartedAt, Is.Null);
+            // PauseMinutes aggregate equals the override (15 min).
+            Assert.That(prDay.PauseMinutes, Is.EqualTo(15.0));
+            // FIX 1b: legacy coarse fields reflect the override's tick so a re-save
+            // round-trips stably (Break1Shift = (15/5)+1 = 4; DTO Pause1Id = tick-1 = 3).
+            Assert.That(prDay.Break1Shift, Is.EqualTo(4),
+                "Break1Shift must reflect the override's coarse tick for stable round-trip.");
+            Assert.That(prDay.Pause1Id, Is.EqualTo(3),
+                "DTO Pause1Id must be the override tick minus 1 (existing read convention).");
+        });
+
+        // DB row untouched — documentation preserved.
+        var dbRow = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking()
+            .FirstAsync(x => x.Id == planning.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(dbRow.Pause10StartedAt, Is.EqualTo(date.AddHours(12)));
+            Assert.That(dbRow.Pause10StoppedAt, Is.EqualTo(date.AddHours(12).AddMinutes(10)));
+            Assert.That(dbRow.Pause11StartedAt, Is.EqualTo(date.AddHours(12).AddMinutes(10)));
+            Assert.That(dbRow.Pause1OverrideMinutes, Is.EqualTo(15));
+        });
+    }
+
+    /// <summary>
     /// Negative companion to Index_OneMinuteInterval_WithSubSlotPauseStamps_AggregatesCorrectly:
     /// when UseOneMinuteIntervals = false the same row's PauseMinutes must be 0,
     /// because the legacy 5-minute-grid path doesn't scan sub-slot DateTime

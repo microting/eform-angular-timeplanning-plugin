@@ -129,6 +129,36 @@ public class TimePlanningPlanningPrDayModel
     public int Break3Shift { get; set; }
     public int Break4Shift { get; set; }
     public int Break5Shift { get; set; }
+
+    // Admin/manual pause override (Approach C). null = compute pause from the
+    // recorded slots (current behavior); non-null = authoritative total pause
+    // MINUTES for that shift. The web workday dialog sets these explicitly; on
+    // read they are populated from the entity so the dialog can show the value.
+    // The worker's recorded Pause*StartedAt/StoppedAt are never destroyed.
+    public int? Pause1OverrideMinutes { get; set; }
+    public int? Pause2OverrideMinutes { get; set; }
+    public int? Pause3OverrideMinutes { get; set; }
+    public int? Pause4OverrideMinutes { get; set; }
+    public int? Pause5OverrideMinutes { get; set; }
+
+    // Clear-to-null capability (FIX 2 — plumbing for the Phase 3 web affordance).
+    // The override fields above are int? so "not sent" and "explicit null/clear"
+    // are indistinguishable on the wire. These companion signals let the web path
+    // explicitly distinguish CLEAR (revert to compute-from-slots) from NOT-SENT
+    // (leave the inference / existing override untouched):
+    //   • Pause{N}OverrideMinutesSpecified == true  → honor Pause{N}OverrideMinutes
+    //     for that shift exactly (a value sets it; null clears to compute-from-slots)
+    //     and SKIP inference for that shift.
+    //   • ClearPauseOverrides == true → clear ALL five shifts to null in one shot
+    //     (coarse convenience signal; takes precedence over per-shift signals).
+    // The app/inference path does NOT need to clear — Break{N}Shift == 0 → override
+    // 0 is sufficient there. The Phase 3 web UI wires the clear affordance to these.
+    public bool Pause1OverrideMinutesSpecified { get; set; }
+    public bool Pause2OverrideMinutesSpecified { get; set; }
+    public bool Pause3OverrideMinutesSpecified { get; set; }
+    public bool Pause4OverrideMinutesSpecified { get; set; }
+    public bool Pause5OverrideMinutesSpecified { get; set; }
+    public bool ClearPauseOverrides { get; set; }
     public string CommentOffice { get; set; }
     public string WorkerComment { get; set; }
     public double SumFlexStart { get; set; }
