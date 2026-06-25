@@ -406,7 +406,6 @@ describe('WorkdayEntityDialogComponent', () => {
 
       component.onUpdateWorkDayEntity();
 
-      const m = component.data.planningPrDayModels as any;
       expect(m.pause1OverrideMinutesSpecified).toBe(true);
       expect(m.pause1OverrideMinutes).toBe(45);
     });
