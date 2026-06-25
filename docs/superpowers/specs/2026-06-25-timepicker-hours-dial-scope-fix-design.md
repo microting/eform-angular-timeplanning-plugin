@@ -41,9 +41,9 @@ Gate the thinning behind a `:has()` that matches only the minute face — keyed 
 
 The exact ancestor element (`.clock-face` vs the numbers' direct container) and the `:has()` predicate will be confirmed against the live rendered DOM during implementation; the count-based `:nth-child(13)` predicate is format-independent (the hours outer ring is always 12 cells in both 12h and 24h formats). `:has()` is supported in all current evergreen browsers — acceptable for this internal admin app. The CI test (below) validates the chosen selector against both dials, so a wrong guess cannot ship.
 
-### 2. Move the rule to the global stylesheet
+### 2. Rule location — kept in the component (as built)
 
-Move the rule out of `time-plannings-table.component.scss` (which only reaches the body-appended overlay via `ViewEncapsulation.None` — fragile, silently breaks if encapsulation changes) into the eform-client **global stylesheet** that already holds global timepicker/overlay overrides, per the original feature spec.
+The original feature spec wanted the rule in a global stylesheet. On investigation that is not appropriate here: the **plugin** repo owns no global stylesheet — the angular.json global styles (`src/scss/styles.scss`, `theme.scss`) live in the **host** repo (`eform-angular-frontend`), and `devinstall.sh` only ships the plugin module dir + DLL + e2e tests, never host globals. Moving the rule there would disconnect it from the plugin's release pipeline. So the rule stays in `time-plannings-table.component.scss`, which is emitted globally via `ViewEncapsulation.None` (the existing mechanism that already reaches the body-appended overlay), with a comment documenting both the minute-face scoping and this ownership rationale.
 
 ### 3. Harden the Playwright test
 
