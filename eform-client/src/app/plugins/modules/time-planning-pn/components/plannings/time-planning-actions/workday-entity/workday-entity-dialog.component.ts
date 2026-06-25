@@ -79,6 +79,20 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   isInTheFuture = false;
   maxPause1Id = 0;
   maxPause2Id = 0;
+
+  // Pause-override (Approach C) change-detection state. Indexed by shift (1..5).
+  // loadedPauseMinutes[shift] = the per-shift total pause in MINUTES as displayed
+  // when the dialog opened (the value the pause picker was seeded with). On save
+  // we compare the picker's current minutes against this baseline; only a genuine
+  // change writes the override. pauseOverrideCleared[shift] is set by the
+  // "use recorded pauses" affordance to explicitly revert that shift to
+  // compute-from-slots (override = null, but Specified = true).
+  private loadedPauseMinutes: { [shift: number]: number | null } = {};
+  pauseOverrideCleared: { [shift: number]: boolean } = {};
+  // The recorded-sum minutes the clear affordance reset a shift's picker to. While
+  // pauseOverrideCleared[shift] is set, an edit that moves the picker away from
+  // this value is treated as a fresh override (the admin changed their mind).
+  private pauseOverrideClearedMinutes: { [shift: number]: number | null } = {};
   todaysFlex = 0;
   nettoHoursOverrideActive = false;
   date: any;
@@ -182,21 +196,40 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     // sum of all Pause*StartedAt/Pause*StoppedAt timestamp pairs in seconds and
     // round to the nearest minute. When the flag is off, fall back to the legacy
     // 5-minute-slot value so flag-off behavior stays bit-identical.
-    const pause1Exact = this.useOneMinuteIntervals
+    //
+    // Approach C: when a pause override is present on the served model, prefer it
+    // directly for display. The server already projects the override onto the
+    // timestamp pair (so the sum-of-slots path would also reflect it), but using
+    // the raw override avoids any 5-minute-floor rounding loss on the projected
+    // pair and makes the displayed value bit-exact with what was saved.
+    const pauseDisplayHhmm = (shift: number, fallback: string | null): string | null => {
+      const ov = this.shiftOverrideMinutes(shift);
+      return ov !== null ? this.convertMinutesToTime(ov) : fallback;
+    };
+    const pause1Exact = pauseDisplayHhmm(1, this.useOneMinuteIntervals
       ? this.convertMinutesToTime(this.computeExactPauseMinutes(1))
-      : pause1Id;
-    const pause2Exact = this.useOneMinuteIntervals
+      : pause1Id);
+    const pause2Exact = pauseDisplayHhmm(2, this.useOneMinuteIntervals
       ? this.convertMinutesToTime(this.computeExactPauseMinutes(2))
-      : pause2Id;
-    const pause3Exact = this.useOneMinuteIntervals
+      : pause2Id);
+    const pause3Exact = pauseDisplayHhmm(3, this.useOneMinuteIntervals
       ? this.convertMinutesToTime(this.computeExactPauseMinutes(3))
-      : pause3Id;
-    const pause4Exact = this.useOneMinuteIntervals
+      : pause3Id);
+    const pause4Exact = pauseDisplayHhmm(4, this.useOneMinuteIntervals
       ? this.convertMinutesToTime(this.computeExactPauseMinutes(4))
-      : pause4Id;
-    const pause5Exact = this.useOneMinuteIntervals
+      : pause4Id);
+    const pause5Exact = pauseDisplayHhmm(5, this.useOneMinuteIntervals
       ? this.convertMinutesToTime(this.computeExactPauseMinutes(5))
-      : pause5Id;
+      : pause5Id);
+
+    // Capture the displayed pause baseline (in minutes) per shift for save-time
+    // change detection, and reset the per-shift clear flags.
+    [pause1Exact, pause2Exact, pause3Exact, pause4Exact, pause5Exact]
+      .forEach((hhmm, idx) => {
+        const shift = idx + 1;
+        this.loadedPauseMinutes[shift] = this.toRawMinutes(hhmm);
+        this.pauseOverrideCleared[shift] = false;
+      });
 
     // Er dato i fremtiden?
     this.isInTheFuture = Date.parse(this.data.planningPrDayModels.date) > Date.now();
@@ -1114,6 +1147,14 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     return totalMs / 60000;
   }
 
+  // Read the pause override (in minutes) carried on the served model for a shift,
+  // or null when none is set (compute-from-slots). Used for display precedence.
+  private shiftOverrideMinutes(shift: number): number | null {
+    const m = this.data.planningPrDayModels;
+    const v = m[`pause${shift}OverrideMinutes`];
+    return v === null || v === undefined ? null : v;
+  }
+
   private getPauseTimestampPairs(shift: number): Array<[string | null, string | null]> {
     const m = this.data.planningPrDayModels;
     if (shift === 1) {
@@ -1507,6 +1548,17 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.stop5Id = this.convertTimeToMinutes(a5?.stop, true, true);
     this.data.planningPrDayModels.stop5StoppedAt = this.convertTimeToDateTimeOfToday(a5?.stop === '00:00' ? '24:00' : a5?.stop);
 
+    // ===== Approach C: per-shift pause override (non-destructive) =====
+    // The override is now the authoritative channel for the admin's total pause.
+    // For each shift, compare the picker's current minutes against the baseline
+    // captured when the dialog opened. The legacy Pause{N}Id / Pause{N}ExactMinutes
+    // are still sent above (harmless), but the override drives the effective total
+    // server-side and the worker's recorded sub-slots are preserved.
+    const actualGroups = [a1, a2, a3, a4, a5];
+    actualGroups.forEach((group, idx) => {
+      this.applyPauseOverrideForShift(idx + 1, group?.pause);
+    });
+
     this.data.planningPrDayModels.planHours = this.workdayForm.get('planHours')?.value;
     this.data.planningPrDayModels.paidOutFlex = this.workdayForm.get('paidOutFlex')?.value;
 
@@ -1521,6 +1573,62 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
         this.data.planningPrDayModels.paidOutFlex.toString().replace(',', '.')
       );
     }
+  }
+
+  // Approach C save wiring. For one shift, decide whether to emit the pause
+  // override on the model based on what the admin actually did:
+  //   • "use recorded pauses" affordance used  → Specified=true, override=null
+  //     (revert that shift to compute-from-slots).
+  //   • picker value changed from the loaded baseline → Specified=true,
+  //     override=<minutes> (authoritative total). Minutes are the exact HH:mm
+  //     minutes for both flag-on and flag-off sites (the picker steps in 1-min
+  //     or 5-min, but the field value is always real minutes).
+  //   • unchanged → Specified=false (leave the server's override untouched; never
+  //     locks an override just because start/stop were edited).
+  private applyPauseOverrideForShift(shift: number, pauseHhmm: string | null | undefined): void {
+    const m = this.data.planningPrDayModels;
+    const specifiedKey = `pause${shift}OverrideMinutesSpecified`;
+    const overrideKey = `pause${shift}OverrideMinutes`;
+
+    const currentMinutes = this.toRawMinutes(pauseHhmm);
+
+    if (this.pauseOverrideCleared[shift]) {
+      // Honor the clear only while the picker still shows the recorded value the
+      // affordance reset it to; a subsequent picker edit cancels the clear and
+      // becomes an explicit override below.
+      if (currentMinutes === (this.pauseOverrideClearedMinutes[shift] ?? null)) {
+        m[specifiedKey] = true;
+        m[overrideKey] = null;
+        return;
+      }
+      this.pauseOverrideCleared[shift] = false;
+    }
+
+    const loadedMinutes = this.loadedPauseMinutes[shift] ?? null;
+    if (currentMinutes !== loadedMinutes) {
+      m[specifiedKey] = true;
+      m[overrideKey] = currentMinutes;
+    } else {
+      m[specifiedKey] = false;
+    }
+  }
+
+  // Clear affordance: "reset pause to recorded" for one shift. Marks the shift so
+  // save sends Pause{N}OverrideMinutesSpecified=true with a null override (revert
+  // to compute-from-slots), and visually resets the picker to the recorded sum so
+  // the admin sees the value they are reverting to before saving.
+  resetPauseToRecorded(shift: number): void {
+    const recordedMinutes = this.useOneMinuteIntervals
+      ? this.computeExactPauseMinutes(shift)
+      : (this.computeFiveMinutePauseMinutes(shift) ?? 0);
+    const hhmm = this.convertMinutesToTime(recordedMinutes);
+    this.pauseOverrideCleared[shift] = true;
+    // Store the picker's resulting raw minutes (convertMinutesToTime(0) → null →
+    // toRawMinutes → null) so the "still showing the recorded value" guard in
+    // applyPauseOverrideForShift compares like-for-like.
+    this.pauseOverrideClearedMinutes[shift] = this.toRawMinutes(hhmm);
+    this.workdayForm.get(`actual.shift${shift}.pause`)?.setValue(hhmm);
+    this.calculatePlanHours();
   }
 
   private getPlannedShiftMinutes(

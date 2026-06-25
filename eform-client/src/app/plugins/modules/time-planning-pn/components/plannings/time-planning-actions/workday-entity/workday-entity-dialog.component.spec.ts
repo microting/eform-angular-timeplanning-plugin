@@ -376,6 +376,52 @@ describe('WorkdayEntityDialogComponent', () => {
     });
   });
 
+  describe('Pause override (Approach C) save wiring', () => {
+    it('sets pause1OverrideMinutes + Specified when the pause field changes', () => {
+      component.ngOnInit();
+
+      // Edit shift 1's pause to 45 minutes (baseline was empty/0).
+      component.workdayForm.get('actual.shift1.pause')?.setValue('00:45');
+
+      component.onUpdateWorkDayEntity();
+
+      const m = component.data.planningPrDayModels as any;
+      expect(m.pause1OverrideMinutesSpecified).toBe(true);
+      expect(m.pause1OverrideMinutes).toBe(45);
+    });
+
+    it('leaves Specified=false when the pause field is unchanged', () => {
+      component.ngOnInit();
+
+      // Do not touch shift 1's pause; only change something else.
+      component.workdayForm.get('actual.shift1.start')?.setValue('08:00');
+
+      component.onUpdateWorkDayEntity();
+
+      const m = component.data.planningPrDayModels as any;
+      expect(m.pause1OverrideMinutesSpecified).toBe(false);
+    });
+
+    it('clear affordance signals revert-to-recorded (Specified=true, override=null)', () => {
+      component.ngOnInit();
+
+      component.resetPauseToRecorded(1);
+      component.onUpdateWorkDayEntity();
+
+      const m = component.data.planningPrDayModels as any;
+      expect(m.pause1OverrideMinutesSpecified).toBe(true);
+      expect(m.pause1OverrideMinutes).toBeNull();
+    });
+
+    it('prefers the served override for the displayed pause value', () => {
+      (component.data.planningPrDayModels as any).pause1OverrideMinutes = 30;
+
+      component.ngOnInit();
+
+      expect(component.workdayForm.get('actual.shift1.pause')?.value).toBe('00:30');
+    });
+  });
+
   describe('Flag Change Handling', () => {
     it('should turn off other flags when one is turned on', () => {
       component.ngOnInit();
