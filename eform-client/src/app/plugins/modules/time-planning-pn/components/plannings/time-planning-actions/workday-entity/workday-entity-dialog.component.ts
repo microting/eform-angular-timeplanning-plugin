@@ -158,11 +158,13 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
     const start1StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start1StartedAt, 'HH:mm', 'UTC');
     const stop1StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop1StoppedAt, 'HH:mm', 'UTC');
-    const pause1Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause1Id * 5);
+    const pause1Minutes = this.computeFiveMinutePauseMinutes(1);
+    const pause1Id = this.convertMinutesToTime(pause1Minutes ?? this.data.planningPrDayModels.pause1Id * 5);
 
     const start2StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start2StartedAt, 'HH:mm', 'UTC');
     const stop2StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop2StoppedAt, 'HH:mm', 'UTC');
-    const pause2Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause2Id * 5);
+    const pause2Minutes = this.computeFiveMinutePauseMinutes(2);
+    const pause2Id = this.convertMinutesToTime(pause2Minutes ?? this.data.planningPrDayModels.pause2Id * 5);
 
     const start3StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start3StartedAt, 'HH:mm', 'UTC');
     const stop3StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop3StoppedAt, 'HH:mm', 'UTC');
@@ -1085,6 +1087,31 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
       }
     }
     return Math.round(totalSeconds / 60);
+  }
+
+  // Sum every Pause*StartedAt/Pause*StoppedAt pair attached to the given shift
+  // using the 5-minute clock-tick rule that mirrors the C# backend under
+  // UseOneMinuteIntervals=false: each endpoint is floored DOWN to its absolute
+  // 5-minute boundary, then differenced per slot (floor(stop) - floor(start),
+  // NOT floor(stop - start)), and summed. A pause inside a single 5-minute cell
+  // contributes 0; each crossed 5-minute boundary adds 5. Returns whole
+  // 5-minute units, or null when the shift has no slot with both endpoints
+  // present (so the caller can fall back to the legacy pause{N}Id value).
+  private computeFiveMinutePauseMinutes(shift: number): number | null {
+    const fiveMinMs = 300000;
+    const floorTo5MinMs = (ms: number) => Math.floor(ms / fiveMinMs) * fiveMinMs;
+    let totalMs = 0;
+    let hasPair = false;
+    for (const [start, stop] of this.getPauseTimestampPairs(shift)) {
+      if (start && stop) {
+        hasPair = true;
+        totalMs += floorTo5MinMs(new Date(stop).getTime()) - floorTo5MinMs(new Date(start).getTime());
+      }
+    }
+    if (!hasPair) {
+      return null;
+    }
+    return totalMs / 60000;
   }
 
   private getPauseTimestampPairs(shift: number): Array<[string | null, string | null]> {

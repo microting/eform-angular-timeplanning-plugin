@@ -1341,27 +1341,29 @@ public class PlanRegistrationHelperTests
     }
 
     /// <summary>
-    /// Flag-off parity: stamps populated and legacy Pause1Id both present.
-    /// The flag-off branch must still return only the legacy tick result
-    /// (15 here) — proves the new flag-on logic did not touch the flag-off path.
+    /// Flag-off now derives pause from the floor-to-5min clock-tick delta of the
+    /// stamps, not the legacy Pause1Id. When a COMPLETE stamp pair is present it
+    /// wins and the legacy Pause1Id is ignored. Here a 3-min pause (12:00→12:03)
+    /// stays inside a single 5-min cell, so the clock-tick delta is 0 even though
+    /// Pause1Id = 4 would have meant a legacy 15-min pause.
     /// </summary>
     [Test]
-    public void AggregatePauseMinutes_LegacyMode_StampsPopulated_StillReturnsLegacyTicks()
+    public void AggregatePauseMinutes_LegacyMode_CompleteStampWins_OverLegacyTicks()
     {
-        // Arrange — stamps describe a 3-min pause, Pause1Id = 4 is a legacy 15-min companion.
+        // Arrange — complete 3-min stamp pair, Pause1Id = 4 is a legacy 15-min companion that must be ignored.
         var someDate = new DateTime(2026, 5, 7, 0, 0, 0);
         var pr = new PlanRegistration
         {
             Pause1StartedAt = someDate.AddHours(12),
             Pause1StoppedAt = someDate.AddHours(12).AddMinutes(3),
-            Pause1Id = 4, // legacy 15 min
+            Pause1Id = 4, // legacy 15 min — ignored because a complete stamp is present
         };
 
         // Act
         var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
 
-        // Assert — flag-off branch ignores stamps and uses legacy ticks only.
-        Assert.That(result, Is.EqualTo(15));
+        // Assert — complete stamp wins: 12:00→12:03 floors to 12:00→12:00 = 0 min.
+        Assert.That(result, Is.EqualTo(0));
     }
 
     // ------------------------------------------------------------------
