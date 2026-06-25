@@ -2762,10 +2762,10 @@ public class TimePlanningWorkingHoursService(
             // pass actualStamp=null and fall through to the existing 2-arg lookup.
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start, planning.Start1StartedAt, useOneMinuteIntervals)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Stop, planning.Stop1StoppedAt, useOneMinuteIntervals)));
-            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift1PauseMinutes)));
+            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift1PauseMinutes, planning.Shift1Pause)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start, planning.Start2StartedAt, useOneMinuteIntervals)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop, planning.Stop2StoppedAt, useOneMinuteIntervals)));
-            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift2PauseMinutes)));
+            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift2PauseMinutes, planning.Shift2Pause)));
             dataRow.Append(CreateNumericCell(planning.NettoHoursOverrideActive ? planning.NettoHoursOverride : planning.NettoHours));
             dataRow.Append(CreateNumericCell(planning.FlexHours));
             dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
@@ -2844,13 +2844,26 @@ public class TimePlanningWorkingHoursService(
 
 
     /// <summary>
+    /// A shift pause cell is blank only when the shift has no pause at all: the
+    /// canonical all-slots total is zero AND the legacy single-slot Pause{N}Id is
+    /// absent (id &lt;= 0). A present-but-zero pause (legacy id 1 -&gt; 0 min) still
+    /// renders, preserving the old "00:00"/0.0 output; a real/multi pause
+    /// (minutes &gt; 0) always renders regardless of the legacy id.
+    /// </summary>
+    private static bool IsShiftPauseBlank(int minutes, int? legacyPauseId)
+    {
+        return minutes == 0 && (legacyPauseId ?? 0) <= 0;
+    }
+
+    /// <summary>
     /// Formats a total pause duration in minutes as <c>HH:mm</c> (the Dashboard
     /// sheet's pause-cell format). Source is the canonical all-slots pause total
-    /// (<c>Shift{N}PauseMinutes</c>), not the legacy single-slot Pause{N}Id.
+    /// (<c>Shift{N}PauseMinutes</c>); the legacy single-slot Pause{N}Id is used
+    /// only to decide blank-vs-present-zero (see <see cref="IsShiftPauseBlank"/>).
     /// </summary>
-    internal static string FormatPauseMinutesAsTime(int minutes)
+    internal static string FormatPauseMinutesAsTime(int minutes, int? legacyPauseId)
     {
-        if (minutes <= 0)
+        if (IsShiftPauseBlank(minutes, legacyPauseId))
         {
             return "";
         }
@@ -2860,10 +2873,11 @@ public class TimePlanningWorkingHoursService(
     /// <summary>
     /// The day-fraction (minutes / 1440) of a total pause duration for the
     /// Dagsoversigt tab, mirroring <see cref="GetShiftTimeFraction"/>'s output.
+    /// The legacy single-slot Pause{N}Id only decides blank-vs-present-zero.
     /// </summary>
-    internal static double? PauseMinutesAsDayFraction(int minutes)
+    internal static double? PauseMinutesAsDayFraction(int minutes, int? legacyPauseId)
     {
-        if (minutes <= 0)
+        if (IsShiftPauseBlank(minutes, legacyPauseId))
         {
             return null;
         }
@@ -4245,10 +4259,10 @@ public class TimePlanningWorkingHoursService(
             var p = row.Planning;
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Start, p.Start1StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Stop, p.Stop1StoppedAt, row.UseOneMinuteIntervals)));
-            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift1PauseMinutes)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift1PauseMinutes, p.Shift1Pause)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Start, p.Start2StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Stop, p.Stop2StoppedAt, row.UseOneMinuteIntervals)));
-            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift2PauseMinutes)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift2PauseMinutes, p.Shift2Pause)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Start, p.Start3StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Stop, p.Stop3StoppedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Pause, null, row.UseOneMinuteIntervals)));
