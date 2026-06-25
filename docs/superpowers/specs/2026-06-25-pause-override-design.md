@@ -23,7 +23,7 @@ Add to entity `PlanRegistration` **and** `PlanRegistrationVersion` (both — the
 
 - `Pause1OverrideMinutes` … `Pause5OverrideMinutes` — `int?` (nullable). `null` = no override (compute from slots as today); non-null = authoritative total minutes for that shift. Nullable doubles as the "active" flag, so no separate bool column.
 
-EF Core migration in the base package (no raw SQL). Bump base version, publish to NuGet. Canonical base repo: `/home/rene/laptop/Documents/workspace/microting/eform-timeplanning-base` (the `/Documents/` copy is stale — confirm at implementation time).
+EF Core migration in the base package (no raw SQL). Bump base version, publish to NuGet. Canonical base repo: `/home/rene/Documents/workspace/microting/eform-timeplanning-base` (confirmed by owner; the `/laptop/` copy referenced in the 2026-06-19 handoff is NOT the one to use).
 
 ### Computation (plugin `PlanRegistrationHelper.cs`)
 
@@ -42,7 +42,17 @@ EF Core migration in the base package (no raw SQL). Bump base version, publish t
 
 ### Transport / DTO
 
-Add `Pause{N}OverrideMinutes` to `TimePlanningPlanningPrDayModel` (read+write) and the Angular model. gRPC/mobile transport: out of scope unless the mobile app needs to read it (it doesn't edit admin overrides) — confirm at implementation; if the proto carries pause fields, add the override there too for parity, else skip.
+Add `Pause{N}OverrideMinutes` to `TimePlanningPlanningPrDayModel` (read+write) and the Angular model.
+
+**Mobile / gRPC — IN SCOPE (owner requirement).** The flutter app needs the override for (a) presenting corrected pause history to all workers and (b) the back-in-time editors who can amend past registrations. So:
+- Add `pause{N}_override_minutes` to the relevant gRPC message(s) in `proto/` (the PlanningPrDay/working-hours message the app reads, and the update message the app writes when editing back in time). Regenerate C# + Dart proto.
+- gRPC service mapping: populate the override on read; persist it on write (same non-destructive rule — writing the override never clears sub-slots).
+- Honor the gRPC-only-transport invariant: touch only the gRPC path, not the old JSON/REST oracle.
+
+### Mobile app (flutter-time) — IN SCOPE
+
+- **Read (all users):** history/day views display the per-shift pause using the override when present (else the computed sum from #531). One source-of-truth helper, mirroring `ComputeShiftPauseSeconds`: override-wins-else-sum.
+- **Write (back-in-time editors only):** where the app permits editing a past shift's pause, write `pause{N}_override_minutes` (non-destructive — recorded start/stops preserved), gated to the roles/flows already allowed to edit back in time. Clearing reverts to null.
 
 ## Out of scope (YAGNI)
 - No per-slot editing UI (Approach B).
@@ -50,10 +60,11 @@ Add `Pause{N}OverrideMinutes` to `TimePlanningPlanningPrDayModel` (read+write) a
 - Shifts 3–5 get the columns for uniformity but the UI primarily exercises 1–2.
 
 ## Phasing (dependency order)
-1. **Base package:** entities + migration + version bump + publish NuGet (gate: published before plugin can consume).
-2. **Plugin C#:** bump base dep; `ComputeShiftPauseSeconds` + `ComputePlanningNettoMinutes` honor override; save path writes override and stops the destructive clear; DTO fields; `Integration.Test/SQL/420_*.sql` dump updated for the new columns; tests (override wins; slots preserved; revert-on-null).
+1. **Base package** (`/Documents/...eform-timeplanning-base`): entities (`PlanRegistration` + `PlanRegistrationVersion`) + EF migration + version bump + publish NuGet (gate: published before plugin can consume).
+2. **Plugin C#:** bump base dep; `ComputeShiftPauseSeconds` + `ComputePlanningNettoMinutes` honor override; save path writes override and stops the destructive clear; REST DTO fields; **gRPC proto + service mapping (read+write)**; `Integration.Test/SQL/420_*.sql` dump updated for the new columns; tests (override wins; slots preserved; revert-on-null).
 3. **Web:** dialog writes `pause{N}OverrideMinutes`; Angular model field.
-4. Each phase: dual gate (code-review + simplifier) → PR → CI green → merge. Land in order.
+4. **Mobile (flutter-time):** regen Dart proto; read override for history display (override-wins-else-sum helper); write override in the back-in-time edit flow (role-gated, non-destructive).
+5. Each phase: dual gate (code-review + simplifier) → PR → CI green → merge. Land in order; protocol/contract (base, then proto in plugin) before consumers (web, mobile).
 
 ## Verification
 - Unit: `ComputeShiftPauseSeconds` returns override when set, sums slots when null; netto/display/export reflect it.
