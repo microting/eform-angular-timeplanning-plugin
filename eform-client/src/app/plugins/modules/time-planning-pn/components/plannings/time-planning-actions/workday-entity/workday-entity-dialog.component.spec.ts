@@ -384,31 +384,16 @@ describe('WorkdayEntityDialogComponent', () => {
       // baseline (no override, no recorded sub-slot timestamps, a past date)
       // so the captured baseline is 0 and setting the pause to '00:45' is a
       // real change → Specified=true.
-      const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 5);
       const m = component.data.planningPrDayModels as any;
-      m.date = pastDate.toISOString();
-      m.pause1Id = 0;
-      m.pause1OverrideMinutes = null;
-      m.pause1OverrideMinutesSpecified = false;
-      // Null every shift-1 pause sub-slot the baseline can sum from
-      // (pause1, pause10-19, pause100-102) so computeExact/FiveMinute → 0.
-      ['1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '100', '101', '102']
-        .forEach((slot) => {
-          m[`pause${slot}StartedAt`] = null;
-          m[`pause${slot}StoppedAt`] = null;
-        });
-
       component.ngOnInit();
 
-      // Force a deterministic zero baseline, independent of the shared fixture
-      // and the ngOnInit recompute, so editing the field is an unambiguous change.
+      // Pin the save-wiring unit directly: with a zero baseline, a 45-min pause is
+      // an unambiguous change. (The form-group → value plumbing inside
+      // onUpdateWorkDayEntity is covered by the e2e round-trip; here we test
+      // applyPauseOverrideForShift's change-detection deterministically, free of
+      // the shared fixture and form-value quirks under jsdom.)
       (component as any).loadedPauseMinutes = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-
-      // Edit shift 1's pause to 45 minutes (baseline is 0) → real change.
-      component.workdayForm.get('actual.shift1.pause')?.setValue('00:45');
-
-      component.onUpdateWorkDayEntity();
+      (component as any).applyPauseOverrideForShift(1, '00:45');
 
       expect(m.pause1OverrideMinutesSpecified).toBe(true);
       expect(m.pause1OverrideMinutes).toBe(45);
