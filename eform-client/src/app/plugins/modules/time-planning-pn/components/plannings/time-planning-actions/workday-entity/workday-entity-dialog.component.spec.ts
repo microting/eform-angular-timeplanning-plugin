@@ -401,7 +401,11 @@ describe('WorkdayEntityDialogComponent', () => {
 
       component.ngOnInit();
 
-      // Edit shift 1's pause to 45 minutes (baseline is now empty/0).
+      // Force a deterministic zero baseline, independent of the shared fixture
+      // and the ngOnInit recompute, so editing the field is an unambiguous change.
+      (component as any).loadedPauseMinutes = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+      // Edit shift 1's pause to 45 minutes (baseline is 0) → real change.
       component.workdayForm.get('actual.shift1.pause')?.setValue('00:45');
 
       component.onUpdateWorkDayEntity();
