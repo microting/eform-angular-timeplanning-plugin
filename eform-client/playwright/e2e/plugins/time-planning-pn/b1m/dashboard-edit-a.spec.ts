@@ -196,6 +196,21 @@ test.describe('Dashboard edit values (b1m, flag-on, 1-minute granularity)', () =
     const h: number = 9;
     const hourFace = page.locator('.clock-face');
     await hourFace.first().waitFor({ state: 'visible', timeout: 5000 });
+
+    // Regression guard for the hours dial: the picker opens on the HOURS face,
+    // whose outer ring also uses .clock-face__number--outer. The 5-min-label
+    // thinning rule is scoped to the minute face only, so EVERY one of the 12
+    // hour labels (1..12) must stay visible here. (Bug #1625 hid hours 2,3,4,7,
+    // 8,9,12 because :nth-child(5n+1) kept only 1/6/11 on the 12-cell dial.)
+    // Shared across both faces (only the active face is in the DOM at a time).
+    const outerLabelSelector =
+      '.timepicker.timepicker--hide-non-multiples-of-5 .clock-face__number--outer > span';
+    const hourLabels = page.locator(outerLabelSelector);
+    await expect(hourLabels).toHaveCount(12);
+    for (let i = 0; i < 12; i++) {
+      await expect(hourLabels.nth(i), `hour label ${i + 1} should be visible`).toBeVisible();
+    }
+
     const hourAngle = (h % 12) * 30;
     const hourR = (h === 0 || h > 12) ? 60 : 100;
     const hourRad = hourAngle * Math.PI / 180;
@@ -211,8 +226,7 @@ test.describe('Dashboard edit values (b1m, flag-on, 1-minute granularity)', () =
     // clock face; non-multiple-of-5 labels are hidden (visibility:hidden) by the
     // .timepicker--hide-non-multiples-of-5 rule. The items remain in the DOM so
     // selection still works — only the label <span> is hidden.
-    const minuteLabels = page.locator(
-      '.timepicker.timepicker--hide-non-multiples-of-5 .clock-face__number--outer > span');
+    const minuteLabels = page.locator(outerLabelSelector);
     await expect(minuteLabels.nth(0)).toBeVisible();   // minute 0
     await expect(minuteLabels.nth(5)).toBeVisible();   // minute 5
     await expect(minuteLabels.nth(1)).toBeHidden();    // minute 1 label hidden
