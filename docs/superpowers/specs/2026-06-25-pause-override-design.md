@@ -63,8 +63,15 @@ Add `Pause{N}OverrideMinutes` to `TimePlanningPlanningPrDayModel` (read+write) a
 - No collapse/destructive reset (Approach A) — explicitly rejected by the documentation requirement.
 - Shifts 3–5 get the columns for uniformity but the UI primarily exercises 1–2.
 
+## Finalized server-side mechanism (no app changes)
+- **Distinct RPCs:** manual edit → `UpdatePlanningByCurrentUser`; punch-clock → `UpdateWorkingHours`. No ambiguity.
+- **WRITE (infer override, change-detected):** in `UpdateByCurrentUserNam` (and `Update`), compute the shift's current pause via `ComputeShiftPauseSeconds`; if the submitted `BreakNShift` total `(BreakNShift-1)*5` DIFFERS, set `PauseNOverrideMinutes` to it. If unchanged, leave the override as-is (so editing only start/stop never locks an override). NEVER modify the recorded `Pause*StartedAt/StoppedAt`. The destructive `ApplyExactMinutePause`/`ClearPauseTimestamps` on the one-minute path is replaced by setting the override.
+- **WEB write:** the dialog sets `PauseNOverrideMinutes` explicitly via a new DTO field (we control that code) — no inference needed there.
+- **READ (project for the unchanged app):** on BOTH `GetPlanningsByUser` (history) and `ReadWorkingHours` (today), when `PauseNOverrideMinutes` is set, the gRPC RESPONSE synthesizes a single `PauseNStartedAt/StoppedAt` pair of the override duration (anchored at shift start; fall back to `(StartNId-1)*5` from midnight if no start timestamp), zeroes that shift's sub-slot timestamps IN THE RESPONSE, and sets the `pauseMinutes` aggregate to the override sum. DB rows are untouched (documentation preserved).
+- **COMPUTE:** `ComputeShiftPauseSeconds` returns the override when set (else all-slots sum); `ComputePlanningNettoMinutes` (flag-off) honors it too.
+
 ## Phasing (dependency order)
-1. **Base package** (`/Documents/...eform-timeplanning-base`): entities (`PlanRegistration` + `PlanRegistrationVersion`) + EF migration + version bump + publish NuGet (gate: published before plugin can consume).
+1. **Base package** (`/Documents/...eform-timeplanning-base`): entities (`PlanRegistration` + `PlanRegistrationVersion`) + EF migration + publish. ✅ DONE — merged, tagged, **published v10.0.53**.
 2. **Plugin C#:** bump base dep; `ComputeShiftPauseSeconds` + `ComputePlanningNettoMinutes` honor override; save path writes override and stops the destructive clear; REST DTO fields; **gRPC proto + service mapping (read+write)**; `Integration.Test/SQL/420_*.sql` dump updated for the new columns; tests (override wins; slots preserved; revert-on-null).
 3. **Web:** dialog writes `pause{N}OverrideMinutes`; Angular model field.
 4. **Mobile (flutter-time):** regen Dart proto; read override for history display (override-wins-else-sum helper); write override in the back-in-time edit flow (role-gated, non-destructive).
