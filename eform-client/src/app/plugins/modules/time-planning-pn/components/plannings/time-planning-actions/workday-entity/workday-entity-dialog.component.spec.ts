@@ -378,9 +378,30 @@ describe('WorkdayEntityDialogComponent', () => {
 
   describe('Pause override (Approach C) save wiring', () => {
     it('sets pause1OverrideMinutes + Specified when the pause field changes', () => {
+      // `mockData` is a single shared object that earlier describes/beforeEach
+      // mutate (date rewrites, hours) and never reset, so the loaded pause
+      // baseline can already be non-zero. Give shift 1 a FRESH zero pause
+      // baseline (no override, no recorded sub-slot timestamps, a past date)
+      // so the captured baseline is 0 and setting the pause to '00:45' is a
+      // real change → Specified=true.
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 5);
+      const m = component.data.planningPrDayModels as any;
+      m.date = pastDate.toISOString();
+      m.pause1Id = 0;
+      m.pause1OverrideMinutes = null;
+      m.pause1OverrideMinutesSpecified = false;
+      // Null every shift-1 pause sub-slot the baseline can sum from
+      // (pause1, pause10-19, pause100-102) so computeExact/FiveMinute → 0.
+      ['1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '100', '101', '102']
+        .forEach((slot) => {
+          m[`pause${slot}StartedAt`] = null;
+          m[`pause${slot}StoppedAt`] = null;
+        });
+
       component.ngOnInit();
 
-      // Edit shift 1's pause to 45 minutes (baseline was empty/0).
+      // Edit shift 1's pause to 45 minutes (baseline is now empty/0).
       component.workdayForm.get('actual.shift1.pause')?.setValue('00:45');
 
       component.onUpdateWorkDayEntity();

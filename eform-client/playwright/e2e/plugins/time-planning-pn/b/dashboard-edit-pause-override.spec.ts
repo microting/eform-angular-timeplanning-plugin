@@ -40,26 +40,48 @@ async function waitForSpinner(page: Page) {
   }
 }
 
-// 5-minute clock-face picker driver (mirrors dashboard-edit-b.spec.ts).
+// Position-based clock-face picker driver. The brittle
+// `[style="transform: rotateZ(...deg) translateX(-50%);"] > span` selector is
+// overlapped and times out; the repo standard (and the passing l1m flag-on
+// counterpart) computes the hand angle and clicks `.clock-face` at the
+// resulting coordinate. This drives the same way for both the start/stop time
+// pickers and the pause picker. Math mirrors
+// l1m/dashboard-edit-pause-override.spec.ts.
 async function pickFiveMinute(page: Page, testid: string, timeStr: string) {
   await page.locator(`[data-testid="${testid}"]`).click();
-  const hours = parseInt(timeStr.split(':')[0], 10);
-  const minutes = parseInt(timeStr.split(':')[1], 10);
-  const degrees = (360 / 12) * hours;
-  const minuteDegrees = (360 / 60) * minutes;
-  if (degrees > 360) {
-    await page.locator(`[style="height: 85px; transform: rotateZ(${degrees}deg) translateX(-50%);"] > span`).click();
-  } else if (degrees === 0) {
-    await page.locator('[style="height: 85px; transform: rotateZ(720deg) translateX(-50%);"] > span').click();
-  } else {
-    await page.locator(`[style="transform: rotateZ(${degrees}deg) translateX(-50%);"] > span`).click();
-  }
-  if (minuteDegrees > 0) {
-    await page.locator(`[style="transform: rotateZ(${minuteDegrees}deg) translateX(-50%);"] > span`).click({ force: true });
-  } else {
-    await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
-  }
+  const [hourStr, minuteStr] = timeStr.split(':');
+  const h = parseInt(hourStr, 10);
+  const m = parseInt(minuteStr, 10);
+  const cx = 145, cy = 145;
+
+  const hourFace = page.locator('.clock-face');
+  await hourFace.first().waitFor({ state: 'visible', timeout: 5000 });
+  const hourAngle = (h % 12) * 30;
+  const hourR = (h === 0 || h > 12) ? 60 : 100;
+  const hourRad = hourAngle * Math.PI / 180;
+  await hourFace.first().click({
+    position: {
+      x: Math.round(cx + hourR * Math.sin(hourRad)),
+      y: Math.round(cy - hourR * Math.cos(hourRad)) + (Math.abs(Math.cos(hourRad)) < 0.01 ? 1 : 0),
+    },
+  });
+
+  await page.waitForTimeout(500);
+  const minuteFace = page.locator('.clock-face');
+  await minuteFace.first().waitFor({ state: 'visible', timeout: 5000 });
+  const minuteAngle = m * 6;
+  const minuteR = 100;
+  const minuteRad = minuteAngle * Math.PI / 180;
+  await minuteFace.first().click({
+    position: {
+      x: Math.round(cx + minuteR * Math.sin(minuteRad)),
+      y: Math.round(cy - minuteR * Math.cos(minuteRad)) + (Math.abs(Math.cos(minuteRad)) < 0.01 ? 1 : 0),
+    },
+  });
+  await page.waitForTimeout(500);
   await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
+  await page.locator('.cdk-overlay-backdrop').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(500);
 }
 
 async function openCell(page: Page, cellId: string) {
