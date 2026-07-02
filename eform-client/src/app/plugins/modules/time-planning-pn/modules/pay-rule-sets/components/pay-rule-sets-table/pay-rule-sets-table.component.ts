@@ -19,6 +19,7 @@ export class PayRuleSetsTableComponent implements OnInit {
   @Output() createClicked = new EventEmitter<void>();
   @Output() editClicked = new EventEmitter<PayRuleSetSimpleModel>();
   @Output() deleteClicked = new EventEmitter<PayRuleSetSimpleModel>();
+  @Output() viewClicked = new EventEmitter<PayRuleSetSimpleModel>();
 
   tableHeaders: MtxGridColumn[] = [];
 
@@ -52,6 +53,10 @@ export class PayRuleSetsTableComponent implements OnInit {
 
   openEditModal(payRuleSet: PayRuleSetSimpleModel) {
     this.editClicked.emit(payRuleSet);
+  }
+
+  openViewModal(payRuleSet: PayRuleSetSimpleModel) {
+    this.viewClicked.emit(payRuleSet);
   }
 
   openDeleteModal(payRuleSet: PayRuleSetSimpleModel) {

@@ -2,9 +2,11 @@ import {Component, DoCheck, OnInit,
   inject
 } from '@angular/core';
 import {
-  MAT_DIALOG_DATA
+  MAT_DIALOG_DATA,
+  MatDialog
 } from '@angular/material/dialog';
 import {AssignedSiteModel, CommonTagModel, GlobalAutoBreakSettingsModel, PayRuleSetSimpleModel} from '../../../../models';
+import {PayRuleSetsViewModalComponent} from '../../../../modules/pay-rule-sets/components/pay-rule-sets-view-modal/pay-rule-sets-view-modal.component';
 import {selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {Store} from '@ngrx/store';
 import {TimePlanningPnSettingsService, TimePlanningPnPayRuleSetsService} from 'src/app/plugins/modules/time-planning-pn/services';
@@ -31,6 +33,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
   private payRuleSetsService = inject(TimePlanningPnPayRuleSetsService);
   private store = inject(Store);
+  private dialog = inject(MatDialog);
 
   assignedSiteForm!: FormGroup;
 
@@ -651,6 +654,18 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
     f.get('daysBackInTimeAllowedEditingEnabled')?.setValue(daysBack);
     this.data.allowEditOfRegistrations = allowEdit;
     this.data.daysBackInTimeAllowedEditingEnabled = daysBack;
+  }
+
+  openPayRuleSetView(): void {
+    const payRuleSetId = this.assignedSiteForm.get('payRuleSetId')?.value;
+    if (!payRuleSetId) {
+      return;
+    }
+    this.dialog.open(PayRuleSetsViewModalComponent, {
+      data: { payRuleSetId },
+      minWidth: 800,
+      maxWidth: 1000,
+    });
   }
 
   loadPayRuleSets(): void {
