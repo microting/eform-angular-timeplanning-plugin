@@ -12,9 +12,9 @@ Our PayLineGenerator supports:
 
 ---
 
-## Already Implemented (19 presets)
+## Already Implemented (21 presets)
 
-### GLS-A / 3F (11 presets)
+### GLS-A / 3F (13 presets)
 | Preset | OT Tiers | Period | Status |
 |--------|----------|--------|--------|
 | Jordbrug - Standard | 30%/80% | 2024-2026 | Done |
