@@ -1643,4 +1643,146 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     ],
     payDayTypeRules: [],
   },
+
+  // -----------------------------------------------------------------
+  // GLS-A / 3F - Udenlandske praktikanter Landbrug 2024-2026
+  //
+  // Foreign trainees under the Jordbrug 2024-2026 §48 loenoversigt.
+  // Two variants mirror the standard Jordbrug split:
+  //   Andet arbejde  = field work (Mon-Sat 06:00-18:00 only)
+  //   Staldarbejde   = animal care (24/7 rostered)
+  // Overtime tiers differ from standard Jordbrug (+50%/+80% not
+  // +30%/+80%). Fixed kr/day supplements for Saturday afternoon +
+  // Sunday/Holiday are modelled via the SAT_ANIMAL_AFTERNOON and
+  // ANIMAL_SUN_HOLIDAY codes (same shape as adult Dyrehold).
+  //
+  // Age note: the loenoversigt distinguishes trainees under 25 vs 25+
+  // during months 7-18 of the praktik (higher kr/time for 25+). The
+  // distinction is purely a base HOURLY RATE (kr/time), not a rule
+  // structure - tier cutoffs, day types, pay codes, and supplements
+  // are identical. One preset per work variant serves both age groups;
+  // the actual hourly rate is configured per worker at payroll time.
+  //
+  // Source: https://www.gls-a.dk/loenoversigt/ (Praktikanter-landbrug)
+  // -----------------------------------------------------------------
+
+  // Preset 38: Udenlandske praktikanter Landbrug - Andet arbejde
+  {
+    key: 'glsa-jordbrug-praktikant-udl-andet',
+    group: 'GLS-A / 3F',
+    label: 'Praktikant udl - Andet arbejde',
+    name: 'GLS-A / 3F - Udenlandske praktikanter Landbrug Andet arbejde 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_50' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_50' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      // Sundays/holidays are not permitted for andet arbejde; if worked,
+      // all hours are overtime (first 2h @ 50%, remainder @ 80%).
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 7200, payCode: 'OVERTIME_50' },
+          { order: 2, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 7200, payCode: 'OVERTIME_50' },
+          { order: 2, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [
+          { order: 1, upToSeconds: 7200, payCode: 'OVERTIME_50' },
+          { order: 2, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+    ],
+    payDayTypeRules: [],
+  },
+
+  // Preset 39: Udenlandske praktikanter Landbrug - Staldarbejde
+  {
+    key: 'glsa-jordbrug-praktikant-udl-staldarbejde',
+    group: 'GLS-A / 3F',
+    label: 'Praktikant udl - Staldarbejde',
+    name: 'GLS-A / 3F - Udenlandske praktikanter Landbrug Staldarbejde 2024-2026',
+    locked: true,
+    payDayRules: [
+      {
+        dayCode: 'WEEKDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_50' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
+      },
+      // Saturday: fallback tier splits at 6h to match the 12:00 clock split
+      // used by the payDayTypeRule below (which drives calculation).
+      {
+        dayCode: 'SATURDAY',
+        payTierRules: [
+          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: null, payCode: 'SAT_ANIMAL_AFTERNOON' },
+        ],
+      },
+      {
+        dayCode: 'SUNDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ANIMAL_SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'HOLIDAY',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ANIMAL_SUN_HOLIDAY' }],
+      },
+      {
+        dayCode: 'GRUNDLOVSDAG',
+        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ANIMAL_SUN_HOLIDAY' }],
+      },
+    ],
+    payDayTypeRules: [
+      // Saturday supplement kicks in from 12:00 (kr/dag fixed rate applies
+      // for hours after noon per the loenoversigt).
+      {
+        dayType: 'Saturday',
+        defaultPayCode: 'SAT_NORMAL',
+        priority: 1,
+        timeBandRules: [
+          { startSecondOfDay: 0, endSecondOfDay: 43200, payCode: 'SAT_NORMAL', priority: 1 },
+          { startSecondOfDay: 43200, endSecondOfDay: 86400, payCode: 'SAT_ANIMAL_AFTERNOON', priority: 1 },
+        ],
+      },
+      {
+        dayType: 'Sunday',
+        defaultPayCode: 'ANIMAL_SUN_HOLIDAY',
+        priority: 1,
+        timeBandRules: [
+          { startSecondOfDay: 0, endSecondOfDay: 86400, payCode: 'ANIMAL_SUN_HOLIDAY', priority: 1 },
+        ],
+      },
+      {
+        dayType: 'Holiday',
+        defaultPayCode: 'ANIMAL_SUN_HOLIDAY',
+        priority: 1,
+        timeBandRules: [
+          { startSecondOfDay: 0, endSecondOfDay: 86400, payCode: 'ANIMAL_SUN_HOLIDAY', priority: 1 },
+        ],
+      },
+    ],
+  },
 ];

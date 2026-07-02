@@ -28,6 +28,11 @@ Our PayLineGenerator supports:
 | Skovbrug - Standard | 30%/100% | 2024-2026 | Done |
 | Skovbrug - Elev u18 | 30%/100% (8h cap) | 2024-2026 | Done |
 | Skovbrug - Elev o18 | 30%/100% | 2024-2026 | Done |
+| Udenlandske praktikanter Landbrug - Andet arbejde | 50%/80% (2h middle tier) | 2024-2026 | Done |
+| Udenlandske praktikanter Landbrug - Staldarbejde | 50%/80% weekday + Sat 12:00 split + ANIMAL_SUN_HOLIDAY | 2024-2026 | Done |
+
+Source for Udenlandske praktikanter: [GLS-A Loenoversigt: Praktikanter-landbrug 2025](https://www.gls-a.dk/wp-content/uploads/2025/02/Praktikanter-landbrug2025.pdf).
+The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of the praktik, but only in the base kr/time - not the rule structure. Tier cutoffs, day types, pay codes, and supplements are identical for both age groups, so a single preset per work variant serves both.
 
 ### KA / Krifa (8 presets)
 | Preset | OT Tiers | Period | Status |

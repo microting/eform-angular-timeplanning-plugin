@@ -53,7 +53,9 @@ public class PayRuleSetService : IPayRuleSetService
         "GLS-A / 3F - Agroindustri Minkfoder Standard 2024-2026",
         "GLS-A / 3F - Agroindustri Minkfoder Elev 2024-2026",
         "GLS-A / 3F - Agroindustri Ovrige Standard 2024-2026",
-        "GLS-A / 3F - Agroindustri Ovrige Elev 2024-2026"
+        "GLS-A / 3F - Agroindustri Ovrige Elev 2024-2026",
+        "GLS-A / 3F - Udenlandske praktikanter Landbrug Andet arbejde 2024-2026",
+        "GLS-A / 3F - Udenlandske praktikanter Landbrug Staldarbejde 2024-2026"
     };
 
     private readonly TimePlanningPnDbContext _dbContext;
