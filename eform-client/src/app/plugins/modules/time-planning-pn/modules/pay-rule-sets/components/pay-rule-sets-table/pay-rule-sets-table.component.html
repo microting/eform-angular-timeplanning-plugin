@@ -30,6 +30,14 @@
     <mat-menu #menu="matMenu">
       <button
         mat-menu-item
+        id="viewPayRuleSetBtn-{{i}}"
+        (click)="openViewModal(row)"
+      >
+        <mat-icon>visibility</mat-icon>
+        <span>{{ 'View pay rule set' | translate }}</span>
+      </button>
+      <button
+        mat-menu-item
         id="editPayRuleSetBtn-{{i}}"
         [disabled]="isLockedPreset(row)"
         [matTooltip]="isLockedPreset(row) ? ('Cannot edit locked preset' | translate) : ''"

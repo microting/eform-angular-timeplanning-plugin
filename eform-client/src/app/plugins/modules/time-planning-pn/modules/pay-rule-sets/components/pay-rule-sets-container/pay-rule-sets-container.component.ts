@@ -5,6 +5,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {PayRuleSetsDeleteModalComponent} from '../pay-rule-sets-delete-modal/pay-rule-sets-delete-modal.component';
 import {PayRuleSetsCreateModalComponent} from '../pay-rule-sets-create-modal/pay-rule-sets-create-modal.component';
 import {PayRuleSetsEditModalComponent} from '../pay-rule-sets-edit-modal/pay-rule-sets-edit-modal.component';
+import {PayRuleSetsViewModalComponent} from '../pay-rule-sets-view-modal/pay-rule-sets-view-modal.component';
 import {TimePlanningPnPayRuleSetsService} from '../../../../services';
 import {Subscription} from 'rxjs';
 import {ToastrService} from 'ngx-toastr';
@@ -95,6 +96,14 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
         // Refresh the table after successful edit (skip for locked: read-only)
         this.getPayRuleSets();
       }
+    });
+  }
+
+  onViewClicked(payRuleSet: PayRuleSetSimpleModel): void {
+    this.dialog.open(PayRuleSetsViewModalComponent, {
+      data: { payRuleSetId: payRuleSet.id },
+      minWidth: 800,
+      maxWidth: 1000,
     });
   }
 

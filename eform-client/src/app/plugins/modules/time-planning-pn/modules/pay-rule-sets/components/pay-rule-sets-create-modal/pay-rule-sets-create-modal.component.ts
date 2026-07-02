@@ -8,6 +8,7 @@ import { TimePlanningPnPayRuleSetsService } from '../../../../services';
 import { PayRuleSetCreateModel, PAY_RULE_SET_PRESETS, PayRuleSetPreset } from '../../../../models';
 import { PayDayRuleDialogComponent, PayDayRuleDialogData } from '../pay-day-rule-dialog/pay-day-rule-dialog.component';
 import { DayTypeRuleDialogComponent, DayTypeRuleDialogData } from '../day-type-rule-dialog/day-type-rule-dialog.component';
+import { formatTierChain, formatTimeBands } from '../../pay-rule-format.util';
 
 @Component({
   selector: 'app-pay-rule-sets-create-modal',
@@ -88,36 +89,11 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
   }
 
   formatTierChain(tiers: Array<{ order: number; upToSeconds: number | null; payCode: string }>): string {
-    return [...tiers]
-      .sort((a, b) => a.order - b.order)
-      .map(t => {
-        if (t.upToSeconds != null) {
-          return `${t.payCode} (${this.secondsToHM(t.upToSeconds)})`;
-        }
-        return t.payCode;
-      })
-      .join(' \u2192 ');
+    return formatTierChain(tiers);
   }
 
   formatTimeBands(bands: Array<{ startSecondOfDay: number; endSecondOfDay: number; payCode: string; priority: number }>): string {
-    return bands
-      .map(b => `${this.secondsToHHMM(b.startSecondOfDay)}-${this.secondsToHHMM(b.endSecondOfDay)} ${b.payCode}`)
-      .join(' | ');
-  }
-
-  private secondsToHM(seconds: number): string {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    if (m === 0) {
-      return `${h}h`;
-    }
-    return `${h}h${m}m`;
-  }
-
-  private secondsToHHMM(seconds: number): string {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    return formatTimeBands(bands);
   }
 
   private initForm(): void {

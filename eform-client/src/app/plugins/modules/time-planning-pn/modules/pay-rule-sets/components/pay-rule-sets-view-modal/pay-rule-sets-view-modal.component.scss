@@ -1,0 +1,54 @@
+mat-dialog-content {
+  min-height: 120px;
+}
+
+mat-dialog-actions {
+  border-top: 1px solid var(--border, #e0e0e0);
+  padding-top: 16px;
+}
+
+.rule-set-view {
+  .rules-summary {
+    margin-bottom: 16px;
+
+    h4 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-header, #333);
+    }
+  }
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    tr {
+      border-bottom: 1px solid var(--border, #e0e0e0);
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    td {
+      padding: 6px 8px;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    .day-code,
+    .day-type {
+      font-weight: 500;
+      white-space: nowrap;
+      width: 120px;
+      color: var(--text-body, #555);
+    }
+
+    .tiers,
+    .bands {
+      color: var(--text-header, #333);
+      word-break: break-word;
+    }
+  }
+}

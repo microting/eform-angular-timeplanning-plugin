@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>{{ payRuleSet?.name || ('Pay Rule Set' | translate) }}</h2>
+
+<div mat-dialog-content *ngIf="!loading && payRuleSet">
+  <div class="rule-set-view">
+    <div class="rules-summary" *ngIf="payRuleSet.payDayRules?.length > 0">
+      <h4>{{ 'Pay Day Rules' | translate }}</h4>
+      <table class="summary-table">
+        <tr *ngFor="let rule of payRuleSet.payDayRules">
+          <td class="day-code">{{ rule.dayCode }}</td>
+          <td class="tiers">{{ formatTierChain(rule.payTierRules || []) }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="rules-summary" *ngIf="payRuleSet.payDayTypeRules?.length > 0">
+      <h4>{{ 'Day Type Rules' | translate }}</h4>
+      <table class="summary-table">
+        <tr *ngFor="let rule of payRuleSet.payDayTypeRules">
+          <td class="day-type">{{ rule.dayType }}</td>
+          <td class="bands">{{ formatDayTypeRule(rule) }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div mat-dialog-content *ngIf="loading">
+  <p>{{ 'Loading...' | translate }}</p>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button class="btn-cancel" mat-dialog-close id="closeViewPayRuleSetBtn">
+    {{ 'Close' | translate }}
+  </button>
+</div>

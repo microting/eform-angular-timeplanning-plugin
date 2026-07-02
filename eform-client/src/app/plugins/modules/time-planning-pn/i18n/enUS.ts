@@ -267,6 +267,8 @@ export const enUS = {
   'Edit Pay Rule Set': 'Edit Pay Rule Set',
   'Edit pay rule set': 'Edit pay rule set',
   'Delete pay rule set': 'Delete pay rule set',
+  'View pay rule set': 'View pay rule set',
+  'Close': 'Close',
   'Overenskomst': 'Overenskomst',
   'Blank (custom rules)': 'Blank (custom rules)',
   'This is a fixed overenskomst. Rules cannot be edited.': 'This is a fixed overenskomst. Rules cannot be edited.',
