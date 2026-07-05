@@ -962,7 +962,7 @@ public class TimeSettingService(
         dbAssignedSite.AllowPersonalTimeRegistration = site.AllowPersonalTimeRegistration;
         dbAssignedSite.AllowAcceptOfPlannedHours = site.AllowAcceptOfPlannedHours;
         dbAssignedSite.Resigned = site.Resigned;
-        dbAssignedSite.UseOneMinuteIntervals = site.UseOneMinuteIntervals;
+        dbAssignedSite.UseOneMinuteIntervals = dbAssignedSite.UseOneMinuteIntervals || site.UseOneMinuteIntervals;
         dbAssignedSite.UsePunchClock = site.UsePunchClock;
         dbAssignedSite.UseDetailedPauseEditing = site.UseDetailedPauseEditing;
         dbAssignedSite.AutoBreakCalculationActive = site.AutoBreakCalculationActive;
