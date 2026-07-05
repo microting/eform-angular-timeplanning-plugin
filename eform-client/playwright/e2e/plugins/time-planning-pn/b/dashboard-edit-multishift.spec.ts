@@ -293,14 +293,30 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
    * Regression guard for the "Use 1-minute intervals" first-user toggle in
    * the Advanced settings section. The flag rides on AssignedSite end-to-end
    * (entity → DTO → write mapping → angular model) and is persisted by
-   * TimeSettingService.UpdateAssignedSite. This test only verifies the UI
-   * plumbing — the toggle is dormant (no business-logic consumers yet).
+   * TimeSettingService.UpdateAssignedSite.
+   *
+   * The toggle is now ONE-WAY:
+   *   - `assigned-site-dialog.component.ts` initializes the FormControl as
+   *     `{ value, disabled: value === true }` — once the loaded value is
+   *     true, the control is born disabled and can never be unchecked via
+   *     the UI again.
+   *   - `TimeSettingService.UpdateAssignedSite` ORs the incoming flag with
+   *     the stored one (`dbAssignedSite.UseOneMinuteIntervals =
+   *     dbAssignedSite.UseOneMinuteIntervals || site.UseOneMinuteIntervals`),
+   *     so the backend can't flip it back to false either.
+   *   - The checkbox carries an always-visible description line
+   *     ('Once enabled, 1-minute intervals cannot be turned off') warning
+   *     about this.
+   *
+   * This test locks that one-way contract for both the CI-fresh-seed case
+   * (checkbox starts unchecked+enabled) and the rerun case (a prior run, or
+   * seed data, already flipped it on — checkbox starts checked+disabled).
    *
    * Gating: !data.resigned && (selectCurrentUserIsFirstUser$ | async).
    * The CI seed logs in as admin@admin.com (LoginConstants.username), which
    * is the first-user, so the toggle is visible in this test context.
    */
-  test('first-user can toggle Use 1-minute intervals; persists across save+reopen', async ({ page }) => {
+  test('Use 1-minute intervals is one-way: ticking persists and locks the control', async ({ page }) => {
     await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
     const indexPromise = page.waitForResponse(r =>
       r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
@@ -328,14 +344,20 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     const cb = page.locator('#useOneMinuteIntervals input[type="checkbox"]');
     await expect(cb).toBeAttached({ timeout: 30000 });
 
-    // Capture the starting state, flip it, save, re-open, assert it persisted.
-    const wasChecked = await cb.isChecked();
-    await page.locator('#useOneMinuteIntervals').click({ force: true });
-    if (wasChecked) {
-      await expect(cb).not.toBeChecked();
-    } else {
-      await expect(cb).toBeChecked();
+    if (await cb.isChecked()) {
+      // Rerun path: the flag was already flipped on (by a previous run of
+      // this test, or by seed data). The control must be locked — never
+      // force-click a disabled control, that would mask the very bug this
+      // test guards against.
+      await expect(cb).toBeDisabled();
+      await page.locator('#cancelButton').click();
+      return;
     }
+
+    // First-run path: checkbox starts unchecked and enabled.
+    await expect(cb).toBeEnabled();
+    await page.locator('#useOneMinuteIntervals').click({ force: true });
+    await expect(cb).toBeChecked();
 
     const assignSitePromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT',
@@ -345,10 +367,10 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     await waitForSpinner(page);
     await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 15000 });
 
-    // Re-open and assert the new value round-tripped. Await the
-    // post-save GET so the freshly-persisted toggle is bound before we
-    // assert (prior failure: line 305 `toBeChecked` saw the pre-bind
-    // unchecked state in a 5s window).
+    // Re-open and assert the value round-tripped AND the control is now
+    // locked. Await the post-save GET so the freshly-persisted toggle is
+    // bound before we assert (prior failure mode: asserting inside the
+    // default 5s window can race the post-open data bind).
     const getAssignedSitePromise2 = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
         && r.url().includes('siteId=')
@@ -360,11 +382,8 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
 
     const cbReopened = page.locator('#useOneMinuteIntervals input[type="checkbox"]');
     await expect(cbReopened).toBeAttached({ timeout: 30000 });
-    if (wasChecked) {
-      await expect(cbReopened).not.toBeChecked({ timeout: 15000 });
-    } else {
-      await expect(cbReopened).toBeChecked({ timeout: 15000 });
-    }
+    await expect(cbReopened).toBeChecked({ timeout: 15000 });
+    await expect(cbReopened).toBeDisabled({ timeout: 15000 });
 
     await page.locator('#cancelButton').click();
   });

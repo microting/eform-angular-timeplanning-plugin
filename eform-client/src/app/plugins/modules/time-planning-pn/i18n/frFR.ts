@@ -399,4 +399,5 @@ export const frFR = {
   'Use 1-minute intervals': 'Utilisez des intervalles d&#39;une minute.',
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Activez la granularité à la minute pour la saisie de l&#39;heure. Les incréments par défaut sont de 5 ou 15 minutes.',
   Details: 'Détails',
+  'Once enabled, 1-minute intervals cannot be turned off': 'Une fois activées, les intervalles d&#39;une minute ne peuvent pas être désactivés.',
 };

@@ -397,4 +397,5 @@ export const da = {
   timer: 'timer',
   'View pay rule set': 'Vis lønregelsæt',
   Close: 'Luk',
+  'Once enabled, 1-minute intervals cannot be turned off': 'Når 1-minutters intervaller er aktiveret, kan de ikke slås fra',
 };

@@ -319,6 +319,7 @@ export const enUS = {
   'Advanced settings': 'Advanced settings',
   'Use 1-minute intervals': 'Use 1-minute intervals',
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.',
+  'Once enabled, 1-minute intervals cannot be turned off': 'Once enabled, 1-minute intervals cannot be turned off',
   'Hide employee from daily operations. Requires a resignation date. All settings below are hidden.': 'Hide employee from daily operations. Requires a resignation date. All settings below are hidden.',
   'Breaks are calculated automatically from the rule set. Manual break entry on shift tabs is disabled.': 'Breaks are calculated automatically from the rule set. Manual break entry on shift tabs is disabled.',
   'Main switch. When active, select registration method and editing policy below.': 'Main switch. When active, select registration method and editing policy below.',
