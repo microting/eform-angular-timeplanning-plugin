@@ -1096,6 +1096,27 @@ public class TimePlanningWorkingHoursService(
         return nettoMinutes;
     }
 
+    /// <summary>
+    /// Resolves the current user's timezone for wall-time normalization of
+    /// incoming timestamp strings (see <see cref="WallTimeNormalizer"/>).
+    /// Falls back to Europe/Copenhagen when the user has no zone stored or
+    /// resolution fails.
+    /// </summary>
+    private async Task<TimeZoneInfo> GetCurrentUserTimeZoneOrDefaultAsync()
+    {
+        try
+        {
+            return await userService.GetCurrentUserTimeZoneInfo() ?? WallTimeNormalizer.DefaultTimeZone;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                "Could not resolve current user timezone, falling back to {DefaultTimeZoneId}: {Message}",
+                WallTimeNormalizer.DefaultTimeZoneId, ex.Message);
+            return WallTimeNormalizer.DefaultTimeZone;
+        }
+    }
+
     public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
     {
         Console.WriteLine($"[DEBUG-GRPC-UPDATE] === UpdateWorkingHour (PERSONAL mode, 1-param) entered ===");
@@ -1110,6 +1131,12 @@ public class TimePlanningWorkingHoursService(
             Console.WriteLine($"[DEBUG-GRPC-UPDATE] EARLY RETURN: GetCurrentUserAsync returned null (JWT missing or invalid)");
             return new OperationResult(false, localizationService.GetString("UserNotFound"));
         }
+
+        // Wall-time-at-rest hardening: any Z/offset-carrying stamp below is
+        // normalized into this zone before persisting (naive digits — what the
+        // app actually sends here today — pass through verbatim).
+        var userTimeZone = await GetCurrentUserTimeZoneOrDefaultAsync();
+
         var currentUser = baseDbContext.Users
             .Single(x => x.Id == currentUserAsync.Id);
         var userEmail = (currentUser.Email ?? "").Trim().ToLower();
@@ -1199,221 +1226,221 @@ public class TimePlanningWorkingHoursService(
                 Pause5Id = model.Shift5Pause ?? 0,
                 Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start1StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start1StartedAt, userTimeZone),
                 Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop1StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop1StoppedAt, userTimeZone),
                 Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause1StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause1StartedAt, userTimeZone),
                 Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause1StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause1StoppedAt, userTimeZone),
                 Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start2StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start2StartedAt, userTimeZone),
                 Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop2StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop2StoppedAt, userTimeZone),
                 Start3StartedAt = string.IsNullOrEmpty(model.Start3StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start3StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start3StartedAt, userTimeZone),
                 Stop3StoppedAt = string.IsNullOrEmpty(model.Stop3StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop3StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop3StoppedAt, userTimeZone),
                 Start4StartedAt = string.IsNullOrEmpty(model.Start4StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start4StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start4StartedAt, userTimeZone),
                 Stop4StoppedAt = string.IsNullOrEmpty(model.Stop4StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop4StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop4StoppedAt, userTimeZone),
                 Start5StartedAt = string.IsNullOrEmpty(model.Start5StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start5StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start5StartedAt, userTimeZone),
                 Stop5StoppedAt = string.IsNullOrEmpty(model.Stop5StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop5StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop5StoppedAt, userTimeZone),
                 Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause10StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause10StartedAt, userTimeZone),
                 Pause10StoppedAt = string.IsNullOrEmpty(model.Pause10StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause10StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause10StoppedAt, userTimeZone),
                 Pause11StartedAt = string.IsNullOrEmpty(model.Pause11StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause11StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause11StartedAt, userTimeZone),
                 Pause11StoppedAt = string.IsNullOrEmpty(model.Pause11StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause11StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause11StoppedAt, userTimeZone),
                 Pause12StartedAt = string.IsNullOrEmpty(model.Pause12StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause12StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause12StartedAt, userTimeZone),
                 Pause12StoppedAt = string.IsNullOrEmpty(model.Pause12StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause12StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause12StoppedAt, userTimeZone),
                 Pause13StartedAt = string.IsNullOrEmpty(model.Pause13StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause13StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause13StartedAt, userTimeZone),
                 Pause13StoppedAt = string.IsNullOrEmpty(model.Pause13StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause13StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause13StoppedAt, userTimeZone),
                 Pause14StartedAt = string.IsNullOrEmpty(model.Pause14StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause14StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause14StartedAt, userTimeZone),
                 Pause14StoppedAt = string.IsNullOrEmpty(model.Pause14StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause14StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause14StoppedAt, userTimeZone),
                 Pause15StartedAt = string.IsNullOrEmpty(model.Pause15StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause15StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause15StartedAt, userTimeZone),
                 Pause15StoppedAt = string.IsNullOrEmpty(model.Pause15StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause15StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause15StoppedAt, userTimeZone),
                 Pause16StartedAt = string.IsNullOrEmpty(model.Pause16StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause16StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause16StartedAt, userTimeZone),
                 Pause16StoppedAt = string.IsNullOrEmpty(model.Pause16StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause16StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause16StoppedAt, userTimeZone),
                 Pause17StartedAt = string.IsNullOrEmpty(model.Pause17StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause17StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause17StartedAt, userTimeZone),
                 Pause17StoppedAt = string.IsNullOrEmpty(model.Pause17StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause17StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause17StoppedAt, userTimeZone),
                 Pause18StartedAt = string.IsNullOrEmpty(model.Pause18StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause18StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause18StartedAt, userTimeZone),
                 Pause18StoppedAt = string.IsNullOrEmpty(model.Pause18StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause18StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause18StoppedAt, userTimeZone),
                 Pause19StartedAt = string.IsNullOrEmpty(model.Pause19StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause19StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause19StartedAt, userTimeZone),
                 Pause19StoppedAt = string.IsNullOrEmpty(model.Pause19StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause19StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause19StoppedAt, userTimeZone),
                 Pause100StartedAt = string.IsNullOrEmpty(model.Pause100StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause100StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause100StartedAt, userTimeZone),
                 Pause100StoppedAt = string.IsNullOrEmpty(model.Pause100StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause100StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause100StoppedAt, userTimeZone),
                 Pause101StartedAt = string.IsNullOrEmpty(model.Pause101StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause101StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause101StartedAt, userTimeZone),
                 Pause101StoppedAt = string.IsNullOrEmpty(model.Pause101StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause101StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause101StoppedAt, userTimeZone),
                 Pause102StartedAt = string.IsNullOrEmpty(model.Pause102StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause102StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause102StartedAt, userTimeZone),
                 Pause102StoppedAt = string.IsNullOrEmpty(model.Pause102StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause102StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause102StoppedAt, userTimeZone),
 
                 Pause2StartedAt = string.IsNullOrEmpty(model.Pause2StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause2StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause2StartedAt, userTimeZone),
                 Pause2StoppedAt = string.IsNullOrEmpty(model.Pause2StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause2StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause2StoppedAt, userTimeZone),
                 Pause20StartedAt = string.IsNullOrEmpty(model.Pause20StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause20StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause20StartedAt, userTimeZone),
                 Pause20StoppedAt = string.IsNullOrEmpty(model.Pause20StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause20StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause20StoppedAt, userTimeZone),
                 Pause21StartedAt = string.IsNullOrEmpty(model.Pause21StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause21StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause21StartedAt, userTimeZone),
                 Pause21StoppedAt = string.IsNullOrEmpty(model.Pause21StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause21StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause21StoppedAt, userTimeZone),
                 Pause22StartedAt = string.IsNullOrEmpty(model.Pause22StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause22StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause22StartedAt, userTimeZone),
                 Pause22StoppedAt = string.IsNullOrEmpty(model.Pause22StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause22StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause22StoppedAt, userTimeZone),
                 Pause23StartedAt = string.IsNullOrEmpty(model.Pause23StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause23StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause23StartedAt, userTimeZone),
                 Pause23StoppedAt = string.IsNullOrEmpty(model.Pause23StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause23StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause23StoppedAt, userTimeZone),
                 Pause24StartedAt = string.IsNullOrEmpty(model.Pause24StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause24StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause24StartedAt, userTimeZone),
                 Pause24StoppedAt = string.IsNullOrEmpty(model.Pause24StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause24StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause24StoppedAt, userTimeZone),
                 Pause25StartedAt = string.IsNullOrEmpty(model.Pause25StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause25StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause25StartedAt, userTimeZone),
                 Pause25StoppedAt = string.IsNullOrEmpty(model.Pause25StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause25StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause25StoppedAt, userTimeZone),
                 Pause26StartedAt = string.IsNullOrEmpty(model.Pause26StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause26StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause26StartedAt, userTimeZone),
                 Pause26StoppedAt = string.IsNullOrEmpty(model.Pause26StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause26StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause26StoppedAt, userTimeZone),
                 Pause27StartedAt = string.IsNullOrEmpty(model.Pause27StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause27StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause27StartedAt, userTimeZone),
                 Pause27StoppedAt = string.IsNullOrEmpty(model.Pause27StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause27StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause27StoppedAt, userTimeZone),
                 Pause28StartedAt = string.IsNullOrEmpty(model.Pause28StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause28StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause28StartedAt, userTimeZone),
                 Pause28StoppedAt = string.IsNullOrEmpty(model.Pause28StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause28StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause28StoppedAt, userTimeZone),
                 Pause29StartedAt = string.IsNullOrEmpty(model.Pause29StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause29StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause29StartedAt, userTimeZone),
                 Pause29StoppedAt = string.IsNullOrEmpty(model.Pause29StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause29StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause29StoppedAt, userTimeZone),
                 Pause200StartedAt = string.IsNullOrEmpty(model.Pause200StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause200StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause200StartedAt, userTimeZone),
                 Pause200StoppedAt = string.IsNullOrEmpty(model.Pause200StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause200StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause200StoppedAt, userTimeZone),
                 Pause201StartedAt = string.IsNullOrEmpty(model.Pause201StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause201StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause201StartedAt, userTimeZone),
                 Pause201StoppedAt = string.IsNullOrEmpty(model.Pause201StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause201StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause201StoppedAt, userTimeZone),
                 Pause202StartedAt = string.IsNullOrEmpty(model.Pause202StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause202StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause202StartedAt, userTimeZone),
                 Pause202StoppedAt = string.IsNullOrEmpty(model.Pause202StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause202StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause202StoppedAt, userTimeZone),
                 Pause3StartedAt = string.IsNullOrEmpty(model.Pause3StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause3StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause3StartedAt, userTimeZone),
                 Pause3StoppedAt = string.IsNullOrEmpty(model.Pause3StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause3StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause3StoppedAt, userTimeZone),
                 Pause4StartedAt = string.IsNullOrEmpty(model.Pause4StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause4StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause4StartedAt, userTimeZone),
                 Pause4StoppedAt = string.IsNullOrEmpty(model.Pause4StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause4StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause4StoppedAt, userTimeZone),
                 Pause5StartedAt = string.IsNullOrEmpty(model.Pause5StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause5StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause5StartedAt, userTimeZone),
                 Pause5StoppedAt = string.IsNullOrEmpty(model.Pause5StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause5StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause5StoppedAt, userTimeZone),
                 Flex = 0,
                 WorkerComment = model.CommentWorker,
                 SdkSitId = sdkSite.MicrotingUid!.Value,
@@ -1491,225 +1518,225 @@ public class TimePlanningWorkingHoursService(
 
             planRegistration.Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
                 ? null
-                : DateTime.Parse(model.Start1StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start1StartedAt, userTimeZone);
             planRegistration.Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop1StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop1StoppedAt, userTimeZone);
             planRegistration.Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause1StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause1StartedAt, userTimeZone);
             planRegistration.Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause1StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause1StoppedAt, userTimeZone);
             planRegistration.Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt)
                 ? null
-                : DateTime.Parse(model.Start2StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start2StartedAt, userTimeZone);
             planRegistration.Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop2StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop2StoppedAt, userTimeZone);
             planRegistration.Start3StartedAt = string.IsNullOrEmpty(model.Start3StartedAt)
                 ? null
-                : DateTime.Parse(model.Start3StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start3StartedAt, userTimeZone);
             planRegistration.Stop3StoppedAt = string.IsNullOrEmpty(model.Stop3StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop3StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop3StoppedAt, userTimeZone);
             planRegistration.Start4StartedAt = string.IsNullOrEmpty(model.Start4StartedAt)
                 ? null
-                : DateTime.Parse(model.Start4StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start4StartedAt, userTimeZone);
             planRegistration.Stop4StoppedAt = string.IsNullOrEmpty(model.Stop4StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop4StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop4StoppedAt, userTimeZone);
             planRegistration.Start5StartedAt = string.IsNullOrEmpty(model.Start5StartedAt)
                 ? null
-                : DateTime.Parse(model.Start5StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start5StartedAt, userTimeZone);
             planRegistration.Stop5StoppedAt = string.IsNullOrEmpty(model.Stop5StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop5StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop5StoppedAt, userTimeZone);
 
             planRegistration.Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause10StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause10StartedAt, userTimeZone);
             planRegistration.Pause10StoppedAt = string.IsNullOrEmpty(model.Pause10StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause10StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause10StoppedAt, userTimeZone);
             planRegistration.Pause11StartedAt = string.IsNullOrEmpty(model.Pause11StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause11StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause11StartedAt, userTimeZone);
             planRegistration.Pause11StoppedAt = string.IsNullOrEmpty(model.Pause11StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause11StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause11StoppedAt, userTimeZone);
             planRegistration.Pause12StartedAt = string.IsNullOrEmpty(model.Pause12StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause12StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause12StartedAt, userTimeZone);
             planRegistration.Pause12StoppedAt = string.IsNullOrEmpty(model.Pause12StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause12StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause12StoppedAt, userTimeZone);
             planRegistration.Pause13StartedAt = string.IsNullOrEmpty(model.Pause13StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause13StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause13StartedAt, userTimeZone);
             planRegistration.Pause13StoppedAt = string.IsNullOrEmpty(model.Pause13StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause13StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause13StoppedAt, userTimeZone);
             planRegistration.Pause14StartedAt = string.IsNullOrEmpty(model.Pause14StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause14StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause14StartedAt, userTimeZone);
             planRegistration.Pause14StoppedAt = string.IsNullOrEmpty(model.Pause14StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause14StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause14StoppedAt, userTimeZone);
             planRegistration.Pause15StartedAt = string.IsNullOrEmpty(model.Pause15StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause15StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause15StartedAt, userTimeZone);
             planRegistration.Pause15StoppedAt = string.IsNullOrEmpty(model.Pause15StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause15StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause15StoppedAt, userTimeZone);
             planRegistration.Pause16StartedAt = string.IsNullOrEmpty(model.Pause16StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause16StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause16StartedAt, userTimeZone);
             planRegistration.Pause16StoppedAt = string.IsNullOrEmpty(model.Pause16StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause16StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause16StoppedAt, userTimeZone);
             planRegistration.Pause17StartedAt = string.IsNullOrEmpty(model.Pause17StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause17StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause17StartedAt, userTimeZone);
             planRegistration.Pause17StoppedAt = string.IsNullOrEmpty(model.Pause17StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause17StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause17StoppedAt, userTimeZone);
             planRegistration.Pause18StartedAt = string.IsNullOrEmpty(model.Pause18StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause18StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause18StartedAt, userTimeZone);
             planRegistration.Pause18StoppedAt = string.IsNullOrEmpty(model.Pause18StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause18StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause18StoppedAt, userTimeZone);
             planRegistration.Pause19StartedAt = string.IsNullOrEmpty(model.Pause19StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause19StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause19StartedAt, userTimeZone);
             planRegistration.Pause19StoppedAt = string.IsNullOrEmpty(model.Pause19StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause19StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause19StoppedAt, userTimeZone);
             planRegistration.Pause100StartedAt = string.IsNullOrEmpty(model.Pause100StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause100StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause100StartedAt, userTimeZone);
             planRegistration.Pause100StoppedAt = string.IsNullOrEmpty(model.Pause100StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause100StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause100StoppedAt, userTimeZone);
             planRegistration.Pause101StartedAt = string.IsNullOrEmpty(model.Pause101StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause101StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause101StartedAt, userTimeZone);
             planRegistration.Pause101StoppedAt = string.IsNullOrEmpty(model.Pause101StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause101StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause101StoppedAt, userTimeZone);
             planRegistration.Pause102StartedAt = string.IsNullOrEmpty(model.Pause102StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause102StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause102StartedAt, userTimeZone);
             planRegistration.Pause102StoppedAt = string.IsNullOrEmpty(model.Pause102StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause102StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause102StoppedAt, userTimeZone);
 
             planRegistration.Pause2StartedAt = string.IsNullOrEmpty(model.Pause2StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause2StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause2StartedAt, userTimeZone);
             planRegistration.Pause2StoppedAt = string.IsNullOrEmpty(model.Pause2StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause2StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause2StoppedAt, userTimeZone);
             planRegistration.Pause20StartedAt = string.IsNullOrEmpty(model.Pause20StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause20StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause20StartedAt, userTimeZone);
             planRegistration.Pause20StoppedAt = string.IsNullOrEmpty(model.Pause20StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause20StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause20StoppedAt, userTimeZone);
             planRegistration.Pause21StartedAt = string.IsNullOrEmpty(model.Pause21StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause21StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause21StartedAt, userTimeZone);
             planRegistration.Pause21StoppedAt = string.IsNullOrEmpty(model.Pause21StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause21StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause21StoppedAt, userTimeZone);
             planRegistration.Pause22StartedAt = string.IsNullOrEmpty(model.Pause22StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause22StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause22StartedAt, userTimeZone);
             planRegistration.Pause22StoppedAt = string.IsNullOrEmpty(model.Pause22StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause22StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause22StoppedAt, userTimeZone);
             planRegistration.Pause23StartedAt = string.IsNullOrEmpty(model.Pause23StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause23StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause23StartedAt, userTimeZone);
             planRegistration.Pause23StoppedAt = string.IsNullOrEmpty(model.Pause23StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause23StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause23StoppedAt, userTimeZone);
             planRegistration.Pause24StartedAt = string.IsNullOrEmpty(model.Pause24StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause24StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause24StartedAt, userTimeZone);
             planRegistration.Pause24StoppedAt = string.IsNullOrEmpty(model.Pause24StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause24StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause24StoppedAt, userTimeZone);
             planRegistration.Pause25StartedAt = string.IsNullOrEmpty(model.Pause25StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause25StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause25StartedAt, userTimeZone);
             planRegistration.Pause25StoppedAt = string.IsNullOrEmpty(model.Pause25StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause25StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause25StoppedAt, userTimeZone);
             planRegistration.Pause26StartedAt = string.IsNullOrEmpty(model.Pause26StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause26StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause26StartedAt, userTimeZone);
             planRegistration.Pause26StoppedAt = string.IsNullOrEmpty(model.Pause26StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause26StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause26StoppedAt, userTimeZone);
             planRegistration.Pause27StartedAt = string.IsNullOrEmpty(model.Pause27StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause27StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause27StartedAt, userTimeZone);
             planRegistration.Pause27StoppedAt = string.IsNullOrEmpty(model.Pause27StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause27StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause27StoppedAt, userTimeZone);
             planRegistration.Pause28StartedAt = string.IsNullOrEmpty(model.Pause28StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause28StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause28StartedAt, userTimeZone);
             planRegistration.Pause28StoppedAt = string.IsNullOrEmpty(model.Pause28StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause28StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause28StoppedAt, userTimeZone);
             planRegistration.Pause29StartedAt = string.IsNullOrEmpty(model.Pause29StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause29StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause29StartedAt, userTimeZone);
             planRegistration.Pause29StoppedAt = string.IsNullOrEmpty(model.Pause29StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause29StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause29StoppedAt, userTimeZone);
             planRegistration.Pause200StartedAt = string.IsNullOrEmpty(model.Pause200StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause200StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause200StartedAt, userTimeZone);
             planRegistration.Pause200StoppedAt = string.IsNullOrEmpty(model.Pause200StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause200StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause200StoppedAt, userTimeZone);
             planRegistration.Pause201StartedAt = string.IsNullOrEmpty(model.Pause201StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause201StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause201StartedAt, userTimeZone);
             planRegistration.Pause201StoppedAt = string.IsNullOrEmpty(model.Pause201StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause201StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause201StoppedAt, userTimeZone);
             planRegistration.Pause202StartedAt = string.IsNullOrEmpty(model.Pause202StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause202StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause202StartedAt, userTimeZone);
             planRegistration.Pause202StoppedAt = string.IsNullOrEmpty(model.Pause202StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause202StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause202StoppedAt, userTimeZone);
 
             planRegistration.Pause3StartedAt = string.IsNullOrEmpty(model.Pause3StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause3StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause3StartedAt, userTimeZone);
             planRegistration.Pause3StoppedAt = string.IsNullOrEmpty(model.Pause3StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause3StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause3StoppedAt, userTimeZone);
 
             planRegistration.Pause4StartedAt = string.IsNullOrEmpty(model.Pause4StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause4StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause4StartedAt, userTimeZone);
             planRegistration.Pause4StoppedAt = string.IsNullOrEmpty(model.Pause4StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause4StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause4StoppedAt, userTimeZone);
 
             planRegistration.Pause5StartedAt = string.IsNullOrEmpty(model.Pause5StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause5StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause5StartedAt, userTimeZone);
             planRegistration.Pause5StoppedAt = string.IsNullOrEmpty(model.Pause5StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause5StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause5StoppedAt, userTimeZone);
 
             planRegistration.Shift1PauseNumber = model.Shift1PauseNumber;
             planRegistration.Shift2PauseNumber = model.Shift2PauseNumber;
@@ -1789,6 +1816,15 @@ public class TimePlanningWorkingHoursService(
 
         await registrationDevice.Update(dbContext);
 
+        // Wall-time-at-rest hardening: the kiosk flow authenticates via a
+        // device token — there is no authenticated user whose timezone could
+        // be resolved, so Z/offset-carrying stamps are normalized into the
+        // documented default zone (Europe/Copenhagen), the same assumption the
+        // wall-time interval ids and EnsureTimestampsFromIds have always
+        // encoded. Naive digits (the shape the kiosk app actually sends) pass
+        // through verbatim.
+        var userTimeZone = WallTimeNormalizer.DefaultTimeZone;
+
         var todayAtMidnight = model.Date;
         Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK: Querying PlanRegistrations: Date={todayAtMidnight:yyyy-MM-dd}, SdkSitId={sdkSiteId}");
 
@@ -1831,229 +1867,229 @@ public class TimePlanningWorkingHoursService(
                 Pause5Id = model.Shift5Pause ?? 0,
                 Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start1StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start1StartedAt, userTimeZone),
                 Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop1StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop1StoppedAt, userTimeZone),
 
                 Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start2StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start2StartedAt, userTimeZone),
                 Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop2StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop2StoppedAt, userTimeZone),
 
                 Start3StartedAt = string.IsNullOrEmpty(model.Start3StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start3StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start3StartedAt, userTimeZone),
                 Stop3StoppedAt = string.IsNullOrEmpty(model.Stop3StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop3StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop3StoppedAt, userTimeZone),
 
                 Start4StartedAt = string.IsNullOrEmpty(model.Start4StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start4StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start4StartedAt, userTimeZone),
                 Stop4StoppedAt = string.IsNullOrEmpty(model.Stop4StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop4StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop4StoppedAt, userTimeZone),
 
                 Start5StartedAt = string.IsNullOrEmpty(model.Start5StartedAt)
                     ? null
-                    : DateTime.Parse(model.Start5StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Start5StartedAt, userTimeZone),
                 Stop5StoppedAt = string.IsNullOrEmpty(model.Stop5StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Stop5StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Stop5StoppedAt, userTimeZone),
 
                 Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause1StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause1StartedAt, userTimeZone),
                 Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause1StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause1StoppedAt, userTimeZone),
                 Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause10StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause10StartedAt, userTimeZone),
                 Pause10StoppedAt = string.IsNullOrEmpty(model.Pause10StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause10StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause10StoppedAt, userTimeZone),
                 Pause11StartedAt = string.IsNullOrEmpty(model.Pause11StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause11StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause11StartedAt, userTimeZone),
                 Pause11StoppedAt = string.IsNullOrEmpty(model.Pause11StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause11StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause11StoppedAt, userTimeZone),
                 Pause12StartedAt = string.IsNullOrEmpty(model.Pause12StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause12StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause12StartedAt, userTimeZone),
                 Pause12StoppedAt = string.IsNullOrEmpty(model.Pause12StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause12StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause12StoppedAt, userTimeZone),
                 Pause13StartedAt = string.IsNullOrEmpty(model.Pause13StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause13StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause13StartedAt, userTimeZone),
                 Pause13StoppedAt = string.IsNullOrEmpty(model.Pause13StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause13StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause13StoppedAt, userTimeZone),
                 Pause14StartedAt = string.IsNullOrEmpty(model.Pause14StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause14StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause14StartedAt, userTimeZone),
                 Pause14StoppedAt = string.IsNullOrEmpty(model.Pause14StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause14StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause14StoppedAt, userTimeZone),
                 Pause15StartedAt = string.IsNullOrEmpty(model.Pause15StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause15StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause15StartedAt, userTimeZone),
                 Pause15StoppedAt = string.IsNullOrEmpty(model.Pause15StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause15StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause15StoppedAt, userTimeZone),
                 Pause16StartedAt = string.IsNullOrEmpty(model.Pause16StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause16StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause16StartedAt, userTimeZone),
                 Pause16StoppedAt = string.IsNullOrEmpty(model.Pause16StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause16StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause16StoppedAt, userTimeZone),
                 Pause17StartedAt = string.IsNullOrEmpty(model.Pause17StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause17StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause17StartedAt, userTimeZone),
                 Pause17StoppedAt = string.IsNullOrEmpty(model.Pause17StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause17StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause17StoppedAt, userTimeZone),
                 Pause18StartedAt = string.IsNullOrEmpty(model.Pause18StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause18StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause18StartedAt, userTimeZone),
                 Pause18StoppedAt = string.IsNullOrEmpty(model.Pause18StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause18StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause18StoppedAt, userTimeZone),
                 Pause19StartedAt = string.IsNullOrEmpty(model.Pause19StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause19StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause19StartedAt, userTimeZone),
                 Pause19StoppedAt = string.IsNullOrEmpty(model.Pause19StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause19StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause19StoppedAt, userTimeZone),
                 Pause100StartedAt = string.IsNullOrEmpty(model.Pause100StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause100StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause100StartedAt, userTimeZone),
                 Pause100StoppedAt = string.IsNullOrEmpty(model.Pause100StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause100StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause100StoppedAt, userTimeZone),
                 Pause101StartedAt = string.IsNullOrEmpty(model.Pause101StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause101StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause101StartedAt, userTimeZone),
                 Pause101StoppedAt = string.IsNullOrEmpty(model.Pause101StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause101StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause101StoppedAt, userTimeZone),
                 Pause102StartedAt = string.IsNullOrEmpty(model.Pause102StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause102StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause102StartedAt, userTimeZone),
                 Pause102StoppedAt = string.IsNullOrEmpty(model.Pause102StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause102StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause102StoppedAt, userTimeZone),
 
                 Pause2StartedAt = string.IsNullOrEmpty(model.Pause2StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause2StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause2StartedAt, userTimeZone),
                 Pause2StoppedAt = string.IsNullOrEmpty(model.Pause2StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause2StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause2StoppedAt, userTimeZone),
                 Pause20StartedAt = string.IsNullOrEmpty(model.Pause20StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause20StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause20StartedAt, userTimeZone),
                 Pause20StoppedAt = string.IsNullOrEmpty(model.Pause20StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause20StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause20StoppedAt, userTimeZone),
                 Pause21StartedAt = string.IsNullOrEmpty(model.Pause21StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause21StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause21StartedAt, userTimeZone),
                 Pause21StoppedAt = string.IsNullOrEmpty(model.Pause21StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause21StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause21StoppedAt, userTimeZone),
                 Pause22StartedAt = string.IsNullOrEmpty(model.Pause22StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause22StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause22StartedAt, userTimeZone),
                 Pause22StoppedAt = string.IsNullOrEmpty(model.Pause22StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause22StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause22StoppedAt, userTimeZone),
                 Pause23StartedAt = string.IsNullOrEmpty(model.Pause23StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause23StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause23StartedAt, userTimeZone),
                 Pause23StoppedAt = string.IsNullOrEmpty(model.Pause23StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause23StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause23StoppedAt, userTimeZone),
                 Pause24StartedAt = string.IsNullOrEmpty(model.Pause24StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause24StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause24StartedAt, userTimeZone),
                 Pause24StoppedAt = string.IsNullOrEmpty(model.Pause24StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause24StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause24StoppedAt, userTimeZone),
                 Pause25StartedAt = string.IsNullOrEmpty(model.Pause25StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause25StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause25StartedAt, userTimeZone),
                 Pause25StoppedAt = string.IsNullOrEmpty(model.Pause25StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause25StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause25StoppedAt, userTimeZone),
                 Pause26StartedAt = string.IsNullOrEmpty(model.Pause26StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause26StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause26StartedAt, userTimeZone),
                 Pause26StoppedAt = string.IsNullOrEmpty(model.Pause26StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause26StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause26StoppedAt, userTimeZone),
                 Pause27StartedAt = string.IsNullOrEmpty(model.Pause27StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause27StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause27StartedAt, userTimeZone),
                 Pause27StoppedAt = string.IsNullOrEmpty(model.Pause27StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause27StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause27StoppedAt, userTimeZone),
                 Pause28StartedAt = string.IsNullOrEmpty(model.Pause28StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause28StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause28StartedAt, userTimeZone),
                 Pause28StoppedAt = string.IsNullOrEmpty(model.Pause28StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause28StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause28StoppedAt, userTimeZone),
                 Pause29StartedAt = string.IsNullOrEmpty(model.Pause29StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause29StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause29StartedAt, userTimeZone),
                 Pause29StoppedAt = string.IsNullOrEmpty(model.Pause29StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause29StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause29StoppedAt, userTimeZone),
                 Pause200StartedAt = string.IsNullOrEmpty(model.Pause200StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause200StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause200StartedAt, userTimeZone),
                 Pause200StoppedAt = string.IsNullOrEmpty(model.Pause200StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause200StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause200StoppedAt, userTimeZone),
                 Pause201StartedAt = string.IsNullOrEmpty(model.Pause201StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause201StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause201StartedAt, userTimeZone),
                 Pause201StoppedAt = string.IsNullOrEmpty(model.Pause201StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause201StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause201StoppedAt, userTimeZone),
                 Pause202StartedAt = string.IsNullOrEmpty(model.Pause202StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause202StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause202StartedAt, userTimeZone),
                 Pause202StoppedAt = string.IsNullOrEmpty(model.Pause202StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause202StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause202StoppedAt, userTimeZone),
 
                 Pause3StartedAt = string.IsNullOrEmpty(model.Pause3StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause3StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause3StartedAt, userTimeZone),
                 Pause3StoppedAt = string.IsNullOrEmpty(model.Pause3StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause3StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause3StoppedAt, userTimeZone),
 
                 Pause4StartedAt = string.IsNullOrEmpty(model.Pause4StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause4StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause4StartedAt, userTimeZone),
                 Pause4StoppedAt = string.IsNullOrEmpty(model.Pause4StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause4StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause4StoppedAt, userTimeZone),
 
                 Pause5StartedAt = string.IsNullOrEmpty(model.Pause5StartedAt)
                     ? null
-                    : DateTime.Parse(model.Pause5StartedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause5StartedAt, userTimeZone),
                 Pause5StoppedAt = string.IsNullOrEmpty(model.Pause5StoppedAt)
                     ? null
-                    : DateTime.Parse(model.Pause5StoppedAt),
+                    : WallTimeNormalizer.NormalizeToWallTime(model.Pause5StoppedAt, userTimeZone),
                 Flex = 0,
                 WorkerComment = model.CommentWorker,
                 SdkSitId = sdkSiteId!.Value,
@@ -2138,208 +2174,208 @@ public class TimePlanningWorkingHoursService(
 
             planRegistration.Start1StartedAt = string.IsNullOrEmpty(model.Start1StartedAt)
                 ? null
-                : DateTime.Parse(model.Start1StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start1StartedAt, userTimeZone);
             planRegistration.Stop1StoppedAt = string.IsNullOrEmpty(model.Stop1StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop1StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop1StoppedAt, userTimeZone);
 
             planRegistration.Start2StartedAt = string.IsNullOrEmpty(model.Start2StartedAt)
                 ? null
-                : DateTime.Parse(model.Start2StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start2StartedAt, userTimeZone);
             planRegistration.Stop2StoppedAt = string.IsNullOrEmpty(model.Stop2StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop2StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop2StoppedAt, userTimeZone);
 
             planRegistration.Start3StartedAt = string.IsNullOrEmpty(model.Start3StartedAt)
                 ? null
-                : DateTime.Parse(model.Start3StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start3StartedAt, userTimeZone);
             planRegistration.Stop3StoppedAt = string.IsNullOrEmpty(model.Stop3StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop3StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop3StoppedAt, userTimeZone);
 
             planRegistration.Start4StartedAt = string.IsNullOrEmpty(model.Start4StartedAt)
                 ? null
-                : DateTime.Parse(model.Start4StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start4StartedAt, userTimeZone);
             planRegistration.Stop4StoppedAt = string.IsNullOrEmpty(model.Stop4StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop4StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop4StoppedAt, userTimeZone);
 
             planRegistration.Start5StartedAt = string.IsNullOrEmpty(model.Start5StartedAt)
                 ? null
-                : DateTime.Parse(model.Start5StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Start5StartedAt, userTimeZone);
             planRegistration.Stop5StoppedAt = string.IsNullOrEmpty(model.Stop5StoppedAt)
                 ? null
-                : DateTime.Parse(model.Stop5StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Stop5StoppedAt, userTimeZone);
 
             planRegistration.Pause1StartedAt = string.IsNullOrEmpty(model.Pause1StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause1StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause1StartedAt, userTimeZone);
             planRegistration.Pause1StoppedAt = string.IsNullOrEmpty(model.Pause1StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause1StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause1StoppedAt, userTimeZone);
             planRegistration.Pause10StartedAt = string.IsNullOrEmpty(model.Pause10StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause10StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause10StartedAt, userTimeZone);
             planRegistration.Pause10StoppedAt = string.IsNullOrEmpty(model.Pause10StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause10StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause10StoppedAt, userTimeZone);
             planRegistration.Pause11StartedAt = string.IsNullOrEmpty(model.Pause11StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause11StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause11StartedAt, userTimeZone);
             planRegistration.Pause11StoppedAt = string.IsNullOrEmpty(model.Pause11StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause11StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause11StoppedAt, userTimeZone);
             planRegistration.Pause12StartedAt = string.IsNullOrEmpty(model.Pause12StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause12StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause12StartedAt, userTimeZone);
             planRegistration.Pause12StoppedAt = string.IsNullOrEmpty(model.Pause12StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause12StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause12StoppedAt, userTimeZone);
             planRegistration.Pause13StartedAt = string.IsNullOrEmpty(model.Pause13StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause13StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause13StartedAt, userTimeZone);
             planRegistration.Pause13StoppedAt = string.IsNullOrEmpty(model.Pause13StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause13StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause13StoppedAt, userTimeZone);
             planRegistration.Pause14StartedAt = string.IsNullOrEmpty(model.Pause14StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause14StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause14StartedAt, userTimeZone);
             planRegistration.Pause14StoppedAt = string.IsNullOrEmpty(model.Pause14StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause14StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause14StoppedAt, userTimeZone);
             planRegistration.Pause15StartedAt = string.IsNullOrEmpty(model.Pause15StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause15StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause15StartedAt, userTimeZone);
             planRegistration.Pause15StoppedAt = string.IsNullOrEmpty(model.Pause15StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause15StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause15StoppedAt, userTimeZone);
             planRegistration.Pause16StartedAt = string.IsNullOrEmpty(model.Pause16StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause16StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause16StartedAt, userTimeZone);
             planRegistration.Pause16StoppedAt = string.IsNullOrEmpty(model.Pause16StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause16StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause16StoppedAt, userTimeZone);
             planRegistration.Pause17StartedAt = string.IsNullOrEmpty(model.Pause17StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause17StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause17StartedAt, userTimeZone);
             planRegistration.Pause17StoppedAt = string.IsNullOrEmpty(model.Pause17StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause17StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause17StoppedAt, userTimeZone);
             planRegistration.Pause18StartedAt = string.IsNullOrEmpty(model.Pause18StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause18StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause18StartedAt, userTimeZone);
             planRegistration.Pause18StoppedAt = string.IsNullOrEmpty(model.Pause18StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause18StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause18StoppedAt, userTimeZone);
             planRegistration.Pause19StartedAt = string.IsNullOrEmpty(model.Pause19StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause19StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause19StartedAt, userTimeZone);
             planRegistration.Pause19StoppedAt = string.IsNullOrEmpty(model.Pause19StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause19StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause19StoppedAt, userTimeZone);
             planRegistration.Pause100StartedAt = string.IsNullOrEmpty(model.Pause100StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause100StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause100StartedAt, userTimeZone);
             planRegistration.Pause100StoppedAt = string.IsNullOrEmpty(model.Pause100StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause100StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause100StoppedAt, userTimeZone);
             planRegistration.Pause101StartedAt = string.IsNullOrEmpty(model.Pause101StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause101StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause101StartedAt, userTimeZone);
             planRegistration.Pause101StoppedAt = string.IsNullOrEmpty(model.Pause101StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause101StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause101StoppedAt, userTimeZone);
             planRegistration.Pause102StartedAt = string.IsNullOrEmpty(model.Pause102StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause102StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause102StartedAt, userTimeZone);
             planRegistration.Pause102StoppedAt = string.IsNullOrEmpty(model.Pause102StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause102StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause102StoppedAt, userTimeZone);
 
             planRegistration.Pause2StartedAt = string.IsNullOrEmpty(model.Pause2StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause2StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause2StartedAt, userTimeZone);
             planRegistration.Pause2StoppedAt = string.IsNullOrEmpty(model.Pause2StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause2StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause2StoppedAt, userTimeZone);
             planRegistration.Pause20StartedAt = string.IsNullOrEmpty(model.Pause20StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause20StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause20StartedAt, userTimeZone);
             planRegistration.Pause20StoppedAt = string.IsNullOrEmpty(model.Pause20StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause20StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause20StoppedAt, userTimeZone);
             planRegistration.Pause21StartedAt = string.IsNullOrEmpty(model.Pause21StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause21StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause21StartedAt, userTimeZone);
             planRegistration.Pause21StoppedAt = string.IsNullOrEmpty(model.Pause21StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause21StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause21StoppedAt, userTimeZone);
             planRegistration.Pause22StartedAt = string.IsNullOrEmpty(model.Pause22StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause22StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause22StartedAt, userTimeZone);
             planRegistration.Pause22StoppedAt = string.IsNullOrEmpty(model.Pause22StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause22StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause22StoppedAt, userTimeZone);
             planRegistration.Pause23StartedAt = string.IsNullOrEmpty(model.Pause23StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause23StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause23StartedAt, userTimeZone);
             planRegistration.Pause23StoppedAt = string.IsNullOrEmpty(model.Pause23StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause23StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause23StoppedAt, userTimeZone);
             planRegistration.Pause24StartedAt = string.IsNullOrEmpty(model.Pause24StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause24StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause24StartedAt, userTimeZone);
             planRegistration.Pause24StoppedAt = string.IsNullOrEmpty(model.Pause24StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause24StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause24StoppedAt, userTimeZone);
             planRegistration.Pause25StartedAt = string.IsNullOrEmpty(model.Pause25StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause25StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause25StartedAt, userTimeZone);
             planRegistration.Pause25StoppedAt = string.IsNullOrEmpty(model.Pause25StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause25StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause25StoppedAt, userTimeZone);
             planRegistration.Pause26StartedAt = string.IsNullOrEmpty(model.Pause26StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause26StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause26StartedAt, userTimeZone);
             planRegistration.Pause26StoppedAt = string.IsNullOrEmpty(model.Pause26StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause26StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause26StoppedAt, userTimeZone);
             planRegistration.Pause27StartedAt = string.IsNullOrEmpty(model.Pause27StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause27StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause27StartedAt, userTimeZone);
             planRegistration.Pause27StoppedAt = string.IsNullOrEmpty(model.Pause27StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause27StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause27StoppedAt, userTimeZone);
             planRegistration.Pause28StartedAt = string.IsNullOrEmpty(model.Pause28StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause28StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause28StartedAt, userTimeZone);
             planRegistration.Pause28StoppedAt = string.IsNullOrEmpty(model.Pause28StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause28StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause28StoppedAt, userTimeZone);
             planRegistration.Pause29StartedAt = string.IsNullOrEmpty(model.Pause29StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause29StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause29StartedAt, userTimeZone);
             planRegistration.Pause29StoppedAt = string.IsNullOrEmpty(model.Pause29StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause29StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause29StoppedAt, userTimeZone);
             planRegistration.Pause200StartedAt = string.IsNullOrEmpty(model.Pause200StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause200StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause200StartedAt, userTimeZone);
             planRegistration.Pause200StoppedAt = string.IsNullOrEmpty(model.Pause200StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause200StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause200StoppedAt, userTimeZone);
             planRegistration.Pause201StartedAt = string.IsNullOrEmpty(model.Pause201StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause201StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause201StartedAt, userTimeZone);
             planRegistration.Pause201StoppedAt = string.IsNullOrEmpty(model.Pause201StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause201StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause201StoppedAt, userTimeZone);
             planRegistration.Pause202StartedAt = string.IsNullOrEmpty(model.Pause202StartedAt)
                 ? null
-                : DateTime.Parse(model.Pause202StartedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause202StartedAt, userTimeZone);
             planRegistration.Pause202StoppedAt = string.IsNullOrEmpty(model.Pause202StoppedAt)
                 ? null
-                : DateTime.Parse(model.Pause202StoppedAt);
+                : WallTimeNormalizer.NormalizeToWallTime(model.Pause202StoppedAt, userTimeZone);
 
             planRegistration.Shift1PauseNumber = model.Shift1PauseNumber;
             planRegistration.Shift2PauseNumber = model.Shift2PauseNumber;

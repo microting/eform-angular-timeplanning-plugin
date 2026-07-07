@@ -1112,60 +1112,110 @@ public static class PlanRegistrationHelper
                 AbsenceWithoutPermission = planRegistration.AbsenceWithoutPermission,
                 Start1StartedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Start1StartedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Start1Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Start1Id * 5) - 5))
                     : (planRegistration.Start1Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start1Id * 5) - 5)),
                 Stop1StoppedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Stop1StoppedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Stop1Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Stop1Id * 5) - 5))
                     : (planRegistration.Stop1Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Stop1Id * 5) - 5)),
                 Start2StartedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Start2StartedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Start2Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Start2Id * 5) - 5))
                     : (planRegistration.Start2Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start2Id * 5) - 5)),
                 Stop2StoppedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Stop2StoppedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Stop2Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Stop2Id * 5) - 5))
                     : (planRegistration.Stop2Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Stop2Id * 5) - 5)),
                 Start3StartedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Start3StartedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Start3Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Start3Id * 5) - 5))
                     : (planRegistration.Start3Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start3Id * 5) - 5)),
                 Stop3StoppedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Stop3StoppedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Stop3Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Stop3Id * 5) - 5))
                     : (planRegistration.Stop3Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Stop3Id * 5) - 5)),
                 Start4StartedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Start4StartedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Start4Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Start4Id * 5) - 5))
                     : (planRegistration.Start4Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start4Id * 5) - 5)),
                 Stop4StoppedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Stop4StoppedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Stop4Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Stop4Id * 5) - 5))
                     : (planRegistration.Stop4Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Stop4Id * 5) - 5)),
                 Start5StartedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Start5StartedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Start5Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Start5Id * 5) - 5))
                     : (planRegistration.Start5Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start5Id * 5) - 5)),
                 Stop5StoppedAt = dbAssignedSite.UseOneMinuteIntervals
                     ? planRegistration.Stop5StoppedAt
+                        // Wall-time-at-rest: fall back to the id-derived wall time so a
+                        // false->true UseOneMinuteIntervals flip never blanks recorded times.
+                        ?? (planRegistration.Stop5Id == 0
+                            ? (DateTime?)null
+                            : midnight.AddMinutes((planRegistration.Stop5Id * 5) - 5))
                     : (planRegistration.Stop5Id == 0
                         ? null
                         : midnight.AddMinutes(
@@ -1976,6 +2026,34 @@ public static class PlanRegistrationHelper
             Shift1PauseNumber = planRegistration.Shift1PauseNumber,
             Shift2PauseNumber = planRegistration.Shift2PauseNumber
         };
+
+        // Wall-time-at-rest: for UseOneMinuteIntervals sites, fall back to the
+        // id-derived wall time when a shift has an interval id but no exact
+        // stamp (rows written while the flag was still false), so a
+        // false->true flag flip never blanks recorded times. Interval ids and
+        // stamps both encode wall time, so no timezone math is involved —
+        // this mirrors the flag-true fallback in UpdatePlanRegistrationsInPeriod
+        // and the backfill in TimePlanningPlanningService.EnsureTimestampsFromIds.
+        var useOneMinuteIntervals = await dbContext.AssignedSites
+            .AsNoTracking()
+            .Where(x => x.SiteId == sdkSiteId)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .Select(x => x.UseOneMinuteIntervals)
+            .FirstOrDefaultAsync();
+        if (useOneMinuteIntervals)
+        {
+            DateTime? FromId(int id) => id > 0 ? midnight.AddMinutes((id * 5) - 5) : null;
+            timePlanningWorkingHoursModel.Start1StartedAt ??= FromId(planRegistration.Start1Id);
+            timePlanningWorkingHoursModel.Stop1StoppedAt ??= FromId(planRegistration.Stop1Id);
+            timePlanningWorkingHoursModel.Start2StartedAt ??= FromId(planRegistration.Start2Id);
+            timePlanningWorkingHoursModel.Stop2StoppedAt ??= FromId(planRegistration.Stop2Id);
+            timePlanningWorkingHoursModel.Start3StartedAt ??= FromId(planRegistration.Start3Id);
+            timePlanningWorkingHoursModel.Stop3StoppedAt ??= FromId(planRegistration.Stop3Id);
+            timePlanningWorkingHoursModel.Start4StartedAt ??= FromId(planRegistration.Start4Id);
+            timePlanningWorkingHoursModel.Stop4StoppedAt ??= FromId(planRegistration.Stop4Id);
+            timePlanningWorkingHoursModel.Start5StartedAt ??= FromId(planRegistration.Start5Id);
+            timePlanningWorkingHoursModel.Stop5StoppedAt ??= FromId(planRegistration.Stop5Id);
+        }
 
         // Approach C READ projection (today path): when a shift carries a pause
         // override, present a single synthesized pause pair and empty the

@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Microting.eFormApi.BasePn.Abstractions;
 using TimePlanning.Pn.Grpc;
+using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.Planning;
 using TimePlanning.Pn.Services.TimePlanningPlanningService;
 
@@ -14,10 +16,38 @@ public class TimePlanningPlanningsGrpcService
     : TimePlanningPlanningsService.TimePlanningPlanningsServiceBase
 {
     private readonly ITimePlanningPlanningService _planningService;
+    private readonly IUserService _userService;
 
-    public TimePlanningPlanningsGrpcService(ITimePlanningPlanningService planningService)
+    // userService is optional so wall-time normalization degrades to the
+    // documented default zone (Europe/Copenhagen) when no user context exists;
+    // DI supplies it in the host.
+    public TimePlanningPlanningsGrpcService(
+        ITimePlanningPlanningService planningService,
+        IUserService userService = null)
     {
         _planningService = planningService;
+        _userService = userService;
+    }
+
+    /// <summary>
+    /// Resolves the current user's timezone for wall-time normalization of
+    /// incoming timestamp strings (see <see cref="WallTimeNormalizer"/>).
+    /// Falls back to Europe/Copenhagen when no user/zone is resolvable.
+    /// Resolved once per write request.
+    /// </summary>
+    private async Task<TimeZoneInfo> ResolveUserTimeZoneAsync()
+    {
+        try
+        {
+            var tz = _userService == null ? null : await _userService.GetCurrentUserTimeZoneInfo();
+            return tz ?? WallTimeNormalizer.DefaultTimeZone;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"[GRPC-PLANNINGS] Could not resolve user timezone, falling back to {WallTimeNormalizer.DefaultTimeZoneId}: {ex.Message}");
+            return WallTimeNormalizer.DefaultTimeZone;
+        }
     }
 
     public override async Task<GetPlanningsByUserResponse> GetPlanningsByUser(
@@ -80,7 +110,9 @@ public class TimePlanningPlanningsGrpcService
     public override async Task<UpdatePlanningByCurrentUserResponse> UpdatePlanningByCurrentUser(
         UpdatePlanningByCurrentUserRequest request, ServerCallContext context)
     {
-        var model = MapDayFromGrpc(request.Model);
+        // The app edit screen calls this RPC and (builds ≥ June 25) may send
+        // Z-suffixed UTC stamps — normalize into the user's wall time here.
+        var model = MapDayFromGrpc(request.Model, await ResolveUserTimeZoneAsync());
         var result = await _planningService.UpdateByCurrentUserNam(model);
 
         return new UpdatePlanningByCurrentUserResponse
@@ -165,7 +197,7 @@ public class TimePlanningPlanningsGrpcService
     {
         try
         {
-            var model = MapDayFromGrpc(request.Model);
+            var model = MapDayFromGrpc(request.Model, await ResolveUserTimeZoneAsync());
             var result = await _planningService.Update(request.PlanningId, model);
 
             return new UpdatePlanningResponse
@@ -338,7 +370,7 @@ public class TimePlanningPlanningsGrpcService
         };
     }
 
-    private static TimePlanningPlanningPrDayModel MapDayFromGrpc(Grpc.PlanningPrDayModel? m)
+    private static TimePlanningPlanningPrDayModel MapDayFromGrpc(Grpc.PlanningPrDayModel? m, TimeZoneInfo tz)
     {
         if (m == null) return new TimePlanningPlanningPrDayModel();
 
@@ -404,89 +436,91 @@ public class TimePlanningPlanningsGrpcService
             CommentOffice = m.CommentOffice,
             WorkerComment = m.WorkerComment,
             // Primary shift timestamps — shifts 1-5
-            Start1StartedAt = ParseDateTime(m.Start1StartedAt),
-            Stop1StoppedAt = ParseDateTime(m.Stop1StoppedAt),
-            Pause1StartedAt = ParseDateTime(m.Pause1StartedAt),
-            Pause1StoppedAt = ParseDateTime(m.Pause1StoppedAt),
-            Start2StartedAt = ParseDateTime(m.Start2StartedAt),
-            Stop2StoppedAt = ParseDateTime(m.Stop2StoppedAt),
-            Pause2StartedAt = ParseDateTime(m.Pause2StartedAt),
-            Pause2StoppedAt = ParseDateTime(m.Pause2StoppedAt),
-            Start3StartedAt = ParseDateTime(m.Start3StartedAt),
-            Stop3StoppedAt = ParseDateTime(m.Stop3StoppedAt),
-            Pause3StartedAt = ParseDateTime(m.Pause3StartedAt),
-            Pause3StoppedAt = ParseDateTime(m.Pause3StoppedAt),
-            Start4StartedAt = ParseDateTime(m.Start4StartedAt),
-            Stop4StoppedAt = ParseDateTime(m.Stop4StoppedAt),
-            Pause4StartedAt = ParseDateTime(m.Pause4StartedAt),
-            Pause4StoppedAt = ParseDateTime(m.Pause4StoppedAt),
-            Start5StartedAt = ParseDateTime(m.Start5StartedAt),
-            Stop5StoppedAt = ParseDateTime(m.Stop5StoppedAt),
-            Pause5StartedAt = ParseDateTime(m.Pause5StartedAt),
-            Pause5StoppedAt = ParseDateTime(m.Pause5StoppedAt),
+            Start1StartedAt = ParseDateTime(m.Start1StartedAt, tz),
+            Stop1StoppedAt = ParseDateTime(m.Stop1StoppedAt, tz),
+            Pause1StartedAt = ParseDateTime(m.Pause1StartedAt, tz),
+            Pause1StoppedAt = ParseDateTime(m.Pause1StoppedAt, tz),
+            Start2StartedAt = ParseDateTime(m.Start2StartedAt, tz),
+            Stop2StoppedAt = ParseDateTime(m.Stop2StoppedAt, tz),
+            Pause2StartedAt = ParseDateTime(m.Pause2StartedAt, tz),
+            Pause2StoppedAt = ParseDateTime(m.Pause2StoppedAt, tz),
+            Start3StartedAt = ParseDateTime(m.Start3StartedAt, tz),
+            Stop3StoppedAt = ParseDateTime(m.Stop3StoppedAt, tz),
+            Pause3StartedAt = ParseDateTime(m.Pause3StartedAt, tz),
+            Pause3StoppedAt = ParseDateTime(m.Pause3StoppedAt, tz),
+            Start4StartedAt = ParseDateTime(m.Start4StartedAt, tz),
+            Stop4StoppedAt = ParseDateTime(m.Stop4StoppedAt, tz),
+            Pause4StartedAt = ParseDateTime(m.Pause4StartedAt, tz),
+            Pause4StoppedAt = ParseDateTime(m.Pause4StoppedAt, tz),
+            Start5StartedAt = ParseDateTime(m.Start5StartedAt, tz),
+            Stop5StoppedAt = ParseDateTime(m.Stop5StoppedAt, tz),
+            Pause5StartedAt = ParseDateTime(m.Pause5StartedAt, tz),
+            Pause5StoppedAt = ParseDateTime(m.Pause5StoppedAt, tz),
             // Detailed pause timestamps for shift 1
-            Pause10StartedAt = ParseDateTime(m.Pause10StartedAt),
-            Pause10StoppedAt = ParseDateTime(m.Pause10StoppedAt),
-            Pause11StartedAt = ParseDateTime(m.Pause11StartedAt),
-            Pause11StoppedAt = ParseDateTime(m.Pause11StoppedAt),
-            Pause12StartedAt = ParseDateTime(m.Pause12StartedAt),
-            Pause12StoppedAt = ParseDateTime(m.Pause12StoppedAt),
-            Pause13StartedAt = ParseDateTime(m.Pause13StartedAt),
-            Pause13StoppedAt = ParseDateTime(m.Pause13StoppedAt),
-            Pause14StartedAt = ParseDateTime(m.Pause14StartedAt),
-            Pause14StoppedAt = ParseDateTime(m.Pause14StoppedAt),
-            Pause15StartedAt = ParseDateTime(m.Pause15StartedAt),
-            Pause15StoppedAt = ParseDateTime(m.Pause15StoppedAt),
-            Pause16StartedAt = ParseDateTime(m.Pause16StartedAt),
-            Pause16StoppedAt = ParseDateTime(m.Pause16StoppedAt),
-            Pause17StartedAt = ParseDateTime(m.Pause17StartedAt),
-            Pause17StoppedAt = ParseDateTime(m.Pause17StoppedAt),
-            Pause18StartedAt = ParseDateTime(m.Pause18StartedAt),
-            Pause18StoppedAt = ParseDateTime(m.Pause18StoppedAt),
-            Pause19StartedAt = ParseDateTime(m.Pause19StartedAt),
-            Pause19StoppedAt = ParseDateTime(m.Pause19StoppedAt),
-            Pause100StartedAt = ParseDateTime(m.Pause100StartedAt),
-            Pause100StoppedAt = ParseDateTime(m.Pause100StoppedAt),
-            Pause101StartedAt = ParseDateTime(m.Pause101StartedAt),
-            Pause101StoppedAt = ParseDateTime(m.Pause101StoppedAt),
-            Pause102StartedAt = ParseDateTime(m.Pause102StartedAt),
-            Pause102StoppedAt = ParseDateTime(m.Pause102StoppedAt),
+            Pause10StartedAt = ParseDateTime(m.Pause10StartedAt, tz),
+            Pause10StoppedAt = ParseDateTime(m.Pause10StoppedAt, tz),
+            Pause11StartedAt = ParseDateTime(m.Pause11StartedAt, tz),
+            Pause11StoppedAt = ParseDateTime(m.Pause11StoppedAt, tz),
+            Pause12StartedAt = ParseDateTime(m.Pause12StartedAt, tz),
+            Pause12StoppedAt = ParseDateTime(m.Pause12StoppedAt, tz),
+            Pause13StartedAt = ParseDateTime(m.Pause13StartedAt, tz),
+            Pause13StoppedAt = ParseDateTime(m.Pause13StoppedAt, tz),
+            Pause14StartedAt = ParseDateTime(m.Pause14StartedAt, tz),
+            Pause14StoppedAt = ParseDateTime(m.Pause14StoppedAt, tz),
+            Pause15StartedAt = ParseDateTime(m.Pause15StartedAt, tz),
+            Pause15StoppedAt = ParseDateTime(m.Pause15StoppedAt, tz),
+            Pause16StartedAt = ParseDateTime(m.Pause16StartedAt, tz),
+            Pause16StoppedAt = ParseDateTime(m.Pause16StoppedAt, tz),
+            Pause17StartedAt = ParseDateTime(m.Pause17StartedAt, tz),
+            Pause17StoppedAt = ParseDateTime(m.Pause17StoppedAt, tz),
+            Pause18StartedAt = ParseDateTime(m.Pause18StartedAt, tz),
+            Pause18StoppedAt = ParseDateTime(m.Pause18StoppedAt, tz),
+            Pause19StartedAt = ParseDateTime(m.Pause19StartedAt, tz),
+            Pause19StoppedAt = ParseDateTime(m.Pause19StoppedAt, tz),
+            Pause100StartedAt = ParseDateTime(m.Pause100StartedAt, tz),
+            Pause100StoppedAt = ParseDateTime(m.Pause100StoppedAt, tz),
+            Pause101StartedAt = ParseDateTime(m.Pause101StartedAt, tz),
+            Pause101StoppedAt = ParseDateTime(m.Pause101StoppedAt, tz),
+            Pause102StartedAt = ParseDateTime(m.Pause102StartedAt, tz),
+            Pause102StoppedAt = ParseDateTime(m.Pause102StoppedAt, tz),
             // Detailed pause timestamps for shift 2
-            Pause20StartedAt = ParseDateTime(m.Pause20StartedAt),
-            Pause20StoppedAt = ParseDateTime(m.Pause20StoppedAt),
-            Pause21StartedAt = ParseDateTime(m.Pause21StartedAt),
-            Pause21StoppedAt = ParseDateTime(m.Pause21StoppedAt),
-            Pause22StartedAt = ParseDateTime(m.Pause22StartedAt),
-            Pause22StoppedAt = ParseDateTime(m.Pause22StoppedAt),
-            Pause23StartedAt = ParseDateTime(m.Pause23StartedAt),
-            Pause23StoppedAt = ParseDateTime(m.Pause23StoppedAt),
-            Pause24StartedAt = ParseDateTime(m.Pause24StartedAt),
-            Pause24StoppedAt = ParseDateTime(m.Pause24StoppedAt),
-            Pause25StartedAt = ParseDateTime(m.Pause25StartedAt),
-            Pause25StoppedAt = ParseDateTime(m.Pause25StoppedAt),
-            Pause26StartedAt = ParseDateTime(m.Pause26StartedAt),
-            Pause26StoppedAt = ParseDateTime(m.Pause26StoppedAt),
-            Pause27StartedAt = ParseDateTime(m.Pause27StartedAt),
-            Pause27StoppedAt = ParseDateTime(m.Pause27StoppedAt),
-            Pause28StartedAt = ParseDateTime(m.Pause28StartedAt),
-            Pause28StoppedAt = ParseDateTime(m.Pause28StoppedAt),
-            Pause29StartedAt = ParseDateTime(m.Pause29StartedAt),
-            Pause29StoppedAt = ParseDateTime(m.Pause29StoppedAt),
-            Pause200StartedAt = ParseDateTime(m.Pause200StartedAt),
-            Pause200StoppedAt = ParseDateTime(m.Pause200StoppedAt),
-            Pause201StartedAt = ParseDateTime(m.Pause201StartedAt),
-            Pause201StoppedAt = ParseDateTime(m.Pause201StoppedAt),
-            Pause202StartedAt = ParseDateTime(m.Pause202StartedAt),
-            Pause202StoppedAt = ParseDateTime(m.Pause202StoppedAt),
+            Pause20StartedAt = ParseDateTime(m.Pause20StartedAt, tz),
+            Pause20StoppedAt = ParseDateTime(m.Pause20StoppedAt, tz),
+            Pause21StartedAt = ParseDateTime(m.Pause21StartedAt, tz),
+            Pause21StoppedAt = ParseDateTime(m.Pause21StoppedAt, tz),
+            Pause22StartedAt = ParseDateTime(m.Pause22StartedAt, tz),
+            Pause22StoppedAt = ParseDateTime(m.Pause22StoppedAt, tz),
+            Pause23StartedAt = ParseDateTime(m.Pause23StartedAt, tz),
+            Pause23StoppedAt = ParseDateTime(m.Pause23StoppedAt, tz),
+            Pause24StartedAt = ParseDateTime(m.Pause24StartedAt, tz),
+            Pause24StoppedAt = ParseDateTime(m.Pause24StoppedAt, tz),
+            Pause25StartedAt = ParseDateTime(m.Pause25StartedAt, tz),
+            Pause25StoppedAt = ParseDateTime(m.Pause25StoppedAt, tz),
+            Pause26StartedAt = ParseDateTime(m.Pause26StartedAt, tz),
+            Pause26StoppedAt = ParseDateTime(m.Pause26StoppedAt, tz),
+            Pause27StartedAt = ParseDateTime(m.Pause27StartedAt, tz),
+            Pause27StoppedAt = ParseDateTime(m.Pause27StoppedAt, tz),
+            Pause28StartedAt = ParseDateTime(m.Pause28StartedAt, tz),
+            Pause28StoppedAt = ParseDateTime(m.Pause28StoppedAt, tz),
+            Pause29StartedAt = ParseDateTime(m.Pause29StartedAt, tz),
+            Pause29StoppedAt = ParseDateTime(m.Pause29StoppedAt, tz),
+            Pause200StartedAt = ParseDateTime(m.Pause200StartedAt, tz),
+            Pause200StoppedAt = ParseDateTime(m.Pause200StoppedAt, tz),
+            Pause201StartedAt = ParseDateTime(m.Pause201StartedAt, tz),
+            Pause201StoppedAt = ParseDateTime(m.Pause201StoppedAt, tz),
+            Pause202StartedAt = ParseDateTime(m.Pause202StartedAt, tz),
+            Pause202StoppedAt = ParseDateTime(m.Pause202StoppedAt, tz),
             // Netto hours override
             NettoHoursOverride = m.NettoHoursOverride,
             NettoHoursOverrideActive = m.NettoHoursOverrideActive,
         };
     }
 
-    private static DateTime? ParseDateTime(string s) =>
-        string.IsNullOrEmpty(s)
-            ? null
-            : DateTime.Parse(s, System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal);
+    /// <summary>
+    /// Wall-time-at-rest: naive digits pass through verbatim; Z / offset-
+    /// carrying stamps (sent by app edit-screen builds ≥ June 25) are
+    /// converted into the user's zone. See <see cref="WallTimeNormalizer"/>.
+    /// </summary>
+    private static DateTime? ParseDateTime(string s, TimeZoneInfo tz) =>
+        WallTimeNormalizer.NormalizeToWallTimeOrNull(s, tz);
 }
