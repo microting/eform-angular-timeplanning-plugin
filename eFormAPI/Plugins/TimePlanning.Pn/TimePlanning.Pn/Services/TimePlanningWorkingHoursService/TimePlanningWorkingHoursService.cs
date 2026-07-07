@@ -99,6 +99,11 @@ public class TimePlanningWorkingHoursService(
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync(x => x.SiteId == model.SiteId);
             var useOneMinuteIntervals = assignedSite?.UseOneMinuteIntervals ?? false;
+            // Stage 3 tick-exact parity: per-row mode-at-registration from the
+            // AssignedSiteVersions audit trail (one query; in-memory lookups).
+            var oneMinuteTimeline = assignedSite != null
+                ? await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite)
+                : new OneMinuteModeTimeline(false, Array.Empty<(bool, DateTime)>());
 
             var timePlanningRequest = dbContext.PlanRegistrations
                 .AsNoTracking()
@@ -388,6 +393,27 @@ public class TimePlanningWorkingHoursService(
             }
 
             timePlannings = timePlannings.OrderBy(x => x.Date).ToList();
+
+            // Stage 3 tick-exact parity: normalize each row's Start/Stop stamps
+            // in the RESPONSE MODEL to its mode at registration —
+            //  - tick row: stamps := Id-derived tick times (the exact device
+            //    stamps that may coexist on the row are NOT shown/summed),
+            //  - one-minute row: exact stamp, falling back to the Id-derived
+            //    time when the stamp is NULL but the Id exists.
+            // Every stamp consumer downstream (web grid, Excel day cells via
+            // GetShiftTime/GetShiftTimeFraction, time-band pay lines via
+            // EnumerateShiftSegments, Grundlovsdag hours via
+            // CalculateHoursAfterNoon, and all totals built from those) then
+            // derives from tick times for tick rows — no drift when a site
+            // flips UseOneMinuteIntervals. Read-only: the save path
+            // (UpdatePlanning) copies only Shift{N} ids and numeric fields from
+            // this model, never the stamps, so nothing synthesized here can be
+            // echoed back into the DB.
+            foreach (var timePlanning in timePlannings)
+            {
+                ApplyModeAtRegistrationStamps(
+                    timePlanning, oneMinuteTimeline.WasOneMinuteAt(timePlanning.Date));
+            }
 
             var j = 0;
             double sumFlexEnd = 0;
@@ -2421,6 +2447,10 @@ public class TimePlanningWorkingHoursService(
 
             var isFifthShiftEnabled = assignedSite.FifthShiftActive;
 
+            // Stage 3 tick-exact parity: per-row mode-at-registration so day
+            // cells render tick rows from ids and one-minute rows from stamps.
+            var oneMinuteTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
+
             // Load PayRuleSet with day rules + tiers AND day type rules + time bands
             PayRuleSet payRuleSet = null;
             if (assignedSite.PayRuleSetId.HasValue)
@@ -2500,7 +2530,9 @@ public class TimePlanningWorkingHoursService(
                     WorkerName = site.Name,
                     Date = p.Date,
                     Planning = p,
-                    UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals
+                    // Per-row mode at registration (tick rows keep tick cells
+                    // even after the site flips to one-minute).
+                    UseOneMinuteIntervals = oneMinuteTimeline.WasOneMinuteAt(p.Date)
                 }).ToList();
                 BuildDayOverviewWorksheet(dayOverviewWorksheetPart, dayOverviewRows, culture);
 
@@ -2627,7 +2659,7 @@ public class TimePlanningWorkingHoursService(
                 foreach (var planning in timePlannings)
                 {
                     var dataRow = new Row() { RowIndex = (uint)rowIndex };
-                    FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, assignedSite.UseOneMinuteIntervals);
+                    FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, oneMinuteTimeline.WasOneMinuteAt(planning.Date));
 
                     // Append pay code values for this day
                     var dayPayLines = payLinesByDate.ContainsKey(planning.Date)
@@ -3068,7 +3100,11 @@ public class TimePlanningWorkingHoursService(
                     AssignedSite = assignedSiteForCache,
                     PayRuleSet = payRuleSetForCache,
                     TimePlannings = siteTimePlannings,
-                    PayLinesByDate = payLinesByDate
+                    PayLinesByDate = payLinesByDate,
+                    // Stage 3 tick-exact parity: one timeline per site, shared by
+                    // the per-site sheet and day-overview writers below.
+                    OneMinuteTimeline =
+                        await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSiteForCache)
                 };
             }
 
@@ -3113,7 +3149,6 @@ public class TimePlanningWorkingHoursService(
                     var doWorker = await sdkContext.Workers.FirstAsync(x => x.Id == doSiteWorker.WorkerId);
                     perSiteCache.TryGetValue(siteIds[i], out var doCache);
                     var doPlannings = doCache?.TimePlannings ?? new List<TimePlanningWorkingHoursModel>();
-                    var doUseOneMinute = doCache?.AssignedSite?.UseOneMinuteIntervals ?? false;
                     foreach (var planning in doPlannings)
                     {
                         dayOverviewRows.Add(new DayOverviewRow
@@ -3122,7 +3157,10 @@ public class TimePlanningWorkingHoursService(
                             WorkerName = doSite.Name,
                             Date = planning.Date,
                             Planning = planning,
-                            UseOneMinuteIntervals = doUseOneMinute
+                            // Per-row mode at registration (tick rows keep tick
+                            // cells even after the site flips to one-minute).
+                            UseOneMinuteIntervals =
+                                doCache?.OneMinuteTimeline?.WasOneMinuteAt(planning.Date) ?? false
                         });
                     }
                 }
@@ -3364,7 +3402,7 @@ public class TimePlanningWorkingHoursService(
                         var dataRow = new Row() { RowIndex = (uint)rowIndex };
                         try
                         {
-                            FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, cache?.AssignedSite?.UseOneMinuteIntervals ?? false);
+                            FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, cache?.OneMinuteTimeline?.WasOneMinuteAt(planning.Date) ?? false);
 
                             // Append pay code values for this day
                             var dayPayLines = (cache != null && cache.PayLinesByDate.ContainsKey(planning.Date))
@@ -4022,6 +4060,55 @@ public class TimePlanningWorkingHoursService(
     }
 
     /// <summary>
+    /// Stage 3 tick-exact parity: rewrites one day-model's Start/Stop stamps to
+    /// the mode the row was REGISTERED under (per-row, from
+    /// <see cref="OneMinuteModeTimeline"/>), so every stamp consumer — the web
+    /// grid DTO, Excel day cells, time-band pay lines
+    /// (<see cref="EnumerateShiftSegments"/>) and Grundlovsdag holiday math
+    /// (<see cref="CalculateHoursAfterNoon"/>) — derives from tick times for
+    /// tick rows and from exact stamps for one-minute rows:
+    ///  - tick row:      stamp := Id-derived (midnight + (Id*5 - 5) min; NULL when Id == 0)
+    ///  - one-minute row: stamp := exact stamp ?? Id-derived fallback
+    /// Pause stamps are intentionally untouched (out of scope for this pass).
+    /// Note the Id 289 (= 24:00, don't-wrap convention) derives to next-day
+    /// 00:00, which <see cref="ResolveShiftSeconds"/> clamps back to 86400s —
+    /// the Excel cells still render "24:00" because their per-row mode routes
+    /// tick rows through the Id-based formatting path.
+    /// </summary>
+    internal static void ApplyModeAtRegistrationStamps(TimePlanningWorkingHoursModel day, bool rowIsOneMinute)
+    {
+        var midnight = day.Date.Date;
+        DateTime? FromId(int? id) => id is > 0 ? midnight.AddMinutes((id.Value * 5) - 5) : null;
+
+        if (rowIsOneMinute)
+        {
+            day.Start1StartedAt ??= FromId(day.Shift1Start);
+            day.Stop1StoppedAt ??= FromId(day.Shift1Stop);
+            day.Start2StartedAt ??= FromId(day.Shift2Start);
+            day.Stop2StoppedAt ??= FromId(day.Shift2Stop);
+            day.Start3StartedAt ??= FromId(day.Shift3Start);
+            day.Stop3StoppedAt ??= FromId(day.Shift3Stop);
+            day.Start4StartedAt ??= FromId(day.Shift4Start);
+            day.Stop4StoppedAt ??= FromId(day.Shift4Stop);
+            day.Start5StartedAt ??= FromId(day.Shift5Start);
+            day.Stop5StoppedAt ??= FromId(day.Shift5Stop);
+        }
+        else
+        {
+            day.Start1StartedAt = FromId(day.Shift1Start);
+            day.Stop1StoppedAt = FromId(day.Shift1Stop);
+            day.Start2StartedAt = FromId(day.Shift2Start);
+            day.Stop2StoppedAt = FromId(day.Shift2Stop);
+            day.Start3StartedAt = FromId(day.Shift3Start);
+            day.Stop3StoppedAt = FromId(day.Shift3Stop);
+            day.Start4StartedAt = FromId(day.Shift4Start);
+            day.Stop4StoppedAt = FromId(day.Shift4Stop);
+            day.Start5StartedAt = FromId(day.Shift5Start);
+            day.Stop5StoppedAt = FromId(day.Shift5Stop);
+        }
+    }
+
+    /// <summary>
     /// Aggregates pay lines with the same PayCode by summing seconds and hours.
     /// Preserves PlanRegistrationId / PayRuleSetId / CalculatedAt from the first occurrence.
     /// </summary>
@@ -4115,6 +4202,8 @@ public class TimePlanningWorkingHoursService(
         public PayRuleSet PayRuleSet { get; set; }
         public List<TimePlanningWorkingHoursModel> TimePlannings { get; set; }
         public Dictionary<DateTime, List<PlanRegistrationPayLine>> PayLinesByDate { get; set; }
+        /// <summary>Per-site mode-at-registration timeline (built once in the pre-pass).</summary>
+        public OneMinuteModeTimeline OneMinuteTimeline { get; set; }
     }
 
     private sealed class DayOverviewRow

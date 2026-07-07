@@ -560,6 +560,13 @@ public static class PlanRegistrationHelper
         // Load the message catalog once (no N+1) so each day can resolve its
         // localized label without re-querying per row.
         var messagesById = await dbContext.Messages.AsNoTracking().ToDictionaryAsync(m => m.Id);
+        // Stage 3 tick-exact parity: resolve the UseOneMinuteIntervals mode that
+        // was in force when each row was REGISTERED (from AssignedSiteVersions —
+        // one query, in-memory lookups) so the Start/Stop display projection
+        // below renders tick rows from ids and one-minute rows from stamps,
+        // regardless of the site's CURRENT flag. Write/calc forks in this method
+        // intentionally keep using dbAssignedSite.UseOneMinuteIntervals.
+        var oneMinuteTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, dbAssignedSite);
         var toDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
         // var dayOfPayment = toDay.Day >= settingsDayOfPayment
         //     ? new DateTime(DateTime.Now.Year, DateTime.Now.Month, settingsDayOfPayment, 0, 0, 0)
@@ -570,6 +577,8 @@ public static class PlanRegistrationHelper
             var planRegistration = await dbContext.PlanRegistrations.AsTracking().FirstAsync(x => x.Id == plan.Id);
             var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month,
                 planRegistration.Date.Day, 0, 0, 0);
+            // Mode at registration (see timeline build above) — display-only.
+            var rowIsOneMinute = oneMinuteTimeline.WasOneMinuteAt(planRegistration.Date);
 
             if (planRegistration.Start1Id > 289)
             {
@@ -1110,62 +1119,112 @@ public static class PlanRegistrationHelper
                 Sick = planRegistration.Sick,
                 OtherAllowedAbsence = planRegistration.OtherAllowedAbsence,
                 AbsenceWithoutPermission = planRegistration.AbsenceWithoutPermission,
-                Start1StartedAt = dbAssignedSite.UseOneMinuteIntervals
+                // Stage 3 tick-exact display parity, forked on the mode AT
+                // REGISTRATION (rowIsOneMinute, from OneMinuteModeTimeline) —
+                // not the site's current flag:
+                //  - tick row (registered under 5-minute mode): ALWAYS the
+                //    Id-derived tick time, even when an exact stamp exists —
+                //    bit-identical to what the row showed before a site flip.
+                //  - one-minute row: the exact stamp first, falling back to the
+                //    Id-derived time when the stamp is NULL but the Id exists
+                //    (mirrors the Excel export / EnsureTimestampsFromIds rule)
+                //    so no row ever renders blank while an Id is present.
+                Start1StartedAt = rowIsOneMinute
                     ? planRegistration.Start1StartedAt
+                      ?? (planRegistration.Start1Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Start1Id * 5) - 5)
+                          : null)
                     : (planRegistration.Start1Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start1Id * 5) - 5)),
-                Stop1StoppedAt = dbAssignedSite.UseOneMinuteIntervals
+                Stop1StoppedAt = rowIsOneMinute
                     ? planRegistration.Stop1StoppedAt
+                      ?? (planRegistration.Stop1Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Stop1Id * 5) - 5)
+                          : null)
                     : (planRegistration.Stop1Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Stop1Id * 5) - 5)),
-                Start2StartedAt = dbAssignedSite.UseOneMinuteIntervals
+                Start2StartedAt = rowIsOneMinute
                     ? planRegistration.Start2StartedAt
+                      ?? (planRegistration.Start2Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Start2Id * 5) - 5)
+                          : null)
                     : (planRegistration.Start2Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start2Id * 5) - 5)),
-                Stop2StoppedAt = dbAssignedSite.UseOneMinuteIntervals
+                Stop2StoppedAt = rowIsOneMinute
                     ? planRegistration.Stop2StoppedAt
+                      ?? (planRegistration.Stop2Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Stop2Id * 5) - 5)
+                          : null)
                     : (planRegistration.Stop2Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Stop2Id * 5) - 5)),
-                Start3StartedAt = dbAssignedSite.UseOneMinuteIntervals
+                Start3StartedAt = rowIsOneMinute
                     ? planRegistration.Start3StartedAt
+                      ?? (planRegistration.Start3Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Start3Id * 5) - 5)
+                          : null)
                     : (planRegistration.Start3Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start3Id * 5) - 5)),
-                Stop3StoppedAt = dbAssignedSite.UseOneMinuteIntervals
+                Stop3StoppedAt = rowIsOneMinute
                     ? planRegistration.Stop3StoppedAt
+                      ?? (planRegistration.Stop3Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Stop3Id * 5) - 5)
+                          : null)
                     : (planRegistration.Stop3Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Stop3Id * 5) - 5)),
-                Start4StartedAt = dbAssignedSite.UseOneMinuteIntervals
+                Start4StartedAt = rowIsOneMinute
                     ? planRegistration.Start4StartedAt
+                      ?? (planRegistration.Start4Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Start4Id * 5) - 5)
+                          : null)
                     : (planRegistration.Start4Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start4Id * 5) - 5)),
-                Stop4StoppedAt = dbAssignedSite.UseOneMinuteIntervals
+                Stop4StoppedAt = rowIsOneMinute
                     ? planRegistration.Stop4StoppedAt
+                      ?? (planRegistration.Stop4Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Stop4Id * 5) - 5)
+                          : null)
                     : (planRegistration.Stop4Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Stop4Id * 5) - 5)),
-                Start5StartedAt = dbAssignedSite.UseOneMinuteIntervals
+                Start5StartedAt = rowIsOneMinute
                     ? planRegistration.Start5StartedAt
+                      ?? (planRegistration.Start5Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Start5Id * 5) - 5)
+                          : null)
                     : (planRegistration.Start5Id == 0
                         ? null
                         : midnight.AddMinutes(
                             (planRegistration.Start5Id * 5) - 5)),
-                Stop5StoppedAt = dbAssignedSite.UseOneMinuteIntervals
+                Stop5StoppedAt = rowIsOneMinute
                     ? planRegistration.Stop5StoppedAt
+                      ?? (planRegistration.Stop5Id > 0
+                          ? midnight.AddMinutes(
+                              (planRegistration.Stop5Id * 5) - 5)
+                          : null)
                     : (planRegistration.Stop5Id == 0
                         ? null
                         : midnight.AddMinutes(
