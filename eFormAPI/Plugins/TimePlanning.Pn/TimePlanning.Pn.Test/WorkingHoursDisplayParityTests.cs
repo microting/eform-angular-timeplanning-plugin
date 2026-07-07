@@ -259,6 +259,71 @@ public class WorkingHoursDisplayParityTests : TestBaseSetup
         });
     }
 
+    /// <summary>
+    /// Write-time mode marker beats the timeline on the working-hours surface
+    /// too (Index DTO → web grid, Excel cells, pay lines): a pre-flip-DATED row
+    /// whose marker is true (admin exact edit after the flip — the l1m
+    /// scenario) surfaces its exact stamps; a post-flip-DATED row whose marker
+    /// is false surfaces ticks.
+    /// </summary>
+    [Test]
+    public async Task Index_WriteTimeMarker_WinsOverTimeline()
+    {
+        const int siteUid = 919;
+        var flipDate = new DateTime(2026, 6, 1);
+        var markerTrueDate = new DateTime(2026, 5, 20);  // pre-flip, marker=true
+        var markerFalseDate = new DateTime(2026, 6, 10); // post-flip, marker=false
+
+        await SeedSdkSite(siteUid);
+        await SeedFlippedAssignedSite(siteUid, flipDate);
+        foreach (var (date, marker) in new (DateTime, bool?)[]
+                 {
+                     (markerTrueDate, true),
+                     (markerFalseDate, false)
+                 })
+        {
+            await new PlanRegistrationEntity
+            {
+                SdkSitId = siteUid,
+                Date = date,
+                Start1Id = 98,   // 08:05
+                Stop1Id = 193,   // 16:00
+                Start1StartedAt = date.AddHours(8).AddMinutes(7),
+                Stop1StoppedAt = date.AddHours(16).AddMinutes(3),
+                RegisteredUnderOneMinuteIntervals = marker,
+                PlanText = "",
+                CommentOffice = "",
+                CommentOfficeAll = "",
+                WorkflowState = Constants.WorkflowStates.Created,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            }.Create(TimePlanningPnDbContext!);
+        }
+
+        var result = await _service.Index(new TimePlanningWorkingHoursRequestModel
+        {
+            SiteId = siteUid,
+            DateFrom = markerTrueDate,
+            DateTo = markerFalseDate
+        });
+        Assert.That(result.Success, Is.True, result.Message);
+
+        var markerTrueDay = result.Model.Single(x => x.Date == markerTrueDate);
+        var markerFalseDay = result.Model.Single(x => x.Date == markerFalseDate);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(markerTrueDay.Start1StartedAt, Is.EqualTo(markerTrueDate.AddHours(8).AddMinutes(7)),
+                "marker=true pre-flip row: Index must surface the exact 08:07 stamp.");
+            Assert.That(markerTrueDay.Stop1StoppedAt, Is.EqualTo(markerTrueDate.AddHours(16).AddMinutes(3)),
+                "marker=true pre-flip row: Index must surface the exact 16:03 stamp.");
+            Assert.That(markerFalseDay.Start1StartedAt, Is.EqualTo(markerFalseDate.AddHours(8).AddMinutes(5)),
+                "marker=false post-flip row: Index must surface the tick 08:05.");
+            Assert.That(markerFalseDay.Stop1StoppedAt, Is.EqualTo(markerFalseDate.AddHours(16)),
+                "marker=false post-flip row: Index must surface the tick 16:00.");
+        });
+    }
+
     // ------------------------------------------------------------------
     // Seed helpers
     // ------------------------------------------------------------------

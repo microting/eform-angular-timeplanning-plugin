@@ -185,7 +185,9 @@ public class TimePlanningWorkingHoursService(
                     NettoHoursOverride = x.NettoHoursOverride,
                     NettoHoursOverrideActive = x.NettoHoursOverrideActive,
                     IsSaturday = x.Date.DayOfWeek == DayOfWeek.Saturday,
-                    IsSunday = x.Date.DayOfWeek == DayOfWeek.Sunday
+                    IsSunday = x.Date.DayOfWeek == DayOfWeek.Sunday,
+                    // Write-time mode marker (null = legacy row → timeline fallback).
+                    RegisteredUnderOneMinuteIntervals = x.RegisteredUnderOneMinuteIntervals
                 })
                 .ToListAsync();
 
@@ -350,6 +352,7 @@ public class TimePlanningWorkingHoursService(
                         Message = lastPlanning?.MessageId,
                         CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
                         CommentOffice = lastPlanning?.CommentOffice?.Replace("\r", "<br />"),
+                        RegisteredUnderOneMinuteIntervals = lastPlanning?.RegisteredUnderOneMinuteIntervals,
                         IsLocked = true,
                         IsWeekend = lastPlanning != null
                             ? lastPlanning.Date.DayOfWeek == DayOfWeek.Saturday ||
@@ -412,7 +415,9 @@ public class TimePlanningWorkingHoursService(
             foreach (var timePlanning in timePlannings)
             {
                 ApplyModeAtRegistrationStamps(
-                    timePlanning, oneMinuteTimeline.WasOneMinuteAt(timePlanning.Date));
+                    timePlanning,
+                    timePlanning.RegisteredUnderOneMinuteIntervals
+                        ?? oneMinuteTimeline.WasOneMinuteAt(timePlanning.Date));
             }
 
             var j = 0;
@@ -638,6 +643,14 @@ public class TimePlanningWorkingHoursService(
                     StatusCaseId = 0
                 };
 
+                // Write-time mode marker: this create carries Start/Stop ids, so
+                // record the input mode in force at this write (null site → marker
+                // stays NULL and resolves via the AssignedSiteVersions timeline).
+                var assignedSite = await dbContext.AssignedSites
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .FirstOrDefaultAsync(x => x.SiteId == microtingUid);
+                planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite?.UseOneMinuteIntervals;
+
                 var preTimePlanning =
                     await dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
                             && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date)
@@ -716,6 +729,15 @@ public class TimePlanningWorkingHoursService(
         var assignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == microtingUid);
+
+        // Write-time mode marker: only the Date != midnight branch above rewrites
+        // the Start/Stop ids, so only that branch re-registers the row's mode
+        // (null site → marker unchanged; timeline fallback resolves it).
+        if (planRegistration.Date != midnight && assignedSite != null)
+        {
+            planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
+        }
+
         planRegistration = await PlanRegistrationHelper
             .UpdatePlanRegistration(planRegistration, dbContext, assignedSite, DateTime.Now.AddMonths(-1));
 
@@ -1454,6 +1476,16 @@ public class TimePlanningWorkingHoursService(
             // timestamps before the inline netto math (5-min sites, flag on).
             SelfHealCorruptPauseIds(planRegistration, assignedSite);
 
+            // Write-time mode marker: this save carries Start/Stop registrations,
+            // so record the input mode (UseOneMinuteIntervals) in force at THIS
+            // write. Display/calc renders the row per this marker forever; a null
+            // site leaves the marker unchanged (mode unknown → resolved via the
+            // AssignedSiteVersions timeline fallback).
+            if (assignedSite != null)
+            {
+                planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
+            }
+
             double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
 
             double hours = nettoMinutes / 60;
@@ -1746,6 +1778,16 @@ public class TimePlanningWorkingHoursService(
             // Self-heal a corrupt incoming pauseNId from the truthful pause
             // timestamps before the inline netto math (5-min sites, flag on).
             SelfHealCorruptPauseIds(planRegistration, assignedSite);
+
+            // Write-time mode marker: this save carries Start/Stop registrations,
+            // so record the input mode (UseOneMinuteIntervals) in force at THIS
+            // write. Display/calc renders the row per this marker forever; a null
+            // site leaves the marker unchanged (mode unknown → resolved via the
+            // AssignedSiteVersions timeline fallback).
+            if (assignedSite != null)
+            {
+                planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
+            }
 
             double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
 
@@ -2099,6 +2141,16 @@ public class TimePlanningWorkingHoursService(
             // timestamps before the inline netto math (5-min sites, flag on).
             SelfHealCorruptPauseIds(planRegistration, assignedSite);
 
+            // Write-time mode marker: this save carries Start/Stop registrations,
+            // so record the input mode (UseOneMinuteIntervals) in force at THIS
+            // write. Display/calc renders the row per this marker forever; a null
+            // site leaves the marker unchanged (mode unknown → resolved via the
+            // AssignedSiteVersions timeline fallback).
+            if (assignedSite != null)
+            {
+                planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
+            }
+
             double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
 
             double hours = nettoMinutes / 60;
@@ -2381,6 +2433,16 @@ public class TimePlanningWorkingHoursService(
             // timestamps before the inline netto math (5-min sites, flag on).
             SelfHealCorruptPauseIds(planRegistration, assignedSite);
 
+            // Write-time mode marker: this save carries Start/Stop registrations,
+            // so record the input mode (UseOneMinuteIntervals) in force at THIS
+            // write. Display/calc renders the row per this marker forever; a null
+            // site leaves the marker unchanged (mode unknown → resolved via the
+            // AssignedSiteVersions timeline fallback).
+            if (assignedSite != null)
+            {
+                planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
+            }
+
             double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
 
             double hours = nettoMinutes / 60;
@@ -2530,9 +2592,11 @@ public class TimePlanningWorkingHoursService(
                     WorkerName = site.Name,
                     Date = p.Date,
                     Planning = p,
-                    // Per-row mode at registration (tick rows keep tick cells
-                    // even after the site flips to one-minute).
-                    UseOneMinuteIntervals = oneMinuteTimeline.WasOneMinuteAt(p.Date)
+                    // Per-row mode at registration: write-time marker first,
+                    // AssignedSiteVersions timeline fallback for legacy rows
+                    // (tick rows keep tick cells even after the site flips).
+                    UseOneMinuteIntervals = p.RegisteredUnderOneMinuteIntervals
+                                            ?? oneMinuteTimeline.WasOneMinuteAt(p.Date)
                 }).ToList();
                 BuildDayOverviewWorksheet(dayOverviewWorksheetPart, dayOverviewRows, culture);
 
@@ -2659,7 +2723,7 @@ public class TimePlanningWorkingHoursService(
                 foreach (var planning in timePlannings)
                 {
                     var dataRow = new Row() { RowIndex = (uint)rowIndex };
-                    FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, oneMinuteTimeline.WasOneMinuteAt(planning.Date));
+                    FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, planning.RegisteredUnderOneMinuteIntervals ?? oneMinuteTimeline.WasOneMinuteAt(planning.Date));
 
                     // Append pay code values for this day
                     var dayPayLines = payLinesByDate.ContainsKey(planning.Date)
@@ -3157,10 +3221,13 @@ public class TimePlanningWorkingHoursService(
                             WorkerName = doSite.Name,
                             Date = planning.Date,
                             Planning = planning,
-                            // Per-row mode at registration (tick rows keep tick
-                            // cells even after the site flips to one-minute).
+                            // Per-row mode at registration: write-time marker
+                            // first, timeline fallback for legacy rows (tick rows
+                            // keep tick cells even after the site flips).
                             UseOneMinuteIntervals =
-                                doCache?.OneMinuteTimeline?.WasOneMinuteAt(planning.Date) ?? false
+                                planning.RegisteredUnderOneMinuteIntervals
+                                ?? doCache?.OneMinuteTimeline?.WasOneMinuteAt(planning.Date)
+                                ?? false
                         });
                     }
                 }
@@ -3402,7 +3469,7 @@ public class TimePlanningWorkingHoursService(
                         var dataRow = new Row() { RowIndex = (uint)rowIndex };
                         try
                         {
-                            FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, cache?.OneMinuteTimeline?.WasOneMinuteAt(planning.Date) ?? false);
+                            FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, planning.RegisteredUnderOneMinuteIntervals ?? cache?.OneMinuteTimeline?.WasOneMinuteAt(planning.Date) ?? false);
 
                             // Append pay code values for this day
                             var dayPayLines = (cache != null && cache.PayLinesByDate.ContainsKey(planning.Date))

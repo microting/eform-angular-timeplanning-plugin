@@ -386,6 +386,68 @@ public class PlanRegistrationHelperDisplayParityTests : TestBaseSetup
     }
 
     /// <summary>
+    /// Write-time mode marker (RegisteredUnderOneMinuteIntervals) beats the
+    /// AssignedSiteVersions timeline in BOTH directions; the timeline only
+    /// resolves legacy rows whose marker is NULL:
+    ///  - marker=true on a pre-flip-DATED row (the l1m scenario: an admin
+    ///    exact-minute edit AFTER the flip re-registers the row under
+    ///    one-minute mode) → exact stamps render;
+    ///  - marker NULL on a pre-flip row (untouched legacy row) → ticks;
+    ///  - marker=false on a post-flip-DATED row (written under 5-minute mode)
+    ///    → ticks even though the timeline says one-minute.
+    /// </summary>
+    [Test]
+    public async Task UpdatePlanRegistrationsInPeriod_WriteTimeMarker_WinsOverTimeline()
+    {
+        var flipDate = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+        var assignedSite = await CreateSiteWithFlipHistory(918, flipDate);
+
+        var markerTrueDate = new DateTime(2026, 5, 20, 0, 0, 0, DateTimeKind.Utc);  // pre-flip
+        var markerNullDate = new DateTime(2026, 5, 21, 0, 0, 0, DateTimeKind.Utc);  // pre-flip
+        var markerFalseDate = new DateTime(2026, 6, 10, 0, 0, 0, DateTimeKind.Utc); // post-flip
+        foreach (var (date, marker) in new (DateTime, bool?)[]
+                 {
+                     (markerTrueDate, true),
+                     (markerNullDate, null),
+                     (markerFalseDate, false)
+                 })
+        {
+            await new PlanRegistration
+            {
+                SdkSitId = 918,
+                Date = date,
+                Start1Id = 98,   // 08:05 on the 5-min grid
+                Stop1Id = 193,   // 16:00 on the 5-min grid
+                Start1StartedAt = date.AddHours(8).AddMinutes(7),
+                Stop1StoppedAt = date.AddHours(16).AddMinutes(3),
+                RegisteredUnderOneMinuteIntervals = marker,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            }.Create(TimePlanningPnDbContext);
+        }
+
+        var markerTrueDay = await ProjectSingleDay(assignedSite, markerTrueDate);
+        var markerNullDay = await ProjectSingleDay(assignedSite, markerNullDate);
+        var markerFalseDay = await ProjectSingleDay(assignedSite, markerFalseDate);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(markerTrueDay.Start1StartedAt, Is.EqualTo(markerTrueDate.AddHours(8).AddMinutes(7)),
+                "marker=true (admin exact edit) on a pre-flip day must render the exact stamp 08:07.");
+            Assert.That(markerTrueDay.Stop1StoppedAt, Is.EqualTo(markerTrueDate.AddHours(16).AddMinutes(3)),
+                "marker=true (admin exact edit) on a pre-flip day must render the exact stamp 16:03.");
+            Assert.That(markerNullDay.Start1StartedAt, Is.EqualTo(markerNullDate.AddHours(8).AddMinutes(5)),
+                "marker NULL (untouched legacy row) resolves via the timeline → tick 08:05.");
+            Assert.That(markerNullDay.Stop1StoppedAt, Is.EqualTo(markerNullDate.AddHours(16)),
+                "marker NULL (untouched legacy row) resolves via the timeline → tick 16:00.");
+            Assert.That(markerFalseDay.Start1StartedAt, Is.EqualTo(markerFalseDate.AddHours(8).AddMinutes(5)),
+                "marker=false must render ticks even on a date the timeline says is one-minute.");
+            Assert.That(markerFalseDay.Stop1StoppedAt, Is.EqualTo(markerFalseDate.AddHours(16)),
+                "marker=false must render ticks even on a date the timeline says is one-minute.");
+        });
+    }
+
+    /// <summary>
     /// No-echo-materialization guard: ReadBySiteAndDate must return NULL
     /// stamps VERBATIM even when interval Ids exist.
     ///

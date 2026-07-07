@@ -164,4 +164,12 @@ public class TimePlanningWorkingHoursModel
     public int Shift2PauseNumber { get; set; }
     public double NettoHoursOverride { get; set; }
     public bool NettoHoursOverrideActive { get; set; }
+
+    /// <summary>
+    /// Write-time mode marker copied from the PlanRegistration row: the site's
+    /// UseOneMinuteIntervals in force when the row's Start/Stop values were last
+    /// written. Governs per-row display/calc (exact stamps vs 5-minute ticks);
+    /// null = legacy row, resolved via the AssignedSiteVersions timeline.
+    /// </summary>
+    public bool? RegisteredUnderOneMinuteIntervals { get; set; }
 }

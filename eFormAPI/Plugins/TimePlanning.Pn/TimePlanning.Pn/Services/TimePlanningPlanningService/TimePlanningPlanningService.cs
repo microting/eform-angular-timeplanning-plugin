@@ -937,6 +937,13 @@ public class TimePlanningPlanningService(
                 DeriveLegacyShiftIdsFromTimestamps(planning);
             }
 
+            // Write-time mode marker: this admin edit rewrites the Start/Stop
+            // registrations, so the row is (re-)registered under the site's
+            // CURRENT input mode — an exact-minute edit on a one-minute site
+            // renders exactly forever, even when the row's date predates the
+            // site's flip to one-minute intervals.
+            planning.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
+
             if (!assignedSite.UseOnlyPlanHours)
             {
                 double minutesPlanned = 0;
@@ -1346,6 +1353,12 @@ public class TimePlanningPlanningService(
                 planning.Start5Id = model.Start5Id ?? 0;
                 planning.Stop5Id = model.Stop5Id ?? 0;
             }
+
+            // Write-time mode marker: this save rewrites the Start/Stop
+            // registrations, so the row is (re-)registered under the site's
+            // CURRENT input mode.
+            planning.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
+
             planning.WorkerComment = model.WorkerComment;
 
             planning = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planning);

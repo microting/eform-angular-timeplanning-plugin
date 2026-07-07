@@ -577,8 +577,12 @@ public static class PlanRegistrationHelper
             var planRegistration = await dbContext.PlanRegistrations.AsTracking().FirstAsync(x => x.Id == plan.Id);
             var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month,
                 planRegistration.Date.Day, 0, 0, 0);
-            // Mode at registration (see timeline build above) — display-only.
-            var rowIsOneMinute = oneMinuteTimeline.WasOneMinuteAt(planRegistration.Date);
+            // Mode at registration — display-only. The write-time marker (stamped
+            // by every Start/Stop-writing save from the site's then-current flag)
+            // is authoritative; the AssignedSiteVersions timeline is the fallback
+            // for legacy rows written before the marker existed (marker NULL).
+            var rowIsOneMinute = planRegistration.RegisteredUnderOneMinuteIntervals
+                                 ?? oneMinuteTimeline.WasOneMinuteAt(planRegistration.Date);
 
             if (planRegistration.Start1Id > 289)
             {
