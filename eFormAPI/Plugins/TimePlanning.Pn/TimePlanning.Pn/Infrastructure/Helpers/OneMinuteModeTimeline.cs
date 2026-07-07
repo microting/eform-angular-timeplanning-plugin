@@ -45,6 +45,14 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 ///    created before the audit row — same mode as at creation).
 ///  - Multiple toggles → interval walk over the change points; several
 ///    toggles on the same date → the last save wins.
+///  - Divergence correction: when the entity's CURRENT flag differs from the
+///    last audited version value, the flag was flipped OUTSIDE the audited
+///    path (raw-SQL ops change, or a CI seed whose dump predates the column —
+///    PnBase writes a version row on every API save, so a complete trail
+///    always ends on the current value). The exact flip time is unknowable,
+///    so the current flag takes over from the LAST audited save date — the
+///    earliest possible un-audited flip point. Audited history before that
+///    date is preserved; for sites flipped through the API this is a no-op.
 ///
 /// Cost: ONE query per site (<see cref="BuildAsync"/>); lookups are pure
 /// in-memory. Build once per site per request scope — never per row.
@@ -59,17 +67,21 @@ public sealed class OneMinuteModeTimeline
     /// <summary>
     /// In-memory constructor (also used directly by unit tests).
     /// <paramref name="versionFlags"/> must be in version-row Id (save) order;
-    /// pass an empty list to fall back to <paramref name="fallbackValue"/>.
+    /// pass an empty list to fall back to <paramref name="currentFlag"/>.
+    /// <paramref name="currentFlag"/> is the entity's CURRENT flag — the
+    /// no-version-rows fallback AND the divergence-correction authority (see
+    /// class docs): when the trail does not end on this value, the current
+    /// flag takes over from the last audited save date.
     /// </summary>
     internal OneMinuteModeTimeline(
-        bool fallbackValue,
+        bool currentFlag,
         IReadOnlyList<(bool UseOneMinuteIntervals, DateTime SavedAt)> versionFlags)
     {
         _changePoints = new List<(DateTime, bool)>();
 
         if (versionFlags == null || versionFlags.Count == 0)
         {
-            _initialValue = fallbackValue;
+            _initialValue = currentFlag;
             return;
         }
 
@@ -84,6 +96,17 @@ public sealed class OneMinuteModeTimeline
             }
             current = value;
             _changePoints.Add((savedAt.Date, current));
+        }
+
+        // Divergence correction: an audit trail written by PnBase always ends
+        // on the entity's current value; when it doesn't, the flag was flipped
+        // outside the audited path (raw-SQL ops change / legacy seed). Trust
+        // the CURRENT flag from the last audited save date — the earliest
+        // possible un-audited flip point — appended LAST so it wins over an
+        // audited toggle on that same date (see WasOneMinuteAt walk order).
+        if (current != currentFlag)
+        {
+            _changePoints.Add((versionFlags[^1].SavedAt.Date, currentFlag));
         }
     }
 

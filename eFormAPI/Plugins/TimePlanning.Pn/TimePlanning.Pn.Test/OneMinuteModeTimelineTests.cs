@@ -11,8 +11,9 @@ namespace TimePlanning.Pn.Test;
 /// rows. Exercises every documented edge: no version rows (fallback to the
 /// current flag), flag already true in the earliest version (born-true),
 /// a single false→true flip, multiple toggles, mid-day saves governing the
-/// whole day (date-only comparison), and same-day double toggles where the
-/// last save wins.
+/// whole day (date-only comparison), same-day double toggles where the
+/// last save wins, and the divergence correction (trail flipped outside the
+/// audited path → current flag wins from the last audited save date).
 /// </summary>
 [TestFixture]
 public class OneMinuteModeTimelineTests
@@ -38,14 +39,35 @@ public class OneMinuteModeTimelineTests
     [Test]
     public void BornTrue_TrueFromTheBeginningOfTime()
     {
-        // Fallback deliberately contradicts the version row to prove the
-        // earliest version's value (not the fallback) governs all dates.
-        var timeline = Timeline(false, (true, Origin));
+        var timeline = Timeline(true, (true, Origin));
         Assert.Multiple(() =>
         {
             Assert.That(timeline.WasOneMinuteAt(DateTime.MinValue), Is.True);
-            Assert.That(timeline.WasOneMinuteAt(Origin.AddYears(-10)), Is.True);
+            Assert.That(timeline.WasOneMinuteAt(Origin.AddYears(-10)), Is.True,
+                "Dates before the first version row take the earliest version's value.");
             Assert.That(timeline.WasOneMinuteAt(Origin.AddYears(10)), Is.True);
+        });
+    }
+
+    /// <summary>
+    /// Divergence correction: the audit trail ends on false but the entity's
+    /// CURRENT flag is true — the flip happened outside the audited path
+    /// (raw-SQL ops change, or a seed dump predating the column; the l1m CI
+    /// shard is exactly this shape). The current flag must take over from the
+    /// LAST audited save date; audited history before it is preserved.
+    /// </summary>
+    [Test]
+    public void TrailDivergesFromCurrentFlag_CurrentFlagWinsFromLastAuditedSave()
+    {
+        var lastSave = new DateTime(2026, 3, 10, 9, 0, 0);
+        var timeline = Timeline(true, (false, Origin), (false, lastSave));
+        Assert.Multiple(() =>
+        {
+            Assert.That(timeline.WasOneMinuteAt(new DateTime(2026, 2, 1)), Is.False,
+                "Audited pre-divergence history stays authoritative.");
+            Assert.That(timeline.WasOneMinuteAt(new DateTime(2026, 3, 10)), Is.True,
+                "From the last audited save date the CURRENT flag governs.");
+            Assert.That(timeline.WasOneMinuteAt(new DateTime(2026, 7, 1)), Is.True);
         });
     }
 
@@ -105,7 +127,9 @@ public class OneMinuteModeTimelineTests
     [Test]
     public void SameDayDoubleToggle_LastSaveWins()
     {
-        var timeline = Timeline(true,
+        // Current flag false — consistent with the trail's last save, so the
+        // divergence correction stays inert and pure save-order rules apply.
+        var timeline = Timeline(false,
             (false, Origin),
             (true, new DateTime(2026, 6, 1, 10, 0, 0)),
             (false, new DateTime(2026, 6, 1, 11, 0, 0)));
