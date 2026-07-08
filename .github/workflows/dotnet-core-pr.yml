@@ -239,7 +239,7 @@ jobs:
           - name: c
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanningServiceMultiShiftTests|FullyQualifiedName=TimePlanning.Pn.Test.ScheduleMessageReadTests|FullyQualifiedName=TimePlanning.Pn.Test.DeviceTokenServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GpsCoordinateServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayDayTypeRuleServiceTests"
           - name: d
-            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationVersionHistoryTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayTierRuleServiceTests"
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationVersionHistoryTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayTierRuleServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.MobileFlexRecomputeAndCascadeTests"
           - name: e
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.PushNotificationIntegrationTests|FullyQualifiedName=TimePlanning.Pn.Test.WorkingHoursDisplayParityTests|FullyQualifiedName=TimePlanning.Pn.Test.PayTimeBandRuleServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperComputationTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperHolidayTests"
           - name: f
