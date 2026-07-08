@@ -64,7 +64,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-standard',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Standard',
-    name: 'GLS-A / 3F - Jordbrug Standard 2024-2026',
+    name: 'GLS-A / 3F - Jordbrug Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -114,7 +114,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-dyrehold',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Dyrehold',
-    name: 'GLS-A / 3F - Jordbrug Dyrehold 2024-2026',
+    name: 'GLS-A / 3F - Jordbrug Dyrehold 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -180,7 +180,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-elev-u18',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Elev (under 18)',
-    name: 'GLS-A / 3F - Jordbrug Elev u18 2024-2026',
+    name: 'GLS-A / 3F - Jordbrug Elev u18 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -224,7 +224,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-elev-o18',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Elev (over 18)',
-    name: 'GLS-A / 3F - Jordbrug Elev o18 2024-2026',
+    name: 'GLS-A / 3F - Jordbrug Elev o18 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -269,7 +269,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-elev-u18-dyrehold',
     group: 'GLS-A / 3F',
     label: 'Jordbrug - Elev u18 Dyrehold',
-    name: 'GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2024-2026',
+    name: 'GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -313,7 +313,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-gartneri-standard',
     group: 'GLS-A / 3F',
     label: 'Gartneri - Standard',
-    name: 'GLS-A / 3F - Gartneri Standard 2024-2026',
+    name: 'GLS-A / 3F - Gartneri Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -363,7 +363,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-gartneri-elev-u18',
     group: 'GLS-A / 3F',
     label: 'Gartneri - Elev (under 18)',
-    name: 'GLS-A / 3F - Gartneri Elev u18 2024-2026',
+    name: 'GLS-A / 3F - Gartneri Elev u18 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -407,7 +407,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-gartneri-elev-o18',
     group: 'GLS-A / 3F',
     label: 'Gartneri - Elev (over 18)',
-    name: 'GLS-A / 3F - Gartneri Elev o18 2024-2026',
+    name: 'GLS-A / 3F - Gartneri Elev o18 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -452,7 +452,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-skovbrug-standard',
     group: 'GLS-A / 3F',
     label: 'Skovbrug - Standard',
-    name: 'GLS-A / 3F - Skovbrug Standard 2024-2026',
+    name: 'GLS-A / 3F - Skovbrug Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -502,7 +502,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-skovbrug-elev-u18',
     group: 'GLS-A / 3F',
     label: 'Skovbrug - Elev (under 18)',
-    name: 'GLS-A / 3F - Skovbrug Elev u18 2024-2026',
+    name: 'GLS-A / 3F - Skovbrug Elev u18 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -546,7 +546,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-skovbrug-elev-o18',
     group: 'GLS-A / 3F',
     label: 'Skovbrug - Elev (over 18)',
-    name: 'GLS-A / 3F - Skovbrug Elev o18 2024-2026',
+    name: 'GLS-A / 3F - Skovbrug Elev o18 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -951,7 +951,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-golf-standard',
     group: 'GLS-A / 3F',
     label: 'Golf - Standard',
-    name: 'GLS-A / 3F - Golf Standard 2024-2026',
+    name: 'GLS-A / 3F - Golf Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -989,7 +989,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-golf-elev',
     group: 'GLS-A / 3F',
     label: 'Golf - Elev',
-    name: 'GLS-A / 3F - Golf Elev 2024-2026',
+    name: 'GLS-A / 3F - Golf Elev 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1031,7 +1031,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-fjerkrae-standard',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Fjerkrae - Standard',
-    name: 'GLS-A / 3F - Agroindustri Fjerkrae Standard 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Fjerkrae Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1071,7 +1071,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-fjerkrae-elev',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Fjerkrae - Elev',
-    name: 'GLS-A / 3F - Agroindustri Fjerkrae Elev 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Fjerkrae Elev 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1109,7 +1109,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-grovvare-standard',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Grovvare - Standard',
-    name: 'GLS-A / 3F - Agroindustri Grovvare Standard 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Grovvare Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1148,7 +1148,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-grovvare-elev',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Grovvare - Elev',
-    name: 'GLS-A / 3F - Agroindustri Grovvare Elev 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Grovvare Elev 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1186,7 +1186,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-gulerod-standard',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Gulerod - Standard',
-    name: 'GLS-A / 3F - Agroindustri Gulerod Standard 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Gulerod Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1225,7 +1225,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-gulerod-elev',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Gulerod - Elev',
-    name: 'GLS-A / 3F - Agroindustri Gulerod Elev 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Gulerod Elev 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1263,7 +1263,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-kartoffelmel-standard',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Kartoffelmel - Standard',
-    name: 'GLS-A / 3F - Agroindustri Kartoffelmel Standard 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Kartoffelmel Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1303,7 +1303,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-kartoffelmel-elev',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Kartoffelmel - Elev',
-    name: 'GLS-A / 3F - Agroindustri Kartoffelmel Elev 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Kartoffelmel Elev 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1341,7 +1341,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-kartoffelsorter-standard',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Kartoffelsorter - Standard',
-    name: 'GLS-A / 3F - Agroindustri Kartoffelsorter Standard 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Kartoffelsorter Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1380,7 +1380,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-kartoffelsorter-elev',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Kartoffelsorter - Elev',
-    name: 'GLS-A / 3F - Agroindustri Kartoffelsorter Elev 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Kartoffelsorter Elev 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1418,7 +1418,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-lucerne-standard',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Lucerne - Standard',
-    name: 'GLS-A / 3F - Agroindustri Lucerne Standard 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Lucerne Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1457,7 +1457,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-lucerne-elev',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Lucerne - Elev',
-    name: 'GLS-A / 3F - Agroindustri Lucerne Elev 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Lucerne Elev 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1495,7 +1495,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-minkfoder-standard',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Minkfoder - Standard',
-    name: 'GLS-A / 3F - Agroindustri Minkfoder Standard 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Minkfoder Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1534,7 +1534,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-minkfoder-elev',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Minkfoder - Elev',
-    name: 'GLS-A / 3F - Agroindustri Minkfoder Elev 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Minkfoder Elev 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1572,7 +1572,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-ovrige-standard',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Ovrige - Standard',
-    name: 'GLS-A / 3F - Agroindustri Ovrige Standard 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Ovrige Standard 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1611,7 +1611,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-agro-ovrige-elev',
     group: 'GLS-A / 3F',
     label: 'Agroindustri Ovrige - Elev',
-    name: 'GLS-A / 3F - Agroindustri Ovrige Elev 2024-2026',
+    name: 'GLS-A / 3F - Agroindustri Ovrige Elev 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1645,9 +1645,9 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
   },
 
   // -----------------------------------------------------------------
-  // GLS-A / 3F - Udenlandske praktikanter Landbrug 2024-2026
+  // GLS-A / 3F - Udenlandske praktikanter Landbrug 2026-2029
   //
-  // Foreign trainees under the Jordbrug 2024-2026 §48 loenoversigt.
+  // Foreign trainees under the Jordbrug 2026-2029 §48 loenoversigt.
   // Two variants mirror the standard Jordbrug split:
   //   Andet arbejde  = field work (Mon-Sat 06:00-18:00 only)
   //   Staldarbejde   = animal care (24/7 rostered)
@@ -1671,7 +1671,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-praktikant-udl-andet',
     group: 'GLS-A / 3F',
     label: 'Praktikant udl - Andet arbejde',
-    name: 'GLS-A / 3F - Udenlandske praktikanter Landbrug Andet arbejde 2024-2026',
+    name: 'GLS-A / 3F - Udenlandske praktikanter Landbrug Andet arbejde 2026-2029',
     locked: true,
     payDayRules: [
       {
@@ -1722,7 +1722,7 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
     key: 'glsa-jordbrug-praktikant-udl-staldarbejde',
     group: 'GLS-A / 3F',
     label: 'Praktikant udl - Staldarbejde',
-    name: 'GLS-A / 3F - Udenlandske praktikanter Landbrug Staldarbejde 2024-2026',
+    name: 'GLS-A / 3F - Udenlandske praktikanter Landbrug Staldarbejde 2026-2029',
     locked: true,
     payDayRules: [
       {

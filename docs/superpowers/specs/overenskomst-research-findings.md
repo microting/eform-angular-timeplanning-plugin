@@ -17,19 +17,19 @@ Our PayLineGenerator supports:
 ### GLS-A / 3F (13 presets)
 | Preset | OT Tiers | Period | Status |
 |--------|----------|--------|--------|
-| Jordbrug - Standard | 30%/80% | 2024-2026 | Done |
-| Jordbrug - Dyrehold | 30%/80% + animal time bands | 2024-2026 | Done |
-| Jordbrug - Elev u18 | 50% (8h cap) | 2024-2026 | Done |
-| Jordbrug - Elev o18 | 30%/80% weekday, 50%/80% Sun | 2024-2026 | Done |
-| Jordbrug - Elev u18 Dyrehold | 50% + animal | 2024-2026 | Done |
-| Gartneri - Standard | 50%/100% (Sat split 12:30) | 2024-2026 | Done |
-| Gartneri - Elev u18 | 50%/100% (8h cap) | 2024-2026 | Done |
-| Gartneri - Elev o18 | 50%/100% | 2024-2026 | Done |
-| Skovbrug - Standard | 30%/100% | 2024-2026 | Done |
-| Skovbrug - Elev u18 | 30%/100% (8h cap) | 2024-2026 | Done |
-| Skovbrug - Elev o18 | 30%/100% | 2024-2026 | Done |
-| Udenlandske praktikanter Landbrug - Andet arbejde | 50%/80% (2h middle tier) | 2024-2026 | Done |
-| Udenlandske praktikanter Landbrug - Staldarbejde | 50%/80% weekday + Sat 12:00 split + ANIMAL_SUN_HOLIDAY | 2024-2026 | Done |
+| Jordbrug - Standard | 30%/80% | 2026-2029 | Done |
+| Jordbrug - Dyrehold | 30%/80% + animal time bands | 2026-2029 | Done |
+| Jordbrug - Elev u18 | 50% (8h cap) | 2026-2029 | Done |
+| Jordbrug - Elev o18 | 30%/80% weekday, 50%/80% Sun | 2026-2029 | Done |
+| Jordbrug - Elev u18 Dyrehold | 50% + animal | 2026-2029 | Done |
+| Gartneri - Standard | 50%/100% (Sat split 12:30) | 2026-2029 | Done |
+| Gartneri - Elev u18 | 50%/100% (8h cap) | 2026-2029 | Done |
+| Gartneri - Elev o18 | 50%/100% | 2026-2029 | Done |
+| Skovbrug - Standard | 30%/100% | 2026-2029 | Done |
+| Skovbrug - Elev u18 | 30%/100% (8h cap) | 2026-2029 | Done |
+| Skovbrug - Elev o18 | 30%/100% | 2026-2029 | Done |
+| Udenlandske praktikanter Landbrug - Andet arbejde | 50%/80% (2h middle tier) | 2026-2029 | Done |
+| Udenlandske praktikanter Landbrug - Staldarbejde | 50%/80% weekday + Sat 12:00 split + ANIMAL_SUN_HOLIDAY | 2026-2029 | Done |
 
 Source for Udenlandske praktikanter: [GLS-A Loenoversigt: Praktikanter-landbrug 2025](https://www.gls-a.dk/wp-content/uploads/2025/02/Praktikanter-landbrug2025.pdf).
 The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of the praktik, but only in the base kr/time - not the rule structure. Tier cutoffs, day types, pay codes, and supplements are identical for both age groups, so a single preset per work variant serves both.
@@ -214,3 +214,26 @@ The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of th
 8. **Hotel & Restaurant** - Large sector
 9. **NNF Fodevareindustri** - Multiple sub-agreements
 10. **GASA Sortering/Pakning + Transport** - Niche but farming-related
+
+## OK26 Verification (2026-07-08)
+
+All GLS-A/3F Den Grønne Gruppe families were renewed in a single combined OK26 settlement signed 25 February 2026, effective 1 March 2026, with minimum contract term through 1 March 2029 → all GLS-A presets period label is **2026-2029**.
+
+### Per-family verification status:
+- **Jordbrug 2026-2029** — full text published (gls-a.dk, 4010, 2. udgave 06.07.26). Structure (overtime 30%/80%, 7h24m/9h24m cutoffs, dyrehold bands, praktikant 50%/80%, Grundlovsdag) unchanged vs 2024-2026.
+- **Agroindustri 2026-2029** — full text published (4012, 07.07.26). All eight sub-areas' overtime clauses word-for-word identical to 2024-2026.
+- **Golf 2026-2029** — confirmed by GLS-A's official lønoversigt (March 2026: "overenskomstperioden 2026-2029"); full text not yet typeset. Wage-overview wording identical to prior year except rates.
+- **Gartneri / Skovbrug 2026-2029** — full texts not yet typeset, but covered by the same signed settlement; the 31-protocol master document (Protokollat 23) states overtime rates "beregnes som hidtil" (unchanged).
+
+### Pre-existing encoding discrepancies (open verification questions for second-opinion review against primary texts)
+
+These mismatches exist against both the 2024-2026 and 2026-2029 texts (unchanged wording), so the rename neither fixes nor worsens them:
+
+1. Agro **Gulerodspakkerier**: text has 30% (h1-2) / 80% (h3) / 100% (beyond + Sun/Hol); preset ends at 80%.
+2. Agro **Kartoffelsortering**: text has 30% → 100% (no 80% tier); preset has 30% → 80%.
+3. Agro **Minkfoder**: text has a third tier at 100% keyed to clock time (after 20:00; Sun after 12:00); preset ends at 80%.
+4. Agro **Øvrige**: text uses flat-DKK supplements across three clock-hour bands + a separate two-band Sunday scale; preset models 30%→80% percentages.
+5. **Skovbrug** evening forskudt-tid band: text allows 18:00-19:00 (1h); preset encodes 18:00-20:00.
+6. **Skovbrug** Saturday: text treats all Saturday work as overtime from hour 1; preset gives 6h "normal" first.
+7. **Gartneri** Sunday/holiday: text tiers it 50% (first 2h) / 100%; preset uses a single all-day SUN_HOLIDAY code.
+8. **Elev u18 8h/day threshold** (Gartneri/Skovbrug/Golf/Agro): no basis in the overenskomst texts — likely from the statutory youth-work rules; verify intent before changing.
