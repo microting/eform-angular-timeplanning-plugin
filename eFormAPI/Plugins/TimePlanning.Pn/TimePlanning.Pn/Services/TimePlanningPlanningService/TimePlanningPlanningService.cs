@@ -1197,6 +1197,7 @@ public class TimePlanningPlanningService(
             }
 
             var planning = await dbContext.PlanRegistrations
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Id == model.Id)
                 .FirstOrDefaultAsync().ConfigureAwait(false);
 

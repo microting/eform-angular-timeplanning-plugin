@@ -547,7 +547,8 @@ public class AbsenceRequestService : IAbsenceRequestService
             // Find or create PlanRegistration for this worker and date
             var planRegistration = await _dbContext.PlanRegistrations
                 .FirstOrDefaultAsync(pr => pr.SdkSitId == request.RequestedBySdkSitId
-                                           && pr.Date == day.Date);
+                                           && pr.Date == day.Date
+                                           && pr.WorkflowState != Constants.WorkflowStates.Removed);
 
             if (planRegistration == null)
             {

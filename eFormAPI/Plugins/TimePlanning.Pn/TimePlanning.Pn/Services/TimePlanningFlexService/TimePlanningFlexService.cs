@@ -148,6 +148,7 @@ public class TimePlanningFlexService(
             foreach (var updateModel in model)
             {
                 var planRegistration = await dbContext.PlanRegistrations
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.Date == updateModel.Date)
                     .Where(x => x.SdkSitId == updateModel.Worker.Id)
                     .FirstOrDefaultAsync();
@@ -174,6 +175,7 @@ public class TimePlanningFlexService(
             foreach (int listSiteId in listSiteIds)
             {
                 var plannings = await dbContext.PlanRegistrations
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => x.StatusCaseId != 0)
                     .Where(x => x.Date > DateTime.Now.AddDays(-2))
                     .Where(x => x.SdkSitId == listSiteId)
