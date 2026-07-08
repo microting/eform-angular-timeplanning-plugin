@@ -99,7 +99,9 @@ public class AbsenceRequestService : IAbsenceRequestService
         {
             return 0;
         }
-        return worker.SiteWorkers.First().Site.MicrotingUid ?? 0;
+        // Deterministically resolve the active site (excludes removed
+        // SiteWorker/Site rows, ordered by SiteWorker.Id). All-removed -> 0.
+        return worker.ResolveActiveSdkSiteId() ?? 0;
     }
 
     public async Task<OperationDataResult<AbsenceRequestModel>> CreateAsync(AbsenceRequestCreateModel model)

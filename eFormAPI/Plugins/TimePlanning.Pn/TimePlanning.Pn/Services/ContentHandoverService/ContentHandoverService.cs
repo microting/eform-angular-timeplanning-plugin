@@ -114,7 +114,15 @@ public class ContentHandoverService : IContentHandoverService
                     _localizationService.GetString("ErrorWhileObtainingPlannings"));
             }
 
-            var callerSite = worker.SiteWorkers.First().Site;
+            // Deterministically resolve the caller's active site (excludes
+            // removed SiteWorker/Site rows). If no active site resolves, the
+            // caller has no site to hand coworkers over from -> empty list
+            // (previously this NRE'd on an empty SiteWorkers collection).
+            var callerSite = worker.ResolveActiveSite();
+            if (callerSite == null)
+            {
+                return new OperationDataResult<List<HandoverCoworkerModel>>(true, new List<HandoverCoworkerModel>());
+            }
 
             var callerTagIds = await sdkDbContext.SiteTags
                 .Where(x => x.SiteId == callerSite.Id
@@ -1097,7 +1105,9 @@ public class ContentHandoverService : IContentHandoverService
         {
             return 0;
         }
-        return worker.SiteWorkers.First().Site.MicrotingUid ?? 0;
+        // Deterministically resolve the active site (excludes removed
+        // SiteWorker/Site rows, ordered by SiteWorker.Id). All-removed -> 0.
+        return worker.ResolveActiveSdkSiteId() ?? 0;
     }
 
     public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync(int fromSdkSitId)

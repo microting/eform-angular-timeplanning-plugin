@@ -135,7 +135,18 @@ public class TimePlanningPlanningService(
                         localizationService.GetString("ErrorWhileObtainingPlannings"));
                 }
 
-                var site = worker!.SiteWorkers.First().Site;
+                // Deterministically resolve the active site (excludes removed
+                // SiteWorker/Site rows). No active site -> same error path as a
+                // missing worker (previously NRE'd on empty SiteWorkers).
+                var site = worker!.ResolveActiveSite();
+                if (site == null)
+                {
+                    SentrySdk.CaptureMessage($"No active site for worker with email {currentUser.Email}");
+                    return new OperationDataResult<List<TimePlanningPlanningModel>>(
+                        false,
+                        localizationService.GetString("ErrorWhileObtainingPlannings"));
+                }
+
                 var assignedSite = assignedSites
                     .FirstOrDefault(x => x.SiteId == site.MicrotingUid);
                 if (assignedSite == null || !assignedSite.IsManager)
@@ -435,7 +446,17 @@ public class TimePlanningPlanningService(
                 localizationService.GetString("SiteNotFound"));
         }
 
-        var site = worker.SiteWorkers.First().Site;
+        // Deterministically resolve the active site (excludes removed
+        // SiteWorker/Site rows). No active site -> not found (mirrors the
+        // worker == null path above; previously NRE'd on empty SiteWorkers).
+        var site = worker.ResolveActiveSite();
+        if (site == null)
+        {
+            SentrySdk.CaptureMessage($"No active site for worker with email {currentUser.Email}");
+            return new OperationDataResult<TimePlanningPlanningModel>(
+                false,
+                localizationService.GetString("SiteNotFound"));
+        }
 
         var dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -1176,7 +1197,18 @@ public class TimePlanningPlanningService(
                     localizationService.GetString("SiteNotFound"));
             }
 
-            var mcrotingUid = worker.SiteWorkers.First().Site.MicrotingUid;
+            // Deterministically resolve the active site (excludes removed
+            // SiteWorker/Site rows). No active site -> not found (mirrors the
+            // worker == null path above; previously NRE'd on empty SiteWorkers).
+            var site = worker.ResolveActiveSite();
+            if (site == null)
+            {
+                SentrySdk.CaptureMessage($"No active site for worker with email {currentUser.Email}");
+                return new OperationDataResult<TimePlanningPlanningModel>(
+                    false,
+                    localizationService.GetString("SiteNotFound"));
+            }
+            var mcrotingUid = site.MicrotingUid;
 
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)

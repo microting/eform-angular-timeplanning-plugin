@@ -3,6 +3,7 @@ namespace TimePlanning.Pn.Controllers;
 
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure.Helpers;
 using Infrastructure.Models.DeviceToken;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -69,6 +70,8 @@ public class DeviceTokenController : Controller
         {
             return 0;
         }
-        return worker.SiteWorkers.First().Site.MicrotingUid ?? 0;
+        // Deterministically resolve the active site (excludes removed
+        // SiteWorker/Site rows, ordered by SiteWorker.Id). All-removed -> 0.
+        return worker.ResolveActiveSdkSiteId() ?? 0;
     }
 }
