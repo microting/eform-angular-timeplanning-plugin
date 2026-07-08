@@ -405,9 +405,15 @@ public class TimeSettingService(
 
                         if (worker != null && worker.SiteWorkers.Any())
                         {
-                            var workerSite = worker.SiteWorkers.First().Site;
-                            var assignedSite = assignedSites
-                                .FirstOrDefault(x => x.SiteId == workerSite.MicrotingUid);
+                            // Deterministically resolve the active site
+                            // (excludes removed SiteWorker/Site rows). When none
+                            // resolves, assignedSite stays null and flows into
+                            // the existing "no assigned site" -> [] branch below.
+                            var workerSite = worker.ResolveActiveSite();
+                            var assignedSite = workerSite == null
+                                ? null
+                                : assignedSites
+                                    .FirstOrDefault(x => x.SiteId == workerSite.MicrotingUid);
 
                             if (assignedSite != null && assignedSite.IsManager)
                             {
@@ -708,7 +714,14 @@ public class TimeSettingService(
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
 
-        var sdkSite = worker.SiteWorkers.First().Site;
+        // Deterministically resolve the active site (excludes removed
+        // SiteWorker/Site rows). No active site -> not found (mirrors the
+        // worker == null path above; previously this NRE'd on empty SiteWorkers).
+        var sdkSite = worker.ResolveActiveSite();
+        if (sdkSite == null)
+        {
+            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
+        }
 
         Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
