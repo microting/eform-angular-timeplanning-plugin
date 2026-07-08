@@ -281,6 +281,7 @@ public class TimePlanningWorkingHoursService(
 
             var lastPlanning = dbContext.PlanRegistrations
                 .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Date < model.DateFrom)
                 .Where(x => x.SdkSitId == model.SiteId).OrderBy(x => x.Date).LastOrDefault();
 
@@ -420,94 +421,10 @@ public class TimePlanningWorkingHoursService(
                         ?? oneMinuteTimeline.WasOneMinuteAt(timePlanning.Date));
             }
 
-            var j = 0;
-            double sumFlexEnd = 0;
-            // Phase 2: parallel running balance in seconds for flag-on chain.
-            int sumFlexEndInSeconds = 0;
-            //double SumFlexStart = 0;
-            foreach (var timePlanningWorkingHoursModel in timePlannings)
-            {
-                if (j == 0)
-                {
-                    if (useOneMinuteIntervals)
-                    {
-                        // Phase 2: chain in seconds; back-derive doubles via /3600.0.
-                        timePlanningWorkingHoursModel.SumFlexStartInSeconds =
-                            timePlanningWorkingHoursModel.SumFlexStartInSeconds;
-                        timePlanningWorkingHoursModel.SumFlexStart =
-                            timePlanningWorkingHoursModel.SumFlexStartInSeconds / 3600.0;
-                        timePlanningWorkingHoursModel.SumFlexEndInSeconds =
-                            timePlanningWorkingHoursModel.SumFlexStartInSeconds
-                            + timePlanningWorkingHoursModel.FlexInSeconds
-                            - timePlanningWorkingHoursModel.PaiedOutFlexInSeconds;
-                        timePlanningWorkingHoursModel.SumFlexEnd =
-                            timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
-                        sumFlexEndInSeconds = timePlanningWorkingHoursModel.SumFlexEndInSeconds;
-                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
-                    }
-                    else
-                    {
-                        timePlanningWorkingHoursModel.SumFlexStart =
-                            Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
-                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
-                            timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
-                            (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
-                                ? 0
-                                : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."),
-                                    CultureInfo.InvariantCulture)), 2);
-                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
-                    }
-                }
-                else
-                {
-                    if (useOneMinuteIntervals)
-                    {
-                        timePlanningWorkingHoursModel.SumFlexStartInSeconds = sumFlexEndInSeconds;
-                        timePlanningWorkingHoursModel.SumFlexStart = sumFlexEndInSeconds / 3600.0;
-                        try
-                        {
-                            timePlanningWorkingHoursModel.SumFlexEndInSeconds =
-                                timePlanningWorkingHoursModel.SumFlexStartInSeconds
-                                + timePlanningWorkingHoursModel.FlexInSeconds
-                                - timePlanningWorkingHoursModel.PaiedOutFlexInSeconds;
-                            timePlanningWorkingHoursModel.SumFlexEnd =
-                                timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
-                        }
-                        catch (Exception e)
-                        {
-                            SentrySdk.CaptureException(e);
-                            logger.LogError(e.Message);
-                            logger.LogTrace(e.StackTrace);
-                        }
-
-                        sumFlexEndInSeconds = timePlanningWorkingHoursModel.SumFlexEndInSeconds;
-                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
-                    }
-                    else
-                    {
-                        timePlanningWorkingHoursModel.SumFlexStart = sumFlexEnd;
-                        try
-                        {
-                            timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
-                                timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
-                                (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
-                                    ? 0
-                                    : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."),
-                                        CultureInfo.InvariantCulture)), 2);
-                        }
-                        catch (Exception e)
-                        {
-                            SentrySdk.CaptureException(e);
-                            logger.LogError(e.Message);
-                            logger.LogTrace(e.StackTrace);
-                        }
-
-                        sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
-                    }
-                }
-
-                j++;
-            }
+            // Single source of truth for the running flex balance rendered by
+            // both this web grid AND the mobile period-status hero
+            // (CalculateHoursSummary) — see ApplyRunningFlexChain.
+            ApplyRunningFlexChain(timePlannings, useOneMinuteIntervals);
 
             return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                 true,
@@ -532,6 +449,12 @@ public class TimePlanningWorkingHoursService(
                 .Where(x => x.SdkSitId == model.SiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync();
+            // Site-level one-minute flag drives the forward-cascade recompute below
+            // so the double AND *InSeconds SumFlex columns are written consistently.
+            var assignedSite = await dbContext.AssignedSites
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.SiteId == model.SiteId);
+            var useOneMinuteIntervals = assignedSite?.UseOneMinuteIntervals ?? false;
             var first = true;
             foreach (var planning in model.Plannings)
             {
@@ -574,20 +497,43 @@ public class TimePlanningWorkingHoursService(
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
-                    if (preTimePlanning != null)
+                    // Re-chain the running flex balance for this later day off the
+                    // preceding row. On UseOneMinuteIntervals sites route through the
+                    // seconds-precision helper so BOTH the *InSeconds source of truth
+                    // AND the back-derived double columns stay consistent — previously
+                    // this rewrote only the doubles (and ignored NettoHoursOverride),
+                    // so the double SumFlexEnd drifted from the seconds chain and the
+                    // mobile summary (which read the double) disagreed with the web
+                    // grid (which recomputes from seconds).
+                    if (useOneMinuteIntervals)
                     {
-                        planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                        planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                                      planRegistration.PlanHours -
-                                                      planRegistration.PaiedOutFlex;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                            planRegistration,
+                            preTimePlanning?.SumFlexEndInSeconds ?? 0,
+                            preTimePlanning != null);
                     }
                     else
                     {
-                        planRegistration.SumFlexEnd = planRegistration.NettoHours - planRegistration.PlanHours -
-                                                      planRegistration.PaiedOutFlex;
-                        planRegistration.SumFlexStart = 0;
-                        planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        // Flag-off path keeps the legacy double formula but now honours
+                        // NettoHoursOverrideActive, matching UpdatePlanRegistration.
+                        var effectiveNettoHours = planRegistration.NettoHoursOverrideActive
+                            ? planRegistration.NettoHoursOverride
+                            : planRegistration.NettoHours;
+                        if (preTimePlanning != null)
+                        {
+                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+                            planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + effectiveNettoHours -
+                                                          planRegistration.PlanHours -
+                                                          planRegistration.PaiedOutFlex;
+                        }
+                        else
+                        {
+                            planRegistration.SumFlexStart = 0;
+                            planRegistration.SumFlexEnd = effectiveNettoHours - planRegistration.PlanHours -
+                                                          planRegistration.PaiedOutFlex;
+                        }
+
+                        planRegistration.Flex = effectiveNettoHours - planRegistration.PlanHours;
                     }
 
                     await planRegistration.Update(dbContext);
@@ -652,7 +598,9 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite?.UseOneMinuteIntervals;
 
                 var preTimePlanning =
-                    await dbContext.PlanRegistrations.AsNoTracking().Where(x => x.Date < planRegistration.Date
+                    await dbContext.PlanRegistrations.AsNoTracking()
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .Where(x => x.Date < planRegistration.Date
                             && x.SdkSitId == planRegistration.SdkSitId).OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
                 if (preTimePlanning != null)
@@ -918,14 +866,67 @@ public class TimePlanningWorkingHoursService(
             var totalPlanHours = planRegistrations.Sum(x => x.PlanHours);
             var totalNettoHours = planRegistrations.Sum(x => x.NettoHours);
             var totalPaidOutFlex = planRegistrations.Sum(x => x.PaiedOutFlex);
-            // The flex balance shown on the period status hero card is a point-in-time
-            // read of the last day's stored SumFlexEnd, not a recomputation of
-            // sum(NettoHours) - sum(PlanHours). The latter ignores opening balance
-            // and mid-period payouts.
-            var lastDay = planRegistrations
-                .OrderByDescending(x => x.Date)
-                .FirstOrDefault();
-            var endOfPeriodFlex = lastDay?.SumFlexEnd ?? 0;
+
+            // The flex balance shown on the period-status hero must agree with the
+            // web grid (Index). Recompute the running balance through the SAME chain
+            // (ApplyRunningFlexChain) instead of reading the stored SumFlexEnd double
+            // column verbatim: on UseOneMinuteIntervals sites the forward cascade
+            // rewrites that double but not the *InSeconds source of truth, so a raw
+            // read drifts. Build the chain rows exactly like Index — the anchor row
+            // (last planning strictly before the period) carries the opening balance
+            // — then take the last in-range day's recomputed SumFlexEnd.
+            var assignedSite = await dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
+            var useOneMinuteIntervals = assignedSite?.UseOneMinuteIntervals ?? false;
+
+            // Anchor = last non-removed planning strictly before the period; carries
+            // the opening balance into the chain. Matches Index's prePlanning anchor
+            // (which also excludes soft-removed rows) so mobile == web.
+            var anchor = await dbContext.PlanRegistrations
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Date < startDate)
+                .Where(x => x.SdkSitId == sdkSite.MicrotingUid)
+                .OrderBy(x => x.Date)
+                .LastOrDefaultAsync();
+
+            // Mirror Index's per-row projection for the flex-relevant fields only.
+            static TimePlanningWorkingHoursModel ToFlexRow(PlanRegistration x) => new()
+            {
+                Date = x.Date,
+                NettoHours = Math.Round(x.NettoHours, 2),
+                FlexHours = Math.Round(x.Flex, 2),
+                SumFlexStart = Math.Round(x.SumFlexStart, 2),
+                PaidOutFlex = x.PaiedOutFlex.ToString().Replace(",", "."),
+                NettoHoursInSeconds = x.NettoHoursInSeconds,
+                FlexInSeconds = x.FlexInSeconds,
+                SumFlexStartInSeconds = x.SumFlexStartInSeconds,
+                SumFlexEndInSeconds = x.SumFlexEndInSeconds,
+                PaiedOutFlexInSeconds = x.PaiedOutFlexInSeconds
+            };
+
+            var inRangeRows = planRegistrations
+                .OrderBy(x => x.Date)
+                .Select(ToFlexRow)
+                .ToList();
+
+            var chainRows = new List<TimePlanningWorkingHoursModel>();
+            if (anchor != null)
+            {
+                chainRows.Add(ToFlexRow(anchor));
+            }
+            chainRows.AddRange(inRangeRows);
+
+            ApplyRunningFlexChain(chainRows, useOneMinuteIntervals);
+
+            // Difference = the last in-range day's recomputed SumFlexEnd (seconds
+            // chain), NOT a raw column read. When the period itself has no rows,
+            // fall back to the anchor's carried-forward balance.
+            var endOfPeriodFlex = inRangeRows.Count > 0
+                ? inRangeRows[^1].SumFlexEnd
+                : (anchor != null ? chainRows[^1].SumFlexEnd : 0);
 
             var summary = new TimePlanningHoursSummaryModel
             {
@@ -956,6 +957,111 @@ public class TimePlanningWorkingHoursService(
         }
     }
 
+
+    /// <summary>
+    /// Applies the running flex-balance chain over an ordered-by-date list of
+    /// working-hours rows. Single source of truth for the flex balance rendered
+    /// by both <see cref="Index"/> (web grid) and <see cref="CalculateHoursSummary"/>
+    /// (mobile period-status hero) so the two never disagree.
+    ///
+    /// For UseOneMinuteIntervals sites the chain runs in the integer
+    /// <c>*InSeconds</c> columns (the source of truth) and back-derives the legacy
+    /// <c>double</c> SumFlex* fields via <c>/3600.0</c>; otherwise it runs in the
+    /// legacy rounded doubles. Behaviour is byte-identical to the loop previously
+    /// inlined in <see cref="Index"/>.
+    /// </summary>
+    private void ApplyRunningFlexChain(
+        List<TimePlanningWorkingHoursModel> timePlannings, bool useOneMinuteIntervals)
+    {
+        var j = 0;
+        double sumFlexEnd = 0;
+        // Phase 2: parallel running balance in seconds for flag-on chain.
+        int sumFlexEndInSeconds = 0;
+        //double SumFlexStart = 0;
+        foreach (var timePlanningWorkingHoursModel in timePlannings)
+        {
+            if (j == 0)
+            {
+                if (useOneMinuteIntervals)
+                {
+                    // Phase 2: chain in seconds; back-derive doubles via /3600.0.
+                    timePlanningWorkingHoursModel.SumFlexStartInSeconds =
+                        timePlanningWorkingHoursModel.SumFlexStartInSeconds;
+                    timePlanningWorkingHoursModel.SumFlexStart =
+                        timePlanningWorkingHoursModel.SumFlexStartInSeconds / 3600.0;
+                    timePlanningWorkingHoursModel.SumFlexEndInSeconds =
+                        timePlanningWorkingHoursModel.SumFlexStartInSeconds
+                        + timePlanningWorkingHoursModel.FlexInSeconds
+                        - timePlanningWorkingHoursModel.PaiedOutFlexInSeconds;
+                    timePlanningWorkingHoursModel.SumFlexEnd =
+                        timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
+                    sumFlexEndInSeconds = timePlanningWorkingHoursModel.SumFlexEndInSeconds;
+                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                }
+                else
+                {
+                    timePlanningWorkingHoursModel.SumFlexStart =
+                        Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
+                    timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
+                        timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
+                        (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                            ? 0
+                            : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."),
+                                CultureInfo.InvariantCulture)), 2);
+                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                }
+            }
+            else
+            {
+                if (useOneMinuteIntervals)
+                {
+                    timePlanningWorkingHoursModel.SumFlexStartInSeconds = sumFlexEndInSeconds;
+                    timePlanningWorkingHoursModel.SumFlexStart = sumFlexEndInSeconds / 3600.0;
+                    try
+                    {
+                        timePlanningWorkingHoursModel.SumFlexEndInSeconds =
+                            timePlanningWorkingHoursModel.SumFlexStartInSeconds
+                            + timePlanningWorkingHoursModel.FlexInSeconds
+                            - timePlanningWorkingHoursModel.PaiedOutFlexInSeconds;
+                        timePlanningWorkingHoursModel.SumFlexEnd =
+                            timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
+                    }
+                    catch (Exception e)
+                    {
+                        SentrySdk.CaptureException(e);
+                        logger.LogError(e.Message);
+                        logger.LogTrace(e.StackTrace);
+                    }
+
+                    sumFlexEndInSeconds = timePlanningWorkingHoursModel.SumFlexEndInSeconds;
+                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                }
+                else
+                {
+                    timePlanningWorkingHoursModel.SumFlexStart = sumFlexEnd;
+                    try
+                    {
+                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
+                            timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
+                            (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
+                                ? 0
+                                : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."),
+                                    CultureInfo.InvariantCulture)), 2);
+                    }
+                    catch (Exception e)
+                    {
+                        SentrySdk.CaptureException(e);
+                        logger.LogError(e.Message);
+                        logger.LogTrace(e.StackTrace);
+                    }
+
+                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                }
+            }
+
+            j++;
+        }
+    }
 
     private static double RoundToTwoDecimalPlaces(double value)
     {
