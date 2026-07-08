@@ -81,19 +81,10 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
         var site = new SdkSite { Name = siteName, MicrotingUid = microtingUid };
         await site.Create(sdkDbContext);
 
-        // Active row + a Removed row for the same date/site -> the pre-fix
-        // SingleOrDefaultAsync would throw on this pair.
-        var active = new PlanRegistration
-        {
-            SdkSitId = microtingUid,
-            Date = importDate,
-            PlanText = "ACTIVE-ORIG",
-            CreatedByUserId = 1,
-            UpdatedByUserId = 1
-        };
-        await active.Create(TimePlanningPnDbContext);
-        var activeId = active.Id;
-
+        // A Removed row + an Active row for the same date/site -> the pre-fix
+        // SingleOrDefaultAsync would throw on this pair. Seed the removed row
+        // FIRST (create+delete) so the active row can then be created without
+        // violating the unique (SdkSitId, Date, WorkflowState) index.
         var removed = new PlanRegistration
         {
             SdkSitId = microtingUid,
@@ -105,6 +96,17 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
         await removed.Create(TimePlanningPnDbContext);
         await removed.Delete(TimePlanningPnDbContext); // WorkflowState -> Removed
         var removedId = removed.Id;
+
+        var active = new PlanRegistration
+        {
+            SdkSitId = microtingUid,
+            Date = importDate,
+            PlanText = "ACTIVE-ORIG",
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await active.Create(TimePlanningPnDbContext);
+        var activeId = active.Id;
 
         var xlsx = BuildWorkbook(siteName, dateStr, "8", "IMPORTED");
         var file = Substitute.For<IFormFile>();
