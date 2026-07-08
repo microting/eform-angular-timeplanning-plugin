@@ -324,7 +324,7 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     await expect(dialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
 
     // Verify the preset name is displayed
-    await expect(dialog.locator('.preset-name')).toContainText('GLS-A / 3F - Jordbrug Standard 2024-2026');
+    await expect(dialog.locator('.preset-name')).toContainText('GLS-A / 3F - Jordbrug Standard 2026-2029');
 
     // Verify the read-only rules summary shows pay day rules
     await expect(dialog.locator('.rules-summary').first()).toBeVisible({ timeout: 5000 });
@@ -335,11 +335,11 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     // Verify it appears in the grid
     const grid = page.locator('#time-planning-pn-pay-rule-sets-grid');
     await grid.waitFor({ state: 'visible', timeout: 10000 });
-    await expect(grid.getByText('GLS-A / 3F - Jordbrug Standard 2024-2026')).toBeVisible({ timeout: 10000 });
+    await expect(grid.getByText('GLS-A / 3F - Jordbrug Standard 2026-2029')).toBeVisible({ timeout: 10000 });
 
     // ---- Step 2: Navigate to Plannings and assign PayRuleSet to worker ----
     await navigateToPlannings(page);
-    await assignPayRuleSetToWorker(page, 'GLS-A / 3F - Jordbrug Standard 2024-2026');
+    await assignPayRuleSetToWorker(page, 'GLS-A / 3F - Jordbrug Standard 2026-2029');
 
     // ---- Step 3: Verify the assignment was saved by re-opening the dialog ----
     // Re-navigate to plannings to confirm
@@ -358,7 +358,7 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     // Verify the "Jordbrug Standard" preset from Scenario 1 is in the grid
     const grid = page.locator('#time-planning-pn-pay-rule-sets-grid');
     await grid.waitFor({ state: 'visible', timeout: 10000 });
-    await expect(grid.getByText('GLS-A / 3F - Jordbrug Standard 2024-2026')).toBeVisible({ timeout: 10000 });
+    await expect(grid.getByText('GLS-A / 3F - Jordbrug Standard 2026-2029')).toBeVisible({ timeout: 10000 });
 
     // ---- Step 2: Open create modal and verify Standard preset is gone ----
     await openCreatePayRuleSetModal(page);
@@ -383,15 +383,15 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
 
     // Verify the locked preset view is shown
     await expect(dialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
-    await expect(dialog.locator('.preset-name')).toContainText('GLS-A / 3F - Jordbrug Dyrehold 2024-2026');
+    await expect(dialog.locator('.preset-name')).toContainText('GLS-A / 3F - Jordbrug Dyrehold 2026-2029');
 
     // Click Create
     await submitCreatePayRuleSet(page);
 
     // ---- Step 4: Verify both rule sets appear in the grid ----
     await grid.waitFor({ state: 'visible', timeout: 10000 });
-    await expect(grid.getByText('GLS-A / 3F - Jordbrug Standard 2024-2026')).toBeVisible({ timeout: 10000 });
-    await expect(grid.getByText('GLS-A / 3F - Jordbrug Dyrehold 2024-2026')).toBeVisible({ timeout: 10000 });
+    await expect(grid.getByText('GLS-A / 3F - Jordbrug Standard 2026-2029')).toBeVisible({ timeout: 10000 });
+    await expect(grid.getByText('GLS-A / 3F - Jordbrug Dyrehold 2026-2029')).toBeVisible({ timeout: 10000 });
   });
 
   // -----------------------------------------------------------------------
@@ -430,12 +430,12 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
 
     const dialog = page.locator('mat-dialog-container');
     await expect(dialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
-    await expect(dialog.locator('.preset-name')).toContainText('GLS-A / 3F - Gartneri Standard 2024-2026');
+    await expect(dialog.locator('.preset-name')).toContainText('GLS-A / 3F - Gartneri Standard 2026-2029');
 
     await submitCreatePayRuleSet(page);
 
     const grid = page.locator('#time-planning-pn-pay-rule-sets-grid');
-    await expect(grid.getByText('GLS-A / 3F - Gartneri Standard 2024-2026')).toBeVisible({ timeout: 10000 });
+    await expect(grid.getByText('GLS-A / 3F - Gartneri Standard 2026-2029')).toBeVisible({ timeout: 10000 });
   });
 
   // -----------------------------------------------------------------------
@@ -455,14 +455,14 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     const createDialog = page.locator('mat-dialog-container');
     await expect(createDialog.locator('.lock-banner')).toBeVisible({ timeout: 5000 });
     await expect(createDialog.locator('.preset-name'))
-      .toContainText('GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2024-2026');
+      .toContainText('GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2026-2029');
 
     await submitCreatePayRuleSet(page);
 
     // Find the newly-created row in the grid
     const grid = page.locator('#time-planning-pn-pay-rule-sets-grid');
     await grid.waitFor({ state: 'visible', timeout: 10000 });
-    const targetText = 'GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2024-2026';
+    const targetText = 'GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2026-2029';
     const row = grid.locator('mtx-grid-row, .mtx-grid-row, tr, [role="row"]').filter({ hasText: targetText });
     await expect(row.first()).toBeVisible({ timeout: 10000 });
 
