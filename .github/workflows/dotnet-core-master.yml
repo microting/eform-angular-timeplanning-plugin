@@ -244,11 +244,11 @@ jobs:
       matrix:
         shard:
           - name: a
-            filter: "FullyQualifiedName=TimePlanning.Pn.Test.AbsenceRequestServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.CanaryInAColeMine"
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.AbsenceRequestServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.CanaryInAColeMine|FullyQualifiedName=TimePlanning.Pn.Test.AbsenceRequestRemovedRowTests|FullyQualifiedName=TimePlanning.Pn.Test.PayrollExportRemovedPlanRegistrationTests"
           - name: b
-            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PictureSnapshotServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.ContentHandoverServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.DanLonFileExporterTests|FullyQualifiedName=TimePlanning.Pn.Test.DataLonFileExporterTests"
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PictureSnapshotServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.ContentHandoverServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.DanLonFileExporterTests|FullyQualifiedName=TimePlanning.Pn.Test.DataLonFileExporterTests|FullyQualifiedName=TimePlanning.Pn.Test.ContentHandoverRemovedRowTests"
           - name: c
-            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanningServiceMultiShiftTests|FullyQualifiedName=TimePlanning.Pn.Test.DeviceTokenServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GpsCoordinateServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayDayTypeRuleServiceTests"
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanningServiceMultiShiftTests|FullyQualifiedName=TimePlanning.Pn.Test.DeviceTokenServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GpsCoordinateServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayDayTypeRuleServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.TimePlanningFlexServiceRemovedRowTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanningUpdateByCurrentUserRemovedRowTests"
           - name: d
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationVersionHistoryTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.PayRuleSetServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.PayTierRuleServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.MobileFlexRecomputeAndCascadeTests"
           - name: e
@@ -256,7 +256,7 @@ jobs:
           - name: f
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceExtendedTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperDisplayParityTests|FullyQualifiedName=TimePlanning.Pn.Test.OneMinuteModeTimelineTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperReadBySiteAndDateTests|FullyQualifiedName=TimePlanning.Pn.Test.PlanRegistrationHelperTests|FullyQualifiedName=TimePlanning.Pn.Test.PushNotificationServiceTests"
           - name: g
-            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServicePhoneNumberTests|FullyQualifiedName=TimePlanning.Pn.Test.TimePlanningWorkingHoursExportTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAbsenceRequestGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAuthGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.DagsoversigtWorksheetExportTests"
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServicePhoneNumberTests|FullyQualifiedName=TimePlanning.Pn.Test.TimePlanningWorkingHoursExportTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAbsenceRequestGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAuthGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.DagsoversigtWorksheetExportTests|FullyQualifiedName=TimePlanning.Pn.Test.WorkingHoursImportRemovedRowTests"
           - name: h
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningContentHandoverGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningPlanningsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningPlanningsGrpcServiceTimeZoneTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningSettingsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningWorkingHoursGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.WorkingHoursExcelExportE2ETests"
     steps:

@@ -3872,8 +3872,9 @@ public class TimePlanningWorkingHoursService(
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
-                            var planRegistration = await dbContext.PlanRegistrations.SingleOrDefaultAsync(x =>
-                                x.Date == dateValue && x.SdkSitId == site.MicrotingUid);
+                            var planRegistration = await dbContext.PlanRegistrations.FirstOrDefaultAsync(x =>
+                                x.Date == dateValue && x.SdkSitId == site.MicrotingUid
+                                && x.WorkflowState != Constants.WorkflowStates.Removed);
 
                             if (planRegistration == null)
                             {

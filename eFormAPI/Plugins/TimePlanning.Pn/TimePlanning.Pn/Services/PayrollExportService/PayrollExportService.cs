@@ -55,7 +55,8 @@ public class PayrollExportService : IPayrollExportService
                 .Where(x => x.PlanRegistration.Date >= periodStart
                             && x.PlanRegistration.Date <= periodEnd
                             && x.PayrollCode != null
-                            && x.WorkflowState != Constants.WorkflowStates.Removed)
+                            && x.WorkflowState != Constants.WorkflowStates.Removed
+                            && x.PlanRegistration.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync();
 
             if (!payLines.Any())
@@ -195,7 +196,8 @@ public class PayrollExportService : IPayrollExportService
                 .Where(x => x.PlanRegistration.Date >= periodStart
                             && x.PlanRegistration.Date <= periodEnd
                             && x.PayrollCode != null
-                            && x.WorkflowState != Constants.WorkflowStates.Removed)
+                            && x.WorkflowState != Constants.WorkflowStates.Removed
+                            && x.PlanRegistration.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync();
 
             var workerCount = payLines

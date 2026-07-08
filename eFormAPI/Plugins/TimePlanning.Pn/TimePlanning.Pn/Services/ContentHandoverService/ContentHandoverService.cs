@@ -170,7 +170,8 @@ public class ContentHandoverService : IContentHandoverService
             var activeCandidateSiteIds = activeCandidates.Select(x => x.MicrotingUid).ToList();
 
             var planRegistrations = await _dbContext.PlanRegistrations
-                .Where(pr => activeCandidateSiteIds.Contains(pr.SdkSitId) && pr.Date == targetDate)
+                .Where(pr => activeCandidateSiteIds.Contains(pr.SdkSitId) && pr.Date == targetDate
+                             && pr.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync();
 
             // Resolve the caller's PlanRegistration on the same date so we can
@@ -182,7 +183,8 @@ public class ContentHandoverService : IContentHandoverService
             if (callerSdkSitId.HasValue)
             {
                 callerPr = await _dbContext.PlanRegistrations
-                    .FirstOrDefaultAsync(pr => pr.SdkSitId == callerSdkSitId.Value && pr.Date == targetDate);
+                    .FirstOrDefaultAsync(pr => pr.SdkSitId == callerSdkSitId.Value && pr.Date == targetDate
+                                               && pr.WorkflowState != Constants.WorkflowStates.Removed);
             }
 
             // Build the list of (start, end) windows for each requested sender
@@ -281,7 +283,8 @@ public class ContentHandoverService : IContentHandoverService
         {
             // Load source PlanRegistration
             var fromPR = await _dbContext.PlanRegistrations
-                .FirstOrDefaultAsync(pr => pr.Id == fromPlanRegistrationId);
+                .FirstOrDefaultAsync(pr => pr.Id == fromPlanRegistrationId
+                                           && pr.WorkflowState != Constants.WorkflowStates.Removed);
 
             if (fromPR == null)
             {
@@ -292,7 +295,8 @@ public class ContentHandoverService : IContentHandoverService
             // Find target PlanRegistration
             var toPR = await _dbContext.PlanRegistrations
                 .FirstOrDefaultAsync(pr => pr.SdkSitId == model.ToSdkSitId
-                                           && pr.Date == fromPR.Date);
+                                           && pr.Date == fromPR.Date
+                                           && pr.WorkflowState != Constants.WorkflowStates.Removed);
 
             if (toPR == null)
             {
@@ -549,9 +553,11 @@ public class ContentHandoverService : IContentHandoverService
 
             // Load source and target PlanRegistrations
             var fromPR = await _dbContext.PlanRegistrations
-                .FirstOrDefaultAsync(pr => pr.Id == request.FromPlanRegistrationId);
+                .FirstOrDefaultAsync(pr => pr.Id == request.FromPlanRegistrationId
+                                           && pr.WorkflowState != Constants.WorkflowStates.Removed);
             var toPR = await _dbContext.PlanRegistrations
-                .FirstOrDefaultAsync(pr => pr.Id == request.ToPlanRegistrationId);
+                .FirstOrDefaultAsync(pr => pr.Id == request.ToPlanRegistrationId
+                                           && pr.WorkflowState != Constants.WorkflowStates.Removed);
 
             if (fromPR == null || toPR == null)
             {
@@ -567,9 +573,11 @@ public class ContentHandoverService : IContentHandoverService
 
             // Resolve AssignedSites once (used by recalc helpers in both paths).
             var fromAssignedSite = await _dbContext.AssignedSites
-                .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId);
+                .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId
+                                          && a.WorkflowState != Constants.WorkflowStates.Removed);
             var toAssignedSite = await _dbContext.AssignedSites
-                .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId);
+                .FirstOrDefaultAsync(a => a.SiteId == toPR.SdkSitId
+                                          && a.WorkflowState != Constants.WorkflowStates.Removed);
 
             var nowUtc = DateTime.UtcNow;
 
@@ -986,10 +994,7 @@ public class ContentHandoverService : IContentHandoverService
             // (UI falls back to id) rather than failing the whole inbox load.
             var siteNameLookup = await TryResolveSiteNameLookupAsync(requests);
 
-            var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
-            var planRegistrations = await _dbContext.PlanRegistrations
-                .Where(p => prIds.Contains(p.Id))
-                .ToDictionaryAsync(p => p.Id);
+            var planRegistrations = await LoadActiveFromPlanRegistrationsAsync(requests);
 
             var models = requests.Select(r =>
             {
@@ -1007,6 +1012,23 @@ public class ContentHandoverService : IContentHandoverService
             return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                 _localizationService.GetString("ErrorGettingHandoverRequests"));
         }
+    }
+
+    /// <summary>
+    /// Loads the active (non-Removed) source PlanRegistrations referenced by the
+    /// supplied handover requests, keyed by Id. Removed rows are excluded so a
+    /// soft-deleted source shift no longer enriches a listing row. Shared by the
+    /// inbox/mine/all listing endpoints, which all resolve the same
+    /// FromPlanRegistrationId set.
+    /// </summary>
+    private async Task<Dictionary<int, PlanRegistration>> LoadActiveFromPlanRegistrationsAsync(
+        IEnumerable<PlanRegistrationContentHandoverRequest> requests)
+    {
+        var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
+        return await _dbContext.PlanRegistrations
+            .Where(p => prIds.Contains(p.Id)
+                        && p.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToDictionaryAsync(p => p.Id);
     }
 
     /// <summary>
@@ -1093,10 +1115,7 @@ public class ContentHandoverService : IContentHandoverService
             // load.
             var siteNameLookup = await TryResolveSiteNameLookupAsync(requests);
 
-            var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
-            var planRegistrations = await _dbContext.PlanRegistrations
-                .Where(p => prIds.Contains(p.Id))
-                .ToDictionaryAsync(p => p.Id);
+            var planRegistrations = await LoadActiveFromPlanRegistrationsAsync(requests);
 
             var models = requests.Select(r =>
             {
@@ -1175,10 +1194,7 @@ public class ContentHandoverService : IContentHandoverService
                     .ToDictionaryAsync(s => s.MicrotingUid, s => s.Name ?? string.Empty);
             }
 
-            var prIds = requests.Select(r => r.FromPlanRegistrationId).Distinct().ToList();
-            var planRegistrations = await _dbContext.PlanRegistrations
-                .Where(p => prIds.Contains(p.Id))
-                .ToDictionaryAsync(p => p.Id);
+            var planRegistrations = await LoadActiveFromPlanRegistrationsAsync(requests);
 
             var models = requests.Select(r =>
             {
