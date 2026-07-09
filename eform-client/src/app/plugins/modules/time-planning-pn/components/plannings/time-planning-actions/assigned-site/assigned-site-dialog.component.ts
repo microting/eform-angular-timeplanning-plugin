@@ -9,6 +9,7 @@ import {AssignedSiteModel, CommonTagModel, GlobalAutoBreakSettingsModel, PayRule
 import {PayRuleSetsViewModalComponent} from '../../../../modules/pay-rule-sets/components/pay-rule-sets-view-modal/pay-rule-sets-view-modal.component';
 import {selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {Store} from '@ngrx/store';
+import {filter, first, switchMap} from 'rxjs/operators';
 import {TimePlanningPnSettingsService, TimePlanningPnPayRuleSetsService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {
   AbstractControl,
@@ -672,7 +673,19 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   }
 
   loadPayRuleSets(): void {
-    this.payRuleSetsService.getPayRuleSets({offset: 0, pageSize: 1000}).subscribe({
+    // GET api/time-planning-pn/pay-rule-sets is admin-only
+    // ([Authorize(Roles = Admin)] on PayRuleSetController.Index). Calling it as
+    // a non-admin returns 403, which the global HttpErrorInterceptor escalates
+    // into a forced logout (refresh token → retry → still 403 → logout) — the
+    // local error callback below never runs. The template already hides the
+    // whole payroll-rules block behind selectCurrentUserIsAdmin$, so for
+    // non-admins we skip the fetch entirely; an admin-assigned payRuleSetId is
+    // still preserved on save because the hidden form control keeps its value.
+    this.selectCurrentUserIsAdmin$.pipe(
+      first(),
+      filter((isAdmin) => isAdmin),
+      switchMap(() => this.payRuleSetsService.getPayRuleSets({offset: 0, pageSize: 1000}))
+    ).subscribe({
       next: (result) => {
         if (result && result.success) {
           this.availablePayRuleSets = result.model?.payRuleSets || [];
