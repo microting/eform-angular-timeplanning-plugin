@@ -102,6 +102,38 @@ describe('AssignedSiteDialogComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  describe('Pay rule sets admin gating', () => {
+    it('should fetch pay rule sets for an admin', () => {
+      component.ngOnInit();
+
+      expect(mockPayRuleSetsService.getPayRuleSets).toHaveBeenCalledWith({ offset: 0, pageSize: 1000 });
+    });
+
+    it('should NOT fetch pay rule sets for a non-admin (admin-only endpoint 403s and forces logout)', () => {
+      mockStore.select.mockReturnValue(of(false));
+      // Re-create so the selectCurrentUserIsAdmin$ class field picks up the
+      // non-admin stream (it is captured at construction time).
+      fixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      component = fixture.componentInstance;
+
+      component.ngOnInit();
+
+      expect(mockPayRuleSetsService.getPayRuleSets).not.toHaveBeenCalled();
+    });
+
+    it('should still initialize payRuleSetId from dialog data for a non-admin', () => {
+      mockStore.select.mockReturnValue(of(false));
+      fixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      component = fixture.componentInstance;
+
+      component.ngOnInit();
+
+      expect(component.assignedSiteForm.get('payRuleSetId')).toBeDefined();
+      expect(component.assignedSiteForm.get('payRuleSetId')?.value)
+        .toBe((mockAssignedSiteData as any).payRuleSetId ?? null);
+    });
+  });
+
   describe('Time Conversion Utilities', () => {
     describe('padZero', () => {
       it('should pad single digit numbers with zero', () => {
