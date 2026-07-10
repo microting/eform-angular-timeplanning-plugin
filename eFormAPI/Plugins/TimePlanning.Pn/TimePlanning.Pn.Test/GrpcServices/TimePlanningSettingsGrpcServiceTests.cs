@@ -177,4 +177,90 @@ public class TimePlanningSettingsGrpcServiceTests
         Assert.That(response.Success, Is.True);
         Assert.That(response.Model, Has.Count.EqualTo(0));
     }
+
+    [TestCase("4.0.26")]
+    [TestCase("4.0.27")]
+    [TestCase("4.1.0")]
+    [TestCase("5.0.0")]
+    public async Task GetRegistrationSites_DeviceVersionAtOrAboveMin_SoftwareVersionIsValidTrue(
+        string softwareVersion)
+    {
+        _settingService.GetAvailableSites(Arg.Any<string>())
+            .Returns(new OperationDataResult<List<Infrastructure.Models.Settings.Site>>(
+                true, "OK", new List<Infrastructure.Models.Settings.Site>()));
+
+        var request = new GetRegistrationSitesRequest
+        {
+            Token = "token",
+            Device = new DeviceMetadata { SoftwareVersion = softwareVersion },
+        };
+
+        var response = await _grpcService.GetRegistrationSites(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.SoftwareVersionIsValid, Is.True);
+    }
+
+    [TestCase("4.0.25")]
+    [TestCase("4.0.0")]
+    [TestCase("3.9.99")]
+    [TestCase("1.0.0")]
+    public async Task GetRegistrationSites_DeviceVersionBelowMin_SoftwareVersionIsValidFalse(
+        string softwareVersion)
+    {
+        _settingService.GetAvailableSites(Arg.Any<string>())
+            .Returns(new OperationDataResult<List<Infrastructure.Models.Settings.Site>>(
+                true, "OK", new List<Infrastructure.Models.Settings.Site>()));
+
+        var request = new GetRegistrationSitesRequest
+        {
+            Token = "token",
+            Device = new DeviceMetadata { SoftwareVersion = softwareVersion },
+        };
+
+        var response = await _grpcService.GetRegistrationSites(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.SoftwareVersionIsValid, Is.False);
+    }
+
+    [TestCase("")]
+    [TestCase("not-a-version")]
+    [TestCase("abc")]
+    public async Task GetRegistrationSites_DeviceVersionUnparseable_SoftwareVersionIsValidFalse(
+        string softwareVersion)
+    {
+        _settingService.GetAvailableSites(Arg.Any<string>())
+            .Returns(new OperationDataResult<List<Infrastructure.Models.Settings.Site>>(
+                true, "OK", new List<Infrastructure.Models.Settings.Site>()));
+
+        var request = new GetRegistrationSitesRequest
+        {
+            Token = "token",
+            Device = new DeviceMetadata { SoftwareVersion = softwareVersion },
+        };
+
+        var response = await _grpcService.GetRegistrationSites(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.SoftwareVersionIsValid, Is.False);
+    }
+
+    [Test]
+    public async Task GetRegistrationSites_DeviceNull_SoftwareVersionIsValidFalse()
+    {
+        _settingService.GetAvailableSites(Arg.Any<string>())
+            .Returns(new OperationDataResult<List<Infrastructure.Models.Settings.Site>>(
+                true, "OK", new List<Infrastructure.Models.Settings.Site>()));
+
+        var request = new GetRegistrationSitesRequest
+        {
+            Token = "token",
+        };
+
+        var response = await _grpcService.GetRegistrationSites(
+            request, TestServerCallContextFactory.Create());
+
+        Assert.That(response.SoftwareVersionIsValid, Is.False);
+    }
 }

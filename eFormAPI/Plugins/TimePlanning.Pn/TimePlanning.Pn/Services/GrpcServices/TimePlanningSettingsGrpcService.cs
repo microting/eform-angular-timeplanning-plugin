@@ -274,6 +274,22 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
             }
         }
 
+        // Force-update gate for kiosk devices, mirroring the personal
+        // getPlanningsByUser path. The app sends its current version in
+        // request.Device; we return false when it is missing or parses to
+        // < 4.0.26 so older/unknown apps are forced to update.
+        try
+        {
+            response.SoftwareVersionIsValid =
+                Version.TryParse(request.Device?.SoftwareVersion, out var v)
+                && v >= new Version(4, 0, 26);
+        }
+        catch (Exception)
+        {
+            // If the version format is invalid, we assume it's not valid
+            response.SoftwareVersionIsValid = false;
+        }
+
         return response;
     }
 
