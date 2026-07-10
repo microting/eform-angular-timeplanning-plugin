@@ -252,6 +252,7 @@ message GetRegistrationSitesResponse {
   bool success = 1;
   string message = 2;
   repeated Site model = 3;
+  bool software_version_is_valid = 4;
 }
 
 // Request messages
@@ -259,6 +260,7 @@ message GetAssignedSiteRequest {}
 
 message GetRegistrationSitesRequest {
   string token = 1;
+  DeviceMetadata device = 2;
 }
 
 message GetRegistrationSitesByCurrentUserRequest {}
