@@ -1868,7 +1868,11 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
   openVersionHistory() {
     this.dialog.open(VersionHistoryModalComponent, {
-      data: { planRegistrationId: this.data.planningPrDayModels.id },
+      data: {
+        planRegistrationId: this.data.planningPrDayModels.id,
+        workerName: this.data.planningPrDayModels.siteName,
+        date: this.data.planningPrDayModels.date
+      },
       width: '90vw',
       maxWidth: '1400px',
       height: '80vh'

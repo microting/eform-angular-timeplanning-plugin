@@ -2154,11 +2154,67 @@ public class TimePlanningPlanningService(
         CompareDateTimeField(changes, "Pause1StartedAt", previous?.Pause1StartedAt, current.Pause1StartedAt);
         CompareDateTimeField(changes, "Pause1StoppedAt", previous?.Pause1StoppedAt, current.Pause1StoppedAt);
 
+        // Shift 1 pause sub-slots
+        CompareDateTimeField(changes, "Pause10StartedAt", previous?.Pause10StartedAt, current.Pause10StartedAt);
+        CompareDateTimeField(changes, "Pause10StoppedAt", previous?.Pause10StoppedAt, current.Pause10StoppedAt);
+        CompareDateTimeField(changes, "Pause11StartedAt", previous?.Pause11StartedAt, current.Pause11StartedAt);
+        CompareDateTimeField(changes, "Pause11StoppedAt", previous?.Pause11StoppedAt, current.Pause11StoppedAt);
+        CompareDateTimeField(changes, "Pause12StartedAt", previous?.Pause12StartedAt, current.Pause12StartedAt);
+        CompareDateTimeField(changes, "Pause12StoppedAt", previous?.Pause12StoppedAt, current.Pause12StoppedAt);
+        CompareDateTimeField(changes, "Pause13StartedAt", previous?.Pause13StartedAt, current.Pause13StartedAt);
+        CompareDateTimeField(changes, "Pause13StoppedAt", previous?.Pause13StoppedAt, current.Pause13StoppedAt);
+        CompareDateTimeField(changes, "Pause14StartedAt", previous?.Pause14StartedAt, current.Pause14StartedAt);
+        CompareDateTimeField(changes, "Pause14StoppedAt", previous?.Pause14StoppedAt, current.Pause14StoppedAt);
+        CompareDateTimeField(changes, "Pause15StartedAt", previous?.Pause15StartedAt, current.Pause15StartedAt);
+        CompareDateTimeField(changes, "Pause15StoppedAt", previous?.Pause15StoppedAt, current.Pause15StoppedAt);
+        CompareDateTimeField(changes, "Pause16StartedAt", previous?.Pause16StartedAt, current.Pause16StartedAt);
+        CompareDateTimeField(changes, "Pause16StoppedAt", previous?.Pause16StoppedAt, current.Pause16StoppedAt);
+        CompareDateTimeField(changes, "Pause17StartedAt", previous?.Pause17StartedAt, current.Pause17StartedAt);
+        CompareDateTimeField(changes, "Pause17StoppedAt", previous?.Pause17StoppedAt, current.Pause17StoppedAt);
+        CompareDateTimeField(changes, "Pause18StartedAt", previous?.Pause18StartedAt, current.Pause18StartedAt);
+        CompareDateTimeField(changes, "Pause18StoppedAt", previous?.Pause18StoppedAt, current.Pause18StoppedAt);
+        CompareDateTimeField(changes, "Pause19StartedAt", previous?.Pause19StartedAt, current.Pause19StartedAt);
+        CompareDateTimeField(changes, "Pause19StoppedAt", previous?.Pause19StoppedAt, current.Pause19StoppedAt);
+        CompareDateTimeField(changes, "Pause100StartedAt", previous?.Pause100StartedAt, current.Pause100StartedAt);
+        CompareDateTimeField(changes, "Pause100StoppedAt", previous?.Pause100StoppedAt, current.Pause100StoppedAt);
+        CompareDateTimeField(changes, "Pause101StartedAt", previous?.Pause101StartedAt, current.Pause101StartedAt);
+        CompareDateTimeField(changes, "Pause101StoppedAt", previous?.Pause101StoppedAt, current.Pause101StoppedAt);
+        CompareDateTimeField(changes, "Pause102StartedAt", previous?.Pause102StartedAt, current.Pause102StartedAt);
+        CompareDateTimeField(changes, "Pause102StoppedAt", previous?.Pause102StoppedAt, current.Pause102StoppedAt);
+
         // Shift 2
         CompareDateTimeField(changes, "Start2StartedAt", previous?.Start2StartedAt, current.Start2StartedAt);
         CompareDateTimeField(changes, "Stop2StoppedAt", previous?.Stop2StoppedAt, current.Stop2StoppedAt);
         CompareDateTimeField(changes, "Pause2StartedAt", previous?.Pause2StartedAt, current.Pause2StartedAt);
         CompareDateTimeField(changes, "Pause2StoppedAt", previous?.Pause2StoppedAt, current.Pause2StoppedAt);
+
+        // Shift 2 pause sub-slots
+        CompareDateTimeField(changes, "Pause20StartedAt", previous?.Pause20StartedAt, current.Pause20StartedAt);
+        CompareDateTimeField(changes, "Pause20StoppedAt", previous?.Pause20StoppedAt, current.Pause20StoppedAt);
+        CompareDateTimeField(changes, "Pause21StartedAt", previous?.Pause21StartedAt, current.Pause21StartedAt);
+        CompareDateTimeField(changes, "Pause21StoppedAt", previous?.Pause21StoppedAt, current.Pause21StoppedAt);
+        CompareDateTimeField(changes, "Pause22StartedAt", previous?.Pause22StartedAt, current.Pause22StartedAt);
+        CompareDateTimeField(changes, "Pause22StoppedAt", previous?.Pause22StoppedAt, current.Pause22StoppedAt);
+        CompareDateTimeField(changes, "Pause23StartedAt", previous?.Pause23StartedAt, current.Pause23StartedAt);
+        CompareDateTimeField(changes, "Pause23StoppedAt", previous?.Pause23StoppedAt, current.Pause23StoppedAt);
+        CompareDateTimeField(changes, "Pause24StartedAt", previous?.Pause24StartedAt, current.Pause24StartedAt);
+        CompareDateTimeField(changes, "Pause24StoppedAt", previous?.Pause24StoppedAt, current.Pause24StoppedAt);
+        CompareDateTimeField(changes, "Pause25StartedAt", previous?.Pause25StartedAt, current.Pause25StartedAt);
+        CompareDateTimeField(changes, "Pause25StoppedAt", previous?.Pause25StoppedAt, current.Pause25StoppedAt);
+        CompareDateTimeField(changes, "Pause26StartedAt", previous?.Pause26StartedAt, current.Pause26StartedAt);
+        CompareDateTimeField(changes, "Pause26StoppedAt", previous?.Pause26StoppedAt, current.Pause26StoppedAt);
+        CompareDateTimeField(changes, "Pause27StartedAt", previous?.Pause27StartedAt, current.Pause27StartedAt);
+        CompareDateTimeField(changes, "Pause27StoppedAt", previous?.Pause27StoppedAt, current.Pause27StoppedAt);
+        CompareDateTimeField(changes, "Pause28StartedAt", previous?.Pause28StartedAt, current.Pause28StartedAt);
+        CompareDateTimeField(changes, "Pause28StoppedAt", previous?.Pause28StoppedAt, current.Pause28StoppedAt);
+        CompareDateTimeField(changes, "Pause29StartedAt", previous?.Pause29StartedAt, current.Pause29StartedAt);
+        CompareDateTimeField(changes, "Pause29StoppedAt", previous?.Pause29StoppedAt, current.Pause29StoppedAt);
+        CompareDateTimeField(changes, "Pause200StartedAt", previous?.Pause200StartedAt, current.Pause200StartedAt);
+        CompareDateTimeField(changes, "Pause200StoppedAt", previous?.Pause200StoppedAt, current.Pause200StoppedAt);
+        CompareDateTimeField(changes, "Pause201StartedAt", previous?.Pause201StartedAt, current.Pause201StartedAt);
+        CompareDateTimeField(changes, "Pause201StoppedAt", previous?.Pause201StoppedAt, current.Pause201StoppedAt);
+        CompareDateTimeField(changes, "Pause202StartedAt", previous?.Pause202StartedAt, current.Pause202StartedAt);
+        CompareDateTimeField(changes, "Pause202StoppedAt", previous?.Pause202StoppedAt, current.Pause202StoppedAt);
 
         // Shift 3
         CompareDateTimeField(changes, "Start3StartedAt", previous?.Start3StartedAt, current.Start3StartedAt);
@@ -2177,6 +2233,13 @@ public class TimePlanningPlanningService(
         CompareDateTimeField(changes, "Stop5StoppedAt", previous?.Stop5StoppedAt, current.Stop5StoppedAt);
         CompareDateTimeField(changes, "Pause5StartedAt", previous?.Pause5StartedAt, current.Pause5StartedAt);
         CompareDateTimeField(changes, "Pause5StoppedAt", previous?.Pause5StoppedAt, current.Pause5StoppedAt);
+
+        // Pause override minutes (admin override of a shift's pause total)
+        CompareField(changes, "Pause1OverrideMinutes", previous?.Pause1OverrideMinutes.ToString(), current.Pause1OverrideMinutes.ToString());
+        CompareField(changes, "Pause2OverrideMinutes", previous?.Pause2OverrideMinutes.ToString(), current.Pause2OverrideMinutes.ToString());
+        CompareField(changes, "Pause3OverrideMinutes", previous?.Pause3OverrideMinutes.ToString(), current.Pause3OverrideMinutes.ToString());
+        CompareField(changes, "Pause4OverrideMinutes", previous?.Pause4OverrideMinutes.ToString(), current.Pause4OverrideMinutes.ToString());
+        CompareField(changes, "Pause5OverrideMinutes", previous?.Pause5OverrideMinutes.ToString(), current.Pause5OverrideMinutes.ToString());
 
         return changes;
     }

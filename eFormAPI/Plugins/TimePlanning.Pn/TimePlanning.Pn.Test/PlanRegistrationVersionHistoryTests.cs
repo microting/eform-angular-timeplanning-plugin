@@ -290,4 +290,105 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
             .Any(v => v.Changes.Any(c => c.FieldType == "gps"));
         Assert.That(hasGpsChange, Is.False);
     }
+
+    [Test]
+    public async Task GetVersionHistory_ReturnsPauseSubSlotChanges_WhenPauseSubSlotFieldsAreUpdated()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 1,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var initialPause10StartedAt = new DateTime(2026, 7, 1, 9, 0, 0);
+        var planRegistration = new PlanRegistration
+        {
+            Date = DateTime.Now,
+            SdkSitId = 1,
+            Pause10StartedAt = initialPause10StartedAt,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planRegistration.Create(TimePlanningPnDbContext);
+
+        // Update the pause sub-slot fields
+        var updatedPause10StartedAt = new DateTime(2026, 7, 1, 9, 15, 0);
+        var updatedPause11StoppedAt = new DateTime(2026, 7, 1, 12, 30, 0);
+        planRegistration.Pause10StartedAt = updatedPause10StartedAt;
+        planRegistration.Pause11StoppedAt = updatedPause11StoppedAt;
+        planRegistration.UpdatedByUserId = 2;
+        await planRegistration.Update(TimePlanningPnDbContext);
+
+        // Act
+        var result = await _planningService.GetVersionHistory(planRegistration.Id);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Versions.Count, Is.GreaterThan(0));
+
+        var latestVersion = result.Model.Versions.FirstOrDefault();
+        Assert.That(latestVersion, Is.Not.Null);
+
+        var pause10Change = latestVersion.Changes.FirstOrDefault(c => c.FieldName == "Pause10StartedAt");
+        Assert.That(pause10Change, Is.Not.Null);
+        Assert.That(pause10Change.FromValue, Is.EqualTo(initialPause10StartedAt.ToString("yyyy-MM-dd HH:mm:ss.ffffff")));
+        Assert.That(pause10Change.ToValue, Is.EqualTo(updatedPause10StartedAt.ToString("yyyy-MM-dd HH:mm:ss.ffffff")));
+
+        var pause11Change = latestVersion.Changes.FirstOrDefault(c => c.FieldName == "Pause11StoppedAt");
+        Assert.That(pause11Change, Is.Not.Null);
+        Assert.That(pause11Change.FromValue, Is.EqualTo(""));
+        Assert.That(pause11Change.ToValue, Is.EqualTo(updatedPause11StoppedAt.ToString("yyyy-MM-dd HH:mm:ss.ffffff")));
+    }
+
+    [Test]
+    public async Task GetVersionHistory_ReturnsPauseOverrideMinutesChange_WhenPauseOverrideMinutesIsUpdated()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 1,
+            GpsEnabled = false,
+            SnapshotEnabled = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var planRegistration = new PlanRegistration
+        {
+            Date = DateTime.Now,
+            SdkSitId = 1,
+            Pause2OverrideMinutes = 15,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planRegistration.Create(TimePlanningPnDbContext);
+
+        // Update the pause override minutes
+        planRegistration.Pause2OverrideMinutes = 45;
+        planRegistration.UpdatedByUserId = 2;
+        await planRegistration.Update(TimePlanningPnDbContext);
+
+        // Act
+        var result = await _planningService.GetVersionHistory(planRegistration.Id);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Model, Is.Not.Null);
+        Assert.That(result.Model.Versions.Count, Is.GreaterThan(0));
+
+        var latestVersion = result.Model.Versions.FirstOrDefault();
+        Assert.That(latestVersion, Is.Not.Null);
+
+        var overrideChange = latestVersion.Changes.FirstOrDefault(c => c.FieldName == "Pause2OverrideMinutes");
+        Assert.That(overrideChange, Is.Not.Null);
+        Assert.That(overrideChange.FromValue, Is.EqualTo("15"));
+        Assert.That(overrideChange.ToValue, Is.EqualTo("45"));
+    }
 }
