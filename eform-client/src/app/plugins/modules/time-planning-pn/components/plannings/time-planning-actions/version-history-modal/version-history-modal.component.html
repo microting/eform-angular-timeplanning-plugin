@@ -1,27 +1,54 @@
-<div mat-dialog-title>{{ 'History' | translate }}</div>
+<div mat-dialog-title class="history-header">
+  <div class="history-header-text">
+    <div class="history-title">{{ 'Activity log' | translate }}</div>
+    <p class="history-intro" *ngIf="workerName || headerDate">
+      {{ 'Changes for' | translate }} {{ workerName }}<ng-container *ngIf="headerDate"> &middot; {{ headerDate }}</ng-container>
+    </p>
+  </div>
+  <button type="button" class="btn-cancel history-close" (click)="close()">
+    {{ 'Close' | translate }}
+  </button>
+</div>
 <div mat-dialog-content *ngIf="!loading && versionHistory">
   <div class="version-history-container">
     <div class="versions-panel" [class.with-side-panel]="selectedGpsCoordinate || selectedSnapshot">
-      <div *ngFor="let version of versionHistory.versions" class="version-section">
-        <h5>
-          {{ formatDateTime(version.updatedAt) }} {{ 'Values changed' | translate }}
-          <span *ngIf="version.updatedByUserId">{{ 'by user' | translate }}: {{ version.updatedByUserName }} ({{version.version}})</span>
-        </h5>
+      <p class="history-hint">{{ 'Newest first. Each line shows the time, what changed, and who changed it.' | translate }}</p>
 
-        <mtx-grid
-          [data]="version.changes"
-          [columns]="tableHeaders"
-          [showPaginator]="false"
-          [pageOnFront]="false"
-          [rowStriped]="false"
-          [showToolbar]="false"
-          [showColumnMenuButton]="false"
-          class="version-history-grid"
-        >
-        </mtx-grid>
-      </div>
+      <ol class="history-timeline">
+        <li *ngFor="let day of timelineDays" class="history-day">
+          <p class="history-day-heading">{{ day.dateLabel }}</p>
+          <ul class="history-events">
+            <li *ngFor="let event of day.events" class="history-event">
+              <time class="history-time">{{ event.time }}</time>
+              <div class="history-event-body">
+                <p class="history-action" [ngSwitch]="event.change.fieldType">
+                  <ng-container *ngSwitchCase="'gps'">
+                    {{ getFieldDisplayName(event.change.fieldName) }}
+                    <a href="javascript:void(0)" (click)="onGpsClick(event.change)">
+                      {{ 'View on Maps' | translate }} ({{ event.change.latitude }}, {{ event.change.longitude }})
+                    </a>
+                  </ng-container>
+                  <ng-container *ngSwitchCase="'snapshot'">
+                    {{ getFieldDisplayName(event.change.fieldName) }}
+                    <a href="javascript:void(0)" (click)="onSnapshotClick(event.change)">
+                      {{ 'View Snapshot' | translate }}
+                    </a>
+                  </ng-container>
+                  <ng-container *ngSwitchDefault>
+                    {{ getFieldDisplayName(event.change.fieldName) }} {{ 'changed' | translate }}:
+                    <span class="history-diff">{{ event.fromDisplay }} → {{ event.toDisplay }}</span>
+                  </ng-container>
+                </p>
+                <p class="history-actor" *ngIf="event.updatedByUserName">
+                  {{ 'by' | translate }} {{ event.updatedByUserName }}
+                </p>
+              </div>
+            </li>
+          </ul>
+        </li>
+      </ol>
 
-      <div *ngIf="versionHistory.versions.length === 0" class="no-versions">
+      <div *ngIf="timelineDays.length === 0" class="no-versions">
         <p>{{ 'No version history available.' | translate}}</p>
       </div>
     </div>
@@ -57,35 +84,3 @@
     </div>
   </div>
 </div>
-
-<div mat-dialog-actions class="d-flex flex-row justify-content-end">
-  <button
-    class="btn-cancel"
-    (click)="close()"
-  >
-    {{ 'Close' | translate }}
-  </button>
-<!--  <button type="button" class="btn btn-cancel" (click)="close()">Close</button>-->
-</div>
-
-
-
-  <ng-template #fieldNameTemplate let-row>
-    {{ getFieldDisplayName(row.fieldName)}}
-  </ng-template>
-
-  <ng-template #toValueTemplate let-row>
-    <ng-container *ngIf="row.fieldType === 'gps'">
-      <a href="javascript:void(0)" (click)="onGpsClick(row)">
-        {{ 'View on Maps' | translate }} ({{ row.latitude }}, {{ row.longitude }})
-      </a>
-    </ng-container>
-    <ng-container *ngIf="row.fieldType === 'snapshot'">
-      <a href="javascript:void(0)" (click)="onSnapshotClick(row)">
-        {{ 'View Snapshot' | translate }}
-      </a>
-    </ng-container>
-    <ng-container *ngIf="row.fieldType === 'standard'">
-      {{ row.toValue }}
-    </ng-container>
-  </ng-template>
