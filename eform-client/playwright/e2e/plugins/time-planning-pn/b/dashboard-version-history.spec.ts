@@ -57,6 +57,13 @@ async function pickPlannedTime(page: Page, testid: string, timeStr: string) {
   if (minuteDegrees > 0) {
     await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
   }
+  if (minuteDegrees === 0) {
+    // The minute face must be clicked even for :00 — skipping it keeps the
+    // field's residual minutes (e.g. 07:50 left by dashboard-edit-b would
+    // survive as "07:50" instead of "07:00"). "00" sits at rotateZ(360deg);
+    // mirrors dashboard-edit-b.spec.ts's proven zero-minute handling.
+    await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+  }
   await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
   await expect(page.locator(`[data-testid="${testid}"]`)).toHaveValue(timeStr);
 }
