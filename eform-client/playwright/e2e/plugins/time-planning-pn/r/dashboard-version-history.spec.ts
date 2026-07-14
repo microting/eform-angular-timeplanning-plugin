@@ -2,8 +2,12 @@ import { test, expect, Page } from '@playwright/test';
 import { LoginPage } from '../../../Page objects/Login.page';
 
 /**
- * b shard: version-history ("Aktivitetslog") modal + human-readable value
- * formatting.
+ * r shard: version-history ("Aktivitetslog") modal + human-readable value
+ * formatting. This lane exists so the spec never shares dashboard state with
+ * other lanes' cumulative edit chains; like lane q it runs only the
+ * activate-plugin + assert-true bootstraps before this file (workers=1,
+ * alphabetical file order), on the shared 'a' seed (the shard has no seed of
+ * its own, so CI falls back to a/'s SQL).
  *
  * The workday edit dialog exposes an admin-only history icon-button which
  * opens VersionHistoryModalComponent — a day-grouped timeline where the
@@ -16,15 +20,17 @@ import { LoginPage } from '../../../Page objects/Login.page';
  *     "af <actor>" line (CI runs the UI in Danish, like the sibling specs
  *     asserting 'Timeregistrering' / '(x timer)').
  *
- * Ordering inside shard b (workers=1, alphabetical file order):
- * this file runs after dashboard-edit-pause-override.spec.ts and before
- * time-planning-settings.spec.ts. The settings spec does not read dashboard
- * cell state, so the plan edits made here (on last week's #cell3_1) do not
- * feed any downstream assertion in the shard's cumulative chain.
+ * Pristine-DB note: #cell3_1 (last week, Tuesday) starts with no plan. That
+ * is fine — the plannings index endpoint materializes a PlanRegistration row
+ * (with a real id) for every worker/day in the viewed period on first load
+ * (TimePlanningPlanningService, missing-dates loop), so the day dialog opens
+ * with a valid planRegistrationId and the history GET resolves. The planned
+ * pickers simply start blank; every pick below sets hour AND minute
+ * explicitly (including :00, see pickPlannedTime) and is verified with
+ * toHaveValue, so no pre-existing value is assumed.
  *
- * The spec is self-contained: it performs two saves with values it fully
- * controls, so the newest version's diff rows are deterministic regardless
- * of what earlier specs left on the cell:
+ * The spec performs two saves with values it fully controls, so the newest
+ * version's diff rows are deterministic:
  *   edit 1: planned shift 1 = 07:00 - 15:00 / break 01:00
  *   edit 2: planned shift 1 = 08:00 - 16:00 / break 00:30
  * => newest version must show 07:00 → 08:00, 15:00 → 16:00, 01:00 → 00:30.
@@ -59,10 +65,13 @@ async function pickPlannedTime(page: Page, testid: string, timeStr: string) {
   }
   if (minuteDegrees === 0) {
     // The minute face must be clicked even for :00 — skipping it keeps the
-    // field's residual minutes (e.g. 07:50 left by dashboard-edit-b would
-    // survive as "07:50" instead of "07:00"). "00" sits at rotateZ(360deg);
-    // mirrors dashboard-edit-b.spec.ts's proven zero-minute handling.
-    await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+    // field's residual minutes (e.g. "07:50" surviving instead of "07:00").
+    // "00" sits at rotateZ(360deg), as in b/dashboard-edit-b.spec.ts's
+    // zero-minute handling. force is required here: an overlapping
+    // clock-face__number--outer div intercepts pointer events on the "00"
+    // span, so a plain click retries until the test timeout (CI run
+    // 29317211838).
+    await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click({ force: true });
   }
   await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
   await expect(page.locator(`[data-testid="${testid}"]`)).toHaveValue(timeStr);
@@ -170,7 +179,7 @@ test.describe('Dashboard version-history (Aktivitetslog) modal', () => {
 
     // Raw minute integers for the values used above must not appear anywhere
     // in the modal (07:00 = 420, 15:00 = 900): formatting must have run for
-    // every version in the timeline, including ones from earlier b-shard specs.
+    // every version in the timeline.
     await expect(modal).not.toContainText(/\b420\b/);
     await expect(modal).not.toContainText(/\b900\b/);
 
