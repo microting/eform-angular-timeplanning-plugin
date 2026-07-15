@@ -41,7 +41,7 @@
            Mirrors the eFormAPI.Web auth flow without taking a project-ref on
            the host (which would violate the no-project-references rule). -->
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.1" />
-      <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.19.1" />
+      <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.19.2" />
     </ItemGroup>
 
     <ItemGroup>
