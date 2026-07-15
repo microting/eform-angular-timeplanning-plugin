@@ -1,3 +1,8 @@
+:host {
+  // Material sizes dialog text via this token (0.875rem); use the app's standard 1rem instead.
+  --mat-dialog-supporting-text-size: 1rem;
+}
+
 .history-header {
   display: flex;
   align-items: flex-start;
@@ -17,7 +22,8 @@
 
 .history-intro {
   margin: 0;
-  font-size: 0.82rem;
+  // Sits inside mat-dialog-title, which would cascade the 21px headline size.
+  font-size: 1rem;
   font-weight: 400;
   color: var(--text-tertiary, #6c757d);
   line-height: 1.35;
@@ -25,7 +31,6 @@
 
 .history-hint {
   margin: 0 0 12px;
-  font-size: 0.8rem;
   color: var(--text-tertiary, #6c757d);
   line-height: 1.4;
 }
@@ -46,7 +51,6 @@
 
 .history-day-heading {
   margin: 0 0 10px;
-  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -62,7 +66,7 @@
 
 .history-event {
   display: grid;
-  grid-template-columns: 3.35rem minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 12px;
   align-items: start;
   margin-bottom: 14px;
@@ -73,7 +77,6 @@
 }
 
 .history-time {
-  font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   color: var(--text-tertiary, #6c757d);
@@ -85,7 +88,6 @@
 
 .history-action {
   margin: 0 0 4px;
-  font-size: 0.88rem;
   font-weight: 500;
   line-height: 1.4;
 }
@@ -97,7 +99,6 @@
 
 .history-actor {
   margin: 0;
-  font-size: 0.8rem;
   font-weight: 400;
   color: var(--text-tertiary, #6c757d);
 }
