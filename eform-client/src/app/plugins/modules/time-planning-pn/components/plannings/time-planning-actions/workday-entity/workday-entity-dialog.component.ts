@@ -10,7 +10,7 @@ import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService} from '../../../../services';
 import {VersionHistoryModalComponent} from '../version-history-modal/version-history-modal.component';
 import {Store} from '@ngrx/store';
-import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
+import {selectCurrentUserIsFirstUser} from 'src/app/state';
 import validator from 'validator';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TemplateFilesService} from 'src/app/common/services';
@@ -54,7 +54,6 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   private originalDialogHeight: string = 'auto';
 
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
-  protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
 
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   enumKeys: string[] = [];

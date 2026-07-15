@@ -4,8 +4,6 @@
       {{ datePipe.transform(data.planningPrDayModels.date, 'dd.MM.yyyy') }}
       <small class="microting-uid" matTooltip="Id">({{ data.planningPrDayModels.id }})</small></div>
     <button
-      *ngIf="selectAuthIsAdmin$ | async"
-
       mat-icon-button
       (click)="openVersionHistory()"
       matTooltip="{{'View history' | translate}}">
