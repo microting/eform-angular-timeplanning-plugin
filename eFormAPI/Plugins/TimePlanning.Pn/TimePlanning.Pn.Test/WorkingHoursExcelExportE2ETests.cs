@@ -216,8 +216,8 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
     /// Opens the xlsx stream and returns the (Shift1Start, Shift1Stop) cell text
     /// for the first data row that has either populated. Column layout from
     /// <c>FillDataRow</c> (positional, 0-indexed): 0=EmployeeNo, 1=SiteName,
-    /// 2=WeekDay, 3=Date, 4=WeekNumber, 5=PlanText, 6=PlanHours, 7=Shift1Start,
-    /// 8=Shift1Stop, 9=Shift1Pause. <c>CreateCell</c> doesn't set
+    /// 2=Tags, 3=WeekDay, 4=Date, 5=WeekNumber, 6=PlanText, 7=PlanHours,
+    /// 8=Shift1Start, 9=Shift1Stop, 10=Shift1Pause. <c>CreateCell</c> doesn't set
     /// <c>CellReference</c>, so cells are positional within the row, not
     /// addressed by letter.
     /// </summary>
@@ -246,9 +246,9 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
         foreach (var row in rows.Where(r => r.RowIndex == null || r.RowIndex! > 1U))
         {
             var cells = row.Elements<Cell>().ToList();
-            if (cells.Count < 9) continue;
-            var shift1Start = CellText(cells[7]);
-            var shift1Stop  = CellText(cells[8]);
+            if (cells.Count < 10) continue;
+            var shift1Start = CellText(cells[8]);
+            var shift1Stop  = CellText(cells[9]);
             if (!string.IsNullOrEmpty(shift1Start) || !string.IsNullOrEmpty(shift1Stop))
             {
                 return (shift1Start, shift1Stop);

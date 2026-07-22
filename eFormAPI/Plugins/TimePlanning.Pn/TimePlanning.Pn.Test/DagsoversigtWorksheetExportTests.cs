@@ -31,7 +31,7 @@ namespace TimePlanning.Pn.Test;
 /// End-to-end coverage for the new "Dagsoversigt" (Day overview) worksheet that
 /// is added as the FIRST tab of both the single-worker and all-workers Excel
 /// exports. These tests open the produced xlsx with OpenXml and assert the sheet
-/// order, the 21-column header, the Excel Table definition, the cell styles and
+/// order, the 22-column header, the Excel Table definition, the cell styles and
 /// the OADate cell values. The export's <c>ValidateExcel</c> swallows schema
 /// errors, so opening/reading the file in a test is the only thing that catches
 /// a malformed worksheet or table.
@@ -114,11 +114,11 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
     }
 
     // ------------------------------------------------------------------
-    // 2. Single-worker: first sheet is Dagsoversigt with 21-column header.
+    // 2. Single-worker: first sheet is Dagsoversigt with 22-column header.
     // ------------------------------------------------------------------
 
     [Test]
-    public async Task SingleWorker_FirstSheetIsDagsoversigt_With21ColumnHeaderAndTable()
+    public async Task SingleWorker_FirstSheetIsDagsoversigt_With22ColumnHeaderAndTable()
     {
         await SeedSiteAndPlanRegistration(
             siteUid: 9801,
@@ -148,17 +148,18 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
         var firstPart = (WorksheetPart)workbookPart.GetPartById(sheets[0].Id!);
         var headerRow = firstPart.Worksheet.Descendants<Row>().First(r => r.RowIndex! == 1U);
         var headerCells = headerRow.Elements<Cell>().ToList();
-        Assert.That(headerCells.Count, Is.EqualTo(21), "Dagsoversigt header must have 21 columns");
+        Assert.That(headerCells.Count, Is.EqualTo(22), "Dagsoversigt header must have 22 columns");
 
         Assert.That(CellText(headerCells[0], workbookPart), Is.EqualTo("Medarbejder nr."));
-        Assert.That(CellText(headerCells[20], workbookPart), Is.EqualTo("Timer netto"));
+        Assert.That(CellText(headerCells[2], workbookPart), Is.EqualTo("Etiketter"));
+        Assert.That(CellText(headerCells[21], workbookPart), Is.EqualTo("Timer netto"));
 
-        // Exactly one Excel Table, named region A1:U{1+dataRows}.
+        // Exactly one Excel Table, named region A1:V{1+dataRows}.
         Assert.That(firstPart.TableDefinitionParts.Count(), Is.EqualTo(1));
         var dataRows = firstPart.Worksheet.Descendants<Row>().Count(r => r.RowIndex! > 1U);
         Assert.That(dataRows, Is.EqualTo(1), "Single seeded plan registration => one data row");
         Assert.That(firstPart.TableDefinitionParts.First().Table!.Reference!.Value,
-            Is.EqualTo($"A1:U{1 + dataRows}"));
+            Is.EqualTo($"A1:V{1 + dataRows}"));
     }
 
     // ------------------------------------------------------------------
@@ -192,21 +193,21 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
 
         var dataRow = firstPart.Worksheet.Descendants<Row>().First(r => r.RowIndex! == 2U);
 
-        // Date cell (col D): StyleIndex 5 (dd/mm/yyyy), numeric OADate.
-        var dateCell = dataRow.Elements<Cell>().Single(c => c.CellReference == "D2");
+        // Date cell (col E): StyleIndex 5 (dd/mm/yyyy), numeric OADate.
+        var dateCell = dataRow.Elements<Cell>().Single(c => c.CellReference == "E2");
         Assert.That(dateCell.StyleIndex!.Value, Is.EqualTo(5U));
         Assert.That(dateCell.DataType!.Value, Is.EqualTo(CellValues.Number));
         Assert.That(double.Parse(dateCell.CellValue!.Text, CultureInfo.InvariantCulture),
             Is.EqualTo(new DateTime(2026, 5, 15).ToOADate()).Within(1e-9));
 
-        // Shift 1 start cell (col F): StyleIndex 3 (hh:mm), value = (97-1)*5/1440.
-        var shift1StartCell = dataRow.Elements<Cell>().Single(c => c.CellReference == "F2");
+        // Shift 1 start cell (col G): StyleIndex 3 (hh:mm), value = (97-1)*5/1440.
+        var shift1StartCell = dataRow.Elements<Cell>().Single(c => c.CellReference == "G2");
         Assert.That(shift1StartCell.StyleIndex!.Value, Is.EqualTo(3U));
         Assert.That(double.Parse(shift1StartCell.CellValue!.Text, CultureInfo.InvariantCulture),
             Is.EqualTo((97 - 1) * 5 / 1440.0).Within(1e-9));
 
-        // NettoHours cell (col U): StyleIndex 4 (0.00).
-        var nettoCell = dataRow.Elements<Cell>().Single(c => c.CellReference == "U2");
+        // NettoHours cell (col V): StyleIndex 4 (0.00).
+        var nettoCell = dataRow.Elements<Cell>().Single(c => c.CellReference == "V2");
         Assert.That(nettoCell.StyleIndex!.Value, Is.EqualTo(4U));
     }
 
@@ -329,7 +330,7 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
 
         // The all-workers workbook has no "Dashboard" sheet; the positional
         // FillDataRow layout lives on the per-site sheet, named after the site
-        // ("Site 9810"). Same 0-indexed columns: 7=Shift1Start, 8=Shift1Stop.
+        // ("Site 9810"). Same 0-indexed columns: 8=Shift1Start, 9=Shift1Stop.
         var (_, allShift1Stop) = ReadDashboardShift1Cells(allResult.Model!, "Site 9810");
         Assert.That(allShift1Stop, Is.EqualTo("26:00"),
             "All-workers path (the one that crashed in production) must also render slot 313 as 26:00");
@@ -414,7 +415,7 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
     /// <summary>
     /// Opens the xlsx stream and returns the (Shift1Start, Shift1Stop) cell text
     /// for the first populated data row of the positional "Dashboard" sheet.
-    /// Column layout from FillDataRow (0-indexed): 7=Shift1Start, 8=Shift1Stop.
+    /// Column layout from FillDataRow (0-indexed): 8=Shift1Start, 9=Shift1Stop.
     /// </summary>
     private static (string Start, string Stop) ReadDashboardShift1Cells(Stream xlsx, string sheetName = "Dashboard")
     {
@@ -428,9 +429,9 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
         foreach (var row in rows.Where(r => r.RowIndex == null || r.RowIndex! > 1U))
         {
             var cells = row.Elements<Cell>().ToList();
-            if (cells.Count < 9) continue;
-            var shift1Start = CellText(cells[7], workbookPart);
-            var shift1Stop = CellText(cells[8], workbookPart);
+            if (cells.Count < 10) continue;
+            var shift1Start = CellText(cells[8], workbookPart);
+            var shift1Stop = CellText(cells[9], workbookPart);
             if (!string.IsNullOrEmpty(shift1Start) || !string.IsNullOrEmpty(shift1Stop))
             {
                 return (shift1Start, shift1Stop);
@@ -445,7 +446,7 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
         var employeeCell = row.Elements<Cell>().Single(c =>
             c.CellReference!.Value!.StartsWith("A"));
         var dateCell = row.Elements<Cell>().Single(c =>
-            c.CellReference!.Value!.StartsWith("D"));
+            c.CellReference!.Value!.StartsWith("E"));
 
         Assert.That(CellText(employeeCell, wb), Is.EqualTo(expectedEmployeeNo));
         Assert.That(double.Parse(dateCell.CellValue!.Text, CultureInfo.InvariantCulture),

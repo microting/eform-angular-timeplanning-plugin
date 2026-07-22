@@ -72,6 +72,9 @@
     <data name="Worker" xml:space="preserve">
         <value>Medarbejder</value>
     </data>
+    <data name="Tags" xml:space="preserve">
+        <value>Etiketter</value>
+    </data>
     <data name="DayOfWeek" xml:space="preserve">
         <value>Ugedag</value>
     </data>
