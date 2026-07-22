@@ -415,6 +415,8 @@ export const hrHR = {
   'The employee enters start, stop and break for each workday themselves.': 'Zaposlenik sam unosi početak, kraj i pauzu za svaki radni dan.',
   'Start/Stop buttons record work and breaks automatically as the day progresses.': 'Tipke Start/Stop bilježe rad i pauze automatski kako dan odmiče.',
   'The employee can retroactively register work hours they forgot to clock in/out on.': 'Zaposlenik može retroaktivno prijaviti radne sate koje je zaboravio prijaviti/odjaviti.',
+  'Shifts across midnight': 'Smjene preko ponoći',
+  'The shift is automatically closed at 00:00 and continues as a new registration on the next day (e.g. day 1: 22:00–00:00, day 2: 00:00–06:00). The app handles this automatically.': 'Smjena se automatski zatvara u 00:00 i nastavlja kao nova registracija sljedećeg dana (npr. dan 1: 22:00–00:00, dan 2: 00:00–06:00). Aplikacija to obrađuje automatski.',
   'Once a registration is saved, the employee can no longer change it. Errors must be corrected by a manager.': 'Nakon što je registracija spremljena, zaposlenik je više ne može mijenjati. Pogreške mora ispraviti voditelj.',
   'The employee can edit all registrations that fall after the last payroll run. Registrations up to and including the 19th of the month are locked when payroll runs. Older registrations cannot be changed.': 'Zaposlenik može uređivati sve registracije koje se izvršavaju nakon posljednjeg obračuna plaća. Registracije do 19. u mjesecu (uključujući i taj datum) zaključavaju se prilikom obračuna plaća. Starije registracije ne mogu se mijenjati.',
   '(Cutoff date is currently fixed at the 19th — will become configurable in a future version.)': '(Krajnji datum je trenutno fiksiran na 19. - bit će konfiguriran u budućoj verziji.)',

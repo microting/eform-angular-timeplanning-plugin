@@ -415,6 +415,8 @@ export const slSL = {
   'The employee enters start, stop and break for each workday themselves.': 'Zaposleni sam vnese začetek, konec in odmor za vsak delovni dan.',
   'Start/Stop buttons record work and breaks automatically as the day progresses.': 'Gumba za zagon/ustavitev beležita delo in se samodejno prekineta, ko dan napreduje.',
   'The employee can retroactively register work hours they forgot to clock in/out on.': 'Zaposleni lahko retroaktivno prijavi delovne ure, ki jih je pozabil prijaviti/odjaviti.',
+  'Shifts across midnight': 'Izmene čez polnoč',
+  'The shift is automatically closed at 00:00 and continues as a new registration on the next day (e.g. day 1: 22:00–00:00, day 2: 00:00–06:00). The app handles this automatically.': 'Izmena se samodejno zapre ob 00:00 in se nadaljuje kot nova registracija naslednji dan (npr. dan 1: 22:00–00:00, dan 2: 00:00–06:00). Aplikacija to obravnava samodejno.',
   'Once a registration is saved, the employee can no longer change it. Errors must be corrected by a manager.': 'Ko je registracija shranjena, je zaposleni ne more več spreminjati. Napake mora popraviti vodja.',
   'The employee can edit all registrations that fall after the last payroll run. Registrations up to and including the 19th of the month are locked when payroll runs. Older registrations cannot be changed.': 'Zaposleni lahko ureja vse registracije, ki sodijo po zadnjem obračunu plač. Registracije do vključno 19. v mesecu so zaklenjene, ko se obračun plač izvede. Starejših registracij ni mogoče spremeniti.',
   '(Cutoff date is currently fixed at the 19th — will become configurable in a future version.)': '(Rok za prijavo je trenutno določen na 19. – v prihodnji različici ga bo mogoče nastaviti.)',

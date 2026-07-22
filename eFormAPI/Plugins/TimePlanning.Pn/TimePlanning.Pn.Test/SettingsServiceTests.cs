@@ -439,6 +439,52 @@ public class SettingsServiceTests : TestBaseSetup
     }
 
     [Test]
+    public async Task UpdateAssignedSite_PersistsOverMidnight()
+    {
+        // Arrange
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 42,
+            OverMidnight = false,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 42,
+            OverMidnight = true,
+            UseGoogleSheetAsDefault = true
+        };
+
+        // Act — enable OverMidnight
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        var updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.OverMidnight, Is.True);
+
+        // Act — disable OverMidnight again
+        updateModel.OverMidnight = false;
+        result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+
+        updatedSite = await TimePlanningPnDbContext.AssignedSites
+            .FirstOrDefaultAsync(x => x.Id == assignedSite.Id);
+        Assert.That(updatedSite, Is.Not.Null);
+        Assert.That(updatedSite.OverMidnight, Is.False);
+    }
+
+    [Test]
     public async Task GetSettings_ReturnsGpsAndSnapshotEnabledSettings()
     {
         // Arrange

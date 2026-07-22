@@ -415,6 +415,8 @@ export const isIS = {
   'The employee enters start, stop and break for each workday themselves.': 'Starfsmaðurinn slær sjálfur inn upphaf, stöðvun og hlé fyrir hvern vinnudag.',
   'Start/Stop buttons record work and breaks automatically as the day progresses.': 'Byrja/Stoppa hnappar skrá vinnu og hlé sjálfkrafa eftir því sem líður á daginn.',
   'The employee can retroactively register work hours they forgot to clock in/out on.': 'Starfsmaðurinn getur skráð vinnutíma sem hann gleymdi að stimpla sig inn/út fyrir afturvirkt.',
+  'Shifts across midnight': 'Vaktir yfir miðnætti',
+  'The shift is automatically closed at 00:00 and continues as a new registration on the next day (e.g. day 1: 22:00–00:00, day 2: 00:00–06:00). The app handles this automatically.': 'Vaktinni er sjálfkrafa lokað kl. 00:00 og heldur áfram sem ný skráning næsta dag (t.d. dagur 1: 22:00–00:00, dagur 2: 00:00–06:00). Appið sér um þetta sjálfkrafa.',
   'Once a registration is saved, the employee can no longer change it. Errors must be corrected by a manager.': 'Þegar skráning hefur verið vistuð getur starfsmaður ekki lengur breytt henni. Villur verða að vera leiðréttar af stjórnanda.',
   'The employee can edit all registrations that fall after the last payroll run. Registrations up to and including the 19th of the month are locked when payroll runs. Older registrations cannot be changed.': 'Starfsmaðurinn getur breytt öllum skráningum sem falla eftir síðustu launakeyrslu. Skráningar til og með 19. mánaðarins eru læstar þegar launakeyrsla fer fram. Ekki er hægt að breyta eldri skráningum.',
   '(Cutoff date is currently fixed at the 19th — will become configurable in a future version.)': '(Síðasti dagur er nú fastur 19. — verður hægt að stilla hann í framtíðarútgáfu.)',

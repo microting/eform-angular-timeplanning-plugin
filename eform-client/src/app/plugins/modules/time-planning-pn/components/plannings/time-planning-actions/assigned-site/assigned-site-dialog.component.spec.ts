@@ -655,4 +655,104 @@ describe('AssignedSiteDialogComponent', () => {
       expect(isFirstUser).toBe(true);
     });
   });
+
+  describe('Shifts across midnight (overMidnight) sub-option', () => {
+    // The checkbox's *ngIf is `data.usePunchClock` inside the mobile-axis block
+    // (gated by !data.resigned && data.allowPersonalTimeRegistration && admin).
+    // Same no-`detectChanges` pattern as the sibling blocks above: assert
+    // against component state, not the rendered DOM, because Material
+    // form-control directives aren't registered under NO_ERRORS_SCHEMA.
+
+    function setupWithData(
+      overrides: Partial<typeof mockAssignedSiteData> & { overMidnight?: boolean },
+    ): AssignedSiteDialogComponent {
+      const data = { ...mockAssignedSiteData, ...overrides };
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        declarations: [AssignedSiteDialogComponent],
+        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          FormBuilder,
+          { provide: MAT_DIALOG_DATA, useValue: data },
+          { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
+          { provide: TimePlanningPnPayRuleSetsService, useValue: mockPayRuleSetsService },
+          { provide: Store, useValue: mockStore },
+        ],
+      }).compileComponents();
+      const newFixture = TestBed.createComponent(AssignedSiteDialogComponent);
+      const c = newFixture.componentInstance;
+      c.ngOnInit();
+      return c;
+    }
+
+    /**
+     * Mirrors the checkbox's *ngIf: it renders only inside the mobile-axis
+     * block and only while the punch-clock entry method is selected.
+     */
+    function isOverMidnightVisible(c: AssignedSiteDialogComponent): boolean {
+      let isAdmin = false;
+      c['selectCurrentUserIsAdmin$']?.subscribe((v: boolean) => (isAdmin = v));
+      return !c.data.resigned
+        && c.data.allowPersonalTimeRegistration
+        && isAdmin
+        && c.data.usePunchClock;
+    }
+
+    it('should show the checkbox when entry method is punchClock', () => {
+      const c = setupWithData({
+        usePunchClock: true,
+        allowAcceptOfPlannedHours: false,
+        allowPersonalTimeRegistration: true,
+        resigned: false,
+      });
+
+      expect(c.entryMethod).toBe('punchClock');
+      expect(isOverMidnightVisible(c)).toBe(true);
+    });
+
+    it('should hide the checkbox when entry method is manual', () => {
+      const c = setupWithData({
+        usePunchClock: false,
+        allowAcceptOfPlannedHours: false,
+        allowPersonalTimeRegistration: true,
+        resigned: false,
+      });
+
+      expect(c.entryMethod).toBe('manual');
+      expect(isOverMidnightVisible(c)).toBe(false);
+    });
+
+    it('should hide the checkbox when entry method is acceptPlanned', () => {
+      const c = setupWithData({
+        usePunchClock: false,
+        allowAcceptOfPlannedHours: true,
+        allowPersonalTimeRegistration: true,
+        resigned: false,
+      });
+
+      expect(c.entryMethod).toBe('acceptPlanned');
+      expect(isOverMidnightVisible(c)).toBe(false);
+    });
+
+    it('should initialize the overMidnight form control from the model value', () => {
+      const cFalse = setupWithData({ usePunchClock: true, overMidnight: false });
+      expect(cFalse.assignedSiteForm.get('overMidnight')?.value).toBe(false);
+
+      const cTrue = setupWithData({ usePunchClock: true, overMidnight: true });
+      expect(cTrue.assignedSiteForm.get('overMidnight')?.value).toBe(true);
+    });
+
+    it('should update the model when the checkbox is toggled', () => {
+      const c = setupWithData({ usePunchClock: true, overMidnight: false });
+
+      c.assignedSiteForm.get('overMidnight')?.setValue(true);
+      // valueChanges Object.assigns the form value onto `data`, which is what
+      // the save button hands back to the caller for updateAssignedSite.
+      expect(c.data.overMidnight).toBe(true);
+
+      c.assignedSiteForm.get('overMidnight')?.setValue(false);
+      expect(c.data.overMidnight).toBe(false);
+    });
+  });
 });

@@ -415,6 +415,8 @@ export const skSK = {
   'The employee enters start, stop and break for each workday themselves.': 'Zamestnanec si sám zadáva začiatok, koniec a prestávku pre každý pracovný deň.',
   'Start/Stop buttons record work and breaks automatically as the day progresses.': 'Tlačidlá Štart/Stop zaznamenávajú prácu a prestávky sa automaticky robia v priebehu dňa.',
   'The employee can retroactively register work hours they forgot to clock in/out on.': 'Zamestnanec si môže spätne zaregistrovať pracovné hodiny, na ktoré zabudol prísť/odísť.',
+  'Shifts across midnight': 'Zmeny cez polnoc',
+  'The shift is automatically closed at 00:00 and continues as a new registration on the next day (e.g. day 1: 22:00–00:00, day 2: 00:00–06:00). The app handles this automatically.': 'Zmena sa automaticky uzavrie o 00:00 a pokračuje ako nová registrácia nasledujúci deň (napr. deň 1: 22:00–00:00, deň 2: 00:00–06:00). Aplikácia to rieši automaticky.',
   'Once a registration is saved, the employee can no longer change it. Errors must be corrected by a manager.': 'Po uložení registrácie ju zamestnanec už nemôže zmeniť. Chyby musí opraviť manažér.',
   'The employee can edit all registrations that fall after the last payroll run. Registrations up to and including the 19th of the month are locked when payroll runs. Older registrations cannot be changed.': 'Zamestnanec môže upravovať všetky registrácie, ktoré spadajú po posledné spracovanie miezd. Registrácie do 19. dňa v mesiaci vrátane sú pri spracovaní miezd uzamknuté. Staršie registrácie nie je možné zmeniť.',
   '(Cutoff date is currently fixed at the 19th — will become configurable in a future version.)': '(Dátum uzávierky je momentálne stanovený na 19. – v budúcej verzii bude možné ho konfigurovať.)',

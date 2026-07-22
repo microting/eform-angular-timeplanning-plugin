@@ -156,6 +156,7 @@ export class AssignedSiteModel {
   useOnlyPlanHours: boolean;
   usePunchClock: boolean;
   usePunchClockWithAllowRegisteringInHistory: boolean;
+  overMidnight: boolean;
   thirdShiftActive: boolean;
   fourthShiftActive: boolean;
   fifthShiftActive: boolean;

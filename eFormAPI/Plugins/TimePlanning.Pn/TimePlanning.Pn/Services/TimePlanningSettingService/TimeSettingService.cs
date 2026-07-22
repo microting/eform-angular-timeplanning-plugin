@@ -979,6 +979,7 @@ public class TimeSettingService(
         dbAssignedSite.UsePunchClock = site.UsePunchClock;
         dbAssignedSite.UseDetailedPauseEditing = site.UseDetailedPauseEditing;
         dbAssignedSite.AutoBreakCalculationActive = site.AutoBreakCalculationActive;
+        dbAssignedSite.OverMidnight = site.OverMidnight;
         dbAssignedSite.PayRuleSetId = site.PayRuleSetId;
 
         dbAssignedSite.StartMonday = site.StartMonday;
