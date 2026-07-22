@@ -179,6 +179,7 @@ export class AssignedSiteDialogComponent implements DoCheck, OnInit {
       allowEditOfRegistrations: new FormControl(this.data.allowEditOfRegistrations),
       usePunchClock: new FormControl(this.data.usePunchClock),
       usePunchClockWithAllowRegisteringInHistory: new FormControl(this.data.usePunchClockWithAllowRegisteringInHistory),
+      overMidnight: new FormControl(this.data.overMidnight),
       allowAcceptOfPlannedHours: new FormControl(this.data.allowAcceptOfPlannedHours),
       daysBackInTimeAllowedEditingEnabled: new FormControl(this.data.daysBackInTimeAllowedEditingEnabled),
       thirdShiftActive: new FormControl(this.data.thirdShiftActive),

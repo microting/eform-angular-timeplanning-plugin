@@ -415,6 +415,8 @@ export const etET = {
   'The employee enters start, stop and break for each workday themselves.': 'Töötaja sisestab iga tööpäeva algus-, lõpp- ja pausi ise.',
   'Start/Stop buttons record work and breaks automatically as the day progresses.': 'Start/Stop nupud salvestavad töö ja pausid automaatselt päeva edenedes.',
   'The employee can retroactively register work hours they forgot to clock in/out on.': 'Töötaja saab tagasiulatuvalt registreerida töötunde, mille registreerimine ununeb.',
+  'Shifts across midnight': 'Vahetused üle kesköö',
+  'The shift is automatically closed at 00:00 and continues as a new registration on the next day (e.g. day 1: 22:00–00:00, day 2: 00:00–06:00). The app handles this automatically.': 'Vahetus suletakse automaatselt kell 00:00 ja jätkub uue registreeringuna järgmisel päeval (nt päev 1: 22:00–00:00, päev 2: 00:00–06:00). Rakendus haldab seda automaatselt.',
   'Once a registration is saved, the employee can no longer change it. Errors must be corrected by a manager.': 'Kui registreering on salvestatud, ei saa töötaja seda enam muuta. Vead peab parandama juht.',
   'The employee can edit all registrations that fall after the last payroll run. Registrations up to and including the 19th of the month are locked when payroll runs. Older registrations cannot be changed.': 'Töötaja saab muuta kõiki registreeringuid, mis jäävad pärast viimast palgaarvestust. Kuni kuu 19. kuupäevani (kaasa arvatud) tehtud registreeringud lukustatakse palgaarvestuse ajal. Vanemaid registreeringuid ei saa muuta.',
   '(Cutoff date is currently fixed at the 19th — will become configurable in a future version.)': '(Lõppkuupäev on praegu fikseeritud 19. kuupäeval – see muutub tulevases versioonis seadistatavaks.)',

@@ -415,6 +415,8 @@ export const noNO = {
   'The employee enters start, stop and break for each workday themselves.': 'Den ansatte legger selv inn start, stopp og pause for hver arbeidsdag.',
   'Start/Stop buttons record work and breaks automatically as the day progresses.': 'Start/stopp-knapper registrerer arbeid og pauser automatisk etter hvert som dagen går.',
   'The employee can retroactively register work hours they forgot to clock in/out on.': 'Den ansatte kan med tilbakevirkende kraft registrere arbeidstimer de har glemt å stemple inn/ut på.',
+  'Shifts across midnight': 'Vakter over midnatt',
+  'The shift is automatically closed at 00:00 and continues as a new registration on the next day (e.g. day 1: 22:00–00:00, day 2: 00:00–06:00). The app handles this automatically.': 'Vakten avsluttes automatisk kl. 00:00 og fortsetter som en ny registrering neste dag (f.eks. dag 1: 22:00–00:00, dag 2: 00:00–06:00). Appen håndterer dette automatisk.',
   'Once a registration is saved, the employee can no longer change it. Errors must be corrected by a manager.': 'Når en registrering er lagret, kan ikke den ansatte lenger endre den. Feil må rettes av en leder.',
   'The employee can edit all registrations that fall after the last payroll run. Registrations up to and including the 19th of the month are locked when payroll runs. Older registrations cannot be changed.': 'Den ansatte kan redigere alle registreringer som faller etter siste lønnskjøring. Registreringer frem til og med den 19. i måneden er låst ved lønnskjøring. Eldre registreringer kan ikke endres.',
   '(Cutoff date is currently fixed at the 19th — will become configurable in a future version.)': '(Siste frist er for øyeblikket satt til den 19. – vil bli konfigurerbar i en fremtidig versjon.)',
