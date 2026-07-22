@@ -2604,6 +2604,9 @@ public class TimePlanningWorkingHoursService(
             var site = await sdkContext.Sites.FirstAsync(x => x.MicrotingUid == model.SiteId);
             var siteWorker = await sdkContext.SiteWorkers.FirstAsync(x => x.SiteId == site.Id);
             var worker = await sdkContext.Workers.FirstAsync(x => x.Id == siteWorker!.WorkerId);
+            // Tag names for this site (sorted, comma-joined) — one lookup per export.
+            var tagNamesBySiteUid = await GetSiteTagNames(sdkContext, [(int)site.MicrotingUid!]);
+            var siteTagNames = tagNamesBySiteUid.GetValueOrDefault((int)site.MicrotingUid!, string.Empty);
             var language = await userService.GetCurrentUserLanguage();
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -2696,6 +2699,7 @@ public class TimePlanningWorkingHoursService(
                 {
                     EmployeeNo = worker.EmployeeNo ?? string.Empty,
                     WorkerName = site.Name,
+                    Tags = siteTagNames,
                     Date = p.Date,
                     Planning = p,
                     // Per-row mode at registration: write-time marker first,
@@ -2712,6 +2716,7 @@ public class TimePlanningWorkingHoursService(
                 {
                     Translations.Employee_no,
                     Translations.Worker,
+                    Translations.Tags,
                     Translations.DayOfWeek,
                     Translations.Date,
                     Translations.Week_number,
@@ -2829,7 +2834,7 @@ public class TimePlanningWorkingHoursService(
                 foreach (var planning in timePlannings)
                 {
                     var dataRow = new Row() { RowIndex = (uint)rowIndex };
-                    FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, planning.RegisteredUnderOneMinuteIntervals ?? oneMinuteTimeline.WasOneMinuteAt(planning.Date));
+                    FillDataRow(dataRow, worker, site, siteTagNames, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, planning.RegisteredUnderOneMinuteIntervals ?? oneMinuteTimeline.WasOneMinuteAt(planning.Date));
 
                     // Append pay code values for this day
                     var dayPayLines = payLinesByDate.ContainsKey(planning.Date)
@@ -2873,6 +2878,7 @@ public class TimePlanningWorkingHoursService(
                 var totalsRow = new Row { RowIndex = (uint)rowIndex };
                 totalsRow.Append(CreateCell((Resources.Translations.ResourceManager.GetString("PayRuleSetTotalRow") ?? "Total"))); // EmployeeNo column → "Total" label
                 totalsRow.Append(CreateCell(string.Empty)); // Worker
+                totalsRow.Append(CreateCell(string.Empty)); // Tags
                 totalsRow.Append(CreateCell(string.Empty)); // DayOfWeek
                 totalsRow.Append(CreateCell(string.Empty)); // Date
                 totalsRow.Append(CreateCell(string.Empty)); // Week
@@ -2947,12 +2953,40 @@ public class TimePlanningWorkingHoursService(
         }
     }
 
-    private void FillDataRow(Row dataRow, Worker worker, Microting.eForm.Infrastructure.Data.Entities.Site site, CultureInfo culture,
+    /// <summary>
+    /// Resolves the tag names of the given sites (identified by their SDK
+    /// <c>MicrotingUid</c> — the id every export code path already holds).
+    /// One query over the SDK's <c>SiteTags</c> join table (non-removed rows
+    /// only, matching the planning-filter idiom) joined with <c>Tags</c> for
+    /// the names. Result: MicrotingUid → tag names sorted alphabetically
+    /// (ordinal, case-insensitive) and joined with ", ". Untagged sites are
+    /// absent from the dictionary.
+    /// </summary>
+    internal static async Task<Dictionary<int, string>> GetSiteTagNames(
+        Microting.eForm.Infrastructure.MicrotingDbContext sdkDbContext, IEnumerable<int> siteMicrotingUids)
+    {
+        var uids = siteMicrotingUids.ToList();
+        var pairs = await sdkDbContext.SiteTags
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .Where(x => x.Site.MicrotingUid != null && uids.Contains(x.Site.MicrotingUid.Value))
+            .Select(x => new { Uid = x.Site.MicrotingUid.Value, x.Tag.Name })
+            .ToListAsync();
+
+        return pairs
+            .GroupBy(x => x.Uid)
+            .ToDictionary(
+                g => g.Key,
+                g => string.Join(", ", g.Select(t => t.Name)
+                    .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)));
+    }
+
+    private void FillDataRow(Row dataRow, Worker worker, Microting.eForm.Infrastructure.Data.Entities.Site site, string siteTags, CultureInfo culture,
         TimePlanningWorkingHoursModel planning, PlanRegistration plr, Language language, bool isThirdShiftEnabled, bool isFourthShiftEnabled, bool isFifthShiftEnabled, bool useOneMinuteIntervals = false)
     {
         try {
             dataRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
             dataRow.Append(CreateCell(site.Name));
+            dataRow.Append(CreateCell(siteTags));
             dataRow.Append(CreateCell(planning.Date.ToString("dddd", culture)));
             dataRow.Append(CreateDateCell(planning.Date));
             dataRow.Append(CreateWeekNumberCell(planning.Date));
@@ -3189,6 +3223,9 @@ public class TimePlanningWorkingHoursService(
 
             var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
+            // Tag names per site (sorted, comma-joined), keyed by MicrotingUid —
+            // one lookup per export, shared by all sheet writers below.
+            var tagNamesBySiteUid = await GetSiteTagNames(sdkContext, siteIds);
             Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
             var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
@@ -3325,6 +3362,7 @@ public class TimePlanningWorkingHoursService(
                         {
                             EmployeeNo = doWorker.EmployeeNo ?? string.Empty,
                             WorkerName = doSite.Name,
+                            Tags = tagNamesBySiteUid.GetValueOrDefault(siteIds[i], string.Empty),
                             Date = planning.Date,
                             Planning = planning,
                             // Per-row mode at registration: write-time marker
@@ -3357,6 +3395,7 @@ public class TimePlanningWorkingHoursService(
                     Translations.To,
                     Translations.Employee_no,
                     Translations.Worker,
+                    Translations.Tags,
                     Translations.PlanHours,
                     Translations.NettoHours,
                     Translations.SumFlexStart,
@@ -3443,12 +3482,14 @@ public class TimePlanningWorkingHoursService(
                     if (site == null) continue;
                     var siteWorker = await sdkContext.SiteWorkers.FirstAsync(x => x.SiteId == site.Id);
                     var worker = await sdkContext.Workers.FirstAsync(x => x.Id == siteWorker.WorkerId);
+                    var siteTagNames = tagNamesBySiteUid.GetValueOrDefault(siteIds[i], string.Empty);
                     WorksheetPart worksheetPart1 = workbookPart1.AddNewPart<WorksheetPart>($"rId{i + 3}");
 
                     var headers = new[]
                     {
                         Translations.Employee_no,
                         Translations.Worker,
+                        Translations.Tags,
                         Translations.DayOfWeek,
                         Translations.Date,
                         Translations.Week_number,
@@ -3575,7 +3616,7 @@ public class TimePlanningWorkingHoursService(
                         var dataRow = new Row() { RowIndex = (uint)rowIndex };
                         try
                         {
-                            FillDataRow(dataRow, worker, site, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, planning.RegisteredUnderOneMinuteIntervals ?? cache?.OneMinuteTimeline?.WasOneMinuteAt(planning.Date) ?? false);
+                            FillDataRow(dataRow, worker, site, siteTagNames, culture, planning, plr, language, isThirdShiftEnabled, isFourthShiftEnabled, isFifthShiftEnabled, planning.RegisteredUnderOneMinuteIntervals ?? cache?.OneMinuteTimeline?.WasOneMinuteAt(planning.Date) ?? false);
 
                             // Append pay code values for this day
                             var dayPayLines = (cache != null && cache.PayLinesByDate.ContainsKey(planning.Date))
@@ -3624,6 +3665,7 @@ public class TimePlanningWorkingHoursService(
                     var siteTotalsRow = new Row { RowIndex = (uint)rowIndex };
                     siteTotalsRow.Append(CreateCell((Resources.Translations.ResourceManager.GetString("PayRuleSetTotalRow") ?? "Total")));
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Worker
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // Tags
                     siteTotalsRow.Append(CreateCell(string.Empty)); // DayOfWeek
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Date
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Week
@@ -3689,6 +3731,7 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateDateCell(model.DateTo));
                     totalRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
                     totalRow.Append(CreateCell(site.Name));
+                    totalRow.Append(CreateCell(siteTagNames));
                     totalRow.Append(CreateNumericCell(siteTotalPlanHours));
                     totalRow.Append(CreateNumericCell(siteTotalNettoHours));
                     totalRow.Append(CreateNumericCell(timePlannings.Count > 0 ? timePlannings.Last().SumFlexEnd : 0.0));
@@ -4384,6 +4427,8 @@ public class TimePlanningWorkingHoursService(
     {
         public string EmployeeNo { get; set; }
         public string WorkerName { get; set; }
+        /// <summary>Sorted, comma-joined tag names of the row's site (empty when untagged).</summary>
+        public string Tags { get; set; } = string.Empty;
         public DateTime Date { get; set; }
         public TimePlanningWorkingHoursModel Planning { get; set; }
         public bool UseOneMinuteIntervals { get; set; }
@@ -4459,10 +4504,10 @@ public class TimePlanningWorkingHoursService(
 
     private void BuildDayOverviewWorksheet(WorksheetPart worksheetPart, List<DayOverviewRow> rows, CultureInfo culture)
     {
-        const int colCount = 21;
+        const int colCount = 22;
         var headers = new[]
         {
-            Translations.Employee_no, Translations.Worker, Translations.DayOfWeek,
+            Translations.Employee_no, Translations.Worker, Translations.Tags, Translations.DayOfWeek,
             Translations.Date, Translations.Week_number,
             Translations.Shift_1__start, Translations.Shift_1__end, Translations.Shift_1__pause,
             Translations.Shift_2__start, Translations.Shift_2__end, Translations.Shift_2__pause,
@@ -4486,11 +4531,12 @@ public class TimePlanningWorkingHoursService(
         var columns = new Columns();
         columns.Append(new Column() { Min = 1U, Max = 1U, Width = 18D, CustomWidth = true });
         columns.Append(new Column() { Min = 2U, Max = 2U, Width = 15D, CustomWidth = true });
-        columns.Append(new Column() { Min = 3U, Max = 3U, Width = 10D, CustomWidth = true });
-        columns.Append(new Column() { Min = 4U, Max = 4U, Width = 11D, CustomWidth = true });
-        columns.Append(new Column() { Min = 5U, Max = 5U, Width = 8D, CustomWidth = true });
-        columns.Append(new Column() { Min = 6U, Max = 20U, Width = 13.5D, CustomWidth = true });
-        columns.Append(new Column() { Min = 21U, Max = 21U, Width = 12D, CustomWidth = true });
+        columns.Append(new Column() { Min = 3U, Max = 3U, Width = 15D, CustomWidth = true }); // Tags
+        columns.Append(new Column() { Min = 4U, Max = 4U, Width = 10D, CustomWidth = true });
+        columns.Append(new Column() { Min = 5U, Max = 5U, Width = 11D, CustomWidth = true });
+        columns.Append(new Column() { Min = 6U, Max = 6U, Width = 8D, CustomWidth = true });
+        columns.Append(new Column() { Min = 7U, Max = 21U, Width = 13.5D, CustomWidth = true });
+        columns.Append(new Column() { Min = 22U, Max = 22U, Width = 12D, CustomWidth = true });
 
         var sheetData = new SheetData();
 
@@ -4514,6 +4560,7 @@ public class TimePlanningWorkingHoursService(
             int c = 1;
             dataRow.Append(DayOverviewStringCell(c++, rowIndex, row.EmployeeNo));
             dataRow.Append(DayOverviewStringCell(c++, rowIndex, row.WorkerName));
+            dataRow.Append(DayOverviewStringCell(c++, rowIndex, row.Tags));
             dataRow.Append(DayOverviewStringCell(c++, rowIndex, row.Date.ToString("dddd", culture)));
             dataRow.Append(DayOverviewDateCell(c++, rowIndex, row.Date));
             var weekNumber = culture.Calendar.GetWeekOfYear(row.Date, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);

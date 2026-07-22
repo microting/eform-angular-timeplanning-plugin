@@ -158,6 +158,12 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("Worker", resourceCulture);
             }
         }
+
+        internal static string Tags {
+            get {
+                return ResourceManager.GetString("Tags", resourceCulture);
+            }
+        }
         
         internal static string DayOfWeek {
             get {
