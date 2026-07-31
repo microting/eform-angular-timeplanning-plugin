@@ -2,6 +2,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microting.eFormApi.BasePn.Abstractions;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Services.DeviceTokenService;
@@ -18,9 +20,21 @@ public class DeviceTokenServiceTests : TestBaseSetup
     {
         await base.Setup();
 
+        // RegisterAsync/UnregisterAsync (exercised below) are keyed on the
+        // sdkSiteId/token parameters directly and never touch the resolver
+        // dependencies; substitutes are provided only so the constructor
+        // never NREs. The JWT-based resolver path (RegisterForCallerAsync)
+        // is covered separately (see Task 2's resolver-focused suite).
+        var userService = Substitute.For<IUserService>();
+        var coreService = Substitute.For<IEFormCoreService>();
+        var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
+
         _service = new DeviceTokenService(
             TimePlanningPnDbContext!,
-            Substitute.For<ILogger<DeviceTokenService>>());
+            Substitute.For<ILogger<DeviceTokenService>>(),
+            userService,
+            baseDbContext,
+            coreService);
     }
 
     [Test]
