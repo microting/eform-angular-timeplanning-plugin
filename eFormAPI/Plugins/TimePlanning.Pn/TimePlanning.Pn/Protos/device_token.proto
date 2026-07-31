@@ -9,6 +9,8 @@ option csharp_namespace = "TimePlanning.Pn.Grpc";
 message RegisterDeviceTokenRequest {
   string token = 1;
   string platform = 2;
+  // Ignored since 2026-07: the server resolves the caller's site id from
+  // the JWT. Field retained for wire compatibility with shipped clients.
   int32 sdk_site_id = 3;
 }
 

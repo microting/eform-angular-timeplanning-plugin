@@ -355,3 +355,5 @@ eform-client/.idea/
 
 .DS_Store
 .claude
+.worktrees/
+.superpowers/

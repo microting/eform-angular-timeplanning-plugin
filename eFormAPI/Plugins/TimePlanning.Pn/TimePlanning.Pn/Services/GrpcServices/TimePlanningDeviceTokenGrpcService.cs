@@ -21,8 +21,10 @@ public class TimePlanningDeviceTokenGrpcService
     {
         try
         {
-            var result = await _deviceTokenService.RegisterAsync(
-                request.SdkSiteId, request.Token, request.Platform);
+            // request.SdkSiteId is deliberately ignored: the site id is
+            // resolved server-side from the JWT (see DeviceTokenService).
+            var result = await _deviceTokenService.RegisterForCallerAsync(
+                request.Token, request.Platform);
 
             return new OperationResponse
             {
