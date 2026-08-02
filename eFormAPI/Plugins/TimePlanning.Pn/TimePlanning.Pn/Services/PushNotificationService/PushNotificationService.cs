@@ -65,7 +65,7 @@ public class PushNotificationService : IPushNotificationService
     {
         if (!_isEnabled)
         {
-            _logger.LogDebug(
+            _logger.LogInformation(
                 "Push notification skipped (Firebase not configured): SdkSiteId={SdkSiteId}, Title={Title}",
                 targetSdkSiteId, title);
             return;
@@ -79,7 +79,7 @@ public class PushNotificationService : IPushNotificationService
 
             if (tokens.Count == 0)
             {
-                _logger.LogDebug("No device tokens found for SdkSiteId {SdkSiteId}", targetSdkSiteId);
+                _logger.LogInformation("No device tokens found for SdkSiteId {SdkSiteId}", targetSdkSiteId);
                 return;
             }
 
