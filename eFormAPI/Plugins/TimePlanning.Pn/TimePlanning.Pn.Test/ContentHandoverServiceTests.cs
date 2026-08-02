@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
@@ -1211,5 +1212,128 @@ public class ContentHandoverServiceTests : TestBaseSetup
 
         Assert.That(result.Success, Is.False);
         Assert.That(result.Message, Is.EqualTo("ShiftOverlapsExistingShift"));
+    }
+
+    // ---------------------------------------------------------------
+    // Scope-owning push send contract.
+    // Fire-and-forget handover pushes must resolve IPushNotificationService
+    // from a scope the send itself creates and disposes (never from the
+    // caller's/request's DI scope, which may already be disposed by the
+    // time a Task.Run-backed send executes). Hand-rolled recording fakes are
+    // used because NSubstitute cannot observe IDisposable.Dispose ordering
+    // cleanly.
+    // ---------------------------------------------------------------
+
+    private sealed class RecordingScope : IServiceScope
+    {
+        private readonly IServiceProvider _provider;
+        public bool Disposed;
+        public RecordingScope(IServiceProvider provider) => _provider = provider;
+        public IServiceProvider ServiceProvider => _provider;
+        public void Dispose() => Disposed = true;
+    }
+
+    private sealed class RecordingScopeFactory : IServiceScopeFactory
+    {
+        private readonly IServiceProvider _provider;
+        public readonly List<RecordingScope> CreatedScopes = new();
+        public RecordingScopeFactory(IServiceProvider provider) => _provider = provider;
+        public IServiceScope CreateScope()
+        {
+            var scope = new RecordingScope(_provider);
+            CreatedScopes.Add(scope);
+            return scope;
+        }
+    }
+
+    private (ContentHandoverService service, RecordingScopeFactory factory,
+        TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService push)
+        BuildScopeRecordingService()
+    {
+        var push = Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>();
+        var provider = Substitute.For<IServiceProvider>();
+        provider.GetService(typeof(TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService))
+            .Returns(push);
+        var factory = new RecordingScopeFactory(provider);
+        var service = new ContentHandoverService(
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<ContentHandoverService>>(),
+            TimePlanningPnDbContext,
+            _userService,
+            _localizationService,
+            Substitute.For<Microting.eFormApi.BasePn.Abstractions.IEFormCoreService>(),
+            Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>()),
+            factory);
+        return (service, factory, push);
+    }
+
+    [Test]
+    public async Task SendCreatePushAsync_ResolvesPushServiceFromOwnScope_AndDisposesIt()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+
+        await service.SendCreatePushAsync(17495, new List<int> { 7, 8 }, 2, new DateTime(2026, 8, 2));
+
+        Assert.That(factory.CreatedScopes, Has.Count.EqualTo(1));
+        Assert.That(factory.CreatedScopes[0].Disposed, Is.True,
+            "the send must dispose the scope it created");
+        await push.Received(1).SendToSiteAsync(
+            17495,
+            "New handover request",
+            Arg.Any<string>(),
+            Arg.Is<Dictionary<string, string>>(d =>
+                d["type"] == "handover_created" &&
+                d["handoverRequestId"] == "7" &&
+                d["handoverRequestIds"] == "7,8" &&
+                d["shiftCount"] == "2"));
+    }
+
+    [Test]
+    public async Task SendAcceptPushAsync_SendsDecidedPayload_ToRequester()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+
+        await service.SendAcceptPushAsync(22505, 48);
+
+        Assert.That(factory.CreatedScopes.Single().Disposed, Is.True);
+        await push.Received(1).SendToSiteAsync(
+            22505,
+            "Handover accepted",
+            Arg.Any<string>(),
+            Arg.Is<Dictionary<string, string>>(d =>
+                d["type"] == "handover_decided" &&
+                d["action"] == "accepted" &&
+                d["handoverRequestId"] == "48"));
+    }
+
+    [Test]
+    public async Task SendRejectPushAsync_SendsDecidedPayload_ToRequester()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+
+        await service.SendRejectPushAsync(22505, 48);
+
+        Assert.That(factory.CreatedScopes.Single().Disposed, Is.True);
+        await push.Received(1).SendToSiteAsync(
+            22505,
+            "Handover rejected",
+            Arg.Any<string>(),
+            Arg.Is<Dictionary<string, string>>(d =>
+                d["type"] == "handover_decided" &&
+                d["action"] == "rejected" &&
+                d["handoverRequestId"] == "48"));
+    }
+
+    [Test]
+    public async Task SendCreatePushAsync_PushFailure_IsSwallowedAndScopeStillDisposed()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+        push.SendToSiteAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<Dictionary<string, string>>())
+            .Returns<Task>(_ => throw new InvalidOperationException("boom"));
+
+        Assert.DoesNotThrowAsync(() =>
+            service.SendCreatePushAsync(1, new List<int> { 1 }, 1, DateTime.UtcNow));
+        Assert.That(factory.CreatedScopes.Single().Disposed, Is.True,
+            "using-scope must dispose even when the send throws");
     }
 }
