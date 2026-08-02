@@ -39,6 +39,15 @@ public class ContentHandoverRemovedRowTests : TestBaseSetup
         var localizationService = Substitute.For<ITimePlanningLocalizationService>();
         localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
 
+        var pushSub = Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>();
+        var scopeProvider = Substitute.For<IServiceProvider>();
+        scopeProvider.GetService(typeof(TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService))
+            .Returns(pushSub);
+        var scope = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScope>();
+        scope.ServiceProvider.Returns(scopeProvider);
+        var scopeFactory = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+        scopeFactory.CreateScope().Returns(scope);
+
         _service = new ContentHandoverService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<ContentHandoverService>>(),
             TimePlanningPnDbContext,
@@ -46,7 +55,7 @@ public class ContentHandoverRemovedRowTests : TestBaseSetup
             localizationService,
             Substitute.For<IEFormCoreService>(),
             Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>()),
-            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
+            scopeFactory);
     }
 
     [Test]

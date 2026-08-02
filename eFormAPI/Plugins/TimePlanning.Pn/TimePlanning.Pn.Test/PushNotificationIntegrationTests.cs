@@ -67,6 +67,13 @@ public class PushNotificationIntegrationTests : TestBaseSetup
             baseDbContext,
             _pushService);
 
+        var handoverScopeProvider = Substitute.For<IServiceProvider>();
+        handoverScopeProvider.GetService(typeof(IPushNotificationService)).Returns(_pushService);
+        var handoverScope = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScope>();
+        handoverScope.ServiceProvider.Returns(handoverScopeProvider);
+        var handoverScopeFactory = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+        handoverScopeFactory.CreateScope().Returns(handoverScope);
+
         _contentHandoverService = new ContentHandoverService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<ContentHandoverService>>(),
             TimePlanningPnDbContext!,
@@ -74,7 +81,7 @@ public class PushNotificationIntegrationTests : TestBaseSetup
             localization,
             Substitute.For<IEFormCoreService>(),
             baseDbContext,
-            _pushService);
+            handoverScopeFactory);
     }
 
     [TearDown]

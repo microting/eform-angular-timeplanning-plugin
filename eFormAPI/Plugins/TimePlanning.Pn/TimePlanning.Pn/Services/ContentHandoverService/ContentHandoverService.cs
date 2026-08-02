@@ -33,6 +33,7 @@ using System.Threading.Tasks;
 using Infrastructure.Helpers;
 using Infrastructure.Models.ContentHandover;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
@@ -52,7 +53,7 @@ public class ContentHandoverService : IContentHandoverService
     private readonly ITimePlanningLocalizationService _localizationService;
     private readonly IEFormCoreService _core;
     private readonly BaseDbContext _baseDbContext;
-    private readonly IPushNotificationService _pushNotificationService;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public ContentHandoverService(
         ILogger<ContentHandoverService> logger,
@@ -61,7 +62,7 @@ public class ContentHandoverService : IContentHandoverService
         ITimePlanningLocalizationService localizationService,
         IEFormCoreService core,
         BaseDbContext baseDbContext,
-        IPushNotificationService pushNotificationService)
+        IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -69,7 +70,7 @@ public class ContentHandoverService : IContentHandoverService
         _localizationService = localizationService;
         _core = core;
         _baseDbContext = baseDbContext;
-        _pushNotificationService = pushNotificationService;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     // Danish-locale, case-insensitive comparer used to sort the handover-eligible
@@ -463,37 +464,101 @@ public class ContentHandoverService : IContentHandoverService
 
     private void FireCreatePush(int toSdkSitId, List<int> requestIds, int shiftCount, DateTime date)
     {
-        _ = Task.Run(async () =>
+        _ = Task.Run(() => SendCreatePushAsync(toSdkSitId, requestIds, shiftCount, date));
+    }
+
+    // Owns a short-lived DI scope per send: the fire-and-forget wrappers outlive
+    // the gRPC request scope, so we must not capture request-scoped services.
+    private async Task SendToSiteInOwnScopeAsync(
+        int targetSdkSitId, string title, string body, Dictionary<string, string> data)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var pushService = scope.ServiceProvider.GetRequiredService<IPushNotificationService>();
+        await pushService.SendToSiteAsync(targetSdkSitId, title, body, data);
+    }
+
+    /// <summary>
+    /// Scope-owning push send for handover creation. The fire-and-forget wrapper
+    /// above outlives the gRPC request's DI scope, so this method creates and
+    /// disposes its own scope instead of capturing request-scoped services
+    /// (the previous capture crashed with ObjectDisposedException once the
+    /// request scope was disposed before the background task ran).
+    /// Internal (not private) so tests can await it deterministically.
+    /// </summary>
+    internal async Task SendCreatePushAsync(int toSdkSitId, List<int> requestIds, int shiftCount, DateTime date)
+    {
+        try
         {
-            try
-            {
-                var title = "New handover request";
-                var body = shiftCount > 1
-                    ? $"A coworker wants to hand over {shiftCount} shifts on {date:yyyy-MM-dd}"
-                    : "A coworker wants to hand over content to you";
-                // Dual-key scheme: Accept/Reject pushes use the singular
-                // "handoverRequestId" and Flutter's FCM handler keys off that
-                // name. Old handlers will open the first request in the batch
-                // (better than nothing); new handlers can read the comma-joined
-                // "handoverRequestIds" for the full batch.
-                var primaryId = requestIds.Count > 0 ? requestIds[0].ToString() : "";
-                await _pushNotificationService.SendToSiteAsync(
-                    toSdkSitId,
-                    title,
-                    body,
-                    new Dictionary<string, string>
-                    {
-                        { "type", "handover_created" },
-                        { "handoverRequestId", primaryId },
-                        { "handoverRequestIds", string.Join(",", requestIds) },
-                        { "shiftCount", shiftCount.ToString() }
-                    });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error sending push notification for handover creation");
-            }
-        });
+            var title = "New handover request";
+            var body = shiftCount > 1
+                ? $"A coworker wants to hand over {shiftCount} shifts on {date:yyyy-MM-dd}"
+                : "A coworker wants to hand over content to you";
+            // Dual-key scheme: Accept/Reject pushes use the singular
+            // "handoverRequestId" and Flutter's FCM handler keys off that
+            // name. Old handlers will open the first request in the batch
+            // (better than nothing); new handlers can read the comma-joined
+            // "handoverRequestIds" for the full batch.
+            var primaryId = requestIds.Count > 0 ? requestIds[0].ToString() : "";
+            await SendToSiteInOwnScopeAsync(
+                toSdkSitId,
+                title,
+                body,
+                new Dictionary<string, string>
+                {
+                    { "type", "handover_created" },
+                    { "handoverRequestId", primaryId },
+                    { "handoverRequestIds", string.Join(",", requestIds) },
+                    { "shiftCount", shiftCount.ToString() }
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending push notification for handover creation");
+        }
+    }
+
+    /// <summary>Scope-owning push send for handover acceptance (see SendCreatePushAsync).</summary>
+    internal async Task SendAcceptPushAsync(int fromSdkSitId, int requestId)
+    {
+        try
+        {
+            await SendToSiteInOwnScopeAsync(
+                fromSdkSitId,
+                "Handover accepted",
+                "Your content handover request has been accepted",
+                new Dictionary<string, string>
+                {
+                    { "type", "handover_decided" },
+                    { "action", "accepted" },
+                    { "handoverRequestId", requestId.ToString() }
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending push notification for handover acceptance");
+        }
+    }
+
+    /// <summary>Scope-owning push send for handover rejection (see SendCreatePushAsync).</summary>
+    internal async Task SendRejectPushAsync(int fromSdkSitId, int requestId)
+    {
+        try
+        {
+            await SendToSiteInOwnScopeAsync(
+                fromSdkSitId,
+                "Handover rejected",
+                "Your content handover request has been rejected",
+                new Dictionary<string, string>
+                {
+                    { "type", "handover_decided" },
+                    { "action", "rejected" },
+                    { "handoverRequestId", requestId.ToString() }
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending push notification for handover rejection");
+        }
     }
 
     private static int GetPlannedEndOfShift(PlanRegistration pr, int n)
@@ -851,26 +916,7 @@ public class ContentHandoverService : IContentHandoverService
 
             // 8. Fire-and-forget push to sender.
             var fromSdkSitId = request.FromSdkSitId;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _pushNotificationService.SendToSiteAsync(
-                        fromSdkSitId,
-                        "Handover accepted",
-                        "Your content handover request has been accepted",
-                        new Dictionary<string, string>
-                        {
-                            { "type", "handover_decided" },
-                            { "action", "accepted" },
-                            { "handoverRequestId", requestId.ToString() }
-                        });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error sending push notification for handover acceptance");
-                }
-            });
+            _ = Task.Run(() => SendAcceptPushAsync(fromSdkSitId, requestId));
 
             return new OperationResult(true);
         }
@@ -914,26 +960,7 @@ public class ContentHandoverService : IContentHandoverService
 
             // Fire-and-forget push to sender
             var fromSdkSitId = request.FromSdkSitId;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _pushNotificationService.SendToSiteAsync(
-                        fromSdkSitId,
-                        "Handover rejected",
-                        "Your content handover request has been rejected",
-                        new Dictionary<string, string>
-                        {
-                            { "type", "handover_decided" },
-                            { "action", "rejected" },
-                            { "handoverRequestId", requestId.ToString() }
-                        });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error sending push notification for handover rejection");
-                }
-            });
+            _ = Task.Run(() => SendRejectPushAsync(fromSdkSitId, requestId));
 
             return new OperationResult(true);
         }

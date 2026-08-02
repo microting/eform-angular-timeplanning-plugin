@@ -21,6 +21,8 @@ public class ContentHandoverServiceTests : TestBaseSetup
     private IContentHandoverService _contentHandoverService;
     private IUserService _userService;
     private ITimePlanningLocalizationService _localizationService;
+    private TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService _pushSub;
+    private Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _scopeFactory;
 
     [SetUp]
     public async Task SetUp()
@@ -36,6 +38,15 @@ public class ContentHandoverServiceTests : TestBaseSetup
         // Mirrors the pattern used in PlanRegistrationVersionHistoryTests.
         var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
 
+        _pushSub = Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>();
+        var scopeProvider = Substitute.For<IServiceProvider>();
+        scopeProvider.GetService(typeof(TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService))
+            .Returns(_pushSub);
+        var scope = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScope>();
+        scope.ServiceProvider.Returns(scopeProvider);
+        _scopeFactory = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+        _scopeFactory.CreateScope().Returns(scope);
+
         _contentHandoverService = new ContentHandoverService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<ContentHandoverService>>(),
             TimePlanningPnDbContext,
@@ -43,7 +54,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
             _localizationService,
             Substitute.For<Microting.eFormApi.BasePn.Abstractions.IEFormCoreService>(),
             baseDbContext,
-            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
+            _scopeFactory);
     }
 
     // GetHandoverEligibleCoworkersAsync exercises the real SDK MicrotingDbContext (Workers,
