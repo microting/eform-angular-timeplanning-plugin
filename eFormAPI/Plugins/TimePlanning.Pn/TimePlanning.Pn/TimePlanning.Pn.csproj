@@ -57,6 +57,7 @@
 
     <ItemGroup>
       <PackageReference Include="Google.Protobuf" Version="3.35.1" />
+      <PackageReference Include="Grpc.Net.Client" Version="2.83.0" />
       <EmbeddedResource Include="Resources\eForms\00. Arbejdstid.xml" />
       <EmbeddedResource Include="Resources\localization.json" />
       <None Remove="Resources\eForms\01. Info eForm.xml" />
