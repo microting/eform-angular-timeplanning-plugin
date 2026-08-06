@@ -89,7 +89,7 @@ export class PayRuleSetsCreateModalComponent implements OnInit {
   }
 
   formatTierChain(tiers: Array<{ order: number; upToSeconds: number | null; payCode: string }>): string {
-    return formatTierChain(tiers);
+    return formatTierChain(tiers, this.translateService.instant('Unlimited'));
   }
 
   formatTimeBands(bands: Array<{ startSecondOfDay: number; endSecondOfDay: number; payCode: string; priority: number }>): string {

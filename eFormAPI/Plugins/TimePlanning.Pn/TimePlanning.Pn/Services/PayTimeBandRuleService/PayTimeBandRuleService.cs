@@ -9,6 +9,7 @@ namespace TimePlanning.Pn.Services.PayTimeBandRuleService;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure.Helpers;
 using Infrastructure.Models.PayTimeBandRule;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,18 +17,38 @@ using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 
 public class PayTimeBandRuleService : IPayTimeBandRuleService
 {
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<PayTimeBandRuleService> _logger;
+    private readonly ITimePlanningLocalizationService _localizationService;
 
     public PayTimeBandRuleService(
         TimePlanningPnDbContext dbContext,
-        ILogger<PayTimeBandRuleService> logger)
+        ILogger<PayTimeBandRuleService> logger,
+        ITimePlanningLocalizationService localizationService)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _localizationService = localizationService;
+    }
+
+    /// <summary>
+    /// A pay time band rule belongs to a PayDayTypeRule, which belongs to a
+    /// PayRuleSet. Locked overenskomst presets are read-only, and the guard on
+    /// PayRuleSetService only covers the rule set row itself — without this
+    /// check a locked preset could be rewritten one child row at a time.
+    /// </summary>
+    private async Task<bool> OwningPayRuleSetIsLocked(int payDayTypeRuleId)
+    {
+        var payRuleSetName = await _dbContext.PayDayTypeRules
+            .Where(pdtr => pdtr.Id == payDayTypeRuleId)
+            .Select(pdtr => pdtr.PayRuleSet.Name)
+            .FirstOrDefaultAsync();
+
+        return payRuleSetName != null && PayRuleSetLock.IsLockedPresetName(payRuleSetName);
     }
 
     public async Task<OperationDataResult<PayTimeBandRulesListModel>> Index(PayTimeBandRulesRequestModel requestModel)
@@ -114,6 +135,11 @@ public class PayTimeBandRuleService : IPayTimeBandRuleService
     {
         try
         {
+            if (await OwningPayRuleSetIsLocked(model.PayDayTypeRuleId))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
+            }
+
             var rule = new PayTimeBandRule
             {
                 PayDayTypeRuleId = model.PayDayTypeRuleId,
@@ -149,6 +175,11 @@ public class PayTimeBandRuleService : IPayTimeBandRuleService
                 return new OperationResult(false, "Pay time band rule not found");
             }
 
+            if (await OwningPayRuleSetIsLocked(rule.PayDayTypeRuleId))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
+            }
+
             rule.StartSecondOfDay = model.StartSecondOfDay;
             rule.EndSecondOfDay = model.EndSecondOfDay;
             rule.PayCode = model.PayCode;
@@ -176,6 +207,11 @@ public class PayTimeBandRuleService : IPayTimeBandRuleService
             if (rule == null)
             {
                 return new OperationResult(false, "Pay time band rule not found");
+            }
+
+            if (await OwningPayRuleSetIsLocked(rule.PayDayTypeRuleId))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
             }
 
             await rule.Delete(_dbContext);

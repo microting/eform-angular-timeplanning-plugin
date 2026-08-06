@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure.Helpers;
 using Infrastructure.Models.PayDayTypeRule;
 using Infrastructure.Models.PayRuleSet;
 using Infrastructure.Models.PayTimeBandRule;
@@ -23,41 +24,6 @@ using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 
 public class PayRuleSetService : IPayRuleSetService
 {
-    private static readonly HashSet<string> LockedPresetNames = new HashSet<string>
-    {
-        "GLS-A / 3F - Jordbrug Standard 2026-2029",
-        "GLS-A / 3F - Jordbrug Dyrehold 2026-2029",
-        "GLS-A / 3F - Jordbrug Elev u18 2026-2029",
-        "GLS-A / 3F - Jordbrug Elev o18 2026-2029",
-        "GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2026-2029",
-        "GLS-A / 3F - Gartneri Standard 2026-2029",
-        "GLS-A / 3F - Gartneri Elev u18 2026-2029",
-        "GLS-A / 3F - Gartneri Elev o18 2026-2029",
-        "GLS-A / 3F - Skovbrug Standard 2026-2029",
-        "GLS-A / 3F - Skovbrug Elev u18 2026-2029",
-        "GLS-A / 3F - Skovbrug Elev o18 2026-2029",
-        "GLS-A / 3F - Golf Standard 2026-2029",
-        "GLS-A / 3F - Golf Elev 2026-2029",
-        "GLS-A / 3F - Agroindustri Fjerkrae Standard 2026-2029",
-        "GLS-A / 3F - Agroindustri Fjerkrae Elev 2026-2029",
-        "GLS-A / 3F - Agroindustri Grovvare Standard 2026-2029",
-        "GLS-A / 3F - Agroindustri Grovvare Elev 2026-2029",
-        "GLS-A / 3F - Agroindustri Gulerod Standard 2026-2029",
-        "GLS-A / 3F - Agroindustri Gulerod Elev 2026-2029",
-        "GLS-A / 3F - Agroindustri Kartoffelmel Standard 2026-2029",
-        "GLS-A / 3F - Agroindustri Kartoffelmel Elev 2026-2029",
-        "GLS-A / 3F - Agroindustri Kartoffelsorter Standard 2026-2029",
-        "GLS-A / 3F - Agroindustri Kartoffelsorter Elev 2026-2029",
-        "GLS-A / 3F - Agroindustri Lucerne Standard 2026-2029",
-        "GLS-A / 3F - Agroindustri Lucerne Elev 2026-2029",
-        "GLS-A / 3F - Agroindustri Minkfoder Standard 2026-2029",
-        "GLS-A / 3F - Agroindustri Minkfoder Elev 2026-2029",
-        "GLS-A / 3F - Agroindustri Ovrige Standard 2026-2029",
-        "GLS-A / 3F - Agroindustri Ovrige Elev 2026-2029",
-        "GLS-A / 3F - Udenlandske praktikanter Landbrug Andet arbejde 2026-2029",
-        "GLS-A / 3F - Udenlandske praktikanter Landbrug Staldarbejde 2026-2029"
-    };
-
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<PayRuleSetService> _logger;
     private readonly ITimePlanningLocalizationService _localizationService;
@@ -317,7 +283,11 @@ public class PayRuleSetService : IPayRuleSetService
             // Locked overenskomst presets are read-only. The frontend renders a
             // summary view in the edit modal and disables the Update button, but
             // this server-side guard backstops direct API calls.
-            if (LockedPresetNames.Contains(payRuleSet.Name))
+            // Blocked when EITHER the stored name or the incoming name is a
+            // locked preset: a locked row cannot be edited by sending a
+            // different name, and an unlocked row cannot be renamed into a
+            // locked preset name.
+            if (PayRuleSetLock.IsLockedPresetName(payRuleSet.Name) || PayRuleSetLock.IsLockedPresetName(model.Name))
             {
                 return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
             }
@@ -596,7 +566,9 @@ public class PayRuleSetService : IPayRuleSetService
                 return new OperationResult(false, _localizationService.GetString("PayRuleSetNotFound"));
             }
 
-            if (LockedPresetNames.Contains(payRuleSet.Name))
+            // Comparison ignores the validity period, so rows stored under an
+            // earlier agreement period stay undeletable after a rename.
+            if (PayRuleSetLock.IsLockedPresetName(payRuleSet.Name))
             {
                 return new OperationResult(false, _localizationService.GetString("CannotDeleteLockedPreset"));
             }

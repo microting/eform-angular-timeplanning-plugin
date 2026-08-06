@@ -49,7 +49,9 @@ export class PayRuleSetsViewModalComponent implements OnInit {
     this.dialogRef.close();
   }
 
-  formatTierChain = formatTierChain;
+  formatTierChain(tiers: Array<{ order: number; upToSeconds: number | null; payCode: string }>): string {
+    return formatTierChain(tiers, this.translateService.instant('Unlimited'));
+  }
 
   formatDayTypeRule(rule: { defaultPayCode: string; timeBandRules: Array<{ startSecondOfDay: number; endSecondOfDay: number; payCode: string }> }): string {
     const bands = formatTimeBands(rule.timeBandRules || []);

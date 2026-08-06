@@ -1,6 +1,8 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {FormGroup, FormControl, Validators, FormArray, FormBuilder, AbstractControl, ValidationErrors} from '@angular/forms';
 import {MatTableDataSource} from '@angular/material/table';
+import {TranslateService} from '@ngx-translate/core';
+import {secondsToHM} from '../../pay-rule-format.util';
 
 @Component({
   selector: 'app-pay-day-rule-form',
@@ -28,7 +30,7 @@ export class PayDayRuleFormComponent implements OnInit {
     {value: 'GRUNDLOVSDAG', label: 'Grundlovsdag'}
   ];
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private translateService: TranslateService) {}
 
   ngOnInit(): void {
     if (!this.payDayRuleForm) {
@@ -103,15 +105,21 @@ export class PayDayRuleFormComponent implements OnInit {
     return this.payTierRules.at(index).get(controlName) as FormControl;
   }
 
-  formatSeconds(seconds: number | null): string {
+  /**
+   * Subscript hint for the "Up To" field: the human reading of the stored
+   * seconds, or the translated "Unlimited" wording when the tier is unbounded.
+   * While the typed text is malformed the hint stays empty — the control still
+   * holds its previous value, and any wording there would describe something
+   * other than what the field shows.
+   */
+  getUpToHint(index: number): string {
+    if (this.getTierControl(index, 'upToSeconds').hasError('hhMmFormat')) {
+      return '';
+    }
+    const seconds = this.getUpToSeconds(index);
     if (seconds === null || seconds === undefined) {
-      return 'No limit';
+      return this.translateService.instant('Unlimited');
     }
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (minutes > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${hours}h`;
+    return secondsToHM(seconds);
   }
 }
