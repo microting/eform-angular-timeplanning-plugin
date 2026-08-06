@@ -464,4 +464,7 @@ export const noNO = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Aktiver 1-minutts granularitet for tidsregistrering. Standardintervaller er 5 eller 15 minutter.',
   Details: 'Detaljer',
   'Once enabled, 1-minute intervals cannot be turned off': 'Når intervaller på 1 minutt er aktivert, kan de ikke slås av',
+  'No pay rule set selected': 'Ingen betalingsregel er valgt',
+  'Mobile time registration disabled': 'Mobil tidsregistrering deaktivert',
+  'Extra shifts': 'Ekstravakter',
 };

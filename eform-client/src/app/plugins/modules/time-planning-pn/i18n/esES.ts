@@ -464,4 +464,7 @@ export const esES = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Habilite la granularidad de 1 minuto para el registro de tiempo. Los incrementos predeterminados son de 5 o 15 minutos.',
   Details: 'Detalles',
   'Once enabled, 1-minute intervals cannot be turned off': 'Una vez activados, los intervalos de 1 minuto no se pueden desactivar.',
+  'No pay rule set selected': 'No se ha seleccionado ningún conjunto de reglas de pago.',
+  'Mobile time registration disabled': 'Registro de tiempo móvil deshabilitado',
+  'Extra shifts': 'Turnos extra',
 };

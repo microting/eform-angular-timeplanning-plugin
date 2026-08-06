@@ -464,4 +464,7 @@ export const skSK = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Povoľte 1-minútovú granularitu pre zadávanie času. Predvolené prírastky sú 5 alebo 15 minút.',
   Details: 'Detaily',
   'Once enabled, 1-minute intervals cannot be turned off': 'Po zapnutí nie je možné minútové intervaly vypnúť.',
+  'No pay rule set selected': 'Nie je vybraté žiadne pravidlo platby',
+  'Mobile time registration disabled': 'Registrácia mobilného času je zakázaná',
+  'Extra shifts': 'Mimoriadne zmeny',
 };

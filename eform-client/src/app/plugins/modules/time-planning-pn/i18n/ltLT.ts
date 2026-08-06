@@ -464,4 +464,7 @@ export const ltLT = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Įgalinti 1 minutės tikslumą laiko įvedimui. Numatytieji žingsniai yra 5 arba 15 minučių.',
   Details: 'Išsami informacija',
   'Once enabled, 1-minute intervals cannot be turned off': 'Įjungus 1 minutės intervalus, jų išjungti negalima.',
+  'No pay rule set selected': 'Nepasirinkta mokėjimo taisyklė',
+  'Mobile time registration disabled': 'Mobiliojo laiko registracija išjungta',
+  'Extra shifts': 'Papildomos pamainos',
 };

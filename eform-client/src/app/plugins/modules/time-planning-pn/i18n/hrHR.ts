@@ -464,4 +464,7 @@ export const hrHR = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Omogućite granularnost od 1 minute za unos vremena. Zadani koraci su 5 ili 15 minuta.',
   Details: 'Detalji',
   'Once enabled, 1-minute intervals cannot be turned off': 'Nakon što su omogućeni, intervali od 1 minute ne mogu se isključiti',
+  'No pay rule set selected': 'Nije odabrano nijedno pravilo plaćanja',
+  'Mobile time registration disabled': 'Onemogućena je registracija vremena na mobilnom uređaju',
+  'Extra shifts': 'Dodatne smjene',
 };

@@ -464,4 +464,7 @@ export const roRO = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Activați granularitatea de 1 minut pentru introducerea timpului. Incrementele implicite sunt de 5 sau 15 minute.',
   Details: 'Detalii',
   'Once enabled, 1-minute intervals cannot be turned off': 'Odată activate, intervalele de 1 minut nu pot fi dezactivate',
+  'No pay rule set selected': 'Niciun set de reguli de plată selectat',
+  'Mobile time registration disabled': 'Înregistrarea timpului pe mobil dezactivată',
+  'Extra shifts': 'Ture suplimentare',
 };

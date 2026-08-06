@@ -42,6 +42,7 @@ using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
+using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using TimePlanningLocalizationService;
@@ -217,6 +218,39 @@ public class TimePlanningPlanningService(
                 Console.WriteLine($"Resigned site: {assignedSite.SiteId}, Resigned at: {assignedSite.ResignedAtDate}");
             }
 
+            // Batch-resolve pay-rule-set names for the listed sites (one query
+            // for the distinct non-null PayRuleSetIds — no per-row queries).
+            var payRuleSetIds = assignedSites
+                .Where(x => x.PayRuleSetId != null)
+                .Select(x => x.PayRuleSetId!.Value)
+                .Distinct()
+                .ToList();
+            var payRuleSetNamesById = await dbContext.PayRuleSets
+                .Where(x => payRuleSetIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.Name)
+                .ConfigureAwait(false);
+
+            // Batch-resolve SDK site tags for the listed sites (one query,
+            // same shape as the Etiketter filter query above), grouped per
+            // site MicrotingUid.
+            var siteMicrotingUids = assignedSites.Select(x => x.SiteId).ToList();
+            var siteTagRows = await sdkDbContext.SiteTags
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Tag.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Site.MicrotingUid != null && siteMicrotingUids.Contains(x.Site.MicrotingUid.Value))
+                .Select(x => new
+                {
+                    SiteMicrotingUid = x.Site.MicrotingUid!.Value,
+                    x.TagId,
+                    TagName = x.Tag.Name
+                })
+                .ToListAsync().ConfigureAwait(false);
+            var tagsBySiteUid = siteTagRows
+                .GroupBy(x => x.SiteMicrotingUid)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(t => new CommonDictionaryModel { Id = t.TagId, Name = t.TagName }).ToList());
+
             var midnightOfDateFrom = new DateTime(model.DateFrom!.Value.Year, model.DateFrom.Value.Month, model.DateFrom.Value.Day, 0, 0, 0);
             var midnightOfDateTo = new DateTime(model.DateTo!.Value.Year, model.DateTo.Value.Month, model.DateTo.Value.Day, 23, 59, 59);
             var todayMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
@@ -261,6 +295,22 @@ public class TimePlanningPlanningService(
                     // Phase 4: per-row mirror of the assigned-site flag drives the
                     // web admin's HH:mm vs HH:mm:ss display path in the plannings table.
                     UseOneMinuteIntervals = dbAssignedSite.UseOneMinuteIntervals,
+                    // Per-row mirrors of the AssignedSite settings for the
+                    // dashboard's settings icon strip.
+                    UsePunchClock = dbAssignedSite.UsePunchClock,
+                    AllowAcceptOfPlannedHours = dbAssignedSite.AllowAcceptOfPlannedHours,
+                    AllowPersonalTimeRegistration = dbAssignedSite.AllowPersonalTimeRegistration,
+                    OverMidnight = dbAssignedSite.OverMidnight,
+                    AutoBreakCalculationActive = dbAssignedSite.AutoBreakCalculationActive,
+                    ThirdShiftActive = dbAssignedSite.ThirdShiftActive,
+                    FourthShiftActive = dbAssignedSite.FourthShiftActive,
+                    FifthShiftActive = dbAssignedSite.FifthShiftActive,
+                    PayRuleSetId = dbAssignedSite.PayRuleSetId,
+                    PayRuleSetName = dbAssignedSite.PayRuleSetId == null
+                        ? null
+                        : payRuleSetNamesById.GetValueOrDefault(dbAssignedSite.PayRuleSetId.Value),
+                    Tags = tagsBySiteUid.GetValueOrDefault(dbAssignedSite.SiteId)
+                           ?? new List<CommonDictionaryModel>(),
                     PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
                 };
 
