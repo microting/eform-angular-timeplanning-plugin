@@ -173,6 +173,176 @@ public class PayRuleSetServiceTests : TestBaseSetup
         Assert.That(result.Message, Does.Contain("NotFound"));
     }
 
+    #region Locked Preset Guard Tests
+
+    [Test]
+    public async Task Update_LockedPresetWithLegacyValidityPeriod_ReturnsFailure()
+    {
+        // Arrange - stored before the catalogue was renamed to "... 2026-2029"
+        var payRuleSet = new PayRuleSet
+        {
+            Name = "GLS-A / 3F - Jordbrug Dyrehold 2024-2026",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkflowState = Constants.WorkflowStates.Created
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext);
+
+        var updateModel = new PayRuleSetUpdateModel
+        {
+            Name = "Renamed By Client"
+        };
+
+        // Act
+        var result = await _service.Update(payRuleSet.Id, updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Does.Contain("CannotEditLockedPreset"));
+        var unchanged = await TimePlanningPnDbContext.PayRuleSets
+            .FirstOrDefaultAsync(prs => prs.Id == payRuleSet.Id);
+        Assert.That(unchanged, Is.Not.Null);
+        Assert.That(unchanged.Name, Is.EqualTo("GLS-A / 3F - Jordbrug Dyrehold 2024-2026"));
+    }
+
+    [Test]
+    public async Task Update_RenamingCustomSetIntoLockedPresetName_ReturnsFailure()
+    {
+        // Arrange
+        var payRuleSet = new PayRuleSet
+        {
+            Name = "Min egen aftale",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkflowState = Constants.WorkflowStates.Created
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext);
+
+        var updateModel = new PayRuleSetUpdateModel
+        {
+            Name = "GLS-A / 3F - Jordbrug Dyrehold 2026-2029"
+        };
+
+        // Act
+        var result = await _service.Update(payRuleSet.Id, updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Does.Contain("CannotEditLockedPreset"));
+        var unchanged = await TimePlanningPnDbContext.PayRuleSets
+            .FirstOrDefaultAsync(prs => prs.Id == payRuleSet.Id);
+        Assert.That(unchanged, Is.Not.Null);
+        Assert.That(unchanged.Name, Is.EqualTo("Min egen aftale"));
+    }
+
+    [Test]
+    public async Task Delete_LockedPresetWithLegacyValidityPeriod_ReturnsFailure()
+    {
+        // Arrange
+        var payRuleSet = new PayRuleSet
+        {
+            Name = "GLS-A / 3F - Jordbrug Dyrehold 2024-2026",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkflowState = Constants.WorkflowStates.Created
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await _service.Delete(payRuleSet.Id);
+
+        // Assert
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Does.Contain("CannotDeleteLockedPreset"));
+        var stillThere = await TimePlanningPnDbContext.PayRuleSets
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(prs => prs.Id == payRuleSet.Id);
+        Assert.That(stillThere, Is.Not.Null);
+        Assert.That(stillThere.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Created));
+    }
+
+    [Test]
+    public async Task Delete_LockedPresetWithCurrentValidityPeriod_ReturnsFailure()
+    {
+        // Arrange - the name exactly as shipped in the current catalogue
+        var payRuleSet = new PayRuleSet
+        {
+            Name = "GLS-A / 3F - Jordbrug Dyrehold 2026-2029",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkflowState = Constants.WorkflowStates.Created
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await _service.Delete(payRuleSet.Id);
+
+        // Assert
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Does.Contain("CannotDeleteLockedPreset"));
+        var stillThere = await TimePlanningPnDbContext.PayRuleSets
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(prs => prs.Id == payRuleSet.Id);
+        Assert.That(stillThere, Is.Not.Null);
+        Assert.That(stillThere.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Created));
+    }
+
+    [Test]
+    public async Task Update_CustomNameWithValidityPeriod_UpdatesPayRuleSet()
+    {
+        // Arrange - stripping the year range must not make this collide with a preset
+        var payRuleSet = new PayRuleSet
+        {
+            Name = "Min egen aftale 2024-2026",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkflowState = Constants.WorkflowStates.Created
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext);
+
+        var updateModel = new PayRuleSetUpdateModel
+        {
+            Name = "Min egen aftale 2026-2029"
+        };
+
+        // Act
+        var result = await _service.Update(payRuleSet.Id, updateModel);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        var updated = await TimePlanningPnDbContext.PayRuleSets
+            .FirstOrDefaultAsync(prs => prs.Id == payRuleSet.Id);
+        Assert.That(updated, Is.Not.Null);
+        Assert.That(updated.Name, Is.EqualTo("Min egen aftale 2026-2029"));
+    }
+
+    [Test]
+    public async Task Delete_CustomNameWithValidityPeriod_SoftDeletesPayRuleSet()
+    {
+        // Arrange
+        var payRuleSet = new PayRuleSet
+        {
+            Name = "Min egen aftale 2024-2026",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkflowState = Constants.WorkflowStates.Created
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await _service.Delete(payRuleSet.Id);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        var deleted = await TimePlanningPnDbContext.PayRuleSets
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(prs => prs.Id == payRuleSet.Id);
+        Assert.That(deleted, Is.Not.Null);
+        Assert.That(deleted.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Removed));
+    }
+
+    #endregion
+
     [Test]
     public async Task Index_ReturnsPayRuleSets()
     {

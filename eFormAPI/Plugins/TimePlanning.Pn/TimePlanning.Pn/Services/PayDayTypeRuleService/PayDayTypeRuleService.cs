@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure.Helpers;
 using Infrastructure.Models.PayDayTypeRule;
 using Infrastructure.Models.PayTimeBandRule;
 using Microsoft.EntityFrameworkCore;
@@ -18,18 +19,38 @@ using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 
 public class PayDayTypeRuleService : IPayDayTypeRuleService
 {
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<PayDayTypeRuleService> _logger;
+    private readonly ITimePlanningLocalizationService _localizationService;
 
     public PayDayTypeRuleService(
         TimePlanningPnDbContext dbContext,
-        ILogger<PayDayTypeRuleService> logger)
+        ILogger<PayDayTypeRuleService> logger,
+        ITimePlanningLocalizationService localizationService)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _localizationService = localizationService;
+    }
+
+    /// <summary>
+    /// A pay day type rule belongs directly to a PayRuleSet. Locked
+    /// overenskomst presets are read-only, and the guard on PayRuleSetService
+    /// only covers the rule set row itself — without this check a locked preset
+    /// could be rewritten one child row at a time.
+    /// </summary>
+    private async Task<bool> OwningPayRuleSetIsLocked(int payRuleSetId)
+    {
+        var payRuleSetName = await _dbContext.PayRuleSets
+            .Where(prs => prs.Id == payRuleSetId)
+            .Select(prs => prs.Name)
+            .FirstOrDefaultAsync();
+
+        return payRuleSetName != null && PayRuleSetLock.IsLockedPresetName(payRuleSetName);
     }
 
     public async Task<OperationDataResult<PayDayTypeRulesListModel>> Index(PayDayTypeRulesRequestModel requestModel)
@@ -127,6 +148,11 @@ public class PayDayTypeRuleService : IPayDayTypeRuleService
     {
         try
         {
+            if (await OwningPayRuleSetIsLocked(model.PayRuleSetId))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
+            }
+
             // Parse DayType enum
             if (!Enum.TryParse<DayType>(model.DayType, out var dayType))
             {
@@ -186,6 +212,11 @@ public class PayDayTypeRuleService : IPayDayTypeRuleService
             if (rule == null)
             {
                 return new OperationResult(false, "Pay day type rule not found");
+            }
+
+            if (await OwningPayRuleSetIsLocked(rule.PayRuleSetId))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
             }
 
             // Parse DayType enum
@@ -272,6 +303,11 @@ public class PayDayTypeRuleService : IPayDayTypeRuleService
             if (rule == null)
             {
                 return new OperationResult(false, "Pay day type rule not found");
+            }
+
+            if (await OwningPayRuleSetIsLocked(rule.PayRuleSetId))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
             }
 
             await rule.Delete(_dbContext);

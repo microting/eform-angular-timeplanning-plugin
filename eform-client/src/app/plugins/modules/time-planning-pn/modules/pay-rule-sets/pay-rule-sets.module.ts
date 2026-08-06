@@ -17,6 +17,7 @@ import {
   DayTypeRuleListComponent,
   DayTypeRuleDialogComponent,
 } from './components';
+import {HhMmSecondsDirective} from './directives/hh-mm-seconds.directive';
 import {TimePlanningPnPayRuleSetsService} from '../../services';
 import {MtxGridModule} from '@ng-matero/extensions/grid';
 import {MtxSelectModule} from '@ng-matero/extensions/select';
@@ -64,6 +65,7 @@ import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
     PayDayRuleDialogComponent,
     DayTypeRuleListComponent,
     DayTypeRuleDialogComponent,
+    HhMmSecondsDirective,
   ],
   providers: [
     TimePlanningPnPayRuleSetsService,

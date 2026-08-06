@@ -8,6 +8,7 @@ using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Services.PayDayTypeRuleService;
+using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 using TimePlanning.Pn.Infrastructure.Models.PayDayTypeRule;
 
 namespace TimePlanning.Pn.Test
@@ -21,9 +22,13 @@ namespace TimePlanning.Pn.Test
         public new async Task Setup()
         {
             await base.Setup();
+            var localizationService = Substitute.For<ITimePlanningLocalizationService>();
+            localizationService.GetString(Arg.Any<string>())
+                .Returns(call => call.Arg<string>());
             _payDayTypeRuleService = new PayDayTypeRuleService(
                 TimePlanningPnDbContext,
-                Substitute.For<ILogger<PayDayTypeRuleService>>());
+                Substitute.For<ILogger<PayDayTypeRuleService>>(),
+                localizationService);
         }
 
         [Test]
@@ -356,5 +361,203 @@ namespace TimePlanning.Pn.Test
             Assert.That(result.Model.PayDayTypeRules.Any(r => r.Id == deletedRule.Id), Is.False);
             Assert.That(result.Model.PayDayTypeRules.Any(r => r.Id == activeRule.Id), Is.True);
         }
+
+        #region Locked Preset Guard Tests
+
+        /// <summary>
+        /// Creates a PayRuleSet with the supplied name and returns it, so the
+        /// locked-preset tests only differ by that name.
+        /// </summary>
+        private async Task<PayRuleSet> CreatePayRuleSetNamed(string payRuleSetName)
+        {
+            var payRuleSet = new PayRuleSet
+            {
+                Name = payRuleSetName,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                WorkflowState = Constants.WorkflowStates.Created
+            };
+            await payRuleSet.Create(TimePlanningPnDbContext);
+
+            return payRuleSet;
+        }
+
+        [Test]
+        public async Task Create_OwnedByLockedPresetWithLegacyValidityPeriod_ReturnsFailure()
+        {
+            // Arrange - stored before the catalogue was renamed to "... 2026-2029"
+            var payRuleSet = await CreatePayRuleSetNamed("GLS-A / 3F - Jordbrug Dyrehold 2024-2026");
+
+            var model = new PayDayTypeRuleCreateModel
+            {
+                PayRuleSetId = payRuleSet.Id,
+                DayType = "Monday",
+                DefaultPayCode = "SNEAKED_IN",
+                Priority = 1
+            };
+
+            // Act
+            var result = await _payDayTypeRuleService.Create(model);
+
+            // Assert
+            Assert.That(result.Success, Is.False);
+            Assert.That(result.Message, Does.Contain("CannotEditLockedPreset"));
+            var created = await TimePlanningPnDbContext.PayDayTypeRules
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(r => r.PayRuleSetId == payRuleSet.Id);
+            Assert.That(created, Is.Null);
+        }
+
+        [Test]
+        public async Task Update_OwnedByLockedPresetWithLegacyValidityPeriod_ReturnsFailure()
+        {
+            // Arrange
+            var payRuleSet = await CreatePayRuleSetNamed("GLS-A / 3F - Jordbrug Dyrehold 2024-2026");
+
+            var rule = new PayDayTypeRule
+            {
+                PayRuleSetId = payRuleSet.Id,
+                DayType = DayType.Monday,
+                DefaultPayCode = "NORMAL",
+                Priority = 1,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                WorkflowState = Constants.WorkflowStates.Created
+            };
+            await rule.Create(TimePlanningPnDbContext);
+
+            var updateModel = new PayDayTypeRuleUpdateModel
+            {
+                DayType = "Tuesday",
+                DefaultPayCode = "HACKED",
+                Priority = 9
+            };
+
+            // Act
+            var result = await _payDayTypeRuleService.Update(rule.Id, updateModel);
+
+            // Assert
+            Assert.That(result.Success, Is.False);
+            Assert.That(result.Message, Does.Contain("CannotEditLockedPreset"));
+            var unchanged = await TimePlanningPnDbContext.PayDayTypeRules
+                .FirstOrDefaultAsync(r => r.Id == rule.Id);
+            Assert.That(unchanged, Is.Not.Null);
+            Assert.That(unchanged.DayType, Is.EqualTo(DayType.Monday));
+            Assert.That(unchanged.DefaultPayCode, Is.EqualTo("NORMAL"));
+            Assert.That(unchanged.Priority, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task Update_OwnedByLockedPresetWithCurrentValidityPeriod_ReturnsFailure()
+        {
+            // Arrange
+            var payRuleSet = await CreatePayRuleSetNamed("GLS-A / 3F - Jordbrug Dyrehold 2026-2029");
+
+            var rule = new PayDayTypeRule
+            {
+                PayRuleSetId = payRuleSet.Id,
+                DayType = DayType.Monday,
+                DefaultPayCode = "NORMAL",
+                Priority = 1,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                WorkflowState = Constants.WorkflowStates.Created
+            };
+            await rule.Create(TimePlanningPnDbContext);
+
+            var updateModel = new PayDayTypeRuleUpdateModel
+            {
+                DayType = "Tuesday",
+                DefaultPayCode = "HACKED",
+                Priority = 9
+            };
+
+            // Act
+            var result = await _payDayTypeRuleService.Update(rule.Id, updateModel);
+
+            // Assert
+            Assert.That(result.Success, Is.False);
+            Assert.That(result.Message, Does.Contain("CannotEditLockedPreset"));
+        }
+
+        [Test]
+        public async Task Delete_OwnedByLockedPresetWithLegacyValidityPeriod_ReturnsFailure()
+        {
+            // Arrange
+            var payRuleSet = await CreatePayRuleSetNamed("GLS-A / 3F - Jordbrug Dyrehold 2024-2026");
+
+            var rule = new PayDayTypeRule
+            {
+                PayRuleSetId = payRuleSet.Id,
+                DayType = DayType.Monday,
+                DefaultPayCode = "NORMAL",
+                Priority = 1,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                WorkflowState = Constants.WorkflowStates.Created
+            };
+            await rule.Create(TimePlanningPnDbContext);
+
+            // Act
+            var result = await _payDayTypeRuleService.Delete(rule.Id);
+
+            // Assert
+            Assert.That(result.Success, Is.False);
+            Assert.That(result.Message, Does.Contain("CannotEditLockedPreset"));
+            var stillThere = await TimePlanningPnDbContext.PayDayTypeRules
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(r => r.Id == rule.Id);
+            Assert.That(stillThere, Is.Not.Null);
+            Assert.That(stillThere.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Created));
+        }
+
+        [Test]
+        public async Task CreateUpdateDelete_OwnedByCustomNameWithValidityPeriod_Succeed()
+        {
+            // Arrange - stripping the year range must not make this collide with a preset
+            var payRuleSet = await CreatePayRuleSetNamed("Min egen aftale 2024-2026");
+
+            var createModel = new PayDayTypeRuleCreateModel
+            {
+                PayRuleSetId = payRuleSet.Id,
+                DayType = "Monday",
+                DefaultPayCode = "CUSTOM",
+                Priority = 1
+            };
+
+            // Act - Create
+            var createResult = await _payDayTypeRuleService.Create(createModel);
+
+            // Assert - Create
+            Assert.That(createResult.Success, Is.True);
+            var created = await TimePlanningPnDbContext.PayDayTypeRules
+                .Where(r => r.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(r => r.PayRuleSetId == payRuleSet.Id);
+            Assert.That(created, Is.Not.Null);
+
+            // Act - Update
+            var updateResult = await _payDayTypeRuleService.Update(created.Id, new PayDayTypeRuleUpdateModel
+            {
+                DayType = "Tuesday",
+                DefaultPayCode = "CUSTOM_2",
+                Priority = 2
+            });
+
+            // Assert - Update
+            Assert.That(updateResult.Success, Is.True);
+
+            // Act - Delete
+            var deleteResult = await _payDayTypeRuleService.Delete(created.Id);
+
+            // Assert - Delete
+            Assert.That(deleteResult.Success, Is.True);
+            var deleted = await TimePlanningPnDbContext.PayDayTypeRules
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(r => r.Id == created.Id);
+            Assert.That(deleted, Is.Not.Null);
+            Assert.That(deleted.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Removed));
+        }
+
+        #endregion
     }
 }

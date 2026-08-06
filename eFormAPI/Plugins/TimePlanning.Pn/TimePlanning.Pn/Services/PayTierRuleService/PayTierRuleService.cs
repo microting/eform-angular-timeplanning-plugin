@@ -9,6 +9,7 @@ namespace TimePlanning.Pn.Services.PayTierRuleService;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure.Helpers;
 using Infrastructure.Models.PayTierRule;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,18 +17,38 @@ using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 
 public class PayTierRuleService : IPayTierRuleService
 {
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<PayTierRuleService> _logger;
+    private readonly ITimePlanningLocalizationService _localizationService;
 
     public PayTierRuleService(
         TimePlanningPnDbContext dbContext,
-        ILogger<PayTierRuleService> logger)
+        ILogger<PayTierRuleService> logger,
+        ITimePlanningLocalizationService localizationService)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _localizationService = localizationService;
+    }
+
+    /// <summary>
+    /// A pay tier rule belongs to a PayDayRule, which belongs to a PayRuleSet.
+    /// Locked overenskomst presets are read-only, and the guard on
+    /// PayRuleSetService only covers the rule set row itself — without this
+    /// check a locked preset could be rewritten one child row at a time.
+    /// </summary>
+    private async Task<bool> OwningPayRuleSetIsLocked(int payDayRuleId)
+    {
+        var payRuleSetName = await _dbContext.PayDayRules
+            .Where(pdr => pdr.Id == payDayRuleId)
+            .Select(pdr => pdr.PayRuleSet.Name)
+            .FirstOrDefaultAsync();
+
+        return payRuleSetName != null && PayRuleSetLock.IsLockedPresetName(payRuleSetName);
     }
 
     public async Task<OperationDataResult<PayTierRulesListModel>> Index(PayTierRulesRequestModel requestModel)
@@ -113,6 +134,11 @@ public class PayTierRuleService : IPayTierRuleService
     {
         try
         {
+            if (await OwningPayRuleSetIsLocked(model.PayDayRuleId))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
+            }
+
             var rule = new PayTierRule
             {
                 PayDayRuleId = model.PayDayRuleId,
@@ -147,6 +173,11 @@ public class PayTierRuleService : IPayTierRuleService
                 return new OperationResult(false, "Pay tier rule not found");
             }
 
+            if (await OwningPayRuleSetIsLocked(rule.PayDayRuleId))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
+            }
+
             rule.Order = model.Order;
             rule.UpToSeconds = model.UpToSeconds;
             rule.PayCode = model.PayCode;
@@ -173,6 +204,11 @@ public class PayTierRuleService : IPayTierRuleService
             if (rule == null)
             {
                 return new OperationResult(false, "Pay tier rule not found");
+            }
+
+            if (await OwningPayRuleSetIsLocked(rule.PayDayRuleId))
+            {
+                return new OperationResult(false, _localizationService.GetString("CannotEditLockedPreset"));
             }
 
             await rule.Delete(_dbContext);

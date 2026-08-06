@@ -9,6 +9,7 @@ import { PayRuleSetUpdateModel, PayRuleSetModel, PAY_RULE_SET_PRESETS, PayRuleSe
 import { PayDayRuleDialogComponent, PayDayRuleDialogData } from '../pay-day-rule-dialog/pay-day-rule-dialog.component';
 import { DayTypeRuleDialogComponent, DayTypeRuleDialogData } from '../day-type-rule-dialog/day-type-rule-dialog.component';
 import { formatTierChain, formatTimeBands } from '../../pay-rule-format.util';
+import { isLockedPresetName, normalizePayRuleSetName } from '../../pay-rule-lock.util';
 
 export interface PayRuleSetsEditModalData {
   payRuleSetId: number;
@@ -26,19 +27,25 @@ export class PayRuleSetsEditModalComponent implements OnInit {
   loading = true;
 
   /**
-   * Resolves the matching locked preset for the loaded rule set, by name.
-   * Returns null when the loaded rule set is custom (or the preset is not
-   * marked locked). When non-null, the modal renders a read-only summary
-   * view instead of the editable form, matching the create modal's locked
-   * preset path.
+   * Resolves the matching locked preset for the loaded rule set. Names are
+   * compared with the agreement validity period stripped, so a rule set stored
+   * under a legacy period (e.g. '... 2024-2026' while the catalogue now says
+   * '... 2026-2029') still resolves to its preset. Returns null when the
+   * loaded rule set is custom (or the preset is not marked locked). When
+   * non-null, the modal renders a read-only summary view instead of the
+   * editable form, matching the create modal's locked preset path.
    */
   get lockedPreset(): PayRuleSetPreset | null {
     if (!this.payRuleSet) return null;
-    return PAY_RULE_SET_PRESETS.find(p => p.locked && p.name === this.payRuleSet.name) ?? null;
+    const normalizedName = normalizePayRuleSetName(this.payRuleSet.name);
+    return PAY_RULE_SET_PRESETS.find(
+      p => p.locked && normalizePayRuleSetName(p.name) === normalizedName
+    ) ?? null;
   }
 
   get isLocked(): boolean {
-    return this.lockedPreset !== null;
+    if (!this.payRuleSet) return false;
+    return isLockedPresetName(this.payRuleSet.name);
   }
 
   constructor(
@@ -291,7 +298,7 @@ export class PayRuleSetsEditModalComponent implements OnInit {
   }
 
   formatTierChain(tiers: Array<{ order: number; upToSeconds: number | null; payCode: string }>): string {
-    return formatTierChain(tiers);
+    return formatTierChain(tiers, this.translateService.instant('Unlimited'));
   }
 
   formatTimeBands(bands: Array<{ startSecondOfDay: number; endSecondOfDay: number; payCode: string; priority: number }>): string {

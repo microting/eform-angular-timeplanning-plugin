@@ -1,5 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormArray, FormGroup } from '@angular/forms';
+import { TranslateService } from '@ngx-translate/core';
+import { secondsToHM } from '../../pay-rule-format.util';
 
 @Component({
   selector: 'app-pay-day-rule-list',
@@ -13,6 +15,8 @@ export class PayDayRuleListComponent {
   @Output() addRule = new EventEmitter<void>();
   @Output() editRule = new EventEmitter<number>();
   @Output() deleteRule = new EventEmitter<number>();
+
+  constructor(private translateService: TranslateService) {}
 
   /**
    * Get the display label for a day code
@@ -48,32 +52,19 @@ export class PayDayRuleListComponent {
   getTierBreakdown(rule: FormGroup): string {
     const tiers = rule.get('payTierRules') as FormArray;
     if (!tiers || tiers.length === 0) {
-      return 'No tiers';
+      return this.translateService.instant('No tiers');
     }
 
     return tiers.controls
       .map(tier => {
         const upToSeconds = tier.get('upToSeconds')?.value;
         const payCode = tier.get('payCode')?.value || '';
-        const timeStr = upToSeconds ? this.formatSeconds(upToSeconds) : 'unlimited';
+        const timeStr = upToSeconds != null
+          ? secondsToHM(upToSeconds)
+          : this.translateService.instant('Unlimited');
         return `${timeStr} → ${payCode}`;
       })
       .join(', ');
-  }
-
-  /**
-   * Format seconds into human-readable time
-   */
-  formatSeconds(seconds: number | null): string {
-    if (seconds === null || seconds === undefined) {
-      return 'No limit';
-    }
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (minutes > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${hours}h`;
   }
 
   /**

@@ -37,17 +37,21 @@
           </td>
         </ng-container>
 
-        <!-- Up To Seconds Column -->
+        <!-- Up To Column (hours:minutes; stored as seconds) -->
         <ng-container matColumnDef="upToSeconds">
-          <th mat-header-cell *matHeaderCellDef>{{ 'Up To (seconds)' | translate }}</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'Up To (hh:mm)' | translate }}</th>
           <td mat-cell *matCellDef="let tier; let i = index">
             <mat-form-field class="tier-field">
               <input matInput
-                     type="number"
+                     type="text"
+                     appHhMmSeconds
                      [formControl]="getTierControl(i, 'upToSeconds')"
-                     min="0"
-                     placeholder="28800">
-              <mat-hint>{{ formatSeconds(getUpToSeconds(i)) | translate }}</mat-hint>
+                     [id]="'tierUpToInput_' + i"
+                     [placeholder]="'Unlimited' | translate">
+              <mat-hint>{{ getUpToHint(i) }}</mat-hint>
+              <mat-error *ngIf="getTierControl(i, 'upToSeconds').hasError('hhMmFormat')">
+                {{ 'Enter a duration as hours:minutes, for example 7:24' | translate }}
+              </mat-error>
             </mat-form-field>
           </td>
         </ng-container>
@@ -100,7 +104,7 @@
       <!-- Help Text -->
       <div class="help-text">
         <mat-icon>info</mat-icon>
-        <span>{{ 'Tiers define time thresholds. E.g., Tier 1: up to 28800 seconds (8 hours) = Regular pay. Leave "Up To" empty for unlimited.' | translate }}</span>
+        <span>{{ 'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.' | translate }}</span>
       </div>
     </div>
 

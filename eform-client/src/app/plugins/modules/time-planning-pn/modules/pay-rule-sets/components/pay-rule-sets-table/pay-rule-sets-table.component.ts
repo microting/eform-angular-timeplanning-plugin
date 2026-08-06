@@ -2,7 +2,8 @@ import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular
 import { MatDialog } from '@angular/material/dialog';
 import { MtxGridColumn } from '@ng-matero/extensions/grid';
 import { TranslateService } from '@ngx-translate/core';
-import { PayRuleSetSimpleModel, PAY_RULE_SET_PRESETS } from '../../../../models';
+import { PayRuleSetSimpleModel } from '../../../../models';
+import { isLockedPresetName } from '../../pay-rule-lock.util';
 
 @Component({
   selector: 'app-pay-rule-sets-table',
@@ -42,9 +43,12 @@ export class PayRuleSetsTableComponent implements OnInit {
    * (e.g. GLS-A / 3F overenskomster). Locked rule sets are read-only:
    * the edit and delete row actions are disabled, and the edit modal
    * renders a summary view instead of the form.
+   *
+   * The comparison ignores the trailing validity period so rows stored
+   * under an earlier agreement period stay locked after a catalogue rename.
    */
   isLockedPreset(row: PayRuleSetSimpleModel): boolean {
-    return PAY_RULE_SET_PRESETS.some(p => p.locked && p.name === row.name);
+    return isLockedPresetName(row.name);
   }
 
   openCreateModal() {

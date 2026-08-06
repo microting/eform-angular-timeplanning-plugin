@@ -1,6 +1,7 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
-import {PayRuleSetSimpleModel, PayRuleSetsRequestModel, PAY_RULE_SET_PRESETS} from '../../../../models';
+import {PayRuleSetSimpleModel, PayRuleSetsRequestModel} from '../../../../models';
+import {isLockedPresetName} from '../../pay-rule-lock.util';
 import {MatDialog} from '@angular/material/dialog';
 import {PayRuleSetsDeleteModalComponent} from '../pay-rule-sets-delete-modal/pay-rule-sets-delete-modal.component';
 import {PayRuleSetsCreateModalComponent} from '../pay-rule-sets-create-modal/pay-rule-sets-create-modal.component';
@@ -82,8 +83,10 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
     // Locked presets (e.g. GLS-A / 3F overenskomster) are read-only. The
     // edit modal still opens but renders a summary view; this guard is a
     // belt-and-braces against direct calls (the table button is also
-    // disabled via isLockedPreset).
-    const isLockedPreset = PAY_RULE_SET_PRESETS.some(p => p.locked && p.name === payRuleSet.name);
+    // disabled via isLockedPreset). The name comparison ignores the trailing
+    // validity period, so rows stored under an earlier agreement period
+    // (e.g. "… 2024-2026") stay locked after a catalogue rename.
+    const isLockedPreset = isLockedPresetName(payRuleSet.name);
 
     const dialogRef = this.dialog.open(PayRuleSetsEditModalComponent, {
       data: { payRuleSetId: payRuleSet.id },
@@ -108,7 +111,7 @@ export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   }
 
   onDeleteClicked(payRuleSet: PayRuleSetSimpleModel): void {
-    const isLockedPreset = PAY_RULE_SET_PRESETS.some(p => p.locked && p.name === payRuleSet.name);
+    const isLockedPreset = isLockedPresetName(payRuleSet.name);
     if (isLockedPreset) {
       this.toastrService.error(this.translateService.instant('Cannot delete locked preset'));
       return;
