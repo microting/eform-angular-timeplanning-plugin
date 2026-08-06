@@ -464,4 +464,7 @@ export const huHU = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': '1 perces részletesség engedélyezése az időbevitelhez. Az alapértelmezett lépésköz 5 vagy 15 perc.',
   Details: 'Részletek',
   'Once enabled, 1-minute intervals cannot be turned off': 'Engedélyezés után az 1 perces intervallumok nem kapcsolhatók ki.',
+  'No pay rule set selected': 'Nincs kiválasztva fizetési szabály',
+  'Mobile time registration disabled': 'Mobil időregisztráció letiltva',
+  'Extra shifts': 'Extra műszakok',
 };

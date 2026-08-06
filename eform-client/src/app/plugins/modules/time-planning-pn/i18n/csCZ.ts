@@ -464,4 +464,7 @@ export const csCZ = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Povolte zadávání času s granularitou po 1 minutě. Výchozí přírůstky jsou 5 nebo 15 minut.',
   Details: 'Podrobnosti',
   'Once enabled, 1-minute intervals cannot be turned off': 'Po zapnutí nelze minutové intervaly vypnout.',
+  'No pay rule set selected': 'Nebylo vybráno žádné pravidlo pro platby',
+  'Mobile time registration disabled': 'Registrace mobilního času zakázána',
+  'Extra shifts': 'Další směny',
 };

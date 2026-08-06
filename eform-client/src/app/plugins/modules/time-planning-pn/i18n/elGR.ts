@@ -464,4 +464,7 @@ export const elGR = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Ενεργοποιήστε την ευαισθησία 1 λεπτού για την εισαγωγή χρόνου. Τα προεπιλεγμένα βήματα είναι 5 ή 15 λεπτά.',
   Details: 'Καθέκαστα',
   'Once enabled, 1-minute intervals cannot be turned off': 'Μόλις ενεργοποιηθεί, τα διαστήματα 1 λεπτού δεν μπορούν να απενεργοποιηθούν',
+  'No pay rule set selected': 'Δεν έχει οριστεί κανόνας πληρωμής',
+  'Mobile time registration disabled': 'Η εγγραφή χρόνου στο κινητό απενεργοποιήθηκε.',
+  'Extra shifts': 'Επιπλέον βάρδιες',
 };

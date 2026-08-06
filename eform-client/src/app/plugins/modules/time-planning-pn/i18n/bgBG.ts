@@ -464,4 +464,7 @@ export const bgBG = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Активирайте гранулиране от 1 минута за въвеждане на време. Стъпките по подразбиране са 5 или 15 минути.',
   Details: 'Детайли',
   'Once enabled, 1-minute intervals cannot be turned off': 'След като са активирани, интервалите от 1 минута не могат да бъдат изключени',
+  'No pay rule set selected': 'Няма избрано правило за плащане',
+  'Mobile time registration disabled': 'Регистрацията на мобилно време е деактивирана',
+  'Extra shifts': 'Допълнителни смени',
 };

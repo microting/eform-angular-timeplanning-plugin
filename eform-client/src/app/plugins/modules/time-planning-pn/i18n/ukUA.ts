@@ -464,4 +464,7 @@ export const ukUA = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Увімкнути точність введення часу з кроком 1 хвилина. Крок за замовчуванням становить 5 або 15 хвилин.',
   Details: 'Деталі',
   'Once enabled, 1-minute intervals cannot be turned off': 'Після ввімкнення інтервали в 1 хвилину не можна вимкнути',
+  'No pay rule set selected': 'Правило оплати не вибрано',
+  'Mobile time registration disabled': 'Реєстрація мобільного часу вимкнена',
+  'Extra shifts': 'Додаткові зміни',
 };

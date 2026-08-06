@@ -464,4 +464,7 @@ export const lvLV = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Iespējot 1 minūtes granularitāti laika ievadei. Noklusējuma intervāli ir 5 vai 15 minūtes.',
   Details: 'Sīkāka informācija',
   'Once enabled, 1-minute intervals cannot be turned off': 'Kad 1 minūtes intervāli ir iespējoti, tos nevar izslēgt.',
+  'No pay rule set selected': 'Nav atlasīts neviens algas noteikums',
+  'Mobile time registration disabled': 'Mobilā laika reģistrācija ir atspējota',
+  'Extra shifts': 'Papildu maiņas',
 };

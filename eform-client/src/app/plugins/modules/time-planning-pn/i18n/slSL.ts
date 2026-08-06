@@ -464,4 +464,7 @@ export const slSL = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Omogočite 1-minutno natančnost za vnos časa. Privzeti koraki so 5 ali 15 minut.',
   Details: 'Podrobnosti',
   'Once enabled, 1-minute intervals cannot be turned off': 'Ko so omogočeni, 1-minutnih intervalov ni mogoče izklopiti.',
+  'No pay rule set selected': 'Ni izbranega nabora pravil za plačilo',
+  'Mobile time registration disabled': 'Registracija časa na mobilnem telefonu onemogočena',
+  'Extra shifts': 'Dodatne izmene',
 };

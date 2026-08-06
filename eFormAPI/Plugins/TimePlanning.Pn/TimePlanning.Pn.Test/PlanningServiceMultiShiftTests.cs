@@ -8,9 +8,12 @@ using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
 using SdkSite = Microting.eForm.Infrastructure.Data.Entities.Site;
+using SdkSiteTag = Microting.eForm.Infrastructure.Data.Entities.SiteTag;
+using SdkTag = Microting.eForm.Infrastructure.Data.Entities.Tag;
 using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
@@ -891,5 +894,240 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
         var prDay = result.PlanningPrDayModels.Single(x => x.Date.Date == date.Date);
         Assert.That(prDay.PauseMinutes, Is.EqualTo(0.0),
             "Legacy flag-off path must NOT pick up sub-slot pause stamps.");
+    }
+
+    // ---------------------------------------------------------------------
+    // Full Index() coverage (dashboard row enrichment: tags + AssignedSite
+    // settings + pay-rule-set name).
+    //
+    // Unlike the tests above, these exercise the COMPLETE Index() path, which
+    // is gated on BaseDbContext.Users (the fixture gap the [Ignore]d tests in
+    // SettingsServiceExtendedTests.cs describe). They close that gap by
+    // seeding a real BaseDbContext (TestBaseSetup.GetBaseDbContext()) with an
+    // admin user, so Index() takes the isAdmin=true branch and lists every
+    // non-removed AssignedSite.
+    // ---------------------------------------------------------------------
+
+    /// <summary>
+    /// Builds a TimePlanningPlanningService wired for the full Index() path:
+    /// real BaseDbContext seeded with an admin user (role "admin"), and an
+    /// ITimePlanningDbContextHelper that hands out a FRESH plugin context per
+    /// call — Index() fans out per-site work concurrently, and production's
+    /// helper also returns a new context per call.
+    /// </summary>
+    private async Task<ITimePlanningPlanningService> BuildAdminIndexServiceAsync(BaseDbContext baseDbContext)
+    {
+        var role = new EformRole { Name = "admin", NormalizedName = "ADMIN" };
+        baseDbContext.Roles.Add(role);
+        await baseDbContext.SaveChangesAsync();
+
+        var user = new EformUser
+        {
+            UserName = "admin@planning-index.test",
+            Email = "admin@planning-index.test",
+            FirstName = "Admin",
+            LastName = "PlanningIndex"
+        };
+        baseDbContext.Users.Add(user);
+        await baseDbContext.SaveChangesAsync();
+
+        baseDbContext.UserRoles.Add(new EformUserRole { UserId = user.Id, RoleId = role.Id });
+        await baseDbContext.SaveChangesAsync();
+
+        _userService.UserId.Returns(user.Id);
+        _userService.GetCurrentUserAsync().Returns(new EformUser { Id = user.Id });
+        _dbContextHelper.GetDbContext().Returns(_ => CreateTimePlanningPnDbContext());
+
+        return new TimePlanningPlanningService(
+            Substitute.For<ILogger<TimePlanningPlanningService>>(),
+            _options,
+            TimePlanningPnDbContext,
+            _dbContextHelper,
+            _userService,
+            _localizationService,
+            baseDbContext,
+            _coreService);
+    }
+
+    private static TimePlanningPlanningRequestModel OneDayRequest(DateTime day) => new()
+    {
+        DateFrom = day,
+        DateTo = day
+    };
+
+    /// <summary>
+    /// Dashboard row enrichment: a site with SDK SiteTags rows gets those tags
+    /// ({Id, Name}) on its Index() row, while a site without tags gets an
+    /// EMPTY list (not null). Same source as the Etiketter filter.
+    /// </summary>
+    [Test]
+    public async Task Index_SiteWithSdkSiteTags_RowCarriesTags_UntaggedSiteGetsEmptyList()
+    {
+        // Arrange — SDK: two sites, two tags, both tags on site 910 only.
+        await using var baseDbContext = GetBaseDbContext();
+        var service = await BuildAdminIndexServiceAsync(baseDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var taggedSdkSite = new SdkSite { Name = "Tagged site 910", MicrotingUid = 910 };
+        await taggedSdkSite.Create(sdkDbContext);
+        var untaggedSdkSite = new SdkSite { Name = "Untagged site 911", MicrotingUid = 911 };
+        await untaggedSdkSite.Create(sdkDbContext);
+
+        var tagA = new SdkTag { Name = "Aften" };
+        await tagA.Create(sdkDbContext);
+        var tagB = new SdkTag { Name = "Weekend" };
+        await tagB.Create(sdkDbContext);
+
+        var siteTagA = new SdkSiteTag { SiteId = taggedSdkSite.Id, TagId = tagA.Id };
+        await siteTagA.Create(sdkDbContext);
+        var siteTagB = new SdkSiteTag { SiteId = taggedSdkSite.Id, TagId = tagB.Id };
+        await siteTagB.Create(sdkDbContext);
+
+        var taggedAssignedSite = new AssignedSiteEntity
+        {
+            SiteId = 910,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await taggedAssignedSite.Create(TimePlanningPnDbContext);
+
+        var untaggedAssignedSite = new AssignedSiteEntity
+        {
+            SiteId = 911,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await untaggedAssignedSite.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await service.Index(OneDayRequest(new DateTime(2026, 5, 20)));
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+        var taggedRow = result.Model.Single(x => x.SiteId == 910);
+        var untaggedRow = result.Model.Single(x => x.SiteId == 911);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(taggedRow.Tags, Has.Count.EqualTo(2));
+            Assert.That(taggedRow.Tags.Select(x => x.Name),
+                Is.EquivalentTo(new[] { "Aften", "Weekend" }));
+            Assert.That(taggedRow.Tags.Single(x => x.Name == "Aften").Id, Is.EqualTo(tagA.Id));
+            Assert.That(taggedRow.Tags.Single(x => x.Name == "Weekend").Id, Is.EqualTo(tagB.Id));
+            Assert.That(untaggedRow.Tags, Is.Not.Null,
+                "Untagged site must get an empty list, not null.");
+            Assert.That(untaggedRow.Tags, Is.Empty);
+        });
+    }
+
+    /// <summary>
+    /// Dashboard row enrichment: PayRuleSetId is mirrored from AssignedSite
+    /// and the name is batch-resolved from PayRuleSets; a site without a pay
+    /// rule set carries null for both.
+    /// </summary>
+    [Test]
+    public async Task Index_PayRuleSetAssigned_RowCarriesIdAndName_UnassignedStaysNull()
+    {
+        // Arrange
+        await using var baseDbContext = GetBaseDbContext();
+        var service = await BuildAdminIndexServiceAsync(baseDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        await new SdkSite { Name = "Pay rule site 912", MicrotingUid = 912 }.Create(sdkDbContext);
+        await new SdkSite { Name = "No pay rule site 913", MicrotingUid = 913 }.Create(sdkDbContext);
+
+        var payRuleSet = new PayRuleSet
+        {
+            Name = "Industriens overenskomst",
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext);
+
+        var withPayRuleSet = new AssignedSiteEntity
+        {
+            SiteId = 912,
+            PayRuleSetId = payRuleSet.Id,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await withPayRuleSet.Create(TimePlanningPnDbContext);
+
+        var withoutPayRuleSet = new AssignedSiteEntity
+        {
+            SiteId = 913,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await withoutPayRuleSet.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await service.Index(OneDayRequest(new DateTime(2026, 5, 20)));
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+        var withRow = result.Model.Single(x => x.SiteId == 912);
+        var withoutRow = result.Model.Single(x => x.SiteId == 913);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(withRow.PayRuleSetId, Is.EqualTo(payRuleSet.Id));
+            Assert.That(withRow.PayRuleSetName, Is.EqualTo("Industriens overenskomst"));
+            Assert.That(withoutRow.PayRuleSetId, Is.Null);
+            Assert.That(withoutRow.PayRuleSetName, Is.Null);
+        });
+    }
+
+    /// <summary>
+    /// Dashboard row enrichment: the settings icon-strip booleans are per-row
+    /// mirrors of the AssignedSite flags (same source as UseOneMinuteIntervals).
+    /// Flags set true on the AssignedSite surface as true; the rest stay false.
+    /// </summary>
+    [Test]
+    public async Task Index_SettingsBooleans_MirrorAssignedSiteFlags()
+    {
+        // Arrange
+        await using var baseDbContext = GetBaseDbContext();
+        var service = await BuildAdminIndexServiceAsync(baseDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        await new SdkSite { Name = "Settings site 914", MicrotingUid = 914 }.Create(sdkDbContext);
+
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 914,
+            UsePunchClock = true,
+            AllowPersonalTimeRegistration = true,
+            OverMidnight = true,
+            ThirdShiftActive = true,
+            // AllowAcceptOfPlannedHours, AutoBreakCalculationActive,
+            // FourthShiftActive and FifthShiftActive stay false.
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await service.Index(OneDayRequest(new DateTime(2026, 5, 20)));
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+        var row = result.Model.Single(x => x.SiteId == 914);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(row.UsePunchClock, Is.True);
+            Assert.That(row.AllowPersonalTimeRegistration, Is.True);
+            Assert.That(row.OverMidnight, Is.True);
+            Assert.That(row.ThirdShiftActive, Is.True);
+            Assert.That(row.AllowAcceptOfPlannedHours, Is.False);
+            Assert.That(row.AutoBreakCalculationActive, Is.False);
+            Assert.That(row.FourthShiftActive, Is.False);
+            Assert.That(row.FifthShiftActive, Is.False);
+        });
     }
 }

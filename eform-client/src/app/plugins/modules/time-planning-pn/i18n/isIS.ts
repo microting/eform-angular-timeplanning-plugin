@@ -464,4 +464,7 @@ export const isIS = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Virkjaðu 1 mínútu nákvæmni fyrir tímaskráningu. Sjálfgefin þrep eru 5 eða 15 mínútur.',
   Details: 'Nánari upplýsingar',
   'Once enabled, 1-minute intervals cannot be turned off': 'Þegar 1 mínútu millibili er virkjað er ekki hægt að slökkva á því',
+  'No pay rule set selected': 'Engin launaregla valin',
+  'Mobile time registration disabled': 'Tímaskráning í farsíma óvirk',
+  'Extra shifts': 'Aukavaktir',
 };

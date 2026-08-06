@@ -246,6 +246,19 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * A tag chip was clicked in a table row: add the tag to the Etiketter
+   * filter (new array reference so the mtx-select model reflects it) and
+   * reload. Clicking a tag that is already selected is a no-op.
+   */
+  onTagSelectedFromRow(tagId: number) {
+    if (this.selectedTagIds.includes(tagId)) {
+      return;
+    }
+    this.selectedTagIds = [...this.selectedTagIds, tagId];
+    this.getPlannings();
+  }
+
+  /**
    * Called by the table component when it has finished rendering
    * the highlighted row/cell in the DOM. This guarantees both the service
    * call and the mtx-grid rendering are complete before we consider the

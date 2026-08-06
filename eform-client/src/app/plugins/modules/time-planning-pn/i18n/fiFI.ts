@@ -464,4 +464,7 @@ export const fiFI = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Ota käyttöön 1 minuutin tarkkuudella ajan syöttö. Oletusarvoinen lisäys on 5 tai 15 minuuttia.',
   Details: 'Tiedot',
   'Once enabled, 1-minute intervals cannot be turned off': 'Kun 1 minuutin välein on otettu käyttöön, niitä ei voi poistaa käytöstä.',
+  'No pay rule set selected': 'Ei valittua maksusääntöä',
+  'Mobile time registration disabled': 'Mobiiliajan rekisteröinti poistettu käytöstä',
+  'Extra shifts': 'Ylimääräiset vuorot',
 };

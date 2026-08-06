@@ -8,6 +8,55 @@
   max-width: 150px;
 }
 
+/* Tag chips row in the pinned Navn column. Chips reuse the global mat-chip
+   styles; the wrapper only exists to stop clicks from bubbling into the
+   first-column edit-dialog handler and to keep chips wrapping inside the
+   pinned column width. */
+.row-tags {
+  cursor: default;
+  max-width: 220px;
+}
+
+/* Fixed-order settings icon strip under the name/version block.
+   active = primary-tinted (theme --primary token), off = dimmed grey
+   matching the app's neutral icon grey (#B3B9BF, see styles.scss). */
+.settings-strip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.setting-ico {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  &.txt {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  &.active {
+    color: var(--primary, #1a67ce);
+    background: rgba(26, 103, 206, 0.12);
+  }
+
+  &.off {
+    color: #B3B9BF;
+    background: transparent;
+  }
+
+  svg {
+    display: block;
+  }
+}
+
 .comment {
   display: flex;
   max-width: 250px;

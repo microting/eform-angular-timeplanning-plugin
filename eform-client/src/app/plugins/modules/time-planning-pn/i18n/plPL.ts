@@ -464,4 +464,7 @@ export const plPL = {
   'Enable 1-minute granularity for time entry. Default increments are 5 or 15 minutes.': 'Włącz dokładność wprowadzania czasu co 1 minutę. Domyślne wartości to 5 lub 15 minut.',
   Details: 'Bliższe dane',
   'Once enabled, 1-minute intervals cannot be turned off': 'Po włączeniu nie można wyłączyć interwałów 1-minutowych',
+  'No pay rule set selected': 'Nie wybrano zestawu reguł płatności',
+  'Mobile time registration disabled': 'Rejestracja czasu mobilnego wyłączona',
+  'Extra shifts': 'Dodatkowe zmiany',
 };

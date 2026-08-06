@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 using System.Collections.Generic;
+using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
 
 namespace TimePlanning.Pn.Infrastructure.Models.Planning;
 
@@ -48,5 +49,31 @@ public class TimePlanningPlanningModel
     /// identical behavior on rows whose site has the flag off.
     /// </summary>
     public bool UseOneMinuteIntervals { get; set; }
+    /// <summary>
+    /// SDK site tags ({Id, Name}) for the row's site — the same tags the
+    /// dashboard's Etiketter filter operates on. Empty list when the site
+    /// has no tags.
+    /// </summary>
+    public List<CommonDictionaryModel> Tags { get; set; }
+    /// <summary>
+    /// Per-row mirror of <c>AssignedSite.PayRuleSetId</c>; null when the site
+    /// has no pay rule set selected.
+    /// </summary>
+    public int? PayRuleSetId { get; set; }
+    /// <summary>
+    /// Resolved <c>PayRuleSet.Name</c> for <see cref="PayRuleSetId"/>; null
+    /// when no pay rule set is selected (or the referenced set no longer exists).
+    /// </summary>
+    public string PayRuleSetName { get; set; }
+    // Per-row mirrors of the AssignedSite time-registration settings that the
+    // dashboard's settings icon strip renders (same source as UseOneMinuteIntervals).
+    public bool UsePunchClock { get; set; }
+    public bool AllowAcceptOfPlannedHours { get; set; }
+    public bool AllowPersonalTimeRegistration { get; set; }
+    public bool OverMidnight { get; set; }
+    public bool AutoBreakCalculationActive { get; set; }
+    public bool ThirdShiftActive { get; set; }
+    public bool FourthShiftActive { get; set; }
+    public bool FifthShiftActive { get; set; }
     public List<TimePlanningPlanningPrDayModel> PlanningPrDayModels { get; set; }
 }

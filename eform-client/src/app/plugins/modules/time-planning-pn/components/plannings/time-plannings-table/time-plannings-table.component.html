@@ -69,6 +69,43 @@
               {{row['softwareVersion']}}
             </div>
           </div>
+          <div class="row-tags" *ngIf="row['tags']?.length" (click)="$event.stopPropagation()">
+            <app-eform-tag [tags]="row['tags']" (clickOnTag)="onTagClicked($event)"></app-eform-tag>
+          </div>
+          <div class="settings-strip">
+            <span class="setting-ico txt" id="settingPayRule{{index}}"
+                  [class.active]="row['payRuleSetId'] != null"
+                  [class.off]="row['payRuleSetId'] == null"
+                  [matTooltip]="row['payRuleSetName'] ? row['payRuleSetName'] : ('No pay rule set selected' | translate)">kr</span>
+            <span class="setting-ico" id="settingMobileReg{{index}}"
+                  [class.active]="row['allowPersonalTimeRegistration']"
+                  [class.off]="!row['allowPersonalTimeRegistration']"
+                  [matTooltip]="getMobileRegTooltip(row)">
+              <svg *ngIf="!row['allowPersonalTimeRegistration'] || row['usePunchClock']" width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6.5" cy="7" r="4.6"/><path d="M6.5 4.8V7l1.8 1.2M4.7 1h3.6"/></svg>
+              <svg *ngIf="row['allowPersonalTimeRegistration'] && !row['usePunchClock'] && row['allowAcceptOfPlannedHours']" width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l3 3 6-7"/></svg>
+              <svg *ngIf="row['allowPersonalTimeRegistration'] && !row['usePunchClock'] && !row['allowAcceptOfPlannedHours']" width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 11l.7-2.8 6.6-6.6 2.1 2.1-6.6 6.6L2 11z"/></svg>
+            </span>
+            <span class="setting-ico" id="settingOverMidnight{{index}}"
+                  [class.active]="row['overMidnight']"
+                  [class.off]="!row['overMidnight']"
+                  [matTooltip]="'Shifts across midnight' | translate">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><path d="M10.8 8.2A5 5 0 1 1 4.8 2a4 4 0 0 0 6 6.2z"/></svg>
+            </span>
+            <span class="setting-ico" id="settingAutoBreak{{index}}"
+                  [class.active]="row['autoBreakCalculationActive']"
+                  [class.off]="!row['autoBreakCalculationActive']"
+                  [matTooltip]="'Auto break calculation' | translate">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor"><rect x="1.5" y="1" width="2.6" height="9" rx="1"/><rect x="6.9" y="1" width="2.6" height="9" rx="1"/></svg>
+            </span>
+            <span class="setting-ico txt" id="settingOneMinute{{index}}"
+                  [class.active]="row['useOneMinuteIntervals']"
+                  [class.off]="!row['useOneMinuteIntervals']"
+                  [matTooltip]="'Use 1-minute intervals' | translate">1m</span>
+            <span class="setting-ico txt" id="settingShifts{{index}}"
+                  [class.active]="row['thirdShiftActive'] || row['fourthShiftActive'] || row['fifthShiftActive']"
+                  [class.off]="!(row['thirdShiftActive'] || row['fourthShiftActive'] || row['fifthShiftActive'])"
+                  [matTooltip]="getExtraShiftsTooltip(row)">3v</span>
+          </div>
         </div>
       </div>
     </div>
@@ -129,6 +166,43 @@
               </ng-container>
               {{row['softwareVersion']}}
             </div>
+          </div>
+          <div class="row-tags" *ngIf="row['tags']?.length" (click)="$event.stopPropagation()">
+            <app-eform-tag [tags]="row['tags']" (clickOnTag)="onTagClicked($event)"></app-eform-tag>
+          </div>
+          <div class="settings-strip">
+            <span class="setting-ico txt" id="settingPayRule{{index}}"
+                  [class.active]="row['payRuleSetId'] != null"
+                  [class.off]="row['payRuleSetId'] == null"
+                  [matTooltip]="row['payRuleSetName'] ? row['payRuleSetName'] : ('No pay rule set selected' | translate)">kr</span>
+            <span class="setting-ico" id="settingMobileReg{{index}}"
+                  [class.active]="row['allowPersonalTimeRegistration']"
+                  [class.off]="!row['allowPersonalTimeRegistration']"
+                  [matTooltip]="getMobileRegTooltip(row)">
+              <svg *ngIf="!row['allowPersonalTimeRegistration'] || row['usePunchClock']" width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6.5" cy="7" r="4.6"/><path d="M6.5 4.8V7l1.8 1.2M4.7 1h3.6"/></svg>
+              <svg *ngIf="row['allowPersonalTimeRegistration'] && !row['usePunchClock'] && row['allowAcceptOfPlannedHours']" width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l3 3 6-7"/></svg>
+              <svg *ngIf="row['allowPersonalTimeRegistration'] && !row['usePunchClock'] && !row['allowAcceptOfPlannedHours']" width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 11l.7-2.8 6.6-6.6 2.1 2.1-6.6 6.6L2 11z"/></svg>
+            </span>
+            <span class="setting-ico" id="settingOverMidnight{{index}}"
+                  [class.active]="row['overMidnight']"
+                  [class.off]="!row['overMidnight']"
+                  [matTooltip]="'Shifts across midnight' | translate">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><path d="M10.8 8.2A5 5 0 1 1 4.8 2a4 4 0 0 0 6 6.2z"/></svg>
+            </span>
+            <span class="setting-ico" id="settingAutoBreak{{index}}"
+                  [class.active]="row['autoBreakCalculationActive']"
+                  [class.off]="!row['autoBreakCalculationActive']"
+                  [matTooltip]="'Auto break calculation' | translate">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor"><rect x="1.5" y="1" width="2.6" height="9" rx="1"/><rect x="6.9" y="1" width="2.6" height="9" rx="1"/></svg>
+            </span>
+            <span class="setting-ico txt" id="settingOneMinute{{index}}"
+                  [class.active]="row['useOneMinuteIntervals']"
+                  [class.off]="!row['useOneMinuteIntervals']"
+                  [matTooltip]="'Use 1-minute intervals' | translate">1m</span>
+            <span class="setting-ico txt" id="settingShifts{{index}}"
+                  [class.active]="row['thirdShiftActive'] || row['fourthShiftActive'] || row['fifthShiftActive']"
+                  [class.off]="!(row['thirdShiftActive'] || row['fourthShiftActive'] || row['fifthShiftActive'])"
+                  [matTooltip]="getExtraShiftsTooltip(row)">3v</span>
           </div>
         </div>
       </div>

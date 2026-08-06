@@ -5,6 +5,7 @@ using DotNet.Testcontainers.Containers;
 using eFormCore;
 using Microsoft.EntityFrameworkCore;
 using Microting.eForm.Infrastructure;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using NUnit.Framework;
 using Testcontainers.MariaDb;
@@ -71,6 +72,54 @@ public abstract class TestBaseSetup
         microtingDbContext.Database.Migrate();
 
         return microtingDbContext;
+    }
+
+    /// <summary>
+    /// Builds a fresh, empty BaseDbContext (the eform-angular-frontend user/
+    /// role store) against the test container — same pattern as the
+    /// BackendConfiguration integration tests. Dropped and recreated per call
+    /// so each test seeds its own users/roles without cross-test pollution.
+    /// Needed by tests that exercise service paths gated on
+    /// BaseDbContext.Users (e.g. TimePlanningPlanningService.Index()).
+    /// </summary>
+    protected BaseDbContext GetBaseDbContext()
+    {
+        var connectionStr = _mariadbTestcontainer.GetConnectionString();
+        var optionsBuilder = new DbContextOptionsBuilder<BaseDbContext>();
+
+        optionsBuilder.UseMySql(
+            connectionStr.Replace("myDb", "420_Angular").Replace("bla", "root"),
+            new MariaDbServerVersion(ServerVersion.AutoDetect(connectionStr)),
+            mySqlOptionsAction: builder => {
+                builder.EnableRetryOnFailure();
+            });
+
+        var baseDbContext = new BaseDbContext(optionsBuilder.Options);
+        baseDbContext.Database.EnsureDeleted();
+        baseDbContext.Database.EnsureCreated();
+        return baseDbContext;
+    }
+
+    /// <summary>
+    /// Builds a NEW TimePlanningPnDbContext against the same (already
+    /// migrated) plugin database as <see cref="TimePlanningPnDbContext"/> —
+    /// WITHOUT dropping it. Use this to make ITimePlanningDbContextHelper
+    /// substitutes hand out a fresh context per call, mirroring production,
+    /// for service paths that run per-site work concurrently (Index()).
+    /// </summary>
+    protected TimePlanningPnDbContext CreateTimePlanningPnDbContext()
+    {
+        var connectionStr = _mariadbTestcontainer.GetConnectionString();
+        var optionsBuilder = new DbContextOptionsBuilder<TimePlanningPnDbContext>();
+
+        optionsBuilder.UseMySql(
+            connectionStr.Replace("myDb", "420_eform-angular-items-planning-plugin").Replace("bla", "root"),
+            new MariaDbServerVersion(ServerVersion.AutoDetect(connectionStr)),
+            mySqlOptionsAction: builder => {
+                builder.EnableRetryOnFailure();
+            });
+
+        return new TimePlanningPnDbContext(optionsBuilder.Options);
     }
 
     protected async Task<Core> GetCore()

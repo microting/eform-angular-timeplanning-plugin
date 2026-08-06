@@ -1,3 +1,4 @@
+import {SharedTagModel} from 'src/app/common/models';
 import {PlanningPrDayModel} from './planning-pr-day.model';
 
 export class TimePlanningModel {
@@ -23,4 +24,16 @@ export class TimePlanningModel {
    * HH:mm regardless of the flag.
    */
   useOneMinuteIntervals: boolean;
+  /** SDK site tags assigned to the row's site (rendered as chips in the Navn column). */
+  tags: SharedTagModel[] = [];
+  payRuleSetId: number | null;
+  payRuleSetName: string;
+  usePunchClock: boolean;
+  allowAcceptOfPlannedHours: boolean;
+  allowPersonalTimeRegistration: boolean;
+  overMidnight: boolean;
+  autoBreakCalculationActive: boolean;
+  thirdShiftActive: boolean;
+  fourthShiftActive: boolean;
+  fifthShiftActive: boolean;
 }

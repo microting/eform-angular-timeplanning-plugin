@@ -39,6 +39,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   @Output() timePlanningChanged: EventEmitter<any> = new EventEmitter<any>();
   @Output() assignedSiteChanged: EventEmitter<any> = new EventEmitter<any>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
+  @Output() tagSelected: EventEmitter<number> = new EventEmitter<number>();
   tableHeaders: MtxGridColumn[] = [];
   enumKeys: string[];
   currentLocale: string = 'da';
@@ -322,6 +323,48 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
       return '24:00';
     }
     return this.datePipe.transform(stoppedAt, 'HH:mm', 'UTC') ?? '';
+  }
+
+  onTagClicked(tagId: number): void {
+    this.tagSelected.emit(tagId);
+  }
+
+  /**
+   * Tooltip for the mobile-registration icon in the settings strip.
+   * Mirrors the AssignedSite dialog's mode wording: punch clock wins over
+   * receipt-of-planned-hours, which wins over manual entry; a disabled
+   * mobile registration gets its own label.
+   */
+  getMobileRegTooltip(row: any): string {
+    if (!row.allowPersonalTimeRegistration) {
+      return this.translateService.instant('Mobile time registration disabled');
+    }
+    if (row.usePunchClock) {
+      return this.translateService.instant('Use time clock on mobile');
+    }
+    if (row.allowAcceptOfPlannedHours) {
+      return this.translateService.instant('Allow receipt for standard time on mobile');
+    }
+    return this.translateService.instant('Manual entry');
+  }
+
+  /**
+   * Tooltip for the "3v" (extra shifts) badge: the translated "Extra shifts"
+   * label, suffixed with which of the 3rd/4th/5th shifts are active.
+   */
+  getExtraShiftsTooltip(row: any): string {
+    const active: string[] = [];
+    if (row.thirdShiftActive) {
+      active.push(this.translateService.instant('3rd shift'));
+    }
+    if (row.fourthShiftActive) {
+      active.push(this.translateService.instant('4th shift'));
+    }
+    if (row.fifthShiftActive) {
+      active.push(this.translateService.instant('5th shift'));
+    }
+    const label = this.translateService.instant('Extra shifts');
+    return active.length ? `${label}: ${active.join(', ')}` : label;
   }
 
   onFirstColumnClick(row: any): void {
