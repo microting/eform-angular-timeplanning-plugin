@@ -21,6 +21,10 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 /// bypassable. Hoisting the logic here lets every service that can mutate a
 /// locked preset (directly or through a child row) share the exact same
 /// definition.
+///
+/// It is also the home for the other preset-IDENTITY questions the engine has to ask,
+/// because they all need the same validity-period normalization — see
+/// <see cref="IsNormalTimeSplitPresetName"/>.
 /// </summary>
 internal static class PayRuleSetLock
 {
@@ -104,5 +108,56 @@ internal static class PayRuleSetLock
     {
         var normalized = NormalizePresetName(name);
         return normalized.Length > 0 && NormalizedLockedPresetNames.Contains(normalized);
+    }
+
+    // ------------------------------------------------------------------
+    // Normal-time / overtime split — OPT-IN BY RULE-SET IDENTITY
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// The presets whose day rules encode tier 1 as a NORMAL-TIME BOUNDARY, and which
+    /// therefore opt in to the sequential normal-time/overtime split in
+    /// <c>TimePlanningWorkingHoursService.CalculatePayLinesForDay</c> (and to the
+    /// Grundlovsdag noon split that rides on the same interpretation).
+    ///
+    /// WHY THIS IS GATED ON IDENTITY AND NOT ON RULE-SET SHAPE
+    /// ------------------------------------------------------
+    /// The split reinterprets the first tier of a banded day as "normal time ends here;
+    /// everything past it is overtime and carries no clock-time supplement". That reading
+    /// is only true for these two § 50 praktikant presets, where § 50 stk. 4 d pays the
+    /// supplements exclusively "for arbejde i normal arbejdstid".
+    ///
+    /// The shape the split used to key off — "the day has time bands AND the day rule has
+    /// more than one tier AND tier 1 has a non-null UpToSeconds" — is NOT unique to them.
+    /// Thirteen other preset/day combinations match it (Jordbrug Standard and Jordbrug
+    /// Dyrehold WEEKDAY+SATURDAY, Gartneri Standard WEEKDAY+SATURDAY, Skovbrug Standard
+    /// WEEKDAY+SATURDAY, KA Svine/Plante/Maskin WEEKDAY, KA Gron WEEKDAY+SATURDAY). In
+    /// those presets tier 1 is a deliberate MIRROR of the clock split, not a normal-time
+    /// boundary, so applying the split there would hand a morning-only Saturday an
+    /// afternoon supplement it never earned. Those presets are explicitly out of scope in
+    /// the 2026-08-07 spec, so the opt-in is by name.
+    ///
+    /// A per-rule-set database column would be the better home for this flag, but the
+    /// entity lives in the eform-timeplanning-base NuGet package and cannot be extended
+    /// from the plugin. Name matching mirrors the locked-preset mechanism above, and goes
+    /// through <see cref="NormalizePresetName"/> so a customer row still carrying the
+    /// "… 2024-2026" validity period matches the "… 2026-2029" catalogue entry.
+    /// </summary>
+    private static readonly HashSet<string> NormalizedNormalTimeSplitPresetNames =
+        new HashSet<string>(new[]
+        {
+            "GLS-A / 3F - Udenlandske praktikanter Landbrug Staldarbejde",
+            "GLS-A / 3F - Udenlandske praktikanter Landbrug Andet arbejde"
+        }.Select(NormalizePresetName));
+
+    /// <summary>
+    /// True when the rule set opts in to the sequential normal-time/overtime split.
+    /// See <see cref="NormalizedNormalTimeSplitPresetNames"/> for why this is an
+    /// identity check and not a shape check.
+    /// </summary>
+    internal static bool IsNormalTimeSplitPresetName(string name)
+    {
+        var normalized = NormalizePresetName(name);
+        return normalized.Length > 0 && NormalizedNormalTimeSplitPresetNames.Contains(normalized);
     }
 }

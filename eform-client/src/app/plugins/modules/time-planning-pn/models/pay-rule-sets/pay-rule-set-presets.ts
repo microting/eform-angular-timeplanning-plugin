@@ -1706,11 +1706,28 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
           { order: 2, upToSeconds: null, payCode: 'OVERTIME_80' },
         ],
       },
+      // Grundlovsdag (5 June) is a half day per Jordbrug § 29: ordinary working
+      // time until 12:00, søgnehelligdag from 12:00 (decision 4 of the
+      // 2026-08-07 spec). The engine has no DayType for Grundlovsdag
+      // (TryGetDayType returns false for it), so the noon split CANNOT be
+      // expressed as time bands here — it is applied in the plugin, in
+      // CalculatePayLinesForDay -> CalculateGrundlovsdagPayLines, for this
+      // preset by name.
+      //
+      // What the tiers below mean in that path:
+      //   - tier 1's 26640 s is the normal-time boundary, and its pay code
+      //     ('NORMAL') is what the BEFORE-NOON normal-time minutes get;
+      //   - the AFTER-NOON normal-time minutes instead get this preset's
+      //     søgnehelligdag treatment, which the engine reads off the SUNDAY rule
+      //     above: first 7200 s OVERTIME_50, remainder OVERTIME_80;
+      //   - tiers 2..3 attribute everything past the 26640 s boundary, so
+      //     overtime minutes carry neither NORMAL nor the søgnehelligdag code.
       {
         dayCode: 'GRUNDLOVSDAG',
         payTierRules: [
-          { order: 1, upToSeconds: 7200, payCode: 'OVERTIME_50' },
-          { order: 2, upToSeconds: null, payCode: 'OVERTIME_80' },
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_50' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
         ],
       },
     ],
@@ -1733,31 +1750,81 @@ export const PAY_RULE_SET_PRESETS: PayRuleSetPreset[] = [
           { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
         ],
       },
-      // Saturday: fallback tier splits at 6h to match the 12:00 clock split
-      // used by the payDayTypeRule below (which drives calculation).
+      // Saturday / Sunday / Holiday tiers below are NOT a fallback - they set
+      // the normal-time boundary and the overtime steps beyond it. The stald
+      // supplements are payable per § 50 stk. 4 d only "for arbejde i normal
+      // arbejdstid", so the first 7h24m are attributed by the clock-time bands
+      // (payDayTypeRules further down) and every minute past that boundary goes
+      // to the overtime steps here instead of carrying a supplement code. The
+      // first tier's pay code is the one the bands would have produced anyway;
+      // it is what defines where normal time ends.
+      //
+      // This reading is NOT applied to every preset with the same shape. The
+      // engine opts in BY RULE-SET NAME (PayRuleSetLock.IsNormalTimeSplitPresetName),
+      // because in the Jordbrug/Gartneri/Skovbrug/KA presets the equivalent
+      // tier 1 is a deliberate MIRROR of their clock split rather than a
+      // normal-time boundary. Renaming this preset without updating that list
+      // silently reverts it to bands-only.
       {
         dayCode: 'SATURDAY',
         payTierRules: [
-          { order: 1, upToSeconds: 21600, payCode: 'SAT_NORMAL' },
-          { order: 2, upToSeconds: null, payCode: 'SAT_ANIMAL_AFTERNOON' },
+          { order: 1, upToSeconds: 26640, payCode: 'SAT_NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_50' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
         ],
       },
       {
         dayCode: 'SUNDAY',
-        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ANIMAL_SUN_HOLIDAY' }],
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'ANIMAL_SUN_HOLIDAY' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_50' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
       },
       {
         dayCode: 'HOLIDAY',
-        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ANIMAL_SUN_HOLIDAY' }],
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'ANIMAL_SUN_HOLIDAY' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_50' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
       },
+      // Grundlovsdag (5 June) is a half day per Jordbrug § 29: ordinary working
+      // time until 12:00, søgnehelligdag from 12:00 (decision 4 of the
+      // 2026-08-07 spec). The engine has no DayType for Grundlovsdag
+      // (TryGetDayType returns false for it), so the noon split CANNOT be
+      // expressed as time bands here — it is applied in the plugin, in
+      // CalculatePayLinesForDay -> CalculateGrundlovsdagPayLines, for this
+      // preset by name.
+      //
+      // What the tiers below mean in that path:
+      //   - tier 1's 26640 s is the normal-time boundary, and its pay code
+      //     ('NORMAL') is what the BEFORE-NOON normal-time minutes get;
+      //   - the AFTER-NOON normal-time minutes instead get this preset's
+      //     søgnehelligdag treatment, which the engine reads off the Sunday
+      //     entry in payDayTypeRules below: ANIMAL_SUN_HOLIDAY;
+      //   - tiers 2..3 attribute everything past the 26640 s boundary, so
+      //     overtime minutes carry neither NORMAL nor ANIMAL_SUN_HOLIDAY.
       {
         dayCode: 'GRUNDLOVSDAG',
-        payTierRules: [{ order: 1, upToSeconds: null, payCode: 'ANIMAL_SUN_HOLIDAY' }],
+        payTierRules: [
+          { order: 1, upToSeconds: 26640, payCode: 'NORMAL' },
+          { order: 2, upToSeconds: 33840, payCode: 'OVERTIME_50' },
+          { order: 3, upToSeconds: null, payCode: 'OVERTIME_80' },
+        ],
       },
     ],
     payDayTypeRules: [
-      // Saturday supplement kicks in from 12:00 (kr/dag fixed rate applies
-      // for hours after noon per the loenoversigt).
+      // These bands split the NORMAL-TIME portion of the day only (the engine
+      // truncates the worked PAUSE-FREE segments at the first tier's boundary
+      // before applying them — pauses do not consume the normal-time budget).
+      // That truncation happens because this preset is opted in by name; for
+      // every other preset the bands still cover the whole day as before.
+      // Saturday supplement kicks in from 12:00 (kr/dag fixed rate applies for
+      // hours after noon per the loenoversigt).
+      //
+      // The Sunday entry does double duty: it is also what the plugin reads as
+      // this preset's "søgnehelligdag treatment" for Grundlovsdag afternoons.
       {
         dayType: 'Saturday',
         defaultPayCode: 'SAT_NORMAL',
