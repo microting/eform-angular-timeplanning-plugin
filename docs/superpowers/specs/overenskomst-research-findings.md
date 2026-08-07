@@ -478,3 +478,131 @@ Søn- og helligdage                                                           17
 
 Source: [GLS-A Lønoversigt, udenlandske praktikanter landbrug, marts 2026](https://www.gls-a.dk/wp-content/uploads/2026/04/Praktikanter-landbrug.pdf) ·
 [Jordbrug 2026-2029](https://www.3f.dk/-/media/files/artikler/overenskomst/den-groenne-gruppe/overenskomster/4010---jordbrug-2026-2029---2,-d-,-udgave---06,-d-,07,-d-,26.pdf)
+
+---
+
+# IMPLEMENTATION STATUS — all overenskomst presets (audit 2026-08-07)
+
+Every GLS-A / 3F preset was re-verified clause by clause against the primary
+agreement PDFs (obtained and text-extracted, not summarised). **Verdict: the
+presets are NOT true to the documents.** All 8 previously-listed discrepancies are
+confirmed and 8 further categories were found.
+
+Framing as always: this system reports **which rule each minute falls under**. A
+wrong pay code is a wrong minute attribution, and since pay codes carry no
+percentage mapping in the backend, the code string *is* the payload handed
+downstream — `OVERTIME_80` where the text says 100 % is a real defect, not a naming
+preference.
+
+## Texts obtained
+
+| Agreement | Edition verified against | Preset claims |
+|---|---|---|
+| Jordbrug 4010 | **2026-2029** (2. udg. 06.07.26) | 2026-2029 ✅ |
+| Agroindustri 4012 | **2026-2029** (endelig 07.07.26) | 2026-2029 ✅ |
+| Gartneri 4011 | 2024-2026 (no 2026-2029 published) | 2026-2029 ⚠️ |
+| Skovbrug 4013 | 2024-2026 (no 2026-2029 published) | 2026-2029 ⚠️ |
+| Golf 4014 | 2024-2026 (no 2026-2029 exists) | 2026-2029 ⚠️ |
+
+⚠️ = the preset name claims an agreement period whose text has not been published.
+
+## Status per preset family
+
+| Family | Presets | Status |
+|---|---|---|
+| **Udenlandske praktikanter** (Stald, Andet) | 2 | ✅ **Corrected 2026-08-07.** Tiers, Saturday, Sunday and the § 29 Grundlovsdag noon split all match. Open: per-day vs per-hour supplement unit; pay codes shared with adult Dyrehold whose amounts differ |
+| Jordbrug Standard / Dyrehold | 2 | ❌ fabricated Saturday supplement; Dyrehold band errors; flat Grundlovsdag |
+| Jordbrug Elev u18 / o18 / u18 Dyrehold | 3 | ❌ wrong first tier (o18), missing top tier (u18), fabricated u18/o18 split |
+| Gartneri Standard / Elev ×2 | 3 | ❌ Sunday not tiered; Saturday code; 1. maj missing; Elev tiers |
+| Skovbrug Standard / Elev ×2 | 3 | ❌ Saturday should be overtime from hour 1; evening band 1 h too long; Elev Sunday step invented |
+| Golf Standard / Elev | 2 | ❌ Saturday-afternoon code; Elev boundary; fridage missing |
+| Agroindustri Standard ×8 / Elev ×8 | 16 | ❌ 3 wrong OT ceilings; Øvrige structurally wrong; no forskudt bands; fabricated Saturday split; **Elev variants have no textual basis at all** |
+
+## Defects, ordered by payroll harm
+
+### Workers under-attributed (minutes coded too low)
+
+1. **Jordbrug Elev o18 first OT tier is 30 %; § 47 stk. 4 gives lærlinge 50 %.**
+   Hits every hour 1–2 of daily overtime for every Jordbrug apprentice.
+2. **All 14 "u18" presets are missing their top overtime tier.** Hour 3 onward stays
+   at the first-tier rate forever (Jordbrug 50 vs 80; Gartneri/Skovbrug 50/30 vs
+   100). Unbounded: the longer the day, the larger the error.
+3. **Agro Kartoffelsortering** codes `OVERTIME_80`; the text has only 30 → **100**.
+4. **Agro Gulerod** missing the 100 % tier, and its 80 % band should stop after
+   overtime hour 3 (37440 s).
+5. **Agro Minkfoder** missing the clock-keyed 100 % tier (overtime after 20:00; Sun/
+   holiday after 12:00), and the Sunday 12:00 split.
+6. **Skovbrug Saturday** gives 6 h "normal"; § 7 stk. 1 puts the week on
+   *"ugens 5 første hverdage"*, so Saturday is the 30 %/100 % ladder from hour 1.
+
+### Minutes over-attributed (supplements not earned)
+
+7. **Saturday-afternoon supplement is fabricated** in Jordbrug Standard and all 8
+   Agro Standard presets. An exhaustive search of "lørdag" finds Saturday
+   supplements only for dyrehold (§ 15), lærling stald (§ 47 stk. 5) and praktikant
+   (§ 50 stk. 4 d) — never for ordinary workers.
+8. **Dyrehold 18:00–24:00 `SHIFTED_EVENING`** — § 23 caps displacement at 2 h after
+   18:00, so 20:00–24:00 is unsupported (4 h/day).
+9. **Dyrehold 05:00–06:00 `SHIFTED_MORNING`** — no such item in § 15.
+10. **Skovbrug evening band 18:00–20:00** — § 22 allows *"indtil 1 time efter kl.
+    18.00"*, so 19:00–20:00 is not entitled.
+11. **Skovbrug Elev Sunday 50 % first-2h step is invented** — § 21 stk. 1 puts
+    søn-/helligdage in the 100 % clause with no 50 % step.
+12. **Gartneri Sunday/holiday flat** where § 22 stk. 2 tiers it 50 % (first 2 h) /
+    100 % — first two hours over-coded, remainder under-coded.
+
+### Structural / missing
+
+13. **Agro Øvrige models percentages where § 4 a pays flat DKK** across clock bands
+    (kr. 49,25 / 78,46 / 146,77, plus a separate Sunday scale). No minute maps to a
+    correct code; needs a DKK-band model, not a tweak.
+14. **Agroindustri encodes no forskudt bands at all**, though § 19 defines
+    18:00–22:00 and 22:00–06:00. All displaced-time minutes across 16 presets are
+    unattributed.
+15. **Dyrehold Saturday 00:00–05:00 misses the § 15 night rate** — § 15 runs
+    *"mandag til lørdag"* (5 h/week lost).
+16. **Grundlovsdag is a flat all-day code on 37 of 39 presets.** § 29 makes it a
+    fridag **from 12:00**; morning minutes are ordinary time. Only the two praktikant
+    presets handle it.
+17. **Per-day supplements encoded per-hour** — § 15 dyrehold, § 47 stk. 5 elev stald,
+    § 50 stk. 4 d praktikant all say *"pr. dag"*. N hours reported where the rule
+    triggers once.
+18. **Unmodelled fridage**: 24 December (all families), 1 May (Gartneri 4 h @50 %
+    then 100 %; Golf as søgnehelligdag; Agro kartoffelsortering fridag from 12:00),
+    31 December (Gartneri, Agro kartoffelsortering).
+
+### The Elev/lærling problem is bigger than a threshold
+
+**The u18/o18 split is fabricated.** Each agreement has exactly **one** lærling
+overtime rule — Jordbrug § 47 stk. 4 (50/80), Gartneri § 45 stk. 3 c (50/100),
+Skovbrug § 44 stk. 9 (30/100) — or none at all. In Jordbrug the only "under 18 år"
+occurrences concern *pension*; § 17 Ungarbejdere is a wage table. **Agroindustri
+contains the word "lærling" zero times**, yet 8 Agro Elev presets are shipped.
+The 8 h/day cap has no basis in any text.
+
+## Engine-level defects that determine what surfaces
+
+- **Weekday bands shadow the tiers** on the 8 "Standard" presets, so several tier
+  errors above are currently invisible rather than harmless.
+- **Presets are copy-at-create-time snapshots.** Correcting a preset does **not**
+  change rule sets already created, and no migration exists. Any future correction
+  needs a migration story *before* it ships — see the 2026-08-07 regression where a
+  name-gated engine change met stale rows and moved up to 6 h/Saturday onto an
+  afternoon supplement (fixed by additionally requiring the corrected tier shape).
+- **Pay lines are never persisted**, so re-exporting an already-paid period reflects
+  today's rules, not the rules it was paid under. There is no snapshot to reconcile.
+
+## Recommended sequence
+
+1. Decide the fate of the 14 Elev presets — correct to the single real lærling rule,
+   or retire the u18/o18 split. Largest single source of under-attribution.
+2. Fix the three Agro overtime ceilings (Kartoffelsortering, Gulerod, Minkfoder) —
+   small, unambiguous, clearly quoted.
+3. Remove the fabricated Saturday supplements (Jordbrug Standard, 8 Agro Standard)
+   and fix Skovbrug Saturday.
+4. Model Grundlovsdag's noon split generally (needs a `DayType` for it in the base
+   package) plus the other fridage.
+5. Re-model Agro Øvrige on flat DKK bands.
+6. Then the per-day supplement unit, and Agro forskudt bands.
+
+Each step needs a data migration for existing rule sets, not just a catalogue edit.
