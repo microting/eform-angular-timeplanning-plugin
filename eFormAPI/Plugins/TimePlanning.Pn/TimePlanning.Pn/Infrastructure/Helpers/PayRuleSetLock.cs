@@ -221,7 +221,10 @@ internal static class PayRuleSetLock
     ///
     /// This is a guard, not the cure. The durable fix is a DATA MIGRATION that rewrites
     /// the stale praktikant day rules to the corrected tiers; once every customer row has
-    /// been migrated this predicate becomes a no-op and can be retired.
+    /// been migrated this predicate becomes a no-op and can be retired. That migration
+    /// shipped 2026-08-07 as CorrectPraktikantSection50Tiers in eform-timeplanning-base
+    /// v10.0.57 — it runs when a customer backend upgrades past that version, so the
+    /// guard stays until no pre-migration database remains.
     /// </summary>
     internal static bool HasNormalTimeBoundaryShape(IReadOnlyList<PayTierRule>? orderedTiers)
     {
