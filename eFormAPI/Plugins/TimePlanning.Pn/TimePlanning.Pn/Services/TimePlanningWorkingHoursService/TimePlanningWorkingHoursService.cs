@@ -4133,41 +4133,69 @@ public class TimePlanningWorkingHoursService(
         totalSecondsAfterNoon += CalculateOverlap(day.Start4StartedAt, day.Stop4StoppedAt);
         totalSecondsAfterNoon += CalculateOverlap(day.Start5StartedAt, day.Stop5StoppedAt);
 
-        // Subtract pauses that occur after noon
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause1StartedAt, day.Pause1StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause2StartedAt, day.Pause2StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause3StartedAt, day.Pause3StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause4StartedAt, day.Pause4StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause5StartedAt, day.Pause5StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause10StartedAt, day.Pause10StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause11StartedAt, day.Pause11StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause12StartedAt, day.Pause12StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause13StartedAt, day.Pause13StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause14StartedAt, day.Pause14StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause15StartedAt, day.Pause15StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause16StartedAt, day.Pause16StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause17StartedAt, day.Pause17StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause18StartedAt, day.Pause18StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause19StartedAt, day.Pause19StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause20StartedAt, day.Pause20StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause21StartedAt, day.Pause21StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause22StartedAt, day.Pause22StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause23StartedAt, day.Pause23StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause24StartedAt, day.Pause24StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause25StartedAt, day.Pause25StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause26StartedAt, day.Pause26StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause27StartedAt, day.Pause27StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause28StartedAt, day.Pause28StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause29StartedAt, day.Pause29StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause100StartedAt, day.Pause100StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause101StartedAt, day.Pause101StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause102StartedAt, day.Pause102StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause200StartedAt, day.Pause200StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause201StartedAt, day.Pause201StoppedAt);
-        totalSecondsAfterNoon -= CalculateOverlap(day.Pause202StartedAt, day.Pause202StoppedAt);
+        // Subtract pauses that occur after noon. EnumeratePauseIntervals is the shared
+        // source of truth for "which fields hold a pause", so this method and the
+        // pause-aware pay-line segmentation (EnumerateWorkedSegments) can never drift
+        // apart on, say, a newly added sub-slot.
+        foreach (var (pauseStart, pauseStop) in EnumeratePauseIntervals(day))
+        {
+            totalSecondsAfterNoon -= CalculateOverlap(pauseStart, pauseStop);
+        }
 
         // Convert to hours and ensure non-negative
         return Math.Max(0, totalSecondsAfterNoon / 3600.0);
+    }
+
+    /// <summary>
+    /// The single source of truth for WHICH model fields hold a pause interval.
+    ///
+    /// Layout (all real wall-clock stamps, mirroring the shift Start/Stop stamps):
+    ///  - Pause1..Pause5      — the primary pause of shifts 1..5;
+    ///  - Pause10..Pause19    — shift 1's additional sub-slots;
+    ///  - Pause20..Pause29    — shift 2's additional sub-slots;
+    ///  - Pause100..Pause102 and Pause200..Pause202 — legacy extra sub-slots for
+    ///    shifts 1 and 2 respectively.
+    ///
+    /// Yields the raw nullable pairs; callers decide how to interpret unset or
+    /// non-positive intervals. Both consumers — Grundlovsdag holiday math
+    /// (<see cref="CalculateHoursAfterNoon"/>) and pay-line segmentation
+    /// (<see cref="EnumerateWorkedSegments"/>) — read this list, so they agree by
+    /// construction.
+    /// </summary>
+    internal static IEnumerable<(DateTime? Start, DateTime? Stop)> EnumeratePauseIntervals(
+        TimePlanningWorkingHoursModel day)
+    {
+        yield return (day.Pause1StartedAt, day.Pause1StoppedAt);
+        yield return (day.Pause2StartedAt, day.Pause2StoppedAt);
+        yield return (day.Pause3StartedAt, day.Pause3StoppedAt);
+        yield return (day.Pause4StartedAt, day.Pause4StoppedAt);
+        yield return (day.Pause5StartedAt, day.Pause5StoppedAt);
+        yield return (day.Pause10StartedAt, day.Pause10StoppedAt);
+        yield return (day.Pause11StartedAt, day.Pause11StoppedAt);
+        yield return (day.Pause12StartedAt, day.Pause12StoppedAt);
+        yield return (day.Pause13StartedAt, day.Pause13StoppedAt);
+        yield return (day.Pause14StartedAt, day.Pause14StoppedAt);
+        yield return (day.Pause15StartedAt, day.Pause15StoppedAt);
+        yield return (day.Pause16StartedAt, day.Pause16StoppedAt);
+        yield return (day.Pause17StartedAt, day.Pause17StoppedAt);
+        yield return (day.Pause18StartedAt, day.Pause18StoppedAt);
+        yield return (day.Pause19StartedAt, day.Pause19StoppedAt);
+        yield return (day.Pause20StartedAt, day.Pause20StoppedAt);
+        yield return (day.Pause21StartedAt, day.Pause21StoppedAt);
+        yield return (day.Pause22StartedAt, day.Pause22StoppedAt);
+        yield return (day.Pause23StartedAt, day.Pause23StoppedAt);
+        yield return (day.Pause24StartedAt, day.Pause24StoppedAt);
+        yield return (day.Pause25StartedAt, day.Pause25StoppedAt);
+        yield return (day.Pause26StartedAt, day.Pause26StoppedAt);
+        yield return (day.Pause27StartedAt, day.Pause27StoppedAt);
+        yield return (day.Pause28StartedAt, day.Pause28StoppedAt);
+        yield return (day.Pause29StartedAt, day.Pause29StoppedAt);
+        yield return (day.Pause100StartedAt, day.Pause100StoppedAt);
+        yield return (day.Pause101StartedAt, day.Pause101StoppedAt);
+        yield return (day.Pause102StartedAt, day.Pause102StoppedAt);
+        yield return (day.Pause200StartedAt, day.Pause200StoppedAt);
+        yield return (day.Pause201StartedAt, day.Pause201StoppedAt);
+        yield return (day.Pause202StartedAt, day.Pause202StoppedAt);
     }
 
     private string GetColumnLetter(int columnIndex)
@@ -4665,7 +4693,27 @@ public class TimePlanningWorkingHoursService(
             return new List<PlanRegistrationPayLine>();
         }
 
+        var calculatedAtUtc = DateTime.UtcNow;
         var dayCode = GetDayCodeForDate(date);
+
+        // Does this rule set opt in to the sequential normal-time/overtime reading of
+        // tier 1? Identity, not shape — see PayRuleSetLock.IsNormalTimeSplitPresetName
+        // for why the shape test was wrong and which presets it wrongly caught.
+        var usesNormalTimeSplit = PayRuleSetLock.IsNormalTimeSplitPresetName(payRuleSet.Name);
+
+        // Grundlovsdag noon split. TryGetDayType returns false for GRUNDLOVSDAG, so the
+        // day has no DayType to hang time bands on and this cannot be expressed in the
+        // preset data — it is implemented here instead.
+        if (usesNormalTimeSplit && dayCode == "GRUNDLOVSDAG")
+        {
+            var grundlovsdagLines = CalculateGrundlovsdagPayLines(
+                planRegistrationId, dayModel, totalSeconds, payRuleSet, calculatedAtUtc);
+
+            if (grundlovsdagLines != null)
+            {
+                return MapDefaultToNormal(MergeByPayCode(grundlovsdagLines));
+            }
+        }
 
         // Time-band path: if PayRuleSet defines time-band rules for the day type, use them.
         if (TryGetDayType(date, dayCode, out var dayType))
@@ -4677,13 +4725,66 @@ public class TimePlanningWorkingHoursService(
 
             if (hasTimeBandRule)
             {
+                // WHY the split below: clock-time supplements (Saturday-afternoon
+                // animal care, Sunday/holiday) are payable per § 50 stk. 4 d only
+                // "For arbejde I NORMAL ARBEJDSTID". Minutes worked beyond the daily
+                // norm are overtime and are paid by the overtime steps INSTEAD of the
+                // supplement — never both. So normal time is attributed by clock
+                // position (bands) and the overflow purely by duration (tiers 2..n).
+                //
+                // Before this, the routing was exclusive: any band for the day meant
+                // the tiers never ran and every overtime minute was silently lost.
+                var orderedTiers = payRuleSet.DayRules?
+                    .SingleOrDefault(dr => dr.DayCode == dayCode)?
+                    .Tiers?
+                    .OrderBy(t => t.Order)
+                    .ToList();
+
+                // The split is OPT-IN BY RULE-SET IDENTITY (usesNormalTimeSplit), not by
+                // rule-set shape. Reinterpreting tier 1 as a normal-time boundary is only
+                // correct for the two § 50 praktikant presets; thirteen other preset/day
+                // combinations have the same shape but encode tier 1 as a MIRROR of their
+                // clock split, and reinterpreting those would award afternoon supplements
+                // to morning-only Saturdays. See PayRuleSetLock.IsNormalTimeSplitPresetName.
+                //
+                // Every other rule set — and any opted-in day whose rule lacks a real
+                // overtime progression (>1 tier with an explicit boundary on tier 1) —
+                // falls through to the historical bands-only behaviour below, unchanged.
+                if (usesNormalTimeSplit
+                    && orderedTiers is { Count: > 1 }
+                    && orderedTiers[0].UpToSeconds is { } normalSeconds)
+                {
+                    var bandSeconds = Math.Min(totalSeconds, normalSeconds);
+                    var overtimeSeconds = Math.Max(0, totalSeconds - normalSeconds);
+
+                    var splitResults = new List<PlanRegistrationPayLine>();
+
+                    // Normal time keeps its clock position — the segments are
+                    // truncated, not rescaled, so e.g. a Saturday shift straddling
+                    // 12:00 still splits at 12:00.
+                    foreach (var (start, stop) in EnumerateShiftSegmentsTruncated(dayModel, bandSeconds))
+                    {
+                        splitResults.AddRange(PayLineGenerator.GenerateTimeBandPayLines(
+                            planRegistrationId, dayType, start, stop, payRuleSet, calculatedAtUtc));
+                    }
+
+                    if (overtimeSeconds > 0)
+                    {
+                        splitResults.AddRange(GenerateOvertimeTierPayLines(
+                            planRegistrationId, orderedTiers, normalSeconds, overtimeSeconds,
+                            payRuleSet, calculatedAtUtc));
+                    }
+
+                    return MapDefaultToNormal(MergeByPayCode(splitResults));
+                }
+
                 var bandResults = new List<PlanRegistrationPayLine>();
                 foreach (var (start, stop) in EnumerateShiftSegments(dayModel))
                 {
                     bandResults.AddRange(PayLineGenerator.GenerateTimeBandPayLines(
-                        planRegistrationId, dayType, start, stop, payRuleSet, DateTime.UtcNow));
+                        planRegistrationId, dayType, start, stop, payRuleSet, calculatedAtUtc));
                 }
-                return MergeByPayCode(bandResults);
+                return MapDefaultToNormal(MergeByPayCode(bandResults));
             }
         }
 
@@ -4693,7 +4794,379 @@ public class TimePlanningWorkingHoursService(
             return new List<PlanRegistrationPayLine>();
         }
 
-        return PayLineGenerator.GeneratePayLines(
-            planRegistrationId, dayCode, totalSeconds, payRuleSet, DateTime.UtcNow);
+        return MapDefaultToNormal(PayLineGenerator.GeneratePayLines(
+            planRegistrationId, dayCode, totalSeconds, payRuleSet, calculatedAtUtc));
+    }
+
+    /// <summary>
+    /// The pause intervals of the day as non-overlapping, ascending seconds-of-day
+    /// ranges. Built from <see cref="EnumeratePauseIntervals"/> (the shared field list)
+    /// and resolved with the same <see cref="ResolveShiftSeconds"/> rules as the shifts,
+    /// so a pause running past midnight is clamped to end-of-day exactly as a shift is.
+    ///
+    /// Overlapping or duplicated pause rows are merged, so a second that is covered by
+    /// two pause slots is only ever removed once.
+    /// </summary>
+    private static List<(int Start, int Stop)> BuildMergedPauseSegments(
+        TimePlanningWorkingHoursModel dayModel)
+    {
+        var pauses = new List<(int Start, int Stop)>();
+
+        foreach (var (start, stop) in EnumeratePauseIntervals(dayModel))
+        {
+            var resolved = ResolveShiftSeconds(start, stop);
+            if (resolved.HasValue)
+            {
+                pauses.Add(resolved.Value);
+            }
+        }
+
+        if (pauses.Count <= 1)
+        {
+            return pauses;
+        }
+
+        pauses.Sort((a, b) => a.Start.CompareTo(b.Start));
+
+        var merged = new List<(int Start, int Stop)> { pauses[0] };
+        for (var i = 1; i < pauses.Count; i++)
+        {
+            var last = merged[^1];
+            var current = pauses[i];
+
+            if (current.Start <= last.Stop)
+            {
+                merged[^1] = (last.Start, Math.Max(last.Stop, current.Stop));
+            }
+            else
+            {
+                merged.Add(current);
+            }
+        }
+
+        return merged;
+    }
+
+    /// <summary>
+    /// Yields the WORKED (netto) portions of the day as seconds-of-day ranges: the shift
+    /// segments of <see cref="EnumerateShiftSegments"/> with every pause interval cut out.
+    ///
+    /// WHY this exists: shift segments are GROSS (pauses included) while every seconds
+    /// budget in the pay engine — <c>totalSeconds</c> comes straight from netto hours — is
+    /// NETTO. Consuming a netto budget against gross segments charges pause time to the
+    /// budget, which pulls the normal-time boundary earlier in the day and silently steals
+    /// afternoon-supplement minutes from the worker.
+    ///
+    /// The emitted ranges keep their real clock positions, so band attribution is
+    /// unaffected; only the pause seconds are removed.
+    /// </summary>
+    internal static IEnumerable<(int Start, int Stop)> EnumerateWorkedSegments(
+        TimePlanningWorkingHoursModel dayModel)
+    {
+        var pauses = BuildMergedPauseSegments(dayModel);
+
+        foreach (var (start, stop) in EnumerateShiftSegments(dayModel))
+        {
+            if (pauses.Count == 0)
+            {
+                yield return (start, stop);
+                continue;
+            }
+
+            var cursor = start;
+
+            foreach (var (pauseStart, pauseStop) in pauses)
+            {
+                if (pauseStop <= cursor)
+                {
+                    continue;
+                }
+
+                if (pauseStart >= stop)
+                {
+                    break;
+                }
+
+                if (pauseStart > cursor)
+                {
+                    yield return (cursor, pauseStart);
+                }
+
+                cursor = pauseStop;
+
+                if (cursor >= stop)
+                {
+                    break;
+                }
+            }
+
+            if (cursor < stop)
+            {
+                yield return (cursor, stop);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Walks <see cref="EnumerateWorkedSegments"/> in order and yields only the first
+    /// <paramref name="budgetSeconds"/> of WORKED time. The segment that crosses the
+    /// budget boundary is split (its stop is pulled back); later segments are dropped.
+    ///
+    /// WHY truncate rather than scale: the surviving seconds must keep their real
+    /// clock position, because the time bands they are attributed against are defined
+    /// in seconds-of-day (e.g. the Saturday 12:00 animal-care boundary).
+    ///
+    /// WHY worked and not gross segments: the budget handed in is derived from netto
+    /// hours, so pause seconds must not consume it — see
+    /// <see cref="EnumerateWorkedSegments"/>. Pause time is never emitted, so it can
+    /// never be band-attributed as if it had been worked either.
+    /// </summary>
+    internal static IEnumerable<(int Start, int Stop)> EnumerateShiftSegmentsTruncated(
+        TimePlanningWorkingHoursModel dayModel,
+        int budgetSeconds)
+    {
+        var remaining = budgetSeconds;
+
+        foreach (var (start, stop) in EnumerateWorkedSegments(dayModel))
+        {
+            if (remaining <= 0)
+            {
+                yield break;
+            }
+
+            var duration = stop - start;
+            if (duration <= remaining)
+            {
+                remaining -= duration;
+                yield return (start, stop);
+            }
+            else
+            {
+                yield return (start, start + remaining);
+                yield break;
+            }
+        }
+    }
+
+    /// <summary>12:00 as a second-of-day — the Grundlovsdag half-day boundary (§ 29).</summary>
+    private const int NoonSecondOfDay = 43200;
+
+    /// <summary>
+    /// Grundlovsdag (5 June) for the opted-in § 50 praktikant presets.
+    ///
+    /// § 29 makes it a half day: minutes before 12:00 are ordinary working time, minutes
+    /// from 12:00 follow søgnehelligdag treatment. GRUNDLOVSDAG has no
+    /// <see cref="DayType"/> (<see cref="TryGetDayType"/> returns false), so the split
+    /// cannot be expressed as preset time bands and is applied here instead.
+    ///
+    /// PRECEDENCE — the two rules do not conflict, they compose, in this order:
+    ///
+    ///  1. THE NORMAL-TIME BOUNDARY WINS FIRST AND ABSOLUTELY. Only the first
+    ///     <c>tier 1 UpToSeconds</c> (26640 s) of WORKED time is eligible for any
+    ///     day-classification code at all. Everything beyond it is overtime and goes to
+    ///     the GRUNDLOVSDAG tiers 2..n — exactly as on a banded day. Overtime minutes
+    ///     never carry NORMAL nor the søgnehelligdag code, which is the same
+    ///     "supplements only for arbejde i normal arbejdstid" rule as § 50 stk. 4 d.
+    ///
+    ///  2. WITHIN those normal-time seconds, the 12:00 split decides the code by CLOCK
+    ///     POSITION: before noon → tier 1's pay code (ordinary working time, "NORMAL");
+    ///     from noon → the preset's søgnehelligdag treatment.
+    ///
+    ///  3. "SØGNEHELLIGDAG TREATMENT" IS READ FROM THE PRESET'S OWN SUNDAY RULE rather
+    ///     than hard-coded, because that is precisely what the phrase means — treat the
+    ///     minute as if the day were a Sunday. Staldarbejde has an all-day Sunday band, so
+    ///     afternoon minutes become ANIMAL_SUN_HOLIDAY. Andet arbejde has no Sunday bands,
+    ///     so its SUNDAY tier ladder runs (first 7200 s OVERTIME_50, remainder
+    ///     OVERTIME_80) over the afternoon normal-time seconds only, restarting at zero.
+    ///
+    /// Andet arbejde is the case worth spelling out: its afternoon ladder and the daily
+    /// overtime overflow both emit OVERTIME_50/OVERTIME_80. That is addition, not a
+    /// conflict — the two minute sets are disjoint by construction (step 1 partitions the
+    /// day before step 2 ever runs), so MergeByPayCode simply sums them and the
+    /// conservation invariant still holds.
+    ///
+    /// Returns null when the preset's GRUNDLOVSDAG rule does not describe a normal-time
+    /// boundary followed by an overtime progression; the caller then falls through to the
+    /// historical routing rather than inventing a boundary.
+    /// </summary>
+    private static List<PlanRegistrationPayLine>? CalculateGrundlovsdagPayLines(
+        int planRegistrationId,
+        TimePlanningWorkingHoursModel dayModel,
+        int totalSeconds,
+        PayRuleSet payRuleSet,
+        DateTime calculatedAtUtc)
+    {
+        var orderedTiers = payRuleSet.DayRules?
+            .SingleOrDefault(dr => dr.DayCode == "GRUNDLOVSDAG")?
+            .Tiers?
+            .OrderBy(t => t.Order)
+            .ToList();
+
+        if (orderedTiers is not { Count: > 1 }
+            || orderedTiers[0].UpToSeconds is not { } normalSeconds)
+        {
+            return null;
+        }
+
+        var result = new List<PlanRegistrationPayLine>();
+
+        // Step 1: partition the day at the normal-time boundary.
+        var normalTimeSeconds = Math.Min(totalSeconds, normalSeconds);
+        var overtimeSeconds = Math.Max(0, totalSeconds - normalSeconds);
+
+        // Step 2: split the normal-time seconds at 12:00 by real clock position.
+        var morningTier = orderedTiers[0];
+        var afternoonSegments = new List<(int Start, int Stop)>();
+
+        foreach (var (start, stop) in EnumerateShiftSegmentsTruncated(dayModel, normalTimeSeconds))
+        {
+            var morningStop = Math.Min(stop, NoonSecondOfDay);
+            if (morningStop > start)
+            {
+                result.Add(new PlanRegistrationPayLine
+                {
+                    PlanRegistrationId = planRegistrationId,
+                    PayCode = morningTier.PayCode,
+                    PayrollCode = morningTier.PayrollCode,
+                    HoursInSeconds = morningStop - start,
+                    Hours = (morningStop - start) / 3600.0,
+                    PayRuleSetId = payRuleSet.Id,
+                    CalculatedAt = calculatedAtUtc
+                });
+            }
+
+            var afternoonStart = Math.Max(start, NoonSecondOfDay);
+            if (stop > afternoonStart)
+            {
+                afternoonSegments.Add((afternoonStart, stop));
+            }
+        }
+
+        // Step 3: the afternoon normal-time seconds get the preset's Sunday treatment.
+        var afternoonSeconds = afternoonSegments.Sum(s => s.Stop - s.Start);
+        if (afternoonSeconds > 0)
+        {
+            var hasSundayBands = payRuleSet.DayTypeRules?
+                .Any(r => r.DayType == DayType.Sunday
+                    && r.TimeBandRules != null
+                    && r.TimeBandRules.Any()) ?? false;
+
+            if (hasSundayBands)
+            {
+                foreach (var (start, stop) in afternoonSegments)
+                {
+                    result.AddRange(PayLineGenerator.GenerateTimeBandPayLines(
+                        planRegistrationId, DayType.Sunday, start, stop, payRuleSet, calculatedAtUtc));
+                }
+            }
+            else
+            {
+                result.AddRange(PayLineGenerator.GeneratePayLines(
+                    planRegistrationId, "SUNDAY", afternoonSeconds, payRuleSet, calculatedAtUtc));
+            }
+        }
+
+        // Step 1 (continued): everything past the boundary is plain overtime.
+        if (overtimeSeconds > 0)
+        {
+            result.AddRange(GenerateOvertimeTierPayLines(
+                planRegistrationId, orderedTiers, normalSeconds, overtimeSeconds,
+                payRuleSet, calculatedAtUtc));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Attributes overtime seconds across the day rule's tiers FROM TIER 2 ONWARD,
+    /// with the same cumulative-threshold semantics as
+    /// <see cref="PayLineGenerator.GeneratePayLines"/>: each tier absorbs up to
+    /// (UpToSeconds - cumulative) seconds, and a null UpToSeconds absorbs the rest.
+    ///
+    /// WHY here and not in the base generator: GeneratePayLines takes a whole
+    /// PayRuleSet plus a day code and always starts at tier 1, so it cannot be asked
+    /// for "tiers 2..n". Tier 1 is skipped because it has already been fully consumed
+    /// by the normal-time bands (this method is only called when worked time exceeds
+    /// the tier-1 boundary), hence <paramref name="cumulativeSeconds"/> starts at that
+    /// boundary.
+    /// </summary>
+    private static List<PlanRegistrationPayLine> GenerateOvertimeTierPayLines(
+        int planRegistrationId,
+        IReadOnlyList<PayTierRule> orderedTiers,
+        int cumulativeSeconds,
+        int overtimeSeconds,
+        PayRuleSet payRuleSet,
+        DateTime calculatedAtUtc)
+    {
+        var result = new List<PlanRegistrationPayLine>();
+        var remainingSeconds = overtimeSeconds;
+
+        for (var i = 1; i < orderedTiers.Count; i++)
+        {
+            if (remainingSeconds <= 0)
+            {
+                break;
+            }
+
+            var tier = orderedTiers[i];
+
+            int tierSeconds;
+            if (tier.UpToSeconds.HasValue)
+            {
+                var tierCap = tier.UpToSeconds.Value - cumulativeSeconds;
+                tierSeconds = Math.Min(remainingSeconds, tierCap);
+            }
+            else
+            {
+                tierSeconds = remainingSeconds;
+            }
+
+            if (tierSeconds > 0)
+            {
+                result.Add(new PlanRegistrationPayLine
+                {
+                    PlanRegistrationId = planRegistrationId,
+                    PayCode = tier.PayCode,
+                    PayrollCode = tier.PayrollCode,
+                    HoursInSeconds = tierSeconds,
+                    Hours = tierSeconds / 3600.0,
+                    PayRuleSetId = payRuleSet.Id,
+                    CalculatedAt = calculatedAtUtc
+                });
+
+                remainingSeconds -= tierSeconds;
+                cumulativeSeconds += tierSeconds;
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Rewrites the base package's no-rule fallback pay code "DEFAULT" to "NORMAL".
+    ///
+    /// WHY here: <see cref="PayLineGenerator"/> emits "DEFAULT" when no PayDayRule /
+    /// PayDayTypeRule matches the day, but the agreed semantics are that unmatched
+    /// minutes are ordinary working time. The base package cannot be changed from this
+    /// dev mode, so CalculatePayLinesForDay — the single exit point for pay-line
+    /// calculation — applies the mapping. TODO: move this into PayLineGenerator at the
+    /// next base release and drop this helper.
+    /// Re-merges only when something was actually rewritten, so a day that produced
+    /// both "NORMAL" and "DEFAULT" lines does not end up with two "NORMAL" rows.
+    /// </summary>
+    private static List<PlanRegistrationPayLine> MapDefaultToNormal(List<PlanRegistrationPayLine> lines)
+    {
+        var rewrote = false;
+
+        foreach (var line in lines)
+        {
+            if (line.PayCode == "DEFAULT")
+            {
+                line.PayCode = "NORMAL";
+                rewrote = true;
+            }
+        }
+
+        return rewrote ? MergeByPayCode(lines) : lines;
     }
 }
