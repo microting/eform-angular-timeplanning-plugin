@@ -510,7 +510,7 @@ preference.
 
 | Family | Presets | Status |
 |---|---|---|
-| **Udenlandske praktikanter** (Stald, Andet) | 2 | ✅ **Corrected 2026-08-07.** Tiers, Saturday, Sunday and the § 29 Grundlovsdag noon split all match. Open: per-day vs per-hour supplement unit; pay codes shared with adult Dyrehold whose amounts differ |
+| **Udenlandske praktikanter** (Stald, Andet) | 2 | ✅ **Corrected 2026-08-07.** Tiers, Saturday, Sunday and the § 29 Grundlovsdag noon split all match. **Data migration shipped 2026-08-07** (eform-timeplanning-base `CorrectPraktikantSection50Tiers`, v10.0.57): existing customer rule sets under either validity-period name are rewritten to the corrected tiers idempotently, so pre-correction rows now take the split path and earn overtime like freshly created ones. Open: per-day vs per-hour supplement unit; pay codes shared with adult Dyrehold whose amounts differ |
 | Jordbrug Standard / Dyrehold | 2 | ❌ fabricated Saturday supplement; Dyrehold band errors; flat Grundlovsdag |
 | Jordbrug Elev u18 / o18 / u18 Dyrehold | 3 | ❌ wrong first tier (o18), missing top tier (u18), fabricated u18/o18 split |
 | Gartneri Standard / Elev ×2 | 3 | ❌ Sunday not tiered; Saturday code; 1. maj missing; Elev tiers |
@@ -585,10 +585,13 @@ The 8 h/day cap has no basis in any text.
 - **Weekday bands shadow the tiers** on the 8 "Standard" presets, so several tier
   errors above are currently invisible rather than harmless.
 - **Presets are copy-at-create-time snapshots.** Correcting a preset does **not**
-  change rule sets already created, and no migration exists. Any future correction
-  needs a migration story *before* it ships — see the 2026-08-07 regression where a
-  name-gated engine change met stale rows and moved up to 6 h/Saturday onto an
-  afternoon supplement (fixed by additionally requiring the corrected tier shape).
+  change rule sets already created. Any future correction needs a migration story
+  *before* it ships — see the 2026-08-07 regression where a name-gated engine
+  change met stale rows and moved up to 6 h/Saturday onto an afternoon supplement
+  (fixed by additionally requiring the corrected tier shape). The praktikant
+  correction's migration shipped 2026-08-07 (`CorrectPraktikantSection50Tiers`,
+  eform-timeplanning-base v10.0.57); the other 37 presets still have **no**
+  migration, and their 18 recorded defects remain undecided.
 - **Pay lines are never persisted**, so re-exporting an already-paid period reflects
   today's rules, not the rules it was paid under. There is no snapshot to reconcile.
 
