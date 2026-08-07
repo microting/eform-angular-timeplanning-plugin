@@ -364,3 +364,117 @@ Any further work here needs end-to-end tests through the router, per day type, s
 ## Naming drift
 
 Both praktikant presets are named `… 2026-2029` in the frontend catalogue while the C# fixtures still say `… 2024-2026`. Existing customer rows will carry whichever name was current when they were created — the same rename-without-migration mismatch that silently unlocked the GLS-A presets (fixed by normalising the trailing validity period when matching).
+
+---
+
+# "Normal daglig arbejdstid" — what sets the overtime boundary (decided 2026-08-07)
+
+**Decision: the boundary stays 7,4 t (26640 s) by default. A planned day SHORTER than
+7,4 t does NOT lower it.** Researched against the primary texts; this is the GLS-A
+reading and it is what the presets encode.
+
+## The asymmetry
+
+§ 22 stk. 1 triggers overtime *"efter normal daglig arbejdstids ophør"* but **never
+defines that figure numerically**. Searching the 2026-2029 agreement for
+`planlagt arbejdstid`, `arbejdsplan`, `vagtplan`, `aftalt arbejdstid`: `vagtplan` and
+`aftalt arbejdstid` do not occur at all, and the others appear **only inside opt-in
+flexible regimes**, never in the ordinary regime § 22 governs.
+
+| Planned day | Does the plan set the overtime line? | Authority |
+|---|---|---|
+| **Longer** than 7,4 t | **Yes** — but only within an opt-in regime, up to its ceiling | § 9 stk. 4 (40 t/uge banked), § 9 stk. 5 (premium only above **45** t/uge), protokollat stk. 1 (*"Ingen arbejdsdag kan være under 6 timer eller over 9,25 timer"*) |
+| **Shorter** than 7,4 t | **No — no clause anywhere lowers it** | — |
+
+Two clauses cut against lowering it:
+
+- § 22 stk. 4: *"Ved opgørelse af overarbejde fradrages forsømt tid af **den normale
+  ugentlige arbejdstid**…"* — the reckoning is anchored weekly.
+- § 8 stk. 4 c (deltid): *"…så der ikke må ydes de beskæftigede nogen form for
+  lønmæssig kompensation, **fordi arbejdstiden er kortere end den normale**."*
+
+7,4 t is the agreement's own daily unit — § 9 stk. 2 reduces the weekly norm by
+*"7,4 timer pr. dag"* for søgnehelligdage — though it is deployed there for SH
+reduction rather than stated as the overtime trigger.
+
+**For praktikanter the question is largely moot anyway.** The circular's monthly
+figures divide out to **160,33 t/md** (13.315,41 ÷ 83,05; and 37 × 52 ÷ 12 = 160,33),
+i.e. a praktikant is a **full-timer at 37 t/uge by definition**. A short planned day is
+already paid inside that salary; the next hour draws against the same 37-hour week.
+
+**Unsettled at the margin (honest limit):** because § 22 stk. 1 never defines the
+figure, an employer with a fixed *written* daily schedule could argue that schedule is
+the normal daily working time. No clause, protokollat, fortolkningsbidrag or published
+voldgift resolves it. Worth putting to GLS-A in writing if a customer disputes it:
+> *"For en udenlandsk praktikant på månedsløn, hvis den planlagte arbejdstid en given
+> dag er kortere end 7,4 timer — hvornår begynder overarbejde: ved den planlagte
+> arbejdstids ophør eller ved 7,4 timer?"*
+
+Note the contrary pattern elsewhere in the Danish market: Industriens Overenskomst
+§ 13 stk. 2 *defines* overtime as work outside *"den i den enkelte uge fastlagte
+daglige arbejdstid for den enkelte medarbejder"* — plan-anchored. That is a different
+agreement and does not govern here, but it explains why the plan-anchored reading is a
+reasonable expectation.
+
+## 296 timer / 8 uger is an average, not a weekly cap
+
+The circular reads *"37 timer pr. uge **eller** 296 timer i en 8 ugers periode"*; the
+agreement removes the ambiguity — § 8 stk. 2: *"indtil 37 timer **i gennemsnit** over en
+periode på op til 8 uger."*
+
+- A single 40-hour week inside the window creates **no** overtime by itself.
+- 296 is **not a constant** — § 9 stk. 2 reduces the weekly norm by 7,4 t per
+  søgnehelligdag falling in the window.
+- Averaging the *weekly* norm does not license unpaid overrun of the *daily* one:
+  § 22 stk. 1 still applies per day.
+- Gap worth noting: § 8 stk. 2 imposes **no arbejdsplan requirement and no weekly
+  ceiling**, unlike § 9 stk. 5 which demands a 3-week rolling plan and pays premium
+  above 45 t/uge.
+
+## Weekly netting (§ 22 stk. 4) — not yet modelled
+
+> *"Ved opgørelse af overarbejde fradrages forsømt tid af den normale ugentlige
+> arbejdstid, medmindre forsømmelsen skyldes en medarbejderen utilregnelig grund eller
+> en grund, som er rettidigt anmeldt til arbejdsgiveren og godkendt af denne."*
+
+Overtime is therefore **not** a pure per-day sum: culpable absence within the week is
+netted off first. The two exceptions must be modellable per absence, or the netting
+will wrongly erode overtime for sick or approved-absence workers. The engine has no
+weekly context today, so this is unimplemented.
+
+## Other praktikant details worth keeping
+
+- **Afspadsering is the trainee's choice** — § 50 stk. 4 c: *"Overarbejde afspadseres
+  eller betales med overarbejdsbetaling **efter praktikantens ønske**."*
+- **Overtime is a multiple of the praktikant's own rate**, not the § 22 C-løn basis used
+  for ordinary staff. Verified: 83,05 × 1,5 = 124,58 and × 1,8 = 149,49; same for the
+  other two steps, exact to the øre.
+- **Three defects in GLS-A's own circular** (marts 2026), all present in the published
+  PDF: the overtime table is headed *"7 - 12 måneders praktik"* while carrying the
+  **7–18** rates (confirmed by the arithmetic above); `15,446,19` has a comma where a
+  period belongs (§ 50 stk. 4 b confirms **15.446,19**); and `ferieberettede` is a typo.
+
+## Circular — Arbejdstid and Overarbejdsbetaling, verbatim
+
+```
+Overarbejdsbetaling            2 første timer hverdage
+                               samt søn- og helligdage    Herudover 80 %
+                                        +50 %
+                                    Kr. pr. time            Kr. pr. time
+0 - 6 måneders praktik                124,58                  149,49
+7 - 12 måneders praktik               144,51                  173,41
+7 - 12 måneders praktik (fyldt 25 år) 167,31                  200,77
+
+Arbejdstid
+Staldarbejde Den normale arbejdstid er indtil 37 timer pr. uge eller 296 timer i en 8 ugers
+periode og kan lægges på alle ugens dage, hele døgnet.
+Andet arbejde Den normale arbejdstid er indtil 37 timer pr. uge og kan lægges mandag til
+lørdag mellem kl. 6.00 og 18.00.
+
+Tillægsbetaling ved staldarbejde (inden for normal arbejdstid)          Kr. pr. dag
+Lørdag efter kl. 12.00                                                        73,90
+Søn- og helligdage                                                           177,60
+```
+
+Source: [GLS-A Lønoversigt, udenlandske praktikanter landbrug, marts 2026](https://www.gls-a.dk/wp-content/uploads/2026/04/Praktikanter-landbrug.pdf) ·
+[Jordbrug 2026-2029](https://www.3f.dk/-/media/files/artikler/overenskomst/den-groenne-gruppe/overenskomster/4010---jordbrug-2026-2029---2,-d-,-udgave---06,-d-,07,-d-,26.pdf)
