@@ -237,3 +237,130 @@ These mismatches exist against both the 2024-2026 and 2026-2029 texts (unchanged
 6. **Skovbrug** Saturday: text treats all Saturday work as overtime from hour 1; preset gives 6h "normal" first.
 7. **Gartneri** Sunday/holiday: text tiers it 50% (first 2h) / 100%; preset uses a single all-day SUN_HOLIDAY code.
 8. **Elev u18 8h/day threshold** (Gartneri/Skovbrug/Golf/Agro): no basis in the overenskomst texts — likely from the statutory youth-work rules; verify intent before changing.
+
+---
+
+# Overarbejde × forskudt tid: how the two interact (research 2026-08-07)
+
+**Scope note.** This system reports **how many minutes of a work period fall under which rule**. It does not compute money. Everything below is therefore framed as *minute attribution*; rates are quoted only where they prove which rule an hour belongs to.
+
+## There is no universal Danish rule — it is per agreement
+
+Researched against primary agreement PDFs. The three patterns found:
+
+| Agreement | Overtime hour inside a displaced-time band | Evidence |
+|---|---|---|
+| **KA / Krifa** (Landbrug svine/kvæg, plantebrug, maskinstation; Grøn) | **Cumulative — both** | Hovedoverenskomst § 16 stk. 5: *"Udføres overarbejde på særlige tidspunkter … betales **foruden overtidstillæg også tillæg for arbejde på særlige tidspunkter**."* |
+| **GLS-A Jordbrug — dyrehold (§ 15)** | **Not cumulative** | § 15 opens *"ved arbejde **inden for normal arbejdstid**"* — an overtime hour is outside normal time, so the stald supplement cannot attach to it. |
+| **GLS-A Jordbrug markarbejde (§ 23), Gartneri (§ 23), Skovbrug (§ 22)** | **Agreement is silent** | Exhaustive search for `samtidig`, `foruden`, `i tilslutning`, `ydes ikke tillæg`, `bortfalder` finds no clause either way. |
+
+Wider-market benchmarks, for the silent cases: Industriens Overenskomst § 14 stk. 6 stacks them **if the overtime is contiguous with the displaced shift**; Anlægsgartner (4002) § 11 stk. 11 stacks them outright; the municipal sector defines them as disjoint (*"Overarbejde er ikke arbejde i forskudt tid"*, KL 04.89 § 1 stk. 2).
+
+Supporting detail for the GLS-A Jordbrug reading: § 22's overtime figures are **totals**, not add-ons — the column is headed `Timeløn i alt pr. overtime`, and C-løn × 1.30 / × 1.80 reproduces the published figures to the øre for all three years.
+
+**Consequence for this system:** the interaction cannot be a single global engine rule. It belongs as a per-rule-set property.
+
+## The engine currently satisfies none of these
+
+`TimePlanningWorkingHoursService.CalculatePayLinesForDay` routes a day **exclusively**: if the matching `DayType` has any `TimeBandRules`, only band attribution runs and the `PayDayRule` tiers are never evaluated.
+
+Because the GLS-A/KA "Standard" presets define weekday bands, their overtime tiers are unreachable — a 12-hour weekday yields one `NORMAL` line of 43200 s and **no overtime minutes at all**. This is wrong under every reading above: under the cumulative reading the overtime minutes are missing, and under the non-cumulative reading the minutes past the daily norm should have been attributed to the overtime rule *instead of* the band rule.
+
+Affected presets (weekday tiers shadowed by weekday bands) — 8 of 39:
+
+Jordbrug Standard · Jordbrug Dyrehold · Gartneri Standard · Skovbrug Standard · KA Landbrug Svine/Kvæg · KA Landbrug Plantebrug · KA Landbrug Maskinstation · KA Grøn
+
+The 31 remaining presets (all Elev/praktikant variants, Golf, Agroindustri) declare no weekday bands, so their tiers do run.
+
+## Additional Jordbrug/dyrehold discrepancies found
+
+- **Dyrehold 05:00–06:00 `SHIFTED_MORNING` and 18:00–24:00 `SHIFTED_EVENING` bands have no basis in § 15**, which lists only weekday 00:00–05:00, Saturday after 12:00, and Sun/holidays. Minutes are being attributed to two rules that do not exist for dyrehold.
+- **§ 15 Saturday-afternoon and Sunday/holiday supplements are per *day*, not per hour.** Encoding them as hourly pay codes attributes N hours where the agreement triggers once.
+- **The 9h24m tier boundary is an assumption.** § 22 keys off *"efter den normale daglige arbejdstids **ophør**"* — the end of the actual scheduled day. It equals 9h24m only when that day is exactly 7,4 h; under § 9 stk. 5 varying hours and the alternative-scheduling protocol (*"Ingen arbejdsdag … over 9,25 timer"*) it does not.
+
+## Sources
+
+Jordbrug 2026-2029 · Jordbrug 2024-2026 · Jordbrug 2021-2024 · Gartneri 2024-2026 · Skovbrug 2024-2026 (all gls-a.dk / 3f.dk PDFs) · GLS-A Lønoversigt Landbrugsarbejde marts 2026 · KA/Krifa Overenskomst 2025-2028 (krifa.dk) · KA fagoverenskomst Landbrug og Grøn (ka.dk) · Industriens Overenskomst 2025-2028 (co-industri.dk) · Anlægsgartnerarbejde 2025-2028 (3f.dk) · KL Aftale 04.89 (kl.dk).
+
+**Not accessible:** GLS-A member-only guidance on forskudttidstillæg and on udenlandske praktikanter — the most likely place where GLS-A states its administrative practice on the points the text leaves open. Worth checking with a member login before building on the silent cases. Gartneri and Skovbrug exist only as 2024-2026 texts; 2026-2029 versions are pending and may add an interaction clause.
+
+---
+
+# Udenlandske praktikanter, landbrug (§ 50) — authoritative rules
+
+Governing clause is **inside the main Jordbrugsoverenskomst (4010)**, not a separate praktikantaftale:
+
+| Period | Clause |
+|---|---|
+| 2026-03-01 → 2029 | **§ 50. Udenlandske praktikanter** |
+| 2024-03-01 → 2026-02-28 | § 48 |
+| 2021-03-01 → 2024 | § 48 |
+
+The 50 %/80 % overtime wording and the two-item staldarbejde tillæg structure are **verbatim identical across all three generations**. What changed in 2026-2029: a new pensionsafsavnstillæg (stk. 5), and the inheritance clause was narrowed from *"Overenskomstens øvrige bestemmelser er gældende for praktikanter."* to *"… **hvor andet ikke følger af § 50**."*
+
+## Working time — the staldarbejde / andet arbejde fork
+
+§ 50 contains **no arbejdstid provision**; it inherits § 8 and § 9 via stk. 7. GLS-A's own rate sheet restates the result:
+
+> **Staldarbejde** — normal arbejdstid indtil 37 timer pr. uge **eller 296 timer i en 8 ugers periode**, og kan lægges **på alle ugens dage, hele døgnet**.
+> **Andet arbejde** — normal arbejdstid indtil 37 timer pr. uge, **mandag til lørdag mellem kl. 6.00 og 18.00**.
+
+**There is no daily norm anywhere in the agreement** — only the placement window. So "overarbejde efter den normale arbejdstids ophør" has no fixed daily trigger for a praktikant; it depends on the individual praktikaftale. The 7h24m (26640 s) tier boundary currently encoded is an assumption, not agreement text.
+
+This fork is the single biggest attribution difference: **the same Sunday hour is normal time for a stald praktikant and overtime for a field praktikant.**
+
+## Overtime — 50 % / 80 %, and Sunday differs from ordinary workers
+
+§ 50 stk. 4 c, verbatim:
+
+> *"Overarbejde og arbejde på søn- og helligdage afregnes med et tillæg til praktikantens normaltimeløn på **50 % for de første 2 timer og herefter 80 %** eller tilsvarende frihed. Overarbejde afspadseres eller betales med overarbejdsbetaling **efter praktikantens ønske**."*
+
+Note this is *worse in structure* than for ordinary staff on Sundays: § 22 gives ordinary workers +80 % from hour one on søn-/helligdage, whereas a praktikant gets +50 % for the first two hours first. Overtime is **not** restricted for trainees, and the afspadsering/payment choice is the trainee's.
+
+## Supplements
+
+- **Staldarbejde tillæg (§ 50 stk. 4 d)** — praktikanter have their *own* reduced two-item schedule: Saturday afternoon **per day**, Sunday/holiday **per day**. Both carry the limiter *"For arbejde **i normal arbejdstid**"*, so an overtime hour does not additionally trigger them.
+- **No night item.** § 15 pays ordinary dyrehold workers for weekday 00:00–05:00; § 50 stk. 4 d has no equivalent. Since stald normal time may be placed around the clock, a praktikant milking at 03:00 is inside normal time with no supplement item — see open question 1 below.
+- **Forskudttidstillæg (§ 23) is inherited unmodified** via stk. 7 (no trainee reduction). Relevant mainly to *andet arbejde*, whose normal time is confined to 06:00–18:00.
+
+## Weekend / holiday / Grundlovsdag
+
+| | Staldarbejde | Andet arbejde |
+|---|---|---|
+| Saturday before 12:00 | Normal time | Normal time (within 06–18) |
+| Saturday after 12:00 | Normal time + per-day tillæg | Normal time until 18:00 |
+| Sunday / helligdag | Can be **normal time** + per-day tillæg | Outside normal time → **overtime 50 % / 80 %** |
+
+**Grundlovsdag is a half day** — § 29 stk. 1: *"Grundlovsdag er fridag **fra kl. 12.00**. For arbejde efter kl. 12.00 betales som for arbejde på en søgnehelligdag."* Minutes **before** 12:00 are ordinary working time. The same clause makes **24 December** a full fridag paid as a søgnehelligdag.
+
+## Encoding audit — what the presets do vs what § 50 says
+
+| # | Item | Encoded | Agreement | Impact on minute attribution |
+|---|---|---|---|---|
+| 1 | Weekday tiers 50 %/80 % | ✅ | ✅ | correct |
+| 2 | Andet arbejde Saturday = weekday | ✅ | ✅ (Mon–Sat 06–18 is normal) | correct |
+| 3 | Andet arbejde Sun/holiday all overtime | ✅ | ✅ (outside normal time) | correct |
+| 4 | **Grundlovsdag whole day as søn-/helligdag** | both presets | ❌ half day — normal before 12:00 | **morning minutes mis-attributed** |
+| 5 | **Staldarbejde Saturday/Sunday overtime** | never reachable | overtime exists (stk. 4 c) | **all Sat/Sun overtime minutes lost** — bands shadow the tiers |
+| 6 | Stald Sat/Sun supplements as hourly codes | hourly | **per day** | N hours reported where the rule triggers once |
+| 7 | Daily norm 7h24m | 26640 s | no daily norm in text | boundary between NORMAL and OVERTIME is an assumption |
+| 8 | Stald 37 h averaged over **8 weeks** | not modelled | § 8 stk. 2 | weekly/period overtime cannot be detected at all |
+| 9 | Pay codes shared with ordinary Dyrehold preset | `SAT_ANIMAL_AFTERNOON`, `ANIMAL_SUN_HOLIDAY` | praktikant amounts differ | not a minute-attribution issue, but downstream cannot tell the two apart from the code alone — every *other* trainee preset uses `ELEV_`-prefixed codes |
+
+Item 5 is the most serious: for **Staldarbejde**, Saturday, Sunday and holidays declare time bands, so the router takes the band path and the tiers never execute. A praktikant working 12 hours on a Saturday is reported as `SAT_NORMAL` + `SAT_ANIMAL_AFTERNOON` with **zero overtime minutes**. Weekdays are unaffected (no bands). *Andet arbejde* is unaffected throughout (no bands at all).
+
+## Test-coverage gap
+
+The 14 existing praktikant tests in `ExpandedOverenskomstPayLineTests` call `PayLineGenerator.GeneratePayLines` and `GenerateTimeBandPayLines` **directly**, never through `CalculatePayLinesForDay`. Both paths therefore pass in isolation while telling you nothing about which one production takes. `PraktikantUdlStald_Saturday_TierPath_6hNormal_Then_AnimalAfternoon` asserts an outcome that **cannot occur in production** for that preset.
+
+Any further work here needs end-to-end tests through the router, per day type, spanning the boundaries: below / exactly at / above the daily norm, the 12:00 Saturday split, the Grundlovsdag noon split, midnight-spanning stald shifts, and the andet-arbejde 06:00/18:00 window edges.
+
+## Open questions (need GLS-A confirmation, not code changes)
+
+1. **Night stald work for a praktikant.** § 50 stk. 4 d omits the § 15 night item, and 2026-2029's *"hvor andet ikke følger af § 50"* arguably displaces § 15 wholesale. Three defensible readings: § 15's night rate still applies; nothing applies; or § 23 applies. The 2024-2026 wording supported the first reading more cleanly.
+2. **§ 23 forskudttid vs overtime for the same hour** — unresolved in the text for praktikanter *and* for ordinary workers.
+3. **Rate-sheet typo**: GLS-A's overtime table says "7 - 12 måneders praktik" while the wage table and § 50 stk. 4 b say **7–18 months**. Present in both the 2025 and 2026 sheets; treat 7–18 as authoritative.
+
+## Naming drift
+
+Both praktikant presets are named `… 2026-2029` in the frontend catalogue while the C# fixtures still say `… 2024-2026`. Existing customer rows will carry whichever name was current when they were created — the same rename-without-migration mismatch that silently unlocked the GLS-A presets (fixed by normalising the trailing validity period when matching).
