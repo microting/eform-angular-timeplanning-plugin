@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using NUnit.Framework;
+using TimePlanning.Pn.Controllers;
 using TimePlanning.Pn.Infrastructure.Models.PayRuleSet;
 using TimePlanning.Pn.Infrastructure.Models.PayTierRule;
 
@@ -187,5 +191,83 @@ public class PayRuleSetControllerTests : TestBaseSetup
         }
         
         Console.WriteLine("✅ All property casing variations deserialize correctly");
+    }
+
+    [Test]
+    public void Controller_StillRequiresAuthentication()
+    {
+        // Opening up the read endpoints must not have opened them to anonymous callers.
+        var authorizeAttributes = typeof(PayRuleSetController)
+            .GetCustomAttributes<AuthorizeAttribute>(true)
+            .ToList();
+
+        Assert.That(authorizeAttributes, Is.Not.Empty,
+            "PayRuleSetController must keep its class-level [Authorize] — anonymous access stays blocked");
+
+        var allowAnonymous = typeof(PayRuleSetController)
+            .GetCustomAttributes<AllowAnonymousAttribute>(true)
+            .ToList();
+
+        Assert.That(allowAnonymous, Is.Empty,
+            "PayRuleSetController must not be marked [AllowAnonymous]");
+
+        Console.WriteLine("✅ PayRuleSetController still requires an authenticated user");
+    }
+
+    [Test]
+    public void IndexAndRead_AreNotRoleRestricted()
+    {
+        // Listing and reading pay rule sets is open to any authenticated user: a
+        // non-admin has to be able to select a pay rule set for a site. Before this,
+        // a role-restricted GET answered 403, which the Angular HttpErrorInterceptor
+        // escalated into a forced logout.
+        foreach (var methodName in new[] { "Index", "Read" })
+        {
+            var method = typeof(PayRuleSetController).GetMethod(methodName);
+            Assert.That(method, Is.Not.Null, $"PayRuleSetController.{methodName} must exist");
+
+            var roleRestricted = method!
+                .GetCustomAttributes<AuthorizeAttribute>(true)
+                .Where(a => !string.IsNullOrWhiteSpace(a.Roles))
+                .ToList();
+
+            Assert.That(roleRestricted, Is.Empty,
+                $"{methodName} must NOT carry an AuthorizeAttribute with roles — found: " +
+                string.Join(", ", roleRestricted.Select(a => a.Roles)));
+        }
+
+        Console.WriteLine("✅ Index and Read are readable by any authenticated user");
+    }
+
+    [Test]
+    public void CreateUpdateDelete_RequireAdminRole()
+    {
+        // Authoring stays admin-only.
+        foreach (var methodName in new[] { "Create", "Update", "Delete" })
+        {
+            var method = typeof(PayRuleSetController).GetMethod(methodName);
+            Assert.That(method, Is.Not.Null, $"PayRuleSetController.{methodName} must exist");
+
+            var authorizeAttributes = method!
+                .GetCustomAttributes<AuthorizeAttribute>(true)
+                .ToList();
+
+            Assert.That(authorizeAttributes, Is.Not.Empty,
+                $"{methodName} must carry an AuthorizeAttribute");
+
+            var roles = authorizeAttributes
+                .Where(a => !string.IsNullOrWhiteSpace(a.Roles))
+                .SelectMany(a => a.Roles!.Split(','))
+                .Select(r => r.Trim())
+                .ToList();
+
+            Assert.That(
+                roles.Any(r => string.Equals(r, EformRole.Admin, StringComparison.OrdinalIgnoreCase)),
+                Is.True,
+                $"{methodName} must be restricted to the '{EformRole.Admin}' role — found: " +
+                string.Join(", ", roles));
+        }
+
+        Console.WriteLine("✅ Create, Update and Delete remain admin-only");
     }
 }

@@ -2627,10 +2627,10 @@ public class TimePlanningWorkingHoursService(
             if (assignedSite.PayRuleSetId.HasValue)
             {
                 payRuleSet = await dbContext.PayRuleSets
-                    .Include(p => p.DayRules)
-                    .ThenInclude(d => d.Tiers)
-                    .Include(p => p.DayTypeRules)
-                    .ThenInclude(d => d.TimeBandRules)
+                    .Include(p => p.DayRules.Where(d => d.WorkflowState != Constants.WorkflowStates.Removed))
+                    .ThenInclude(d => d.Tiers.Where(t => t.WorkflowState != Constants.WorkflowStates.Removed))
+                    .Include(p => p.DayTypeRules.Where(d => d.WorkflowState != Constants.WorkflowStates.Removed))
+                    .ThenInclude(d => d.TimeBandRules.Where(b => b.WorkflowState != Constants.WorkflowStates.Removed))
                     .FirstOrDefaultAsync(p => p.Id == assignedSite.PayRuleSetId.Value);
             }
 
@@ -2638,7 +2638,10 @@ public class TimePlanningWorkingHoursService(
             var culture = new CultureInfo(language.LanguageCode);
             Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
 
-            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
+            // The suffix must be unique: the timestamp only has second precision, so two
+            // exports started within the same second would target the same file — and the
+            // first one's returned stream still holds it open, failing the second.
+            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}";
             var filePath = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
             // Fetch data early so we can pre-compute pay lines for header discovery
@@ -2648,9 +2651,12 @@ public class TimePlanningWorkingHoursService(
             // remove the first entry from the content.Model
             var timePlannings = content.Model.Skip(1).ToList();
 
-            // Pre-compute pay lines for each day and collect unique pay codes
+            // Pre-compute pay lines for each day and collect unique pay codes.
+            // Seed from the codes DECLARED by the site's pay-rule-set so the columns exist
+            // even when the selected period contains no registered time at all
+            // (GetDeclaredPayCodes returns an empty list when payRuleSet is null).
             var payLinesByDate = new Dictionary<DateTime, List<PlanRegistrationPayLine>>();
-            var allPayCodes = new List<string>();
+            var allPayCodes = GetDeclaredPayCodes(payRuleSet);
 
             if (payRuleSet != null)
             {
@@ -2670,6 +2676,7 @@ public class TimePlanningWorkingHoursService(
 
                     payLinesByDate[planning.Date] = payLines;
 
+                    // Defensive fallback: union in any code produced outside the declaration.
                     foreach (var pl in payLines)
                     {
                         if (!allPayCodes.Contains(pl.PayCode))
@@ -3227,7 +3234,9 @@ public class TimePlanningWorkingHoursService(
             // one lookup per export, shared by all sheet writers below.
             var tagNamesBySiteUid = await GetSiteTagNames(sdkContext, siteIds);
             Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
-            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
+            // Unique suffix for the same reason as the single-worker export above: a
+            // second-precision timestamp alone collides when two exports start together.
+            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}";
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
             // Set CurrentUICulture so Translations.X resolves in the user's language for all
@@ -3256,11 +3265,22 @@ public class TimePlanningWorkingHoursService(
                 if (assignedSiteForCache.PayRuleSetId.HasValue)
                 {
                     payRuleSetForCache = await dbContext.PayRuleSets
-                        .Include(p => p.DayRules)
-                        .ThenInclude(d => d.Tiers)
-                        .Include(p => p.DayTypeRules)
-                        .ThenInclude(d => d.TimeBandRules)
+                        .Include(p => p.DayRules.Where(d => d.WorkflowState != Constants.WorkflowStates.Removed))
+                        .ThenInclude(d => d.Tiers.Where(t => t.WorkflowState != Constants.WorkflowStates.Removed))
+                        .Include(p => p.DayTypeRules.Where(d => d.WorkflowState != Constants.WorkflowStates.Removed))
+                        .ThenInclude(d => d.TimeBandRules.Where(b => b.WorkflowState != Constants.WorkflowStates.Removed))
                         .FirstOrDefaultAsync(p => p.Id == assignedSiteForCache.PayRuleSetId.Value);
+                }
+
+                // Union this site's DECLARED codes into the global list so the Total sheet
+                // carries every declared column even for a period with no registered time.
+                // (GetDeclaredPayCodes returns an empty list when the site has no rule-set.)
+                foreach (var declaredPayCode in GetDeclaredPayCodes(payRuleSetForCache))
+                {
+                    if (!allPayCodes.Contains(declaredPayCode))
+                    {
+                        allPayCodes.Add(declaredPayCode);
+                    }
                 }
 
                 var dataResult = await Index(new TimePlanningWorkingHoursRequestModel
@@ -3762,7 +3782,7 @@ public class TimePlanningWorkingHoursService(
                     // Append per-pay-code total for this worker (matches the dynamic columns added to the headers)
                     foreach (var payCode in allPayCodes)
                     {
-                        totalRow.Append(CreateNumericCell(siteTotalsByPayCode[payCode]));
+                        totalRow.Append(CreateNumericCell(siteTotalsByPayCode.GetValueOrDefault(payCode, 0)));
                     }
 
                     // Add netto hours sum for each seed message

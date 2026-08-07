@@ -409,8 +409,308 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
     }
 
     // ------------------------------------------------------------------
+    // 7. Empty period: the pay-code columns come from the DECLARED codes of the
+    //    site's pay-rule-set, so they are present even when the selected period
+    //    contains no registered time at all.
+    // ------------------------------------------------------------------
+
+    [Test]
+    public async Task SingleWorker_EmptyPeriod_DashboardCarriesDeclaredPayCodesWithZeroTotals()
+    {
+        var dateFrom = new DateTime(2026, 5, 11);
+        var dateTo = new DateTime(2026, 5, 13);
+
+        // Site has a pay-rule-set declaring three codes, but NOT ONE PlanRegistration
+        // inside [dateFrom, dateTo] — only a prior-day row outside the range.
+        await SeedSiteWithNoRegistrationsInRange(siteUid: 9711, employeeNo: "1", rangeStart: dateFrom);
+        await LinkPayRuleSetDeclaringCodes(siteUid: 9711, name: "RuleSet Empty", "NORM", "OT50", "OT100");
+
+        var result = await _service.GenerateExcelDashboard(new TimePlanningWorkingHoursRequestModel
+        {
+            SiteId = 9711,
+            DateFrom = dateFrom,
+            DateTo = dateTo,
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model, Is.Not.Null);
+
+        try
+        {
+            result.Model!.Position = 0;
+            using var doc = SpreadsheetDocument.Open(result.Model!, false);
+            var workbookPart = doc.WorkbookPart!;
+
+            var (header, totalsRow) = ReadHeaderAndLastRow(workbookPart, "Dashboard");
+            var dataRow = ReadFirstDataRow(workbookPart, "Dashboard");
+
+            foreach (var payCode in new[] { "NORM", "OT50", "OT100" })
+            {
+                var columnIndex = header.IndexOf(payCode);
+                Assert.That(columnIndex, Is.GreaterThanOrEqualTo(0),
+                    $"Declared pay code {payCode} must have a column even for a period with no registered time");
+
+                Assert.That(totalsRow.Count, Is.GreaterThan(columnIndex),
+                    $"Totals row must reach the {payCode} column");
+                Assert.That(double.Parse(totalsRow[columnIndex], CultureInfo.InvariantCulture),
+                    Is.EqualTo(0).Within(1e-9),
+                    $"Totals row must show 0 for the unobserved declared code {payCode}");
+
+                // The per-day data rows must emit the declared columns too, otherwise the
+                // rows would be narrower than the header and every later column would slide.
+                Assert.That(dataRow.Count, Is.GreaterThan(columnIndex),
+                    $"Data row must reach the {payCode} column — row width must match the header width");
+                Assert.That(double.Parse(dataRow[columnIndex], CultureInfo.InvariantCulture),
+                    Is.EqualTo(0).Within(1e-9),
+                    $"Data row must show 0 for the unobserved declared code {payCode}");
+            }
+        }
+        finally
+        {
+            await result.Model!.DisposeAsync();
+        }
+    }
+
+    [Test]
+    public async Task SingleWorker_EmptyPeriod_SiteWithoutPayRuleSet_HasNoPayCodeColumns()
+    {
+        var dateFrom = new DateTime(2026, 5, 11);
+        var dateTo = new DateTime(2026, 5, 13);
+
+        // Reference site: a rule-set declaring exactly two codes.
+        await SeedSiteWithNoRegistrationsInRange(siteUid: 9712, employeeNo: "1", rangeStart: dateFrom);
+        await LinkPayRuleSetDeclaringCodes(siteUid: 9712, name: "RuleSet Ref", "REFA", "REFB");
+
+        // Control site: identical seeding, but PayRuleSetId stays null.
+        await SeedSiteWithNoRegistrationsInRange(siteUid: 9713, employeeNo: "2", rangeStart: dateFrom);
+
+        var withRuleSet = await _service.GenerateExcelDashboard(new TimePlanningWorkingHoursRequestModel
+        {
+            SiteId = 9712, DateFrom = dateFrom, DateTo = dateTo,
+        });
+        var withoutRuleSet = await _service.GenerateExcelDashboard(new TimePlanningWorkingHoursRequestModel
+        {
+            SiteId = 9713, DateFrom = dateFrom, DateTo = dateTo,
+        });
+
+        Assert.That(withRuleSet.Success, Is.True, withRuleSet.Message);
+        Assert.That(withoutRuleSet.Success, Is.True, withoutRuleSet.Message);
+
+        try
+        {
+            withRuleSet.Model!.Position = 0;
+            using var withDoc = SpreadsheetDocument.Open(withRuleSet.Model!, false);
+            var (withHeader, _) = ReadHeaderAndLastRow(withDoc.WorkbookPart!, "Dashboard");
+
+            withoutRuleSet.Model!.Position = 0;
+            using var withoutDoc = SpreadsheetDocument.Open(withoutRuleSet.Model!, false);
+            var (withoutHeader, _) = ReadHeaderAndLastRow(withoutDoc.WorkbookPart!, "Dashboard");
+
+            Assert.That(withHeader, Does.Contain("REFA"));
+            Assert.That(withHeader, Does.Contain("REFB"));
+
+            // The rule-set-less site gets the fixed columns only — exactly two fewer.
+            Assert.That(withoutHeader, Does.Not.Contain("REFA"));
+            Assert.That(withoutHeader, Does.Not.Contain("REFB"));
+            Assert.That(withoutHeader.Count, Is.EqualTo(withHeader.Count - 2),
+                "A site with no pay-rule-set must add no pay-code columns at all");
+        }
+        finally
+        {
+            await withRuleSet.Model!.DisposeAsync();
+            await withoutRuleSet.Model!.DisposeAsync();
+        }
+    }
+
+    [Test]
+    public async Task AllWorkers_EmptyPeriod_TotalSheetCarriesDeclaredPayCodes()
+    {
+        var dateFrom = new DateTime(2026, 5, 11);
+        var dateTo = new DateTime(2026, 5, 13);
+
+        await SeedSiteWithNoRegistrationsInRange(siteUid: 9721, employeeNo: "1", rangeStart: dateFrom);
+        await LinkPayRuleSetDeclaringCodes(siteUid: 9721, name: "RuleSet A", "EMPTYA");
+
+        await SeedSiteWithNoRegistrationsInRange(siteUid: 9722, employeeNo: "2", rangeStart: dateFrom);
+        await LinkPayRuleSetDeclaringCodes(siteUid: 9722, name: "RuleSet B", "EMPTYB");
+
+        // Site with no rule-set at all — must contribute no code.
+        await SeedSiteWithNoRegistrationsInRange(siteUid: 9723, employeeNo: "3", rangeStart: dateFrom);
+
+        var result = await _service.GenerateExcelDashboard(
+            new TimePlanningWorkingHoursReportForAllWorkersRequestModel
+            {
+                DateFrom = dateFrom,
+                DateTo = dateTo,
+            });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model, Is.Not.Null);
+
+        try
+        {
+            result.Model!.Position = 0;
+            using var doc = SpreadsheetDocument.Open(result.Model!, false);
+            var workbookPart = doc.WorkbookPart!;
+
+            var totalHeader = ReadHeaderRowText(workbookPart, "Total");
+            Assert.That(totalHeader, Does.Contain("EMPTYA"),
+                "Total sheet must carry Site A's declared code even with no registered time");
+            Assert.That(totalHeader, Does.Contain("EMPTYB"),
+                "Total sheet must carry Site B's declared code even with no registered time");
+
+            // Per-site sheets keep their own declared codes; the rule-set-less site gets none.
+            Assert.That(ReadHeaderRowText(workbookPart, "Site 9721"), Does.Contain("EMPTYA"));
+            Assert.That(ReadHeaderRowText(workbookPart, "Site 9722"), Does.Contain("EMPTYB"));
+            var siteCHeader = ReadHeaderRowText(workbookPart, "Site 9723");
+            Assert.That(siteCHeader, Does.Not.Contain("EMPTYA"));
+            Assert.That(siteCHeader, Does.Not.Contain("EMPTYB"));
+        }
+        finally
+        {
+            await result.Model!.DisposeAsync();
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Returns (header row cells, last row cells) as plain text for the named sheet.
+    /// The positional sheets ("Dashboard" / "Site NNNN") emit cells without a
+    /// CellReference, so index i of the header lines up with index i of any data or
+    /// totals row. The last row of those sheets is the totals row.
+    /// </summary>
+    private static (List<string> Header, List<string> LastRow) ReadHeaderAndLastRow(
+        WorkbookPart workbookPart, string sheetName)
+    {
+        var sheet = workbookPart.Workbook.Descendants<Sheet>().First(s => s.Name == sheetName);
+        var part = (WorksheetPart)workbookPart.GetPartById(sheet.Id!);
+        var rows = part.Worksheet.Descendants<Row>()
+            .OrderBy(r => r.RowIndex!.Value)
+            .ToList();
+        var header = rows.First().Elements<Cell>().Select(c => CellText(c, workbookPart)).ToList();
+        var lastRow = rows.Last().Elements<Cell>().Select(c => CellText(c, workbookPart)).ToList();
+        return (header, lastRow);
+    }
+
+    /// <summary>
+    /// Returns the cells of the FIRST per-day DATA row (the row right after the header)
+    /// of a positional sheet, as plain text. Row 1 is the header and the last row is the
+    /// totals row, so this is the row that must stay exactly as wide as the header — the
+    /// data rows are what keep the pay-code columns aligned.
+    /// </summary>
+    private static List<string> ReadFirstDataRow(WorkbookPart workbookPart, string sheetName)
+    {
+        var sheet = workbookPart.Workbook.Descendants<Sheet>().First(s => s.Name == sheetName);
+        var part = (WorksheetPart)workbookPart.GetPartById(sheet.Id!);
+        var rows = part.Worksheet.Descendants<Row>()
+            .OrderBy(r => r.RowIndex!.Value)
+            .ToList();
+        Assert.That(rows.Count, Is.GreaterThan(2),
+            $"Sheet '{sheetName}' must hold at least one data row between the header and the totals row");
+        return rows[1].Elements<Cell>().Select(c => CellText(c, workbookPart)).ToList();
+    }
+
+    /// <summary>
+    /// Creates a <see cref="PayRuleSet"/> declaring the given pay codes (one
+    /// <see cref="PayDayRule"/> with one <see cref="PayTierRule"/> per code) and links
+    /// it to the already-seeded site. Unlike <c>LinkPayRuleSetToSite</c> this does NOT
+    /// touch any PlanRegistration — the point is that the columns must appear with no
+    /// worked time at all.
+    /// </summary>
+    private async Task LinkPayRuleSetDeclaringCodes(int siteUid, string name, params string[] payCodes)
+    {
+        var tiers = new List<PayTierRule>();
+        for (var i = 0; i < payCodes.Length; i++)
+        {
+            tiers.Add(new PayTierRule
+            {
+                UpToSeconds = i == payCodes.Length - 1 ? null : (i + 1) * 3600,
+                PayCode = payCodes[i],
+                PayrollCode = (100 + i).ToString(CultureInfo.InvariantCulture),
+                Order = i + 1,
+            });
+        }
+
+        var payRuleSet = new PayRuleSet
+        {
+            Name = name,
+            DayRules = new List<PayDayRule>
+            {
+                new PayDayRule { DayCode = "WEEKDAY", Tiers = tiers }
+            },
+            DayTypeRules = new List<PayDayTypeRule>(),
+            WorkflowState = Constants.WorkflowStates.Created,
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext!);
+
+        var assignedSite = await TimePlanningPnDbContext!.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstAsync(x => x.SiteId == siteUid);
+        assignedSite.PayRuleSetId = payRuleSet.Id;
+        await assignedSite.Update(TimePlanningPnDbContext!);
+    }
+
+    /// <summary>
+    /// Seeds one SDK Site/Worker/SiteWorker + an AssignedSite + a SINGLE
+    /// PlanRegistration on the day BEFORE <paramref name="rangeStart"/>. The exported
+    /// period therefore holds no registration at all: Index() carries the prior day in
+    /// as the "prePlanning" row (dropped by the export's Skip(1)) and synthesises an
+    /// empty placeholder row for every day of the requested range.
+    /// </summary>
+    private async Task SeedSiteWithNoRegistrationsInRange(int siteUid, string employeeNo, DateTime rangeStart)
+    {
+        var core = await GetCore();
+        var sdkDb = core.DbContextHelper.GetDbContext();
+
+        var site = new SdkSite { Name = $"Site {siteUid}", MicrotingUid = siteUid };
+        await site.Create(sdkDb);
+
+        var worker = new SdkWorker
+        {
+            FirstName = "Test",
+            LastName = "Worker",
+            Email = $"test{siteUid}@example.com",
+            MicrotingUid = 1000 + siteUid,
+            EmployeeNo = employeeNo,
+        };
+        await worker.Create(sdkDb);
+
+        var siteWorker = new SdkSiteWorker
+        {
+            SiteId = site.Id,
+            WorkerId = worker.Id,
+            MicrotingUid = 2000 + siteUid,
+        };
+        await siteWorker.Create(sdkDb);
+
+        await new AssignedSiteEntity
+        {
+            SiteId = siteUid,
+            UseOneMinuteIntervals = false,
+            Resigned = false,
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        }.Create(TimePlanningPnDbContext!);
+
+        await new PlanRegistrationEntity
+        {
+            SdkSitId = siteUid,
+            Date = rangeStart.AddDays(-1),
+            Start1Id = 0,
+            Stop1Id = 0,
+            Pause1Id = 0,
+            PlanText = "",
+            CommentOffice = "",
+            CommentOfficeAll = "",
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        }.Create(TimePlanningPnDbContext!);
+    }
 
     /// <summary>
     /// Opens the xlsx stream and returns the (Shift1Start, Shift1Stop) cell text
@@ -514,9 +814,11 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
         await assignedSite.Update(TimePlanningPnDbContext!);
 
         // Give the in-range registration positive NettoHours so the WEEKDAY tier
-        // emits a pay line for the declared code. The per-site COLUMN header comes
-        // from the DECLARED codes (worked time irrelevant), but the Total sheet's
-        // union is built from EMITTED pay codes, so it needs non-zero worked time.
+        // emits a pay line for the declared code. Column headers no longer depend on
+        // this: both the per-site sheet and the Total sheet build their union from the
+        // DECLARED codes, so the columns appear with no worked time at all. The
+        // non-zero NettoHours is kept so the emitted values are non-zero, which is what
+        // the value-level assertions of the tests using this helper rely on.
         var registrations = await TimePlanningPnDbContext!.PlanRegistrations
             .Where(x => x.SdkSitId == siteUid
                         && x.WorkflowState != Constants.WorkflowStates.Removed
