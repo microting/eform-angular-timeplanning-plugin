@@ -2638,7 +2638,10 @@ public class TimePlanningWorkingHoursService(
             var culture = new CultureInfo(language.LanguageCode);
             Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
 
-            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
+            // The suffix must be unique: the timestamp only has second precision, so two
+            // exports started within the same second would target the same file — and the
+            // first one's returned stream still holds it open, failing the second.
+            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}";
             var filePath = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
             // Fetch data early so we can pre-compute pay lines for header discovery
@@ -3231,7 +3234,9 @@ public class TimePlanningWorkingHoursService(
             // one lookup per export, shared by all sheet writers below.
             var tagNamesBySiteUid = await GetSiteTagNames(sdkContext, siteIds);
             Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "results"));
-            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}";
+            // Unique suffix for the same reason as the single-worker export above: a
+            // second-precision timestamp alone collides when two exports start together.
+            var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}";
             var resultDocument = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
             // Set CurrentUICulture so Translations.X resolves in the user's language for all
