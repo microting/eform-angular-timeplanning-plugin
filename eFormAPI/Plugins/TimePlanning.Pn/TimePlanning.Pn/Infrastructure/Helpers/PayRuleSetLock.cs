@@ -7,6 +7,7 @@ Copyright (c) 2007 - 2021 Microting A/S
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 
 namespace TimePlanning.Pn.Infrastructure.Helpers;
 
@@ -159,5 +160,80 @@ internal static class PayRuleSetLock
     {
         var normalized = NormalizePresetName(name);
         return normalized.Length > 0 && NormalizedNormalTimeSplitPresetNames.Contains(normalized);
+    }
+
+    // ------------------------------------------------------------------
+    // Normal-time / overtime split — SHAPE GUARD FOR STALE PRESET SNAPSHOTS
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Number of tiers in a corrected praktikant day rule: the normal-time boundary
+    /// plus the two overtime steps.
+    /// </summary>
+    private const int NormalTimeBoundaryTierCount = 3;
+
+    /// <summary>
+    /// Tier 1's cutoff in the corrected presets: the daily normal-time boundary,
+    /// 7 h 24 m (37 h ÷ 5). This is the value the split reads as "normal time ends here".
+    /// </summary>
+    internal const int NormalTimeBoundarySeconds = 26640;
+
+    /// <summary>
+    /// Tier 2's cumulative cutoff in the corrected presets: the top of the 50 % overtime
+    /// step, 9 h 24 m (the boundary plus 2 h).
+    /// </summary>
+    internal const int Overtime50BoundarySeconds = 33840;
+
+    /// <summary>Tier 2's pay code in the corrected presets — the 50 % overtime step.</summary>
+    private const string Overtime50PayCode = "OVERTIME_50";
+
+    /// <summary>Tier 3's pay code in the corrected presets — the open-ended 80 % overtime step.</summary>
+    private const string Overtime80PayCode = "OVERTIME_80";
+
+    /// <summary>
+    /// True when a day rule's ordered tiers actually ENCODE a normal-time boundary
+    /// followed by the two overtime steps, i.e. they match the corrected praktikant
+    /// preset shape exactly:
+    ///
+    ///   tier 1: UpToSeconds == 26640 (the normal-time boundary; its pay code varies
+    ///           legitimately per day — SAT_NORMAL, ANIMAL_SUN_HOLIDAY, NORMAL — so it
+    ///           is deliberately NOT constrained here)
+    ///   tier 2: UpToSeconds == 33840, PayCode == "OVERTIME_50"
+    ///   tier 3: UpToSeconds == null,  PayCode == "OVERTIME_80"
+    ///
+    /// WHY THIS EXISTS — NAME MATCHING ALONE IS NOT ENOUGH
+    /// ---------------------------------------------------
+    /// <see cref="IsNormalTimeSplitPresetName"/> answers "which AGREEMENT is this rule
+    /// set", and that is a stable question. But preset definitions are COPY-AT-CREATE-TIME
+    /// SNAPSHOTS: a customer who created the praktikant rule set before the tiers were
+    /// corrected still holds the OLD rows in their database, under the very same name.
+    /// Those pre-correction rows encode something completely different — e.g. the old
+    /// Staldarbejde SATURDAY rule was [21600 SAT_NORMAL, null SAT_ANIMAL_AFTERNOON], a
+    /// MIRROR of the clock bands, not a normal-time boundary. Reinterpreting it as a
+    /// boundary attributes 21600 s to the bands and dumps the overflow on tier 2's
+    /// SAT_ANIMAL_AFTERNOON — a fixed kr/dag afternoon supplement — even for a shift that
+    /// ended at noon.
+    ///
+    /// So the name identifies the agreement, and this predicate confirms the DATA really
+    /// speaks the new dialect. When it does not, the caller must leave the row on the
+    /// historical path rather than reinterpret it: when the data is not what the new
+    /// interpretation assumes, do not reinterpret it.
+    ///
+    /// This is a guard, not the cure. The durable fix is a DATA MIGRATION that rewrites
+    /// the stale praktikant day rules to the corrected tiers; once every customer row has
+    /// been migrated this predicate becomes a no-op and can be retired.
+    /// </summary>
+    internal static bool HasNormalTimeBoundaryShape(IReadOnlyList<PayTierRule>? orderedTiers)
+    {
+        if (orderedTiers is not { Count: NormalTimeBoundaryTierCount })
+        {
+            return false;
+        }
+
+        return orderedTiers[0].UpToSeconds == NormalTimeBoundarySeconds
+               && orderedTiers[1].UpToSeconds == Overtime50BoundarySeconds
+               && orderedTiers[1].PayCode == Overtime50PayCode
+               && orderedTiers[2].UpToSeconds == null
+               && orderedTiers[2].PayCode == Overtime80PayCode;
     }
 }
