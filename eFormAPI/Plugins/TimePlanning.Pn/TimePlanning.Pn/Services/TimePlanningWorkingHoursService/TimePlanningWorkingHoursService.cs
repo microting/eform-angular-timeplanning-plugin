@@ -4750,8 +4750,22 @@ public class TimePlanningWorkingHoursService(
                 // Every other rule set — and any opted-in day whose rule lacks a real
                 // overtime progression (>1 tier with an explicit boundary on tier 1) —
                 // falls through to the historical bands-only behaviour below, unchanged.
+                //
+                // AND THE NAME IS NOT ENOUGH ON ITS OWN. Preset definitions are
+                // copy-at-create-time snapshots, so a customer who created this rule set
+                // BEFORE the tiers were corrected still holds the OLD rows under the very
+                // same name — e.g. the old Staldarbejde SATURDAY rule was
+                // [21600 SAT_NORMAL, null SAT_ANIMAL_AFTERNOON], a MIRROR of the clock
+                // bands rather than a normal-time boundary. Reading that as a boundary
+                // truncates the bands at 21600 s and pays the overflow as
+                // SAT_ANIMAL_AFTERNOON — a fixed kr/dag afternoon supplement — to a worker
+                // who went home at noon. HasNormalTimeBoundaryShape therefore requires the
+                // tiers to actually encode the corrected boundary + overtime progression;
+                // stale rows fall through to the historical path untouched. A data
+                // migration of those rows is the durable fix — see PayRuleSetLock.
                 if (usesNormalTimeSplit
                     && orderedTiers is { Count: > 1 }
+                    && PayRuleSetLock.HasNormalTimeBoundaryShape(orderedTiers)
                     && orderedTiers[0].UpToSeconds is { } normalSeconds)
                 {
                     var bandSeconds = Math.Min(totalSeconds, normalSeconds);
@@ -5002,7 +5016,18 @@ public class TimePlanningWorkingHoursService(
             .OrderBy(t => t.Order)
             .ToList();
 
+        // The name identifies the AGREEMENT, but the DB row may PREDATE the tier
+        // correction: preset definitions are copy-at-create-time snapshots, so a customer
+        // who created this rule set earlier still holds the old GRUNDLOVSDAG tiers under
+        // the same name — Andet arbejde's were [7200 OVERTIME_50, null OVERTIME_80], a
+        // plain Sunday-style ladder with no normal-time boundary in it at all. Reading
+        // 7200 s as "normal time ends here" would move the noon split and shrink the
+        // ordinary-working-time half of the day to two hours. HasNormalTimeBoundaryShape
+        // confirms the tiers really encode the corrected boundary; when they do not we
+        // return null and the caller keeps the historical routing. A data migration of the
+        // stale rows is the durable fix — see PayRuleSetLock.
         if (orderedTiers is not { Count: > 1 }
+            || !PayRuleSetLock.HasNormalTimeBoundaryShape(orderedTiers)
             || orderedTiers[0].UpToSeconds is not { } normalSeconds)
         {
             return null;

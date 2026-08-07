@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NUnit.Framework;
+using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
 using TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
 using TimePlanning.Pn.Test.Helpers;
@@ -811,6 +812,270 @@ public class PraktikantPayLineRoutingTests
         AssertPayLines(lines, 21600,
             ("NORMAL", 12600),
             ("ANIMAL_SUN_HOLIDAY", 9000));
+    }
+
+    // ------------------------------------------------------------------
+    // 11. STALE PRESET SNAPSHOTS — pre-correction rows in customer databases.
+    //
+    // Preset definitions are COPIED INTO the customer's database at create time, so a
+    // customer who created a praktikant rule set before the tiers were corrected still
+    // holds the OLD rows — under the very same, unchanged Name. The name gate therefore
+    // still fires on them, and without a shape guard the engine would reinterpret tiers
+    // that do not encode a normal-time boundary at all.
+    //
+    // The concrete harm on the old Staldarbejde SATURDAY rule
+    // ([21600 SAT_NORMAL, null SAT_ANIMAL_AFTERNOON]): tier 1's 21600 s is a MIRROR of the
+    // 12:00 clock band, not a boundary, and tier 2 is a fixed kr/dag AFTERNOON supplement.
+    // Reading it as a boundary truncates the bands at 21600 s and pays the overflow as
+    // SAT_ANIMAL_AFTERNOON — an afternoon supplement to a worker who went home at noon.
+    //
+    // PayRuleSetLock.HasNormalTimeBoundaryShape requires the tiers to match the CORRECTED
+    // encoding (26640 / 33840 OVERTIME_50 / null OVERTIME_80), so these rows fall through
+    // to the historical path untouched. Principle: when the data is not what the new
+    // interpretation assumes, do not reinterpret it.
+    //
+    // These tests should be DELETED together with the fixtures once a data migration has
+    // rewritten the stale rows.
+    // ------------------------------------------------------------------
+
+    [Test]
+    public void Legacy_Stald_Saturday_8h_EntirelyBeforeNoon_KeepsBandsOnly_NoAfternoonSupplement()
+    {
+        // THE REPORTED HARM, LOCKED DOWN. 04:00 → 12:00 = 28800 s, entirely before noon.
+        //   Historical (and correct) bands-only: the whole segment (14400, 43200) lies
+        //   inside the 00:00–12:00 band → SAT_NORMAL 28800, nothing else.
+        //   With the name-only gate it became: bandSeconds = min(28800, 21600) = 21600,
+        //   truncating the segment to 04:00 → 10:00 (SAT_NORMAL 21600), and the remaining
+        //   7200 s fell to tier 2 → SAT_ANIMAL_AFTERNOON 7200 — an afternoon supplement
+        //   for work that ended at noon.
+        var lines = Run(Saturday, PraktikantFixtures.StaldarbejdeLegacyTiers(),
+            SingleShift(Saturday, 4 * Hour, 8 * Hour), 8 * Hour);
+
+        AssertPayLines(lines, 28800, ("SAT_NORMAL", 28800));
+        Assert.That(lines.Any(l => l.PayCode == "SAT_ANIMAL_AFTERNOON"), Is.False,
+            "A shift ending at noon must never earn the afternoon supplement");
+        Assert.That(lines.Any(l => l.PayCode!.StartsWith("OVERTIME")), Is.False,
+            "Stale mirror tiers must not be reinterpreted as an overtime progression");
+    }
+
+    [Test]
+    public void Legacy_Stald_Saturday_MidnightToNoon_12h_AllSatNormal()
+    {
+        // 00:00 → 12:00 = 43200 s, the full morning band. Bands-only attributes every
+        // second to the 00:00–12:00 band → SAT_NORMAL 43200.
+        // With the name-only gate this flipped a full SIX HOURS: SAT_NORMAL 21600 +
+        // SAT_ANIMAL_AFTERNOON 21600 (43200 - 21600 overflowing onto tier 2).
+        var lines = Run(Saturday, PraktikantFixtures.StaldarbejdeLegacyTiers(),
+            SingleShift(Saturday, 0, 12 * Hour), 12 * Hour);
+
+        AssertPayLines(lines, 43200, ("SAT_NORMAL", 43200));
+        Assert.That(lines.Any(l => l.PayCode == "SAT_ANIMAL_AFTERNOON"), Is.False,
+            "No second of a midnight-to-noon shift is in the afternoon band");
+    }
+
+    [Test]
+    public void Legacy_Stald_Saturday_06to18_12h_BandsAcrossTheWholeDay()
+    {
+        // 06:00 → 18:00 = 43200 s. Bands-only means NO truncation at any boundary; every
+        // worked second is attributed by clock position across the whole 12 h:
+        //   SAT_NORMAL           06:00 → 12:00 = 21600 s
+        //   SAT_ANIMAL_AFTERNOON 12:00 → 18:00 = 21600 s
+        // Here the afternoon supplement IS earned — the guard restores the historical
+        // reading, it does not suppress the supplement.
+        var lines = Run(Saturday, PraktikantFixtures.StaldarbejdeLegacyTiers(),
+            SingleShift(Saturday, 6 * Hour, 12 * Hour), 12 * Hour);
+
+        AssertPayLines(lines, 43200,
+            ("SAT_NORMAL", 21600),
+            ("SAT_ANIMAL_AFTERNOON", 21600));
+        Assert.That(lines.Any(l => l.PayCode!.StartsWith("OVERTIME")), Is.False,
+            "Stale mirror tiers must not produce overtime lines");
+    }
+
+    [Test]
+    public void Legacy_Andet_Grundlovsdag_8h_KeepsHistoricalSundayLadder_NoNoonSplit()
+    {
+        // Stale GRUNDLOVSDAG tiers [7200 OVERTIME_50, null OVERTIME_80]: two tiers with a
+        // non-null tier 1, so the old Count > 1 test passed — but 7200 s is the Sunday
+        // ladder's first step, not a normal-time boundary. HasNormalTimeBoundaryShape now
+        // rejects it, CalculateGrundlovsdagPayLines returns null, and TryGetDayType returns
+        // false for GRUNDLOVSDAG, so the pure tier path runs over the full 28800 s:
+        //   tier 1 UpTo 7200  → OVERTIME_50 =  7200 s
+        //   tier 2 UpTo null  → OVERTIME_80 = 28800 - 7200 = 21600 s
+        // No NORMAL line and no noon boundary anywhere — exactly the historical result.
+        var lines = Run(Grundlovsdag, PraktikantFixtures.AndetArbejdeLegacyTiers(),
+            SingleShift(Grundlovsdag, 6 * Hour, 8 * Hour), 8 * Hour);
+
+        AssertPayLines(lines, 28800,
+            ("OVERTIME_50", 7200),
+            ("OVERTIME_80", 21600));
+        Assert.That(lines.Any(l => l.PayCode == "NORMAL"), Is.False,
+            "The noon split must not be applied to a stale Grundlovsdag rule");
+    }
+
+    [Test]
+    public void Legacy_Stald_Sunday_12h_SingleTier_StaysAllAnimalSunHoliday()
+    {
+        // The stale SUNDAY rule has a SINGLE tier, so it already failed the Count > 1 test
+        // and never entered the split. This guards that it stays that way: 06:00 → 18:00 =
+        // 43200 s, all inside the single 00:00–24:00 ANIMAL_SUN_HOLIDAY band, with no
+        // truncation at 26640 and therefore no overtime lines.
+        var lines = Run(Sunday, PraktikantFixtures.StaldarbejdeLegacyTiers(),
+            SingleShift(Sunday, 6 * Hour, 12 * Hour), 12 * Hour);
+
+        AssertPayLines(lines, 43200, ("ANIMAL_SUN_HOLIDAY", 43200));
+        Assert.That(lines.Any(l => l.PayCode!.StartsWith("OVERTIME")), Is.False,
+            "A single-tier stale rule must not produce overtime lines");
+    }
+
+    [Test]
+    public void PositiveControl_CorrectedStaldSaturday_StillTakesSplitPath()
+    {
+        // THE POSITIVE CONTROL. The guard must exclude ONLY stale data. The corrected
+        // fixture — same date, same shift as Legacy_Stald_Saturday_06to18_12h above —
+        // still takes the new split path and produces exactly the expectations of
+        // Stald_Saturday_12h_BandsUntilNorm_ThenOvertimeTiers:
+        //   bands over the first 26640 s (06:00 → 13:24): SAT_NORMAL 21600 +
+        //   SAT_ANIMAL_AFTERNOON 5040; overflow 16560 → OVERTIME_50 7200, OVERTIME_80 9360.
+        // Contrast with the legacy test above, where the SAME shift yields 21600/21600 and
+        // no overtime — that difference is the whole point of the shape check.
+        var lines = Run(Saturday, PraktikantFixtures.Staldarbejde(),
+            SingleShift(Saturday, 6 * Hour, 12 * Hour), 12 * Hour);
+
+        AssertPayLines(lines, 43200,
+            ("SAT_NORMAL", 21600),
+            ("SAT_ANIMAL_AFTERNOON", 5040),
+            ("OVERTIME_50", 7200),
+            ("OVERTIME_80", 9360));
+    }
+
+    [Test]
+    public void PositiveControl_CorrectedAndetGrundlovsdag_StillTakesNoonSplit()
+    {
+        // Same shift as Legacy_Andet_Grundlovsdag_8h above (06:00 → 14:00 = 28800 s), on
+        // the CORRECTED fixture, to show the guard did not disable the noon split:
+        //   Step 1: normal time = min(28800, 26640) = 26640 → 06:00 → 13:24;
+        //           overtime    = 28800 - 26640 = 2160.
+        //   Step 2: 06:00 → 12:00 = 21600 s → NORMAL
+        //           12:00 → 13:24 =  5040 s → SUNDAY ladder restarting at zero →
+        //                                     OVERTIME_50 5040 (below the 7200 cap)
+        //   Step 1 overflow over tiers 2..3 from 26640: OVERTIME_50 2160 (cap 33840).
+        //   MergeByPayCode sums the two disjoint OVERTIME_50 sets: 5040 + 2160 = 7200.
+        // 21600 + 7200 = 28800.
+        var lines = Run(Grundlovsdag, PraktikantFixtures.AndetArbejde(),
+            SingleShift(Grundlovsdag, 6 * Hour, 8 * Hour), 8 * Hour);
+
+        AssertPayLines(lines, 28800,
+            ("NORMAL", 21600),
+            ("OVERTIME_50", 7200));
+    }
+
+    // ---- The shape predicate itself, unit-tested ----
+
+    [Test]
+    public void ShapeGuard_AcceptsEveryCorrectedPraktikantDayRule()
+    {
+        // Every day rule of both corrected presets that can reach either gated site must
+        // pass, or the guard would silently disable the split for legitimate current data.
+        foreach (var payRuleSet in new[]
+                 {
+                     PraktikantFixtures.Staldarbejde(),
+                     PraktikantFixtures.AndetArbejde()
+                 })
+        {
+            foreach (var dayCode in new[] { "WEEKDAY", "SATURDAY", "GRUNDLOVSDAG" })
+            {
+                var tiers = payRuleSet.DayRules.Single(r => r.DayCode == dayCode)
+                    .Tiers.OrderBy(t => t.Order).ToList();
+
+                Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(tiers), Is.True,
+                    $"{payRuleSet.Name} / {dayCode} is corrected data and must be accepted");
+            }
+        }
+
+        // Staldarbejde's SUNDAY and HOLIDAY rules also carry the corrected boundary
+        // (they are banded days, so they reach the split site).
+        var stald = PraktikantFixtures.Staldarbejde();
+        foreach (var dayCode in new[] { "SUNDAY", "HOLIDAY" })
+        {
+            var tiers = stald.DayRules.Single(r => r.DayCode == dayCode)
+                .Tiers.OrderBy(t => t.Order).ToList();
+
+            Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(tiers), Is.True,
+                $"Staldarbejde / {dayCode} is corrected data and must be accepted");
+        }
+    }
+
+    [Test]
+    public void ShapeGuard_RejectsEveryStalePraktikantDayRule()
+    {
+        var legacyStald = PraktikantFixtures.StaldarbejdeLegacyTiers();
+        foreach (var dayCode in new[] { "SATURDAY", "SUNDAY", "HOLIDAY", "GRUNDLOVSDAG" })
+        {
+            var tiers = legacyStald.DayRules.Single(r => r.DayCode == dayCode)
+                .Tiers.OrderBy(t => t.Order).ToList();
+
+            Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(tiers), Is.False,
+                $"Stale Staldarbejde / {dayCode} must be rejected");
+        }
+
+        var legacyAndet = PraktikantFixtures.AndetArbejdeLegacyTiers();
+        var grundlovsdagTiers = legacyAndet.DayRules.Single(r => r.DayCode == "GRUNDLOVSDAG")
+            .Tiers.OrderBy(t => t.Order).ToList();
+
+        Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(grundlovsdagTiers), Is.False,
+            "Stale Andet arbejde / GRUNDLOVSDAG must be rejected");
+    }
+
+    [Test]
+    public void ShapeGuard_RejectsNullAndWrongArity()
+    {
+        Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(null), Is.False);
+        Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(new List<PayTierRule>()), Is.False);
+
+        // Correct boundary and codes, but a fourth tier appended — not the shipped shape,
+        // so we do not claim to know how to read it.
+        var fourTiers = new List<PayTierRule>
+        {
+            new() { Order = 1, UpToSeconds = 26640, PayCode = "NORMAL" },
+            new() { Order = 2, UpToSeconds = 33840, PayCode = "OVERTIME_50" },
+            new() { Order = 3, UpToSeconds = 43200, PayCode = "OVERTIME_80" },
+            new() { Order = 4, UpToSeconds = null, PayCode = "OVERTIME_100" },
+        };
+        Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(fourTiers), Is.False);
+    }
+
+    [Test]
+    public void ShapeGuard_RejectsRightArityButWrongBoundaryOrCodes()
+    {
+        // Three tiers and the right pay codes, but the boundary is a different number —
+        // a hand-edited or differently-versioned row we must not reinterpret.
+        var wrongBoundary = new List<PayTierRule>
+        {
+            new() { Order = 1, UpToSeconds = 21600, PayCode = "SAT_NORMAL" },
+            new() { Order = 2, UpToSeconds = 33840, PayCode = "OVERTIME_50" },
+            new() { Order = 3, UpToSeconds = null, PayCode = "OVERTIME_80" },
+        };
+        Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(wrongBoundary), Is.False);
+
+        // Right boundaries, but tier 2/3 are supplement codes rather than overtime steps —
+        // i.e. a mirror encoding, exactly what must not be reinterpreted.
+        var wrongCodes = new List<PayTierRule>
+        {
+            new() { Order = 1, UpToSeconds = 26640, PayCode = "SAT_NORMAL" },
+            new() { Order = 2, UpToSeconds = 33840, PayCode = "SAT_ANIMAL_AFTERNOON" },
+            new() { Order = 3, UpToSeconds = null, PayCode = "ANIMAL_SUN_HOLIDAY" },
+        };
+        Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(wrongCodes), Is.False);
+
+        // Right codes and boundary, but tier 3 is closed rather than open-ended.
+        var closedLastTier = new List<PayTierRule>
+        {
+            new() { Order = 1, UpToSeconds = 26640, PayCode = "NORMAL" },
+            new() { Order = 2, UpToSeconds = 33840, PayCode = "OVERTIME_50" },
+            new() { Order = 3, UpToSeconds = 86400, PayCode = "OVERTIME_80" },
+        };
+        Assert.That(PayRuleSetLock.HasNormalTimeBoundaryShape(closedLastTier), Is.False);
     }
 
     // ------------------------------------------------------------------
