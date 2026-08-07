@@ -2,6 +2,8 @@ import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular
 import { MatDialog } from '@angular/material/dialog';
 import { MtxGridColumn } from '@ng-matero/extensions/grid';
 import { TranslateService } from '@ngx-translate/core';
+import { Store } from '@ngrx/store';
+import { selectCurrentUserIsAdmin } from 'src/app/state';
 import { PayRuleSetSimpleModel } from '../../../../models';
 import { isLockedPresetName } from '../../pay-rule-lock.util';
 
@@ -14,6 +16,13 @@ import { isLockedPresetName } from '../../pay-rule-lock.util';
 export class PayRuleSetsTableComponent implements OnInit {
   private dialog = inject(MatDialog);
   private translateService = inject(TranslateService);
+  private store = inject(Store);
+
+  // The list endpoint is open to any authenticated user, but create/update/delete
+  // are still admin-only on the server and a 403 is escalated into a forced
+  // logout by the global HttpErrorInterceptor. Hide the mutating actions rather
+  // than let a non-admin trigger them.
+  public selectCurrentUserIsAdmin$ = this.store.select(selectCurrentUserIsAdmin);
 
   @Input() payRuleSets: PayRuleSetSimpleModel[] = [];
   @Input() loading = false;

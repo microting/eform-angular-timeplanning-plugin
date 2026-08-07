@@ -102,14 +102,19 @@ describe('AssignedSiteDialogComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  describe('Pay rule sets admin gating', () => {
+  describe('Pay rule sets availability', () => {
     it('should fetch pay rule sets for an admin', () => {
       component.ngOnInit();
 
       expect(mockPayRuleSetsService.getPayRuleSets).toHaveBeenCalledWith({ offset: 0, pageSize: 1000 });
     });
 
-    it('should NOT fetch pay rule sets for a non-admin (admin-only endpoint 403s and forces logout)', () => {
+    it('should ALSO fetch pay rule sets for a non-admin (listing is no longer admin-only)', () => {
+      // GET api/time-planning-pn/pay-rule-sets used to be [Authorize(Roles =
+      // Admin)], so a non-admin's 403 was escalated into a forced logout and
+      // the fetch had to be skipped. Listing and reading a rule set are now
+      // open to any authenticated user so non-admins can pick one for an
+      // assigned site; only creating/editing/deleting stays admin-only.
       mockStore.select.mockReturnValue(of(false));
       // Re-create so the selectCurrentUserIsAdmin$ class field picks up the
       // non-admin stream (it is captured at construction time).
@@ -118,7 +123,7 @@ describe('AssignedSiteDialogComponent', () => {
 
       component.ngOnInit();
 
-      expect(mockPayRuleSetsService.getPayRuleSets).not.toHaveBeenCalled();
+      expect(mockPayRuleSetsService.getPayRuleSets).toHaveBeenCalledWith({ offset: 0, pageSize: 1000 });
     });
 
     it('should still initialize payRuleSetId from dialog data for a non-admin', () => {
