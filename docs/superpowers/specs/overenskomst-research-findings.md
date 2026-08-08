@@ -296,7 +296,7 @@ below is an out-of-corpus comparator, not persisted primary text
 
 | Agreement | Overtime hour inside a displaced-time band | Evidence |
 |---|---|---|
-| **GLS-A Agroindustri (§ 19 stk. 4)** and **Holddrift** | **Cumulative — both** | § 19 stk. 4: overtime in tilslutning to forskudt arbejdstid draws the overtidstillæg *in addition to* the forskudt supplement (agroindustri-2026-2029.txt:672-673); same principle in the Holddrift sheet (ratesheet-holddriftstillaeg-2026.txt:24-25). |
+| **GLS-A Agroindustri (§ 19 stk. 4)** and **Holddrift** | **Cumulative — both** | § 19 stk. 4: overtime in tilslutning to forskudt arbejdstid draws the overtidstillæg *in addition to* the forskudt supplement (agroindustri-2026-2029.txt:672-673); same principle in the Holddrift sheet (ratesheet-holddriftstillaeg-2026.txt:26-27). |
 | **KA / Krifa** (Landbrug svine/kvæg, plantebrug, maskinstation; Grøn) — *comparator, text not in audit corpus* | **Cumulative — both** | Hovedoverenskomst § 16 stk. 5: *"Udføres overarbejde på særlige tidspunkter … betales **foruden overtidstillæg også tillæg for arbejde på særlige tidspunkter**."* |
 | **GLS-A Jordbrug — dyrehold (§ 15)** | **Not cumulative** | § 15 opens *"ved arbejde **inden for normal arbejdstid**"* — an overtime hour is outside normal time, so the stald supplement cannot attach to it. |
 | **GLS-A Jordbrug markarbejde (§ 23), Gartneri (§ 23), Skovbrug (§ 22)** | **Agreement is silent** | Exhaustive search for `samtidig`, `foruden`, `i tilslutning`, `ydes ikke tillæg`, `bortfalder` finds no clause either way. |

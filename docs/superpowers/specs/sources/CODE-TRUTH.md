@@ -348,8 +348,8 @@ Note: the fixture identifies presets by a numeric `Id` (214, 215, 232, 233) whil
 ## Agroindustri (16 presets)
 
 **Sources:**
-- Catalogue (TS): `/home/rene/Documents/workspace/microting/eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn/models/pay-rule-sets/pay-rule-set-presets.ts` (lines 1029-1645)
-- C# fixture: `/home/rene/Documents/workspace/microting/eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/OverenskomstFixtureHelper.cs` (lines 1089-2083)
+- Catalogue (TS): `eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn/models/pay-rule-sets/pay-rule-set-presets.ts` (lines 1029-1645)
+- C# fixture: `eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/OverenskomstFixtureHelper.cs` (lines 1089-2083)
 
 All 16 presets have `payDayTypeRules: []` (TS) / no `DayTypeRules` populated (C#) — no dayTypeRules bands exist in either source for any of the 16 presets.
 

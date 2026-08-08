@@ -22,7 +22,7 @@ All PDFs retrieved 2026-08-08. SHA-256 recomputed independently against each dow
 | golf-2024-2026.txt | 2773 | 131 | present | yes (line 2/8/21) |
 | agroindustri-2026-2029.txt | 3765 | 189 | present | yes (line 2/5/18) |
 | loenoversigt-landbrug-2026.txt | 95 | 0 (rate sheet; `grep -ci 'kr\.'` = 9) | present | yes (line 12/13) |
-| ratesheet-holddriftstillaeg-2026.txt | 32 | 0 (rate sheet; `grep -ci 'kr\.' = 3, see note below) | present | yes (line 13/14) |
+| ratesheet-holddriftstillaeg-2026.txt | 32 | 0 (rate sheet; `grep -ci 'kr\.'` = 3, see note below) | present | yes (line 13/14) |
 
 Note on `ratesheet-holddriftstillaeg-2026.txt`: the brief's rate-sheet sanity heuristic (`grep -c 'kr\.' > 5`) is
 tuned for the larger main wage sheet. This document's case-sensitive `kr.` count is 0 (source uses capitalized
