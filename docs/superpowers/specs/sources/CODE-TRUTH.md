@@ -8,7 +8,7 @@ against.
 
 Sources:
 - Catalogue (TS): `eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn/models/pay-rule-sets/pay-rule-set-presets.ts`, read from this repo's working tree (branch `docs/glsa-findings-verification`, even with `stable` for code files) at commit `9fed1a55`.
-- C# fixtures: `eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/OverenskomstFixtureHelper.cs`, branch `master` at commit `5cbe0af`.
+- C# fixtures: `eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/OverenskomstFixtureHelper.cs` (Gartneri, Skovbrug, Golf, KA Landbrug, KA Gron, and the two Jordbrug Praktikant presets) and `eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/GlsAFixtureHelper.cs` (the 5 Jordbrug Standard/Dyrehold/Elev presets), both branch `master` at commit `5cbe0af`.
 - Engine: `eform-angular-timeplanning-plugin/eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn/Services/TimePlanningWorkingHoursService/TimePlanningWorkingHoursService.cs`, `.../Infrastructure/Helpers/PayRuleSetLock.cs` (this repo), and `eform-timeplanning-base/Microting.TimePlanningBase/Infrastructure/Helpers/PayLineGenerator.cs` (base repo — note: the real path is `Infrastructure/Helpers/PayLineGenerator.cs`, not `Infrastructure/Data/PayLineGenerator*.cs` as originally guessed).
 
 The 31 `glsa-*` preset keys in the catalogue, grouped by family as dispatched:
@@ -23,15 +23,20 @@ Total: 2 + 3 + 6 + 4 + 16 = 31 presets. (The catalogue file also contains 8 non-
 `ka-*` presets — `ka-landbrug-svine-*`, `ka-landbrug-plante-*`, `ka-landbrug-maskin-*`,
 `ka-gron-*` — which are out of scope for this audit and not covered below.)
 
-**Headline finding surfaced by the family-1 and family-2 agents:** five presets —
+**Correction (superseding an earlier draft of this document):** the five presets —
 `glsa-jordbrug-standard`, `glsa-jordbrug-dyrehold`, `glsa-jordbrug-elev-u18`,
-`glsa-jordbrug-elev-o18`, `glsa-jordbrug-elev-u18-dyrehold` — have **no corresponding
-factory method at all** in `OverenskomstFixtureHelper.cs`. The fixture file's own
-class-level doc comment (line 32) scopes it to "Gartneri, Skovbrug, KA Landbrug, KA
-Gron" plus the two Jordbrug Praktikant presets — Jordbrug Standard/Dyrehold/Elev are
-simply out of that file's scope, not merely divergent in values. This is called out
-explicitly in each family's divergence section below rather than treated as a
-byte-level mismatch, since there is no fixture row to diff against.
+`glsa-jordbrug-elev-o18`, `glsa-jordbrug-elev-u18-dyrehold` — are **not** absent from
+the C# fixtures. An earlier pass searched only `OverenskomstFixtureHelper.cs` (which
+indeed has no Jordbrug Standard/Dyrehold/Elev factories) and stopped there. Their
+fixtures actually live in a separate file in the same directory,
+`eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/GlsAFixtureHelper.cs`
+(branch `master`): `GlsA_Jordbrug_Standard` (Id 100), `GlsA_Jordbrug_DyrePasning` (Id
+101), `GlsA_Jordbrug_Laerling_Under18` (Id 102), `GlsA_Jordbrug_Laerling_Over18` (Id
+103), `GlsA_Jordbrug_Laerling_Under18_DyrePasning` (Id 104). Byte-level comparison
+(below, in each preset's divergence section) shows all 5 match the catalogue exactly
+in tiers/seconds/payCodes/bands — the only divergence is the `Name` year suffix
+(`2024-2026` in the fixture vs `2026-2029` in the catalogue), the same pattern seen
+across the other 26 presets in this document.
 
 ---
 
@@ -39,7 +44,7 @@ byte-level mismatch, since there is no fixture row to diff against.
 
 Sources read (code only):
 - `eform-angular-timeplanning-plugin/eform-client/.../pay-rule-set-presets.ts` (working tree, lines 61-176)
-- `eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/OverenskomstFixtureHelper.cs` (branch `master`)
+- `eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/GlsAFixtureHelper.cs` (branch `master`)
 
 ### Preset: `glsa-jordbrug-standard`
 
@@ -67,22 +72,30 @@ Catalogue metadata: `group: 'GLS-A / 3F'`, `label: 'Jordbrug - Dyrehold'`, `name
 
 ### Catalogue vs C# fixture divergence
 
-**`glsa-jordbrug-standard`**: No matching fixture exists. `OverenskomstFixtureHelper.cs` contains no method named `GlsA_Jordbrug_Standard` (or any variant matching the name "Jordbrug Standard"). Confirmed via a full `public static PayRuleSet` symbol scan of the file (34 factory methods total) — the only Jordbrug-prefixed factories are `GlsA_Jordbrug_Praktikant_Udenlandsk_Andet` (Id 232) and `GlsA_Jordbrug_Praktikant_Udenlandsk_Staldarbejde` (Id 233), both named "Udenlandske praktikanter Landbrug ... 2024-2026" — a different agreement (foreign-trainee/Praktikant variant), different year range, and structurally different tiers (e.g. `Andet`'s WEEKDAY tiers are 26640→`NORMAL`, 33840→`OVERTIME_50`, null→`OVERTIME_80`, vs. catalogue's `OVERTIME_30` second tier; its SATURDAY/SUNDAY/HOLIDAY/GRUNDLOVSDAG tier shapes also don't match the catalogue preset at all). **Divergence: the catalogue preset has no corresponding fixture in this file — entirely absent, not merely different values.**
+**`glsa-jordbrug-standard`** (fixture: `GlsAFixtureHelper.GlsA_Jordbrug_Standard`, Id=100)
+- Name string differs: catalogue `GLS-A / 3F - Jordbrug Standard 2026-2029` vs fixture `GLS-A / 3F - Jordbrug Standard 2024-2026` (year range) — same pattern as every other preset in this document.
+- WEEKDAY tiers match byte-for-byte: 26640→`NORMAL`, 33840→`OVERTIME_30`, null→`OVERTIME_80`.
+- WEEKDAY dayTypeRules match byte-for-byte: Monday-Friday, `DefaultPayCode NORMAL`, priority 1, bands 14400-21600 `SHIFTED_MORNING` / 21600-64800 `NORMAL` / 64800-72000 `SHIFTED_EVENING` (fixture builds these via the shared `StandardWeekdayTimeBands()` helper, same values).
+- SATURDAY tiers match byte-for-byte: 21600→`SAT_NORMAL`, null→`SAT_AFTERNOON`. SATURDAY dayTypeRule matches byte-for-byte: `DefaultPayCode SAT_NORMAL`, priority 1, bands 21600-43200 `SAT_NORMAL` / 43200-64800 `SAT_AFTERNOON`.
+- SUNDAY, HOLIDAY, GRUNDLOVSDAG tiers match byte-for-byte (`SUN_HOLIDAY` / `SUN_HOLIDAY` / `GRUNDLOVSDAG`); no dayTypeRules defined for any of the three in either source — match.
+- **No other divergence found.**
 
-**`glsa-jordbrug-dyrehold`**: Likewise absent. No `GlsA_Jordbrug_Dyrehold` (or similarly named) factory exists. The closest fixture by theme is `GlsA_Jordbrug_Praktikant_Udenlandsk_Staldarbejde` (Id 233, "Staldarbejde" = animal-care work), but it is a distinct Praktikant preset for foreign trainees, named/dated differently ("...Staldarbejde 2024-2026" vs. catalogue's "Jordbrug Dyrehold 2026-2029"), and its structure diverges from the catalogue preset in multiple ways:
-- WEEKDAY tiers use `OVERTIME_50`/`OVERTIME_80` (catalogue: `OVERTIME_30`/`OVERTIME_80`), and the fixture's Weekday has no matching DayTypeRules band set at all (no `ANIMAL_NIGHT`/`SHIFTED_MORNING`/`SHIFTED_EVENING` weekday bands present in the fixture, unlike the catalogue's `WEEKDAY_TIME_BANDS_DYREHOLD`).
-- SATURDAY/SUNDAY/HOLIDAY tiers in the fixture are 3-tier progressions (`SAT_NORMAL`/`ANIMAL_SUN_HOLIDAY` → `OVERTIME_50` → `OVERTIME_80`) rather than the catalogue's single- or two-tier shapes (catalogue SATURDAY: 21600→`SAT_NORMAL`, null→`SAT_ANIMAL_AFTERNOON`; catalogue SUNDAY/HOLIDAY: single tier, null→`ANIMAL_SUN_HOLIDAY`).
-- GRUNDLOVSDAG in the fixture uses full `NORMAL`/`OVERTIME_50`/`OVERTIME_80` progression vs. catalogue's single `GRUNDLOVSDAG` payCode tier.
-- Where DayTypeRules bands do line up (Saturday 0-43200 `SAT_NORMAL` / 43200-86400 `SAT_ANIMAL_AFTERNOON`; Sunday and Holiday 0-86400 `ANIMAL_SUN_HOLIDAY`), the second/edges match the catalogue's Dyrehold bands byte-for-byte, but this is the Praktikant fixture's incidental overlap, not a match to a preset that otherwise exists in the file.
-
-**Divergence: the catalogue preset has no directly corresponding fixture in this file — entirely absent as a "Dyrehold" (non-trainee) preset.**
+**`glsa-jordbrug-dyrehold`** (fixture: `GlsAFixtureHelper.GlsA_Jordbrug_DyrePasning`, Id=101)
+- Name string differs: catalogue `GLS-A / 3F - Jordbrug Dyrehold 2026-2029` vs fixture `GLS-A / 3F - Jordbrug Dyrehold 2024-2026` (year range).
+- WEEKDAY tiers match byte-for-byte: 26640→`NORMAL`, 33840→`OVERTIME_30`, null→`OVERTIME_80`.
+- WEEKDAY dayTypeRules match byte-for-byte: Monday-Friday, `DefaultPayCode NORMAL`, priority 1, bands 0-18000 `ANIMAL_NIGHT` / 18000-21600 `SHIFTED_MORNING` / 21600-64800 `NORMAL` / 64800-86400 `SHIFTED_EVENING` (fixture's `AnimalWeekdayTimeBands()` helper — same values).
+- SATURDAY tiers match byte-for-byte: 21600→`SAT_NORMAL`, null→`SAT_ANIMAL_AFTERNOON`. SATURDAY dayTypeRule matches byte-for-byte: `DefaultPayCode SAT_NORMAL`, priority 1, bands 0-43200 `SAT_NORMAL` / 43200-86400 `SAT_ANIMAL_AFTERNOON`.
+- SUNDAY tiers match byte-for-byte: null→`ANIMAL_SUN_HOLIDAY`. SUNDAY dayTypeRule matches byte-for-byte: `DefaultPayCode ANIMAL_SUN_HOLIDAY`, priority 1, band 0-86400 `ANIMAL_SUN_HOLIDAY`.
+- HOLIDAY tiers match byte-for-byte: null→`ANIMAL_SUN_HOLIDAY`. HOLIDAY dayTypeRule matches byte-for-byte: `DefaultPayCode ANIMAL_SUN_HOLIDAY`, priority 1, band 0-86400 `ANIMAL_SUN_HOLIDAY`.
+- GRUNDLOVSDAG tiers match byte-for-byte: null→`GRUNDLOVSDAG`; no dayTypeRule defined for GRUNDLOVSDAG in either source — match.
+- **No other divergence found.**
 
 ---
 
 ## Jordbrug Elev x3
 
 Source A (catalogue): `eform-angular-timeplanning-plugin/eform-client/.../pay-rule-set-presets.ts`
-Source B (C# fixtures): `eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/OverenskomstFixtureHelper.cs`
+Source B (C# fixtures): `eform-timeplanning-base/Microting.TimePlanningBase.Tests/Helpers/GlsAFixtureHelper.cs`
 
 ### Preset 1: `glsa-jordbrug-elev-u18` (Jordbrug - Elev under 18)
 
@@ -124,27 +137,37 @@ Catalogue `name`: `GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2026-2029`
 
 ### Catalogue vs C# fixture divergence
 
-**None of the three catalogue keys (`glsa-jordbrug-elev-u18`, `glsa-jordbrug-elev-o18`, `glsa-jordbrug-elev-u18-dyrehold`) exist anywhere in `OverenskomstFixtureHelper.cs`.** The fixture file's only "Jordbrug"-named presets are `GlsA_Jordbrug_Praktikant_Udenlandsk_Andet` (Id 232) and `GlsA_Jordbrug_Praktikant_Udenlandsk_Staldarbejde` (Id 233) — both are **Praktikant** (foreign-trainee) agreements with a different structure (flat-rate `ANIMAL_SUN_HOLIDAY`/`SUN_HOLIDAY` payCodes, `DayTypeRules`/time-band splits present), not **Elev** (apprentice) presets, and neither matches these keys/names. The class-level doc comment (line 32) explicitly scopes this file to "Gartneri, Skovbrug, KA Landbrug, KA Gron" — Jordbrug Elev is not among them.
+All three catalogue keys have direct fixtures in `GlsAFixtureHelper.cs` (a separate file from `OverenskomstFixtureHelper.cs`, same directory) — an earlier pass only searched `OverenskomstFixtureHelper.cs` and, not finding them there, mistakenly compared against the unrelated Gartneri Elev fixtures instead. The correct fixtures are:
 
-The nearest content-analogs by payCode/second pattern are `GlsA_Gartneri_Elev_Under18` (Id 201) and `GlsA_Gartneri_Elev_Over18` (Id 202) — different collective-agreement subgroup (Gartneri, not Jordbrug), different `Name` string, different years (2024-2026 vs catalogue's 2026-2029), and no analog exists at all for the Dyrehold variant. Divergences against each:
+**Preset 1 (`glsa-jordbrug-elev-u18`) vs `GlsAFixtureHelper.GlsA_Jordbrug_Laerling_Under18`, Id=102:**
+- Name string differs: catalogue `GLS-A / 3F - Jordbrug Elev u18 2026-2029` vs fixture `GLS-A / 3F - Jordbrug Elev u18 2024-2026` (year range).
+- WEEKDAY tiers match byte-for-byte: 28800→`ELEV_NORMAL`, null→`ELEV_OVERTIME_50`.
+- SATURDAY tiers match byte-for-byte: 28800→`ELEV_SAT_NORMAL`, null→`ELEV_SAT_OVERTIME_50`.
+- SUNDAY tiers match byte-for-byte: 7200→`ELEV_SUN_OT_50`, null→`ELEV_SUN_OT_80`.
+- HOLIDAY tiers match byte-for-byte: 7200→`ELEV_HOL_OT_50`, null→`ELEV_HOL_OT_80` — the fixture has dedicated Holiday payCodes, it does not reuse the Sunday codes.
+- GRUNDLOVSDAG tiers match byte-for-byte: null→`GRUNDLOVSDAG`.
+- dayTypeRules: catalogue is an explicit empty array `[]`; the fixture's `PayRuleSet` object has no `DayTypeRules` property set at all (structurally absent, not merely empty) — same practical effect, different representation, same pattern noted for the Gartneri/Skovbrug Elev presets above.
+- **No other divergence found.**
 
-**Preset 1 (`glsa-jordbrug-elev-u18`) vs nearest analog `GlsA_Gartneri_Elev_Under18`:**
-- Preset/Name differs entirely: "Jordbrug Elev u18 2026-2029" vs "Gartneri Elev u18 2024-2026".
-- WEEKDAY and SATURDAY tiers are byte-identical between the two.
-- SUNDAY tier 2 payCode differs: catalogue `ELEV_SUN_OT_80` vs fixture `ELEV_SUN_OT_100`.
-- HOLIDAY differs in both payCodes: catalogue uses `ELEV_HOL_OT_50`/`ELEV_HOL_OT_80` (distinct Holiday codes); fixture reuses the Sunday codes verbatim — `ELEV_SUN_OT_50`/`ELEV_SUN_OT_100` (no dedicated Holiday paycode in the fixture).
-- No preset with the catalogue's exact key/name exists in the fixture file at all.
+**Preset 2 (`glsa-jordbrug-elev-o18`) vs `GlsAFixtureHelper.GlsA_Jordbrug_Laerling_Over18`, Id=103:**
+- Name string differs: catalogue `GLS-A / 3F - Jordbrug Elev o18 2026-2029` vs fixture `GLS-A / 3F - Jordbrug Elev o18 2024-2026` (year range).
+- WEEKDAY tiers match byte-for-byte: 26640→`ELEV_NORMAL`, 33840→`ELEV_OVERTIME_30`, null→`ELEV_OVERTIME_80`.
+- SATURDAY tiers match byte-for-byte: 21600→`ELEV_SAT_NORMAL`, null→`ELEV_SAT_AFTERNOON`.
+- SUNDAY tiers match byte-for-byte: 7200→`ELEV_SUN_OT_50`, null→`ELEV_SUN_OT_80`.
+- HOLIDAY tiers match byte-for-byte: 7200→`ELEV_HOL_OT_50`, null→`ELEV_HOL_OT_80`.
+- GRUNDLOVSDAG tiers match byte-for-byte: null→`GRUNDLOVSDAG`.
+- dayTypeRules: same absent-vs-empty-array representation note as Preset 1.
+- **No other divergence found.**
 
-**Preset 2 (`glsa-jordbrug-elev-o18`) vs nearest analog `GlsA_Gartneri_Elev_Over18`:**
-- Preset/Name differs entirely: "Jordbrug Elev o18 2026-2029" vs "Gartneri Elev o18 2024-2026".
-- WEEKDAY tier 1 (26640/ELEV_NORMAL) and tier boundary (33840) match, but tier 2 payCode differs: catalogue `ELEV_OVERTIME_30` vs fixture `ELEV_OVERTIME_50`; tier 3 payCode differs: catalogue `ELEV_OVERTIME_80` vs fixture `ELEV_OVERTIME_100`.
-- SATURDAY tier 1 boundary differs: catalogue `upToSeconds=21600` vs fixture `upToSeconds=23400`; payCodes (`ELEV_SAT_NORMAL`/`ELEV_SAT_AFTERNOON`) match.
-- SUNDAY tier 2 payCode differs: catalogue `ELEV_SUN_OT_80` vs fixture `ELEV_SUN_OT_100`.
-- HOLIDAY differs in both payCodes, same pattern as Preset 1: catalogue `ELEV_HOL_OT_50`/`ELEV_HOL_OT_80` vs fixture reusing `ELEV_SUN_OT_50`/`ELEV_SUN_OT_100`.
-- No preset with the catalogue's exact key/name exists in the fixture file at all.
-
-**Preset 3 (`glsa-jordbrug-elev-u18-dyrehold`):**
-- No analog exists in the fixture file whatsoever. No fixture combines `ELEV_NORMAL`/`ELEV_OVERTIME_50` weekday tiers with an `ELEV_SAT_ANIMAL_AFTERNOON` Saturday paycode. The only "ANIMAL"-flavored payCodes in the fixture file (`SAT_ANIMAL_AFTERNOON`, `ANIMAL_SUN_HOLIDAY`) belong to the unrelated Praktikant preset `GlsA_Jordbrug_Praktikant_Udenlandsk_Staldarbejde` (Id 233), whose day-rule/tier and `DayTypeRules` structure is entirely different from this Elev preset (flat all-day rates via time bands rather than tiered thresholds, no `GRUNDLOVSDAG` day-code as a discrete `PayDayRule` in the tier list). This preset is entirely absent from the C# fixture file — no divergence comparison is possible for it.
+**Preset 3 (`glsa-jordbrug-elev-u18-dyrehold`) vs `GlsAFixtureHelper.GlsA_Jordbrug_Laerling_Under18_DyrePasning`, Id=104:**
+- Name string differs: catalogue `GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2026-2029` vs fixture `GLS-A / 3F - Jordbrug Elev u18 Dyrehold 2024-2026` (year range).
+- WEEKDAY tiers match byte-for-byte: 28800→`ELEV_NORMAL`, null→`ELEV_OVERTIME_50`.
+- SATURDAY tiers match byte-for-byte: 28800→`ELEV_SAT_NORMAL`, null→`ELEV_SAT_ANIMAL_AFTERNOON`.
+- SUNDAY tiers match byte-for-byte: 7200→`ELEV_SUN_OT_50`, null→`ELEV_SUN_OT_80`.
+- HOLIDAY tiers match byte-for-byte: 7200→`ELEV_HOL_OT_50`, null→`ELEV_HOL_OT_80`.
+- GRUNDLOVSDAG tiers match byte-for-byte: null→`GRUNDLOVSDAG`.
+- dayTypeRules: same absent-vs-empty-array representation note as Preset 1.
+- **No other divergence found.**
 
 ---
 
