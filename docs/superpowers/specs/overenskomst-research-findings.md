@@ -55,18 +55,24 @@ The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of th
 #### Agroindustri (#4012, 2024-2026)
 - **Parties:** GLS-A / 3F Den Gronne Gruppe
 - **Covers:** Agro-industrial processing (feed mills, grain processing, etc.)
-- **OT:** Similar to Jordbrug (30%/80%)
-- **Normal:** 37h/week, Mon-Sat 06:00-18:00
-- **Fit:** Perfect - same structure as existing Jordbrug presets
+- **OT:** NOT one ladder [corrected 2026-08-08, see ledger G-002]: § 18 stk. 1 defers all
+  rates to the eight kapitel-21 lønbilag, which carry five different ladders —
+  grovvarehandler 40%, fjerkræ/kartoffelmel 30%/50%/100%, kartoffelsortercentraler
+  30%/100% (no 80% tier), gulerodspakkerier 30%/80%/100%, lucerne 30%/80% (no 100%),
+  øvrige flat DKK per klokketime. Only three of eight resemble Jordbrug's 30/80.
+- **Normal:** 37h/week, Mon-Sat 06:00-18:00 (confirmed, agroindustri-2026-2029.txt:232, 293-294)
+- **Fit:** Per-lønbilag encodings required; "same structure as Jordbrug" was wrong
 - **Variants needed:** Standard, Elev u18, Elev o18
-- **Source:** [Agroindustri 2024-2026 PDF](https://www.3f.dk/-/media/files/artikler/overenskomst/den-groenne-gruppe/overenskomster/4012---agroindustri--2024-2026---endelig-17,-d-,05,-d-,24.pdf)
+- **Source:** [Agroindustri 2024-2026 PDF](https://www.3f.dk/-/media/files/artikler/overenskomst/den-groenne-gruppe/overenskomster/4012---agroindustri--2024-2026---endelig-17,-d-,05,-d-,24.pdf) — the "2024-2026" period claim is unverified (no 2024-2026 text in the audit corpus; verified edition is 2026-2029)
 
 #### Golf (#4014, 2024-2026)
 - **Parties:** GLS-A / 3F Den Gronne Gruppe
 - **Covers:** Golf course workers (greenkeepers, maintenance)
-- **OT:** Similar to Gartneri (50%/100%)
-- **Normal:** 37h/week, seasonal variation
-- **Fit:** Good - same structure, seasonal hours may need attention
+- **OT:** Flat 100% supplement with no first-tier step (golf-2024-2026.txt:472-476) —
+  NOT Gartneri-like 50%/100% [corrected 2026-08-08, see ledger G-003]. The shipped
+  single-tier 100% preset matches the text; the error was this doc's comparison.
+- **Normal:** 37h/week averaged over up to 52 weeks (confirmed, golf-2024-2026.txt:236-237)
+- **Fit:** Good - shipped presets match the 2024-2026 text
 - **Variants needed:** Standard, Elev
 - **Source:** [Golf 2024-2026 PDF](https://www.3f.dk/-/media/files/artikler/overenskomst/den-groenne-gruppe/overenskomster/4014---golf-2024-2026---endelig-30,-d-,05,-d-,24.pdf)
 
@@ -77,6 +83,7 @@ The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of th
 - **Period:** 2024-2026
 - **Fit:** Good - hourly workers with standard OT tiers
 - **Source:** [GLS-A Overenskomster](https://www.gls-a.dk/overenskomst/)
+- *Unverified: agreement text not in the audit corpus [2026-08-08, see ledger G-004]*
 
 #### GASA Sortering og Pakning (Sorting & Packing)
 - **Parties:** GLS-A / 3F
@@ -84,6 +91,7 @@ The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of th
 - **OT:** Need to verify
 - **Period:** 2024-2026
 - **Fit:** Good - production workers
+- *Unverified: agreement text not in the audit corpus [2026-08-08, see ledger G-005]*
 
 #### GASA Transport
 - **Parties:** GLS-A / 3F
@@ -91,13 +99,22 @@ The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of th
 - **OT:** Need to verify
 - **Period:** 2024-2026
 - **Source:** [GASA Transport 2024-2026 PDF](https://www.gls-a.dk/wp-content/uploads/2024/07/4016-GASA-TRANSPORT-2024-2026-endelig-05.07.24.pdf)
+- *Unverified: agreement text not in the audit corpus [2026-08-08, see ledger G-006]*
 
 #### Holddrift (Shift work agreement)
-- **Parties:** GLS-A / Dansk Metal + 3F
-- **Covers:** Shift workers across GLS-A sectors
-- **Structure:** Different - uses shift supplements (tillaegstyper) rather than OT tiers
-- **Period:** 2024-2026
-- **Fit:** Possible but may need different pay code structure
+- **Parties:** GLS-A / 3F (Den Grønne Gruppe) — never Dansk Metal; the incorporation
+  clauses in all four full agreements name only GLS-A/3F, and "Metal" has zero hits in
+  the corpus [corrected 2026-08-08, see ledger G-007]
+- **Covers:** Shift workers across GLS-A sectors (incorporated by reference into
+  Jordbrug, Gartneri, Skovbrug and Agroindustri; not Golf)
+- **Structure:** Shift supplements coexist WITH overtime tiers, not instead of them —
+  overtime draws its own overtidstillæg on top of the holddriftstillæg
+  (ratesheet-holddriftstillaeg-2026.txt:26-27) [corrected 2026-08-08, see ledger G-007].
+  Weekly norm differs per shift: 1. skift 37 t, 2./3. skift 34 t (see ledger M-021).
+- **Period:** persisted rate sheet covers 1 March 2026 - 28 February 2027; the
+  agreement text itself is not in the audit corpus
+- **Fit:** Needs shift-category norms, clock windows (weekday 17:00-06:00, Saturday
+  14:00 → end of Sunday) and roster-based fridag categories — see ledger M-021..M-023
 - **Source:** [GLS-A Holddrift 2024-2026](https://www.danskmetal.dk/pjecer-og-udgivelser/overenskomst-gls-a-holddrift-2024-2026)
 
 #### GLS-A / Dansk Metal
@@ -106,6 +123,7 @@ The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of th
 - **OT:** Need to verify - likely follows Dansk Metal patterns
 - **Period:** 2024-2026
 - **Source:** [GLS-A Dansk Metal](https://www.danskmetal.dk/overenskomster/andre-brancher/gls-a)
+- *Unverified: agreement text not in the audit corpus [2026-08-08, see ledger G-008]*
 
 #### GLS-A / HK
 - **Parties:** GLS-A / HK Privat
@@ -113,6 +131,7 @@ The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of th
 - **OT:** Salaried (funktionaer) - no hourly OT tiers
 - **Fit:** Poor - salaried workers don't use our tier system
 - **Source:** [HK GLS-A](https://www.hk.dk/raadogstoette/vaerktoejer/overenskomster/privat/11400/11380_gartneri-land-og-skovbrug)
+- *Unverified: agreement text not in the audit corpus [2026-08-08, see ledger G-009]*
 
 ### KA / Krifa - Remaining Sectors
 
@@ -217,26 +236,50 @@ The loenoversigt distinguishes trainees under 25 vs 25+ during months 7-18 of th
 
 ## OK26 Verification (2026-07-08)
 
-All GLS-A/3F Den Grønne Gruppe families were renewed in a single combined OK26 settlement signed 25 February 2026, effective 1 March 2026, with minimum contract term through 1 March 2029 → all GLS-A presets period label is **2026-2029**.
+The signing date 25 February 2026, effect 1 March 2026 and minimum term through
+1 March 2029 are confirmed in the published Jordbrug and Agroindustri 2026-2029 texts
+only. "All GLS-A families in a single combined settlement" is not supported: the
+Gartneri and Skovbrug 2026-2029 texts are unpublished, and GLS-A's OK26 news does not
+mention Golf at all [corrected 2026-08-08, see ledger G-010].
 
 ### Per-family verification status:
-- **Jordbrug 2026-2029** — full text published (gls-a.dk, 4010, 2. udgave 06.07.26). Structure (overtime 30%/80%, 7h24m/9h24m cutoffs, dyrehold bands, praktikant 50%/80%, Grundlovsdag) unchanged vs 2024-2026.
-- **Agroindustri 2026-2029** — full text published (4012, 07.07.26). All eight sub-areas' overtime clauses word-for-word identical to 2024-2026.
-- **Golf 2026-2029** — confirmed by GLS-A's official lønoversigt (March 2026: "overenskomstperioden 2026-2029"); full text not yet typeset. Wage-overview wording identical to prior year except rates.
-- **Gartneri / Skovbrug 2026-2029** — full texts not yet typeset, but covered by the same signed settlement; the 31-protocol master document (Protokollat 23) states overtime rates "beregnes som hidtil" (unchanged).
+- **Jordbrug 2026-2029** — full text published (gls-a.dk, 4010, 2. udgave 06.07.26).
+  Confirmed in the 2026-2029 text: overtime 30%/80%, dyrehold bands (§ 15), praktikant
+  50%/80%, Grundlovsdag (§ 29). The "7h24m/9h24m cutoffs" are NOT agreement text — the
+  agreement states no clock-duration cutoffs; 26640/33840 s are engine-side derivations
+  of 37÷5 [corrected 2026-08-08, see ledger G-011]. "Unchanged vs 2024-2026" is
+  unverified (no 2024-2026 text in the audit corpus).
+- **Agroindustri 2026-2029** — full text published (4012, 07.07.26). The
+  "word-for-word identical to 2024-2026" claim is unverified — no 2024-2026 text in
+  the audit corpus [2026-08-08, see ledger G-012].
+- **Golf** — NO 2026-2029 edition exists at all: both GLS-A's and 3F's listings still
+  show 2024-2026 as current, GLS-A's OK26 news never mentions Golf, and the March-2026
+  Golf lønoversigt this doc cited is not in the corpus (the only persisted marts-2026
+  circular is the landbrug wage sheet, which mentions neither Golf nor any
+  overenskomstperiode) [corrected 2026-08-08, see ledger G-013, G-084]. The Golf
+  presets' "2026-2029" name claims a period whose text does not exist.
+- **Gartneri / Skovbrug 2026-2029** — full texts not published. The "covered by the
+  same signed settlement" half has partial corroboration (GLS-A's OK26 news covers
+  Gartneri; a signed Feb-2026 protocol exists for Skovbrug), but the load-bearing
+  Protokollat 23 "beregnes som hidtil" wording is absent from every persisted source —
+  unverifiable until the texts publish [2026-08-08, see ledger G-014].
 
 ### Pre-existing encoding discrepancies (open verification questions for second-opinion review against primary texts)
 
-These mismatches exist against both the 2024-2026 and 2026-2029 texts (unchanged wording), so the rename neither fixes nor worsens them:
+These mismatches were verified 2026-08-08 against the persisted texts (Jordbrug/Agro
+2026-2029; Gartneri/Skovbrug/Golf 2024-2026 — the "exist against both editions" framing
+is unverifiable where a prior or successor edition is not in the corpus, see ledger
+G-015). Verdicts: items 2, 3, 5, 6, 7 CONFIRMED; items 1, 4, 8 partially refuted as
+noted [corrected 2026-08-08, see ledger G-016..G-023]:
 
-1. Agro **Gulerodspakkerier**: text has 30% (h1-2) / 80% (h3) / 100% (beyond + Sun/Hol); preset ends at 80%.
+1. Agro **Gulerodspakkerier**: text has 30% (h1-2) / 80% (h3) / 100% (beyond + Sun/Hol); preset ends at 80%. Confirmed for `-standard` only — the `-elev` twin has no 80% band at all (single unbounded 30% tier), so the remediation applies to one preset, not two [see ledger G-016].
 2. Agro **Kartoffelsortering**: text has 30% → 100% (no 80% tier); preset has 30% → 80%.
 3. Agro **Minkfoder**: text has a third tier at 100% keyed to clock time (after 20:00; Sun after 12:00); preset ends at 80%.
-4. Agro **Øvrige**: text uses flat-DKK supplements across three clock-hour bands + a separate two-band Sunday scale; preset models 30%→80% percentages.
+4. Agro **Øvrige**: text uses flat-DKK supplements across three clock-hour bands + a separate two-band Sunday scale; preset models 30%→80% percentages. The `-standard` half is confirmed; the `-elev` twin models a single unbounded 30% tier, a different wrong shape — and § 4 also has a pre-shift two-band scale (§ 4 b) and a hverdagsfridag scale (§ 4 c) that no preset touches [see ledger G-019, M-019, M-020].
 5. **Skovbrug** evening forskudt-tid band: text allows 18:00-19:00 (1h); preset encodes 18:00-20:00.
 6. **Skovbrug** Saturday: text treats all Saturday work as overtime from hour 1; preset gives 6h "normal" first.
 7. **Gartneri** Sunday/holiday: text tiers it 50% (first 2h) / 100%; preset uses a single all-day SUN_HOLIDAY code.
-8. **Elev u18 8h/day threshold** (Gartneri/Skovbrug/Golf/Agro): no basis in the overenskomst texts — likely from the statutory youth-work rules; verify intent before changing.
+8. **Elev u18 8h/day threshold** (Gartneri/Skovbrug/Golf/Agro): no basis in the overenskomst texts as a *pay* threshold — but the framing "likely from statutory youth-work rules" was itself unevidenced; the audit found no standalone daily 8-hour clause in any of the five texts (the only "8 timer" hits are substrings of "48 timer") and the statutory-origin hypothesis remains exactly that [corrected 2026-08-08, see ledger G-023].
 
 ---
 
@@ -246,11 +289,15 @@ These mismatches exist against both the 2024-2026 and 2026-2029 texts (unchanged
 
 ## There is no universal Danish rule — it is per agreement
 
-Researched against primary agreement PDFs. The three patterns found:
+Researched against primary agreement PDFs. Within the persisted GLS-A texts, the
+attested patterns are stacking, not-cumulative and silence; the KA/Krifa exemplar
+below is an out-of-corpus comparator, not persisted primary text
+[corrected 2026-08-08, see ledger G-024]:
 
 | Agreement | Overtime hour inside a displaced-time band | Evidence |
 |---|---|---|
-| **KA / Krifa** (Landbrug svine/kvæg, plantebrug, maskinstation; Grøn) | **Cumulative — both** | Hovedoverenskomst § 16 stk. 5: *"Udføres overarbejde på særlige tidspunkter … betales **foruden overtidstillæg også tillæg for arbejde på særlige tidspunkter**."* |
+| **GLS-A Agroindustri (§ 19 stk. 4)** and **Holddrift** | **Cumulative — both** | § 19 stk. 4: overtime in tilslutning to forskudt arbejdstid draws the overtidstillæg *in addition to* the forskudt supplement (agroindustri-2026-2029.txt:672-673); same principle in the Holddrift sheet (ratesheet-holddriftstillaeg-2026.txt:24-25). |
+| **KA / Krifa** (Landbrug svine/kvæg, plantebrug, maskinstation; Grøn) — *comparator, text not in audit corpus* | **Cumulative — both** | Hovedoverenskomst § 16 stk. 5: *"Udføres overarbejde på særlige tidspunkter … betales **foruden overtidstillæg også tillæg for arbejde på særlige tidspunkter**."* |
 | **GLS-A Jordbrug — dyrehold (§ 15)** | **Not cumulative** | § 15 opens *"ved arbejde **inden for normal arbejdstid**"* — an overtime hour is outside normal time, so the stald supplement cannot attach to it. |
 | **GLS-A Jordbrug markarbejde (§ 23), Gartneri (§ 23), Skovbrug (§ 22)** | **Agreement is silent** | Exhaustive search for `samtidig`, `foruden`, `i tilslutning`, `ydes ikke tillæg`, `bortfalder` finds no clause either way. |
 
@@ -274,13 +321,30 @@ The 31 remaining presets (all Elev/praktikant variants, Golf, Agroindustri) decl
 
 ## Additional Jordbrug/dyrehold discrepancies found
 
-- **Dyrehold 05:00–06:00 `SHIFTED_MORNING` and 18:00–24:00 `SHIFTED_EVENING` bands have no basis in § 15**, which lists only weekday 00:00–05:00, Saturday after 12:00, and Sun/holidays. Minutes are being attributed to two rules that do not exist for dyrehold.
-- **§ 15 Saturday-afternoon and Sunday/holiday supplements are per *day*, not per hour.** Encoding them as hourly pay codes attributes N hours where the agreement triggers once.
+- **Dyrehold 18:00–24:00 `SHIFTED_EVENING` is over-broad**: § 23 caps displacement at
+  2 h after 18:00, so 20:00–24:00 is unsupported (4 h/day). The 05:00–06:00
+  `SHIFTED_MORNING` band, however, is NOT baseless — its basis is § 23 forskudt
+  arbejdstid (2 h window before 06:00, jordbrug-2026-2029.txt:783), not § 15; on
+  Dyrehold it is truncated to 05:00–06:00 only because 00:00–05:00 is already the § 15
+  ANIMAL_NIGHT band [corrected 2026-08-08, see ledger G-031, G-032].
+- **§ 15 Saturday-afternoon and Sunday/holiday supplements are per *day*, not per hour**
+  (its weekday/Saturday night item is expressly "pr. time" — § 15 is mixed). The
+  agreement-text half is confirmed; whether the presets "encode them as hourly" is not
+  decidable in-engine — no rule or pay-line entity carries a rate or unit field, so the
+  per-day-vs-per-hour distinction lives downstream [corrected 2026-08-08, see ledger
+  G-033; capability gap recorded as E11 in the proposed-encodings doc].
 - **The 9h24m tier boundary is an assumption.** § 22 keys off *"efter den normale daglige arbejdstids **ophør**"* — the end of the actual scheduled day. It equals 9h24m only when that day is exactly 7,4 h; under § 9 stk. 5 varying hours and the alternative-scheduling protocol (*"Ingen arbejdsdag … over 9,25 timer"*) it does not.
 
 ## Sources
 
-Jordbrug 2026-2029 · Jordbrug 2024-2026 · Jordbrug 2021-2024 · Gartneri 2024-2026 · Skovbrug 2024-2026 (all gls-a.dk / 3f.dk PDFs) · GLS-A Lønoversigt Landbrugsarbejde marts 2026 · KA/Krifa Overenskomst 2025-2028 (krifa.dk) · KA fagoverenskomst Landbrug og Grøn (ka.dk) · Industriens Overenskomst 2025-2028 (co-industri.dk) · Anlægsgartnerarbejde 2025-2028 (3f.dk) · KL Aftale 04.89 (kl.dk).
+**Canonical manifest: `sources/SOURCES.md`** — the persisted, hash-verified corpus this
+doc's GLS-A claims are checkable against (retrieved 2026-08-08): Jordbrug 2026-2029 ·
+Gartneri 2024-2026 · Skovbrug 2024-2026 · Golf 2024-2026 · Agroindustri 2026-2029 ·
+Lønoversigt Landbrugsarbejde marts 2026 · Holddriftstillæg sheet 2026-2027. Documents
+cited below but NOT persisted (claims resting solely on them are marked unverifiable):
+Jordbrug 2024-2026 / 2021-2024 · KA/Krifa Overenskomst 2025-2028 (krifa.dk) · KA
+fagoverenskomst Landbrug og Grøn (ka.dk) · Industriens Overenskomst 2025-2028
+(co-industri.dk) · Anlægsgartnerarbejde 2025-2028 (3f.dk) · KL Aftale 04.89 (kl.dk).
 
 **Not accessible:** GLS-A member-only guidance on forskudttidstillæg and on udenlandske praktikanter — the most likely place where GLS-A states its administrative practice on the points the text leaves open. Worth checking with a member login before building on the silent cases. Gartneri and Skovbrug exist only as 2024-2026 texts; 2026-2029 versions are pending and may add an interaction clause.
 
@@ -305,7 +369,7 @@ The 50 %/80 % overtime wording and the two-item staldarbejde tillæg structure a
 > **Staldarbejde** — normal arbejdstid indtil 37 timer pr. uge **eller 296 timer i en 8 ugers periode**, og kan lægges **på alle ugens dage, hele døgnet**.
 > **Andet arbejde** — normal arbejdstid indtil 37 timer pr. uge, **mandag til lørdag mellem kl. 6.00 og 18.00**.
 
-**There is no daily norm anywhere in the agreement** — only the placement window. So "overarbejde efter den normale arbejdstids ophør" has no fixed daily trigger for a praktikant; it depends on the individual praktikaftale. The 7h24m (26640 s) tier boundary currently encoded is an assumption, not agreement text.
+**No clause states a daily overtime-trigger figure** — only the placement window. So "overarbejde efter den normale arbejdstids ophør" has no fixed daily trigger for a praktikant; it depends on the individual praktikaftale. Note the narrowing [corrected 2026-08-08, see ledger G-042, G-043]: "7,4 timer" IS literal agreement text — three times, always as the søgnehelligdag/fridag reduction unit (37÷5), never as an overtime trigger. The encoded 26640 s boundary is a borrowed SH-reduction figure that no clause adopts as the praktikant daily overtime boundary — not an invented number, but not a stated trigger either.
 
 This fork is the single biggest attribution difference: **the same Sunday hour is normal time for a stald praktikant and overtime for a field praktikant.**
 
@@ -340,14 +404,14 @@ Note this is *worse in structure* than for ordinary staff on Sundays: § 22 give
 | 1 | Weekday tiers 50 %/80 % | ✅ | ✅ | correct |
 | 2 | Andet arbejde Saturday = weekday | ✅ | ✅ (Mon–Sat 06–18 is normal) | correct |
 | 3 | Andet arbejde Sun/holiday all overtime | ✅ | ✅ (outside normal time) | correct |
-| 4 | **Grundlovsdag whole day as søn-/helligdag** | both presets | ❌ half day — normal before 12:00 | **morning minutes mis-attributed** |
-| 5 | **Staldarbejde Saturday/Sunday overtime** | never reachable | overtime exists (stk. 4 c) | **all Sat/Sun overtime minutes lost** — bands shadow the tiers |
-| 6 | Stald Sat/Sun supplements as hourly codes | hourly | **per day** | N hours reported where the rule triggers once |
-| 7 | Daily norm 7h24m | 26640 s | no daily norm in text | boundary between NORMAL and OVERTIME is an assumption |
+| 4 | **Grundlovsdag noon split** | handled by BOTH praktikant presets since 2026-08-07 (weekday-shaped tiers + gated noon-split path) — the flat whole-day pattern belongs to the other 37 presets, not these two [corrected 2026-08-08, see ledger G-058, G-094] | § 29: half day — normal before 12:00 | correct for the two praktikant presets |
+| 5 | **Staldarbejde Saturday/Sunday overtime** | reachable since 2026-08-07: the name+shape-gated split lets bands attribute normal time while tiers 2-3 take the overflow [corrected 2026-08-08, see ledger G-059, G-085] | overtime exists (stk. 4 c) | correct post-correction; the "bands shadow the tiers" description is historical |
+| 6 | Stald Sat/Sun supplements as hourly codes | unit not decidable in-engine (no rate/unit field on rules or pay lines) [corrected 2026-08-08, see ledger G-033] | **per day** (night item is per hour — § 15 is mixed) | per-day vs per-hour is a downstream payroll decision; engine gap E11 |
+| 7 | Daily norm 7h24m | 26640 s | no daily overtime-trigger figure in text (7,4 t exists only as the SH-reduction unit) [see ledger G-043] | boundary between NORMAL and OVERTIME is an assumption |
 | 8 | Stald 37 h averaged over **8 weeks** | not modelled | § 8 stk. 2 | weekly/period overtime cannot be detected at all |
 | 9 | Pay codes shared with ordinary Dyrehold preset | `SAT_ANIMAL_AFTERNOON`, `ANIMAL_SUN_HOLIDAY` | praktikant amounts differ | not a minute-attribution issue, but downstream cannot tell the two apart from the code alone — every *other* trainee preset uses `ELEV_`-prefixed codes |
 
-Item 5 is the most serious: for **Staldarbejde**, Saturday, Sunday and holidays declare time bands, so the router takes the band path and the tiers never execute. A praktikant working 12 hours on a Saturday is reported as `SAT_NORMAL` + `SAT_ANIMAL_AFTERNOON` with **zero overtime minutes**. Weekdays are unaffected (no bands). *Andet arbejde* is unaffected throughout (no bands at all).
+Item 5 *was* the most serious defect and is FIXED as of 2026-08-07 [corrected 2026-08-08, see ledger G-059, G-085]: the corrected tiers plus the identity+shape-gated split mean a praktikant working 12 hours on a Saturday now gets band-attributed normal time until the 26640 s boundary and OVERTIME_50/OVERTIME_80 beyond it. The historical failure mode (band path shadowing the tiers, zero overtime minutes) still describes the OTHER banded presets — see the engine-level defects section. Data migration for pre-correction customer rows shipped 2026-08-07 (eform-timeplanning-base v10.0.57).
 
 ## Test-coverage gap
 
@@ -358,8 +422,10 @@ Any further work here needs end-to-end tests through the router, per day type, s
 ## Open questions (need GLS-A confirmation, not code changes)
 
 1. **Night stald work for a praktikant.** § 50 stk. 4 d omits the § 15 night item, and 2026-2029's *"hvor andet ikke følger af § 50"* arguably displaces § 15 wholesale. Three defensible readings: § 15's night rate still applies; nothing applies; or § 23 applies. The 2024-2026 wording supported the first reading more cleanly.
-2. **§ 23 forskudttid vs overtime for the same hour** — unresolved in the text for praktikanter *and* for ordinary workers.
-3. **Rate-sheet typo**: GLS-A's overtime table says "7 - 12 måneders praktik" while the wage table and § 50 stk. 4 b say **7–18 months**. Present in both the 2025 and 2026 sheets; treat 7–18 as authoritative.
+2. **§ 23 forskudttid vs overtime for the same hour** — unresolved in the Jordbrug text for praktikanter *and* for ordinary workers. NOT unresolved GLS-A-wide: Agroindustri § 19 stk. 4 settles the same question explicitly in favour of stacking [corrected 2026-08-08, see ledger G-063].
+3. ~~Rate-sheet typo "7 - 12 måneders praktik"~~ — REFUTED: the persisted marts-2026 circular contains no praktikant overtime table at all; the alleged heading does not exist there. The 2025 sheet is not in the corpus, so that half is untestable. § 50 stk. 4 b's **7–18 months** stands as authoritative [corrected 2026-08-08, see ledger G-064].
+4. **Is § 22's Sunday +80% really from hour one for ordinary workers?** The praktikant-is-worse comparison rests on it, and the text supports two readings — tagged `[open question for GLS-A]` [2026-08-08, see ledger G-046].
+5. **Does § 15's night rate survive § 50 stk. 7 for praktikanter?** Three defensible readings (see question 1) — tagged `[open question for GLS-A]` [2026-08-08, see ledger G-062].
 
 ## Naming drift
 
@@ -370,8 +436,14 @@ Both praktikant presets are named `… 2026-2029` in the frontend catalogue whil
 # "Normal daglig arbejdstid" — what sets the overtime boundary (decided 2026-08-07)
 
 **Decision: the boundary stays 7,4 t (26640 s) by default. A planned day SHORTER than
-7,4 t does NOT lower it.** Researched against the primary texts; this is the GLS-A
-reading and it is what the presets encode.
+7,4 t does NOT lower it by default.** Two of the decision's original justifications
+were overclaims [corrected 2026-08-08, see ledger G-065]: § 22 stk. 1 states no figure,
+so 7,4 t is an interpretive convention layered on the § 8 stk. 1 weekly norm (37÷5),
+textually attested only as the SH-reduction unit; and "it is what the presets encode"
+is false as a blanket — 26640 s is tier 1 on the adult Standard/Dyrehold presets and
+the three o18 Elev presets, while the 13 presets carrying the 28800 s first-tier shape
+(all *-elev-u18 plus Golf Elev and the 8 Agro Elev) use 28800 s. The decision may still
+be the right default; it is not agreement text and it is not universal in the presets.
 
 ## The asymmetry
 
@@ -383,8 +455,8 @@ flexible regimes**, never in the ordinary regime § 22 governs.
 
 | Planned day | Does the plan set the overtime line? | Authority |
 |---|---|---|
-| **Longer** than 7,4 t | **Yes** — but only within an opt-in regime, up to its ceiling | § 9 stk. 4 (40 t/uge banked), § 9 stk. 5 (premium only above **45** t/uge), protokollat stk. 1 (*"Ingen arbejdsdag kan være under 6 timer eller over 9,25 timer"*) |
-| **Shorter** than 7,4 t | **No — no clause anywhere lowers it** | — |
+| **Longer** than 7,4 t | **Yes — but only the alternativ-arbejdstid protokollat actually redefines a per-day range.** § 9 stk. 4 is a weekly 40 t banking scheme settled by afspadsering (it defers an overtime line, doesn't set one) and § 9 stk. 5 sets a weekly 45 t premium threshold independent of any single day [corrected 2026-08-08, see ledger G-067] | protokollat stk. 1 (*"Ingen arbejdsdag kan være under 6 timer eller over 9,25 timer"*); § 9 stk. 4/5 are weekly mechanisms |
+| **Shorter** than 7,4 t | **Not by default — but "no clause anywhere" was too absolute**: § 52 Overenskomstfravigende lokalaftaler expressly permits written local derogations from the arbejdstid provisions, and § 9 stk. 9 routes arbejdstid derogations there [corrected 2026-08-08, see ledger G-068] | § 52; § 9 stk. 9 |
 
 Two clauses cut against lowering it:
 
@@ -449,12 +521,21 @@ weekly context today, so this is unimplemented.
 - **Overtime is a multiple of the praktikant's own rate**, not the § 22 C-løn basis used
   for ordinary staff. Verified: 83,05 × 1,5 = 124,58 and × 1,8 = 149,49; same for the
   other two steps, exact to the øre.
-- **Three defects in GLS-A's own circular** (marts 2026), all present in the published
-  PDF: the overtime table is headed *"7 - 12 måneders praktik"* while carrying the
-  **7–18** rates (confirmed by the arithmetic above); `15,446,19` has a comma where a
-  period belongs (§ 50 stk. 4 b confirms **15.446,19**); and `ferieberettede` is a typo.
+- ~~Three defects in GLS-A's own circular~~ — REFUTED [corrected 2026-08-08, see ledger
+  G-064, G-081]: none of the three alleged defects exists in the persisted marts-2026
+  circular. It contains no praktikant overtime table, no "7 - 12 måneders praktik"
+  heading, no "15,446,19" (that figure lives only in § 50 stk. 4 b of the agreement,
+  correctly punctuated), and "ferieberettigede" is spelled correctly throughout. The
+  figures previously attributed to the circular are § 50 agreement figures.
 
-## Circular — Arbejdstid and Overarbejdsbetaling, verbatim
+## Circular — Arbejdstid and Overarbejdsbetaling — MISATTRIBUTED, kept for the record
+
+The block below was previously presented as a verbatim transcription of the marts-2026
+circular. It is NOT [corrected 2026-08-08, see ledger G-082]: the persisted circular
+contains no such Overarbejdsbetaling table and no 73,90/177,60 staldarbejde figures.
+The overtime figures are derivable from § 50's hourly rates × 1,5 / × 1,8, and
+73,90/177,60 are § 50 stk. 4 d agreement figures (jordbrug-2026-2029.txt:2216, 2221).
+The Arbejdstid wording matches the agreement (§ 50 via §§ 8-9), not a circular page.
 
 ```
 Overarbejdsbetaling            2 første timer hverdage
@@ -483,10 +564,20 @@ Source: [GLS-A Lønoversigt, udenlandske praktikanter landbrug, marts 2026](http
 
 # IMPLEMENTATION STATUS — all overenskomst presets (audit 2026-08-07)
 
-Every GLS-A / 3F preset was re-verified clause by clause against the primary
-agreement PDFs (obtained and text-extracted, not summarised). **Verdict: the
-presets are NOT true to the documents.** All 8 previously-listed discrepancies are
-confirmed and 8 further categories were found.
+> **Adversarially verified 2026-08-08 against persisted sources — see
+> `2026-08-08-glsa-verification-ledger.md`** (98 claims: 52 confirmed, 28 refuted,
+> 18 unverifiable; plus 23 missing rules M-001..M-023). Proposed corrections and
+> engine gaps: `2026-08-08-glsa-proposed-encodings.md`. Sources: `sources/SOURCES.md`.
+
+Every GLS-A / 3F preset was re-verified clause by clause against primary agreement
+PDFs (obtained and text-extracted, not summarised) — for Jordbrug and Agroindustri
+the 2026-2029 editions; for Gartneri, Skovbrug and Golf necessarily the 2024-2026
+editions, since no 2026-2029 texts exist [corrected 2026-08-08, see ledger G-083].
+**Verdict: the presets are NOT true to the documents.** 18 defects are enumerated
+below (the earlier "8 confirmed + 8 further" arithmetic did not match its own list);
+the 2026-08-08 verification confirmed 12 of the 18 as filed, narrowed or refuted 6
+(defects 2, 4, 7, 9, 13-as-to-elev, 17 — see the list), removed one false defect
+(Golf Saturday code), and found 23 further missing rules.
 
 Framing as always: this system reports **which rule each minute falls under**. A
 wrong pay code is a wrong minute attribution, and since pay codes carry no
@@ -511,12 +602,13 @@ preference.
 | Family | Presets | Status |
 |---|---|---|
 | **Udenlandske praktikanter** (Stald, Andet) | 2 | ✅ **Corrected 2026-08-07.** Tiers, Saturday, Sunday and the § 29 Grundlovsdag noon split all match. **Data migration shipped 2026-08-07** (eform-timeplanning-base `CorrectPraktikantSection50Tiers`, v10.0.57): existing customer rule sets under either validity-period name are rewritten to the corrected tiers idempotently, so pre-correction rows now take the split path and earn overtime like freshly created ones. Open: per-day vs per-hour supplement unit; pay codes shared with adult Dyrehold whose amounts differ |
-| Jordbrug Standard / Dyrehold | 2 | ❌ fabricated Saturday supplement; Dyrehold band errors; flat Grundlovsdag |
-| Jordbrug Elev u18 / o18 / u18 Dyrehold | 3 | ❌ wrong first tier (o18), missing top tier (u18), fabricated u18/o18 split |
-| Gartneri Standard / Elev ×2 | 3 | ❌ Sunday not tiered; Saturday code; 1. maj missing; Elev tiers |
+| Jordbrug Standard / Dyrehold | 2 | ❌ fabricated Saturday supplement (default regime — the opt-in alternativ-arbejdstid protokollat DOES pay any worker a Saturday kr/time rate, see ledger G-090); Dyrehold evening band over-broad (morning band has § 23 basis — defect 9 refuted, see ledger G-031/G-032); flat Grundlovsdag. Missing: kapitel 22 sector ladders (frugtplantager, fjerkræproduktion, minkfarme) have NO presets at all — ledger M-007..M-009 |
+| Jordbrug Elev u18 / o18 / u18 Dyrehold | 3 | ❌ wrong first tier (o18), missing top tier (u18 — WEEKDAY and SATURDAY), fabricated u18/o18 split |
+| Gartneri Standard / Elev ×2 | 3 | ❌ Sunday not tiered; Saturday-afternoon code baseless on `-standard` and `-elev-o18` (u18 already uses the tiered code) [see ledger G-086]; 1. maj missing; Elev tiers. Missing: detailsalg § 14 bands, deltid § 11, turnus notice § 22 stk. 2, anlægsgartner carve-out § 2 — ledger M-010, M-012..M-014 |
 | Skovbrug Standard / Elev ×2 | 3 | ❌ Saturday should be overtime from hour 1; evening band 1 h too long; Elev Sunday step invented |
-| Golf Standard / Elev | 2 | ❌ Saturday-afternoon code; Elev boundary; fridage missing |
-| Agroindustri Standard ×8 / Elev ×8 | 16 | ❌ 3 wrong OT ceilings; Øvrige structurally wrong; no forskudt bands; fabricated Saturday split; **Elev variants have no textual basis at all** |
+| Golf Standard / Elev | 2 | ❌ Elev boundary; fridage missing. The previously listed "Saturday-afternoon code" defect was FALSE — the preset matches the text exactly (normal Saturday 06:00-12:00, 100% after noon) [corrected 2026-08-08, see ledger G-087] |
+| Agroindustri Standard ×8 / Elev ×8 | 16 | ❌ 3 wrong OT ceilings (Gulerod's applies to `-standard` only, see ledger G-016); Øvrige structurally wrong (incl. unencoded pre-shift § 4 b and hverdagsfridag § 4 c scales); no forskudt bands; fabricated Saturday split; **Elev variants have no textual basis at all**. Missing: grovvare pre-shift tier + conditional ladder, deltid § 5 stk. 3 d, Weekendarbejde § 7 stk. 4 — ledger M-015..M-020 |
+| *Cross-family regimes (no presets)* | — | Flekstid, fastløn, alternativ arbejdstidsplanlægning (stk. 1 + stk. 3), varierende ugentlig arbejdstid, Holddrift shift norms/windows/fridage — ledger M-001, M-003, M-005/M-006, M-011, M-021..M-023 |
 
 ## Defects, ordered by payroll harm
 
@@ -524,12 +616,18 @@ preference.
 
 1. **Jordbrug Elev o18 first OT tier is 30 %; § 47 stk. 4 gives lærlinge 50 %.**
    Hits every hour 1–2 of daily overtime for every Jordbrug apprentice.
-2. **All 14 "u18" presets are missing their top overtime tier.** Hour 3 onward stays
-   at the first-tier rate forever (Jordbrug 50 vs 80; Gartneri/Skovbrug 50/30 vs
-   100). Unbounded: the longer the day, the larger the error.
+2. **The missing-top-tier defect holds for exactly 4 presets, not 14** [corrected
+   2026-08-08, see ledger G-089]: 13 GLS-A presets carry the 28800 s two-tier shape,
+   and only `glsa-jordbrug-elev-u18`, `glsa-jordbrug-elev-u18-dyrehold` (§ 47 stk. 4,
+   50→80), `glsa-gartneri-elev-u18` (§ 45 stk. 3 c, 50→100) and
+   `glsa-skovbrug-elev-u18` (§ 44 stk. 9, 30→100) are governed by an apprentice
+   overtime clause — on WEEKDAY and SATURDAY alike. The other 9 (`glsa-golf-elev` +
+   8 `glsa-agro-*-elev`) have no apprentice overtime clause at all and are
+   fabrications (defect: the whole preset, not a tier — see the Elev section).
 3. **Agro Kartoffelsortering** codes `OVERTIME_80`; the text has only 30 → **100**.
-4. **Agro Gulerod** missing the 100 % tier, and its 80 % band should stop after
-   overtime hour 3 (37440 s).
+4. **Agro Gulerod `-standard`** missing the 100 % tier, and its 80 % band should stop
+   after overtime hour 3 (37440 s). Applies to the standard preset only — the `-elev`
+   twin has no 80 % band to bound [corrected 2026-08-08, see ledger G-016].
 5. **Agro Minkfoder** missing the clock-keyed 100 % tier (overtime after 20:00; Sun/
    holiday after 12:00), and the Sunday 12:00 split.
 6. **Skovbrug Saturday** gives 6 h "normal"; § 7 stk. 1 puts the week on
@@ -538,12 +636,21 @@ preference.
 ### Minutes over-attributed (supplements not earned)
 
 7. **Saturday-afternoon supplement is fabricated** in Jordbrug Standard and all 8
-   Agro Standard presets. An exhaustive search of "lørdag" finds Saturday
-   supplements only for dyrehold (§ 15), lærling stald (§ 47 stk. 5) and praktikant
-   (§ 50 stk. 4 d) — never for ordinary workers.
+   Agro Standard presets — for the DEFAULT kapitel-3 regime those presets model. The
+   original "never for ordinary workers" was too absolute [corrected 2026-08-08, see
+   ledger G-090]: the opt-in alternativ-arbejdstidsplanlægning protokollat stk. 4 a
+   pays ANY medarbejder kr. 82,90/time on Saturdays, and Holddrift pays a Saturday
+   window rate. In the default regime, Saturday supplements exist only for dyrehold
+   (§ 15), lærling stald (§ 47 stk. 5), § 49 stk. 4 and praktikant (§ 50 stk. 4 d) —
+   so the defect and its remediation stand unchanged.
 8. **Dyrehold 18:00–24:00 `SHIFTED_EVENING`** — § 23 caps displacement at 2 h after
    18:00, so 20:00–24:00 is unsupported (4 h/day).
-9. **Dyrehold 05:00–06:00 `SHIFTED_MORNING`** — no such item in § 15.
+9. ~~Dyrehold 05:00–06:00 `SHIFTED_MORNING` — no such item in § 15~~ — REFUTED
+   [corrected 2026-08-08, see ledger G-031]: the band's basis is § 23 forskudt
+   arbejdstid (2 h window before 06:00), not § 15; on Dyrehold it is truncated to
+   05:00–06:00 because 00:00–05:00 is already the § 15 ANIMAL_NIGHT band. Not a
+   defect. (The second cited preset, `glsa-jordbrug-elev-u18-dyrehold`, declares no
+   bands at all, so the claim never applied there.)
 10. **Skovbrug evening band 18:00–20:00** — § 22 allows *"indtil 1 time efter kl.
     18.00"*, so 19:00–20:00 is not entitled.
 11. **Skovbrug Elev Sunday 50 % first-2h step is invented** — § 21 stk. 1 puts
@@ -555,7 +662,9 @@ preference.
 
 13. **Agro Øvrige models percentages where § 4 a pays flat DKK** across clock bands
     (kr. 49,25 / 78,46 / 146,77, plus a separate Sunday scale). No minute maps to a
-    correct code; needs a DKK-band model, not a tweak.
+    correct code; needs a DKK-band model, not a tweak. The `-elev` twin is wrong in a
+    different way (single unbounded 30 % tier), and § 4 b (pre-shift) and § 4 c
+    (hverdagsfridag) scales are additionally unencoded [see ledger G-019, M-019, M-020].
 14. **Agroindustri encodes no forskudt bands at all**, though § 19 defines
     18:00–22:00 and 22:00–06:00. All displaced-time minutes across 16 presets are
     unattributed.
@@ -563,13 +672,45 @@ preference.
     *"mandag til lørdag"* (5 h/week lost).
 16. **Grundlovsdag is a flat all-day code on 37 of 39 presets.** § 29 makes it a
     fridag **from 12:00**; morning minutes are ordinary time. Only the two praktikant
-    presets handle it.
-17. **Per-day supplements encoded per-hour** — § 15 dyrehold, § 47 stk. 5 elev stald,
-    § 50 stk. 4 d praktikant all say *"pr. dag"*. N hours reported where the rule
-    triggers once.
+    presets handle it. (Count precision: 29 of 31 `glsa-*` presets verified flat via
+    CODE-TRUTH; the 8 `ka-*` presets are asserted flat from the catalogue but sit
+    outside the audited corpus [see ledger G-094].)
+17. **Per-day supplements: the texts say "pr. dag"** (§ 15 dyrehold Saturday/Sunday
+    items, § 47 stk. 5 elev stald, § 50 stk. 4 d praktikant; § 15's night item is
+    expressly "pr. time"). Whether the presets mis-encode this is NOT decidable
+    in-engine — no rule or pay-line entity carries a rate or unit field, so per-day
+    vs per-hour is a downstream payroll decision; the gap is the missing
+    unit-of-measure capability (E11) [corrected 2026-08-08, see ledger G-033].
 18. **Unmodelled fridage**: 24 December (all families), 1 May (Gartneri 4 h @50 %
     then 100 %; Golf as søgnehelligdag; Agro kartoffelsortering fridag from 12:00),
     31 December (Gartneri, Agro kartoffelsortering).
+
+### Missing rules found by the 2026-08-08 completeness sweep
+
+[added 2026-08-08, see ledger M-001..M-023] — full-text sweeps of all five agreements
+plus the rate sheets found 23 pay-relevant rules absent from BOTH the presets and this
+doc's earlier findings. Highest-surface first:
+
+- **Jordbrug kapitel 22 sector ladders have no presets at all** (M-007..M-009):
+  frugtplantager (30/50/100 with a søn-/helligdag NOON split on ordinary weekends),
+  fjerkræproduktion (30/50/100 + a task-conditional 80 % override for fodring/æg
+  lørdag-søn-/helligdage), minkfarme (clock-keyed 30/80/100). § 16 routes this work
+  to kapitel 22; today it silently falls on `glsa-jordbrug-standard`'s 30/80.
+- **Opt-in regimes that reroute attribution** (M-001 flekstid, M-003 fastløn, M-005/
+  M-006 alternativ arbejdstidsplanlægning incl. the 5×24 h plan-change penalty, M-016
+  Agro Weekendarbejde which *suppresses* søgnehelligdagsforskud).
+- **Worker-category variants**: deltid (Gartneri § 11 = M-012; Agro § 5 stk. 3 d =
+  M-015), detailsalg bands with lærling/ungarbejder percentages (M-013).
+- **Structure the tier model cannot express**: grovvare pre-shift +50 % hour and its
+  conditional ladder shrink (M-017/M-018), Øvrige § 4 b/§ 4 c scales (M-019/M-020).
+- **Holddrift**: per-shift weekly norms (37/34 t), supplement clock windows (weekday
+  17:00-06:00; lørdag 14:00 → end of Sunday), roster-based fridag categories
+  (M-021..M-023).
+- Klargøring af traktorer pre-shift ½-hour (M-002), Gartneri/Skovbrug 26-week
+  averaging (M-011), Gartneri out-of-turnus Sunday notice payment (M-014), Gartneri
+  anlægsgartner carve-out to the Anlægsgartner overenskomst's ladder (M-010), and the
+  borderline søn-/helligdag minimum-hours floor (M-004 — likely a scheduling
+  guarantee, kept for the encoding-phase decision).
 
 ### The Elev/lærling problem is bigger than a threshold
 
@@ -597,15 +738,27 @@ The 8 h/day cap has no basis in any text.
 
 ## Recommended sequence
 
-1. Decide the fate of the 14 Elev presets — correct to the single real lærling rule,
-   or retire the u18/o18 split. Largest single source of under-attribution.
-2. Fix the three Agro overtime ceilings (Kartoffelsortering, Gulerod, Minkfoder) —
-   small, unambiguous, clearly quoted.
-3. Remove the fabricated Saturday supplements (Jordbrug Standard, 8 Agro Standard)
-   and fix Skovbrug Saturday.
-4. Model Grundlovsdag's noon split generally (needs a `DayType` for it in the base
-   package) plus the other fridage.
-5. Re-model Agro Øvrige on flat DKK bands.
-6. Then the per-day supplement unit, and Agro forskudt bands.
+(updated 2026-08-08 from the verification — proposed target tables and expressibility
+per item live in `2026-08-08-glsa-proposed-encodings.md`)
 
-Each step needs a data migration for existing rule sets, not just a catalogue edit.
+1. Decide the fate of the Elev presets — correct the 4 genuinely clause-governed u18
+   presets, and decide whether the 9 fabricated ones (Golf Elev + 8 Agro Elev) and the
+   u18/o18 split are retired. Largest single source of under-attribution.
+2. Fix the shippable-today items: Agro Kartoffelsortering ceiling, Gulerod `-standard`
+   ceiling, Minkfoder Sunday/holiday noon bands, Jordbrug Elev o18 first tier, the
+   praktikant andet-arbejde § 23 forskudt bands (G-050 — expressible via the existing
+   split gate), and the config-only fridage (Golf 1 May, Agro kartoffelsortering
+   31 Dec).
+3. Remove the fabricated Saturday supplements (Jordbrug Standard, 8 Agro Standard;
+   Gartneri `-standard`/`-elev-o18` afternoon codes) and fix Skovbrug Saturday —
+   note these need band DELETION, not tier edits, or the change is a runtime no-op.
+4. Decide the kapitel-22 question: new preset families for frugtplantager,
+   fjerkræproduktion, minkfarme (M-007..M-009), or documented out-of-scope.
+5. Model Grundlovsdag's noon split generally (needs a `DayType` for it in the base
+   package) plus the other fridage; re-model Agro Øvrige on flat DKK bands.
+6. Then the engine gaps by leverage: E1 band/tier stacking (unblocks defects across
+   4+ packets and is itself a live payroll defect on the banded Standard presets),
+   E11 unit-of-measure, E10 flat-DKK amounts, Agro forskudt bands.
+
+Each step needs a data migration for existing rule sets, not just a catalogue edit —
+the praktikant migration (`CorrectPraktikantSection50Tiers`) is the template.
