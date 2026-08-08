@@ -147,7 +147,7 @@ PROPOSED — not product-decided. No code changes.
 
 **Expressibility:** EXPRESSIBLE regardless of which value is chosen — `PayTierRule.UpToSeconds` is a generic numeric threshold with no apprentice-specific special-casing in the engine (Engine facts (e), CODE-TRUTH.md:608: "if an Elev preset wants an 8h boundary it would have to be expressed as an ordinary tier `UpToSeconds` value like any other preset").
 **Justification:**
-- Absence of any 8-hour/28800 s threshold clause: G-023 — "8 timer" and "otte timer" return zero hits in all five agreement texts; the representative pension-only age clause "Lærlinge under 18 år, der ikke er omfattet af overenskomstens pensionsordning, samt lær-" (jordbrug-2026-2029.txt:1905) is the only kind of "under 18" hit that exists, and it supplies no daily-hours boundary.
+- Absence of any 8-hour/28800 s threshold clause: G-023 — "otte timer" returns zero hits in all five agreement texts, and the only "8 timer" hits (jordbrug:3386, agroindustri:2702) are substrings of "48 timer", so no standalone daily 8-hour clause exists; the representative pension-only age clause "Lærlinge under 18 år, der ikke er omfattet af overenskomstens pensionsordning, samt lær-" (jordbrug-2026-2029.txt:1905) is the only kind of "under 18" hit that exists, and it supplies no daily-hours boundary.
 - Scope is 13 presets, not 14 (G-023's refutation ground); the `*-elev-o18` presets use 26640 and are outside this finding.
 
 ---
@@ -188,7 +188,7 @@ REFUTED: the Dyrehold WEEKDAY 18000-21600 `SHIFTED_MORNING` band has a valid § 
 - G-093: 0-18000 `ANIMAL_NIGHT` band added, matching the WEEKDAY `ANIMAL_NIGHT` band's start/pay code, because "På hverdage (mandag til lørdag) mellem kl. 00.00 – 5.00 om morgenen, pr. time:" (jordbrug-2026-2029.txt:582) parenthetically includes Saturday in the same night item that already produces the WEEKDAY 0-18000 `ANIMAL_NIGHT` band.
 - `SAT_NORMAL` band start moved from 0 to 18000 — pure boundary adjustment to avoid overlap with the new band.
 
-### G-090 — Saturday-afternoon supplement fabricated in the default kapitel-3 regime
+### G-090 (confirmed portion) — Saturday-afternoon supplement fabricated in the default kapitel-3 regime
 **Current:** `glsa-jordbrug-standard` SATURDAY band `43200-64800 SAT_AFTERNOON` (CODE-TRUTH.md:56); all 8 `glsa-agro-*-standard` presets carry SATURDAY tier `2: null → SAT_AFTERNOON` with no bands defined (CODE-TRUTH.md:361, 381, 401, 421, 441, 461, 481, 501).
 **Agreement requires:** G-090 — REFUTED for overreach only (opt-in alternativ-arbejdstid stk. 4 a and the incorporated Holddrift agreement do pay Saturday, but both are opt-in whole-Saturday kr/time regimes, structurally unlike a per-day "lørdag eftermiddag" item). Confirmed for the default kapitel-3 regime the Standard presets model: the exhaustive "lørdag" sweep finds no ordinary-worker Saturday-afternoon item in either Jordbrug or Agroindustri — "betales med et tillæg på kr. 82,90 pr. time." (jordbrug-2026-2029.txt:3274) belongs only to the separate opt-in stk. 4 a protokollat, not the default regime.
 
