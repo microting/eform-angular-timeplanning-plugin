@@ -14,7 +14,12 @@ Every table states EXPRESSIBLE or NOT-EXPRESSIBLE against the engine facts; NOT-
 
 **Scope rule.** Encodings are drawn from CONFIRMED defect rows and MISSING rows only. REFUTED rows get no encoding — with one deliberate exception: where a row was REFUTED purely for overreach (a wrong preset count, a wrong twin preset, an over-absolute "never"), the confirmed *portion* is encoded and the refutation is stated in the section itself. Seven rows are in that category: G-016, G-019, G-023, G-033, G-086, G-089, G-090. Two rows appear as explicit no-encoding entries because their refutation means the code is already right: G-031 (Packet 2) and G-087 (Packet 4).
 
-**Not encoded, by design.** The remaining CONFIRMED rows are correctness confirmations (G-055-G-057, G-085), interpretive or arithmetic findings that yield no corrected encoding (G-001, G-025, G-026, G-028, G-034, G-039-G-052, G-066, G-069-G-078, G-080, G-097 is used only as supporting evidence in Packet 1), and absence claims already carried by the packets that need them. All UNVERIFIABLE rows are excluded — an unsettled claim cannot justify a tier value.
+**Not encoded, by design.** The remaining CONFIRMED rows are correctness confirmations (G-055-G-057, G-085), interpretive or arithmetic findings that yield no corrected encoding (G-001, G-026, G-028, G-039-G-041, G-044, G-045, G-047-G-049, G-051, G-052, G-066, G-069-G-072, G-074, G-076, G-077, G-080, G-097 is used only as supporting evidence in Packet 1), and absence claims already carried by the packets that need them. The two ranges above are narrower than a naive reading of the old G-039-G-052/G-069-G-078 span would suggest: G-042/G-043 are REFUTED and G-046/G-073/G-075 are UNVERIFIABLE, so despite falling numerically inside that span they are excluded, not swept in — see the ledger for each. G-050, previously in this bucket, now has its own encoding in Packet 4. Three further CONFIRMED rows get a one-line reason instead of a bare listing:
+- **G-025** — subsumed by G-033's per-day-unit treatment of the same codes (`ANIMAL_NIGHT`/`SAT_ANIMAL_AFTERNOON`/`ANIMAL_SUN_HOLIDAY`, Packet 7): a flat per-day item cannot partially cumulate into overtime hours by construction, so G-025's "the stald supplement isn't cumulative with overtime" finding needs no table of its own once G-033's unit-of-measure treatment is in place.
+- **G-034** — the 33840 s tier-2 boundary's 9h24m derivation is an assumption, holding only when the day is exactly 7,4 h; it gets the same carried-forward-with-caveat treatment G-023's section already gives the elev 28800 s boundary (Packet 1), so no separate table is proposed.
+- **G-078** — § 9 stk. 5's above-45 t/uge premium is a period-accumulation clause needing the same capability as G-060/M-011/G-079/M-021 (Packet 8); it is added to E18's needed-by list below rather than given its own table.
+
+All UNVERIFIABLE rows are excluded — an unsettled claim cannot justify a tier value.
 
 **Coverage**
 
@@ -23,7 +28,7 @@ Every table states EXPRESSIBLE or NOT-EXPRESSIBLE against the engine facts; NOT-
 | 1 — Elev / lærling structural family | G-088, G-096, G-097, G-098, G-023 (portion), G-089 (portion) |
 | 2 — Jordbrug Standard + Dyrehold | G-032, G-093, G-090 (portion), M-002; G-031 no-encoding |
 | 3 — Gartneri + Skovbrug | G-020, G-021, G-022, G-086 (portion), G-091, M-010, M-012, M-013, M-014 |
-| 4 — Golf + fridage / Grundlovsdag | G-094, G-053, G-095, G-054, G-084; G-087 no-encoding |
+| 4 — Golf + fridage / Grundlovsdag | G-094, G-053, G-095, G-054, G-084, G-050; G-087 no-encoding |
 | 5 — Agroindustri ceilings + grovvare | G-016 (portion), G-017, G-018, M-017, M-018 |
 | 6 — Agroindustri structural | G-019 (portion), M-019, M-020, G-092, M-015, M-016 |
 | 7 — Jordbrug kapitel 22 + per-day supplements | M-007, M-008, M-009, G-033 (portion), G-061 |
@@ -72,35 +77,56 @@ PROPOSED — not product-decided. No code changes.
 - Split itself fabricated: G-096 — "Overarbejde og arbejde på søn- og helligdage afregnes med et tillæg til lærlingens normal-" (jordbrug-2026-2029.txt:1874) is unconditional, no age qualifier; same shape confirmed for Gartneri (gartneri-2024-2026.txt:1753-1755) and Skovbrug (skovbrug-2024-2026.txt:1962, 1969).
 - § 17 is not an overtime rule: G-097 — "Ungarbejderes løn beregnes af A-lønnen." (jordbrug-2026-2029.txt:609); the surrounding 17-/16-/14-15-årige percentage rows (jordbrug-2026-2029.txt:611-624) are base-wage-by-age, not overtime tiers.
 
-### G-089 (confirmed portion) — missing top overtime tier, 4 presets
-**Current:** `glsa-jordbrug-elev-u18` and `glsa-jordbrug-elev-u18-dyrehold` WEEKDAY = 1: 28800 → `ELEV_NORMAL`; 2: null → `ELEV_OVERTIME_50` (CODE-TRUTH.md:106, 132). `glsa-gartneri-elev-u18` WEEKDAY = 1: 28800 → `ELEV_NORMAL`; 2: null → `ELEV_OVERTIME_50` (CODE-TRUTH.md:194). `glsa-skovbrug-elev-u18` WEEKDAY = 1: 28800 → `ELEV_NORMAL`; 2: null → `ELEV_OVERTIME_30` (CODE-TRUTH.md:227). All four have only one overtime tier, so hour 3 onward never escalates.
-**Agreement requires:** each clause is a two-step ladder — a rate for the first two overtime hours, then a higher rate for everything beyond. G-089 is REFUTED as filed (its "14 presets" scope is wrong on two counts); the missing-top-tier defect is confirmed for exactly these four.
+### G-089 (confirmed portion) — missing top overtime tier, 4 presets, WEEKDAY and SATURDAY
+**Current — WEEKDAY:** `glsa-jordbrug-elev-u18` and `glsa-jordbrug-elev-u18-dyrehold` WEEKDAY = 1: 28800 → `ELEV_NORMAL`; 2: null → `ELEV_OVERTIME_50` (CODE-TRUTH.md:106, 132). `glsa-gartneri-elev-u18` WEEKDAY = 1: 28800 → `ELEV_NORMAL`; 2: null → `ELEV_OVERTIME_50` (CODE-TRUTH.md:194). `glsa-skovbrug-elev-u18` WEEKDAY = 1: 28800 → `ELEV_NORMAL`; 2: null → `ELEV_OVERTIME_30` (CODE-TRUTH.md:227). All four have only one overtime tier, so hour 3 onward never escalates.
+**Current — SATURDAY:** `glsa-jordbrug-elev-u18` SATURDAY = 1: 28800 → `ELEV_SAT_NORMAL`; 2: null → `ELEV_SAT_OVERTIME_50` (CODE-TRUTH.md:107). `glsa-jordbrug-elev-u18-dyrehold` SATURDAY = 1: 28800 → `ELEV_SAT_NORMAL`; 2: null → `ELEV_SAT_ANIMAL_AFTERNOON` (CODE-TRUTH.md:133). `glsa-gartneri-elev-u18` SATURDAY = 1: 28800 → `ELEV_SAT_NORMAL`; 2: null → `ELEV_SAT_OVERTIME_50` (CODE-TRUTH.md:195). Same shape as WEEKDAY — one overtime tier, no escalation. (`glsa-skovbrug-elev-u18`'s SATURDAY defect is separate — § 21/§ 44's Saturday-is-overtime-from-hour-one finding, G-021, Packet 3 — and is already corrected there.)
+**Agreement requires:** each clause is a two-step ladder — a rate for the first two overtime hours, then a higher rate for everything beyond — and none of the three clauses distinguishes weekday overtime from Saturday overtime. G-089 is REFUTED as filed (its "14 presets" scope is wrong on two counts, and its "WEEKDAY, SATURDAY" scope narrows to these same 4 presets); the missing-top-tier defect is confirmed for exactly these four, on both day types.
 
-**Proposed encoding — `glsa-jordbrug-elev-u18`, `glsa-jordbrug-elev-u18-dyrehold`**
+**Proposed encoding — `glsa-jordbrug-elev-u18`, `glsa-jordbrug-elev-u18-dyrehold` (WEEKDAY)**
 
 | DayCode | Tier order / upToSeconds / payCode | dayTypeRules bands (dayType, start–end sec, payCode) |
 |---|---|---|
 | WEEKDAY | 1: 28800 (boundary itself disputed, see G-023) → `ELEV_NORMAL`; 2: 36000 → `ELEV_OVERTIME_50`; 3: null → `ELEV_OVERTIME_80` | (none) |
 
-**Proposed encoding — `glsa-gartneri-elev-u18`**
+**Proposed encoding — `glsa-gartneri-elev-u18` (WEEKDAY)**
 
 | DayCode | Tier order / upToSeconds / payCode | dayTypeRules bands (dayType, start–end sec, payCode) |
 |---|---|---|
 | WEEKDAY | 1: 28800 (disputed, see G-023) → `ELEV_NORMAL`; 2: 36000 → `ELEV_OVERTIME_50`; 3: null → `ELEV_OVERTIME_100` | (none) |
 
-**Proposed encoding — `glsa-skovbrug-elev-u18`**
+**Proposed encoding — `glsa-skovbrug-elev-u18` (WEEKDAY)**
 
 | DayCode | Tier order / upToSeconds / payCode | dayTypeRules bands (dayType, start–end sec, payCode) |
 |---|---|---|
 | WEEKDAY | 1: 28800 (disputed, see G-023) → `ELEV_NORMAL`; 2: 36000 → `ELEV_OVERTIME_30`; 3: null → `ELEV_OVERTIME_100` | (none) |
 
-**Expressibility:** EXPRESSIBLE — three ascending `PayTierRule` entries, no bands on these days, tier path runs unmodified for all four presets.
+**Proposed encoding — `glsa-jordbrug-elev-u18` (SATURDAY)**
+
+| DayCode | Tier order / upToSeconds / payCode | dayTypeRules bands (dayType, start–end sec, payCode) |
+|---|---|---|
+| SATURDAY | 1: 28800 (disputed, see G-023) → `ELEV_SAT_NORMAL`; 2: 36000 → `ELEV_SAT_OVERTIME_50`; 3: null → `ELEV_SAT_OVERTIME_80` | (none) |
+
+**Proposed encoding — `glsa-jordbrug-elev-u18-dyrehold` (SATURDAY)**
+
+| DayCode | Tier order / upToSeconds / payCode | dayTypeRules bands (dayType, start–end sec, payCode) |
+|---|---|---|
+| SATURDAY | 1: 28800 (disputed, see G-023) → `ELEV_SAT_NORMAL`; 2: 36000 → `ELEV_SAT_ANIMAL_AFTERNOON` (existing tier-2 name kept unchanged — see note below); 3: null → `ELEV_SAT_OVERTIME_80` | (none) |
+
+**Proposed encoding — `glsa-gartneri-elev-u18` (SATURDAY)**
+
+| DayCode | Tier order / upToSeconds / payCode | dayTypeRules bands (dayType, start–end sec, payCode) |
+|---|---|---|
+| SATURDAY | 1: 28800 (disputed, see G-023) → `ELEV_SAT_NORMAL`; 2: 36000 → `ELEV_SAT_OVERTIME_50`; 3: null → `ELEV_SAT_OVERTIME_100` | (none) |
+
+**Expressibility:** EXPRESSIBLE — three ascending `PayTierRule` entries, no bands on any of these days (CODE-TRUTH.md:106-107, 132-133, 194-195: `payDayTypeRules: []` covers every day type on all three presets), tier path runs unmodified for all four presets on both WEEKDAY and SATURDAY.
 **Justification:**
-- Jordbrug tier 2 boundary (36000 = 28800 + 7200) and rate `ELEV_OVERTIME_50`, tier 3 `ELEV_OVERTIME_80`: G-089 — "Overarbejde og arbejde på søn- og helligdage afregnes med et tillæg til lærlingens normal-" (jordbrug-2026-2029.txt:1874) / "timeløn på 50 % for de første 2 timer og herefter 80 % eller tilsvarende frihed." (jordbrug-2026-2029.txt:1875).
-- Gartneri tier 2 rate `ELEV_OVERTIME_50`, tier 3 `ELEV_OVERTIME_100`: G-089 — Gartneri § 45 stk. 3 c (gartneri-2024-2026.txt:1753-1755).
-- Skovbrug tier 2 rate `ELEV_OVERTIME_30`: G-089 — "1. og 2. time efter normal arbejdstid: tillæg, svarende til 30 % af B-løn pr. time" (skovbrug-2024-2026.txt:1962).
-- Skovbrug tier 3 rate `ELEV_OVERTIME_100`: G-089 — "For overarbejde herudover samt søn- og helligdage: tillæg, svarende til 100 % af B-løn pr." (skovbrug-2024-2026.txt:1969).
-- Tier 1 boundary (28800) in all three tables is carried forward unchanged pending G-023 below — it is not itself supported by any of these quotes.
+- Jordbrug WEEKDAY tier 2 boundary (36000 = 28800 + 7200) and rate `ELEV_OVERTIME_50`, tier 3 `ELEV_OVERTIME_80`: G-089 — "Overarbejde og arbejde på søn- og helligdage afregnes med et tillæg til lærlingens normal-" (jordbrug-2026-2029.txt:1874) / "timeløn på 50 % for de første 2 timer og herefter 80 % eller tilsvarende frihed." (jordbrug-2026-2029.txt:1875).
+- Gartneri WEEKDAY tier 2 rate `ELEV_OVERTIME_50`, tier 3 `ELEV_OVERTIME_100`: G-089 — Gartneri § 45 stk. 3 c, "c. Betaling for overarbejde" / "Overarbejde og arbejde på søn- og helligdage afregnes med et tillæg til lærlingens" / "normaltimeløn på 50 % for de første 2 timer og herefter 100 % eller tilsvarende frihed." (gartneri-2024-2026.txt:1753-1755).
+- Skovbrug WEEKDAY tier 2 rate `ELEV_OVERTIME_30`: G-089 — "1. og 2. time efter normal arbejdstid: tillæg, svarende til 30 % af B-løn pr. time" (skovbrug-2024-2026.txt:1962).
+- Skovbrug WEEKDAY tier 3 rate `ELEV_OVERTIME_100`: G-089 — "For overarbejde herudover samt søn- og helligdage: tillæg, svarende til 100 % af B-løn pr." (skovbrug-2024-2026.txt:1969).
+- Tier 1 boundary (28800) in every table above is carried forward unchanged pending G-023 below — it is not itself supported by any of these quotes.
+- SATURDAY uses the identical clauses as WEEKDAY: none of § 47 stk. 4, § 45 stk. 3 c, or § 44 stk. 9 distinguishes weekday overtime from Saturday overtime — each reads "Overarbejde og arbejde på søn- og helligdage" (jordbrug-2026-2029.txt:1874; gartneri-2024-2026.txt:1754) or "1. og 2. time efter normal arbejdstid" (skovbrug-2024-2026.txt:1962, restating § 21 stk. 1 for lærlinge without a weekday-only qualifier) — so the same 50/80, 50/100 and 30/100 pairs apply to Saturday's tier 3 boundary at 36000 s (28800 + 7200) exactly as they do on WEEKDAY.
+- `glsa-jordbrug-elev-u18-dyrehold`'s SATURDAY tier 2 keeps the pay-code name already shipped, `ELEV_SAT_ANIMAL_AFTERNOON`, rather than renaming it to `ELEV_SAT_OVERTIME_50` to match its non-dyrehold sibling: this fix only adds the missing top tier, it does not touch the existing tier-2 naming, which is out of scope here.
 
 ### G-089 (confirmed portion) / G-098 — 9 presets with no apprentice clause at all (fabrications, not missing-tier cases)
 **Current:** `glsa-golf-elev` WEEKDAY = 1: 28800 → `ELEV_NORMAL`; 2: null → `ELEV_OVERTIME_100` (CODE-TRUTH.md:300). The 8 `glsa-agro-*-elev` presets each have WEEKDAY = 1: 28800 → `ELEV_NORMAL`; 2: null → `ELEV_OVERTIME_30`/`_40` (CODE-TRUTH.md:370, 390, 410, 430, 450, 470, 490, 510).
@@ -240,7 +266,7 @@ PROPOSED — not product-decided. No code changes.
 
 | DayCode | Tier order / upToSeconds / payCode | dayTypeRules bands (dayType, start–end sec, payCode) |
 |---|---|---|
-| SATURDAY | 1: 7200 → `ELEV_SAT_OVERTIME_30`; 2: null → `ELEV_SAT_OVERTIME_30` (top-tier 100 % fix is Packet 1 scope, not applied here) | (none — unchanged) |
+| SATURDAY | 1: 7200 → `ELEV_SAT_OVERTIME_30`; 2: null → `ELEV_SAT_OVERTIME_100` | (none — unchanged) |
 
 **Expressibility:** EXPRESSIBLE for both elev presets (already tier-only days). EXPRESSIBLE for `glsa-skovbrug-standard` **only if the SATURDAY band rows are deleted** — per Engine facts (a) (CODE-TRUTH.md:558, 561) Skovbrug Standard SATURDAY is one of the "thirteen other preset/day combinations" that fall to the bands-only branch with "no tier involvement at all", so editing tier values alone would not change runtime behaviour.
 **Justification:**
@@ -268,7 +294,7 @@ PROPOSED — not product-decided. No code changes.
 ### G-086 (confirmed portion) — Gartneri Standard & Elev o18 Saturday afternoon is untiered with no basis
 **Current:** `glsa-gartneri-standard` SATURDAY tiers 23400 `SAT_NORMAL` → null `SAT_AFTERNOON`, bands 21600-45000 `SAT_NORMAL` / 45000-64800 `SAT_AFTERNOON` (CODE-TRUTH.md:184) — a bands-only day. `glsa-gartneri-elev-o18` SATURDAY tiers 23400 `ELEV_SAT_NORMAL` → null `ELEV_SAT_AFTERNOON`, no bands (CODE-TRUTH.md:206).
 **Agreement requires:** § 8 stk. 2 places normal Saturday hours 06.00-12.30 — "Arbejdstiden lægges mandag til fredag mellem kl. 6.00 og kl. 18.00, og lørdag mellem kl." / "6.00 og kl. 12.30." (gartneri-2024-2026.txt:274-275). § 8 stk. 4 pays Saturday hours outside that window "som for overarbejde på hverdage, jf. § 22, stk. 1" — G-086, "varierende ugentlige arbejdstider placeres arbejdstimer på lørdage, afregnes der for disse" / "timer som for overarbejde på hverdage, jf. § 22, stk. 1." (gartneri-2024-2026.txt:313-314).
-**Honesty note:** G-086 is REFUTED as filed on scope ("Elev ×2"); the defect holds for 2 of the 3 named presets. `glsa-gartneri-elev-u18` already uses `ELEV_SAT_OVERTIME_50` (CODE-TRUTH.md:195) and is correctly overtime-labelled — excluded here; its remaining missing-top-tier gap is Packet 1's scope.
+**Honesty note:** G-086 is REFUTED as filed on scope ("Elev ×2"); the defect holds for 2 of the 3 named presets. `glsa-gartneri-elev-u18` already uses `ELEV_SAT_OVERTIME_50` (CODE-TRUTH.md:195) and is correctly overtime-labelled — excluded here; its remaining missing-top-tier gap is fixed in Packet 1's G-089 SATURDAY table for `glsa-gartneri-elev-u18` above (28800 → `ELEV_SAT_NORMAL`; 36000 → `ELEV_SAT_OVERTIME_50`; null → `ELEV_SAT_OVERTIME_100`).
 
 **Proposed encoding — `glsa-gartneri-standard`**
 
@@ -348,8 +374,8 @@ PROPOSED — not product-decided. No code changes.
 
 Per-worker-category pay codes, mirroring the catalogue's existing `ELEV_*` labelling rather than a numeric rate field: `DETAIL_*_LAERLING` (75 %), `DETAIL_*_UNGARB17` (75 %), `DETAIL_*_UNGARB16` (65 %), `DETAIL_*_UNGARB_U16` (50 %), selected the same way the catalogue already selects standard vs elev-u18 vs elev-o18.
 
-**Expressibility:** EXPRESSIBLE for the clock-band mechanics and the age/lærling ladder — the three bands are ordinary `PayTimeBandRule` clock windows, and since the engine has no rate field at all (Engine facts (c), CODE-TRUTH.md:588-594) every existing percentage in the catalogue is already carried as a distinct `PayCode` string interpreted downstream.
-**Caveat (catalogue-modelling gap, not an engine gap):** § 14 is textually scoped to detailsalg work, but the preset catalogue varies only by age/elev status, not by job function — encoding this needs a new preset axis or a worker-category flag, a product decision. It also inherits the bands-vs-tiers routing problem: adding WEEKDAY/SATURDAY bands to a Gartneri preset that relies on its tier ladder would suppress those tiers (Engine facts (a)).
+**Expressibility:** NOT-EXPRESSIBLE — missing capability: **E1, bands and overtime tiers stacking on the same day for non-praktikant presets**. The clock-band mechanics and the age/lærling ladder are individually ordinary `PayTimeBandRule`/`PayCode` shapes — since the engine has no rate field at all (Engine facts (c), CODE-TRUTH.md:588-594), every existing percentage in the catalogue is already carried as a distinct `PayCode` string interpreted downstream — but the bands cannot actually be added to a Gartneri preset without breaking it, per the caveat below.
+**Caveat (why it's blocked):** § 14 is textually scoped to detailsalg work, but the preset catalogue varies only by age/elev status, not by job function — encoding this needs a new preset axis or a worker-category flag, a product decision. More fundamentally, it inherits the bands-vs-tiers routing problem: whichever Gartneri preset these bands attach to relies on its WEEKDAY/SATURDAY tier ladder (Engine facts (a)), and none of the Gartneri presets is on the two-name `IsNormalTimeSplitPresetName` allowlist (`PayRuleSetLock.cs:150-152`) that lets bands and tiers coexist — so adding WEEKDAY/SATURDAY bands here would suppress those tiers outright, the same E1 gap G-092/G-030/M-009 hit.
 **Justification:**
 - Weekday band 18:00-22:00 = 64800-79200 s: M-013 — gartneri-2024-2026.txt:537.
 - Saturday band 12:30-20:00 = 45000-72000 s: M-013 — gartneri-2024-2026.txt:541.
@@ -516,6 +542,22 @@ PROPOSED — not product-decided. No code changes.
 ### G-087 — no encoding required (REFUTED)
 `glsa-golf-standard` SATURDAY encodes 21600 s (06:00-12:00) → `SAT_NORMAL` then `SAT_AFTERNOON` (CODE-TRUTH.md:289), which matches the Golf text exactly (golf-2024-2026.txt:231-232, 475-476). No change proposed. (`glsa-golf-elev`'s 28800 s Saturday boundary is G-023's scope, in Packet 1.)
 
+### G-050 — § 23 forskudttidstillæg inherited unmodified by praktikanter via stk. 7
+**Current:** `glsa-jordbrug-praktikant-udl-andet` ships `payDayTypeRules: []` for the whole preset (CODE-TRUTH.md:318) — no forskudttidstillæg bands on WEEKDAY or any other day. `glsa-jordbrug-standard` carries the § 23 bands on WEEKDAY: 14400-21600 `SHIFTED_MORNING`, 64800-72000 `SHIFTED_EVENING` (CODE-TRUTH.md:55).
+**Agreement requires:** G-050 (CONFIRMED) — § 50 stk. 7 does not modify § 23: "Overenskomstens øvrige bestemmelser er gældende for praktikanter, hvor andet ikke føl-" / "ger af § 50." (jordbrug-2026-2029.txt:2255-2256). § 23 itself sets "Forskydningstillæg indtil 2 timer før kl. 6.00 pr. time:" (jordbrug-2026-2029.txt:783) and "Forskydningstillæg indtil 2 timer efter kl. 18.00 pr. time:" (jordbrug-2026-2029.txt:788), with no age, lærling or praktikant qualifier anywhere in § 23 (jordbrug-2026-2029.txt:781-791).
+
+**Proposed encoding — `glsa-jordbrug-praktikant-udl-andet`**
+
+| DayCode | Tier order / upToSeconds / payCode | dayTypeRules bands (dayType, start–end sec, payCode) |
+|---|---|---|
+| WEEKDAY | unchanged: 1: 26640 → `NORMAL`; 2: 33840 → `OVERTIME_50`; 3: null → `OVERTIME_80` (CODE-TRUTH.md:312) | ADD: Monday-Friday 14400-21600 `SHIFTED_MORNING` (p1); 64800-72000 `SHIFTED_EVENING` (p1) — same bands as `glsa-jordbrug-standard` (CODE-TRUTH.md:55) |
+
+**Expressibility:** EXPRESSIBLE today — unlike every other band/tier-stacking table in this document, this preset is not blocked by E1. Its catalogue name is one of the exact two strings `PayRuleSetLock.IsNormalTimeSplitPresetName` matches, `"GLS-A / 3F - Udenlandske praktikanter Landbrug Andet arbejde"` (`PayRuleSetLock.cs:150-152`, CODE-TRUTH.md:553-555), and its WEEKDAY tiers — 26640/`NORMAL`, 33840/`OVERTIME_50`, null/`OVERTIME_80` (CODE-TRUTH.md:312) — are exactly the shape `PayRuleSetLock.HasNormalTimeBoundaryShape` requires (`PayRuleSetLock.cs:229-241`, CODE-TRUTH.md:556). So adding the § 23 bands here runs through the same identity+shape-gated path Engine facts (a) describes for the two praktikant presets: normal-time seconds attributed by clock position via `GenerateTimeBandPayLines`, overflow from tier 2 onward via `GenerateOvertimeTierPayLines` (CODE-TRUTH.md:557) — bands and tiers stack instead of bands suppressing tiers outright.
+**Justification:**
+- Unmodified inheritance: G-050 — "Overenskomstens øvrige bestemmelser er gældende for praktikanter, hvor andet ikke føl-" / "ger af § 50." (jordbrug-2026-2029.txt:2255-2256).
+- Band values identical to `glsa-jordbrug-standard`'s existing § 23 bands: § 23 — "Forskydningstillæg indtil 2 timer før kl. 6.00 pr. time:" (jordbrug-2026-2029.txt:783); "Forskydningstillæg indtil 2 timer efter kl. 18.00 pr. time:" (jordbrug-2026-2029.txt:788); CODE-TRUTH.md:55.
+**Honesty note:** whether § 23's morning/evening clock windows are the right fit for *andet arbejde* praktikant work — whose normal time this document elsewhere treats as confined to 06:00-18:00 Monday-Saturday — needs its own product decision; it is not settled here. This table proposes the entitlement G-050 confirms exists; whether andet-arbejde praktikanter ever actually work the pre-6.00/post-18.00 hours the bands cover is a separate, unresolved question.
+
 ---
 
 ## Packet 5 — Agroindustri ceilings + grovvare
@@ -638,7 +680,7 @@ PROPOSED — not product-decided. No code changes.
 | WEEKDAY | 1: 26640 → `NORMAL` (unchanged) | clock-keyed after-shift: `OT_DKK_BAND_1` (klokketime 1-2 after shift end), `OT_DKK_BAND_2` (klokketime 3-4), `OT_DKK_BAND_3` (klokketime 5+ until next normal-time start) — NOT expressible as `StartSecondOfDay`/`EndSecondOfDay` bands, since boundaries are relative to shift end, not to fixed clock time |
 | SUNDAY / HOLIDAY | none (existing `SUN_HOLIDAY` tier replaced by the § 4 d scale) | `SUN_HOL_DKK_BAND_1` (normal-time start → 12:00), `SUN_HOL_DKK_BAND_2` (12:00 → next normal-time start) |
 
-**Expressibility:** NOT-EXPRESSIBLE — missing capabilities: **flat-DKK amount field on a pay code** (Engine facts (c), CODE-TRUTH.md:588-594: `PayTierRule`/`PayTimeBandRule`/`PlanRegistrationPayLine` carry no rate or amount column) and, for the § 4 a bands specifically, **shift-end-relative (rather than clock-of-day) band boundaries** (`PayTimeBandRule` takes absolute `StartSecondOfDay`/`EndSecondOfDay`, but "1./2. klokketime efter normal arbejdstid" counts from whenever the shift ends).
+**Expressibility:** NOT-EXPRESSIBLE — missing capabilities: **flat-DKK amount field on a pay code** (Engine facts (c), CODE-TRUTH.md:588-594: `PayTierRule`/`PayTimeBandRule`/`PlanRegistrationPayLine` carry no rate or amount column) and **shift-relative (rather than clock-of-day) band boundaries** (`PayTimeBandRule` takes absolute `StartSecondOfDay`/`EndSecondOfDay`). The § 4 a bands are anchored to "1./2. klokketime efter normal arbejdstid" — counted from whenever the shift ends. The § 4 d SUNDAY/HOLIDAY bands are anchored the same way from the other side: "Fra den daglige normale arbejdstids begyndelse og indtil kl. 12.00" and "Fra kl. 12.00 og indtil den normale arbejdstids begyndelse" (agroindustri-2026-2029.txt:3616, 3621) both move with the shift's normal-time start, not a fixed clock boundary alone — so both halves of this table are blocked by the same shift-relative-boundary gap, not just § 4 a.
 **Justification:**
 - `OT_DKK_BAND_1` = kr. 49,25/time (1. og 2. klokketime efter normal arbejdstid) — G-019, agroindustri-2026-2029.txt:3567-3568.
 - `OT_DKK_BAND_2` = kr. 78,46/time (3. og 4. klokketime efter normal arbejdstid) — G-019, agroindustri-2026-2029.txt:3572-3573.
@@ -822,7 +864,7 @@ PROPOSED — not product-decided. No code changes.
 
 | DayCode | Current PayCode | Proposed praktikant-only PayCode | Basis |
 |---|---|---|---|
-| SATURDAY (tier 2 / band 43200-86400) | `SAT_ANIMAL_AFTERNOON` | `PRAKTIKANT_SAT_ANIMAL_AFTERNOON` | § 50 stk. 4 d pays 73,90 (jordbrug-2026-2029.txt:2215-2216), not § 15's 154,74 (587-588) |
+| SATURDAY (band 43200-86400 only — `SAT_ANIMAL_AFTERNOON` is not a tier here; tier 2 is a separate, unrelated `OVERTIME_50` pay code, CODE-TRUTH.md:325, left untouched by this rename) | `SAT_ANIMAL_AFTERNOON` | `PRAKTIKANT_SAT_ANIMAL_AFTERNOON` | § 50 stk. 4 d pays 73,90 (jordbrug-2026-2029.txt:2215-2216), not § 15's 154,74 (587-588) |
 | SUNDAY (tier 1 / band 0-86400) | `ANIMAL_SUN_HOLIDAY` | `PRAKTIKANT_ANIMAL_SUN_HOLIDAY` | § 50 stk. 4 d pays 177,60 (jordbrug-2026-2029.txt:2220-2221), not § 15's 327,75 (593-594) |
 | HOLIDAY (tier 1 / band 0-86400) | `ANIMAL_SUN_HOLIDAY` | `PRAKTIKANT_ANIMAL_SUN_HOLIDAY` | same clause as SUNDAY — § 50 stk. 4 d makes no Sunday/Holiday distinction |
 
@@ -841,6 +883,8 @@ PROPOSED — not product-decided. No code changes.
 ### G-030 — whole 12-hour weekday wrongly attributed to NORMAL (the banded Standard presets)
 **Current:** for Jordbrug Standard, the WEEKDAY band `21600-64800 → NORMAL` (CODE-TRUTH.md:55) spans the entire 06:00-18:00 window; the WEEKDAY tiers `1: 26640 → NORMAL; 2: 33840 → OVERTIME_30; 3: null → OVERTIME_80` sit on the same row and never execute, because bands beat tiers whenever both exist and the exception is gated by preset name to the two Udenlandske praktikanter presets (CODE-TRUTH.md:548, 551-556). Gartneri Standard (CODE-TRUTH.md:183) and Skovbrug Standard (CODE-TRUTH.md:216) are named in the same dead-tier list — the "thirteen other preset/day combinations" at CODE-TRUTH.md:558.
 **Agreement requires:** G-030 — "1. og 2. time efter normal daglig arbejdstids ophør (+30 % af C-løn)" (jordbrug-2026-2029.txt:734); § 22 stk. 1 tiers work beyond the normal day under either reading, so attributing a whole 12 h weekday to NORMAL is wrong on both.
+
+The ledger scopes G-030 to "the 8 banded 'Standard' presets" — matching CODE-TRUTH.md:558's "thirteen other preset/day combinations" list of preset *names*: Jordbrug Standard, Jordbrug Dyrehold, Gartneri Standard, Skovbrug Standard, KA Svine, KA Plante, KA Maskin, KA Gron. Four of those eight are the non-GLS-A `ka-landbrug-svine-*`/`ka-landbrug-plante-*`/`ka-landbrug-maskin-*`/`ka-gron-*` presets that CODE-TRUTH.md:24 explicitly scopes out of this audit ("out of scope for this audit and not covered below"), leaving exactly the 4 GLS-A presets named in the table below.
 
 **Proposed encoding — `glsa-jordbrug-standard`, `glsa-jordbrug-dyrehold`, `glsa-gartneri-standard`, `glsa-skovbrug-standard`**
 
@@ -1061,7 +1105,7 @@ The deduplicated union of every capability named NOT-EXPRESSIBLE above, with the
 | E1 | **Bands and overtime tiers stacking on the same day for non-praktikant presets** — equivalently, a clock-keyed segment coexisting with an elapsed-seconds tier ladder. Today the band path wins outright whenever any band exists for a day type, and the tier-on-top exception is gated by preset *name* plus an exact tier *shape* (CODE-TRUTH.md:548, 553-556, 561). | 3 (M-013), 5 (G-018 WEEKDAY, M-017), 6 (G-092, M-015), 7 (M-009), 8 (G-030) |
 | E2 | **Concurrent same-second stacking of two independent pay-code lines** — one worked second drawing two supplements at once. `PayTimeBandRule` carries one `PayCode` per row and the router picks a single path per day. | 8 (M-005, M-022 caveat) |
 | E3 | **Clock-time split routing generalised beyond the hardcoded `dayCode == "GRUNDLOVSDAG"` check and the two-preset name+shape gate.** | 4 (G-094/G-053, 1 May Agro kartoffelsortering) |
-| E4 | **Shift-end-relative (rather than clock-of-day) band boundaries** — "1./2. klokketime efter normal arbejdstid" counts from whenever the shift ends. | 6 (G-019 § 4 a) |
+| E4 | **Shift-relative (rather than clock-of-day) band boundaries** — "1./2. klokketime efter normal arbejdstid" counts from whenever the shift ends (§ 4 a); § 4 d's søn-/helligdag bands are anchored the same way, from "den daglige normale arbejdstids begyndelse" to noon and from noon back to "den normale arbejdstids begyndelse" (agroindustri-2026-2029.txt:3616, 3621) — a boundary that moves with the shift, not a fixed clock time. | 6 (G-019 § 4 a, § 4 d) |
 | E5 | **Pre-shift (before-normal-start) attribution segment** — the tier model counts forward from shift start only. | 2 (M-002), 5 (M-017), 6 (M-019) |
 | E6 | **Duration-capped floating pre-shift segment** — `min(actual pre-shift seconds, 1800)`, with no fixed clock window to anchor it. | 2 (M-002) |
 
@@ -1069,7 +1113,7 @@ The deduplicated union of every capability named NOT-EXPRESSIBLE above, with the
 
 | # | Missing capability | Needed by |
 |---|---|---|
-| E7 | **Distinct DayType/dayCode values for 1 May and 31 December** — the enum has one generic `Holiday`, so a 1-May-only rate cannot be isolated from Christmas Day (CODE-TRUTH.md:565-581). | 4 (G-095) |
+| E7 | **Distinct DayType/dayCode value for 1 May** — the enum has one generic `Holiday`, so a 1-May-only rate cannot be isolated from Christmas Day (CODE-TRUTH.md:565-581). 31 December needs no distinct value: both its tables below (Gartneri, Agro kartoffelsortering) are blocked by E8/E17 or resolved as config-only, never by day-type granularity. | 4 (G-095) |
 | E8 | **Employer-configurable holiday-date selection** — the Gartneri 24-or-31 December local choice; the holiday JSON is a fixed date map for the whole customer base. | 4 (G-095, Gartneri) |
 | E9 | **Per-employee roster / guaranteed-day-off input** — working an erstatningsfridag, a displaced vagtlistefridag, or an individually guaranteed hverdagsfridag; day types are calendar-derived only. | 6 (M-020), 8 (M-023) |
 
@@ -1077,7 +1121,7 @@ The deduplicated union of every capability named NOT-EXPRESSIBLE above, with the
 
 | # | Missing capability | Needed by |
 |---|---|---|
-| E10 | **Flat-DKK amount field on a pay code** — no rule or pay-line entity carries a rate or amount column at all (CODE-TRUTH.md:588-594). | 6 (G-019, M-015, M-019, M-020) |
+| E10 | **Flat-DKK amount field on a pay code** — no rule or pay-line entity carries a rate or amount column at all (CODE-TRUTH.md:588-594). | 6 (G-019, M-015, M-019, M-020, G-092) |
 | E11 | **Unit-of-measure field (per-hour vs per-day/flat)** on pay rules and pay lines — a "pr. dag" clause and a "pr. time" clause are indistinguishable in-engine. | 7 (G-033) |
 
 ### Conditions the rule model cannot express
@@ -1095,7 +1139,7 @@ The deduplicated union of every capability named NOT-EXPRESSIBLE above, with the
 
 | # | Missing capability | Needed by |
 |---|---|---|
-| E18 | **Weekly / period hour accumulation across days** — every threshold resets daily, so no 8-week average, 26-week average, 45 t/uge ceiling or weekly norm can be evaluated. | 8 (G-060, G-079, M-011, M-021) |
+| E18 | **Weekly / period hour accumulation across days** — every threshold resets daily, so no 8-week average, 26-week average, 45 t/uge ceiling or weekly norm can be evaluated. | 8 (G-060, G-079, M-011, M-021, G-078) |
 | E19 | **Per-absence reason codes feeding weekly netting** — § 22 stk. 4 nets culpable absence off the weekly total with exactly two exempting reasons; a naive implementation would erode overtime for sick and approved-absence workers. | 8 (G-079) |
 | E20 | **Cross-day hour banking account (flex balance) per employee**, including a beordret-vs-voluntary distinction at the same boundary. | 8 (M-001) |
 | E21 | **Per-employee opt-in regime flag on a pay rule set** — fastløn absorption for one employee on a shared roster; and, at establishment level, a regime toggle that overrides a preset's default day-type pay code (Weekendarbejde suppressing søgnehelligdagsforskud). | 6 (M-016), 8 (M-003) |
