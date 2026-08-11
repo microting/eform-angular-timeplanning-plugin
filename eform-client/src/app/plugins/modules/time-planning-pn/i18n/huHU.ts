@@ -470,4 +470,5 @@ export const huHU = {
   'No tiers': 'Nincsenek szintek',
   'Enter a duration as hours:minutes, for example 7:24': 'Adja meg az időtartamot óra:perc formátumban, például 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'A szintek óra:perc formátumban határozzák meg az időküszöböket. Pl. 1. szint: 8:00-ig (8 óra) = Rendszeres fizetés. Korlátlan időhöz hagyja üresen az „Egész” mezőt.',
+  PregnancyLeave: 'Terhességgel kapcsolatos hiányzás',
 };

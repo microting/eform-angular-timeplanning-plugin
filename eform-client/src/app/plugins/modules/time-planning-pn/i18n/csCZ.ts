@@ -470,4 +470,5 @@ export const csCZ = {
   'No tiers': 'Žádné úrovně',
   'Enter a duration as hours:minutes, for example 7:24': 'Zadejte dobu trvání ve formátu hodiny:minuty, například 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Úrovně definují časové prahy jako hodiny:minuty. Např. Úroveň 1: do 8:00 (8 hodin) = běžná mzda. Pro neomezený čas nechte pole „Do“ prázdné.',
+  PregnancyLeave: 'Absence související s těhotenstvím',
 };

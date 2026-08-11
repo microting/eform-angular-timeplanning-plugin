@@ -16,6 +16,7 @@ describe('Time Planning - Leave policies', () => {
     { labelInFlags: 'Helligdag',           expectedTooltip: 'Helligdag' },
     { labelInFlags: 'Afspadsering',        expectedTooltip: 'Afspadsering' },
     { labelInFlags: 'Barselsorlov',        expectedTooltip: 'Barselsorlov' },
+    { labelInFlags: 'Graviditetsbetinget fravær', expectedTooltip: 'Graviditetsbetinget fravær' },
   ];
 
   beforeEach(() => {

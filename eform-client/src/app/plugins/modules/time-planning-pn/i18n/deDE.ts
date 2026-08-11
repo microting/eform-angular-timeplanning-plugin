@@ -470,4 +470,5 @@ export const deDE = {
   'No tiers': 'Keine Stufen',
   'Enter a duration as hours:minutes, for example 7:24': 'Geben Sie eine Dauer im Format Stunden:Minuten ein, zum Beispiel 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Die Stufen definieren Zeitgrenzen in Stunden:Minuten. Beispiel: Stufe 1: bis zu 8:00 Uhr (8 Stunden) = Normalgehalt. Lassen Sie „Bis zu“ leer, wenn Sie unbegrenzt arbeiten möchten.',
+  PregnancyLeave: 'Schwangerschaftsbedingte Abwesenheit',
 };

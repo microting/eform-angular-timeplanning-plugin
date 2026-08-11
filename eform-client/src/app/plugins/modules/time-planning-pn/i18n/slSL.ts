@@ -470,4 +470,5 @@ export const slSL = {
   'No tiers': 'Brez stopenj',
   'Enter a duration as hours:minutes, for example 7:24': 'Vnesite trajanje v obliki ur:minut, na primer 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Stopnje določajo časovne pragove kot ure:minute. Npr. Stopnja 1: do 8:00 (8 ur) = Redno plačilo. Za neomejeno plačilo pustite polje »Do« prazno.',
+  PregnancyLeave: 'Odsotnost zaradi nosečnosti',
 };

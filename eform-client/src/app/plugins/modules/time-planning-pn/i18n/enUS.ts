@@ -142,6 +142,7 @@ export const enUS = {
   'Maternity': 'Maternity leave',
   'VacationDayOff': 'Vacation day off',
   'Holiday': 'Holiday',
+  PregnancyLeave: 'Pregnancy-related absence',
   'Absence Requests': 'Absence Requests',
   'Inbox': 'Inbox',
   'My Requests': 'My Requests',

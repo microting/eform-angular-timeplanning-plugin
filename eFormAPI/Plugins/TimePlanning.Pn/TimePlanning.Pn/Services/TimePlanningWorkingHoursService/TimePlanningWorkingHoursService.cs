@@ -635,7 +635,7 @@ public class TimePlanningWorkingHoursService(
 
         if (planRegistration.Date != midnight)
         {
-            planRegistration.MessageId = model.Message == 10 ? null : model.Message;
+            planRegistration.MessageId = model.Message == 0 ? null : model.Message;
             planRegistration.PlanText = model.PlanText;
             planRegistration.Date = model.Date;
             planRegistration.PlanHours = model.PlanHours;

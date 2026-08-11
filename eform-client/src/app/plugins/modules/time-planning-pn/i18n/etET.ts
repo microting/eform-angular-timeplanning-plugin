@@ -470,4 +470,5 @@ export const etET = {
   'No tiers': 'Tasemeid pole',
   'Enter a duration as hours:minutes, for example 7:24': 'Sisesta kestus kujul tunnid:minutid, näiteks 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Tasemed defineerivad ajalävesid tundide ja minutitena. Näiteks 1. tasand: kuni kella 8.00-ni (8 tundi) = regulaarne palk. Piiramatu aja saamiseks jätke "Kuni" tühjaks.',
+  PregnancyLeave: 'Rasedusega seotud puudumine',
 };

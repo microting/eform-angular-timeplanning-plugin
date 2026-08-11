@@ -470,4 +470,5 @@ export const lvLV = {
   'No tiers': 'Nav līmeņu',
   'Enter a duration as hours:minutes, for example 7:24': 'Ievadiet ilgumu kā stundas:minūtes, piemēram, 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Līmeņi definē laika sliekšņus kā stundas:minūtes. Piemēram, 1. līmenis: līdz plkst. 8:00 (8 stundas) = regulāra samaksa. Lai iegūtu neierobežotu laiku, atstājiet lauku "Līdz" tukšu.',
+  PregnancyLeave: 'Ar grūtniecību saistīta prombūtne',
 };

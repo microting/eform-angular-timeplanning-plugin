@@ -470,4 +470,5 @@ export const hrHR = {
   'No tiers': 'Nema slojeva',
   'Enter a duration as hours:minutes, for example 7:24': 'Unesite trajanje u formatu sati:minute, na primjer 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Razine definiraju vremenske pragove kao sati:minute. Npr. Razina 1: do 8:00 (8 sati) = Redovna plaća. Ostavite "Do" prazno za neograničeno.',
+  PregnancyLeave: 'Izostanci povezani s trudnoćom',
 };

@@ -470,4 +470,5 @@ export const noNO = {
   'No tiers': 'Ingen nivåer',
   'Enter a duration as hours:minutes, for example 7:24': 'Skriv inn en varighet som timer:minutter, for eksempel 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Nivåer definerer tidsgrenser som timer:minutter. F.eks. Nivå 1: opptil 8:00 (8 timer) = Vanlig lønn. La «Opptil» stå tomt for ubegrenset tid.',
+  PregnancyLeave: 'Graviditetsrelatert fravær',
 };

@@ -470,4 +470,5 @@ export const skSK = {
   'No tiers': 'Žiadne úrovne',
   'Enter a duration as hours:minutes, for example 7:24': 'Zadajte trvanie vo formáte hodiny:minúty, napríklad 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Úrovne definujú časové prahy ako hodiny:minúty. Napr. Úroveň 1: do 8:00 (8 hodín) = bežná mzda. Pre neobmedzený čas nechajte pole „Do“ prázdne.',
+  PregnancyLeave: 'Neprítomnosť súvisiaca s tehotenstvom',
 };

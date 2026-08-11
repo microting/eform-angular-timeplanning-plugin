@@ -470,4 +470,5 @@ export const svSE = {
   'No tiers': 'Inga nivåer',
   'Enter a duration as hours:minutes, for example 7:24': 'Ange en varaktighet som timmar:minuter, till exempel 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Nivåer definierar tidsgränser som timmar:minuter. T.ex. Nivå 1: upp till 8:00 (8 timmar) = Ordinarie lön. Lämna "Upp till" tomt för obegränsat antal.',
+  PregnancyLeave: 'Graviditetsrelaterad frånvaro',
 };

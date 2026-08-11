@@ -470,4 +470,5 @@ export const plPL = {
   'No tiers': 'Brak poziomów',
   'Enter a duration as hours:minutes, for example 7:24': 'Wprowadź czas trwania w formacie godziny:minuty, na przykład 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Poziomy definiują progi czasowe w postaci godzin:minut. Np. Poziom 1: do 8:00 (8 godzin) = płaca regularna. Pozostaw pole „Do”, aby uzyskać nieograniczony czas.',
+  PregnancyLeave: 'Nieobecność związana z ciążą',
 };

@@ -470,4 +470,5 @@ export const ltLT = {
   'No tiers': 'Nėra pakopų',
   'Enter a duration as hours:minutes, for example 7:24': 'Įveskite trukmę valandų:minutių formatu, pavyzdžiui, 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Pakopos apibrėžia laiko ribas kaip valandas:minutes. Pvz., 1 pakopa: iki 8:00 (8 valandos) = Įprastas atlyginimas. Palikite laukelį „Iki“ tuščią, jei norite neriboto laiko.',
+  PregnancyLeave: 'Su nėštumu susijęs nebuvimas',
 };

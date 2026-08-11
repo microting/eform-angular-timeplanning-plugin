@@ -470,4 +470,5 @@ export const itIT = {
   'No tiers': 'Nessun livello',
   'Enter a duration as hours:minutes, for example 7:24': 'Inserisci la durata nel formato ore:minuti, ad esempio 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'I livelli definiscono le soglie temporali in ore:minuti. Ad esempio, Livello 1: fino a 8:00 (8 ore) = Retribuzione ordinaria. Lasciare vuoto il campo "Fino a" per una retribuzione illimitata.',
+  PregnancyLeave: 'Assenza correlata alla gravidanza',
 };

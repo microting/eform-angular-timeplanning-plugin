@@ -470,4 +470,5 @@ export const roRO = {
   'No tiers': 'Fără niveluri',
   'Enter a duration as hours:minutes, for example 7:24': 'Introduceți o durată în format ore:minute, de exemplu 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Nivelurile definesc pragurile de timp ca ore:minute. De exemplu, Nivelul 1: până la 8:00 (8 ore) = Salariu normal. Lăsați „Până la” gol pentru nelimitat.',
+  PregnancyLeave: 'Absență legată de sarcină',
 };
