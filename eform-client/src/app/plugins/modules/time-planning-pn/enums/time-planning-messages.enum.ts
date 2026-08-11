@@ -11,4 +11,5 @@ export enum TimePlanningMessagesEnum {
   Maternity,
   VacationDayOff,
   Holiday,
+  PregnancyLeave,
 }

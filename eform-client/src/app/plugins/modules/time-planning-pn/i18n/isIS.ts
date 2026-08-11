@@ -470,4 +470,5 @@ export const isIS = {
   'No tiers': 'Engin stig',
   'Enter a duration as hours:minutes, for example 7:24': 'Sláðu inn tímalengd sem klukkustundir:mínútur, til dæmis 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Þrep skilgreina tímamörk sem klukkustundir:mínútur. T.d. Þrep 1: allt að 8:00 (8 klukkustundir) = Venjuleg laun. Skiljið „Allt að“ eftir autt fyrir ótakmarkaðan tíma.',
+  PregnancyLeave: 'Fjarvera vegna meðgöngu',
 };

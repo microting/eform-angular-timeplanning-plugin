@@ -470,4 +470,5 @@ export const elGR = {
   'No tiers': 'Χωρίς επίπεδα',
   'Enter a duration as hours:minutes, for example 7:24': 'Εισαγάγετε μια διάρκεια ως ώρες:λεπτά, για παράδειγμα 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Τα επίπεδα ορίζουν τα χρονικά όρια ως ώρες:λεπτά. Π.χ., Επίπεδο 1: έως 8:00 (8 ώρες) = Κανονική αμοιβή. Αφήστε το "Έως" κενό για απεριόριστο.',
+  PregnancyLeave: 'Απουσία που σχετίζεται με την εγκυμοσύνη',
 };

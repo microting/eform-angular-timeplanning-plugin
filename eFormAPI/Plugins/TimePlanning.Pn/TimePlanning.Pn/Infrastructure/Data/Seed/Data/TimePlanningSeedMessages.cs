@@ -93,6 +93,14 @@ public class TimePlanningSeedMessages
             DaName = "Helligdag",
             EnName = "Holiday day off",
             DeName = "Helligdag Tag"
+        },
+        new Message
+        {
+            Id = 13,
+            Name = "PregnancyLeave",
+            DaName = "Graviditetsbetinget fravær",
+            EnName = "Pregnancy-related absence",
+            DeName = "Schwangerschaftsbedingte Abwesenheit"
         }
     };
 }

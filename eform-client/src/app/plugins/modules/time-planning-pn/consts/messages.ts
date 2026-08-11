@@ -72,6 +72,12 @@ export function messages(
         TimePlanningMessagesEnum[TimePlanningMessagesEnum.Holiday]
       ),
     },
+    {
+      id: TimePlanningMessagesEnum.PregnancyLeave,
+      value: translate.instant(
+        TimePlanningMessagesEnum[TimePlanningMessagesEnum.PregnancyLeave]
+      ),
+    },
     // {
     //   id: TimePlanningMessagesEnum.TimeOff,
     //   value: translate.instant(

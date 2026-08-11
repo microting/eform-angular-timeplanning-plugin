@@ -470,4 +470,5 @@ export const nlNL = {
   'No tiers': 'Geen niveaus',
   'Enter a duration as hours:minutes, for example 7:24': 'Voer een tijdsduur in als uren:minuten, bijvoorbeeld 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'De niveaus definiëren tijdslimieten in uren:minuten. Bijvoorbeeld: Niveau 1: tot 8:00 (8 uur) = Normaal loon. Laat "Tot" leeg voor onbeperkt.',
+  PregnancyLeave: 'Zwangerschapsgerelateerde afwezigheid',
 };

@@ -470,4 +470,5 @@ export const esES = {
   'No tiers': 'Sin niveles',
   'Enter a duration as hours:minutes, for example 7:24': 'Introduzca una duración en formato horas:minutos, por ejemplo 7:24.',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Los niveles definen los umbrales de tiempo como horas:minutos. Por ejemplo, Nivel 1: hasta las 8:00 (8 horas) = Pago regular. Deje "Hasta" en blanco para un período ilimitado.',
+  PregnancyLeave: 'Ausencia relacionada con el embarazo',
 };

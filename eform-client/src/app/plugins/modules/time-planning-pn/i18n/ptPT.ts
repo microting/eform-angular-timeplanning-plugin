@@ -470,4 +470,5 @@ export const ptPT = {
   'No tiers': 'Sem níveis',
   'Enter a duration as hours:minutes, for example 7:24': 'Insira a duração no formato horas:minutos, por exemplo, 7:24.',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Os níveis definem limites de tempo em horas:minutos. Exemplo: Nível 1: até 8:00 (8 horas) = Pagamento normal. Deixe "Até" em branco para pagamento ilimitado.',
+  PregnancyLeave: 'Ausência relacionada à gravidez',
 };

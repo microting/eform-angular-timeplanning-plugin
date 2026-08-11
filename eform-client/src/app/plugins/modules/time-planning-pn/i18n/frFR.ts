@@ -470,4 +470,5 @@ export const frFR = {
   'No tiers': 'Pas de niveaux',
   'Enter a duration as hours:minutes, for example 7:24': 'Saisissez une durée au format heures:minutes, par exemple 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Les paliers définissent des seuils temporels en heures:minutes. Ex. : Palier 1 : jusqu’à 8 h 00 (8 heures) = Rémunération normale. Laissez le champ « Jusqu’à » vide pour une durée illimitée.',
+  PregnancyLeave: 'Absence liée à la grossesse',
 };

@@ -470,4 +470,5 @@ export const ukUA = {
   'No tiers': 'Без рівнів',
   'Enter a duration as hours:minutes, for example 7:24': 'Введіть тривалість у форматі годин:хвилини, наприклад, 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Рівні визначають часові пороги як години:хвилини. Наприклад, Рівень 1: до 8:00 (8 годин) = Звичайна оплата. Залиште поле «До» порожнім для необмеженого часу.',
+  PregnancyLeave: 'Відсутність, пов\'язана з вагітністю',
 };

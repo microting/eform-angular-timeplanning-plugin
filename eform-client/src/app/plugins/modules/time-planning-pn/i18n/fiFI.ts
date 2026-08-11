@@ -470,4 +470,5 @@ export const fiFI = {
   'No tiers': 'Ei tasoja',
   'Enter a duration as hours:minutes, for example 7:24': 'Syötä kesto muodossa tunnit:minuutit, esimerkiksi 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Tasot määrittelevät aikarajat muodossa tunnit:minuutit. Esim. Taso 1: klo 8.00 asti (8 tuntia) = Normaali palkka. Jätä "Jopa" tyhjäksi, jos haluat rajoittamattoman ajan.',
+  PregnancyLeave: 'Raskauteen liittyvä poissaolo',
 };

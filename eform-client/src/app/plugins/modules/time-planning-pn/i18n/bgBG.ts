@@ -470,4 +470,5 @@ export const bgBG = {
   'No tiers': 'Няма нива',
   'Enter a duration as hours:minutes, for example 7:24': 'Въведете продължителност като часове:минути, например 7:24',
   'Tiers define time thresholds as hours:minutes. E.g., Tier 1: up to 8:00 (8 hours) = Regular pay. Leave "Up To" empty for unlimited.': 'Нивата определят времевите прагове като часове:минути. Например, Ниво 1: до 8:00 (8 часа) = Редовно заплащане. Оставете „До“ празно за неограничено.',
+  PregnancyLeave: 'Отсъствие, свързано с бременност',
 };
