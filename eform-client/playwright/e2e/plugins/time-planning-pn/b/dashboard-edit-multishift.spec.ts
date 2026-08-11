@@ -233,9 +233,10 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
     const personalCb = page.locator('#allowPersonalTimeRegistration input[type="checkbox"]');
     await expect(personalCb).toBeAttached({ timeout: 30000 });
     if (!(await personalCb.isChecked())) {
+      await page.locator('#allowPersonalTimeRegistration').scrollIntoViewIfNeeded();
       await page.locator('#allowPersonalTimeRegistration').click({ force: true });
     }
-    await expect(personalCb).toBeChecked();
+    await expect(personalCb).toBeChecked({ timeout: 10000 });
 
     // Click the acceptPlanned radio — pick the inner clickable label/input
     // because the Material radio button host wraps a hidden input.
@@ -356,8 +357,9 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
 
     // First-run path: checkbox starts unchecked and enabled.
     await expect(cb).toBeEnabled();
+    await page.locator('#useOneMinuteIntervals').scrollIntoViewIfNeeded();
     await page.locator('#useOneMinuteIntervals').click({ force: true });
-    await expect(cb).toBeChecked();
+    await expect(cb).toBeChecked({ timeout: 10000 });
 
     const assignSitePromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT',

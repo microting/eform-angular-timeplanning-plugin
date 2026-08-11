@@ -2734,14 +2734,7 @@ public class TimePlanningWorkingHoursService(
                     Translations.Shift_1__pause,
                     Translations.Shift_2__start,
                     Translations.Shift_2__end,
-                    Translations.Shift_2__pause,
-                    Translations.NettoHours,
-                    Translations.Flex,
-                    Translations.SumFlexStart,
-                    Translations.PaidOutFlex,
-                    Translations.Message,
-                    Translations.Comments,
-                    Translations.Comment_office
+                    Translations.Shift_2__pause
                 };
 
                 if (isThirdShiftEnabled)
@@ -2773,6 +2766,17 @@ public class TimePlanningWorkingHoursService(
                         Translations.Shift_5__pause
                     }).ToArray();
                 }
+
+                headers = headers.Concat(new[]
+                {
+                    Translations.NettoHours,
+                    Translations.Flex,
+                    Translations.SumFlexStart,
+                    Translations.PaidOutFlex,
+                    Translations.Message,
+                    Translations.Comments,
+                    Translations.Comment_office
+                }).ToArray();
 
                 List<string> headerStrings = new List<string>();
                 foreach (var header in headers)
@@ -2897,6 +2901,24 @@ public class TimePlanningWorkingHoursService(
                 totalsRow.Append(CreateCell(string.Empty)); // Shift2 Start
                 totalsRow.Append(CreateCell(string.Empty)); // Shift2 Stop
                 totalsRow.Append(CreateCell(string.Empty)); // Shift2 Pause
+                if (isThirdShiftEnabled)
+                {
+                    totalsRow.Append(CreateCell(string.Empty)); // Shift3 Start
+                    totalsRow.Append(CreateCell(string.Empty)); // Shift3 Stop
+                    totalsRow.Append(CreateCell(string.Empty)); // Shift3 Pause
+                }
+                if (isFourthShiftEnabled)
+                {
+                    totalsRow.Append(CreateCell(string.Empty)); // Shift4 Start
+                    totalsRow.Append(CreateCell(string.Empty)); // Shift4 Stop
+                    totalsRow.Append(CreateCell(string.Empty)); // Shift4 Pause
+                }
+                if (isFifthShiftEnabled)
+                {
+                    totalsRow.Append(CreateCell(string.Empty)); // Shift5 Start
+                    totalsRow.Append(CreateCell(string.Empty)); // Shift5 Stop
+                    totalsRow.Append(CreateCell(string.Empty)); // Shift5 Pause
+                }
                 totalsRow.Append(CreateNumericCell(totalNettoHours)); // NettoHours
                 totalsRow.Append(CreateNumericCell(totalFlexHours)); // FlexHours
                 totalsRow.Append(CreateCell(string.Empty)); // SumFlexEnd (running balance, not summable)
@@ -2904,24 +2926,6 @@ public class TimePlanningWorkingHoursService(
                 totalsRow.Append(CreateCell(string.Empty)); // Message
                 totalsRow.Append(CreateCell(string.Empty)); // CommentWorker
                 totalsRow.Append(CreateCell(string.Empty)); // CommentOffice
-                if (isThirdShiftEnabled)
-                {
-                    totalsRow.Append(CreateCell(string.Empty));
-                    totalsRow.Append(CreateCell(string.Empty));
-                    totalsRow.Append(CreateCell(string.Empty));
-                }
-                if (isFourthShiftEnabled)
-                {
-                    totalsRow.Append(CreateCell(string.Empty));
-                    totalsRow.Append(CreateCell(string.Empty));
-                    totalsRow.Append(CreateCell(string.Empty));
-                }
-                if (isFifthShiftEnabled)
-                {
-                    totalsRow.Append(CreateCell(string.Empty));
-                    totalsRow.Append(CreateCell(string.Empty));
-                    totalsRow.Append(CreateCell(string.Empty));
-                }
                 foreach (var payCode in allPayCodes)
                 {
                     totalsRow.Append(CreateNumericCell(totalsByPayCode[payCode]));
@@ -3009,15 +3013,6 @@ public class TimePlanningWorkingHoursService(
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start, planning.Start2StartedAt, useOneMinuteIntervals)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop, planning.Stop2StoppedAt, useOneMinuteIntervals)));
             dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift2PauseMinutes, planning.Shift2Pause)));
-            dataRow.Append(CreateNumericCell(planning.NettoHoursOverrideActive ? planning.NettoHoursOverride : planning.NettoHours));
-            dataRow.Append(CreateNumericCell(planning.FlexHours));
-            dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
-            dataRow.Append(CreateNumericCell(string.IsNullOrEmpty(planning.PaidOutFlex)
-                ? 0
-                : double.Parse(planning.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)));
-            dataRow.Append(CreateCell(GetMessageText(planning.Message, language)));
-            dataRow.Append(CreateCell(planning.CommentWorker?.Replace("<br>", "\n")));
-            dataRow.Append(CreateCell(planning.CommentOffice?.Replace("<br>", "\n")));
             if (isThirdShiftEnabled)
             {
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Start, planning.Start3StartedAt, useOneMinuteIntervals)));
@@ -3036,6 +3031,15 @@ public class TimePlanningWorkingHoursService(
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Stop, planning.Stop5StoppedAt, useOneMinuteIntervals)));
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Pause, null, useOneMinuteIntervals)));
             }
+            dataRow.Append(CreateNumericCell(planning.NettoHoursOverrideActive ? planning.NettoHoursOverride : planning.NettoHours));
+            dataRow.Append(CreateNumericCell(planning.FlexHours));
+            dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
+            dataRow.Append(CreateNumericCell(string.IsNullOrEmpty(planning.PaidOutFlex)
+                ? 0
+                : double.Parse(planning.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)));
+            dataRow.Append(CreateCell(GetMessageText(planning.Message, language)));
+            dataRow.Append(CreateCell(planning.CommentWorker?.Replace("<br>", "\n")));
+            dataRow.Append(CreateCell(planning.CommentOffice?.Replace("<br>", "\n")));
         }
         catch (Exception ex)
         {
@@ -3520,14 +3524,7 @@ public class TimePlanningWorkingHoursService(
                         Translations.Shift_1__pause,
                         Translations.Shift_2__start,
                         Translations.Shift_2__end,
-                        Translations.Shift_2__pause,
-                        Translations.NettoHours,
-                        Translations.Flex,
-                        Translations.SumFlexStart,
-                        Translations.PaidOutFlex,
-                        Translations.Message,
-                        Translations.Comments,
-                        Translations.Comment_office
+                        Translations.Shift_2__pause
                     };
 
                     if (isThirdShiftEnabled)
@@ -3559,6 +3556,17 @@ public class TimePlanningWorkingHoursService(
                             Translations.Shift_5__pause
                         }).ToArray();
                     }
+
+                    headers = headers.Concat(new[]
+                    {
+                        Translations.NettoHours,
+                        Translations.Flex,
+                        Translations.SumFlexStart,
+                        Translations.PaidOutFlex,
+                        Translations.Message,
+                        Translations.Comments,
+                        Translations.Comment_office
+                    }).ToArray();
                     List<string> headerStrings = new List<string>();
                     foreach (var header in headers)
                     {
@@ -3697,31 +3705,31 @@ public class TimePlanningWorkingHoursService(
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Shift2 Start
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Shift2 Stop
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Shift2 Pause
+                    if (isThirdShiftEnabled)
+                    {
+                        siteTotalsRow.Append(CreateCell(string.Empty)); // Shift3 Start
+                        siteTotalsRow.Append(CreateCell(string.Empty)); // Shift3 Stop
+                        siteTotalsRow.Append(CreateCell(string.Empty)); // Shift3 Pause
+                    }
+                    if (isFourthShiftEnabled)
+                    {
+                        siteTotalsRow.Append(CreateCell(string.Empty)); // Shift4 Start
+                        siteTotalsRow.Append(CreateCell(string.Empty)); // Shift4 Stop
+                        siteTotalsRow.Append(CreateCell(string.Empty)); // Shift4 Pause
+                    }
+                    if (isFifthShiftEnabled)
+                    {
+                        siteTotalsRow.Append(CreateCell(string.Empty)); // Shift5 Start
+                        siteTotalsRow.Append(CreateCell(string.Empty)); // Shift5 Stop
+                        siteTotalsRow.Append(CreateCell(string.Empty)); // Shift5 Pause
+                    }
                     siteTotalsRow.Append(CreateNumericCell(siteTotalNettoHours)); // NettoHours
                     siteTotalsRow.Append(CreateNumericCell(siteTotalFlexHours)); // FlexHours
-                    siteTotalsRow.Append(CreateCell(string.Empty)); // SumFlexStart
+                    siteTotalsRow.Append(CreateCell(string.Empty)); // SumFlexEnd (running balance, not summable)
                     siteTotalsRow.Append(CreateNumericCell(siteTotalPaidOutFlex)); // PaidOutFlex
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Message
                     siteTotalsRow.Append(CreateCell(string.Empty)); // CommentWorker
                     siteTotalsRow.Append(CreateCell(string.Empty)); // CommentOffice
-                    if (isThirdShiftEnabled)
-                    {
-                        siteTotalsRow.Append(CreateCell(string.Empty));
-                        siteTotalsRow.Append(CreateCell(string.Empty));
-                        siteTotalsRow.Append(CreateCell(string.Empty));
-                    }
-                    if (isFourthShiftEnabled)
-                    {
-                        siteTotalsRow.Append(CreateCell(string.Empty));
-                        siteTotalsRow.Append(CreateCell(string.Empty));
-                        siteTotalsRow.Append(CreateCell(string.Empty));
-                    }
-                    if (isFifthShiftEnabled)
-                    {
-                        siteTotalsRow.Append(CreateCell(string.Empty));
-                        siteTotalsRow.Append(CreateCell(string.Empty));
-                        siteTotalsRow.Append(CreateCell(string.Empty));
-                    }
                     foreach (var payCode in sitePayCodes)
                     {
                         siteTotalsRow.Append(CreateNumericCell(siteTotalsByPayCode.GetValueOrDefault(payCode, 0)));
