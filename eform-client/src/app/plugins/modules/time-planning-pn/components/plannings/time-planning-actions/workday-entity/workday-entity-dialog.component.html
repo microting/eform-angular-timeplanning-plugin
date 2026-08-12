@@ -11,6 +11,10 @@
     </button>
   </div>
 
+  <div class="dialog-site-tags" *ngIf="data.tags?.length">
+    <app-eform-tag [tags]="data.tags"></app-eform-tag>
+  </div>
+
   <div mat-dialog-content>
     <div class="workday-dialog-container">
       <div class="main-content" [class.with-side-panel]="selectedGpsCoordinate || selectedSnapshot">

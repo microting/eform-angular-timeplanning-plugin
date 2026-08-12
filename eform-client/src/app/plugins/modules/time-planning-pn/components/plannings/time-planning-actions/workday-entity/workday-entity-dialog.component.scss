@@ -1,3 +1,19 @@
+/* Read-only SDK site-tag strip sitting directly under the dialog title.
+   No width cap (unlike .row-tags in the plannings table) — chips may wrap
+   across the full dialog width. */
+.dialog-site-tags {
+  margin-top: -8px;
+  margin-bottom: 10px;
+  padding: 0 24px;
+}
+
+/* The strip breaks the title+content adjacency Material relies on for its
+   `.mat-mdc-dialog-title + .mat-mdc-dialog-content { padding-top: 0 }` rule;
+   restore the collapse so tagged and untagged workers share the same rhythm. */
+.dialog-site-tags + [mat-dialog-content] {
+  padding-top: 0;
+}
+
 .flex-row {
   display: flex;
   align-items: center;
