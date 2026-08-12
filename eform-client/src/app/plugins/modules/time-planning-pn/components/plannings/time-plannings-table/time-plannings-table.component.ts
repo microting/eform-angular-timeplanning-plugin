@@ -444,7 +444,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
     this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
       if (result && result.success) {
         this.dialog.open(WorkdayEntityDialogComponent, {
-          data: {planningPrDayModels: cellData, assignedSiteModel: result.model},
+          data: {planningPrDayModels: cellData, assignedSiteModel: result.model, tags: row.tags ?? []},
           minWidth: 1024,
           minHeight: 500,
           maxWidth: '95vw',  // Add this

@@ -14,6 +14,7 @@ import {selectCurrentUserIsFirstUser} from 'src/app/state';
 import validator from 'validator';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TemplateFilesService} from 'src/app/common/services';
+import {SharedTagModel} from 'src/app/common/models';
 import {Subscription} from 'rxjs';
 import { MatDialogRef } from '@angular/material/dialog';
 
@@ -45,7 +46,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   private imageService = inject(TemplateFilesService);
   public data = inject<{
       planningPrDayModels: PlanningPrDayModel,
-      assignedSiteModel: AssignedSiteModel
+      assignedSiteModel: AssignedSiteModel,
+      tags?: SharedTagModel[]
     }>(MAT_DIALOG_DATA);
   protected datePipe = inject(DatePipe);
   private translateService = inject(TranslateService);
