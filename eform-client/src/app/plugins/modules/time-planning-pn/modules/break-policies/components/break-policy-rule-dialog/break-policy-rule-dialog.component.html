@@ -5,13 +5,12 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button
+  <button class="btn-cancel"
           (click)="onCancel()"
           id="cancelBtn">
     {{ 'Cancel' | translate }}
   </button>
-  <button mat-raised-button
-          color="primary"
+  <button class="btn-primary"
           (click)="onSave()"
           [disabled]="!ruleForm.valid"
           id="saveBtn">
