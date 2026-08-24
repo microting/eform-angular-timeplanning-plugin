@@ -20,18 +20,18 @@
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
   <button
+    class="btn-cancel"
+    id="cancelCreateBtn"
+    (click)="hide()"
+  >
+    {{'Cancel' | translate}}
+  </button>
+  <button
     class="btn-primary"
     id="saveCreateBtn"
     (click)="createBreakPolicy()"
     [disabled]="breakPolicyForm.invalid"
   >
     {{'Create' | translate}}
-  </button>
-  <button
-    class="btn-cancel"
-    id="cancelCreateBtn"
-    (click)="hide()"
-  >
-    {{'Cancel' | translate}}
   </button>
 </div>
