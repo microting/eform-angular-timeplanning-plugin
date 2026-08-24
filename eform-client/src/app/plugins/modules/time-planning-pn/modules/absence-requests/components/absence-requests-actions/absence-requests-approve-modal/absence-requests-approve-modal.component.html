@@ -42,15 +42,14 @@
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
   <button
-    mat-raised-button
-    color="primary"
+    class="btn-primary"
     id="saveApproveBtn"
     (click)="approve()"
   >
     {{ 'Approve' | translate }}
   </button>
   <button
-    mat-raised-button
+    class="btn-cancel"
     id="cancelApproveBtn"
     (click)="hide()"
   >
