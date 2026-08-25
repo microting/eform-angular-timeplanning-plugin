@@ -33,9 +33,7 @@ public class PushNotificationServiceTests : TestBaseSetup
     [Test]
     public async Task SendToSiteAsync_WhenFirebaseNotConfigured_IsNoOp()
     {
-        var service = new PushNotificationService(
-            TimePlanningPnDbContext!,
-            Substitute.For<ILogger<PushNotificationService>>());
+        var service = CreateService();
 
         await service.SendToSiteAsync(1, "Title", "Body");
     }
@@ -80,9 +78,7 @@ public class PushNotificationServiceTests : TestBaseSetup
         await SeedToken("newer", sdkSiteId: 7, buildNumber: 40000);
         await SeedToken("other-site", sdkSiteId: 8, buildNumber: 40000);
 
-        var service = new PushNotificationService(
-            TimePlanningPnDbContext!,
-            Substitute.For<ILogger<PushNotificationService>>());
+        var service = CreateService();
 
         var tokens = await service.ResolveTargetTokensAsync(7, minBuild: 31221);
         var picked = tokens.Select(t => t.Token).ToList();
@@ -97,9 +93,7 @@ public class PushNotificationServiceTests : TestBaseSetup
         await SeedToken("legacy-0", sdkSiteId: 7, buildNumber: 0);
         await SeedToken("modern", sdkSiteId: 7, buildNumber: 40000);
 
-        var service = new PushNotificationService(
-            TimePlanningPnDbContext!,
-            Substitute.For<ILogger<PushNotificationService>>());
+        var service = CreateService();
 
         var tokens = await service.ResolveTargetTokensAsync(7, minBuild: 0);
 
@@ -107,6 +101,9 @@ public class PushNotificationServiceTests : TestBaseSetup
             Is.EquivalentTo(new[] { "legacy-0", "modern" }),
             "minBuild 0 must keep existing callers unaffected (all devices included)");
     }
+
+    private PushNotificationService CreateService() =>
+        new(TimePlanningPnDbContext!, Substitute.For<ILogger<PushNotificationService>>());
 
     private async Task SeedToken(string token, int sdkSiteId, int buildNumber)
     {

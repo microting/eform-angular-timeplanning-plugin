@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.TimePlanningBase.Infrastructure.Data;
+using DeviceToken = Microting.TimePlanningBase.Infrastructure.Data.Entities.DeviceToken;
 
 public class PushNotificationService : IPushNotificationService
 {
@@ -103,8 +104,7 @@ public class PushNotificationService : IPushNotificationService
     /// <paramref name="minBuild"/>. A <paramref name="minBuild"/> of 0 includes
     /// every device (old installs report AppBuildNumber 0).
     /// </summary>
-    internal Task<List<Microting.TimePlanningBase.Infrastructure.Data.Entities.DeviceToken>>
-        ResolveTargetTokensAsync(int targetSdkSiteId, int minBuild) =>
+    internal Task<List<DeviceToken>> ResolveTargetTokensAsync(int targetSdkSiteId, int minBuild) =>
         _dbContext.DeviceTokens
             .Where(dt => dt.SdkSiteId == targetSdkSiteId
                          && dt.WorkflowState == Constants.WorkflowStates.Created
