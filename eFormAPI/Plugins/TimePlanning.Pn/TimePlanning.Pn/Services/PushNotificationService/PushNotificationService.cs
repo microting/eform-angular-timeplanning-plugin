@@ -57,6 +57,46 @@ public class PushNotificationService : IPushNotificationService
         }
     }
 
+    /// <summary>
+    /// Builds an FCM message. When both <paramref name="title"/> and
+    /// <paramref name="body"/> are empty the message is data-only (silent): no
+    /// visible <see cref="Notification"/> block is attached and APNs
+    /// content-available is set so iOS wakes the app in the background to
+    /// process the data payload. Otherwise a normal visible notification is
+    /// attached alongside the data.
+    /// </summary>
+    public static Message BuildMessage(
+        string token,
+        string title,
+        string body,
+        Dictionary<string, string>? data)
+    {
+        var hasNotification = !string.IsNullOrEmpty(title) || !string.IsNullOrEmpty(body);
+        var message = new Message
+        {
+            Token = token,
+            Data = data
+        };
+
+        if (hasNotification)
+        {
+            message.Notification = new Notification
+            {
+                Title = title,
+                Body = body
+            };
+        }
+        else
+        {
+            message.Apns = new ApnsConfig
+            {
+                Aps = new Aps { ContentAvailable = true }
+            };
+        }
+
+        return message;
+    }
+
     public async Task SendToSiteAsync(
         int targetSdkSiteId,
         string title,
@@ -87,16 +127,7 @@ public class PushNotificationService : IPushNotificationService
             {
                 try
                 {
-                    var message = new Message
-                    {
-                        Token = deviceToken.Token,
-                        Notification = new Notification
-                        {
-                            Title = title,
-                            Body = body
-                        },
-                        Data = data
-                    };
+                    var message = BuildMessage(deviceToken.Token, title, body, data);
 
                     await FirebaseMessaging.DefaultInstance.SendAsync(message);
                 }
