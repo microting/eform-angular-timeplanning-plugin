@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,7 @@ public class SettingsServiceTests : TestBaseSetup
     private ITimePlanningLocalizationService _localizationService;
     private IEFormCoreService _coreService;
     private IPluginDbOptions<TimePlanningBaseSettings> _options;
+    private TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService _pushNotificationService;
 
     [SetUp]
     public async Task SetUp()
@@ -51,6 +53,9 @@ public class SettingsServiceTests : TestBaseSetup
             SnapshotEnabled = "0"
         });
 
+        _pushNotificationService =
+            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>();
+
         _settingsService = new TimeSettingService(
             _options,
             TimePlanningPnDbContext,
@@ -58,7 +63,8 @@ public class SettingsServiceTests : TestBaseSetup
             _userService,
             _localizationService,
             null,
-            _coreService);
+            _coreService,
+            _pushNotificationService);
     }
 
     [Test]
@@ -192,6 +198,41 @@ public class SettingsServiceTests : TestBaseSetup
         Assert.That(updatedSite, Is.Not.Null);
         Assert.That(updatedSite.GpsEnabled, Is.False);
         Assert.That(updatedSite.SnapshotEnabled, Is.False);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_StillSucceeds_WhenPushThrows()
+    {
+        // The settings_changed push is fire-and-forget: a push failure must
+        // never fail the settings update.
+        _pushNotificationService
+            .SendToSiteAsync(
+                Arg.Any<int>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<Dictionary<string, string>?>())
+            .Returns(_ => Task.FromException(new Exception("boom")));
+
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 42,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var updateModel = new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 42,
+            UseGoogleSheetAsDefault = true
+        };
+
+        var result = await _settingsService.UpdateAssignedSite(updateModel);
+
+        Assert.That(result.Success, Is.True,
+            "a push failure must not fail the settings update");
     }
 
     [Test]

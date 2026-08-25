@@ -45,6 +45,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using TimePlanningLocalizationService;
+using TimePlanning.Pn.Services.PushNotificationService;
 
 public class TimeSettingService(
     IPluginDbOptions<TimePlanningBaseSettings> options,
@@ -53,7 +54,8 @@ public class TimeSettingService(
     IUserService userService,
     ITimePlanningLocalizationService localizationService,
     BaseDbContext baseDbContext,
-    IEFormCoreService core)
+    IEFormCoreService core,
+    IPushNotificationService pushNotificationService)
     : ISettingService
 {
     public async Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
@@ -1076,6 +1078,24 @@ public class TimeSettingService(
         dbAssignedSite.IsManager = site.IsManager;
 
         await dbAssignedSite.Update(dbContext);
+
+        // Fire-and-forget: tell the worker's device(s) that their assigned-site
+        // settings changed so personal mode can auto-refresh. Sent AFTER the row
+        // is committed; a push failure must NEVER fail the settings update.
+        try
+        {
+            await pushNotificationService.SendToSiteAsync(
+                dbAssignedSite.SiteId,
+                title: "",
+                body: "",
+                data: new Dictionary<string, string> { { "type", "settings_changed" } });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Failed to send settings_changed push for SdkSiteId {SdkSiteId}",
+                dbAssignedSite.SiteId);
+        }
 
         // Update managing tags
         var existingManagingTags = await dbContext.AssignedSiteManagingTags
