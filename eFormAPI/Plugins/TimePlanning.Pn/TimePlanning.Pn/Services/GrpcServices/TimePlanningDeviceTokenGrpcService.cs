@@ -21,10 +21,11 @@ public class TimePlanningDeviceTokenGrpcService
     {
         try
         {
-            // request.SdkSiteId is deliberately ignored: the site id is
-            // resolved server-side from the JWT (see DeviceTokenService).
+            // The site id is resolved server-side from the JWT (see
+            // DeviceTokenService); the client no longer sends one. The client's
+            // reported app build number is persisted for push version-gating.
             var result = await _deviceTokenService.RegisterForCallerAsync(
-                request.Token, request.Platform);
+                request.Token, request.Platform, request.BuildNumber);
 
             return new OperationResponse
             {
