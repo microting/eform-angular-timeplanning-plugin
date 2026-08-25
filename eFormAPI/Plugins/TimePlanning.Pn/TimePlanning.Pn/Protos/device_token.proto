@@ -9,9 +9,13 @@ option csharp_namespace = "TimePlanning.Pn.Grpc";
 message RegisterDeviceTokenRequest {
   string token = 1;
   string platform = 2;
-  // Ignored since 2026-07: the server resolves the caller's site id from
-  // the JWT. Field retained for wire compatibility with shipped clients.
-  int32 sdk_site_id = 3;
+  // App build number reported by the client at registration. 0 = old/unknown
+  // client that predates this field. Used to version-gate silent pushes.
+  //
+  // Field 3 previously carried sdk_site_id, which the server ignored since
+  // 2026-07 (the caller's site id is resolved from the JWT). The client
+  // repurposed this int32 slot for build_number, so the wire stays identical.
+  int32 build_number = 3;
 }
 
 message UnregisterDeviceTokenRequest {
