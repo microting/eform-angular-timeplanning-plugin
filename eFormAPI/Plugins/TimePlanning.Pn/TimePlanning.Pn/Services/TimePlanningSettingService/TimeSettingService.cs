@@ -58,6 +58,11 @@ public class TimeSettingService(
     IPushNotificationService pushNotificationService)
     : ISettingService
 {
+    // First flutter-time build that sends build_number AND handles the
+    // settings_changed silent push; older installs report AppBuildNumber 0 and
+    // are excluded to avoid a stray notification.
+    private const int MinSettingsChangedPushBuild = 31221;
+
     public async Task<OperationDataResult<TimePlanningSettingsModel>> GetSettings()
     {
         try
@@ -1088,7 +1093,8 @@ public class TimeSettingService(
                 dbAssignedSite.SiteId,
                 title: "",
                 body: "",
-                data: new Dictionary<string, string> { { "type", "settings_changed" } });
+                data: new Dictionary<string, string> { { "type", "settings_changed" } },
+                minBuild: MinSettingsChangedPushBuild);
         }
         catch (Exception ex)
         {

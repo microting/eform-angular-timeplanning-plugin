@@ -97,11 +97,26 @@ public class PushNotificationService : IPushNotificationService
         return message;
     }
 
+    /// <summary>
+    /// Resolves the live device tokens targeted by a push: same site, still in
+    /// the Created workflow state, and reporting an app build number at or above
+    /// <paramref name="minBuild"/>. A <paramref name="minBuild"/> of 0 includes
+    /// every device (old installs report AppBuildNumber 0).
+    /// </summary>
+    internal Task<List<Microting.TimePlanningBase.Infrastructure.Data.Entities.DeviceToken>>
+        ResolveTargetTokensAsync(int targetSdkSiteId, int minBuild) =>
+        _dbContext.DeviceTokens
+            .Where(dt => dt.SdkSiteId == targetSdkSiteId
+                         && dt.WorkflowState == Constants.WorkflowStates.Created
+                         && dt.AppBuildNumber >= minBuild)
+            .ToListAsync();
+
     public async Task SendToSiteAsync(
         int targetSdkSiteId,
         string title,
         string body,
-        Dictionary<string, string>? data = null)
+        Dictionary<string, string>? data = null,
+        int minBuild = 0)
     {
         if (!_isEnabled)
         {
@@ -113,9 +128,7 @@ public class PushNotificationService : IPushNotificationService
 
         try
         {
-            var tokens = await _dbContext.DeviceTokens
-                .Where(dt => dt.SdkSiteId == targetSdkSiteId && dt.WorkflowState == Constants.WorkflowStates.Created)
-                .ToListAsync();
+            var tokens = await ResolveTargetTokensAsync(targetSdkSiteId, minBuild);
 
             if (tokens.Count == 0)
             {
