@@ -57,7 +57,8 @@ public class SettingsServiceExtendedTests : TestBaseSetup
             _userService,
             _localizationService,
             null,
-            _coreService);
+            _coreService,
+            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
     }
 
     // --- GetAvailableSites tests ---

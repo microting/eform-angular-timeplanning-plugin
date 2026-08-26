@@ -35,7 +35,7 @@ public class DeviceTokenService : IDeviceTokenService
         _coreService = coreService;
     }
 
-    public async Task<OperationResult> RegisterForCallerAsync(string token, string platform)
+    public async Task<OperationResult> RegisterForCallerAsync(string token, string platform, int buildNumber = 0)
     {
         var sdkSiteId = await ResolveCallerSdkSiteIdAsync();
         if (sdkSiteId == 0)
@@ -46,7 +46,7 @@ public class DeviceTokenService : IDeviceTokenService
                 false, "Could not resolve an active site for the calling user");
         }
 
-        return await RegisterAsync(sdkSiteId, token, platform);
+        return await RegisterAsync(sdkSiteId, token, platform, buildNumber);
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public class DeviceTokenService : IDeviceTokenService
         return worker.ResolveActiveSdkSiteId() ?? 0;
     }
 
-    public async Task<OperationResult> RegisterAsync(int sdkSiteId, string token, string platform)
+    public async Task<OperationResult> RegisterAsync(int sdkSiteId, string token, string platform, int buildNumber = 0)
     {
         try
         {
@@ -91,6 +91,7 @@ public class DeviceTokenService : IDeviceTokenService
             {
                 existing.SdkSiteId = sdkSiteId;
                 existing.Platform = platform;
+                existing.AppBuildNumber = buildNumber;
                 await existing.Update(_dbContext);
             }
             else
@@ -100,6 +101,7 @@ public class DeviceTokenService : IDeviceTokenService
                     SdkSiteId = sdkSiteId,
                     Token = token,
                     Platform = platform,
+                    AppBuildNumber = buildNumber,
                 };
                 await deviceToken.Create(_dbContext);
             }

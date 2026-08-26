@@ -64,6 +64,42 @@ public class DeviceTokenServiceTests : TestBaseSetup
     }
 
     [Test]
+    public async Task RegisterAsync_NewToken_PersistsAppBuildNumber()
+    {
+        var result = await _service.RegisterAsync(42, "build-token", "android", 31221);
+
+        Assert.That(result.Success, Is.True);
+
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.SingleAsync();
+        Assert.That(stored.AppBuildNumber, Is.EqualTo(31221));
+    }
+
+    [Test]
+    public async Task RegisterAsync_ReRegister_UpdatesAppBuildNumber()
+    {
+        await _service.RegisterAsync(42, "build-token", "android", 31221);
+
+        var result = await _service.RegisterAsync(42, "build-token", "android", 40000);
+
+        Assert.That(result.Success, Is.True);
+        Assert.That(await TimePlanningPnDbContext!.DeviceTokens.CountAsync(), Is.EqualTo(1));
+
+        var stored = await TimePlanningPnDbContext.DeviceTokens.SingleAsync();
+        Assert.That(stored.AppBuildNumber, Is.EqualTo(40000),
+            "a re-register must refresh the stored app build number");
+    }
+
+    [Test]
+    public async Task RegisterAsync_DefaultBuildNumber_PersistsZero()
+    {
+        await _service.RegisterAsync(42, "legacy-token", "android");
+
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.SingleAsync();
+        Assert.That(stored.AppBuildNumber, Is.EqualTo(0),
+            "an old client that omits the build number is stored as 0");
+    }
+
+    [Test]
     public async Task UnregisterAsync_ExistingToken_IsRemoved()
     {
         await _service.RegisterAsync(1, "remove-me", "android");
