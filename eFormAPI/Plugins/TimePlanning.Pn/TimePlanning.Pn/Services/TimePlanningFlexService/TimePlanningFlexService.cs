@@ -247,8 +247,22 @@ public class TimePlanningFlexService(
     {
         planRegistration.CommentOfficeAll = model.CommentOfficeAll;
         planRegistration.CommentOffice = model.CommentOffice;
+
+        // PaiedOutFlexInSeconds is the source the flag-on flex chain
+        // (PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision /
+        // TimePlanningWorkingHoursService.ApplyRunningFlexChain) subtracts. Only ever
+        // updating the legacy double below would leave that column stale, so keep it
+        // in lockstep here too. Old value falls back to the double the same way those
+        // chains do, since this row may itself have only ever had the double set.
+        var oldPaiedOutFlexSeconds = planRegistration.PaiedOutFlexInSeconds != 0
+            ? planRegistration.PaiedOutFlexInSeconds
+            : (int)Math.Round(planRegistration.PaiedOutFlex * 3600);
+        var newPaiedOutFlexSeconds = (int)Math.Round(model.PaidOutFlex * 3600);
+
         planRegistration.SumFlexEnd += planRegistration.PaiedOutFlex - model.PaidOutFlex;
+        planRegistration.SumFlexEndInSeconds += oldPaiedOutFlexSeconds - newPaiedOutFlexSeconds;
         planRegistration.PaiedOutFlex = model.PaidOutFlex;
+        planRegistration.PaiedOutFlexInSeconds = newPaiedOutFlexSeconds;
         planRegistration.UpdatedByUserId = userService.UserId;
 
         await planRegistration.Update(dbContext);

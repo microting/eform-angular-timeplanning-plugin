@@ -959,6 +959,26 @@ public class TimePlanningWorkingHoursService(
 
 
     /// <summary>
+    /// Production writers (e.g. <c>TimePlanningFlexService.UpdatePlanning</c>) only
+    /// ever populate the legacy double <c>PaiedOutFlex</c>/<c>PaidOutFlex</c> fields;
+    /// <c>PaiedOutFlexInSeconds</c> stays at its default of 0. Mirrors the identical
+    /// fallback in <see cref="PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision"/>
+    /// so the flag-on chain doesn't silently treat a real paid-out flex as zero.
+    /// </summary>
+    private static int PaiedOutFlexSecondsWithFallback(TimePlanningWorkingHoursModel model)
+    {
+        if (model.PaiedOutFlexInSeconds != 0)
+        {
+            return model.PaiedOutFlexInSeconds;
+        }
+
+        return string.IsNullOrEmpty(model.PaidOutFlex)
+            ? 0
+            : (int)Math.Round(
+                double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture) * 3600);
+    }
+
+    /// <summary>
     /// Applies the running flex-balance chain over an ordered-by-date list of
     /// working-hours rows. Single source of truth for the flex balance rendered
     /// by both <see cref="Index"/> (web grid) and <see cref="CalculateHoursSummary"/>
@@ -992,7 +1012,7 @@ public class TimePlanningWorkingHoursService(
                     timePlanningWorkingHoursModel.SumFlexEndInSeconds =
                         timePlanningWorkingHoursModel.SumFlexStartInSeconds
                         + timePlanningWorkingHoursModel.FlexInSeconds
-                        - timePlanningWorkingHoursModel.PaiedOutFlexInSeconds;
+                        - PaiedOutFlexSecondsWithFallback(timePlanningWorkingHoursModel);
                     timePlanningWorkingHoursModel.SumFlexEnd =
                         timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
                     sumFlexEndInSeconds = timePlanningWorkingHoursModel.SumFlexEndInSeconds;
@@ -1022,7 +1042,7 @@ public class TimePlanningWorkingHoursService(
                         timePlanningWorkingHoursModel.SumFlexEndInSeconds =
                             timePlanningWorkingHoursModel.SumFlexStartInSeconds
                             + timePlanningWorkingHoursModel.FlexInSeconds
-                            - timePlanningWorkingHoursModel.PaiedOutFlexInSeconds;
+                            - PaiedOutFlexSecondsWithFallback(timePlanningWorkingHoursModel);
                         timePlanningWorkingHoursModel.SumFlexEnd =
                             timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
                     }
