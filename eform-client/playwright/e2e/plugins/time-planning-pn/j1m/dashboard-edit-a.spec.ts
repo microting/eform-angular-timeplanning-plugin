@@ -56,13 +56,19 @@ test.describe('Dashboard edit values (j1m, flag-on, global values round-trip)', 
     const settingsGetPromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'
     );
+    // Registered before the click alongside settingsGetPromise: getSettings() and
+    // getPayrollSettings() both fire synchronously from ngOnInit, so listening for
+    // this response only after settingsGetPromise resolves is too late — the
+    // payroll request has often already completed, leaving this promise unresolved
+    // until the 120s test timeout (no default action timeout is configured).
+    const payrollSettingsGetPromise = page.waitForResponse(
+      r => r.url().includes('/api/time-planning-pn/payroll/settings') && r.request().method() === 'GET'
+    );
     await page.locator('#plugin-settings-link0').click();
     await settingsGetPromise;
 
     // Wait for payroll settings to finish loading (async call that causes re-render)
-    await page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/payroll/settings') && r.request().method() === 'GET'
-    ).catch(() => {});
+    await payrollSettingsGetPromise;
     await page.waitForTimeout(500);
 
     // Check autoBreakCalculationActiveToggle state and enable if needed
