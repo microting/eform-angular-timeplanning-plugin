@@ -16,6 +16,14 @@ message RegisterDeviceTokenRequest {
   // 2026-07 (the caller's site id is resolved from the JWT). The client
   // repurposed this int32 slot for build_number, so the wire stays identical.
   int32 build_number = 3;
+  // Which app minted the token. Always "time" for this service; carried
+  // explicitly so both plugins share one register contract, and so each
+  // sender can scope itself to the tokens its own Firebase project issued.
+  string app_id = 4;
+  // Stable per-install UUID, generated once per install and persisted by the
+  // client. This is the identity of the stored row: a rotated token updates
+  // the existing install's row rather than creating a second one.
+  string installation_id = 5;
 }
 
 message UnregisterDeviceTokenRequest {
