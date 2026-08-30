@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Sentry;
+using TimePlanning.Pn.Services.DeviceTokenService;
 using DeviceToken = Microting.TimePlanningBase.Infrastructure.Data.Entities.DeviceToken;
 
 public class PushNotificationService : IPushNotificationService
@@ -22,7 +23,7 @@ public class PushNotificationService : IPushNotificationService
     /// SENDER_ID_MISMATCH, so those are filtered out at selection time rather
     /// than discovered at send time.
     /// </summary>
-    public const string TimePlanningAppId = "time";
+    private const string TimePlanningAppId = DeviceTokenService.TimePlanningAppId;
 
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<PushNotificationService> _logger;
