@@ -42,7 +42,9 @@ public class DeviceTokenController : Controller
             return new OperationResult(false, "Could not resolve caller SdkSiteId");
         }
 
-        return await _deviceTokenService.RegisterAsync(sdkSiteId, model.Token, model.Platform);
+        return await _deviceTokenService.RegisterAsync(
+            sdkSiteId, model.Token, model.Platform, model.BuildNumber,
+            model.AppId, model.InstallationId);
     }
 
     [HttpDelete]

@@ -23,9 +23,14 @@ public class TimePlanningDeviceTokenGrpcService
         {
             // The site id is resolved server-side from the JWT (see
             // DeviceTokenService); the client no longer sends one. The client's
-            // reported app build number is persisted for push version-gating.
+            // reported app build number is persisted for push version-gating,
+            // and (AppId, InstallationId) is the identity of the stored row.
+            // An empty app_id or installation_id comes back as an unsuccessful
+            // OperationResponse - this transport reports failures in the
+            // response body rather than as a gRPC status.
             var result = await _deviceTokenService.RegisterForCallerAsync(
-                request.Token, request.Platform, request.BuildNumber);
+                request.Token, request.Platform, request.BuildNumber,
+                request.AppId, request.InstallationId);
 
             return new OperationResponse
             {
