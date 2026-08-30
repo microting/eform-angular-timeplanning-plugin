@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FirebaseAdmin.Messaging;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microting.eForm.Infrastructure.Constants;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
@@ -81,7 +83,7 @@ public class PushNotificationServiceTests : TestBaseSetup
         var service = CreateService();
 
         var tokens = await service.ResolveTargetTokensAsync(7, minBuild: 31221);
-        var picked = tokens.Select(t => t.Token).ToList();
+        var picked = tokens.Select(t => t.FcmToken).ToList();
 
         Assert.That(picked, Is.EquivalentTo(new[] { "exact", "newer" }),
             "only same-site tokens reporting build >= minBuild must be targeted");
@@ -97,23 +99,107 @@ public class PushNotificationServiceTests : TestBaseSetup
 
         var tokens = await service.ResolveTargetTokensAsync(7, minBuild: 0);
 
-        Assert.That(tokens.Select(t => t.Token),
+        Assert.That(tokens.Select(t => t.FcmToken),
             Is.EquivalentTo(new[] { "legacy-0", "modern" }),
             "minBuild 0 must keep existing callers unaffected (all devices included)");
+    }
+
+    [Test]
+    public async Task ResolveTargetTokens_ExcludesSoftDeletedTokens()
+    {
+        await SeedToken("live", sdkSiteId: 9, buildNumber: 0);
+        var dead = await SeedToken("dead", sdkSiteId: 9, buildNumber: 0);
+        await dead.Delete(TimePlanningPnDbContext!);
+
+        var tokens = await CreateService().ResolveTargetTokensAsync(9, minBuild: 0);
+
+        Assert.That(tokens.Select(t => t.FcmToken), Is.EquivalentTo(new[] { "live" }));
+    }
+
+    // The DeviceTokens table is shared with no other app in this database
+    // today, but the entity and its indexes are shared with
+    // BackendConfiguration's. A foreign-app token belongs to a different
+    // Firebase project: sending to it returns SENDER_ID_MISMATCH.
+    [Test]
+    public async Task ResolveTargetTokens_ExcludesForeignAppTokens()
+    {
+        await SeedToken("mine", sdkSiteId: 400, buildNumber: 0);
+        await SeedToken("theirs", sdkSiteId: 400, buildNumber: 0, appId: "adhoc");
+
+        var tokens = await CreateService().ResolveTargetTokensAsync(400, minBuild: 0);
+
+        Assert.That(tokens.Select(t => t.FcmToken), Is.EquivalentTo(new[] { "mine" }),
+            "the time sender must only ever see tokens minted by the time app");
+    }
+
+    // SENDER_ID_MISMATCH has two causes. A single mismatching token among
+    // healthy ones is a foreign token and is pruned. EVERY targeted token
+    // mismatching means this sender is holding the wrong Firebase credential,
+    // and pruning would silently wipe the tenant's whole token set.
+
+    [Test]
+    public async Task PruneSenderIdMismatches_MixedResults_PrunesOnlyTheMismatchingToken()
+    {
+        var healthy = await SeedToken("healthy", sdkSiteId: 500, buildNumber: 0);
+        var mismatching = await SeedToken("mismatching", sdkSiteId: 500, buildNumber: 0);
+
+        await CreateService().PruneSenderIdMismatchesAsync(
+            new List<DeviceToken> { mismatching }, targetedCount: 2, targetSdkSiteId: 500);
+
+        var rows = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking()
+            .ToDictionaryAsync(r => r.Id, r => r.WorkflowState);
+        Assert.Multiple(() =>
+        {
+            Assert.That(rows[healthy.Id], Is.EqualTo(Constants.WorkflowStates.Created));
+            Assert.That(rows[mismatching.Id], Is.EqualTo(Constants.WorkflowStates.Removed));
+        });
+    }
+
+    [Test]
+    public async Task PruneSenderIdMismatches_EveryTokenMismatched_PrunesNothing()
+    {
+        var first = await SeedToken("cred-1", sdkSiteId: 501, buildNumber: 0);
+        var second = await SeedToken("cred-2", sdkSiteId: 501, buildNumber: 0);
+
+        await CreateService().PruneSenderIdMismatchesAsync(
+            new List<DeviceToken> { first, second }, targetedCount: 2, targetSdkSiteId: 501);
+
+        var states = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking()
+            .Select(r => r.WorkflowState).ToListAsync();
+        Assert.That(states, Is.All.EqualTo(Constants.WorkflowStates.Created),
+            "a wholesale mismatch is a credential fault; the tokens must survive it");
+    }
+
+    [Test]
+    public async Task PruneSenderIdMismatches_SoleTargetMismatched_PrunesNothing()
+    {
+        var only = await SeedToken("cred-only", sdkSiteId: 502, buildNumber: 0);
+
+        await CreateService().PruneSenderIdMismatchesAsync(
+            new List<DeviceToken> { only }, targetedCount: 1, targetSdkSiteId: 502);
+
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+        Assert.That(stored.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Created),
+            "one device that mismatches on its own send is indistinguishable from a "
+            + "credential fault, so it is kept");
     }
 
     private PushNotificationService CreateService() =>
         new(TimePlanningPnDbContext!, Substitute.For<ILogger<PushNotificationService>>());
 
-    private async Task SeedToken(string token, int sdkSiteId, int buildNumber)
+    private async Task<DeviceToken> SeedToken(
+        string token, int sdkSiteId, int buildNumber, string appId = "time")
     {
         var deviceToken = new DeviceToken
         {
+            AppId = appId,
+            InstallationId = $"inst-{appId}-{token}",
             SdkSiteId = sdkSiteId,
-            Token = token,
+            FcmToken = token,
             Platform = "android",
             AppBuildNumber = buildNumber
         };
         await deviceToken.Create(TimePlanningPnDbContext!);
+        return deviceToken;
     }
 }
