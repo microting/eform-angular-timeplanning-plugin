@@ -1,3 +1,4 @@
+#nullable enable
 namespace TimePlanning.Pn.Services.PushNotificationService;
 
 using System.Collections.Generic;
