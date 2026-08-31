@@ -982,6 +982,13 @@ public class TimeSettingService(
         dbAssignedSite.AllowPersonalTimeRegistration = site.AllowPersonalTimeRegistration;
         dbAssignedSite.AllowAcceptOfPlannedHours = site.AllowAcceptOfPlannedHours;
         dbAssignedSite.Resigned = site.Resigned;
+        // Record WHEN one-minute intervals took effect, so every later flex
+        // recomputation keeps pre-switch days on 5-minute rules instead of
+        // restating already-closed SumFlexEnd balances at one-minute precision.
+        // MUST run BEFORE the one-way OR on the next line — see the helper.
+        OneMinuteModeTimeline.StampEffectiveDateOnEnable(
+            dbAssignedSite, site.UseOneMinuteIntervals, DateTime.UtcNow);
+
         dbAssignedSite.UseOneMinuteIntervals = dbAssignedSite.UseOneMinuteIntervals || site.UseOneMinuteIntervals;
         dbAssignedSite.UsePunchClock = site.UsePunchClock;
         dbAssignedSite.UseDetailedPauseEditing = site.UseDetailedPauseEditing;

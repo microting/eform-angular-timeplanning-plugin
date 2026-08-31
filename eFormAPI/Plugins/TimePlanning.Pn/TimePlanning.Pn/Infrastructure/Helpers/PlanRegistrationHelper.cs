@@ -458,6 +458,38 @@ public static class PlanRegistrationHelper
     }
 
     /// <summary>
+    /// Reads an <c>*InSeconds</c> column, falling back to its legacy
+    /// <c>double</c> hour sibling when the column is still 0.
+    ///
+    /// Every <c>*InSeconds</c> column was added by a migration with
+    /// <c>defaultValue: 0</c> and NO backfill (SumFlexEndInSeconds by
+    /// 20260108054344), so on the overwhelming majority of historical rows the
+    /// column reads 0 while the real value lives in the decimal. Taking the
+    /// column at face value silently substitutes zero for a real balance.
+    ///
+    /// A genuine zero and an unbackfilled zero are indistinguishable, which is
+    /// harmless: both fall back to the decimal, and a genuinely-zero row has a
+    /// zero decimal too.
+    /// </summary>
+    public static int SecondsOrDecimalFallback(int seconds, double hours)
+        => seconds != 0 ? seconds : (int)Math.Round(hours * 3600);
+
+    /// <summary>
+    /// Seeds the running flex chain from the preceding day's closing balance,
+    /// in seconds, via <see cref="SecondsOrDecimalFallback"/>; 0 when there is
+    /// no preceding row.
+    ///
+    /// The fallback is load-bearing at a one-minute mode transition: the first
+    /// post-switch row seeds from the last PRE-switch row, which by definition
+    /// only ever had the decimal columns written.
+    /// </summary>
+    public static int SumFlexEndSecondsWithFallback(PlanRegistration? preTimePlanning)
+        => preTimePlanning == null
+            ? 0
+            : SecondsOrDecimalFallback(
+                preTimePlanning.SumFlexEndInSeconds, preTimePlanning.SumFlexEnd);
+
+    /// <summary>
     /// Phase 2 — write the second-precision NettoHours / Flex / SumFlex chain.
     ///
     /// Computes <c>NettoHoursInSeconds</c> from DateTime deltas (or legacy
@@ -491,6 +523,18 @@ public static class PlanRegistrationHelper
     /// True when there is a preceding planning row (use the running balance);
     /// false when this is the first row (reset SumFlexStart to 0).
     /// </param>
+    /// <summary>
+    /// Preferred overload: seeds the chain from <paramref name="preTimePlanning"/>
+    /// (null when this is the first row) through
+    /// <see cref="SumFlexEndSecondsWithFallback"/>, so no call site can
+    /// accidentally seed from the raw, usually-zero <c>SumFlexEndInSeconds</c>
+    /// column and silently discard the carried-forward balance.
+    /// </summary>
+    public static void ApplyNettoFlexChainSecondPrecision(
+        PlanRegistration pr, PlanRegistration? preTimePlanning)
+        => ApplyNettoFlexChainSecondPrecision(
+            pr, SumFlexEndSecondsWithFallback(preTimePlanning), preTimePlanning != null);
+
     public static void ApplyNettoFlexChainSecondPrecision(PlanRegistration pr,
         int sumFlexStartInSeconds, bool hasPreTimePlanning)
     {
@@ -498,18 +542,11 @@ public static class PlanRegistrationHelper
         pr.NettoHoursInSeconds = (int)nettoSeconds;
         pr.NettoHours = nettoSeconds / 3600.0;
 
-        // Punch-clock / scheduled days populate the double PlanHours but leave
-        // PlanHoursInSeconds at 0. Fall back to PlanHours * 3600 so flex is
-        // computed against the real plan instead of treating it as 0.
-        var planHoursSeconds = pr.PlanHoursInSeconds != 0
-            ? pr.PlanHoursInSeconds
-            : (int)Math.Round(pr.PlanHours * 3600);
-        // Production writers populate only the double PaiedOutFlex and leave
-        // PaiedOutFlexInSeconds at 0. Fall back to PaiedOutFlex * 3600 so a
-        // paid-out flex is subtracted instead of being treated as 0.
-        var paiedOutFlexSeconds = pr.PaiedOutFlexInSeconds != 0
-            ? pr.PaiedOutFlexInSeconds
-            : (int)Math.Round(pr.PaiedOutFlex * 3600);
+        // Punch-clock / scheduled days and production writers populate only the
+        // doubles; the *InSeconds siblings stay 0. See SecondsOrDecimalFallback.
+        var planHoursSeconds = SecondsOrDecimalFallback(pr.PlanHoursInSeconds, pr.PlanHours);
+        var paiedOutFlexSeconds =
+            SecondsOrDecimalFallback(pr.PaiedOutFlexInSeconds, pr.PaiedOutFlex);
 
         // Mirror the flag-off override semantics:
         //   Flex      = (override ? NettoHoursOverride : NettoHours) - PlanHours
@@ -560,12 +597,11 @@ public static class PlanRegistrationHelper
         // Load the message catalog once (no N+1) so each day can resolve its
         // localized label without re-querying per row.
         var messagesById = await dbContext.Messages.AsNoTracking().ToDictionaryAsync(m => m.Id);
-        // Stage 3 tick-exact parity: resolve the UseOneMinuteIntervals mode that
-        // was in force when each row was REGISTERED (from AssignedSiteVersions —
-        // one query, in-memory lookups) so the Start/Stop display projection
-        // below renders tick rows from ids and one-minute rows from stamps,
-        // regardless of the site's CURRENT flag. Write/calc forks in this method
-        // intentionally keep using dbAssignedSite.UseOneMinuteIntervals.
+        // ONE query, in-memory lookups: resolves the mode that was in force when
+        // each row was REGISTERED. EVERY mode fork in this method reads the
+        // resulting per-row `rowIsOneMinute`, never the site's CURRENT flag —
+        // recomputing closed days under a newly-enabled one-minute flag is what
+        // silently rewrote historical balances. See OneMinuteModeTimeline.
         var oneMinuteTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, dbAssignedSite);
         var toDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
         // var dayOfPayment = toDay.Day >= settingsDayOfPayment
@@ -577,10 +613,8 @@ public static class PlanRegistrationHelper
             var planRegistration = await dbContext.PlanRegistrations.AsTracking().FirstAsync(x => x.Id == plan.Id);
             var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month,
                 planRegistration.Date.Day, 0, 0, 0);
-            // Mode at registration — display-only. The write-time marker (stamped
-            // by every Start/Stop-writing save from the site's then-current flag)
-            // is authoritative; the AssignedSiteVersions timeline is the fallback
-            // for legacy rows written before the marker existed (marker NULL).
+            // Mode at registration: the write-time marker when the row has one,
+            // else the timeline (effective date, else the audit trail).
             var rowIsOneMinute = planRegistration.RegisteredUnderOneMinuteIntervals
                                  ?? oneMinuteTimeline.WasOneMinuteAt(planRegistration.Date);
 
@@ -594,7 +628,7 @@ public static class PlanRegistrationHelper
                 // the int Id is corrected and StartedAt is backfilled from it.
                 // When the flag is on but StartedAt is null, fall through to the
                 // backfill so legacy rows without precise stamps still get one.
-                if (dbAssignedSite.UseOneMinuteIntervals && planRegistration.Start1StartedAt.HasValue)
+                if (rowIsOneMinute && planRegistration.Start1StartedAt.HasValue)
                 {
                     // Phase 1: precise DateTime stamp wins; do NOT overwrite it
                     // with the 5-minute snap derived from Start1Id.
@@ -610,7 +644,7 @@ public static class PlanRegistrationHelper
                 // FIXME: This is a workaround, it should be removed when the frontend is fixed.
                 planRegistration.Stop1Id /= 5 + 1;
                 // Phase 1: same fork as Start1 above for the stop stamp.
-                if (dbAssignedSite.UseOneMinuteIntervals && planRegistration.Stop1StoppedAt.HasValue)
+                if (rowIsOneMinute && planRegistration.Stop1StoppedAt.HasValue)
                 {
                     // Phase 1: precise DateTime stamp wins; do NOT overwrite it
                     // with the 5-minute snap derived from Stop1Id.
@@ -679,15 +713,12 @@ public static class PlanRegistrationHelper
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
-                        // Phase 2: when UseOneMinuteIntervals is on, run the
-                        // SumFlex chain in seconds (source of truth) and
-                        // back-derive doubles. Flag-off path stays byte-identical.
-                        if (dbAssignedSite.UseOneMinuteIntervals)
+                        // Fork on the mode AT REGISTRATION, not the site's current
+                        // flag — see OneMinuteModeTimeline for why.
+                        if (rowIsOneMinute)
                         {
                             ApplyNettoFlexChainSecondPrecision(
-                                planRegistration,
-                                preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                                preTimePlanning != null);
+                                planRegistration, preTimePlanning);
                         }
                         else if (preTimePlanning != null)
                         {
@@ -1010,15 +1041,12 @@ public static class PlanRegistrationHelper
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
-                        // Phase 2: when UseOneMinuteIntervals is on, run the
-                        // SumFlex chain in seconds (source of truth) and
-                        // back-derive doubles. Flag-off path stays byte-identical.
-                        if (dbAssignedSite.UseOneMinuteIntervals)
+                        // Fork on the mode AT REGISTRATION, not the site's current
+                        // flag — see OneMinuteModeTimeline for why.
+                        if (rowIsOneMinute)
                         {
                             ApplyNettoFlexChainSecondPrecision(
-                                planRegistration,
-                                preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                                preTimePlanning != null);
+                                planRegistration, preTimePlanning);
                         }
                         else if (preTimePlanning != null)
                         {
@@ -1313,7 +1341,7 @@ public static class PlanRegistrationHelper
                 Pause5StoppedAt = planRegistration.Pause5StoppedAt
             };
 
-            planningModel.PauseMinutes += AggregatePauseMinutes(planRegistration, dbAssignedSite.UseOneMinuteIntervals);
+            planningModel.PauseMinutes += AggregatePauseMinutes(planRegistration, rowIsOneMinute);
 
             // planningModel.PauseMinutes = planningModel.PauseMinutes > 0 ? planningModel.PauseMinutes - 5 : 0;
 
@@ -1378,6 +1406,10 @@ public static class PlanRegistrationHelper
         {
             return planRegistration;
         }
+        // Mode AT REGISTRATION for this row, never the site's current flag —
+        // see OneMinuteModeTimeline.
+        var rowIsOneMinute = await OneMinuteModeTimeline.ResolveRowModeAsync(
+            dbContext, dbAssignedSite, planRegistration);
         var tainted = false;
         // foreach (var plan in planningsInPeriod)
         // {
@@ -1434,15 +1466,12 @@ public static class PlanRegistrationHelper
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
-                    // Phase 2: when UseOneMinuteIntervals is on, run the
-                    // SumFlex chain in seconds (source of truth) and
-                    // back-derive doubles. Flag-off path stays byte-identical.
-                    if (dbAssignedSite.UseOneMinuteIntervals)
+                    // Fork on the mode AT REGISTRATION, not the site's current
+                    // flag — see OneMinuteModeTimeline for why.
+                    if (rowIsOneMinute)
                     {
                         ApplyNettoFlexChainSecondPrecision(
-                            planRegistration,
-                            preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                            preTimePlanning != null);
+                            planRegistration, preTimePlanning);
                     }
                     else if (preTimePlanning != null)
                     {
@@ -1752,15 +1781,12 @@ public static class PlanRegistrationHelper
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
-                    // Phase 2: when UseOneMinuteIntervals is on, run the
-                    // SumFlex chain in seconds (source of truth) and
-                    // back-derive doubles. Flag-off path stays byte-identical.
-                    if (dbAssignedSite.UseOneMinuteIntervals)
+                    // Fork on the mode AT REGISTRATION, not the site's current
+                    // flag — see OneMinuteModeTimeline for why.
+                    if (rowIsOneMinute)
                     {
                         ApplyNettoFlexChainSecondPrecision(
-                            planRegistration,
-                            preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                            preTimePlanning != null);
+                            planRegistration, preTimePlanning);
                     }
                     else if (preTimePlanning != null)
                     {
