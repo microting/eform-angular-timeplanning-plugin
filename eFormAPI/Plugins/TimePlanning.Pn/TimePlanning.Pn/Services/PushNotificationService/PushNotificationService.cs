@@ -1,3 +1,4 @@
+#nullable enable
 namespace TimePlanning.Pn.Services.PushNotificationService;
 
 using System;
@@ -25,9 +26,31 @@ public class PushNotificationService : IPushNotificationService
     /// </summary>
     private const string TimePlanningAppId = DeviceTokenService.TimePlanningAppId;
 
+    /// <summary>
+    /// Name of the FirebaseApp this sender owns, namespaced vendor-then-sender
+    /// to match "microting-adhoc" in eform-service-backendconfiguration-plugin.
+    ///
+    /// It MUST be named. FirebaseApp.DefaultInstance is process-wide, and
+    /// TimePlanning.Pn is only one of several plugins loaded into a single
+    /// eFormAPI.Web host process - BackendConfiguration.Pn is gaining a sender
+    /// of its own for flutter-eform. Each holds the credential for a DIFFERENT
+    /// Firebase project, so whichever plugin initialised first would own the
+    /// default instance and every other sender would silently push through
+    /// that first project. Every token then comes back SENDER_ID_MISMATCH,
+    /// which <see cref="PruneSenderIdMismatchesAsync"/> correctly reads as a
+    /// credential fault and leaves alone - so the send is retried forever and
+    /// never surfaces as an error. A named app keeps the credentials
+    /// per-plugin, which is what rules that failure out.
+    /// </summary>
+    private const string FirebaseAppName = "microting-time";
+
+    // Serialises the create-if-absent in EnsureFirebaseApp; see there for why
+    // that call must happen at most once.
+    private static readonly object FirebaseInitLock = new();
+
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<PushNotificationService> _logger;
-    private readonly bool _isEnabled;
+    private readonly FirebaseApp? _firebaseApp;
 
     public PushNotificationService(
         TimePlanningPnDbContext dbContext,
@@ -39,32 +62,106 @@ public class PushNotificationService : IPushNotificationService
         var serviceAccountJson = _dbContext.PluginConfigurationValues
             .FirstOrDefault(x => x.Name == "TimePlanningBaseSettings:FirebaseServiceAccountJson")?.Value;
 
-        if (!string.IsNullOrWhiteSpace(serviceAccountJson))
+        _firebaseApp = ResolveFirebaseApp(serviceAccountJson, logger);
+    }
+
+    /// <summary>
+    /// The app this sender pushes through, or null when push is off - either
+    /// no service account is configured, or initialisation failed. Neither is
+    /// something the caller can act on, so both are logged here and reported
+    /// as absence; <see cref="SendToSiteAsync"/> gates on it.
+    /// </summary>
+    private static FirebaseApp? ResolveFirebaseApp(
+        string? serviceAccountJson,
+        ILogger<PushNotificationService> logger)
+    {
+        if (string.IsNullOrWhiteSpace(serviceAccountJson))
         {
-            try
-            {
-                if (FirebaseApp.DefaultInstance == null)
-                {
-                    FirebaseApp.Create(new AppOptions
-                    {
-                        Credential = GoogleCredential.FromJson(serviceAccountJson)
-                    });
-                }
-                _isEnabled = true;
-                _logger.LogInformation("Firebase push notifications initialized");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to initialize Firebase Admin SDK");
-                _isEnabled = false;
-            }
-        }
-        else
-        {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "TimePlanningBaseSettings:FirebaseServiceAccountJson not configured. " +
                 "Push notifications are disabled");
-            _isEnabled = false;
+            return null;
+        }
+
+        try
+        {
+            var app = EnsureFirebaseApp(serviceAccountJson);
+            logger.LogInformation(
+                "Firebase push notifications initialized on app {FirebaseAppName}",
+                FirebaseAppName);
+            return app;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to initialize Firebase Admin SDK");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Returns this plugin's named FirebaseApp, creating it on first use.
+    ///
+    /// Double-checked over <see cref="FirebaseApp.GetInstance(string)"/>,
+    /// which returns null when the app is absent - unlike
+    /// <see cref="FirebaseApp.Create(AppOptions, string)"/>, which throws
+    /// ArgumentException ("FirebaseApp named ... already exists") when the name
+    /// is taken. Re-checking INSIDE the lock is what makes concurrent first
+    /// requests idempotent instead of turning the loser into a swallowed
+    /// exception that disables push for that request. Mirrors the locking in
+    /// AdhocReminderJob.EnsureFirebaseApp in
+    /// eform-service-backendconfiguration-plugin.
+    ///
+    /// The lock is private to this assembly, so it cannot serialise a creator
+    /// outside it (a second load context, a future in-process sender). The
+    /// catch makes the postcondition hold regardless of who won: when this
+    /// returns, an app of this name exists.
+    /// </summary>
+    private static FirebaseApp EnsureFirebaseApp(string serviceAccountJson)
+    {
+        var app = FirebaseApp.GetInstance(FirebaseAppName);
+        if (app != null)
+        {
+            return app;
+        }
+
+        lock (FirebaseInitLock)
+        {
+            var existing = FirebaseApp.GetInstance(FirebaseAppName);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            try
+            {
+                return FirebaseApp.Create(
+                    new AppOptions
+                    {
+                        // CredentialFactory, not the obsolete
+                        // GoogleCredential.FromJson: pinning the generic to
+                        // ServiceAccountCredential also fails fast into the
+                        // caller's catch when the configured JSON is not a
+                        // service-account key.
+                        Credential = CredentialFactory
+                            .FromJson<ServiceAccountCredential>(serviceAccountJson)
+                            .ToGoogleCredential()
+                    },
+                    FirebaseAppName);
+            }
+            catch (ArgumentException)
+            {
+                // Someone outside this lock created it first. That is the
+                // postcondition, not a failure - but only if the app is
+                // actually there; otherwise the ArgumentException came from
+                // somewhere else and must not be swallowed.
+                var raced = FirebaseApp.GetInstance(FirebaseAppName);
+                if (raced == null)
+                {
+                    throw;
+                }
+
+                return raced;
+            }
         }
     }
 
@@ -139,10 +236,10 @@ public class PushNotificationService : IPushNotificationService
         Dictionary<string, string>? data = null,
         int minBuild = 0)
     {
-        if (!_isEnabled)
+        if (_firebaseApp == null)
         {
             _logger.LogInformation(
-                "Push notification skipped (Firebase not configured): SdkSiteId={SdkSiteId}, Title={Title}",
+                "Push notification skipped (Firebase push disabled): SdkSiteId={SdkSiteId}, Title={Title}",
                 targetSdkSiteId, title);
             return;
         }
@@ -159,13 +256,18 @@ public class PushNotificationService : IPushNotificationService
 
             var senderIdMismatches = new List<DeviceToken>();
 
+            // GetMessaging(app), never DefaultInstance: see FirebaseAppName.
+            // Hoisted - it is the same client for every token, and each call
+            // takes FirebaseAdmin's global lock to re-derive it.
+            var messaging = FirebaseMessaging.GetMessaging(_firebaseApp);
+
             foreach (var deviceToken in tokens)
             {
                 try
                 {
                     var message = BuildMessage(deviceToken.FcmToken, title, body, data);
 
-                    await FirebaseMessaging.DefaultInstance.SendAsync(message);
+                    await messaging.SendAsync(message);
                 }
                 catch (FirebaseMessagingException fex)
                     when (fex.MessagingErrorCode == MessagingErrorCode.SenderIdMismatch)
