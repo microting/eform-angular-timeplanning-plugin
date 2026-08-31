@@ -11,6 +11,7 @@ using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Services.DeviceTokenService;
+using TimePlanning.Pn.Services.PushNotificationService;
 using RegisterDeviceTokenModel = TimePlanning.Pn.Infrastructure.Models.DeviceToken.RegisterDeviceTokenModel;
 
 namespace TimePlanning.Pn.Test;
@@ -531,6 +532,30 @@ public class DeviceTokenServiceTests : TestBaseSetup
             Assert.That(stored.Platform, Is.EqualTo("ios"));
             Assert.That(stored.AppBuildNumber, Is.EqualTo(44000));
         });
+    }
+
+    // The point of DEFAULTING app_id rather than rejecting it: the row a legacy
+    // register writes must still be picked up by the send path, whose query is
+    // keyed on AppId (IX_DeviceTokens_AppId_SdkSiteId_WorkflowState). A row
+    // stored with a null or empty AppId would be invisible to every push -
+    // which would defeat the entire change.
+    [Test]
+    public async Task RegisterAsync_LegacyRegisteredRow_IsSelectedByTheSendPath()
+    {
+        await _service.RegisterAsync(450, "tok-sendpath", "android", 0, "", "");
+
+        // Firebase is not configured in tests, so this constructor never
+        // touches the process-wide FirebaseApp registry; only the token-
+        // selection seam is exercised.
+        var push = new PushNotificationService(
+            TimePlanningPnDbContext!,
+            Substitute.For<ILogger<PushNotificationService>>());
+
+        var targeted = await push.ResolveTargetTokensAsync(450, minBuild: 0);
+
+        Assert.That(targeted.Select(t => t.FcmToken),
+            Is.EquivalentTo(new[] { "tok-sendpath" }),
+            "a device that registered through the legacy path must still receive push");
     }
 
     // The REST endpoint is reachable too. DeviceTokenController.Register hands
