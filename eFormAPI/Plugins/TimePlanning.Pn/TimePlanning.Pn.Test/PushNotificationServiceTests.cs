@@ -1,6 +1,12 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,15 +16,37 @@ using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Services.PushNotificationService;
 
+#nullable enable
 namespace TimePlanning.Pn.Test;
 
 [TestFixture]
 public class PushNotificationServiceTests : TestBaseSetup
 {
+    /// <summary>
+    /// The Firebase app name this sender must own, pinned here as a literal on
+    /// purpose. Reading the production constant back would make this test agree
+    /// with any rename, including one that re-points the plugin at the app of
+    /// another sender co-hosted in eFormAPI.Web. The name is a process-wide key,
+    /// so it is treated like a wire value.
+    /// </summary>
+    private const string ExpectedFirebaseAppName = "microting-time";
+
     [SetUp]
     public async Task SetUp()
     {
         await base.Setup();
+        DeleteFirebaseApps();
+    }
+
+    // FirebaseApp instances live in a process-wide registry that outlives the
+    // fixture, so every test starts and ends with an empty one.
+    [TearDown]
+    public void DeleteFirebaseAppsAfterTest() => DeleteFirebaseApps();
+
+    private static void DeleteFirebaseApps()
+    {
+        FirebaseApp.GetInstance(ExpectedFirebaseAppName)?.Delete();
+        FirebaseApp.DefaultInstance?.Delete();
     }
 
     [Test]
@@ -182,6 +210,161 @@ public class PushNotificationServiceTests : TestBaseSetup
         Assert.That(stored.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Created),
             "one device that mismatches on its own send is indistinguishable from a "
             + "credential fault, so it is kept");
+    }
+
+    // ---- Firebase app ownership -------------------------------------------
+    //
+    // TimePlanning.Pn and BackendConfiguration.Pn are loaded as plugins into
+    // the SAME eFormAPI.Web process, and each holds the credential for a
+    // DIFFERENT Firebase project. FirebaseApp.DefaultInstance is process-wide:
+    // whichever plugin initialises first owns it, and every later sender then
+    // pushes through the first one's project. Every token then comes back
+    // SENDER_ID_MISMATCH, which this service reads as a credential fault and
+    // retries forever without surfacing an error. Hence: a named app, never
+    // the default one.
+
+    [Test]
+    public async Task Initialisation_CreatesTheNamedApp_AndNeverTheProcessWideDefault()
+    {
+        await ConfigureFirebaseServiceAccount();
+        var logger = new RecordingLogger<PushNotificationService>();
+
+        _ = new PushNotificationService(TimePlanningPnDbContext!, logger);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(FirebaseApp.GetInstance(ExpectedFirebaseAppName), Is.Not.Null,
+                $"this sender must own a Firebase app named '{ExpectedFirebaseAppName}'");
+            Assert.That(FirebaseApp.DefaultInstance, Is.Null,
+                "FirebaseApp.DefaultInstance is shared with every other plugin in "
+                + "eFormAPI.Web; claiming it cross-contaminates Firebase credentials");
+            Assert.That(logger.Errors, Is.Empty, "initialisation must not have failed");
+        });
+    }
+
+    // The loser of the concurrent-first-request race, made deterministic:
+    // FirebaseApp.Create THROWS when the name is already taken, and the
+    // constructor swallows that into "push disabled", so the second
+    // initialisation must find the existing app instead of creating one.
+    [Test]
+    public async Task Initialisation_WhenTheNamedAppAlreadyExists_ReusesItAndKeepsPushEnabled()
+    {
+        await ConfigureFirebaseServiceAccount();
+        _ = new PushNotificationService(
+            TimePlanningPnDbContext!, new RecordingLogger<PushNotificationService>());
+        var firstApp = FirebaseApp.GetInstance(ExpectedFirebaseAppName);
+
+        var secondLogger = new RecordingLogger<PushNotificationService>();
+        _ = new PushNotificationService(TimePlanningPnDbContext!, secondLogger);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(firstApp, Is.Not.Null);
+            Assert.That(FirebaseApp.GetInstance(ExpectedFirebaseAppName), Is.SameAs(firstApp),
+                "the second initialisation must reuse the app, not replace or duplicate it");
+            Assert.That(secondLogger.Errors, Is.Empty,
+                "a failed re-initialisation is swallowed and disables push for that "
+                + "scoped request, which then silently sends nothing");
+            Assert.That(FirebaseApp.DefaultInstance, Is.Null);
+        });
+    }
+
+    [Test]
+    public async Task Initialisation_UnderConcurrentFirstRequests_NeverDisablesPush()
+    {
+        await ConfigureFirebaseServiceAccount();
+
+        const int racers = 8;
+        var loggers = Enumerable.Range(0, racers)
+            .Select(_ => new RecordingLogger<PushNotificationService>()).ToList();
+        var contexts = Enumerable.Range(0, racers)
+            .Select(_ => CreateTimePlanningPnDbContext()).ToList();
+        var startLine = new Barrier(racers);
+
+        // Real threads, not the pool: a Barrier only releases once every
+        // participant has arrived, and Parallel.For gives no guarantee that
+        // all of them are running at once.
+        var threads = Enumerable.Range(0, racers)
+            .Select(i => new Thread(() =>
+            {
+                startLine.SignalAndWait();
+                _ = new PushNotificationService(contexts[i], loggers[i]);
+            }))
+            .ToList();
+
+        foreach (var thread in threads)
+        {
+            thread.Start();
+        }
+
+        foreach (var thread in threads)
+        {
+            thread.Join();
+        }
+
+        foreach (var context in contexts)
+        {
+            await context.DisposeAsync();
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loggers.SelectMany(l => l.Errors), Is.Empty,
+                "two concurrent first requests must not race each other into a "
+                + "FirebaseAppAlreadyExistsException that disables push");
+            Assert.That(FirebaseApp.GetInstance(ExpectedFirebaseAppName), Is.Not.Null);
+            Assert.That(FirebaseApp.DefaultInstance, Is.Null);
+        });
+    }
+
+    /// <summary>
+    /// Points the plugin configuration at a syntactically valid but entirely
+    /// synthetic service-account key. Creating a FirebaseApp only parses the
+    /// credential, so this reaches the real initialisation path without any
+    /// network call or real secret.
+    /// </summary>
+    private async Task ConfigureFirebaseServiceAccount()
+    {
+        using var rsa = RSA.Create(2048);
+        var serviceAccountJson = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["type"] = "service_account",
+            ["project_id"] = "microting-time-test",
+            ["private_key_id"] = "test-key-id",
+            ["private_key"] = rsa.ExportPkcs8PrivateKeyPem(),
+            ["client_email"] = "time-test@microting-time-test.iam.gserviceaccount.com",
+            ["client_id"] = "1234567890",
+            ["token_uri"] = "https://oauth2.googleapis.com/token"
+        });
+
+        var configurationValue = await TimePlanningPnDbContext!.PluginConfigurationValues
+            .FirstAsync(x => x.Name == "TimePlanningBaseSettings:FirebaseServiceAccountJson");
+        configurationValue.Value = serviceAccountJson;
+        await TimePlanningPnDbContext.SaveChangesAsync();
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        private readonly ConcurrentQueue<string> _errors = new();
+
+        public IReadOnlyCollection<string> Errors => _errors;
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel >= LogLevel.Error)
+            {
+                _errors.Enqueue($"{formatter(state, exception)} :: {exception}");
+            }
+        }
     }
 
     private PushNotificationService CreateService() =>
