@@ -435,6 +435,14 @@ Both praktikant presets are named `… 2026-2029` in the frontend catalogue whil
 
 # "Normal daglig arbejdstid" — what sets the overtime boundary (decided 2026-08-07)
 
+> **Extended 2026-08-24.** This section's decision still stands, but the evidence base has
+> since widened considerably — external sources (FV 2015.0097, Industriens Overenskomst
+> § 13 stk. 2, GLS-A's own praktikant circular and turnus guidance, SIRI), the full text of
+> the kapitel 21 protokollat, and a negative result on a customer payslip-reconciliation case.
+> See `2026-08-24-glsa-overtime-basis-findings.md` in this directory. In particular, the open
+> question is now three questions, and question 3 (daily boundary vs 8-week period budget for
+> staldarbejde) is the one that would change the engine's shape rather than its parameters.
+
 **Decision: the boundary stays 7,4 t (26640 s) by default. A planned day SHORTER than
 7,4 t does NOT lower it by default.** Two of the decision's original justifications
 were overclaims [corrected 2026-08-08, see ledger G-065]: § 22 stk. 1 states no figure,
