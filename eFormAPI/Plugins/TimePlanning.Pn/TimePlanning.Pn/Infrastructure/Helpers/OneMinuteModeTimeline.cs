@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using AssignedSite = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
+using PlanRegistration = Microting.TimePlanningBase.Infrastructure.Data.Entities.PlanRegistration;
 
 namespace TimePlanning.Pn.Infrastructure.Helpers;
 
@@ -54,12 +55,42 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 ///    earliest possible un-audited flip point. Audited history before that
 ///    date is preserved; for sites flipped through the API this is a no-op.
 ///
+/// Authoritative override: <c>AssignedSite.UseOneMinuteIntervalsFrom</c>.
+/// The derived timeline above is a RECONSTRUCTION; when ops (or the
+/// settings save in <c>TimeSettingService.UpdateAssignedSite</c>) has
+/// recorded the date the flag actually took effect, that stored date is the
+/// truth and the reconstruction is not consulted at all:
+///   <c>UseOneMinuteIntervals &amp;&amp; rowDate &gt;= UseOneMinuteIntervalsFrom</c>
+/// (date-only, same granularity rule as above). A NULL column means "nothing
+/// recorded" and falls through to the derived timeline, which keeps today's
+/// behaviour for every site ops has not backfilled.
+///
+/// Full per-row precedence (see <see cref="ResolveRowModeAsync"/>):
+///   1. <c>PlanRegistration.RegisteredUnderOneMinuteIntervals</c> — the
+///      write-time marker, ground truth for rows that carry one.
+///   2. <c>UseOneMinuteIntervalsFrom</c> — the stored effective date.
+///   3. the AssignedSiteVersions-derived timeline.
+///
+/// The class also OWNS THE WRITE SIDE of that column:
+/// <see cref="StampEffectiveDateOnEnable"/> is what records the date when the
+/// settings save flips the flag on, so the read rule and the write rule cannot
+/// drift apart.
+///
 /// Cost: ONE query per site (<see cref="BuildAsync"/>); lookups are pure
 /// in-memory. Build once per site per request scope — never per row.
 /// </summary>
 public sealed class OneMinuteModeTimeline
 {
     private readonly bool _initialValue;
+
+    /// <summary>The site's CURRENT flag (also the effective-date verdict's value).</summary>
+    private readonly bool _currentFlag;
+
+    /// <summary>
+    /// The authoritative date the current flag took effect, when recorded;
+    /// NULL means "not recorded" and the derived timeline is used instead.
+    /// </summary>
+    private readonly DateTime? _effectiveFrom;
 
     /// <summary>Date-only change points in save order (date, value-from-that-date).</summary>
     private readonly List<(DateTime Date, bool Value)> _changePoints;
@@ -72,11 +103,17 @@ public sealed class OneMinuteModeTimeline
     /// no-version-rows fallback AND the divergence-correction authority (see
     /// class docs): when the trail does not end on this value, the current
     /// flag takes over from the last audited save date.
+    /// <paramref name="effectiveFrom"/> is the site's recorded
+    /// <c>UseOneMinuteIntervalsFrom</c>; when non-null it OVERRIDES the derived
+    /// timeline entirely (see <see cref="ResolveByEffectiveDate"/>).
     /// </summary>
     internal OneMinuteModeTimeline(
         bool currentFlag,
-        IReadOnlyList<(bool UseOneMinuteIntervals, DateTime SavedAt)> versionFlags)
+        IReadOnlyList<(bool UseOneMinuteIntervals, DateTime SavedAt)> versionFlags,
+        DateTime? effectiveFrom = null)
     {
+        _currentFlag = currentFlag;
+        _effectiveFrom = effectiveFrom;
         _changePoints = new List<(DateTime, bool)>();
 
         if (versionFlags == null || versionFlags.Count == 0)
@@ -113,11 +150,19 @@ public sealed class OneMinuteModeTimeline
     /// <summary>
     /// Builds the timeline for one AssignedSite with a single
     /// AssignedSiteVersions query. An unsaved entity (Id == 0) or a site
-    /// without audit rows yields a constant timeline of the current flag.
+    /// without audit rows yields a constant timeline of the current flag;
+    /// a null site (no AssignedSite row for the worker) yields a constant
+    /// 5-minute timeline, so callers never need their own empty-timeline
+    /// fallback.
     /// </summary>
     public static async Task<OneMinuteModeTimeline> BuildAsync(
-        TimePlanningPnDbContext dbContext, AssignedSite assignedSite)
+        TimePlanningPnDbContext dbContext, AssignedSite? assignedSite)
     {
+        if (assignedSite == null)
+        {
+            return new OneMinuteModeTimeline(false, Array.Empty<(bool, DateTime)>());
+        }
+
         var versionFlags = await dbContext.AssignedSiteVersions
             .AsNoTracking()
             .Where(x => x.AssignedSiteId == assignedSite.Id)
@@ -132,15 +177,99 @@ public sealed class OneMinuteModeTimeline
             assignedSite.UseOneMinuteIntervals,
             versionFlags
                 .Select(x => (x.UseOneMinuteIntervals, x.UpdatedAt ?? x.CreatedAt))
-                .ToList());
+                .ToList(),
+            assignedSite.UseOneMinuteIntervalsFrom);
+    }
+
+    /// <summary>
+    /// The ONE place the stored effective date is turned into a verdict.
+    /// Returns <c>null</c> when nothing is recorded (<paramref name="effectiveFrom"/>
+    /// is NULL) so the caller falls through to the derived timeline; otherwise
+    /// the flag applies only from that date onwards. DATE-ONLY comparison — a
+    /// <c>PlanRegistration.Date</c> is a midnight anchor with no time-of-day,
+    /// matching the timeline's own granularity rule.
+    /// </summary>
+    internal static bool? ResolveByEffectiveDate(
+        bool currentFlag, DateTime? effectiveFrom, DateTime rowDate)
+        => effectiveFrom == null
+            ? null
+            : currentFlag && rowDate.Date >= effectiveFrom.Value.Date;
+
+    /// <summary>
+    /// Records WHEN one-minute intervals took effect, on the false→true
+    /// transition only. Must be called BEFORE the caller ORs the incoming value
+    /// into the stored flag: <c>UseOneMinuteIntervals</c> is deliberately
+    /// one-way (commit 994c9cd4), so after the OR a real transition is
+    /// indistinguishable from "was already true".
+    ///
+    /// The <c>UseOneMinuteIntervalsFrom == null</c> guard is required: an ops
+    /// backfill of recovered historical dates must not be clobbered with
+    /// today's date by an unrelated later settings save. The column is ops-only
+    /// — written by script or by this stamp, never exposed on a DTO.
+    /// </summary>
+    public static void StampEffectiveDateOnEnable(
+        AssignedSite dbAssignedSite, bool incomingUseOneMinuteIntervals, DateTime now)
+    {
+        if (!dbAssignedSite.UseOneMinuteIntervals
+            && incomingUseOneMinuteIntervals
+            && dbAssignedSite.UseOneMinuteIntervalsFrom == null)
+        {
+            dbAssignedSite.UseOneMinuteIntervalsFrom = now;
+        }
+    }
+
+    /// <summary>
+    /// Resolves the mode for ONE row under the full precedence (write-time
+    /// marker → stored effective date → derived timeline), querying
+    /// AssignedSiteVersions only when neither of the first two can answer.
+    /// Use this from calc paths that hold a single row; loops that already
+    /// build a timeline should keep using
+    /// <c>row.RegisteredUnderOneMinuteIntervals ?? timeline.WasOneMinuteAt(row.Date)</c>,
+    /// which carries the same precedence because <see cref="WasOneMinuteAt"/>
+    /// consults the effective date first.
+    ///
+    /// NEVER call this in a loop: on a legacy row of an un-backfilled site it
+    /// falls through to <see cref="BuildAsync"/>, so a per-row call is the
+    /// exact N+1 this class exists to avoid. Build a timeline once instead.
+    /// </summary>
+    public static async Task<bool> ResolveRowModeAsync(
+        TimePlanningPnDbContext dbContext, AssignedSite? assignedSite, PlanRegistration row)
+    {
+        if (row.RegisteredUnderOneMinuteIntervals.HasValue)
+        {
+            return row.RegisteredUnderOneMinuteIntervals.Value;
+        }
+
+        if (assignedSite == null)
+        {
+            return false;
+        }
+
+        var byEffectiveDate = ResolveByEffectiveDate(
+            assignedSite.UseOneMinuteIntervals, assignedSite.UseOneMinuteIntervalsFrom, row.Date);
+        if (byEffectiveDate.HasValue)
+        {
+            return byEffectiveDate.Value;
+        }
+
+        var timeline = await BuildAsync(dbContext, assignedSite);
+        return timeline.WasOneMinuteAt(row.Date);
     }
 
     /// <summary>
     /// The <c>UseOneMinuteIntervals</c> value in force on <paramref name="rowDate"/>
-    /// (date-only comparison; the time component is ignored).
+    /// (date-only comparison; the time component is ignored). The site's
+    /// recorded <c>UseOneMinuteIntervalsFrom</c> wins when present; only when
+    /// nothing is recorded does the AssignedSiteVersions-derived walk answer.
     /// </summary>
     public bool WasOneMinuteAt(DateTime rowDate)
     {
+        var byEffectiveDate = ResolveByEffectiveDate(_currentFlag, _effectiveFrom, rowDate);
+        if (byEffectiveDate.HasValue)
+        {
+            return byEffectiveDate.Value;
+        }
+
         var date = rowDate.Date;
         var value = _initialValue;
         // Walk ALL change points in save order (no early break): the LAST save

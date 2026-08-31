@@ -98,12 +98,9 @@ public class TimePlanningWorkingHoursService(
                 .AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync(x => x.SiteId == model.SiteId);
-            var useOneMinuteIntervals = assignedSite?.UseOneMinuteIntervals ?? false;
             // Stage 3 tick-exact parity: per-row mode-at-registration from the
             // AssignedSiteVersions audit trail (one query; in-memory lookups).
-            var oneMinuteTimeline = assignedSite != null
-                ? await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite)
-                : new OneMinuteModeTimeline(false, Array.Empty<(bool, DateTime)>());
+            var oneMinuteTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
 
             var timePlanningRequest = dbContext.PlanRegistrations
                 .AsNoTracking()
@@ -270,10 +267,13 @@ public class TimePlanningWorkingHoursService(
                         continue;
                     }
 
+                    // Mode AT REGISTRATION — see OneMinuteModeTimeline.
+                    var pauseRowIsOneMinute = tp.RegisteredUnderOneMinuteIntervals
+                                              ?? oneMinuteTimeline.WasOneMinuteAt(tp.Date);
                     tp.Shift1PauseMinutes =
-                        PlanRegistrationHelper.ComputeShiftPauseSeconds(pauseRow, 1, useOneMinuteIntervals) / 60;
+                        PlanRegistrationHelper.ComputeShiftPauseSeconds(pauseRow, 1, pauseRowIsOneMinute) / 60;
                     tp.Shift2PauseMinutes =
-                        PlanRegistrationHelper.ComputeShiftPauseSeconds(pauseRow, 2, useOneMinuteIntervals) / 60;
+                        PlanRegistrationHelper.ComputeShiftPauseSeconds(pauseRow, 2, pauseRowIsOneMinute) / 60;
                 }
             }
 
@@ -287,6 +287,9 @@ public class TimePlanningWorkingHoursService(
 
             if (lastPlanning != null)
             {
+                // Mode AT REGISTRATION for the carried-over previous-day row.
+                var lastPlanningIsOneMinute = lastPlanning.RegisteredUnderOneMinuteIntervals
+                                              ?? oneMinuteTimeline.WasOneMinuteAt(lastPlanning.Date);
                 // lastPlanning.Date = new DateTime(lastPlanning.Date.Year, lastPlanning.Date.Month, lastPlanning.Date.Day, 0, 0, 0);
 
 
@@ -315,10 +318,10 @@ public class TimePlanningWorkingHoursService(
                         // materialized PlanRegistration already in scope, so this reuses
                         // ComputeShiftPauseSeconds with no extra query (no N+1).
                         Shift1PauseMinutes = lastPlanning != null
-                            ? PlanRegistrationHelper.ComputeShiftPauseSeconds(lastPlanning, 1, useOneMinuteIntervals) / 60
+                            ? PlanRegistrationHelper.ComputeShiftPauseSeconds(lastPlanning, 1, lastPlanningIsOneMinute) / 60
                             : 0,
                         Shift2PauseMinutes = lastPlanning != null
-                            ? PlanRegistrationHelper.ComputeShiftPauseSeconds(lastPlanning, 2, useOneMinuteIntervals) / 60
+                            ? PlanRegistrationHelper.ComputeShiftPauseSeconds(lastPlanning, 2, lastPlanningIsOneMinute) / 60
                             : 0,
                         Shift3Start = lastPlanning?.Start3Id,
                         Shift3Stop = lastPlanning?.Stop3Id,
@@ -348,7 +351,7 @@ public class TimePlanningWorkingHoursService(
                         NettoHoursInSeconds = lastPlanning?.NettoHoursInSeconds ?? 0,
                         FlexInSeconds = lastPlanning?.FlexInSeconds ?? 0,
                         SumFlexStartInSeconds = lastPlanning?.SumFlexStartInSeconds ?? 0,
-                        SumFlexEndInSeconds = lastPlanning?.SumFlexEndInSeconds ?? 0,
+                        SumFlexEndInSeconds = PlanRegistrationHelper.SumFlexEndSecondsWithFallback(lastPlanning),
                         PaiedOutFlexInSeconds = lastPlanning?.PaiedOutFlexInSeconds ?? 0,
                         Message = lastPlanning?.MessageId,
                         CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
@@ -423,8 +426,10 @@ public class TimePlanningWorkingHoursService(
 
             // Single source of truth for the running flex balance rendered by
             // both this web grid AND the mobile period-status hero
-            // (CalculateHoursSummary) — see ApplyRunningFlexChain.
-            ApplyRunningFlexChain(timePlannings, useOneMinuteIntervals);
+            // (CalculateHoursSummary) — see ApplyRunningFlexChain. Forked PER ROW
+            // on the mode at registration so a period spanning a one-minute flip
+            // keeps recomputing its pre-flip days under 5-minute rules.
+            ApplyRunningFlexChain(timePlannings, oneMinuteTimeline);
 
             return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
                 true,
@@ -454,7 +459,8 @@ public class TimePlanningWorkingHoursService(
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync(x => x.SiteId == model.SiteId);
-            var useOneMinuteIntervals = assignedSite?.UseOneMinuteIntervals ?? false;
+            // ONE query for the whole cascade below — never per row.
+            var cascadeTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
             var first = true;
             foreach (var planning in model.Plannings)
             {
@@ -505,12 +511,13 @@ public class TimePlanningWorkingHoursService(
                     // so the double SumFlexEnd drifted from the seconds chain and the
                     // mobile summary (which read the double) disagreed with the web
                     // grid (which recomputes from seconds).
-                    if (useOneMinuteIntervals)
+                    // Mode AT REGISTRATION for THIS later row — see
+                    // OneMinuteModeTimeline.
+                    if (planRegistration.RegisteredUnderOneMinuteIntervals
+                        ?? cascadeTimeline.WasOneMinuteAt(planRegistration.Date))
                     {
                         PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                            planRegistration,
-                            preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                            preTimePlanning != null);
+                            planRegistration, preTimePlanning);
                     }
                     else
                     {
@@ -879,7 +886,9 @@ public class TimePlanningWorkingHoursService(
                 .AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
-            var useOneMinuteIntervals = assignedSite?.UseOneMinuteIntervals ?? false;
+            // Per-row mode-at-registration, mirroring Index so the mobile hero and
+            // the web grid stay in agreement across a one-minute flip.
+            var summaryTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
 
             // Anchor = last non-removed planning strictly before the period; carries
             // the opening balance into the chain. Matches Index's prePlanning anchor
@@ -904,7 +913,8 @@ public class TimePlanningWorkingHoursService(
                 FlexInSeconds = x.FlexInSeconds,
                 SumFlexStartInSeconds = x.SumFlexStartInSeconds,
                 SumFlexEndInSeconds = x.SumFlexEndInSeconds,
-                PaiedOutFlexInSeconds = x.PaiedOutFlexInSeconds
+                PaiedOutFlexInSeconds = x.PaiedOutFlexInSeconds,
+                RegisteredUnderOneMinuteIntervals = x.RegisteredUnderOneMinuteIntervals
             };
 
             var inRangeRows = planRegistrations
@@ -919,7 +929,7 @@ public class TimePlanningWorkingHoursService(
             }
             chainRows.AddRange(inRangeRows);
 
-            ApplyRunningFlexChain(chainRows, useOneMinuteIntervals);
+            ApplyRunningFlexChain(chainRows, summaryTimeline);
 
             // Difference = the last in-range day's recomputed SumFlexEnd (seconds
             // chain), NOT a raw column read. When the period itself has no rows,
@@ -979,72 +989,82 @@ public class TimePlanningWorkingHoursService(
     }
 
     /// <summary>
+    /// The legacy double paid-out-flex operand: the culture-formatted
+    /// <c>PaidOutFlex</c> string parsed to hours (0 when absent). Distinct from
+    /// <see cref="PaiedOutFlexSecondsWithFallback"/>, which prefers the integer
+    /// seconds column — the 5-minute branch must keep reading only the string.
+    /// </summary>
+    private static double PaidOutFlexHours(TimePlanningWorkingHoursModel model)
+        => string.IsNullOrEmpty(model.PaidOutFlex)
+            ? 0
+            : double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture);
+
+    /// <summary>
     /// Applies the running flex-balance chain over an ordered-by-date list of
     /// working-hours rows. Single source of truth for the flex balance rendered
     /// by both <see cref="Index"/> (web grid) and <see cref="CalculateHoursSummary"/>
     /// (mobile period-status hero) so the two never disagree.
     ///
-    /// For UseOneMinuteIntervals sites the chain runs in the integer
-    /// <c>*InSeconds</c> columns (the source of truth) and back-derives the legacy
-    /// <c>double</c> SumFlex* fields via <c>/3600.0</c>; otherwise it runs in the
-    /// legacy rounded doubles. Behaviour is byte-identical to the loop previously
-    /// inlined in <see cref="Index"/>.
+    /// The mode is resolved PER ROW — never from the site's current flag — via
+    /// <see cref="OneMinuteModeTimeline"/>, so a period spanning a one-minute
+    /// flip keeps recomputing its pre-flip days under 5-minute rules instead of
+    /// silently restating closed balances.
+    ///
+    /// For a one-minute row the chain runs in the integer <c>*InSeconds</c> columns
+    /// (the source of truth) and back-derives the legacy <c>double</c> SumFlex*
+    /// fields via <c>/3600.0</c>; a 5-minute row runs in the legacy rounded doubles
+    /// and its <c>*InSeconds</c> DTO fields are deliberately left untouched (the
+    /// flag-off response stays byte-identical, and ops reads a zero there as the
+    /// signal that the row never ran in one-minute mode). BOTH running accumulators
+    /// are nonetheless kept in lockstep after every row, so the balance carries
+    /// correctly across a mode boundary in either direction.
     /// </summary>
-    private void ApplyRunningFlexChain(
-        List<TimePlanningWorkingHoursModel> timePlannings, bool useOneMinuteIntervals)
+    internal void ApplyRunningFlexChain(
+        List<TimePlanningWorkingHoursModel> timePlannings, OneMinuteModeTimeline timeline)
     {
         var j = 0;
         double sumFlexEnd = 0;
-        // Phase 2: parallel running balance in seconds for flag-on chain.
-        int sumFlexEndInSeconds = 0;
-        //double SumFlexStart = 0;
-        foreach (var timePlanningWorkingHoursModel in timePlannings)
+        // Phase 2: parallel running balance in seconds for one-minute rows.
+        var sumFlexEndInSeconds = 0;
+        foreach (var row in timePlannings)
         {
+            var isOneMinuteRow = row.RegisteredUnderOneMinuteIntervals
+                                 ?? timeline.WasOneMinuteAt(row.Date);
             if (j == 0)
             {
-                if (useOneMinuteIntervals)
+                if (isOneMinuteRow)
                 {
-                    // Phase 2: chain in seconds; back-derive doubles via /3600.0.
-                    timePlanningWorkingHoursModel.SumFlexStartInSeconds =
-                        timePlanningWorkingHoursModel.SumFlexStartInSeconds;
-                    timePlanningWorkingHoursModel.SumFlexStart =
-                        timePlanningWorkingHoursModel.SumFlexStartInSeconds / 3600.0;
-                    timePlanningWorkingHoursModel.SumFlexEndInSeconds =
-                        timePlanningWorkingHoursModel.SumFlexStartInSeconds
-                        + timePlanningWorkingHoursModel.FlexInSeconds
-                        - PaiedOutFlexSecondsWithFallback(timePlanningWorkingHoursModel);
-                    timePlanningWorkingHoursModel.SumFlexEnd =
-                        timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
-                    sumFlexEndInSeconds = timePlanningWorkingHoursModel.SumFlexEndInSeconds;
-                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                    // The anchor's opening balance falls back to the decimal
+                    // SumFlexStart when the seconds column is still 0 — otherwise
+                    // the whole carried-forward balance is dropped at the head of
+                    // the chain. See PlanRegistrationHelper.SecondsOrDecimalFallback.
+                    row.SumFlexStartInSeconds = PlanRegistrationHelper.SecondsOrDecimalFallback(
+                        row.SumFlexStartInSeconds, row.SumFlexStart);
+                    row.SumFlexStart = row.SumFlexStartInSeconds / 3600.0;
+                    row.SumFlexEndInSeconds = row.SumFlexStartInSeconds
+                                              + row.FlexInSeconds
+                                              - PaiedOutFlexSecondsWithFallback(row);
+                    row.SumFlexEnd = row.SumFlexEndInSeconds / 3600.0;
                 }
                 else
                 {
-                    timePlanningWorkingHoursModel.SumFlexStart =
-                        Math.Round(timePlanningWorkingHoursModel.SumFlexStart, 2);
-                    timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
-                        timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
-                        (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
-                            ? 0
-                            : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."),
-                                CultureInfo.InvariantCulture)), 2);
-                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
+                    row.SumFlexStart = Math.Round(row.SumFlexStart, 2);
+                    row.SumFlexEnd = Math.Round(
+                        row.SumFlexStart + row.FlexHours - PaidOutFlexHours(row), 2);
                 }
             }
             else
             {
-                if (useOneMinuteIntervals)
+                if (isOneMinuteRow)
                 {
-                    timePlanningWorkingHoursModel.SumFlexStartInSeconds = sumFlexEndInSeconds;
-                    timePlanningWorkingHoursModel.SumFlexStart = sumFlexEndInSeconds / 3600.0;
+                    row.SumFlexStartInSeconds = sumFlexEndInSeconds;
+                    row.SumFlexStart = sumFlexEndInSeconds / 3600.0;
                     try
                     {
-                        timePlanningWorkingHoursModel.SumFlexEndInSeconds =
-                            timePlanningWorkingHoursModel.SumFlexStartInSeconds
-                            + timePlanningWorkingHoursModel.FlexInSeconds
-                            - PaiedOutFlexSecondsWithFallback(timePlanningWorkingHoursModel);
-                        timePlanningWorkingHoursModel.SumFlexEnd =
-                            timePlanningWorkingHoursModel.SumFlexEndInSeconds / 3600.0;
+                        row.SumFlexEndInSeconds = row.SumFlexStartInSeconds
+                                                  + row.FlexInSeconds
+                                                  - PaiedOutFlexSecondsWithFallback(row);
+                        row.SumFlexEnd = row.SumFlexEndInSeconds / 3600.0;
                     }
                     catch (Exception e)
                     {
@@ -1052,21 +1072,14 @@ public class TimePlanningWorkingHoursService(
                         logger.LogError(e.Message);
                         logger.LogTrace(e.StackTrace);
                     }
-
-                    sumFlexEndInSeconds = timePlanningWorkingHoursModel.SumFlexEndInSeconds;
-                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                 }
                 else
                 {
-                    timePlanningWorkingHoursModel.SumFlexStart = sumFlexEnd;
+                    row.SumFlexStart = sumFlexEnd;
                     try
                     {
-                        timePlanningWorkingHoursModel.SumFlexEnd = Math.Round(
-                            timePlanningWorkingHoursModel.SumFlexStart + timePlanningWorkingHoursModel.FlexHours -
-                            (string.IsNullOrEmpty(timePlanningWorkingHoursModel.PaidOutFlex)
-                                ? 0
-                                : double.Parse(timePlanningWorkingHoursModel.PaidOutFlex.Replace(",", "."),
-                                    CultureInfo.InvariantCulture)), 2);
+                        row.SumFlexEnd = Math.Round(
+                            row.SumFlexStart + row.FlexHours - PaidOutFlexHours(row), 2);
                     }
                     catch (Exception e)
                     {
@@ -1074,11 +1087,15 @@ public class TimePlanningWorkingHoursService(
                         logger.LogError(e.Message);
                         logger.LogTrace(e.StackTrace);
                     }
-
-                    sumFlexEnd = timePlanningWorkingHoursModel.SumFlexEnd;
                 }
             }
 
+            // One tail for all four branches: both accumulators advance together
+            // so the next row can chain off this one whichever mode it is in.
+            sumFlexEnd = row.SumFlexEnd;
+            sumFlexEndInSeconds = isOneMinuteRow
+                ? row.SumFlexEndInSeconds
+                : (int)Math.Round(sumFlexEnd * 3600);
             j++;
         }
     }
@@ -1628,9 +1645,7 @@ public class TimePlanningWorkingHoursService(
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planRegistration,
-                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                    preTimePlanning != null);
+                    planRegistration, preTimePlanning);
             }
             else
             {
@@ -1931,9 +1946,7 @@ public class TimePlanningWorkingHoursService(
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planRegistration,
-                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                    preTimePlanning != null);
+                    planRegistration, preTimePlanning);
             }
             else
             {
@@ -2293,9 +2306,7 @@ public class TimePlanningWorkingHoursService(
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planRegistration,
-                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                    preTimePlanning != null);
+                    planRegistration, preTimePlanning);
             }
             else
             {
@@ -2585,9 +2596,7 @@ public class TimePlanningWorkingHoursService(
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planRegistration,
-                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                    preTimePlanning != null);
+                    planRegistration, preTimePlanning);
             }
             else
             {

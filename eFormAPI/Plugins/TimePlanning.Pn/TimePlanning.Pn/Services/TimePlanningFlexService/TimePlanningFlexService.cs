@@ -42,6 +42,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanningLocalizationService;
 
 /// <summary>
@@ -248,19 +249,43 @@ public class TimePlanningFlexService(
         planRegistration.CommentOfficeAll = model.CommentOfficeAll;
         planRegistration.CommentOffice = model.CommentOffice;
 
+        var assignedSite = await dbContext.AssignedSites
+            .AsNoTracking()
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.SiteId == planRegistration.SdkSitId);
+
         // PaiedOutFlexInSeconds is the source the flag-on flex chain
         // (PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision /
         // TimePlanningWorkingHoursService.ApplyRunningFlexChain) subtracts. Only ever
         // updating the legacy double below would leave that column stale, so keep it
         // in lockstep here too. Old value falls back to the double the same way those
         // chains do, since this row may itself have only ever had the double set.
-        var oldPaiedOutFlexSeconds = planRegistration.PaiedOutFlexInSeconds != 0
-            ? planRegistration.PaiedOutFlexInSeconds
-            : (int)Math.Round(planRegistration.PaiedOutFlex * 3600);
+        var oldPaiedOutFlexSeconds = PlanRegistrationHelper.SecondsOrDecimalFallback(
+            planRegistration.PaiedOutFlexInSeconds, planRegistration.PaiedOutFlex);
         var newPaiedOutFlexSeconds = (int)Math.Round(model.PaidOutFlex * 3600);
 
+        // SumFlexEndInSeconds is the source of truth ONLY for rows registered
+        // under one-minute mode; on 5-minute rows it is deliberately left at 0
+        // (the decimal SumFlexEnd is the balance there), and ops relies on that
+        // zero as a forensic signal. Writing an unconditional delta here both
+        // corrupted 5-minute rows and — because the column is 0 on ~97% of rows
+        // while the decimal holds the real balance — produced a NEGATIVE value.
+        // The seed must be read BEFORE the decimal SumFlexEnd is adjusted below,
+        // or the fallback would pick up the already-adjusted balance and apply
+        // the payout delta twice.
+        var rowIsOneMinute = await OneMinuteModeTimeline.ResolveRowModeAsync(
+            dbContext, assignedSite, planRegistration);
+        var oldSumFlexEndSeconds =
+            PlanRegistrationHelper.SumFlexEndSecondsWithFallback(planRegistration);
+
         planRegistration.SumFlexEnd += planRegistration.PaiedOutFlex - model.PaidOutFlex;
-        planRegistration.SumFlexEndInSeconds += oldPaiedOutFlexSeconds - newPaiedOutFlexSeconds;
+
+        if (rowIsOneMinute)
+        {
+            planRegistration.SumFlexEndInSeconds =
+                oldSumFlexEndSeconds + oldPaiedOutFlexSeconds - newPaiedOutFlexSeconds;
+        }
+
         planRegistration.PaiedOutFlex = model.PaidOutFlex;
         planRegistration.PaiedOutFlexInSeconds = newPaiedOutFlexSeconds;
         planRegistration.UpdatedByUserId = userService.UserId;

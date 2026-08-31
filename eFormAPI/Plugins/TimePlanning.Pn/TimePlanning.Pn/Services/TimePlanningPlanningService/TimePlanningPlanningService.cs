@@ -1076,9 +1076,7 @@ public class TimePlanningPlanningService(
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planning,
-                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                    preTimePlanning != null);
+                    planning, preTimePlanning);
             }
             else
             {
@@ -1130,6 +1128,9 @@ public class TimePlanningPlanningService(
                 .OrderBy(x => x.Date)
                 .ToList();
 
+            // ONE query for the whole cascade below — never per row.
+            var cascadeTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
+
             foreach (var planningAfterThisPlanning in planningsAfterThisPlanning)
             {
                 var preTimePlanningAfterThisPlanning =
@@ -1140,15 +1141,13 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
-                // Phase 2: when UseOneMinuteIntervals is on, replay the
-                // SumFlex chain through subsequent days using *InSeconds as
-                // the source of truth so accumulated rounding does not drift.
-                if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
+                // These are OTHER, already-registered rows, so fork on the mode
+                // AT REGISTRATION — see OneMinuteModeTimeline.
+                if (planningAfterThisPlanning.RegisteredUnderOneMinuteIntervals
+                    ?? cascadeTimeline.WasOneMinuteAt(planningAfterThisPlanning.Date))
                 {
                     PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                        planningAfterThisPlanning,
-                        preTimePlanningAfterThisPlanning?.SumFlexEndInSeconds ?? 0,
-                        preTimePlanningAfterThisPlanning != null);
+                        planningAfterThisPlanning, preTimePlanningAfterThisPlanning);
                 }
                 else if (preTimePlanningAfterThisPlanning != null)
                 {
@@ -1471,9 +1470,7 @@ public class TimePlanningPlanningService(
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planning,
-                    preTimePlanning?.SumFlexEndInSeconds ?? 0,
-                    preTimePlanning != null);
+                    planning, preTimePlanning);
             }
             else
             {
@@ -1504,6 +1501,9 @@ public class TimePlanningPlanningService(
                 .OrderBy(x => x.Date)
                 .ToList();
 
+            // ONE query for the whole cascade below — never per row.
+            var cascadeTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
+
             foreach (var planningAfterThisPlanning in planningsAfterThisPlanning)
             {
                 var preTimePlanningAfterThisPlanning =
@@ -1514,15 +1514,13 @@ public class TimePlanningPlanningService(
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 
-                // Phase 2: when UseOneMinuteIntervals is on, replay the
-                // SumFlex chain through subsequent days using *InSeconds as
-                // the source of truth so accumulated rounding does not drift.
-                if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
+                // These are OTHER, already-registered rows, so fork on the mode
+                // AT REGISTRATION — see OneMinuteModeTimeline.
+                if (planningAfterThisPlanning.RegisteredUnderOneMinuteIntervals
+                    ?? cascadeTimeline.WasOneMinuteAt(planningAfterThisPlanning.Date))
                 {
                     PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                        planningAfterThisPlanning,
-                        preTimePlanningAfterThisPlanning?.SumFlexEndInSeconds ?? 0,
-                        preTimePlanningAfterThisPlanning != null);
+                        planningAfterThisPlanning, preTimePlanningAfterThisPlanning);
                 }
                 else if (preTimePlanningAfterThisPlanning != null)
                 {
