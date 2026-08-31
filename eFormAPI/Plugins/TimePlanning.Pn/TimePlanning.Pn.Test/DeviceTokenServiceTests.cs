@@ -327,11 +327,12 @@ public class DeviceTokenServiceTests : TestBaseSetup
     // continuous fleet-wide warning flood.
     // ---------------------------------------------------------------------
 
-    // sha256("legacy-tok-golden"), lowercase hex, under the reserved prefix.
-    // Hard-coded on purpose: it pins the algorithm, the casing and the prefix,
-    // so a random or row-id-derived scheme cannot pass.
     private const string LegacyGoldenToken = "legacy-tok-golden";
 
+    // sha256(LegacyGoldenToken), lowercase hex, under the reserved prefix.
+    // Hard-coded on purpose - never computed from the production helper: the
+    // literal pins the algorithm, the casing and the prefix, so a random or
+    // row-id-derived scheme cannot pass.
     private const string LegacyGoldenInstallationId =
         "legacy-token:04095630657a3b3ffbc147418b20e2c539cd9d69bde95c081049bad010b7a71e";
 
@@ -515,6 +516,10 @@ public class DeviceTokenServiceTests : TestBaseSetup
         Assert.That(await TimePlanningPnDbContext!.DeviceTokens.CountAsync(), Is.EqualTo(0));
     }
 
+    // Deliberately passes both before and after this change: it is the
+    // requirement that the modern path stays untouched, not a change detector.
+    // The modern path's adoption leg is covered separately by
+    // RegisterAsync_LegacyBackfilledRow_IsAdoptedNotDuplicated.
     [Test]
     public async Task RegisterAsync_BothFieldsSupplied_StoresExactlyWhatTheClientSent()
     {
@@ -532,6 +537,80 @@ public class DeviceTokenServiceTests : TestBaseSetup
             Assert.That(stored.Platform, Is.EqualTo("ios"));
             Assert.That(stored.AppBuildNumber, Is.EqualTo(44000));
         });
+    }
+
+    // Two legacy registers can be in flight at once on a client's FIRST launch:
+    // flutter-time's personal-view init and its onTokenRefresh handler both
+    // register the same token, so both miss the token lookup and both derive
+    // the SAME synthetic id - the loser hits the unique index. That must not
+    // surface as a failed register, because the client turns a failure into the
+    // Sentry warning this whole change exists to stop.
+    //
+    // Seeding a row that already holds the synthetic id under a stale token
+    // reproduces the losing insert deterministically, without threads.
+    [Test]
+    public async Task RegisterAsync_LegacyInsertHitsTheUniqueIndex_AdoptsTheExistingRow()
+    {
+        var occupier = new DeviceToken
+        {
+            AppId = "time",
+            InstallationId = LegacyGoldenInstallationId,
+            FcmToken = "stale-token",
+            SdkSiteId = 500,
+            Platform = "android",
+        };
+        await occupier.Create(TimePlanningPnDbContext!);
+
+        var result = await _service.RegisterAsync(501, LegacyGoldenToken, "ios", 9, "", "");
+
+        Assert.That(result.Success, Is.True,
+            "losing the insert race must not be reported to the client as a failure");
+        var rows = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().ToListAsync();
+        Assert.That(rows, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(rows[0].Id, Is.EqualTo(occupier.Id));
+            Assert.That(rows[0].FcmToken, Is.EqualTo(LegacyGoldenToken));
+            Assert.That(rows[0].SdkSiteId, Is.EqualTo(501));
+            Assert.That(rows[0].Platform, Is.EqualTo("ios"));
+            Assert.That(rows[0].AppBuildNumber, Is.EqualTo(9));
+        });
+    }
+
+    // A legacy client's token ROTATION cannot land on the old row - nothing
+    // ties the new token to the old one without a real install id - so it
+    // leaves a second row behind and the device is pushed to twice until FCM
+    // reports the dead token. This pins that honestly: it is the
+    // pre-identity-model behaviour, not something this change introduced, and
+    // it ends the moment the client upgrades and sends a real installation id.
+    [Test]
+    public async Task RegisterAsync_LegacyRegister_AfterTokenRotation_LeavesTheOldRowBehind()
+    {
+        await _service.RegisterAsync(460, "tok-rot-1", "android", 0, "", "");
+        await _service.RegisterAsync(460, "tok-rot-2", "android", 0, "", "");
+
+        var rows = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking()
+            .OrderBy(r => r.Id).ToListAsync();
+        Assert.That(rows.Select(r => r.FcmToken),
+            Is.EqualTo(new[] { "tok-rot-1", "tok-rot-2" }),
+            "documented limitation: without a real install id the rotated token is a new row");
+    }
+
+    // Rejecting an empty token matters most when a row already exists: the
+    // unguarded code reached the field assignment and blanked a WORKING token,
+    // taking that device dark. If anyone moves the guard below the identity
+    // lookup, this fails.
+    [Test]
+    public async Task RegisterAsync_EmptyToken_ExistingRow_DoesNotWipeTheStoredToken()
+    {
+        await _service.RegisterAsync(470, "tok-keep", "android", 3, "time", "inst-keep");
+
+        var result = await _service.RegisterAsync(470, "", "android", 3, "time", "inst-keep");
+
+        Assert.That(result.Success, Is.False);
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+        Assert.That(stored.FcmToken, Is.EqualTo("tok-keep"),
+            "an empty token must never overwrite a live one");
     }
 
     // The point of DEFAULTING app_id rather than rejecting it: the row a legacy
@@ -555,12 +634,17 @@ public class DeviceTokenServiceTests : TestBaseSetup
 
         Assert.That(targeted.Select(t => t.FcmToken),
             Is.EquivalentTo(new[] { "tok-sendpath" }),
-            "a device that registered through the legacy path must still receive push");
+            "a legacy-registered device must still be targeted by an ungated send. "
+            + "Version-gated sends (minBuild > 0) still skip it, because a client "
+            + "old enough to omit installation_id also reports AppBuildNumber 0");
     }
 
-    // The REST endpoint is reachable too. DeviceTokenController.Register hands
-    // the bound model straight to RegisterAsync, and a body from a pre-identity
-    // client omits both fields - which the model materialises as "".
+    // The REST endpoint is reachable too, and DeviceTokenController.Register
+    // hands the bound model straight to RegisterAsync. This pins the seam that
+    // can silently drift - RegisterDeviceTokenModel's defaults, which are what
+    // a pre-identity-model JSON body binds to - by feeding them through the
+    // service. It does not exercise the controller itself (that needs the JWT
+    // site resolution); the controller's pass-through is a two-line method.
     [Test]
     public async Task RegisterAsync_RestModelDefaults_TakeTheLegacyPath()
     {

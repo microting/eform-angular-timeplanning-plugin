@@ -33,9 +33,9 @@ public class DeviceTokenController : Controller
         _baseDbContext = baseDbContext;
     }
 
-    // Reachable public endpoint even though the shipped client uses gRPC. It
-    // hands the bound model straight to the service, which reads an omitted
-    // app_id / installation_id the same way the gRPC path does.
+    // Reachable public endpoint even though the shipped client uses gRPC: a
+    // posted body that omits app_id / installation_id binds them to "", which
+    // the service reads exactly the way it reads the gRPC path's "".
     [HttpPost]
     public async Task<OperationResult> Register([FromBody] RegisterDeviceTokenModel model)
     {
