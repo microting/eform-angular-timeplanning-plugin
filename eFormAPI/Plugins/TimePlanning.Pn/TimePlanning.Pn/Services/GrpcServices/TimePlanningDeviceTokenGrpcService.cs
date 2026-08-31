@@ -25,9 +25,11 @@ public class TimePlanningDeviceTokenGrpcService
             // DeviceTokenService); the client no longer sends one. The client's
             // reported app build number is persisted for push version-gating,
             // and (AppId, InstallationId) is the identity of the stored row.
-            // An empty app_id or installation_id comes back as an unsuccessful
-            // OperationResponse - this transport reports failures in the
-            // response body rather than as a gRPC status.
+            // Clients shipped before that identity model send neither field and
+            // proto3 decodes both as "", so the service reads them
+            // backward-compatibly rather than rejecting; only an empty token
+            // comes back as an unsuccessful OperationResponse - this transport
+            // reports failures in the response body, not as a gRPC status.
             var result = await _deviceTokenService.RegisterForCallerAsync(
                 request.Token, request.Platform, request.BuildNumber,
                 request.AppId, request.InstallationId);

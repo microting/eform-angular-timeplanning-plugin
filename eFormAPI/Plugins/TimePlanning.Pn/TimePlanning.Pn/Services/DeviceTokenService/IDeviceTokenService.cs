@@ -12,7 +12,7 @@ public interface IDeviceTokenService
     /// <paramref name="buildNumber"/> is the client's app build number
     /// (0 = old/unknown), stored for push version-gating.
     /// <paramref name="appId"/> and <paramref name="installationId"/> are the
-    /// stored row's identity; see <see cref="RegisterAsync"/>.
+    /// stored row's identity; either may be empty, see <see cref="RegisterAsync"/>.
     /// </summary>
     Task<OperationResult> RegisterForCallerAsync(
         string token, string platform, int buildNumber = 0,
@@ -23,8 +23,14 @@ public interface IDeviceTokenService
     /// (<paramref name="appId"/>, <paramref name="installationId"/>) - the app
     /// install, not the FCM token. A rotated token updates that install's row
     /// in place, and a different user on the same install reassigns
-    /// <paramref name="sdkSiteId"/>. Both arguments are required; an empty one
-    /// is rejected without storing anything.
+    /// <paramref name="sdkSiteId"/>.
+    ///
+    /// Both carry a backward-compatible reading for clients shipped before the
+    /// identity model, which send neither (proto3 decodes an absent string as
+    /// ""): an empty <paramref name="appId"/> means "time", the only app this
+    /// service serves, and an empty <paramref name="installationId"/> falls
+    /// back to matching on the FCM token, the pre-change identity. Only
+    /// <paramref name="token"/> is hard-required.
     /// </summary>
     Task<OperationResult> RegisterAsync(
         int sdkSiteId, string token, string platform, int buildNumber = 0,
