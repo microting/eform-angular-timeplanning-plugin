@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,8 @@ using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
 using TimePlanning.Pn.Services.DeviceTokenService;
+using TimePlanning.Pn.Services.PushNotificationService;
+using RegisterDeviceTokenModel = TimePlanning.Pn.Infrastructure.Models.DeviceToken.RegisterDeviceTokenModel;
 
 namespace TimePlanning.Pn.Test;
 
@@ -313,21 +316,360 @@ public class DeviceTokenServiceTests : TestBaseSetup
         });
     }
 
+    // ---------------------------------------------------------------------
+    // Backward compatibility with clients shipped before the identity model.
+    //
+    // proto3 decodes an absent string as "", so every already-installed build
+    // sends "" for app_id AND installation_id. Rejecting those would leave the
+    // whole fleet unable to register (new installs get no push at all; a
+    // rotated FCM token can never re-register) until the app reaches stores -
+    // and flutter-time reports each rejection to Sentry, so it would also be a
+    // continuous fleet-wide warning flood.
+    // ---------------------------------------------------------------------
+
+    private const string LegacyGoldenToken = "legacy-tok-golden";
+
+    // sha256(LegacyGoldenToken), lowercase hex, under the reserved prefix.
+    // Hard-coded on purpose - never computed from the production helper: the
+    // literal pins the algorithm, the casing and the prefix, so a random or
+    // row-id-derived scheme cannot pass.
+    private const string LegacyGoldenInstallationId =
+        "legacy-token:04095630657a3b3ffbc147418b20e2c539cd9d69bde95c081049bad010b7a71e";
+
     [Test]
-    public async Task RegisterAsync_EmptyInstallationId_IsRejectedWithoutStoring()
+    public async Task RegisterAsync_EmptyAppId_DefaultsToTimeAndStores()
     {
-        var result = await _service.RegisterAsync(350, "tok-x", "android", 0, "time", "");
+        var result = await _service.RegisterAsync(
+            351, "tok-noapp", "android", 7, "", "inst-noapp");
+
+        Assert.That(result.Success, Is.True);
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(stored.AppId, Is.EqualTo(DeviceTokenService.TimePlanningAppId),
+                "this service backs exactly one app, so an empty app_id is not ambiguous");
+            Assert.That(stored.InstallationId, Is.EqualTo("inst-noapp"));
+            Assert.That(stored.SdkSiteId, Is.EqualTo(351));
+            Assert.That(stored.AppBuildNumber, Is.EqualTo(7));
+        });
+    }
+
+    [Test]
+    public async Task RegisterAsync_EmptyInstallationId_NoExistingRow_CreatesRowWithDeterministicId()
+    {
+        var result = await _service.RegisterAsync(
+            360, LegacyGoldenToken, "android", 12, "time", "");
+
+        Assert.That(result.Success, Is.True);
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(stored.InstallationId, Is.EqualTo(LegacyGoldenInstallationId),
+                "the synthetic id must be a pure function of the token, or the same device "
+                + "would insert a fresh row on every legacy register");
+            Assert.That(stored.InstallationId, Has.Length.LessThanOrEqualTo(128),
+                "InstallationId is varchar(128)");
+            Assert.That(stored.SdkSiteId, Is.EqualTo(360));
+            Assert.That(stored.FcmToken, Is.EqualTo(LegacyGoldenToken));
+            Assert.That(stored.AppId, Is.EqualTo("time"));
+            Assert.That(stored.Platform, Is.EqualTo("android"));
+            Assert.That(stored.AppBuildNumber, Is.EqualTo(12));
+            Assert.That(stored.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Created));
+        });
+    }
+
+    [Test]
+    public async Task RegisterAsync_SyntheticInstallationId_CannotCollideWithAClientUuid()
+    {
+        await _service.RegisterAsync(361, "tok-shape", "android", 0, "", "");
+
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(stored.InstallationId, Does.StartWith("legacy-token:"));
+            Assert.That(Guid.TryParse(stored.InstallationId, out _), Is.False,
+                "real clients send a v4 UUID; the reserved prefix is outside that alphabet");
+        });
+    }
+
+    [Test]
+    public async Task RegisterAsync_EmptyInstallationIdTwice_UpdatesTheSameRow()
+    {
+        await _service.RegisterAsync(370, "tok-legacy-twice", "android", 1, "", "");
+        var first = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+
+        var result = await _service.RegisterAsync(371, "tok-legacy-twice", "ios", 2, "", "");
+
+        Assert.That(result.Success, Is.True);
+        var rows = await TimePlanningPnDbContext.DeviceTokens.AsNoTracking().ToListAsync();
+        Assert.That(rows, Has.Count.EqualTo(1),
+            "a repeated legacy register from one device must not insert a duplicate");
+        Assert.Multiple(() =>
+        {
+            Assert.That(rows[0].Id, Is.EqualTo(first.Id));
+            Assert.That(rows[0].SdkSiteId, Is.EqualTo(371));
+            Assert.That(rows[0].Platform, Is.EqualTo("ios"));
+            Assert.That(rows[0].AppBuildNumber, Is.EqualTo(2));
+        });
+    }
+
+    [Test]
+    public async Task RegisterAsync_EmptyInstallationId_ExistingRowForToken_UpdatesInPlace()
+    {
+        await _service.RegisterAsync(380, "tok-existing", "android", 5, "time", "inst-real-existing");
+        var before = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+
+        var result = await _service.RegisterAsync(381, "tok-existing", "ios", 6, "", "");
+
+        Assert.That(result.Success, Is.True);
+        var rows = await TimePlanningPnDbContext.DeviceTokens.AsNoTracking().ToListAsync();
+        Assert.That(rows, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(rows[0].Id, Is.EqualTo(before.Id),
+                "match-by-token is the pre-change behaviour and must reuse the row");
+            Assert.That(rows[0].InstallationId, Is.EqualTo("inst-real-existing"),
+                "a legacy register must not downgrade a real install id to the synthetic one");
+            Assert.That(rows[0].SdkSiteId, Is.EqualTo(381));
+            Assert.That(rows[0].Platform, Is.EqualTo("ios"));
+            Assert.That(rows[0].AppBuildNumber, Is.EqualTo(6));
+        });
+    }
+
+    // The whole point of a deterministic synthetic id: when the fleet finally
+    // upgrades, the real installation_id must CLAIM the row the legacy
+    // registers created. A second row would be live too, carry the same token
+    // and site, and the sender would select both - doubled pushes forever.
+    [Test]
+    public async Task RegisterAsync_LegacyRow_IsAdoptedWhenTheClientUpgrades()
+    {
+        await _service.RegisterAsync(390, "tok-upgrade", "android", 0, "", "");
+        var legacyRow = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+        Assert.That(legacyRow.InstallationId, Does.StartWith("legacy-token:"));
+
+        var result = await _service.RegisterAsync(
+            390, "tok-upgrade", "android", 43000, "time", "11111111-2222-4333-8444-555555555555");
+
+        Assert.That(result.Success, Is.True);
+        var rows = await TimePlanningPnDbContext.DeviceTokens.AsNoTracking().ToListAsync();
+        Assert.That(rows, Has.Count.EqualTo(1),
+            "the upgraded client must claim the legacy row, not add a second one");
+        Assert.Multiple(() =>
+        {
+            Assert.That(rows[0].Id, Is.EqualTo(legacyRow.Id));
+            Assert.That(rows[0].InstallationId, Is.EqualTo("11111111-2222-4333-8444-555555555555"));
+            Assert.That(rows[0].AppBuildNumber, Is.EqualTo(43000));
+        });
+    }
+
+    [Test]
+    public async Task RegisterAsync_SoftDeletedLegacyRow_EmptyInstallationId_IsRevived()
+    {
+        await _service.RegisterAsync(400, "tok-legacy-pruned", "android", 0, "", "");
+        var row = await TimePlanningPnDbContext!.DeviceTokens.SingleAsync();
+        await row.Delete(TimePlanningPnDbContext);
+
+        var result = await _service.RegisterAsync(400, "tok-legacy-pruned", "android", 0, "", "");
+
+        Assert.That(result.Success, Is.True);
+        var rows = await TimePlanningPnDbContext.DeviceTokens.AsNoTracking().ToListAsync();
+        Assert.That(rows, Has.Count.EqualTo(1),
+            "a pruned row must be revived, never inserted alongside");
+        Assert.That(rows[0].WorkflowState, Is.EqualTo(Constants.WorkflowStates.Created));
+    }
+
+    [Test]
+    public async Task RegisterAsync_LegacyRegister_DoesNotTakeAnotherAppsRow()
+    {
+        var foreign = new DeviceToken
+        {
+            AppId = "adhoc",
+            InstallationId = "inst-adhoc",
+            FcmToken = "tok-cross",
+            SdkSiteId = 410,
+            Platform = "android",
+        };
+        await foreign.Create(TimePlanningPnDbContext!);
+
+        await _service.RegisterAsync(410, "tok-cross", "android", 0, "", "");
+
+        var rows = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking()
+            .OrderBy(r => r.Id).ToListAsync();
+        Assert.That(rows, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(rows[0].AppId, Is.EqualTo("adhoc"));
+            Assert.That(rows[0].InstallationId, Is.EqualTo("inst-adhoc"));
+            Assert.That(rows[1].AppId, Is.EqualTo("time"));
+            Assert.That(rows[1].InstallationId, Does.StartWith("legacy-token:"));
+        });
+    }
+
+    // fcm_token stays hard-required: there is no sensible fallback for an
+    // absent token, and it is not one of the fields old clients omit.
+    [Test]
+    public async Task RegisterAsync_EmptyToken_IsRejectedWithoutStoring()
+    {
+        var result = await _service.RegisterAsync(420, "", "android", 0, "time", "inst-notoken");
 
         Assert.That(result.Success, Is.False);
         Assert.That(await TimePlanningPnDbContext!.DeviceTokens.CountAsync(), Is.EqualTo(0));
     }
 
+    // Deliberately passes both before and after this change: it is the
+    // requirement that the modern path stays untouched, not a change detector.
+    // The modern path's adoption leg is covered separately by
+    // RegisterAsync_LegacyBackfilledRow_IsAdoptedNotDuplicated.
     [Test]
-    public async Task RegisterAsync_EmptyAppId_IsRejectedWithoutStoring()
+    public async Task RegisterAsync_BothFieldsSupplied_StoresExactlyWhatTheClientSent()
     {
-        var result = await _service.RegisterAsync(351, "tok-y", "android", 0, "", "inst-noapp");
+        var result = await _service.RegisterAsync(
+            430, "tok-modern", "ios", 44000, "time", "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee");
+
+        Assert.That(result.Success, Is.True);
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(stored.AppId, Is.EqualTo("time"));
+            Assert.That(stored.InstallationId, Is.EqualTo("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"),
+                "the modern path must store the client's id verbatim");
+            Assert.That(stored.SdkSiteId, Is.EqualTo(430));
+            Assert.That(stored.Platform, Is.EqualTo("ios"));
+            Assert.That(stored.AppBuildNumber, Is.EqualTo(44000));
+        });
+    }
+
+    // Two legacy registers can be in flight at once on a client's FIRST launch:
+    // flutter-time's personal-view init and its onTokenRefresh handler both
+    // register the same token, so both miss the token lookup and both derive
+    // the SAME synthetic id - the loser hits the unique index. That must not
+    // surface as a failed register, because the client turns a failure into the
+    // Sentry warning this whole change exists to stop.
+    //
+    // Seeding a row that already holds the synthetic id under a stale token
+    // reproduces the losing insert deterministically, without threads.
+    [Test]
+    public async Task RegisterAsync_LegacyInsertHitsTheUniqueIndex_AdoptsTheExistingRow()
+    {
+        var occupier = new DeviceToken
+        {
+            AppId = "time",
+            InstallationId = LegacyGoldenInstallationId,
+            FcmToken = "stale-token",
+            SdkSiteId = 500,
+            Platform = "android",
+        };
+        await occupier.Create(TimePlanningPnDbContext!);
+
+        var result = await _service.RegisterAsync(501, LegacyGoldenToken, "ios", 9, "", "");
+
+        Assert.That(result.Success, Is.True,
+            "losing the insert race must not be reported to the client as a failure");
+        var rows = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().ToListAsync();
+        Assert.That(rows, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(rows[0].Id, Is.EqualTo(occupier.Id));
+            Assert.That(rows[0].FcmToken, Is.EqualTo(LegacyGoldenToken));
+            Assert.That(rows[0].SdkSiteId, Is.EqualTo(501));
+            Assert.That(rows[0].Platform, Is.EqualTo("ios"));
+            Assert.That(rows[0].AppBuildNumber, Is.EqualTo(9));
+        });
+    }
+
+    // A legacy client's token ROTATION cannot land on the old row - nothing
+    // ties the new token to the old one without a real install id - so it
+    // leaves a second row behind and the device is pushed to twice until FCM
+    // reports the dead token. This pins that honestly: it is the
+    // pre-identity-model behaviour, not something this change introduced, and
+    // it ends the moment the client upgrades and sends a real installation id.
+    [Test]
+    public async Task RegisterAsync_LegacyRegister_AfterTokenRotation_LeavesTheOldRowBehind()
+    {
+        await _service.RegisterAsync(460, "tok-rot-1", "android", 0, "", "");
+        await _service.RegisterAsync(460, "tok-rot-2", "android", 0, "", "");
+
+        var rows = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking()
+            .OrderBy(r => r.Id).ToListAsync();
+        Assert.That(rows.Select(r => r.FcmToken),
+            Is.EqualTo(new[] { "tok-rot-1", "tok-rot-2" }),
+            "documented limitation: without a real install id the rotated token is a new row");
+    }
+
+    // Rejecting an empty token matters most when a row already exists: the
+    // unguarded code reached the field assignment and blanked a WORKING token,
+    // taking that device dark. If anyone moves the guard below the identity
+    // lookup, this fails.
+    [Test]
+    public async Task RegisterAsync_EmptyToken_ExistingRow_DoesNotWipeTheStoredToken()
+    {
+        await _service.RegisterAsync(470, "tok-keep", "android", 3, "time", "inst-keep");
+
+        var result = await _service.RegisterAsync(470, "", "android", 3, "time", "inst-keep");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(await TimePlanningPnDbContext!.DeviceTokens.CountAsync(), Is.EqualTo(0));
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+        Assert.That(stored.FcmToken, Is.EqualTo("tok-keep"),
+            "an empty token must never overwrite a live one");
+    }
+
+    // The point of DEFAULTING app_id rather than rejecting it: the row a legacy
+    // register writes must still be picked up by the send path, whose query is
+    // keyed on AppId (IX_DeviceTokens_AppId_SdkSiteId_WorkflowState). A row
+    // stored with a null or empty AppId would be invisible to every push -
+    // which would defeat the entire change.
+    [Test]
+    public async Task RegisterAsync_LegacyRegisteredRow_IsSelectedByTheSendPath()
+    {
+        await _service.RegisterAsync(450, "tok-sendpath", "android", 0, "", "");
+
+        // Firebase is not configured in tests, so this constructor never
+        // touches the process-wide FirebaseApp registry; only the token-
+        // selection seam is exercised.
+        var push = new PushNotificationService(
+            TimePlanningPnDbContext!,
+            Substitute.For<ILogger<PushNotificationService>>());
+
+        var targeted = await push.ResolveTargetTokensAsync(450, minBuild: 0);
+
+        Assert.That(targeted.Select(t => t.FcmToken),
+            Is.EquivalentTo(new[] { "tok-sendpath" }),
+            "a legacy-registered device must still be targeted by an ungated send. "
+            + "Version-gated sends (minBuild > 0) still skip it, because a client "
+            + "old enough to omit installation_id also reports AppBuildNumber 0");
+    }
+
+    // The REST endpoint is reachable too, and DeviceTokenController.Register
+    // hands the bound model straight to RegisterAsync. This pins the seam that
+    // can silently drift - RegisterDeviceTokenModel's defaults, which are what
+    // a pre-identity-model JSON body binds to - by feeding them through the
+    // service. It does not exercise the controller itself (that needs the JWT
+    // site resolution); the controller's pass-through is a two-line method.
+    [Test]
+    public async Task RegisterAsync_RestModelDefaults_TakeTheLegacyPath()
+    {
+        var model = new RegisterDeviceTokenModel
+        {
+            Token = "tok-rest",
+            Platform = "android",
+        };
+        Assert.Multiple(() =>
+        {
+            Assert.That(model.AppId, Is.Empty);
+            Assert.That(model.InstallationId, Is.Empty);
+        });
+
+        var result = await _service.RegisterAsync(
+            440, model.Token, model.Platform, model.BuildNumber,
+            model.AppId, model.InstallationId);
+
+        Assert.That(result.Success, Is.True);
+        var stored = await TimePlanningPnDbContext!.DeviceTokens.AsNoTracking().SingleAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(stored.AppId, Is.EqualTo("time"));
+            Assert.That(stored.InstallationId, Does.StartWith("legacy-token:"));
+            Assert.That(stored.SdkSiteId, Is.EqualTo(440));
+        });
     }
 }
