@@ -381,6 +381,7 @@ public class TimePlanningPlanningService(
                                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                                 .Where(x => x.Date < missingDate
                                             && x.SdkSitId == dbAssignedSite.SiteId)
+                                .Where(x => dbAssignedSite.FlexChainComputedThrough == null || x.Date <= dbAssignedSite.FlexChainComputedThrough)
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
@@ -595,6 +596,7 @@ public class TimePlanningPlanningService(
                         .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                         .Where(x => x.Date < missingDate
                                     && x.SdkSitId == dbAssignedSite.SiteId)
+                        .Where(x => dbAssignedSite.FlexChainComputedThrough == null || x.Date <= dbAssignedSite.FlexChainComputedThrough)
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefaultAsync();
 

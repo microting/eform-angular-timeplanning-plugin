@@ -1703,4 +1703,46 @@ public class PlanRegistrationHelperTests
     {
         Assert.That(TimePlanningWorkingHoursService.GetDeclaredPayCodes(new PayRuleSet()), Is.Empty);
     }
+
+    [Test]
+    public void Anchor_SkipsRowsBeyondTheCursor_AndSeedsFromTheLastComputedRow()
+    {
+        // A site whose chain is computed through 2026-06-10. The 06-11 row was
+        // created ahead of time and never filled in -- SumFlexEnd 0 -- so anchoring
+        // on it would discard the balance. The anchor must be the 06-10 row.
+        var site = new AssignedSite
+        {
+            SiteId = 1,
+            FlexChainComputedThrough = new DateTime(2026, 6, 10)
+        };
+        var computed = new PlanRegistration
+        {
+            SdkSitId = 1, Date = new DateTime(2026, 6, 10), SumFlexEnd = 42.5
+        };
+        var uncomputed = new PlanRegistration
+        {
+            SdkSitId = 1, Date = new DateTime(2026, 6, 11), SumFlexEnd = 0
+        };
+
+        var anchor = PlanRegistrationHelper.ResolveChainAnchor(
+            new[] { computed, uncomputed }, site, new DateTime(2026, 6, 12));
+
+        Assert.That(anchor, Is.SameAs(computed));
+    }
+
+    [Test]
+    public void Anchor_WithNullCursor_FallsBackToTheImmediatelyPrecedingRow()
+    {
+        var site = new AssignedSite { SiteId = 1, FlexChainComputedThrough = null };
+        var previous = new PlanRegistration
+        {
+            SdkSitId = 1, Date = new DateTime(2026, 6, 11), SumFlexEnd = 7.0
+        };
+
+        var anchor = PlanRegistrationHelper.ResolveChainAnchor(
+            new[] { previous }, site, new DateTime(2026, 6, 12));
+
+        Assert.That(anchor, Is.SameAs(previous),
+            "a null cursor means nothing is known -- behave exactly as before");
+    }
 }
