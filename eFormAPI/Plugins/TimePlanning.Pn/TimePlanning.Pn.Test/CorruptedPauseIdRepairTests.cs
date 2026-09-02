@@ -5,6 +5,7 @@ using Microting.eForm.Infrastructure.Constants;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
 
@@ -46,7 +47,7 @@ public class CorruptedPauseIdRepairTests : TestBaseSetup
             Pause1Id = 145,                          // CORRUPT absolute tick (12:00)
         };
 
-        var netto = PlanRegistrationHelper.ComputeNettoSecondsFromDateTimeShifts(pr);
+        var netto = FlexChain.ComputeNettoSecondsFromDateTimeShifts(pr);
 
         // 8h - 30m = 7h30m = 27000s, derived from timestamps not the id.
         Assert.That(netto, Is.EqualTo(27000));

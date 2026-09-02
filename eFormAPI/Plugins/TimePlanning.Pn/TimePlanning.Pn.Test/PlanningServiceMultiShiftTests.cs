@@ -10,6 +10,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
 using SdkSite = Microting.eForm.Infrastructure.Data.Entities.Site;
 using SdkSiteTag = Microting.eForm.Infrastructure.Data.Entities.SiteTag;
@@ -515,7 +516,7 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
 
         // Sanity: pre-edit the slot sum is 30 min.
         Assert.That(
-            PlanRegistrationHelper.ComputeShiftPauseSeconds(planning, 1, false),
+            FlexChain.ComputeShiftPauseSeconds(planning, 1, false),
             Is.EqualTo(30 * 60),
             "Pre-condition: the three sub-slots must sum to 30 min.");
 
@@ -550,7 +551,7 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
             Assert.That(reloaded.Pause1OverrideMinutes, Is.EqualTo(10),
                 "Admin edit must set the per-shift override to 10 min.");
             Assert.That(
-                PlanRegistrationHelper.ComputeShiftPauseSeconds(reloaded, 1, false),
+                FlexChain.ComputeShiftPauseSeconds(reloaded, 1, false),
                 Is.EqualTo(10 * 60),
                 "ComputeShiftPauseSeconds must honor the override, not sum slots.");
             Assert.That(reloaded.NettoHoursInSeconds, Is.EqualTo(28800 - 600),
@@ -641,7 +642,7 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
         Assert.That(reloaded.Pause1OverrideMinutes, Is.Null,
             "Unchanged pause total must not lock an override.");
         Assert.That(
-            PlanRegistrationHelper.ComputeShiftPauseSeconds(reloaded, 1, false),
+            FlexChain.ComputeShiftPauseSeconds(reloaded, 1, false),
             Is.EqualTo(30 * 60),
             "Pause still computed from the recorded slots (30 min).");
     }
@@ -712,7 +713,7 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
             Assert.That(reloaded.Pause1OverrideMinutes, Is.EqualTo(0),
                 "Clearing the pause sets an explicit zero override.");
             Assert.That(
-                PlanRegistrationHelper.ComputeShiftPauseSeconds(reloaded, 1, false),
+                FlexChain.ComputeShiftPauseSeconds(reloaded, 1, false),
                 Is.EqualTo(0),
                 "Effective pause is zero.");
             Assert.That(reloaded.NettoHoursInSeconds, Is.EqualTo(28800),

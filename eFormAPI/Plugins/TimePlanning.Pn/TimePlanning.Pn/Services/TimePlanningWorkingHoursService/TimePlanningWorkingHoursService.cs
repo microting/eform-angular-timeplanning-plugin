@@ -271,9 +271,9 @@ public class TimePlanningWorkingHoursService(
                     var pauseRowIsOneMinute = tp.RegisteredUnderOneMinuteIntervals
                                               ?? oneMinuteTimeline.WasOneMinuteAt(tp.Date);
                     tp.Shift1PauseMinutes =
-                        PlanRegistrationHelper.ComputeShiftPauseSeconds(pauseRow, 1, pauseRowIsOneMinute) / 60;
+                        FlexChain.ComputeShiftPauseSeconds(pauseRow, 1, pauseRowIsOneMinute) / 60;
                     tp.Shift2PauseMinutes =
-                        PlanRegistrationHelper.ComputeShiftPauseSeconds(pauseRow, 2, pauseRowIsOneMinute) / 60;
+                        FlexChain.ComputeShiftPauseSeconds(pauseRow, 2, pauseRowIsOneMinute) / 60;
                 }
             }
 
@@ -317,10 +317,10 @@ public class TimePlanningWorkingHoursService(
                         // materialized PlanRegistration already in scope, so this reuses
                         // ComputeShiftPauseSeconds with no extra query (no N+1).
                         Shift1PauseMinutes = lastPlanning != null
-                            ? PlanRegistrationHelper.ComputeShiftPauseSeconds(lastPlanning, 1, lastPlanningIsOneMinute) / 60
+                            ? FlexChain.ComputeShiftPauseSeconds(lastPlanning, 1, lastPlanningIsOneMinute) / 60
                             : 0,
                         Shift2PauseMinutes = lastPlanning != null
-                            ? PlanRegistrationHelper.ComputeShiftPauseSeconds(lastPlanning, 2, lastPlanningIsOneMinute) / 60
+                            ? FlexChain.ComputeShiftPauseSeconds(lastPlanning, 2, lastPlanningIsOneMinute) / 60
                             : 0,
                         Shift3Start = lastPlanning?.Start3Id,
                         Shift3Stop = lastPlanning?.Stop3Id,
@@ -355,7 +355,7 @@ public class TimePlanningWorkingHoursService(
                         SumFlexStartInSeconds = lastPlanningIsOneMinute
                             ? lastPlanning?.SumFlexStartInSeconds ?? 0
                             : 0,
-                        SumFlexEndInSeconds = PlanRegistrationHelper.SumFlexEndSecondsWithFallback(
+                        SumFlexEndInSeconds = FlexChain.SumFlexEndSecondsWithFallback(
                             lastPlanning, lastPlanningIsOneMinute),
                         PaiedOutFlexInSeconds = lastPlanning?.PaiedOutFlexInSeconds ?? 0,
                         Message = lastPlanning?.MessageId,
@@ -521,7 +521,7 @@ public class TimePlanningWorkingHoursService(
                     // OneMinuteModeTimeline.
                     if (cascadeTimeline.WasOneMinuteForRow(planRegistration))
                     {
-                        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                        FlexChain.ApplyNettoFlexChainSecondPrecision(
                             planRegistration, preTimePlanning,
                             cascadeTimeline.WasOneMinuteFor(preTimePlanning));
                     }
@@ -530,7 +530,7 @@ public class TimePlanningWorkingHoursService(
                         // Flag-off path keeps the legacy double formula (it honours
                         // NettoHoursOverrideActive, matching UpdatePlanRegistration)
                         // and clears the seconds columns with the same call.
-                        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(
+                        FlexChain.ApplyNettoFlexChainDecimal(
                             planRegistration, preTimePlanning);
                     }
 
@@ -1041,7 +1041,7 @@ public class TimePlanningWorkingHoursService(
                     // SumFlexStart when the seconds column is still 0 — otherwise
                     // the whole carried-forward balance is dropped at the head of
                     // the chain. See PlanRegistrationHelper.SecondsOrDecimalFallback.
-                    row.SumFlexStartInSeconds = PlanRegistrationHelper.SecondsOrDecimalFallback(
+                    row.SumFlexStartInSeconds = FlexChain.SecondsOrDecimalFallback(
                         row.SumFlexStartInSeconds, row.SumFlexStart);
                     row.SumFlexStart = row.SumFlexStartInSeconds / 3600.0;
                     row.SumFlexEndInSeconds = row.SumFlexStartInSeconds
@@ -1263,31 +1263,31 @@ public class TimePlanningWorkingHoursService(
         if (pr.Stop1Id >= pr.Start1Id && pr.Stop1Id != 0)
         {
             nettoMinutes += (pr.Stop1Id - pr.Start1Id) * minutesMultiplier;
-            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 1, useOneMinuteIntervals: false) / 60.0;
+            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 1, useOneMinuteIntervals: false) / 60.0;
         }
 
         if (pr.Stop2Id >= pr.Start2Id && pr.Stop2Id != 0)
         {
             nettoMinutes += (pr.Stop2Id - pr.Start2Id) * minutesMultiplier;
-            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 2, useOneMinuteIntervals: false) / 60.0;
+            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 2, useOneMinuteIntervals: false) / 60.0;
         }
 
         if (pr.Stop3Id >= pr.Start3Id && pr.Stop3Id != 0)
         {
             nettoMinutes += (pr.Stop3Id - pr.Start3Id) * minutesMultiplier;
-            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 3, useOneMinuteIntervals: false) / 60.0;
+            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 3, useOneMinuteIntervals: false) / 60.0;
         }
 
         if (pr.Stop4Id >= pr.Start4Id && pr.Stop4Id != 0)
         {
             nettoMinutes += (pr.Stop4Id - pr.Start4Id) * minutesMultiplier;
-            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 4, useOneMinuteIntervals: false) / 60.0;
+            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 4, useOneMinuteIntervals: false) / 60.0;
         }
 
         if (pr.Stop5Id >= pr.Start5Id && pr.Stop5Id != 0)
         {
             nettoMinutes += (pr.Stop5Id - pr.Start5Id) * minutesMultiplier;
-            nettoMinutes -= PlanRegistrationHelper.ComputeShiftPauseSeconds(pr, 5, useOneMinuteIntervals: false) / 60.0;
+            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 5, useOneMinuteIntervals: false) / 60.0;
         }
 
         return nettoMinutes;
@@ -1333,7 +1333,7 @@ public class TimePlanningWorkingHoursService(
             planRegistration.SumFlexStart = 0;
         }
 
-        PlanRegistrationHelper.ClearSumFlexSeconds(planRegistration);
+        FlexChain.ClearSumFlexSeconds(planRegistration);
     }
 
     public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
@@ -1696,7 +1696,7 @@ public class TimePlanningWorkingHoursService(
                 // Single-row save, not a loop, so resolving the predecessor here
                 // is not an N+1 — and costs nothing once its marker or the site's
                 // effective date can answer.
-                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                FlexChain.ApplyNettoFlexChainSecondPrecision(
                     planRegistration, preTimePlanning,
                     await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(
                         dbContext, assignedSite, preTimePlanning));
@@ -1990,7 +1990,7 @@ public class TimePlanningWorkingHoursService(
                 // Single-row save, not a loop, so resolving the predecessor here
                 // is not an N+1 — and costs nothing once its marker or the site's
                 // effective date can answer.
-                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                FlexChain.ApplyNettoFlexChainSecondPrecision(
                     planRegistration, preTimePlanning,
                     await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(
                         dbContext, assignedSite, preTimePlanning));
@@ -2343,7 +2343,7 @@ public class TimePlanningWorkingHoursService(
                 // Single-row save, not a loop, so resolving the predecessor here
                 // is not an N+1 — and costs nothing once its marker or the site's
                 // effective date can answer.
-                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                FlexChain.ApplyNettoFlexChainSecondPrecision(
                     planRegistration, preTimePlanning,
                     await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(
                         dbContext, assignedSite, preTimePlanning));
@@ -2626,7 +2626,7 @@ public class TimePlanningWorkingHoursService(
                 // Single-row save, not a loop, so resolving the predecessor here
                 // is not an N+1 — and costs nothing once its marker or the site's
                 // effective date can answer.
-                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                FlexChain.ApplyNettoFlexChainSecondPrecision(
                     planRegistration, preTimePlanning,
                     await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(
                         dbContext, assignedSite, preTimePlanning));
@@ -4079,7 +4079,7 @@ public class TimePlanningWorkingHoursService(
                                 // row keeps its seconds untouched here.
                                 if (!importTimeline.WasOneMinuteForRow(planRegistration))
                                 {
-                                    PlanRegistrationHelper.ClearSumFlexSeconds(planRegistration);
+                                    FlexChain.ClearSumFlexSeconds(planRegistration);
                                 }
 
                                 await planRegistration.Update(dbContext);

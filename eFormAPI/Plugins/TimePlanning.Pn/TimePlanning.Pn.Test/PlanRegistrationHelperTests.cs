@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
@@ -489,7 +490,7 @@ public class PlanRegistrationHelperTests
             Pause1StoppedAt = null,
         };
 
-        var nettoSeconds = PlanRegistrationHelper.ComputeNettoSecondsFromDateTimeShifts(pr);
+        var nettoSeconds = FlexChain.ComputeNettoSecondsFromDateTimeShifts(pr);
 
         Assert.Multiple(() =>
         {
@@ -520,7 +521,7 @@ public class PlanRegistrationHelperTests
             Pause1StoppedAt = new DateTime(2026, 5, 15, 12, 0, 27),
         };
 
-        var nettoSeconds = PlanRegistrationHelper.ComputeNettoSecondsFromDateTimeShifts(pr);
+        var nettoSeconds = FlexChain.ComputeNettoSecondsFromDateTimeShifts(pr);
 
         // 8h work = 28800 s; pause from DateTime = 27 s; netto = 28773 s.
         Assert.That(nettoSeconds, Is.EqualTo(28773L),
@@ -560,7 +561,7 @@ public class PlanRegistrationHelperTests
         // Pretend the previous day carried 30 min of positive flex forward.
         const int sumFlexStartInSeconds = 1800;
 
-        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+        FlexChain.ApplyNettoFlexChainSecondPrecision(
             pr, sumFlexStartInSeconds, hasPreTimePlanning: true);
 
         Assert.Multiple(() =>
@@ -620,7 +621,7 @@ public class PlanRegistrationHelperTests
             NettoHoursOverrideActive = false,
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+        FlexChain.ApplyNettoFlexChainSecondPrecision(
             pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
 
         Assert.Multiple(() =>
@@ -675,7 +676,7 @@ public class PlanRegistrationHelperTests
             NettoHoursOverrideActive = false,
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+        FlexChain.ApplyNettoFlexChainSecondPrecision(
             pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
 
         Assert.Multiple(() =>
@@ -716,7 +717,7 @@ public class PlanRegistrationHelperTests
             PaiedOutFlexInSeconds = 0,
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+        FlexChain.ApplyNettoFlexChainSecondPrecision(
             pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
 
         Assert.Multiple(() =>
@@ -755,7 +756,7 @@ public class PlanRegistrationHelperTests
             NettoHoursOverrideActive = true,
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+        FlexChain.ApplyNettoFlexChainSecondPrecision(
             pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
 
         Assert.Multiple(() =>
@@ -794,7 +795,7 @@ public class PlanRegistrationHelperTests
             PaiedOutFlexInSeconds = 1800,
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+        FlexChain.ApplyNettoFlexChainSecondPrecision(
             pr, sumFlexStartInSeconds: 0, hasPreTimePlanning: false);
 
         Assert.Multiple(() =>
@@ -1053,7 +1054,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert
         Assert.That(result, Is.EqualTo(3));
@@ -1078,7 +1079,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
 
         // Assert
         Assert.That(result, Is.EqualTo(0));
@@ -1102,7 +1103,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert
         Assert.That(result, Is.EqualTo(10));
@@ -1122,7 +1123,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
 
         // Assert
         Assert.That(result, Is.EqualTo(15));
@@ -1145,7 +1146,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert — legacy fallback now applies since no stamp pairs are populated.
         Assert.That(result, Is.EqualTo(15));
@@ -1170,7 +1171,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert
         Assert.That(result, Is.EqualTo(3));
@@ -1195,7 +1196,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert
         Assert.That(result, Is.EqualTo(10));
@@ -1219,7 +1220,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert
         Assert.That(result, Is.EqualTo(13));
@@ -1241,7 +1242,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert
         Assert.That(result, Is.EqualTo(9));
@@ -1262,7 +1263,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert
         Assert.That(result, Is.EqualTo(5));
@@ -1279,7 +1280,7 @@ public class PlanRegistrationHelperTests
         var pr = new PlanRegistration();
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert
         Assert.That(result, Is.EqualTo(0));
@@ -1308,7 +1309,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert — stamps were observed, so the (0-min) stamp result wins
         // over the legacy fallback that would otherwise return 15.
@@ -1334,7 +1335,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: true);
 
         // Assert
         Assert.That(result, Is.EqualTo(0));
@@ -1360,7 +1361,7 @@ public class PlanRegistrationHelperTests
         };
 
         // Act
-        var result = PlanRegistrationHelper.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
+        var result = FlexChain.AggregatePauseMinutes(pr, useOneMinuteIntervals: false);
 
         // Assert — complete stamp wins: 12:00→12:03 floors to 12:00→12:00 = 0 min.
         Assert.That(result, Is.EqualTo(0));
@@ -1387,7 +1388,7 @@ public class PlanRegistrationHelperTests
             Stop1StoppedAt  = null,
             Start1Id = 97, Stop1Id = 121, Pause1Id = 0,
         };
-        var netto = PlanRegistrationHelper.ComputeNettoSecondsFromDateTimeShifts(pr);
+        var netto = FlexChain.ComputeNettoSecondsFromDateTimeShifts(pr);
         Assert.That(netto, Is.EqualTo(7200), "Legacy slot math: (121-97)*5 = 120 min = 7200 s");
     }
 
@@ -1408,7 +1409,7 @@ public class PlanRegistrationHelperTests
             Stop1StoppedAt  = new DateTime(2026, 5, 15, 10, 10, 0),
             Start1Id = 97, Stop1Id = 122, Pause1Id = 0,
         };
-        var netto = PlanRegistrationHelper.ComputeNettoSecondsFromDateTimeShifts(pr);
+        var netto = FlexChain.ComputeNettoSecondsFromDateTimeShifts(pr);
         Assert.That(netto, Is.EqualTo(7560), "08:04→10:10 = 2h06m = 7560 s (precise DateTime delta wins over legacy slot math)");
     }
 
@@ -1515,7 +1516,7 @@ public class PlanRegistrationHelperTests
         };
         var pre = new PlanRegistration { Date = new DateTime(2026, 8, 26), SumFlexEnd = 3.61 };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(pr, pre);
+        FlexChain.ApplyNettoFlexChainDecimal(pr, pre);
 
         Assert.Multiple(() =>
         {
@@ -1541,7 +1542,7 @@ public class PlanRegistrationHelperTests
             SumFlexEndInSeconds = 67890
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(pr, null);
+        FlexChain.ApplyNettoFlexChainDecimal(pr, null);
 
         Assert.Multiple(() =>
         {
@@ -1569,7 +1570,7 @@ public class PlanRegistrationHelperTests
             PaiedOutFlex = 0
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(
+        FlexChain.ApplyNettoFlexChainDecimal(
             pr, new PlanRegistration { SumFlexEnd = 2.0 });
 
         Assert.Multiple(() =>
@@ -1593,7 +1594,7 @@ public class PlanRegistrationHelperTests
             PaiedOutFlexInSeconds = 555
         };
 
-        PlanRegistrationHelper.ClearSumFlexSeconds(pr);
+        FlexChain.ClearSumFlexSeconds(pr);
 
         Assert.Multiple(() =>
         {
@@ -1631,7 +1632,7 @@ public class PlanRegistrationHelperTests
         };
         var dayZero = new PlanRegistration { Date = new DateTime(2026, 8, 26), SumFlexEnd = 2.0 };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(dayOne, dayZero);
+        FlexChain.ApplyNettoFlexChainDecimal(dayOne, dayZero);
 
         var dayTwo = new PlanRegistration
         {
@@ -1642,7 +1643,7 @@ public class PlanRegistrationHelperTests
             PlanHoursInSeconds = 28800
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+        FlexChain.ApplyNettoFlexChainSecondPrecision(
             dayTwo, dayOne, preIsOneMinute: false);
 
         Assert.Multiple(() =>
@@ -1681,7 +1682,7 @@ public class PlanRegistrationHelperTests
             PlanHoursInSeconds = 28800
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(pr, pre, preIsOneMinute: true);
+        FlexChain.ApplyNettoFlexChainSecondPrecision(pr, pre, preIsOneMinute: true);
 
         Assert.Multiple(() =>
         {
