@@ -230,6 +230,33 @@ public class GoogleSheetHelper
                 }
             }
 
+            // ONE timeline per mapped site, built BEFORE the row loop and never
+            // per row. The update leg below may only clear a row's seconds
+            // columns once it knows the row ran in five-minute mode — see the
+            // INVERTED-SUMFLEX-SIGN note there for why clearing a one-minute
+            // row here would be actively harmful.
+            var oneMinuteTimelines = new Dictionary<int, OneMinuteModeTimeline>();
+            foreach (var mappedSite in columnSiteMap.Values)
+            {
+                // A site without a MicrotingUid cannot be resolved; skip it here
+                // rather than throwing, and let the lookup below fall through to
+                // "mode unknown" (which does NOT clear).
+                if (mappedSite.MicrotingUid == null
+                    || oneMinuteTimelines.ContainsKey(mappedSite.MicrotingUid.Value))
+                {
+                    continue;
+                }
+
+                var mappedSiteUid = mappedSite.MicrotingUid.Value;
+
+                var mappedAssignedSite = await dbContext.AssignedSites
+                    .AsNoTracking()
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .FirstOrDefaultAsync(x => x.SiteId == mappedSiteUid);
+                oneMinuteTimelines[mappedSiteUid] =
+                    await OneMinuteModeTimeline.BuildAsync(dbContext, mappedAssignedSite);
+            }
+
             // Skip the header row (first row)
             for (var i = 1; i < values.Count; i++)
             {
@@ -392,6 +419,45 @@ public class GoogleSheetHelper
                                 planRegistration.PaiedOutFlex;
                             planRegistration.SumFlexStart = 0;
                             planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                        }
+
+                        // KNOWN BUG, UNFIXED AND OUT OF SCOPE HERE — search tag:
+                        // INVERTED-SUMFLEX-SIGN.
+                        // This leg computes
+                        //     SumFlexEnd = SumFlexStart + PlanHours - NettoHours - PaiedOutFlex
+                        // where the canonical chain (PlanRegistrationHelper
+                        // .ApplyNettoFlexChainDecimal / ...SecondPrecision) is
+                        //     SumFlexEnd = SumFlexStart + NettoHours - PlanHours - PaiedOutFlex
+                        // — the NettoHours/PlanHours operands are the wrong way
+                        // round, so the balance moves the wrong direction on any
+                        // day where the two differ. Note its own Flex line just
+                        // above uses the CORRECT order, so Flex and SumFlexEnd
+                        // disagree with each other on the same row. The identical
+                        // inversion exists in TimePlanningWorkingHoursService
+                        // .Import's update leg. Deliberately NOT fixed in this
+                        // change (which only alters which *InSeconds columns get
+                        // written); fixing it restates historical balances and
+                        // needs its own change, review and rollback path.
+                        //
+                        // What IS new here: this leg rewrites an EXISTING row's
+                        // decimal balance, so a five-minute row's seconds columns
+                        // must not keep an earlier one-minute write's value — the
+                        // next row would seed its whole chain from it.
+                        //
+                        // The clear is MODE-GATED, and that gate is load-bearing
+                        // BECAUSE of the inversion above: zeroing a genuine
+                        // one-minute row's seconds would make every reader fall
+                        // back to the decimal this leg just wrote with the wrong
+                        // sign. A one-minute row keeps its seconds untouched here.
+                        // Unresolvable mode => leave the row exactly as it was.
+                        // Not clearing preserves the pre-existing behaviour;
+                        // clearing a one-minute row would not.
+                        if (site.MicrotingUid != null
+                            && oneMinuteTimelines.TryGetValue(
+                                site.MicrotingUid.Value, out var siteTimeline)
+                            && !siteTimeline.WasOneMinuteForRow(planRegistration))
+                        {
+                            PlanRegistrationHelper.ClearSumFlexSeconds(planRegistration);
                         }
 
                         await planRegistration.Update(dbContext);

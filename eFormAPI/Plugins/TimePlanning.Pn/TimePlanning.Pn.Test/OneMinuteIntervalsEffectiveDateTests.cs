@@ -28,7 +28,12 @@ namespace TimePlanning.Pn.Test;
 ///  - <see cref="OneMinuteModeTimeline.ResolveRowModeAsync"/> — the per-row
 ///    write-time marker outranks both.
 ///  - <see cref="PlanRegistrationHelper.SumFlexEndSecondsWithFallback"/> — the
-///    reverse seed fallback (SumFlexEndInSeconds is 0 on ~97% of rows).
+///    reverse seed fallback (SumFlexEndInSeconds is 0 on ~97% of rows) AND its
+///    mode-aware form, which ignores a STALE non-zero seconds column on a
+///    predecessor that resolves to five-minute mode.
+///  - <see cref="OneMinuteModeTimeline.WasOneMinuteFor"/> — the in-memory
+///    per-row resolution (marker → effective date → timeline) the chain sites
+///    use for the PRECEDING row.
 ///  - <see cref="OneMinuteModeTimeline.StampEffectiveDateOnEnable"/> — the
 ///    false→true settings stamp and its no-clobber guard.
 /// </summary>
@@ -212,7 +217,16 @@ public class OneMinuteIntervalsEffectiveDateTests
     [Test]
     public void SeedFallback_NullPredecessor_IsZero()
     {
-        Assert.That(PlanRegistrationHelper.SumFlexEndSecondsWithFallback(null), Is.EqualTo(0));
+        Assert.Multiple(() =>
+        {
+            Assert.That(PlanRegistrationHelper.SumFlexEndSecondsWithFallback(null), Is.EqualTo(0));
+            Assert.That(
+                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(null, preIsOneMinute: false),
+                Is.EqualTo(0), "…whatever the mode argument says.");
+            Assert.That(
+                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(null, preIsOneMinute: true),
+                Is.EqualTo(0));
+        });
     }
 
     [Test]
@@ -245,6 +259,176 @@ public class OneMinuteIntervalsEffectiveDateTests
                 PlanRegistrationHelper.SumFlexEndSecondsWithFallback(
                     new PlanRegistration { SumFlexEndInSeconds = 0, SumFlexEnd = 0 }),
                 Is.EqualTo(0), "A genuine zero and an unbackfilled zero agree.");
+        });
+    }
+
+    // ---------------------------------------------------------------- //
+    // 4b. STALE seconds on a five-minute predecessor                    //
+    // ---------------------------------------------------------------- //
+    //
+    // Observed in production (tenant 994, site 21445, effective date
+    // 2026-08-26 13:53:47):
+    //
+    //   Date        SumFlexStart  SumFlexEnd  StartInSeconds  EndInSeconds  marker
+    //   2026-08-27   3.61         -3.97        -263168        -290456        0
+    //   2026-08-28  -80.68       -86.01        -290456        -309644        NULL
+    //
+    // The 08-27 row is dated AFTER the site's effective date, so the date alone
+    // would resolve it to one-minute — but its write-time marker says five
+    // minute and the marker outranks the date. The five-minute branch wrote its
+    // decimals and left the seconds columns holding an older one-minute write's
+    // value, so the 08-28 row seeded from -290456 s (-80.68 h) instead of the
+    // correct decimal -3.97 h: a 76.71-hour break on a live site.
+
+    private const int StaleSeconds = -290456;   // -80.68 h, the residue
+    private const double TrueDecimalHours = -3.97;   // the row's real closing balance
+    private const int TrueDecimalSeconds = -14292; // Round(-3.97 * 3600)
+
+    [Test]
+    public void SeedFallback_FiveMinutePredecessor_IgnoresStaleSecondsColumn()
+    {
+        var pre = new PlanRegistration
+        {
+            Date = new DateTime(2026, 8, 27),
+            SumFlexEnd = TrueDecimalHours,
+            SumFlexEndInSeconds = StaleSeconds
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(pre, preIsOneMinute: false),
+                Is.EqualTo(TrueDecimalSeconds),
+                "A five-minute row carries its balance in the decimal ONLY; a "
+                + "non-zero seconds column there is residue, never a balance.");
+            Assert.That(
+                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(pre, preIsOneMinute: true),
+                Is.EqualTo(StaleSeconds),
+                "A one-minute predecessor keeps the seconds column as its truth.");
+            Assert.That(
+                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(pre),
+                Is.EqualTo(StaleSeconds),
+                "Unknown mode keeps the pre-existing behaviour.");
+        });
+    }
+
+    [Test]
+    public void SeedFallback_FiveMinutePredecessor_WithZeroSeconds_IsUnchanged()
+    {
+        // The post-fix shape: five-minute writes clear the columns, so both
+        // rules agree and the decimal answers either way.
+        var pre = new PlanRegistration { SumFlexEnd = 12.5, SumFlexEndInSeconds = 0 };
+        Assert.That(
+            PlanRegistrationHelper.SumFlexEndSecondsWithFallback(pre, preIsOneMinute: false),
+            Is.EqualTo(45000));
+    }
+
+    /// <summary>
+    /// The production bug in miniature: the predecessor resolves to FIVE-MINUTE
+    /// via its write-time MARKER even though its date is after the site's
+    /// effective date (marker &gt; effective date &gt; timeline), and it carries
+    /// stale seconds that disagree with its decimal. The successor must open on
+    /// the decimal.
+    ///
+    /// A date-based test cannot catch this: by date alone the predecessor is a
+    /// one-minute row.
+    /// </summary>
+    [Test]
+    public void MarkerFiveMinutePredecessorAfterTheEffectiveDate_SeedsFromTheDecimal()
+    {
+        var timeline = new OneMinuteModeTimeline(
+            currentFlag: true,
+            versionFlags: Array.Empty<(bool, DateTime)>(),
+            effectiveFrom: new DateTime(2026, 8, 26, 13, 53, 47));
+
+        var pre = new PlanRegistration
+        {
+            Date = new DateTime(2026, 8, 27),
+            RegisteredUnderOneMinuteIntervals = false, // the marker, and it wins
+            SumFlexEnd = TrueDecimalHours,
+            SumFlexEndInSeconds = StaleSeconds
+        };
+
+        Assert.That(timeline.WasOneMinuteAt(pre.Date), Is.True,
+            "By DATE alone the predecessor would look like a one-minute row…");
+        Assert.That(timeline.WasOneMinuteFor(pre), Is.False,
+            "…but its write-time marker outranks the effective date.");
+
+        // The successor: a one-minute row, 8 h worked against an 8 h plan, so it
+        // adds nothing of its own and its closing balance IS the carried seed.
+        var successor = new PlanRegistration
+        {
+            Date = new DateTime(2026, 8, 28),
+            Start1StartedAt = new DateTime(2026, 8, 28, 8, 0, 0),
+            Stop1StoppedAt = new DateTime(2026, 8, 28, 16, 0, 0),
+            PlanHours = 8.0,
+            PlanHoursInSeconds = 28800
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+            successor, pre, timeline.WasOneMinuteFor(pre));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(successor.SumFlexStartInSeconds, Is.EqualTo(TrueDecimalSeconds),
+                "Opens on the predecessor's decimal balance (-3.97 h), NOT on the "
+                + "stale seconds column (-80.68 h).");
+            Assert.That(successor.SumFlexStart, Is.EqualTo(TrueDecimalHours).Within(0.001));
+            Assert.That(successor.SumFlexEndInSeconds, Is.EqualTo(TrueDecimalSeconds));
+            Assert.That(successor.SumFlexEnd, Is.EqualTo(TrueDecimalHours).Within(0.001),
+                "Pre-fix this closed at -86.01 h — a 76.71-hour break.");
+        });
+    }
+
+    /// <summary>
+    /// All four mobile/kiosk punch-clock legs call this with the preceding row,
+    /// which is null on a worker's very first registration. Null in, null out —
+    /// "mode unknown" — and no database access, which is what makes the
+    /// <c>null!</c> context below safe in production too.
+    /// </summary>
+    [Test]
+    public async Task ResolveRowModeOrNull_NullRow_IsNull_AndTouchesNoDbContext()
+    {
+        var site = new AssignedSite
+        {
+            UseOneMinuteIntervals = true,
+            UseOneMinuteIntervalsFrom = EffectiveFrom
+        };
+
+        // Sequential awaits rather than Assert.Multiple: an async lambda there
+        // would be async void and the assertions could escape the block.
+        Assert.That(
+            await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(null!, site, null),
+            Is.Null);
+        Assert.That(
+            await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(null!, null, null),
+            Is.Null, "A null site does not turn a null row into 'five-minute'.");
+    }
+
+    [Test]
+    public void WasOneMinuteFor_NullRow_IsNull_ForwardableAsUnknownMode()
+    {
+        var timeline = new OneMinuteModeTimeline(
+            currentFlag: true, versionFlags: Array.Empty<(bool, DateTime)>());
+        Assert.That(timeline.WasOneMinuteFor(null), Is.Null);
+    }
+
+    [Test]
+    public void WasOneMinuteFor_UnmarkedRow_FallsThroughToTheTimeline()
+    {
+        var timeline = new OneMinuteModeTimeline(
+            currentFlag: true,
+            versionFlags: Array.Empty<(bool, DateTime)>(),
+            effectiveFrom: EffectiveFrom);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                timeline.WasOneMinuteFor(new PlanRegistration { Date = new DateTime(2026, 5, 31) }),
+                Is.False);
+            Assert.That(
+                timeline.WasOneMinuteFor(new PlanRegistration { Date = new DateTime(2026, 6, 1) }),
+                Is.True);
         });
     }
 

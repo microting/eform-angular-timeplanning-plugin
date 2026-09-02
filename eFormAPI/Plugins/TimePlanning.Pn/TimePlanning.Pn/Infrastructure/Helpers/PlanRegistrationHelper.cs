@@ -483,11 +483,102 @@ public static class PlanRegistrationHelper
     /// post-switch row seeds from the last PRE-switch row, which by definition
     /// only ever had the decimal columns written.
     /// </summary>
-    public static int SumFlexEndSecondsWithFallback(PlanRegistration? preTimePlanning)
-        => preTimePlanning == null
-            ? 0
-            : SecondsOrDecimalFallback(
-                preTimePlanning.SumFlexEndInSeconds, preTimePlanning.SumFlexEnd);
+    /// <param name="preIsOneMinute">
+    /// The mode the PRECEDING row resolves to (write-time marker, else the
+    /// site's effective date / audit timeline). Pass <c>false</c> and the
+    /// row's <c>SumFlexEndInSeconds</c> column is IGNORED — a five-minute row
+    /// carries its balance in the decimal only, so a non-zero seconds column
+    /// there is stale residue from an earlier one-minute write, never a
+    /// balance. Pass <c>null</c> (the default) when the mode is not known and
+    /// the column is taken at face value, as before.
+    ///
+    /// Defence in depth. <see cref="ApplyNettoFlexChainDecimal"/> now clears
+    /// both seconds columns on every five-minute write, so a row written by
+    /// THIS version of the code cannot carry stale seconds; rows written by an
+    /// older version, by the background service (which never touches the
+    /// seconds columns) or by a direct DB edit still can, and seeding the chain
+    /// from such a value is what restated whole balances at a mode boundary.
+    /// </param>
+    public static int SumFlexEndSecondsWithFallback(
+        PlanRegistration? preTimePlanning, bool? preIsOneMinute = null)
+    {
+        if (preTimePlanning == null)
+        {
+            return 0;
+        }
+
+        if (preIsOneMinute == false)
+        {
+            return (int)Math.Round(preTimePlanning.SumFlexEnd * 3600);
+        }
+
+        return SecondsOrDecimalFallback(
+            preTimePlanning.SumFlexEndInSeconds, preTimePlanning.SumFlexEnd);
+    }
+
+    /// <summary>
+    /// Clears the second-precision SumFlex columns.
+    ///
+    /// The invariant: a row whose balance was last written in FIVE-MINUTE
+    /// (decimal) mode carries NO seconds — <c>SumFlexStartInSeconds</c> and
+    /// <c>SumFlexEndInSeconds</c> read 0, and every reader therefore falls back
+    /// to the decimal via <see cref="SecondsOrDecimalFallback"/>. Leaving a
+    /// previous one-minute write's value behind makes the row claim a balance
+    /// it no longer has, and the next row seeds the whole chain from it.
+    /// </summary>
+    public static void ClearSumFlexSeconds(PlanRegistration pr)
+    {
+        pr.SumFlexStartInSeconds = 0;
+        pr.SumFlexEndInSeconds = 0;
+    }
+
+    /// <summary>
+    /// The FIVE-MINUTE counterpart of
+    /// <see cref="ApplyNettoFlexChainSecondPrecision(PlanRegistration, PlanRegistration?, bool?)"/>:
+    /// writes the legacy decimal Flex / SumFlexStart / SumFlexEnd chain AND
+    /// clears the <c>*InSeconds</c> siblings, so no call site can write one
+    /// without the other.
+    ///
+    ///   Flex       = (override ? NettoHoursOverride : NettoHours) - PlanHours
+    ///   SumFlexStart = preTimePlanning?.SumFlexEnd ?? 0
+    ///   SumFlexEnd   = SumFlexStart + effectiveNetto - PlanHours - PaiedOutFlex
+    ///
+    /// <c>NettoHours</c> is used AS-IS (callers that recompute it from the
+    /// five-minute tick math assign it immediately before calling).
+    /// </summary>
+    public static void ApplyNettoFlexChainDecimal(
+        PlanRegistration pr, PlanRegistration? preTimePlanning)
+    {
+        var effectiveNettoHours = pr.NettoHoursOverrideActive
+            ? pr.NettoHoursOverride
+            : pr.NettoHours;
+
+        pr.Flex = effectiveNettoHours - pr.PlanHours;
+        pr.SumFlexStart = preTimePlanning?.SumFlexEnd ?? 0;
+        pr.SumFlexEnd = pr.SumFlexStart + effectiveNettoHours - pr.PlanHours - pr.PaiedOutFlex;
+
+        ClearSumFlexSeconds(pr);
+    }
+
+    /// <summary>
+    /// Preferred overload: seeds the chain from <paramref name="preTimePlanning"/>
+    /// (null when this is the first row) through
+    /// <see cref="SumFlexEndSecondsWithFallback"/>, so no call site can
+    /// accidentally seed from the raw, usually-zero <c>SumFlexEndInSeconds</c>
+    /// column and silently discard the carried-forward balance.
+    /// </summary>
+    /// <param name="preIsOneMinute">
+    /// The preceding row's resolved mode, forwarded to
+    /// <see cref="SumFlexEndSecondsWithFallback"/> so a five-minute
+    /// predecessor seeds from its decimal balance instead of a stale seconds
+    /// column. Pass <c>null</c> when the mode is not cheaply resolvable.
+    /// </param>
+    public static void ApplyNettoFlexChainSecondPrecision(
+        PlanRegistration pr, PlanRegistration? preTimePlanning, bool? preIsOneMinute = null)
+        => ApplyNettoFlexChainSecondPrecision(
+            pr,
+            SumFlexEndSecondsWithFallback(preTimePlanning, preIsOneMinute),
+            preTimePlanning != null);
 
     /// <summary>
     /// Phase 2 — write the second-precision NettoHours / Flex / SumFlex chain.
@@ -523,18 +614,6 @@ public static class PlanRegistrationHelper
     /// True when there is a preceding planning row (use the running balance);
     /// false when this is the first row (reset SumFlexStart to 0).
     /// </param>
-    /// <summary>
-    /// Preferred overload: seeds the chain from <paramref name="preTimePlanning"/>
-    /// (null when this is the first row) through
-    /// <see cref="SumFlexEndSecondsWithFallback"/>, so no call site can
-    /// accidentally seed from the raw, usually-zero <c>SumFlexEndInSeconds</c>
-    /// column and silently discard the carried-forward balance.
-    /// </summary>
-    public static void ApplyNettoFlexChainSecondPrecision(
-        PlanRegistration pr, PlanRegistration? preTimePlanning)
-        => ApplyNettoFlexChainSecondPrecision(
-            pr, SumFlexEndSecondsWithFallback(preTimePlanning), preTimePlanning != null);
-
     public static void ApplyNettoFlexChainSecondPrecision(PlanRegistration pr,
         int sumFlexStartInSeconds, bool hasPreTimePlanning)
     {
@@ -718,48 +797,12 @@ public static class PlanRegistrationHelper
                         if (rowIsOneMinute)
                         {
                             ApplyNettoFlexChainSecondPrecision(
-                                planRegistration, preTimePlanning);
-                        }
-                        else if (preTimePlanning != null)
-                        {
-                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                            if (planRegistration.NettoHoursOverrideActive)
-                            {
-                                planRegistration.SumFlexEnd =
-                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
-                                    planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.Flex =
-                                    planRegistration.NettoHoursOverride - planRegistration.PlanHours;
-                            }
-                            else
-                            {
-                                planRegistration.SumFlexEnd =
-                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                    planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                            }
+                                planRegistration, preTimePlanning,
+                                oneMinuteTimeline.WasOneMinuteFor(preTimePlanning));
                         }
                         else
                         {
-                            if (planRegistration.NettoHoursOverrideActive)
-                            {
-                                planRegistration.SumFlexEnd =
-                                    planRegistration.NettoHoursOverride - planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.SumFlexStart = 0;
-                                planRegistration.Flex =
-                                    planRegistration.NettoHoursOverride - planRegistration.PlanHours;
-                            }
-                            else
-                            {
-                                planRegistration.SumFlexEnd =
-                                    planRegistration.NettoHours - planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.SumFlexStart = 0;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                            }
+                            ApplyNettoFlexChainDecimal(planRegistration, preTimePlanning);
                         }
 
                         await planRegistration.Update(dbContext).ConfigureAwait(false);
@@ -1046,45 +1089,12 @@ public static class PlanRegistrationHelper
                         if (rowIsOneMinute)
                         {
                             ApplyNettoFlexChainSecondPrecision(
-                                planRegistration, preTimePlanning);
-                        }
-                        else if (preTimePlanning != null)
-                        {
-                            if (planRegistration.NettoHoursOverrideActive)
-                            {
-                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                planRegistration.SumFlexEnd =
-                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
-                                    planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
-                            } else
-                            {
-                                planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                                planRegistration.SumFlexEnd =
-                                    preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                    planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                            }
+                                planRegistration, preTimePlanning,
+                                oneMinuteTimeline.WasOneMinuteFor(preTimePlanning));
                         }
                         else
                         {
-                            if (planRegistration.NettoHoursOverrideActive)
-                            {
-                                planRegistration.SumFlexEnd =
-                                    planRegistration.NettoHoursOverride - planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.SumFlexStart = 0;
-                                planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
-                            } else
-                            {
-                                planRegistration.SumFlexEnd =
-                                    planRegistration.NettoHours - planRegistration.PlanHours -
-                                    planRegistration.PaiedOutFlex;
-                                planRegistration.SumFlexStart = 0;
-                                planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                            }
+                            ApplyNettoFlexChainDecimal(planRegistration, preTimePlanning);
                         }
                         await planRegistration.Update(dbContext).ConfigureAwait(false);
                     }
@@ -1399,7 +1409,8 @@ public static class PlanRegistrationHelper
         PlanRegistration planRegistration,
         TimePlanningPnDbContext dbContext,
         AssignedSite dbAssignedSite,
-        DateTime dayOfPayment
+        DateTime dayOfPayment,
+        OneMinuteModeTimeline oneMinuteTimeline
         )
     {
         if (dbAssignedSite.Resigned)
@@ -1407,9 +1418,9 @@ public static class PlanRegistrationHelper
             return planRegistration;
         }
         // Mode AT REGISTRATION for this row, never the site's current flag —
-        // see OneMinuteModeTimeline.
-        var rowIsOneMinute = await OneMinuteModeTimeline.ResolveRowModeAsync(
-            dbContext, dbAssignedSite, planRegistration);
+        // see OneMinuteModeTimeline. The timeline is built ONCE by the calling
+        // loop and passed in, so this never costs a query per row.
+        var rowIsOneMinute = oneMinuteTimeline.WasOneMinuteForRow(planRegistration);
         var tainted = false;
         // foreach (var plan in planningsInPeriod)
         // {
@@ -1471,47 +1482,12 @@ public static class PlanRegistrationHelper
                     if (rowIsOneMinute)
                     {
                         ApplyNettoFlexChainSecondPrecision(
-                            planRegistration, preTimePlanning);
-                    }
-                    else if (preTimePlanning != null)
-                    {
-                        if (planRegistration.NettoHoursOverrideActive)
-                        {
-                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                            planRegistration.SumFlexEnd =
-                                preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
-                                planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
-                        }
-                        else
-                        {
-                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                            planRegistration.SumFlexEnd =
-                                preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                        }
+                            planRegistration, preTimePlanning,
+                            oneMinuteTimeline.WasOneMinuteFor(preTimePlanning));
                     }
                     else
                     {
-                        if (planRegistration.NettoHoursOverrideActive)
-                        {
-                            planRegistration.SumFlexEnd =
-                                planRegistration.NettoHoursOverride - planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.SumFlexStart = 0;
-                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
-                        }
-                        else
-                        {
-                            planRegistration.SumFlexEnd =
-                                planRegistration.NettoHours - planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.SumFlexStart = 0;
-                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                        }
+                        ApplyNettoFlexChainDecimal(planRegistration, preTimePlanning);
                     }
 
                     await planRegistration.Update(dbContext).ConfigureAwait(false);
@@ -1786,45 +1762,12 @@ public static class PlanRegistrationHelper
                     if (rowIsOneMinute)
                     {
                         ApplyNettoFlexChainSecondPrecision(
-                            planRegistration, preTimePlanning);
-                    }
-                    else if (preTimePlanning != null)
-                    {
-                        if (planRegistration.NettoHoursOverrideActive)
-                        {planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                            planRegistration.SumFlexEnd =
-                                preTimePlanning.SumFlexEnd + planRegistration.NettoHoursOverride -
-                                planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
-                        } else
-                        {
-                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                            planRegistration.SumFlexEnd =
-                                preTimePlanning.SumFlexEnd + planRegistration.NettoHours -
-                                planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                        }
+                            planRegistration, preTimePlanning,
+                            oneMinuteTimeline.WasOneMinuteFor(preTimePlanning));
                     }
                     else
                     {
-                        if (planRegistration.NettoHoursOverrideActive)
-                        {
-                            planRegistration.SumFlexEnd =
-                                planRegistration.NettoHoursOverride - planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.SumFlexStart = 0;
-                            planRegistration.Flex = planRegistration.NettoHoursOverride - planRegistration.PlanHours;
-                        }
-                        else
-                        {
-                            planRegistration.SumFlexEnd =
-                                planRegistration.NettoHours - planRegistration.PlanHours -
-                                planRegistration.PaiedOutFlex;
-                            planRegistration.SumFlexStart = 0;
-                            planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
-                        }
+                        ApplyNettoFlexChainDecimal(planRegistration, preTimePlanning);
                     }
 
                     // Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");

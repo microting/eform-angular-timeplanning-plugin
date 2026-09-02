@@ -1488,6 +1488,209 @@ public class PlanRegistrationHelperTests
         Assert.That(codes, Is.EqualTo(new List<string> { "A", "B", "C", "D", "E" }));
     }
 
+    // ------------------------------------------------------------------ //
+    // ApplyNettoFlexChainDecimal — the FIVE-MINUTE write path             //
+    // ------------------------------------------------------------------ //
+
+    /// <summary>
+    /// The invariant the whole fix rests on: a five-minute write leaves NO
+    /// seconds behind. Before this, the decimal branches wrote SumFlexStart /
+    /// SumFlexEnd and left the *InSeconds columns exactly as they were, so a
+    /// row recomputed under five-minute rules kept whatever an earlier
+    /// one-minute write had put there — and the next row seeded its whole chain
+    /// from that stale value.
+    /// </summary>
+    [Test]
+    public void ApplyNettoFlexChainDecimal_ClearsPreviouslyNonZeroSecondsColumns()
+    {
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 8, 27),
+            NettoHours = 8.0,
+            PlanHours = 7.5,
+            PaiedOutFlex = 0,
+            // Residue from an earlier one-minute write of the same row.
+            SumFlexStartInSeconds = -263168,
+            SumFlexEndInSeconds = -290456
+        };
+        var pre = new PlanRegistration { Date = new DateTime(2026, 8, 26), SumFlexEnd = 3.61 };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(pr, pre);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.SumFlexStart, Is.EqualTo(3.61).Within(1e-9));
+            Assert.That(pr.SumFlexEnd, Is.EqualTo(4.11).Within(1e-9),
+                "3.61 + 8.0 - 7.5 - 0");
+            Assert.That(pr.Flex, Is.EqualTo(0.5).Within(1e-9));
+            Assert.That(pr.SumFlexStartInSeconds, Is.EqualTo(0),
+                "The forensic zero: a five-minute row carries no seconds.");
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(0));
+        });
+    }
+
+    [Test]
+    public void ApplyNettoFlexChainDecimal_NoPredecessor_StartsAtZero()
+    {
+        var pr = new PlanRegistration
+        {
+            NettoHours = 6.0,
+            PlanHours = 8.0,
+            PaiedOutFlex = 1.0,
+            SumFlexStartInSeconds = 12345,
+            SumFlexEndInSeconds = 67890
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(pr, null);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.SumFlexStart, Is.EqualTo(0));
+            Assert.That(pr.SumFlexEnd, Is.EqualTo(-3.0).Within(1e-9), "0 + 6 - 8 - 1");
+            Assert.That(pr.Flex, Is.EqualTo(-2.0).Within(1e-9));
+            Assert.That(pr.SumFlexStartInSeconds, Is.EqualTo(0));
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(0));
+        });
+    }
+
+    /// <summary>
+    /// Same override semantics as the one-minute chain: the override replaces
+    /// NettoHours in BOTH Flex and SumFlexEnd.
+    /// </summary>
+    [Test]
+    public void ApplyNettoFlexChainDecimal_OverrideActive_UsesTheOverride()
+    {
+        var pr = new PlanRegistration
+        {
+            NettoHours = 6.0,
+            NettoHoursOverride = 9.5,
+            NettoHoursOverrideActive = true,
+            PlanHours = 8.0,
+            PaiedOutFlex = 0
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(
+            pr, new PlanRegistration { SumFlexEnd = 2.0 });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.Flex, Is.EqualTo(1.5).Within(1e-9), "9.5 - 8.0");
+            Assert.That(pr.SumFlexEnd, Is.EqualTo(3.5).Within(1e-9), "2.0 + 9.5 - 8.0 - 0");
+        });
+    }
+
+    [Test]
+    public void ClearSumFlexSeconds_ZeroesBothColumnsAndTouchesNothingElse()
+    {
+        var pr = new PlanRegistration
+        {
+            SumFlexStart = 1.5,
+            SumFlexEnd = 2.5,
+            SumFlexStartInSeconds = 111,
+            SumFlexEndInSeconds = 222,
+            FlexInSeconds = 333,
+            NettoHoursInSeconds = 444,
+            PaiedOutFlexInSeconds = 555
+        };
+
+        PlanRegistrationHelper.ClearSumFlexSeconds(pr);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.SumFlexStartInSeconds, Is.EqualTo(0));
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(0));
+            Assert.That(pr.SumFlexStart, Is.EqualTo(1.5), "The decimals are the balance now.");
+            Assert.That(pr.SumFlexEnd, Is.EqualTo(2.5));
+            Assert.That(pr.FlexInSeconds, Is.EqualTo(333),
+                "Only the SumFlex pair is cleared — PaiedOutFlexInSeconds in "
+                + "particular is maintained on five-minute rows too.");
+            Assert.That(pr.NettoHoursInSeconds, Is.EqualTo(444));
+            Assert.That(pr.PaiedOutFlexInSeconds, Is.EqualTo(555));
+        });
+    }
+
+    /// <summary>
+    /// A MIXED-MODE chain end to end: a five-minute day carrying stale seconds,
+    /// then a one-minute day. The five-minute write clears the residue, and the
+    /// one-minute day therefore opens on the decimal balance — with or without
+    /// the mode hint, because after the clear the two agree.
+    /// </summary>
+    [Test]
+    public void MixedModeChain_FiveMinuteThenOneMinute_CarriesTheDecimalBalance()
+    {
+        var dayOne = new PlanRegistration
+        {
+            Date = new DateTime(2026, 8, 27),
+            NettoHours = 9.0,
+            PlanHours = 8.0,
+            // Arbitrary non-zero residue from an earlier one-minute write; the
+            // exact values carry no meaning beyond "not zero, and not the
+            // decimal balance".
+            SumFlexStartInSeconds = 111111,
+            SumFlexEndInSeconds = 222222
+        };
+        var dayZero = new PlanRegistration { Date = new DateTime(2026, 8, 26), SumFlexEnd = 2.0 };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(dayOne, dayZero);
+
+        var dayTwo = new PlanRegistration
+        {
+            Date = new DateTime(2026, 8, 28),
+            Start1StartedAt = new DateTime(2026, 8, 28, 8, 0, 0),
+            Stop1StoppedAt = new DateTime(2026, 8, 28, 16, 30, 30),
+            PlanHours = 8.0,
+            PlanHoursInSeconds = 28800
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+            dayTwo, dayOne, preIsOneMinute: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(dayOne.SumFlexEnd, Is.EqualTo(3.0).Within(1e-9), "2.0 + 9.0 - 8.0");
+            Assert.That(dayOne.SumFlexEndInSeconds, Is.EqualTo(0));
+
+            Assert.That(dayTwo.SumFlexStartInSeconds, Is.EqualTo(10800),
+                "3.00 h carried across the boundary as 10800 s.");
+            Assert.That(dayTwo.NettoHoursInSeconds, Is.EqualTo(30630), "08:00–16:30:30");
+            Assert.That(dayTwo.SumFlexEndInSeconds, Is.EqualTo(10800 + 30630 - 28800),
+                "The 30 s survives the boundary.");
+            Assert.That(dayTwo.SumFlexEnd, Is.EqualTo(dayTwo.SumFlexEndInSeconds / 3600.0));
+        });
+    }
+
+    /// <summary>
+    /// Regression guard for the ONE-MINUTE side: a one-minute predecessor's
+    /// populated seconds column is still the source of truth, to the second.
+    /// </summary>
+    [Test]
+    public void OneMinutePredecessor_StillSeedsFromItsSecondsColumn()
+    {
+        var pre = new PlanRegistration
+        {
+            RegisteredUnderOneMinuteIntervals = true,
+            SumFlexEnd = 3.0,          // a stale 2-decimal rendering…
+            SumFlexEndInSeconds = 10837 // …of a balance that is really 3 h 0 m 37 s
+        };
+        var pr = new PlanRegistration
+        {
+            Date = new DateTime(2026, 8, 28),
+            Start1StartedAt = new DateTime(2026, 8, 28, 8, 0, 0),
+            Stop1StoppedAt = new DateTime(2026, 8, 28, 16, 0, 0),
+            PlanHours = 8.0,
+            PlanHoursInSeconds = 28800
+        };
+
+        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(pr, pre, preIsOneMinute: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pr.SumFlexStartInSeconds, Is.EqualTo(10837),
+                "The 37 s is not lost to the decimal.");
+            Assert.That(pr.SumFlexEndInSeconds, Is.EqualTo(10837));
+        });
+    }
+
     [Test]
     public void GetDeclaredPayCodes_NullRuleSet_ReturnsEmpty()
     {

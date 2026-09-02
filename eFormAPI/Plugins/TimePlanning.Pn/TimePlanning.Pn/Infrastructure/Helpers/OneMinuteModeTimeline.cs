@@ -223,10 +223,8 @@ public sealed class OneMinuteModeTimeline
     /// marker → stored effective date → derived timeline), querying
     /// AssignedSiteVersions only when neither of the first two can answer.
     /// Use this from calc paths that hold a single row; loops that already
-    /// build a timeline should keep using
-    /// <c>row.RegisteredUnderOneMinuteIntervals ?? timeline.WasOneMinuteAt(row.Date)</c>,
-    /// which carries the same precedence because <see cref="WasOneMinuteAt"/>
-    /// consults the effective date first.
+    /// build a timeline should use <see cref="WasOneMinuteForRow"/>, which
+    /// carries the same precedence in memory.
     ///
     /// NEVER call this in a loop: on a legacy row of an un-backfilled site it
     /// falls through to <see cref="BuildAsync"/>, so a per-row call is the
@@ -255,6 +253,37 @@ public sealed class OneMinuteModeTimeline
         var timeline = await BuildAsync(dbContext, assignedSite);
         return timeline.WasOneMinuteAt(row.Date);
     }
+
+    /// <summary>
+    /// THE definition of the per-row precedence: the write-time marker when the
+    /// row carries one, else this timeline (effective date, else the audit
+    /// trail). Every call site resolving a row's mode against a prebuilt
+    /// timeline goes through here rather than spelling the <c>??</c> out again.
+    /// Pure in-memory — safe inside a loop.
+    /// </summary>
+    public bool WasOneMinuteForRow(PlanRegistration row)
+        => row.RegisteredUnderOneMinuteIntervals ?? WasOneMinuteAt(row.Date);
+
+    /// <summary>
+    /// <see cref="WasOneMinuteForRow"/> for a row that may be null (typically
+    /// the preceding day, which does not exist for the first registration),
+    /// yielding <c>null</c> so callers can forward the result straight into the
+    /// "unknown mode" parameter of the flex-chain helpers.
+    /// </summary>
+    public bool? WasOneMinuteFor(PlanRegistration? row)
+        => row == null ? null : WasOneMinuteForRow(row);
+
+    /// <summary>
+    /// <see cref="ResolveRowModeAsync"/> for a row that may be null (typically
+    /// the preceding day, which does not exist for the first registration).
+    /// Same N+1 warning: never call this in a loop — build a timeline once and
+    /// use <see cref="WasOneMinuteFor"/> instead.
+    /// </summary>
+    public static async Task<bool?> ResolveRowModeOrNullAsync(
+        TimePlanningPnDbContext dbContext, AssignedSite? assignedSite, PlanRegistration? row)
+        => row == null
+            ? null
+            : await ResolveRowModeAsync(dbContext, assignedSite, row);
 
     /// <summary>
     /// The <c>UseOneMinuteIntervals</c> value in force on <paramref name="rowDate"/>
