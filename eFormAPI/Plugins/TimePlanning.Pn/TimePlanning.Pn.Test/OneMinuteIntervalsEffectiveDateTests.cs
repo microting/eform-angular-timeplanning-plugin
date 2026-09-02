@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
 
@@ -219,12 +220,12 @@ public class OneMinuteIntervalsEffectiveDateTests
     {
         Assert.Multiple(() =>
         {
-            Assert.That(PlanRegistrationHelper.SumFlexEndSecondsWithFallback(null), Is.EqualTo(0));
+            Assert.That(FlexChain.SumFlexEndSecondsWithFallback(null), Is.EqualTo(0));
             Assert.That(
-                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(null, preIsOneMinute: false),
+                FlexChain.SumFlexEndSecondsWithFallback(null, preIsOneMinute: false),
                 Is.EqualTo(0), "…whatever the mode argument says.");
             Assert.That(
-                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(null, preIsOneMinute: true),
+                FlexChain.SumFlexEndSecondsWithFallback(null, preIsOneMinute: true),
                 Is.EqualTo(0));
         });
     }
@@ -233,7 +234,7 @@ public class OneMinuteIntervalsEffectiveDateTests
     public void SeedFallback_PopulatedSecondsWin()
     {
         var pre = new PlanRegistration { SumFlexEndInSeconds = 7261, SumFlexEnd = 99 };
-        Assert.That(PlanRegistrationHelper.SumFlexEndSecondsWithFallback(pre), Is.EqualTo(7261),
+        Assert.That(FlexChain.SumFlexEndSecondsWithFallback(pre), Is.EqualTo(7261),
             "When the seconds column is populated it is the source of truth.");
     }
 
@@ -248,15 +249,15 @@ public class OneMinuteIntervalsEffectiveDateTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(
+                FlexChain.SumFlexEndSecondsWithFallback(
                     new PlanRegistration { SumFlexEndInSeconds = 0, SumFlexEnd = 12.5 }),
                 Is.EqualTo(45000));
             Assert.That(
-                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(
+                FlexChain.SumFlexEndSecondsWithFallback(
                     new PlanRegistration { SumFlexEndInSeconds = 0, SumFlexEnd = -2.25 }),
                 Is.EqualTo(-8100), "A negative carried balance survives the fallback.");
             Assert.That(
-                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(
+                FlexChain.SumFlexEndSecondsWithFallback(
                     new PlanRegistration { SumFlexEndInSeconds = 0, SumFlexEnd = 0 }),
                 Is.EqualTo(0), "A genuine zero and an unbackfilled zero agree.");
         });
@@ -297,16 +298,16 @@ public class OneMinuteIntervalsEffectiveDateTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(pre, preIsOneMinute: false),
+                FlexChain.SumFlexEndSecondsWithFallback(pre, preIsOneMinute: false),
                 Is.EqualTo(TrueDecimalSeconds),
                 "A five-minute row carries its balance in the decimal ONLY; a "
                 + "non-zero seconds column there is residue, never a balance.");
             Assert.That(
-                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(pre, preIsOneMinute: true),
+                FlexChain.SumFlexEndSecondsWithFallback(pre, preIsOneMinute: true),
                 Is.EqualTo(StaleSeconds),
                 "A one-minute predecessor keeps the seconds column as its truth.");
             Assert.That(
-                PlanRegistrationHelper.SumFlexEndSecondsWithFallback(pre),
+                FlexChain.SumFlexEndSecondsWithFallback(pre),
                 Is.EqualTo(StaleSeconds),
                 "Unknown mode keeps the pre-existing behaviour.");
         });
@@ -319,7 +320,7 @@ public class OneMinuteIntervalsEffectiveDateTests
         // rules agree and the decimal answers either way.
         var pre = new PlanRegistration { SumFlexEnd = 12.5, SumFlexEndInSeconds = 0 };
         Assert.That(
-            PlanRegistrationHelper.SumFlexEndSecondsWithFallback(pre, preIsOneMinute: false),
+            FlexChain.SumFlexEndSecondsWithFallback(pre, preIsOneMinute: false),
             Is.EqualTo(45000));
     }
 
@@ -365,7 +366,7 @@ public class OneMinuteIntervalsEffectiveDateTests
             PlanHoursInSeconds = 28800
         };
 
-        PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+        FlexChain.ApplyNettoFlexChainSecondPrecision(
             successor, pre, timeline.WasOneMinuteFor(pre));
 
         Assert.Multiple(() =>

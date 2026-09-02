@@ -42,6 +42,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanningLocalizationService;
 
@@ -260,7 +261,7 @@ public class TimePlanningFlexService(
         // updating the legacy double below would leave that column stale, so keep it
         // in lockstep here too. Old value falls back to the double the same way those
         // chains do, since this row may itself have only ever had the double set.
-        var oldPaiedOutFlexSeconds = PlanRegistrationHelper.SecondsOrDecimalFallback(
+        var oldPaiedOutFlexSeconds = FlexChain.SecondsOrDecimalFallback(
             planRegistration.PaiedOutFlexInSeconds, planRegistration.PaiedOutFlex);
         var newPaiedOutFlexSeconds = (int)Math.Round(model.PaidOutFlex * 3600);
 
@@ -279,7 +280,7 @@ public class TimePlanningFlexService(
         // fallback would read exactly the stale column this change exists to
         // distrust, so do not read it at all there.
         var oldSumFlexEndSeconds = rowIsOneMinute
-            ? PlanRegistrationHelper.SumFlexEndSecondsWithFallback(planRegistration)
+            ? FlexChain.SumFlexEndSecondsWithFallback(planRegistration)
             : 0;
 
         planRegistration.SumFlexEnd += planRegistration.PaiedOutFlex - model.PaidOutFlex;
@@ -292,7 +293,7 @@ public class TimePlanningFlexService(
         else
         {
             // Five-minute row: the adjusted decimal above is the whole balance.
-            PlanRegistrationHelper.ClearSumFlexSeconds(planRegistration);
+            FlexChain.ClearSumFlexSeconds(planRegistration);
         }
 
         planRegistration.PaiedOutFlex = model.PaidOutFlex;

@@ -26,6 +26,7 @@ SOFTWARE.
 using System.Text.RegularExpressions;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
@@ -389,7 +390,7 @@ public class TimePlanningPlanningService(
                         // the shared decimal helper so the *InSeconds columns
                         // are written (as 0) by the same call that writes the
                         // decimals — the two can never drift apart.
-                        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(
+                        FlexChain.ApplyNettoFlexChainDecimal(
                             newPlanRegistration, preTimePlanning);
                     }
 
@@ -601,7 +602,7 @@ public class TimePlanningPlanningService(
                 // constructed row, so this only carries the predecessor's
                 // closing balance forward — through the shared helper so the
                 // seconds columns cannot drift from the decimals.
-                PlanRegistrationHelper.ApplyNettoFlexChainDecimal(
+                FlexChain.ApplyNettoFlexChainDecimal(
                     newPlanRegistration, preTimePlanning);
             }
 
@@ -1060,14 +1061,14 @@ public class TimePlanningPlanningService(
             // legacy double hour fields.
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
-                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                FlexChain.ApplyNettoFlexChainSecondPrecision(
                     planning, preTimePlanning,
                     cascadeTimeline.WasOneMinuteFor(preTimePlanning));
             }
             else
             {
                 planning.NettoHours = hours;
-                PlanRegistrationHelper.ApplyNettoFlexChainDecimal(planning, preTimePlanning);
+                FlexChain.ApplyNettoFlexChainDecimal(planning, preTimePlanning);
             }
 
             // Ensure timestamps are populated from IDs for accurate time tracking calculation
@@ -1113,13 +1114,13 @@ public class TimePlanningPlanningService(
                 // AT REGISTRATION — see OneMinuteModeTimeline.
                 if (cascadeTimeline.WasOneMinuteForRow(planningAfterThisPlanning))
                 {
-                    PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    FlexChain.ApplyNettoFlexChainSecondPrecision(
                         planningAfterThisPlanning, preTimePlanningAfterThisPlanning,
                         cascadeTimeline.WasOneMinuteFor(preTimePlanningAfterThisPlanning));
                 }
                 else
                 {
-                    PlanRegistrationHelper.ApplyNettoFlexChainDecimal(
+                    FlexChain.ApplyNettoFlexChainDecimal(
                         planningAfterThisPlanning, preTimePlanningAfterThisPlanning);
                 }
 
@@ -1406,7 +1407,7 @@ public class TimePlanningPlanningService(
             // legacy double hour fields.
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
-                PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                FlexChain.ApplyNettoFlexChainSecondPrecision(
                     planning, preTimePlanning,
                     cascadeTimeline.WasOneMinuteFor(preTimePlanning));
             }
@@ -1431,7 +1432,7 @@ public class TimePlanningPlanningService(
                 planning.Flex = planning.NettoHours - planning.PlanHours;
                 // The forensic zero: this row's balance now lives in the decimals
                 // only, so a previous one-minute write's seconds must not survive.
-                PlanRegistrationHelper.ClearSumFlexSeconds(planning);
+                FlexChain.ClearSumFlexSeconds(planning);
             }
 
             // Ensure timestamps are populated from IDs for accurate time tracking calculation
@@ -1466,13 +1467,13 @@ public class TimePlanningPlanningService(
                 // AT REGISTRATION — see OneMinuteModeTimeline.
                 if (cascadeTimeline.WasOneMinuteForRow(planningAfterThisPlanning))
                 {
-                    PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
+                    FlexChain.ApplyNettoFlexChainSecondPrecision(
                         planningAfterThisPlanning, preTimePlanningAfterThisPlanning,
                         cascadeTimeline.WasOneMinuteFor(preTimePlanningAfterThisPlanning));
                 }
                 else
                 {
-                    PlanRegistrationHelper.ApplyNettoFlexChainDecimal(
+                    FlexChain.ApplyNettoFlexChainDecimal(
                         planningAfterThisPlanning, preTimePlanningAfterThisPlanning);
                 }
 
@@ -1717,7 +1718,7 @@ public class TimePlanningPlanningService(
         var ticks = new int[6]; // index 0 unused; shifts are 1..5
         for (var shift = 1; shift <= 5; shift++)
         {
-            var overrideMinutes = PlanRegistrationHelper.GetShiftPauseOverrideMinutes(planning, shift);
+            var overrideMinutes = FlexChain.GetShiftPauseOverrideMinutes(planning, shift);
             ticks[shift] = overrideMinutes.HasValue
                 ? (overrideMinutes.Value / 5) + 1
                 : GetShiftPauseId(planning, shift);
@@ -1850,7 +1851,7 @@ public class TimePlanningPlanningService(
             // Admin/manual pause override wins: when set, it is the authoritative
             // total pause MINUTES for the shift, replacing both the one-minute
             // timestamp delta and the legacy (Pause{N}Id-1)*5 tick deduction.
-            var overrideMinutes = PlanRegistrationHelper.GetShiftPauseOverrideMinutes(planning, shift);
+            var overrideMinutes = FlexChain.GetShiftPauseOverrideMinutes(planning, shift);
 
             if (useOneMinuteIntervals && startedAt.HasValue && stoppedAt.HasValue && stoppedAt.Value > startedAt.Value)
             {

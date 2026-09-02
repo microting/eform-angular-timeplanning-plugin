@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
-using TimePlanning.Pn.Infrastructure.Helpers;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 
 namespace TimePlanning.Pn.Test;
 

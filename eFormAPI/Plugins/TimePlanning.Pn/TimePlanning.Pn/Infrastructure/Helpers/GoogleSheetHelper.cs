@@ -18,6 +18,7 @@ using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 
@@ -457,7 +458,7 @@ public class GoogleSheetHelper
                                 site.MicrotingUid.Value, out var siteTimeline)
                             && !siteTimeline.WasOneMinuteForRow(planRegistration))
                         {
-                            PlanRegistrationHelper.ClearSumFlexSeconds(planRegistration);
+                            FlexChain.ClearSumFlexSeconds(planRegistration);
                         }
 
                         await planRegistration.Update(dbContext);

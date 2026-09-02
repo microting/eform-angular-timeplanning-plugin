@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.Planning;
@@ -70,7 +71,7 @@ public class ComputeShiftPauseSecondsTests
     {
         var reg = BuildRow16288Shape();
 
-        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false);
+        var result = FlexChain.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false);
 
         Assert.That(result, Is.EqualTo(30 * 60),
             "Shift 1 OFF: 0 + 5 + 20 + 5 = 30 min across Pause1/Pause10/Pause11/Pause12");
@@ -81,7 +82,7 @@ public class ComputeShiftPauseSecondsTests
     {
         var reg = BuildRow16288Shape();
 
-        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 2, useOneMinuteIntervals: false);
+        var result = FlexChain.ComputeShiftPauseSeconds(reg, 2, useOneMinuteIntervals: false);
 
         Assert.That(result, Is.EqualTo(5 * 60),
             "Shift 2 OFF: Pause2 19:13:26 -> 19:16:52 crosses 19:15 = 5 min");
@@ -92,7 +93,7 @@ public class ComputeShiftPauseSecondsTests
     {
         var reg = BuildRow16288Shape();
 
-        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: true);
+        var result = FlexChain.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: true);
 
         // 162 (2m42s) + 523 (8m43s) + 1252 (20m52s) + 48 (0m48s) = 1985 s.
         Assert.That(result, Is.EqualTo(1985),
@@ -104,7 +105,7 @@ public class ComputeShiftPauseSecondsTests
     {
         var reg = BuildRow16288Shape();
 
-        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 2, useOneMinuteIntervals: true);
+        var result = FlexChain.ComputeShiftPauseSeconds(reg, 2, useOneMinuteIntervals: true);
 
         // 19:16:52 - 19:13:26 = 3m26s = 206 s.
         Assert.That(result, Is.EqualTo(206),
@@ -122,8 +123,8 @@ public class ComputeShiftPauseSecondsTests
     {
         var reg = BuildRow16288Shape();
 
-        var shift1 = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false);
-        var shift2 = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 2, useOneMinuteIntervals: false);
+        var shift1 = FlexChain.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false);
+        var shift2 = FlexChain.ComputeShiftPauseSeconds(reg, 2, useOneMinuteIntervals: false);
 
         Assert.That(shift1 + shift2, Is.EqualTo(35 * 60),
             "Day total OFF = 30 + 5 = 35 min");
@@ -144,7 +145,7 @@ public class ComputeShiftPauseSecondsTests
             Pause3Id = 4, // legacy 15-min pause: (4 - 1) * 5 = 15 min
         };
 
-        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 3, useOneMinuteIntervals);
+        var result = FlexChain.ComputeShiftPauseSeconds(reg, 3, useOneMinuteIntervals);
 
         Assert.That(result, Is.EqualTo(15 * 60),
             "No timestamped slot => legacy primary Pause3Id fallback = 15 min");
@@ -170,7 +171,7 @@ public class ComputeShiftPauseSecondsTests
             Pause1Id = 4, // legacy 15-min pause: (4 - 1) * 5 = 15 min
         };
 
-        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals);
+        var result = FlexChain.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals);
 
         Assert.That(result, Is.EqualTo(15 * 60),
             "Orphaned start-only slot is not a complete slot => legacy Pause1Id fallback = 15 min");
@@ -190,7 +191,7 @@ public class ComputeShiftPauseSecondsTests
             Pause1StartedAt = new DateTime(2026, 6, 19, 10, 0, 0, DateTimeKind.Utc),
             Pause1StoppedAt = null,
         };
-        Assert.That(PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false), Is.EqualTo(900),
+        Assert.That(FlexChain.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false), Is.EqualTo(900),
             "Half-record (StartedAt only) must not suppress the legacy PauseId fallback");
     }
 
@@ -210,7 +211,7 @@ public class ComputeShiftPauseSecondsTests
         var reg = BuildRow16288Shape();
         reg.Pause1OverrideMinutes = 12;
 
-        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals);
+        var result = FlexChain.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals);
 
         Assert.That(result, Is.EqualTo(12 * 60),
             "Override must replace the slot sum entirely.");
@@ -227,7 +228,7 @@ public class ComputeShiftPauseSecondsTests
         var reg = BuildRow16288Shape();
         reg.Pause1OverrideMinutes = 0;
 
-        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals);
+        var result = FlexChain.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals);
 
         Assert.That(result, Is.EqualTo(0),
             "Override = 0 means zero pause, not the slot sum.");
@@ -243,7 +244,7 @@ public class ComputeShiftPauseSecondsTests
         var reg = BuildRow16288Shape();
         reg.Pause1OverrideMinutes = null;
 
-        var result = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false);
+        var result = FlexChain.ComputeShiftPauseSeconds(reg, 1, useOneMinuteIntervals: false);
 
         Assert.That(result, Is.EqualTo(30 * 60),
             "Null override must fall back to the all-slots sum (30 min).");
@@ -259,7 +260,7 @@ public class ComputeShiftPauseSecondsTests
         var reg = BuildRow16288Shape();
         reg.Pause1OverrideMinutes = 99;
 
-        var shift2 = PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 2, useOneMinuteIntervals: false);
+        var shift2 = FlexChain.ComputeShiftPauseSeconds(reg, 2, useOneMinuteIntervals: false);
 
         Assert.That(shift2, Is.EqualTo(5 * 60),
             "Shift 2 has no override and must still sum its own slot (5 min).");
@@ -306,7 +307,7 @@ public class PauseOverrideInferenceTests
             Pause10StoppedAt = Date.AddHours(11).AddMinutes(20),
         };
         // Sanity: the slot sum is 33 min, not a 5-min multiple.
-        Assert.That(PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, true),
+        Assert.That(FlexChain.ComputeShiftPauseSeconds(reg, 1, true),
             Is.EqualTo(33 * 60), "Pre-condition: slot sum is 33 min.");
 
         var preEditShownTicks = TimePlanningPlanningService.CaptureCurrentShiftShownTicks(reg);
@@ -316,7 +317,7 @@ public class PauseOverrideInferenceTests
 
         Assert.That(reg.Pause1OverrideMinutes, Is.Null,
             "Unchanged pause (Break == pre-edit Pause1Id) must NOT lock an override.");
-        Assert.That(PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, true),
+        Assert.That(FlexChain.ComputeShiftPauseSeconds(reg, 1, true),
             Is.EqualTo(33 * 60), "Netto pause still reflects the recorded slot sum.");
     }
 
@@ -419,7 +420,7 @@ public class PauseOverrideInferenceTests
 
         Assert.That(reg.Pause1OverrideMinutes, Is.Null,
             "Explicit clear must revert the override to null.");
-        Assert.That(PlanRegistrationHelper.ComputeShiftPauseSeconds(reg, 1, false),
+        Assert.That(FlexChain.ComputeShiftPauseSeconds(reg, 1, false),
             Is.EqualTo(5 * 60), "After clear, pause falls back to the recorded slot sum (5 min).");
     }
 
