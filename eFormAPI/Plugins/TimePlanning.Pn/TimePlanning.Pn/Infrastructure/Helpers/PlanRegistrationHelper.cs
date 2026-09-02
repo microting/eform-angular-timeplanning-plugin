@@ -364,6 +364,26 @@ public static class PlanRegistrationHelper
         RecalculatePlanHoursFromShifts(pr);
     }
 
+    /// <summary>
+    /// The row a chain recompute should seed from: the latest candidate strictly
+    /// before <paramref name="windowStart"/> that the site's cursor vouches for.
+    /// A row after the cursor may be one created ahead of time and never filled
+    /// in, whose zero would silently discard the accumulated balance.
+    /// A null cursor means nothing is known, so behave exactly as before.
+    /// </summary>
+    public static PlanRegistration? ResolveChainAnchor(
+        IEnumerable<PlanRegistration> candidates, AssignedSite site, DateTime windowStart)
+    {
+        var eligible = candidates.Where(x => x.Date < windowStart);
+
+        if (site.FlexChainComputedThrough is { } cursor)
+        {
+            eligible = eligible.Where(x => x.Date <= cursor);
+        }
+
+        return eligible.OrderByDescending(x => x.Date).FirstOrDefault();
+    }
+
     public static async Task<TimePlanningPlanningModel> UpdatePlanRegistrationsInPeriod(
         List<PlanRegistration> planningsInPeriod,
         TimePlanningPlanningModel siteModel,
@@ -495,6 +515,7 @@ public static class PlanRegistrationHelper
                                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                                 .Where(x => x.Date < planRegistration.Date
                                             && x.SdkSitId == dbAssignedSite.SiteId)
+                                .Where(x => dbAssignedSite.FlexChainComputedThrough == null || x.Date <= dbAssignedSite.FlexChainComputedThrough)
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
@@ -787,6 +808,7 @@ public static class PlanRegistrationHelper
                                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                                 .Where(x => x.Date < planRegistration.Date
                                             && x.SdkSitId == dbAssignedSite.SiteId)
+                                .Where(x => dbAssignedSite.FlexChainComputedThrough == null || x.Date <= dbAssignedSite.FlexChainComputedThrough)
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
@@ -1180,6 +1202,7 @@ public static class PlanRegistrationHelper
                             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                             .Where(x => x.Date < planRegistration.Date
                                         && x.SdkSitId == dbAssignedSite.SiteId)
+                            .Where(x => dbAssignedSite.FlexChainComputedThrough == null || x.Date <= dbAssignedSite.FlexChainComputedThrough)
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
@@ -1460,6 +1483,7 @@ public static class PlanRegistrationHelper
                             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                             .Where(x => x.Date < planRegistration.Date
                                         && x.SdkSitId == dbAssignedSite.SiteId)
+                            .Where(x => dbAssignedSite.FlexChainComputedThrough == null || x.Date <= dbAssignedSite.FlexChainComputedThrough)
                             .OrderByDescending(x => x.Date)
                             .FirstOrDefaultAsync();
 
