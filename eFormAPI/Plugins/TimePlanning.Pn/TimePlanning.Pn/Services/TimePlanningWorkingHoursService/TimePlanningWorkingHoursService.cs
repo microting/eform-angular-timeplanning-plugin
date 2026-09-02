@@ -288,8 +288,7 @@ public class TimePlanningWorkingHoursService(
             if (lastPlanning != null)
             {
                 // Mode AT REGISTRATION for the carried-over previous-day row.
-                var lastPlanningIsOneMinute = lastPlanning.RegisteredUnderOneMinuteIntervals
-                                              ?? oneMinuteTimeline.WasOneMinuteAt(lastPlanning.Date);
+                var lastPlanningIsOneMinute = oneMinuteTimeline.WasOneMinuteForRow(lastPlanning);
                 // lastPlanning.Date = new DateTime(lastPlanning.Date.Year, lastPlanning.Date.Month, lastPlanning.Date.Day, 0, 0, 0);
 
 
@@ -350,8 +349,14 @@ public class TimePlanningWorkingHoursService(
                         // Phase 2: second-precision siblings for the SumFlex chain.
                         NettoHoursInSeconds = lastPlanning?.NettoHoursInSeconds ?? 0,
                         FlexInSeconds = lastPlanning?.FlexInSeconds ?? 0,
-                        SumFlexStartInSeconds = lastPlanning?.SumFlexStartInSeconds ?? 0,
-                        SumFlexEndInSeconds = PlanRegistrationHelper.SumFlexEndSecondsWithFallback(lastPlanning),
+                        // Mode-aware: a five-minute row carries its balance in
+                        // the decimals only, so its seconds columns are residue
+                        // from an earlier one-minute write, never a balance.
+                        SumFlexStartInSeconds = lastPlanningIsOneMinute
+                            ? lastPlanning?.SumFlexStartInSeconds ?? 0
+                            : 0,
+                        SumFlexEndInSeconds = PlanRegistrationHelper.SumFlexEndSecondsWithFallback(
+                            lastPlanning, lastPlanningIsOneMinute),
                         PaiedOutFlexInSeconds = lastPlanning?.PaiedOutFlexInSeconds ?? 0,
                         Message = lastPlanning?.MessageId,
                         CommentWorker = lastPlanning?.WorkerComment?.Replace("\r", "<br />"),
@@ -468,7 +473,8 @@ public class TimePlanningWorkingHoursService(
                 var planRegistration = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
                 if (planRegistration != null)
                 {
-                    await UpdatePlanning(first, planRegistration, planning, model.SiteId);
+                    await UpdatePlanning(
+                        first, planRegistration, planning, model.SiteId, cascadeTimeline);
                 }
                 else
                 {
@@ -513,34 +519,19 @@ public class TimePlanningWorkingHoursService(
                     // grid (which recomputes from seconds).
                     // Mode AT REGISTRATION for THIS later row — see
                     // OneMinuteModeTimeline.
-                    if (planRegistration.RegisteredUnderOneMinuteIntervals
-                        ?? cascadeTimeline.WasOneMinuteAt(planRegistration.Date))
+                    if (cascadeTimeline.WasOneMinuteForRow(planRegistration))
                     {
                         PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                            planRegistration, preTimePlanning);
+                            planRegistration, preTimePlanning,
+                            cascadeTimeline.WasOneMinuteFor(preTimePlanning));
                     }
                     else
                     {
-                        // Flag-off path keeps the legacy double formula but now honours
-                        // NettoHoursOverrideActive, matching UpdatePlanRegistration.
-                        var effectiveNettoHours = planRegistration.NettoHoursOverrideActive
-                            ? planRegistration.NettoHoursOverride
-                            : planRegistration.NettoHours;
-                        if (preTimePlanning != null)
-                        {
-                            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                            planRegistration.SumFlexEnd = preTimePlanning.SumFlexEnd + effectiveNettoHours -
-                                                          planRegistration.PlanHours -
-                                                          planRegistration.PaiedOutFlex;
-                        }
-                        else
-                        {
-                            planRegistration.SumFlexStart = 0;
-                            planRegistration.SumFlexEnd = effectiveNettoHours - planRegistration.PlanHours -
-                                                          planRegistration.PaiedOutFlex;
-                        }
-
-                        planRegistration.Flex = effectiveNettoHours - planRegistration.PlanHours;
+                        // Flag-off path keeps the legacy double formula (it honours
+                        // NettoHoursOverrideActive, matching UpdatePlanRegistration)
+                        // and clears the seconds columns with the same call.
+                        PlanRegistrationHelper.ApplyNettoFlexChainDecimal(
+                            planRegistration, preTimePlanning);
                     }
 
                     await planRegistration.Update(dbContext);
@@ -635,7 +626,8 @@ public class TimePlanningWorkingHoursService(
 
     private async Task UpdatePlanning(bool first, PlanRegistration planRegistration,
         TimePlanningWorkingHoursModel model,
-        int microtingUid)
+        int microtingUid,
+        OneMinuteModeTimeline timeline)
     {
         var dateTime = DateTime.Now;
         var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
@@ -694,7 +686,8 @@ public class TimePlanningWorkingHoursService(
         }
 
         planRegistration = await PlanRegistrationHelper
-            .UpdatePlanRegistration(planRegistration, dbContext, assignedSite, DateTime.Now.AddMonths(-1));
+            .UpdatePlanRegistration(
+                planRegistration, dbContext, assignedSite, DateTime.Now.AddMonths(-1), timeline);
 
         await planRegistration.Update(dbContext);
     }
@@ -1000,6 +993,15 @@ public class TimePlanningWorkingHoursService(
             : double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture);
 
     /// <summary>
+    /// The DTO-side <see cref="PlanRegistrationHelper.ClearSumFlexSeconds"/>.
+    /// </summary>
+    private static void ClearRowSumFlexSeconds(TimePlanningWorkingHoursModel row)
+    {
+        row.SumFlexStartInSeconds = 0;
+        row.SumFlexEndInSeconds = 0;
+    }
+
+    /// <summary>
     /// Applies the running flex-balance chain over an ordered-by-date list of
     /// working-hours rows. Single source of truth for the flex balance rendered
     /// by both <see cref="Index"/> (web grid) and <see cref="CalculateHoursSummary"/>
@@ -1013,9 +1015,10 @@ public class TimePlanningWorkingHoursService(
     /// For a one-minute row the chain runs in the integer <c>*InSeconds</c> columns
     /// (the source of truth) and back-derives the legacy <c>double</c> SumFlex*
     /// fields via <c>/3600.0</c>; a 5-minute row runs in the legacy rounded doubles
-    /// and its <c>*InSeconds</c> DTO fields are deliberately left untouched (the
-    /// flag-off response stays byte-identical, and ops reads a zero there as the
-    /// signal that the row never ran in one-minute mode). BOTH running accumulators
+    /// and its <c>*InSeconds</c> DTO fields are CLEARED (ops reads a zero there as
+    /// the signal that the row does not carry a seconds balance — echoing back a
+    /// stale value the row happens to still hold in the database is what let the
+    /// displayed balance disagree with the recomputed one). BOTH running accumulators
     /// are nonetheless kept in lockstep after every row, so the balance carries
     /// correctly across a mode boundary in either direction.
     /// </summary>
@@ -1051,6 +1054,7 @@ public class TimePlanningWorkingHoursService(
                     row.SumFlexStart = Math.Round(row.SumFlexStart, 2);
                     row.SumFlexEnd = Math.Round(
                         row.SumFlexStart + row.FlexHours - PaidOutFlexHours(row), 2);
+                    ClearRowSumFlexSeconds(row);
                 }
             }
             else
@@ -1087,6 +1091,8 @@ public class TimePlanningWorkingHoursService(
                         logger.LogError(e.Message);
                         logger.LogTrace(e.StackTrace);
                     }
+
+                    ClearRowSumFlexSeconds(row);
                 }
             }
 
@@ -1285,6 +1291,49 @@ public class TimePlanningWorkingHoursService(
         }
 
         return nettoMinutes;
+    }
+
+    /// <summary>
+    /// The five-minute (flag-off) decimal flex chain used by the FOUR
+    /// mobile/kiosk punch-clock save legs, byte-for-byte the formula they have
+    /// always used — extracted only so the seconds-column clear cannot be
+    /// forgotten by one of them.
+    ///
+    /// INTENTIONAL DIVERGENCE — do not "unify" without a separate change. This
+    /// chain differs from the canonical
+    /// <see cref="PlanRegistrationHelper.ApplyNettoFlexChainDecimal"/> in two
+    /// ways, both deliberate here:
+    ///  1. it does NOT consult <c>NettoHoursOverrideActive</c> — it always
+    ///     chains on the computed netto hours, unlike the one-minute branch of
+    ///     the same fork and unlike every other decimal chain site;
+    ///  2. it associates the arithmetic as
+    ///     <c>SumFlexStart + Flex - PaiedOutFlex</c> rather than
+    ///     <c>SumFlexStart + Netto - PlanHours - PaiedOutFlex</c>, which is the
+    ///     same value in exact arithmetic but can differ in the last bit of a
+    ///     double.
+    /// Unifying them is a candidate follow-up, out of scope here for the reason
+    /// spelled out at the other gated site
+    /// (TimePlanningPlanningService.UpdateByCurrentUserNam). The ONLY new
+    /// behaviour here is the ClearSumFlexSeconds call.
+    /// </summary>
+    private static void ApplyPunchClockFlexChainDecimal(
+        PlanRegistration planRegistration, PlanRegistration? preTimePlanning, double hours)
+    {
+        planRegistration.NettoHours = hours;
+        planRegistration.Flex = hours - planRegistration.PlanHours;
+        if (preTimePlanning != null)
+        {
+            planRegistration.SumFlexEnd =
+                preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
+            planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
+        }
+        else
+        {
+            planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
+            planRegistration.SumFlexStart = 0;
+        }
+
+        PlanRegistrationHelper.ClearSumFlexSeconds(planRegistration);
     }
 
     public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
@@ -1641,27 +1690,20 @@ public class TimePlanningWorkingHoursService(
             // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
             // from DateTime deltas (precise to the second) and write
             // *InSeconds columns as the source of truth; back-derive the
-            // legacy double hour fields. Flag-off path stays byte-identical.
+            // legacy double hour fields.
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
+                // Single-row save, not a loop, so resolving the predecessor here
+                // is not an N+1 — and costs nothing once its marker or the site's
+                // effective date can answer.
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planRegistration, preTimePlanning);
+                    planRegistration, preTimePlanning,
+                    await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(
+                        dbContext, assignedSite, preTimePlanning));
             }
             else
             {
-                planRegistration.NettoHours = hours;
-                planRegistration.Flex = hours - planRegistration.PlanHours;
-                if (preTimePlanning != null)
-                {
-                    planRegistration.SumFlexEnd =
-                        preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                }
-                else
-                {
-                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = 0;
-                }
+                ApplyPunchClockFlexChainDecimal(planRegistration, preTimePlanning, hours);
             }
 
             Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL CREATE: Before planRegistration.Create(dbContext) -- SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
@@ -1942,27 +1984,20 @@ public class TimePlanningWorkingHoursService(
             // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
             // from DateTime deltas (precise to the second) and write
             // *InSeconds columns as the source of truth; back-derive the
-            // legacy double hour fields. Flag-off path stays byte-identical.
+            // legacy double hour fields.
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
+                // Single-row save, not a loop, so resolving the predecessor here
+                // is not an N+1 — and costs nothing once its marker or the site's
+                // effective date can answer.
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planRegistration, preTimePlanning);
+                    planRegistration, preTimePlanning,
+                    await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(
+                        dbContext, assignedSite, preTimePlanning));
             }
             else
             {
-                planRegistration.NettoHours = hours;
-                planRegistration.Flex = hours - planRegistration.PlanHours;
-                if (preTimePlanning != null)
-                {
-                    planRegistration.SumFlexEnd =
-                        preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                }
-                else
-                {
-                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = 0;
-                }
+                ApplyPunchClockFlexChainDecimal(planRegistration, preTimePlanning, hours);
             }
 
             Console.WriteLine($"[DEBUG-GRPC-UPDATE] PERSONAL UPDATE: Before planRegistration.Update(dbContext) -- Id={planRegistration.Id}, SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
@@ -2302,27 +2337,20 @@ public class TimePlanningWorkingHoursService(
             // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
             // from DateTime deltas (precise to the second) and write
             // *InSeconds columns as the source of truth; back-derive the
-            // legacy double hour fields. Flag-off path stays byte-identical.
+            // legacy double hour fields.
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
+                // Single-row save, not a loop, so resolving the predecessor here
+                // is not an N+1 — and costs nothing once its marker or the site's
+                // effective date can answer.
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planRegistration, preTimePlanning);
+                    planRegistration, preTimePlanning,
+                    await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(
+                        dbContext, assignedSite, preTimePlanning));
             }
             else
             {
-                planRegistration.NettoHours = hours;
-                planRegistration.Flex = hours - planRegistration.PlanHours;
-                if (preTimePlanning != null)
-                {
-                    planRegistration.SumFlexEnd =
-                        preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                }
-                else
-                {
-                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = 0;
-                }
+                ApplyPunchClockFlexChainDecimal(planRegistration, preTimePlanning, hours);
             }
 
             Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK CREATE: Before planRegistration.Create(dbContext) -- SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
@@ -2592,27 +2620,20 @@ public class TimePlanningWorkingHoursService(
             // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
             // from DateTime deltas (precise to the second) and write
             // *InSeconds columns as the source of truth; back-derive the
-            // legacy double hour fields. Flag-off path stays byte-identical.
+            // legacy double hour fields.
             if (assignedSite != null && assignedSite.UseOneMinuteIntervals)
             {
+                // Single-row save, not a loop, so resolving the predecessor here
+                // is not an N+1 — and costs nothing once its marker or the site's
+                // effective date can answer.
                 PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision(
-                    planRegistration, preTimePlanning);
+                    planRegistration, preTimePlanning,
+                    await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(
+                        dbContext, assignedSite, preTimePlanning));
             }
             else
             {
-                planRegistration.NettoHours = hours;
-                planRegistration.Flex = hours - planRegistration.PlanHours;
-                if (preTimePlanning != null)
-                {
-                    planRegistration.SumFlexEnd =
-                        preTimePlanning.SumFlexEnd + planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = preTimePlanning.SumFlexEnd;
-                }
-                else
-                {
-                    planRegistration.SumFlexEnd = planRegistration.Flex - planRegistration.PaiedOutFlex;
-                    planRegistration.SumFlexStart = 0;
-                }
+                ApplyPunchClockFlexChainDecimal(planRegistration, preTimePlanning, hours);
             }
 
             Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK UPDATE: Before planRegistration.Update(dbContext) -- Id={planRegistration.Id}, SdkSitId={planRegistration.SdkSitId}, Date={planRegistration.Date:yyyy-MM-dd}, Start1Id={planRegistration.Start1Id}, Stop1Id={planRegistration.Stop1Id}, Pause1Id={planRegistration.Pause1Id}, Start1StartedAt={planRegistration.Start1StartedAt}, Stop1StoppedAt={planRegistration.Stop1StoppedAt}, NettoHours={planRegistration.NettoHours}");
@@ -3914,6 +3935,17 @@ public class TimePlanningWorkingHoursService(
                             continue;
                         }
 
+                        // ONE timeline per sheet (= per site), built BEFORE the row
+                        // loop and never per row. The update leg below may only clear
+                        // a row's seconds columns once it knows the row ran in
+                        // five-minute mode — see the INVERTED-SUMFLEX-SIGN note there.
+                        var importAssignedSite = await dbContext.AssignedSites
+                            .AsNoTracking()
+                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                            .FirstOrDefaultAsync(x => x.SiteId == site.MicrotingUid);
+                        var importTimeline =
+                            await OneMinuteModeTimeline.BuildAsync(dbContext, importAssignedSite);
+
                         var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
                         var sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
 
@@ -4036,6 +4068,18 @@ public class TimePlanningWorkingHoursService(
                                         planRegistration.PaiedOutFlex;
                                     planRegistration.SumFlexStart = 0;
                                     planRegistration.Flex = planRegistration.NettoHours - planRegistration.PlanHours;
+                                }
+
+                                // KNOWN BUG, UNFIXED AND OUT OF SCOPE HERE — search
+                                // tag: INVERTED-SUMFLEX-SIGN. This leg carries the
+                                // same inverted SumFlexEnd sign as
+                                // GoogleSheetHelper.PushToGoogleSheet's update leg;
+                                // that site holds the full explanation and the reason
+                                // the clear below MUST stay mode-gated. A one-minute
+                                // row keeps its seconds untouched here.
+                                if (!importTimeline.WasOneMinuteForRow(planRegistration))
+                                {
+                                    PlanRegistrationHelper.ClearSumFlexSeconds(planRegistration);
                                 }
 
                                 await planRegistration.Update(dbContext);

@@ -275,8 +275,12 @@ public class TimePlanningFlexService(
         // the payout delta twice.
         var rowIsOneMinute = await OneMinuteModeTimeline.ResolveRowModeAsync(
             dbContext, assignedSite, planRegistration);
-        var oldSumFlexEndSeconds =
-            PlanRegistrationHelper.SumFlexEndSecondsWithFallback(planRegistration);
+        // Only the one-minute branch consumes this. On a five-minute row the
+        // fallback would read exactly the stale column this change exists to
+        // distrust, so do not read it at all there.
+        var oldSumFlexEndSeconds = rowIsOneMinute
+            ? PlanRegistrationHelper.SumFlexEndSecondsWithFallback(planRegistration)
+            : 0;
 
         planRegistration.SumFlexEnd += planRegistration.PaiedOutFlex - model.PaidOutFlex;
 
@@ -284,6 +288,11 @@ public class TimePlanningFlexService(
         {
             planRegistration.SumFlexEndInSeconds =
                 oldSumFlexEndSeconds + oldPaiedOutFlexSeconds - newPaiedOutFlexSeconds;
+        }
+        else
+        {
+            // Five-minute row: the adjusted decimal above is the whole balance.
+            PlanRegistrationHelper.ClearSumFlexSeconds(planRegistration);
         }
 
         planRegistration.PaiedOutFlex = model.PaidOutFlex;

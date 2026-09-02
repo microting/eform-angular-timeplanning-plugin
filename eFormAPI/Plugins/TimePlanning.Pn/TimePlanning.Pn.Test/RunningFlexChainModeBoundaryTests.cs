@@ -18,8 +18,10 @@ namespace TimePlanning.Pn.Test;
 /// The chain forks per row: a one-minute row runs in the integer
 /// <c>*InSeconds</c> columns and back-derives the doubles; a five-minute row
 /// runs in the legacy 2-decimal doubles and its <c>*InSeconds</c> DTO fields are
-/// deliberately NOT written (the flag-off response stays byte-identical, and ops
-/// reads a zero there as the signal that the row never ran in one-minute mode).
+/// CLEARED (ops reads a zero there as the signal that the row does not carry a
+/// seconds balance — echoing back a stale value the database row still holds
+/// from an earlier one-minute write is what let the displayed balance disagree
+/// with the recomputed one).
 /// Both running accumulators are nonetheless advanced on every row so the
 /// balance carries across the boundary — that hand-off is what these tests pin.
 ///
@@ -51,7 +53,7 @@ public class RunningFlexChainModeBoundaryTests
 
     private static TimePlanningWorkingHoursModel FiveMinuteRow(
         int dayOfMonth, double flexHours, string paidOutFlex = "0",
-        double sumFlexStart = 0, int sumFlexEndInSeconds = 0)
+        double sumFlexStart = 0, int sumFlexStartInSeconds = 0, int sumFlexEndInSeconds = 0)
         => new()
         {
             Date = new DateTime(2026, 6, dayOfMonth),
@@ -59,6 +61,7 @@ public class RunningFlexChainModeBoundaryTests
             FlexHours = flexHours,
             PaidOutFlex = paidOutFlex,
             SumFlexStart = sumFlexStart,
+            SumFlexStartInSeconds = sumFlexStartInSeconds,
             SumFlexEndInSeconds = sumFlexEndInSeconds
         };
 
@@ -115,8 +118,8 @@ public class RunningFlexChainModeBoundaryTests
             Assert.That(rows[2].SumFlexEnd, Is.EqualTo(rows[2].SumFlexEndInSeconds / 3600.0));
             Assert.That(rows[3].SumFlexEnd, Is.EqualTo(rows[3].SumFlexEndInSeconds / 3600.0));
 
-            // Five-minute rows keep their *InSeconds DTO fields untouched — by
-            // design, not by omission (see the fixture summary).
+            // Five-minute rows carry no seconds — by design, not by omission
+            // (see the fixture summary).
             Assert.That(rows[0].SumFlexEndInSeconds, Is.EqualTo(0));
             Assert.That(rows[1].SumFlexEndInSeconds, Is.EqualTo(0));
         });
@@ -184,11 +187,13 @@ public class RunningFlexChainModeBoundaryTests
     ///          SumFlexEnd   = Round(1.23 + 2.5 - 0.25, 2) = 3.48
     ///   row 1: SumFlexEnd   = Round(3.48 - 1.1 - 0, 2)    = 2.38
     ///   row 2: SumFlexEnd   = Round(2.38 + 0.333333 - 0.5, 2) = 2.21
-    /// The sentinel <c>*InSeconds</c> values prove the seconds bookkeeping added
-    /// for the boundary hand-off writes nothing on a five-minute row.
+    /// The sentinel <c>*InSeconds</c> values prove a five-minute row is returned
+    /// carrying NO seconds balance: whatever the database row still holds from an
+    /// earlier one-minute write is cleared, so no consumer — and no later
+    /// recompute seeded off this response — can mistake it for a live balance.
     /// </summary>
     [Test]
-    public void UniformlyFiveMinute_MatchesTheLegacyFormulasAndWritesNoSeconds()
+    public void UniformlyFiveMinute_MatchesTheLegacyFormulasAndClearsSeconds()
     {
         const int sentinel = 424242;
         var rows = new List<TimePlanningWorkingHoursModel>
@@ -217,8 +222,10 @@ public class RunningFlexChainModeBoundaryTests
 
             foreach (var row in rows)
             {
-                Assert.That(row.SumFlexStartInSeconds, Is.EqualTo(sentinel));
-                Assert.That(row.SumFlexEndInSeconds, Is.EqualTo(sentinel));
+                Assert.That(row.SumFlexStartInSeconds, Is.EqualTo(0),
+                    "The sentinel must not survive: a five-minute row carries "
+                    + "its balance in the decimals only.");
+                Assert.That(row.SumFlexEndInSeconds, Is.EqualTo(0));
             }
         });
     }
@@ -264,6 +271,39 @@ public class RunningFlexChainModeBoundaryTests
             Assert.That(rows[0].SumFlexStartInSeconds, Is.EqualTo(7200),
                 "A populated seconds column is the source of truth.");
             Assert.That(rows[0].SumFlexEndInSeconds, Is.EqualTo(7200));
+        });
+    }
+
+    /// <summary>
+    /// The display-side twin of the persisted defect (tenant 994, site 21445):
+    /// a five-minute row whose <c>SumFlexEndInSeconds</c> still holds an older
+    /// one-minute write's value — -290456 s (-80.68 h) against a real decimal
+    /// balance of -3.97 h. The chain must return it cleared, and the following
+    /// one-minute row must open on the DECIMAL, not on the residue.
+    /// </summary>
+    [Test]
+    public void FiveMinuteRowWithStaleSeconds_IsClearedAndDoesNotPoisonTheBoundary()
+    {
+        var rows = new List<TimePlanningWorkingHoursModel>
+        {
+            FiveMinuteRow(1, flexHours: -7.58, sumFlexStart: 3.61,
+                sumFlexStartInSeconds: -263168, sumFlexEndInSeconds: -290456),
+            OneMinuteRow(2, flexInSeconds: 0)
+        };
+
+        _service.ApplyRunningFlexChain(rows, UnusedTimeline);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rows[0].SumFlexEnd, Is.EqualTo(-3.97).Within(1e-9),
+                "3.61 - 7.58 — the real closing balance.");
+            Assert.That(rows[0].SumFlexStartInSeconds, Is.EqualTo(0));
+            Assert.That(rows[0].SumFlexEndInSeconds, Is.EqualTo(0),
+                "-290456 s was residue, not a balance.");
+
+            Assert.That(rows[1].SumFlexStartInSeconds, Is.EqualTo(-14292),
+                "The next row opens on -3.97 h, NOT on -80.68 h.");
+            Assert.That(rows[1].SumFlexEnd, Is.EqualTo(-3.97).Within(0.001));
         });
     }
 
