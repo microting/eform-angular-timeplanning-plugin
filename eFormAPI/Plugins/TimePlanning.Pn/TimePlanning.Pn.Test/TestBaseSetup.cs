@@ -122,8 +122,36 @@ public abstract class TestBaseSetup
         return new TimePlanningPnDbContext(optionsBuilder.Options);
     }
 
+    /// <summary>
+    /// Provisions the SDK database (420_SDK) the first time it is needed and
+    /// memoizes the result for the lifetime of this fixture instance. This is
+    /// expensive (SQL dump load + EF migrations, tens of seconds) and is only
+    /// required by tests that call <see cref="GetCore"/>; classes that never
+    /// call it must not pay this cost in every [SetUp].
+    /// </summary>
+    private async Task EnsureSdkDbProvisionedAsync()
+    {
+        if (MicrotingDbContext != null)
+        {
+            return;
+        }
+
+        if (_mariadbTestcontainer.State == TestcontainersStates.Undefined)
+        {
+            await _mariadbTestcontainer.StartAsync();
+        }
+
+        var dbContext = GetContext(_mariadbTestcontainer.GetConnectionString());
+        dbContext.Database.SetCommandTimeout(300);
+        MicrotingDbContext = dbContext;
+    }
+
     protected async Task<Core> GetCore()
     {
+        // Core.StartSqlOnly only connects and validates settings - it does not
+        // migrate - so the SDK database must already be provisioned before it runs.
+        await EnsureSdkDbProvisionedAsync();
+
         var core = new Core();
         await core.StartSqlOnly(_mariadbTestcontainer.GetConnectionString().Replace("myDb", "420_SDK")
             .Replace("bla", "root"));
@@ -138,29 +166,17 @@ public abstract class TestBaseSetup
             await _mariadbTestcontainer.StartAsync();
         }
 
-        // ConnectionString = _mariadbTestcontainer.GetConnectionString();
-
-        var DbContext = GetContext(_mariadbTestcontainer.GetConnectionString());
-
-        DbContext!.Database.SetCommandTimeout(300);
-        // Console.WriteLine($"{DateTime.Now} : Starting MariaDb Container...");
-        // await _mariadbTestcontainer.StartAsync();
-        // Console.WriteLine($"{DateTime.Now} : Started MariaDb Container");
-        //
         TimePlanningPnDbContext = GetTimePlanningPnDbContext(_mariadbTestcontainer.GetConnectionString());
-        //
-        // TimePlanningPnDbContext!.Database.SetCommandTimeout(300);
-        //
-        // MicrotingDbContext = GetContext(_mariadbTestcontainer.GetConnectionString());
-        //
-        // MicrotingDbContext!.Database.SetCommandTimeout(300);
-
     }
 
     [OneTimeTearDown]
     public async Task OneTimeTearDown()
     {
         Console.WriteLine($"{DateTime.Now} : Stopping MariaDb Container...");
+        if (MicrotingDbContext != null)
+        {
+            await MicrotingDbContext.DisposeAsync();
+        }
         await _mariadbTestcontainer.StopAsync();
         await _mariadbTestcontainer.DisposeAsync();
         Console.WriteLine($"{DateTime.Now} : Stopped MariaDb Container");
