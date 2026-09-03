@@ -124,26 +124,32 @@ public abstract class TestBaseSetup
 
     /// <summary>
     /// Provisions the SDK database (420_SDK) the first time it is needed and
-    /// memoizes the result for the lifetime of this fixture instance. This is
-    /// expensive (SQL dump load + EF migrations, tens of seconds) and is only
-    /// required by tests that call <see cref="GetCore"/>; classes that never
-    /// call it must not pay this cost in every [SetUp].
+    /// memoizes the schema/connection for the lifetime of this fixture
+    /// instance — <see cref="MicrotingDbContext.Database.Migrate"/> (~44-48s)
+    /// is the expensive part and only needs to run ONCE per fixture, not once
+    /// per test. On every call after the first, the SDK *data* is reset by
+    /// replaying the SQL dump (~7s) without re-running Migrate(), so every
+    /// test that calls <see cref="GetCore"/> still gets an isolated SDK
+    /// database — classes that never call GetCore() pay neither cost.
     /// </summary>
     private async Task EnsureSdkDbProvisionedAsync()
     {
-        if (MicrotingDbContext != null)
-        {
-            return;
-        }
-
         if (_mariadbTestcontainer.State == TestcontainersStates.Undefined)
         {
             await _mariadbTestcontainer.StartAsync();
         }
 
-        var dbContext = GetContext(_mariadbTestcontainer.GetConnectionString());
-        dbContext.Database.SetCommandTimeout(300);
-        MicrotingDbContext = dbContext;
+        if (MicrotingDbContext == null)
+        {
+            var dbContext = GetContext(_mariadbTestcontainer.GetConnectionString());
+            dbContext.Database.SetCommandTimeout(300);
+            MicrotingDbContext = dbContext;
+            return;
+        }
+
+        var file = Path.Combine("SQL", "420_SDK.sql");
+        var rawSql = await File.ReadAllTextAsync(file);
+        await MicrotingDbContext.Database.ExecuteSqlRawAsync(rawSql);
     }
 
     protected async Task<Core> GetCore()

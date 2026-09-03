@@ -2742,6 +2742,29 @@ INSERT INTO `Workers` VALUES (1,'2022-09-21 06:00:56.725618','2023-05-11 11:55:3
 /*!40000 ALTER TABLE `Workers` ENABLE KEYS */;
 UNLOCK TABLES;
 
+--
+-- Table structure for table `__EFMigrationsHistory`
+--
+
+DROP TABLE IF EXISTS `__EFMigrationsHistory`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `__EFMigrationsHistory` (
+  `MigrationId` varchar(150) NOT NULL,
+  `ProductVersion` varchar(32) NOT NULL,
+  PRIMARY KEY (`MigrationId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `__EFMigrationsHistory`
+--
+
+LOCK TABLES `__EFMigrationsHistory` WRITE;
+/*!40000 ALTER TABLE `__EFMigrationsHistory` DISABLE KEYS */;
+INSERT INTO `__EFMigrationsHistory` VALUES ('20180810124416_InitialCreate','6.0.8'),('20190116110009_AddingOriginalId','6.0.8'),('20190315092242_AddingModelseForInsight','6.0.8'),('20190318122928_FixingNamingOfSurveyConfigurationSites','6.0.8'),('20190319130214_AddingMissingForeignKeys','6.0.8'),('20190408081151_AddingFolders','6.0.8'),('20190408084408_AddingMissingParentId','6.0.8'),('20190509074123_RefactoringidtoId','6.0.8'),('20190514053645_RefactoringAttributeNames','6.0.8'),('20190515064952_FixingNamingForFieldValues','6.0.8'),('20190531092007_AddingMissingAIonLogs','6.0.8'),('20190711053344_AddingJasperDocxEnabledAttributesToCheckList','6.0.8'),('20190828054730_AddingNewVersionClasses','6.0.8'),('20190828074017_AddingMissingClasses','6.0.8'),('20190923100451_ChangeStringToInt','6.0.8'),('20190924172326_AddingNewIndexOnCases','6.0.8'),('20200116074236_AddingSiteTaggins','6.0.8'),('20200120093951_CleanupInSight','6.0.8'),('20200120164857_AddingTranslationsToInSight','6.0.8'),('20200120171433_AddingMicrotingUidToInSight','6.0.8'),('20200122103229_ChangingValueToBeStringForAnswerValue','6.0.8'),('20200222140656_AddinDisplayIndexToOptions','6.0.8'),('20200224084023_AddingAttributesToUnits','6.0.8'),('20200224092512_AddingMoreAttributesToUnits','6.0.8'),('20200226182616_MakingNextQuestionIdNullable','6.0.8'),('20200318150742_MakingUnitIdNullableForAnswers','6.0.8'),('20200427095029_AdjustTimeToUTC','6.0.8'),('20200513142551_AddingFolderIdToCasesAndCheckListSites','6.0.8'),('20200617160004_ChangingOptionsIndexToOptionIndex','6.0.8'),('20200620171527_AddingExcelExportEnabledToCheckList','6.0.8'),('20200701101500_LettingSurveyConfigurationIdBeNullable','6.0.8'),('20201116164405_AddingDescriptionToEntityGroup','6.0.8'),('20201130204234_FixingSplitScreen','6.0.8'),('20201220194822_FixingTableColumnNames','6.0.8'),('20201220201427_FixingQuestionSet','6.0.8'),('20201222125152_HugheTableRenaming','6.0.8'),('20201223104631_AddingTranslations','6.0.8'),('20201225165255_FixingBrokenTableNames','6.0.8'),('20201231062732_ChangingDescriptToLanguageCode','6.0.8'),('20210405153325_AddingExtraFieldValues','6.0.8'),('20210407134630_AddingFolderTranslations','6.0.8'),('20210609072417_AddingLinkingOfSitesAndEntities','6.0.8'),('20210730085329_AddingDefaultValueToFieldTranslations','6.0.8'),('20211014105943_CLAttributes','6.0.8'),('20211108111024_AddingIsArchivedToCases','6.0.8'),('20211116085744_AddingDoneAtEditable','6.0.8'),('20220207094729_AddingIsLockedToSiteUnitWorkers','6.0.8'),('20221016081344_AddingIsActiveToLanguage','7.0.0'),('20221129082337_AddingReceivedByServerAtToCases','7.0.0'),('20230506062507_AddingInitialsToWorkers','7.0.5'),('20230607084834_AddingOriginalFileLocationToUploadedData','8.0.6'),('20240619132520_AddPinCodeEmployeeNoToWorker','8.0.6');
+/*!40000 ALTER TABLE `__EFMigrationsHistory` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
