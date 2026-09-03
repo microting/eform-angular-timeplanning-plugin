@@ -127,10 +127,12 @@ public abstract class TestBaseSetup
     /// memoizes the schema/connection for the lifetime of this fixture
     /// instance — <see cref="MicrotingDbContext.Database.Migrate"/> (~44-48s)
     /// is the expensive part and only needs to run ONCE per fixture, not once
-    /// per test. On every call after the first, the SDK *data* is reset by
-    /// replaying the SQL dump (~7s) without re-running Migrate(), so every
-    /// test that calls <see cref="GetCore"/> still gets an isolated SDK
-    /// database — classes that never call GetCore() pay neither cost.
+    /// per test. This method ONLY provisions; it never resets SDK data, so
+    /// calling <see cref="GetCore"/> more than once within a single test is
+    /// harmless. Per-test data isolation is handled separately, in
+    /// <see cref="Setup"/> (see ResetSdkDbDataAsync below) — resetting here,
+    /// on every call, wiped out data a test had just written via an earlier
+    /// GetCore() call in the same test (Stage 0 review round 2).
     /// </summary>
     private async Task EnsureSdkDbProvisionedAsync()
     {
@@ -144,18 +146,31 @@ public abstract class TestBaseSetup
             var dbContext = GetContext(_mariadbTestcontainer.GetConnectionString());
             dbContext.Database.SetCommandTimeout(300);
             MicrotingDbContext = dbContext;
-            return;
         }
+    }
 
+    /// <summary>
+    /// Resets SDK *data* to the dump's known-good snapshot (~7s) by
+    /// replaying the SQL dump against the already-migrated schema, WITHOUT
+    /// re-running Migrate() (~44-48s, kept once-per-fixture). Called once per
+    /// test from <see cref="Setup"/> — not from <see cref="GetCore"/> — so a
+    /// test that calls GetCore() more than once doesn't have its own SDK
+    /// writes wiped out mid-test, while every *new* test still starts from
+    /// clean SDK data.
+    /// </summary>
+    private async Task ResetSdkDbDataAsync()
+    {
         var file = Path.Combine("SQL", "420_SDK.sql");
         var rawSql = await File.ReadAllTextAsync(file);
-        await MicrotingDbContext.Database.ExecuteSqlRawAsync(rawSql);
+        await MicrotingDbContext!.Database.ExecuteSqlRawAsync(rawSql);
     }
 
     protected async Task<Core> GetCore()
     {
         // Core.StartSqlOnly only connects and validates settings - it does not
         // migrate - so the SDK database must already be provisioned before it runs.
+        // This only provisions (once per fixture) and never resets data -- see
+        // EnsureSdkDbProvisionedAsync's doc comment.
         await EnsureSdkDbProvisionedAsync();
 
         var core = new Core();
@@ -170,6 +185,17 @@ public abstract class TestBaseSetup
         if (_mariadbTestcontainer.State == TestcontainersStates.Undefined)
         {
             await _mariadbTestcontainer.StartAsync();
+        }
+
+        // Reset SDK data once per test -- but only if an earlier test in this
+        // fixture already provisioned it (MicrotingDbContext != null). On the
+        // first test of a fixture, provisioning (triggered lazily by that
+        // test's own GetCore() call, if it makes one) already leaves the SDK
+        // database freshly loaded from the dump, so resetting here too would
+        // just be a redundant ~7s replay.
+        if (MicrotingDbContext != null)
+        {
+            await ResetSdkDbDataAsync();
         }
 
         TimePlanningPnDbContext = GetTimePlanningPnDbContext(_mariadbTestcontainer.GetConnectionString());
