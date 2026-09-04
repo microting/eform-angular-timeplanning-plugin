@@ -38,7 +38,7 @@ export const da: HelpProseMap = {
       'Sæt flueben ved Fridag, eller ved Afspadsering hvis dagen er aftalt som afspadsering.',
       'Klik Gem. Dagen tæller nu som nul timer.',
     ],
-    detail: 'En dag har kun én dagtype ad gangen — et flueben ved Fridag eller Afspadsering fjerner den type, der stod før. De to sætter begge dagen til nul timer, mens Ferie, Syg, Kursus og de øvrige dagtyper beholder de planlagte timer. Det er den forskel, man skal holde øje med.',
+    detail: 'En dag har kun én dagtype ad gangen — et flueben ved Fridag eller Afspadsering fjerner den type, der stod før. De to sætter begge dagen til nul timer, mens Ferie, Syg, Kursus og de øvrige dagtyper beholder de planlagte timer. Vær især opmærksom på Ferie fridag: trods navnet beholder den de planlagte timer i stedet for at sætte dagen til nul timer.',
     keywords: ['fridag', 'fri', 'afspadsering', 'afspadsere', 'nul timer', 'ikke på arbejde', 'hjemme', 'holder fri'],
   },
   'task.correctRegisteredTime': {
@@ -320,7 +320,7 @@ export const da: HelpProseMap = {
   'dayCell.nettoOverride': {
     title: 'Netto timer overskrivning',
     short: 'Hvad dagen skal tælle som, når det ikke skal være de timer, der blev registreret. Feltet vises kun, når der er sat en overskrivning på dagen.',
-    detail: 'Sætter du en dagtype, udfyldes feltet for dig: Fridag og Afspadsering sætter det til nul, og alle andre dagtyper sætter det til de timer, der var planlagt for dagen. Du kan også skrive en værdi selv. Skemaet viser så dette tal som dagens timer i stedet for den registrerede total.',
+    detail: 'Sætter du en dagtype, udfyldes feltet for dig: Fridag og Afspadsering sætter det til nul, og alle andre dagtyper — også Ferie fridag, trods navnet — sætter det til de timer, der var planlagt for dagen. Du kan også skrive en værdi selv. Skemaet viser så dette tal som dagens timer i stedet for den registrerede total.',
     keywords: ['netto', 'nettotimer', 'overskrivning', 'tæller som', 'korrektion', 'rettelse', 'manuelle timer', 'fast timetal'],
   },
   'dayCell.paidOutFlex': {
@@ -332,7 +332,7 @@ export const da: HelpProseMap = {
   'dayCell.flags': {
     title: 'Dagtype',
     short: 'Markerer hvad det er for en slags dag — ferie, sygdom, kursus og så videre. De ligner afkrydsningsfelter, men en dag har kun én dagtype ad gangen: sætter du et nyt flueben, forsvinder det forrige.',
-    detail: 'Fluebenet bestemmer også, hvad dagen tæller som. Fridag og Afspadsering sætter dagen til nul timer. Ferie, Syg, Kursus, Orlov, Barns 1. sygedag, Barns 2. sygedag, Ferie fridag, Barselsorlov, Helligdag og Graviditetsbetinget fravær sætter den derimod til de timer, der var planlagt for dagen. Fridag og Ferie står lige ved siden af hinanden øverst i listen og gør det stik modsatte af hinanden, så vælg den, der passer til, hvad dagen skal tælle som. Vær også opmærksom på Ferie fridag: den lyder som en fridag, men opfører sig som Ferie og beholder de planlagte timer. Fjerner du fluebenet igen, forsvinder den indstilling.',
+    detail: 'Fluebenet bestemmer også, hvad dagen tæller som. Fridag og Afspadsering sætter dagen til nul timer. Ferie, Syg, Kursus, Orlov, Barns 1. sygedag, Barns 2. sygedag, Ferie fridag, Barselsorlov, Helligdag og Graviditetsbetinget fravær sætter den derimod til de timer, der var planlagt for dagen. Hold især øje med navnene: Ferie fridag lyder som Fridag og Afspadsering, men gør det modsatte af dem begge — den beholder de planlagte timer, hvor de to sætter dagen til nul timer. Vælg den type, der passer til, hvad dagen skal tælle som. Fjerner du fluebenet igen, forsvinder den indstilling.',
     keywords: ['dagtype', 'ferie', 'sygdom', 'syg', 'kursus', 'barsel', 'orlov', 'helligdag', 'afspadsering', 'fridag', 'feriefridag', 'fravær', 'flueben', 'markér dag'],
   },
   'dayCell.commentOffice': {

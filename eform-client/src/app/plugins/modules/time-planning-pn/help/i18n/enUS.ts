@@ -11,7 +11,7 @@ export const enUS: HelpProseMap = {
       'Click Save. The day now counts as the planned hours.',
       'Repeat for each vacation day.',
     ],
-    detail: 'A day carries one day type at a time — ticking Vacation clears any other type already set. Use Vacation day off instead if the day should count as zero hours.',
+    detail: 'A day carries one day type at a time — ticking Vacation clears any other type already set. Use Day off or Vacation day off instead if the day should count as zero hours.',
     keywords: ['vacation', 'holiday', 'time off', 'leave', 'absent', 'away', 'ferie', 'annual leave'],
   },
   'task.registerSickness': {
@@ -34,7 +34,7 @@ export const enUS: HelpProseMap = {
       'Tick Day off, or Vacation day off if it comes out of the vacation balance.',
       'Click Save. The day now counts as zero hours.',
     ],
-    detail: 'A day carries one day type at a time — ticking Day off or Vacation day off clears any other type already set. Both of them set the day to zero hours, while Vacation, sickness, course and the other day types keep the planned hours instead. This is the difference to watch for.',
+    detail: 'A day carries one day type at a time — ticking Day off or Vacation day off clears any other type already set. Both of them set the day to zero hours, while Vacation, sickness, course and the other day types keep the planned hours instead. Time off is the one to watch: despite the name it keeps the planned hours, like Vacation, rather than zeroing the day.',
     keywords: ['day off', 'off', 'free', 'not working', 'zero hours', 'vacation day off', 'rest day'],
   },
   'task.correctRegisteredTime': {
@@ -316,7 +316,7 @@ export const enUS: HelpProseMap = {
   'dayCell.nettoOverride': {
     title: 'Netto hours override',
     short: 'What the day counts as, when it should not be the hours that were registered. The field appears only when an override is in force on the day.',
-    detail: 'Ticking a day type sets this for you: Day off and Vacation day off set it to zero, and every other type sets it to the hours planned for the day. You can also type a value in yourself. The grid then shows this figure as the day\'s hours instead of the registered total.',
+    detail: 'Ticking a day type sets this for you: Day off and Vacation day off set it to zero, and every other type — Time off included, despite its name — sets it to the hours planned for the day. You can also type a value in yourself. The grid then shows this figure as the day\'s hours instead of the registered total.',
     keywords: ['netto', 'override', 'counts as', 'adjust', 'correction', 'manual hours', 'net hours', 'force', 'set hours'],
   },
   'dayCell.paidOutFlex': {
@@ -328,7 +328,7 @@ export const enUS: HelpProseMap = {
   'dayCell.flags': {
     title: 'Day type',
     short: 'Marks what kind of day this is — vacation, sickness, course and so on. They look like checkboxes, but a day carries only one type at a time: ticking a new one unticks the previous one.',
-    detail: 'Ticking a type also sets what the day counts as. Day off and Vacation day off set it to zero hours. Vacation, Sick, Course, Leave of absence, Children 1st sick day, Children 2st sick day, Time off, Maternity leave, Holiday and Pregnancy-related absence all set it to the hours planned for that day. So Vacation and Vacation day off sit next to each other and do the opposite of one another — pick the one that matches what the day should count as. Unticking the type again removes that setting.',
+    detail: 'Ticking a type also sets what the day counts as. Day off and Vacation day off set it to zero hours. Vacation, Sick, Course, Leave of absence, Children 1st sick day, Children 2st sick day, Time off, Maternity leave, Holiday and Pregnancy-related absence all set it to the hours planned for that day. Watch the names: Time off reads like Day off and Vacation day off, but it does the opposite of both — it keeps the planned hours where they set the day to zero. Pick the type that matches what the day should count as. Unticking the type again removes that setting.',
     keywords: ['day type', 'vacation', 'sickness', 'sick', 'course', 'maternity', 'leave', 'holiday', 'flag', 'absence', 'checkbox', 'day off', 'time off', 'mark day'],
   },
   'dayCell.commentOffice': {
