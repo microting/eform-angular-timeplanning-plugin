@@ -12,7 +12,7 @@ netto hours, the difference between planned and actual times, what saving actual
 triggers — none of it is written down anywhere the user can reach. Customer support
 answers the same questions repeatedly.
 
-The page carries 67 `matTooltip`s, but they are icon labels ("Download Excel",
+The page carries 75 `matTooltip`s, but they are icon labels ("Download Excel",
 "Reload table"), not explanations. There is no help affordance of any kind — no `?`
 button, no popover, no tour — anywhere in either repo.
 
@@ -27,12 +27,12 @@ once appears everywhere a user might look for it.
 ## What a non-admin can actually do
 
 The planning page is **not admin-gated**. Its route guard requires only the
-`time_planning_plugin_access` claim (`time-planning-pn.routing.ts:18-24`). Inside the
+`time_planning_plugin_access` claim (`time-planning-pn.routing.ts:19-24`). Inside the
 page, exactly two things are admin-only:
 
 | Control | Gate |
 |---|---|
-| Export to payroll button | `time-plannings-container.component.html:87`, and server-side via `PayrollExportController.cs:12` |
+| Export to payroll button | `time-plannings-container.component.html:88`, and server-side via `PayrollExportController.cs:12` |
 | Assigned-site dialog (click on worker name) | `time-plannings-table.component.ts:370-372`, **client-side only** — the endpoint it calls checks the `GetWorkingHours` claim, not the admin role |
 
 Everything else — filters, navigation, Excel download, reload, and the entire day-cell
@@ -128,10 +128,21 @@ English.
 | Inline hint | `<tp-help-hint helpId>` | `short` |
 
 **ⓘ icon.** A small `mat-icon-button` whose `aria-label` comes from the entry. Opens a
-CDK connected overlay using `cdkConnectedOverlayUsePopover="inline"`, which renders
-into the browser top layer. This matters because roughly half the help lives inside a
-`MatDialog`: a body-appended overlay would fight the dialog's own z-index and focus
-trap. Dismissed on Escape, backdrop click, and scroll.
+`cdkConnectedOverlay` anchored to the button via `cdkOverlayOrigin`, with a transparent
+backdrop, a close-on-scroll strategy, and fallback positions. Dismissed on Escape
+(`overlayKeydown`), backdrop click, and scroll.
+
+This has to work inside a `MatDialog`, because roughly half the help lives in one. It
+does: CDK appends every overlay to the same `.cdk-overlay-container`, and an overlay
+opened while a dialog is up is appended after the dialog pane, so it stacks above it.
+The proof is already in these two dialogs — `AssignedSiteDialogComponent` and
+`WorkdayEntityDialogComponent` between them host 23 overlay-based controls
+(`ngx-material-timepicker`, `matDatepicker`, `mtx-select`) that open correctly today.
+
+Note for the implementer: `cdkConnectedOverlayUsePopover` (native top-layer rendering)
+does **not** exist in the installed `@angular/cdk` **20.2.14** — it is a later addition.
+Do not reach for it; the standard overlay container behaviour described above is what
+this design relies on.
 
 **Search.** A field at the top of the panel, focused when the panel is opened from the
 `?` button. With no query the panel shows its normal grouped browse view; search is
@@ -172,9 +183,11 @@ whose anchor is absent from the DOM is skipped, not treated as an error** — th
 required, because the worker select only renders when `availableSites.length > 1` and
 the payroll button only renders for admins.
 
-**Inline hint.** Renders the pattern already used ~8 times in this plugin — a
-`div.help-text` containing `mat-icon>info` and a span (see
-`pay-day-rule-form.component.html:104-107`). Used where the page currently explains
+**Inline hint.** Renders the plugin's existing `div.help-text` pattern — a
+`mat-icon>info` beside a span. It is used in exactly two places today
+(`pay-day-rule-form.component.html:105-108` and
+`day-type-rule-dialog.component.html:161`), so this work both reuses and
+standardises it. Used where the page currently explains
 nothing:
 
 - Fields disabled because the date is in the future
@@ -227,7 +240,8 @@ this is the single most valuable thing the help system can say.
 The full flag set is `TimePlanningMessagesEnum`: `DayOff`, `Vacation`, `Sick`,
 `Course`, `LeaveOfAbsence`, `Children1stSick`, `Children2stSick`, `TimeOff`,
 `Maternity`, `VacationDayOff`, `Holiday`, `PregnancyLeave`. `Blank` and `Care` are
-excluded from the UI (`:241-242`) and get no entries.
+excluded from the UI (`:242`) and get no entries. Note that `Care` is not a member of
+`TimePlanningMessagesEnum` at all — that half of the check is dead defensive code.
 
 ### `toolbar` — controls (9)
 
