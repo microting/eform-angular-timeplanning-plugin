@@ -28,14 +28,24 @@ describe('HelpSearchService', () => {
 
   it('folds diacritics so ae matches æ', () => {
     const service = make('da');
-    const withLigature = service.search('læge', { isAdmin: false }).map(r => r.entry.id);
-    const folded = service.search('laege', { isAdmin: false }).map(r => r.entry.id);
-    expect(folded).toEqual(withLigature);
+    const withLigature = service.search('fravær', { isAdmin: false });
+    const folded = service.search('fraVAER', { isAdmin: false }).map(r => r.entry.id);
+    // Assert both searches return non-empty, so a content edit removing diacritics
+    // from keywords cannot make this test pass without verifying the match.
+    expect(withLigature.length).toBeGreaterThan(0);
+    expect(folded.length).toBeGreaterThan(0);
+    expect(folded).toEqual(withLigature.map(r => r.entry.id));
   });
 
   it('folds ø and å', () => {
     const service = make('da');
-    expect(service.search('sygdom', { isAdmin: false }).length).toBeGreaterThan(0);
+    // ø: løn folds to lon
+    const withø = service.search('løn', { isAdmin: false });
+    const withoø = service.search('lon', { isAdmin: false }).map(r => r.entry.id);
+    expect(withø.length).toBeGreaterThan(0);
+    expect(withoø.length).toBeGreaterThan(0);
+    expect(withoø).toEqual(withø.map(r => r.entry.id));
+    // å: årstid folds to arstid
     expect(service.search('arstid', { isAdmin: false })).toEqual(
       service.search('årstid', { isAdmin: false }),
     );
