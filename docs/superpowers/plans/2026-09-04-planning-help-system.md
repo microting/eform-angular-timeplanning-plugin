@@ -2529,7 +2529,7 @@ At the end of the container template, outside `eform-new-subheader`:
 
 ```html
 <tp-help-panel [isAdmin]="isAdmin" (replayTourRequested)="replayPageTour()"></tp-help-panel>
-<tp-help-tour tour="page" [isAdmin]="isAdmin"></tp-help-tour>
+<tp-help-tour tour="page"></tp-help-tour>
 ```
 
 Every `tp-help-icon` on the page binds its `openInPanel` output so the popover's
@@ -2588,10 +2588,10 @@ Then, at the end of the dialog template:
 
 ```html
 <tp-help-hint helpId="dayCell.futureDisabled" tone="warn" *ngIf="isInTheFuture"></tp-help-hint>
-<tp-help-tour tour="dialog" [isAdmin]="false"></tp-help-tour>
+<tp-help-tour tour="dialog"></tp-help-tour>
 ```
 
-The dialog tour passes `isAdmin="false"` because no dialog entry is admin-only; the input exists only to satisfy the shared component's signature.
+`tp-help-tour` takes `[tour]` only. It has no `isAdmin` input — admin filtering happens inside `HelpTourService.start(tour, { isAdmin })`, which the container and the dialog each call. Each mounted instance renders only its own tour, so the page and dialog instances do not collide.
 
 - [ ] **Step 6b: Start the dialog tour**
 
