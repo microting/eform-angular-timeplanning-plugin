@@ -1440,7 +1440,8 @@ git commit -m "feat(help): add tp-help-hint inline hint component"
 
 **Interfaces:**
 - Consumes: `HelpContentService` (Task 2), `HelpSearchService` + `HelpSearchResult` (Task 4).
-- Produces: `HelpPanelService` with `isOpen$: Observable<boolean>`, `target$: Observable<HelpEntryId | null>`, `open(target?: HelpEntryId): void`, `close(): void`; and `HelpPanelComponent`, selector `tp-help-panel`, `@Input() isAdmin = false`.
+- Produces: `HelpPanelService` with `isOpen$: Observable<boolean>`, `target$: Observable<HelpEntryId | null>`, `open(target?: HelpEntryId): void`, `close(): void`; and `HelpPanelComponent`, selector `tp-help-panel`, `@Input() isAdmin = false`, `@Output() replayTourRequested = new EventEmitter<void>()`.
+- **Does not** consume `HelpTourService` — that service does not exist until Task 8. The panel raises `replayTourRequested` and Task 9 wires it to the tour.
 
 - [ ] **Step 1: Write the failing service test**
 
@@ -1582,13 +1583,12 @@ export class HelpPanelService {
 - [ ] **Step 5: Implement `HelpPanelComponent`**
 
 ```ts
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { HelpEntry, HelpEntryId, HelpProse, HelpSection, HelpUiStrings } from '../../help.model';
 import { HelpContentService } from '../../services/help-content.service';
 import { HelpPanelService } from '../../services/help-panel.service';
 import { HelpSearchResult, HelpSearchService } from '../../services/help-search.service';
-import { HelpTourService } from '../../services/help-tour.service';
 
 interface PanelSection {
   section: HelpSection;
@@ -1615,11 +1615,12 @@ export class HelpPanelComponent implements OnInit, OnDestroy {
 
   private readonly subscriptions = new Subscription();
 
+  @Output() replayTourRequested = new EventEmitter<void>();
+
   constructor(
     private helpContent: HelpContentService,
     private helpSearch: HelpSearchService,
     private helpPanel: HelpPanelService,
-    private helpTour: HelpTourService,
   ) {}
 
   get ui(): HelpUiStrings {
@@ -1682,10 +1683,14 @@ export class HelpPanelComponent implements OnInit, OnDestroy {
     this.helpPanel.close();
   }
 
-  /** Replays the page tour. Closes the panel first so the anchors are visible. */
+  /**
+   * Asks the host to replay the tour. The panel deliberately does not depend on
+   * HelpTourService — it is built before the tour exists, and keeping the panel
+   * independent of it means neither has to know about the other.
+   */
   replayTour(): void {
     this.helpPanel.close();
-    setTimeout(() => this.helpTour.start('page', { isAdmin: this.isAdmin }));
+    this.replayTourRequested.emit();
   }
 
   private buildSections(): void {
@@ -2486,6 +2491,11 @@ describe('help wiring', () => {
     expect(helpTemplates).not.toContain('| translate');
   });
 
+  it('binds the help-icon and panel outputs, or they are inert', () => {
+    expect(MARKUP).toContain('(openInPanel)=');
+    expect(MARKUP).toContain('(replayTourRequested)=');
+  });
+
   it('does not introduce new translate keys for help chrome', () => {
     // The help button's tooltip must come from HelpUiStrings, not a new shared key.
     expect(MARKUP).not.toContain("'Help' | translate");
@@ -2518,8 +2528,15 @@ Add `data-tp-help` to the toolbar controls that carry an anchor: `toolbar.showRe
 At the end of the container template, outside `eform-new-subheader`:
 
 ```html
-<tp-help-panel [isAdmin]="isAdmin"></tp-help-panel>
+<tp-help-panel [isAdmin]="isAdmin" (replayTourRequested)="replayPageTour()"></tp-help-panel>
 <tp-help-tour tour="page" [isAdmin]="isAdmin"></tp-help-tour>
+```
+
+Every `tp-help-icon` on the page binds its `openInPanel` output so the popover's
+"More in help" link actually opens the panel on that entry:
+
+```html
+<tp-help-icon helpId="toolbar.dateRange" (openInPanel)="openHelp($event)"></tp-help-icon>
 ```
 
 - [ ] **Step 4: Add the two container methods**
@@ -2531,8 +2548,13 @@ get helpUi(): HelpUiStrings {
   return this.helpContent.ui();
 }
 
-openHelp(): void {
-  this.helpPanel.open();
+openHelp(target?: HelpEntryId): void {
+  this.helpPanel.open(target);
+}
+
+replayPageTour(): void {
+  // The panel has already closed itself; let that settle before querying anchors.
+  setTimeout(() => this.helpTour.start('page', { isAdmin: this.isAdmin }));
 }
 
 private startTourOnce(): void {
