@@ -1,0 +1,78 @@
+<aside class="tp-help-panel" *ngIf="isOpen" role="complementary" [attr.aria-label]="ui.help">
+  <header class="tp-help-panel__top">
+    <h5>{{ ui.help }}</h5>
+    <span class="tp-help-panel__spacer"></span>
+    <button type="button" mat-icon-button [attr.aria-label]="ui.close" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div class="tp-help-panel__search">
+    <mat-icon aria-hidden="true">search</mat-icon>
+    <input
+      type="search"
+      [ngModel]="query"
+      (ngModelChange)="onQueryChange($event)"
+      [attr.aria-label]="ui.searchHelp"
+      [placeholder]="ui.searchHelp"/>
+    <button type="button" *ngIf="isSearching" [attr.aria-label]="ui.clear" (click)="clearQuery()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="tp-help-panel__replay">
+    <button type="button" (click)="replayTour()">{{ ui.replayTour }}</button>
+  </div>
+
+  <div class="tp-help-panel__body">
+    <ng-container *ngIf="isSearching; else browse">
+      <p class="tp-help-panel__count">{{ results.length }}</p>
+      <article
+        class="tp-help-entry"
+        *ngFor="let result of results"
+        [class.tp-help-entry--target]="result.entry.id === targetId">
+        <button type="button" class="tp-help-entry__head" (click)="toggleEntry(result.entry.id)">
+          <span
+            class="tp-help-entry__kind"
+            [class.tp-help-entry__kind--task]="result.entry.kind === 'task'">
+            <!-- An icon rather than the word "task"/"control", which has no translation. -->
+            <mat-icon aria-hidden="true">
+              {{ result.entry.kind === 'task' ? 'playlist_add_check' : 'tune' }}
+            </mat-icon>
+          </span>
+          <b>{{ result.prose.title }}</b>
+        </button>
+        <p>{{ result.prose.short }}</p>
+        <ng-container *ngIf="expanded === result.entry.id">
+          <p class="tp-help-entry__detail" *ngIf="result.prose.detail">{{ result.prose.detail }}</p>
+          <ol class="tp-help-entry__steps" *ngIf="result.prose.steps">
+            <li *ngFor="let step of result.prose.steps">{{ step }}</li>
+          </ol>
+        </ng-container>
+      </article>
+    </ng-container>
+
+    <ng-template #browse>
+      <ng-container *ngFor="let group of sections">
+        <h6 class="tp-help-panel__section">{{ sectionLabel(group.section) }}</h6>
+        <article
+          class="tp-help-entry"
+          *ngFor="let entry of group.entries"
+          [class.tp-help-entry--target]="entry.id === targetId">
+          <ng-container *ngIf="prose(entry.id) as entryProse">
+            <button type="button" class="tp-help-entry__head" (click)="toggleEntry(entry.id)">
+              <b>{{ entryProse.title }}</b>
+            </button>
+            <p>{{ entryProse.short }}</p>
+            <ng-container *ngIf="expanded === entry.id">
+              <p class="tp-help-entry__detail" *ngIf="entryProse.detail">{{ entryProse.detail }}</p>
+              <ol class="tp-help-entry__steps" *ngIf="entryProse.steps">
+                <li *ngFor="let step of entryProse.steps">{{ step }}</li>
+              </ol>
+            </ng-container>
+          </ng-container>
+        </article>
+      </ng-container>
+    </ng-template>
+  </div>
+</aside>

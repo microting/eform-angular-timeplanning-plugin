@@ -52,6 +52,7 @@ import {MtxSelect} from '@ng-matero/extensions/select';
 import {OverlayModule} from '@angular/cdk/overlay';
 import {HelpIconComponent} from './help/components/help-icon/help-icon.component';
 import {HelpHintComponent} from './help/components/help-hint/help-hint.component';
+import {HelpPanelComponent} from './help/components/help-panel/help-panel.component';
 
 @NgModule({
   imports: [
@@ -112,6 +113,7 @@ import {HelpHintComponent} from './help/components/help-hint/help-hint.component
     PayrollExportDialogComponent,
     HelpIconComponent,
     HelpHintComponent,
+    HelpPanelComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,
