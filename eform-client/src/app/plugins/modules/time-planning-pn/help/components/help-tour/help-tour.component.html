@@ -1,0 +1,18 @@
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin!"
+  [cdkConnectedOverlayOpen]="!!state && !!origin"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayPush]="true">
+  <div class="tp-help-tour" role="dialog" *ngIf="prose as tourProse">
+    <p class="tp-help-tour__step">
+      {{ (state!.index + 1) }} / {{ state!.total }}
+    </p>
+    <h5>{{ tourProse.title }}</h5>
+    <p class="tp-help-tour__body">{{ tourProse.short }}</p>
+    <div class="tp-help-tour__actions">
+      <button type="button" class="tp-help-tour__skip" (click)="skip()">{{ ui.skip }}</button>
+      <button type="button" class="tp-help-tour__next" (click)="next()">{{ ui.next }}</button>
+    </div>
+  </div>
+</ng-template>

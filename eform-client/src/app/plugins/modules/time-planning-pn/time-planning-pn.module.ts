@@ -53,6 +53,7 @@ import {OverlayModule} from '@angular/cdk/overlay';
 import {HelpIconComponent} from './help/components/help-icon/help-icon.component';
 import {HelpHintComponent} from './help/components/help-hint/help-hint.component';
 import {HelpPanelComponent} from './help/components/help-panel/help-panel.component';
+import {HelpTourComponent} from './help/components/help-tour/help-tour.component';
 
 @NgModule({
   imports: [
@@ -114,6 +115,7 @@ import {HelpPanelComponent} from './help/components/help-panel/help-panel.compon
     HelpIconComponent,
     HelpHintComponent,
     HelpPanelComponent,
+    HelpTourComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,
