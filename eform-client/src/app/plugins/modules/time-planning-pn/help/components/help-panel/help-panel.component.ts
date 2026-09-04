@@ -1,5 +1,6 @@
 import {
-  Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges,
+  AfterViewChecked, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy,
+  OnInit, Output, SimpleChanges,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { HelpEntry, HelpEntryId, HelpProse, HelpSection, HelpUiStrings } from '../../help.model';
@@ -21,7 +22,7 @@ const SECTION_ORDER: HelpSection[] = ['task', 'toolbar', 'grid', 'dayCell', 'fle
   styleUrls: ['./help-panel.component.scss'],
   standalone: false,
 })
-export class HelpPanelComponent implements OnInit, OnChanges, OnDestroy {
+export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, OnDestroy {
   @Input() isAdmin = false;
 
   /**
@@ -40,10 +41,18 @@ export class HelpPanelComponent implements OnInit, OnChanges, OnDestroy {
 
   private readonly subscriptions = new Subscription();
 
+  /**
+   * A deep link expands its target, but the panel still opens scrolled to the
+   * top, so a target low in the list — any of the flex entries — lands off
+   * screen. Set when a target arrives, cleared once it has been scrolled to.
+   */
+  private pendingTargetScroll = false;
+
   constructor(
     private helpContent: HelpContentService,
     private helpSearch: HelpSearchService,
     private helpPanel: HelpPanelService,
+    private host: ElementRef<HTMLElement>,
   ) {}
 
   /** Chrome labels. Never the shared ngx-translate catalogue. */
@@ -79,6 +88,7 @@ export class HelpPanelComponent implements OnInit, OnChanges, OnDestroy {
     this.subscriptions.add(this.helpPanel.target$.subscribe(target => {
       this.targetId = target;
       this.expanded = target;
+      this.pendingTargetScroll = target !== null;
     }));
   }
 
@@ -87,6 +97,18 @@ export class HelpPanelComponent implements OnInit, OnChanges, OnDestroy {
     if (changes['isAdmin'] && !changes['isAdmin'].firstChange && this.isOpen) {
       this.buildSections();
       this.onQueryChange(this.query);
+    }
+  }
+
+  ngAfterViewChecked(): void {
+    if (!this.pendingTargetScroll) {
+      return;
+    }
+    const target = this.host.nativeElement.querySelector('.tp-help-entry--target');
+    if (target) {
+      this.pendingTargetScroll = false;
+      // Optional call: jsdom and other non-layout hosts do not implement it.
+      target.scrollIntoView?.({ block: 'nearest' });
     }
   }
 

@@ -14,6 +14,7 @@ import * as R from 'ramda';
 import {TimePlanningMessagesEnum} from '../../../enums';
 import {Store} from '@ngrx/store';
 import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
+import {applyGridHelpAnchors} from '../../../help/grid-help-anchors';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -82,6 +83,9 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   }
 
   ngAfterViewChecked(): void {
+    // mtx-grid owns its header row, so the Name column's sort header is the one
+    // help anchor that cannot be written in the template.
+    applyGridHelpAnchors(this.el.nativeElement);
     if (this.pendingHighlight && !this.highlightApplied && !this.waitingForFreshData && this.timePlannings?.length) {
       const rowIndex = this.timePlannings.findIndex(tp => tp.siteId === this.pendingHighlight.siteId);
       if (rowIndex >= 0) {

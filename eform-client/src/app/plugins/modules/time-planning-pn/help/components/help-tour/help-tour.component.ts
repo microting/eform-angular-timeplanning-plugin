@@ -52,6 +52,14 @@ export class HelpTourComponent implements OnInit, DoCheck, AfterViewChecked, OnD
   private readonly subscriptions = new Subscription();
   private pendingFocus = false;
 
+  /**
+   * The overlay uses CDK's reposition strategy, so an anchor below the fold
+   * yields a card pushed on screen pointing at nothing. Bring each step's anchor
+   * into view as it becomes current — once per step, so a re-rendered anchor node
+   * does not yank the page back mid-read.
+   */
+  private scrolledFor: string | null = null;
+
   constructor(
     private helpContent: HelpContentService,
     private helpTour: HelpTourService,
@@ -76,6 +84,13 @@ export class HelpTourComponent implements OnInit, DoCheck, AfterViewChecked, OnD
       this.pendingFocus = this.pendingFocus || (!!mine && !this.state);
       this.state = mine;
       this.setOrigin(mine ? this.helpTour.anchorElement(mine.entry) : null);
+      if (!mine) {
+        this.scrolledFor = null;
+      } else if (this.scrolledFor !== mine.entry.id) {
+        this.scrolledFor = mine.entry.id;
+        // Optional call: jsdom and other non-layout hosts do not implement it.
+        this.origin?.nativeElement.scrollIntoView?.({ block: 'center', inline: 'center' });
+      }
     }));
   }
 

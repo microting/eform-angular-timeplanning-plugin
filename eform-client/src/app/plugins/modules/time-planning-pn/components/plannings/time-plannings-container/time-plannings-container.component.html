@@ -10,6 +10,7 @@
     <!--  </mat-form-field>-->
     <mat-slide-toggle
       color="primary"
+      data-tp-help="toolbar.showResigned"
       id="showCalculationsAsNumberToggle"
       [checked]="showResignedSites"
       [(ngModel)]="showResignedSites"
@@ -21,6 +22,7 @@
 
     <button
       id="backwards"
+      data-tp-help="toolbar.navBackward"
       class="btn-secondary btn-secondary--icon-rounded-border"
       (click)="goBackward()"
       matTooltip="{{ 'keyboard_tab_rtl' | translate }}"
@@ -29,6 +31,7 @@
     </button>
     <button
       id="forwards"
+      data-tp-help="toolbar.navForward"
       class="btn-secondary btn-secondary--icon-rounded-border"
       (click)="goForward()"
       matTooltip="{{ 'keyboard_tab' | translate }}"
@@ -37,7 +40,7 @@
     </button>
 
     <div class="line-vert" *ngIf="availableSites.length > 1"></div>
-    <div class="text-field--rounded" *ngIf="availableSites.length > 1">
+    <div class="text-field--rounded" data-tp-help="toolbar.workerFilter" *ngIf="availableSites.length > 1">
       <mat-form-field style="flex: 0 0 25%; min-width: 150px;">
         <mat-label>{{ 'Worker' | translate }}</mat-label>
         <mtx-select
@@ -50,7 +53,7 @@
         </mtx-select>
       </mat-form-field>
     </div>
-    <div class="text-field--rounded">
+    <div class="text-field--rounded" data-tp-help="toolbar.tagFilter">
       <mat-form-field style="flex: 0 0 25%; min-width: 150px;">
         <mat-label>{{ 'Tags' | translate }}</mat-label>
         <mtx-select
@@ -64,7 +67,7 @@
         </mtx-select>
       </mat-form-field>
     </div>
-    <div class="text-field--rounded">
+    <div class="text-field--rounded" data-tp-help="toolbar.dateRange">
       <mat-form-field id="workingHoursRange">
         <mat-label>{{ 'Date range' | translate }}</mat-label>
         <mat-datepicker-toggle matPrefix [for]="picker"></mat-datepicker-toggle>
@@ -75,9 +78,11 @@
         <mat-date-range-picker #picker></mat-date-range-picker>
       </mat-form-field>
     </div>
+    <tp-help-icon helpId="toolbar.dateRange" (openInPanel)="openHelp($event)"></tp-help-icon>
     <div class="line-vert"></div>
     <button
       id="file-export-excel"
+      data-tp-help="toolbar.downloadExcel"
       class="btn-secondary btn-secondary--icon-rounded-border"
       (click)="openDownloadExcelDialog()"
       matTooltip="{{ 'Download Excel' | translate }}">
@@ -86,6 +91,7 @@
     <button
       *ngIf="isAdmin && payrollSystem !== 0"
       id="payroll-export"
+      data-tp-help="toolbar.payrollExport"
       class="btn-secondary btn-secondary--icon-rounded-border"
       (click)="openPayrollExportDialog()"
       matTooltip="{{ 'Export to payroll' | translate }}">
@@ -94,10 +100,20 @@
     <button
       class="btn-secondary btn-secondary--icon-rounded-border"
       id="workingHoursReload"
+      data-tp-help="toolbar.reload"
       [matTooltip]="'Reload table' | translate"
       (click)="getPlannings()"
     >
       <mat-icon>restart_alt</mat-icon>
+    </button>
+    <button
+      mat-icon-button
+      type="button"
+      id="planningHelp"
+      class="btn-secondary btn-secondary--icon-rounded-border"
+      [matTooltip]="helpUi.help"
+      (click)="openHelp()">
+      <mat-icon>help_outline</mat-icon>
     </button>
   </div>
 </eform-new-subheader>
@@ -122,3 +138,6 @@
   (highlightedRowRendered)="onHighlightedRowRendered()"
 ></app-time-plannings-table>
 <!--</div>-->
+
+<tp-help-panel [isAdmin]="isAdmin" (replayTourRequested)="replayPageTour()"></tp-help-panel>
+<tp-help-tour tour="page"></tp-help-tour>

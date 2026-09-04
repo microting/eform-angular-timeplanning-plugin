@@ -17,6 +17,9 @@ import {TemplateFilesService} from 'src/app/common/services';
 import {SharedTagModel} from 'src/app/common/models';
 import {Subscription} from 'rxjs';
 import { MatDialogRef } from '@angular/material/dialog';
+import {HelpEntryId} from '../../../../help/help.model';
+import {HelpPanelService} from '../../../../help/services/help-panel.service';
+import {HelpTourService} from '../../../../help/services/help-tour.service';
 
 import {
   AbstractControl,
@@ -52,6 +55,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   protected datePipe = inject(DatePipe);
   private translateService = inject(TranslateService);
   private dialogRef = inject(MatDialogRef<WorkdayEntityDialogComponent>);
+  private helpPanel = inject(HelpPanelService);
+  private helpTour = inject(HelpTourService);
   private originalDialogWidth: string = '600px';
   private originalDialogHeight: string = 'auto';
 
@@ -119,6 +124,10 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   gpsDataMap: Map<string, GpsCoordinateModel> = new Map();
   snapshotDataMap: Map<string, PictureSnapshotModel> = new Map();
   private readonly GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
+
+  /** True while the tour on screen is this dialog's, so closing can end it. */
+  private dialogTourRunning = false;
+  private helpTourState$: Subscription;
 
 
 
@@ -431,6 +440,23 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
     this.updateDisabledStates();
     this.loadGpsAndSnapshotData();
+
+    this.helpTourState$ = this.helpTour.state$.subscribe(state => {
+      this.dialogTourRunning = state?.entry.tour === 'dialog';
+    });
+    this.startDialogTourOnce();
+  }
+
+  openHelp(target?: HelpEntryId): void {
+    this.helpPanel.open(target);
+  }
+
+  private startDialogTourOnce(): void {
+    if (this.helpTour.hasSeen('dialog')) {
+      return;
+    }
+    // The anchors only exist once this pass has rendered the form and the shift grid.
+    setTimeout(() => this.helpTour.start('dialog', { isAdmin: false }));
   }
 
   // inside class:
@@ -1997,5 +2023,12 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.imageSub$?.unsubscribe();
     this.revokeSnapshotUrl();
+    this.helpTourState$?.unsubscribe();
+    if (this.dialogTourRunning) {
+      // abort(), not stop(): closing a row is the page changing underneath the
+      // tour, not the planner saying they are done with it, so it must still be
+      // offered the next time a day is opened.
+      this.helpTour.abort();
+    }
   }
 }

@@ -5,10 +5,12 @@
       <small class="microting-uid" matTooltip="Id">({{ data.planningPrDayModels.id }})</small></div>
     <button
       mat-icon-button
+      data-tp-help="dayCell.versionHistory"
       (click)="openVersionHistory()"
       matTooltip="{{'View history' | translate}}">
       <mat-icon>history</mat-icon>
     </button>
+    <tp-help-icon helpId="dayCell.versionHistory" (openInPanel)="openHelp($event)"></tp-help-icon>
   </div>
 
   <div class="dialog-site-tags" *ngIf="data.tags?.length">
@@ -17,9 +19,10 @@
 
   <div mat-dialog-content>
     <div class="workday-dialog-container">
-      <div class="main-content" [class.with-side-panel]="selectedGpsCoordinate || selectedSnapshot">
+      <div class="main-content" cdkScrollable [class.with-side-panel]="selectedGpsCoordinate || selectedSnapshot">
         <br/>
         <mtx-grid
+          data-tp-help="dayCell.shiftCount"
           [columns]="tableHeaders"
           [data]="shiftData"
           [showPaginator]="false"
@@ -30,13 +33,17 @@
 
         <ng-template #plannedShiftTemplate let-shiftId="shiftId">
           <ng-container [formGroupName]="'planned'">
-            <div [formGroupName]="'shift' + shiftId">
+            <div [formGroupName]="'shift' + shiftId" data-tp-help="dayCell.plannedTimes">
+              <tp-help-icon
+                *ngIf="shiftId === '1'"
+                helpId="dayCell.plannedTimes"
+                (openInPanel)="openHelp($event)"></tp-help-icon>
               <mat-error *ngFor="let error of getInputErrors('planned.shift' + shiftId)">
                 <small>{{ error }}</small>
               </mat-error>
 
               <div class="flex-row">
-                <mat-form-field>
+                <mat-form-field data-tp-help="dayCell.oneMinuteIntervals">
                   <mat-label>{{ 'Start' | translate }}</mat-label>
                   <input
                     matInput
@@ -54,7 +61,7 @@
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
-                <button mat-icon-button color="warn" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 1)">
+                <button mat-icon-button color="warn" data-tp-help="dayCell.resetField" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 1)">
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
@@ -142,6 +149,7 @@
           <button
             *ngIf="hasGpsData(key)"
             mat-icon-button
+            data-tp-help="dayCell.gps"
             color="primary"
             (click)="onGpsClick(key)"
             matTooltip="{{'View GPS Location' | translate}}">
@@ -149,6 +157,7 @@
           </button>
           <button *ngIf="hasSnapshotData(key)"
             mat-icon-button
+            data-tp-help="dayCell.snapshot"
             color="primary"
             (click)="onSnapshotClick(key)"
             matTooltip="{{'View Snapshot' | translate}}">
@@ -163,7 +172,11 @@
           let-pauseKey="pauseKey"
           let-stopKey="stopKey">
           <ng-container [formGroupName]="'actual'">
-            <div [formGroupName]="'shift' + shiftId">
+            <div [formGroupName]="'shift' + shiftId" data-tp-help="dayCell.actualTimes">
+              <tp-help-icon
+                *ngIf="shiftId === '1'"
+                helpId="dayCell.actualTimes"
+                (openInPanel)="openHelp($event)"></tp-help-icon>
               <mat-error *ngFor="let error of getInputErrors('actual.shift' + shiftId)">
                 <small>{{ error }}</small>
               </mat-error>
@@ -232,11 +245,16 @@
                   mat-icon-button
                   type="button"
                   color="primary"
+                  data-tp-help="dayCell.resetPauseToRecorded"
                   [matTooltip]="'Reset pause to recorded' | translate"
                   [attr.data-testid]="'resetPauseToRecorded' + shiftId"
                   (click)="resetPauseToRecorded(+shiftId)">
                   <mat-icon>restore</mat-icon>
                 </button>
+                <tp-help-icon
+                  *ngIf="shiftId === '1'"
+                  helpId="dayCell.resetPauseToRecorded"
+                  (openInPanel)="openHelp($event)"></tp-help-icon>
                 <ng-container
                   [ngTemplateOutlet]="trackingButtons"
                   [ngTemplateOutletContext]="{ key: pauseKey }">
@@ -316,18 +334,21 @@
                 [value]="data.planningPrDayModels.sumFlexStart.toFixed(2)"/>
             </mat-form-field>
 
-            <mat-form-field>
-              <mat-label>{{ 'Plan hours' | translate }}</mat-label>
-              <input
-                matInput
-                type="number"
-                id="planHours"
-                formControlName="planHours"
-                (change)="calculatePlanHours()"/>
-              <mat-error data-testid="planHours-Error"  *ngIf="workdayForm.hasError('tooManyHours')">
-                Total planned hours cannot exceed 24
-              </mat-error>
-            </mat-form-field>
+            <div class="flex-row">
+              <mat-form-field data-tp-help="dayCell.planHours">
+                <mat-label>{{ 'Plan hours' | translate }}</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  id="planHours"
+                  formControlName="planHours"
+                  (change)="calculatePlanHours()"/>
+                <mat-error data-testid="planHours-Error"  *ngIf="workdayForm.hasError('tooManyHours')">
+                  Total planned hours cannot exceed 24
+                </mat-error>
+              </mat-form-field>
+              <tp-help-icon helpId="dayCell.planHours" (openInPanel)="openHelp($event)"></tp-help-icon>
+            </div>
 
             <mat-form-field *ngIf="!isInTheFuture">
               <mat-label>{{ 'NettoHours' | translate }}</mat-label>
@@ -340,48 +361,64 @@
                 [value]="data.planningPrDayModels.actualHours.toFixed(2)"/>
             </mat-form-field>
 
-            <mat-form-field *ngIf="!isInTheFuture && data.planningPrDayModels.nettoHoursOverrideActive">
-              <mat-label>{{ 'NettoHours override' | translate }}</mat-label>
-              <input
-                matInput
-                type="number"
-                id="nettoHoursOverride"
-                formControlName="nettoHoursOverride"
-                (change)="calculatePlanHours()"/>
-            </mat-form-field>
+            <div class="flex-row" *ngIf="!isInTheFuture && data.planningPrDayModels.nettoHoursOverrideActive">
+              <mat-form-field data-tp-help="dayCell.nettoOverride">
+                <mat-label>{{ 'NettoHours override' | translate }}</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  id="nettoHoursOverride"
+                  formControlName="nettoHoursOverride"
+                  (change)="calculatePlanHours()"/>
+              </mat-form-field>
+              <tp-help-icon helpId="dayCell.nettoOverride" (openInPanel)="openHelp($event)"></tp-help-icon>
+            </div>
 
             <br *ngIf="data.planningPrDayModels.nettoHoursOverrideActive"/>
-            <mat-form-field *ngIf="!isInTheFuture">
-              <mat-label>{{ 'Flex' | translate }}</mat-label>
-              <input
-                matInput
-                type="text"
-                id="todaysFlex"
-                readonly
-                disabled
-                [value]="todaysFlex.toFixed(2)"/>
-            </mat-form-field>
+            <div class="flex-row" *ngIf="!isInTheFuture">
+              <mat-form-field data-tp-help="flex.whatIsFlex">
+                <mat-label>{{ 'Flex' | translate }}</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  id="todaysFlex"
+                  readonly
+                  disabled
+                  [value]="todaysFlex.toFixed(2)"/>
+              </mat-form-field>
+              <tp-help-icon helpId="flex.whatIsFlex" (openInPanel)="openHelp($event)"></tp-help-icon>
+            </div>
 
-            <mat-form-field *ngIf="!isInTheFuture">
-              <mat-label>{{ 'PaidOutFlex' | translate }}</mat-label>
-              <input
-                matInput
-                type="text"
-                id="paidOutFlex"
-                formControlName="paidOutFlex"
-                (change)="calculatePlanHours()"/>
-            </mat-form-field>
+            <div class="flex-row" *ngIf="!isInTheFuture">
+              <mat-form-field data-tp-help="dayCell.paidOutFlex">
+                <mat-label>{{ 'PaidOutFlex' | translate }}</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  id="paidOutFlex"
+                  formControlName="paidOutFlex"
+                  (change)="calculatePlanHours()"/>
+              </mat-form-field>
+              <tp-help-icon helpId="dayCell.paidOutFlex" (openInPanel)="openHelp($event)"></tp-help-icon>
+              <tp-help-icon
+                helpId="flex.paidOutFlexRelation"
+                data-tp-help="flex.paidOutFlexRelation"
+                (openInPanel)="openHelp($event)"></tp-help-icon>
+            </div>
 
-            <mat-form-field *ngIf="!isInTheFuture">
-              <mat-label>{{ 'Flex balance to date' | translate }}</mat-label>
-              <input
-                matInput
-                type="text"
-                id="flexIncludingToday"
-                readonly
-                disabled
-                [value]="data.planningPrDayModels.sumFlexEnd.toFixed(2)"/>
-            </mat-form-field>
+            <div class="flex-row" *ngIf="!isInTheFuture">
+              <mat-form-field data-tp-help="flex.sumFlex">
+                <mat-label>{{ 'Flex balance to date' | translate }}</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  id="flexIncludingToday"
+                  readonly
+                  disabled
+                  [value]="data.planningPrDayModels.sumFlexEnd.toFixed(2)"/>
+              </mat-form-field>
+              <tp-help-icon helpId="flex.sumFlex" (openInPanel)="openHelp($event)"></tp-help-icon>
+            </div>
 
             <p *ngIf="data.planningPrDayModels.workerComment">
               <strong>{{ 'CommentWorker' | translate }}:</strong>
@@ -389,7 +426,8 @@
             </p>
           </div>
 
-          <div id="flags" formGroupName="flags" class="d-flex flex-column gap-4">
+          <tp-help-icon helpId="dayCell.flags" (openInPanel)="openHelp($event)"></tp-help-icon>
+          <div id="flags" data-tp-help="dayCell.flags" formGroupName="flags" class="d-flex flex-column gap-4">
             <ng-container *ngFor="let key of enumKeys">
               <ng-container *ngIf="key !== 'Blank' && key !== 'Care'">
                 <mat-checkbox
@@ -403,14 +441,23 @@
           </div>
 
           <br/><br/>
-          <mat-form-field>
-            <mat-label>{{ 'CommentOffice' | translate }}</mat-label>
-            <input
-              matInput
-              type="text"
-              id="CommentOffice"
-              formControlName="commentOffice"/>
-          </mat-form-field>
+          <div class="flex-row">
+            <mat-form-field data-tp-help="dayCell.commentOffice">
+              <mat-label>{{ 'CommentOffice' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                id="CommentOffice"
+                formControlName="commentOffice"/>
+            </mat-form-field>
+            <tp-help-icon helpId="dayCell.commentOffice" (openInPanel)="openHelp($event)"></tp-help-icon>
+          </div>
+
+          <tp-help-hint
+            *ngIf="isInTheFuture"
+            helpId="dayCell.futureDisabled"
+            data-tp-help="dayCell.futureDisabled"
+            tone="warn"></tp-help-hint>
 
           <br/>
       </div>
@@ -448,9 +495,11 @@
       {{ 'Cancel' | translate }}
     </button>
 
+    <tp-help-icon helpId="dayCell.save" (openInPanel)="openHelp($event)"></tp-help-icon>
     <button
       class="btn-primary btn-primary--icon-left"
       id="saveButton"
+      data-tp-help="dayCell.save"
       (click)="onUpdateWorkDayEntity()"
       [disabled]="workdayForm.invalid"
       [mat-dialog-close]="data"
@@ -459,3 +508,5 @@
     </button>
   </div>
 </form>
+
+<tp-help-tour tour="dialog"></tp-help-tour>

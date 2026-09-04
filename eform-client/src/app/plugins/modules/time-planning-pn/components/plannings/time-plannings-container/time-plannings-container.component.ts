@@ -16,6 +16,10 @@ import {selectCurrentUserLocale, selectCurrentUserIsAdmin} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
 import {DownloadExcelDialogComponent, PayrollExportDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
+import {HelpEntryId, HelpUiStrings} from '../../../help/help.model';
+import {HelpContentService} from '../../../help/services/help-content.service';
+import {HelpPanelService} from '../../../help/services/help-panel.service';
+import {HelpTourService} from '../../../help/services/help-tour.service';
 
 @AutoUnsubscribe()
 @Component({
@@ -29,6 +33,9 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   private planningsService = inject(TimePlanningPnPlanningsService);
   private settingsService = inject(TimePlanningPnSettingsService);
   private dialog = inject(MatDialog);
+  private helpContent = inject(HelpContentService);
+  private helpPanel = inject(HelpPanelService);
+  private helpTour = inject(HelpTourService);
 
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
@@ -49,6 +56,14 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   getAvailableSites$: Subscription;
   public selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
   locale: string;
+
+  /**
+   * The page tour is offered once per session at most. hasSeen() alone is not
+   * enough: it only flips when the tour ends, and getPlannings() reruns on every
+   * filter change, so an unfinished tour would otherwise restart from step 1 each
+   * time the grid reloads.
+   */
+  private pageTourOffered = false;
 
   ngOnInit(): void {
     // Load available tags
@@ -129,8 +144,33 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
         if (data && data.success) {
           this.timePlannings = data.model;
         }
+        this.startPageTourOnce();
       });
     }
+
+  /** Help chrome labels. Never the shared ngx-translate catalogue. */
+  get helpUi(): HelpUiStrings {
+    return this.helpContent.ui();
+  }
+
+  openHelp(target?: HelpEntryId): void {
+    this.helpPanel.open(target);
+  }
+
+  replayPageTour(): void {
+    // The panel has already closed itself; let that settle before querying anchors.
+    setTimeout(() => this.helpTour.start('page', { isAdmin: this.isAdmin }));
+  }
+
+  private startPageTourOnce(): void {
+    if (this.pageTourOffered || this.helpTour.hasSeen('page')) {
+      return;
+    }
+    this.pageTourOffered = true;
+    // Let the current change-detection pass render the grid, or start() finds no
+    // anchors and drops every step it was meant to point at.
+    setTimeout(() => this.helpTour.start('page', { isAdmin: this.isAdmin }));
+  }
 
   ngOnDestroy(): void {
   }
