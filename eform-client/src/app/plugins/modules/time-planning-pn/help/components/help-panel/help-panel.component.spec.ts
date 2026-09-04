@@ -304,6 +304,28 @@ describe('HelpPanelComponent', () => {
     expect(fixture.nativeElement.querySelector('.tp-help-entry--target')).not.toBeNull();
   });
 
+  it('keeps the dialog surface when a related link is followed', () => {
+    // Navigating inside the panel is not moving to another surface. open() defaults
+    // the surface to 'page', so forwarding it here is what stops a related link from
+    // silently turning the dialog tour back into the page tour.
+    const replays: HelpTourName[] = [];
+    component.replayTourRequested.subscribe(tour => replays.push(tour));
+    // A deep link already expands its target, so there is nothing to toggle.
+    panel.open('task.registerVacation', 'dialog');
+    fixture.detectChanges();
+    expect(component.expanded).toBe('task.registerVacation');
+
+    (fixture.nativeElement.querySelector('.tp-help-entry__related-link') as HTMLElement).click();
+    fixture.detectChanges();
+
+    expect(component.surface).toBe('dialog');
+
+    clickReplay();
+    fixture.detectChanges();
+
+    expect(replays).toEqual(['dialog']);
+  });
+
   it('drops a related link to an entry the reader is not allowed to see', () => {
     // A link into an entry the panel does not list would deep-link to a row that
     // is not there. task.exportForPayroll points at the admin-only payroll export.

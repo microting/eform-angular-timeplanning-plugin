@@ -291,10 +291,16 @@ export class HelpPanelComponent extends HelpChromeBase
    * inventing panel-local navigation: open() expands the entry and scrolls to it.
    * The query is cleared first, because a control the current search did not match
    * has no row to scroll to while the result list is on screen.
+   *
+   * The surface is carried through deliberately: open() defaults it to 'page', so
+   * following a link from a panel opened inside the day-cell dialog would silently
+   * reset it and leave "Take the tour" replaying the page tour, whose anchors are
+   * all behind the dialog backdrop. Navigating within the panel does not move the
+   * planner to another surface.
    */
   openRelated(id: HelpEntryId): void {
     this.onQueryChange('');
-    this.helpPanel.open(id);
+    this.helpPanel.open(id, this.surface);
   }
 
   sectionLabel(section: HelpSection): string {
