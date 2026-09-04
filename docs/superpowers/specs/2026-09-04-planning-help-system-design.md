@@ -128,9 +128,14 @@ English.
 | Inline hint | `<tp-help-hint helpId>` | `short` |
 
 **ⓘ icon.** A small `mat-icon-button` whose `aria-label` comes from the entry. Opens a
-`cdkConnectedOverlay` anchored to the button via `cdkOverlayOrigin`, with a transparent
-backdrop, a close-on-scroll strategy, and fallback positions. Dismissed on Escape
-(`overlayKeydown`), backdrop click, and scroll.
+`cdkConnectedOverlay` anchored to the button via `cdkOverlayOrigin`, with a
+close-on-scroll strategy and fallback positions. Dismissed on Escape
+(`overlayKeydown`), an outside click (`overlayOutsideClick`), and scroll.
+
+Deliberately **no backdrop**. A transparent full-page backdrop swallows the first
+click, and on this page every day cell is a click target that opens the day editor —
+so a planner dismissing a popover would have to click twice to reach the cell
+underneath. `overlayOutsideClick` gives the same dismissal without the tax.
 
 This has to work inside a `MatDialog`, because roughly half the help lives in one. It
 does: CDK appends every overlay to the same `.cdk-overlay-container`, and an overlay
