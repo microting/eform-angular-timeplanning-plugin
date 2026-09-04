@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { OverlayModule } from '@angular/cdk/overlay';
+import { CloseScrollStrategy, OverlayModule } from '@angular/cdk/overlay';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -91,6 +91,26 @@ describe('HelpIconComponent', () => {
     expect(popover).not.toBeNull();
     expect(popover.getAttribute('role')).toBe('note');
     expect(popover.getAttribute('aria-label')).toBe(enUS['toolbar.dateRange'].title);
+  });
+
+  it('binds a close-on-scroll strategy, not the injected reposition default', () => {
+    // CdkConnectedOverlay's injected default is createRepositionScrollStrategy,
+    // which would leave the popover glued to a trigger scrolled out of view.
+    expect(fixture.componentInstance.scrollStrategy).toBeInstanceOf(CloseScrollStrategy);
+  });
+
+  it('dismisses on scroll', () => {
+    fixture.componentInstance.isOpen = true;
+    fixture.detectChanges();
+    expect(document.querySelector('.tp-help-popover')).not.toBeNull();
+
+    // ScrollDispatcher listens for 'scroll' on the document and pushes through
+    // its scrolled() stream, which the close strategy is subscribed to.
+    document.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isOpen).toBe(false);
+    expect(document.querySelector('.tp-help-popover')).toBeNull();
   });
 
   it('renders nothing for an unknown id rather than throwing', () => {

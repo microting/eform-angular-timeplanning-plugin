@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { ConnectedPosition } from '@angular/cdk/overlay';
+import { ConnectedPosition, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { HelpEntryId, HelpProse, HelpUiStrings } from '../../help.model';
 import { HelpContentService } from '../../services/help-content.service';
 
@@ -22,7 +22,17 @@ export class HelpIconComponent {
     { originX: 'center', originY: 'top', overlayX: 'end', overlayY: 'bottom', offsetY: -6 },
   ];
 
-  constructor(private helpContent: HelpContentService) {}
+  /**
+   * Dismiss on scroll rather than following the trigger. This popover means
+   * "this explains the control next to me"; in a horizontally scrolling grid,
+   * CDK's default reposition strategy would leave it floating over unrelated
+   * columns, or trailing a trigger the planner has already scrolled past.
+   */
+  readonly scrollStrategy: ScrollStrategy;
+
+  constructor(private helpContent: HelpContentService, overlay: Overlay) {
+    this.scrollStrategy = overlay.scrollStrategies.close();
+  }
 
   /** Undefined for an id the registry does not know, so the template renders nothing. */
   get prose(): HelpProse | undefined {
