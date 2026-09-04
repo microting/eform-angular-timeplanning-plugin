@@ -15,11 +15,11 @@ export const PLANNING_HELP_ENTRIES: HelpEntry[] = [
   { id: 'task.addExtraShift', kind: 'task', section: 'task',
     related: ['dayCell.shiftCount', 'grid.settingsStrip'] },
   { id: 'task.changePlannedHours', kind: 'task', section: 'task',
-    related: ['dayCell.plannedTimes', 'dayCell.planHours'] },
+    related: ['dayCell.plannedTimes', 'dayCell.planHours', 'dayCell.planHoursLimit'] },
   { id: 'task.payOutFlex', kind: 'task', section: 'task',
     related: ['dayCell.paidOutFlex', 'flex.sumFlex'] },
   { id: 'task.exportForPayroll', kind: 'task', section: 'task',
-    related: ['toolbar.downloadExcel'] },
+    related: ['toolbar.downloadExcel', 'toolbar.payrollExport'] },
   { id: 'task.whoChangedThis', kind: 'task', section: 'task',
     related: ['dayCell.versionHistory'] },
   { id: 'task.whereWasThisRegistered', kind: 'task', section: 'task',
@@ -38,9 +38,9 @@ export const PLANNING_HELP_ENTRIES: HelpEntry[] = [
   { id: 'toolbar.dateRange', kind: 'control', section: 'toolbar', anchor: 'toolbar.dateRange',
     tour: 'page', tourStep: 1 },
   { id: 'toolbar.downloadExcel', kind: 'control', section: 'toolbar', anchor: 'toolbar.downloadExcel',
-    tour: 'page', tourStep: 7 },
+    tour: 'page', tourStep: 6 },
   { id: 'toolbar.payrollExport', kind: 'control', section: 'toolbar', anchor: 'toolbar.payrollExport',
-    tour: 'page', tourStep: 8, adminOnly: true },
+    tour: 'page', tourStep: 7, adminOnly: true },
   { id: 'toolbar.reload', kind: 'control', section: 'toolbar', anchor: 'toolbar.reload' },
 
   // ---- grid ----
@@ -54,7 +54,8 @@ export const PLANNING_HELP_ENTRIES: HelpEntry[] = [
   { id: 'grid.messageIcons', kind: 'control', section: 'grid', anchor: 'grid.messageIcons' },
   { id: 'grid.sortName', kind: 'control', section: 'grid', anchor: 'grid.sortName' },
   { id: 'grid.openDay', kind: 'control', section: 'grid', anchor: 'grid.openDay',
-    tour: 'page', tourStep: 6 },
+    tour: 'page', tourStep: 8 },
+  { id: 'grid.noWorkers', kind: 'control', section: 'grid', anchor: 'grid.noWorkers' },
 
   // ---- day-cell dialog ----
   { id: 'dayCell.versionHistory', kind: 'control', section: 'dayCell', anchor: 'dayCell.versionHistory' },
@@ -79,6 +80,7 @@ export const PLANNING_HELP_ENTRIES: HelpEntry[] = [
   { id: 'dayCell.save', kind: 'control', section: 'dayCell', anchor: 'dayCell.save',
     tour: 'dialog', tourStep: 6 },
   { id: 'dayCell.oneMinuteIntervals', kind: 'control', section: 'dayCell', anchor: 'dayCell.oneMinuteIntervals' },
+  { id: 'dayCell.planHoursLimit', kind: 'control', section: 'dayCell', anchor: 'dayCell.planHoursLimit' },
 
   // ---- flex ----
   { id: 'flex.whatIsFlex', kind: 'control', section: 'flex', anchor: 'flex.whatIsFlex' },

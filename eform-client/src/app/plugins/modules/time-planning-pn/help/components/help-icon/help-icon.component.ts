@@ -1,7 +1,7 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { ConnectedPosition, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
-import { HelpEntryId, HelpProse, HelpUiStrings } from '../../help.model';
-import { HelpContentService } from '../../services/help-content.service';
+import { HelpEntryId } from '../../help.model';
+import { HelpEntryChromeBase } from '../help-chrome.base';
 
 @Component({
   selector: 'tp-help-icon',
@@ -9,8 +9,7 @@ import { HelpContentService } from '../../services/help-content.service';
   styleUrls: ['./help-icon.component.scss'],
   standalone: false,
 })
-export class HelpIconComponent {
-  @Input() helpId!: HelpEntryId;
+export class HelpIconComponent extends HelpEntryChromeBase {
   @Output() openInPanel = new EventEmitter<HelpEntryId>();
 
   isOpen = false;
@@ -30,18 +29,9 @@ export class HelpIconComponent {
    */
   readonly scrollStrategy: ScrollStrategy;
 
-  constructor(private helpContent: HelpContentService, overlay: Overlay) {
+  constructor(overlay: Overlay) {
+    super();
     this.scrollStrategy = overlay.scrollStrategies.close();
-  }
-
-  /** Undefined for an id the registry does not know, so the template renders nothing. */
-  get prose(): HelpProse | undefined {
-    return this.helpContent.entry(this.helpId) ? this.helpContent.prose(this.helpId) : undefined;
-  }
-
-  /** Help chrome labels. Never the shared ngx-translate catalogue. */
-  get ui(): HelpUiStrings {
-    return this.helpContent.ui();
   }
 
   toggle(): void {

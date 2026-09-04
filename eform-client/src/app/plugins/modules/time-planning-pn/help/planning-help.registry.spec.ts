@@ -57,6 +57,16 @@ describe('planning help registry', () => {
     }
   });
 
+  it('ends the page tour by inviting the user to open a day', () => {
+    // The tour's closing move is meant to hand the planner the thing they came to
+    // do, not an export they may never touch.
+    const pageSteps = PLANNING_HELP_ENTRIES
+      .filter(e => e.tour === 'page' && e.tourStep !== undefined)
+      .sort((a, b) => (a.tourStep as number) - (b.tourStep as number));
+    expect(pageSteps.length).toBeGreaterThan(1);
+    expect(pageSteps[pageSteps.length - 1].id).toBe('grid.openDay');
+  });
+
   it('resolves every related id', () => {
     for (const entry of PLANNING_HELP_ENTRIES) {
       for (const related of entry.related ?? []) {

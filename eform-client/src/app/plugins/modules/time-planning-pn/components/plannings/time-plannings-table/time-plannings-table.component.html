@@ -1,3 +1,12 @@
+<!--
+  The Name column is pinned left, so a hint sitting flush to the left edge
+  immediately above the table reads as introducing that column. MtxGridColumn has
+  no per-column header template (see help/grid-help-anchors.ts, which stamps the
+  same header from a render hook for the same reason), so this is as close to the
+  column as the grid allows without replacing its whole header row.
+-->
+<tp-help-hint class="tp-help-hint--name-column" helpId="grid.nameColumn"></tp-help-hint>
+
 <mtx-grid
   id="main-header-text"
   [data]="timePlannings"
@@ -6,11 +15,15 @@
   [pageOnFront]="false"
   [rowStriped]="false"
   [showToolbar]="false"
+  [noResultTemplate]="noWorkersTemplate"
   class="time-dashboard"
 >
 </mtx-grid>
 
-<tp-help-hint helpId="grid.nameColumn"></tp-help-hint>
+<!-- mtx-grid renders this in place of the rows when `data` is empty. -->
+<ng-template #noWorkersTemplate>
+  <tp-help-hint helpId="grid.noWorkers" data-tp-help="grid.noWorkers"></tp-help-hint>
+</ng-template>
 
 <ng-template #firstColumnTemplate let-row let-col="colDef" let-index="index">
   <ng-container *ngIf="(selectAuthIsAdmin$ | async) === true">

@@ -194,4 +194,36 @@
       color: var(--text-header, #0f1316);
     }
   }
+
+  &__related-title {
+    margin-top: 10px;
+    font-weight: 600;
+    color: var(--text-header, #0f1316);
+  }
+
+  &__related {
+    margin: 3px 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      margin-bottom: 1px;
+    }
+  }
+
+  &__related-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--primary, #289694);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
 }

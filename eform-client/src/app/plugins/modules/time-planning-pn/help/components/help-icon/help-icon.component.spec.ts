@@ -34,23 +34,49 @@ describe('HelpIconComponent', () => {
     expect(fixture.componentInstance.isOpen).toBe(true);
   });
 
+  // These three drive real events through the template bindings rather than
+  // calling the handlers. Calling onOverlayKeydown() or onMore() directly proves
+  // only that the methods work: delete (overlayKeydown) or (click)="onMore()"
+  // from the template and such tests stay green while the control goes inert.
+  const press = (key: string) =>
+    // CDK's OverlayKeyboardDispatcher listens on document.body and routes to the
+    // topmost open overlay, which is what (overlayKeydown) is fed from.
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+
   it('closes on Escape', () => {
     fixture.componentInstance.isOpen = true;
-    fixture.componentInstance.onOverlayKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(document.querySelector('.tp-help-popover')).not.toBeNull();
+
+    press('Escape');
+    fixture.detectChanges();
+
     expect(fixture.componentInstance.isOpen).toBe(false);
+    expect(document.querySelector('.tp-help-popover')).toBeNull();
   });
 
   it('ignores other keys', () => {
     fixture.componentInstance.isOpen = true;
-    fixture.componentInstance.onOverlayKeydown(new KeyboardEvent('keydown', { key: 'a' }));
+    fixture.detectChanges();
+
+    press('a');
+    fixture.detectChanges();
+
     expect(fixture.componentInstance.isOpen).toBe(true);
+    expect(document.querySelector('.tp-help-popover')).not.toBeNull();
   });
 
   it('emits the id when More is used, and closes', () => {
     const seen: string[] = [];
     fixture.componentInstance.openInPanel.subscribe(id => seen.push(id));
     fixture.componentInstance.isOpen = true;
-    fixture.componentInstance.onMore();
+    fixture.detectChanges();
+
+    const more = document.querySelector('.tp-help-popover__more') as HTMLButtonElement;
+    expect(more).not.toBeNull();
+    more.click();
+    fixture.detectChanges();
+
     expect(seen).toEqual(['toolbar.dateRange']);
     expect(fixture.componentInstance.isOpen).toBe(false);
   });

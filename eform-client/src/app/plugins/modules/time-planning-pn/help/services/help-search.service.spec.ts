@@ -17,13 +17,23 @@ describe('HelpSearchService', () => {
   };
 
   it('finds the vacation task from the Danish word', () => {
-    const ids = make('da').search('ferie', { isAdmin: false }).map(r => r.entry.id);
-    expect(ids).toContain('task.registerVacation');
+    const results = make('da').search('ferie', { isAdmin: false });
+    // `fallback` distinguishes a real hit from the task list search hands back
+    // when nothing matched. Without this guard the assertion below would also
+    // pass on a no-match, because task.registerVacation is one of the twelve
+    // tasks in that consolation list.
+    expect(results.some(r => !r.fallback)).toBe(true);
+    expect(results.map(r => r.entry.id)).toContain('task.registerVacation');
   });
 
   it('finds a Danish entry from an English word, through the fallback', () => {
-    const ids = make('da').search('vacation', { isAdmin: false }).map(r => r.entry.id);
-    expect(ids).toContain('task.registerVacation');
+    const results = make('da').search('vacation', { isAdmin: false });
+    expect(results.some(r => !r.fallback)).toBe(true);
+    // Asserted on a CONTROL, which the no-match task list can never contain, and
+    // on one whose Danish prose does not carry the English word: the only route
+    // to it is HELP_FALLBACK in HelpSearchService.rank(). Remove that candidate
+    // and this goes red.
+    expect(results.map(r => r.entry.id)).toContain('dayCell.flags');
   });
 
   it('folds diacritics so ae matches æ', () => {
@@ -74,11 +84,16 @@ describe('HelpSearchService', () => {
     const results = make('en-US').search('zzzznomatch', { isAdmin: false });
     expect(results.length).toBeGreaterThan(0);
     expect(results.every(r => r.entry.kind === 'task')).toBe(true);
+    expect(results.every(r => r.fallback === true)).toBe(true);
   });
 
   it('returns the task list for an empty query', () => {
     const results = make('en-US').search('   ', { isAdmin: false });
+    // [].every() is true, so without a length guard this passes on the exact bug
+    // it is here to catch: a blank query returning nothing at all.
+    expect(results.length).toBeGreaterThan(0);
     expect(results.every(r => r.entry.kind === 'task')).toBe(true);
+    expect(results.every(r => r.fallback === true)).toBe(true);
   });
 
   it('never returns an admin-only entry to a non-admin', () => {

@@ -251,6 +251,12 @@ export const enUS: HelpProseMap = {
     detail: 'The dialog that opens covers one worker on one date. Everything on the day — plan, registered times, day type, comments — is edited there and takes effect when you save.',
     keywords: ['open', 'click', 'edit day', 'day dialog', 'change day', 'double click', 'edit cell', 'how to edit'],
   },
+  'grid.noWorkers': {
+    title: 'The list is empty',
+    short: 'No worker matched the filters above the table. The page has data; this selection has no rows.',
+    detail: 'Clear the tag filter, set the worker filter back to all workers, or widen the date range. Show resigned also narrows the list: a worker who has left stays hidden until it is on. If the list is still empty with every filter cleared, no worker is set up for these dates.',
+    keywords: ['empty', 'no rows', 'no workers', 'nothing shown', 'blank table', 'missing worker', 'filter', 'no results', 'list is empty', 'where are my workers'],
+  },
 
   // -------------------------------------------------------------- day cell ----
   'dayCell.versionHistory': {
@@ -349,6 +355,12 @@ export const enUS: HelpProseMap = {
     detail: 'The 1m badge in the worker row tells you which applies. If a picker will not let you land on the exact minute you want, that worker is on five-minute steps.',
     keywords: ['minutes', 'one minute', '1m', 'five minute', 'interval', 'step', 'rounding', 'granularity', 'exact time', 'picker'],
   },
+  'dayCell.planHoursLimit': {
+    title: 'Planned hours cannot exceed 24',
+    short: 'The planned hours on one day, across every shift, have to add up to 24 or less. Until they do, the field is in error and Save stays disabled.',
+    detail: 'Check the planned start and stop of each shift on the day: the total is what is being measured, not any single shift. A shift that runs past midnight belongs partly to the next day, so plan the hours after midnight on that day instead of stacking them onto this one.',
+    keywords: ['24 hours', 'exceed', 'too many hours', 'planned hours', 'validation', 'error', 'red', 'save disabled', 'cannot save', 'over 24', 'limit'],
+  },
 
   // ----------------------------------------------------------------- flex ----
   'flex.whatIsFlex': {
@@ -382,6 +394,8 @@ export const enUSUi: HelpUiStrings = {
   next: 'Next',
   noResults: 'Nothing matched. Here is what people usually need:',
   resultCount: 'results',
+  resultCountOne: 'result',
+  relatedControls: 'Controls this uses',
   kindTask: 'Task',
   kindControl: 'Control',
   sectionTask: 'Common tasks',

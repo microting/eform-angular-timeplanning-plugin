@@ -10,9 +10,9 @@ import {
 } from '@angular/core';
 import { CdkConnectedOverlay, ConnectedPosition } from '@angular/cdk/overlay';
 import { Subscription } from 'rxjs';
-import { HelpProse, HelpTourName, HelpUiStrings } from '../../help.model';
-import { HelpContentService } from '../../services/help-content.service';
+import { HelpProse, HelpTourName } from '../../help.model';
 import { HelpTourService, HelpTourState } from '../../services/help-tour.service';
+import { HelpChromeBase } from '../help-chrome.base';
 
 /** Distinguishes the aria-labelledby target of one mounted tour from another's. */
 let nextTourCardId = 0;
@@ -23,7 +23,8 @@ let nextTourCardId = 0;
   styleUrls: ['./help-tour.component.scss'],
   standalone: false,
 })
-export class HelpTourComponent implements OnInit, DoCheck, AfterViewChecked, OnDestroy {
+export class HelpTourComponent extends HelpChromeBase
+  implements OnInit, DoCheck, AfterViewChecked, OnDestroy {
   /**
    * Which tour this instance renders. The service is a singleton and one page can
    * mount this component twice — once for the page tour, once inside the day-cell
@@ -60,18 +61,12 @@ export class HelpTourComponent implements OnInit, DoCheck, AfterViewChecked, OnD
    */
   private scrolledFor: string | null = null;
 
-  constructor(
-    private helpContent: HelpContentService,
-    private helpTour: HelpTourService,
-  ) {}
+  constructor(private helpTour: HelpTourService) {
+    super();
+  }
 
   get prose(): HelpProse | null {
     return this.state ? this.helpContent.prose(this.state.entry.id) : null;
-  }
-
-  /** Help chrome labels. Never the shared ngx-translate catalogue. */
-  get ui(): HelpUiStrings {
-    return this.helpContent.ui();
   }
 
   ngOnInit(): void {

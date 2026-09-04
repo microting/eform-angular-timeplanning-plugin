@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateService } from '@ngx-translate/core';
-import { HelpEntryId } from '../../help.model';
+import { HelpEntryId, HelpTourName } from '../../help.model';
 import { enUS, enUSUi } from '../../i18n/enUS';
 import { HelpPanelService } from '../../services/help-panel.service';
 import { HelpPanelComponent } from './help-panel.component';
@@ -216,17 +216,102 @@ describe('HelpPanelComponent', () => {
     expect(sectionHeadings().length).toBe(5);
   });
 
-  it('closes and asks the host to replay the tour', () => {
-    const replays: void[] = [];
-    component.replayTourRequested.subscribe(() => replays.push(undefined));
+  const clickReplay = () =>
+    (fixture.nativeElement.querySelector('.tp-help-panel__replay button') as HTMLElement).click();
+
+  it('closes and asks the host to replay the page tour', () => {
+    const replays: HelpTourName[] = [];
+    component.replayTourRequested.subscribe(tour => replays.push(tour));
     panel.open();
     fixture.detectChanges();
 
-    (fixture.nativeElement.querySelector('.tp-help-panel__replay button') as HTMLElement).click();
+    clickReplay();
     fixture.detectChanges();
 
-    expect(replays.length).toBe(1);
+    expect(replays).toEqual(['page']);
     expect(panelEl()).toBeNull();
+  });
+
+  it('asks for the dialog tour when it was opened from the day-cell dialog', () => {
+    // One panel serves both surfaces. Replaying the page tour from inside the
+    // dialog would anchor every step behind the dialog backdrop and leave a card
+    // nobody can reach until the dialog is closed.
+    const replays: HelpTourName[] = [];
+    component.replayTourRequested.subscribe(tour => replays.push(tour));
+    panel.open('dayCell.save', 'dialog');
+    fixture.detectChanges();
+
+    clickReplay();
+    fixture.detectChanges();
+
+    expect(replays).toEqual(['dialog']);
+  });
+
+  it('goes back to the page tour once the panel has closed', () => {
+    panel.open('dayCell.save', 'dialog');
+    fixture.detectChanges();
+    expect(component.surface).toBe('dialog');
+
+    panel.close();
+    fixture.detectChanges();
+    panel.open();
+    fixture.detectChanges();
+
+    expect(component.surface).toBe('page');
+  });
+
+  it('says "1 result", not "1 results"', () => {
+    panel.open();
+    // 'avatar' appears in exactly one entry's prose.
+    component.onQueryChange('avatar');
+    fixture.detectChanges();
+
+    expect(component.results.length).toBe(1);
+    expect(enUSUi.resultCountOne).not.toBe(enUSUi.resultCount);
+    expect(countText()).toBe(`1 ${enUSUi.resultCountOne}`);
+  });
+
+  it('ends an expanded task with links to the controls it touches', () => {
+    // `related` is registry data the panel is the only consumer of; unrendered it
+    // is dead weight the integrity spec alone keeps honest.
+    panel.open();
+    fixture.detectChanges();
+    component.toggleEntry('task.registerVacation');
+    fixture.detectChanges();
+
+    const links = Array.from(
+      fixture.nativeElement.querySelectorAll('.tp-help-entry__related-link'),
+    ).map(el => ((el as HTMLElement).textContent ?? '').trim());
+
+    const related = component.related('task.registerVacation');
+    expect(related.length).toBeGreaterThan(0);
+    expect(links).toEqual(related.map(id => enUS[id].title));
+    expect(text()).toContain(enUSUi.relatedControls);
+  });
+
+  it('moves the panel to a related control when its link is used', () => {
+    panel.open();
+    fixture.detectChanges();
+    component.toggleEntry('task.registerVacation');
+    fixture.detectChanges();
+
+    const first = component.related('task.registerVacation')[0];
+    (fixture.nativeElement.querySelector('.tp-help-entry__related-link') as HTMLElement).click();
+    fixture.detectChanges();
+
+    expect(component.expanded).toBe(first);
+    expect(component.targetId).toBe(first);
+    expect(fixture.nativeElement.querySelector('.tp-help-entry--target')).not.toBeNull();
+  });
+
+  it('drops a related link to an entry the reader is not allowed to see', () => {
+    // A link into an entry the panel does not list would deep-link to a row that
+    // is not there. task.exportForPayroll points at the admin-only payroll export.
+    component.isAdmin = false;
+    expect(component.related('task.exportForPayroll')).not.toContain('toolbar.payrollExport');
+
+    component.isAdmin = true;
+    expect(component.related('task.exportForPayroll')).toContain('toolbar.payrollExport');
   });
 
   it('names the query and offers the tasks when nothing matches', () => {
@@ -274,6 +359,56 @@ describe('HelpPanelComponent', () => {
     expect(panelEl()).toBeNull();
   });
 
+  it('swallows Escape before the CDK dispatcher can close the day-cell dialog', () => {
+    // CDK's OverlayKeyboardDispatcher listens for keydown on document.body in the
+    // bubble phase and routes it to the topmost overlay - which, when help is
+    // opened from inside a day cell, is the MatDialog holding unsaved edits. A
+    // plain document listener runs after that. Dispatch the event the way a real
+    // key press reaches the page (from the focused element, bubbling through body)
+    // and assert the body listener never sees it.
+    panel.open();
+    fixture.detectChanges();
+
+    const dispatcherStandIn = jest.fn();
+    document.body.addEventListener('keydown', dispatcherStandIn);
+    const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    document.body.dispatchEvent(event);
+    document.body.removeEventListener('keydown', dispatcherStandIn);
+    fixture.detectChanges();
+
+    expect(dispatcherStandIn).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(true);
+    expect(component.isOpen).toBe(false);
+    expect(panelEl()).toBeNull();
+  });
+
+  it('lets Escape through to the page once the panel has closed', () => {
+    // The shield must not outlive the panel, or Escape would stop closing the
+    // day-cell dialog at all.
+    const dispatcherStandIn = jest.fn();
+    document.body.addEventListener('keydown', dispatcherStandIn);
+    document.body.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    document.body.removeEventListener('keydown', dispatcherStandIn);
+
+    expect(dispatcherStandIn).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves other keys alone while open', () => {
+    panel.open();
+    fixture.detectChanges();
+
+    const dispatcherStandIn = jest.fn();
+    document.body.addEventListener('keydown', dispatcherStandIn);
+    document.body.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'a', bubbles: true, cancelable: true }));
+    document.body.removeEventListener('keydown', dispatcherStandIn);
+    fixture.detectChanges();
+
+    expect(dispatcherStandIn).toHaveBeenCalledTimes(1);
+    expect(component.isOpen).toBe(true);
+  });
+
   it('rebuilds what isAdmin filters when it arrives after opening', () => {
     panel.open();
     component.onQueryChange('payroll');
@@ -288,6 +423,31 @@ describe('HelpPanelComponent', () => {
 
     expect(browsedIds()).toContain('toolbar.payrollExport');
     expect(resultIds()).toContain('toolbar.payrollExport');
+  });
+
+  it('does not rebuild on the first isAdmin change, or while closed', () => {
+    // Both guards, on their false side. ngOnChanges fires once at creation with
+    // firstChange true, before the panel has ever opened; rebuilding then would
+    // hand *ngFor a fresh array on every open and drop focus and scroll position.
+    const rebuild = jest.spyOn(component as any, 'buildSections');
+
+    component.isAdmin = true;
+    component.ngOnChanges({ isAdmin: new SimpleChange(undefined, true, true) });
+    expect(rebuild).not.toHaveBeenCalled();
+
+    // Not the first change any more, but the panel is closed.
+    component.ngOnChanges({ isAdmin: new SimpleChange(true, false, false) });
+    expect(rebuild).not.toHaveBeenCalled();
+
+    // A change that is neither of those does rebuild, so the test above is not
+    // passing because buildSections is unreachable.
+    panel.open();
+    fixture.detectChanges();
+    rebuild.mockClear();
+    component.ngOnChanges({ isAdmin: new SimpleChange(false, true, false) });
+    expect(rebuild).toHaveBeenCalled();
+
+    rebuild.mockRestore();
   });
 
   it('stops listening to the panel service once destroyed', () => {

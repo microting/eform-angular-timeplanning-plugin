@@ -106,8 +106,12 @@
     >
       <mat-icon>restart_alt</mat-icon>
     </button>
+    <!--
+      Same markup as the five toolbar buttons above it. mat-icon-button used to sit
+      here as well and sized the button from Material's own state-layer variables,
+      which are not what btn-secondary--icon-rounded-border assumes.
+    -->
     <button
-      mat-icon-button
       type="button"
       id="planningHelp"
       class="btn-secondary btn-secondary--icon-rounded-border"
@@ -139,5 +143,5 @@
 ></app-time-plannings-table>
 <!--</div>-->
 
-<tp-help-panel [isAdmin]="isAdmin" (replayTourRequested)="replayPageTour()"></tp-help-panel>
+<tp-help-panel [isAdmin]="isAdmin" (replayTourRequested)="replayTour($event)"></tp-help-panel>
 <tp-help-tour tour="page"></tp-help-tour>

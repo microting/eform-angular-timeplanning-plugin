@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:4200",
+      "localStorage": [
+        {
+          "name": "tp.planning.tour.v1",
+          "value": "[\"page\",\"dialog\"]"
+        }
+      ]
+    }
+  ]
+}

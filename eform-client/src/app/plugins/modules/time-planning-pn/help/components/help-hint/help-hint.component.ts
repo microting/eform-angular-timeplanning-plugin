@@ -1,6 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { HelpEntryId, HelpProse } from '../../help.model';
-import { HelpContentService } from '../../services/help-content.service';
+import { HelpEntryChromeBase } from '../help-chrome.base';
 
 @Component({
   selector: 'tp-help-hint',
@@ -8,13 +7,6 @@ import { HelpContentService } from '../../services/help-content.service';
   styleUrls: ['./help-hint.component.scss'],
   standalone: false,
 })
-export class HelpHintComponent {
-  @Input() helpId!: HelpEntryId;
+export class HelpHintComponent extends HelpEntryChromeBase {
   @Input() tone: 'info' | 'warn' = 'info';
-
-  constructor(private helpContent: HelpContentService) {}
-
-  get prose(): HelpProse | undefined {
-    return this.helpContent.entry(this.helpId) ? this.helpContent.prose(this.helpId) : undefined;
-  }
 }

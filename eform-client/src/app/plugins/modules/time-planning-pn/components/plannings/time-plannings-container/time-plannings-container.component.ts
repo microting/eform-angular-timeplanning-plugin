@@ -16,7 +16,7 @@ import {selectCurrentUserLocale, selectCurrentUserIsAdmin} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
 import {DownloadExcelDialogComponent, PayrollExportDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
-import {HelpEntryId, HelpUiStrings} from '../../../help/help.model';
+import {HelpEntryId, HelpTourName, HelpUiStrings} from '../../../help/help.model';
 import {HelpContentService} from '../../../help/services/help-content.service';
 import {HelpPanelService} from '../../../help/services/help-panel.service';
 import {HelpTourService} from '../../../help/services/help-tour.service';
@@ -157,9 +157,16 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     this.helpPanel.open(target);
   }
 
-  replayPageTour(): void {
+  /**
+   * Replays whichever tour the panel says applies to the surface it was opened
+   * from. Opened from the toolbar that is the page tour; opened from inside the
+   * day-cell dialog it is the dialog tour, whose anchors are the only ones in
+   * front of the dialog backdrop. This is also the only way the dialog tour can
+   * be seen a second time: the dialog itself offers it once, gated on hasSeen.
+   */
+  replayTour(tour: HelpTourName): void {
     // The panel has already closed itself; let that settle before querying anchors.
-    setTimeout(() => this.helpTour.start('page', { isAdmin: this.isAdmin }));
+    setTimeout(() => this.helpTour.start(tour, { isAdmin: this.isAdmin }));
   }
 
   private startPageTourOnce(): void {

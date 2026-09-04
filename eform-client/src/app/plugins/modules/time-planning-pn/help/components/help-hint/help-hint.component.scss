@@ -27,3 +27,14 @@
     }
   }
 }
+
+/**
+ * The grid's Name column is pinned left, so this variant keeps the hint flush to
+ * the left edge and no wider than the column it introduces, rather than letting
+ * it stretch into a banner across the whole table.
+ */
+:host(.tp-help-hint--name-column) {
+  display: block;
+  max-width: 320px;
+  margin-bottom: 8px;
+}

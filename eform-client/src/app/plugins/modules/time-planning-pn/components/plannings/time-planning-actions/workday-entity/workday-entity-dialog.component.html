@@ -349,6 +349,11 @@
               </mat-form-field>
               <tp-help-icon helpId="dayCell.planHours" (openInPanel)="openHelp($event)"></tp-help-icon>
             </div>
+            <tp-help-hint
+              *ngIf="workdayForm.hasError('tooManyHours')"
+              helpId="dayCell.planHoursLimit"
+              data-tp-help="dayCell.planHoursLimit"
+              tone="warn"></tp-help-hint>
 
             <mat-form-field *ngIf="!isInTheFuture">
               <mat-label>{{ 'NettoHours' | translate }}</mat-label>

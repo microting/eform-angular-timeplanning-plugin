@@ -117,6 +117,62 @@ describe('help wiring', () => {
     expect(bindings).toBe(icons);
     expect((MARKUP.match(/<tp-help-panel/g) ?? []).length)
       .toBe((MARKUP.match(/\(replayTourRequested\)=/g) ?? []).length);
+    // And the host must forward what the panel emitted. Hardcoding 'page' here
+    // would replay the page tour from inside the day-cell dialog, pointing every
+    // step at an anchor behind the dialog backdrop.
+    expect(read(CONTAINER_HTML)).toContain('(replayTourRequested)="replayTour($event)"');
+  });
+
+  it('places an inline hint at each of the four spots the spec names', () => {
+    // Registry entries with no hint on the page are content nobody ever reaches
+    // in the situation it was written for.
+    const hints = [...MARKUP.matchAll(/<tp-help-hint[\s\S]*?>/g)].map(match => match[0]);
+    const hintIds = hints
+      .map(hint => /helpId="([^"]+)"/.exec(hint)?.[1])
+      .filter((id): id is string => !!id);
+    expect(hintIds.sort()).toEqual([
+      'dayCell.futureDisabled', 'dayCell.planHoursLimit', 'grid.nameColumn', 'grid.noWorkers',
+    ]);
+  });
+
+  it('shows the plan-hours hint with the validation error, not always', () => {
+    const dialogHtml = read(DIALOG_HTML);
+    const hint = /<tp-help-hint[^>]*helpId="dayCell.planHoursLimit"[\s\S]*?><\/tp-help-hint>|<tp-help-hint[\s\S]*?helpId="dayCell.planHoursLimit"[\s\S]*?><\/tp-help-hint>/
+      .exec(dialogHtml);
+    expect(hint).not.toBeNull();
+    expect((hint as RegExpExecArray)[0]).toContain("hasError('tooManyHours')");
+    // Beside the error it explains, not somewhere else in the form.
+    expect(dialogHtml.indexOf('helpId="dayCell.planHoursLimit"'))
+      .toBeGreaterThan(dialogHtml.indexOf('data-testid="planHours-Error"'));
+  });
+
+  it('renders the empty-grid hint where the grid renders no rows', () => {
+    // mtx-grid swaps noResultTemplate in for the row area when `data` is empty;
+    // dropped anywhere else the hint would be a permanent banner.
+    const tableHtml = read(TABLE_HTML);
+    expect(tableHtml).toContain('[noResultTemplate]="noWorkersTemplate"');
+    const template = /<ng-template #noWorkersTemplate>([\s\S]*?)<\/ng-template>/.exec(tableHtml);
+    expect(template).not.toBeNull();
+    expect((template as RegExpExecArray)[1]).toContain('helpId="grid.noWorkers"');
+  });
+
+  it('puts the name-column hint above the grid, not below the whole table', () => {
+    // Below </mtx-grid> it reads as a footnote on the table rather than as
+    // something about the column it describes.
+    const tableHtml = read(TABLE_HTML);
+    expect(tableHtml.indexOf('helpId="grid.nameColumn"'))
+      .toBeLessThan(tableHtml.indexOf('<mtx-grid'));
+  });
+
+  it('gives the help button the same markup as its toolbar siblings', () => {
+    const containerHtml = read(CONTAINER_HTML);
+    const button = /<button[^>]*id="planningHelp"[\s\S]*?>/.exec(containerHtml);
+    expect(button).not.toBeNull();
+    // mat-icon-button sizes from Material's state-layer variables and fights the
+    // shared class the other five toolbar buttons use on their own.
+    expect((button as RegExpExecArray)[0]).not.toContain('mat-icon-button');
+    expect((button as RegExpExecArray)[0])
+      .toContain('class="btn-secondary btn-secondary--icon-rounded-border"');
   });
 
   it('does not introduce new translate keys for help chrome', () => {

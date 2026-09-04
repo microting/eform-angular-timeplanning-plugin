@@ -11,12 +11,14 @@ export const HELP_IDS = [
   // grid controls
   'grid.nameColumn', 'grid.tagChips', 'grid.settingsStrip', 'grid.dayCellAnatomy',
   'grid.weeklyPlannedHours', 'grid.messageIcons', 'grid.sortName', 'grid.openDay',
+  'grid.noWorkers',
   // day-cell dialog controls
   'dayCell.versionHistory', 'dayCell.plannedTimes', 'dayCell.actualTimes',
   'dayCell.shiftCount', 'dayCell.resetField', 'dayCell.resetPauseToRecorded',
   'dayCell.gps', 'dayCell.snapshot', 'dayCell.futureDisabled', 'dayCell.planHours',
   'dayCell.nettoOverride', 'dayCell.paidOutFlex', 'dayCell.flags',
   'dayCell.commentOffice', 'dayCell.save', 'dayCell.oneMinuteIntervals',
+  'dayCell.planHoursLimit',
   // flex controls
   'flex.whatIsFlex', 'flex.sumFlex', 'flex.paidOutFlexRelation',
 ] as const;
@@ -67,6 +69,10 @@ export interface HelpUiStrings {
   noResults: string;
   /** Plural noun for the search result count, e.g. "12 results". */
   resultCount: string;
+  /** Singular noun for a one-hit search, e.g. "1 result". */
+  resultCountOne: string;
+  /** Heading above the controls a task points at. */
+  relatedControls: string;
   /** Accessible names for the kind badge on a search result. */
   kindTask: string;
   kindControl: string;

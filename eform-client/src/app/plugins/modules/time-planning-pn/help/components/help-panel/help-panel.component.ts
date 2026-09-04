@@ -1,13 +1,15 @@
 import {
-  AfterViewChecked, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy,
+  AfterViewChecked, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy,
   OnInit, Output, SimpleChanges,
 } from '@angular/core';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { Subscription } from 'rxjs';
-import { HelpEntry, HelpEntryId, HelpProse, HelpSection, HelpUiStrings } from '../../help.model';
-import { HelpContentService } from '../../services/help-content.service';
+import {
+  HelpEntry, HelpEntryId, HelpProse, HelpSection, HelpTourName,
+} from '../../help.model';
 import { HelpPanelService } from '../../services/help-panel.service';
 import { HelpSearchResult, HelpSearchService } from '../../services/help-search.service';
+import { HelpChromeBase } from '../help-chrome.base';
 
 export interface PanelSection {
   section: HelpSection;
@@ -23,18 +25,25 @@ const SECTION_ORDER: HelpSection[] = ['task', 'toolbar', 'grid', 'dayCell', 'fle
   styleUrls: ['./help-panel.component.scss'],
   standalone: false,
 })
-export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, OnDestroy {
+export class HelpPanelComponent extends HelpChromeBase
+  implements OnInit, OnChanges, AfterViewChecked, OnDestroy {
   @Input() isAdmin = false;
 
   /**
-   * Asks the host to replay the tour. The panel deliberately does not depend on
-   * HelpTourService — keeping the two independent means neither has to know about
-   * the other, and the host already owns where the tour is anchored.
+   * Asks the host to replay a tour, naming which one. The panel deliberately does
+   * not depend on HelpTourService — keeping the two independent means neither has
+   * to know about the other, and the host already owns where the tour is anchored.
+   * The name matters because one panel serves two surfaces: opened from the
+   * day-cell dialog it must replay the dialog tour, whose anchors are the only
+   * ones reachable while the dialog's backdrop is up.
    */
-  @Output() replayTourRequested = new EventEmitter<void>();
+  @Output() replayTourRequested = new EventEmitter<HelpTourName>();
 
   isOpen = false;
   targetId: HelpEntryId | null = null;
+
+  /** The tour belonging to the surface the panel was opened from. */
+  surface: HelpTourName = 'page';
   query = '';
   results: HelpSearchResult[] = [];
   sections: PanelSection[] = [];
@@ -54,20 +63,19 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
   private originalNextSibling: Node | null = null;
   private pendingFocus = false;
 
+  /** Whether the capture-phase Escape listener is currently on document. */
+  private escapeCaptureBound = false;
+
   /** What had focus when the panel opened, so closing can hand it back. */
   private focusOnOpen: HTMLElement | null = null;
 
   constructor(
-    private helpContent: HelpContentService,
     private helpSearch: HelpSearchService,
     private helpPanel: HelpPanelService,
     private host: ElementRef<HTMLElement>,
     private overlayContainer: OverlayContainer,
-  ) {}
-
-  /** Chrome labels. Never the shared ngx-translate catalogue. */
-  get ui(): HelpUiStrings {
-    return this.helpContent.ui();
+  ) {
+    super();
   }
 
   get isSearching(): boolean {
@@ -96,6 +104,7 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
       this.isOpen = isOpen;
       if (isOpen) {
         this.moveIntoOverlayContainer();
+        this.bindEscapeCapture();
         if (!wasOpen) {
           // Only on a real closed -> open transition. Rebuilding the sections
           // hands *ngFor a fresh array and re-creates every entry node, which
@@ -107,11 +116,15 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
           this.pendingFocus = true;
         }
       } else {
+        this.unbindEscapeCapture();
         this.onQueryChange('');
         this.restoreFromOverlayContainer();
         this.pendingFocus = false;
         this.returnFocus();
       }
+    }));
+    this.subscriptions.add(this.helpPanel.surface$.subscribe(surface => {
+      this.surface = surface;
     }));
     this.subscriptions.add(this.helpPanel.target$.subscribe(target => {
       this.targetId = target;
@@ -151,16 +164,47 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
     }
   }
 
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.isOpen) {
-      this.close();
+  /**
+   * Escape closes the panel and must not reach anything underneath it. The panel
+   * is a plain element rather than an OverlayRef, so CDK's OverlayKeyboardDispatcher
+   * does not shield it the way it shields the popover and the tour card: that
+   * dispatcher listens on document.body in the bubble phase, which runs BEFORE a
+   * document-level bubble listener, and it would hand Escape to the day-cell
+   * dialog's MatDialogRef (disableClose is false by default). Opening help from
+   * inside a day dialog and pressing Escape would then close the editor and
+   * discard unsaved edits. Listening on document in the CAPTURE phase puts this
+   * handler ahead of the dispatcher, and stopping propagation there means the
+   * event never descends to body at all.
+   */
+  private readonly onEscapeCapture = (event: KeyboardEvent): void => {
+    if (!this.isOpen || event.key !== 'Escape') {
+      return;
     }
-  }
+    event.stopPropagation();
+    event.preventDefault();
+    this.close();
+  };
 
   ngOnDestroy(): void {
+    this.unbindEscapeCapture();
     this.restoreFromOverlayContainer();
     this.subscriptions.unsubscribe();
+  }
+
+  private bindEscapeCapture(): void {
+    if (this.escapeCaptureBound) {
+      return;
+    }
+    this.escapeCaptureBound = true;
+    document.addEventListener('keydown', this.onEscapeCapture, true);
+  }
+
+  private unbindEscapeCapture(): void {
+    if (!this.escapeCaptureBound) {
+      return;
+    }
+    this.escapeCaptureBound = false;
+    document.removeEventListener('keydown', this.onEscapeCapture, true);
   }
 
   /**
@@ -230,6 +274,29 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
     return this.helpContent.prose(id);
   }
 
+  /**
+   * The controls a task touches. Filtered by the same admin rule the rest of the
+   * panel uses, so a link can never point at an entry the panel does not list.
+   */
+  related(id: HelpEntryId): HelpEntryId[] {
+    return (this.helpContent.entry(id)?.related ?? [])
+      .filter(relatedId => {
+        const entry = this.helpContent.entry(relatedId);
+        return !!entry && (!entry.adminOnly || this.isAdmin);
+      });
+  }
+
+  /**
+   * Follows a related link. Reuses the existing deep-link target rather than
+   * inventing panel-local navigation: open() expands the entry and scrolls to it.
+   * The query is cleared first, because a control the current search did not match
+   * has no row to scroll to while the result list is on screen.
+   */
+  openRelated(id: HelpEntryId): void {
+    this.onQueryChange('');
+    this.helpPanel.open(id);
+  }
+
   sectionLabel(section: HelpSection): string {
     const labels: Record<HelpSection, string> = {
       task: this.ui.sectionTask,
@@ -246,8 +313,10 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
   }
 
   replayTour(): void {
+    // Read before closing: close() resets the surface back to the page.
+    const tour = this.surface;
     this.helpPanel.close();
-    this.replayTourRequested.emit();
+    this.replayTourRequested.emit(tour);
   }
 
   private buildSections(): void {

@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { HelpContentService } from './help-content.service';
-import { enUS } from '../i18n/enUS';
-import { da } from '../i18n/da';
+import { enUS, enUSUi } from '../i18n/enUS';
+import { da, daUi } from '../i18n/da';
 import { HELP_LOCALES } from '../i18n';
 import { HelpProseMap } from '../help.model';
 
@@ -53,6 +53,32 @@ describe('HelpContentService', () => {
     } finally {
       delete HELP_LOCALES['da-partial'];
     }
+  });
+
+  // ui() resolves the chrome labels the same way prose() resolves content, and it
+  // is the only source of help chrome: the components must never reach for the 25
+  // shared ngx-translate locale files. Untested, a resolution bug here would show
+  // up as an English panel inside a Danish page.
+  it('returns English chrome labels for an English locale', () => {
+    expect(make('en-US').ui()).toBe(enUSUi);
+  });
+
+  it('resolves a bare language code to that locale\'s chrome labels', () => {
+    expect(make('da').ui()).toBe(daUi);
+  });
+
+  it('resolves a regional code to its bare language, before falling back', () => {
+    // ngx-translate reports whatever the account is set to; 'da-DK' has no map of
+    // its own and must land on Danish rather than on English.
+    expect(make('da-DK').ui()).toBe(daUi);
+  });
+
+  it('falls back to English chrome labels for a locale with no map', () => {
+    expect(make('de-DE').ui()).toBe(enUSUi);
+  });
+
+  it('falls back to English chrome labels when no locale is reported at all', () => {
+    expect(make('').ui()).toBe(enUSUi);
   });
 
   it('hides admin-only entries from a non-admin', () => {

@@ -26,11 +26,13 @@
 
   <div class="tp-help-panel__body">
     <ng-container *ngIf="isSearching; else browse">
-      <p class="tp-help-panel__count tp-help-panel__count--empty" *ngIf="isFallback; else resultCount">
+      <p class="tp-help-panel__count" *ngIf="isFallback; else resultCount">
         &ldquo;{{ query }}&rdquo; &mdash; {{ ui.noResults }}
       </p>
       <ng-template #resultCount>
-        <p class="tp-help-panel__count">{{ results.length }} {{ ui.resultCount }}</p>
+        <p class="tp-help-panel__count">
+          {{ results.length }} {{ results.length === 1 ? ui.resultCountOne : ui.resultCount }}
+        </p>
       </ng-template>
       <article
         class="tp-help-entry"
@@ -49,12 +51,10 @@
           <b>{{ result.prose.title }}</b>
         </button>
         <p>{{ result.prose.short }}</p>
-        <ng-container *ngIf="expanded === result.entry.id">
-          <p class="tp-help-entry__detail" *ngIf="result.prose.detail">{{ result.prose.detail }}</p>
-          <ol class="tp-help-entry__steps" *ngIf="result.prose.steps">
-            <li *ngFor="let step of result.prose.steps">{{ step }}</li>
-          </ol>
-        </ng-container>
+        <ng-container
+          *ngIf="expanded === result.entry.id"
+          [ngTemplateOutlet]="entryDetail"
+          [ngTemplateOutletContext]="{ id: result.entry.id, prose: result.prose }"></ng-container>
       </article>
     </ng-container>
 
@@ -70,15 +70,38 @@
               <b>{{ entryProse.title }}</b>
             </button>
             <p>{{ entryProse.short }}</p>
-            <ng-container *ngIf="expanded === entry.id">
-              <p class="tp-help-entry__detail" *ngIf="entryProse.detail">{{ entryProse.detail }}</p>
-              <ol class="tp-help-entry__steps" *ngIf="entryProse.steps">
-                <li *ngFor="let step of entryProse.steps">{{ step }}</li>
-              </ol>
-            </ng-container>
+            <ng-container
+              *ngIf="expanded === entry.id"
+              [ngTemplateOutlet]="entryDetail"
+              [ngTemplateOutletContext]="{ id: entry.id, prose: entryProse }"></ng-container>
           </ng-container>
         </article>
       </ng-container>
     </ng-template>
   </div>
 </aside>
+
+<!--
+  The expanded body of one entry, shared by the search results and the browse list.
+  A task ends by pointing at the controls it touches: each is a link that moves the
+  panel to that entry, through the same deep-link target the help icons use.
+-->
+<ng-template #entryDetail let-id="id" let-entryProse="prose">
+  <p class="tp-help-entry__detail" *ngIf="entryProse.detail">{{ entryProse.detail }}</p>
+  <ol class="tp-help-entry__steps" *ngIf="entryProse.steps">
+    <li *ngFor="let step of entryProse.steps">{{ step }}</li>
+  </ol>
+  <ng-container *ngIf="related(id).length > 0">
+    <p class="tp-help-entry__related-title">{{ ui.relatedControls }}</p>
+    <ul class="tp-help-entry__related">
+      <li *ngFor="let relatedId of related(id)">
+        <button
+          type="button"
+          class="tp-help-entry__related-link"
+          (click)="openRelated(relatedId)">
+          {{ prose(relatedId).title }}
+        </button>
+      </li>
+    </ul>
+  </ng-container>
+</ng-template>

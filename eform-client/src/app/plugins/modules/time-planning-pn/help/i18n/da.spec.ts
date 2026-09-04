@@ -58,16 +58,13 @@ describe('Danish help content', () => {
     }
   });
 
-  // The Danish labels are not a word-for-word map of the English ones: DayOff is
-  // "Fridag", VacationDayOff is "Afspadsering", and TimeOff is "Ferie fridag" — which
-  // looks like a day off but keeps the planned hours. The day-type entry has to name
-  // all of them the way the checkboxes do.
-  it('names the day types that zero the day, and the look-alikes that do not', () => {
-    const text = [da['dayCell.flags'].short, da['dayCell.flags'].detail ?? ''].join(' ');
-    for (const label of ['Fridag', 'Afspadsering', 'Ferie', 'Ferie fridag', 'nul timer']) {
-      expect(text).toContain(label);
-    }
-  });
+  // The Danish day-type copy is covered by day-type-copy.spec.ts, which asserts the
+  // same thing properly: that ONE sentence carries the warning about the look-alike
+  // type, in every registered locale. The version that used to stand here checked
+  // only that five substrings appeared somewhere in the entry, all of which the
+  // neutral type-by-type listing already guarantees — and 'Ferie' is a substring of
+  // 'Ferie fridag' — so deleting the warning sentence left it green. Removed rather
+  // than hardened, because hardening it would have reproduced the other spec.
 
   it('never mentions administrators', () => {
     // \w* catches the Danish definite and possessive forms — administratoren,

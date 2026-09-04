@@ -255,6 +255,12 @@ export const da: HelpProseMap = {
     detail: 'Dialogen, der åbner, dækker én medarbejder på én dato. Alt på dagen — plan, registrerede tider, dagtype og kommentarer — redigeres der og træder i kraft, når du gemmer.',
     keywords: ['åbn', 'klik', 'rediger dag', 'dagdialog', 'ændre dag', 'dobbeltklik', 'hvordan retter jeg en dag'],
   },
+  'grid.noWorkers': {
+    title: 'Listen er tom',
+    short: 'Ingen medarbejder passer til filtrene over skemaet. Siden har data; det er udvalget, der ikke giver nogen rækker.',
+    detail: 'Ryd tagfilteret, sæt medarbejderfilteret tilbage til alle medarbejdere, eller udvid datointervallet. Vis fratrådte begrænser også listen: en medarbejder, der er stoppet, bliver ved med at være skjult, indtil den er slået til. Er listen stadig tom, når alle filtre er ryddet, er der ingen medarbejder sat op i den valgte periode.',
+    keywords: ['tom', 'ingen rækker', 'ingen medarbejdere', 'intet vises', 'tomt skema', 'mangler medarbejder', 'filter', 'ingen resultater', 'listen er tom', 'hvor er mine medarbejdere'],
+  },
 
   // ---------------------------------------------------------- rediger dag ----
   'dayCell.versionHistory': {
@@ -353,6 +359,12 @@ export const da: HelpProseMap = {
     detail: 'Mærket 1m i medarbejderrækken fortæller, hvad der gælder. Kan du ikke ramme det præcise minut i en tidsvælger, er den medarbejder sat til trin på fem minutter.',
     keywords: ['minutter', 'ét minut', '1m', 'fem minutter', 'interval', 'trin', 'afrunding', 'præcist klokkeslæt', 'tidsvælger'],
   },
+  'dayCell.planHoursLimit': {
+    title: 'Planlagte timer kan ikke overstige 24',
+    short: 'De planlagte timer på én dag skal på tværs af alle vagter give 24 timer eller mindre. Indtil de gør det, står feltet med fejl, og Gem er slået fra.',
+    detail: 'Se på den planlagte start og slut for hver vagt på dagen: det er summen, der måles, ikke den enkelte vagt. En vagt, der går over midnat, hører delvist til den næste dag, så læg timerne efter midnat på den dag i stedet for at samle dem her.',
+    keywords: ['24 timer', 'overstiger', 'for mange timer', 'planlagte timer', 'validering', 'fejl', 'rød', 'gem slået fra', 'kan ikke gemme', 'over 24', 'grænse'],
+  },
 
   // ------------------------------------------------------------------ flex ----
   'flex.whatIsFlex': {
@@ -386,6 +398,8 @@ export const daUi: HelpUiStrings = {
   next: 'Næste',
   noResults: 'Ingen træffere. Her er det, folk oftest har brug for:',
   resultCount: 'resultater',
+  resultCountOne: 'resultat',
+  relatedControls: 'Funktioner, den bruger',
   kindTask: 'Opgave',
   kindControl: 'Funktion',
   sectionTask: 'Almindelige opgaver',

@@ -275,7 +275,9 @@ describe('TimePlanningsContainerComponent', () => {
       component.getPlannings();
       jest.runAllTimers();
 
-      expect(start).toHaveBeenCalledWith('page', { isAdmin: component.isAdmin });
+      // A literal, not component.isAdmin: reading the expected value off the
+      // component under test asserts nothing about what was passed.
+      expect(start).toHaveBeenCalledWith('page', { isAdmin: false });
     });
 
     it('does not re-offer the tour on every reload', () => {
@@ -288,6 +290,15 @@ describe('TimePlanningsContainerComponent', () => {
       jest.runAllTimers();
 
       expect(start).toHaveBeenCalledTimes(1);
+    });
+
+    it('replays whichever tour the panel names, including the dialog one', () => {
+      // start('dialog') is otherwise called from one place, gated on hasSeen, so
+      // this is the only route back to the dialog tour once it has been skipped.
+      component.replayTour('dialog');
+      jest.runAllTimers();
+
+      expect(start).toHaveBeenCalledWith('dialog', { isAdmin: false });
     });
 
     it('does not offer a tour the planner has already seen', () => {
