@@ -1,0 +1,29 @@
+.help-text {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 9px 11px;
+  border-left: 3px solid var(--primary, #289694);
+  border-radius: 0 5px 5px 0;
+  background: var(--primary-light, #f5fcfc);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-body, #7f868d);
+
+  .mat-icon {
+    flex: none;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--primary, #289694);
+  }
+
+  &--warn {
+    border-left-color: var(--warning, #e2a01c);
+    background: rgba(226, 160, 28, 0.12);
+
+    .mat-icon {
+      color: var(--warning, #e2a01c);
+    }
+  }
+}
