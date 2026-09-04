@@ -132,11 +132,9 @@ nothing:
 - Fields disabled because the date is in the future
 - The "Total planned hours cannot exceed 24" validation
 - An empty grid when filters match no workers
-- **A non-admin clicking a worker's name.** Today this silently does nothing — the
-  click handler is bound in both template branches and the admin check happens inside
-  the method body (`time-plannings-table.component.ts:370-372`). A hint explaining
-  that this opens worker settings for administrators replaces silent failure with an
-  answer.
+- **The worker column**, which packs four unlabelled things into one cell — name,
+  agreed weekly hours, tags, and a strip of status icons for the rules that apply to
+  that worker. The hint names what is being shown.
 
 ## Anchoring
 
@@ -194,13 +192,30 @@ page actually displays for a given worker.
 Exactly one entry carries `adminOnly`: `toolbar.payrollExport`. The panel and both
 tours filter it through `selectAuthIsAdmin$` (`auth.selector.ts:17-18`).
 
-`grid.nameColumn` is deliberately **not** `adminOnly`, even though the dialog it
-describes is. A non-admin clicking a worker's name gets silence today; the whole point
-of its entry is to tell that user what the column is and that opening worker settings
-requires an administrator. Marking it `adminOnly` would hide the answer from exactly
-the person asking the question.
+`grid.nameColumn` is not `adminOnly` — it describes what the column *displays*, which
+every user sees. It says nothing about the dialog behind it.
 
 Every other entry is shown to all users, which matches how the page is actually gated.
+
+## Copy rules
+
+**"Admin" means Microting, not a customer role.** Help copy therefore never mentions
+administrator capabilities, never explains what someone with more access could do, and
+never accounts for why a control did nothing. An entry describes what the reader sees
+and what the reader can do — nothing else.
+
+This rules out a whole tempting category of text. The worker column is the clearest
+case: clicking it opens a settings dialog for Microting staff and silently does nothing
+for everyone else, and the entry must still confine itself to describing the four
+things the column displays. "This opens worker settings for administrators" is exactly
+the sentence not to write.
+
+Two further rules, both already exercised above:
+
+- Name which value is meant when a label is reused. `plannedHours` renders as both a
+  weekly total and a per-day-cell value.
+- Describe what the screen shows, not how the server computes it — see the flex note
+  under the entry inventory.
 
 ## Testing
 
