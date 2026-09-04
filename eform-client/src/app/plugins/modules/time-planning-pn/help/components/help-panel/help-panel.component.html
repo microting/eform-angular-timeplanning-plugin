@@ -26,16 +26,22 @@
 
   <div class="tp-help-panel__body">
     <ng-container *ngIf="isSearching; else browse">
-      <p class="tp-help-panel__count">{{ results.length }}</p>
+      <p class="tp-help-panel__count tp-help-panel__count--empty" *ngIf="isFallback; else resultCount">
+        &ldquo;{{ query }}&rdquo; &mdash; {{ ui.noResults }}
+      </p>
+      <ng-template #resultCount>
+        <p class="tp-help-panel__count">{{ results.length }} {{ ui.resultCount }}</p>
+      </ng-template>
       <article
         class="tp-help-entry"
         *ngFor="let result of results"
         [class.tp-help-entry--target]="result.entry.id === targetId">
         <button type="button" class="tp-help-entry__head" (click)="toggleEntry(result.entry.id)">
+          <!-- An icon carries the distinction visually; the label carries it for screen readers. -->
           <span
             class="tp-help-entry__kind"
-            [class.tp-help-entry__kind--task]="result.entry.kind === 'task'">
-            <!-- An icon rather than the word "task"/"control", which has no translation. -->
+            [class.tp-help-entry__kind--task]="result.entry.kind === 'task'"
+            [attr.aria-label]="kindLabel(result.entry)">
             <mat-icon aria-hidden="true">
               {{ result.entry.kind === 'task' ? 'playlist_add_check' : 'tune' }}
             </mat-icon>

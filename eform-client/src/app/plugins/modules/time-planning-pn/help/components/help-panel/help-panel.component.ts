@@ -1,4 +1,6 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import {
+  Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges,
+} from '@angular/core';
 import { Subscription } from 'rxjs';
 import { HelpEntry, HelpEntryId, HelpProse, HelpSection, HelpUiStrings } from '../../help.model';
 import { HelpContentService } from '../../services/help-content.service';
@@ -19,7 +21,7 @@ const SECTION_ORDER: HelpSection[] = ['task', 'toolbar', 'grid', 'dayCell', 'fle
   styleUrls: ['./help-panel.component.scss'],
   standalone: false,
 })
-export class HelpPanelComponent implements OnInit, OnDestroy {
+export class HelpPanelComponent implements OnInit, OnChanges, OnDestroy {
   @Input() isAdmin = false;
 
   /**
@@ -53,6 +55,18 @@ export class HelpPanelComponent implements OnInit, OnDestroy {
     return this.query.trim().length > 0;
   }
 
+  /**
+   * True when the query matched nothing and the search handed back the task list
+   * instead. The panel says so rather than passing twelve tasks off as hits.
+   */
+  get isFallback(): boolean {
+    return this.results.length > 0 && this.results.every(result => result.fallback === true);
+  }
+
+  kindLabel(entry: HelpEntry): string {
+    return entry.kind === 'task' ? this.ui.kindTask : this.ui.kindControl;
+  }
+
   ngOnInit(): void {
     this.subscriptions.add(this.helpPanel.isOpen$.subscribe(isOpen => {
       this.isOpen = isOpen;
@@ -66,6 +80,21 @@ export class HelpPanelComponent implements OnInit, OnDestroy {
       this.targetId = target;
       this.expanded = target;
     }));
+  }
+
+  /** isAdmin can arrive after the panel is already open; rebuild what it filters. */
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['isAdmin'] && !changes['isAdmin'].firstChange && this.isOpen) {
+      this.buildSections();
+      this.onQueryChange(this.query);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.isOpen) {
+      this.close();
+    }
   }
 
   ngOnDestroy(): void {

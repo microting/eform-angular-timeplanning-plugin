@@ -1,3 +1,4 @@
+import { SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,6 +21,10 @@ describe('HelpPanelComponent', () => {
       .map(el => ((el as HTMLElement).textContent ?? '').trim());
   const browsedIds = () => component.sections.flatMap(group => group.entries.map(entry => entry.id));
   const resultIds = () => component.results.map(result => result.entry.id);
+  const countText = () =>
+    ((fixture.nativeElement.querySelector('.tp-help-panel__count') as HTMLElement | null)?.textContent ?? '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -77,7 +82,7 @@ describe('HelpPanelComponent', () => {
     expect(text()).toContain(enUS['toolbar.dateRange'].short);
   });
 
-  it('groups every non-admin entry under its own section', () => {
+  it('groups every entry under its own section', () => {
     component.isAdmin = true;
     panel.open();
     fixture.detectChanges();
@@ -99,8 +104,9 @@ describe('HelpPanelComponent', () => {
     expect(component.results.length).toBeGreaterThan(0);
     expect(resultIds()).toContain('task.registerVacation');
     expect(sectionHeadings()).toEqual([]);
-    expect(fixture.nativeElement.querySelector('.tp-help-panel__count')?.textContent?.trim())
-      .toBe(String(component.results.length));
+    expect(component.isFallback).toBe(false);
+    expect(countText()).toBe(`${component.results.length} ${enUSUi.resultCount}`);
+    expect(countText()).not.toContain(enUSUi.noResults);
 
     component.clearQuery();
     fixture.detectChanges();
@@ -221,6 +227,67 @@ describe('HelpPanelComponent', () => {
 
     expect(replays.length).toBe(1);
     expect(panelEl()).toBeNull();
+  });
+
+  it('names the query and offers the tasks when nothing matches', () => {
+    panel.open();
+    component.onQueryChange('zzzqqq');
+    fixture.detectChanges();
+
+    expect(component.isSearching).toBe(true);
+    expect(component.isFallback).toBe(true);
+    expect(component.results.length).toBeGreaterThan(0);
+    expect(component.results.every(result => result.entry.kind === 'task')).toBe(true);
+    expect(countText()).toContain('zzzqqq');
+    expect(countText()).toContain(enUSUi.noResults);
+    expect(countText()).not.toContain(enUSUi.resultCount);
+    expect(text()).toContain(enUS['task.registerVacation'].title);
+  });
+
+  it('names each result kind for screen readers', () => {
+    component.isAdmin = true;
+    panel.open();
+    component.onQueryChange('payroll');
+    fixture.detectChanges();
+
+    const labels = Array.from(fixture.nativeElement.querySelectorAll('.tp-help-entry__kind'))
+      .map(el => (el as HTMLElement).getAttribute('aria-label'));
+    expect(labels.length).toBe(component.results.length);
+    expect(labels).toEqual(component.results.map(result =>
+      result.entry.kind === 'task' ? enUSUi.kindTask : enUSUi.kindControl));
+    expect(labels).toContain(enUSUi.kindControl);
+  });
+
+  it('closes on Escape, and only while open', () => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(component.isOpen).toBe(false);
+
+    panel.open();
+    fixture.detectChanges();
+    expect(panelEl()).not.toBeNull();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    expect(component.isOpen).toBe(false);
+    expect(panelEl()).toBeNull();
+  });
+
+  it('rebuilds what isAdmin filters when it arrives after opening', () => {
+    panel.open();
+    component.onQueryChange('payroll');
+    fixture.detectChanges();
+
+    expect(browsedIds()).not.toContain('toolbar.payrollExport');
+    expect(resultIds()).not.toContain('toolbar.payrollExport');
+
+    component.isAdmin = true;
+    component.ngOnChanges({ isAdmin: new SimpleChange(false, true, false) });
+    fixture.detectChanges();
+
+    expect(browsedIds()).toContain('toolbar.payrollExport');
+    expect(resultIds()).toContain('toolbar.payrollExport');
   });
 
   it('stops listening to the panel service once destroyed', () => {

@@ -65,6 +65,11 @@ export interface HelpUiStrings {
   skip: string;
   next: string;
   noResults: string;
+  /** Plural noun for the search result count, e.g. "12 results". */
+  resultCount: string;
+  /** Accessible names for the kind badge on a search result. */
+  kindTask: string;
+  kindControl: string;
   sectionTask: string;
   sectionToolbar: string;
   sectionGrid: string;

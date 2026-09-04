@@ -6,6 +6,13 @@ import { HelpContentService } from './help-content.service';
 export interface HelpSearchResult {
   entry: HelpEntry;
   prose: HelpProse;
+  /**
+   * True when this result is part of the task list handed back because the query
+   * matched nothing (or was empty), rather than a match on the query itself. A
+   * help search must never dead-end, so the caller shows these — but it has to be
+   * able to say so instead of passing them off as hits.
+   */
+  fallback?: boolean;
 }
 
 /** Match location, lower is better. */
@@ -78,6 +85,6 @@ export class HelpSearchService {
   private tasksOnly(entries: HelpEntry[]): HelpSearchResult[] {
     return entries
       .filter(entry => entry.kind === 'task')
-      .map(entry => ({ entry, prose: this.helpContent.prose(entry.id) }));
+      .map(entry => ({ entry, prose: this.helpContent.prose(entry.id), fallback: true }));
   }
 }
