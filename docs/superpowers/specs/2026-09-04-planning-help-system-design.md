@@ -233,9 +233,19 @@ rest — and ticking one rewrites netto hours
 | `DayOff`, `VacationDayOff` | `0` |
 | `Vacation`, `Sick`, `Course`, `LeaveOfAbsence`, `Maternity`, `Holiday`, and the rest | the day's planned hours |
 
-So `Vacation` and `VacationDayOff` sit next to each other and produce opposite results.
-`registerVacation` and `registerDayOff` must state which one counts as worked time;
-this is the single most valuable thing the help system can say.
+The trap is **name versus behaviour**, not adjacency. In render order the types are
+`DayOff`, `Vacation`, `Sick`, `Course`, `LeaveOfAbsence`, `Children1stSick`,
+`Children2stSick`, `TimeOff`, `Maternity`, `VacationDayOff`, `Holiday`,
+`PregnancyLeave` — so `Vacation` (2nd) and `VacationDayOff` (10th) are nowhere near
+each other. What actually catches people is that **`TimeOff` keeps the planned hours**
+while the similarly-named `DayOff` and `VacationDayOff` zero them.
+
+It is worse in Danish, where the shipped labels are `Fridag` (DayOff, zero),
+`Afspadsering` (VacationDayOff, zero) and **`Ferie fridag` (TimeOff, keeps the hours
+despite being named a fridag)**.
+
+`registerVacation`, `registerDayOff` and `dayCell.flags` must state which types count
+as worked time; this is the single most valuable thing the help system can say.
 
 The full flag set is `TimePlanningMessagesEnum`: `DayOff`, `Vacation`, `Sick`,
 `Course`, `LeaveOfAbsence`, `Children1stSick`, `Children2stSick`, `TimeOff`,
