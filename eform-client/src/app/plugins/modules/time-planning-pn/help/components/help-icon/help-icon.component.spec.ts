@@ -55,6 +55,44 @@ describe('HelpIconComponent', () => {
     expect(fixture.componentInstance.isOpen).toBe(false);
   });
 
+  it('closes when a click lands outside the popover, without a backdrop to swallow it', () => {
+    fixture.componentInstance.isOpen = true;
+    fixture.detectChanges();
+
+    // No backdrop means the same click that dismisses the popover reaches the
+    // control underneath - on this page every day cell is a click target.
+    expect(document.querySelector('.cdk-overlay-backdrop')).toBeNull();
+
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    outside.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    outside.remove();
+
+    expect(fixture.componentInstance.isOpen).toBe(false);
+  });
+
+  it('stays open when the click lands inside the popover', () => {
+    fixture.componentInstance.isOpen = true;
+    fixture.detectChanges();
+
+    const body = document.querySelector('.tp-help-popover__body') as HTMLElement;
+    body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isOpen).toBe(true);
+  });
+
+  it('describes the popover as a note, not a modal dialog it does not implement', () => {
+    fixture.componentInstance.isOpen = true;
+    fixture.detectChanges();
+
+    const popover = document.querySelector('.tp-help-popover');
+    expect(popover).not.toBeNull();
+    expect(popover.getAttribute('role')).toBe('note');
+    expect(popover.getAttribute('aria-label')).toBe(enUS['toolbar.dateRange'].title);
+  });
+
   it('renders nothing for an unknown id rather than throwing', () => {
     const other = TestBed.createComponent(HelpIconComponent);
     other.componentInstance.helpId = 'nope' as never;

@@ -16,13 +16,12 @@
     [cdkConnectedOverlayOrigin]="helpOrigin"
     [cdkConnectedOverlayOpen]="isOpen"
     [cdkConnectedOverlayPositions]="positions"
-    [cdkConnectedOverlayHasBackdrop]="true"
-    cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+    [cdkConnectedOverlayHasBackdrop]="false"
     [cdkConnectedOverlayPush]="true"
-    (backdropClick)="close()"
+    (overlayOutsideClick)="close()"
     (overlayKeydown)="onOverlayKeydown($event)"
     (detach)="close()">
-    <div class="tp-help-popover" role="dialog" [attr.aria-label]="helpProse.title">
+    <div class="tp-help-popover" role="note" [attr.aria-label]="helpProse.title">
       <h5 class="tp-help-popover__title">{{ helpProse.title }}</h5>
       <p class="tp-help-popover__body">{{ helpProse.short }}</p>
       <button type="button" class="tp-help-popover__more" (click)="onMore()">
