@@ -213,6 +213,36 @@ describe('HelpTourComponent', () => {
     expect(tour.isRunning).toBe(false);
   });
 
+  it('leaves an anchor-loss end unseen and still offerable, unlike a user skip', () => {
+    // The dialog tour starts the instant the day-cell dialog opens, so a planner
+    // who opens a row, glances and closes it may have seen one step of six.
+    // Closing a dialog means "done with this row", not "done learning".
+    const tour = TestBed.inject(HelpTourService);
+    let element = anchor('dayCell.plannedTimes');
+    tour.start('dialog', { isAdmin: false });
+    const fixture = mount('dialog');
+    expect(card()).not.toBeNull();
+
+    element.remove();
+    fixture.detectChanges();
+
+    expect(tour.isRunning).toBe(false);
+    expect(tour.hasSeen('dialog')).toBe(false);
+
+    // Still offerable: the same tour runs again and renders.
+    element = anchor('dayCell.plannedTimes');
+    tour.start('dialog', { isAdmin: false });
+    fixture.detectChanges();
+    expect(card()).not.toBeNull();
+
+    // The other direction: the user ending it does count.
+    (card()!.querySelector('.tp-help-tour__skip') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(card()).toBeNull();
+    expect(tour.hasSeen('dialog')).toBe(true);
+  });
+
   it('re-points at a replaced anchor node rather than a detached one', () => {
     const element = anchor('toolbar.dateRange');
     TestBed.inject(HelpTourService).start('page', { isAdmin: false });

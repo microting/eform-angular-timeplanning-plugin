@@ -46,18 +46,28 @@ export class HelpTourService {
   }
 
   /**
-   * Skipping counts as having seen it. `current` is only set while a step is
-   * actually on screen — emit() clears it the moment a tour ends or fails to
-   * start — so this needs no further guard.
+   * Ends the tour because the user said so — Skip or Escape — which counts as
+   * having seen it. `current` is only set while a step is actually on screen;
+   * emit() clears it the moment a tour ends or fails to start, so no further
+   * guard is needed here.
    */
   stop(): void {
     if (this.current) {
       this.markSeen(this.current);
     }
-    this.current = null;
-    this.steps = [];
-    this.index = 0;
-    this.stateSubject.next(null);
+    this.reset();
+  }
+
+  /**
+   * Ends the tour because the page changed underneath it — an anchor vanished —
+   * WITHOUT recording it as seen. That is an environmental interruption, not a
+   * signal from the user: the dialog tour starts the instant the day-cell dialog
+   * opens, so a planner who opens a row, glances and closes it may have seen one
+   * step of six. Closing a dialog means "done with this row", not "done learning",
+   * and the tour must still be offered automatically next time.
+   */
+  abort(): void {
+    this.reset();
   }
 
   /** True while a tour is on screen. */
@@ -80,6 +90,13 @@ export class HelpTourService {
     if (!seen.includes(tour)) {
       this.writeSeen([...seen, tour]);
     }
+  }
+
+  private reset(): void {
+    this.current = null;
+    this.steps = [];
+    this.index = 0;
+    this.stateSubject.next(null);
   }
 
   private emit(): void {

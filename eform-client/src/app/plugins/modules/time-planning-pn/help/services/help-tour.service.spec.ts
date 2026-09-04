@@ -127,6 +127,28 @@ describe('HelpTourService', () => {
     expect(service.hasSeen('page')).toBe(true);
   });
 
+  it('ends a tour without recording it when the page changes underneath', () => {
+    // abort() is the environmental path: an anchor vanished, which says nothing
+    // about whether the user is done. stop() is the user saying so.
+    anchor('toolbar.dateRange');
+    service.start('page', { isAdmin: false });
+    service.abort();
+
+    expect(service.isRunning).toBe(false);
+    expect(service.hasSeen('page')).toBe(false);
+  });
+
+  it('records the same tour as seen when the user stops it instead', () => {
+    anchor('toolbar.dateRange');
+    service.start('page', { isAdmin: false });
+    service.abort();
+    expect(service.hasSeen('page')).toBe(false);
+
+    service.start('page', { isAdmin: false });
+    service.stop();
+    expect(service.hasSeen('page')).toBe(true);
+  });
+
   it('marks only the tour that ran, leaving the other one unseen', () => {
     anchor('dayCell.plannedTimes');
     service.start('dialog', { isAdmin: false });

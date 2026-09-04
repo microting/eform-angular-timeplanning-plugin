@@ -85,6 +85,9 @@ export class HelpTourComponent implements OnInit, DoCheck, AfterViewChecked, OnD
    * the worker select — the overlay would close while the tour stayed "running",
    * leaving no card and no way to skip. End the tour instead. A replaced (rather
    * than removed) anchor node just re-points the overlay.
+   *
+   * abort(), not stop(): the page changed underneath the tour, which says nothing
+   * about whether the user is done with it, so it stays offerable.
    */
   ngDoCheck(): void {
     if (!this.state) {
@@ -94,7 +97,7 @@ export class HelpTourComponent implements OnInit, DoCheck, AfterViewChecked, OnD
     if (element) {
       this.setOrigin(element);
     } else {
-      this.helpTour.stop();
+      this.helpTour.abort();
     }
   }
 
