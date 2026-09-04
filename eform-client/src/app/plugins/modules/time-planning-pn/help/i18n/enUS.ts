@@ -34,7 +34,7 @@ export const enUS: HelpProseMap = {
       'Tick Day off, or Vacation day off if it comes out of the vacation balance.',
       'Click Save. The day now counts as zero hours.',
     ],
-    detail: 'Day off and Vacation day off both set the day to zero hours. Vacation, sickness, course and the other day types keep the planned hours instead. This is the difference to watch for.',
+    detail: 'A day carries one day type at a time — ticking Day off or Vacation day off clears any other type already set. Both of them set the day to zero hours, while Vacation, sickness, course and the other day types keep the planned hours instead. This is the difference to watch for.',
     keywords: ['day off', 'off', 'free', 'not working', 'zero hours', 'vacation day off', 'rest day'],
   },
   'task.correctRegisteredTime': {
