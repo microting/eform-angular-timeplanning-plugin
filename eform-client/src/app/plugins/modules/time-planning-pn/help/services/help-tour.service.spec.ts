@@ -140,11 +140,41 @@ describe('HelpTourService', () => {
     expect(service.hasSeen('page')).toBe(false);
   });
 
-  it('does not mark a tour seen when an empty tour is then stopped', () => {
-    // stop() runs on the same guard as emit(): nothing was shown, nothing was seen.
+  it('leaves a tour that never started unseen even after stop()', () => {
+    // emit() already cleared `current` because no step was shown, so stop() has
+    // nothing to record. This covers emit()'s guard, not a second guard in stop().
     service.start('page', { isAdmin: false });
     service.stop();
     expect(service.hasSeen('page')).toBe(false);
+  });
+
+  it('skips a step whose anchor vanished after the tour started', async () => {
+    anchor('toolbar.dateRange');
+    anchor('toolbar.navForward');
+    anchor('grid.openDay');
+    service.start('page', { isAdmin: false });
+    expect((await firstValueFrom(service.state$))?.total).toBe(3);
+
+    document.querySelector('[data-tp-help="toolbar.navForward"]')!.remove();
+    service.next();
+
+    const state = await firstValueFrom(service.state$);
+    expect(state?.entry.id).toBe('grid.openDay');
+    // The vanished step is dropped rather than counted toward a card never shown.
+    expect(state?.total).toBe(2);
+    expect(state?.index).toBe(1);
+  });
+
+  it('still marks the tour seen when the last remaining anchors vanish', () => {
+    anchor('toolbar.dateRange');
+    anchor('grid.openDay');
+    service.start('page', { isAdmin: false });
+
+    document.querySelector('[data-tp-help="grid.openDay"]')!.remove();
+    service.next();
+
+    expect(service.isRunning).toBe(false);
+    expect(service.hasSeen('page')).toBe(true);
   });
 
   it('does not re-mark or throw when stopped twice', () => {

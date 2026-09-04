@@ -1,9 +1,21 @@
-import { Component, ElementRef, Input, OnDestroy, OnInit } from '@angular/core';
-import { ConnectedPosition } from '@angular/cdk/overlay';
+import {
+  AfterViewChecked,
+  Component,
+  DoCheck,
+  ElementRef,
+  Input,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+import { CdkConnectedOverlay, ConnectedPosition } from '@angular/cdk/overlay';
 import { Subscription } from 'rxjs';
 import { HelpProse, HelpTourName, HelpUiStrings } from '../../help.model';
 import { HelpContentService } from '../../services/help-content.service';
 import { HelpTourService, HelpTourState } from '../../services/help-tour.service';
+
+/** Distinguishes the aria-labelledby target of one mounted tour from another's. */
+let nextTourCardId = 0;
 
 @Component({
   selector: 'tp-help-tour',
@@ -11,24 +23,34 @@ import { HelpTourService, HelpTourState } from '../../services/help-tour.service
   styleUrls: ['./help-tour.component.scss'],
   standalone: false,
 })
-export class HelpTourComponent implements OnInit, OnDestroy {
+export class HelpTourComponent implements OnInit, DoCheck, AfterViewChecked, OnDestroy {
+  /**
+   * Which tour this instance renders. The service is a singleton and one page can
+   * mount this component twice — once for the page tour, once inside the day-cell
+   * dialog — so an instance must ignore state belonging to the other tour.
+   */
   @Input() tour: HelpTourName = 'page';
-  @Input() isAdmin = false;
 
   state: HelpTourState | null = null;
 
   /**
    * The anchor is a raw element found by querySelector, so it is wrapped:
-   * cdkConnectedOverlayOrigin takes an ElementRef or a CdkOverlayOrigin.
+   * cdkConnectedOverlayOrigin also accepts an Element, but an ElementRef keeps
+   * the binding's intent explicit and matches the sibling help components.
    */
   origin: ElementRef<HTMLElement> | null = null;
+
+  readonly titleId = `tp-help-tour-title-${nextTourCardId++}`;
 
   readonly positions: ConnectedPosition[] = [
     { originX: 'center', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 10 },
     { originX: 'center', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -10 },
   ];
 
+  @ViewChild(CdkConnectedOverlay) private connectedOverlay?: CdkConnectedOverlay;
+
   private readonly subscriptions = new Subscription();
+  private pendingFocus = false;
 
   constructor(
     private helpContent: HelpContentService,
@@ -50,10 +72,45 @@ export class HelpTourComponent implements OnInit, OnDestroy {
     // there would suppress the automatic first run. The service records it instead,
     // when a tour actually ends or is skipped.
     this.subscriptions.add(this.helpTour.state$.subscribe(state => {
-      this.state = state;
-      const element = state ? this.helpTour.anchorElement(state.entry) : null;
-      this.origin = element ? new ElementRef(element) : null;
+      const mine = state && state.entry.tour === this.tour ? state : null;
+      this.pendingFocus = this.pendingFocus || (!!mine && !this.state);
+      this.state = mine;
+      this.setOrigin(mine ? this.helpTour.anchorElement(mine.entry) : null);
     }));
+  }
+
+  /**
+   * Anchors are only validated when the tour starts. If the current step's anchor
+   * leaves the DOM afterwards — the day-cell dialog closes mid-tour, a filter hides
+   * the worker select — the overlay would close while the tour stayed "running",
+   * leaving no card and no way to skip. End the tour instead. A replaced (rather
+   * than removed) anchor node just re-points the overlay.
+   */
+  ngDoCheck(): void {
+    if (!this.state) {
+      return;
+    }
+    const element = this.helpTour.anchorElement(this.state.entry);
+    if (element) {
+      this.setOrigin(element);
+    } else {
+      this.helpTour.stop();
+    }
+  }
+
+  ngAfterViewChecked(): void {
+    if (!this.pendingFocus) {
+      return;
+    }
+    // The overlay is appended at the end of <body>, far from the anchor in tab
+    // order, so a keyboard user cannot otherwise reach Skip or Next. No focus
+    // trap: the tour is non-modal and must not lock the page it is explaining.
+    const primaryAction = this.connectedOverlay?.overlayRef?.overlayElement
+      ?.querySelector<HTMLElement>('.tp-help-tour__next');
+    if (primaryAction) {
+      this.pendingFocus = false;
+      primaryAction.focus();
+    }
   }
 
   ngOnDestroy(): void {
@@ -66,5 +123,18 @@ export class HelpTourComponent implements OnInit, OnDestroy {
 
   skip(): void {
     this.helpTour.stop();
+  }
+
+  onOverlayKeydown(event: KeyboardEvent): void {
+    if (this.state && event.key === 'Escape') {
+      this.skip();
+    }
+  }
+
+  private setOrigin(element: HTMLElement | null): void {
+    if (this.origin?.nativeElement === element) {
+      return;
+    }
+    this.origin = element ? new ElementRef(element) : null;
   }
 }

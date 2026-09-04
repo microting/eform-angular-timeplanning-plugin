@@ -45,9 +45,13 @@ export class HelpTourService {
     this.emit();
   }
 
-  /** Skipping counts as having seen it — but only if a step was actually shown. */
+  /**
+   * Skipping counts as having seen it. `current` is only set while a step is
+   * actually on screen — emit() clears it the moment a tour ends or fails to
+   * start — so this needs no further guard.
+   */
   stop(): void {
-    if (this.current && this.steps.length > 0) {
+    if (this.current) {
       this.markSeen(this.current);
     }
     this.current = null;
@@ -79,6 +83,12 @@ export class HelpTourService {
   }
 
   private emit(): void {
+    // A step's anchor can disappear after start() validated it — a filter hides
+    // the worker select, the day-cell dialog closes. Drop those steps as they are
+    // reached, so `total` stays honest rather than counting a card that never shows.
+    while (this.index < this.steps.length && !this.anchorElement(this.steps[this.index])) {
+      this.steps.splice(this.index, 1);
+    }
     const entry = this.steps[this.index];
     if (entry) {
       this.stateSubject.next({ entry, index: this.index, total: this.steps.length });

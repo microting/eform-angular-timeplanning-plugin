@@ -3,12 +3,18 @@
   [cdkConnectedOverlayOrigin]="origin!"
   [cdkConnectedOverlayOpen]="!!state && !!origin"
   [cdkConnectedOverlayPositions]="positions"
-  [cdkConnectedOverlayPush]="true">
-  <div class="tp-help-tour" role="dialog" *ngIf="prose as tourProse">
+  [cdkConnectedOverlayPush]="true"
+  (overlayKeydown)="onOverlayKeydown($event)">
+  <div
+    class="tp-help-tour"
+    role="dialog"
+    aria-modal="false"
+    [attr.aria-labelledby]="titleId"
+    *ngIf="prose as tourProse">
     <p class="tp-help-tour__step">
       {{ (state!.index + 1) }} / {{ state!.total }}
     </p>
-    <h5>{{ tourProse.title }}</h5>
+    <h5 [id]="titleId">{{ tourProse.title }}</h5>
     <p class="tp-help-tour__body">{{ tourProse.short }}</p>
     <div class="tp-help-tour__actions">
       <button type="button" class="tp-help-tour__skip" (click)="skip()">{{ ui.skip }}</button>
