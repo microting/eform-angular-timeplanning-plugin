@@ -2,6 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { HelpContentService } from './help-content.service';
 import { enUS } from '../i18n/enUS';
+import { da } from '../i18n/da';
+import { HELP_LOCALES } from '../i18n';
+import { HelpProseMap } from '../help.model';
 
 describe('HelpContentService', () => {
   let translate: { currentLang: string };
@@ -32,7 +35,24 @@ describe('HelpContentService', () => {
 
   it('resolves a bare language code to its locale file', () => {
     const service = make('da');
-    expect(service.prose('toolbar.dateRange')).toBeDefined();
+    expect(service.prose('toolbar.dateRange')).toEqual(da['toolbar.dateRange']);
+  });
+
+  // prose() falls back to English one entry at a time, not one locale at a time.
+  // A locale map that is present but missing a single id must still serve its own
+  // language for every other id.
+  it('falls back to English only for the id a locale map is missing', () => {
+    const partial: Partial<HelpProseMap> = { ...da };
+    delete partial['toolbar.dateRange'];
+    HELP_LOCALES['da-partial'] = partial;
+    try {
+      const service = make('da-partial');
+      expect(service.prose('toolbar.dateRange')).toEqual(enUS['toolbar.dateRange']);
+      expect(service.prose('toolbar.reload')).toEqual(da['toolbar.reload']);
+      expect(service.prose('dayCell.flags')).toEqual(da['dayCell.flags']);
+    } finally {
+      delete HELP_LOCALES['da-partial'];
+    }
   });
 
   it('hides admin-only entries from a non-admin', () => {
