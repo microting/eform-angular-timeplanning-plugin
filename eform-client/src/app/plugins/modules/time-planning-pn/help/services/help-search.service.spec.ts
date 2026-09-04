@@ -45,10 +45,12 @@ describe('HelpSearchService', () => {
     expect(withø.length).toBeGreaterThan(0);
     expect(withoø.length).toBeGreaterThan(0);
     expect(withoø).toEqual(withø.map(r => r.entry.id));
-    // å: årstid folds to arstid
-    expect(service.search('arstid', { isAdmin: false })).toEqual(
-      service.search('årstid', { isAdmin: false }),
-    );
+    // å: fratrådt folds to fratradt
+    const withå = service.search('fratrådt', { isAdmin: false });
+    const withoutå = service.search('fratradt', { isAdmin: false }).map(r => r.entry.id);
+    expect(withå.length).toBeGreaterThan(0);
+    expect(withoutå.length).toBeGreaterThan(0);
+    expect(withoutå).toEqual(withå.map(r => r.entry.id));
   });
 
   it('ranks tasks above controls', () => {
