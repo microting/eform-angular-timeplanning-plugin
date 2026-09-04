@@ -2607,6 +2607,12 @@ private startDialogTourOnce(): void {
 
 Call it at the end of `ngOnInit`, after the form is built, so the anchors exist in the DOM.
 
+If the dialog tears the tour down explicitly when it closes, it must call
+`HelpTourService.abort()`, **not** `stop()`. `stop()` marks the tour seen — it is the
+user-initiated end, used by Skip, Escape and completion. `abort()` ends the tour without
+marking it seen, and is for the page changing underneath: someone who opens a row,
+glances and closes it has not seen the tour and must still be offered it.
+
 - [ ] **Step 7: Run the tests and confirm they pass**
 
 Run: `cd eform-angular-frontend/eform-client && npx jest --testPathPatterns=time-planning-pn`
