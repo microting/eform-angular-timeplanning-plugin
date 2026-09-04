@@ -51,7 +51,11 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
 
   /** Where the panel host sits when it is not parked in the overlay container. */
   private originalParent: Node | null = null;
+  private originalNextSibling: Node | null = null;
   private pendingFocus = false;
+
+  /** What had focus when the panel opened, so closing can hand it back. */
+  private focusOnOpen: HTMLElement | null = null;
 
   constructor(
     private helpContent: HelpContentService,
@@ -84,15 +88,29 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
 
   ngOnInit(): void {
     this.subscriptions.add(this.helpPanel.isOpen$.subscribe(isOpen => {
+      // open() re-emits even when the panel is already open — a second
+      // "More in help" deep-links into the open panel. Only a genuine
+      // closed -> open transition may move focus, or that second click would
+      // yank the planner out of whatever they were reading.
+      const wasOpen = this.isOpen;
       this.isOpen = isOpen;
       if (isOpen) {
-        this.buildSections();
         this.moveIntoOverlayContainer();
-        this.pendingFocus = true;
+        if (!wasOpen) {
+          // Only on a real closed -> open transition. Rebuilding the sections
+          // hands *ngFor a fresh array and re-creates every entry node, which
+          // drops both focus and scroll position; nothing but isAdmin changes
+          // what is listed, and ngOnChanges already rebuilds for that.
+          this.buildSections();
+          const active = document.activeElement;
+          this.focusOnOpen = active instanceof HTMLElement ? active : null;
+          this.pendingFocus = true;
+        }
       } else {
         this.onQueryChange('');
         this.restoreFromOverlayContainer();
         this.pendingFocus = false;
+        this.returnFocus();
       }
     }));
     this.subscriptions.add(this.helpPanel.target$.subscribe(target => {
@@ -150,8 +168,8 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
    * aria-hidden="true" while a modal is open, and the day-cell dialog's help
    * icons link into this panel. Left where it is declared, the panel would open
    * hidden from screen readers and behind the dialog. Inside the container it is
-   * neither, and it stacks above the dialog pane on DOM order alone — no
-   * z-index hack.
+   * not aria-hidden; the SCSS raises it above the container's own backdrop and
+   * panes, which all sit at z-index 1000.
    */
   private moveIntoOverlayContainer(): void {
     const host = this.host.nativeElement;
@@ -159,15 +177,38 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
     if (host.parentNode === container) {
       return;
     }
-    this.originalParent = this.originalParent ?? host.parentNode;
+    if (host.parentNode) {
+      this.originalParent = host.parentNode;
+      this.originalNextSibling = host.nextSibling;
+    }
     container.appendChild(host);
   }
 
-  /** Put the host back before Angular tears the view down around it. */
+  /** Put the host back where it was before Angular tears the view down around it. */
   private restoreFromOverlayContainer(): void {
     const host = this.host.nativeElement;
-    if (this.originalParent && host.parentNode !== this.originalParent) {
-      this.originalParent.appendChild(host);
+    if (!this.originalParent || host.parentNode === this.originalParent) {
+      return;
+    }
+    // insertBefore(node, null) appends, so a panel that was last stays last.
+    // Appending unconditionally would walk the host down past its siblings on
+    // every open/close cycle.
+    const before = this.originalNextSibling?.parentNode === this.originalParent
+      ? this.originalNextSibling
+      : null;
+    this.originalParent.insertBefore(host, before);
+  }
+
+  /**
+   * Hands focus back to whatever opened the panel. The toolbar help button is
+   * still mounted and gets it; a "More in help" button lives in a popover that
+   * has already closed, so there is nothing to return to and focus is left alone.
+   */
+  private returnFocus(): void {
+    const trigger = this.focusOnOpen;
+    this.focusOnOpen = null;
+    if (trigger?.isConnected) {
+      trigger.focus();
     }
   }
 

@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { OverlayContainer, OverlayModule } from '@angular/cdk/overlay';
@@ -179,6 +179,27 @@ describe('help wiring', () => {
     expect(root.querySelector('th.mat-column-0')?.hasAttribute('data-tp-help')).toBe(false);
   });
 
+  it('warns instead of stopping silently if the registry drops the sortName anchor', () => {
+    jest.isolateModules(() => {
+      jest.doMock('./planning-help.registry', () => ({ PLANNING_HELP_ENTRIES: [] }));
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { applyGridHelpAnchors: stamp } = require('./grid-help-anchors');
+
+      const root = document.createElement('div');
+      const header = document.createElement('th');
+      header.className = 'mat-column-siteName';
+      root.appendChild(header);
+
+      stamp(root);
+
+      expect(header.hasAttribute('data-tp-help')).toBe(false);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('grid.sortName'));
+      warn.mockRestore();
+    });
+    jest.dontMock('./planning-help.registry');
+  });
+
   it('calls the header stamp from the table component', () => {
     // Importing it is not calling it: the stamp only lands from a render hook.
     const tableTs = read(TABLE_TS);
@@ -187,9 +208,26 @@ describe('help wiring', () => {
     expect((hook as RegExpExecArray)[0]).toContain('applyGridHelpAnchors(this.el.nativeElement)');
   });
 
-  it('opts the panel back into pointer events, since the overlay container opts out', () => {
-    const scss = read('help/components/help-panel/help-panel.component.scss');
-    const block = scss.slice(0, scss.indexOf('\n}'));
+  it('raises the panel above the CDK overlay layer it is parked in', () => {
+    // .cdk-overlay-container is a stacking context, and inside it CDK puts the
+    // backdrop, the global wrapper and every pane on one z-index. Below that the
+    // panel paints under the day-cell dialog's backdrop, is dimmed by it and
+    // loses hit-testing to it — a click on the panel would reach the backdrop
+    // and close the dialog. The CDK value is read, not assumed.
+    const cdkCss = readFileSync(
+      join(dirname(require.resolve('@angular/cdk/package.json')), 'overlay-prebuilt.css'), 'utf8');
+    const cdkLayers = [...cdkCss.matchAll(
+      /\.cdk-(?:overlay-backdrop|overlay-pane|global-overlay-wrapper)\{[^}]*?z-index:\s*(\d+)/g)]
+      .map(match => Number(match[1]));
+    expect(cdkLayers.length).toBeGreaterThan(0);
+
+    const panelScss = read('help/components/help-panel/help-panel.component.scss');
+    const block = panelScss.slice(0, panelScss.indexOf('\n}'));
+    const declared = /z-index:\s*(\d+)/.exec(block);
+    expect(declared).not.toBeNull();
+
+    expect(Number((declared as RegExpExecArray)[1])).toBeGreaterThan(Math.max(...cdkLayers));
+    // .cdk-overlay-container is pointer-events: none; panes opt back in one by one.
     expect(block).toContain('pointer-events: auto');
   });
 });
@@ -269,6 +307,54 @@ describe('help deep link and tour scrolling', () => {
     fixture.detectChanges();
 
     expect(host.parentNode).not.toBe(container);
+  });
+
+  it('puts the host back where it was, not merely back in the parent', () => {
+    // Appending on close walks the panel down past its siblings — in the real
+    // template, past <tp-help-tour> — a little further on every open/close.
+    const fixture = mountPanel();
+    const host = fixture.nativeElement as HTMLElement;
+    const marker = document.createElement('div');
+    (host.parentNode as Node).appendChild(marker);
+    const panel = TestBed.inject(HelpPanelService);
+
+    for (let cycle = 0; cycle < 2; cycle++) {
+      panel.open();
+      fixture.detectChanges();
+      panel.close();
+      fixture.detectChanges();
+    }
+
+    expect(host.nextSibling).toBe(marker);
+  });
+
+  it('takes focus when it opens, but not when an already-open panel is deep-linked', () => {
+    const fixture = mountPanel();
+    const host = fixture.nativeElement as HTMLElement;
+    const trigger = document.createElement('button');
+    document.body.appendChild(trigger);
+    trigger.focus();
+    const panel = TestBed.inject(HelpPanelService);
+
+    panel.open();
+    fixture.detectChanges();
+    const search = host.querySelector('.tp-help-panel__search input') as HTMLElement;
+    expect(document.activeElement).toBe(search);
+
+    // The planner clicks into the list; a second "More in help" must not yank
+    // focus back to the search box.
+    const entryHead = host.querySelector('.tp-help-entry__head') as HTMLElement;
+    entryHead.focus();
+    panel.open('flex.sumFlex');
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(entryHead);
+
+    // Closing hands focus back to whatever opened it.
+    panel.close();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.remove();
   });
 
   it('scrolls the current tour anchor into view when a step becomes current', () => {

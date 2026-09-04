@@ -2,10 +2,17 @@
   position: fixed;
   top: 0;
   right: 0;
-  z-index: 900;
-  /* The open panel is parked inside .cdk-overlay-container, which is
-     pointer-events: none so overlays do not swallow page clicks. Panes opt back
-     in individually; this panel has to do the same. */
+  /* The open panel is parked inside .cdk-overlay-container. That container is
+     position: fixed with z-index 1000, so it is a stacking context and this
+     value is scoped to it, not raised over the whole page. Inside it, CDK gives
+     .cdk-overlay-backdrop, .cdk-global-overlay-wrapper and .cdk-overlay-pane
+     z-index 1000 each, so DOM order alone does not put the panel on top: below
+     1000 it paints under the day-cell dialog's backdrop, is dimmed by it, and
+     loses hit-testing to it — a click on the panel would reach the backdrop and
+     close the dialog. */
+  z-index: 1001;
+  /* .cdk-overlay-container is pointer-events: none so overlays do not swallow
+     page clicks. Panes opt back in individually; this panel has to do the same. */
   pointer-events: auto;
   display: flex;
   flex-direction: column;
