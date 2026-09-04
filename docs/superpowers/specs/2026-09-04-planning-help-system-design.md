@@ -327,7 +327,10 @@ Two further rules, both already exercised above:
   a template exists in the registry; every registry id has prose in `enUS`. This is the
   test that prevents rot: it fails when someone typos an id, or deletes a control and
   leaves its help entry behind.
-- **Search** — a Danish query folds diacritics (`laege` finds *læge*); an English query
+- **Search** — a Danish query folds diacritics, asserted against a term that actually
+  appears in the content (`lon` finds the entries keyworded *løn*) and asserting a
+  non-empty result, since two queries that both match nothing compare equal regardless
+  of whether folding works; an English query
   finds a Danish-only entry through the English fallback; tasks sort above controls; a
   query matching nothing returns the task list rather than an empty result.
 - **Admin filtering** — a non-admin sees neither `adminOnly` entry in the panel, and
