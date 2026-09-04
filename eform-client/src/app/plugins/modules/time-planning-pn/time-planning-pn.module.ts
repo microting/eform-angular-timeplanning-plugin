@@ -49,6 +49,8 @@ import {MatCheckbox} from '@angular/material/checkbox';
 import {MatRadioButton, MatRadioGroup} from '@angular/material/radio';
 import {MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle} from '@angular/material/dialog';
 import {MtxSelect} from '@ng-matero/extensions/select';
+import {OverlayModule} from '@angular/cdk/overlay';
+import {HelpIconComponent} from './help/components/help-icon/help-icon.component';
 
 @NgModule({
   imports: [
@@ -94,7 +96,8 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     MatStartDate,
     MatEndDate,
     MatPrefix,
-    MatError
+    MatError,
+    OverlayModule
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
@@ -106,6 +109,7 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
     PayrollExportDialogComponent,
+    HelpIconComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,

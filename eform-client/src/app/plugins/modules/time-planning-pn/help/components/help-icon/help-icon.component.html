@@ -1,0 +1,33 @@
+<ng-container *ngIf="prose as helpProse">
+  <button
+    type="button"
+    mat-icon-button
+    class="tp-help-icon"
+    cdkOverlayOrigin
+    #helpOrigin="cdkOverlayOrigin"
+    [attr.aria-label]="helpProse.title"
+    [attr.aria-expanded]="isOpen"
+    (click)="toggle()">
+    <mat-icon>info_outline</mat-icon>
+  </button>
+
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="helpOrigin"
+    [cdkConnectedOverlayOpen]="isOpen"
+    [cdkConnectedOverlayPositions]="positions"
+    [cdkConnectedOverlayHasBackdrop]="true"
+    cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+    [cdkConnectedOverlayPush]="true"
+    (backdropClick)="close()"
+    (overlayKeydown)="onOverlayKeydown($event)"
+    (detach)="close()">
+    <div class="tp-help-popover" role="dialog" [attr.aria-label]="helpProse.title">
+      <h5 class="tp-help-popover__title">{{ helpProse.title }}</h5>
+      <p class="tp-help-popover__body">{{ helpProse.short }}</p>
+      <button type="button" class="tp-help-popover__more" (click)="onMore()">
+        {{ ui.moreInHelp }}
+      </button>
+    </div>
+  </ng-template>
+</ng-container>
