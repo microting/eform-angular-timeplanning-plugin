@@ -328,7 +328,7 @@ export const enUS: HelpProseMap = {
   'dayCell.flags': {
     title: 'Day type',
     short: 'Marks what kind of day this is — vacation, sickness, course and so on. They look like checkboxes, but a day carries only one type at a time: ticking a new one unticks the previous one.',
-    detail: 'Ticking a type also sets what the day counts as. Day off and Vacation day off set it to zero hours. Vacation, Sick, Course, Leave of absence, Children 1st sick day, Children 2st sick day, Time off, Maternity leave, Holiday and Pregnancy-related absence all set it to the hours planned for that day. Watch the names: Time off reads like Day off and Vacation day off, but it does the opposite of both — it keeps the planned hours where they set the day to zero. Pick the type that matches what the day should count as. Unticking the type again removes that setting.',
+    detail: 'Ticking a type also sets what the day counts as. Day off and Vacation day off set it to zero hours. Vacation, Sick, Course, Leave of absence, Children 1st sick day, Children 2st sick day, Time off, Maternity leave, Holiday and Pregnancy-related absence all set it to the hours planned for that day. Watch the names: Time off reads like Day off and Vacation day off, but despite its name it keeps the planned hours, where those two set the day to zero hours. Pick the type that matches what the day should count as. Unticking the type again removes that setting.',
     keywords: ['day type', 'vacation', 'sickness', 'sick', 'course', 'maternity', 'leave', 'holiday', 'flag', 'absence', 'checkbox', 'day off', 'time off', 'mark day'],
   },
   'dayCell.commentOffice': {

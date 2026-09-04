@@ -23,6 +23,8 @@ describe('day type copy in every locale', () => {
     lookAlike: string;
     /** The two types that rewrite the day to zero hours. */
     zeroing: [string, string];
+    /** This language's despite-the-name construction. */
+    nameTrap: RegExp;
     /** How this language says "the hours planned for the day". */
     keepsPlanned: RegExp;
     /** How this language says "zero hours". */
@@ -33,12 +35,14 @@ describe('day type copy in every locale', () => {
     'en-US': {
       lookAlike: 'Time off',
       zeroing: ['Day off', 'Vacation day off'],
+      nameTrap: /despite (the|its) name/i,
       keepsPlanned: /planned/i,
       zeroHours: /zero hours/i,
     },
     da: {
       lookAlike: 'Ferie fridag',
       zeroing: ['Fridag', 'Afspadsering'],
+      nameTrap: /trods navnet/i,
       keepsPlanned: /planlagt/i,
       zeroHours: /nul timer/i,
     },
@@ -50,19 +54,40 @@ describe('day type copy in every locale', () => {
     return [(prose as HelpProse).short, (prose as HelpProse).detail ?? ''].join(' ');
   };
 
+  // Terminator plus a capitalised next word, so the abbreviated ordinals inside
+  // "Barns 1. sygedag" do not split a Danish sentence in two.
+  const sentences = (text: string): string[] => text.split(/(?<=[.!?])\s+(?=[A-ZÆØÅ])/);
+
   for (const [locale, expected] of Object.entries(EXPECTED)) {
     it(`${locale} never claims the opposite day types sit next to each other`, () => {
       expect(flagsText(locale)).not.toMatch(ADJACENCY);
     });
 
-    it(`${locale} warns that ${expected.lookAlike} keeps the planned hours despite its name`, () => {
+    it(`${locale} names both day types that set the day to zero hours`, () => {
       const text = flagsText(locale);
-      expect(text).toContain(expected.lookAlike);
       for (const zeroing of expected.zeroing) {
         expect(text).toContain(zeroing);
       }
-      expect(text).toMatch(expected.keepsPlanned);
       expect(text).toMatch(expected.zeroHours);
+    });
+
+    // Deliberately a single-sentence assertion. Checking only that these words appear
+    // SOMEWHERE in the entry proves nothing: the ordinary type-by-type description has
+    // to name every type and both outcomes anyway, so the co-occurrence holds even with
+    // the warning deleted. The warning is a claim about the relationship between them,
+    // so it has to be tested as one sentence that carries all of it at once.
+    it(`${locale} warns, in one sentence, that ${expected.lookAlike} keeps the planned hours despite its name`, () => {
+      const warnings = sentences(flagsText(locale))
+        .filter(sentence => sentence.includes(expected.lookAlike) && expected.nameTrap.test(sentence));
+
+      expect(warnings.length).toBeGreaterThan(0);
+
+      const warning = warnings.join(' ');
+      expect(warning).toMatch(expected.keepsPlanned);
+      expect(warning).toMatch(expected.zeroHours);
+      for (const zeroing of expected.zeroing) {
+        expect(warning).toContain(zeroing);
+      }
     });
   }
 

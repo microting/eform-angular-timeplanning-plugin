@@ -332,7 +332,7 @@ export const da: HelpProseMap = {
   'dayCell.flags': {
     title: 'Dagtype',
     short: 'Markerer hvad det er for en slags dag — ferie, sygdom, kursus og så videre. De ligner afkrydsningsfelter, men en dag har kun én dagtype ad gangen: sætter du et nyt flueben, forsvinder det forrige.',
-    detail: 'Fluebenet bestemmer også, hvad dagen tæller som. Fridag og Afspadsering sætter dagen til nul timer. Ferie, Syg, Kursus, Orlov, Barns 1. sygedag, Barns 2. sygedag, Ferie fridag, Barselsorlov, Helligdag og Graviditetsbetinget fravær sætter den derimod til de timer, der var planlagt for dagen. Hold især øje med navnene: Ferie fridag lyder som Fridag og Afspadsering, men gør det modsatte af dem begge — den beholder de planlagte timer, hvor de to sætter dagen til nul timer. Vælg den type, der passer til, hvad dagen skal tælle som. Fjerner du fluebenet igen, forsvinder den indstilling.',
+    detail: 'Fluebenet bestemmer også, hvad dagen tæller som. Fridag og Afspadsering sætter dagen til nul timer. Ferie, Syg, Kursus, Orlov, Barns 1. sygedag, Barns 2. sygedag, Ferie fridag, Barselsorlov, Helligdag og Graviditetsbetinget fravær sætter den derimod til de timer, der var planlagt for dagen. Hold især øje med navnene: Ferie fridag lyder som Fridag og Afspadsering, men beholder trods navnet de planlagte timer, hvor de to sætter dagen til nul timer. Vælg den type, der passer til, hvad dagen skal tælle som. Fjerner du fluebenet igen, forsvinder den indstilling.',
     keywords: ['dagtype', 'ferie', 'sygdom', 'syg', 'kursus', 'barsel', 'orlov', 'helligdag', 'afspadsering', 'fridag', 'feriefridag', 'fravær', 'flueben', 'markér dag'],
   },
   'dayCell.commentOffice': {
