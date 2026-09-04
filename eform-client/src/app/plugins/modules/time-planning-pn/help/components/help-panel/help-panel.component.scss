@@ -2,11 +2,11 @@
   position: fixed;
   top: 0;
   right: 0;
-  /* Above .cdk-overlay-container (1000): the day-cell dialog is modal, and its
-     help popovers link into this panel. At a lower z-index that link would open
-     the panel behind the dialog's backdrop and read as a control that did
-     nothing. */
-  z-index: 1001;
+  z-index: 900;
+  /* The open panel is parked inside .cdk-overlay-container, which is
+     pointer-events: none so overlays do not swallow page clicks. Panes opt back
+     in individually; this panel has to do the same. */
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   width: 340px;

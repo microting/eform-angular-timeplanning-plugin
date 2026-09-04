@@ -334,7 +334,7 @@
                 [value]="data.planningPrDayModels.sumFlexStart.toFixed(2)"/>
             </mat-form-field>
 
-            <div class="flex-row">
+            <div class="field-with-help">
               <mat-form-field data-tp-help="dayCell.planHours">
                 <mat-label>{{ 'Plan hours' | translate }}</mat-label>
                 <input
@@ -361,7 +361,7 @@
                 [value]="data.planningPrDayModels.actualHours.toFixed(2)"/>
             </mat-form-field>
 
-            <div class="flex-row" *ngIf="!isInTheFuture && data.planningPrDayModels.nettoHoursOverrideActive">
+            <div class="field-with-help" *ngIf="!isInTheFuture && data.planningPrDayModels.nettoHoursOverrideActive">
               <mat-form-field data-tp-help="dayCell.nettoOverride">
                 <mat-label>{{ 'NettoHours override' | translate }}</mat-label>
                 <input
@@ -375,7 +375,7 @@
             </div>
 
             <br *ngIf="data.planningPrDayModels.nettoHoursOverrideActive"/>
-            <div class="flex-row" *ngIf="!isInTheFuture">
+            <div class="field-with-help" *ngIf="!isInTheFuture">
               <mat-form-field data-tp-help="flex.whatIsFlex">
                 <mat-label>{{ 'Flex' | translate }}</mat-label>
                 <input
@@ -389,7 +389,7 @@
               <tp-help-icon helpId="flex.whatIsFlex" (openInPanel)="openHelp($event)"></tp-help-icon>
             </div>
 
-            <div class="flex-row" *ngIf="!isInTheFuture">
+            <div class="field-with-help" *ngIf="!isInTheFuture">
               <mat-form-field data-tp-help="dayCell.paidOutFlex">
                 <mat-label>{{ 'PaidOutFlex' | translate }}</mat-label>
                 <input
@@ -406,7 +406,7 @@
                 (openInPanel)="openHelp($event)"></tp-help-icon>
             </div>
 
-            <div class="flex-row" *ngIf="!isInTheFuture">
+            <div class="field-with-help" *ngIf="!isInTheFuture">
               <mat-form-field data-tp-help="flex.sumFlex">
                 <mat-label>{{ 'Flex balance to date' | translate }}</mat-label>
                 <input

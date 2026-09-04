@@ -8,6 +8,7 @@ import { of } from 'rxjs';
 import { format } from 'date-fns';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
+import { HelpTourService } from '../../../help/services/help-tour.service';
 
 describe('TimePlanningsContainerComponent', () => {
   let component: TimePlanningsContainerComponent;
@@ -233,6 +234,71 @@ describe('TimePlanningsContainerComponent', () => {
           tagIds: undefined
         })
       );
+    });
+  });
+
+  describe('Page help tour', () => {
+    let tour: HelpTourService;
+    let start: jest.SpyInstance;
+
+    beforeEach(() => {
+      localStorage.clear();
+      tour = TestBed.inject(HelpTourService);
+      start = jest.spyOn(tour, 'start').mockImplementation(() => undefined);
+      jest.useFakeTimers();
+      component.dateFrom = new Date(2024, 0, 15);
+      component.dateTo = new Date(2024, 0, 21);
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+      start.mockRestore();
+      localStorage.clear();
+    });
+
+    it('does not offer the tour while the grid has no rows', () => {
+      // HelpTourService marks a tour seen as soon as it runs out of steps, and
+      // that flag is persisted, so an empty first load would drop the three grid
+      // steps and suppress them for good.
+      mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: [] }) as any);
+
+      component.getPlannings();
+      jest.runAllTimers();
+
+      expect(start).not.toHaveBeenCalled();
+    });
+
+    it('offers the tour once rows have arrived', () => {
+      mockPlanningsService.getPlannings.mockReturnValue(
+        of({ success: true, model: [{ siteId: 1, siteName: 'A' }] }) as any);
+
+      component.getPlannings();
+      jest.runAllTimers();
+
+      expect(start).toHaveBeenCalledWith('page', { isAdmin: component.isAdmin });
+    });
+
+    it('does not re-offer the tour on every reload', () => {
+      mockPlanningsService.getPlannings.mockReturnValue(
+        of({ success: true, model: [{ siteId: 1, siteName: 'A' }] }) as any);
+
+      component.getPlannings();
+      jest.runAllTimers();
+      component.getPlannings();
+      jest.runAllTimers();
+
+      expect(start).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not offer a tour the planner has already seen', () => {
+      tour.markSeen('page');
+      mockPlanningsService.getPlannings.mockReturnValue(
+        of({ success: true, model: [{ siteId: 1, siteName: 'A' }] }) as any);
+
+      component.getPlannings();
+      jest.runAllTimers();
+
+      expect(start).not.toHaveBeenCalled();
     });
   });
 });

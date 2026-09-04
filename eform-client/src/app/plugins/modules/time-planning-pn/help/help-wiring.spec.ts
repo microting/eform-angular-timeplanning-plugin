@@ -1,8 +1,8 @@
-import { readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { OverlayModule } from '@angular/cdk/overlay';
+import { OverlayContainer, OverlayModule } from '@angular/cdk/overlay';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateService } from '@ngx-translate/core';
@@ -12,6 +12,7 @@ import { HelpTourComponent } from './components/help-tour/help-tour.component';
 import { HelpPanelService } from './services/help-panel.service';
 import { HelpTourService } from './services/help-tour.service';
 import { applyGridHelpAnchors } from './grid-help-anchors';
+import { enUSUi } from './i18n/enUS';
 
 const MODULE_ROOT = join(__dirname, '..');
 
@@ -21,10 +22,29 @@ const TABLE_HTML = 'components/plannings/time-plannings-table/time-plannings-tab
 const TABLE_TS = 'components/plannings/time-plannings-table/time-plannings-table.component.ts';
 const DIALOG_HTML = 'components/plannings/time-planning-actions/workday-entity/workday-entity-dialog.component.html';
 const DIALOG_TS = 'components/plannings/time-planning-actions/workday-entity/workday-entity-dialog.component.ts';
+const DIALOG_SCSS = 'components/plannings/time-planning-actions/workday-entity/workday-entity-dialog.component.scss';
 
 const read = (relative: string): string => readFileSync(join(MODULE_ROOT, relative), 'utf8');
 
 const MARKUP = [read(CONTAINER_HTML), read(TABLE_HTML), read(DIALOG_HTML)].join('\n');
+
+/**
+ * Every literal `'key' | translate` in the three wired templates, frozen as it
+ * stood before the help system was mounted. The help chrome takes its labels
+ * from HelpUiStrings, so this task added none; a new entry here means someone
+ * added a key that has to be translated into all 25 shared locale files.
+ */
+const TEMPLATE_TRANSLATE_KEYS = [
+  'Actual', 'Auto break calculation', 'Cancel', 'CommentOffice', 'CommentWorker', 'Date range',
+  'Download Excel', 'Export to payroll', 'Flex', 'Flex balance at start of day',
+  'Flex balance to date', 'keyboard_tab', 'keyboard_tab_rtl', 'Needs update!', 'NettoHours',
+  'NettoHours override', 'No pay rule set selected', 'PaidOutFlex', 'Pause', 'Plan hours',
+  'Planned working hours', 'Reload table', 'Reset pause to recorded', 'Save',
+  'Shift not stopped by user!', 'Shifts across midnight', 'Show resigned', 'Start', 'Stop',
+  'Tags', 'Total breaktime', 'Total working hours', 'Use 1-minute intervals',
+  'View GPS Location', 'View history', 'View Snapshot', 'Worker', 'Worktime start',
+  'Worktime stop',
+];
 
 describe('help wiring', () => {
   it('anchors every entry that a tour needs', () => {
@@ -89,13 +109,56 @@ describe('help wiring', () => {
   });
 
   it('binds the help-icon and panel outputs, or they are inert', () => {
-    expect(MARKUP).toContain('(openInPanel)=');
-    expect(MARKUP).toContain('(replayTourRequested)=');
+    // Every icon, not just one: an unbound "More in help" is a control that
+    // silently does nothing.
+    const icons = (MARKUP.match(/<tp-help-icon/g) ?? []).length;
+    const bindings = (MARKUP.match(/\(openInPanel\)=/g) ?? []).length;
+    expect(icons).toBeGreaterThan(1);
+    expect(bindings).toBe(icons);
+    expect((MARKUP.match(/<tp-help-panel/g) ?? []).length)
+      .toBe((MARKUP.match(/\(replayTourRequested\)=/g) ?? []).length);
   });
 
   it('does not introduce new translate keys for help chrome', () => {
-    // The help button's tooltip must come from HelpUiStrings, not a new shared key.
-    expect(MARKUP).not.toContain("'Help' | translate");
+    // The help chrome must come from HelpUiStrings. This freezes the literal
+    // translate keys the three wired templates use: adding `'Help' | translate`,
+    // or any other new key, fails here and forces a deliberate update of all 25
+    // shared locale files.
+    const used = [...MARKUP.matchAll(/'([^']+)'\s*\|\s*translate/g)].map(match => match[1]);
+    expect(new Set(used)).toEqual(new Set(TEMPLATE_TRANSLATE_KEYS));
+  });
+
+  it('does not add the help chrome to the shared locale catalogue', () => {
+    // Wording that could only have come from this feature. Generic labels the
+    // plugin already translates ('Close', 'Next') are deliberately not listed.
+    const distinctive = [
+      enUSUi.searchHelp, enUSUi.moreInHelp, enUSUi.replayTour, enUSUi.noResults,
+      enUSUi.sectionTask, enUSUi.sectionDayCell,
+    ];
+    const localeDir = join(MODULE_ROOT, 'i18n');
+    const localeFiles = readdirSync(localeDir).filter(name => name.endsWith('.ts'));
+    expect(localeFiles.length).toBeGreaterThan(20);
+    for (const name of localeFiles) {
+      const contents = readFileSync(join(localeDir, name), 'utf8');
+      for (const phrase of distinctive) {
+        expect(contents).not.toContain(phrase);
+      }
+    }
+  });
+
+  it('keeps the help-paired form fields at the width they had', () => {
+    // These five were direct children of the .d-flex.flex-column column, where a
+    // flex item stretches. Rowing them up with their icon shrinks them to
+    // mat-form-field's intrinsic width unless the stretch is restored.
+    const dialogHtml = read(DIALOG_HTML);
+    expect((dialogHtml.match(/class="field-with-help"/g) ?? []).length).toBe(5);
+
+    const scss = read(DIALOG_SCSS);
+    const start = scss.indexOf('.field-with-help {');
+    expect(start).toBeGreaterThan(-1);
+    const block = scss.slice(start, scss.indexOf('\n}', start));
+    expect(block).toContain('mat-form-field');
+    expect(block).toMatch(/flex:\s*1 1 auto/);
   });
 
   it('marks the day-cell dialog body scrollable so popovers dismiss on its scroll', () => {
@@ -117,17 +180,17 @@ describe('help wiring', () => {
   });
 
   it('calls the header stamp from the table component', () => {
-    expect(read(TABLE_TS)).toContain('applyGridHelpAnchors');
+    // Importing it is not calling it: the stamp only lands from a render hook.
+    const tableTs = read(TABLE_TS);
+    const hook = /ngAfterViewChecked\(\)[\s\S]*?\n  \}/.exec(tableTs);
+    expect(hook).not.toBeNull();
+    expect((hook as RegExpExecArray)[0]).toContain('applyGridHelpAnchors(this.el.nativeElement)');
   });
 
-  it('stacks the panel above the CDK overlay container', () => {
-    // The day-cell dialog is modal and its popovers link into the panel. Below
-    // .cdk-overlay-container (z-index 1000) that link opens the panel behind the
-    // dialog backdrop, which reads as a control that did nothing.
+  it('opts the panel back into pointer events, since the overlay container opts out', () => {
     const scss = read('help/components/help-panel/help-panel.component.scss');
-    const zIndex = /\.tp-help-panel\s*\{[^}]*?z-index:\s*(\d+)/.exec(scss);
-    expect(zIndex).not.toBeNull();
-    expect(Number((zIndex as RegExpExecArray)[1])).toBeGreaterThan(1000);
+    const block = scss.slice(0, scss.indexOf('\n}'));
+    expect(block).toContain('pointer-events: auto');
   });
 });
 
@@ -153,38 +216,59 @@ describe('help deep link and tour scrolling', () => {
     localStorage.clear();
   });
 
-  it('scrolls the panel to the entry a deep link targets', () => {
+  const mountPanel = (): ComponentFixture<HelpPanelComponent> => {
     TestBed.configureTestingModule({
       declarations: [HelpPanelComponent],
       imports: [FormsModule, MatIconModule, MatButtonModule],
       providers: [HelpPanelService, { provide: TranslateService, useValue: { currentLang: 'en-US' } }],
     });
-    const fixture: ComponentFixture<HelpPanelComponent> = TestBed.createComponent(HelpPanelComponent);
+    const fixture = TestBed.createComponent(HelpPanelComponent);
     fixture.detectChanges();
+    return fixture;
+  };
+
+  it('scrolls the panel to a deep-link target, and only then', () => {
+    const fixture = mountPanel();
+    const panel = TestBed.inject(HelpPanelService);
+
+    // Browsing the whole catalogue has nothing to scroll to.
+    panel.open();
+    fixture.detectChanges();
+    expect(scrolled).toHaveLength(0);
 
     // flex.sumFlex sits in the last section, well below the fold of a panel that
     // opens scrolled to the top.
-    TestBed.inject(HelpPanelService).open('flex.sumFlex');
+    panel.close();
+    fixture.detectChanges();
+    panel.open('flex.sumFlex');
     fixture.detectChanges();
 
     const target = fixture.nativeElement.querySelector('.tp-help-entry--target') as HTMLElement;
     expect(target).not.toBeNull();
-    expect(scrolled).toContain(target);
+    expect(scrolled).toEqual([target]);
   });
 
-  it('does not scroll the panel when it is opened without a target', () => {
-    TestBed.configureTestingModule({
-      declarations: [HelpPanelComponent],
-      imports: [FormsModule, MatIconModule, MatButtonModule],
-      providers: [HelpPanelService, { provide: TranslateService, useValue: { currentLang: 'en-US' } }],
-    });
-    const fixture: ComponentFixture<HelpPanelComponent> = TestBed.createComponent(HelpPanelComponent);
+  it('parks the open panel inside the CDK overlay container and gives it focus', () => {
+    // CDK's Dialog marks body siblings of the overlay container aria-hidden
+    // while a modal is open, and the day-cell dialog links into this panel.
+    const fixture = mountPanel();
+    const host = fixture.nativeElement as HTMLElement;
+    const container = TestBed.inject(OverlayContainer).getContainerElement();
+    const panel = TestBed.inject(HelpPanelService);
+
+    expect(host.parentNode).not.toBe(container);
+
+    panel.open();
     fixture.detectChanges();
 
-    TestBed.inject(HelpPanelService).open();
+    expect(host.parentNode).toBe(container);
+    expect(document.activeElement)
+      .toBe(host.querySelector('.tp-help-panel__search input'));
+
+    panel.close();
     fixture.detectChanges();
 
-    expect(scrolled).toHaveLength(0);
+    expect(host.parentNode).not.toBe(container);
   });
 
   it('scrolls the current tour anchor into view when a step becomes current', () => {

@@ -2,6 +2,7 @@ import {
   AfterViewChecked, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy,
   OnInit, Output, SimpleChanges,
 } from '@angular/core';
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { Subscription } from 'rxjs';
 import { HelpEntry, HelpEntryId, HelpProse, HelpSection, HelpUiStrings } from '../../help.model';
 import { HelpContentService } from '../../services/help-content.service';
@@ -48,11 +49,16 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
    */
   private pendingTargetScroll = false;
 
+  /** Where the panel host sits when it is not parked in the overlay container. */
+  private originalParent: Node | null = null;
+  private pendingFocus = false;
+
   constructor(
     private helpContent: HelpContentService,
     private helpSearch: HelpSearchService,
     private helpPanel: HelpPanelService,
     private host: ElementRef<HTMLElement>,
+    private overlayContainer: OverlayContainer,
   ) {}
 
   /** Chrome labels. Never the shared ngx-translate catalogue. */
@@ -81,8 +87,12 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
       this.isOpen = isOpen;
       if (isOpen) {
         this.buildSections();
+        this.moveIntoOverlayContainer();
+        this.pendingFocus = true;
       } else {
         this.onQueryChange('');
+        this.restoreFromOverlayContainer();
+        this.pendingFocus = false;
       }
     }));
     this.subscriptions.add(this.helpPanel.target$.subscribe(target => {
@@ -101,6 +111,17 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
   }
 
   ngAfterViewChecked(): void {
+    if (this.pendingFocus) {
+      // The panel can be opened from inside the modal day-cell dialog, whose
+      // focus trap wraps Tab within itself. Handing focus to the search input is
+      // what makes the panel reachable at all from there.
+      const search = this.host.nativeElement
+        .querySelector<HTMLElement>('.tp-help-panel__search input');
+      if (search) {
+        this.pendingFocus = false;
+        search.focus();
+      }
+    }
     if (!this.pendingTargetScroll) {
       return;
     }
@@ -120,7 +141,34 @@ export class HelpPanelComponent implements OnInit, OnChanges, AfterViewChecked, 
   }
 
   ngOnDestroy(): void {
+    this.restoreFromOverlayContainer();
     this.subscriptions.unsubscribe();
+  }
+
+  /**
+   * CDK's Dialog marks every body sibling of .cdk-overlay-container
+   * aria-hidden="true" while a modal is open, and the day-cell dialog's help
+   * icons link into this panel. Left where it is declared, the panel would open
+   * hidden from screen readers and behind the dialog. Inside the container it is
+   * neither, and it stacks above the dialog pane on DOM order alone — no
+   * z-index hack.
+   */
+  private moveIntoOverlayContainer(): void {
+    const host = this.host.nativeElement;
+    const container = this.overlayContainer.getContainerElement();
+    if (host.parentNode === container) {
+      return;
+    }
+    this.originalParent = this.originalParent ?? host.parentNode;
+    container.appendChild(host);
+  }
+
+  /** Put the host back before Angular tears the view down around it. */
+  private restoreFromOverlayContainer(): void {
+    const host = this.host.nativeElement;
+    if (this.originalParent && host.parentNode !== this.originalParent) {
+      this.originalParent.appendChild(host);
+    }
   }
 
   onQueryChange(query: string): void {

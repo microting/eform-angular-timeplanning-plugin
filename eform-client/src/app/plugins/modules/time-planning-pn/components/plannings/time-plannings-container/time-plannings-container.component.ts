@@ -163,7 +163,11 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   private startPageTourOnce(): void {
-    if (this.pageTourOffered || this.helpTour.hasSeen('page')) {
+    // Steps 4-6 point at grid rows. HelpTourService records a tour as seen the
+    // moment it runs out of steps, and that flag lives in localStorage, so
+    // offering the tour on an empty grid would drop those three steps and then
+    // permanently suppress them. Wait for rows.
+    if (this.pageTourOffered || this.timePlannings.length === 0 || this.helpTour.hasSeen('page')) {
       return;
     }
     this.pageTourOffered = true;
