@@ -37,4 +37,14 @@ describe('HelpHintComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.help-text')).toBeNull();
   });
+
+  it('renders the correct icon based on tone', () => {
+    fixture.componentInstance.helpId = 'dayCell.futureDisabled';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.mat-icon').textContent).toContain('info');
+
+    fixture.componentInstance.tone = 'warn';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.mat-icon').textContent).toContain('warning');
+  });
 });
