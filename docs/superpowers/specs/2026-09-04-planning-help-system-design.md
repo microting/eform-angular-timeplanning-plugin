@@ -61,26 +61,49 @@ Rejected alternatives:
 
 ```ts
 export type HelpSection =
-  | 'toolbar' | 'grid' | 'dayCell' | 'shifts' | 'flex' | 'flags';
+  | 'task' | 'toolbar' | 'grid' | 'dayCell' | 'shifts' | 'flex' | 'flags';
+
+export type HelpKind = 'control' | 'task';
 
 export interface HelpEntry {
   id: HelpEntryId;      // stable identifier, e.g. 'dayCell.actualPause'
+  kind: HelpKind;
   section: HelpSection;
   anchor?: string;      // data-tp-help value; required if tourStep is set
   tourStep?: number;    // present = included in a tour; value = order within it
   tour?: 'page' | 'dialog';
   adminOnly?: boolean;  // filtered out when the current user is not an admin
+  related?: HelpEntryId[];  // tasks only: the controls the task touches
 }
 ```
 
 Prose lives separately, in `help/i18n/enUS.ts` and `help/i18n/da.ts`:
 
 ```ts
-export const enUS: Record<HelpEntryId, { short: string; detail?: string }> = { ... };
+export const enUS: Record<HelpEntryId, {
+  title: string;
+  short: string;
+  detail?: string;
+  steps?: string[];     // tasks only, in order
+  keywords: string[];   // search synonyms, in this locale's language
+}> = { ... };
 ```
 
 `short` is one or two sentences and is what the ⓘ popover and the panel summary show.
 `detail` is an optional further paragraph shown only in the panel.
+
+### Controls and tasks
+
+A **control** entry answers "what is this thing?" and is anchored to something on
+screen. A **task** entry answers "how do I do X?", has ordered `steps`, and is anchored
+to nothing.
+
+Both are needed, and the distinction is what makes the panel searchable. A planner who
+needs to register vacation does not search for a control — no control on the page is
+called "vacation". They search for the task. Control entries alone would return
+nothing for the most common question the page receives.
+
+Tours are built from control entries only; tasks have no `anchor` and no `tourStep`.
 
 `HelpContentService` resolves prose against ngx-translate's `currentLang` and falls
 back to English **per entry**, so a partially translated Danish file degrades
@@ -109,6 +132,31 @@ CDK connected overlay using `cdkConnectedOverlayUsePopover="inline"`, which rend
 into the browser top layer. This matters because roughly half the help lives inside a
 `MatDialog`: a body-appended overlay would fight the dialog's own z-index and focus
 trap. Dismissed on Escape, backdrop click, and scroll.
+
+**Search.** A field at the top of the panel, focused when the panel is opened from the
+`?` button. With no query the panel shows its normal grouped browse view; search is
+additive, never a replacement for browsing.
+
+Matching is case-insensitive and diacritic-insensitive — Danish `å æ ø` must fold, or
+a user typing `laege` finds nothing — across `title`, `keywords`, `short`, `detail` and
+`steps`. It runs against **both the active locale and the English fallback**, so a
+Danish user who types an English term still finds the entry, and vice versa. Both are
+already loaded, so this costs nothing.
+
+Matching is substring, not fuzzy. Across ~48 entries fuzzy matching adds noise rather
+than recall.
+
+Results are ordered: **tasks before controls** — someone typing into a help box wants a
+how-to, not a definition — then by where the match landed, title before keyword before
+body. Each result shows its `title` and `short`; expanding a task reveals its `steps`.
+
+When nothing matches, the panel names the query and lists the tasks rather than showing
+an empty result — a dead end is the one outcome a help search must not produce.
+
+`keywords` is what makes this work at all. A Danish planner types *ferie*, *sygdom*,
+*fri*, *afspadsering* or *barsel*, and none of those strings appear anywhere in the
+English prose. Keywords carry the synonyms, per locale, and are authored as
+deliberately as the prose.
 
 **Side panel.** A right-side slide-in opened by a single `?` button placed in the
 container toolbar after the last `div.line-vert`
@@ -151,14 +199,42 @@ The `dialog` tour is offered from inside `WorkdayEntityDialogComponent`.
 
 ## Entry inventory
 
-Approximately 36 entries.
+Approximately 48 entries — 36 controls and 12 tasks.
 
-### `toolbar` (9)
+### `task` (12)
+
+`registerVacation`, `registerSickness`, `registerDayOff`, `correctRegisteredTime`,
+`addMissingRegistration`, `addExtraShift`, `changePlannedHours`, `payOutFlex`,
+`exportForPayroll`, `whoChangedThis`, `whereWasThisRegistered`, `filterToOneTeam`.
+
+Each carries `steps` and a `related` list of the controls it touches, so a task ends by
+pointing at the control entries that explain the fields it just told the user to fill.
+
+Three of these describe the day flags, and they carry a rule the UI actively hides.
+The flags render as checkboxes but are **mutually exclusive** — ticking one unticks the
+rest — and ticking one rewrites netto hours
+(`workday-entity-dialog.component.ts:1263-1290`):
+
+| Flag | Resulting netto hours |
+|---|---|
+| `DayOff`, `VacationDayOff` | `0` |
+| `Vacation`, `Sick`, `Course`, `LeaveOfAbsence`, `Maternity`, `Holiday`, and the rest | the day's planned hours |
+
+So `Vacation` and `VacationDayOff` sit next to each other and produce opposite results.
+`registerVacation` and `registerDayOff` must state which one counts as worked time;
+this is the single most valuable thing the help system can say.
+
+The full flag set is `TimePlanningMessagesEnum`: `DayOff`, `Vacation`, `Sick`,
+`Course`, `LeaveOfAbsence`, `Children1stSick`, `Children2stSick`, `TimeOff`,
+`Maternity`, `VacationDayOff`, `Holiday`, `PregnancyLeave`. `Blank` and `Care` are
+excluded from the UI (`:241-242`) and get no entries.
+
+### `toolbar` — controls (9)
 
 `showResigned`, `navBackward`, `navForward`, `workerFilter`, `tagFilter`, `dateRange`,
 `downloadExcel`, `payrollExport` (adminOnly), `reload`.
 
-### `grid` (8)
+### `grid` — controls (8)
 
 `nameColumn`, `tagChips` (click-to-filter), `settingsStrip` (the pay-rule /
 mobile-registration / over-midnight / auto-break / one-minute / extra-shifts status
@@ -169,7 +245,7 @@ badges), `dayCellAnatomy` (planned versus actual, and the icon legend),
 elements — a weekly total and a per-day-cell value. The help text must name which one
 it describes, or it will actively mislead.
 
-### `dayCell` (16)
+### `dayCell` — controls (16)
 
 `versionHistory`, `plannedTimes`, `actualTimes`, `shiftCount`, `resetField`,
 `resetPauseToRecorded`, `gps`, `snapshot`, `futureDisabled`, `planHours`,
@@ -177,7 +253,7 @@ it describes, or it will actively mislead.
 `oneMinuteIntervals` (the timepicker's `minutesGap` is 1 or 5 depending on the
 worker's setting).
 
-### `flex` (3)
+### `flex` — controls (3)
 
 `whatIsFlex`, `sumFlex`, `paidOutFlexRelation`.
 
@@ -222,10 +298,14 @@ Two further rules, both already exercised above:
 - **`HelpContentService` fallback** — an entry missing from `da.ts` resolves to the
   English text; a present entry does not.
 - **Registry integrity** — every entry with a `tourStep` also declares a `tour` and an
-  `anchor`; `tourStep` values are unique within each tour; every `helpId` referenced in
+  `anchor`; no `task` entry has an `anchor` or a `tourStep`; every `related` id resolves;
+  every entry has at least one keyword in `enUS`; `tourStep` values are unique within each tour; every `helpId` referenced in
   a template exists in the registry; every registry id has prose in `enUS`. This is the
   test that prevents rot: it fails when someone typos an id, or deletes a control and
   leaves its help entry behind.
+- **Search** — a Danish query folds diacritics (`laege` finds *læge*); an English query
+  finds a Danish-only entry through the English fallback; tasks sort above controls; a
+  query matching nothing returns the task list rather than an empty result.
 - **Admin filtering** — a non-admin sees neither `adminOnly` entry in the panel, and
   the page tour skips the payroll step.
 
