@@ -59,3 +59,10 @@
   display: block;
   margin-bottom: 4px;
 }
+
+/* Help is admin-only, and the host still renders for everyone else — as an empty
+   element with a margin. Comment nodes do not disqualify :empty, so the *ngIf
+   anchor Angular leaves behind still matches. */
+:host(.tp-help-icon--name-column):empty {
+  display: none;
+}

@@ -113,7 +113,7 @@
     -->
     <button
       type="button"
-      *ngIf="isAdmin"
+      *ngIf="helpVisibility.isVisible$ | async"
       id="planningHelp"
       class="btn-secondary btn-secondary--icon-rounded-border"
       [matTooltip]="helpUi.help"

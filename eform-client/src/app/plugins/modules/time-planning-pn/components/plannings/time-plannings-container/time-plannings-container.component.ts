@@ -20,6 +20,7 @@ import {HelpEntryId, HelpTourName, HelpUiStrings} from '../../../help/help.model
 import {HelpContentService} from '../../../help/services/help-content.service';
 import {HelpPanelService} from '../../../help/services/help-panel.service';
 import {HelpTourService} from '../../../help/services/help-tour.service';
+import {HelpVisibilityService} from '../../../help/services/help-visibility.service';
 
 @AutoUnsubscribe()
 @Component({
@@ -36,6 +37,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   private helpContent = inject(HelpContentService);
   private helpPanel = inject(HelpPanelService);
   private helpTour = inject(HelpTourService);
+  /** Protected, not private: the ? button binds isVisible$ straight from the template. */
+  protected helpVisibility = inject(HelpVisibilityService);
 
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
@@ -174,7 +177,14 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     // moment it runs out of steps, and that flag lives in localStorage, so
     // offering the tour on an empty grid would drop those three steps and then
     // permanently suppress them. Wait for rows.
-    if (this.pageTourOffered || this.timePlannings.length === 0 || this.helpTour.hasSeen('page')) {
+    // The gate is checked here rather than after the fact, because
+    // pageTourOffered is a once-per-page-visit latch: burning it on a start the
+    // gate refuses would mean the tour never comes up again for this container
+    // instance, even if help becomes visible a moment later.
+    if (this.pageTourOffered
+      || this.timePlannings.length === 0
+      || !this.helpVisibility.isVisible
+      || this.helpTour.hasSeen('page')) {
       return;
     }
     this.pageTourOffered = true;

@@ -137,6 +137,10 @@ describe('help wiring', () => {
     // disabled future day. grid.nameColumn used to be a fourth hint here and was
     // a banner across the top of the page from load until navigation — it is an
     // icon now, asserted below.
+    //
+    // The list is exhaustive, which is what keeps that banner from coming back:
+    // any hint re-added anywhere in the three templates fails here, whatever
+    // attributes it is written with.
     const hints = [...MARKUP.matchAll(/<tp-help-hint[\s\S]*?>/g)].map(match => match[0]);
     const hintIds = hints
       .map(hint => /helpId="([^"]+)"/.exec(hint)?.[1])
@@ -144,7 +148,6 @@ describe('help wiring', () => {
     expect(hintIds.sort()).toEqual([
       'dayCell.futureDisabled', 'dayCell.planHoursLimit', 'grid.noWorkers',
     ]);
-    expect(MARKUP).not.toContain('<tp-help-hint helpId="grid.nameColumn"');
   });
 
   it('shows the plan-hours hint with the validation error, not always', () => {
@@ -176,7 +179,9 @@ describe('help wiring', () => {
     const affordance = /<tp-help-(icon|hint)[^>]*helpId="grid\.nameColumn"|<tp-help-(icon|hint)[\s\S]{0,200}?helpId="grid\.nameColumn"/
       .exec(tableHtml);
     expect(affordance).not.toBeNull();
-    expect((affordance as RegExpExecArray)[0]).toContain('tp-help-icon');
+    // The element, not the class: `<tp-help-hint class="tp-help-icon--name-column">`
+    // would satisfy a bare 'tp-help-icon' substring.
+    expect((affordance as RegExpExecArray)[0]).toContain('<tp-help-icon');
     // Below </mtx-grid> it reads as a footnote on the table rather than as
     // something about the column it describes.
     expect(tableHtml.indexOf('helpId="grid.nameColumn"'))
@@ -194,16 +199,19 @@ describe('help wiring', () => {
       .toContain('class="btn-secondary btn-secondary--icon-rounded-border"');
   });
 
-  it('shows the help button only to an admin, like the toolbar control beside it', () => {
-    // Help is admin-only for now. Every other surface is gated centrally in
-    // HelpVisibilityService, but the ? button is plain host markup with no help
-    // component behind it, so it needs the toolbar's own idiom.
+  it('gates the help button on the same source as the rest of the help chrome', () => {
+    // Not the container's own `isAdmin`. That is a take(1) read, so it cannot
+    // follow a later flip to non-admin — the cross-tab storage listener
+    // re-dispatching, a role change — and would leave a ? button on screen that
+    // opens a panel refusing to render. The service is live.
     const containerHtml = read(CONTAINER_HTML);
     const button = /<button[^>]*id="planningHelp"[\s\S]*?>/.exec(containerHtml);
     expect(button).not.toBeNull();
-    expect((button as RegExpExecArray)[0]).toMatch(/\*ngIf="isAdmin\b/);
-    // The idiom itself, so this is not asserting against a hand-invented flag.
-    expect(containerHtml).toContain('*ngIf="isAdmin && payrollSystem !== 0"');
+    expect((button as RegExpExecArray)[0])
+      .toContain('*ngIf="helpVisibility.isVisible$ | async"');
+    expect((button as RegExpExecArray)[0]).not.toMatch(/\*ngIf="isAdmin/);
+    // The binding needs the field to exist, or the template silently reads undefined.
+    expect(read(CONTAINER_TS)).toContain('inject(HelpVisibilityService)');
   });
 
   it('does not introduce new translate keys for help chrome', () => {

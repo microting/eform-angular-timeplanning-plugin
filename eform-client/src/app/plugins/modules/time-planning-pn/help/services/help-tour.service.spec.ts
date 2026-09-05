@@ -311,6 +311,10 @@ describe('HelpTourService', () => {
     anchor('toolbar.dateRange');
     helpVisibility.isVisible = false;
     service.start('page', { isAdmin: true });
+    // Without this the case passes with the gate deleted: an ungated start would
+    // run, hasSeen would still be false (the tour was neither finished nor
+    // skipped) and the second start would simply restart at index 0.
+    expect(service.isRunning).toBe(false);
 
     helpVisibility.isVisible = true;
     expect(service.hasSeen('page')).toBe(false);

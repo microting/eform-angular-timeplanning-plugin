@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { HelpTourService } from '../../../help/services/help-tour.service';
+import { HelpVisibilityService } from '../../../help/services/help-visibility.service';
 
 describe('TimePlanningsContainerComponent', () => {
   let component: TimePlanningsContainerComponent;
@@ -278,6 +279,27 @@ describe('TimePlanningsContainerComponent', () => {
       // A literal, not component.isAdmin: reading the expected value off the
       // component under test asserts nothing about what was passed.
       expect(start).toHaveBeenCalledWith('page', { isAdmin: false });
+    });
+
+    it('does not burn the once-per-page offer on a tour the help gate refuses', () => {
+      // pageTourOffered is a latch for the life of the container. Setting it
+      // around a start the gate refuses would mean this planner never gets the
+      // tour on this page visit, even once help becomes visible to them.
+      const visibility = TestBed.inject(HelpVisibilityService);
+      const isVisible = jest.spyOn(visibility, 'isVisible', 'get').mockReturnValue(false);
+      mockPlanningsService.getPlannings.mockReturnValue(
+        of({ success: true, model: [{ siteId: 1, siteName: 'A' }] }) as any);
+
+      component.getPlannings();
+      jest.runAllTimers();
+      expect(start).not.toHaveBeenCalled();
+
+      isVisible.mockReturnValue(true);
+      component.getPlannings();
+      jest.runAllTimers();
+      expect(start).toHaveBeenCalledWith('page', { isAdmin: false });
+
+      isVisible.mockRestore();
     });
 
     it('does not re-offer the tour on every reload', () => {
