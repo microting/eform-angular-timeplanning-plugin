@@ -6,15 +6,23 @@ import { OverlayContainer, OverlayModule } from '@angular/cdk/overlay';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { PLANNING_HELP_ENTRIES } from './planning-help.registry';
 import { HelpPanelComponent } from './components/help-panel/help-panel.component';
 import { HelpTourComponent } from './components/help-tour/help-tour.component';
 import { HelpPanelService } from './services/help-panel.service';
 import { HelpTourService } from './services/help-tour.service';
 import { applyGridHelpAnchors } from './grid-help-anchors';
+import { HelpVisibilityService } from './services/help-visibility.service';
 import { enUSUi } from './i18n/enUS';
 
 const MODULE_ROOT = join(__dirname, '..');
+
+/** Help is admin-only; the components under test need the flag, not a whole store. */
+const provideHelpVisibility = {
+  provide: HelpVisibilityService,
+  useValue: { isVisible: true, isVisible$: of(true) },
+};
 
 const CONTAINER_HTML = 'components/plannings/time-plannings-container/time-plannings-container.component.html';
 const CONTAINER_TS = 'components/plannings/time-plannings-container/time-plannings-container.component.ts';
@@ -123,16 +131,20 @@ describe('help wiring', () => {
     expect(read(CONTAINER_HTML)).toContain('(replayTourRequested)="replayTour($event)"');
   });
 
-  it('places an inline hint at each of the four spots the spec names', () => {
-    // Registry entries with no hint on the page are content nobody ever reaches
-    // in the situation it was written for.
+  it('places an inline hint only where something conditional has just happened', () => {
+    // A hint has no trigger and no dismiss, so it is only ever right where the
+    // page itself decides to show it: an empty grid, a validation error, a
+    // disabled future day. grid.nameColumn used to be a fourth hint here and was
+    // a banner across the top of the page from load until navigation — it is an
+    // icon now, asserted below.
     const hints = [...MARKUP.matchAll(/<tp-help-hint[\s\S]*?>/g)].map(match => match[0]);
     const hintIds = hints
       .map(hint => /helpId="([^"]+)"/.exec(hint)?.[1])
       .filter((id): id is string => !!id);
     expect(hintIds.sort()).toEqual([
-      'dayCell.futureDisabled', 'dayCell.planHoursLimit', 'grid.nameColumn', 'grid.noWorkers',
+      'dayCell.futureDisabled', 'dayCell.planHoursLimit', 'grid.noWorkers',
     ]);
+    expect(MARKUP).not.toContain('<tp-help-hint helpId="grid.nameColumn"');
   });
 
   it('shows the plan-hours hint with the validation error, not always', () => {
@@ -156,10 +168,17 @@ describe('help wiring', () => {
     expect((template as RegExpExecArray)[1]).toContain('helpId="grid.noWorkers"');
   });
 
-  it('puts the name-column hint above the grid, not below the whole table', () => {
+  it('offers the name column as a clickable icon above the grid, never as a banner', () => {
+    const tableHtml = read(TABLE_HTML);
+    // An icon: opened by a click and dismissed by one. As a hint it was open
+    // from page load and had no way to close, so it sat across the top of the
+    // planning page permanently.
+    const affordance = /<tp-help-(icon|hint)[^>]*helpId="grid\.nameColumn"|<tp-help-(icon|hint)[\s\S]{0,200}?helpId="grid\.nameColumn"/
+      .exec(tableHtml);
+    expect(affordance).not.toBeNull();
+    expect((affordance as RegExpExecArray)[0]).toContain('tp-help-icon');
     // Below </mtx-grid> it reads as a footnote on the table rather than as
     // something about the column it describes.
-    const tableHtml = read(TABLE_HTML);
     expect(tableHtml.indexOf('helpId="grid.nameColumn"'))
       .toBeLessThan(tableHtml.indexOf('<mtx-grid'));
   });
@@ -173,6 +192,18 @@ describe('help wiring', () => {
     expect((button as RegExpExecArray)[0]).not.toContain('mat-icon-button');
     expect((button as RegExpExecArray)[0])
       .toContain('class="btn-secondary btn-secondary--icon-rounded-border"');
+  });
+
+  it('shows the help button only to an admin, like the toolbar control beside it', () => {
+    // Help is admin-only for now. Every other surface is gated centrally in
+    // HelpVisibilityService, but the ? button is plain host markup with no help
+    // component behind it, so it needs the toolbar's own idiom.
+    const containerHtml = read(CONTAINER_HTML);
+    const button = /<button[^>]*id="planningHelp"[\s\S]*?>/.exec(containerHtml);
+    expect(button).not.toBeNull();
+    expect((button as RegExpExecArray)[0]).toMatch(/\*ngIf="isAdmin\b/);
+    // The idiom itself, so this is not asserting against a hand-invented flag.
+    expect(containerHtml).toContain('*ngIf="isAdmin && payrollSystem !== 0"');
   });
 
   it('does not introduce new translate keys for help chrome', () => {
@@ -314,7 +345,11 @@ describe('help deep link and tour scrolling', () => {
     TestBed.configureTestingModule({
       declarations: [HelpPanelComponent],
       imports: [FormsModule, MatIconModule, MatButtonModule],
-      providers: [HelpPanelService, { provide: TranslateService, useValue: { currentLang: 'en-US' } }],
+      providers: [
+        HelpPanelService,
+        { provide: TranslateService, useValue: { currentLang: 'en-US' } },
+        provideHelpVisibility,
+      ],
     });
     const fixture = TestBed.createComponent(HelpPanelComponent);
     fixture.detectChanges();
@@ -417,7 +452,10 @@ describe('help deep link and tour scrolling', () => {
     TestBed.configureTestingModule({
       declarations: [HelpTourComponent],
       imports: [OverlayModule],
-      providers: [{ provide: TranslateService, useValue: { currentLang: 'en-US' } }],
+      providers: [
+        { provide: TranslateService, useValue: { currentLang: 'en-US' } },
+        provideHelpVisibility,
+      ],
     });
     const anchors = new Map<string, HTMLElement>();
     for (const entry of PLANNING_HELP_ENTRIES.filter(e => e.tour === 'page' && e.tourStep !== undefined)) {

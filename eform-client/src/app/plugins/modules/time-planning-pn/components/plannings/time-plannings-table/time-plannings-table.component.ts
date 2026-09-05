@@ -15,6 +15,8 @@ import {TimePlanningMessagesEnum} from '../../../enums';
 import {Store} from '@ngrx/store';
 import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {applyGridHelpAnchors} from '../../../help/grid-help-anchors';
+import {HelpEntryId} from '../../../help/help.model';
+import {HelpPanelService} from '../../../help/services/help-panel.service';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -33,6 +35,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   protected datePipe = inject(DatePipe);
   private cdr = inject(ChangeDetectorRef);
   private el = inject(ElementRef);
+  private helpPanel = inject(HelpPanelService);
 
   @Input() timePlannings: TimePlanningModel[] = [];
   @Input() dateFrom!: Date;
@@ -80,6 +83,16 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
       this.waitingForFreshData = false;
       this.highlightApplied = false;
     }
+  }
+
+  /**
+   * "More in help" from the Name-column icon. The table opens the panel itself
+   * rather than emitting to the container: the panel is a page-level singleton
+   * reached through its service, and routing this one click up through an output
+   * would add a hop that carries no extra information.
+   */
+  openHelp(target: HelpEntryId): void {
+    this.helpPanel.open(target);
   }
 
   ngAfterViewChecked(): void {

@@ -2,7 +2,19 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ElementRef } from '@angular/core';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
+import { HelpVisibilityService } from '../../services/help-visibility.service';
 import { HelpTourComponent } from './help-tour.component';
+
+/**
+ * The one dependency the help chrome gained when help became admin-only. A stub
+ * rather than a mock store: HelpVisibilityService is the only thing the chrome
+ * asks, so these specs do not need ngrx at all. It defaults to visible, so every
+ * assertion below still covers the admin case it was written for.
+ */
+const helpVisibility = { isVisible: true, isVisible$: of(true) };
+const provideHelpVisibility = { provide: HelpVisibilityService, useValue: helpVisibility };
+
 import { HelpTourService } from '../../services/help-tour.service';
 import { HelpTourName } from '../../help.model';
 import { enUS, enUSUi } from '../../i18n/enUS';
@@ -33,7 +45,10 @@ describe('HelpTourComponent', () => {
     TestBed.configureTestingModule({
       declarations: [HelpTourComponent],
       imports: [OverlayModule],
-      providers: [{ provide: TranslateService, useValue: { currentLang: 'en-US' } }],
+      providers: [
+        { provide: TranslateService, useValue: { currentLang: 'en-US' } },
+        provideHelpVisibility,
+      ],
     });
   });
 

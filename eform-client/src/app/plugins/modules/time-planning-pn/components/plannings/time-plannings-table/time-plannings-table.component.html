@@ -1,11 +1,20 @@
 <!--
-  The Name column is pinned left, so a hint sitting flush to the left edge
+  The Name column is pinned left, so a compact affordance flush to the left edge
   immediately above the table reads as introducing that column. MtxGridColumn has
   no per-column header template (see help/grid-help-anchors.ts, which stamps the
   same header from a render hook for the same reason), so this is as close to the
   column as the grid allows without replacing its whole header row.
+
+  An icon rather than a hint, deliberately: a hint has no dismiss and no trigger,
+  so this spot was a blue banner that was open from page load and stayed open
+  forever, permanently occupying the top of the page. The icon behaves like every
+  other help affordance on the page — click to open the popover, click away to
+  dismiss — and takes up one glyph instead of a full-width strip.
 -->
-<tp-help-hint class="tp-help-hint--name-column" helpId="grid.nameColumn"></tp-help-hint>
+<tp-help-icon
+  class="tp-help-icon--name-column"
+  helpId="grid.nameColumn"
+  (openInPanel)="openHelp($event)"></tp-help-icon>
 
 <mtx-grid
   id="main-header-text"

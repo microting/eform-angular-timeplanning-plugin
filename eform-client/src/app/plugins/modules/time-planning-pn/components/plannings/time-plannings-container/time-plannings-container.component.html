@@ -113,6 +113,7 @@
     -->
     <button
       type="button"
+      *ngIf="isAdmin"
       id="planningHelp"
       class="btn-secondary btn-secondary--icon-rounded-border"
       [matTooltip]="helpUi.help"

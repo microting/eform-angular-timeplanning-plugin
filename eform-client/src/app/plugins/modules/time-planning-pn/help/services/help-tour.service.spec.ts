@@ -1,8 +1,19 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { HelpTourService, TOUR_STORAGE_KEY } from './help-tour.service';
 import { HelpContentService } from './help-content.service';
+import { HelpVisibilityService } from './help-visibility.service';
+
+/**
+ * The one dependency the help chrome gained when help became admin-only. A stub
+ * rather than a mock store: HelpVisibilityService is the only thing the chrome
+ * asks, so these specs do not need ngrx at all. It defaults to visible, so every
+ * assertion below still covers the admin case it was written for.
+ */
+const helpVisibility = { isVisible: true, isVisible$: of(true) };
+const provideHelpVisibility = { provide: HelpVisibilityService, useValue: helpVisibility };
+
 
 describe('HelpTourService', () => {
   let service: HelpTourService;
@@ -14,6 +25,8 @@ describe('HelpTourService', () => {
   };
 
   beforeEach(() => {
+    // The stub is shared by every case here; the gate tests flip it.
+    helpVisibility.isVisible = true;
     document.body.innerHTML = '';
     localStorage.clear();
     TestBed.resetTestingModule();
@@ -22,6 +35,7 @@ describe('HelpTourService', () => {
         HelpTourService,
         HelpContentService,
         { provide: TranslateService, useValue: { currentLang: 'en-US' } },
+        provideHelpVisibility,
       ],
     });
     service = TestBed.inject(HelpTourService);
@@ -271,6 +285,36 @@ describe('HelpTourService', () => {
     service.next();
     expect((await firstValueFrom(service.state$))?.index).toBe(1);
     service.start('page', { isAdmin: false });
+    expect((await firstValueFrom(service.state$))?.index).toBe(0);
+  });
+
+  it('refuses to start for a non-admin, and does not mark the tour seen', () => {
+    anchor('toolbar.dateRange');
+    anchor('toolbar.navForward');
+    helpVisibility.isVisible = false;
+
+    service.start('page', { isAdmin: true });
+
+    expect(service.isRunning).toBe(false);
+    // Not seen: the gate is temporary. A planner who was never offered the tour
+    // has not declined it and must still get it the first time help appears.
+    expect(service.hasSeen('page')).toBe(false);
+
+    // The same call runs for an admin, so the two assertions above are about the
+    // gate and not about missing anchors.
+    helpVisibility.isVisible = true;
+    service.start('page', { isAdmin: true });
+    expect(service.isRunning).toBe(true);
+  });
+
+  it('still offers a refused tour once help becomes visible', async () => {
+    anchor('toolbar.dateRange');
+    helpVisibility.isVisible = false;
+    service.start('page', { isAdmin: true });
+
+    helpVisibility.isVisible = true;
+    expect(service.hasSeen('page')).toBe(false);
+    service.start('page', { isAdmin: true });
     expect((await firstValueFrom(service.state$))?.index).toBe(0);
   });
 });

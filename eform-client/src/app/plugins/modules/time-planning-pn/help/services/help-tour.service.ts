@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { HelpEntry, HelpTourName } from '../help.model';
 import { HelpContentService } from './help-content.service';
+import { HelpVisibilityService } from './help-visibility.service';
 
 export const TOUR_STORAGE_KEY = 'tp.planning.tour.v1';
 
@@ -24,7 +25,10 @@ export class HelpTourService {
 
   readonly state$: Observable<HelpTourState | null> = this.stateSubject.asObservable();
 
-  constructor(private helpContent: HelpContentService) {}
+  constructor(
+    private helpContent: HelpContentService,
+    private helpVisibility: HelpVisibilityService,
+  ) {}
 
   /**
    * Steps whose anchor is absent are dropped, never treated as an error: the
@@ -32,6 +36,16 @@ export class HelpTourService {
    * filter only renders when the account has more than one site.
    */
   start(tour: HelpTourName, opts: { isAdmin: boolean }): void {
+    // The one choke point for all three ways a tour begins: startPageTourOnce,
+    // startDialogTourOnce and the panel's replay button. Refusing here closes
+    // every path at once.
+    //
+    // A refused tour is deliberately NOT marked seen. The gate is temporary; a
+    // planner who never got the offer has not declined it, and must still be
+    // offered it the first time help becomes visible to them.
+    if (!this.helpVisibility.isVisible) {
+      return;
+    }
     this.current = tour;
     this.steps = this.helpContent
       .tourEntries(tour, opts)

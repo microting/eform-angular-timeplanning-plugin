@@ -49,3 +49,13 @@
     cursor: pointer;
   }
 }
+
+/**
+ * The grid's Name column is pinned left, so this variant puts the icon on its own
+ * line flush to that edge, immediately above the table, where it reads as
+ * introducing the column rather than the grid as a whole.
+ */
+:host(.tp-help-icon--name-column) {
+  display: block;
+  margin-bottom: 4px;
+}

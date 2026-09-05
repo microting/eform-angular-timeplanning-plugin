@@ -4,10 +4,22 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { HelpEntryId, HelpTourName } from '../../help.model';
 import { enUS, enUSUi } from '../../i18n/enUS';
 import { HelpPanelService } from '../../services/help-panel.service';
+import { HelpVisibilityService } from '../../services/help-visibility.service';
 import { HelpPanelComponent } from './help-panel.component';
+
+/**
+ * The one dependency the help chrome gained when help became admin-only. A stub
+ * rather than a mock store: HelpVisibilityService is the only thing the chrome
+ * asks, so these specs do not need ngrx at all. It defaults to visible, so every
+ * assertion below still covers the admin case it was written for.
+ */
+const helpVisibility = { isVisible: true, isVisible$: of(true) };
+const provideHelpVisibility = { provide: HelpVisibilityService, useValue: helpVisibility };
+
 
 describe('HelpPanelComponent', () => {
   let fixture: ComponentFixture<HelpPanelComponent>;
@@ -27,12 +39,15 @@ describe('HelpPanelComponent', () => {
       .trim();
 
   beforeEach(async () => {
+    // The stub is shared by every case here; the gate tests flip it.
+    helpVisibility.isVisible = true;
     await TestBed.configureTestingModule({
       declarations: [HelpPanelComponent],
       imports: [FormsModule, MatIconModule, MatButtonModule],
       providers: [
         HelpPanelService,
         { provide: TranslateService, useValue: { currentLang: 'en-US' } },
+        provideHelpVisibility,
       ],
     }).compileComponents();
 
@@ -479,5 +494,37 @@ describe('HelpPanelComponent', () => {
 
     expect(component.isOpen).toBe(false);
     expect(component.targetId).toBeNull();
+  });
+
+  it('does not open for a non-admin, however it is asked to', () => {
+    // isAdmin only filters the entries listed inside an already-open panel. The
+    // panel itself has to refuse to exist, or a stray open() — a deep link, a
+    // leftover keyboard shortcut — puts the whole catalogue on screen.
+    helpVisibility.isVisible = false;
+
+    panel.open();
+    fixture.detectChanges();
+    expect(component.isOpen).toBe(false);
+    expect(panelEl()).toBeNull();
+
+    panel.open('flex.sumFlex' as HelpEntryId);
+    fixture.detectChanges();
+    expect(panelEl()).toBeNull();
+
+    // And the markup is gated too, so isOpen being set by any other route than
+    // the service — a refactor, a test, a subclass — still renders nothing.
+    component.isOpen = true;
+    fixture.detectChanges();
+    expect(panelEl()).toBeNull();
+    component.isOpen = false;
+
+    // An admin opens it exactly as before.
+    helpVisibility.isVisible = true;
+    panel.close();
+    fixture.detectChanges();
+    panel.open();
+    fixture.detectChanges();
+    expect(component.isOpen).toBe(true);
+    expect(panelEl()).not.toBeNull();
   });
 });

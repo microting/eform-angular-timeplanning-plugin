@@ -95,7 +95,13 @@ export class HelpPanelComponent extends HelpChromeBase
   }
 
   ngOnInit(): void {
-    this.subscriptions.add(this.helpPanel.isOpen$.subscribe(isOpen => {
+    this.subscriptions.add(this.helpPanel.isOpen$.subscribe(requested => {
+      // The panel is help chrome like everything else, and help is admin-only
+      // for now. Refusing the open here — not just hiding the markup — keeps a
+      // stray open() from reparenting the host into the overlay container,
+      // stealing focus and binding the capture-phase Escape handler for a user
+      // who has no help at all.
+      const isOpen = requested && this.isVisible;
       // open() re-emits even when the panel is already open — a second
       // "More in help" deep-links into the open panel. Only a genuine
       // closed -> open transition may move focus, or that second click would
