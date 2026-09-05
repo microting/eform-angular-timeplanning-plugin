@@ -302,6 +302,30 @@ every user sees. It says nothing about the dialog behind it.
 
 Every other entry is shown to all users, which matches how the page is actually gated.
 
+## Rollout: admin-only first
+
+The whole help system — the `?` button, the panel, both tours, every ⓘ and every inline
+hint — is currently visible only to admins, i.e. only to Microting. This is a staged
+rollout, not a change of audience: the content is still written for the team lead, and the
+copy rules below still bind, because customers see it when the gate lifts.
+
+The gate lives in three choke points rather than at the ~20 template call sites, so no
+usage site can leak: `HelpVisibilityService` (root, live subscription to
+`selectCurrentUserIsAdmin` — never `take(1)`, which would latch a stale value),
+read by `HelpEntryChromeBase.prose`, by `HelpTourService.start()`, and by
+`HelpPanelComponent`. A tour refused by the gate is deliberately **not** marked seen, so a
+user still gets their one automatic offer once the gate is lifted.
+
+Lifting the gate should be a small change in those three places plus the `?` button. Two
+things to revisit at that point:
+
+- `grid.nameColumn`'s copy currently under-describes its only remaining audience — it never
+  says that clicking the column opens the worker's settings. That sentence must not be
+  added while the gate is up, and if it is ever added it must not be phrased as an
+  administrator capability.
+- `toolbar.payrollExport` keeps its own `adminOnly` flag, which is a permanent property of
+  that entry rather than part of this rollout.
+
 ## Copy rules
 
 **"Admin" means Microting, not a customer role.** Help copy therefore never mentions
