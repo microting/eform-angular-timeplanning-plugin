@@ -12,6 +12,8 @@ import { Store } from '@ngrx/store';
 import { provideMockStore } from '@ngrx/store/testing';
 import { DomSanitizer } from '@angular/platform-browser';
 import { TemplateFilesService } from 'src/app/common/services';
+import { HelpPanelService } from '../../../../help/services/help-panel.service';
+import { HelpTourService, TOUR_STORAGE_KEY } from '../../../../help/services/help-tour.service';
 
 describe('WorkdayEntityDialogComponent', () => {
   let component: WorkdayEntityDialogComponent;
@@ -156,6 +158,37 @@ describe('WorkdayEntityDialogComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  describe('Help wiring', () => {
+    it('tells the panel it was opened from the dialog', async () => {
+      // The panel is mounted once, on the page behind this dialog. Without the
+      // surface its "Take the tour" button replays the PAGE tour, whose anchors
+      // are all behind this dialog's backdrop.
+      const panel = TestBed.inject(HelpPanelService);
+      const surfaces: string[] = [];
+      panel.surface$.subscribe(surface => surfaces.push(surface));
+
+      component.openHelp('dayCell.save');
+
+      expect(surfaces[surfaces.length - 1]).toBe('dialog');
+    });
+
+    it('offers the dialog tour with the real isAdmin, not a hardcoded false', () => {
+      jest.useFakeTimers();
+      localStorage.removeItem(TOUR_STORAGE_KEY);
+      const tour = TestBed.inject(HelpTourService);
+      const start = jest.spyOn(tour, 'start').mockImplementation(() => undefined);
+
+      component.isAdmin = true;
+      (component as any).startDialogTourOnce();
+      jest.runAllTimers();
+
+      expect(start).toHaveBeenCalledWith('dialog', { isAdmin: true });
+
+      start.mockRestore();
+      jest.useRealTimers();
+    });
   });
 
   describe('Time Conversion Utilities', () => {

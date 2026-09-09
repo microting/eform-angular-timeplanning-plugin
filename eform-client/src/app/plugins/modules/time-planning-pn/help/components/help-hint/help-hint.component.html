@@ -1,0 +1,4 @@
+<div class="help-text" *ngIf="prose as helpProse" [class.help-text--warn]="tone === 'warn'">
+  <mat-icon>{{ tone === 'warn' ? 'warning' : 'info' }}</mat-icon>
+  <span>{{ helpProse.short }}</span>
+</div>

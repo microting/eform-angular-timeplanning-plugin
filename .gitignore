@@ -357,3 +357,4 @@ eform-client/.idea/
 .claude
 .worktrees/
 .superpowers/
+eform-client/node_modules

@@ -62,6 +62,12 @@ jobs:
     - name: Copy dependencies
       run: |
         cp -av eform-angular-timeplanning-plugin/eform-client/src/app/plugins/modules/time-planning-pn eform-angular-frontend/eform-client/src/app/plugins/modules/time-planning-pn
+        # The unit tests include a guard on the Playwright tour seed, which lives
+        # outside the plugin src tree, so bring it and the config it is wired into.
+        mkdir -p eform-angular-frontend/eform-client/playwright
+        rm -rf eform-angular-frontend/eform-client/playwright/helpers
+        cp -av eform-angular-timeplanning-plugin/eform-client/playwright/helpers eform-angular-frontend/eform-client/playwright/helpers
+        cp -av eform-angular-timeplanning-plugin/eform-client/playwright.config.ts eform-angular-frontend/eform-client/playwright.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
     - name: yarn install
       run: cd eform-angular-frontend/eform-client && yarn install

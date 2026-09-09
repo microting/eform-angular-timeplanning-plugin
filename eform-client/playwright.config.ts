@@ -13,6 +13,15 @@ export default defineConfig({
   retries: 0,
   use: {
     baseURL: 'http://localhost:4200',
+    // Seeds localStorage so the planning page's onboarding tours count as already
+    // seen. Playwright gives every test a fresh context with empty storage, so
+    // without this both tours auto-start: the page tour drops a card over the top
+    // grid rows and the dialog tour drops one over the shift-1 fields, and
+    // Playwright's actionability check then fails on the intercepting overlay for
+    // every spec that clicks a day cell or #saveButton. The seed matches
+    // TOUR_STORAGE_KEY in help/services/help-tour.service.ts; a jest test in the
+    // plugin (help/playwright-tour-seed.spec.ts) fails if the two drift apart.
+    storageState: 'playwright/helpers/tour-seen.storage.json',
     viewport: { width: 1920, height: 1080 },
     video: 'on',
     screenshot: 'only-on-failure',

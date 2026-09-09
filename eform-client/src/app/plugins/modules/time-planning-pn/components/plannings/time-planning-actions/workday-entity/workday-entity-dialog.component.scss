@@ -20,6 +20,20 @@
   gap: 16px; /* Adjust spacing between elements */
 }
 
+/* A form field paired with its help icon. These fields were direct children of
+   the .d-flex.flex-column column, where a flex item stretches to the column
+   width; putting them in a row would otherwise shrink them to mat-form-field's
+   intrinsic width and leave the un-paired fields beside them looking ragged. */
+.field-with-help {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  mat-form-field {
+    flex: 1 1 auto;
+  }
+}
+
 .workday-dialog-container {
   display: flex;
   gap: 20px;

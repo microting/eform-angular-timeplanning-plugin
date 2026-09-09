@@ -49,6 +49,12 @@ import {MatCheckbox} from '@angular/material/checkbox';
 import {MatRadioButton, MatRadioGroup} from '@angular/material/radio';
 import {MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle} from '@angular/material/dialog';
 import {MtxSelect} from '@ng-matero/extensions/select';
+import {OverlayModule} from '@angular/cdk/overlay';
+import {CdkScrollable} from '@angular/cdk/scrolling';
+import {HelpIconComponent} from './help/components/help-icon/help-icon.component';
+import {HelpHintComponent} from './help/components/help-hint/help-hint.component';
+import {HelpPanelComponent} from './help/components/help-panel/help-panel.component';
+import {HelpTourComponent} from './help/components/help-tour/help-tour.component';
 
 @NgModule({
   imports: [
@@ -94,7 +100,12 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     MatStartDate,
     MatEndDate,
     MatPrefix,
-    MatError
+    MatError,
+    OverlayModule,
+    // The day-cell dialog declares its own overflow container inside
+    // mat-dialog-content; ScrollDispatcher only sees containers marked
+    // cdkScrollable, and the help popovers dismiss on scroll.
+    CdkScrollable
   ],
   declarations: [
     TimePlanningPnLayoutComponent,
@@ -106,6 +117,10 @@ import {MtxSelect} from '@ng-matero/extensions/select';
     TimePlanningsTableComponent,
     TimePlanningsContainerComponent,
     PayrollExportDialogComponent,
+    HelpIconComponent,
+    HelpHintComponent,
+    HelpPanelComponent,
+    HelpTourComponent,
   ],
   providers: [
     TimePlanningPnSettingsService,

@@ -10,13 +10,16 @@ import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService} from '../../../../services';
 import {VersionHistoryModalComponent} from '../version-history-modal/version-history-modal.component';
 import {Store} from '@ngrx/store';
-import {selectCurrentUserIsFirstUser} from 'src/app/state';
+import {selectCurrentUserIsFirstUser, selectCurrentUserIsAdmin} from 'src/app/state';
 import validator from 'validator';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TemplateFilesService} from 'src/app/common/services';
 import {SharedTagModel} from 'src/app/common/models';
 import {Subscription} from 'rxjs';
 import { MatDialogRef } from '@angular/material/dialog';
+import {HelpEntryId} from '../../../../help/help.model';
+import {HelpPanelService} from '../../../../help/services/help-panel.service';
+import {HelpTourService} from '../../../../help/services/help-tour.service';
 
 import {
   AbstractControl,
@@ -52,10 +55,16 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   protected datePipe = inject(DatePipe);
   private translateService = inject(TranslateService);
   private dialogRef = inject(MatDialogRef<WorkdayEntityDialogComponent>);
+  private helpPanel = inject(HelpPanelService);
+  private helpTour = inject(HelpTourService);
   private originalDialogWidth: string = '600px';
   private originalDialogHeight: string = 'auto';
 
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
+
+  /** Drives which help entries the dialog tour may include. */
+  isAdmin = false;
+  private isAdmin$: Subscription;
 
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   enumKeys: string[] = [];
@@ -119,6 +128,10 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   gpsDataMap: Map<string, GpsCoordinateModel> = new Map();
   snapshotDataMap: Map<string, PictureSnapshotModel> = new Map();
   private readonly GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
+
+  /** True while the tour on screen is this dialog's, so closing can end it. */
+  private dialogTourRunning = false;
+  private helpTourState$: Subscription;
 
 
 
@@ -431,6 +444,33 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
     this.updateDisabledStates();
     this.loadGpsAndSnapshotData();
+
+    this.isAdmin$ = this.store.select(selectCurrentUserIsAdmin)
+      .subscribe(isAdmin => this.isAdmin = !!isAdmin);
+    this.helpTourState$ = this.helpTour.state$.subscribe(state => {
+      this.dialogTourRunning = state?.entry.tour === 'dialog';
+    });
+    this.startDialogTourOnce();
+  }
+
+  /**
+   * The panel is mounted once, on the page behind this dialog. Telling it which
+   * surface asked for it is what makes its "Take the tour" button replay the
+   * DIALOG tour rather than the page one, whose anchors all sit behind this
+   * dialog's backdrop.
+   */
+  openHelp(target?: HelpEntryId): void {
+    this.helpPanel.open(target, 'dialog');
+  }
+
+  private startDialogTourOnce(): void {
+    if (this.helpTour.hasSeen('dialog')) {
+      return;
+    }
+    // The anchors only exist once this pass has rendered the form and the shift grid.
+    // isAdmin is passed through rather than hardcoded: no dialog entry is adminOnly
+    // today, but a later one would otherwise be dropped from the tour in silence.
+    setTimeout(() => this.helpTour.start('dialog', { isAdmin: this.isAdmin }));
   }
 
   // inside class:
@@ -1997,5 +2037,13 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.imageSub$?.unsubscribe();
     this.revokeSnapshotUrl();
+    this.isAdmin$?.unsubscribe();
+    this.helpTourState$?.unsubscribe();
+    if (this.dialogTourRunning) {
+      // abort(), not stop(): closing a row is the page changing underneath the
+      // tour, not the planner saying they are done with it, so it must still be
+      // offered the next time a day is opened.
+      this.helpTour.abort();
+    }
   }
 }

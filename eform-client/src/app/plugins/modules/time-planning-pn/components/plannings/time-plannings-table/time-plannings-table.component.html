@@ -1,3 +1,21 @@
+<!--
+  The Name column is pinned left, so a compact affordance flush to the left edge
+  immediately above the table reads as introducing that column. MtxGridColumn has
+  no per-column header template (see help/grid-help-anchors.ts, which stamps the
+  same header from a render hook for the same reason), so this is as close to the
+  column as the grid allows without replacing its whole header row.
+
+  An icon rather than a hint, deliberately: a hint has no dismiss and no trigger,
+  so this spot was a blue banner that was open from page load and stayed open
+  forever, permanently occupying the top of the page. The icon behaves like every
+  other help affordance on the page — click to open the popover, click away to
+  dismiss — and takes up one glyph instead of a full-width strip.
+-->
+<tp-help-icon
+  class="tp-help-icon--name-column"
+  helpId="grid.nameColumn"
+  (openInPanel)="openHelp($event)"></tp-help-icon>
+
 <mtx-grid
   id="main-header-text"
   [data]="timePlannings"
@@ -6,13 +24,19 @@
   [pageOnFront]="false"
   [rowStriped]="false"
   [showToolbar]="false"
+  [noResultTemplate]="noWorkersTemplate"
   class="time-dashboard"
 >
 </mtx-grid>
 
+<!-- mtx-grid renders this in place of the rows when `data` is empty. -->
+<ng-template #noWorkersTemplate>
+  <tp-help-hint helpId="grid.noWorkers" data-tp-help="grid.noWorkers"></tp-help-hint>
+</ng-template>
+
 <ng-template #firstColumnTemplate let-row let-col="colDef" let-index="index">
   <ng-container *ngIf="(selectAuthIsAdmin$ | async) === true">
-    <div class="first-column" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
+    <div class="first-column" data-tp-help="grid.nameColumn" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
       <div class="progress-container">
         <ng-container *ngIf="row['avatarUrl'] === null">
           <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
@@ -37,7 +61,7 @@
         <br>
         <div class="hours-info">
           <strong>{{ row[col.field] }}</strong>
-          <div *ngIf="row['plannedHours'] !== 0" id="plannedHours{{index}}">
+          <div *ngIf="row['plannedHours'] !== 0" data-tp-help="grid.weeklyPlannedHours" id="plannedHours{{index}}">
             <span [matTooltip]="'Planned working hours' | translate ">
             {{ padZero(row['plannedHours']) }}:{{ padZero(row['plannedMinutes']) }}
             </span>
@@ -69,10 +93,10 @@
               {{row['softwareVersion']}}
             </div>
           </div>
-          <div class="row-tags" *ngIf="row['tags']?.length" (click)="$event.stopPropagation()">
+          <div class="row-tags" data-tp-help="grid.tagChips" *ngIf="row['tags']?.length" (click)="$event.stopPropagation()">
             <app-eform-tag [tags]="row['tags']" (clickOnTag)="onTagClicked($event)"></app-eform-tag>
           </div>
-          <div class="settings-strip">
+          <div class="settings-strip" data-tp-help="grid.settingsStrip">
             <span class="setting-ico txt" id="settingPayRule{{index}}"
                   [class.active]="row['payRuleSetId'] != null"
                   [class.off]="row['payRuleSetId'] == null"
@@ -111,7 +135,7 @@
     </div>
   </ng-container>
   <ng-container *ngIf="(selectAuthIsAdmin$ | async) === false">
-    <div class="first-column" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
+    <div class="first-column" data-tp-help="grid.nameColumn" (click)="onFirstColumnClick(row)" id="firstColumn{{index}}">
       <div class="progress-container">
         <ng-container *ngIf="row['avatarUrl'] === null">
           <div class="progress-circle" [style.--percentage]="row['percentageCompleted']">
@@ -136,7 +160,7 @@
         <br>
         <div class="hours-info">
           <strong>{{ row[col.field] }}</strong>
-          <div *ngIf="row['plannedHours'] !== 0" id="plannedHours{{index}}">
+          <div *ngIf="row['plannedHours'] !== 0" data-tp-help="grid.weeklyPlannedHours" id="plannedHours{{index}}">
             {{ padZero(row['plannedHours']) }}:{{ padZero(row['plannedMinutes']) }}
 
             <ng-container *ngIf="row['currentWorkedHours'] !== 0">
@@ -167,10 +191,10 @@
               {{row['softwareVersion']}}
             </div>
           </div>
-          <div class="row-tags" *ngIf="row['tags']?.length" (click)="$event.stopPropagation()">
+          <div class="row-tags" data-tp-help="grid.tagChips" *ngIf="row['tags']?.length" (click)="$event.stopPropagation()">
             <app-eform-tag [tags]="row['tags']" (clickOnTag)="onTagClicked($event)"></app-eform-tag>
           </div>
-          <div class="settings-strip">
+          <div class="settings-strip" data-tp-help="grid.settingsStrip">
             <span class="setting-ico txt" id="settingPayRule{{index}}"
                   [class.active]="row['payRuleSetId'] != null"
                   [class.off]="row['payRuleSetId'] == null"
@@ -211,9 +235,9 @@
 </ng-template>
 
 <ng-template #dayColumnTemplate let-row let-col="colDef" let-index="index">
-  <div class="plan-container" (click)="onDayColumnClick(row, col.field)" id="cell{{index}}_{{col.field}}">
+  <div class="plan-container" data-tp-help="grid.openDay" (click)="onDayColumnClick(row, col.field)" id="cell{{index}}_{{col.field}}">
     <!-- Left Content -->
-    <div class="plan-content">
+    <div class="plan-content" data-tp-help="grid.dayCellAnatomy">
       <!--<div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 === 0"> - </div>-->
       <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.plannedStartOfShift1 !== 0">
         <span id="firstShift{{index}}_{{col.field}}">
@@ -394,7 +418,7 @@
     </div>
 
     <!-- Right Icons -->
-    <div class="plan-icons">
+    <div class="plan-icons" data-tp-help="grid.messageIcons">
       <mat-icon fontSet="material-symbols-outlined" *ngIf="row.planningPrDayModels[col.field]?.message === 2" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">flight</mat-icon>
       <mat-icon fontSet="material-symbols-outlined" *ngIf="row.planningPrDayModels[col.field]?.message === 10" class="blue-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">pregnant_woman</mat-icon>
       <mat-icon fontSet="material-symbols-outlined" *ngIf="row.planningPrDayModels[col.field]?.message === 3 || row.planningPrDayModels[col.field]?.message === 7 || row.planningPrDayModels[col.field]?.message === 8" class="red-text neutral-icon" [matTooltip]="enumKeys[row.planningPrDayModels[col.field]?.message - 1] | translate">sick</mat-icon>

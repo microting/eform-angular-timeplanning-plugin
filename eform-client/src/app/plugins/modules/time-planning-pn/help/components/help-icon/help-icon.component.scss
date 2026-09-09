@@ -1,0 +1,68 @@
+.tp-help-icon {
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  vertical-align: middle;
+
+  .mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    color: var(--text-body, #7f868d);
+  }
+
+  &:hover .mat-icon {
+    color: var(--primary, #289694);
+  }
+}
+
+.tp-help-popover {
+  max-width: 320px;
+  padding: 12px 14px;
+  border: 1px solid var(--border, #e2e6e9);
+  border-radius: 8px;
+  background: var(--tp-td-bg, #ffffff);
+  box-shadow: 0 2px 6px rgba(15, 19, 22, 0.1), 0 12px 32px rgba(15, 19, 22, 0.16);
+
+  &__title {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-header, #0f1316);
+  }
+
+  &__body {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-body, #7f868d);
+  }
+
+  &__more {
+    margin-top: 9px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--primary, #289694);
+    cursor: pointer;
+  }
+}
+
+/**
+ * The grid's Name column is pinned left, so this variant puts the icon on its own
+ * line flush to that edge, immediately above the table, where it reads as
+ * introducing the column rather than the grid as a whole.
+ */
+:host(.tp-help-icon--name-column) {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Help is admin-only, and the host still renders for everyone else — as an empty
+   element with a margin. Comment nodes do not disqualify :empty, so the *ngIf
+   anchor Angular leaves behind still matches. */
+:host(.tp-help-icon--name-column):empty {
+  display: none;
+}

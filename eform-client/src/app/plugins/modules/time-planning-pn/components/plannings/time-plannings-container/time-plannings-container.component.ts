@@ -16,6 +16,11 @@ import {selectCurrentUserLocale, selectCurrentUserIsAdmin} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
 import {DownloadExcelDialogComponent, PayrollExportDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
+import {HelpEntryId, HelpTourName, HelpUiStrings} from '../../../help/help.model';
+import {HelpContentService} from '../../../help/services/help-content.service';
+import {HelpPanelService} from '../../../help/services/help-panel.service';
+import {HelpTourService} from '../../../help/services/help-tour.service';
+import {HelpVisibilityService} from '../../../help/services/help-visibility.service';
 
 @AutoUnsubscribe()
 @Component({
@@ -29,6 +34,11 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   private planningsService = inject(TimePlanningPnPlanningsService);
   private settingsService = inject(TimePlanningPnSettingsService);
   private dialog = inject(MatDialog);
+  private helpContent = inject(HelpContentService);
+  private helpPanel = inject(HelpPanelService);
+  private helpTour = inject(HelpTourService);
+  /** Protected, not private: the ? button binds isVisible$ straight from the template. */
+  protected helpVisibility = inject(HelpVisibilityService);
 
   timePlanningsRequest: TimePlanningsRequestModel;
   availableSites: SiteDto[] = [];
@@ -49,6 +59,14 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   getAvailableSites$: Subscription;
   public selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
   locale: string;
+
+  /**
+   * The page tour is offered once per session at most. hasSeen() alone is not
+   * enough: it only flips when the tour ends, and getPlannings() reruns on every
+   * filter change, so an unfinished tour would otherwise restart from step 1 each
+   * time the grid reloads.
+   */
+  private pageTourOffered = false;
 
   ngOnInit(): void {
     // Load available tags
@@ -129,8 +147,51 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
         if (data && data.success) {
           this.timePlannings = data.model;
         }
+        this.startPageTourOnce();
       });
     }
+
+  /** Help chrome labels. Never the shared ngx-translate catalogue. */
+  get helpUi(): HelpUiStrings {
+    return this.helpContent.ui();
+  }
+
+  openHelp(target?: HelpEntryId): void {
+    this.helpPanel.open(target);
+  }
+
+  /**
+   * Replays whichever tour the panel says applies to the surface it was opened
+   * from. Opened from the toolbar that is the page tour; opened from inside the
+   * day-cell dialog it is the dialog tour, whose anchors are the only ones in
+   * front of the dialog backdrop. This is also the only way the dialog tour can
+   * be seen a second time: the dialog itself offers it once, gated on hasSeen.
+   */
+  replayTour(tour: HelpTourName): void {
+    // The panel has already closed itself; let that settle before querying anchors.
+    setTimeout(() => this.helpTour.start(tour, { isAdmin: this.isAdmin }));
+  }
+
+  private startPageTourOnce(): void {
+    // Steps 4-6 point at grid rows. HelpTourService records a tour as seen the
+    // moment it runs out of steps, and that flag lives in localStorage, so
+    // offering the tour on an empty grid would drop those three steps and then
+    // permanently suppress them. Wait for rows.
+    // The gate is checked here rather than after the fact, because
+    // pageTourOffered is a once-per-page-visit latch: burning it on a start the
+    // gate refuses would mean the tour never comes up again for this container
+    // instance, even if help becomes visible a moment later.
+    if (this.pageTourOffered
+      || this.timePlannings.length === 0
+      || !this.helpVisibility.isVisible
+      || this.helpTour.hasSeen('page')) {
+      return;
+    }
+    this.pageTourOffered = true;
+    // Let the current change-detection pass render the grid, or start() finds no
+    // anchors and drops every step it was meant to point at.
+    setTimeout(() => this.helpTour.start('page', { isAdmin: this.isAdmin }));
+  }
 
   ngOnDestroy(): void {
   }
