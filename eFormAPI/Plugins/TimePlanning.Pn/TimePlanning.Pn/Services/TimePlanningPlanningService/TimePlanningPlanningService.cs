@@ -68,7 +68,6 @@ public class TimePlanningPlanningService(
         {
             var sdkCore = await core.GetCore();
             var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
-            var result = new List<TimePlanningPlanningModel>();
             var assignedSites =
                 await dbContext.AssignedSites
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -276,9 +275,13 @@ public class TimePlanningPlanningService(
                 .AsNoTracking()
                 .ToListAsync().ConfigureAwait(false);
 
+            // Each task owns its DbContext (and therefore its own pooled
+            // connection), so it must dispose it. Without the `await using`
+            // this leaked one context per assigned site per dashboard load,
+            // reclaimed only whenever GC got around to it.
             var tasks = assignedSites.Select(async dbAssignedSite =>
             {
-                var innerDbContext =
+                await using var innerDbContext =
                     dbContextHelper.GetDbContext();
                 var site = sitesList
                     .FirstOrDefault(x => x.MicrotingUid == dbAssignedSite.SiteId);
@@ -426,14 +429,22 @@ public class TimePlanningPlanningService(
                     midnightOfDateTo,
                     options);
 
-                result.Add(siteModel);
-            // }
             return siteModel;
             }).ToList();
 
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            // Build the list from what the tasks return, NOT from shared state.
+            // This used to Add() into a List<T> shared by every task, after
+            // several awaits and so on parallel thread-pool threads: List<T> is
+            // not thread-safe, and concurrent Adds silently dropped workers --
+            // the dashboard came back with 14 of 16 rows and no error at all.
+            // Task.WhenAll already returned exactly this data; it was discarded.
+            var siteModels = await Task.WhenAll(tasks).ConfigureAwait(false);
 
-            result = result.OrderBy(x => Regex.Replace(x.SiteName, @"\d", ""))
+            // OfType also drops the nulls returned when an assigned site has no
+            // SDK site -- the old code never added those either.
+            var result = siteModels
+                .OfType<TimePlanningPlanningModel>()
+                .OrderBy(x => Regex.Replace(x.SiteName, @"\d", ""))
                 .ThenBy(x => x.SiteName)
                 .ToList();
 
