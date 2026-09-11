@@ -132,6 +132,9 @@
     <data name="Hours Sunday" xml:space="preserve">
         <value>Søn- og helligdagstimer</value>
     </data>
+    <data name="Hours Holiday" xml:space="preserve">
+        <value>Helligdagstimer</value>
+    </data>
     <data name="Yes" xml:space="preserve">
         <value>Ja</value>
     </data>

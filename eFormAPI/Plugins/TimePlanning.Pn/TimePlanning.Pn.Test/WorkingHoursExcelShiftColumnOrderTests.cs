@@ -424,7 +424,7 @@ public class WorkingHoursExcelShiftColumnOrderTests : TestBaseSetup
             var columnIndex = header.IndexOf(DaPregnancyLeave);
             Assert.That(columnIndex, Is.GreaterThanOrEqualTo(13),
                 "The seed DaName 'Graviditetsbetinget fravær' must have a Total-sheet column, " +
-                "positioned among the per-message columns after the 13 fixed (and any pay-code) columns");
+                "positioned among the per-message columns after the 14 fixed (and any pay-code) columns");
             Assert.That(header.Count(h => h == DaPregnancyLeave), Is.EqualTo(1),
                 "Exactly one PregnancyLeave column");
 

@@ -269,8 +269,16 @@ public class TimePlanningWorkingHoursExportTests
     }
     
     /// <summary>
-    /// Simulates the calculation logic from TimePlanningWorkingHoursService.
-    /// Calculates Sunday and Holiday hours including special handling for Grundlovsdag.
+    /// WARNING -- this is a HAND COPY of the column J loop in
+    /// TimePlanningWorkingHoursService, not a call into it. Changing production
+    /// code does NOT make these tests fail; the real workbook coverage for
+    /// columns J and K lives in WorkingHoursExcelHolidayColumnTests, which opens
+    /// the produced .xlsx. Keep this copy in sync so it does not quietly drift
+    /// into asserting behaviour that no longer exists.
+    ///
+    /// Mirrors the production loop: Sunday + every holiday in the JSON calendar,
+    /// Grundlovsdag counting only the hours after 12:00, and each day's hours
+    /// taken as NettoHoursOverrideActive ? NettoHoursOverride : NettoHours.
     /// </summary>
     private double CalculateSundayAndHolidayHours(List<TimePlanningWorkingHoursModel> workingHours)
     {
@@ -278,6 +286,10 @@ public class TimePlanningWorkingHoursExportTests
         
         foreach (var day in workingHours)
         {
+            var dayNettoHours = day.NettoHoursOverrideActive
+                ? day.NettoHoursOverride
+                : day.NettoHours;
+
             // Check if it's Sunday or a holiday
             var isSundayOrHoliday = day.IsSunday || PlanRegistrationHelper.IsOfficialHoliday(day.Date);
             
@@ -293,14 +305,59 @@ public class TimePlanningWorkingHoursExportTests
                 else
                 {
                     // For other Sundays/holidays, count all hours
-                    sumHoursSundayAndHoliday += day.NettoHours;
+                    sumHoursSundayAndHoliday += dayNettoHours;
                 }
             }
         }
         
         return sumHoursSundayAndHoliday;
     }
+
+    /// <summary>
+    /// Hand copy of the column K loop -- same warning as above. No Sunday term,
+    /// no Grundlovsdag noon split: only days whose JSON category is
+    /// official_holiday count.
+    /// </summary>
+    private double CalculateStatutoryHolidayHours(List<TimePlanningWorkingHoursModel> workingHours)
+    {
+        var sumHoursStatutoryHoliday = 0.0;
+
+        foreach (var day in workingHours)
+        {
+            if (!PlanRegistrationHelper.IsStatutoryHoliday(day.Date))
+            {
+                continue;
+            }
+
+            sumHoursStatutoryHoliday += day.NettoHoursOverrideActive
+                ? day.NettoHoursOverride
+                : day.NettoHours;
+        }
+
+        return sumHoursStatutoryHoliday;
+    }
     
+    [Test]
+    public void StatutoryHolidayHours_ExcludeSundaysGrundlovsdagAndJuleaften()
+    {
+        // Hand-copy coverage only -- the authoritative assertions on the real
+        // workbook live in WorkingHoursExcelHolidayColumnTests.
+        var workingHours = new List<TimePlanningWorkingHoursModel>
+        {
+            CreateWorkDay(new DateTime(2026, 9, 14), 7.0, false, false),  // Monday
+            CreateWorkDay(new DateTime(2026, 9, 13), 5.0, false, true),   // Sunday
+            CreateWorkDay(new DateTime(2026, 6, 5), 8.0, false, false),   // Grundlovsdag
+            CreateWorkDay(new DateTime(2026, 12, 24), 4.0, false, false), // Juleaften
+            CreateWorkDay(new DateTime(2026, 12, 25), 6.0, false, false), // Juledag
+            CreateWorkDay(new DateTime(2026, 12, 26), 3.0, true, false)   // 2. juledag
+        };
+
+        var statutoryHours = CalculateStatutoryHolidayHours(workingHours);
+
+        Assert.That(statutoryHours, Is.EqualTo(9.0),
+            "Only Juledag (6) and 2. juledag (3) carry category official_holiday");
+    }
+
     /// <summary>
     /// Simulates the CalculateHoursAfterNoon logic from TimePlanningWorkingHoursService.
     /// </summary>

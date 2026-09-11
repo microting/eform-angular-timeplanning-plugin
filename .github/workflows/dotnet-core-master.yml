@@ -255,7 +255,7 @@ jobs:
       matrix:
         shard:
           - name: a
-            filter: "FullyQualifiedName=TimePlanning.Pn.Test.AbsenceRequestServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.CanaryInAColeMine|FullyQualifiedName=TimePlanning.Pn.Test.AbsenceRequestRemovedRowTests|FullyQualifiedName=TimePlanning.Pn.Test.PayrollExportRemovedPlanRegistrationTests"
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.AbsenceRequestServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyControllerTests|FullyQualifiedName=TimePlanning.Pn.Test.BreakPolicyServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.CanaryInAColeMine|FullyQualifiedName=TimePlanning.Pn.Test.AbsenceRequestRemovedRowTests|FullyQualifiedName=TimePlanning.Pn.Test.PayrollExportRemovedPlanRegistrationTests|FullyQualifiedName=TimePlanning.Pn.Test.WorkingHoursExcelHolidayColumnTests"
           - name: b
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.PictureSnapshotServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.ContentHandoverServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.DanLonFileExporterTests|FullyQualifiedName=TimePlanning.Pn.Test.DataLonFileExporterTests|FullyQualifiedName=TimePlanning.Pn.Test.ContentHandoverRemovedRowTests|FullyQualifiedName=TimePlanning.Pn.Test.ConfigurationSeedDataTests"
           - name: c
