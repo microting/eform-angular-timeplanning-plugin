@@ -612,6 +612,139 @@ public class PlanRegistrationHelperHolidayTests
         Assert.That(planRegistration.NettoHoursInSeconds, Is.EqualTo(38700)); // 10.75 * 3600
     }
 
+    // ------------------------------------------------------------------
+    // IsStatutoryHoliday: TRUE only for JSON entries whose category is
+    // "official_holiday". The agreement-based days off
+    // ("overenskomstfastsat_fridag" -- Grundlovsdag and Juleaften) are days
+    // off by collective agreement, NOT statutory holidays, so they are
+    // excluded. IsOfficialHoliday deliberately keeps counting them; the two
+    // predicates are NOT interchangeable.
+    // ------------------------------------------------------------------
+
+    [Test]
+    [TestCase("2026-01-01", "Nytårsdag 2026")]
+    [TestCase("2026-04-02", "Skærtorsdag 2026")]
+    [TestCase("2026-04-03", "Langfredag 2026")]
+    [TestCase("2026-04-06", "2. påskedag 2026")]
+    [TestCase("2026-05-14", "Kristi himmelfartsdag 2026")]
+    [TestCase("2026-12-25", "Juledag 2026")]
+    [TestCase("2026-12-26", "2. juledag 2026")]
+    [TestCase("2027-03-25", "Skærtorsdag 2027")]
+    public void IsStatutoryHoliday_OfficialHolidayCategory_ReturnsTrue(string dateString, string description)
+    {
+        var date = DateTime.Parse(dateString);
+
+        Assert.That(PlanRegistrationHelper.IsStatutoryHoliday(date), Is.True,
+            $"{description} ({dateString}) carries category 'official_holiday' and must be statutory");
+    }
+
+    [Test]
+    [TestCase("2026-06-05", "Grundlovsdag 2026")]
+    [TestCase("2027-06-05", "Grundlovsdag 2027")]
+    [TestCase("2026-12-24", "Juleaften 2026")]
+    [TestCase("2027-12-24", "Juleaften 2027")]
+    public void IsStatutoryHoliday_OverenskomstfastsatFridag_ReturnsFalse(string dateString, string description)
+    {
+        var date = DateTime.Parse(dateString);
+
+        Assert.That(PlanRegistrationHelper.IsStatutoryHoliday(date), Is.False,
+            $"{description} ({dateString}) is 'overenskomstfastsat_fridag', not a statutory holiday");
+
+        // ...but it is still an official holiday for the Søn- og helligdagstimer
+        // column: the two predicates must NOT collapse into each other.
+        Assert.That(PlanRegistrationHelper.IsOfficialHoliday(date), Is.True,
+            $"{description} ({dateString}) must still count as an official holiday");
+    }
+
+    [Test]
+    [TestCase("2026-11-16", "Ordinary Monday")]
+    [TestCase("2026-07-06", "Ordinary Monday in summer")]
+    [TestCase("2026-12-23", "Ordinary Wednesday before Christmas")]
+    public void IsStatutoryHoliday_OrdinaryWeekday_ReturnsFalse(string dateString, string description)
+    {
+        var date = DateTime.Parse(dateString);
+
+        Assert.That(PlanRegistrationHelper.IsStatutoryHoliday(date), Is.False,
+            $"{description} ({dateString}) is not in the holiday calendar at all");
+    }
+
+    [Test]
+    [TestCase("2024-12-25", "Juledag before the calendar's from-date")]
+    [TestCase("2025-01-01", "Nytårsdag 2025 -- calendar starts 2025-12-24")]
+    [TestCase("2031-12-25", "Juledag after the calendar's to-date")]
+    public void IsStatutoryHoliday_DateOutsideCalendarRange_ReturnsFalse(string dateString, string description)
+    {
+        var date = DateTime.Parse(dateString);
+
+        Assert.That(PlanRegistrationHelper.IsStatutoryHoliday(date), Is.False,
+            $"{description} ({dateString}) is outside danish_holidays_2025_2030.json and must fail closed");
+    }
+
+    [Test]
+    public void IsStatutoryHoliday_IgnoresTimeOfDay()
+    {
+        var justBeforeMidnight = new DateTime(2026, 12, 25, 23, 59, 59);
+
+        Assert.That(PlanRegistrationHelper.IsStatutoryHoliday(justBeforeMidnight), Is.True,
+            "The date is normalized to midnight before comparison, like IsOfficialHoliday");
+    }
+
+    [Test]
+    public void IsStatutoryHoliday_IsAStrictSubsetOfIsOfficialHoliday_OverTheWholeCalendar()
+    {
+        // The Total sheet's column K (Helligdagstimer) may never exceed column J
+        // (Søn- og helligdagstimer); that rests on this subset relation holding
+        // for EVERY day in the calendar, not just the sampled ones.
+        var statutoryCount = 0;
+        var officialOnlyCount = 0;
+
+        for (var date = new DateTime(2025, 1, 1); date <= new DateTime(2031, 12, 31); date = date.AddDays(1))
+        {
+            var statutory = PlanRegistrationHelper.IsStatutoryHoliday(date);
+            var official = PlanRegistrationHelper.IsOfficialHoliday(date);
+
+            if (statutory)
+            {
+                statutoryCount++;
+                Assert.That(official, Is.True,
+                    $"{date:yyyy-MM-dd} is statutory but not official -- the subset relation is broken");
+            }
+            else if (official)
+            {
+                officialOnlyCount++;
+            }
+        }
+
+        Assert.That(statutoryCount, Is.EqualTo(52),
+            "danish_holidays_2025_2030.json carries exactly 52 'official_holiday' entries");
+        // 11 'overenskomstfastsat_fridag' entries exist, but 2028-06-05 carries
+        // BOTH a Grundlovsdag entry and a '2. pinsedag' official_holiday entry
+        // (they collide that year), so only 10 DATES are official-but-not-statutory.
+        Assert.That(officialOnlyCount, Is.EqualTo(10),
+            "...and 10 dates that are official but NOT statutory (11 agreement entries minus the 2028-06-05 collision)");
+    }
+
+    [Test]
+    public void IsStatutoryHoliday_Grundlovsdag2028_CollidesWithSecondWhitMonday_AndIsStatutory()
+    {
+        // KNOWN COLLISION, pinned deliberately: in 2028 Grundlovsdag (5 June)
+        // falls on 2. pinsedag, so the JSON carries TWO entries for that date --
+        // one 'overenskomstfastsat_fridag' and one 'official_holiday'. The
+        // category match therefore makes it statutory, which is the right call
+        // for a full public holiday.
+        //
+        // Consequence, called out in the change report: on this single date the
+        // Total sheet's column K (full netto hours) can EXCEED column J, because
+        // column J short-circuits on IsGrundlovsdag and applies the noon split.
+        // Column J's Grundlovsdag handling is out of scope here.
+        var collision = new DateTime(2028, 6, 5);
+
+        Assert.That(PlanRegistrationHelper.IsStatutoryHoliday(collision), Is.True,
+            "2028-06-05 carries a '2. pinsedag' official_holiday entry and must be statutory");
+        Assert.That(PlanRegistrationHelper.IsGrundlovsdag(collision), Is.True,
+            "...while still being Grundlovsdag by the date rule");
+    }
+
     // Helper method to test the private GetDayCode method via reflection
     private string GetDayCodePublic(DateTime date)
     {

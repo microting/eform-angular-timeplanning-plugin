@@ -3475,6 +3475,7 @@ public class TimePlanningWorkingHoursService(
                     Translations.SumFlexStart,
                     Translations.Normal_Hours,
                     Translations.Hours_Sunday,
+                    Translations.Hours_Holiday,
                     Translations.Comments,
                     Translations.Message,
                     Translations.Hours_Saturday
@@ -3814,22 +3815,48 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateNumericCell(siteTotalNettoHours));
                     totalRow.Append(CreateNumericCell(timePlannings.Count > 0 ? timePlannings.Last().SumFlexEnd : 0.0));
 
-                    // Sunday + holiday hours (Grundlovsdag only counts hours after 12:00)
+                    // Column J: Sunday + holiday hours (Grundlovsdag only counts hours
+                    // after 12:00). Column K: statutory-holiday hours ONLY -- no Sunday
+                    // term, and no Grundlovsdag noon split, because Grundlovsdag is
+                    // 'overenskomstfastsat_fridag' and so is excluded outright.
+                    //
+                    // Reading the bare NettoHours here made column I + column J
+                    // disagree with column G on any overridden Sunday or holiday.
+                    //
+                    // KNOWN GAP, deliberately not fixed here: Grundlovsdag is the
+                    // one day that still ignores the override, because
+                    // CalculateHoursAfterNoon derives from the shift stamps and a
+                    // netto override carries no information about WHICH hours fell
+                    // after 12:00. Splitting an override across noon is a payroll
+                    // policy decision, not a code fix. On an overridden
+                    // Grundlovsdag, column I + column J therefore still does not
+                    // reconcile with column G.
                     var sumHoursSundayAndHoliday = 0.0;
+                    var sumHoursStatutoryHoliday = 0.0;
                     foreach (var day in timePlannings)
                     {
-                        var isSundayOrHoliday = day.IsSunday || PlanRegistrationHelper.IsOfficialHoliday(day.Date);
-                        if (!isSundayOrHoliday) continue;
-
-                        sumHoursSundayAndHoliday += PlanRegistrationHelper.IsGrundlovsdag(day.Date)
-                            ? CalculateHoursAfterNoon(day)
+                        var dayNettoHours = day.NettoHoursOverrideActive
+                            ? day.NettoHoursOverride
                             : day.NettoHours;
+
+                        if (PlanRegistrationHelper.IsStatutoryHoliday(day.Date))
+                        {
+                            sumHoursStatutoryHoliday += dayNettoHours;
+                        }
+
+                        if (day.IsSunday || PlanRegistrationHelper.IsOfficialHoliday(day.Date))
+                        {
+                            sumHoursSundayAndHoliday += PlanRegistrationHelper.IsGrundlovsdag(day.Date)
+                                ? CalculateHoursAfterNoon(day)
+                                : dayNettoHours;
+                        }
                     }
                     var normalHours = siteTotalNettoHours - sumHoursSundayAndHoliday;
                     var sumHoursSaturday = timePlannings.Where(x => x.IsSaturday).Sum(x => x.NettoHours);
 
                     totalRow.Append(CreateNumericCell(normalHours));
                     totalRow.Append(CreateNumericCell(sumHoursSundayAndHoliday));
+                    totalRow.Append(CreateNumericCell(sumHoursStatutoryHoliday));
 
                     var countCommentFromWorker = timePlannings.Count(x => !string.IsNullOrEmpty(x.CommentWorker));
                     var countMessages = timePlannings.Count(x => x.Message != null);

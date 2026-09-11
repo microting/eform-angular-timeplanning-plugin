@@ -273,6 +273,12 @@ namespace TimePlanning.Pn.Resources {
             }
         }
         
+        internal static string Hours_Holiday {
+            get {
+                return ResourceManager.GetString("Hours Holiday", resourceCulture);
+            }
+        }
+        
         internal static string Yes {
             get {
                 return ResourceManager.GetString("Yes", resourceCulture);

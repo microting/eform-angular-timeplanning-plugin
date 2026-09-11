@@ -30,6 +30,13 @@ public static class PlanRegistrationHelper
     private static readonly object _holidayConfigLock = new object();
 
     /// <summary>
+    /// The <c>category</c> value in danish_holidays_2025_2030.json that marks a
+    /// STATUTORY holiday. The only other value in the file is
+    /// <c>overenskomstfastsat_fridag</c> (Grundlovsdag, Juleaften).
+    /// </summary>
+    private const string OfficialHolidayCategory = "official_holiday";
+
+    /// <summary>
     /// Loads the Danish holiday configuration from the JSON file.
     /// Caches the result for subsequent calls.
     /// </summary>
@@ -2205,6 +2212,35 @@ public static class PlanRegistrationHelper
 
         // Check if the date exists in our holiday configuration
         return config.Holidays?.Any(h => h.ParsedDate == midnight) ?? false;
+    }
+
+    /// <summary>
+    /// Check if a date is a STATUTORY Danish holiday, i.e. an entry in
+    /// danish_holidays_2025_2030.json whose <c>category</c> is
+    /// <c>official_holiday</c>.
+    ///
+    /// This is deliberately NARROWER than <see cref="IsOfficialHoliday"/>,
+    /// which matches every entry in the file regardless of category and so
+    /// also counts the agreement-based days off
+    /// (<c>overenskomstfastsat_fridag</c>: Grundlovsdag and Juleaften).
+    /// The two are not interchangeable: IsOfficialHoliday feeds the
+    /// "Søn- og helligdagstimer" export column and the pay-code day
+    /// classification, while this one feeds the "Helligdagstimer" column,
+    /// which must exclude Grundlovsdag and Juleaften.
+    ///
+    /// Fails closed: a missing, blank or unrecognised category is NOT
+    /// statutory.
+    /// </summary>
+    public static bool IsStatutoryHoliday(DateTime date)
+    {
+        var config = LoadHolidayConfiguration();
+
+        // Normalize the date to midnight for comparison
+        var midnight = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0);
+
+        return config.Holidays?.Any(h =>
+            h.ParsedDate == midnight
+            && string.Equals(h.Category?.Trim(), OfficialHolidayCategory, StringComparison.OrdinalIgnoreCase)) ?? false;
     }
 
     /// <summary>
