@@ -47,6 +47,47 @@ async function waitForSpinner(page: Page) {
   }
 }
 
+// The grid ids `#firstColumn{index}` / `#cell{index}_{day}` are POSITIONAL --
+// the index is the row's place in the API response and carries nothing about
+// identity. If the grid renders with fewer rows than the seed's 16, the same
+// index silently addresses a DIFFERENT worker. That is how this spec failed
+// once: it wrote five shifts, reopened what it thought was the same cell, and
+// found it empty ("Expected 01:03, Received ''") because the row had shifted.
+//
+// We deliberately do NOT hardcode which worker row 3 is. That depends on the
+// server's collation of the seeded names, so pinning a name here would couple
+// the spec to a derivation rather than to the property that actually matters:
+// all five dialog opens must hit the SAME row.
+async function readDialogWorker(page: Page): Promise<string> {
+  await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+  const title = page.locator('mat-dialog-container [mat-dialog-title]');
+  await expect(title).toBeVisible({ timeout: 10000 });
+  // Workday dialog title is "<name> - <dd.MM.yyyy> (<id>)" (with the date on
+  // its own line); the assigned-site dialog title is just "<name>". Collapsing
+  // whitespace and taking the part before the first " - " yields the name in
+  // both cases.
+  const raw = (await title.innerText()).replace(/\s+/g, ' ').trim();
+  return raw.split(/\s+-\s+/)[0].trim();
+}
+
+// Returns the worker this dialog belongs to. Pass the previously seen name to
+// assert the row has not shifted; pass null on the first open to capture it.
+async function sameWorkerAsBefore(page: Page, seen: string | null): Promise<string> {
+  const who = await readDialogWorker(page);
+  // A blank siteName would leave the workday title as "- 20.05.2026 (123)",
+  // which survives the split and is stable across opens -- i.e. it would pass
+  // this check vacuously. Require a real name, not a leftover separator.
+  expect(who, `dialog title must name a worker, got '${who}'`).toMatch(/^[^\s-]/);
+  if (seen !== null) {
+    expect(
+      who,
+      `positional row index shifted: this dialog is '${who}' but earlier opens were ` +
+      `'${seen}' — every shift assertion below would be checking the wrong worker`
+    ).toBe(seen);
+  }
+  return who;
+}
+
 async function pickTime(page: Page, timeStr: string) {
   // Position-based clock-face clicks. Works uniformly for h=0 (break
   // times), unlike rotateZ-selector strategies. Identical helper to b1m/c1m/d1m.
@@ -125,9 +166,13 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard (e1m,
     // assigned site has thirdShiftActive / fourthShiftActive / fifthShiftActive
     // flipped on. The post-migration patch only sets `UseOneMinuteIntervals`
     // — the multi-shift flags still need the UI dance below.
+    // Captured on the first dialog open, then asserted unchanged on every
+    // later open (see sameWorkerAsBefore).
+    let rowWorker: string | null = null;
+
     for (const id of ['thirdShiftActive', 'fourthShiftActive', 'fifthShiftActive']) {
       await page.locator('#firstColumn3').click();
-      await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 10000 });
+      rowWorker = await sameWorkerAsBefore(page, rowWorker);
 
       const cb = page.locator(`#${id} input[type="checkbox"]`);
       await cb.waitFor({ state: 'attached', timeout: 10000 });
@@ -141,8 +186,23 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard (e1m,
       await expect(page.locator('#saveButton')).toBeEnabled({ timeout: 10000 });
       const assignSitePromise = page.waitForResponse(
         r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT');
+      // Saving an assigned site makes the container re-fetch the whole grid
+      // (assignedSiteChanged -> onAssignedSiteChanged -> getPlannings), which
+      // re-stamps every row id. Awaiting only the PUT let the next
+      // #firstColumn3 / #cell3_0 click land mid-re-index, against rows that
+      // were about to be replaced. Gate on the re-index too.
+      const reindexPromise = page.waitForResponse(
+        r => r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
       await page.locator('#saveButton').click();
-      await assignSitePromise;
+      // The re-index only fires when the PUT reports success, so assert that
+      // first: otherwise a failed save shows up as an opaque "Timeout waiting
+      // for response" on the gate below instead of "the save failed".
+      const assignSiteResponse = await assignSitePromise;
+      expect(
+        await assignSiteResponse.json(),
+        `saving ${id} must succeed, or no re-index follows`
+      ).toMatchObject({ success: true });
+      await reindexPromise;
       await waitForSpinner(page);
       await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 10000 });
     }
@@ -150,6 +210,7 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard (e1m,
     const cellId = '#cell3_0';
     await page.locator(cellId).scrollIntoViewIfNeeded();
     await page.locator(cellId).click();
+    rowWorker = await sameWorkerAsBefore(page, rowWorker);
     await expect(page.locator('#planHours')).toBeVisible();
 
     // Fill all 5 shifts at 1-minute granularity.
@@ -169,9 +230,12 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard (e1m,
     await waitForSpinner(page);
     await page.waitForTimeout(500);
 
-    // Re-open the same cell and assert every shift round-tripped.
+    // Re-open the same cell and assert every shift round-tripped. The identity
+    // check matters most HERE: this is the reopen that previously landed on a
+    // different worker and reported an empty value instead of a wrong row.
     await page.locator(cellId).scrollIntoViewIfNeeded();
     await page.locator(cellId).click();
+    rowWorker = await sameWorkerAsBefore(page, rowWorker);
     await expect(page.locator('#planHours')).toBeVisible();
 
     for (const s of allFiveShifts) {

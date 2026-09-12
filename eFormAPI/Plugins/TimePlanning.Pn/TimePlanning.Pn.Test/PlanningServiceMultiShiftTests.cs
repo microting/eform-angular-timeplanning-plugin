@@ -52,6 +52,12 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
         _coreService.GetCore().Returns(core);
 
         _dbContextHelper = Substitute.For<ITimePlanningDbContextHelper>();
+        // NB: this hands out the SHARED fixture context. TimePlanningPlanningService
+        // .Index() disposes every context it takes from the helper, so a test that
+        // calls Index() through this stub would dispose the fixture out from under
+        // itself. The Index() tests below go through BuildAdminIndexServiceAsync,
+        // which overrides this with a fresh context per call -- do the same for any
+        // new one.
         _dbContextHelper.GetDbContext().Returns(TimePlanningPnDbContext);
 
         _options = Substitute.For<IPluginDbOptions<TimePlanningBaseSettings>>();
@@ -1130,5 +1136,62 @@ public class PlanningServiceMultiShiftTests : TestBaseSetup
             Assert.That(row.FourthShiftActive, Is.False);
             Assert.That(row.FifthShiftActive, Is.False);
         });
+    }
+
+    /// <summary>
+    /// Asserts the contract that a concurrent-Add race in Index() used to break
+    /// (see the comment at the Task.WhenAll call): every assigned site comes
+    /// back, every time. A lost update cannot be forced deterministically, so
+    /// this repeats the call -- enough fan-out and iterations that a
+    /// reintroduced race would very likely drop a row. It never fails
+    /// spuriously: a correct implementation always returns all of them.
+    /// </summary>
+    [Test]
+    public async Task Index_ManyAssignedSites_ReturnsEveryRow_NoneLostToConcurrentAdd()
+    {
+        // Arrange -- 16 sites, matching the seed size that exposed the race.
+        await using var baseDbContext = GetBaseDbContext();
+        var service = await BuildAdminIndexServiceAsync(baseDbContext);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        const int siteCount = 16;
+        var expectedSiteIds = new List<int>();
+
+        for (var i = 0; i < siteCount; i++)
+        {
+            var microtingUid = 8600 + i;
+            // No digits in the name: Index() sorts on the digit-stripped name.
+            var letter = (char)('a' + i);
+            await new SdkSite { Name = $"Race site {letter}{letter}", MicrotingUid = microtingUid }
+                .Create(sdkDbContext);
+
+            await new AssignedSiteEntity
+            {
+                SiteId = microtingUid,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            }.Create(TimePlanningPnDbContext);
+
+            expectedSiteIds.Add(microtingUid);
+        }
+
+        // Act + Assert -- repeat. The lost-update window is only a few
+        // instructions wide, so a handful of rolls would usually pass even with
+        // the bug present; the extra iterations are cheap next to the fixture
+        // setup this test already pays for.
+        for (var attempt = 1; attempt <= 20; attempt++)
+        {
+            var result = await service.Index(OneDayRequest(new DateTime(2026, 5, 20)));
+
+            Assert.That(result.Success, Is.True, result.Message);
+            Assert.That(result.Model, Is.Not.Null);
+            var returnedSiteIds = result.Model.Select(x => x.SiteId).ToList();
+
+            Assert.That(returnedSiteIds, Is.EquivalentTo(expectedSiteIds),
+                $"attempt {attempt}: every assigned site must come back exactly once -- a " +
+                "missing one is the signature of a concurrent List<T>.Add losing an element");
+        }
     }
 }
