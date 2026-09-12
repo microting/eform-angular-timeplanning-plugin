@@ -335,9 +335,36 @@ freeze a period.
 ### 8.3 Multi-day
 
 Because one date plus the cascade already locks everything before it,
-"multi-day" means **multi-worker**. A toolbar control **"Afstem til og med
-\<dato\>"** sets the boundary for many workers in one action, with a live
-preview of the affected count before committing.
+"multi-day" means **multi-worker**. Every bulk action is therefore the same
+operation with two axes:
+
+```
+scope = target date  ×  set of workers
+```
+
+- **The date** comes from clicking a day-column header, or from the toolbar's
+  date field. One date, never a range — the cascade supplies the range.
+- **The worker set** comes from row selection; with nothing selected it
+  defaults to **every worker currently visible** under the active filters.
+
+That single mechanism covers all three requested modes without three separate
+features:
+
+| Requested mode | How it is expressed |
+|---|---|
+| Selected rows | tick rows, then pick a date |
+| Selected column | click a day header; no row selection ⇒ all visible workers |
+| All visible in the period | pick a date with nothing selected |
+
+**The affected region is previewed before it is committed** — the cells that
+will be locked are highlighted in place, so the cascade is visible rather than
+inferred. The confirm step states the two counts that matter: how many workers,
+and the date the boundary lands on.
+
+**Rows already reconciled past the target date are skipped, not moved
+backwards.** Applying an earlier date to a worker whose boundary is already
+later would be an *unlock*, and unlocking is deliberately a separate, heavier
+action (§8.4). Those rows are reported as skipped rather than silently ignored.
 
 Worker selection uses mtx-grid's `[rowSelectable]` / `[multiSelectable]`, which
 this plugin has never used. The host's backend-configuration task-list is the
@@ -422,13 +449,27 @@ Anchor rows by worker identity, not by grid index.
 | `MaxDaysEditable` remains bypassable | Out of scope, explicitly; the interceptor makes the *new* lock not share the flaw |
 | Timezone off-by-one near midnight | `DateTime.Now.Date` fixed in §6.4; tests must include a late-evening case |
 
-## 11. Open questions
+## 11. Resolved decisions
 
-1. Should `reconcile-through` apply to **selected** workers only, or to every
-   worker currently visible under the active filters? Selected is safer;
-   all-visible is faster for the common month-end case.
-2. Should a locked day still be exportable to payroll, and should
-   `TransferredToPayroll` and `Reconciled` be related at all? They are
-   independent in this design.
-3. Does the mobile app need to *display* the locked state, or is rejecting the
-   write sufficient for now?
+These were open during design and are now settled:
+
+1. **Bulk scope** — all three: selected rows, a selected day column, or every
+   worker visible in the chosen period. Expressed as one mechanism (date ×
+   worker set) rather than three features; see §8.3.
+2. **No link to payroll.** `Reconciled` and `TransferredToPayroll` stay
+   independent. Reconciling does not affect export eligibility, and exporting
+   does not reconcile. They are adjacent columns from the same migration and it
+   would be easy to assume otherwise — they are not related.
+3. **Mobile rejects the write and shows no lock state.** The gRPC paths return
+   the same localized failure as the web paths. No mobile UI work is in scope;
+   the app does not need to render the three states.
+
+## 12. Open questions
+
+None blocking. Two worth revisiting after the first release:
+
+- Whether the skipped-rows report in §8.3 needs a persistent surface, or
+  whether naming the count in the result toast is enough.
+- Whether `ReconciledBy` is wanted on the face of the record. It is currently
+  recoverable from `PlanRegistrationVersion.UpdatedByUserId` (§3), and adding
+  it would require the base-repo migration this design otherwise avoids.
