@@ -1,0 +1,434 @@
+# Reconciled ("Afstemt") day lock — design
+
+**Date:** 2026-09-12
+**Status:** Design, awaiting review
+**Scope:** `eform-angular-timeplanning-plugin` (web UI + `TimePlanning.Pn` API),
+`eform-service-timeplanning-plugin` (background jobs). **No change to
+`eform-timeplanning-base`.**
+
+---
+
+## 1. Problem
+
+Payroll periods need to be closed. Once a period's hours are agreed, nothing
+should be able to change them — not a web edit, not a mobile registration, and
+not a background recalculation that quietly rewrites a flex balance three months
+after the fact.
+
+Today the plugin has no such mechanism. It has four partial approximations, none
+of which closes a day:
+
+| Mechanism | Scope | Enforced where |
+|---|---|---|
+| `MaxDaysEditable` (default 45) | tenant-wide | **read path + browser only** — a crafted POST bypasses it |
+| `AllowEditOfRegistrations` / `DaysBackInTimeAllowedEditingEnabled` | per site | server-side, **mobile write path only**, boolean-only (the numeric day count is never compared) |
+| `DayOfPayment` | tenant-wide | **commented out** in `PlanRegistrationHelper` (two places) |
+| `TransferredToPayroll` | per registration | informational in the export preview; **blocks nothing** |
+
+Two per-site date watermarks exist (`FlexChainComputedThrough`,
+`UseOneMinuteIntervalsFrom`) but both gate *calculation semantics*, not editing.
+Notably `UseOneMinuteIntervalsFrom`'s own doc comment already refers to
+"already-closed periods" — a concept that has never existed in the schema.
+
+## 2. Goals
+
+1. A web user can mark a worker's day as **Afstemt** (reconciled), recording
+   when it happened.
+2. A reconciled day, **and every earlier day for that worker**, becomes
+   immutable: no edit from web or mobile, no modification by any recalculation.
+3. Earlier days are locked **without** being marked `Reconciled` themselves.
+4. Unlocking is possible only in strict reverse order — to free a day, every
+   day after it must be freed first.
+5. The three resulting day states are legible in the grid without relying on
+   colour alone.
+
+## 3. Non-goals
+
+- Fixing the `MaxDaysEditable` server-side enforcement hole. Noted as a known
+  gap; it is the reason this design does not rely on call-site guards alone.
+- Reconciling at any granularity other than per worker per day.
+- A `ReconciledBy` column. Who performed the action is recoverable from
+  `PlanRegistrationVersion.UpdatedByUserId`; adding a column would require a
+  base-repo migration, which this design otherwise avoids entirely.
+- Changing `TransferredToPayroll` semantics, or coupling reconcile to payroll
+  export.
+
+---
+
+## 4. Data model — no schema change required
+
+`Reconciled` and `ReconciledAt` **already exist** on both `PlanRegistrations`
+and `PlanRegistrationVersions`, added by migration
+`20260127060748_AddReconciledAndTransferredToPayrollToPlanRegistration`:
+
+```csharp
+public bool Reconciled { get; set; }          // tinyint(1) NOT NULL DEFAULT 0
+public DateTime? ReconciledAt { get; set; }   // datetime(6) NULL
+```
+
+They are verified present in the currently pinned package
+(`Microting.TimePlanningBase` **10.0.62**). Nothing writes them today; exactly
+one place reads them — the admin-only version diff in
+`TimePlanningPlanningService.CompareVersions`.
+
+An unused translation key already ships in all 24 locale files:
+`'Reconciled in accounting': 'Afstemt i regnskabet'`.
+
+**Consequence: no base-repo change, no migration, no NuGet bump.**
+
+### 4.1 The lock predicate — derived, never stored
+
+```
+lockedThrough(siteId) = MAX(Date)
+                        WHERE SdkSitId = siteId
+                          AND Reconciled = 1
+                          AND WorkflowState != 'Removed'
+                        -- null when the worker has no reconciled day
+
+isLocked(siteId, date) ⟺ lockedThrough(siteId) != null
+                          AND date <= lockedThrough(siteId)
+```
+
+One row carries the mark. Every earlier day is locked by derivation and keeps
+`Reconciled = false`, which is requirement (3) satisfied by construction rather
+than by a background job that must keep flags in sync.
+
+Unlocking is therefore *only* meaningful at `lockedThrough` itself: clearing
+that day's flag moves the boundary back to the next-newest reconciled day, or
+to null. Requirement (4) is a property of the model, not a rule that has to be
+separately enforced — a day below the boundary cannot be unlocked because
+unlocking it would not change `MAX(Date)`.
+
+### 4.2 Invariants
+
+- **I1.** `ReconciledAt` is non-null exactly when `Reconciled` is true. Both are
+  written in the same operation; unlock clears both.
+- **I2.** `Reconciled` may only be set for `date < today`. Reconciling today or
+  a future day is rejected **server-side**, not merely hidden in the UI.
+- **I3.** No write of any kind may modify, create or delete a `PlanRegistration`
+  whose `Date <= lockedThrough(SdkSitId)`.
+
+**I2 is load-bearing beyond its obvious purpose.** See §6.2.
+
+### 4.3 Query cost
+
+`PlanRegistrations` has a unique index on `(SdkSitId, Date, WorkflowState)`.
+
+- `isLocked` for a known `(site, date)` is an exact seek — optimal.
+- `lockedThrough(site)` is a prefix scan on `SdkSitId` plus a range on `Date`;
+  `Reconciled` is not in the index, so candidate rows are table lookups. For a
+  single site over a viewed window this is negligible. The dashboard resolves
+  it **once per site per request**, not per day, and passes the value down.
+
+No new index is proposed. If profiling later shows it matters, the narrow fix
+is a filtered index on `(SdkSitId, Reconciled, Date)` — but note this repo has
+already reverted speculative indexes once (base commit `f086394`), so it should
+be added only against a measured query.
+
+---
+
+## 5. Write-path inventory
+
+There are **32 `PlanRegistration.Create/Update/Delete` call sites across 11
+files in 2 repositories**, and **no choke point**. `PnBase.Create/Update/Delete`
+live in the base NuGet package; most services call them directly rather than
+through any plugin-owned helper.
+
+Categories:
+
+- **Web/admin:** `PlanningService.Update`, `UpdateByCurrentUserNam`, both
+  `Index` gap-fills, `WorkingHoursService.CreateUpdate` (bulk, multi-day),
+  `FlexService.UpdateCreate` (+ an estate-wide re-save loop),
+  `TimeSettingService.UpdateAssignedSite`, `GoogleSheetHelper`, `Import`,
+  `AbsenceRequestService`, `ContentHandoverService`, `PayrollExportService`.
+- **Mobile/gRPC:** thin adapters delegating to the same services, plus a
+  **kiosk** `UpdateWorkingHour` overload with *no date guard at all*.
+- **Recalculation:** `UpdatePlanRegistrationsInPeriod` (4 write sites; runs on
+  **every dashboard load and every mobile fetch**), `UpdatePlanRegistration`,
+  and the forward flex cascades.
+- **Background (service repo):** `SearchListJob` (8×/day sheet pull; nightly
+  per-site walk that can **delete** rows), `FlexChainCatchUpJob` (off by
+  default), `eFormCompletedHandler` (device submissions, can resurrect a
+  `Removed` row).
+- **Startup:** `CorruptedPauseIdRepair` — notable as the **only** path that
+  already implements a date lock of its own.
+
+Two behaviours matter more than the raw count:
+
+**Reading writes.** `POST plannings/index` — the dashboard load — creates a
+`PlanRegistration` for every missing date in the requested range, then
+`UpdatePlanRegistrationsInPeriod` writes to all of them. Opening a report over
+a closed month would, today, create and write rows inside it.
+
+**Cascades write days nobody edited.** Forward flex cascades run from an edited
+day through later days: one bounded at today, one **180 days into the future**
+(`WorkingHoursService.CreateUpdate`), and one in the service repo with **no
+upper bound at all** (`eFormCompletedHandler`).
+
+**Every write goes through EF change tracking.** No production path uses
+`ExecuteSqlRaw`, `ExecuteUpdate`, `ExecuteDelete` or a bulk insert against
+`PlanRegistration`. (A grep finds two `ExecuteSqlRaw` hits in
+`TimePlanning.Pn.Test/TestBaseSetup.cs`; both replay a SQL dump into the **SDK**
+database during test setup and touch neither the plugin DB nor
+`PlanRegistration`.) A `SaveChanges` interceptor can therefore see all 32 sites.
+
+---
+
+## 6. Enforcement
+
+### 6.1 Three layers
+
+**Layer 1 — `SaveChangesInterceptor` (the guarantee).**
+Rejects any tracked `PlanRegistration` entry that violates **I3**: `Modified` or
+`Deleted` with `Date <= lockedThrough`, or `Added` in that range. This is the
+only layer that is *complete*: it covers all 32 sites and any site added later.
+
+It must be registered **in both repositories** wherever a
+`TimePlanningPnDbContext` is constructed. Registering it in only one leaves the
+background jobs unguarded — a lock with a hole, which is worse than no lock
+because it invites trust.
+
+The interceptor resolves `lockedThrough` per distinct `SdkSitId` in the change
+set, once per `SaveChanges`, not per row.
+
+**Layer 2 — guards on user-facing write paths (the message).**
+`PlanningService.Update`, `UpdateByCurrentUserNam`,
+`WorkingHoursService.CreateUpdate`, and both `UpdateWorkingHour` overloads
+check the predicate first and return a localized failure. Without this the user
+sees a 500 from the interceptor instead of "this day is reconciled".
+
+**Layer 3 — recalculation paths skip, they do not throw.**
+`UpdatePlanRegistrationsInPeriod` legitimately spans the boundary on every
+dashboard load. It filters locked days out of its working set rather than
+failing. Same for `UpdatePlanRegistration` and the service-repo jobs.
+
+Rationale for all three: guards alone repeat the `MaxDaysEditable` mistake
+(bypassable); the interceptor alone turns an ordinary dashboard load into an
+exception.
+
+### 6.2 Why the cascades need no special handling
+
+Given **I2** (nothing at or after today may be reconciled):
+
+- every locked day satisfies `date <= lockedThrough < today`;
+- every editable day satisfies `date > lockedThrough`;
+- a forward cascade starts from an edited day and walks *forward*.
+
+Therefore every day a cascade touches is `> lockedThrough` and unlocked. **The
+cascades provably cannot reach a locked day.** Reading the boundary day to seed
+the chain is unaffected — that is a read.
+
+This is the single reason the 180-day and unbounded cascades do not need to be
+re-plumbed. **If I2 is ever relaxed, they become live hazards immediately.**
+Any future change permitting a future-dated reconcile must revisit §5's cascade
+list first. Layer 1 would catch the violation, but as a 500 rather than a
+designed behaviour.
+
+### 6.3 Gap-fill inside a locked range
+
+Gap-fill **stops at the boundary**: no row creation, no recomputation for
+`date <= lockedThrough`. A locked period is frozen exactly as it stands.
+
+Consequence, accepted deliberately: a day inside a locked range that never had
+a registration stays empty in the grid rather than materialising a blank row.
+That is the correct reading — nothing was registered that day — and it is what
+makes "reconciled" mean byte-stable rather than merely read-only.
+
+### 6.4 Timezone
+
+The predicate in **I2** depends on "today", and the codebase mixes
+`DateTime.Now` and `DateTime.UtcNow`. `PlanRegistration.Date` is a midnight
+local date.
+
+**Decision: compare against `DateTime.Now.Date`** (server local), matching how
+`PlanRegistrationHelper` and the existing mobile guard already compute "today".
+Using UTC would make the boundary shift by a day for part of each evening in
+Danish time. This is stated explicitly because it is exactly the kind of
+off-by-one that is invisible in tests written at midday.
+
+---
+
+## 7. API surface
+
+Three operations on `TimePlanningPlanningController`:
+
+| Verb | Route | Body | Returns |
+|---|---|---|---|
+| `PUT` | `plannings/{id}/reconcile` | — | `OperationResult` |
+| `PUT` | `plannings/{id}/unreconcile` | — | `OperationResult` |
+| `PUT` | `plannings/reconcile-through` | `{ date, siteIds[] }` | `OperationResult` with per-site outcome |
+
+Rules enforced server-side:
+
+- Reconcile rejects `date >= DateTime.Now.Date` (**I2**).
+- Reconcile is idempotent: re-reconciling an already-reconciled day is a no-op
+  success, not an error.
+- Unreconcile rejects any day that is not exactly `lockedThrough` for that
+  worker, with a message naming the day that must be freed first.
+- `reconcile-through` sets `Reconciled` on **one** day per listed worker: the
+  latest day at or before the given date that has a registration. Everything
+  earlier locks by derivation. If a worker has no registration on or before the
+  date, that worker is skipped and reported.
+
+The read model gains two fields on the existing per-day DTO:
+
+```csharp
+public bool Reconciled { get; set; }
+public DateTime? ReconciledAt { get; set; }
+```
+
+and one per-row field, so the client can render the staircase without computing
+it per cell:
+
+```csharp
+public DateTime? LockedThrough { get; set; }
+```
+
+`isLocked` is then a pure client-side comparison, consistent with how the grid
+already derives cell classes.
+
+---
+
+## 8. UI
+
+### 8.1 Three states
+
+Because the mark is per worker per day, the boundary is a **staircase** down
+the grid, not one vertical line. Each worker has their own reconciled-through
+date.
+
+Four independent channels, so colour is never load-bearing:
+
+| State | Texture | Glyph | Cursor | Tooltip (da) |
+|---|---|---|---|---|
+| Open | none | — | `pointer` | — |
+| Locked (cascade) | diagonal hatch | outline `lock`, bottom-left | `not-allowed` | `Låst · ligger før en afstemt dag` |
+| Afstemt (boundary) | flat tint, 3px right border | filled `verified`, top-right | `default` | `Afstemt <dato> kl. <tid>` |
+
+Constraints from the existing code:
+
+- `getCellClass(row, field)` returns a **single** string today and has no
+  composition mechanism. It must be extended to return multiple classes.
+- Styles must be **theme-agnostic**: `body.theme-eform` rules do not apply under
+  `theme-workspace`. Use `--tp-td-bg` / `--tp-border` / `--tp-text`, and define
+  new `--tp-locked-*` tokens at `:root` with dark overrides.
+- `outline` + yellow is already taken by `.highlight-cell`; blue by
+  `.setting-ico.active`. The lock palette must avoid both.
+- Day-cell icons use `fontSet="material-symbols-outlined"` + `class="neutral-icon"`.
+  `lock` is already in use elsewhere (pay-rule-set banner) and is the right
+  precedent.
+
+A legend sits under the grid whenever any locked day is in range — otherwise
+nobody learns what the hatch means.
+
+### 8.2 Single day
+
+A third action in the workday dialog footer, with a two-step inline confirm
+(the footer morphs; no second modal). After saving, the dialog reopens
+read-only with a provenance line where the actions were.
+
+The dialog is chosen over a cell hover affordance deliberately: it is the only
+place the user already sees *whose day, which date, which hours* before
+committing, and the day cell is a dense click target where a misfire would
+freeze a period.
+
+### 8.3 Multi-day
+
+Because one date plus the cascade already locks everything before it,
+"multi-day" means **multi-worker**. A toolbar control **"Afstem til og med
+\<dato\>"** sets the boundary for many workers in one action, with a live
+preview of the affected count before committing.
+
+Worker selection uses mtx-grid's `[rowSelectable]` / `[multiSelectable]`, which
+this plugin has never used. The host's backend-configuration task-list is the
+precedent and documents two gotchas that apply verbatim:
+
+1. mtx-grid binds `(click)="_selectRow()"` on the `<tr>`; with `[rowSelectable]`
+   this **clears the batch selection** when a day cell is clicked. The day cell
+   must call `stopRowClick($event)`.
+2. mtx-grid rebuilds its internal `SelectionModel` empty in `ngOnChanges`
+   **without emitting** `rowSelectedChange`, so the component must re-emit an
+   empty selection itself.
+
+Both are load-bearing: the planning grid's day cells are clickable, so (1) is
+guaranteed to bite.
+
+### 8.4 Unlock
+
+Only the boundary day offers unlock; it moves the line back one notch. A day
+below the boundary shows *which* day must be freed first rather than a disabled
+control with no explanation.
+
+Confirmation is a typed word, not a checkbox — deliberately asymmetric: sealing
+takes a click, unsealing takes a word.
+
+### 8.5 Blocked feedback
+
+A locked day's dialog **opens read-only** rather than refusing to open. People
+read closed days constantly. Every field renders at full opacity, disabled, with
+a banner at the top. This reuses the existing `tp-help-hint tone="warn"` pattern
+already used for `dayCell.futureDisabled`.
+
+**Copy rule:** user-facing text states what the day *is*. It never explains a
+restriction by referring to what an administrator may do. ("admin = Microting"
+is a standing constraint in this product.)
+
+### 8.6 Permissions
+
+Per explicit decision: **any web user may reconcile.** This is a deliberate
+departure from the rest of the toolbar — payroll export, for instance, is
+admin-gated — and it means an ordinary user can freeze a period. The
+reverse-order unlock rule is the only safeguard, and it is the reason unlock
+carries the heavier confirmation.
+
+---
+
+## 9. Testing
+
+Tests in this repo run **only in CI**.
+
+**C# (`TimePlanning.Pn.Test`):**
+- `lockedThrough` with: no reconciled day, one, several, one soft-deleted.
+- `isLocked` at the boundary, either side of it, and for a worker with none.
+- **I2**: reconcile rejected for today and for a future date.
+- Unreconcile rejected below the boundary, accepted at it, and the boundary
+  moving back to the next-newest.
+- Interceptor: `Modified`, `Added` and `Deleted` in a locked range each
+  rejected; each allowed above the boundary.
+- Gap-fill creates nothing inside a locked range.
+- `UpdatePlanRegistrationsInPeriod` leaves locked rows byte-identical —
+  asserted on `Version`/`UpdatedAt`, so a no-op re-save still fails the test.
+- `reconcile-through` marks exactly one day per worker and skips workers with
+  no registration.
+
+New test classes must be added to the CI shard filters in **both**
+`dotnet-core-pr.yml` and `dotnet-core-master.yml`, or they silently never run.
+
+**Playwright:** reconcile a day → cell shows the boundary treatment → earlier
+cell shows the locked treatment → opening a locked day gives a read-only dialog
+→ unlock below the boundary is refused → unlock at the boundary moves it back.
+Anchor rows by worker identity, not by grid index.
+
+---
+
+## 10. Risks
+
+| Risk | Mitigation |
+|---|---|
+| Interceptor registered in only one repo → silent hole | Explicit test in each repo asserting a locked write is rejected through that repo's own context construction |
+| **I2** relaxed later → cascades reach locked days | Stated as an invariant here and in code comments at the cascade sites; interceptor catches it as a 500 rather than corruption |
+| Any user can freeze a period | Accepted by decision; reverse-order unlock + typed confirmation |
+| Row selection breaks day-cell clicks | Known mtx-grid gotchas documented in §8.3, both with existing fixes in the host repo |
+| `MaxDaysEditable` remains bypassable | Out of scope, explicitly; the interceptor makes the *new* lock not share the flaw |
+| Timezone off-by-one near midnight | `DateTime.Now.Date` fixed in §6.4; tests must include a late-evening case |
+
+## 11. Open questions
+
+1. Should `reconcile-through` apply to **selected** workers only, or to every
+   worker currently visible under the active filters? Selected is safer;
+   all-visible is faster for the common month-end case.
+2. Should a locked day still be exportable to payroll, and should
+   `TransferredToPayroll` and `Reconciled` be related at all? They are
+   independent in this design.
+3. Does the mobile app need to *display* the locked state, or is rejecting the
+   write sufficient for now?
