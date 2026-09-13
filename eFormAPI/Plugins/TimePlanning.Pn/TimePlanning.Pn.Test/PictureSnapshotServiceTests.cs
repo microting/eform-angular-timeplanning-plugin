@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using eFormCore;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
@@ -24,6 +25,7 @@ public class PictureSnapshotServiceTests : TestBaseSetup
     private IUserService _userService;
     private ITimePlanningLocalizationService _localizationService;
     private IEFormCoreService _coreService;
+    private Microsoft.Extensions.Logging.ILogger<TimePlanningPictureSnapshotService> _logger;
 
     [SetUp]
     public async Task SetUp()
@@ -36,9 +38,10 @@ public class PictureSnapshotServiceTests : TestBaseSetup
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
 
         _coreService = Substitute.For<IEFormCoreService>();
+        _logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<TimePlanningPictureSnapshotService>>();
 
         _pictureSnapshotService = new TimePlanningPictureSnapshotService(
-            Substitute.For<Microsoft.Extensions.Logging.ILogger<TimePlanningPictureSnapshotService>>(),
+            _logger,
             TimePlanningPnDbContext,
             _userService,
             _localizationService,
@@ -73,8 +76,10 @@ public class PictureSnapshotServiceTests : TestBaseSetup
         Assert.That(result.Success, Is.False);
     }
 
+    // SQL/420_SDK.sql seeds s3Enabled = False, so the SDK has no S3 client and the
+    // upload fails without a network call (SDK 10.0.39+ no longer swallows it).
     [Test]
-    public async Task Create_CreatesPictureSnapshot_WithFile()
+    public async Task Create_ReturnsFailureAndSavesNoSnapshot_WhenFileUploadFails()
     {
         // Arrange
         var planRegistration = new PlanRegistration
@@ -110,8 +115,21 @@ public class PictureSnapshotServiceTests : TestBaseSetup
 
         // Act
         var result = await _pictureSnapshotService.Create(model, mockFile, null);
+
         // Assert
-        Assert.That(result.Success, Is.True);
+        Assert.That(result.Success, Is.False);
+        Assert.That(
+            await TimePlanningPnDbContext.PictureSnapshots.CountAsync(x => x.PlanRegistrationId == planRegistration.Id),
+            Is.EqualTo(0),
+            "a snapshot row must not point at a file that was never stored");
+        // The upload itself failed for lack of an S3 client, not an earlier lookup;
+        // a real S3 call would fail with an AmazonS3Exception instead.
+        _logger.Received(1).Log(
+            Microsoft.Extensions.Logging.LogLevel.Error,
+            Arg.Any<Microsoft.Extensions.Logging.EventId>(),
+            Arg.Any<Arg.AnyType>(),
+            Arg.Is<Exception>(e => e is InvalidOperationException),
+            Arg.Any<Func<Arg.AnyType, Exception, string>>());
     }
 
     [Test]
