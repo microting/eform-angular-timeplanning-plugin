@@ -1,7 +1,7 @@
 # Reconciled ("Afstemt") day lock — design
 
 **Date:** 2026-09-12
-**Status:** Design, awaiting review
+**Status:** Accepted. Backend implemented (PR #1711); service repo, host styles and frontend follow. See §13 for the rulings taken during implementation.
 **Scope:** `eform-angular-timeplanning-plugin` (web UI + `TimePlanning.Pn` API),
 `eform-service-timeplanning-plugin` (background jobs). **No change to
 `eform-timeplanning-base`.**
@@ -67,7 +67,7 @@ public DateTime? ReconciledAt { get; set; }   // datetime(6) NULL
 ```
 
 They are verified present in the currently pinned package
-(`Microting.TimePlanningBase` **10.0.62**). Nothing writes them today; exactly
+(`Microting.TimePlanningBase` **10.0.62**; implementation pinned 10.0.63, which still has them). Nothing writes them today; exactly
 one place reads them — the admin-only version diff in
 `TimePlanningPlanningService.CompareVersions`.
 
@@ -508,10 +508,21 @@ wrong, in the SDD ledger. They supersede the sections they name.
   range, so §6.1's "localized failure" would make any range touching a
   reconciled day unsaveable. The save skips locked rows, and the page shows
   them read-only through its existing `IsLocked` flag.
-- **More write paths to guard (F11, F12, F13). Ruled and briefed; not yet
-  implemented.** An audit found writes outside §5's list that reach locked
-  days: startup pause-id repair (unguarded, it would crash host startup),
-  Google Sheet pull, Excel import, the flex screen, absence approval and shift
-  handover, plus the service repo's sheet pull and flex catch-up. Task 5B
-  (plugin) and Task 7B (service repo) will make bulk re-syncs skip locked days
-  and give a user acting on specific days a message.
+- **More write paths guarded (F11, F13 in the plugin; F12 in the service
+  repo).** An audit found writes outside §5's list that reach locked days.
+  In the plugin (PR #1711), each now skips locked days or answers with a
+  message: startup pause-id repair (unguarded, it would have crashed host
+  startup), Google Sheet pull, Excel import, the flex screen, and absence and
+  handover requests (checked when created, approved or accepted). In the
+  service repo (a separate PR), the sheet pull, the nightly recalculation and
+  the flex catch-up skip locked days. Bulk re-syncs skip; a user acting on
+  specific days gets a message.
+- **Unlock refusals name the day to free first** (§7), and a worker with
+  nothing reconciled gets a distinct message.
+- **The lock's race window is documented, not closed.** The boundary query
+  and the write are separate statements, so a reconcile committed between
+  them can let one write through. Every guarded path still saves through the
+  interceptor, which reads the boundary again.
+- **Release order.** The frontend (PR4) must not reach production before the
+  service-repo PR is deployed; otherwise background jobs could still write
+  days the web shows as closed.
