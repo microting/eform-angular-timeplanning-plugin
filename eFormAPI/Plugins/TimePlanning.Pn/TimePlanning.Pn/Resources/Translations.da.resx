@@ -201,4 +201,25 @@
     <data name="DayOverview" xml:space="preserve">
         <value>Dagsoversigt</value>
     </data>
+    <data name="DayIsReconciled" xml:space="preserve">
+        <value>Dagen er afstemt. Tallene er endelige.</value>
+    </data>
+    <data name="DayIsLockedByReconciledDay" xml:space="preserve">
+        <value>Dagen er låst, fordi den ligger før en afstemt dag.</value>
+    </data>
+    <data name="CannotReconcileTodayOrFuture" xml:space="preserve">
+        <value>Kun dage før i dag kan afstemmes.</value>
+    </data>
+    <data name="OnlyLatestReconciledDayCanBeUnlocked" xml:space="preserve">
+        <value>Lås den seneste afstemte dag op først ({0}).</value>
+    </data>
+    <data name="NothingIsReconciled" xml:space="preserve">
+        <value>Intet er afstemt for denne medarbejder.</value>
+    </data>
+    <data name="SuccessfullyReconciledDay" xml:space="preserve">
+        <value>Dagen er afstemt</value>
+    </data>
+    <data name="SuccessfullyUnlockedDay" xml:space="preserve">
+        <value>Dagen er låst op</value>
+    </data>
 </root>

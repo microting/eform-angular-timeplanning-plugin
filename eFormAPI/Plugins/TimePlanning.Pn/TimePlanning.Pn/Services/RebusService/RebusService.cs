@@ -28,10 +28,10 @@ using System.Threading.Tasks;
 using Castle.MicroKernel.Registration;
 using Castle.Windsor;
 using eFormCore;
+using Infrastructure.Helpers;
 using Installers;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data;
-using Microting.TimePlanningBase.Infrastructure.Data.Factories;
 using Rebus.Bus;
 
 public class RebusService : IRebusService
@@ -65,9 +65,9 @@ public class RebusService : IRebusService
     {
         return _bus;
     }
+    // The day-lock guarded context, not TimePlanningPnContextFactory's: a
+    // future handler writing PlanRegistration through this registration must
+    // not bypass the lock.
     private TimePlanningPnDbContext GetContext()
-    {
-        TimePlanningPnContextFactory contextFactory = new TimePlanningPnContextFactory();
-        return contextFactory.CreateDbContext(new[] {_connectionString});
-    }
+        => new TimePlanningDbContextHelper(_connectionString).GetDbContext();
 }

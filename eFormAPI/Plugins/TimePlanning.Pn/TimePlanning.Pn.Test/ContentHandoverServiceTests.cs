@@ -244,6 +244,73 @@ public class ContentHandoverServiceTests : TestBaseSetup
         Assert.That(result.Model[0].ShiftIndex, Is.Null);
     }
 
+    /// <summary>
+    /// A handover touching a locked day could never be accepted, so it must
+    /// not be created and left pending. Otherwise a valid full-day request:
+    /// the source has content and the target is empty. The message says what
+    /// the blocking row IS, on whichever worker's row blocks: locked by a
+    /// later reconciled day, or reconciled itself.
+    /// </summary>
+    [TestCase(true, false, "DayIsLockedByReconciledDay",
+        TestName = "CreateAsync_RefusesAndCreatesNothing_WhenTheSendersDayIsLocked")]
+    [TestCase(false, true, "DayIsReconciled",
+        TestName = "CreateAsync_RefusesAndCreatesNothing_WhenTheReceiversDayIsReconciled")]
+    public async Task CreateAsync_RefusesAndCreatesNothing_WhenEitherWorkersDayIsLocked(
+        bool lockSender, bool reconcileTheHandoverDay, string expectedMessage)
+    {
+        var date = new DateTime(2024, 4, 8);
+        var sourcePR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 1,
+            PlanHoursInSeconds = 28800,
+            PlanText = "Important work",
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        var targetPR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 2,
+            PlanHoursInSeconds = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        var lockedWorkersRow = lockSender ? sourcePR : targetPR;
+        if (reconcileTheHandoverDay)
+        {
+            // The handover day itself is the locked worker's boundary.
+            lockedWorkersRow.Reconciled = true;
+            lockedWorkersRow.ReconciledAt = new DateTime(2024, 4, 9, 9, 12, 0);
+        }
+        await sourcePR.Create(TimePlanningPnDbContext);
+        await targetPR.Create(TimePlanningPnDbContext);
+
+        if (!reconcileTheHandoverDay)
+        {
+            // Lock-safe order: the handover day exists BEFORE a later day of
+            // the locked worker is reconciled, which locks the handover day too.
+            await new PlanRegistration
+            {
+                Date = date.AddDays(2),
+                SdkSitId = lockedWorkersRow.SdkSitId,
+                Reconciled = true,
+                ReconciledAt = new DateTime(2024, 4, 11, 9, 12, 0),
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            }.Create(TimePlanningPnDbContext);
+        }
+
+        var result = await _contentHandoverService.CreateAsync(sourcePR.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2, RequestComment = "Locked day" });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo(expectedMessage));
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrationContentHandoverRequests
+                .AsNoTracking().CountAsync(), Is.Zero,
+            "a handover that can never be accepted must not be created");
+    }
+
     [Test]
     public async Task AcceptAsync_MovesContent_FromSourceToTarget()
     {
@@ -368,6 +435,113 @@ public class ContentHandoverServiceTests : TestBaseSetup
         // Assert
         Assert.That(result.Success, Is.False);
         Assert.That(result.Message, Is.EqualTo("TargetPlanRegistrationMustBeEmpty"));
+    }
+
+    /// <summary>
+    /// The two rows belong to two workers, each with their own boundary, and
+    /// the receiver is persisted before the sender. Without the up-front check:
+    /// a locked SENDER leaves the shift copied onto the receiver and still on
+    /// the sender; a locked RECEIVER fails with the generic error. Either way
+    /// both rows and the request must stay exactly as they were.
+    ///
+    /// The message says what the blocking row IS, checked on whichever
+    /// worker's row blocks (the sender is the counterpart of the accepting
+    /// receiver): locked by a later reconciled day, or reconciled itself.
+    /// </summary>
+    [TestCase(true, false, "DayIsLockedByReconciledDay",
+        TestName = "AcceptAsync_Fails_AndWritesNothing_WhenTheSendersDayIsLocked")]
+    [TestCase(false, false, "DayIsLockedByReconciledDay",
+        TestName = "AcceptAsync_Fails_AndWritesNothing_WhenTheReceiversDayIsLocked")]
+    [TestCase(true, true, "DayIsReconciled",
+        TestName = "AcceptAsync_Fails_AndWritesNothing_WhenTheSendersDayIsReconciled")]
+    [TestCase(false, true, "DayIsReconciled",
+        TestName = "AcceptAsync_Fails_AndWritesNothing_WhenTheReceiversDayIsReconciled")]
+    public async Task AcceptAsync_Fails_AndWritesNothing_WhenEitherWorkersDayIsLocked(
+        bool lockSender, bool reconcileTheHandoverDay, string expectedMessage)
+    {
+        var date = new DateTime(2024, 4, 8);
+
+        var sourcePR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 1,
+            PlanHours = 8,
+            PlanHoursInSeconds = 28800,
+            PlanText = "Important work",
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        var targetPR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = 2,
+            PlanHours = 0,
+            PlanHoursInSeconds = 0,
+            PlanText = null,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        var lockedWorkersRow = lockSender ? sourcePR : targetPR;
+        if (reconcileTheHandoverDay)
+        {
+            // The handover day itself is the locked worker's boundary.
+            lockedWorkersRow.Reconciled = true;
+            lockedWorkersRow.ReconciledAt = new DateTime(2024, 4, 9, 9, 12, 0);
+        }
+        await sourcePR.Create(TimePlanningPnDbContext);
+        await targetPR.Create(TimePlanningPnDbContext);
+
+        if (!reconcileTheHandoverDay)
+        {
+            // Lock-safe order: the handover day exists BEFORE a later day of
+            // the locked worker is reconciled, which locks the handover day too.
+            await new PlanRegistration
+            {
+                Date = date.AddDays(2),
+                SdkSitId = lockedWorkersRow.SdkSitId,
+                Reconciled = true,
+                ReconciledAt = new DateTime(2024, 4, 11, 9, 12, 0),
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            }.Create(TimePlanningPnDbContext);
+        }
+
+        var request = new PlanRegistrationContentHandoverRequest
+        {
+            FromSdkSitId = 1,
+            ToSdkSitId = 2,
+            Date = date,
+            FromPlanRegistrationId = sourcePR.Id,
+            ToPlanRegistrationId = targetPR.Id,
+            Status = HandoverRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await request.Create(TimePlanningPnDbContext);
+
+        var result = await _contentHandoverService.AcceptAsync(request.Id, 2,
+            new ContentHandoverDecisionModel { DecisionComment = "Accepted" });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo(expectedMessage));
+
+        // AsNoTracking: the database, not the tracked instances the service
+        // shares with this test.
+        var sourceAfter = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().FirstAsync(pr => pr.Id == sourcePR.Id);
+        var targetAfter = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().FirstAsync(pr => pr.Id == targetPR.Id);
+        Assert.That(sourceAfter.PlanText, Is.EqualTo("Important work"));
+        Assert.That(sourceAfter.PlanHoursInSeconds, Is.EqualTo(28800));
+        Assert.That(sourceAfter.Version, Is.EqualTo(1), "the sender's row must not be saved");
+        Assert.That(targetAfter.PlanText, Is.Null);
+        Assert.That(targetAfter.PlanHoursInSeconds, Is.EqualTo(0));
+        Assert.That(targetAfter.Version, Is.EqualTo(1), "the receiver's row must not be saved");
+
+        var requestAfter = await TimePlanningPnDbContext.PlanRegistrationContentHandoverRequests
+            .AsNoTracking().FirstAsync(r => r.Id == request.Id);
+        Assert.That(requestAfter.Status, Is.EqualTo(HandoverRequestStatus.Pending));
     }
 
     [Test]

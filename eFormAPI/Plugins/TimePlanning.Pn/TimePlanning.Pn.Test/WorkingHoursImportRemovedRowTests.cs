@@ -108,17 +108,9 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
         await active.Create(TimePlanningPnDbContext);
         var activeId = active.Id;
 
-        var xlsx = BuildWorkbook(siteName, dateStr, "8", "IMPORTED");
-        var file = Substitute.For<IFormFile>();
-        file.CopyToAsync(Arg.Any<Stream>(), Arg.Any<CancellationToken>())
-            .Returns(ci =>
-            {
-                var target = ci.Arg<Stream>();
-                target.Write(xlsx, 0, xlsx.Length);
-                return Task.CompletedTask;
-            });
+        var xlsx = BuildWorkbook(siteName, (dateStr, "8", "IMPORTED"));
 
-        var result = await _service.Import(file);
+        var result = await _service.Import(FormFile(xlsx));
 
         // Post-fix: no crash, and the ACTIVE row is the import target.
         Assert.That(result.Success, Is.True, result.Message);
@@ -140,6 +132,79 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
         Assert.That(activeCount, Is.EqualTo(1), "Import must not create a duplicate active row");
     }
 
+    /// <summary>
+    /// A bulk import skips a locked day instead of failing the whole file.
+    /// Without the skip the locked row is loaded, changed and saved, the
+    /// interceptor refuses it, and Import returns Success false with the later
+    /// rows never imported.
+    ///
+    /// The boundary is in the FUTURE only because Import never reaches a past
+    /// day (it drops dates before now minus one day, which by time of day also
+    /// drops yesterday), so no boundary that satisfies I2 is reachable. The
+    /// lock itself does not check I2; this pins the skip as defense in depth.
+    /// </summary>
+    [Test]
+    public async Task Import_SkipsALockedDay_AndImportsTheRest()
+    {
+        const int microtingUid = 889;
+        const string siteName = "ImportLockSite";
+        var lockedDay = DateTime.Now.AddDays(5).Date;
+        var openDay = lockedDay.AddDays(1);
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        await new SdkSite { Name = siteName, MicrotingUid = microtingUid }.Create(sdkDbContext);
+
+        var boundary = new PlanRegistration
+        {
+            SdkSitId = microtingUid,
+            Date = lockedDay,
+            PlanText = "LOCKED-ORIG",
+            Reconciled = true,
+            ReconciledAt = new DateTime(2026, 1, 20, 9, 12, 0),
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await boundary.Create(TimePlanningPnDbContext);
+        var boundaryBefore = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().FirstAsync(x => x.Id == boundary.Id);
+
+        // The locked day comes first, so without the skip the import aborts
+        // before it ever reaches the open day.
+        var xlsx = BuildWorkbook(siteName,
+            (lockedDay.ToString("dd.MM.yyyy"), "8", "IMPORTED-LOCKED"),
+            (openDay.ToString("dd.MM.yyyy"), "6", "IMPORTED-OPEN"));
+
+        var result = await _service.Import(FormFile(xlsx));
+
+        Assert.That(result.Success, Is.True, result.Message);
+
+        var lockedAfter = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().FirstAsync(x => x.Id == boundary.Id);
+        Assert.That(lockedAfter.PlanText, Is.EqualTo("LOCKED-ORIG"), "a locked day must not be imported into");
+        Assert.That(lockedAfter.Version, Is.EqualTo(boundaryBefore.Version));
+        Assert.That(lockedAfter.UpdatedAt, Is.EqualTo(boundaryBefore.UpdatedAt));
+
+        var openRow = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking()
+            .SingleAsync(x => x.SdkSitId == microtingUid && x.Date == openDay
+                              && x.WorkflowState != Constants.WorkflowStates.Removed);
+        Assert.That(openRow.PlanText, Is.EqualTo("IMPORTED-OPEN"), "the open day is still imported");
+    }
+
+    private static IFormFile FormFile(byte[] xlsx)
+    {
+        var file = Substitute.For<IFormFile>();
+        file.CopyToAsync(Arg.Any<Stream>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                var target = ci.Arg<Stream>();
+                target.Write(xlsx, 0, xlsx.Length);
+                return Task.CompletedTask;
+            });
+        return file;
+    }
+
     private static Cell TextCell(string reference, string value) => new Cell
     {
         CellReference = reference,
@@ -153,7 +218,8 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
         CellValue = new CellValue(value)
     };
 
-    private static byte[] BuildWorkbook(string sheetName, string dateStr, string hours, string text)
+    private static byte[] BuildWorkbook(
+        string sheetName, params (string Date, string Hours, string Text)[] rows)
     {
         using var ms = new MemoryStream();
         using (var doc = SpreadsheetDocument.Create(ms, SpreadsheetDocumentType.Workbook))
@@ -178,10 +244,15 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
             header.Append(TextCell("A1", "Date"), TextCell("B1", "Hours"), TextCell("C1", "Text"));
             sheetData.Append(header);
 
-            // Data row (RowIndex 2): A=date, B=planHours, C=planText.
-            var data = new Row { RowIndex = 2 };
-            data.Append(TextCell("A2", dateStr), NumberCell("B2", hours), TextCell("C2", text));
-            sheetData.Append(data);
+            // Data rows (RowIndex 2..): A=date, B=planHours, C=planText.
+            for (var i = 0; i < rows.Length; i++)
+            {
+                var r = i + 2;
+                var data = new Row { RowIndex = (uint)r };
+                data.Append(TextCell($"A{r}", rows[i].Date), NumberCell($"B{r}", rows[i].Hours),
+                    TextCell($"C{r}", rows[i].Text));
+                sheetData.Append(data);
+            }
 
             wbPart.Workbook.Save();
         }

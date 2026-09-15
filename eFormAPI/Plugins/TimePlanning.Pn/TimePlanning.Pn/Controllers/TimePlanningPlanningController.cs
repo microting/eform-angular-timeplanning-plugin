@@ -78,4 +78,26 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
     {
         return await _planningService.GetVersionHistory(planRegistrationId);
     }
+
+    [HttpPut]
+    [Route("{id}/reconcile")]
+    public async Task<OperationResult> Reconcile(int id)
+    {
+        return await _planningService.Reconcile(id);
+    }
+
+    [HttpPut]
+    [Route("{id}/unreconcile")]
+    public async Task<OperationResult> Unreconcile(int id)
+    {
+        return await _planningService.Unreconcile(id);
+    }
+
+    [HttpPut]
+    [Route("reconcile-through")]
+    public async Task<OperationDataResult<ReconcileThroughResultModel>> ReconcileThrough(
+        [FromBody] ReconcileThroughRequestModel model)
+    {
+        return await _planningService.ReconcileThrough(model);
+    }
 }

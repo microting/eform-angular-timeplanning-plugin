@@ -35,6 +35,7 @@ using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
+using TimePlanning.Pn.Infrastructure.Interceptors;
 using TimePlanning.Pn.Infrastructure.Data.Seed.Data;
 using Microting.TimePlanningBase.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
@@ -101,6 +102,9 @@ public class TimePlanningWorkingHoursService(
             // Stage 3 tick-exact parity: per-row mode-at-registration from the
             // AssignedSiteVersions audit trail (one query; in-memory lookups).
             var oneMinuteTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
+            // Reconciled days ride the existing IsLocked flag, which the page
+            // already renders read-only. One lookup; every row is checked in memory.
+            var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, model.SiteId);
 
             var timePlanningRequest = dbContext.PlanRegistrations
                 .AsNoTracking()
@@ -177,7 +181,8 @@ public class TimePlanningWorkingHoursService(
                     CommentWorker = x.WorkerComment.Replace("\r", "<br />"),
                     CommentOffice = x.CommentOffice.Replace("\r", "<br />"),
                     // CommentOfficeAll = x.CommentOfficeAll,
-                    IsLocked = (x.Date < DateTime.Now.AddDays(-(int)(maxDaysEditable ?? 0)) || x.Date == midnight),
+                    IsLocked = (x.Date < DateTime.Now.AddDays(-(int)(maxDaysEditable ?? 0)) || x.Date == midnight)
+                               || DayLockHelper.IsLocked(lockedThrough, x.Date),
                     IsWeekend = x.Date.DayOfWeek == DayOfWeek.Saturday || x.Date.DayOfWeek == DayOfWeek.Sunday,
                     NettoHoursOverride = x.NettoHoursOverride,
                     NettoHoursOverrideActive = x.NettoHoursOverrideActive,
@@ -393,7 +398,8 @@ public class TimePlanningWorkingHoursService(
                             Date = model.DateFrom.AddDays(i),
                             WeekDay = (int)model.DateFrom.AddDays(i).DayOfWeek,
                             IsLocked = model.DateFrom.AddDays(i) < DateTime.Now.AddDays(-(int)(maxDaysEditable ?? 0)) ||
-                                       model.DateFrom.AddDays(i) == midnight,
+                                       model.DateFrom.AddDays(i) == midnight ||
+                                       DayLockHelper.IsLocked(lockedThrough, model.DateFrom.AddDays(i)),
                             IsWeekend = model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Saturday
                                         || model.DateFrom.AddDays(i).DayOfWeek == DayOfWeek.Sunday
                             //WorkerId = model.WorkerId,
@@ -455,9 +461,21 @@ public class TimePlanningWorkingHoursService(
     {
         try
         {
+            // Locked rows arrive here because the page posts every row it shows.
+            // They are displayed read-only (Index sets IsLocked), so they are
+            // skipped, not rejected: rejecting would make any range touching a
+            // reconciled day unsaveable. The interceptor still guarantees that a
+            // crafted POST cannot write one.
+            var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, model.SiteId);
+            // Locked rows are never even loaded, so nothing below can mutate
+            // one and have a later save (which saves the whole context) flush
+            // it. The forward cascade walks this same list, so it skips them
+            // too. Not redundant with the loop's skip: only this keeps the
+            // cascade out of the lock.
             var planRegistrations = await dbContext.PlanRegistrations
                 .Where(x => x.SdkSitId == model.SiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .WhereOpen(lockedThrough)
                 .ToListAsync();
             // Site-level one-minute flag drives the forward-cascade recompute below
             // so the double AND *InSeconds SumFlex columns are written consistently.
@@ -470,18 +488,24 @@ public class TimePlanningWorkingHoursService(
             foreach (var planning in model.Plannings)
             {
                 planning.Date = new DateTime(planning.Date.Year, planning.Date.Month, planning.Date.Day, 0, 0, 0);
+                if (DayLockHelper.IsLocked(lockedThrough, planning.Date))
+                {
+                    // Neither updated nor created. `first` is still cleared: the
+                    // carried-over first row may be the locked one, and the next
+                    // row must then be creatable as usual.
+                    first = false;
+                    continue;
+                }
+
                 var planRegistration = planRegistrations.FirstOrDefault(x => x.Date == planning.Date);
                 if (planRegistration != null)
                 {
                     await UpdatePlanning(
                         first, planRegistration, planning, model.SiteId, cascadeTimeline);
                 }
-                else
+                else if (!first)
                 {
-                    if (!first)
-                    {
-                        await CreatePlanning(first, planning, model.SiteId, model.SiteId, planning.CommentWorker);
-                    }
+                    await CreatePlanning(first, planning, model.SiteId, model.SiteId, planning.CommentWorker);
                 }
 
                 first = false;
@@ -615,7 +639,11 @@ public class TimePlanningWorkingHoursService(
 
                 await planRegistration.Create(dbContext);
             }
-            catch (Exception e)
+            // A lock refusal passes through to CreateUpdate's catch. CreateUpdate
+            // skips locked days before calling this, so one only arrives when the
+            // boundary moved mid-request. Swallowed, the rejected Added entry
+            // stays tracked and the next save in the request fails on it anyway.
+            catch (Exception e) when (e is not DayLockedException)
             {
                 SentrySdk.CaptureException(e);
                 logger.LogError(e.Message);
@@ -1336,6 +1364,32 @@ public class TimePlanningWorkingHoursService(
         FlexChain.ClearSumFlexSeconds(planRegistration);
     }
 
+    /// <summary>
+    /// The day-lock guard for both UpdateWorkingHour overloads: a failure to
+    /// return when the day is locked, else null. Neither overload has a
+    /// try/catch, so this answers with a message instead of letting the
+    /// interceptor throw. The message follows the planning service's rule, the
+    /// row's own Reconciled flag, so mobile says what web says for the same day
+    /// (spec §11.3). The row may not be loaded yet (or may not exist), so the
+    /// flag costs one cheap query, and only when the day is locked.
+    /// </summary>
+    private async Task<OperationResult?> CheckDayLockAsync(int? sdkSitId, DateTime date)
+    {
+        if (sdkSitId is not { } siteId)
+        {
+            return null;
+        }
+
+        var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, siteId);
+        if (!DayLockHelper.IsLocked(lockedThrough, date))
+        {
+            return null;
+        }
+
+        return new OperationResult(false, localizationService.GetString(
+            await DayLockHelper.LockedMessageKeyAsync(dbContext, siteId, date)));
+    }
+
     public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
     {
         Console.WriteLine($"[DEBUG-GRPC-UPDATE] === UpdateWorkingHour (PERSONAL mode, 1-param) entered ===");
@@ -1395,6 +1449,11 @@ public class TimePlanningWorkingHoursService(
             return new OperationResult(
                 false,
                 localizationService.GetString("EditingNotAllowedForWorker"));
+        }
+
+        if (await CheckDayLockAsync(sdkSite.MicrotingUid, model.Date) is { } dayLocked)
+        {
+            return dayLocked;
         }
 
         var todayAtMidnight = model.Date;
@@ -2023,6 +2082,14 @@ public class TimePlanningWorkingHoursService(
             return new OperationDataResult<TimePlanningWorkingHoursModel>(false, "Token not found");
         }
         Console.WriteLine($"[DEBUG-GRPC-UPDATE] KIOSK: registrationDevice found, Id={registrationDevice.Id}");
+
+        // Before both branches below (each repeats its own assigned-site lookup),
+        // and after the token check so an unknown device learns nothing about
+        // the lock.
+        if (await CheckDayLockAsync(sdkSiteId, model.Date) is { } dayLocked)
+        {
+            return dayLocked;
+        }
 
         registrationDevice.OsVersion = model.OsVersion;
         registrationDevice.Model = model.Model;
@@ -3950,6 +4017,8 @@ public class TimePlanningWorkingHoursService(
                         return new OperationResult(false, localizationService.GetString("FileFormatError"));
                     }
 
+                    // Observability only: the locked-day skip below is silent otherwise.
+                    var lockedDaysSkipped = 0;
                     foreach (Sheet sheet in sheets)
                     {
                         if (sheet.Name?.Value == null || sheet.Id?.Value == null)
@@ -3972,6 +4041,12 @@ public class TimePlanningWorkingHoursService(
                             .FirstOrDefaultAsync(x => x.SiteId == site.MicrotingUid);
                         var importTimeline =
                             await OneMinuteModeTimeline.BuildAsync(dbContext, importAssignedSite);
+                        // A bulk import skips locked days (frozen means frozen)
+                        // rather than failing the whole file. Once per sheet
+                        // (= per site), never per row.
+                        var importLockedThrough = site.MicrotingUid is { } importSiteUid
+                            ? await DayLockHelper.LockedThroughAsync(dbContext, importSiteUid)
+                            : null;
 
                         var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
                         var sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
@@ -4022,6 +4097,14 @@ public class TimePlanningWorkingHoursService(
 
                             if (dateValue > DateTime.Now.AddDays(180))
                             {
+                                continue;
+                            }
+
+                            // Before the row is loaded, so a locked row is never
+                            // tracked and no later save can flush a change into it.
+                            if (DayLockHelper.IsLocked(importLockedThrough, dateValue))
+                            {
+                                lockedDaysSkipped++;
                                 continue;
                             }
 
@@ -4113,6 +4196,8 @@ public class TimePlanningWorkingHoursService(
                             }
                         }
                     }
+
+                    Console.WriteLine($"[Import] summary: skipped {lockedDaysSkipped} locked day(s).");
                 }
             }
         }

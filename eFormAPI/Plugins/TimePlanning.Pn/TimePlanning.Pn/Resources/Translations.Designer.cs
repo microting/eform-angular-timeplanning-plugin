@@ -308,5 +308,47 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("DayOverview", resourceCulture);
             }
         }
+
+        internal static string DayIsReconciled {
+            get {
+                return ResourceManager.GetString("DayIsReconciled", resourceCulture);
+            }
+        }
+
+        internal static string DayIsLockedByReconciledDay {
+            get {
+                return ResourceManager.GetString("DayIsLockedByReconciledDay", resourceCulture);
+            }
+        }
+
+        internal static string CannotReconcileTodayOrFuture {
+            get {
+                return ResourceManager.GetString("CannotReconcileTodayOrFuture", resourceCulture);
+            }
+        }
+
+        internal static string OnlyLatestReconciledDayCanBeUnlocked {
+            get {
+                return ResourceManager.GetString("OnlyLatestReconciledDayCanBeUnlocked", resourceCulture);
+            }
+        }
+
+        internal static string NothingIsReconciled {
+            get {
+                return ResourceManager.GetString("NothingIsReconciled", resourceCulture);
+            }
+        }
+
+        internal static string SuccessfullyReconciledDay {
+            get {
+                return ResourceManager.GetString("SuccessfullyReconciledDay", resourceCulture);
+            }
+        }
+
+        internal static string SuccessfullyUnlockedDay {
+            get {
+                return ResourceManager.GetString("SuccessfullyUnlockedDay", resourceCulture);
+            }
+        }
     }
 }
