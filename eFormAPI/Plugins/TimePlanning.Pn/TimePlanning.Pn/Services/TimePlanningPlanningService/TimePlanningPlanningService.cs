@@ -29,6 +29,7 @@ using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.TimePlanningBase.Infrastructure.Helpers;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
+using TimePlanning.Pn.Infrastructure.Interceptors;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 
 namespace TimePlanning.Pn.Services.TimePlanningPlanningService;
@@ -2268,6 +2269,238 @@ public class TimePlanningPlanningService(
                 ToValue = currBool.ToString(),
                 FieldType = "standard"
             });
+        }
+    }
+
+    /// <summary>
+    /// Loads a live (non-removed) PlanRegistration by id. Shared by every
+    /// single-row reconcile mutation below; each call site still owns its own
+    /// null check and PlanningNotFound response.
+    /// </summary>
+    private async Task<PlanRegistration?> FindActivePlanningAsync(int id)
+    {
+        return await dbContext.PlanRegistrations
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    /// <summary>
+    /// Sets Reconciled and ReconciledAt together and saves. I1: flag and
+    /// timestamp always change together. DateTime.Now, not UtcNow: the
+    /// tooltip renders this verbatim as "Afstemt <dato> kl. <tid>", and UTC
+    /// would read 1-2 hours off in Danish time. Consistent with the
+    /// CanReconcile comparison. Can throw DayLockedException; callers decide
+    /// how to handle that race.
+    /// </summary>
+    private async Task SetReconciledAsync(PlanRegistration planning, bool reconciled)
+    {
+        planning.Reconciled = reconciled;
+        planning.ReconciledAt = reconciled ? DateTime.Now : null;
+        planning.UpdatedByUserId = userService.UserId;
+        await planning.Update(dbContext);
+    }
+
+    public async Task<OperationResult> Reconcile(int id)
+    {
+        try
+        {
+            var planning = await FindActivePlanningAsync(id);
+
+            if (planning == null)
+            {
+                return new OperationResult(false, localizationService.GetString("PlanningNotFound"));
+            }
+
+            // Idempotent: re-reconciling an already reconciled day is a no-op
+            // success. Clients retry; that should not read as a failure.
+            if (planning.Reconciled)
+            {
+                return new OperationResult(true, localizationService.GetString("SuccessfullyReconciledDay"));
+            }
+
+            if (!DayLockHelper.CanReconcile(planning.Date))
+            {
+                return new OperationResult(false,
+                    localizationService.GetString("CannotReconcileTodayOrFuture"));
+            }
+
+            // Without this, reconciling a day BELOW an existing boundary passes
+            // CanReconcile, reaches Update, and the interceptor throws into the
+            // generic catch -- a 500-shaped "ErrorWhileUpdatingPlanning" instead
+            // of a message. That is exactly what Layer 2 exists to prevent.
+            var existingBoundary = await DayLockHelper.LockedThroughAsync(dbContext, planning.SdkSitId);
+            if (DayLockHelper.IsLocked(existingBoundary, planning.Date))
+            {
+                return new OperationResult(false,
+                    localizationService.GetString("DayIsLockedByReconciledDay"));
+            }
+
+            await SetReconciledAsync(planning, true);
+
+            return new OperationResult(true, localizationService.GetString("SuccessfullyReconciledDay"));
+        }
+        catch (DayLockedException)
+        {
+            // Expected and routine: a blocked edit is a normal outcome, not an
+            // incident. Do not report it to Sentry.
+            //
+            // The rejected entry stays tracked on `dbContext` (a request-scoped,
+            // injected context — see Task 4 amendment A1) after this throws.
+            // That is acceptable because we return immediately; no further
+            // save is attempted on this context for the rest of the request.
+            return new OperationResult(false,
+                localizationService.GetString("DayIsLockedByReconciledDay"));
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            logger.LogError(e, "TimePlanningPlanningService.Reconcile failed");
+            return new OperationResult(false, localizationService.GetString("ErrorWhileUpdatingPlanning"));
+        }
+    }
+
+    public async Task<OperationResult> Unreconcile(int id)
+    {
+        try
+        {
+            var planning = await FindActivePlanningAsync(id);
+
+            if (planning == null)
+            {
+                return new OperationResult(false, localizationService.GetString("PlanningNotFound"));
+            }
+            // Boundary check FIRST. If the idempotency check came first, a user
+            // clicking unlock on a cascade-locked day (Reconciled = false, deep
+            // inside the range) would be told "Dagen er låst op" while nothing
+            // happened.
+            var boundary = await DayLockHelper.LockedThroughAsync(dbContext, planning.SdkSitId);
+            if (boundary is null || planning.Date.Date != boundary.Value.Date)
+            {
+                return new OperationResult(false,
+                    localizationService.GetString("OnlyLatestReconciledDayCanBeUnlocked"));
+            }
+
+            if (!planning.Reconciled)
+            {
+                return new OperationResult(true, localizationService.GetString("SuccessfullyUnlockedDay"));
+            }
+
+            await SetReconciledAsync(planning, false);
+
+            return new OperationResult(true, localizationService.GetString("SuccessfullyUnlockedDay"));
+        }
+        catch (DayLockedException)
+        {
+            // Race: another request reconciled a newer day for this site
+            // between the boundary read above and this save, so `planning`'s
+            // day is no longer the boundary the interceptor will permit an
+            // unlock on. Routine, not an incident -- no Sentry, same as
+            // Reconcile's DayLockedException catch.
+            return new OperationResult(false,
+                localizationService.GetString("OnlyLatestReconciledDayCanBeUnlocked"));
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            logger.LogError(e, "TimePlanningPlanningService.Unreconcile failed");
+            return new OperationResult(false, localizationService.GetString("ErrorWhileUpdatingPlanning"));
+        }
+    }
+
+    public async Task<OperationDataResult<ReconcileThroughResultModel>> ReconcileThrough(
+        ReconcileThroughRequestModel model)
+    {
+        try
+        {
+            if (model == null || model.SiteIds.Count == 0)
+            {
+                return new OperationDataResult<ReconcileThroughResultModel>(false,
+                    localizationService.GetString("ErrorWhileUpdatingPlanning"));
+            }
+            if (!DayLockHelper.CanReconcile(model.Date))
+            {
+                return new OperationDataResult<ReconcileThroughResultModel>(false,
+                    localizationService.GetString("CannotReconcileTodayOrFuture"));
+            }
+
+            // Distinct: a duplicated site id in the request would otherwise be
+            // counted twice.
+            var siteIds = model.SiteIds.Distinct().ToList();
+            var boundaries = await DayLockHelper.LockedThroughForSitesAsync(dbContext, siteIds);
+            var result = new ReconcileThroughResultModel();
+            var target = model.Date.Date;
+
+            foreach (var siteId in siteIds)
+            {
+                // Already at or past the target: moving the boundary BACK would
+                // be an unlock, which is deliberately a separate, heavier action.
+                if (DayLockHelper.IsLocked(boundaries.GetValueOrDefault(siteId), target))
+                {
+                    result.SkippedAlreadyFurtherForward.Add(siteId);
+                    continue;
+                }
+
+                // The mark must land on a day that actually has a registration —
+                // a seal on an empty day means nothing.
+                var landing = await dbContext.PlanRegistrations
+                    .Where(x => x.SdkSitId == siteId)
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Date <= target)
+                    .OrderByDescending(x => x.Date)
+                    .FirstOrDefaultAsync();
+
+                if (landing == null)
+                {
+                    // A different reason from "already further forward", and the
+                    // spec distinguishes them -- do not merge the two lists.
+                    result.SkippedNoRegistration.Add(siteId);
+                    continue;
+                }
+
+                if (landing.Reconciled)
+                {
+                    // Already marked on exactly this day: nothing to do, and it
+                    // must not inflate Applied.
+                    result.AlreadyReconciledSiteIds.Add(siteId);
+                    continue;
+                }
+
+                try
+                {
+                    await SetReconciledAsync(landing, true);
+                }
+                catch (DayLockedException)
+                {
+                    // Race: another request moved this site's boundary between
+                    // the snapshot taken above and this write, so `landing` is
+                    // now at or before the NEW boundary -- the same meaning as
+                    // "already further forward". Routine, not an incident: no
+                    // Sentry, and the other sites in this request must not be
+                    // aborted because of it.
+                    //
+                    // Detach the rejected entry: it stays tracked on this
+                    // request-scoped `dbContext` after the throw, and every
+                    // later site's SaveChanges on the same context would
+                    // otherwise see it again and rethrow.
+                    dbContext.Entry(landing).State = EntityState.Detached;
+                    result.SkippedAlreadyFurtherForward.Add(siteId);
+                    continue;
+                }
+
+                result.Applied++;
+                // Per-worker, because the boundary is a staircase: one shared
+                // LandedOn would name the wrong date for most workers.
+                result.LandedOnBySiteId[siteId] = landing.Date;
+            }
+
+            return new OperationDataResult<ReconcileThroughResultModel>(true, result);
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            logger.LogError(e, "TimePlanningPlanningService.ReconcileThrough failed");
+            return new OperationDataResult<ReconcileThroughResultModel>(false,
+                localizationService.GetString("ErrorWhileUpdatingPlanning"));
         }
     }
 }

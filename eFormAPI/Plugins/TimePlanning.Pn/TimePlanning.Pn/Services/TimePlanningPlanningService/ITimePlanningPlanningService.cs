@@ -40,4 +40,8 @@ public interface ITimePlanningPlanningService
 
     Task<OperationResult> UpdateByCurrentUserNam(TimePlanningPlanningPrDayModel model);
     Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId);
+
+    Task<OperationResult> Reconcile(int id);
+    Task<OperationResult> Unreconcile(int id);
+    Task<OperationDataResult<ReconcileThroughResultModel>> ReconcileThrough(ReconcileThroughRequestModel model);
 }
