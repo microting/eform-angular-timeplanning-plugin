@@ -10,6 +10,7 @@ using Microting.TimePlanningBase.Infrastructure.Data;
 using NUnit.Framework;
 using Testcontainers.MariaDb;
 using TimePlanning.Pn.Infrastructure.Data.Seed;
+using TimePlanning.Pn.Infrastructure.Interceptors;
 
 #nullable enable
 namespace TimePlanning.Pn.Test;
@@ -38,6 +39,8 @@ public abstract class TestBaseSetup
             mySqlOptionsAction: builder => {
                 builder.EnableRetryOnFailure();
             });
+
+        optionsBuilder.AddInterceptors(ReconciledDayLockInterceptor.Instance);
 
         var backendConfigurationPnDbContext = new TimePlanningPnDbContext(optionsBuilder.Options);
 
@@ -118,6 +121,8 @@ public abstract class TestBaseSetup
             mySqlOptionsAction: builder => {
                 builder.EnableRetryOnFailure();
             });
+
+        optionsBuilder.AddInterceptors(ReconciledDayLockInterceptor.Instance);
 
         return new TimePlanningPnDbContext(optionsBuilder.Options);
     }

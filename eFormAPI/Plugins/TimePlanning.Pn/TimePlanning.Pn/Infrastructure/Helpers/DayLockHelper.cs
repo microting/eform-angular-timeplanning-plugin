@@ -4,6 +4,7 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microting.eForm.Infrastructure.Constants;
@@ -40,13 +41,14 @@ public static class DayLockHelper
     /// Every requested site gets an entry; sites with no reconciled day map to null.
     /// </summary>
     public static async Task<Dictionary<int, DateTime?>> LockedThroughForSitesAsync(
-        TimePlanningPnDbContext db, IReadOnlyCollection<int> sdkSitIds)
+        TimePlanningPnDbContext db, IReadOnlyCollection<int> sdkSitIds,
+        CancellationToken cancellationToken = default)
     {
         var found = await BoundaryRows(db)
             .Where(x => sdkSitIds.Contains(x.SdkSitId))
             .GroupBy(x => x.SdkSitId)
             .Select(g => new { SdkSitId = g.Key, Max = g.Max(x => x.Date) })
-            .ToListAsync()
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         var map = found.ToDictionary(x => x.SdkSitId, x => (DateTime?)x.Max);

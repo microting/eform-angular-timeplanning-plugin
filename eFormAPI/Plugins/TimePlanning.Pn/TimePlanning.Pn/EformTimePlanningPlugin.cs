@@ -27,6 +27,7 @@ using Microting.eForm.Infrastructure.Models;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
+using TimePlanning.Pn.Infrastructure.Interceptors;
 using TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
 using TimePlanning.Pn.Services.TimePlanningGpsCoordinateService;
 using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
@@ -186,7 +187,8 @@ public class EformTimePlanningPlugin : IEformPlugin
             {
                 builder.EnableRetryOnFailure();
                 builder.MigrationsAssembly(PluginAssembly().FullName);
-            }));
+            })
+            .AddInterceptors(ReconciledDayLockInterceptor.Instance));
 
         var contextFactory = new TimePlanningPnContextFactory();
         var context = contextFactory.CreateDbContext(new[] { connectionString });

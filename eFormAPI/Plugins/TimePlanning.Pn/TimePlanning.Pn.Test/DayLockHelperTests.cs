@@ -51,9 +51,16 @@ public class DayLockHelperTests : TestBaseSetup
     [Test]
     public async Task LockedThrough_SeveralReconciled_IsTheLatest()
     {
+        // The plain row sits ABOVE the boundary (2026-01-18, not the
+        // 14th): with the interceptor attached, creating an unreconciled row
+        // at or below an already-seeded boundary would throw during arrange,
+        // before this test ever got to its assertion. Seeding it above also
+        // strengthens the test: a plain row past the reconciled max proves
+        // MAX ignores non-reconciled rows, not just that it ignores earlier
+        // reconciled ones.
         await Seed(701, new DateTime(2026, 1, 12), reconciled: true);
         await Seed(701, new DateTime(2026, 1, 16), reconciled: true);
-        await Seed(701, new DateTime(2026, 1, 14), reconciled: false);
+        await Seed(701, new DateTime(2026, 1, 18), reconciled: false);
 
         var result = await DayLockHelper.LockedThroughAsync(TimePlanningPnDbContext!, 701);
 
