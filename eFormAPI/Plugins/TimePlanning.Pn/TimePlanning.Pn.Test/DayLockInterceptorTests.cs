@@ -10,10 +10,11 @@ using PlanRegistrationEntity = Microting.TimePlanningBase.Infrastructure.Data.En
 namespace TimePlanning.Pn.Test;
 
 /// <summary>
-/// The interceptor is the only layer that is COMPLETE -- it covers all 32
-/// PlanRegistration write sites and anything added later. These tests go
-/// through a context built exactly as production builds it (interceptor
-/// attached), so they prove the wiring, not just the class.
+/// The interceptor is the only layer that covers every write path -- all 32
+/// PlanRegistration write sites and anything added later (see its race note
+/// for the one gap). These tests prove the class's rule through the fixture
+/// context, which attaches the interceptor itself; DayLockWiringTests proves
+/// that production's own context builders attach it too.
 /// </summary>
 [TestFixture]
 public class DayLockInterceptorTests : TestBaseSetup
@@ -152,7 +153,7 @@ public class DayLockInterceptorTests : TestBaseSetup
     [Test]
     public async Task SettingTheTransferredToPayrollFlag_OnALockedDay_IsAllowed()
     {
-        // Mirrors PayrollExportService.ExportPayroll exactly (ruling F10):
+        // Mirrors PayrollExportService.ExportPayroll exactly (spec §11.2):
         // Reconciled and TransferredToPayroll are independent, so exporting a
         // reconciled period must not be blocked by the very lock reconciling
         // it created.

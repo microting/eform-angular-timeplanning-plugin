@@ -320,6 +320,15 @@ public class ContentHandoverService : IContentHandoverService
                     _localizationService.GetString("CannotHandoverToSameWorker"));
             }
 
+            // A handover touching a locked day could never be accepted (Accept
+            // refuses it), so it is refused here instead of left pending.
+            var blockingRow = await FirstLockedRowAsync(fromPR, toPR);
+            if (blockingRow != null)
+            {
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
+                    _localizationService.GetString(DayLockHelper.LockedMessageKey(blockingRow.Reconciled)));
+            }
+
             var shiftIndices = model.ShiftIndices ?? new List<int>();
 
             // Load existing pending requests scoped to (target, date). We'll
@@ -460,6 +469,20 @@ public class ContentHandoverService : IContentHandoverService
             return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                 _localizationService.GetString("ErrorCreatingHandoverRequest"));
         }
+    }
+
+    /// <summary>
+    /// The first of the two rows that sits on a locked day, or null. The rows
+    /// belong to two different workers, each with their own boundary, resolved
+    /// in one query. Checked so a refusal names the row that blocks it, in the
+    /// persist order Accept uses (receiver first, then sender).
+    /// </summary>
+    private async Task<PlanRegistration?> FirstLockedRowAsync(PlanRegistration fromPR, PlanRegistration toPR)
+    {
+        var boundaries = await DayLockHelper.LockedThroughForSitesAsync(
+            _dbContext, [fromPR.SdkSitId, toPR.SdkSitId]);
+        return new[] { toPR, fromPR }.FirstOrDefault(pr =>
+            DayLockHelper.IsLocked(boundaries, pr.SdkSitId, pr.Date));
     }
 
     private void FireCreatePush(int toSdkSitId, List<int> requestIds, int shiftCount, DateTime date)
@@ -644,15 +667,10 @@ public class ContentHandoverService : IContentHandoverService
                 "[Handover] Accept request {RequestId}: loaded fromPR {FromPRId} (sdkSitId={FromSdkSitId}) and toPR {ToPRId} (sdkSitId={ToSdkSitId}), shiftIndex={ShiftIndex}",
                 requestId, fromPR.Id, fromPR.SdkSitId, toPR.Id, toPR.SdkSitId, request.ShiftIndex);
 
-            // Two different workers, each with their own boundary. Checked
-            // before either row is touched: the receiver is persisted before
-            // the sender, so a lock refusing the sender afterwards would leave
-            // the shift on both days. Checked in that persist order, and the
-            // message says what the blocking row is.
-            var boundaries = await DayLockHelper.LockedThroughForSitesAsync(
-                _dbContext, [fromPR.SdkSitId, toPR.SdkSitId]);
-            var blockingRow = new[] { toPR, fromPR }.FirstOrDefault(pr =>
-                DayLockHelper.IsLocked(boundaries, pr.SdkSitId, pr.Date));
+            // Checked before either row is touched: the receiver is persisted
+            // before the sender, so a lock refusing the sender afterwards would
+            // leave the shift on both days.
+            var blockingRow = await FirstLockedRowAsync(fromPR, toPR);
             if (blockingRow != null)
             {
                 _logger.LogWarning(

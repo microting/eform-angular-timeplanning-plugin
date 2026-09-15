@@ -265,6 +265,8 @@ public class GoogleSheetHelper
             // MicrotingUid in columnSiteMap.
             var lockedThroughBySite = await DayLockHelper.LockedThroughForSitesAsync(
                 dbContext, oneMinuteTimelines.Keys.ToList());
+            // Observability only: the skip is silent otherwise.
+            var lockedDaysSkipped = 0;
 
             // Skip the header row (first row)
             for (var i = 1; i < values.Count; i++)
@@ -300,6 +302,7 @@ public class GoogleSheetHelper
                     if (site.MicrotingUid is { } lockSiteUid
                         && DayLockHelper.IsLocked(lockedThroughBySite, lockSiteUid, dateValue))
                     {
+                        lockedDaysSkipped++;
                         continue;
                     }
 
@@ -481,6 +484,8 @@ public class GoogleSheetHelper
                     }
                 }
             }
+
+            Console.WriteLine($"[PullEverythingFromGoogleSheet] summary: skipped {lockedDaysSkipped} locked day(s).");
         }
         else
         {

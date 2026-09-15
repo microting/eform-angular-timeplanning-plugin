@@ -71,9 +71,9 @@ public class DayLockHelperTests : TestBaseSetup
     [Test]
     public async Task LockedThrough_IgnoresRemovedRows()
     {
-        // Once Task 2's interceptor exists, any write that touches a
-        // PlanRegistration at or before the current boundary (I3) is
-        // rejected. That rules out the obvious seeding -- reconcile a row,
+        // The fixture context carries the day-lock interceptor, so any write
+        // that touches a PlanRegistration at or before the current boundary
+        // (I3) is rejected. That rules out the obvious seeding -- reconcile a row,
         // then soft-delete it in a LATER, separate save -- because by the
         // time of that second save the boundary would already be the row
         // being deleted, and the delete would land ON the boundary day.
@@ -85,9 +85,9 @@ public class DayLockHelperTests : TestBaseSetup
         // it via Delete() (PnBase.Delete only ever issues one SaveChanges
         // when there are pending changes). At the moment that save runs, the
         // DB boundary is still the 12th, so the write to the 18th is above
-        // the boundary and permitted -- both before Task 2's interceptor
-        // exists and after. The row ends up Removed, so it must never
-        // surface as the new boundary.
+        // the boundary and permitted, with or without the interceptor
+        // attached. The row ends up Removed, so it must never surface as the
+        // new boundary.
         await Seed(702, new DateTime(2026, 1, 12), reconciled: true);
         await Seed(702, new DateTime(2026, 1, 18), reconciled: false);
 

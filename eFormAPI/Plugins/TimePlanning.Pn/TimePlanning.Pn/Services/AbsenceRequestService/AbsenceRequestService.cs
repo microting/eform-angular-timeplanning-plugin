@@ -119,6 +119,18 @@ public class AbsenceRequestService : IAbsenceRequestService
                     _localizationService.GetString("DateToMustBeGreaterThanOrEqualToDateFrom"));
             }
 
+            // A request touching a locked day could never be approved (Approve
+            // refuses it), so it is refused here instead of left pending. Locked
+            // days are a prefix of the calendar, so the range touches one
+            // exactly when its first day is locked, and that day is the earliest
+            // blocking one Approve would name too.
+            var lockedThrough = await DayLockHelper.LockedThroughAsync(_dbContext, model.RequestedBySdkSitId);
+            if (DayLockHelper.IsLocked(lockedThrough, dateFrom))
+            {
+                return new OperationDataResult<AbsenceRequestModel>(false, _localizationService.GetString(
+                    await DayLockHelper.LockedMessageKeyAsync(_dbContext, model.RequestedBySdkSitId, dateFrom)));
+            }
+
             // Check for overlapping pending requests for the same worker
             var hasOverlap = await _dbContext.AbsenceRequests
                 .AnyAsync(ar => ar.RequestedBySdkSitId == model.RequestedBySdkSitId

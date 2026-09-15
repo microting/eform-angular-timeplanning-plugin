@@ -211,7 +211,10 @@
         <value>Only days before today can be reconciled.</value>
     </data>
     <data name="OnlyLatestReconciledDayCanBeUnlocked" xml:space="preserve">
-        <value>Unlock the most recent reconciled day first.</value>
+        <value>Unlock the most recent reconciled day first ({0}).</value>
+    </data>
+    <data name="NothingIsReconciled" xml:space="preserve">
+        <value>Nothing is reconciled for this worker.</value>
     </data>
     <data name="SuccessfullyReconciledDay" xml:space="preserve">
         <value>Day reconciled</value>

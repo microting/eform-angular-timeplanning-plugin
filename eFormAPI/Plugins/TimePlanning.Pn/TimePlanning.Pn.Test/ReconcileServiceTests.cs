@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -67,6 +68,10 @@ public class ReconcileServiceTests : TestBaseSetup
 
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
+        // The format overload echoes its arguments, so a test can assert what
+        // a message names (e.g. the day to unlock first), not just its key.
+        _localizationService.GetString(Arg.Any<string>(), Arg.Any<object[]>())
+            .Returns(x => x[0] + "|" + string.Join("|", (object[])x[1]));
 
         _coreService = Substitute.For<IEFormCoreService>();
         var core = await GetCore();
@@ -170,10 +175,11 @@ public class ReconcileServiceTests : TestBaseSetup
 
     /// <summary>
     /// UpdatePlanRegistrationsInPeriod's catch-all logs and SWALLOWS whatever
-    /// its try throws, so a lock rejection there (a missing guard on an Update
-    /// inside the try) would not fail Index. It does log at Error level, which
-    /// this catches. Inspects ReceivedCalls, because LogError is an extension
-    /// method over the generic Log&lt;TState&gt; and cannot be matched directly.
+    /// its try throws, except a lock rejection, which it lets through to fail
+    /// Index. Anything else swallowed there would not fail Index, but it does
+    /// log at Error level, which this catches. Inspects ReceivedCalls, because
+    /// LogError is an extension method over the generic Log&lt;TState&gt; and
+    /// cannot be matched directly.
     /// </summary>
     private void AssertNoErrorLogged()
     {
@@ -184,7 +190,8 @@ public class ReconcileServiceTests : TestBaseSetup
 
     /// <summary>
     /// The dashboard grid reads days BY POSITION, so the list must hold
-    /// exactly one entry per date of the window, in order (ruling F17).
+    /// exactly one entry per date of the window, in order (spec §6.3); a
+    /// missing entry would shift every later day one column left.
     /// </summary>
     private static void AssertOneDayPerDate(
         IReadOnlyList<TimePlanningPlanningPrDayModel> days, TimePlanningPlanningRequestModel window)
@@ -232,7 +239,8 @@ public class ReconcileServiceTests : TestBaseSetup
     /// <summary>
     /// Everything Index() needs to actually process a site: the SDK Site the
     /// row takes its name from and the plugin AssignedSite it iterates. Without
-    /// both, Index() skips the site and a lock test passes vacuously (ruling F7).
+    /// both, Index() skips the site, so a lock test would pass without ever
+    /// exercising the lock.
     /// </summary>
     private async Task<SdkSite> SeedAssignedSiteAsync(int siteUid, bool useGoogleSheetAsDefault = false)
     {
@@ -285,8 +293,9 @@ public class ReconcileServiceTests : TestBaseSetup
     /// <summary>
     /// A reconciled day (so the boundary) storing values a dashboard load
     /// rewrites in memory. That makes the loaded, TRACKED entity dirty -- the
-    /// precondition for the flush trap in ruling F15. Without it, merely
-    /// skipping the Update calls would look sufficient.
+    /// precondition for the flush trap: the next open day's save would flush
+    /// the dirty locked row and fail the load. Without it, merely skipping the
+    /// Update calls would look sufficient.
     ///
     /// IsSaturday is stored WRONG for the date, so the unconditional weekday
     /// assignment before the first Update (the one outside the try, whose
@@ -409,8 +418,22 @@ public class ReconcileServiceTests : TestBaseSetup
         var result = await _service.Unreconcile(earlier.Id);
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Message, Is.EqualTo("OnlyLatestReconciledDayCanBeUnlocked"),
-            "the puzzle rule: free the outermost piece first");
+        Assert.That(result.Message,
+            Is.EqualTo("OnlyLatestReconciledDayCanBeUnlocked|"
+                       + later.Date.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)),
+            "the puzzle rule: free the outermost piece first, and the message names it");
+    }
+
+    [Test]
+    public async Task Unreconcile_WhenNothingIsReconciled_SaysSo()
+    {
+        // No boundary at all, so there is no day the message could name.
+        var row = await SeedPlain(915, DateTime.Now.Date.AddDays(-5));
+
+        var result = await _service.Unreconcile(row.Id);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("NothingIsReconciled"));
     }
 
     [Test]
@@ -680,9 +703,8 @@ public class ReconcileServiceTests : TestBaseSetup
     /// WhereOpen keeps locked ROWS out of the load, but a locked date with NO
     /// row (a gap row the working-hours Index emits, and the page posts every
     /// row) is not in the load either way. Without the skip, CreatePlanning
-    /// creates -5 inside the lock; its own catch swallows the interceptor's
-    /// throw, the Added entity stays tracked, the next save (-2's create, then
-    /// -1's update, which has no catch) flushes it again, and the request fails.
+    /// creates -5 inside the lock, the interceptor refuses it, and the refusal
+    /// propagates through CreatePlanning's catch and fails the whole request.
     /// </summary>
     [Test]
     public async Task CreateUpdate_ALockedGapRowInTheMiddle_IsNotCreatedAndTheRestSaves()
@@ -862,15 +884,16 @@ public class ReconcileServiceTests : TestBaseSetup
 
     // ---------------------------------------------------------------------
     // Layer 3: recalculation skips locked days, and a dashboard load over a
-    // closed period still succeeds (ruling F15: a dirty locked entity left
-    // behind would be flushed by the next open day's save and fail the load).
-    // Each asserts the positional one-entry-per-date contract (ruling F17) and
-    // that nothing was rejected and swallowed inside the recompute's catch.
+    // closed period still succeeds (a dirty locked entity left behind would be
+    // flushed by the next open day's save and fail the load). Each asserts the
+    // positional one-entry-per-date contract (spec §6.3) and that nothing on
+    // the way was logged as an error.
     // ---------------------------------------------------------------------
 
     /// <summary>
     /// Run once per recompute branch: each branch has its own guarded Update
-    /// inside the catch-all, and AssertNoErrorLogged is what pins it.
+    /// inside the catch-all. A missing guard there throws the lock rejection
+    /// through the catch-all, which fails Index and so result.Success.
     /// </summary>
     [TestCase(false)]
     [TestCase(true)]
@@ -975,7 +998,7 @@ public class ReconcileServiceTests : TestBaseSetup
     }
 
     // ---------------------------------------------------------------------
-    // Task 6: the read model carries the lock state -- the row-level boundary
+    // The read model carries the lock state -- the row-level boundary
     // once per site, and Reconciled/ReconciledAt per day, so the client can
     // render locked and reconciled days without scanning cells.
     // ---------------------------------------------------------------------
@@ -1014,7 +1037,7 @@ public class ReconcileServiceTests : TestBaseSetup
     }
 
     /// <summary>
-    /// The trap the brief names: UpdatePlanRegistrationsInPeriod's per-day loop
+    /// The trap: UpdatePlanRegistrationsInPeriod's per-day loop
     /// runs over planningsInPeriod, and a window that is entirely locked with
     /// no existing rows leaves that list empty for the whole call -- the loop
     /// never executes once. LockedThrough must still be set, because it is

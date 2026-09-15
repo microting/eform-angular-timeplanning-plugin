@@ -333,6 +333,12 @@ namespace TimePlanning.Pn.Resources {
             }
         }
 
+        internal static string NothingIsReconciled {
+            get {
+                return ResourceManager.GetString("NothingIsReconciled", resourceCulture);
+            }
+        }
+
         internal static string SuccessfullyReconciledDay {
             get {
                 return ResourceManager.GetString("SuccessfullyReconciledDay", resourceCulture);

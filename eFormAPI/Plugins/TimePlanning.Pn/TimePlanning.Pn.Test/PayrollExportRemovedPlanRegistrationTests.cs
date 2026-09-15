@@ -135,7 +135,7 @@ public class PayrollExportRemovedPlanRegistrationTests : TestBaseSetup
     }
 
     /// <summary>
-    /// Spec §11.2 (ruling F10): reconciling a period must not block exporting
+    /// Spec §11.2: reconciling a period must not block exporting
     /// it. Export flags every exported row, locked or not, so without the
     /// interceptor's payroll-flag exemption the first locked row's Update is
     /// refused and the export fails with the file already produced.

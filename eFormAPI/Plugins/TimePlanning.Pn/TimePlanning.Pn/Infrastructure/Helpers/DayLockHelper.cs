@@ -1,3 +1,9 @@
+// NOTE: a deliberate copy of this file lives in eform-service-timeplanning-plugin
+// (ServiceTimePlanningPlugin/Infrastructure/Helpers/DayLockHelper.cs). The two
+// repos share only the base NuGet package. If you change the lock logic here,
+// change the twin too: a divergence lets background jobs write days the web
+// refuses. The twin omits the message and reconcile members, which background
+// jobs never need.
 #nullable enable
 namespace TimePlanning.Pn.Infrastructure.Helpers;
 

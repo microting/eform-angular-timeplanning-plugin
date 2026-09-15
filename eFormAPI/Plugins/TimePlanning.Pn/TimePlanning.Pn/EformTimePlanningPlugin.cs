@@ -181,14 +181,11 @@ public class EformTimePlanningPlugin : IEformPlugin
 
         _connectionString = connectionString;
         services.AddSingleton<ITimePlanningDbContextHelper>(provider => new TimePlanningDbContextHelper(_connectionString));
+        // Keep the options inside ConfigureTimePlanningDbContext: that is where
+        // DayLockWiringTests checks the day-lock interceptor is attached.
         services.AddDbContextPool<TimePlanningPnDbContext>(o =>
-            o.UseMySql(connectionString, new MariaDbServerVersion(
-                ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
-            {
-                builder.EnableRetryOnFailure();
-                builder.MigrationsAssembly(PluginAssembly().FullName);
-            })
-            .AddInterceptors(ReconciledDayLockInterceptor.Instance));
+            ConfigureTimePlanningDbContext(o, connectionString,
+                new MariaDbServerVersion(ServerVersion.AutoDetect(connectionString))));
 
         var contextFactory = new TimePlanningPnContextFactory();
         var context = contextFactory.CreateDbContext(new[] { connectionString });
@@ -220,6 +217,24 @@ public class EformTimePlanningPlugin : IEformPlugin
             Console.WriteLine($"[CorruptedPauseIdRepair] stopped by the day lock, startup continues: {ex.Message}");
             SentrySdk.CaptureException(ex);
         }
+    }
+
+    /// <summary>
+    /// The options of the pooled TimePlanningPnDbContext registration. A
+    /// method, not an inline lambda, so DayLockWiringTests can prove the
+    /// day-lock interceptor is attached. The caller passes the server version
+    /// so that test opens no connection; the registration passes
+    /// ServerVersion.AutoDetect, as it always has.
+    /// </summary>
+    public static void ConfigureTimePlanningDbContext(
+        DbContextOptionsBuilder options, string connectionString, ServerVersion serverVersion)
+    {
+        options.UseMySql(connectionString, serverVersion, mySqlOptionsAction: builder =>
+            {
+                builder.EnableRetryOnFailure();
+                builder.MigrationsAssembly(typeof(EformTimePlanningPlugin).Assembly.FullName);
+            })
+            .AddInterceptors(ReconciledDayLockInterceptor.Instance);
     }
 
     public void Configure(IApplicationBuilder appBuilder)

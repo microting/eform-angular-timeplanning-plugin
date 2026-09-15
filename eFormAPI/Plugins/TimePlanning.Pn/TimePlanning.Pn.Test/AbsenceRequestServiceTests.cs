@@ -116,6 +116,47 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         Assert.That(result.Message, Is.EqualTo("OverlappingAbsenceRequestExists"));
     }
 
+    /// <summary>
+    /// A request touching a locked day could never be approved, so it must
+    /// not be created and left pending. The range runs past the boundary into
+    /// an open day, so only the lock check can refuse it. The message says
+    /// what the first requested day IS: locked by the boundary (no row of its
+    /// own), or the reconciled boundary day itself.
+    /// </summary>
+    [TestCase(3, "DayIsLockedByReconciledDay",
+        TestName = "CreateAsync_RefusesAndCreatesNothing_WhenTheFirstDayIsBelowTheBoundary")]
+    [TestCase(4, "DayIsReconciled",
+        TestName = "CreateAsync_RefusesAndCreatesNothing_WhenTheFirstDayIsTheReconciledDay")]
+    public async Task CreateAsync_RefusesAndCreatesNothing_WhenTheFirstRequestedDayIsLocked(
+        int firstRequestedDayOfMarch, string expectedMessage)
+    {
+        const int sdkSitId = 12;
+        await new PlanRegistration
+        {
+            SdkSitId = sdkSitId,
+            Date = new DateTime(2024, 3, 4),
+            Reconciled = true,
+            ReconciledAt = new DateTime(2024, 3, 6, 9, 12, 0),
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+
+        var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
+        {
+            RequestedBySdkSitId = sdkSitId,
+            DateFrom = new DateTime(2024, 3, firstRequestedDayOfMarch),
+            DateTo = new DateTime(2024, 3, 6),
+            MessageId = 2, // Vacation
+            RequestComment = "Spans the boundary"
+        });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo(expectedMessage));
+        Assert.That(await TimePlanningPnDbContext.AbsenceRequests.AsNoTracking().CountAsync(), Is.Zero,
+            "a request that can never be approved must not be created");
+        Assert.That(await TimePlanningPnDbContext.AbsenceRequestDays.AsNoTracking().CountAsync(), Is.Zero);
+    }
+
     [Test]
     public async Task ApproveAsync_UpdatesPlanRegistrations_AndSetsAbsenceFlags()
     {

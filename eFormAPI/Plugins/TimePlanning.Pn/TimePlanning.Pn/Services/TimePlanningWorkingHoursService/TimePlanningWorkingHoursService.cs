@@ -35,6 +35,7 @@ using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
+using TimePlanning.Pn.Infrastructure.Interceptors;
 using TimePlanning.Pn.Infrastructure.Data.Seed.Data;
 using Microting.TimePlanningBase.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
@@ -467,9 +468,10 @@ public class TimePlanningWorkingHoursService(
             // crafted POST cannot write one.
             var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, model.SiteId);
             // Locked rows are never even loaded, so nothing below can mutate
-            // one and have a later save flush it (ruling F15). The forward
-            // cascade walks this same list, so it skips them too. Not redundant
-            // with the loop's skip: only this keeps the cascade out of the lock.
+            // one and have a later save (which saves the whole context) flush
+            // it. The forward cascade walks this same list, so it skips them
+            // too. Not redundant with the loop's skip: only this keeps the
+            // cascade out of the lock.
             var planRegistrations = await dbContext.PlanRegistrations
                 .Where(x => x.SdkSitId == model.SiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -637,7 +639,11 @@ public class TimePlanningWorkingHoursService(
 
                 await planRegistration.Create(dbContext);
             }
-            catch (Exception e)
+            // A lock refusal passes through to CreateUpdate's catch. CreateUpdate
+            // skips locked days before calling this, so one only arrives when the
+            // boundary moved mid-request. Swallowed, the rejected Added entry
+            // stays tracked and the next save in the request fails on it anyway.
+            catch (Exception e) when (e is not DayLockedException)
             {
                 SentrySdk.CaptureException(e);
                 logger.LogError(e.Message);
@@ -4011,6 +4017,8 @@ public class TimePlanningWorkingHoursService(
                         return new OperationResult(false, localizationService.GetString("FileFormatError"));
                     }
 
+                    // Observability only: the locked-day skip below is silent otherwise.
+                    var lockedDaysSkipped = 0;
                     foreach (Sheet sheet in sheets)
                     {
                         if (sheet.Name?.Value == null || sheet.Id?.Value == null)
@@ -4096,6 +4104,7 @@ public class TimePlanningWorkingHoursService(
                             // tracked and no later save can flush a change into it.
                             if (DayLockHelper.IsLocked(importLockedThrough, dateValue))
                             {
+                                lockedDaysSkipped++;
                                 continue;
                             }
 
@@ -4187,6 +4196,8 @@ public class TimePlanningWorkingHoursService(
                             }
                         }
                     }
+
+                    Console.WriteLine($"[Import] summary: skipped {lockedDaysSkipped} locked day(s).");
                 }
             }
         }

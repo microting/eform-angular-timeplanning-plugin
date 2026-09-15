@@ -33,7 +33,7 @@ public abstract class TestBaseSetup
         var optionsBuilder = new DbContextOptionsBuilder<TimePlanningPnDbContext>();
 
         optionsBuilder.UseMySql(
-            connectionStr.Replace("myDb", "420_eform-angular-items-planning-plugin").Replace("bla", "root"),
+            PluginConnectionString,
             new MariaDbServerVersion(
                 ServerVersion.AutoDetect(connectionStr)),
             mySqlOptionsAction: builder => {
@@ -104,6 +104,15 @@ public abstract class TestBaseSetup
     }
 
     /// <summary>
+    /// The connection string of the plugin database <see cref="Setup"/>
+    /// migrates, for tests that must build a context the way production does
+    /// (e.g. through TimePlanningDbContextHelper) rather than through this
+    /// fixture's own builders.
+    /// </summary>
+    protected string PluginConnectionString => _mariadbTestcontainer.GetConnectionString()
+        .Replace("myDb", "420_eform-angular-items-planning-plugin").Replace("bla", "root");
+
+    /// <summary>
     /// Builds a NEW TimePlanningPnDbContext against the same (already
     /// migrated) plugin database as <see cref="TimePlanningPnDbContext"/> —
     /// WITHOUT dropping it. Use this to make ITimePlanningDbContextHelper
@@ -116,7 +125,7 @@ public abstract class TestBaseSetup
         var optionsBuilder = new DbContextOptionsBuilder<TimePlanningPnDbContext>();
 
         optionsBuilder.UseMySql(
-            connectionStr.Replace("myDb", "420_eform-angular-items-planning-plugin").Replace("bla", "root"),
+            PluginConnectionString,
             new MariaDbServerVersion(ServerVersion.AutoDetect(connectionStr)),
             mySqlOptionsAction: builder => {
                 builder.EnableRetryOnFailure();

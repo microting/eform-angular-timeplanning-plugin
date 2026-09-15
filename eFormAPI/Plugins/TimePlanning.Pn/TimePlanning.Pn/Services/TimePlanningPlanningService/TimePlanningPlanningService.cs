@@ -36,6 +36,7 @@ namespace TimePlanning.Pn.Services.TimePlanningPlanningService;
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure.Models.Planning;
@@ -2426,9 +2427,9 @@ public class TimePlanningPlanningService(
             // Expected and routine: a blocked edit is a normal outcome, not an
             // incident. Do not report it to Sentry.
             //
-            // The rejected entry stays tracked on `dbContext` (a request-scoped,
-            // injected context — see Task 4 amendment A1) after this throws.
-            // That is acceptable because we return immediately; no further
+            // The rejected entry stays tracked on `dbContext` after this throws.
+            // That context is the request-scoped, injected one, so the entry
+            // dies with the request, and we return immediately: no further
             // save is attempted on this context for the rest of the request.
             return new OperationResult(false,
                 localizationService.GetString("DayIsLockedByReconciledDay"));
@@ -2456,10 +2457,13 @@ public class TimePlanningPlanningService(
             // inside the range) would be told "Dagen er låst op" while nothing
             // happened.
             var boundary = await DayLockHelper.LockedThroughAsync(dbContext, planning.SdkSitId);
-            if (boundary is null || planning.Date.Date != boundary.Value.Date)
+            if (boundary is null)
             {
-                return new OperationResult(false,
-                    localizationService.GetString("OnlyLatestReconciledDayCanBeUnlocked"));
+                return new OperationResult(false, localizationService.GetString("NothingIsReconciled"));
+            }
+            if (planning.Date.Date != boundary.Value.Date)
+            {
+                return OnlyLatestReconciledDayCanBeUnlocked(boundary.Value);
             }
 
             if (!planning.Reconciled)
@@ -2471,15 +2475,15 @@ public class TimePlanningPlanningService(
 
             return new OperationResult(true, localizationService.GetString("SuccessfullyUnlockedDay"));
         }
-        catch (DayLockedException)
+        catch (DayLockedException e)
         {
             // Race: another request reconciled a newer day for this site
             // between the boundary read above and this save, so `planning`'s
             // day is no longer the boundary the interceptor will permit an
             // unlock on. Routine, not an incident -- no Sentry, same as
-            // Reconcile's DayLockedException catch.
-            return new OperationResult(false,
-                localizationService.GetString("OnlyLatestReconciledDayCanBeUnlocked"));
+            // Reconcile's DayLockedException catch. The exception carries the
+            // new boundary, so naming it costs no query.
+            return OnlyLatestReconciledDayCanBeUnlocked(e.LockedThrough);
         }
         catch (Exception e)
         {
@@ -2488,6 +2492,15 @@ public class TimePlanningPlanningService(
             return new OperationResult(false, localizationService.GetString("ErrorWhileUpdatingPlanning"));
         }
     }
+
+    /// <summary>
+    /// The unlock refusal names the day to unlock first, so the user does not
+    /// have to hunt for it in the grid (spec §7).
+    /// </summary>
+    private OperationResult OnlyLatestReconciledDayCanBeUnlocked(DateTime boundary)
+        => new(false, localizationService.GetString(
+            "OnlyLatestReconciledDayCanBeUnlocked",
+            boundary.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)));
 
     public async Task<OperationDataResult<ReconcileThroughResultModel>> ReconcileThrough(
         ReconcileThroughRequestModel model)

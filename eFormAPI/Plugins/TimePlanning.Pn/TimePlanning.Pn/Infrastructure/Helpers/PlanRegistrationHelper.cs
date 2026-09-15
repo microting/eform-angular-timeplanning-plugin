@@ -14,6 +14,7 @@ using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Microting.TimePlanningBase.Infrastructure.Helpers;
 using Sentry;
+using TimePlanning.Pn.Infrastructure.Interceptors;
 using TimePlanning.Pn.Infrastructure.Models.Holiday;
 using TimePlanning.Pn.Infrastructure.Models.Planning;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
@@ -859,7 +860,12 @@ public static class PlanRegistrationHelper
                         }
                     }
                 }
-                catch (Exception e)
+                // A lock refusal passes through. Every Update in this try is
+                // skipped for a locked day, so one only arrives when the boundary
+                // moved mid-load or a guard is missing. It must fail the load, not
+                // be logged as a PlanText problem: swallowed, the rejected entry
+                // stays tracked and the next save fails on it anyway.
+                catch (Exception e) when (e is not DayLockedException)
                 {
                     logger.LogError(
                         $"Could not parse PlanText for planning with id: {planRegistration.Id} the PlanText was: {planRegistration.PlanText}");

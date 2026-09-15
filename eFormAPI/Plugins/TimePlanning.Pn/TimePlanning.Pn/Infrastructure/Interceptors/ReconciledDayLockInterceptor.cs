@@ -1,3 +1,8 @@
+// NOTE: a deliberate copy of this file lives in eform-service-timeplanning-plugin
+// (ServiceTimePlanningPlugin/Infrastructure/Interceptors/ReconciledDayLockInterceptor.cs).
+// The two repos share only the base NuGet package. If you change the lock logic
+// here, change the twin too: a divergence lets background jobs write days the
+// web refuses.
 #nullable enable
 namespace TimePlanning.Pn.Infrastructure.Interceptors;
 
@@ -36,7 +41,15 @@ public class DayLockedException(int sdkSitId, DateTime date, DateTime lockedThro
 }
 
 /// <summary>
-/// Enforces invariant I3 across every PlanRegistration write path.
+/// Enforces invariant I3 on every PlanRegistration write path; see the race
+/// note below for the one gap.
+///
+/// RACE NOTE. The boundary query and the write are separate statements with no
+/// transaction around them, so a reconcile committed between the two lets one
+/// write through onto a day that just became locked. This is race-only and
+/// accepted. The services' up-front guards read the boundary earlier, but they
+/// only pick the friendly message: a reconcile committed after a guard ran is
+/// still refused here, at save time, as a DayLockedException.
 ///
 /// STATELESS BY DESIGN. The pooled context registration
 /// (EformTimePlanningPlugin.AddDbContextPool) reuses context instances, so an
@@ -96,8 +109,10 @@ public class ReconciledDayLockInterceptor : SaveChangesInterceptor
         // Sync-over-async is safe here: ASP.NET Core requests run with no
         // SynchronizationContext, and GuardAsync/LockedThroughForSitesAsync use
         // ConfigureAwait(false) throughout, so there is no continuation to
-        // deadlock on. This path exists only because the plugin's own seed
-        // code calls the synchronous SaveChanges; those seeds never touch
+        // deadlock on. No production path reaches this: the plugin's seed code
+        // is the only caller of the synchronous SaveChanges, and in production
+        // it runs on the factory context, which has no interceptor. Only the
+        // test fixture seeds through a guarded context. The seeds never touch
         // PlanRegistration, so GuardAsync returns before awaiting anything.
         GuardAsync(eventData.Context, CancellationToken.None).GetAwaiter().GetResult();
         return base.SavingChanges(eventData, result);
@@ -184,7 +199,8 @@ public class ReconciledDayLockInterceptor : SaveChangesInterceptor
 
             // The two permitted writes inside the locked range: clearing the
             // flag on the boundary day itself (that is what unlocking IS), and
-            // a payroll-flag-only write on any locked day (ruling F10). Both
+            // a payroll-flag-only write on any locked day (see
+            // PayrollFlagProperties for why exporting must stay possible). Both
             // are evaluated against the entry's CURRENT site's boundary --
             // that is the only boundary either exemption is ever about -- and
             // both already fail whenever Date or SdkSitId is among the
