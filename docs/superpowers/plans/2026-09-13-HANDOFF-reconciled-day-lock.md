@@ -1,4 +1,6 @@
-# STATUS — Reconciled ("Afstemt") day lock — PARKED 2026-09-13
+# HANDOFF — Reconciled ("Afstemt") day lock
+
+**Parked 2026-09-13. This file is the entry point — read it before the spec or the plan.**
 
 **State:** design and plan complete and reviewed. **No implementation code written.**
 
@@ -19,18 +21,51 @@ da5cd018  docs: implementation plan for the Reconciled day lock
 
 ## To pick this up
 
-1. `git checkout docs/reconciled-day-lock-spec`
-2. Read the spec, then the plan. The plan's Global Constraints section carries every
-   project-wide rule; each task is self-contained from there.
-3. Decide the one open question below.
-4. Push the docs branch and PR it, or fold the docs into the implementation branch.
-5. Execute with `superpowers:subagent-driven-development` — one fresh subagent per task,
-   review between tasks.
+**Announce the dev-mode gate first** (CLAUDE.md requires it), then:
 
-**Natural stopping point:** after Task 6 the backend is complete and enforceable. Tasks 7-14
-(service repo, frontend, styles, e2e) can land separately.
+1. Read this file, then the spec, then the plan. The plan's Global Constraints section
+   carries every project-wide rule; each task is self-contained from there.
+2. Settle the open decision below with the user.
+3. Decide whether to push this docs branch and PR it, or fold the docs into the
+   implementation branch. Note the dependency-alignment map (`3f33a08e`) rode along on the
+   same branch and is unrelated work — split it out if this becomes a PR.
+4. `stable` has moved since parking (`9e2ae84f`, `82348e71`, `1ef699be` — none touch the
+   lock). Rebase or merge before starting.
+5. Execute with **`superpowers:subagent-driven-development`** — one fresh subagent per
+   task, review between tasks.
 
----
+**Follow the normal development cycle for every task** (CLAUDE.md): branch off `stable`,
+write or update tests, verify what can be verified locally (`dotnet build` only — see
+below), run the **dual review gate** (`superpowers:requesting-code-review` AND a
+`code-simplifier` subagent, dispatched in parallel) before committing, stage files by
+name, PR into `stable`, then watch CI to a verdict.
+
+**Natural stopping point:** after Task 6 the backend is complete and enforceable. Tasks
+7-14 (service repo, frontend, styles, e2e) can land separately.
+
+### What this feature does
+
+Marking a worker's day **Afstemt** freezes that day and every earlier day for that worker
+against web edits, mobile registrations and background recalculation. Earlier days lock
+**without** being marked `Reconciled`. A day can only be unlocked once every day after it
+is unlocked — like a Chinese ring puzzle.
+
+### House rules that bite here
+
+- **Dev mode: NONE — edit the source repos directly.** Do **not** run `devgetchanges.sh`;
+  the host-app mirror is stale (Aug 14) and syncing from it would overwrite recent work.
+- **Tests run ONLY in CI.** Never run `dotnet test`, `playwright test`, `jest` or
+  `npm test` locally — a PreToolUse hook blocks them. `dotnet build` is allowed and
+  expected. Push and watch `gh pr checks <n>`.
+- **New C# test classes must be added to the shard filters in BOTH**
+  `.github/workflows/dotnet-core-pr.yml` **and** `dotnet-core-master.yml`, or they
+  silently never run.
+- **Never commit to `stable`.** Branch, PR in.
+- **SCSS lives in `eform-angular-frontend`**, never per-plugin — Task 10 is a separate
+  repo and a separate PR. Expect three FOSSA checks to fail on that repo's PRs; they are
+  non-gating.
+- **User-facing copy must never explain a restriction by referring to what an
+  administrator may do** ("admin = Microting"). State what the day *is*.
 
 ## THE OPEN DECISION — needed before Task 9
 
