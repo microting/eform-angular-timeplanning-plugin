@@ -234,4 +234,13 @@ public class TimePlanningPlanningPrDayModel
     public DateTime? Pause5StoppedAt { get; set; }
     public double NettoHoursOverride { get; set; }
     public bool NettoHoursOverrideActive { get; set; }
+
+    /// <summary>The stored mark: true on every day the worker reconciled (there
+    /// can be several). Days before the newest mark are locked without being
+    /// marked. Whether a day is locked, and which day can be unlocked, comes
+    /// from LockedThrough on the row, never from this flag alone.</summary>
+    public bool Reconciled { get; set; }
+
+    /// <summary>When this day was reconciled (server local time); null when not reconciled.</summary>
+    public DateTime? ReconciledAt { get; set; }
 }

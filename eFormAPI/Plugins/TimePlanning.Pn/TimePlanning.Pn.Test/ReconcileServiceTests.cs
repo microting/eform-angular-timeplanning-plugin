@@ -973,4 +973,81 @@ public class ReconcileServiceTests : TestBaseSetup
                 "the missing locked dates are placeholders on the mobile path too");
         });
     }
+
+    // ---------------------------------------------------------------------
+    // Task 6: the read model carries the lock state -- the row-level boundary
+    // once per site, and Reconciled/ReconciledAt per day, so the client can
+    // render locked and reconciled days without scanning cells.
+    // ---------------------------------------------------------------------
+
+    [Test]
+    public async Task Index_ProjectsReconciledStateOntoTheReadModel()
+    {
+        await using var baseDbContext = GetBaseDbContext();
+        var svc = await BuildAdminIndexServiceAsync(baseDbContext);
+        await SeedAssignedSiteAsync(912);
+        // Locked by derivation only -- earlier than the boundary, never itself
+        // marked Reconciled.
+        var earlier = await SeedPlain(912, DateTime.Now.Date.AddDays(-6));
+        var boundary = await SeedReconciledBoundaryAsync(912, DateTime.Now.Date.AddDays(-4));
+        var window = new TimePlanningPlanningRequestModel
+        {
+            DateFrom = DateTime.Now.Date.AddDays(-6),
+            DateTo = DateTime.Now.Date
+        };
+
+        var result = await svc.Index(window);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var siteRow = result.Model.Single(x => x.SiteId == 912);
+        var boundaryDay = siteRow.PlanningPrDayModels.Single(d => d.Date.Date == boundary.Date.Date);
+        var earlierDay = siteRow.PlanningPrDayModels.Single(d => d.Date.Date == earlier.Date.Date);
+        Assert.Multiple(() =>
+        {
+            Assert.That(siteRow.LockedThrough, Is.EqualTo(boundary.Date),
+                "the client needs the boundary once per row, not per cell");
+            Assert.That(boundaryDay.Reconciled, Is.True);
+            Assert.That(boundaryDay.ReconciledAt, Is.Not.Null);
+            Assert.That(earlierDay.Reconciled, Is.False,
+                "locked by derivation, not individually marked -- LockedThrough covers it");
+        });
+    }
+
+    /// <summary>
+    /// The trap the brief names: UpdatePlanRegistrationsInPeriod's per-day loop
+    /// runs over planningsInPeriod, and a window that is entirely locked with
+    /// no existing rows leaves that list empty for the whole call -- the loop
+    /// never executes once. LockedThrough must still be set, because it is
+    /// resolved unconditionally before the loop, not inside it.
+    /// </summary>
+    [Test]
+    public async Task Index_WhenTheEntireWindowIsLockedWithNoRows_StillReturnsLockedThrough()
+    {
+        await using var baseDbContext = GetBaseDbContext();
+        var svc = await BuildAdminIndexServiceAsync(baseDbContext);
+        await SeedAssignedSiteAsync(914);
+        var boundary = await SeedReconciledBoundaryAsync(914, DateTime.Now.Date.AddDays(-5));
+        // Entirely before the boundary, so every day here is locked -- and
+        // gap-fill must not create rows inside a frozen period, so this
+        // window has zero PlanRegistrations of its own.
+        var window = new TimePlanningPlanningRequestModel
+        {
+            DateFrom = DateTime.Now.Date.AddDays(-20),
+            DateTo = DateTime.Now.Date.AddDays(-15)
+        };
+
+        var result = await svc.Index(window);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var siteRow = result.Model.Single(x => x.SiteId == 914);
+        var rowsInWindow = await TimePlanningPnDbContext!.PlanRegistrations
+            .CountAsync(x => x.SdkSitId == 914 && x.Date >= window.DateFrom && x.Date <= window.DateTo);
+        Assert.Multiple(() =>
+        {
+            Assert.That(rowsInWindow, Is.Zero, "the window must genuinely have no rows of its own");
+            Assert.That(siteRow.LockedThrough, Is.EqualTo(boundary.Date),
+                "a fully-locked window with no rows must still carry the boundary, " +
+                "or the client renders an entirely locked worker as fully editable");
+        });
+    }
 }

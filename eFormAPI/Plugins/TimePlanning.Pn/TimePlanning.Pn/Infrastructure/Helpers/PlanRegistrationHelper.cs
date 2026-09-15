@@ -424,6 +424,10 @@ public static class PlanRegistrationHelper
         // skipped rather than raising. Without this, the interceptor turns
         // every visit to a closed month into a 500.
         var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, dbAssignedSite.SiteId);
+        // Set once, here, before the per-day loop: a worker with NO rows in
+        // the window never enters that loop at all, and would otherwise leave
+        // LockedThrough null — rendering a fully-locked month as editable.
+        siteModel.LockedThrough = lockedThrough;
         foreach (var plan in planningsInPeriod)
         {
             var planRegistration = await dbContext.PlanRegistrations.AsTracking().FirstAsync(x => x.Id == plan.Id);
@@ -1130,6 +1134,8 @@ public static class PlanRegistrationHelper
             planningModel.IsDoubleShift = planningModel.Start2StartedAt != planningModel.Stop2StoppedAt;
             planningModel.NettoHoursOverride = planRegistration.NettoHoursOverride;
             planningModel.NettoHoursOverrideActive = planRegistration.NettoHoursOverrideActive;
+            planningModel.Reconciled = planRegistration.Reconciled;
+            planningModel.ReconciledAt = planRegistration.ReconciledAt;
 
             // Approach C READ projection: for any shift with a pause override,
             // present a single synthesized pause pair (sum = override) and empty
