@@ -239,6 +239,22 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
+            // Checked before anything is persisted: the status below is saved
+            // BEFORE the per-day loop, so letting the lock refuse a day
+            // part-way through would leave the request Approved with only some
+            // of its days flagged. One boundary query for the worker. The
+            // earliest locked day blocks; the message says what that day is.
+            var lockedThrough = await DayLockHelper.LockedThroughAsync(_dbContext, request.RequestedBySdkSitId);
+            var blockingDay = request.Days!
+                .OrderBy(day => day.Date)
+                .FirstOrDefault(day => DayLockHelper.IsLocked(lockedThrough, day.Date));
+            if (blockingDay != null)
+            {
+                return new OperationResult(false, _localizationService.GetString(
+                    await DayLockHelper.LockedMessageKeyAsync(
+                        _dbContext, request.RequestedBySdkSitId, blockingDay.Date)));
+            }
+
             // Apply changes without an explicit transaction.
             // NOTE: Update() methods internally handle persistence, and using
             // an explicit BeginTransactionAsync here was causing a silent

@@ -50,12 +50,14 @@ public class PayrollExportRemovedPlanRegistrationTests : TestBaseSetup
     }
 
     private async Task<PlanRegistration> SeedPlanRegistrationWithPayLine(
-        int sdkSitId, DateTime date, double hours, bool removed)
+        int sdkSitId, DateTime date, double hours, bool removed, bool reconciled = false)
     {
         var pr = new PlanRegistration
         {
             SdkSitId = sdkSitId,
             Date = date,
+            Reconciled = reconciled,
+            ReconciledAt = reconciled ? new DateTime(2026, 2, 2, 9, 12, 0) : (DateTime?)null,
             CreatedByUserId = 1,
             UpdatedByUserId = 1
         };
@@ -130,5 +132,48 @@ public class PayrollExportRemovedPlanRegistrationTests : TestBaseSetup
         Assert.That(result.Success, Is.False);
         Assert.That(result.ErrorMessage, Is.EqualTo("NoPayrollDataForPeriod"),
             "A removed PlanRegistration must not be exported as payable hours");
+    }
+
+    /// <summary>
+    /// Spec §11.2 (ruling F10): reconciling a period must not block exporting
+    /// it. Export flags every exported row, locked or not, so without the
+    /// interceptor's payroll-flag exemption the first locked row's Update is
+    /// refused and the export fails with the file already produced.
+    /// </summary>
+    [Test]
+    public async Task ExportPayroll_FlagsRowsInsideAReconciledPeriod()
+    {
+        var periodStart = new DateTime(2026, 1, 1);
+        var periodEnd = new DateTime(2026, 1, 31);
+
+        var settings = new PayrollIntegrationSettings
+        {
+            PayrollSystem = 1,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await settings.Create(TimePlanningPnDbContext);
+
+        // Lock-safe order: the day below the boundary is created BEFORE the
+        // boundary day is reconciled.
+        var belowBoundary = await SeedPlanRegistrationWithPayLine(
+            400, new DateTime(2026, 1, 13), 7.0, removed: false);
+        var boundary = await SeedPlanRegistrationWithPayLine(
+            400, new DateTime(2026, 1, 14), 8.0, removed: false, reconciled: true);
+
+        var result = await _service.ExportPayroll(periodStart, periodEnd);
+
+        Assert.That(result.Success, Is.True, result.ErrorMessage);
+        foreach (var id in new[] { belowBoundary.Id, boundary.Id })
+        {
+            var row = await TimePlanningPnDbContext.PlanRegistrations
+                .AsNoTracking().FirstAsync(x => x.Id == id);
+            Assert.That(row.TransferredToPayroll, Is.True, $"row {id} must be flagged as exported");
+            Assert.That(row.TransferredToPayrollAt, Is.Not.Null);
+        }
+
+        var reloadedBoundary = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().FirstAsync(x => x.Id == boundary.Id);
+        Assert.That(reloadedBoundary.Reconciled, Is.True, "exporting must not unlock the day");
     }
 }

@@ -2313,7 +2313,7 @@ public class TimePlanningPlanningService(
         var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, planning.SdkSitId);
         return DayLockHelper.IsLocked(lockedThrough, planning.Date)
             ? new OperationResult(false, localizationService.GetString(
-                planning.Reconciled ? "DayIsReconciled" : "DayIsLockedByReconciledDay"))
+                DayLockHelper.LockedMessageKey(planning.Reconciled)))
             : null;
     }
 
@@ -2516,7 +2516,7 @@ public class TimePlanningPlanningService(
             {
                 // Already at or past the target: moving the boundary BACK would
                 // be an unlock, which is deliberately a separate, heavier action.
-                if (DayLockHelper.IsLocked(boundaries.GetValueOrDefault(siteId), target))
+                if (DayLockHelper.IsLocked(boundaries, siteId, target))
                 {
                     result.SkippedAlreadyFurtherForward.Add(siteId);
                     continue;

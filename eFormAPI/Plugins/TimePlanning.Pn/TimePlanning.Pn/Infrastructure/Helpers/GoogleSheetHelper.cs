@@ -258,6 +258,14 @@ public class GoogleSheetHelper
                     await OneMinuteModeTimeline.BuildAsync(dbContext, mappedAssignedSite);
             }
 
+            // This is a bulk re-sync over the sheet's whole history, so a locked
+            // day is skipped, never rejected: frozen means frozen. ONE query for
+            // every mapped site, built before the row loop and never per row.
+            // The timeline keys ARE the mapped sites: one per distinct non-null
+            // MicrotingUid in columnSiteMap.
+            var lockedThroughBySite = await DayLockHelper.LockedThroughForSitesAsync(
+                dbContext, oneMinuteTimelines.Keys.ToList());
+
             // Skip the header row (first row)
             for (var i = 1; i < values.Count; i++)
             {
@@ -283,6 +291,14 @@ public class GoogleSheetHelper
                 for (int j = 3; j < row.Count; j += 2)
                 {
                     if (!columnSiteMap.TryGetValue(j, out var site))
+                    {
+                        continue;
+                    }
+
+                    // Decided before the row is even loaded, so a locked row is
+                    // never tracked and no later save in this loop can flush it.
+                    if (site.MicrotingUid is { } lockSiteUid
+                        && DayLockHelper.IsLocked(lockedThroughBySite, lockSiteUid, dateValue))
                     {
                         continue;
                     }

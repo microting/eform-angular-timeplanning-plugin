@@ -644,6 +644,24 @@ public class ContentHandoverService : IContentHandoverService
                 "[Handover] Accept request {RequestId}: loaded fromPR {FromPRId} (sdkSitId={FromSdkSitId}) and toPR {ToPRId} (sdkSitId={ToSdkSitId}), shiftIndex={ShiftIndex}",
                 requestId, fromPR.Id, fromPR.SdkSitId, toPR.Id, toPR.SdkSitId, request.ShiftIndex);
 
+            // Two different workers, each with their own boundary. Checked
+            // before either row is touched: the receiver is persisted before
+            // the sender, so a lock refusing the sender afterwards would leave
+            // the shift on both days. Checked in that persist order, and the
+            // message says what the blocking row is.
+            var boundaries = await DayLockHelper.LockedThroughForSitesAsync(
+                _dbContext, [fromPR.SdkSitId, toPR.SdkSitId]);
+            var blockingRow = new[] { toPR, fromPR }.FirstOrDefault(pr =>
+                DayLockHelper.IsLocked(boundaries, pr.SdkSitId, pr.Date));
+            if (blockingRow != null)
+            {
+                _logger.LogWarning(
+                    "[Handover] Accept request {RequestId}: rejected — PR {BlockingPRId} (sdkSitId={BlockingSdkSitId}) is on a locked day",
+                    requestId, blockingRow.Id, blockingRow.SdkSitId);
+                return new OperationResult(false, _localizationService.GetString(
+                    DayLockHelper.LockedMessageKey(blockingRow.Reconciled)));
+            }
+
             // Resolve AssignedSites once (used by recalc helpers in both paths).
             var fromAssignedSite = await _dbContext.AssignedSites
                 .FirstOrDefaultAsync(a => a.SiteId == fromPR.SdkSitId

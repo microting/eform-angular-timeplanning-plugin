@@ -1380,12 +1380,8 @@ public class TimePlanningWorkingHoursService(
             return null;
         }
 
-        var day = date.Date;
-        var reconciled = await dbContext.PlanRegistrations
-            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-            .AnyAsync(x => x.SdkSitId == siteId && x.Date == day && x.Reconciled);
         return new OperationResult(false, localizationService.GetString(
-            reconciled ? "DayIsReconciled" : "DayIsLockedByReconciledDay"));
+            await DayLockHelper.LockedMessageKeyAsync(dbContext, siteId, date)));
     }
 
     public async Task<OperationResult> UpdateWorkingHour(TimePlanningWorkingHoursUpdateModel model)
@@ -4037,6 +4033,12 @@ public class TimePlanningWorkingHoursService(
                             .FirstOrDefaultAsync(x => x.SiteId == site.MicrotingUid);
                         var importTimeline =
                             await OneMinuteModeTimeline.BuildAsync(dbContext, importAssignedSite);
+                        // A bulk import skips locked days (frozen means frozen)
+                        // rather than failing the whole file. Once per sheet
+                        // (= per site), never per row.
+                        var importLockedThrough = site.MicrotingUid is { } importSiteUid
+                            ? await DayLockHelper.LockedThroughAsync(dbContext, importSiteUid)
+                            : null;
 
                         var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
                         var sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
@@ -4086,6 +4088,13 @@ public class TimePlanningWorkingHoursService(
                             }
 
                             if (dateValue > DateTime.Now.AddDays(180))
+                            {
+                                continue;
+                            }
+
+                            // Before the row is loaded, so a locked row is never
+                            // tracked and no later save can flush a change into it.
+                            if (DayLockHelper.IsLocked(importLockedThrough, dateValue))
                             {
                                 continue;
                             }

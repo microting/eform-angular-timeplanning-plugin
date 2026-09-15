@@ -67,6 +67,15 @@ public static class DayLockHelper
         => lockedThrough.HasValue && date.Date <= lockedThrough.Value.Date;
 
     /// <summary>
+    /// <see cref="IsLocked(DateTime?, DateTime)"/> against a boundary map from
+    /// <see cref="LockedThroughForSitesAsync"/>. A site missing from the map
+    /// has no boundary, so its days are open.
+    /// </summary>
+    public static bool IsLocked(
+        IReadOnlyDictionary<int, DateTime?> lockedThroughBySite, int sdkSitId, DateTime date)
+        => IsLocked(lockedThroughBySite.GetValueOrDefault(sdkSitId), date);
+
+    /// <summary>
     /// The rows NOT locked by <paramref name="lockedThrough"/>, as a filter the
     /// database runs. Exactly equivalent to <c>!IsLocked(lockedThrough, x.Date)</c>,
     /// time of day included: date.Date &lt;= lockedThrough.Date holds exactly
@@ -85,6 +94,30 @@ public static class DayLockHelper
 
         var firstOpenDay = boundary.Date.AddDays(1);
         return query.Where(x => x.Date >= firstOpenDay);
+    }
+
+    /// <summary>
+    /// The message key for a write the lock refuses. It states what the
+    /// blocking day IS: reconciled itself, or locked by a later reconciled day.
+    /// One rule for every path, so web and mobile say the same (spec §11.3).
+    /// </summary>
+    public static string LockedMessageKey(bool blockingRowIsReconciled)
+        => blockingRowIsReconciled ? "DayIsReconciled" : "DayIsLockedByReconciledDay";
+
+    /// <summary>
+    /// <see cref="LockedMessageKey"/> for a locked day whose row is not loaded,
+    /// or does not exist (then the day is only locked). One cheap query, so
+    /// call it only once the day is known to be locked.
+    /// </summary>
+    public static async Task<string> LockedMessageKeyAsync(
+        TimePlanningPnDbContext db, int sdkSitId, DateTime date)
+    {
+        var day = date.Date;
+        var reconciled = await db.PlanRegistrations
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .AnyAsync(x => x.SdkSitId == sdkSitId && x.Date == day && x.Reconciled)
+            .ConfigureAwait(false);
+        return LockedMessageKey(reconciled);
     }
 
     /// <summary>
