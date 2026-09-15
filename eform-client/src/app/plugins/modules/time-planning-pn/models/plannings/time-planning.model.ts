@@ -36,4 +36,11 @@ export class TimePlanningModel {
   thirdShiftActive: boolean;
   fourthShiftActive: boolean;
   fifthShiftActive: boolean;
+  /**
+   * Latest ("boundary") date locked for this row, or null when nothing is
+   * locked. Every day at or before this date is locked; only the day whose
+   * date === lockedThrough is the boundary (unlock offered, boundary border).
+   * Older locked days are marked via PlanningPrDayModel.reconciled instead.
+   */
+  lockedThrough: string | null;
 }

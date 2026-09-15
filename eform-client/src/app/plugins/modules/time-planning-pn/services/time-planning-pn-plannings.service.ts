@@ -4,6 +4,7 @@ import { OperationDataResult, OperationResult } from 'src/app/common/models';
 import { ApiBaseService } from 'src/app/common/services';
 import {
   PlanningPrDayModel,
+  ReconcileThroughResultModel,
   TimeFlexesModel,
   TimeFlexesUpdateModel,
   TimePlanningModel,
@@ -50,6 +51,27 @@ export class TimePlanningPnPlanningsService {
   ): Observable<OperationDataResult<PlanRegistrationVersionHistoryModel>> {
     return this.apiBaseService.get(
       TimePlanningPnPlanningsMethods.Plannings + '/' + planRegistrationId + '/version-history'
+    );
+  }
+
+  reconcileDay(id: number): Observable<OperationResult> {
+    return this.apiBaseService.put(
+      TimePlanningPnPlanningsMethods.Plannings + '/' + id + '/reconcile', {}
+    );
+  }
+
+  unreconcileDay(id: number): Observable<OperationResult> {
+    return this.apiBaseService.put(
+      TimePlanningPnPlanningsMethods.Plannings + '/' + id + '/unreconcile', {}
+    );
+  }
+
+  reconcileThrough(
+    date: string, siteIds: number[]
+  ): Observable<OperationDataResult<ReconcileThroughResultModel>> {
+    return this.apiBaseService.put(
+      TimePlanningPnPlanningsMethods.Plannings + '/reconcile-through',
+      {date, siteIds}
     );
   }
 }
