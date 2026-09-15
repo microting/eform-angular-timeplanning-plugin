@@ -420,9 +420,14 @@ public static class PlanRegistrationHelper
         //     ? new DateTime(DateTime.Now.Year, DateTime.Now.Month, settingsDayOfPayment, 0, 0, 0)
         //     : new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, settingsDayOfPayment, 0, 0, 0);
         var dayOfPayment = toDay.AddMonths(-1);
+        // A dashboard load legitimately spans the boundary, so locked days are
+        // skipped rather than raising. Without this, the interceptor turns
+        // every visit to a closed month into a 500.
+        var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, dbAssignedSite.SiteId);
         foreach (var plan in planningsInPeriod)
         {
             var planRegistration = await dbContext.PlanRegistrations.AsTracking().FirstAsync(x => x.Id == plan.Id);
+            var dayIsLocked = DayLockHelper.IsLocked(lockedThrough, planRegistration.Date);
             var midnight = new DateTime(planRegistration.Date.Year, planRegistration.Date.Month,
                 planRegistration.Date.Day, 0, 0, 0);
             // Mode at registration: the write-time marker when the row has one,
@@ -468,7 +473,10 @@ public static class PlanRegistrationHelper
             }
             planRegistration.IsSaturday = midnight.DayOfWeek == DayOfWeek.Saturday;
             planRegistration.IsSunday = midnight.DayOfWeek == DayOfWeek.Sunday;
-            await planRegistration.Update(dbContext).ConfigureAwait(false);
+            if (!dayIsLocked)
+            {
+                await planRegistration.Update(dbContext).ConfigureAwait(false);
+            }
 
             if (!dbAssignedSite.Resigned)
             {
@@ -476,7 +484,11 @@ public static class PlanRegistrationHelper
                 {
                     if (dbAssignedSite.UseGoogleSheetAsDefault)
                     {
-                        if (planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
+                        // Locked days skip the plan recompute outright: it would be
+                        // reverted anyway, and its "Plan hours changed" event (plus
+                        // `tainted`, which repeats it for every later day) would
+                        // fire falsely on every load of a closed period.
+                        if (!dayIsLocked && planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
                         {
                             if (!string.IsNullOrEmpty(planRegistration.PlanText))
                             {
@@ -539,11 +551,16 @@ public static class PlanRegistrationHelper
                             FlexChain.ApplyNettoFlexChainDecimal(planRegistration, preTimePlanning);
                         }
 
-                        await planRegistration.Update(dbContext).ConfigureAwait(false);
+                        if (!dayIsLocked)
+                        {
+                            await planRegistration.Update(dbContext).ConfigureAwait(false);
+                        }
                     }
                     else
                     {
-                        if (planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
+                        // Same as the Google-sheet branch: no plan recompute, and so
+                        // no false "Plan hours changed" event, for a locked day.
+                        if (!dayIsLocked && planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
                         {
                             var dayOfWeek = planRegistration.Date.DayOfWeek;
                             var originalPlanHours = planRegistration.PlanHours;
@@ -807,6 +824,7 @@ public static class PlanRegistrationHelper
 
                             // Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
 
+                            // Unguarded on purpose: this block only runs for open days.
                             await planRegistration.Update(dbContext).ConfigureAwait(false);
                         }
 
@@ -831,7 +849,10 @@ public static class PlanRegistrationHelper
                         {
                             FlexChain.ApplyNettoFlexChainDecimal(planRegistration, preTimePlanning);
                         }
-                        await planRegistration.Update(dbContext).ConfigureAwait(false);
+                        if (!dayIsLocked)
+                        {
+                            await planRegistration.Update(dbContext).ConfigureAwait(false);
+                        }
                     }
                 }
                 catch (Exception e)
@@ -844,6 +865,18 @@ public static class PlanRegistrationHelper
                     logger.LogError(e.Message);
                     logger.LogTrace(e.StackTrace);
                 }
+            }
+
+            if (dayIsLocked)
+            {
+                // Frozen means frozen. The recomputation above mutated this TRACKED
+                // entity in memory. Reverting it (no query) means (a) the grid shows
+                // the STORED, reconciled values, not a recomputation, and (b) the next
+                // open day's SaveChanges cannot flush these changes into a locked row,
+                // which the interceptor would reject and fail the whole dashboard load.
+                var lockedEntry = dbContext.Entry(planRegistration);
+                lockedEntry.CurrentValues.SetValues(lockedEntry.OriginalValues);
+                lockedEntry.State = EntityState.Unchanged;
             }
 
             string? messageLabel = null;

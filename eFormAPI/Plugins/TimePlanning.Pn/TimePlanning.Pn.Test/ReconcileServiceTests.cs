@@ -15,20 +15,46 @@ using NUnit.Framework;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.Planning;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
+using TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
+using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
 using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 using TimePlanning.Pn.Services.TimePlanningPlanningService;
+using TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
+using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
+using SdkLanguage = Microting.eForm.Infrastructure.Data.Entities.Language;
+using SdkSite = Microting.eForm.Infrastructure.Data.Entities.Site;
+using SdkSiteWorker = Microting.eForm.Infrastructure.Data.Entities.SiteWorker;
+using SdkWorker = Microting.eForm.Infrastructure.Data.Entities.Worker;
 
 namespace TimePlanning.Pn.Test;
 
 [TestFixture]
 public class ReconcileServiceTests : TestBaseSetup
 {
+    /// <summary>The user BuildAdminIndexServiceAsync creates; the current-user paths find "my site" by it.</summary>
+    private const string AdminEmail = "admin@planning-index.test";
+
+    /// <summary>
+    /// Stored values on a locked day that UpdatePlanRegistrationsInPeriod
+    /// would overwrite if the day were open (SeedAssignedSiteAsync plans 0
+    /// hours on every weekday, and no earlier row carries a flex balance in):
+    ///  - PlanHours: the plan recompute (which would write 0) is skipped for
+    ///    locked days outright, so this pins that skip.
+    ///  - SumFlexEnd: the flex chain still runs on the tracked entity and
+    ///    writes 0 + 0 - 7.5 = -7.5 in memory, so this pins the revert before
+    ///    the projection.
+    /// </summary>
+    private const double StoredPlanHours = 7.5;
+    private const double StoredSumFlexEnd = 3.5;
+
     private ITimePlanningPlanningService _service;
     private IUserService _userService;
     private ITimePlanningLocalizationService _localizationService;
     private IEFormCoreService _coreService;
     private ITimePlanningDbContextHelper _dbContextHelper;
     private IPluginDbOptions<TimePlanningBaseSettings> _options;
+    /// <summary>The logger BuildAdminIndexServiceAsync's service writes to; see AssertNoErrorLogged.</summary>
+    private ILogger<TimePlanningPlanningService> _indexLogger;
 
     [SetUp]
     public async Task SetUpTest()
@@ -103,8 +129,9 @@ public class ReconcileServiceTests : TestBaseSetup
     /// call — Index() fans out per-site work concurrently, and production's
     /// helper also returns a new context per call.
     ///
-    /// Not used by this task's own tests, but copied verbatim so Tasks 5 and 6
-    /// can append Index() tests to this fixture without duplicating it.
+    /// Also wires _userService to that user, which is what the current-user
+    /// paths (IndexByCurrentUserName, UpdateByCurrentUserNam, the personal
+    /// UpdateWorkingHour) resolve "me" from.
     /// </summary>
     private async Task<ITimePlanningPlanningService> BuildAdminIndexServiceAsync(BaseDbContext baseDbContext)
     {
@@ -114,8 +141,8 @@ public class ReconcileServiceTests : TestBaseSetup
 
         var user = new EformUser
         {
-            UserName = "admin@planning-index.test",
-            Email = "admin@planning-index.test",
+            UserName = AdminEmail,
+            Email = AdminEmail,
             FirstName = "Admin",
             LastName = "PlanningIndex"
         };
@@ -129,8 +156,9 @@ public class ReconcileServiceTests : TestBaseSetup
         _userService.GetCurrentUserAsync().Returns(new EformUser { Id = user.Id });
         _dbContextHelper.GetDbContext().Returns(_ => CreateTimePlanningPnDbContext());
 
+        _indexLogger = Substitute.For<ILogger<TimePlanningPlanningService>>();
         return new TimePlanningPlanningService(
-            Substitute.For<ILogger<TimePlanningPlanningService>>(),
+            _indexLogger,
             _options,
             TimePlanningPnDbContext,
             _dbContextHelper,
@@ -139,6 +167,185 @@ public class ReconcileServiceTests : TestBaseSetup
             baseDbContext,
             _coreService);
     }
+
+    /// <summary>
+    /// UpdatePlanRegistrationsInPeriod's catch-all logs and SWALLOWS whatever
+    /// its try throws, so a lock rejection there (a missing guard on an Update
+    /// inside the try) would not fail Index. It does log at Error level, which
+    /// this catches. Inspects ReceivedCalls, because LogError is an extension
+    /// method over the generic Log&lt;TState&gt; and cannot be matched directly.
+    /// </summary>
+    private void AssertNoErrorLogged()
+    {
+        var errors = _indexLogger.ReceivedCalls()
+            .Count(c => c.GetMethodInfo().Name == nameof(ILogger.Log) && c.GetArguments()[0] is LogLevel.Error);
+        Assert.That(errors, Is.Zero, "nothing on the Index path may be rejected and swallowed");
+    }
+
+    /// <summary>
+    /// The dashboard grid reads days BY POSITION, so the list must hold
+    /// exactly one entry per date of the window, in order (ruling F17).
+    /// </summary>
+    private static void AssertOneDayPerDate(
+        IReadOnlyList<TimePlanningPlanningPrDayModel> days, TimePlanningPlanningRequestModel window)
+    {
+        var from = window.DateFrom!.Value.Date;
+        var count = (window.DateTo!.Value.Date - from).Days + 1;
+        Assert.That(days, Has.Count.EqualTo(count), "one entry per date, locked gaps included");
+        for (var i = 0; i < count; i++)
+        {
+            Assert.That(days[i].Date, Is.EqualTo(from.AddDays(i)), $"column {i} must be {from.AddDays(i):yyyy-MM-dd}");
+        }
+    }
+
+    /// <summary>
+    /// A registration device, so the kiosk UpdateWorkingHour overload accepts
+    /// its token. Returns the generated token for the call under test.
+    /// </summary>
+    private async Task<string> SeedKioskDeviceAsync()
+    {
+        var token = Guid.NewGuid().ToString("N");
+        await new RegistrationDevice
+        {
+            Token = token,
+            Name = "Kiosk Device",
+            OtpCode = "10001",
+            SoftwareVersion = "1.0.0",
+            Manufacturer = "Test",
+            Model = "Test",
+            OsVersion = "1.0",
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        }.Create(TimePlanningPnDbContext!);
+        return token;
+    }
+
+    /// <summary>A plain day, reconciled, so it becomes the boundary.</summary>
+    private async Task<PlanRegistration> SeedReconciledBoundaryAsync(int siteUid, DateTime date)
+    {
+        var row = await SeedPlain(siteUid, date);
+        var reconciled = await _service.Reconcile(row.Id);
+        Assert.That(reconciled.Success, Is.True, reconciled.Message);
+        return row;
+    }
+
+    /// <summary>
+    /// Everything Index() needs to actually process a site: the SDK Site the
+    /// row takes its name from and the plugin AssignedSite it iterates. Without
+    /// both, Index() skips the site and a lock test passes vacuously (ruling F7).
+    /// </summary>
+    private async Task<SdkSite> SeedAssignedSiteAsync(int siteUid, bool useGoogleSheetAsDefault = false)
+    {
+        var sdkDbContext = (await _coreService.GetCore()).DbContextHelper.GetDbContext();
+        var sdkSite = new SdkSite { Name = $"Reconcile site {siteUid}", MicrotingUid = siteUid };
+        await sdkSite.Create(sdkDbContext);
+
+        await new AssignedSiteEntity
+        {
+            SiteId = siteUid,
+            // The recompute has two branches, each with its own guarded Update
+            // inside the catch-all. Default to the weekday-plan branch (the
+            // entity itself defaults to the Google-sheet one), whose all-zero
+            // plan is what makes StoredPlanHours stale.
+            UseGoogleSheetAsDefault = useGoogleSheetAsDefault,
+            // The personal mobile write path refuses past days without this,
+            // before its lock guard is ever reached.
+            AllowEditOfRegistrations = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext!);
+
+        return sdkSite;
+    }
+
+    /// <summary>
+    /// Makes <paramref name="sdkSite"/> the current user's site: a worker with
+    /// the admin's e-mail, attached to it. That is how the current-user paths
+    /// resolve "my site".
+    /// </summary>
+    private async Task SeedCurrentUserWorkerAsync(SdkSite sdkSite)
+    {
+        var sdkDbContext = (await _coreService.GetCore()).DbContextHelper.GetDbContext();
+        var worker = new SdkWorker
+        {
+            FirstName = "Admin",
+            LastName = "PlanningIndex",
+            Email = AdminEmail,
+            MicrotingUid = 1000 + sdkSite.MicrotingUid!.Value
+        };
+        await worker.Create(sdkDbContext);
+        await new SdkSiteWorker
+        {
+            SiteId = sdkSite.Id,
+            WorkerId = worker.Id,
+            MicrotingUid = 2000 + sdkSite.MicrotingUid!.Value
+        }.Create(sdkDbContext);
+    }
+
+    /// <summary>
+    /// A reconciled day (so the boundary) storing values a dashboard load
+    /// rewrites in memory. That makes the loaded, TRACKED entity dirty -- the
+    /// precondition for the flush trap in ruling F15. Without it, merely
+    /// skipping the Update calls would look sufficient.
+    ///
+    /// IsSaturday is stored WRONG for the date, so the unconditional weekday
+    /// assignment before the first Update (the one outside the try, whose
+    /// throw nothing swallows) always dirties the row, whatever day of the
+    /// week the test runs on.
+    /// </summary>
+    private async Task<PlanRegistration> SeedReconciledDayWithStaleStoredValuesAsync(int siteUid, DateTime date)
+    {
+        var row = await SeedPlain(siteUid, date);
+        row.PlanHours = StoredPlanHours;
+        row.SumFlexEnd = StoredSumFlexEnd;
+        row.IsSaturday = date.DayOfWeek != DayOfWeek.Saturday;
+        await row.Update(TimePlanningPnDbContext!);
+
+        var reconciled = await _service.Reconcile(row.Id);
+        Assert.That(reconciled.Success, Is.True, reconciled.Message);
+        return row;
+    }
+
+    private TimePlanningWorkingHoursService BuildWorkingHoursService(BaseDbContext baseDbContext = null) =>
+        new(Substitute.For<ILogger<TimePlanningWorkingHoursService>>(),
+            TimePlanningPnDbContext!,
+            _userService,
+            _localizationService,
+            baseDbContext,
+            _options,
+            _coreService);
+
+    /// <summary>
+    /// One row as the working-hours page posts it (the page posts every row it
+    /// shows). Tests assert MessageId because the recompute inside
+    /// UpdatePlanning never touches it, unlike PlanHours.
+    /// </summary>
+    private static TimePlanningWorkingHoursModel Posted(DateTime date) => new()
+    {
+        Date = date,
+        Message = 3,
+        PlanText = "",
+        PaidOutFlex = "0",
+        CommentOffice = "",
+        CommentOfficeAll = ""
+    };
+
+    private static TimePlanningPlanningPrDayModel EditOf(PlanRegistration row) => new()
+    {
+        Id = row.Id,
+        Date = row.Date,
+        CommentOffice = ""
+    };
+
+    /// <summary>
+    /// With the boundary seeded on -5, this window holds the locked day AND
+    /// open days after it, which gap-fill creates and the loop then saves.
+    /// </summary>
+    private static TimePlanningPlanningRequestModel LastTenDaysThroughToday() => new()
+    {
+        DateFrom = DateTime.Now.Date.AddDays(-10),
+        DateTo = DateTime.Now.Date
+    };
 
     [Test]
     public async Task Reconcile_APastDay_SetsFlagAndTimestamp()
@@ -363,6 +570,407 @@ public class ReconcileServiceTests : TestBaseSetup
             Assert.That(result.Model.SkippedAlreadyFurtherForward, Is.Empty,
                 "913's only registration IS the landing day -- it must not also appear here");
             Assert.That(result.Model.SkippedNoRegistration, Is.Empty);
+        });
+    }
+
+    // ---------------------------------------------------------------------
+    // Layer 2: user-facing write paths answer with a message. Without the
+    // guards, each of these reaches the interceptor and comes back as a
+    // generic error (or, where the method has no try/catch, a raw exception).
+    // ---------------------------------------------------------------------
+
+    [Test]
+    public async Task Update_ADayBelowTheBoundary_ReturnsDayIsLockedByReconciledDay()
+    {
+        // Plain rows below a boundary must exist before it: afterwards the
+        // interceptor refuses to create them.
+        var earlier = await SeedPlain(920, DateTime.Now.Date.AddDays(-8));
+        await SeedReconciledBoundaryAsync(920, DateTime.Now.Date.AddDays(-3));
+
+        var result = await _service.Update(earlier.Id, EditOf(earlier));
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("DayIsLockedByReconciledDay"));
+    }
+
+    [Test]
+    public async Task Update_TheBoundaryDay_ReturnsDayIsReconciled()
+    {
+        var boundary = await SeedReconciledBoundaryAsync(921, DateTime.Now.Date.AddDays(-3));
+
+        var result = await _service.Update(boundary.Id, EditOf(boundary));
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("DayIsReconciled"),
+            "the reconciled day itself says what it is, not that something else locks it");
+    }
+
+    [Test]
+    public async Task Update_AnOpenDayAboveTheBoundary_StillSucceeds()
+    {
+        await SeedAssignedSiteAsync(922);
+        await SeedReconciledBoundaryAsync(922, DateTime.Now.Date.AddDays(-3));
+        var open = await SeedPlain(922, DateTime.Now.Date.AddDays(-1));
+
+        var result = await _service.Update(open.Id, EditOf(open));
+
+        Assert.That(result.Success, Is.True, result.Message);
+    }
+
+    [Test]
+    public async Task UpdateByCurrentUserNam_TheBoundaryDay_ReturnsDayIsReconciled()
+    {
+        await using var baseDbContext = GetBaseDbContext();
+        var svc = await BuildAdminIndexServiceAsync(baseDbContext);
+        await SeedCurrentUserWorkerAsync(await SeedAssignedSiteAsync(923));
+        var boundary = await SeedReconciledBoundaryAsync(923, DateTime.Now.Date.AddDays(-3));
+
+        var result = await svc.UpdateByCurrentUserNam(EditOf(boundary));
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("DayIsReconciled"),
+            "spec 11.3: the mobile path answers with the same message as web");
+    }
+
+    [Test]
+    public async Task CreateUpdate_AcrossTheBoundary_SkipsLockedRowsAndSavesOpenOnes()
+    {
+        // UpdatePlanning dereferences the AssignedSite.
+        await SeedAssignedSiteAsync(924);
+        var boundary = await SeedReconciledBoundaryAsync(924, DateTime.Now.Date.AddDays(-3));
+        var existingOpen = await SeedPlain(924, DateTime.Now.Date.AddDays(-1));
+        var before = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == boundary.Id);
+        var missingOpenDate = DateTime.Now.Date.AddDays(-2);
+
+        var result = await BuildWorkingHoursService().CreateUpdate(new TimePlanningWorkingHoursUpdateCreateModel
+        {
+            SiteId = 924,
+            Plannings = new List<TimePlanningWorkingHoursModel>
+            {
+                // First, like the page's carried-over row: a locked first row
+                // must not stop the next row from being created.
+                Posted(boundary.Date),
+                Posted(missingOpenDate),
+                Posted(existingOpen.Date)
+            }
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var lockedAfter = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == boundary.Id);
+        var created = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.SdkSitId == 924 && x.Date == missingOpenDate);
+        var updated = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == existingOpen.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(lockedAfter.Version, Is.EqualTo(before.Version),
+                "the locked row is skipped, not re-saved");
+            Assert.That(lockedAfter.UpdatedAt, Is.EqualTo(before.UpdatedAt));
+            Assert.That(lockedAfter.MessageId, Is.Null, "the posted change to the locked row is ignored");
+            Assert.That(created, Is.Not.Null, "an open day missing from the DB is still created");
+            Assert.That(created?.MessageId, Is.EqualTo(3));
+            Assert.That(updated.MessageId, Is.EqualTo(3), "an open day in the same request still saves");
+        });
+    }
+
+    /// <summary>
+    /// Pins CreateUpdate's loop skip, which WhereOpen does not make redundant:
+    /// WhereOpen keeps locked ROWS out of the load, but a locked date with NO
+    /// row (a gap row the working-hours Index emits, and the page posts every
+    /// row) is not in the load either way. Without the skip, CreatePlanning
+    /// creates -5 inside the lock; its own catch swallows the interceptor's
+    /// throw, the Added entity stays tracked, the next save (-2's create, then
+    /// -1's update, which has no catch) flushes it again, and the request fails.
+    /// </summary>
+    [Test]
+    public async Task CreateUpdate_ALockedGapRowInTheMiddle_IsNotCreatedAndTheRestSaves()
+    {
+        await SeedAssignedSiteAsync(932);
+        var below = await SeedPlain(932, DateTime.Now.Date.AddDays(-8));
+        await SeedReconciledBoundaryAsync(932, DateTime.Now.Date.AddDays(-3));
+        var existingOpen = await SeedPlain(932, DateTime.Now.Date.AddDays(-1));
+        var lockedGapDate = DateTime.Now.Date.AddDays(-5);
+        var openGapDate = DateTime.Now.Date.AddDays(-2);
+
+        var result = await BuildWorkingHoursService().CreateUpdate(new TimePlanningWorkingHoursUpdateCreateModel
+        {
+            SiteId = 932,
+            Plannings = new List<TimePlanningWorkingHoursModel>
+            {
+                Posted(below.Date),
+                // Not first, so without the skip CreatePlanning would create it.
+                Posted(lockedGapDate),
+                Posted(openGapDate),
+                Posted(existingOpen.Date)
+            }
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var lockedGap = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .AnyAsync(x => x.SdkSitId == 932 && x.Date == lockedGapDate);
+        var created = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.SdkSitId == 932 && x.Date == openGapDate);
+        var updated = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == existingOpen.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(lockedGap, Is.False, "a locked period does not grow new rows");
+            Assert.That(created?.MessageId, Is.EqualTo(3), "the open gap row is created");
+            Assert.That(updated.MessageId, Is.EqualTo(3), "the open stored row is updated");
+        });
+    }
+
+    /// <summary>
+    /// Pins CreateUpdate's DB-side WhereOpen filter, which looks redundant next
+    /// to the loop's skip but is the only thing keeping the forward cascade
+    /// out of the lock. Posting only the locked -8 skips it in the loop; the
+    /// cascade then runs over every row after -8. Without the filter it would
+    /// re-chain -6 (stored balance 5, recomputed 0) and save it inside the
+    /// lock, the interceptor would reject that, and the request would fail.
+    /// </summary>
+    [Test]
+    public async Task CreateUpdate_PostingALockedDay_CascadesPastTheLockWithoutTouchingIt()
+    {
+        await SeedAssignedSiteAsync(931);
+        var below = await SeedPlain(931, DateTime.Now.Date.AddDays(-8));
+        var insideLock = await SeedPlain(931, DateTime.Now.Date.AddDays(-6));
+        insideLock.SumFlexStart = 5;
+        insideLock.SumFlexEnd = 5;
+        await insideLock.Update(TimePlanningPnDbContext!);
+        var boundary = await SeedReconciledBoundaryAsync(931, DateTime.Now.Date.AddDays(-3));
+        // Stale balance, so the cascade's re-chain off the boundary visibly changes it.
+        var open = await SeedPlain(931, DateTime.Now.Date.AddDays(-1));
+        open.SumFlexStart = 9;
+        open.SumFlexEnd = 9;
+        await open.Update(TimePlanningPnDbContext!);
+        async Task<PlanRegistration> Stored(PlanRegistration row) =>
+            await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking().FirstAsync(x => x.Id == row.Id);
+        var insideBefore = await Stored(insideLock);
+        var boundaryBefore = await Stored(boundary);
+        var openBefore = await Stored(open);
+
+        var result = await BuildWorkingHoursService().CreateUpdate(new TimePlanningWorkingHoursUpdateCreateModel
+        {
+            SiteId = 931,
+            Plannings = new List<TimePlanningWorkingHoursModel> { new() { Date = below.Date } }
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var insideAfter = await Stored(insideLock);
+        var boundaryAfter = await Stored(boundary);
+        var openAfter = await Stored(open);
+        Assert.Multiple(() =>
+        {
+            Assert.That(insideAfter.Version, Is.EqualTo(insideBefore.Version), "a locked row the cascade passes");
+            Assert.That(boundaryAfter.Version, Is.EqualTo(boundaryBefore.Version), "the boundary");
+            Assert.That(openAfter.Version, Is.GreaterThan(openBefore.Version),
+                "the open day after the lock is still recomputed by the cascade");
+            Assert.That(openAfter.SumFlexStart, Is.EqualTo(boundaryAfter.SumFlexEnd),
+                "re-chained off the stored boundary balance");
+        });
+    }
+
+    [Test]
+    public async Task WorkingHoursIndex_MarksReconciledLockedDaysAsIsLocked()
+    {
+        await SeedAssignedSiteAsync(930);
+        // Keep the MaxDaysEditable window out of the way, so only the
+        // reconciled lock can set IsLocked on these past days.
+        _options.Value.MaxDaysEditable = 365;
+        _userService.GetCurrentUserLanguage().Returns(new SdkLanguage { LanguageCode = "da" });
+        await SeedPlain(930, DateTime.Now.Date.AddDays(-8));
+        await SeedReconciledBoundaryAsync(930, DateTime.Now.Date.AddDays(-3));
+        await SeedPlain(930, DateTime.Now.Date.AddDays(-1));
+
+        var result = await BuildWorkingHoursService().Index(new TimePlanningWorkingHoursRequestModel
+        {
+            SiteId = 930,
+            DateFrom = DateTime.Now.Date.AddDays(-10),
+            DateTo = DateTime.Now.Date.AddDays(-1)
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        bool IsLockedOn(int daysAgo) =>
+            result.Model.Single(x => x.Date == DateTime.Now.Date.AddDays(-daysAgo)).IsLocked;
+        Assert.Multiple(() =>
+        {
+            Assert.That(IsLockedOn(8), Is.True, "a stored day below the boundary");
+            Assert.That(IsLockedOn(3), Is.True, "the reconciled day itself");
+            Assert.That(IsLockedOn(5), Is.True, "an empty day inside the lock (the gap-row path)");
+            Assert.That(IsLockedOn(1), Is.False, "a stored day above the boundary stays editable");
+            Assert.That(IsLockedOn(2), Is.False, "an empty day above the boundary stays editable");
+        });
+    }
+
+    [Test]
+    public async Task UpdateWorkingHour_Kiosk_ADayBelowTheBoundary_IsRejectedAndCreatesNothing()
+    {
+        var token = await SeedKioskDeviceAsync();
+        await SeedReconciledBoundaryAsync(925, DateTime.Now.Date.AddDays(-3));
+        // No row on -4: without the guard the kiosk would CREATE one inside the
+        // lock, and this method has no try/catch to turn the rejection into a message.
+        var lockedDate = DateTime.Now.Date.AddDays(-4);
+
+        var result = await BuildWorkingHoursService().UpdateWorkingHour(925,
+            new TimePlanningWorkingHoursUpdateModel { Date = lockedDate }, token);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("DayIsLockedByReconciledDay"));
+        Assert.That(await TimePlanningPnDbContext!.PlanRegistrations
+            .AnyAsync(x => x.SdkSitId == 925 && x.Date == lockedDate), Is.False);
+    }
+
+    /// <summary>
+    /// Separates the message rule (the row's own Reconciled flag, as on web)
+    /// from the earlier "is it the boundary date" rule: -8 was reconciled
+    /// first, then -3, so -8 is reconciled but lies below the boundary. The
+    /// boundary-date rule answered DayIsLockedByReconciledDay here; web says
+    /// DayIsReconciled for the same day, and mobile must too (spec 11.3).
+    /// </summary>
+    [Test]
+    public async Task UpdateWorkingHour_Kiosk_AnOlderReconciledDay_ReturnsDayIsReconciled()
+    {
+        var token = await SeedKioskDeviceAsync();
+        var older = await SeedReconciledBoundaryAsync(933, DateTime.Now.Date.AddDays(-8));
+        await SeedReconciledBoundaryAsync(933, DateTime.Now.Date.AddDays(-3));
+
+        var result = await BuildWorkingHoursService().UpdateWorkingHour(933,
+            new TimePlanningWorkingHoursUpdateModel { Date = older.Date }, token);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("DayIsReconciled"));
+    }
+
+    [Test]
+    public async Task UpdateWorkingHour_Personal_TheBoundaryDay_ReturnsDayIsReconciled()
+    {
+        await using var baseDbContext = GetBaseDbContext();
+        // Seeds the admin user and points _userService at it ("me").
+        await BuildAdminIndexServiceAsync(baseDbContext);
+        await SeedCurrentUserWorkerAsync(await SeedAssignedSiteAsync(926));
+        var boundary = await SeedReconciledBoundaryAsync(926, DateTime.Now.Date.AddDays(-3));
+
+        var result = await BuildWorkingHoursService(baseDbContext).UpdateWorkingHour(
+            new TimePlanningWorkingHoursUpdateModel { Date = boundary.Date });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("DayIsReconciled"),
+            "spec 11.3: the mobile path answers with the same message as web");
+    }
+
+    // ---------------------------------------------------------------------
+    // Layer 3: recalculation skips locked days, and a dashboard load over a
+    // closed period still succeeds (ruling F15: a dirty locked entity left
+    // behind would be flushed by the next open day's save and fail the load).
+    // Each asserts the positional one-entry-per-date contract (ruling F17) and
+    // that nothing was rejected and swallowed inside the recompute's catch.
+    // ---------------------------------------------------------------------
+
+    /// <summary>
+    /// Run once per recompute branch: each branch has its own guarded Update
+    /// inside the catch-all, and AssertNoErrorLogged is what pins it.
+    /// </summary>
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Index_OverALockedRange_LeavesLockedRowsByteIdentical(bool useGoogleSheetAsDefault)
+    {
+        await using var baseDbContext = GetBaseDbContext();
+        var svc = await BuildAdminIndexServiceAsync(baseDbContext);
+        await SeedAssignedSiteAsync(927, useGoogleSheetAsDefault);
+        var row = await SeedReconciledDayWithStaleStoredValuesAsync(927, DateTime.Now.Date.AddDays(-5));
+        var before = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == row.Id);
+        var window = LastTenDaysThroughToday();
+
+        var result = await svc.Index(window);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        AssertNoErrorLogged();
+        var days = result.Model.Single(x => x.SiteId == 927).PlanningPrDayModels;
+        AssertOneDayPerDate(days, window);
+        var lockedDay = days.Single(x => x.Date == row.Date);
+        var after = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == row.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(after.Version, Is.EqualTo(before.Version),
+                "a no-op re-save still bumps Version — this catches silent rewrites");
+            Assert.That(after.UpdatedAt, Is.EqualTo(before.UpdatedAt));
+            Assert.That(lockedDay.Id, Is.EqualTo(row.Id));
+            Assert.That(lockedDay.PlanHours, Is.EqualTo(StoredPlanHours),
+                "the grid shows the STORED, reconciled plan, not a recomputation");
+            Assert.That(lockedDay.SumFlexEnd, Is.EqualTo(StoredSumFlexEnd),
+                "the grid shows the STORED, reconciled balance, not a recomputation");
+        });
+    }
+
+    [Test]
+    public async Task Index_OverALockedRange_CreatesNoNewRows()
+    {
+        await using var baseDbContext = GetBaseDbContext();
+        var svc = await BuildAdminIndexServiceAsync(baseDbContext);
+        await SeedAssignedSiteAsync(928);
+        var boundary = DateTime.Now.Date.AddDays(-5);
+        await SeedReconciledDayWithStaleStoredValuesAsync(928, boundary);
+        var window = LastTenDaysThroughToday();
+
+        var result = await svc.Index(window);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        AssertNoErrorLogged();
+        var days = result.Model.Single(x => x.SiteId == 928).PlanningPrDayModels;
+        AssertOneDayPerDate(days, window);
+        var lockedRows = await TimePlanningPnDbContext!.PlanRegistrations
+            .CountAsync(x => x.SdkSitId == 928 && x.Date <= boundary);
+        var openRows = await TimePlanningPnDbContext!.PlanRegistrations
+            .CountAsync(x => x.SdkSitId == 928 && x.Date > boundary);
+        Assert.Multiple(() =>
+        {
+            Assert.That(lockedRows, Is.EqualTo(1),
+                "gap-fill must not materialise rows inside a frozen period");
+            Assert.That(openRows, Is.EqualTo(5),
+                "gap-fill still fills the open days after the boundary (-4 .. today)");
+            Assert.That(days.Where(x => x.Date < boundary).Select(x => x.Id), Is.All.EqualTo(0),
+                "the missing locked dates (-10 .. -6) are placeholders, with no row behind them");
+        });
+    }
+
+    [Test]
+    public async Task IndexByCurrentUserName_OverALockedRange_Succeeds()
+    {
+        await using var baseDbContext = GetBaseDbContext();
+        var svc = await BuildAdminIndexServiceAsync(baseDbContext);
+        await SeedCurrentUserWorkerAsync(await SeedAssignedSiteAsync(929));
+        var row = await SeedReconciledDayWithStaleStoredValuesAsync(929, DateTime.Now.Date.AddDays(-5));
+        var before = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == row.Id);
+        var window = LastTenDaysThroughToday();
+
+        var result = await svc.IndexByCurrentUserName(window, null, null, null, null);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        AssertNoErrorLogged();
+        Assert.That(result.Model.SiteId, Is.EqualTo(929));
+        var days = result.Model.PlanningPrDayModels;
+        AssertOneDayPerDate(days, window);
+        var lockedDay = days.Single(x => x.Date == row.Date);
+        var after = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == row.Id);
+        var lockedRows = await TimePlanningPnDbContext!.PlanRegistrations
+            .CountAsync(x => x.SdkSitId == 929 && x.Date <= row.Date);
+        Assert.Multiple(() =>
+        {
+            Assert.That(after.Version, Is.EqualTo(before.Version));
+            Assert.That(after.UpdatedAt, Is.EqualTo(before.UpdatedAt));
+            Assert.That(lockedDay.PlanHours, Is.EqualTo(StoredPlanHours),
+                "the mobile fetch shows the STORED, reconciled plan, not a recomputation");
+            Assert.That(lockedDay.SumFlexEnd, Is.EqualTo(StoredSumFlexEnd));
+            Assert.That(lockedRows, Is.EqualTo(1),
+                "the mobile path's gap-fill must not grow the frozen period either");
+            Assert.That(days.Where(x => x.Date < row.Date).Select(x => x.Id), Is.All.EqualTo(0),
+                "the missing locked dates are placeholders on the mobile path too");
         });
     }
 }

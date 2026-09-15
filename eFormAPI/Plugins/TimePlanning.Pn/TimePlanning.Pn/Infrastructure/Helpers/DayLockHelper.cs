@@ -67,6 +67,27 @@ public static class DayLockHelper
         => lockedThrough.HasValue && date.Date <= lockedThrough.Value.Date;
 
     /// <summary>
+    /// The rows NOT locked by <paramref name="lockedThrough"/>, as a filter the
+    /// database runs. Exactly equivalent to <c>!IsLocked(lockedThrough, x.Date)</c>,
+    /// time of day included: date.Date &lt;= lockedThrough.Date holds exactly
+    /// when date &lt; lockedThrough.Date + 1 day.
+    ///
+    /// For bulk writers: a locked row that is never loaded is never tracked,
+    /// so no later SaveChanges on the context can flush a change into it.
+    /// </summary>
+    public static IQueryable<PlanRegistration> WhereOpen(
+        this IQueryable<PlanRegistration> query, DateTime? lockedThrough)
+    {
+        if (lockedThrough is not { } boundary)
+        {
+            return query;
+        }
+
+        var firstOpenDay = boundary.Date.AddDays(1);
+        return query.Where(x => x.Date >= firstOpenDay);
+    }
+
+    /// <summary>
     /// Invariant I2: today and future days must stay open so time can still be
     /// registered. This is also what makes the forward flex cascades unable to
     /// reach a locked day -- see the design doc before relaxing it.

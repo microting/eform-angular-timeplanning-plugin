@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microting.eForm.Infrastructure.Constants;
@@ -179,6 +180,34 @@ public class DayLockHelperTests : TestBaseSetup
             Assert.That(DayLockHelper.CanReconcile(DateTime.Now.Date.AddDays(-1)), Is.True);
             Assert.That(DayLockHelper.CanReconcile(DateTime.Now.Date.AddHours(23)), Is.False,
                 "a time-of-day on today is still today");
+        });
+    }
+
+    /// <summary>
+    /// WhereOpen is the SQL-side twin of IsLocked, used by bulk writers that
+    /// must never load a locked row. Pins the equivalence, time of day
+    /// included, so the two cannot drift apart.
+    /// </summary>
+    [Test]
+    public void WhereOpen_KeepsExactlyTheDaysIsLockedLeavesOpen()
+    {
+        var boundary = new DateTime(2026, 1, 18);
+        var dates = new[]
+        {
+            boundary.AddDays(-1),
+            boundary,
+            boundary.AddHours(23).AddMinutes(59),
+            boundary.AddDays(1),
+            boundary.AddDays(1).AddHours(6)
+        };
+        var rows = dates.Select(d => new PlanRegistrationEntity { Date = d }).AsQueryable();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rows.WhereOpen(boundary).Select(x => x.Date),
+                Is.EqualTo(dates.Where(d => !DayLockHelper.IsLocked(boundary, d))));
+            Assert.That(rows.WhereOpen(null).Count(), Is.EqualTo(dates.Length),
+                "no boundary, nothing is locked");
         });
     }
 }

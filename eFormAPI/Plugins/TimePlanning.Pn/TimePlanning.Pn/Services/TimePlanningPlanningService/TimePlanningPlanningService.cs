@@ -368,7 +368,11 @@ public class TimePlanningPlanningService(
                     }
                 }
 
-                foreach (var missingDate in missingDates)
+                // Per site and from this site's own context: every worker has
+                // their own boundary, and sites run concurrently.
+                var lockedMissingDates = await LockedMissingDatesAsync(
+                    innerDbContext, dbAssignedSite.SiteId, missingDates);
+                foreach (var missingDate in missingDates.Except(lockedMissingDates))
                 {
                     var newPlanRegistration = new PlanRegistration
                     {
@@ -429,6 +433,7 @@ public class TimePlanningPlanningService(
                     midnightOfDateFrom,
                     midnightOfDateTo,
                     options);
+                AddLockedPlaceholderDays(siteModel, lockedMissingDates);
 
             return siteModel;
             }).ToList();
@@ -591,7 +596,9 @@ public class TimePlanningPlanningService(
             }
         }
 
-        foreach (var missingDate in missingDates)
+        var lockedMissingDates = await LockedMissingDatesAsync(
+            dbContext, dbAssignedSite.SiteId, missingDates);
+        foreach (var missingDate in missingDates.Except(lockedMissingDates))
         {
             var newPlanRegistration = new PlanRegistration
             {
@@ -658,6 +665,7 @@ public class TimePlanningPlanningService(
             midnightOfDateTo,
             options,
             messageLanguage);
+        AddLockedPlaceholderDays(siteModel, lockedMissingDates);
 
         siteModel.PlanningPrDayModels = model.IsSortDsc
             ? siteModel.PlanningPrDayModels.OrderByDescending(x => x.Date).ToList()
@@ -698,6 +706,11 @@ public class TimePlanningPlanningService(
                 return new OperationResult(
                     false,
                     localizationService.GetString("PlanningNotFound"));
+            }
+
+            if (await CheckDayLockAsync(planning) is { } dayLocked)
+            {
+                return dayLocked;
             }
 
             var assignedSite = await dbContext.AssignedSites
@@ -1236,6 +1249,11 @@ public class TimePlanningPlanningService(
                 return new OperationDataResult<TimePlanningPlanningModel>(
                     false,
                     localizationService.GetString("PlanningNotFound"));
+            }
+
+            if (await CheckDayLockAsync(planning) is { } dayLocked)
+            {
+                return dayLocked;
             }
 
             // Snapshot each shift's PRE-EDIT EFFECTIVE SHOWN coarse tick (override →
@@ -2282,6 +2300,70 @@ public class TimePlanningPlanningService(
         return await dbContext.PlanRegistrations
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    /// <summary>
+    /// The day-lock guard for the web and mobile edit paths: a failure to
+    /// return when the day is locked, else null. Without it the interceptor
+    /// still refuses the write, but as a generic error instead of a message
+    /// saying what the day is.
+    /// </summary>
+    private async Task<OperationResult?> CheckDayLockAsync(PlanRegistration planning)
+    {
+        var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, planning.SdkSitId);
+        return DayLockHelper.IsLocked(lockedThrough, planning.Date)
+            ? new OperationResult(false, localizationService.GetString(
+                planning.Reconciled ? "DayIsReconciled" : "DayIsLockedByReconciledDay"))
+            : null;
+    }
+
+    /// <summary>
+    /// The missing dates gap-fill must NOT create, because they fall inside the
+    /// site's lock: frozen means frozen, so a locked period does not grow new
+    /// rows (AddLockedPlaceholderDays stands in for them instead). The boundary
+    /// costs a query, so it is only resolved when there is anything to fill.
+    /// </summary>
+    private static async Task<List<DateTime>> LockedMissingDatesAsync(
+        TimePlanningPnDbContext ctx, int siteId, List<DateTime> missingDates)
+    {
+        if (missingDates.Count == 0)
+        {
+            return missingDates;
+        }
+
+        var lockedThrough = await DayLockHelper.LockedThroughAsync(ctx, siteId);
+        return missingDates.Where(x => DayLockHelper.IsLocked(lockedThrough, x)).ToList();
+    }
+
+    /// <summary>
+    /// Gives each missing day inside the lock (which gap-fill may not create)
+    /// a NON-PERSISTED stand-in, then restores date order. The dashboard grid
+    /// reads days BY POSITION (column i = planningPrDayModels[i]), so a
+    /// missing entry would shift every later day one column left, under the
+    /// wrong header, and a click would open a different day. Id 0 marks a day
+    /// with no row; the values mirror what the projection yields for an empty
+    /// row. Nothing is written, so frozen still means frozen.
+    /// </summary>
+    private static void AddLockedPlaceholderDays(
+        TimePlanningPlanningModel siteModel, List<DateTime> lockedMissingDates)
+    {
+        if (lockedMissingDates.Count == 0)
+        {
+            return;
+        }
+
+        siteModel.PlanningPrDayModels.AddRange(lockedMissingDates.Select(date =>
+            new TimePlanningPlanningPrDayModel
+            {
+                Id = 0,
+                Date = date,
+                SiteId = siteModel.SiteId,
+                SiteName = siteModel.SiteName,
+                WeekDay = date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)date.DayOfWeek,
+                // |NettoHours - PlanHours| <= 0 on an empty row.
+                PlanHoursMatched = true
+            }));
+        siteModel.PlanningPrDayModels = siteModel.PlanningPrDayModels.OrderBy(x => x.Date).ToList();
     }
 
     /// <summary>
