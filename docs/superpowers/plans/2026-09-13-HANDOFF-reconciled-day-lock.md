@@ -2,7 +2,11 @@
 
 **Parked 2026-09-13. This file is the entry point — read it before the spec or the plan.**
 
-**State:** design and plan complete and reviewed. **No implementation code written.**
+**State (updated 2026-09-15):** execution under way on `feat/reconciled-day-lock-backend`
+(PR #1711). "THE OPEN DECISION" section below is settled: §8.1–8.4 are all in scope, with tasks in
+the plan's Addendum B. Rulings taken during execution are summarised in spec §13.
+
+**Original state (2026-09-13):** design and plan complete and reviewed. No implementation code written.
 
 **Branch:** `docs/reconciled-day-lock-spec` — 3 commits, **never pushed, no PR**, working tree clean.
 

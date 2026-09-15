@@ -230,9 +230,14 @@ Gap-fill **stops at the boundary**: no row creation, no recomputation for
 `date <= lockedThrough`. A locked period is frozen exactly as it stands.
 
 Consequence, accepted deliberately: a day inside a locked range that never had
-a registration stays empty in the grid rather than materialising a blank row.
-That is the correct reading — nothing was registered that day — and it is what
-makes "reconciled" mean byte-stable rather than merely read-only.
+a registration gets no row. Nothing was registered that day, and not creating
+one is what makes "reconciled" mean byte-stable rather than merely read-only.
+
+**Revised during implementation (ruling F17):** the dashboard grid reads days
+*by position* (`field = index`), so a missing day would shift every later day
+one column left. The read model therefore carries a **non-persisted
+placeholder day** (`Id = 0`) for each locked missing date, keeping one entry
+per date. Nothing is written to the database; the cell renders empty.
 
 ### 6.4 Timezone
 
@@ -371,8 +376,9 @@ this plugin has never used. The host's backend-configuration task-list is the
 precedent and documents two gotchas that apply verbatim:
 
 1. mtx-grid binds `(click)="_selectRow()"` on the `<tr>`; with `[rowSelectable]`
-   this **clears the batch selection** when a day cell is clicked. The day cell
-   must call `stopRowClick($event)`.
+   this **clears the batch selection** when a day cell is clicked. Use mtx-grid's
+   `[disableRowClickSelection]` (it still emits `rowClick`), which also covers
+   clicks on the Name column; a per-cell `stopRowClick($event)` would not.
 2. mtx-grid rebuilds its internal `SelectionModel` empty in `ngOnChanges`
    **without emitting** `rowSelectedChange`, so the component must re-emit an
    empty selection itself.
@@ -473,3 +479,39 @@ None blocking. Two worth revisiting after the first release:
 - Whether `ReconciledBy` is wanted on the face of the record. It is currently
   recoverable from `PlanRegistrationVersion.UpdatedByUserId` (§3), and adding
   it would require the base-repo migration this design otherwise avoids.
+- **Open (from implementation):** §8.1 gives locked cells a `not-allowed`
+  cursor, while §8.5 has them open a read-only dialog on click. Left as
+  written; worth a look in the browser.
+
+## 13. Revisions during implementation (2026-09-15)
+
+Rulings taken while executing the plan. Each is recorded, with its cost if
+wrong, in the SDD ledger. They supersede the sections they name.
+
+- **§8.1–8.4 are all in scope** (user decision). Tasks for them were written
+  and reviewed before the frontend phase.
+- **I3 and payroll (F10).** The interceptor permits a *payroll-flag-only*
+  write inside the lock (`TransferredToPayroll`/`TransferredToPayrollAt` plus
+  bookkeeping columns). Without this, exporting a reconciled period fails
+  midway: the file is built, some flags are set and the rest are not. This is
+  what §11.2's independence requires. Hours are never writable.
+- **I3 is checked on the original and the current slot.** Changing a locked
+  row's `Date` or `SdkSitId` cannot move it out of the lock.
+- **Unlock must clear both columns (I1 at the choke point).** Clearing
+  `Reconciled` while leaving `ReconciledAt` set is rejected.
+- **Recalculation reverts, it does not just skip saves (F15).** The dashboard
+  recompute mutates *tracked* rows. Skipping only the save lets the next open
+  day's save flush a locked row. Locked days are reverted before any later
+  save, so the grid shows the stored, reconciled values.
+- **Gap-fill placeholders (F17).** See §6.3.
+- **Working-hours bulk save skips (F16).** That page posts every row in its
+  range, so §6.1's "localized failure" would make any range touching a
+  reconciled day unsaveable. The save skips locked rows, and the page shows
+  them read-only through its existing `IsLocked` flag.
+- **More write paths to guard (F11, F12, F13). Ruled and briefed; not yet
+  implemented.** An audit found writes outside §5's list that reach locked
+  days: startup pause-id repair (unguarded, it would crash host startup),
+  Google Sheet pull, Excel import, the flex screen, absence approval and shift
+  handover, plus the service repo's sheet pull and flex catch-up. Task 5B
+  (plugin) and Task 7B (service repo) will make bulk re-syncs skip locked days
+  and give a user acting on specific days a message.
