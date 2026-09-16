@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Page objects/Login.page';
 import {
-  closeDayWithoutChange, expectSuccess, lastWeekMonday, openDashboardLastWeek, openDay, reconcileDay,
-  tdOf, unlockAll, UNLOCK_WORD, UNRECONCILE_PATH, waitForIndex, waitForPut, waitForSpinner,
-  workerAtRow,
+  assertReadOnlyDialog, closeDayWithoutChange, expectSuccess, lastWeekMonday, openDay,
+  reconcileDay, tdOf, UNLOCK_WORD, UNRECONCILE_PATH, useLastWeekDashboard, waitForIndex,
+  waitForPut, waitForSpinner,
 } from './reconcile-helpers';
 
 /**
@@ -11,34 +10,17 @@ import {
  * The worker is grid row 9 at the start and is found by name after that.
  */
 test.describe('Reconciled day lock: unlock', () => {
-  /**
-   * The worker whose row a test locked. afterEach unlocks it even when an assertion
-   * failed halfway through: the shard shares one database and runs its files in
-   * order, so a row left locked would break every spec after this one.
-   */
-  let worker = '';
-
-  test.beforeEach(async ({ page }) => {
-    worker = '';
-    await page.goto('http://localhost:4200');
-    await new LoginPage(page).login();
-    await openDashboardLastWeek(page);
-  });
-
-  test.afterEach(async ({ page }) => {
-    await unlockAll(page, worker);
-  });
+  const session = useLastWeekDashboard();
 
   test('only the boundary offers unlock, earlier days name it, and unlocking takes the word', async ({ page }) => {
-    worker = await workerAtRow(page, 9);
+    const worker = await session.pickWorker(page, 9);
     const boundaryDate = await reconcileDay(page, worker, 3);
 
     // A day below the boundary names the day to free first and offers no unlock.
     await openDay(page, worker, 1);
     await expect(page.locator('#lockedFreeFirstText'))
       .toHaveText(`Låst, fordi ${boundaryDate} er afstemt. Lås ${boundaryDate} op først.`);
-    await expect(page.locator('#unlockButton')).toHaveCount(0);
-    await expect(page.locator('#saveButton')).toHaveCount(0);
+    await assertReadOnlyDialog(page);
     await closeDayWithoutChange(page);
 
     // The boundary: its provenance, no "free first" line, and an unlock gated by the word.

@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Page objects/Login.page';
 import {
-  closeDayAfterLockChange, closeDayWithoutChange, countPuts, openDashboardLastWeek, openDay,
-  PLANNING_PUT_PATH, PROVENANCE, RECONCILE_PATH, reconcileOpenDay, tdOf, unlockAll, unlockDay,
-  workerAtRow,
+  closeDayAfterLockChange, closeDayWithoutChange, countPuts, openDay,
+  PLANNING_PUT_PATH, PROVENANCE, RECONCILE_PATH, reconcileOpenDay, tdOf, unlockDay,
+  useLastWeekDashboard,
 } from './reconcile-helpers';
 
 /**
@@ -12,26 +11,10 @@ import {
  * found by name after that.
  */
 test.describe('Reconciled day lock: dialog confirm', () => {
-  /**
-   * The worker whose row a test locked. afterEach unlocks it even when an assertion
-   * failed halfway through: the shard shares one database and runs its files in
-   * order, so a row left locked would break every spec after this one.
-   */
-  let worker = '';
-
-  test.beforeEach(async ({ page }) => {
-    worker = '';
-    await page.goto('http://localhost:4200');
-    await new LoginPage(page).login();
-    await openDashboardLastWeek(page);
-  });
-
-  test.afterEach(async ({ page }) => {
-    await unlockAll(page, worker);
-  });
+  const session = useLastWeekDashboard();
 
   test('reconcile takes a second click in the same footer, then the dialog stays open read-only', async ({ page }) => {
-    worker = await workerAtRow(page, 6);
+    const worker = await session.pickWorker(page, 6);
     const reconciles = countPuts(page, RECONCILE_PATH);
 
     const date = await openDay(page, worker, 3);
@@ -80,7 +63,7 @@ test.describe('Reconciled day lock: dialog confirm', () => {
   });
 
   test('a day with unsaved edits offers no reconcile, and Cancel writes nothing', async ({ page }) => {
-    worker = await workerAtRow(page, 6);
+    const worker = await session.pickWorker(page, 6);
     await openDay(page, worker, 1);
     await expect(page.locator('#reconcileButton')).toBeVisible();
 

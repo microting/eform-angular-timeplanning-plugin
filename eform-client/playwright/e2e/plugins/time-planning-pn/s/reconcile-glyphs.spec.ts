@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Page objects/Login.page';
 import {
-  cellOf, expectTooltipOnHover, LOCKED_TOOLTIP, openDashboardLastWeek, PROVENANCE, reconcileDay,
-  rowOf, tdOf, unlockAll, unlockDay, workerAtRow,
+  cellOf, expectTooltipOnHover, LOCKED_TOOLTIP, PROVENANCE, reconcileDay,
+  rowOf, tdOf, unlockDay, useLastWeekDashboard,
 } from './reconcile-helpers';
 
 /**
@@ -10,23 +9,7 @@ import {
  * grid. The worker is grid row 5 at the start and is found by name after that.
  */
 test.describe('Reconciled day lock: glyphs and legend', () => {
-  /**
-   * The worker whose row a test locked. afterEach unlocks it even when an assertion
-   * failed halfway through: the shard shares one database and runs its files in
-   * order, so a row left locked would break every spec after this one.
-   */
-  let worker = '';
-
-  test.beforeEach(async ({ page }) => {
-    worker = '';
-    await page.goto('http://localhost:4200');
-    await new LoginPage(page).login();
-    await openDashboardLastWeek(page);
-  });
-
-  test.afterEach(async ({ page }) => {
-    await unlockAll(page, worker);
-  });
+  const session = useLastWeekDashboard();
 
   // Day 4 (last week's Friday) becomes the boundary, so day 2 is cascade-locked and
   // day 5 stays open.
@@ -35,7 +18,7 @@ test.describe('Reconciled day lock: glyphs and legend', () => {
     // locked is in view, so there is no legend.
     await expect(page.locator('#lockLegend')).toHaveCount(0);
 
-    worker = await workerAtRow(page, 5);
+    const worker = await session.pickWorker(page, 5);
     await reconcileDay(page, worker, 4);
 
     // Boundary: the seal and no lock. Its tooltip is the provenance line.
@@ -60,7 +43,8 @@ test.describe('Reconciled day lock: glyphs and legend', () => {
     await expect(page.locator('#lockLegendReconciled')).toContainText('Afstemt');
 
     // Unlocking is part of the behaviour under test: with nothing locked the glyphs
-    // and the legend go away again. afterEach only catches what a failure leaves.
+    // and the legend go away again. The session cleanup only catches what a failure
+    // leaves behind.
     await unlockDay(page, worker, 4);
     await expect(cellOf(page, worker, 2).locator('.tp-day-glyph')).toHaveCount(0);
     await expect(page.locator('#lockLegend')).toHaveCount(0);
@@ -71,7 +55,7 @@ test.describe('Reconciled day lock: glyphs and legend', () => {
   test('an older reconciled day stays sealed under a later boundary, without the boundary border', async ({ page }) => {
     await expect(page.locator('#lockLegend')).toHaveCount(0);
 
-    worker = await workerAtRow(page, 5);
+    const worker = await session.pickWorker(page, 5);
     // Day 1 first, then day 3, which becomes the boundary.
     await reconcileDay(page, worker, 1);
     await reconcileDay(page, worker, 3);

@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../../Page objects/Login.page';
 import {
-  cellOf, closeDayWithoutChange, countPuts, expectSuccess, lastWeekMonday, openDashboardLastWeek,
-  openDay, RECONCILE_THROUGH_PATH, reconcileDay, rowCheckbox, rowOf, tdOf, unlockAll, unlockDay,
-  waitForIndex, waitForPut, waitForSpinner, workerAtRow,
+  cellOf, closeDayWithoutChange, countPuts, expectSuccess, lastWeekMonday,
+  openDay, RECONCILE_THROUGH_PATH, reconcileDay, rowCheckbox, rowOf, tdOf, unlockDay,
+  useLastWeekDashboard, waitForIndex, waitForPut, waitForSpinner,
 } from './reconcile-helpers';
 
 /**
@@ -11,31 +10,20 @@ import {
  * start and are found by name after that. B is reconciled further forward (day 5) than
  * the bulk target (day 3), so it must be shown as skipped and left where it is.
  *
- * The shard shares one database and runs its files in order, so both workers are unlocked
- * in afterEach as well: a row left locked by a failed assertion breaks every spec after
- * this one.
+ * The outsider is picked through the session as well, although the test's point is that
+ * it is never touched: if the bulk reconcile reaches outside the selection anyway, the
+ * session cleanup frees that row instead of leaving it to break the next spec.
  */
 test.describe('Reconciled day lock: bulk reconcile', () => {
-  let locked: string[] = [];
-
-  test.beforeEach(async ({ page }) => {
-    locked = [];
-    await page.goto('http://localhost:4200');
-    await new LoginPage(page).login();
-    await openDashboardLastWeek(page);
-  });
-
-  test.afterEach(async ({ page }) => {
-    for (const worker of locked) {
-      await unlockAll(page, worker);
-    }
-  });
+  const session = useLastWeekDashboard();
 
   test('a header click previews per worker, skips rows already further, and toasts counts', async ({ page }) => {
-    const a = await workerAtRow(page, 7);
-    const b = await workerAtRow(page, 8);
-    const outsider = await workerAtRow(page, 10);
-    locked = [a, b];
+    // Three workers, a preview, a commit and three rows to clean up afterwards, and the
+    // frame's login, navigation and cleanup count against the same per-test budget.
+    test.slow();
+    const a = await session.pickWorker(page, 7);
+    const b = await session.pickWorker(page, 8);
+    const outsider = await session.pickWorker(page, 10);
     const throughs = countPuts(page, RECONCILE_THROUGH_PATH);
 
     await reconcileDay(page, b, 5);
@@ -98,15 +86,14 @@ test.describe('Reconciled day lock: bulk reconcile', () => {
     await expect(page.locator('#reconcileScopeBar')).toHaveCount(0);
     await expect(rowCheckbox(page, a)).not.toBeChecked();
 
-    // Cleanup. afterEach is only the safety net for a failure above.
+    // Cleanup. The session cleanup is only the safety net for a failure above.
     await unlockDay(page, a, 3);
     await unlockDay(page, b, 5);
-    locked = [];
   });
 
   test('a reload while ticked rows are previewed cancels the preview instead of widening it', async ({ page }) => {
-    const a = await workerAtRow(page, 7);
-    const outsider = await workerAtRow(page, 10);
+    const a = await session.pickWorker(page, 7);
+    const outsider = await session.pickWorker(page, 10);
 
     await rowCheckbox(page, a).check();
     await page.locator('#dayHeader3').click();
