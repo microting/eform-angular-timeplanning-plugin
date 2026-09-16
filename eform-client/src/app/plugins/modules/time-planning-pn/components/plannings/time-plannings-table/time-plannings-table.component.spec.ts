@@ -693,4 +693,199 @@ describe('TimePlanningsTableComponent', () => {
       expect(component.convertHoursToTimeWithSeconds(-1.5)).toBe('-1:30:00');
     });
   });
+  /**
+   * Rebuilding the day columns flushes change detection twice, so mtx-grid sees the
+   * emptied [columns] before the new ones. What these blocks assert is the map the
+   * rebuild produces, so the flush is stubbed out rather than driven through a live
+   * view.
+   */
+  const stubHeaderFlush = (target: any) => {
+    target.cdr = { detectChanges: jest.fn() };
+  };
+
+  /**
+   * The worker set for a bulk reconcile. mtx-grid rebuilds its SelectionModel empty on
+   * ANY input change and emits nothing, so the component has to report that itself —
+   * and report it as a RESET, because an empty selection means "everyone visible" and
+   * would silently widen a previewed scope.
+   */
+  describe('row selection', () => {
+    const changed = jest.fn();
+    const reset = jest.fn();
+
+    beforeEach(() => {
+      changed.mockClear();
+      reset.mockClear();
+      component.selectionChanged.subscribe(changed);
+      component.selectionReset.subscribe(reset);
+    });
+
+    it('emits the ticked rows as site ids', () => {
+      component.onRowSelected([{ siteId: 4 }, { siteId: 9 }]);
+
+      expect(changed).toHaveBeenCalledWith([4, 9]);
+      expect(reset).not.toHaveBeenCalled();
+    });
+
+    it('survives a grid that hands it nothing', () => {
+      component.onRowSelected(null as any);
+
+      expect(changed).toHaveBeenCalledWith([]);
+    });
+
+    it('reports new rows dropping a live selection as a reset, not as an empty selection', () => {
+      component.onRowSelected([{ siteId: 4 }]);
+      changed.mockClear();
+
+      component.timePlannings = [];
+      component.ngOnChanges({ timePlannings: { currentValue: [] } } as any);
+
+      expect(reset).toHaveBeenCalledTimes(1);
+      // An empty selection here would be read as "every visible worker".
+      expect(changed).not.toHaveBeenCalled();
+    });
+
+    it('stays quiet when new rows arrive and nothing was ticked', () => {
+      component.timePlannings = [];
+      component.ngOnChanges({ timePlannings: { currentValue: [] } } as any);
+
+      expect(reset).not.toHaveBeenCalled();
+    });
+
+    it('reports the reset only once, since the grid drops the selection only once', () => {
+      component.onRowSelected([{ siteId: 4 }]);
+
+      component.ngOnChanges({ timePlannings: { currentValue: [] } } as any);
+      component.ngOnChanges({ timePlannings: { currentValue: [] } } as any);
+
+      expect(reset).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports new columns dropping a live selection too', () => {
+      // Rebuilding the headers changes [columns] and [headerTemplate], and mtx-grid
+      // empties its SelectionModel on those just as it does on new data.
+      stubHeaderFlush(component);
+      component.onRowSelected([{ siteId: 4 }]);
+      component.dateFrom = new Date(2026, 8, 7);
+      component.dateTo = new Date(2026, 8, 13);
+
+      component.ngOnChanges({ dateTo: { currentValue: component.dateTo } } as any);
+
+      expect(reset).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('the past-day header', () => {
+    beforeEach(() => stubHeaderFlush(component));
+
+    /** Three days ending yesterday, so every column is in the past. */
+    const showLastThreeDays = () => {
+      const yesterday = new Date();
+      yesterday.setHours(0, 0, 0, 0);
+      yesterday.setDate(yesterday.getDate() - 1);
+      component.dateFrom = new Date(yesterday);
+      component.dateFrom.setDate(yesterday.getDate() - 2);
+      component.dateTo = yesterday;
+      component.ngOnChanges({ dateTo: { currentValue: component.dateTo } } as any);
+      return yesterday;
+    };
+
+    it('offers the clickable header on past days only', () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      component.dateFrom = new Date(today);
+      component.dateFrom.setDate(today.getDate() - 1);
+      component.dateTo = new Date(today);
+      component.dateTo.setDate(today.getDate() + 1);
+
+      component.ngOnChanges({ dateTo: { currentValue: component.dateTo } } as any);
+
+      // Yesterday, today, tomorrow: nothing at or after today may be reconciled.
+      expect(Object.keys(component.dayHeaderTemplates)).toEqual(['0']);
+    });
+
+    it('asks for a preview through the day its column stands for', () => {
+      const requested: Date[] = [];
+      component.reconcileDateRequested.subscribe(date => requested.push(date));
+      const yesterday = showLastThreeDays();
+
+      component.onDayHeaderClick('2');
+
+      expect(requested).toHaveLength(1);
+      expect(requested[0].toDateString()).toBe(yesterday.toDateString());
+    });
+
+    it('asks for nothing when the column is not one it knows', () => {
+      const requested: Date[] = [];
+      component.reconcileDateRequested.subscribe(date => requested.push(date));
+      showLastThreeDays();
+
+      component.onDayHeaderClick('siteName');
+
+      expect(requested).toHaveLength(0);
+    });
+  });
+
+  /**
+   * The preview classes are read from the template on every pass, because mtx-grid
+   * stamps the <td> class through a pure pipe that cannot follow the container's
+   * preview.
+   */
+  describe('the bulk reconcile preview', () => {
+    const row = (siteId: number) => ({
+      siteId,
+      planningPrDayModels: ['2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10']
+        .map((date, index) => ({ id: index + 1, date: `${date}T00:00:00` })),
+    }) as any;
+
+    beforeEach(() => {
+      component.reconcilePreview = {
+        target: '2026-09-09',
+        siteIds: [1, 2, 3],
+        landingBySiteId: { 1: '2026-09-09', 3: '2026-09-09' },
+        existingBySiteId: { 1: null, 2: '2026-09-10', 3: '2026-09-07' },
+        outcomeBySiteId: { 1: 'lock', 2: 'skip', 3: 'lock' },
+        willReconcileCount: 2,
+        skipCount: 1,
+      };
+    });
+
+    it('draws every day up to the landing day of an unlocked row', () => {
+      expect(component.isPreviewLocked(row(1), '0')).toBe(true);
+      expect(component.isPreviewLocked(row(1), '2')).toBe(true);
+      expect(component.isPreviewBoundary(row(1), '2')).toBe(true);
+    });
+
+    it('leaves the days after the landing day alone', () => {
+      expect(component.isPreviewLocked(row(1), '3')).toBe(false);
+      expect(component.isPreviewBoundary(row(1), '3')).toBe(false);
+    });
+
+    it('draws a locked row only from its existing boundary forward', () => {
+      // Row 3 is already sealed through the 7th; re-hatching that day would say the
+      // preview is about to do something it is not.
+      expect(component.isPreviewLocked(row(3), '0')).toBe(false);
+      expect(component.isPreviewLocked(row(3), '1')).toBe(true);
+      expect(component.isPreviewBoundary(row(3), '2')).toBe(true);
+    });
+
+    it('draws nothing on a row the preview skipped, and labels it instead', () => {
+      expect(component.isPreviewSkipped(row(2))).toBe(true);
+      expect(component.isPreviewLocked(row(2), '0')).toBe(false);
+      expect(component.isPreviewBoundary(row(2), '2')).toBe(false);
+    });
+
+    it('draws nothing on a row outside the scope', () => {
+      expect(component.isPreviewLocked(row(9), '0')).toBe(false);
+      expect(component.isPreviewSkipped(row(9))).toBe(false);
+    });
+
+    it('draws nothing at all once the preview is cancelled', () => {
+      component.reconcilePreview = null;
+
+      expect(component.isPreviewLocked(row(1), '0')).toBe(false);
+      expect(component.isPreviewBoundary(row(1), '2')).toBe(false);
+      expect(component.isPreviewSkipped(row(2))).toBe(false);
+    });
+  });
 });

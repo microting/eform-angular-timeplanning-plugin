@@ -1,6 +1,8 @@
 import {DatePipe} from '@angular/common';
 import {TranslateService} from '@ngx-translate/core';
 import {format} from 'date-fns';
+import {Observable, Subscription, defaultIfEmpty, throwError, timeout} from 'rxjs';
+import {OperationResult} from 'src/app/common/models';
 import {PlanningPrDayModel, TimePlanningModel} from '../../models';
 
 /**
@@ -138,6 +140,102 @@ export function formatReconciledProvenance(
   return translate.instant('reconciledProvenance', {
     date: datePipe.transform(reconciledAt, 'dd.MM.yyyy'),
     time: datePipe.transform(reconciledAt, 'HH:mm'),
+  });
+}
+
+// ---- One lock request, four outcomes -----------------------------------------------
+
+/**
+ * How long a reconcile, an unlock or a bulk reconcile may hang before the caller
+ * stops waiting for it.
+ *
+ * It has to be shorter than HttpErrorInterceptor's own budget: its `default:` branch
+ * retries a failing request five times, fifteen seconds apart, which is about 75
+ * seconds before it gives up. Waiting that out behind a blocked backdrop, or behind a
+ * disabled commit button, is not a state anyone should have to sit through.
+ */
+export const LOCK_REQUEST_TIMEOUT_MS = 30000;
+
+/**
+ * Thrown by the timeout above, so the failure handler can tell the one UNKNOWN error
+ * apart from the errors that reached us from the server. Recognised by reference, not
+ * by type, so a test needs no rxjs-internal error object to prove the branch.
+ */
+const LOCK_REQUEST_TIMED_OUT = {lockRequestTimedOut: true};
+
+/**
+ * What came back. Four outcomes, because the two that are NOT failures must not be
+ * reported as one:
+ * - `success`   — the server did it.
+ * - `refused`   — KNOWN. The server itself answered "no", so nothing changed.
+ *                 ApiBaseService has already toasted `message` when there is one.
+ * - `error`     — KNOWN. The only error HttpErrorInterceptor lets through to a caller
+ *                 is its 400 branch, where the request was rejected before anything
+ *                 happened — and it has already toasted it.
+ * - `unknown`   — our timeout, or the interceptor giving up after retrying against a
+ *                 5xx or a dead connection. Neither says whether the write landed, so
+ *                 the caller must refresh rather than claim nothing happened.
+ */
+export type LockRequestOutcome<T extends OperationResult> =
+  | {kind: 'success'; result: T}
+  | {kind: 'refused'; message: string | null}
+  | {kind: 'error'}
+  | {kind: 'unknown'};
+
+/**
+ * Closes a `switch` over the outcomes: put `return assertLockOutcomeHandled(outcome);`
+ * after the last `case`, with every case returning.
+ *
+ * The argument narrows to `never` only while the union is exhausted, so adding a fifth
+ * outcome fails the build at each call site instead of quietly falling through — which,
+ * for a switch whose last branch means "we do not know what happened", would be the worst
+ * possible silence.
+ */
+export function assertLockOutcomeHandled(outcome: never): never {
+  return outcome;
+}
+
+/**
+ * The one place a lock request is made, shared by the day dialog and the toolbar's
+ * bulk reconcile so they cannot drift on what an unanswered request means.
+ *
+ * Callers do the rest themselves — their in-flight guards, their messages, their
+ * refresh — because the dialog blocks its own dismissal while a request is out and the
+ * toolbar does not. What they must NOT each re-derive is the outcome.
+ */
+export function sendLockRequest<T extends OperationResult>(
+  request$: Observable<T>,
+  handle: (outcome: LockRequestOutcome<T>) => void,
+): Subscription {
+  return request$.pipe(
+    timeout({
+      each: LOCK_REQUEST_TIMEOUT_MS,
+      with: () => throwError(() => LOCK_REQUEST_TIMED_OUT),
+    }),
+    // HttpErrorInterceptor turns a sustained 5xx, and an offline network, into EMPTY
+    // after its retries: a completion with no value and no error. This turns that into
+    // an ordinary answer of "nothing", so it needs no state of its own to recognise.
+    defaultIfEmpty(null),
+  ).subscribe({
+    next: (result: T | null) => {
+      if (result && result.success) {
+        handle({kind: 'success', result});
+        return;
+      }
+      if (!result) {
+        // The EMPTY above. The interceptor reaches it only after retrying against a
+        // 5xx or a dead connection, and a 5xx can be written AFTER the save has
+        // committed — the server saves before it writes the response. So a response
+        // arriving is not evidence that nothing changed.
+        handle({kind: 'unknown'});
+        return;
+      }
+      handle({kind: 'refused', message: result.message ?? null});
+    },
+    error: error => handle(
+      // Our own timeout aborts the request from this end, but a slow server may commit
+      // it a moment later.
+      error === LOCK_REQUEST_TIMED_OUT ? {kind: 'unknown'} : {kind: 'error'}),
   });
 }
 

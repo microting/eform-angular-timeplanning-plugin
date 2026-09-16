@@ -1,7 +1,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { LOCK_REQUEST_TIMEOUT_MS, WorkdayEntityDialogComponent } from './workday-entity-dialog.component';
+import { WorkdayEntityDialogComponent } from './workday-entity-dialog.component';
+import { LOCK_REQUEST_TIMEOUT_MS } from '../../day-lock.util';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService } from '../../../../services';

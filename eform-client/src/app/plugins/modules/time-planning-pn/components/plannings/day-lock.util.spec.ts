@@ -1,4 +1,5 @@
 import {DatePipe} from '@angular/common';
+import {EMPTY, of, Subject, throwError} from 'rxjs';
 import {
   buildReconcilePreview,
   dayKey,
@@ -9,6 +10,9 @@ import {
   isDayLocked,
   isDaySealed,
   isPlaceholderDay,
+  LOCK_REQUEST_TIMEOUT_MS,
+  LockRequestOutcome,
+  sendLockRequest,
 } from './day-lock.util';
 
 describe('day-lock util', () => {
@@ -259,6 +263,71 @@ describe('day-lock util', () => {
       const preview = buildReconcilePreview([row(1, null, week), row(2, null, week)], [2, 2], '2026-09-08');
       expect(preview.siteIds).toEqual([2]);
       expect(preview.outcomeBySiteId[1]).toBeUndefined();
+    });
+  });
+  /**
+   * The four outcomes both the day dialog and the toolbar's bulk reconcile decide from.
+   * Two of them are not failures, and reporting them as one is what makes a user redo a
+   * write that may already have landed.
+   */
+  describe('sendLockRequest', () => {
+    const outcomes = (source: any): LockRequestOutcome<any>[] => {
+      const seen: LockRequestOutcome<any>[] = [];
+      sendLockRequest<any>(source, outcome => seen.push(outcome));
+      return seen;
+    };
+
+    it('passes a successful answer straight through', () => {
+      const answer = {success: true, model: {applied: 2}};
+      expect(outcomes(of(answer))).toEqual([{kind: 'success', result: answer}]);
+    });
+
+    it('reports a refusal as known, carrying whatever the server said', () => {
+      expect(outcomes(of({success: false, message: 'DayIsReconciled'})))
+        .toEqual([{kind: 'refused', message: 'DayIsReconciled'}]);
+    });
+
+    it('reports a refusal with no message as known all the same', () => {
+      // The caller adds its own fallback line; what matters here is that nothing
+      // changed on the server, so this must not be confused with an unanswered write.
+      expect(outcomes(of({success: false}))).toEqual([{kind: 'refused', message: null}]);
+    });
+
+    it('reports an error that reached us as known, because someone already spoke', () => {
+      // HttpErrorInterceptor toasts every 400 and rethrows an empty string.
+      expect(outcomes(throwError(() => ''))).toEqual([{kind: 'error'}]);
+    });
+
+    it('reports a completion with no answer as unknown', () => {
+      // The interceptor turns a sustained 5xx, and an offline network, into EMPTY.
+      expect(outcomes(EMPTY)).toEqual([{kind: 'unknown'}]);
+    });
+
+    it('stops waiting for a request that never answers, and calls that unknown', () => {
+      jest.useFakeTimers();
+      const seen: LockRequestOutcome<any>[] = [];
+      const request = new Subject<any>();
+      sendLockRequest<any>(request, outcome => seen.push(outcome));
+
+      expect(seen).toEqual([]);
+      jest.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
+
+      expect(seen).toEqual([{kind: 'unknown'}]);
+      jest.useRealTimers();
+    });
+
+    it('lets no late answer through, because the abort is from this end only', () => {
+      jest.useFakeTimers();
+      const seen: LockRequestOutcome<any>[] = [];
+      const request = new Subject<any>();
+      sendLockRequest<any>(request, outcome => seen.push(outcome));
+      jest.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
+
+      request.next({success: true});
+      request.complete();
+
+      expect(seen).toEqual([{kind: 'unknown'}]);
+      jest.useRealTimers();
     });
   });
 });

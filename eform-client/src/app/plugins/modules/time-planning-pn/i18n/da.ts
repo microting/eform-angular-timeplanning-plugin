@@ -485,11 +485,12 @@ export const da = {
   reconcileScopeSkipped: 'Springes over: {{count}} (allerede afstemt længere frem)',
   reconcileThroughResult: 'Afstemt: {{applied}} · Sprunget over: {{skipped}}',
   reconcileThroughUnchanged: 'Uændret: {{count}}',
+  reconcileThroughNoRegistration: 'Ingen registrering: {{count}}',
   reconcileDayConfirm: 'Afstem {{worker}} {{date}}? Dagen og alle dage før den bliver låst.',
   reconcileNeedsSave: 'Gem ændringerne, før dagen afstemmes',
   unlockFreeFirst: 'Låst, fordi {{date}} er afstemt. Lås {{date}} op først.',
   unlockTypeWordPrompt: 'Afstemningen fjernes, og dagen kan redigeres igen. Skriv {{word}} for at bekræfte.',
   UNLOCK: 'LÅS OP',
   lockRequestFailed: 'Handlingen kunne ikke gennemføres. Prøv igen.',
-  lockRequestUncertain: 'Der kom ikke noget svar. Dagens tilstand er usikker og opdateres, når vinduet lukkes.',
+  lockRequestUncertain: 'Der kom ikke noget svar. Tilstanden er usikker, og visningen opdateres.',
 };

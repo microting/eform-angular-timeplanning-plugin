@@ -17,7 +17,9 @@ import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {applyGridHelpAnchors} from '../../../help/grid-help-anchors';
 import {HelpEntryId} from '../../../help/help.model';
 import {HelpPanelService} from '../../../help/services/help-panel.service';
-import {dayAt, dayLockState, formatReconciledProvenance, isDayLocked, isDaySealed} from '../day-lock.util';
+import {
+  dayAt, dayKey, dayLockState, formatReconciledProvenance, isDayLocked, isDaySealed, ReconcilePreview,
+} from '../day-lock.util';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -41,16 +43,34 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   @Input() timePlannings: TimePlanningModel[] = [];
   @Input() dateFrom!: Date;
   @Input() dateTo!: Date;
+  /** The region a bulk reconcile would lock (spec §8.3). Null when none is on screen. */
+  @Input() reconcilePreview: ReconcilePreview | null = null;
   @Output() timePlanningChanged: EventEmitter<any> = new EventEmitter<any>();
   @Output() assignedSiteChanged: EventEmitter<any> = new EventEmitter<any>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
   @Output() tagSelected: EventEmitter<number> = new EventEmitter<number>();
+  /** The ticked rows as site ids, emitted when the user ticks or unticks one. */
+  @Output() selectionChanged: EventEmitter<number[]> = new EventEmitter<number[]>();
+  /** The grid dropped a non-empty selection by itself. See resetSelection. */
+  @Output() selectionReset: EventEmitter<void> = new EventEmitter<void>();
+  /** A past day header was clicked: preview a reconcile through that day. Commits nothing. */
+  @Output() reconcileDateRequested: EventEmitter<Date> = new EventEmitter<Date>();
   tableHeaders: MtxGridColumn[] = [];
   enumKeys: string[];
   currentLocale: string = 'da';
 
   @ViewChild('firstColumnTemplate', {static: true}) firstColumnTemplate!: TemplateRef<any>;
   @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
+  @ViewChild('reconcileDayHeaderTemplate', {static: true}) reconcileDayHeaderTemplate!: TemplateRef<any>;
+
+  /**
+   * The mtx-grid [headerTemplate] map. Only past day columns get the clickable header,
+   * because nothing at or after today may be reconciled. Columns missing from the map
+   * keep mtx-grid's default header.
+   */
+  dayHeaderTemplates: {[field: string]: TemplateRef<any>} = {};
+  private columnDates: {[field: string]: Date} = {};
+  private selectionActive = false;
   protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
   public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
@@ -100,7 +120,57 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
     }
     if (changes.timePlannings) {
       this.hasLockedDayInView = this.computeHasLockedDayInView();
+      this.resetSelection();
     }
+  }
+
+  onRowSelected(rows: any[]): void {
+    const siteIds = (rows ?? []).map(r => r.siteId);
+    this.selectionActive = siteIds.length > 0;
+    this.selectionChanged.emit(siteIds);
+  }
+
+  /**
+   * mtx-grid rebuilds its SelectionModel empty on ANY input change ([data], [columns],
+   * [headerTemplate]) and emits nothing. This reports that, and only when rows were
+   * ticked, as a RESET rather than as an empty selection. An empty selection means
+   * "everyone visible", which would silently widen a previewed scope from the ticked
+   * rows to all of them; the container cancels the preview instead.
+   */
+  private resetSelection(): void {
+    if (this.selectionActive) {
+      this.selectionActive = false;
+      this.selectionReset.emit();
+    }
+  }
+
+  onDayHeaderClick(field: string): void {
+    const date = this.columnDates[field];
+    if (date) {
+      this.reconcileDateRequested.emit(new Date(date));
+    }
+  }
+
+  /** A cell that WILL lock if the preview is committed. Cells already locked are left alone. */
+  isPreviewLocked(row: any, field: string): boolean {
+    const landing = this.reconcilePreview?.landingBySiteId[row?.siteId];
+    const day = dayKey(dayAt(row, field)?.date);
+    if (!landing || !day) {
+      return false;
+    }
+    const existing = this.reconcilePreview.existingBySiteId[row.siteId];
+    return day <= landing && (!existing || day > existing);
+  }
+
+  /** The cell the mark will land on: the new boundary. */
+  isPreviewBoundary(row: any, field: string): boolean {
+    const landing = this.reconcilePreview?.landingBySiteId[row?.siteId];
+    return !!landing && dayKey(dayAt(row, field)?.date) === landing;
+  }
+
+  /** Already reconciled at or past the target: shown as skipped (§8.3). */
+  isPreviewSkipped(row: any): boolean {
+    return this.reconcilePreview?.outcomeBySiteId[row?.siteId] === 'skip';
   }
 
   /** Seal tooltip: "Afstemt 14.09.2026 kl. 10:32". */
@@ -166,15 +236,20 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
 
   private updateTableHeaders(): void {
     this.tableHeaders = [];
+    this.dayHeaderTemplates = {};
+    this.columnDates = {};
     this.cdr.detectChanges();
     const startDate = new Date(this.dateFrom);
     const endDate = new Date(this.dateTo);
     const today = new Date();
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
     const tempEndDate = new Date(endDate);
     tempEndDate.setHours(0, 0, 0, 0);
     const diff = (tempEndDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
     let daysCount = Math.floor(diff) +1;
     let todayTranslated = this.translateService.stream('Today');
+    const headerTemplates: {[field: string]: TemplateRef<any>} = {};
 
     this.tableHeaders = [
       {
@@ -187,6 +262,14 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
       ...Array.from({length: daysCount}).map((_, index) => {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + index);
+        const field = index.toString();
+        this.columnDates[field] = currentDate;
+        // Only past days can be reconciled, so only their headers become buttons. A
+        // past header is always a plain string: the Observable header is today's, and
+        // today never gets this template.
+        if (currentDate < todayMidnight) {
+          headerTemplates[field] = this.reconcileDayHeaderTemplate;
+        }
         const isToday = currentDate.toDateString() === today.toDateString();
         const formattedDate = isToday
           ? todayTranslated
@@ -194,12 +277,15 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
         return {
           cellTemplate: this.dayColumnTemplate,
           header: formattedDate,
-          field: index.toString(),
+          field,
           sortable: false,
-          class: (row: any) => this.getCellClass(row, index.toString()),
+          class: (row: any) => this.getCellClass(row, field),
         };
       }),
     ];
+    this.dayHeaderTemplates = headerTemplates;
+    // New [columns] and [headerTemplate] make mtx-grid drop its selection silently.
+    this.resetSelection();
     this.cdr.detectChanges();
   }
 

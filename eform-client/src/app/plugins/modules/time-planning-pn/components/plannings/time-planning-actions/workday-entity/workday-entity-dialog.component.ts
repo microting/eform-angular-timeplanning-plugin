@@ -15,14 +15,14 @@ import validator from 'validator';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TemplateFilesService} from 'src/app/common/services';
 import {OperationResult, SharedTagModel} from 'src/app/common/models';
-import {Observable, Subscription, defaultIfEmpty, throwError, timeout} from 'rxjs';
+import {Observable, Subscription} from 'rxjs';
 import {ToastrService} from 'ngx-toastr';
 import { MatDialogRef } from '@angular/material/dialog';
 import {HelpEntryId} from '../../../../help/help.model';
 import {HelpPanelService} from '../../../../help/services/help-panel.service';
 import {HelpTourService} from '../../../../help/services/help-tour.service';
 import {format} from 'date-fns';
-import {dayKey, formatReconciledProvenance} from '../../day-lock.util';
+import {assertLockOutcomeHandled, dayKey, formatReconciledProvenance, sendLockRequest} from '../../day-lock.util';
 
 import {
   AbstractControl,
@@ -34,23 +34,6 @@ import {
   ReactiveFormsModule,
   FormArray,
 } from '@angular/forms';
-
-/**
- * How long a reconcile or unlock may hang before this dialog stops waiting for it.
- *
- * It has to be shorter than HttpErrorInterceptor's own budget: its `default:` branch
- * retries a failing request five times, fifteen seconds apart, which is about 75
- * seconds before it gives up. Waiting that out behind a blocked backdrop is not a
- * state anyone should have to sit through.
- */
-export const LOCK_REQUEST_TIMEOUT_MS = 30000;
-
-/**
- * Thrown by the timeout above, so the failure handler can tell the one UNKNOWN outcome
- * apart from the known ones: an error the interceptor has already reported, and an
- * empty completion, which `defaultIfEmpty` turns into an ordinary answer instead.
- */
-const LOCK_REQUEST_TIMED_OUT = {lockRequestTimedOut: true};
 
 @Component({
   selector: 'app-workday-entity-dialog',
@@ -2044,6 +2027,10 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
    * dialog from its callback and must not do so while dismissal is still blocked. The
    * callback runs in the same synchronous call stack, so nothing the user does can
    * land in the gap; `lockStateChanged` is therefore still set before any close.
+   *
+   * The request itself, and what each outcome means, live in the shared util: the
+   * toolbar's bulk reconcile makes the same shape of request and must reach the same
+   * four answers.
    */
   private submitLockRequest(
     request$: Observable<OperationResult>,
@@ -2059,48 +2046,27 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
       onFailure?.();
     };
 
-    request$.pipe(
-      timeout({
-        each: LOCK_REQUEST_TIMEOUT_MS,
-        with: () => throwError(() => LOCK_REQUEST_TIMED_OUT),
-      }),
-      // HttpErrorInterceptor turns a sustained 5xx, and an offline network, into EMPTY
-      // after its retries: a completion with no value and no error. This turns that
-      // into an ordinary answer of "nothing", so it needs no state of its own to
-      // recognise; the next handler decides what it means.
-      defaultIfEmpty(null),
-    ).subscribe({
-      next: (result: OperationResult | null) => {
-        if (result && result.success) {
+    sendLockRequest(request$, outcome => {
+      switch (outcome.kind) {
+        case 'success':
           this.setLockRequestInFlight(false);
           onSuccess();
           return;
-        }
-        if (!result) {
-          // The EMPTY above. The interceptor only reaches it after retrying against
-          // 5xx or a dead connection, and a 5xx can be written AFTER the save has
-          // already committed — the server saves before it writes the response. So a
-          // response arriving is not evidence that nothing changed.
-          this.markLockStateUncertain(settle);
+        case 'refused':
+          // ApiBaseService toasts body.message when the refusal carries one; the
+          // fallback covers the rare refusal that does not.
+          settle(outcome.message ? null : 'lockRequestFailed');
           return;
-        }
-        // KNOWN: the server itself answered "no", so nothing changed. ApiBaseService
-        // toasts body.message when the refusal carries one; the fallback covers the
-        // rare refusal that does not.
-        settle(result.message ? null : 'lockRequestFailed');
-      },
-      error: error => {
-        if (error !== LOCK_REQUEST_TIMED_OUT) {
-          // KNOWN: the only error HttpErrorInterceptor lets through is its 400 branch,
-          // where the server rejected the request before doing anything. It has also
-          // already toasted every errorMessage, so saying it again would double up.
+        case 'error':
+          // The interceptor has already toasted its 400, so saying it again would
+          // double up.
           settle(null);
           return;
-        }
-        // Our own timeout: the request is aborted from this end, but a slow server may
-        // commit it a moment later.
-        this.markLockStateUncertain(settle);
-      },
+        case 'unknown':
+          this.markLockStateUncertain(settle);
+          return;
+      }
+      return assertLockOutcomeHandled(outcome);
     });
   }
 
