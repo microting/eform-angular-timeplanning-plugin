@@ -42,6 +42,7 @@ export const PLANNING_HELP_ENTRIES: HelpEntry[] = [
   { id: 'toolbar.payrollExport', kind: 'control', section: 'toolbar', anchor: 'toolbar.payrollExport',
     tour: 'page', tourStep: 7, adminOnly: true },
   { id: 'toolbar.reload', kind: 'control', section: 'toolbar', anchor: 'toolbar.reload' },
+  { id: 'toolbar.reconcileThrough', kind: 'control', section: 'toolbar', anchor: 'toolbar.reconcileThrough' },
 
   // ---- grid ----
   { id: 'grid.nameColumn', kind: 'control', section: 'grid', anchor: 'grid.nameColumn',
@@ -81,6 +82,8 @@ export const PLANNING_HELP_ENTRIES: HelpEntry[] = [
     tour: 'dialog', tourStep: 6 },
   { id: 'dayCell.oneMinuteIntervals', kind: 'control', section: 'dayCell', anchor: 'dayCell.oneMinuteIntervals' },
   { id: 'dayCell.planHoursLimit', kind: 'control', section: 'dayCell', anchor: 'dayCell.planHoursLimit' },
+  { id: 'dayCell.reconciled', kind: 'control', section: 'dayCell', anchor: 'dayCell.reconciled' },
+  { id: 'dayCell.lockedByReconciled', kind: 'control', section: 'dayCell', anchor: 'dayCell.lockedByReconciled' },
 
   // ---- flex ----
   { id: 'flex.whatIsFlex', kind: 'control', section: 'flex', anchor: 'flex.whatIsFlex' },

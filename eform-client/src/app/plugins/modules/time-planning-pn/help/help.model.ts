@@ -8,6 +8,7 @@ export const HELP_IDS = [
   'toolbar.showResigned', 'toolbar.navBackward', 'toolbar.navForward',
   'toolbar.workerFilter', 'toolbar.tagFilter', 'toolbar.dateRange',
   'toolbar.downloadExcel', 'toolbar.payrollExport', 'toolbar.reload',
+  'toolbar.reconcileThrough',
   // grid controls
   'grid.nameColumn', 'grid.tagChips', 'grid.settingsStrip', 'grid.dayCellAnatomy',
   'grid.weeklyPlannedHours', 'grid.messageIcons', 'grid.sortName', 'grid.openDay',
@@ -18,7 +19,7 @@ export const HELP_IDS = [
   'dayCell.gps', 'dayCell.snapshot', 'dayCell.futureDisabled', 'dayCell.planHours',
   'dayCell.nettoOverride', 'dayCell.paidOutFlex', 'dayCell.flags',
   'dayCell.commentOffice', 'dayCell.save', 'dayCell.oneMinuteIntervals',
-  'dayCell.planHoursLimit',
+  'dayCell.planHoursLimit', 'dayCell.reconciled', 'dayCell.lockedByReconciled',
   // flex controls
   'flex.whatIsFlex', 'flex.sumFlex', 'flex.paidOutFlexRelation',
 ] as const;
