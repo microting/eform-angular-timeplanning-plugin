@@ -490,4 +490,6 @@ export const enUS = {
   unlockFreeFirst: 'Locked because {{date}} is reconciled. Unlock {{date}} first.',
   unlockTypeWordPrompt: 'The reconciliation is removed and the day can be edited again. Type {{word}} to confirm.',
   UNLOCK: 'UNLOCK',
+  lockRequestFailed: 'The action could not be completed. Try again.',
+  lockRequestUncertain: 'No answer came back. The state of the day is uncertain and refreshes when this window closes.',
 };

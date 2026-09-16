@@ -61,7 +61,14 @@
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
-                <button mat-icon-button color="warn" data-tp-help="dayCell.resetField" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 1)">
+                <!--
+                  Every reset affordance is [disabled] rather than *ngIf: a greyed icon
+                  holds the row's layout and reads as "not here, not now", where a
+                  vanished one leaves a gap and says nothing. The handlers guard
+                  themselves as well, because patchValue and setValue write straight
+                  through a disabled control.
+                -->
+                <button mat-icon-button color="warn" data-tp-help="dayCell.resetField" [disabled]="isLocked" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 1)">
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
@@ -95,7 +102,7 @@
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
-                <button mat-icon-button color="warn" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 2)">
+                <button mat-icon-button color="warn" [disabled]="isLocked" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 2)">
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
@@ -124,7 +131,7 @@
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
-                <button mat-icon-button color="warn" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 3)">
+                <button mat-icon-button color="warn" [disabled]="isLocked" (click)="resetPlannedTimes((+shiftId - 1) * 3 + 3)">
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
@@ -200,7 +207,7 @@
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
-                <button mat-icon-button color="warn" (click)="resetActualTimes((+shiftId - 1) * 3 + 1)">
+                <button mat-icon-button color="warn" [disabled]="actualTimesReadOnly" (click)="resetActualTimes((+shiftId - 1) * 3 + 1)">
                   <mat-icon>delete</mat-icon>
                 </button>
                 <ng-container
@@ -238,7 +245,7 @@
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
-                <button mat-icon-button color="warn" (click)="resetActualTimes((+shiftId - 1) * 3 + 2)">
+                <button mat-icon-button color="warn" [disabled]="actualTimesReadOnly" (click)="resetActualTimes((+shiftId - 1) * 3 + 2)">
                   <mat-icon>delete</mat-icon>
                 </button>
                 <button
@@ -248,6 +255,7 @@
                   data-tp-help="dayCell.resetPauseToRecorded"
                   [matTooltip]="'Reset pause to recorded' | translate"
                   [attr.data-testid]="'resetPauseToRecorded' + shiftId"
+                  [disabled]="actualTimesReadOnly"
                   (click)="resetPauseToRecorded(+shiftId)">
                   <mat-icon>restore</mat-icon>
                 </button>
@@ -285,7 +293,7 @@
                     (closed)="calculatePlanHours()">
                   </ngx-material-timepicker>
                 </mat-form-field>
-                <button mat-icon-button color="warn" (click)="resetActualTimes((+shiftId - 1) * 3 + 3)">
+                <button mat-icon-button color="warn" [disabled]="actualTimesReadOnly" (click)="resetActualTimes((+shiftId - 1) * 3 + 3)">
                   <mat-icon>delete</mat-icon>
                 </button>
                 <ng-container
@@ -464,6 +472,24 @@
             data-tp-help="dayCell.futureDisabled"
             tone="warn"></tp-help-hint>
 
+          <!--
+            Two hints with fixed ids rather than one hint with a bound id: the help
+            wiring spec only reads literal ids out of the markup, so a bound one would
+            escape both its registry check and its exhaustive hint list. Help chrome is
+            admin-only, so these are extras; the footer lines below carry the copy that
+            every user sees.
+          -->
+          <tp-help-hint
+            *ngIf="isLocked && data.isSealed"
+            helpId="dayCell.reconciled"
+            data-tp-help="dayCell.reconciled"
+            tone="warn"></tp-help-hint>
+          <tp-help-hint
+            *ngIf="isLocked && !data.isSealed"
+            helpId="dayCell.lockedByReconciled"
+            data-tp-help="dayCell.lockedByReconciled"
+            tone="warn"></tp-help-hint>
+
           <br/>
       </div>
 
@@ -491,26 +517,129 @@
     </div>
   </div>
 
-  <div mat-dialog-actions class="d-flex flex-row justify-content-end">
-    <button
-      class="btn-cancel"
-      mat-dialog-close
-      id="cancelButton"
-      (click)="onCancel()">
-      {{ 'Cancel' | translate }}
-    </button>
+  <!--
+    The footer morphs in place (spec §8.2, §8.4): one row, three modes, no second
+    modal. Source order keeps a .btn-cancel first, as check-button-conventions.js
+    requires for the whole row regardless of *ngIf. Every new button is
+    type="button" because this row sits inside <form>, and an implicit submit would
+    click the first button in the form, which is the history button in the title.
+  -->
+  <div mat-dialog-actions class="d-flex flex-row justify-content-end align-items-center tp-dialog-footer">
+    <ng-container *ngIf="footerMode === 'actions'">
+      <!-- What the day IS, in plain text every user sees (help chrome is admin-only). -->
+      <div class="tp-footer-status" *ngIf="isLocked">
+        <span id="reconciledProvenance" *ngIf="data.isSealed">
+          <mat-icon fontSet="material-symbols-rounded" class="neutral-icon filled tp-seal">verified</mat-icon>
+          <span id="reconciledProvenanceText">{{ reconciledProvenance }}</span>
+        </span>
+        <span id="lockedFreeFirst" *ngIf="!isBoundaryDay">
+          <mat-icon fontSet="material-symbols-outlined" class="neutral-icon">lock</mat-icon>
+          <span id="lockedFreeFirstText">{{ 'unlockFreeFirst' | translate: {date: freeFirstDate} }}</span>
+        </span>
+      </div>
+      <span class="tp-footer-note" id="reconcileNeedsSave"
+            *ngIf="reconcileEligible && workdayForm.dirty">
+        {{ 'reconcileNeedsSave' | translate }}
+      </span>
 
-    <tp-help-icon helpId="dayCell.save" (openInPanel)="openHelp($event)"></tp-help-icon>
-    <button
-      class="btn-primary btn-primary--icon-left"
-      id="saveButton"
-      data-tp-help="dayCell.save"
-      (click)="onUpdateWorkDayEntity()"
-      [disabled]="workdayForm.invalid"
-      [mat-dialog-close]="data"
-    >
-      <span>{{ 'Save' | translate }}</span>
-    </button>
+      <button
+        type="button"
+        class="btn-cancel"
+        mat-dialog-close
+        id="cancelButton"
+        (click)="onCancel()">
+        {{ 'Cancel' | translate }}
+      </button>
+
+      <button
+        type="button"
+        *ngIf="reconcileEligible && !workdayForm.dirty"
+        class="btn-quiet"
+        id="reconcileButton"
+        (click)="onReconcileStart()">
+        {{ 'Reconcile day' | translate }}
+      </button>
+
+      <button
+        type="button"
+        *ngIf="isBoundaryDay"
+        class="btn-quiet"
+        id="unlockButton"
+        (click)="onUnlockStart()">
+        {{ 'Unlock' | translate }}
+      </button>
+
+      <tp-help-icon *ngIf="!isLocked" helpId="dayCell.save" (openInPanel)="openHelp($event)"></tp-help-icon>
+      <!-- [mat-dialog-close] fires regardless of (click), so on a locked day Save must
+           be out of the DOM, not merely disabled. -->
+      <button
+        *ngIf="!isLocked"
+        class="btn-primary btn-primary--icon-left"
+        id="saveButton"
+        data-tp-help="dayCell.save"
+        (click)="onUpdateWorkDayEntity()"
+        [disabled]="workdayForm.invalid"
+        [mat-dialog-close]="data"
+      >
+        <span>{{ 'Save' | translate }}</span>
+      </button>
+    </ng-container>
+
+    <ng-container *ngIf="footerMode === 'confirmReconcile'">
+      <span class="tp-footer-confirm" id="reconcileConfirmText">
+        {{ 'reconcileDayConfirm' | translate: {worker: data.planningPrDayModels.siteName, date: dayLabel} }}
+      </span>
+      <button
+        type="button"
+        class="btn-cancel"
+        id="reconcileCancelButton"
+        [disabled]="lockRequestInFlight"
+        (click)="onReconcileCancel()">
+        {{ 'Cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="btn-primary"
+        id="reconcileConfirmButton"
+        [disabled]="lockRequestInFlight"
+        (click)="onReconcileConfirm()">
+        {{ 'Reconcile day' | translate }}
+      </button>
+    </ng-container>
+
+    <ng-container *ngIf="footerMode === 'confirmUnlock'">
+      <label class="tp-footer-confirm" for="unlockWordInput" id="unlockPrompt">
+        {{ 'unlockTypeWordPrompt' | translate: {word: unlockWord} }}
+      </label>
+      <!-- [formControl] is standalone: it can sit inside the [formGroup] without
+           registering in it, so workdayForm.disable() does not reach it.
+           preventDefault on Enter stops the implicit form submit. -->
+      <input
+        #unlockWordInput
+        id="unlockWordInput"
+        class="tp-unlock-word"
+        type="text"
+        autocomplete="off"
+        spellcheck="false"
+        [formControl]="unlockWordCtrl"
+        (keydown.enter)="$event.preventDefault(); onUnlockConfirm()">
+      <button
+        type="button"
+        class="btn-cancel"
+        id="unlockCancelButton"
+        [disabled]="lockRequestInFlight"
+        (click)="onUnlockCancel()">
+        {{ 'Cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="btn-delete"
+        id="unlockConfirmButton"
+        [disabled]="!unlockWordMatches || lockRequestInFlight"
+        (click)="onUnlockConfirm()">
+        {{ 'Unlock' | translate }}
+      </button>
+    </ng-container>
   </div>
 </form>
 

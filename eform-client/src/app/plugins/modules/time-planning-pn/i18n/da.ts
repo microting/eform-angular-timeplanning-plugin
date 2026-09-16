@@ -490,4 +490,6 @@ export const da = {
   unlockFreeFirst: 'Låst, fordi {{date}} er afstemt. Lås {{date}} op først.',
   unlockTypeWordPrompt: 'Afstemningen fjernes, og dagen kan redigeres igen. Skriv {{word}} for at bekræfte.',
   UNLOCK: 'LÅS OP',
+  lockRequestFailed: 'Handlingen kunne ikke gennemføres. Prøv igen.',
+  lockRequestUncertain: 'Der kom ikke noget svar. Dagens tilstand er usikker og opdateres, når vinduet lukkes.',
 };

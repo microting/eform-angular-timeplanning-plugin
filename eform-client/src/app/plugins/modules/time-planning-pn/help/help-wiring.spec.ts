@@ -42,9 +42,10 @@ const MARKUP = [read(CONTAINER_HTML), read(TABLE_HTML), read(DIALOG_HTML)].join(
  * from HelpUiStrings, so this task added none; a new entry here means someone
  * added a key that has to be translated into all 25 shared locale files.
  *
- * `lockedTooltip` and `reconciledLegend` are the reconciled day lock's two grid
- * strings (Task 9A). Task 13A adds them, and the rest of the lock's keys, to every
- * locale file.
+ * The reconciled ("afstemt") day lock adds its own strings: `lockedTooltip` and
+ * `reconciledLegend` in the grid, and `Reconcile day`, `Unlock`, `reconcileDayConfirm`,
+ * `reconcileNeedsSave`, `unlockFreeFirst` and `unlockTypeWordPrompt` in the day
+ * dialog's footer. All of them are translated in every shared locale file.
  */
 const TEMPLATE_TRANSLATE_KEYS = [
   'Actual', 'Auto break calculation', 'Cancel', 'CommentOffice', 'CommentWorker', 'Date range',
@@ -52,9 +53,11 @@ const TEMPLATE_TRANSLATE_KEYS = [
   'Flex balance to date', 'keyboard_tab', 'keyboard_tab_rtl', 'lockedTooltip',
   'Needs update!', 'NettoHours',
   'NettoHours override', 'No pay rule set selected', 'PaidOutFlex', 'Pause', 'Plan hours',
-  'Planned working hours', 'reconciledLegend', 'Reload table', 'Reset pause to recorded', 'Save',
+  'Planned working hours', 'Reconcile day', 'reconcileDayConfirm', 'reconciledLegend',
+  'reconcileNeedsSave', 'Reload table', 'Reset pause to recorded', 'Save',
   'Shift not stopped by user!', 'Shifts across midnight', 'Show resigned', 'Start', 'Stop',
-  'Tags', 'Total breaktime', 'Total working hours', 'Use 1-minute intervals',
+  'Tags', 'Total breaktime', 'Total working hours', 'Unlock', 'unlockFreeFirst',
+  'unlockTypeWordPrompt', 'Use 1-minute intervals',
   'View GPS Location', 'View history', 'View Snapshot', 'Worker', 'Worktime start',
   'Worktime stop',
 ];
@@ -151,7 +154,8 @@ describe('help wiring', () => {
       .map(hint => /helpId="([^"]+)"/.exec(hint)?.[1])
       .filter((id): id is string => !!id);
     expect(hintIds.sort()).toEqual([
-      'dayCell.futureDisabled', 'dayCell.planHoursLimit', 'grid.noWorkers',
+      'dayCell.futureDisabled', 'dayCell.lockedByReconciled', 'dayCell.planHoursLimit',
+      'dayCell.reconciled', 'grid.noWorkers',
     ]);
   });
 

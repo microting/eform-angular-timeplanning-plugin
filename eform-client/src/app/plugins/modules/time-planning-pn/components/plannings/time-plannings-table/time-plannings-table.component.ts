@@ -489,9 +489,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
                   this.convertStringToMinutes(data.autoBreakSettings.sunday.breakMinutesUpperLimit as string);
                 this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
                   if (result && result.success) {
-                    this.pendingHighlight = { siteId: siteId, field: null };
-                    this.highlightApplied = false;
-                    this.waitingForFreshData = true;
+                    this.armPendingHighlight(siteId, null);
                     this.assignedSiteChanged.emit(data);
                   }
                 });
@@ -500,6 +498,17 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
           }
         });
     }});
+  }
+
+  /**
+   * Marks the cell the grid should flash once fresh data lands, and tells the render
+   * pass that the rows on screen are now stale. Every write path arms the same three
+   * fields; splitting them is how one of them gets forgotten.
+   */
+  private armPendingHighlight(siteId: number, field: string | null): void {
+    this.pendingHighlight = { siteId, field };
+    this.highlightApplied = false;
+    this.waitingForFreshData = true;
   }
 
   onDayColumnClick(row: any, field: string): void {
@@ -512,7 +521,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
     const cellData = R.clone(row.planningPrDayModels[field]);
     this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
       if (result && result.success) {
-        this.dialog.open(WorkdayEntityDialogComponent, {
+        const dialogRef = this.dialog.open(WorkdayEntityDialogComponent, {
           data: {
             planningPrDayModels: cellData,
             assignedSiteModel: result.model,
@@ -531,12 +540,23 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
           maxWidth: '95vw',  // Add this
           maxHeight: '95vh', // Add this
           panelClass: 'time-planning-dialog'
-        })
-          .afterClosed().subscribe((data: any) => {
+        });
+        // Captured now, because MatDialogRef sets componentInstance to null on close,
+        // and every close path (Cancel, Esc, backdrop) must be able to report a
+        // reconcile or unlock that has already reached the server.
+        const dialog = dialogRef.componentInstance;
+        dialogRef.afterClosed().subscribe((data: any) => {
+          if (dialog?.lockStateChanged) {
+            // Already persisted by the dialog's own PUT. Never fall through to
+            // updatePlanning: the day is locked now, and the save would be refused.
+            // A reload is also the only way the grid picks the new state up, since the
+            // cell classes are memoised on the row reference.
+            this.armPendingHighlight(siteId, field);
+            this.timePlanningChanged.emit(null);
+            return;
+          }
           if (data !== '' && data !== undefined) {
-            this.pendingHighlight = { siteId, field };
-            this.highlightApplied = false;
-            this.waitingForFreshData = true;
+            this.armPendingHighlight(siteId, field);
             this.planningsService.updatePlanning(data.planningPrDayModels, data.planningPrDayModels.id).subscribe(result => {
               if (result && result.success) {
                 this.timePlanningChanged.emit(data);

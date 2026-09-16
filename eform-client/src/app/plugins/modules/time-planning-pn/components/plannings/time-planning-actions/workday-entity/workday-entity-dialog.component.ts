@@ -1,4 +1,4 @@
-import {Component, OnInit, TemplateRef, ViewChild,
+import {Component, ElementRef, OnInit, TemplateRef, ViewChild,
   inject, OnDestroy
 } from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialog} from '@angular/material/dialog';
@@ -14,12 +14,15 @@ import {selectCurrentUserIsFirstUser, selectCurrentUserIsAdmin} from 'src/app/st
 import validator from 'validator';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TemplateFilesService} from 'src/app/common/services';
-import {SharedTagModel} from 'src/app/common/models';
-import {Subscription} from 'rxjs';
+import {OperationResult, SharedTagModel} from 'src/app/common/models';
+import {Observable, Subscription, defaultIfEmpty, throwError, timeout} from 'rxjs';
+import {ToastrService} from 'ngx-toastr';
 import { MatDialogRef } from '@angular/material/dialog';
 import {HelpEntryId} from '../../../../help/help.model';
 import {HelpPanelService} from '../../../../help/services/help-panel.service';
 import {HelpTourService} from '../../../../help/services/help-tour.service';
+import {format} from 'date-fns';
+import {dayKey, formatReconciledProvenance} from '../../day-lock.util';
 
 import {
   AbstractControl,
@@ -31,6 +34,23 @@ import {
   ReactiveFormsModule,
   FormArray,
 } from '@angular/forms';
+
+/**
+ * How long a reconcile or unlock may hang before this dialog stops waiting for it.
+ *
+ * It has to be shorter than HttpErrorInterceptor's own budget: its `default:` branch
+ * retries a failing request five times, fifteen seconds apart, which is about 75
+ * seconds before it gives up. Waiting that out behind a blocked backdrop is not a
+ * state anyone should have to sit through.
+ */
+export const LOCK_REQUEST_TIMEOUT_MS = 30000;
+
+/**
+ * Thrown by the timeout above, so the failure handler can tell the one UNKNOWN outcome
+ * apart from the known ones: an error the interceptor has already reported, and an
+ * empty completion, which `defaultIfEmpty` turns into an ordinary answer instead.
+ */
+const LOCK_REQUEST_TIMED_OUT = {lockRequestTimedOut: true};
 
 @Component({
   selector: 'app-workday-entity-dialog',
@@ -50,13 +70,22 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   public data = inject<{
       planningPrDayModels: PlanningPrDayModel,
       assignedSiteModel: AssignedSiteModel,
-      tags?: SharedTagModel[]
+      tags?: SharedTagModel[],
+      /** At or before the row's boundary: the day opens read-only. */
+      isLocked?: boolean,
+      /** The one day whose date is the row's boundary. Only it offers unlock. */
+      isBoundary?: boolean,
+      /** A locked day carrying its own reconcile mark: it shows its provenance. */
+      isSealed?: boolean,
+      /** The row's boundary, named to the user as the day to free first. */
+      lockedThrough?: string | null
     }>(MAT_DIALOG_DATA);
   protected datePipe = inject(DatePipe);
   private translateService = inject(TranslateService);
   private dialogRef = inject(MatDialogRef<WorkdayEntityDialogComponent>);
   private helpPanel = inject(HelpPanelService);
   private helpTour = inject(HelpTourService);
+  private toastrService = inject(ToastrService);
   private originalDialogWidth: string = '600px';
   private originalDialogHeight: string = 'auto';
 
@@ -132,6 +161,57 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   /** True while the tour on screen is this dialog's, so closing can end it. */
   private dialogTourRunning = false;
   private helpTourState$: Subscription;
+
+  // ---- Reconcile and unlock footer (spec §8.2, §8.4) ---------------------------
+  //
+  // The footer morphs in place instead of stacking a second modal: this dialog is the
+  // one place that already shows whose day, which date and which hours, and a modal on
+  // top would cover exactly that.
+
+  footerMode: 'actions' | 'confirmReconcile' | 'confirmUnlock' = 'actions';
+
+  /**
+   * A reconciled or cascade-locked day opens read-only. Derived from the dialog data
+   * rather than copied into a field, so an in-place reconcile has one thing to set
+   * and the two can never disagree.
+   */
+  get isLocked(): boolean {
+    return this.data.isLocked === true;
+  }
+
+  /**
+   * Registered times are read-only on a locked day, and on a day that has not
+   * happened yet — the actual controls are already built disabled for a future day,
+   * but the reset affordances write through patchValue, which ignores that.
+   */
+  get actualTimesReadOnly(): boolean {
+    return this.isLocked || this.isInTheFuture;
+  }
+
+  /**
+   * Whether this day may be sealed at all. Read once in ngOnInit: as a getter it was
+   * re-evaluated on every change-detection pass, so a dialog left open across
+   * midnight could arm the confirm on a day that had meanwhile become today.
+   */
+  canReconcile = false;
+
+  /**
+   * Set once a reconcile or unlock has reached the server. After the close, whatever
+   * its path (Cancel, Esc, backdrop), the table reads this and reloads the grid
+   * instead of treating the close payload as a save.
+   */
+  lockStateChanged = false;
+
+  /** True while a reconcile or unlock PUT is in flight. */
+  lockRequestInFlight = false;
+
+  /** The word the user types to unlock; standalone, so the form's disable never reaches it. */
+  readonly unlockWordCtrl = new FormControl<string>('', {nonNullable: true});
+
+  @ViewChild('unlockWordInput') private unlockWordInput?: ElementRef<HTMLInputElement>;
+
+  /** Captured at construction so it can be restored after the PUT. */
+  private readonly defaultDisableClose = this.dialogRef.disableClose;
 
 
 
@@ -247,6 +327,10 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
     // Er dato i fremtiden?
     this.isInTheFuture = Date.parse(this.data.planningPrDayModels.date) > Date.now();
+    // Today and future days stay open so time can still be registered.
+    const day = dayKey(this.data.planningPrDayModels.date);
+    this.canReconcile = !!this.data.planningPrDayModels.id
+      && day !== null && day < dayKey(new Date());
     this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
     this.date = Date.parse(this.data.planningPrDayModels.date);
 
@@ -443,6 +527,11 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     }
 
     this.updateDisabledStates();
+    if (this.isLocked) {
+      // One sweep closes every control the cascade above left open; the guard inside
+      // setDisabled is what keeps them closed from here on.
+      this.workdayForm.disable({emitEvent: false});
+    }
     this.loadGpsAndSnapshotData();
 
     this.isAdmin$ = this.store.select(selectCurrentUserIsAdmin)
@@ -483,10 +572,15 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     if (!c) {
       return;
     }
-    if (disabled && c.enabled) {
+    // A locked day can never re-enable a control. The progressive-enable cascade in
+    // updateDisabledStates() calls setDisabled(path, false) from many branches, and it
+    // runs again on every field change; without this guard, one keystroke would reopen
+    // a read-only form.
+    const effective = disabled || this.isLocked;
+    if (effective && c.enabled) {
       c.disable({emitEvent: false});
     }
-    if (!disabled && c.disabled) {
+    if (!effective && c.disabled) {
       c.enable({emitEvent: false});
     }
   }
@@ -1337,6 +1431,11 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
   // ===== Nulstil plan =====
   resetPlannedTimes(number: number) {
+    // patchValue writes through a DISABLED control, so the guard has to be here and
+    // not only on the button: otherwise a sealed day could be blanked on screen.
+    if (this.isLocked) {
+      return;
+    }
     const s1 = this.workdayForm.get('planned.shift1') as FormGroup;
     const s2 = this.workdayForm.get('planned.shift2') as FormGroup;
     const s3 = this.workdayForm.get('planned.shift3') as FormGroup;
@@ -1416,6 +1515,11 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
   // ===== Nulstil registreret =====
   resetActualTimes(number: number) {
+    // Same hole as resetPlannedTimes, and it predates the lock: the actual controls
+    // are built disabled for a future day, and patchValue ignored that too.
+    if (this.actualTimesReadOnly) {
+      return;
+    }
     const a1 = this.workdayForm.get('actual.shift1') as FormGroup;
     const a2 = this.workdayForm.get('actual.shift2') as FormGroup;
     const a3 = this.workdayForm.get('actual.shift3') as FormGroup;
@@ -1659,6 +1763,10 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   // to compute-from-slots), and visually resets the picker to the recorded sum so
   // the admin sees the value they are reverting to before saving.
   resetPauseToRecorded(shift: number): void {
+    // setValue writes through a DISABLED control, as above.
+    if (this.actualTimesReadOnly) {
+      return;
+    }
     const recordedMinutes = this.useOneMinuteIntervals
       ? this.computeExactPauseMinutes(shift)
       : (this.computeFiveMinutePauseMinutes(shift) ?? 0);
@@ -1905,6 +2013,237 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   }
 
   onCancel() {
+  }
+
+  // ---- Reconcile (spec §8.2) ---------------------------------------------------
+
+  /**
+   * While the PUT is in flight the dialog cannot be dismissed. Otherwise Esc or a
+   * backdrop click would close it before lockStateChanged is set, and the grid would
+   * go on drawing a day the server has just sealed as open.
+   */
+  private setLockRequestInFlight(inFlight: boolean): void {
+    this.lockRequestInFlight = inFlight;
+    this.dialogRef.disableClose = inFlight || this.defaultDisableClose;
+  }
+
+  /**
+   * The one place reconcile and unlock talk to the server, so they cannot drift on
+   * the in-flight guard, on recovery or on what the user is told.
+   *
+   * **Every outcome must leave the dialog usable.** While the request is in flight the
+   * dialog cannot be dismissed and both confirm buttons are disabled, and neither of
+   * them carries mat-dialog-close — so an outcome that is not handled here does not
+   * degrade, it strands the user with nothing but a page reload.
+   *
+   * `settle` takes the message to show, or null when someone has already spoken: the
+   * server's own refusal message through ApiBaseService, or the 400 branch of
+   * HttpErrorInterceptor, which is the only error it lets through to a caller.
+   *
+   * The guard is cleared BEFORE the callbacks run, because the unlock path closes the
+   * dialog from its callback and must not do so while dismissal is still blocked. The
+   * callback runs in the same synchronous call stack, so nothing the user does can
+   * land in the gap; `lockStateChanged` is therefore still set before any close.
+   */
+  private submitLockRequest(
+    request$: Observable<OperationResult>,
+    onSuccess: () => void,
+    onFailure?: () => void,
+  ): void {
+    this.setLockRequestInFlight(true);
+    const settle = (message: string | null) => {
+      this.setLockRequestInFlight(false);
+      if (message) {
+        this.toastrService.error(this.translateService.instant(message));
+      }
+      onFailure?.();
+    };
+
+    request$.pipe(
+      timeout({
+        each: LOCK_REQUEST_TIMEOUT_MS,
+        with: () => throwError(() => LOCK_REQUEST_TIMED_OUT),
+      }),
+      // HttpErrorInterceptor turns a sustained 5xx, and an offline network, into EMPTY
+      // after its retries: a completion with no value and no error. This turns that
+      // into an ordinary answer of "nothing", so it needs no state of its own to
+      // recognise; the next handler decides what it means.
+      defaultIfEmpty(null),
+    ).subscribe({
+      next: (result: OperationResult | null) => {
+        if (result && result.success) {
+          this.setLockRequestInFlight(false);
+          onSuccess();
+          return;
+        }
+        if (!result) {
+          // The EMPTY above. The interceptor only reaches it after retrying against
+          // 5xx or a dead connection, and a 5xx can be written AFTER the save has
+          // already committed — the server saves before it writes the response. So a
+          // response arriving is not evidence that nothing changed.
+          this.markLockStateUncertain(settle);
+          return;
+        }
+        // KNOWN: the server itself answered "no", so nothing changed. ApiBaseService
+        // toasts body.message when the refusal carries one; the fallback covers the
+        // rare refusal that does not.
+        settle(result.message ? null : 'lockRequestFailed');
+      },
+      error: error => {
+        if (error !== LOCK_REQUEST_TIMED_OUT) {
+          // KNOWN: the only error HttpErrorInterceptor lets through is its 400 branch,
+          // where the server rejected the request before doing anything. It has also
+          // already toasted every errorMessage, so saying it again would double up.
+          settle(null);
+          return;
+        }
+        // Our own timeout: the request is aborted from this end, but a slow server may
+        // commit it a moment later.
+        this.markLockStateUncertain(settle);
+      },
+    });
+  }
+
+  /**
+   * The two outcomes where the day's state on the server is unknowable from here: our
+   * own timeout, and the interceptor giving up. Neither tells us whether the write
+   * landed, so the close must reload the grid and let the server say.
+   *
+   * Being wrong this way costs one unnecessary reload on a genuine failure. Being
+   * wrong the other way leaves a sealed day drawn as open, which the user then acts
+   * against.
+   */
+  private markLockStateUncertain(settle: (message: string | null) => void): void {
+    this.lockStateChanged = true;
+    settle('lockRequestUncertain');
+  }
+
+  /** The day may be sealed, and is not sealed already. */
+  get reconcileEligible(): boolean {
+    return !this.isLocked && this.canReconcile;
+  }
+
+  /** "Afstemt 14.09.2026 kl. 10:32", shown where the actions were. */
+  get reconciledProvenance(): string {
+    return formatReconciledProvenance(
+      this.data.planningPrDayModels.reconciledAt, this.datePipe, this.translateService);
+  }
+
+  get dayLabel(): string {
+    return this.datePipe.transform(this.data.planningPrDayModels.date, 'dd.MM.yyyy') ?? '';
+  }
+
+  onReconcileStart(): void {
+    if (this.reconcileEligible && !this.workdayForm.dirty) {
+      this.footerMode = 'confirmReconcile';
+    }
+  }
+
+  onReconcileCancel(): void {
+    this.footerMode = 'actions';
+  }
+
+  onReconcileConfirm(): void {
+    if (this.lockRequestInFlight) {
+      return;
+    }
+    // The eligibility rule again, not only in the *ngIf that armed the confirm: this
+    // is where the request is actually made.
+    // Reconcile also writes only the flag, never the form, so an edit made while the
+    // confirm was showing would be frozen unsaved behind the seal. Either way, go
+    // back to the actions, where the note explains why.
+    if (!this.reconcileEligible || this.workdayForm.dirty) {
+      this.footerMode = 'actions';
+      return;
+    }
+    this.submitLockRequest(
+      this.planningsService.reconcileDay(this.data.planningPrDayModels.id),
+      () => this.applyReconciledInPlace(),
+      () => this.footerMode = 'actions',
+    );
+  }
+
+  /**
+   * Turns this open dialog read-only instead of closing it (spec §8.2). The server
+   * stamped the timestamp a moment ago; the client clock stands in for it until the
+   * close, and the reload that follows brings the stored value for every later open.
+   */
+  private applyReconciledInPlace(): void {
+    const day = this.data.planningPrDayModels;
+    day.reconciled = true;
+    day.reconciledAt = format(new Date(), 'yyyy-MM-dd\'T\'HH:mm:ss');
+    this.data.isLocked = true;
+    this.data.isSealed = true;
+    // Only open days above the boundary offer reconcile, so this day IS the new boundary.
+    this.data.isBoundary = true;
+    this.data.lockedThrough = day.date;
+    // The setDisabled guard stops every later cascade call from re-enabling a control.
+    this.workdayForm.disable({emitEvent: false});
+    // The in-flight guard has just lifted, but this runs in the same synchronous call
+    // stack, so no Esc or backdrop click can land between the two: by the time the
+    // dialog can be dismissed again, every close path already sees this.
+    this.lockStateChanged = true;
+    this.footerMode = 'actions';
+  }
+
+  // ---- Unlock (spec §8.4) ------------------------------------------------------
+
+  /** Only the boundary day offers unlock. It moves the line back one notch. */
+  get isBoundaryDay(): boolean {
+    return this.isLocked && this.data.isBoundary === true;
+  }
+
+  /** The day to free first, for every other locked day: the row's boundary. */
+  get freeFirstDate(): string {
+    return this.datePipe.transform(this.data.lockedThrough, 'dd.MM.yyyy') ?? '';
+  }
+
+  /** The localized word to type. The key doubles as its own fallback in untranslated locales. */
+  get unlockWord(): string {
+    return this.translateService.instant('UNLOCK');
+  }
+
+  /** Case and spacing are not the friction; the word is. */
+  get unlockWordMatches(): boolean {
+    const norm = (value: string) => (value ?? '').trim().replace(/\s+/g, ' ').toLocaleUpperCase();
+    return norm(this.unlockWordCtrl.value) === norm(this.unlockWord);
+  }
+
+  onUnlockStart(): void {
+    if (!this.isBoundaryDay) {
+      return;
+    }
+    this.unlockWordCtrl.setValue('');
+    this.footerMode = 'confirmUnlock';
+    // The input exists only once this change-detection pass has rendered the mode.
+    setTimeout(() => this.unlockWordInput?.nativeElement.focus());
+  }
+
+  onUnlockCancel(): void {
+    this.unlockWordCtrl.setValue('');
+    this.footerMode = 'actions';
+  }
+
+  onUnlockConfirm(): void {
+    // isBoundaryDay again, not only in the template: unlocking anything but the
+    // boundary is refused by the server, and the rule is worth stating where the
+    // request is actually made.
+    if (!this.isBoundaryDay || !this.unlockWordMatches || this.lockRequestInFlight) {
+      return;
+    }
+    // On failure (a newer boundary appeared meanwhile, say) the footer stays in this
+    // mode, so the word need not be typed again; the toast names the day to free first.
+    this.submitLockRequest(
+      this.planningsService.unreconcileDay(this.data.planningPrDayModels.id),
+      () => {
+        // The day is editable again, but this form was built locked. The only way
+        // back to a form whose enable/disable cascade ran from a clean start is to
+        // close and reopen from a reloaded grid. lockStateChanged is set before the
+        // close, so no close path can miss it.
+        this.lockStateChanged = true;
+        this.dialogRef.close();
+      },
+    );
   }
 
   openVersionHistory() {

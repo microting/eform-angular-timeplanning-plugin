@@ -446,6 +446,42 @@ describe('TimePlanningsTableComponent', () => {
 
       expect(dialogData()).toMatchObject({ isLocked: false, isBoundary: false, isSealed: false });
     });
+
+    describe('the close contract after a reconcile or unlock', () => {
+      /** A dialog that closed with `payload`, having reported `lockStateChanged`. */
+      const dialogThatClosed = (lockStateChanged: boolean, payload: any) => {
+        (mockDialog.open as jest.Mock).mockReturnValue({
+          componentInstance: { lockStateChanged },
+          afterClosed: () => of(payload),
+        } as any);
+      };
+
+      it('reloads the grid and sends no save when the dialog reconciled the day', () => {
+        const changed = jest.fn();
+        component.timePlanningChanged.subscribe(changed);
+        // A reconcile can close through Cancel, Esc or the backdrop, so the close
+        // payload proves nothing either way; lockStateChanged is what decides.
+        dialogThatClosed(true, { planningPrDayModels: { id: 1 } });
+
+        component.onDayColumnClick(dayRow('2026-09-10'), '0');
+
+        // The day is locked now, so the save would be refused; and the grid memoises
+        // its cell classes on the row reference, so only a reload redraws it.
+        expect(mockPlanningsService.updatePlanning).not.toHaveBeenCalled();
+        expect(changed).toHaveBeenCalledTimes(1);
+      });
+
+      it('still saves a plain close that carries a payload', () => {
+        // The negative control: without it the assertion above could pass on a close
+        // path that never saved in the first place.
+        mockPlanningsService.updatePlanning.mockReturnValue(of({ success: true }) as any);
+        dialogThatClosed(false, { planningPrDayModels: { id: 1 } });
+
+        component.onDayColumnClick(dayRow('2026-09-10'), '0');
+
+        expect(mockPlanningsService.updatePlanning).toHaveBeenCalledWith({ id: 1 }, 1);
+      });
+    });
   });
 
   describe('isInOlderThanToday', () => {
