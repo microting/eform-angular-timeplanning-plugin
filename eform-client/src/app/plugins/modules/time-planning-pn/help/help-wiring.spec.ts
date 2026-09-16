@@ -41,13 +41,18 @@ const MARKUP = [read(CONTAINER_HTML), read(TABLE_HTML), read(DIALOG_HTML)].join(
  * stood before the help system was mounted. The help chrome takes its labels
  * from HelpUiStrings, so this task added none; a new entry here means someone
  * added a key that has to be translated into all 25 shared locale files.
+ *
+ * `lockedTooltip` and `reconciledLegend` are the reconciled day lock's two grid
+ * strings (Task 9A). Task 13A adds them, and the rest of the lock's keys, to every
+ * locale file.
  */
 const TEMPLATE_TRANSLATE_KEYS = [
   'Actual', 'Auto break calculation', 'Cancel', 'CommentOffice', 'CommentWorker', 'Date range',
   'Download Excel', 'Export to payroll', 'Flex', 'Flex balance at start of day',
-  'Flex balance to date', 'keyboard_tab', 'keyboard_tab_rtl', 'Needs update!', 'NettoHours',
+  'Flex balance to date', 'keyboard_tab', 'keyboard_tab_rtl', 'lockedTooltip',
+  'Needs update!', 'NettoHours',
   'NettoHours override', 'No pay rule set selected', 'PaidOutFlex', 'Pause', 'Plan hours',
-  'Planned working hours', 'Reload table', 'Reset pause to recorded', 'Save',
+  'Planned working hours', 'reconciledLegend', 'Reload table', 'Reset pause to recorded', 'Save',
   'Shift not stopped by user!', 'Shifts across midnight', 'Show resigned', 'Start', 'Stop',
   'Tags', 'Total breaktime', 'Total working hours', 'Use 1-minute intervals',
   'View GPS Location', 'View history', 'View Snapshot', 'Worker', 'Worktime start',

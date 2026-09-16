@@ -17,6 +17,7 @@ import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {applyGridHelpAnchors} from '../../../help/grid-help-anchors';
 import {HelpEntryId} from '../../../help/help.model';
 import {HelpPanelService} from '../../../help/services/help-panel.service';
+import {dayAt, dayLockState, formatReconciledProvenance, isDayLocked, isDaySealed} from '../day-lock.util';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -59,6 +60,20 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   private waitingForFreshData = false;
   @Output() highlightedRowRendered: EventEmitter<void> = new EventEmitter<void>();
 
+  // The day states (spec §8.1, ruling F20) come from the shared util, so the grid,
+  // the dialog and the bulk preview can never disagree about a cell. Exposed for the
+  // day-cell template: dayLockState resolves the cell once for the content column,
+  // and the seal sits in the icon column, outside that read.
+  protected readonly dayLockState = dayLockState;
+  protected readonly isDaySealed = isDaySealed;
+
+  /**
+   * Legend switch (spec §8.1): shown whenever a locked day is on screen, because
+   * otherwise nobody learns what the hatch means. Recomputed when rows arrive, never
+   * on every change-detection pass.
+   */
+  hasLockedDayInView = false;
+
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.updateTableHeaders();
@@ -83,6 +98,20 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
       this.waitingForFreshData = false;
       this.highlightApplied = false;
     }
+    if (changes.timePlannings) {
+      this.hasLockedDayInView = this.computeHasLockedDayInView();
+    }
+  }
+
+  /** Seal tooltip: "Afstemt 14.09.2026 kl. 10:32". */
+  reconciledTooltip(row: any, field: string): string {
+    return formatReconciledProvenance(
+      dayAt(row, field)?.reconciledAt, this.datePipe, this.translateService);
+  }
+
+  private computeHasLockedDayInView(): boolean {
+    return (this.timePlannings ?? []).some(row =>
+      (row.planningPrDayModels ?? []).some((_, index) => isDayLocked(row, index)));
   }
 
   /**
@@ -198,7 +227,25 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
     return rounded === '-0.00' ? '0.00' : rounded;
   }
 
+  /**
+   * The td class: the day's state background, with the lock layered on top (F20).
+   * Only the boundary gets reconciled-background, which draws the 3px staircase
+   * border. Every other day at or before it, older sealed days included, gets
+   * locked-background; the seal glyph in the cell tells a sealed day apart.
+   */
   getCellClass(row: any, field: string): string {
+    const base = this.getCellStateClass(row, field);
+    const lock = dayLockState(row, field);
+    if (lock.boundary) {
+      return `${base} reconciled-background`;
+    }
+    if (lock.locked) {
+      return `${base} locked-background`;
+    }
+    return base;
+  }
+
+  private getCellStateClass(row: any, field: string): string {
     // const date = row.planningPrDayModels[field]?.date;
     try {
       const cellData = row.planningPrDayModels[field];
@@ -456,12 +503,29 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   }
 
   onDayColumnClick(row: any, field: string): void {
+    const lock = dayLockState(row, field);
+    // F17: a placeholder has no registration behind it, so there is nothing to open.
+    if (lock.placeholder) {
+      return;
+    }
     const siteId = row.siteId;
     const cellData = R.clone(row.planningPrDayModels[field]);
     this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
       if (result && result.success) {
         this.dialog.open(WorkdayEntityDialogComponent, {
-          data: {planningPrDayModels: cellData, assignedSiteModel: result.model, tags: row.tags ?? []},
+          data: {
+            planningPrDayModels: cellData,
+            assignedSiteModel: result.model,
+            tags: row.tags ?? [],
+            // A locked day still opens, read-only: people read closed days
+            // constantly. Only the boundary offers unlock (F20); a sealed day shows
+            // its provenance; any other locked day names lockedThrough as the day
+            // to free first.
+            isLocked: lock.locked,
+            isBoundary: lock.boundary,
+            isSealed: lock.sealed,
+            lockedThrough: row.lockedThrough ?? null,
+          },
           minWidth: 1024,
           minHeight: 500,
           maxWidth: '95vw',  // Add this

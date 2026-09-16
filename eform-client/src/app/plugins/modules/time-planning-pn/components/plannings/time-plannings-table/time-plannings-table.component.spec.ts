@@ -314,6 +314,138 @@ describe('TimePlanningsTableComponent', () => {
 
       expect(component.getCellClass(row, '0')).toBe('grey-background');
     });
+
+    // The reconciled ("Afstemt") day lock layers on top of the four state
+    // backgrounds. Ruling F20: only the day at lockedThrough is the boundary, and it
+    // alone gets the border class. Every other day at or before it is locked,
+    // whether or not it carries a reconcile mark of its own.
+    describe('the day lock', () => {
+      const lockedRow = (date: string, extra: any = {}) => ({
+        lockedThrough: '2026-09-09T00:00:00',
+        planningPrDayModels: {
+          '0': {
+            id: 1,
+            date: `${date}T00:00:00`,
+            reconciled: false,
+            planHours: 0,
+            start1StartedAt: null,
+            start2StartedAt: null,
+            workDayEnded: false,
+            plannedStartOfShift1: null,
+            message: null,
+            workerComment: null,
+            nettoHoursOverrideActive: false,
+            ...extra
+          }
+        }
+      });
+
+      it('gives the boundary day the reconciled background, on top of its state', () => {
+        expect(component.getCellClass(lockedRow('2026-09-09', { reconciled: true }), '0'))
+          .toBe('white-background reconciled-background');
+      });
+
+      it('gives an older reconciled day the locked background, never the boundary border', () => {
+        expect(component.getCellClass(lockedRow('2026-09-07', { reconciled: true }), '0'))
+          .toBe('white-background locked-background');
+      });
+
+      it('gives a day locked by a later reconciled day the locked background', () => {
+        expect(component.getCellClass(lockedRow('2026-09-08'), '0'))
+          .toBe('white-background locked-background');
+      });
+
+      it('leaves a day after the boundary as it was', () => {
+        expect(component.getCellClass(lockedRow('2026-09-10'), '0')).toBe('white-background');
+      });
+
+      it('leaves every day as it was when the row has no boundary', () => {
+        const row = lockedRow('2026-09-07', { reconciled: true });
+        row.lockedThrough = null as any;
+        expect(component.getCellClass(row, '0')).toBe('white-background');
+      });
+    });
+  });
+
+  // The legend under the grid explains the hatch, so it appears exactly when a
+  // locked day is on screen.
+  describe('hasLockedDayInView', () => {
+    const rowWithDays = (lockedThrough: string | null) => ({
+      lockedThrough,
+      planningPrDayModels: [
+        { id: 1, date: '2026-09-08T00:00:00', reconciled: false },
+        { id: 1, date: '2026-09-09T00:00:00', reconciled: true }
+      ]
+    }) as any;
+
+    it('is true once a row in view has a locked day', () => {
+      component.timePlannings = [rowWithDays('2026-09-09T00:00:00')];
+      component.ngOnChanges({ timePlannings: { currentValue: component.timePlannings } } as any);
+      expect(component.hasLockedDayInView).toBe(true);
+    });
+
+    it('is false when nothing in view is locked', () => {
+      component.timePlannings = [rowWithDays(null)];
+      component.ngOnChanges({ timePlannings: { currentValue: component.timePlannings } } as any);
+      expect(component.hasLockedDayInView).toBe(false);
+    });
+  });
+
+  describe('onDayColumnClick', () => {
+    const dayRow = (date: string, extra: any = {}) => ({
+      siteId: 7,
+      tags: [],
+      lockedThrough: '2026-09-09T00:00:00',
+      planningPrDayModels: {
+        '0': { id: 1, date: `${date}T00:00:00`, reconciled: false, ...extra }
+      }
+    });
+
+    const dialogData = () => (mockDialog.open as jest.Mock).mock.calls[0][1].data;
+
+    beforeEach(() => {
+      mockSettingsService.getAssignedSite.mockReturnValue(of({ success: true, model: {} }) as any);
+      (mockDialog.open as jest.Mock).mockReturnValue({ afterClosed: () => of(undefined) } as any);
+    });
+
+    it('does not open a placeholder day, which has no registration behind it', () => {
+      // F17: id 0 stands in for a locked date with no row, so there is nothing to
+      // fetch and nothing to open.
+      component.onDayColumnClick(dayRow('2026-09-08', { id: 0 }), '0');
+
+      expect(mockSettingsService.getAssignedSite).not.toHaveBeenCalled();
+      expect(mockDialog.open).not.toHaveBeenCalled();
+    });
+
+    it('tells the dialog that the boundary day is locked, sealed and the boundary', () => {
+      component.onDayColumnClick(dayRow('2026-09-09', { reconciled: true }), '0');
+
+      expect(mockDialog.open).toHaveBeenCalled();
+      expect(dialogData()).toMatchObject({
+        isLocked: true,
+        isBoundary: true,
+        isSealed: true,
+        lockedThrough: '2026-09-09T00:00:00'
+      });
+    });
+
+    it('tells the dialog that an older reconciled day is sealed but not the boundary', () => {
+      component.onDayColumnClick(dayRow('2026-09-07', { reconciled: true }), '0');
+
+      expect(dialogData()).toMatchObject({ isLocked: true, isBoundary: false, isSealed: true });
+    });
+
+    it('tells the dialog that a cascade-locked day carries no mark of its own', () => {
+      component.onDayColumnClick(dayRow('2026-09-08'), '0');
+
+      expect(dialogData()).toMatchObject({ isLocked: true, isBoundary: false, isSealed: false });
+    });
+
+    it('tells the dialog that a day after the boundary is open', () => {
+      component.onDayColumnClick(dayRow('2026-09-10'), '0');
+
+      expect(dialogData()).toMatchObject({ isLocked: false, isBoundary: false, isSealed: false });
+    });
   });
 
   describe('isInOlderThanToday', () => {
