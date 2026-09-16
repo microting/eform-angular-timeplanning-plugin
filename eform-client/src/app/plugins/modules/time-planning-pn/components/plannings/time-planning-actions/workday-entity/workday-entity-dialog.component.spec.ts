@@ -13,6 +13,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { provideMockStore } from '@ngrx/store/testing';
+import { selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser } from 'src/app/state';
 import { DomSanitizer } from '@angular/platform-browser';
 import { TemplateFilesService } from 'src/app/common/services';
 import { HelpPanelService } from '../../../../help/services/help-panel.service';
@@ -149,10 +150,17 @@ describe('WorkdayEntityDialogComponent', () => {
       providers: [
         FormBuilder,
         DatePipe,
+        // The bed has no auth slice, so the real projectors read `state.auth` as
+        // undefined and throw on the first ngOnInit. That error reaches a subscribe()
+        // with no error handler, so RxJS reports it on a timer — which a fake-timer
+        // case then flushes into whatever test happens to be running. Overriding the
+        // selectors the component actually asks for (a string key overrides nothing)
+        // keeps the projectors from running at all.
         provideMockStore({
           initialState: {},
           selectors: [
-            { selector: 'selectCurrentUserIsFirstUser', value: false }
+            { selector: selectCurrentUserIsAdmin, value: false },
+            { selector: selectCurrentUserIsFirstUser, value: false }
           ]
         }),
         { provide: MAT_DIALOG_DATA, useValue: mockData },

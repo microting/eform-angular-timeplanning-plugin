@@ -635,7 +635,10 @@ describe('TimePlanningsContainerComponent', () => {
 
       component.confirmReconcileThrough();
 
-      expect(toastr.warning).toHaveBeenCalledWith('reconcileThroughResult');
+      // The whole message, so a regression to one merged "skipped" figure fails here
+      // too: worker 1 has no registration, and that clause stays its own.
+      expect(toastr.warning)
+        .toHaveBeenCalledWith('reconcileThroughResult · reconcileThroughNoRegistration');
       expect(toastr.success).not.toHaveBeenCalled();
     });
 

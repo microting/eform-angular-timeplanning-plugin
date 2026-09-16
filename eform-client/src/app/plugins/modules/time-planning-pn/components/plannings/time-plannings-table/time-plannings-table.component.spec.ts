@@ -9,6 +9,12 @@ import { ChangeDetectorRef, NO_ERRORS_SCHEMA } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
+import { registerTestLocales } from '../../../testing/register-test-locales';
+
+// The header row formats each day through DatePipe in the user's language, and this
+// component defaults to 'da'. main.ts registers that data before the app runs; a bed
+// has to do it itself or the pipe throws NG0701.
+registerTestLocales();
 
 describe('TimePlanningsTableComponent', () => {
   let component: TimePlanningsTableComponent;
