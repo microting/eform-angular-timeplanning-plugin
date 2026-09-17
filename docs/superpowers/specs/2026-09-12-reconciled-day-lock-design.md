@@ -408,11 +408,18 @@ is a standing constraint in this product.)
 
 ### 8.6 Permissions
 
-Per explicit decision: **any web user may reconcile.** This is a deliberate
-departure from the rest of the toolbar — payroll export, for instance, is
-admin-gated — and it means an ordinary user can freeze a period. The
-reverse-order unlock rule is the only safeguard, and it is the reason unlock
-carries the heavier confirmation.
+Supersedes the original decision recorded here (any web user may reconcile)
+at the user's request — see §13; not a silent rewrite. **Only the first
+user — the account with the lowest `AspNetUsers` Id — may reconcile, unlock,
+or bulk-reconcile.** The server is the authority: no `[Authorize]` role can
+express "the first user", so the rule is enforced as a service-layer check
+in `TimePlanningPlanningService`, not a controller attribute. The UI hides
+the three controls from every other user rather than disabling them with an
+explanation. Lock **display** is unaffected by who may act on it and stays
+visible to every user regardless: hatching, seals, glyphs, tooltips, the
+legend, the read-only dialog, the provenance line, and the free-first line
+on unlock. The reverse-order unlock rule is still the reason unlock carries
+the heavier confirmation.
 
 ---
 
@@ -526,3 +533,12 @@ wrong, in the SDD ledger. They supersede the sections they name.
 - **Release order.** The frontend (PR4) must not reach production before the
   service-repo PR is deployed; otherwise background jobs could still write
   days the web shows as closed.
+- **§8.6 permissions reversed to first-user-only, after the feature was
+  complete and CI-green.** Not an admin role either: only the first user
+  (lowest `AspNetUsers` Id) may reconcile, unlock, or bulk-reconcile,
+  enforced as a service-layer check because no `[Authorize]` role can
+  express it. The admin-role version (commit `07b598e6`) was superseded by a
+  follow-up commit (`1eb5f77e`) rather than rewritten, since `07b598e6` was
+  already pushed and CI-green. Release consequence: between PR1 and PR4
+  merging, every user sees reconcile controls that refuse, so the two must
+  merge as one sequence, not independently.
