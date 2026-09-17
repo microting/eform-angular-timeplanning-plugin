@@ -1365,19 +1365,36 @@ public class TimePlanningWorkingHoursService(
     }
 
     /// <summary>
-    /// The day-lock guard for both UpdateWorkingHour overloads: a failure to
-    /// return when the day is locked, else null. Neither overload has a
-    /// try/catch, so this answers with a message instead of letting the
-    /// interceptor throw. The message follows the planning service's rule, the
-    /// row's own Reconciled flag, so mobile says what web says for the same day
+    /// The write guard for both UpdateWorkingHour overloads: a failure to
+    /// return when this (site, day) may NOT be written, else null. Neither
+    /// overload has a try/catch, so this answers with a message instead of
+    /// letting the interceptor throw.
+    ///
+    /// Named for what it answers, not for one of its reasons: it refuses on two
+    /// distinct grounds -- the day is locked, or the site could not be resolved
+    /// at all -- and only the first is a day-lock outcome. (It is also not the
+    /// same method as TimePlanningPlanningService.CheckDayLockAsync, which
+    /// takes a loaded PlanRegistration; an earlier audit flagged the shared
+    /// name as a trap.)
+    ///
+    /// Locked case: the message follows the planning service's rule, the row's
+    /// own Reconciled flag, so mobile says what web says for the same day
     /// (spec §11.3). The row may not be loaded yet (or may not exist), so the
     /// flag costs one cheap query, and only when the day is locked.
+    ///
+    /// Null site id REFUSES. null is this method's "writable, proceed" answer,
+    /// so returning it for an unresolvable site would waive the freeze for
+    /// exactly the caller whose day cannot be evaluated -- and for a rule whose
+    /// purpose is "this day cannot be written", the unknown case must refuse,
+    /// not permit. It costs nothing: the kiosk overload dereferences the same
+    /// id with `!` a few hundred lines later, so a null that got past here
+    /// ended as a raw InvalidOperationException instead of a message.
     /// </summary>
-    private async Task<OperationResult?> CheckDayLockAsync(int? sdkSitId, DateTime date)
+    private async Task<OperationResult?> RefuseIfNotWritableAsync(int? sdkSitId, DateTime date)
     {
         if (sdkSitId is not { } siteId)
         {
-            return null;
+            return new OperationResult(false, localizationService.GetString("SiteNotFound"));
         }
 
         var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, siteId);
@@ -1451,9 +1468,9 @@ public class TimePlanningWorkingHoursService(
                 localizationService.GetString("EditingNotAllowedForWorker"));
         }
 
-        if (await CheckDayLockAsync(sdkSite.MicrotingUid, model.Date) is { } dayLocked)
+        if (await RefuseIfNotWritableAsync(sdkSite.MicrotingUid, model.Date) is { } refusal)
         {
-            return dayLocked;
+            return refusal;
         }
 
         var todayAtMidnight = model.Date;
@@ -2086,9 +2103,9 @@ public class TimePlanningWorkingHoursService(
         // Before both branches below (each repeats its own assigned-site lookup),
         // and after the token check so an unknown device learns nothing about
         // the lock.
-        if (await CheckDayLockAsync(sdkSiteId, model.Date) is { } dayLocked)
+        if (await RefuseIfNotWritableAsync(sdkSiteId, model.Date) is { } refusal)
         {
-            return dayLocked;
+            return refusal;
         }
 
         registrationDevice.OsVersion = model.OsVersion;
@@ -3993,6 +4010,17 @@ public class TimePlanningWorkingHoursService(
 
     public async Task<OperationResult> Import(IFormFile file)
     {
+        // Method scope, so the finally below and the success exit at the bottom
+        // can both read them. The two counters are incremented at DIFFERENT
+        // levels, so an audit has to look in both places:
+        //   unresolvableSheetsSkipped -- the sheet loop, at the third of its
+        //     three `continue`s (the first two are deliberately silent; each
+        //     says why).
+        //   lockedDaysSkipped -- the nested ROW loop, at its locked-day
+        //     `continue`. This is the counter the deleted Console.WriteLine
+        //     used to report.
+        var lockedDaysSkipped = 0;
+        var unresolvableSheetsSkipped = 0;
         try
         {
             // Get core
@@ -4017,17 +4045,35 @@ public class TimePlanningWorkingHoursService(
                         return new OperationResult(false, localizationService.GetString("FileFormatError"));
                     }
 
-                    // Observability only: the locked-day skip below is silent otherwise.
-                    var lockedDaysSkipped = 0;
                     foreach (Sheet sheet in sheets)
                     {
+                        // A malformed sheet element, not user data. Silent.
                         if (sheet.Name?.Value == null || sheet.Id?.Value == null)
                         {
                             continue;
                         }
                         var site = await sdkContext.Sites.FirstOrDefaultAsync(x => x.Name.Replace(" ", "").ToLower() == sheet.Name.Value.Replace(" ", "").ToLower());
+
+                        // DELIBERATELY SILENT, and not the same case as the one
+                        // below. A sheet whose name matches no worker may not be
+                        // about a worker at all -- a cover tab, instructions, a
+                        // summary -- so reporting every one would cry wolf on
+                        // ordinary workbooks. (Pre-existing behaviour; if it is
+                        // ever revisited, it needs its own decision about which
+                        // unmatched names are worth naming.)
                         if (site == null)
                         {
+                            continue;
+                        }
+
+                        // REPORTED, because the name DID match a worker: this is
+                        // a real data problem the user has to hear about, not an
+                        // unrelated tab. Skip the whole sheet -- a null boundary
+                        // makes IsLocked false for EVERY row, which would import
+                        // it with no lock check at all.
+                        if (site.MicrotingUid is not { } importSiteUid)
+                        {
+                            unresolvableSheetsSkipped++;
                             continue;
                         }
 
@@ -4038,15 +4084,14 @@ public class TimePlanningWorkingHoursService(
                         var importAssignedSite = await dbContext.AssignedSites
                             .AsNoTracking()
                             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                            .FirstOrDefaultAsync(x => x.SiteId == site.MicrotingUid);
+                            .FirstOrDefaultAsync(x => x.SiteId == importSiteUid);
                         var importTimeline =
                             await OneMinuteModeTimeline.BuildAsync(dbContext, importAssignedSite);
                         // A bulk import skips locked days (frozen means frozen)
                         // rather than failing the whole file. Once per sheet
                         // (= per site), never per row.
-                        var importLockedThrough = site.MicrotingUid is { } importSiteUid
-                            ? await DayLockHelper.LockedThroughAsync(dbContext, importSiteUid)
-                            : null;
+                        var importLockedThrough =
+                            await DayLockHelper.LockedThroughAsync(dbContext, importSiteUid);
 
                         var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
                         var sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
@@ -4110,12 +4155,12 @@ public class TimePlanningWorkingHoursService(
 
                             var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
                                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                                .Where(x => x.Date < dateValue && x.SdkSitId == (int)site.MicrotingUid!)
+                                .Where(x => x.Date < dateValue && x.SdkSitId == importSiteUid)
                                 .OrderByDescending(x => x.Date)
                                 .FirstOrDefaultAsync();
 
                             var planRegistration = await dbContext.PlanRegistrations.FirstOrDefaultAsync(x =>
-                                x.Date == dateValue && x.SdkSitId == site.MicrotingUid
+                                x.Date == dateValue && x.SdkSitId == importSiteUid
                                 && x.WorkflowState != Constants.WorkflowStates.Removed);
 
                             if (planRegistration == null)
@@ -4125,7 +4170,7 @@ public class TimePlanningWorkingHoursService(
                                     Date = dateValue,
                                     PlanText = planText,
                                     PlanHours = parsedPlanHours,
-                                    SdkSitId = (int)site.MicrotingUid!,
+                                    SdkSitId = importSiteUid,
                                     CreatedByUserId = userService.UserId,
                                     UpdatedByUserId = userService.UserId,
                                     NettoHours = 0,
@@ -4196,8 +4241,6 @@ public class TimePlanningWorkingHoursService(
                             }
                         }
                     }
-
-                    Console.WriteLine($"[Import] summary: skipped {lockedDaysSkipped} locked day(s).");
                 }
             }
         }
@@ -4207,7 +4250,56 @@ public class TimePlanningWorkingHoursService(
             logger.LogError(ex.Message);
             return new OperationResult(false, ex.Message);
         }
-        return new OperationResult(true, "Imported");
+        finally
+        {
+            // IN A FINALLY, so it runs on EVERY exit from this method: the
+            // success path below, the catch above, and the two malformed-file
+            // early returns. Placed after the catch's `return` it would have
+            // been skipped exactly when it matters most -- a file that skipped
+            // 40 locked days and then threw on sheet 9 would lose both counts.
+            //
+            // This is the channel ops actually has: it works whatever the UI
+            // does with the response, and it replaces the Console.WriteLine
+            // this PR removed. It logs even when both counts are zero, so
+            // "skipped nothing" stays distinguishable from "never got here".
+            // "ended", not "finished": on the catch path it did not finish.
+            logger.LogInformation(
+                "Import ended: {LockedDaysSkipped} locked day(s) skipped, {UnresolvableSheetsSkipped} sheet(s) skipped for a worker with no MicrotingUid.",
+                lockedDaysSkipped, unresolvableSheetsSkipped);
+        }
+
+        // A sheet whose name matched a Site row that carries no MicrotingUid is
+        // a data problem someone has to fix, not routine bookkeeping, so it also
+        // raises a Sentry warning -- the same treatment GoogleSheetHelper gives
+        // its own sheet problems. Only when non-zero: a zero is worth nothing
+        // there. Only on the success path, too: a run that threw has already
+        // reported that exception to Sentry, and the finally above carries the
+        // counts, so repeating them here would be a second ticket for one run.
+        if (unresolvableSheetsSkipped > 0)
+        {
+            SentrySdk.CaptureMessage(
+                $"Import: {unresolvableSheetsSkipped} sheet(s) named a worker with no MicrotingUid and were skipped.",
+                SentryLevel.Warning);
+        }
+
+        // Then the user-facing message: one success exit, naming each skip with
+        // its reason -- the rule ReconcileThrough already follows. A bare
+        // "Imported" over a reconciled month reads as "your corrections are in"
+        // while the locked rows still hold their old numbers, so the user
+        // re-imports the same file forever. Each part is a whole sentence, so
+        // they join in any language without having to agree grammatically.
+        var summary = new List<string> { localizationService.GetString("Imported") };
+        if (lockedDaysSkipped > 0)
+        {
+            summary.Add(localizationService.GetString(
+                "ImportLockedDaysSkipped", lockedDaysSkipped));
+        }
+        if (unresolvableSheetsSkipped > 0)
+        {
+            summary.Add(localizationService.GetString(
+                "ImportUnresolvableSheetsSkipped", unresolvableSheetsSkipped));
+        }
+        return new OperationResult(true, string.Join(" ", summary));
     }
 
     private string GetCellValue(WorkbookPart workbookPart, Row row, int columnIndex)

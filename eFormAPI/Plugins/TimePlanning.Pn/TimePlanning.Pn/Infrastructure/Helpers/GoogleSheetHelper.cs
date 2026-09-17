@@ -355,8 +355,14 @@ public class GoogleSheetHelper
 
                     // Decided before the row is even loaded, so a locked row is
                     // never tracked and no later save in this loop can flush it.
-                    if (site.MicrotingUid is { } lockSiteUid
-                        && DayLockHelper.IsLocked(lockedThroughBySite, lockSiteUid, dateValue))
+                    //
+                    // `!` deliberately: sitesByKey filters MicrotingUid != null
+                    // (the Where above), and `workers` is built only from
+                    // sitesByKey, so a null cannot reach this line. Written as a
+                    // null-tolerant check it would not be defensive -- it would
+                    // silently skip the lock check for a value that cannot
+                    // occur, which is the one outcome this rule must never have.
+                    if (DayLockHelper.IsLocked(lockedThroughBySite, (int)site.MicrotingUid!, dateValue))
                     {
                         lockedDaysSkipped++;
                         continue;

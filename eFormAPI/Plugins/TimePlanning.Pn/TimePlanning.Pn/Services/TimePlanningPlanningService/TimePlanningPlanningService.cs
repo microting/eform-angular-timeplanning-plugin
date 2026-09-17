@@ -2369,11 +2369,17 @@ public class TimePlanningPlanningService(
 
     /// <summary>
     /// Sets Reconciled and ReconciledAt together and saves. I1: flag and
-    /// timestamp always change together. DateTime.Now, not UtcNow: the
-    /// tooltip renders this verbatim as "Afstemt <dato> kl. <tid>", and UTC
-    /// would read 1-2 hours off in Danish time. Consistent with the
-    /// CanReconcile comparison. Can throw DayLockedException; callers decide
-    /// how to handle that race.
+    /// timestamp always change together. Can throw DayLockedException; callers
+    /// decide how to handle that race.
+    ///
+    /// ReconciledAt is an AUDIT/DISPLAY instant -- the tooltip renders it
+    /// verbatim as "Afstemt <dato> kl. <tid>" -- never an input to a lock
+    /// comparison, so it is deliberately NOT covered by
+    /// DayLockHelper.CanReconcile's UtcNow rule. DateTime.Now is left here
+    /// unchanged: this repo's Dockerfile sets no TZ, so the shipped container
+    /// resolves it to UTC anyway and the stored instant is the same either way.
+    /// Which clock the tooltip ought to render is a presentation question and
+    /// is tracked separately.
     /// </summary>
     private async Task SetReconciledAsync(PlanRegistration planning, bool reconciled)
     {
