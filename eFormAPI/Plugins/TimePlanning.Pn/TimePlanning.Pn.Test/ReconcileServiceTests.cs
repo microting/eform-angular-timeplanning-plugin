@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
@@ -13,6 +15,7 @@ using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
+using TimePlanning.Pn.Controllers;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.Planning;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
@@ -1072,5 +1075,62 @@ public class ReconcileServiceTests : TestBaseSetup
                 "a fully-locked window with no rows must still carry the boundary, " +
                 "or the client renders an entirely locked worker as fully editable");
         });
+    }
+
+    // ---------------------------------------------------------------------
+    // Server-side enforcement of "only an admin may reconcile or unlock a day"
+    // (product decision reversal — the spec's earlier "any web user may
+    // reconcile" no longer holds). A reflection test over the controller is
+    // the honest option here: the suite is service-level and never goes
+    // through the ASP.NET Core auth pipeline, so nothing else would catch a
+    // silently-dropped [Authorize] attribute.
+    // ---------------------------------------------------------------------
+
+    [Test]
+    public void Reconcile_Unreconcile_ReconcileThrough_RequireAdminRole()
+    {
+        foreach (var methodName in new[] { "Reconcile", "Unreconcile", "ReconcileThrough" })
+        {
+            var method = typeof(TimePlanningPlanningController).GetMethod(methodName);
+            Assert.That(method, Is.Not.Null, $"TimePlanningPlanningController.{methodName} must exist");
+
+            var authorizeAttributes = method!
+                .GetCustomAttributes<AuthorizeAttribute>(true)
+                .ToList();
+
+            Assert.That(authorizeAttributes, Is.Not.Empty,
+                $"{methodName} must carry an AuthorizeAttribute");
+
+            var roles = authorizeAttributes
+                .Where(a => !string.IsNullOrWhiteSpace(a.Roles))
+                .SelectMany(a => a.Roles!.Split(','))
+                .Select(r => r.Trim())
+                .ToList();
+
+            Assert.That(
+                roles.Any(r => string.Equals(r, EformRole.Admin, StringComparison.OrdinalIgnoreCase)),
+                Is.True,
+                $"{methodName} must be restricted to the '{EformRole.Admin}' role — found: " +
+                string.Join(", ", roles));
+        }
+    }
+
+    [Test]
+    public void Update_OpenDayAction_IsNotAdminRestricted()
+    {
+        // Reading and editing OPEN days is unchanged by the reconcile lock
+        // reversal — only reconcile/unreconcile/reconcile-through move behind
+        // the admin gate. Update is the named open-day action here.
+        var method = typeof(TimePlanningPlanningController).GetMethod("Update");
+        Assert.That(method, Is.Not.Null, "TimePlanningPlanningController.Update must exist");
+
+        var roleRestricted = method!
+            .GetCustomAttributes<AuthorizeAttribute>(true)
+            .Where(a => !string.IsNullOrWhiteSpace(a.Roles))
+            .ToList();
+
+        Assert.That(roleRestricted, Is.Empty,
+            "Update (editing an open day) must not gain an admin-role restriction from the reconcile lock change — found: " +
+            string.Join(", ", roleRestricted.Select(a => a.Roles)));
     }
 }

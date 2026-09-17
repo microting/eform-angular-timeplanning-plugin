@@ -24,7 +24,9 @@ namespace TimePlanning.Pn.Controllers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure.Models.Planning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Services.TimePlanningPlanningService;
 
@@ -81,6 +83,7 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
 
     [HttpPut]
     [Route("{id}/reconcile")]
+    [Authorize(Roles = EformRole.Admin)]
     public async Task<OperationResult> Reconcile(int id)
     {
         return await _planningService.Reconcile(id);
@@ -88,6 +91,7 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
 
     [HttpPut]
     [Route("{id}/unreconcile")]
+    [Authorize(Roles = EformRole.Admin)]
     public async Task<OperationResult> Unreconcile(int id)
     {
         return await _planningService.Unreconcile(id);
@@ -95,6 +99,7 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
 
     [HttpPut]
     [Route("reconcile-through")]
+    [Authorize(Roles = EformRole.Admin)]
     public async Task<OperationDataResult<ReconcileThroughResultModel>> ReconcileThrough(
         [FromBody] ReconcileThroughRequestModel model)
     {
