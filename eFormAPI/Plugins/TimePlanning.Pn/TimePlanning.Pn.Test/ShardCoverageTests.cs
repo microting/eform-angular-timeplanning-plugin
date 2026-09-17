@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
+using NUnit.Framework.Interfaces;
 
 namespace TimePlanning.Pn.Test;
 
@@ -132,30 +133,78 @@ public class ShardCoverageTests
     /// </summary>
     private static List<string> DiscoverTestClasses()
     {
-        const BindingFlags MethodFlags =
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+        var withTests = GetAssemblyTypes()
+            .Where(t => t.IsClass && HasTestMethod(t))
+            .ToList();
 
-        return Assembly.GetExecutingAssembly()
-            .GetTypes()
-            .Where(t => t.IsClass)
+        // Open generic definitions are dropped below, because NUnit names the
+        // closed instantiations it builds from [TestFixture(typeof(...))] in a way
+        // this guard does not model. That exclusion is only safe while none
+        // exists, so it is asserted rather than left as a comment asking a future
+        // reader to remember — otherwise `[TestFixture(typeof(int))] class
+        // FooTests<T>` would run in NUnit, be skipped here, and go unsharded:
+        // precisely the bug this fixture exists to prevent.
+        var genericFixtures = withTests
+            .Where(t => t.IsGenericTypeDefinition)
+            .Select(t => t.FullName!)
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.That(genericFixtures, Is.Empty,
+            "Generic test fixture(s) carrying test methods were found:\n  " +
+            string.Join("\n  ", genericFixtures) + "\n" +
+            "NUnit runs these via [TestFixture(typeof(...))], but this guard cannot model how the " +
+            "closed instantiations are named, so it would leave them unsharded and silently unrun. " +
+            "Either make them non-generic fixtures, or teach this guard their naming AND add them to " +
+            "the shard filters by hand.");
+
+        return withTests
             // Excluded: abstract fixtures such as TestBaseSetup. NUnit never runs an
             // abstract type as a fixture; any [Test] it declares executes under each
             // concrete subclass's own name, and it is the subclass that needs sharding.
             .Where(t => !t.IsAbstract)
-            // Excluded: open generic definitions. NUnit can only run those via
-            // [TestFixture(typeof(...))], which produces closed types, and there are
-            // none in this assembly today. If one ever appears this exclusion should be
-            // revisited rather than widened.
             .Where(t => !t.IsGenericTypeDefinition)
-            .Where(t => t.GetMethods(MethodFlags).Any(IsTestMethod))
             .Select(t => t.FullName!)
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToList();
     }
 
+    /// <summary>
+    /// A partially loadable assembly still yields whatever types did load. Letting
+    /// <see cref="ReflectionTypeLoadException"/> escape would replace this
+    /// fixture's carefully worded diagnosis with an opaque loader stack trace.
+    /// </summary>
+    private static IEnumerable<Type> GetAssemblyTypes()
+    {
+        try
+        {
+            return Assembly.GetExecutingAssembly().GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            return ex.Types.Where(t => t is not null)!;
+        }
+    }
+
+    private static bool HasTestMethod(Type type)
+    {
+        const BindingFlags MethodFlags =
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+
+        return type.GetMethods(MethodFlags).Any(IsTestMethod);
+    }
+
+    /// <summary>
+    /// Matched through NUnit's builder interfaces rather than a list of attribute
+    /// types. <c>TestAttribute</c> is an <see cref="ISimpleTestBuilder"/>;
+    /// <c>TestCase</c>, <c>TestCaseSource</c>, <c>Theory</c>, <c>Combinatorial</c>,
+    /// <c>Pairwise</c> and <c>Sequential</c> are all <see cref="ITestBuilder"/>s —
+    /// as is any custom builder attribute. Naming three concrete types instead
+    /// would silently miss every other shape NUnit can run, which is exactly the
+    /// class of omission this fixture exists to catch.
+    /// </summary>
     private static bool IsTestMethod(MethodInfo method) =>
-        method.GetCustomAttributes(inherit: true)
-            .Any(a => a is TestAttribute or TestCaseAttribute or TestCaseSourceAttribute);
+        method.GetCustomAttributes(inherit: true).Any(a => a is ITestBuilder or ISimpleTestBuilder);
 
     private static HashSet<string> ParseShardedClasses(string workflowText) =>
         FilterEntry.Matches(workflowText)
