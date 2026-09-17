@@ -42,7 +42,11 @@ export const PLANNING_HELP_ENTRIES: HelpEntry[] = [
   { id: 'toolbar.payrollExport', kind: 'control', section: 'toolbar', anchor: 'toolbar.payrollExport',
     tour: 'page', tourStep: 7, adminOnly: true },
   { id: 'toolbar.reload', kind: 'control', section: 'toolbar', anchor: 'toolbar.reload' },
-  { id: 'toolbar.reconcileThrough', kind: 'control', section: 'toolbar', anchor: 'toolbar.reconcileThrough' },
+  // The control itself renders only for the first user, so the entry that teaches it
+  // follows. Not adminOnly: the two axes are independent, and an admin who is not the
+  // first user would otherwise be taught a field their toolbar does not have.
+  { id: 'toolbar.reconcileThrough', kind: 'control', section: 'toolbar', anchor: 'toolbar.reconcileThrough',
+    firstUserOnly: true },
 
   // ---- grid ----
   { id: 'grid.nameColumn', kind: 'control', section: 'grid', anchor: 'grid.nameColumn',

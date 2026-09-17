@@ -89,6 +89,19 @@ describe('HelpContentService', () => {
       .toContain('toolbar.payrollExport');
   });
 
+  it('hides first-user-only entries from everyone else, admin or not', () => {
+    // The two axes are independent: being an admin does not hand you the reconcile
+    // field, so it must not hand you the entry that teaches it either.
+    const service = make('en-US');
+    expect(service.entries({ isAdmin: true }).map(e => e.id))
+      .not.toContain('toolbar.reconcileThrough');
+    expect(service.entries({ isAdmin: false, isFirstUser: true }).map(e => e.id))
+      .toContain('toolbar.reconcileThrough');
+    // An omitted flag means "not the first user", so an un-taught caller hides it.
+    expect(service.entries({ isAdmin: true, isFirstUser: false }).map(e => e.id))
+      .not.toContain('toolbar.reconcileThrough');
+  });
+
   it('orders tour entries by step and drops admin-only steps for a non-admin', () => {
     const service = make('en-US');
     const steps = service.tourEntries('page', { isAdmin: false });
@@ -100,7 +113,8 @@ describe('HelpContentService', () => {
 
   it('never returns undefined prose for a registry id', () => {
     const service = make('da');
-    for (const entry of service.entries({ isAdmin: true })) {
+    // Both axes open, so the loop still covers every entry in the registry.
+    for (const entry of service.entries({ isAdmin: true, isFirstUser: true })) {
       expect(service.prose(entry.id).short.length).toBeGreaterThan(0);
     }
   });

@@ -5,7 +5,7 @@ import {
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { Subscription } from 'rxjs';
 import {
-  HelpEntry, HelpEntryId, HelpProse, HelpSection, HelpTourName,
+  HelpAudience, HelpEntry, HelpEntryId, HelpProse, HelpSection, HelpTourName,
 } from '../../help.model';
 import { HelpPanelService } from '../../services/help-panel.service';
 import { HelpSearchResult, HelpSearchService } from '../../services/help-search.service';
@@ -28,6 +28,8 @@ const SECTION_ORDER: HelpSection[] = ['task', 'toolbar', 'grid', 'dayCell', 'fle
 export class HelpPanelComponent extends HelpChromeBase
   implements OnInit, OnChanges, AfterViewChecked, OnDestroy {
   @Input() isAdmin = false;
+  /** The second audience axis. See HelpEntry.firstUserOnly for why it is not the first. */
+  @Input() isFirstUser = false;
 
   /**
    * Asks the host to replay a tour, naming which one. The panel deliberately does
@@ -139,9 +141,10 @@ export class HelpPanelComponent extends HelpChromeBase
     }));
   }
 
-  /** isAdmin can arrive after the panel is already open; rebuild what it filters. */
+  /** Either flag can arrive after the panel is already open; rebuild what they filter. */
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['isAdmin'] && !changes['isAdmin'].firstChange && this.isOpen) {
+    const arrived = (input: string) => changes[input] && !changes[input].firstChange;
+    if ((arrived('isAdmin') || arrived('isFirstUser')) && this.isOpen) {
       this.buildSections();
       this.onQueryChange(this.query);
     }
@@ -265,7 +268,7 @@ export class HelpPanelComponent extends HelpChromeBase
   onQueryChange(query: string): void {
     this.query = query;
     // A blank query browses instead of searching, so there is nothing to rank.
-    this.results = this.isSearching ? this.helpSearch.search(query, { isAdmin: this.isAdmin }) : [];
+    this.results = this.isSearching ? this.helpSearch.search(query, this.audience) : [];
   }
 
   clearQuery(): void {
@@ -281,15 +284,12 @@ export class HelpPanelComponent extends HelpChromeBase
   }
 
   /**
-   * The controls a task touches. Filtered by the same admin rule the rest of the
+   * The controls a task touches. Filtered by the same audience rules the rest of the
    * panel uses, so a link can never point at an entry the panel does not list.
    */
   related(id: HelpEntryId): HelpEntryId[] {
-    return (this.helpContent.entry(id)?.related ?? [])
-      .filter(relatedId => {
-        const entry = this.helpContent.entry(relatedId);
-        return !!entry && (!entry.adminOnly || this.isAdmin);
-      });
+    const listed = new Set(this.helpContent.entries(this.audience).map(entry => entry.id));
+    return (this.helpContent.entry(id)?.related ?? []).filter(relatedId => listed.has(relatedId));
   }
 
   /**
@@ -331,8 +331,13 @@ export class HelpPanelComponent extends HelpChromeBase
     this.replayTourRequested.emit(tour);
   }
 
+  /** One reading of who is looking, so the list, the search and the links agree. */
+  private get audience(): HelpAudience {
+    return { isAdmin: this.isAdmin, isFirstUser: this.isFirstUser };
+  }
+
   private buildSections(): void {
-    const entries = this.helpContent.entries({ isAdmin: this.isAdmin });
+    const entries = this.helpContent.entries(this.audience);
     this.sections = SECTION_ORDER
       .map(section => ({ section, entries: entries.filter(entry => entry.section === section) }))
       .filter(group => group.entries.length > 0);

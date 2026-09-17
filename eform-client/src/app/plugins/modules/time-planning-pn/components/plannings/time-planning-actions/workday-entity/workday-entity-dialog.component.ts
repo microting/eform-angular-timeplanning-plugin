@@ -72,11 +72,28 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   private originalDialogWidth: string = '600px';
   private originalDialogHeight: string = 'auto';
 
-  public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
-
-  /** Drives which help entries the dialog tour may include. */
+  /**
+   * Drives which help entries the dialog tour may include. Nothing else.
+   *
+   * It sits beside isFirstUser below and the two are NOT duplicates of each other:
+   * help chrome is admin-only, while reconcile and unlock belong to the first user.
+   * Collapsing them would silently change who gets which.
+   */
   isAdmin = false;
   private isAdmin$: Subscription;
+
+  /**
+   * Whether this user may reconcile or unlock at all: only the first user may, and the
+   * server refuses everyone else.
+   *
+   * Subscribed live, and never with take(1). Unlike the admin flag, which is read off
+   * the token and is there the moment login lands, this one comes from the
+   * current-user slice, which is populated separately. A one-shot read that happened
+   * to run first would latch false and take the two verbs away from the one user who
+   * has them, for the rest of the session.
+   */
+  isFirstUser = false;
+  private isFirstUser$: Subscription;
 
   TimePlanningMessagesEnum = TimePlanningMessagesEnum;
   enumKeys: string[] = [];
@@ -519,6 +536,8 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
     this.isAdmin$ = this.store.select(selectCurrentUserIsAdmin)
       .subscribe(isAdmin => this.isAdmin = !!isAdmin);
+    this.isFirstUser$ = this.store.select(selectCurrentUserIsFirstUser)
+      .subscribe(isFirstUser => this.isFirstUser = !!isFirstUser);
     this.helpTourState$ = this.helpTour.state$.subscribe(state => {
       this.dialogTourRunning = state?.entry.tour === 'dialog';
     });
@@ -540,9 +559,10 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
       return;
     }
     // The anchors only exist once this pass has rendered the form and the shift grid.
-    // isAdmin is passed through rather than hardcoded: no dialog entry is adminOnly
-    // today, but a later one would otherwise be dropped from the tour in silence.
-    setTimeout(() => this.helpTour.start('dialog', { isAdmin: this.isAdmin }));
+    // Both audience flags are passed through rather than hardcoded: no dialog entry is
+    // gated on either today, but a later one would otherwise be dropped in silence.
+    setTimeout(() => this.helpTour.start('dialog',
+      { isAdmin: this.isAdmin, isFirstUser: this.isFirstUser }));
   }
 
   // inside class:
@@ -2084,9 +2104,17 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     settle('lockRequestUncertain');
   }
 
-  /** The day may be sealed, and is not sealed already. */
+  /**
+   * The day may be sealed, is not sealed already, and this user may seal it.
+   *
+   * Only the first user may reconcile. Everything that merely SHOWS the lock — the
+   * glyphs, the provenance line, the read-only form — stays for everyone; it is the
+   * verb that is hidden, and hidden rather than disabled, because a disabled control
+   * would have to explain itself, and no copy here may explain a restriction by
+   * appealing to what some other user may do.
+   */
   get reconcileEligible(): boolean {
-    return !this.isLocked && this.canReconcile;
+    return this.isFirstUser && !this.isLocked && this.canReconcile;
   }
 
   /** "Afstemt 14.09.2026 kl. 10:32", shown where the actions were. */
@@ -2154,9 +2182,19 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
   // ---- Unlock (spec §8.4) ------------------------------------------------------
 
-  /** Only the boundary day offers unlock. It moves the line back one notch. */
+  /**
+   * Only the boundary day offers unlock. It moves the line back one notch.
+   *
+   * This stays free of the first-user flag on purpose: it is also what decides whether
+   * the footer names the day to free first, and every user is told which day that is.
+   */
   get isBoundaryDay(): boolean {
     return this.isLocked && this.data.isBoundary === true;
+  }
+
+  /** Unlock is the boundary day's verb, and only the first user has it. */
+  get canUnlock(): boolean {
+    return this.isFirstUser && this.isBoundaryDay;
   }
 
   /** The day to free first, for every other locked day: the row's boundary. */
@@ -2176,7 +2214,7 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   }
 
   onUnlockStart(): void {
-    if (!this.isBoundaryDay) {
+    if (!this.canUnlock) {
       return;
     }
     this.unlockWordCtrl.setValue('');
@@ -2191,10 +2229,10 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   }
 
   onUnlockConfirm(): void {
-    // isBoundaryDay again, not only in the template: unlocking anything but the
-    // boundary is refused by the server, and the rule is worth stating where the
-    // request is actually made.
-    if (!this.isBoundaryDay || !this.unlockWordMatches || this.lockRequestInFlight) {
+    // canUnlock again, not only in the template: unlocking anything but the boundary,
+    // and unlocking as anyone but the first user, is refused by the server, and the
+    // rule is worth stating where the request is actually made.
+    if (!this.canUnlock || !this.unlockWordMatches || this.lockRequestInFlight) {
       return;
     }
     // On failure (a newer boundary appeared meanwhile, say) the footer stays in this
@@ -2343,6 +2381,7 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.imageSub$?.unsubscribe();
     this.revokeSnapshotUrl();
     this.isAdmin$?.unsubscribe();
+    this.isFirstUser$?.unsubscribe();
     this.helpTourState$?.unsubscribe();
     if (this.dialogTourRunning) {
       // abort(), not stop(): closing a row is the page changing underneath the

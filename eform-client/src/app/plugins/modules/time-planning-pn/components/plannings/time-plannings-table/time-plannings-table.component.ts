@@ -1,8 +1,9 @@
 import {
-  AfterViewChecked, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output,
-  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
+  AfterViewChecked, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit,
+  Output, SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
   inject
 } from '@angular/core';
+import {Subscription} from 'rxjs';
 import {AssignedSiteModel, TimePlanningModel} from '../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
@@ -29,7 +30,7 @@ import {
   standalone: false
 
 })
-export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterViewChecked {
+export class TimePlanningsTableComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
   private store = inject(Store);
   private planningsService = inject(TimePlanningPnPlanningsService);
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
@@ -65,14 +66,37 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
 
   /**
    * The mtx-grid [headerTemplate] map. Only past day columns get the clickable header,
-   * because nothing at or after today may be reconciled. Columns missing from the map
-   * keep mtx-grid's default header.
+   * because nothing at or after today may be reconciled, and only for the first user,
+   * because only the first user may reconcile. Columns missing from the map keep
+   * mtx-grid's default header — which is why everyone else loses the affordance
+   * without losing the date above the column.
    */
   dayHeaderTemplates: {[field: string]: TemplateRef<any>} = {};
   private columnDates: {[field: string]: Date} = {};
   private selectionActive = false;
+  /**
+   * Whether this user may reconcile at all. The day header and the row tick boxes are
+   * the grid's two ways into a bulk reconcile, so both exist only for the first user.
+   * It also decides the day cell's registration-id line, which was the same flag read
+   * a second way, through an async pipe inside the cell template — one store
+   * subscription per rendered cell where this field costs one.
+   *
+   * Subscribed live rather than read once: this flag rides on the current-user slice
+   * rather than the token, so it is NOT in the store in time for the first header
+   * build (bound inputs make ngOnChanges run before ngOnInit), and a one-shot read
+   * would latch that early false for the whole session. headersBuilt below is what
+   * makes that first, uninformed build recoverable.
+   * Note it is NOT selectAuthIsAdmin$ below, which gates unrelated chrome.
+   */
+  isFirstUser = false;
+  private isFirstUserSub: Subscription;
+  /**
+   * Whether a header row has been built at all. The first build usually happens from
+   * ngOnChanges, before this component has ever seen the flag; this is what lets the
+   * flag's arrival rebuild what that build could not know.
+   */
+  private headersBuilt = false;
   protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
-  public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
   // Highlight & scroll tracking
   private pendingHighlight: { siteId: number; field: string | null } | null = null;
@@ -96,11 +120,29 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
 
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
+    this.isFirstUserSub = this.store.select(selectCurrentUserIsFirstUser).subscribe(isFirstUser => {
+      if (!!isFirstUser === this.isFirstUser) {
+        // The store re-emits on every unrelated state change; only a real answer
+        // changing is worth rebuilding a header row for.
+        return;
+      }
+      this.isFirstUser = !!isFirstUser;
+      if (!this.headersBuilt) {
+        // Nothing to correct yet. The build below, or the one ngOnChanges is about to
+        // run, will read the flag itself.
+        return;
+      }
+      this.updateTableHeaders();
+    });
     this.updateTableHeaders();
     this.translateService.onLangChange.subscribe((lang) => {
       this.currentLocale = lang.lang;
       this.updateTableHeaders();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.isFirstUserSub?.unsubscribe();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -145,6 +187,11 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   }
 
   onDayHeaderClick(field: string): void {
+    // The template is only installed for the first user, so this is belt and braces —
+    // but the flag can flip while the built header row is still on screen.
+    if (!this.isFirstUser) {
+      return;
+    }
     const date = this.columnDates[field];
     if (date) {
       this.reconcileDateRequested.emit(new Date(date));
@@ -264,10 +311,10 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
         currentDate.setDate(startDate.getDate() + index);
         const field = index.toString();
         this.columnDates[field] = currentDate;
-        // Only past days can be reconciled, so only their headers become buttons. A
-        // past header is always a plain string: the Observable header is today's, and
-        // today never gets this template.
-        if (currentDate < todayMidnight) {
+        // Only past days can be reconciled, and only the first user may reconcile, so
+        // only their headers become buttons. A past header is always a plain string:
+        // the Observable header is today's, and today never gets this template.
+        if (this.isFirstUser && currentDate < todayMidnight) {
           headerTemplates[field] = this.reconcileDayHeaderTemplate;
         }
         const isToday = currentDate.toDateString() === today.toDateString();
@@ -284,6 +331,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
       }),
     ];
     this.dayHeaderTemplates = headerTemplates;
+    this.headersBuilt = true;
     // New [columns] and [headerTemplate] make mtx-grid drop its selection silently.
     this.resetSelection();
     this.cdr.detectChanges();

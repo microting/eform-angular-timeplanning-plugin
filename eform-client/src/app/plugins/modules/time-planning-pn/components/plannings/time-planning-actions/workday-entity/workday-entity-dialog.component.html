@@ -551,6 +551,14 @@
         {{ 'Cancel' | translate }}
       </button>
 
+      <!--
+        The two verbs, and the only gated part of this footer: reconcileEligible and
+        canUnlock both carry isFirstUser. Everything above — the seal, the provenance
+        line, the day to free first — stays for every user, because knowing a day is
+        frozen is not a privilege. Hidden, never disabled, and with no line saying why:
+        a disabled control would have to explain itself, and no copy here may explain a
+        restriction by appealing to what some other user may do.
+      -->
       <button
         type="button"
         *ngIf="reconcileEligible && !workdayForm.dirty"
@@ -562,7 +570,7 @@
 
       <button
         type="button"
-        *ngIf="isBoundaryDay"
+        *ngIf="canUnlock"
         class="btn-quiet"
         id="unlockButton"
         (click)="onUnlockStart()">

@@ -12,7 +12,7 @@ import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
-import { provideMockStore } from '@ngrx/store/testing';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser } from 'src/app/state';
 import { DomSanitizer } from '@angular/platform-browser';
 import { TemplateFilesService } from 'src/app/common/services';
@@ -179,6 +179,26 @@ describe('WorkdayEntityDialogComponent', () => {
     component = fixture.componentInstance;
   });
 
+  /**
+   * Reconcile and unlock belong to the FIRST USER, and the bed's default user is not
+   * one, so every case that exercises either verb has to say so.
+   *
+   * The flag reaches the component through the store, which it subscribes to live, so
+   * refreshState() reaches it whenever this is called — before ngOnInit or after.
+   * Where a case below re-runs ngOnInit having flipped the flag, that is to get a
+   * freshly built dialog for the day it just configured, NOT to make the component
+   * notice the flag.
+   *
+   * It overrides the imported selector OBJECT, never a string key: a string-keyed
+   * provideMockStore override is silently inert, which is exactly how this suite went
+   * red once before.
+   */
+  const setFirstUser = (value: boolean): void => {
+    const store = TestBed.inject(MockStore);
+    store.overrideSelector(selectCurrentUserIsFirstUser, value);
+    store.refreshState();
+  };
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
@@ -197,17 +217,19 @@ describe('WorkdayEntityDialogComponent', () => {
       expect(surfaces[surfaces.length - 1]).toBe('dialog');
     });
 
-    it('offers the dialog tour with the real isAdmin, not a hardcoded false', () => {
+    it('offers the dialog tour with the real audience flags, not hardcoded falses', () => {
       jest.useFakeTimers();
       localStorage.removeItem(TOUR_STORAGE_KEY);
       const tour = TestBed.inject(HelpTourService);
       const start = jest.spyOn(tour, 'start').mockImplementation(() => undefined);
 
       component.isAdmin = true;
+      component.isFirstUser = true;
       (component as any).startDialogTourOnce();
       jest.runAllTimers();
 
-      expect(start).toHaveBeenCalledWith('dialog', { isAdmin: true });
+      // Both axes, so a later entry gated on either is judged by the right one.
+      expect(start).toHaveBeenCalledWith('dialog', { isAdmin: true, isFirstUser: true });
 
       start.mockRestore();
       jest.useRealTimers();
@@ -606,6 +628,9 @@ describe('WorkdayEntityDialogComponent', () => {
     };
 
     beforeEach(() => {
+      // The verbs are the first user's; see setFirstUser. The block that proves the
+      // gate turns this back off, case by case.
+      setFirstUser(true);
       openPastDay();
       mockPlanningsService.reconcileDay.mockReturnValue(of({ success: true, message: '' } as any));
       mockPlanningsService.unreconcileDay.mockReturnValue(of({ success: true, message: '' } as any));
@@ -1049,6 +1074,76 @@ describe('WorkdayEntityDialogComponent', () => {
       });
     });
 
+    /**
+     * Only the first user may reconcile or unlock. Every case is a pair — the same day
+     * as someone else and as the first user — so that no assertion can pass because
+     * the day simply was not reconcilable in the first place.
+     */
+    describe('the two verbs belong to the first user', () => {
+      it('offers reconcile to the first user and to nobody else', () => {
+        setFirstUser(false);
+        armReconcile();
+
+        // The DAY is reconcilable; the USER is not the one who may do it.
+        expect(component.canReconcile).toBe(true);
+        expect(component.reconcileEligible).toBe(false);
+        expect(component.footerMode).toBe('actions');
+        component.onReconcileConfirm();
+        expect(mockPlanningsService.reconcileDay).not.toHaveBeenCalled();
+
+        setFirstUser(true);
+        armReconcile();
+
+        expect(component.reconcileEligible).toBe(true);
+        expect(component.footerMode).toBe('confirmReconcile');
+        component.onReconcileConfirm();
+        expect(mockPlanningsService.reconcileDay).toHaveBeenCalledTimes(1);
+      });
+
+      it('offers unlock to the first user and to nobody else', () => {
+        boundaryDay();
+        setFirstUser(false);
+        armUnlock();
+
+        // The DAY is the boundary; the USER may not move it.
+        expect(component.isBoundaryDay).toBe(true);
+        expect(component.canUnlock).toBe(false);
+        expect(component.footerMode).toBe('actions');
+        // And the request is refused even with the word typed and the confirm forced.
+        component.unlockWordCtrl.setValue('LÅS OP');
+        component.footerMode = 'confirmUnlock';
+        component.onUnlockConfirm();
+        expect(mockPlanningsService.unreconcileDay).not.toHaveBeenCalled();
+
+        setFirstUser(true);
+        armUnlock();
+        expect(component.canUnlock).toBe(true);
+        component.unlockWordCtrl.setValue('LÅS OP');
+
+        component.onUnlockConfirm();
+
+        expect(mockPlanningsService.unreconcileDay).toHaveBeenCalledTimes(1);
+      });
+
+      it('still shows every user what the day is, verbs or no verbs', () => {
+        // F24: the lock is DISPLAYED to everyone. Only the actions are gated, so a
+        // user without them still opens a read-only day that says it is sealed, when
+        // it was sealed, and which day would have to be freed first.
+        boundaryDay();
+        component.data.isBoundary = false;
+        component.data.lockedThrough = '2026-09-14T00:00:00';
+        setFirstUser(false);
+
+        component.ngOnInit();
+
+        expect(component.isLocked).toBe(true);
+        expect(component.workdayForm.disabled).toBe(true);
+        expect(component.data.isSealed).toBe(true);
+        expect(component.reconciledProvenance).toBe('Afstemt 14.09.2026 kl. 10:32');
+        expect(component.freeFirstDate).toBe('14.09.2026');
+      });
+    });
+
     describe('the footer markup', () => {
       // This suite never renders the template (the TranslateService here is a mock),
       // so the structural invariants of the footer are read off the file. The
@@ -1071,13 +1166,30 @@ describe('WorkdayEntityDialogComponent', () => {
         expect(save).toContain('[mat-dialog-close]="data"');
       });
 
-      it('offers unlock only on the boundary', () => {
-        expect(buttonWithId('unlockButton')).toContain('*ngIf="isBoundaryDay"');
+      it('offers unlock only on the boundary, and only to the first user', () => {
+        // canUnlock, not isBoundaryDay: the latter also decides whether the footer
+        // names the day to free first, which every user is told.
+        expect(buttonWithId('unlockButton')).toContain('*ngIf="canUnlock"');
       });
 
       it('offers reconcile only on an open, past, clean day', () => {
         expect(buttonWithId('reconcileButton'))
           .toContain('*ngIf="reconcileEligible && !workdayForm.dirty"');
+      });
+
+      it('keeps the lines that merely say what the day IS free of the gate', () => {
+        // F24: hatching, seals, provenance and "free this day first" are for everyone.
+        // Only the verbs are the first user's, so nothing here may grow an isFirstUser.
+        const status = /<div[^>]*class="tp-footer-status"[^>]*>/.exec(template);
+        const freeFirst = /<span[^>]*id="lockedFreeFirst"[^>]*>/.exec(template);
+        const provenance = /<span[^>]*id="reconciledProvenance"[^>]*>/.exec(template);
+
+        expect(status![0]).toContain('*ngIf="isLocked"');
+        expect(freeFirst![0]).toContain('*ngIf="!isBoundaryDay"');
+        expect(provenance![0]).toContain('*ngIf="data.isSealed"');
+        for (const tag of [status, freeFirst, provenance]) {
+          expect(tag![0]).not.toContain('isFirstUser');
+        }
       });
 
       it('keeps every footer button out of the implicit form submit', () => {

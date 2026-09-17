@@ -19,11 +19,11 @@ import {
 } from '../day-lock.util';
 import {ExcelIcon, iOSIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {Store} from '@ngrx/store';
-import {selectCurrentUserLocale, selectCurrentUserIsAdmin} from 'src/app/state';
+import {selectCurrentUserLocale, selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
 import {DownloadExcelDialogComponent, PayrollExportDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
-import {HelpEntryId, HelpTourName, HelpUiStrings} from '../../../help/help.model';
+import {HelpAudience, HelpEntryId, HelpTourName, HelpUiStrings} from '../../../help/help.model';
 import {HelpContentService} from '../../../help/services/help-content.service';
 import {HelpPanelService} from '../../../help/services/help-panel.service';
 import {HelpTourService} from '../../../help/services/help-tour.service';
@@ -54,7 +54,19 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   availableTags: CommonTagModel[] = [];
   selectedTagIds: number[] = [];
   showResignedSites: boolean = false;
+  /**
+   * Gates the payroll export button and the help panel, and nothing to do with the day
+   * lock: that is isFirstUser below. The two live side by side and are not each other's
+   * duplicate — collapsing them would quietly change who gets which.
+   */
   isAdmin: boolean = false;
+  /**
+   * Whether this user may reconcile at all. Only the first user may, and the server
+   * refuses everyone else. Subscribed live rather than with take(1), because this flag
+   * rides on the current-user slice rather than the token: see the same note in the
+   * day dialog.
+   */
+  isFirstUser: boolean = false;
   payrollSystem: number = 0;
   payrollCutoffDay: number = 19;
   timePlannings: TimePlanningModel[] = [];
@@ -76,6 +88,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   updateTimePlanning$: Subscription;
   getAvailableSites$: Subscription;
   reconcileThrough$: Subscription;
+  isFirstUser$: Subscription;
   public selectCurrentUserLocale$ = this.store.select(selectCurrentUserLocale);
   locale: string;
 
@@ -125,6 +138,18 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
       this.locale = locale;
       this.getPlannings();
     });
+
+    // The day lock's own flag. Live, never take(1) — see the field's note.
+    this.isFirstUser$ = this.store.select(selectCurrentUserIsFirstUser)
+      .subscribe((isFirstUser) => {
+        this.isFirstUser = !!isFirstUser;
+        // A flag that turns false while a preview is drawn would otherwise leave the
+        // scope bar on screen with a Confirm button that silently does nothing — a
+        // control disabled without explanation, by accident. rebuildReconcilePreview
+        // cancels for anyone but the first user, and does nothing on a late true,
+        // when there is no target date yet.
+        this.rebuildReconcilePreview();
+      });
 
     // Load payroll settings only for admins — export is admin-gated
     this.store.select(selectCurrentUserIsAdmin).pipe(take(1)).subscribe((admin) => {
@@ -269,6 +294,14 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   private rebuildReconcilePreview(): void {
+    if (!this.isFirstUser) {
+      // Only the first user may reconcile, so only the first user gets the preview
+      // that leads to it. Guarded here rather than at each caller: this is the one
+      // place a preview is ever built, and the toolbar field the flag also hides is
+      // not the only way in — a day-column header asks for one too.
+      this.cancelReconcilePreview();
+      return;
+    }
     const target = this.reconcileThroughDate;
     const onScreen = !!target && !!this.reconcileMinDate && !!this.reconcileMaxDate
       && target >= this.reconcileMinDate && target <= this.reconcileMaxDate;
@@ -293,7 +326,9 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
    */
   confirmReconcileThrough(): void {
     const preview = this.reconcilePreview;
-    if (!preview || this.reconcileInFlight || preview.willReconcileCount === 0) {
+    // The first-user rule again at the commit, not only where the preview is built:
+    // this is where the request is actually made, and the server refuses anyone else.
+    if (!this.isFirstUser || !preview || this.reconcileInFlight || preview.willReconcileCount === 0) {
       return;
     }
     this.reconcileInFlight = true;
@@ -383,6 +418,14 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     return segments.join(' · ');
   }
 
+  /**
+   * Who is looking, for everything that filters the help registry. Both axes, so an
+   * entry gated on either is judged by the right one.
+   */
+  get helpAudience(): HelpAudience {
+    return { isAdmin: this.isAdmin, isFirstUser: this.isFirstUser };
+  }
+
   /** Help chrome labels. Never the shared ngx-translate catalogue. */
   get helpUi(): HelpUiStrings {
     return this.helpContent.ui();
@@ -401,7 +444,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
    */
   replayTour(tour: HelpTourName): void {
     // The panel has already closed itself; let that settle before querying anchors.
-    setTimeout(() => this.helpTour.start(tour, { isAdmin: this.isAdmin }));
+    setTimeout(() => this.helpTour.start(tour, this.helpAudience));
   }
 
   private startPageTourOnce(): void {
@@ -422,7 +465,7 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
     this.pageTourOffered = true;
     // Let the current change-detection pass render the grid, or start() finds no
     // anchors and drops every step it was meant to point at.
-    setTimeout(() => this.helpTour.start('page', { isAdmin: this.isAdmin }));
+    setTimeout(() => this.helpTour.start('page', this.helpAudience));
   }
 
   ngOnDestroy(): void {

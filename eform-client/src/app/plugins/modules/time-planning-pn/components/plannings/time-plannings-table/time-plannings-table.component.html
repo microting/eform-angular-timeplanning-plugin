@@ -17,7 +17,9 @@
   (openInPanel)="openHelp($event)"></tp-help-icon>
 
 <!--
-  Row selection is the worker set for a bulk reconcile (spec §8.3).
+  Row selection is the worker set for a bulk reconcile (spec §8.3), and nothing else,
+  so it exists only for the first user, the only one who may reconcile — a tick box
+  that can lead nowhere is chrome this feature would have added for no one.
   disableRowClickSelection is what keeps that selection usable: without it mtx-grid's
   own handler on the <tr> clears the batch whenever a day cell or the Name column is
   clicked, while still emitting rowClick. Rows are selected by their checkbox only, and
@@ -33,7 +35,7 @@
   [showToolbar]="false"
   [noResultTemplate]="noWorkersTemplate"
   [headerTemplate]="dayHeaderTemplates"
-  [rowSelectable]="true"
+  [rowSelectable]="isFirstUser"
   [multiSelectable]="true"
   [disableRowClickSelection]="true"
   (rowSelectedChange)="onRowSelected($event)"
@@ -471,7 +473,9 @@
               {{row.planningPrDayModels[col.field]?.commentOffice}}
             </div>
           </div>
-          <div class="plan-text"  *ngIf="selectCurrentUserIsFirstUser$ | async">
+          <!-- The field, not an async pipe: this template renders once per day cell,
+               so a pipe here opened one store subscription per cell on screen. -->
+          <div class="plan-text"  *ngIf="isFirstUser">
             <div>
               <small class="grey-text">
                 (id: {{ row.planningPrDayModels[col.field]?.id }})

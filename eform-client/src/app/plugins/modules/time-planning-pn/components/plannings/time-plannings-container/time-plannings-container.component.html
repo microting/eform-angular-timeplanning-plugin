@@ -112,8 +112,13 @@
       commit. Limited to days on screen, because the preview cannot draw what is off
       screen, and to yesterday at the latest — nothing at or after today can be
       reconciled.
+
+      The first user's, like the two verbs in the day dialog: hidden outright rather
+      than offered and refused, because a disabled field would have to say why. Note
+      the flag — isFirstUser, not the isAdmin that guards the payroll button above.
+      The grid keeps showing every user which days are frozen.
     -->
-    <div class="text-field--rounded" data-tp-help="toolbar.reconcileThrough">
+    <div class="text-field--rounded" data-tp-help="toolbar.reconcileThrough" *ngIf="isFirstUser">
       <mat-form-field id="reconcileThroughField">
         <mat-label>{{ 'Reconcile through' | translate }}</mat-label>
         <mat-datepicker-toggle matPrefix [for]="reconcilePicker"></mat-datepicker-toggle>
@@ -151,7 +156,9 @@
 <!--
   Bulk reconcile scope (spec §8.3). It appears only while a preview is on screen, and it
   is the only place the bulk operation commits. It names the two numbers that matter:
-  how many workers, and the day the boundary lands on.
+  how many workers, and the day the boundary lands on. It carries no flag of its own
+  because it needs none: rebuildReconcilePreview never builds a preview for anyone but
+  the first user, so for everyone else there is nothing here to render.
 
   Both counts are of rows the preview could actually DRAW. A worker with no registered day
   between their own boundary and the target has no region to show, so they are neither
@@ -200,5 +207,7 @@
 ></app-time-plannings-table>
 <!--</div>-->
 
-<tp-help-panel [isAdmin]="isAdmin" (replayTourRequested)="replayTour($event)"></tp-help-panel>
+<!-- Both audience axes: the panel must not teach a control this reader has not got. -->
+<tp-help-panel [isAdmin]="isAdmin" [isFirstUser]="isFirstUser"
+               (replayTourRequested)="replayTour($event)"></tp-help-panel>
 <tp-help-tour tour="page"></tp-help-tour>

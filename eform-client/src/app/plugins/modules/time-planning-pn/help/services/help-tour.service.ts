@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { HelpEntry, HelpTourName } from '../help.model';
+import { HelpAudience, HelpEntry, HelpTourName } from '../help.model';
 import { HelpContentService } from './help-content.service';
 import { HelpVisibilityService } from './help-visibility.service';
 
@@ -35,7 +35,7 @@ export class HelpTourService {
    * payroll-export control only renders for Microting staff, and the worker
    * filter only renders when the account has more than one site.
    */
-  start(tour: HelpTourName, opts: { isAdmin: boolean }): void {
+  start(tour: HelpTourName, opts: HelpAudience): void {
     // The one choke point for all three ways a tour begins: startPageTourOnce,
     // startDialogTourOnce and the panel's replay button. Refusing here closes
     // every path at once.

@@ -80,6 +80,15 @@ describe('planning help registry', () => {
     expect(adminOnly.map(e => e.id)).toEqual(['toolbar.payrollExport']);
   });
 
+  it('marks exactly one entry first-user-only, and keeps the two axes apart', () => {
+    // Pinned the same way the admin list is, so the second axis stays truthful: an
+    // entry that gains a gate has to come through here and say which gate it is.
+    const firstUserOnly = PLANNING_HELP_ENTRIES.filter(e => e.firstUserOnly);
+    expect(firstUserOnly.map(e => e.id)).toEqual(['toolbar.reconcileThrough']);
+    // Nothing carries both: they answer different questions about the reader.
+    expect(PLANNING_HELP_ENTRIES.filter(e => e.adminOnly && e.firstUserOnly)).toEqual([]);
+  });
+
   it('never mentions administrators in user-facing copy', () => {
     const banned = /\badmin(istrator)?s?\b/i;
     for (const entry of PLANNING_HELP_ENTRIES) {

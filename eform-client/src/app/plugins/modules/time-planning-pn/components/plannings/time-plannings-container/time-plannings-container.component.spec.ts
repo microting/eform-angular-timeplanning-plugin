@@ -1,10 +1,13 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TimePlanningsContainerComponent } from './time-plannings-container.component';
 import { TimePlanningPnPlanningsService } from '../../../services/time-planning-pn-plannings.service';
 import { TimePlanningPnSettingsService } from '../../../services/time-planning-pn-settings.service';
 import { MatDialog } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
-import { EMPTY, of, Subject, throwError } from 'rxjs';
+import { selectCurrentUserIsFirstUser } from 'src/app/state';
+import { BehaviorSubject, EMPTY, of, Subject, throwError } from 'rxjs';
 import { addDays, endOfWeek, format, startOfWeek, subDays } from 'date-fns';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -66,6 +69,11 @@ describe('TimePlanningsContainerComponent', () => {
 
     fixture = TestBed.createComponent(TimePlanningsContainerComponent);
     component = fixture.componentInstance;
+    // Reconcile is the first user's, and most cases here never run ngOnInit, which is
+    // where the flag would arrive from the store. Set once, so no case can quietly
+    // exercise the bulk action as a user who would be offered nothing; the block that
+    // proves the gate sets it per case instead.
+    component.isFirstUser = true;
   });
 
   it('should create', () => {
@@ -283,9 +291,9 @@ describe('TimePlanningsContainerComponent', () => {
       component.getPlannings();
       jest.runAllTimers();
 
-      // A literal, not component.isAdmin: reading the expected value off the
-      // component under test asserts nothing about what was passed.
-      expect(start).toHaveBeenCalledWith('page', { isAdmin: false });
+      // Literals, not component.isAdmin / component.isFirstUser: reading the expected
+      // values off the component under test asserts nothing about what was passed.
+      expect(start).toHaveBeenCalledWith('page', { isAdmin: false, isFirstUser: true });
     });
 
     it('does not burn the once-per-page offer on a tour the help gate refuses', () => {
@@ -304,7 +312,7 @@ describe('TimePlanningsContainerComponent', () => {
       isVisible.mockReturnValue(true);
       component.getPlannings();
       jest.runAllTimers();
-      expect(start).toHaveBeenCalledWith('page', { isAdmin: false });
+      expect(start).toHaveBeenCalledWith('page', { isAdmin: false, isFirstUser: true });
 
       isVisible.mockRestore();
     });
@@ -327,7 +335,7 @@ describe('TimePlanningsContainerComponent', () => {
       component.replayTour('dialog');
       jest.runAllTimers();
 
-      expect(start).toHaveBeenCalledWith('dialog', { isAdmin: false });
+      expect(start).toHaveBeenCalledWith('dialog', { isAdmin: false, isFirstUser: true });
     });
 
     it('does not offer a tour the planner has already seen', () => {
@@ -361,16 +369,17 @@ describe('TimePlanningsContainerComponent', () => {
     })),
   }) as any;
 
-  describe('Bulk reconcile preview', () => {
-    const load = (...rows: any[]) => {
-      mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: rows }) as any);
-      component.getPlannings();
-    };
+  /** Shows last week and loads these rows through the real load path. */
+  const loadLastWeek = (...rows: any[]) => {
+    component.dateFrom = lastWeekStart;
+    component.dateTo = lastWeekEnd;
+    mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: rows }) as any);
+    component.getPlannings();
+  };
 
+  describe('Bulk reconcile preview', () => {
     beforeEach(() => {
-      component.dateFrom = lastWeekStart;
-      component.dateTo = lastWeekEnd;
-      load(rowFor(1), rowFor(2));
+      loadLastWeek(rowFor(1), rowFor(2));
     });
 
     it('previews every visible worker when no row is ticked', () => {
@@ -391,7 +400,7 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('shows a row already reconciled past the target as skipped, not moved backwards', () => {
-      load(rowFor(1), rowFor(2, `${keyOf(5)}T00:00:00`));
+      loadLastWeek(rowFor(1), rowFor(2, `${keyOf(5)}T00:00:00`));
 
       component.onReconcileDateChanged(dayOf(3));
 
@@ -422,7 +431,7 @@ describe('TimePlanningsContainerComponent', () => {
     it('offers no target at all when the whole visible range is today or later', () => {
       component.dateFrom = new Date();
       component.dateTo = addDays(new Date(), 6);
-      load(rowFor(1));
+      loadLastWeek(rowFor(1));
 
       // Both ends, or the field would advertise a minimum it will never accept.
       expect(component.reconcileMaxDate).toBeNull();
@@ -435,7 +444,7 @@ describe('TimePlanningsContainerComponent', () => {
 
       component.dateFrom = addDays(lastWeekStart, 7);
       component.dateTo = addDays(lastWeekEnd, 7);
-      load(rowFor(1), rowFor(2));
+      loadLastWeek(rowFor(1), rowFor(2));
 
       expect(component.reconcilePreview).toBeNull();
     });
@@ -466,7 +475,7 @@ describe('TimePlanningsContainerComponent', () => {
     it('redraws an unticked preview on the new rows, because that scope cannot widen', () => {
       component.onReconcileDateChanged(dayOf(3));
 
-      load(rowFor(1), rowFor(2), rowFor(3));
+      loadLastWeek(rowFor(1), rowFor(2), rowFor(3));
 
       // Still "everyone visible", so the preview follows the rows instead of vanishing.
       expect(component.reconcilePreview?.siteIds).toEqual([1, 2, 3]);
@@ -548,11 +557,7 @@ describe('TimePlanningsContainerComponent', () => {
     /** Worker 1 will be sealed on day 3; worker 2 is already further forward. */
     beforeEach(() => {
       toastr = TestBed.inject(ToastrService) as any;
-      component.dateFrom = lastWeekStart;
-      component.dateTo = lastWeekEnd;
-      mockPlanningsService.getPlannings.mockReturnValue(
-        of({ success: true, model: [rowFor(1), rowFor(2, `${keyOf(5)}T00:00:00`)] }) as any);
-      component.getPlannings();
+      loadLastWeek(rowFor(1), rowFor(2, `${keyOf(5)}T00:00:00`));
       component.onReconcileDateChanged(addDays(lastWeekStart, 3));
       reloads = mockPlanningsService.getPlannings.mock.calls.length;
     });
@@ -754,6 +759,93 @@ describe('TimePlanningsContainerComponent', () => {
       component.confirmReconcileThrough();
 
       expect(mockPlanningsService.reconcileThrough).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * Only the first user may reconcile. Every case here is a pair: the same call as
+   * someone else and as the first user, so nothing can pass because the setup was
+   * simply too poor to produce a preview.
+   */
+  describe('the bulk reconcile belongs to the first user', () => {
+    /** Loads the rows as the given user, since the load itself rebuilds the preview. */
+    const loadAs = (isFirstUser: boolean) => {
+      component.isFirstUser = isFirstUser;
+      loadLastWeek(rowFor(1), rowFor(2));
+    };
+
+    it('previews nothing for anyone else, and everything for the first user', () => {
+      loadAs(false);
+
+      component.onReconcileDateChanged(dayOf(3));
+      expect(component.reconcilePreview).toBeNull();
+
+      loadAs(true);
+
+      component.onReconcileDateChanged(dayOf(3));
+      expect(component.reconcilePreview?.willReconcileCount).toBe(2);
+    });
+
+    it('takes a drawn preview down when the flag turns false under it', () => {
+      // Otherwise the scope bar stays on screen with a Confirm button that silently
+      // does nothing — a control disabled with no explanation, arrived at by accident.
+      // The flag rides on the current-user slice, so it really can answer late.
+      const firstUser$ = new BehaviorSubject(true);
+      mockStore.select.mockImplementation((selector: any) =>
+        (selector === selectCurrentUserIsFirstUser ? firstUser$ : of('en-US')) as any);
+      component = TestBed.createComponent(TimePlanningsContainerComponent).componentInstance;
+      component.ngOnInit();
+      loadAs(true);
+      component.onReconcileDateChanged(dayOf(3));
+      expect(component.reconcilePreview).not.toBeNull();
+
+      firstUser$.next(false);
+
+      expect(component.reconcilePreview).toBeNull();
+      expect(component.reconcileThroughDate).toBeNull();
+    });
+
+    it('builds no preview for someone else who ticks rows either', () => {
+      // The toolbar field is hidden, but a ticked row rebuilds the preview too.
+      loadAs(false);
+      component.onReconcileDateChanged(dayOf(3));
+
+      component.onSelectionChanged([1]);
+
+      expect(component.reconcilePreview).toBeNull();
+    });
+
+    it('commits nothing for anyone else, even with a preview already drawn', () => {
+      // The preview is built as the first user and the flag then flips, which is the
+      // only way anyone else can reach the commit at all: the scope bar holds it.
+      loadAs(true);
+      component.onReconcileDateChanged(dayOf(3));
+      expect(component.reconcilePreview).not.toBeNull();
+      mockPlanningsService.reconcileThrough.mockReturnValue(of({ success: true, model: null }) as any);
+
+      component.isFirstUser = false;
+      component.confirmReconcileThrough();
+
+      expect(mockPlanningsService.reconcileThrough).not.toHaveBeenCalled();
+
+      component.isFirstUser = true;
+      component.confirmReconcileThrough();
+
+      expect(mockPlanningsService.reconcileThrough).toHaveBeenCalledTimes(1);
+    });
+
+    it('hides the bulk target field rather than disabling it', () => {
+      // Never rendered here (the bed has no Material), so the binding is read off the
+      // file, as the day dialog's footer markup is. A disabled field would have to
+      // explain itself, and no copy here may explain a restriction by appealing to
+      // what some other user may do. Read for the RIGHT flag, too: isAdmin still gates
+      // the payroll export button in this same toolbar.
+      const template = readFileSync(
+        join(__dirname, 'time-plannings-container.component.html'), 'utf8');
+      const field = /<div[^>]*data-tp-help="toolbar\.reconcileThrough"[^>]*>/.exec(template);
+
+      expect(field).not.toBeNull();
+      expect(field![0]).toContain('*ngIf="isFirstUser"');
     });
   });
 });

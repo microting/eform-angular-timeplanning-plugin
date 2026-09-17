@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TimePlanningsTableComponent } from './time-plannings-table.component';
 import { TimePlanningPnPlanningsService } from '../../../services/time-planning-pn-plannings.service';
@@ -7,7 +9,8 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectorRef, NO_ERRORS_SCHEMA } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { of } from 'rxjs';
+import { selectCurrentUserIsFirstUser } from 'src/app/state';
+import { BehaviorSubject, of } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
 import { registerTestLocales } from '../../../testing/register-test-locales';
 
@@ -710,6 +713,21 @@ describe('TimePlanningsTableComponent', () => {
   };
 
   /**
+   * Three days ending yesterday, so every column is in the past. Derived from the
+   * clock rather than written down, so no passing date turns these blocks red.
+   */
+  const showLastThreeDays = (): Date => {
+    const yesterday = new Date();
+    yesterday.setHours(0, 0, 0, 0);
+    yesterday.setDate(yesterday.getDate() - 1);
+    component.dateFrom = new Date(yesterday);
+    component.dateFrom.setDate(yesterday.getDate() - 2);
+    component.dateTo = yesterday;
+    component.ngOnChanges({ dateTo: { currentValue: component.dateTo } } as any);
+    return yesterday;
+  };
+
+  /**
    * The worker set for a bulk reconcile. mtx-grid rebuilds its SelectionModel empty on
    * ANY input change and emits nothing, so the component has to report that itself —
    * and report it as a RESET, because an empty selection means "everyone visible" and
@@ -782,19 +800,11 @@ describe('TimePlanningsTableComponent', () => {
   });
 
   describe('the past-day header', () => {
-    beforeEach(() => stubHeaderFlush(component));
-
-    /** Three days ending yesterday, so every column is in the past. */
-    const showLastThreeDays = () => {
-      const yesterday = new Date();
-      yesterday.setHours(0, 0, 0, 0);
-      yesterday.setDate(yesterday.getDate() - 1);
-      component.dateFrom = new Date(yesterday);
-      component.dateFrom.setDate(yesterday.getDate() - 2);
-      component.dateTo = yesterday;
-      component.ngOnChanges({ dateTo: { currentValue: component.dateTo } } as any);
-      return yesterday;
-    };
+    beforeEach(() => {
+      stubHeaderFlush(component);
+      // The header is the first user's; the block below argues why and proves it.
+      component.isFirstUser = true;
+    });
 
     it('offers the clickable header on past days only', () => {
       const today = new Date();
@@ -829,6 +839,95 @@ describe('TimePlanningsTableComponent', () => {
       component.onDayHeaderClick('siteName');
 
       expect(requested).toHaveLength(0);
+    });
+  });
+
+  /**
+   * Only the first user may reconcile, so only the first user gets the two ways in
+   * the grid offers: the clickable day header and the row tick boxes. Every case is a
+   * pair, because a header map that is empty for the wrong reason — no past columns,
+   * no dates — would let the negative half pass on its own.
+   */
+  describe('the day header belongs to the first user', () => {
+    beforeEach(() => stubHeaderFlush(component));
+
+    /**
+     * Hands the component a first-user stream this test drives, and ONLY that one.
+     * Keyed on the selector rather than answering every select() with the same
+     * subject: otherwise a case like "stops listening" would pass on whichever other
+     * selector happened to be subscribed, and would stop testing anything in silence
+     * the day that changed.
+     */
+    const firstUserStream = (flag$: BehaviorSubject<boolean>) => {
+      mockStore.select.mockImplementation((selector: any) =>
+        (selector === selectCurrentUserIsFirstUser ? flag$ : of(true)) as any);
+    };
+
+    it('leaves every past header plain for everyone else, and clickable for the first user', () => {
+      component.isFirstUser = false;
+      showLastThreeDays();
+      expect(component.dayHeaderTemplates).toEqual({});
+
+      component.isFirstUser = true;
+      showLastThreeDays();
+
+      expect(Object.keys(component.dayHeaderTemplates)).toEqual(['0', '1', '2']);
+    });
+
+    it('asks for no preview when someone else reaches the handler anyway', () => {
+      const requested: Date[] = [];
+      component.reconcileDateRequested.subscribe(date => requested.push(date));
+      component.isFirstUser = true;
+      showLastThreeDays();
+
+      component.isFirstUser = false;
+      component.onDayHeaderClick('2');
+      expect(requested).toHaveLength(0);
+
+      component.isFirstUser = true;
+      component.onDayHeaderClick('2');
+
+      expect(requested).toHaveLength(1);
+    });
+
+    it('reads the flag off the store, and rebuilds the header row when it arrives late', () => {
+      // isFirstUser rides on the current-user slice rather than the token, so it is
+      // subscribed rather than read once: a one-shot read landing first would latch
+      // false and hide the header from the one user who has it for the whole session.
+      const firstUser$ = new BehaviorSubject(false);
+      firstUserStream(firstUser$);
+
+      component.ngOnInit();
+      showLastThreeDays();
+      expect(component.isFirstUser).toBe(false);
+      expect(component.dayHeaderTemplates).toEqual({});
+
+      firstUser$.next(true);
+
+      expect(component.isFirstUser).toBe(true);
+      expect(Object.keys(component.dayHeaderTemplates)).toEqual(['0', '1', '2']);
+    });
+
+    it('stops listening once the grid is gone', () => {
+      const firstUser$ = new BehaviorSubject(false);
+      firstUserStream(firstUser$);
+      component.ngOnInit();
+      expect(firstUser$.observed).toBe(true);
+
+      component.ngOnDestroy();
+
+      expect(firstUser$.observed).toBe(false);
+    });
+
+    it('offers the tick boxes only to the user who could use them', () => {
+      // Row selection exists to scope a bulk reconcile and nothing else, so it is not
+      // rendered for anyone who may not reconcile. Never rendered in this bed, so the
+      // binding is read off the file — and read for the RIGHT flag: isAdmin still
+      // gates unrelated chrome in this same template.
+      const template = readFileSync(
+        join(__dirname, 'time-plannings-table.component.html'), 'utf8');
+
+      expect(template).toContain('[rowSelectable]="isFirstUser"');
     });
   });
 
