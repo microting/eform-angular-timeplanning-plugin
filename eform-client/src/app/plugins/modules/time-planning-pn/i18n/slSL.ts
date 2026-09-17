@@ -490,7 +490,7 @@ export const slSL = {
   reconcileThroughNoRegistration: 'No registration: {{count}}',
   reconcileDayConfirm: 'Reconcile {{worker}} on {{date}}? This day and every day before it become locked.',
   reconcileNeedsSave: 'Save your changes before reconciling the day',
-  unlockFreeFirst: 'Locked because {{date}} is reconciled. Unlock {{date}} first.',
+  unlockFreeFirst: 'Locked because {{date}} is reconciled. The day is released when {{date}} is unlocked.',
   unlockTypeWordPrompt: 'The reconciliation is removed and the day can be edited again. Type {{word}} to confirm.',
   UNLOCK: 'UNLOCK',
   lockRequestFailed: 'The action could not be completed. Try again.',

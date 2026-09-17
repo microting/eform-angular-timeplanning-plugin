@@ -890,10 +890,12 @@ describe('TimePlanningsTableComponent', () => {
       expect(requested).toHaveLength(1);
     });
 
-    it('reads the flag off the store, and rebuilds the header row when it arrives late', () => {
-      // isFirstUser rides on the current-user slice rather than the token, so it is
-      // subscribed rather than read once: a one-shot read landing first would latch
-      // false and hide the header from the one user who has it for the whole session.
+    it('reads the flag off the store, and rebuilds the header row when it changes', () => {
+      // Two reasons the flag is subscribed rather than read once. The first build
+      // cannot have seen it — dateFrom/dateTo are bound inputs, so ngOnChanges and its
+      // updateTableHeaders() run before ngOnInit — and the answer can change while the
+      // page is alive. headersBuilt is what makes that uninformed first build
+      // recoverable, and this case drives exactly that sequence.
       const firstUser$ = new BehaviorSubject(false);
       firstUserStream(firstUser$);
 

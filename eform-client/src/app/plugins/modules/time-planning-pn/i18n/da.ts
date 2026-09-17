@@ -488,7 +488,7 @@ export const da = {
   reconcileThroughNoRegistration: 'Ingen registrering: {{count}}',
   reconcileDayConfirm: 'Afstem {{worker}} {{date}}? Dagen og alle dage før den bliver låst.',
   reconcileNeedsSave: 'Gem ændringerne, før dagen afstemmes',
-  unlockFreeFirst: 'Låst, fordi {{date}} er afstemt. Lås {{date}} op først.',
+  unlockFreeFirst: 'Låst, fordi {{date}} er afstemt. Dagen frigives, når {{date}} låses op.',
   unlockTypeWordPrompt: 'Afstemningen fjernes, og dagen kan redigeres igen. Skriv {{word}} for at bekræfte.',
   UNLOCK: 'LÅS OP',
   lockRequestFailed: 'Handlingen kunne ikke gennemføres. Prøv igen.',

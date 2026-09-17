@@ -81,11 +81,14 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, OnDestroy
    * a second way, through an async pipe inside the cell template — one store
    * subscription per rendered cell where this field costs one.
    *
-   * Subscribed live rather than read once: this flag rides on the current-user slice
-   * rather than the token, so it is NOT in the store in time for the first header
-   * build (bound inputs make ngOnChanges run before ngOnInit), and a one-shot read
-   * would latch that early false for the whole session. headersBuilt below is what
-   * makes that first, uninformed build recoverable.
+   * Subscribed live rather than read once, for two reasons — neither of them about
+   * which flag reaches the store first, because both arrive in the same auth payload:
+   *  - the first header build cannot have seen this flag whatever the store does.
+   *    dateFrom/dateTo are bound inputs, so ngOnChanges, and with it the first
+   *    updateTableHeaders(), runs before ngOnInit. headersBuilt below is what makes
+   *    that uninformed build recoverable;
+   *  - the flag is not fixed for the life of the page — signing out resets it — so a
+   *    one-shot read would go on answering with whatever it caught.
    * Note it is NOT selectAuthIsAdmin$ below, which gates unrelated chrome.
    */
   isFirstUser = false;
@@ -122,8 +125,9 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, OnDestroy
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
     this.isFirstUserSub = this.store.select(selectCurrentUserIsFirstUser).subscribe(isFirstUser => {
       if (!!isFirstUser === this.isFirstUser) {
-        // The store re-emits on every unrelated state change; only a real answer
-        // changing is worth rebuilding a header row for.
+        // store.select already suppresses repeats through distinctUntilChanged, so in
+        // the app this never fires. It keeps the plain-subject test doubles honest,
+        // and stops a repeat from ever rebuilding the header row.
         return;
       }
       this.isFirstUser = !!isFirstUser;

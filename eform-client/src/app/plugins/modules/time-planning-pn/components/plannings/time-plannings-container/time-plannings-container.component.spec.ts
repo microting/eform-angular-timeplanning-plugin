@@ -789,7 +789,7 @@ describe('TimePlanningsContainerComponent', () => {
     it('takes a drawn preview down when the flag turns false under it', () => {
       // Otherwise the scope bar stays on screen with a Confirm button that silently
       // does nothing — a control disabled with no explanation, arrived at by accident.
-      // The flag rides on the current-user slice, so it really can answer late.
+      // The flag is not fixed for the life of the page: signing out resets it.
       const firstUser$ = new BehaviorSubject(true);
       mockStore.select.mockImplementation((selector: any) =>
         (selector === selectCurrentUserIsFirstUser ? firstUser$ : of('en-US')) as any);

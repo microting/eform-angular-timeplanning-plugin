@@ -62,9 +62,11 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   isAdmin: boolean = false;
   /**
    * Whether this user may reconcile at all. Only the first user may, and the server
-   * refuses everyone else. Subscribed live rather than with take(1), because this flag
-   * rides on the current-user slice rather than the token: see the same note in the
-   * day dialog.
+   * refuses everyone else.
+   *
+   * Subscribed live rather than with take(1): the flag is not fixed for the life of the
+   * page — signing out resets it — and the subscription is also what takes a drawn
+   * preview down when it changes. See ngOnInit.
    */
   isFirstUser: boolean = false;
   payrollSystem: number = 0;
@@ -139,7 +141,8 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
       this.getPlannings();
     });
 
-    // The day lock's own flag. Live, never take(1) — see the field's note.
+    // The day lock's own flag. Live, never take(1) — the flag can change while this
+    // page is alive, and the preview drawn over the grid has to follow it.
     this.isFirstUser$ = this.store.select(selectCurrentUserIsFirstUser)
       .subscribe((isFirstUser) => {
         this.isFirstUser = !!isFirstUser;

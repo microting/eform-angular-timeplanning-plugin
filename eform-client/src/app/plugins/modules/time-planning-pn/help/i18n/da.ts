@@ -380,7 +380,7 @@ export const da: HelpProseMap = {
   'dayCell.lockedByReconciled': {
     title: 'Låst',
     short: 'Dagen ligger før en afstemt dag.',
-    detail: 'Dagen kan ikke ændres, fordi en senere dag er afstemt. Lås den seneste afstemte dag op først.',
+    detail: 'Dagen kan ikke ændres, fordi en senere dag er afstemt. Den frigives, når den seneste afstemte dag låses op.',
     keywords: ['låst', 'afstemt', 'tidligere'],
   },
 

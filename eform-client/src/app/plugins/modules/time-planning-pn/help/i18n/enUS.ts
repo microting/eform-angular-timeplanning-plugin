@@ -376,7 +376,7 @@ export const enUS: HelpProseMap = {
   'dayCell.lockedByReconciled': {
     title: 'Locked',
     short: 'The day falls before a reconciled day.',
-    detail: 'The day cannot be changed, because a later day is reconciled. Unlock the latest reconciled day first.',
+    detail: 'The day cannot be changed, because a later day is reconciled. It is released when the latest reconciled day is unlocked.',
     keywords: ['locked', 'reconciled', 'earlier'],
   },
 

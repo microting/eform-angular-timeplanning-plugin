@@ -86,11 +86,10 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
    * Whether this user may reconcile or unlock at all: only the first user may, and the
    * server refuses everyone else.
    *
-   * Subscribed live, and never with take(1). Unlike the admin flag, which is read off
-   * the token and is there the moment login lands, this one comes from the
-   * current-user slice, which is populated separately. A one-shot read that happened
-   * to run first would latch false and take the two verbs away from the one user who
-   * has them, for the rest of the session.
+   * Subscribed live, and never with take(1): the flag is not fixed for the life of the
+   * page — signing out resets it — and a one-shot read would go on answering with
+   * whatever it happened to catch. Say nothing here about which of the two flags
+   * reaches the store first; they arrive in the same auth payload.
    */
   isFirstUser = false;
   private isFirstUser$: Subscription;

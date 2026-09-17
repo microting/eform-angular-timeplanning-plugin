@@ -116,8 +116,9 @@ export class HelpPanelComponent extends HelpChromeBase
         if (!wasOpen) {
           // Only on a real closed -> open transition. Rebuilding the sections
           // hands *ngFor a fresh array and re-creates every entry node, which
-          // drops both focus and scroll position; nothing but isAdmin changes
-          // what is listed, and ngOnChanges already rebuilds for that.
+          // drops both focus and scroll position; nothing but the two audience
+          // flags changes what is listed, and ngOnChanges already rebuilds for
+          // either of them.
           this.buildSections();
           const active = document.activeElement;
           this.focusOnOpen = active instanceof HTMLElement ? active : null;

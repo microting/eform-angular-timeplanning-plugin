@@ -16,10 +16,12 @@ test.describe('Reconciled day lock: unlock', () => {
     const worker = await session.pickWorker(page, 9);
     const boundaryDate = await reconcileDay(page, worker, 3);
 
-    // A day below the boundary names the day to free first and offers no unlock.
+    // A day below the boundary names the day to free first and offers no unlock. The
+    // line says what releases the day; it does not tell the reader to go and do it,
+    // because it is shown to users who have no Unlock button.
     await openDay(page, worker, 1);
     await expect(page.locator('#lockedFreeFirstText'))
-      .toHaveText(`Låst, fordi ${boundaryDate} er afstemt. Lås ${boundaryDate} op først.`);
+      .toHaveText(`Låst, fordi ${boundaryDate} er afstemt. Dagen frigives, når ${boundaryDate} låses op.`);
     await assertReadOnlyDialog(page);
     await closeDayWithoutChange(page);
 
