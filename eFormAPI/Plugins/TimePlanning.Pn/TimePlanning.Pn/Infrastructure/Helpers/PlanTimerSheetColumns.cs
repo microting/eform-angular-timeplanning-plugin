@@ -24,7 +24,7 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 public static class PlanTimerSheetColumns
 {
     /// <summary>Columns before this one hold the date and other non-worker data.</summary>
-    private const int FirstWorkerColumn = 3;
+    public const int FirstWorkerColumn = 3;
 
     /// <summary>
     /// Hyphen plus the en and em dashes a spreadsheet's autocorrect types. The
@@ -130,6 +130,68 @@ public static class PlanTimerSheetColumns
 
         return new Layout(byKey.Values.OrderBy(x => x.HoursColumn ?? x.TextColumn).ToList(), problems);
     }
+
+    /// <summary>
+    /// <paramref name="FirstColumn"/> is the 0-based column the first appended
+    /// header belongs in. It never precedes FirstWorkerColumn: on a sheet whose
+    /// header row is empty or short, headers written into A/B/C would sit in the
+    /// date columns the import skips, and the next push would append them again.
+    /// </summary>
+    public sealed record HeaderAppends(
+        IReadOnlyList<string> Headers,
+        int FirstColumn,
+        IReadOnlyList<string> Problems);
+
+    /// <summary>
+    /// The headers a push must append so every site has both a "- timer" and a
+    /// "- tekst" column. Existing headers are matched the same way the import
+    /// matches them -- ignoring case, whitespace and dash style -- so a
+    /// hand-edited header is recognized instead of being duplicated.
+    ///
+    /// Headers are only ever appended. Nothing is moved, renamed or removed, so
+    /// no column parts company with the data under it. A site holding only half
+    /// a pair therefore gets a complete new pair at the end and keeps its old
+    /// column; the import pairs columns by name, so it goes on reading the old
+    /// one until someone moves the data over and deletes it. Problems name that
+    /// column so it does not sit there unnoticed.
+    /// </summary>
+    public static HeaderAppends PlanAppends(IList<object> existingHeaders, IEnumerable<string> siteNames)
+    {
+        var existing = Map(existingHeaders).Workers.ToDictionary(x => x.Key);
+        var headers = new List<string>();
+        var problems = new List<string>();
+        var planned = new HashSet<string>();
+
+        foreach (var siteName in siteNames)
+        {
+            var key = NormalizeName(siteName);
+            if (key.Length == 0 || !planned.Add(key))
+            {
+                continue;
+            }
+
+            if (existing.TryGetValue(key, out var columns))
+            {
+                if (columns.HoursColumn != null && columns.TextColumn != null)
+                {
+                    continue;
+                }
+
+                var letter = ColumnLetter(columns.HoursColumn ?? columns.TextColumn!.Value);
+                problems.Add(
+                    $"\"{siteName}\" had only one of its two columns ({letter}); a complete pair was appended. The import keeps reading column {letter} until its data is moved to the new pair and the column is deleted.");
+            }
+
+            headers.Add(TimerHeader(siteName));
+            headers.Add(TextHeader(siteName));
+        }
+
+        return new HeaderAppends(headers, Math.Max(existingHeaders.Count, FirstWorkerColumn), problems);
+    }
+
+    public static string TimerHeader(string siteName) => $"{siteName} - timer";
+
+    public static string TextHeader(string siteName) => $"{siteName} - tekst";
 
     /// <summary>
     /// The cell value, or empty when the column is absent. The Sheets API drops

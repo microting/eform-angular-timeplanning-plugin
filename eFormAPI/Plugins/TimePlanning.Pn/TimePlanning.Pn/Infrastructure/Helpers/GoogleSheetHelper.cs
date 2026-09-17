@@ -90,41 +90,38 @@ public class GoogleSheetHelper
                 .Select(x => x.Name)
                 .ToListAsync();
 
-            var newHeaders = existingHeaders.Cast<string>().ToList();
-            foreach (var siteName in siteNames)
+            // Matching a header by its exact text used to append a second
+            // column whenever a header had been retyped with other spacing, a
+            // different dash or other capitals. The planner matches the way the
+            // import does, and only ever appends.
+            var appends = PlanTimerSheetColumns.PlanAppends(existingHeaders, siteNames);
+            foreach (var problem in appends.Problems)
             {
-                var timerHeader = $"{siteName} - timer";
-                var textHeader = $"{siteName} - tekst";
-                if (!newHeaders.Contains(timerHeader))
-                {
-                    newHeaders.Add(timerHeader);
-                }
-
-                if (!newHeaders.Contains(textHeader))
-                {
-                    newHeaders.Add(textHeader);
-                }
+                logger.LogWarning("PlanTimer sheet: {Problem}", problem);
+                SentrySdk.CaptureMessage($"PlanTimer sheet: {problem}", SentryLevel.Warning);
             }
 
-            if (!existingHeaders.Cast<string>().SequenceEqual(newHeaders))
+            if (appends.Headers.Count > 0)
             {
+                // Only the appended cells are written. Rewriting the whole row
+                // would restate every existing header, so any header a human had
+                // corrected would be silently reverted.
+                var firstNewColumn = appends.FirstColumn;
+                var range = $"{sheetName}!" +
+                            $"{PlanTimerSheetColumns.ColumnLetter(firstNewColumn)}1:" +
+                            $"{PlanTimerSheetColumns.ColumnLetter(firstNewColumn + appends.Headers.Count - 1)}1";
                 var updateRequest = new ValueRange
                 {
-                    Values = new List<IList<object>> { newHeaders.Cast<object>().ToList() }
-                };
-
-                var columnLetter = GetColumnLetter(newHeaders.Count);
-                updateRequest = new ValueRange
-                {
-                    Values = new List<IList<object>> { newHeaders.Cast<object>().ToList() }
+                    Values = new List<IList<object>> { appends.Headers.Cast<object>().ToList() }
                 };
                 var updateHeaderRequest =
-                    service.Spreadsheets.Values.Update(updateRequest, googleSheetId, $"{sheetName}!A1:{columnLetter}1");
+                    service.Spreadsheets.Values.Update(updateRequest, googleSheetId, range);
                 updateHeaderRequest.ValueInputOption =
                     SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
                 await updateHeaderRequest.ExecuteAsync();
 
-                logger.LogInformation("Headers updated successfully.");
+                logger.LogInformation("Appended {Count} header(s) to the PlanTimer sheet at {Range}.",
+                    appends.Headers.Count, range);
             }
 
             AutoAdjustColumnWidths(service, googleSheetId, sheetName, logger);
@@ -640,23 +637,6 @@ public class GoogleSheetHelper
         {
             logger.LogError($"An error occurred while auto-adjusting column widths: {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// Takes a ONE-based column number, unlike PlanTimerSheetColumns.ColumnLetter,
-    /// which takes the zero-based index the header map and its messages use.
-    /// </summary>
-    private static string GetColumnLetter(int columnIndex)
-    {
-        string columnLetter = "";
-        while (columnIndex > 0)
-        {
-            int modulo = (columnIndex - 1) % 26;
-            columnLetter = Convert.ToChar(65 + modulo) + columnLetter;
-            columnIndex = (columnIndex - modulo) / 26;
-        }
-
-        return columnLetter;
     }
 
     static void SetAlternatingColumnColors(SheetsService service, string spreadsheetId, int sheetId, int columnCount,
