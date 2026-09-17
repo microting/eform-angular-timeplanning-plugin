@@ -30,16 +30,20 @@ public class TimePlanningAuthGrpcServiceTests
     public void SetUp()
     {
         _deviceService = Substitute.For<ITimePlanningRegistrationDeviceService>();
-        // RefreshToken-related deps are not exercised by ActivateDevice tests;
-        // null-pass these. UserManager/RoleManager have no usable interface to
-        // substitute against, so we pass null — any test that exercises
-        // RefreshToken would need to construct real instances.
+        // RoleManager is only reached once a login succeeds, which no test here does, so
+        // it stays null. UserManager substitutes fine through its virtual members.
         _userService = Substitute.For<IUserService>();
-        _userManager = null;
+        _userManager = SubstituteUserManager();
         _roleManager = null;
         _tokenOptions = Substitute.For<IOptions<EformTokenOptions>>();
         _grpcService = new TimePlanningAuthGrpcService(
             _deviceService, _userService, _userManager, _roleManager, _tokenOptions);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _userManager?.Dispose();
     }
 
     [Test]
@@ -123,5 +127,79 @@ public class TimePlanningAuthGrpcServiceTests
 
         await _deviceService.Received(1).Activate(
             Arg.Is<TimePlanningRegistrationDeviceActivateModel>(m => m.CustomerNo == 0));
+    }
+
+    // This service is a second, parallel login implementation that mints the same JWT as
+    // the JSON path, so a disabled account has to be refused here too - otherwise a
+    // resigned employee's flutter-time app keeps working. Every credential failure answers
+    // with one message, for the same reason the JSON path does.
+    // Spelled out rather than referenced from the production constant: asserting against
+    // the constant would pass however the message changed.
+    private const string ExpectedMessage = "You have entered an invalid username or password";
+
+    private static UserManager<EformUser> SubstituteUserManager() =>
+        Substitute.For<UserManager<EformUser>>(
+            Substitute.For<IUserStore<EformUser>>(), null, null, null, null, null, null, null, null);
+
+    private TimePlanningAuthGrpcService ServiceWith(UserManager<EformUser> userManager) =>
+        new(_deviceService, _userService, userManager, _roleManager, _tokenOptions);
+
+    private static EformUser DisabledUser() => new()
+    {
+        Id = 42,
+        UserName = "someone@example.com",
+        Email = "someone@example.com",
+        EmailConfirmed = true,
+        IsActive = false
+    };
+
+    [Test]
+    public async Task AuthenticateUser_DisabledAccount_IsRefused()
+    {
+        var userManager = SubstituteUserManager();
+        userManager.FindByNameAsync(Arg.Any<string>()).Returns(DisabledUser());
+        userManager.CheckPasswordAsync(Arg.Any<EformUser>(), Arg.Any<string>()).Returns(true);
+
+        var response = await ServiceWith(userManager).AuthenticateUser(
+            new AuthenticateUserRequest { Username = "someone@example.com", Password = "right" }, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.False, "a disabled account must not be able to log in");
+        Assert.That(response.Message, Is.EqualTo(ExpectedMessage));
+    }
+
+    [Test]
+    public async Task AuthenticateUser_DisabledAccount_ReturnsSameMessageAsUnknownAccount()
+    {
+        var disabledManager = SubstituteUserManager();
+        disabledManager.FindByNameAsync(Arg.Any<string>()).Returns(DisabledUser());
+        disabledManager.CheckPasswordAsync(Arg.Any<EformUser>(), Arg.Any<string>()).Returns(true);
+        var disabled = await ServiceWith(disabledManager).AuthenticateUser(
+            new AuthenticateUserRequest { Username = "someone@example.com", Password = "right" }, TestServerCallContextFactory.Create());
+
+        var unknownManager = SubstituteUserManager();
+        unknownManager.FindByNameAsync(Arg.Any<string>()).Returns((EformUser)null!);
+        unknownManager.FindByEmailAsync(Arg.Any<string>()).Returns((EformUser)null!);
+        var unknown = await ServiceWith(unknownManager).AuthenticateUser(
+            new AuthenticateUserRequest { Username = "someone@example.com", Password = "right" }, TestServerCallContextFactory.Create());
+
+        Assert.That(disabled.Message, Is.EqualTo(unknown.Message),
+            "a disabled account must not be distinguishable from one that does not exist");
+        Assert.That(unknown.Message, Does.Not.Contain("someone@example.com"),
+            "the response must not repeat what was typed");
+    }
+
+    [Test]
+    public async Task RefreshToken_DisabledAccount_IsRefused()
+    {
+        // The refusal returns before the token is minted, so the null UserManager this
+        // fixture passes is never reached.
+        _userService.UserId.Returns(42);
+        _userService.GetByIdAsync(Arg.Any<int>()).Returns(DisabledUser());
+
+        var response = await _grpcService.RefreshToken(new RefreshTokenRequest(), TestServerCallContextFactory.Create());
+
+        Assert.That(response.Success, Is.False,
+            "a disabled account must not be able to roll its session forward");
+        Assert.That(response.Message, Is.EqualTo(ExpectedMessage));
     }
 }

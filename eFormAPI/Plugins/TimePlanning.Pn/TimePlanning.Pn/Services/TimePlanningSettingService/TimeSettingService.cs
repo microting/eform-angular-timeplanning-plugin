@@ -966,6 +966,74 @@ public class TimeSettingService(
         }
     }
 
+    /// <summary>
+    /// Resigning here must disable the person's login, exactly as resigning through the
+    /// device-users screen does. Resigned is only a visibility flag - no authentication
+    /// code reads it - so without this a worker resigned from time-planning keeps an
+    /// account that still signs in, including the flutter apps. Written with ExecuteUpdate
+    /// rather than UserManager, which would run Identity's validators against addresses
+    /// part of this population cannot satisfy (non-ASCII local parts).
+    /// </summary>
+    private async Task SyncLoginStateAsync(int sdkSiteMicrotingUid, bool resigned)
+    {
+        try
+        {
+            var sdkCore = await core.GetCore().ConfigureAwait(false);
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+
+            var email = await (
+                from s in sdkDbContext.Sites
+                join sw in sdkDbContext.SiteWorkers on s.Id equals sw.SiteId
+                join w in sdkDbContext.Workers on sw.WorkerId equals w.Id
+                where s.MicrotingUid == sdkSiteMicrotingUid
+                      && s.WorkflowState != Constants.WorkflowStates.Removed
+                      && sw.WorkflowState != Constants.WorkflowStates.Removed
+                      && w.WorkflowState != Constants.WorkflowStates.Removed
+                select w.Email).FirstOrDefaultAsync().ConfigureAwait(false);
+
+            // Matched the same way the avatar lookup above does it - the two must agree,
+            // or that lookup finds a login this one misses.
+            var workerEmail = (email ?? "").Trim().ToLower();
+            if (string.IsNullOrEmpty(workerEmail))
+            {
+                logger.LogWarning(
+                    "No worker email for site {SdkSiteId}; Resigned={Resigned} saved, no login state written",
+                    sdkSiteMicrotingUid, resigned);
+                return;
+            }
+
+            var isActive = !resigned;
+            var affected = await baseDbContext.Users
+                .Where(x => x.Email.ToLower() == workerEmail)
+                .ExecuteUpdateAsync(x => x.SetProperty(u => u.IsActive, isActive))
+                .ConfigureAwait(false);
+
+            if (affected == 0)
+            {
+                // The resignation did not reach a login: the worker's address matches no
+                // account. That is the failure this method exists to report.
+                logger.LogWarning(
+                    "No login row matched the worker of site {SdkSiteId}; IsActive={IsActive} not written",
+                    sdkSiteMicrotingUid, isActive);
+                return;
+            }
+
+            logger.LogInformation(
+                "Set IsActive={IsActive} on {Count} login(s) for site {SdkSiteId}",
+                isActive, affected, sdkSiteMicrotingUid);
+        }
+        catch (Exception ex)
+        {
+            // The settings row is already committed, and a resignation that does not reach
+            // the login is a security gap rather than a broken save - so report it and let
+            // the caller succeed.
+            SentrySdk.CaptureException(ex);
+            logger.LogError(ex,
+                "Could not sync login state for site {SdkSiteId}",
+                sdkSiteMicrotingUid);
+        }
+    }
+
     public async Task<OperationResult> UpdateAssignedSite(Infrastructure.Models.Settings.AssignedSite site)
     {
         var siteId = site.SiteId;
@@ -1091,6 +1159,8 @@ public class TimeSettingService(
         dbAssignedSite.IsManager = site.IsManager;
 
         await dbAssignedSite.Update(dbContext);
+
+        await SyncLoginStateAsync(dbAssignedSite.SiteId, site.Resigned).ConfigureAwait(false);
 
         // Fire-and-forget: tell the worker's device(s) that their assigned-site
         // settings changed so personal mode can auto-refresh. Sent AFTER the row
