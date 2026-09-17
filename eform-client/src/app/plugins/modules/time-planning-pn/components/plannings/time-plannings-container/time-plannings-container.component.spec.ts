@@ -369,12 +369,24 @@ describe('TimePlanningsContainerComponent', () => {
     })),
   }) as any;
 
-  /** Shows last week and loads these rows through the real load path. */
+  /**
+   * Loads these rows through the real load path, leaving the visible range alone.
+   *
+   * The bulk bounds are derived from dateFrom/dateTo at LOAD time, so a case asserting
+   * about a range of its own must set that range and then come through here. Coming
+   * through loadLastWeek instead would put last week's range back and leave the case
+   * asserting about bounds that belong to a different window.
+   */
+  const loadRows = (...rows: any[]) => {
+    mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: rows }) as any);
+    component.getPlannings();
+  };
+
+  /** The common case: show last week, then load. */
   const loadLastWeek = (...rows: any[]) => {
     component.dateFrom = lastWeekStart;
     component.dateTo = lastWeekEnd;
-    mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: rows }) as any);
-    component.getPlannings();
+    loadRows(...rows);
   };
 
   describe('Bulk reconcile preview', () => {
@@ -429,9 +441,10 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('offers no target at all when the whole visible range is today or later', () => {
+      // Its own window, so its own load: the bounds have to be derived from THIS range.
       component.dateFrom = new Date();
       component.dateTo = addDays(new Date(), 6);
-      loadLastWeek(rowFor(1));
+      loadRows(rowFor(1));
 
       // Both ends, or the field would advertise a minimum it will never accept.
       expect(component.reconcileMaxDate).toBeNull();
@@ -442,9 +455,11 @@ describe('TimePlanningsContainerComponent', () => {
       component.onReconcileDateChanged(dayOf(3));
       expect(component.reconcilePreview).not.toBeNull();
 
+      // Navigating a week on, so its own load: loadLastWeek would put the target back
+      // on screen and there would be nothing for the preview to be dropped from.
       component.dateFrom = addDays(lastWeekStart, 7);
       component.dateTo = addDays(lastWeekEnd, 7);
-      loadLastWeek(rowFor(1), rowFor(2));
+      loadRows(rowFor(1), rowFor(2));
 
       expect(component.reconcilePreview).toBeNull();
     });
