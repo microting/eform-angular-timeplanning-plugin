@@ -68,6 +68,8 @@ public class ReconcileServiceTests : TestBaseSetup
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
         _userService.GetCurrentUserAsync().Returns(new EformUser { Id = 1 });
+        // The fixture's default caller IS the first user; the gate tests override this.
+        _userService.GetFirstUserIdInDb().Returns(1);
 
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
@@ -162,6 +164,12 @@ public class ReconcileServiceTests : TestBaseSetup
 
         _userService.UserId.Returns(user.Id);
         _userService.GetCurrentUserAsync().Returns(new EformUser { Id = user.Id });
+        // This admin user is also treated as the first user here: these tests
+        // exercise Index()'s recompute/lock-display behaviour, not the
+        // reconcile gate, and SeedReconciledBoundaryAsync/
+        // SeedReconciledDayWithStaleStoredValuesAsync below reconcile THROUGH
+        // this same _userService substitute as a setup step.
+        _userService.GetFirstUserIdInDb().Returns(user.Id);
         _dbContextHelper.GetDbContext().Returns(_ => CreateTimePlanningPnDbContext());
 
         _indexLogger = Substitute.For<ILogger<TimePlanningPlanningService>>();
@@ -1078,16 +1086,115 @@ public class ReconcileServiceTests : TestBaseSetup
     }
 
     // ---------------------------------------------------------------------
-    // Server-side enforcement of "only an admin may reconcile or unlock a day"
-    // (product decision reversal — the spec's earlier "any web user may
-    // reconcile" no longer holds). A reflection test over the controller is
-    // the honest option here: the suite is service-level and never goes
-    // through the ASP.NET Core auth pipeline, so nothing else would catch a
-    // silently-dropped [Authorize] attribute.
+    // Server-side enforcement of "only the FIRST USER may reconcile or unlock
+    // a day" (corrected product decision — it is not a role at all, admin or
+    // otherwise). The gate lives in the SERVICE layer
+    // (TimePlanningPlanningService.Reconcile/Unreconcile/ReconcileThrough,
+    // via FirstUserHelper.IsFirstUserAsync), because that is the only path to
+    // these writes (see the controller, which now carries a bare
+    // [Authorize] — anonymous is still refused by the pipeline, but which
+    // signed-in caller may proceed is decided here). These are therefore
+    // proper behaviour tests, not reflection: success/refusal and, on
+    // refusal, that nothing was written.
     // ---------------------------------------------------------------------
 
     [Test]
-    public void Reconcile_Unreconcile_ReconcileThrough_RequireAdminRole()
+    public async Task Reconcile_TheFirstUser_Succeeds()
+    {
+        // Deliberately explicit, not redundant with SeedReconciledBoundaryAsync's
+        // internal assert: on a gate feature, the ALLOWED case deserves a pin a
+        // reader can find by name, not one inferred from a fixture's internals.
+        var row = await SeedPlain(940, DateTime.Now.Date.AddDays(-5));
+
+        var result = await _service.Reconcile(row.Id);
+
+        Assert.That(result.Success, Is.True, result.Message);
+    }
+
+    [Test]
+    public async Task Reconcile_ADifferentSignedInUser_IsRefused_AndWritesNothing()
+    {
+        var row = await SeedPlain(941, DateTime.Now.Date.AddDays(-5));
+        // Someone else is signed in; user 1 remains the first user.
+        _userService.UserId.Returns(2);
+
+        var result = await _service.Reconcile(row.Id);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("OnlyTheFirstUserCanReconcileOrUnlock"));
+        var reloaded = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == row.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(reloaded.Reconciled, Is.False, "a refused caller must not reconcile the day");
+            Assert.That(reloaded.ReconciledAt, Is.Null);
+        });
+    }
+
+    [Test]
+    public async Task Reconcile_CallerWithNoUserId_IsRefused_EvenWhenTheUsersTableIsEmpty()
+    {
+        // UserId 0 (no signed-in user) paired with GetFirstUserIdInDb also
+        // answering 0 (an empty users table) must NOT satisfy 0 == 0 -- the
+        // house rule's whole point (FirstUserHelper.IsFirstUserAsync).
+        var row = await SeedPlain(942, DateTime.Now.Date.AddDays(-5));
+        _userService.UserId.Returns(0);
+        _userService.GetFirstUserIdInDb().Returns(0);
+
+        var result = await _service.Reconcile(row.Id);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("OnlyTheFirstUserCanReconcileOrUnlock"));
+        var reloaded = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == row.Id);
+        Assert.That(reloaded.Reconciled, Is.False,
+            "userId 0 must never pass, even against an empty/zero first-user id");
+    }
+
+    [Test]
+    public async Task Unreconcile_ADifferentSignedInUser_IsRefused_AndWritesNothing()
+    {
+        var boundary = await SeedReconciledBoundaryAsync(943, DateTime.Now.Date.AddDays(-3));
+        _userService.UserId.Returns(2);
+
+        var result = await _service.Unreconcile(boundary.Id);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("OnlyTheFirstUserCanReconcileOrUnlock"));
+        var reloaded = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == boundary.Id);
+        Assert.That(reloaded.Reconciled, Is.True, "a refused caller must not unlock the day");
+    }
+
+    [Test]
+    public async Task ReconcileThrough_ADifferentSignedInUser_IsRefused_AndWritesNothing()
+    {
+        var row = await SeedPlain(944, DateTime.Now.Date.AddDays(-6));
+        _userService.UserId.Returns(2);
+
+        var result = await _service.ReconcileThrough(new ReconcileThroughRequestModel
+        {
+            Date = DateTime.Now.Date.AddDays(-6),
+            SiteIds = new List<int> { 944 }
+        });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("OnlyTheFirstUserCanReconcileOrUnlock"));
+        var reloaded = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .FirstAsync(x => x.Id == row.Id);
+        Assert.That(reloaded.Reconciled, Is.False, "a refused caller must not bulk-reconcile anything");
+    }
+
+    /// <summary>
+    /// Cheap and still worth pinning: anonymous access must stay blocked even
+    /// though the role check is gone -- these three keep a bare [Authorize] --
+    /// AND that none of them carry a role restriction any more, since the
+    /// mechanism really changed to the service-layer first-user check, not
+    /// merely gained one. The real control is the behaviour tests above; this
+    /// only guards against either half of that shape drifting silently.
+    /// </summary>
+    [Test]
+    public void Reconcile_Unreconcile_ReconcileThrough_RequireAuthorize_ButCarryNoRole()
     {
         foreach (var methodName in new[] { "Reconcile", "Unreconcile", "ReconcileThrough" })
         {
@@ -1099,28 +1206,24 @@ public class ReconcileServiceTests : TestBaseSetup
                 .ToList();
 
             Assert.That(authorizeAttributes, Is.Not.Empty,
-                $"{methodName} must carry an AuthorizeAttribute");
+                $"{methodName} must carry an AuthorizeAttribute so anonymous callers are refused");
 
-            var roles = authorizeAttributes
-                .Where(a => !string.IsNullOrWhiteSpace(a.Roles))
-                .SelectMany(a => a.Roles!.Split(','))
-                .Select(r => r.Trim())
-                .ToList();
-
-            Assert.That(
-                roles.Any(r => string.Equals(r, EformRole.Admin, StringComparison.OrdinalIgnoreCase)),
-                Is.True,
-                $"{methodName} must be restricted to the '{EformRole.Admin}' role — found: " +
-                string.Join(", ", roles));
+            var roleRestricted = authorizeAttributes.Where(a => !string.IsNullOrWhiteSpace(a.Roles)).ToList();
+            Assert.That(roleRestricted, Is.Empty,
+                $"{methodName} must NOT be role-restricted -- the first-user check lives in the service, " +
+                "not a role -- found: " + string.Join(", ", roleRestricted.Select(a => a.Roles)));
         }
     }
 
+    /// <summary>
+    /// Reading and editing OPEN days is unrelated to the reconcile gate,
+    /// whichever mechanism guards reconcile itself (admin role, then first
+    /// user). Update is the named open-day action here, and this assertion
+    /// stands on its own regardless of which gate reconcile currently uses.
+    /// </summary>
     [Test]
-    public void Update_OpenDayAction_IsNotAdminRestricted()
+    public void Update_OpenDayAction_NeverAcquiresARoleRestriction()
     {
-        // Reading and editing OPEN days is unchanged by the reconcile lock
-        // reversal — only reconcile/unreconcile/reconcile-through move behind
-        // the admin gate. Update is the named open-day action here.
         var method = typeof(TimePlanningPlanningController).GetMethod("Update");
         Assert.That(method, Is.Not.Null, "TimePlanningPlanningController.Update must exist");
 
@@ -1130,7 +1233,7 @@ public class ReconcileServiceTests : TestBaseSetup
             .ToList();
 
         Assert.That(roleRestricted, Is.Empty,
-            "Update (editing an open day) must not gain an admin-role restriction from the reconcile lock change — found: " +
+            "Update (editing an open day) must not gain a role restriction from the reconcile gate — found: " +
             string.Join(", ", roleRestricted.Select(a => a.Roles)));
     }
 }

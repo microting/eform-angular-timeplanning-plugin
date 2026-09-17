@@ -26,7 +26,6 @@ using System.Threading.Tasks;
 using Infrastructure.Models.Planning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Services.TimePlanningPlanningService;
 
@@ -81,9 +80,13 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
         return await _planningService.GetVersionHistory(planRegistrationId);
     }
 
+    // Anonymous callers are still refused by the pipeline, but WHICH signed-in
+    // caller may proceed is no longer a role — it is decided in the service
+    // layer (TimePlanningPlanningService.Reconcile/Unreconcile/ReconcileThrough),
+    // which is the only path to these writes. See FirstUserHelper.IsFirstUserAsync.
     [HttpPut]
     [Route("{id}/reconcile")]
-    [Authorize(Roles = EformRole.Admin)]
+    [Authorize]
     public async Task<OperationResult> Reconcile(int id)
     {
         return await _planningService.Reconcile(id);
@@ -91,7 +94,7 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
 
     [HttpPut]
     [Route("{id}/unreconcile")]
-    [Authorize(Roles = EformRole.Admin)]
+    [Authorize]
     public async Task<OperationResult> Unreconcile(int id)
     {
         return await _planningService.Unreconcile(id);
@@ -99,7 +102,7 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
 
     [HttpPut]
     [Route("reconcile-through")]
-    [Authorize(Roles = EformRole.Admin)]
+    [Authorize]
     public async Task<OperationDataResult<ReconcileThroughResultModel>> ReconcileThrough(
         [FromBody] ReconcileThroughRequestModel model)
     {
