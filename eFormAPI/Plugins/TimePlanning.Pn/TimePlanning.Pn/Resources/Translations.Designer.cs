@@ -327,6 +327,12 @@ namespace TimePlanning.Pn.Resources {
             }
         }
 
+        internal static string OnlyTheFirstUserCanReconcileOrUnlock {
+            get {
+                return ResourceManager.GetString("OnlyTheFirstUserCanReconcileOrUnlock", resourceCulture);
+            }
+        }
+
         internal static string OnlyLatestReconciledDayCanBeUnlocked {
             get {
                 return ResourceManager.GetString("OnlyLatestReconciledDayCanBeUnlocked", resourceCulture);

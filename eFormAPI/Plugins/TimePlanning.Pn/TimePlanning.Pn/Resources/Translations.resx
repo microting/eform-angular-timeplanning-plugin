@@ -210,6 +210,9 @@
     <data name="CannotReconcileTodayOrFuture" xml:space="preserve">
         <value>Only days before today can be reconciled.</value>
     </data>
+    <data name="OnlyTheFirstUserCanReconcileOrUnlock" xml:space="preserve">
+        <value>Only the first user can reconcile or unlock days.</value>
+    </data>
     <data name="OnlyLatestReconciledDayCanBeUnlocked" xml:space="preserve">
         <value>Unlock the most recent reconciled day first ({0}).</value>
     </data>

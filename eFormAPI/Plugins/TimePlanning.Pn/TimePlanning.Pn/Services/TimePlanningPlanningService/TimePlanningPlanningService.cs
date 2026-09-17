@@ -2387,6 +2387,11 @@ public class TimePlanningPlanningService(
     {
         try
         {
+            if (!await userService.IsFirstUserAsync())
+            {
+                return new OperationResult(false, OnlyTheFirstUserCanReconcileOrUnlock());
+            }
+
             var planning = await FindActivePlanningAsync(id);
 
             if (planning == null)
@@ -2446,6 +2451,11 @@ public class TimePlanningPlanningService(
     {
         try
         {
+            if (!await userService.IsFirstUserAsync())
+            {
+                return new OperationResult(false, OnlyTheFirstUserCanReconcileOrUnlock());
+            }
+
             var planning = await FindActivePlanningAsync(id);
 
             if (planning == null)
@@ -2502,11 +2512,27 @@ public class TimePlanningPlanningService(
             "OnlyLatestReconciledDayCanBeUnlocked",
             boundary.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)));
 
+    /// <summary>
+    /// No [Authorize] role can express "the first user" -- it names a single,
+    /// data-dependent account (the lowest AspNetUsers Id), not a role -- so
+    /// Reconcile, Unreconcile and ReconcileThrough each check
+    /// FirstUserHelper.IsFirstUserAsync in the service layer instead, and
+    /// share this refusal message.
+    /// </summary>
+    private string OnlyTheFirstUserCanReconcileOrUnlock()
+        => localizationService.GetString("OnlyTheFirstUserCanReconcileOrUnlock");
+
     public async Task<OperationDataResult<ReconcileThroughResultModel>> ReconcileThrough(
         ReconcileThroughRequestModel model)
     {
         try
         {
+            if (!await userService.IsFirstUserAsync())
+            {
+                return new OperationDataResult<ReconcileThroughResultModel>(false,
+                    OnlyTheFirstUserCanReconcileOrUnlock());
+            }
+
             if (model == null || model.SiteIds.Count == 0)
             {
                 return new OperationDataResult<ReconcileThroughResultModel>(false,

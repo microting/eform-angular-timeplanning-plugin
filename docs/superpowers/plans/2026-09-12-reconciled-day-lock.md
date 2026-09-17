@@ -27,7 +27,7 @@
 - **I2 is load-bearing beyond its own purpose.** Because the boundary is always in the past and edits are only allowed above it, forward flex cascades (one runs 180 days ahead, one is unbounded) provably cannot reach a locked day. If I2 is ever relaxed, those cascades must be revisited first.
 - **Timezone:** compare against `DateTime.Now.Date` (server local), matching `PlanRegistrationHelper` and the existing mobile guard. Never `UtcNow`.
 - **Copy rule:** user-facing text states what the day *is*. It never explains a restriction by referring to what an administrator may do. ("admin = Microting".)
-- **Permissions:** any web user may reconcile. No admin gate on reconcile or unlock.
+- **Permissions:** only the first user may reconcile, unlock, or bulk-reconcile — see spec §8.6.
 - **Payroll:** `Reconciled` and `TransferredToPayroll` are independent in both directions. Do not couple them.
 - **Mobile:** rejects the write with the same localized failure as web. No mobile UI work.
 - **Tests run only in CI.** Never run `dotnet test`, `playwright test`, `jest` or `npm test` locally — a hook blocks them. `dotnet build` is allowed and expected. Push and watch `gh pr checks <n>`.
@@ -2518,7 +2518,7 @@ Re-running a failed job **overwrites** its conclusion, so a green run can hide a
 
 ## Self-Review
 
-**Spec coverage.** §4 data model → Task 1. §4.2 I1 → Tasks 4 (write) and 1 (test). I2 → Tasks 1, 4, 12. I3 → Task 2. §4.3 query cost → Task 1 (`LockedThroughForSitesAsync`). §5 write inventory → Tasks 2, 5, 7. §6.1 three layers → Tasks 2 (L1), 5 (L2, L3). §6.2 cascades → Global Constraints + Task 1 doc comment. §6.3 gap-fill → Task 5 Step 5. §6.4 timezone → Task 1 `CanReconcile`. §7 API → Task 4; read model → Task 6. §8.1 three states → Tasks 9, 10. §8.2 single day → Task 11. §8.3 bulk → Tasks 4 (`ReconcileThrough`), 12. §8.4 unlock → Tasks 4, 11. §8.5 blocked feedback → Task 11. §8.6 permissions → no admin gate anywhere (verified: no `[Authorize]` added in Task 4). §9 testing → Tasks 1, 2, 4, 5, 6, 14.
+**Spec coverage.** §4 data model → Task 1. §4.2 I1 → Tasks 4 (write) and 1 (test). I2 → Tasks 1, 4, 12. I3 → Task 2. §4.3 query cost → Task 1 (`LockedThroughForSitesAsync`). §5 write inventory → Tasks 2, 5, 7. §6.1 three layers → Tasks 2 (L1), 5 (L2, L3). §6.2 cascades → Global Constraints + Task 1 doc comment. §6.3 gap-fill → Task 5 Step 5. §6.4 timezone → Task 1 `CanReconcile`. §7 API → Task 4; read model → Task 6. §8.1 three states → Tasks 9, 10. §8.2 single day → Task 11. §8.3 bulk → Tasks 4 (`ReconcileThrough`), 12. §8.4 unlock → Tasks 4, 11. §8.5 blocked feedback → Task 11. §8.6 permissions → first-user-only, enforced in the service layer, not a controller role (see spec §8.6; verified by `ReconcileServiceTests`'s first-user behaviour tests). §9 testing → Tasks 1, 2, 4, 5, 6, 14.
 
 **Gaps found and closed while reviewing:**
 - The interceptor must permit the unlock write on the boundary day, or unlocking would be blocked by the lock it removes. Added `IsUnlockOfBoundaryDay` (Task 2 Step 3) and a test for it.
