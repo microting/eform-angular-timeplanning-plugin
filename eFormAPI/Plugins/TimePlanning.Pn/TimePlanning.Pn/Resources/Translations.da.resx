@@ -225,4 +225,16 @@
     <data name="SuccessfullyUnlockedDay" xml:space="preserve">
         <value>Dagen er låst op</value>
     </data>
+    <data name="SiteNotFound" xml:space="preserve">
+        <value>Medarbejder ikke fundet.</value>
+    </data>
+    <data name="Imported" xml:space="preserve">
+        <value>Importeret.</value>
+    </data>
+    <data name="ImportLockedDaysSkipped" xml:space="preserve">
+        <value>{0} låst(e) dag(e) blev ikke ændret.</value>
+    </data>
+    <data name="ImportUnresolvableSheetsSkipped" xml:space="preserve">
+        <value>Ark ikke importeret, fordi medarbejderen ikke er fuldt oprettet: {0}.</value>
+    </data>
 </root>

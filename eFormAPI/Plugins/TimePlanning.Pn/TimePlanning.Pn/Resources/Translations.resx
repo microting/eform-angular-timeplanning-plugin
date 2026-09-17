@@ -225,4 +225,16 @@
     <data name="SuccessfullyUnlockedDay" xml:space="preserve">
         <value>Day unlocked</value>
     </data>
+    <data name="SiteNotFound" xml:space="preserve">
+        <value>Worker not found.</value>
+    </data>
+    <data name="Imported" xml:space="preserve">
+        <value>Imported.</value>
+    </data>
+    <data name="ImportLockedDaysSkipped" xml:space="preserve">
+        <value>Locked days left unchanged: {0}.</value>
+    </data>
+    <data name="ImportUnresolvableSheetsSkipped" xml:space="preserve">
+        <value>Sheets not imported because the worker is not fully registered: {0}.</value>
+    </data>
 </root>

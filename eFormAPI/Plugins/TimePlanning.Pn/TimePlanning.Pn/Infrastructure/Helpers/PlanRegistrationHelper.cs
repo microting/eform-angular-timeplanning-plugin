@@ -867,13 +867,17 @@ public static class PlanRegistrationHelper
                 // stays tracked and the next save fails on it anyway.
                 catch (Exception e) when (e is not DayLockedException)
                 {
-                    logger.LogError(
-                        $"Could not parse PlanText for planning with id: {planRegistration.Id} the PlanText was: {planRegistration.PlanText}");
-                    SentrySdk.CaptureMessage(
-                        $"Could not parse PlanText for planning with id: {planRegistration.Id} the PlanText was: {planRegistration.PlanText}");
-                    //SentrySdk.CaptureException(e);
-                    logger.LogError(e.Message);
-                    logger.LogTrace(e.StackTrace);
+                    // The try above ends in planRegistration.Update calls, so
+                    // this catches DbUpdateException, DbUpdateConcurrencyException,
+                    // MySqlException and friends -- not just PlanText parsing.
+                    // It used to guess "Could not parse PlanText" twice (log +
+                    // Sentry message) while the actual type and stack went to
+                    // Trace, which most hosts do not emit. Report the exception
+                    // ONCE, on each channel, and let it name itself.
+                    SentrySdk.CaptureException(e);
+                    logger.LogError(e,
+                        "UpdatePlanRegistrationsInPeriod failed for PlanRegistration {PlanRegistrationId} (PlanText: {PlanText})",
+                        planRegistration.Id, planRegistration.PlanText);
                 }
             }
 
@@ -1557,10 +1561,26 @@ public static class PlanRegistrationHelper
                     await planRegistration.Update(dbContext).ConfigureAwait(false);
                 }
             }
-            catch (Exception)
+            // Same shape as the catch in UpdatePlanRegistrationsInPeriod, and
+            // fixed the same way. The try above ends in a planRegistration.Update,
+            // so this catches DbUpdateException, DbUpdateConcurrencyException,
+            // MySqlException and friends, which the old "Could not parse
+            // PlanText" message mislabelled while losing the type and stack.
+            // Capture the exception itself, and only that.
+            //
+            // The DayLockedException filter matches the other site: a lock
+            // refusal is routine, not an incident, and must not be reported.
+            // It is a control-flow change, but not an outcome change -- the
+            // rejected entry stays tracked either way, so the sole caller's own
+            // Update (TimePlanningWorkingHoursService.UpdatePlanning) rethrows
+            // it whether or not this catch swallowed it.
+            //
+            // This method takes no ILogger, so Sentry carries the detail. (The
+            // sibling UpdatePlanRegistrationsInPeriod in this class does take
+            // one and logs there.)
+            catch (Exception e) when (e is not DayLockedException)
             {
-                SentrySdk.CaptureMessage(
-                    $"Could not parse PlanText for planning with id: {planRegistration.Id} the PlanText was: {planRegistration.PlanText}");
+                SentrySdk.CaptureException(e);
             }
         // }
         return planRegistration;

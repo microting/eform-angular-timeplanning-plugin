@@ -48,6 +48,11 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
 
         var localizationService = Substitute.For<ITimePlanningLocalizationService>();
         localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
+        // The format overload echoes its arguments, so a test can assert what a
+        // message NAMES (here: how many locked days the import left alone), not
+        // just which key it used.
+        localizationService.GetString(Arg.Any<string>(), Arg.Any<object[]>())
+            .Returns(x => x[0] + "|" + string.Join("|", (object[])x[1]));
 
         _coreService = Substitute.For<IEFormCoreService>();
         var core = await GetCore();
@@ -114,6 +119,8 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
 
         // Post-fix: no crash, and the ACTIVE row is the import target.
         Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Message, Is.EqualTo("Imported"),
+            "an import that skipped nothing says only that it imported");
 
         var reloadedActive = await TimePlanningPnDbContext.PlanRegistrations
             .AsNoTracking().FirstAsync(x => x.Id == activeId);
@@ -142,6 +149,11 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
     /// day (it drops dates before now minus one day, which by time of day also
     /// drops yesterday), so no boundary that satisfies I2 is reachable. The
     /// lock itself does not check I2; this pins the skip as defense in depth.
+    ///
+    /// It also pins that the skip is REPORTED. A silent skip is what makes
+    /// someone re-import a corrected timesheet over a reconciled month forever:
+    /// they are told "Imported", they see the old numbers, and nothing in the
+    /// result says which days did not move.
     /// </summary>
     [Test]
     public async Task Import_SkipsALockedDay_AndImportsTheRest()
@@ -178,6 +190,10 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
         var result = await _service.Import(FormFile(xlsx));
 
         Assert.That(result.Success, Is.True, result.Message);
+        // The mock echoes "key|arg", so this asserts both the message and the
+        // count it names -- one locked day, not "some".
+        Assert.That(result.Message, Is.EqualTo("Imported ImportLockedDaysSkipped|1"),
+            "the result must say how many days the lock left unchanged");
 
         var lockedAfter = await TimePlanningPnDbContext.PlanRegistrations
             .AsNoTracking().FirstAsync(x => x.Id == boundary.Id);
@@ -190,6 +206,50 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
             .SingleAsync(x => x.SdkSitId == microtingUid && x.Date == openDay
                               && x.WorkflowState != Constants.WorkflowStates.Removed);
         Assert.That(openRow.PlanText, Is.EqualTo("IMPORTED-OPEN"), "the open day is still imported");
+    }
+
+    /// <summary>
+    /// A sheet whose name DOES match a worker, but whose worker has no
+    /// MicrotingUid, is skipped whole AND reported. Skipping it is the lock
+    /// requirement -- an unreadable boundary makes IsLocked false for every row,
+    /// so importing it would import the sheet with no lock check at all. But a
+    /// silent skip here would be its own bug: the name matched, so the user
+    /// believes that worker's sheet went in, and a plain success would leave
+    /// them re-importing a file that never lands.
+    ///
+    /// Distinct from a sheet matching NO worker, which stays deliberately
+    /// silent -- such a tab may not be about a worker at all.
+    /// </summary>
+    [Test]
+    public async Task Import_ASheetWhoseWorkerHasNoMicrotingUid_IsSkippedAndReported()
+    {
+        const string siteName = "ImportNoUidSite";
+        var importDate = DateTime.Now.AddDays(5).Date;
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        // Name matches the worksheet; MicrotingUid deliberately absent. Cleared
+        // AFTER Create and then re-read, so the arrange cannot quietly test the
+        // wrong thing if Create ever starts back-filling a uid of its own.
+        var site = new SdkSite { Name = siteName, MicrotingUid = null };
+        await site.Create(sdkDbContext);
+        site.MicrotingUid = null;
+        await sdkDbContext.SaveChangesAsync();
+        Assert.That((await sdkDbContext.Sites.AsNoTracking().FirstAsync(x => x.Id == site.Id))
+            .MicrotingUid, Is.Null, "arrange: the site must really have no MicrotingUid");
+
+        var xlsx = BuildWorkbook(siteName,
+            (importDate.ToString("dd.MM.yyyy"), "8", "SHOULD-NOT-LAND"));
+
+        var result = await _service.Import(FormFile(xlsx));
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Message, Is.EqualTo("Imported ImportUnresolvableSheetsSkipped|1"),
+            "the result must name the sheet it could not import");
+
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrations
+                .AnyAsync(x => x.Date == importDate), Is.False,
+            "a sheet that cannot be lock-checked must not be imported at all");
     }
 
     private static IFormFile FormFile(byte[] xlsx)

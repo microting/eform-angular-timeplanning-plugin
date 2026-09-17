@@ -384,10 +384,28 @@ public class ReconcileServiceTests : TestBaseSetup
         });
     }
 
+    /// <summary>
+    /// UtcNow, deliberately: this date is fed to CanReconcile, which compares
+    /// against UtcNow.Date, and it sits exactly ON that boundary -- so a local
+    /// clock an offset away from UTC flips the outcome.
+    ///
+    /// The fixture's other DateTime.Now dates stay as they are, including the
+    /// many that DO reach CanReconcile via _service.Reconcile. Every date that
+    /// reaches it is -3 or older, or +3 forward, and the largest real UTC offset
+    /// is 14 hours, so no offset can move one across the boundary. The file's -1
+    /// dates never reach CanReconcile: they are open days and window bounds,
+    /// tested by IsLocked against a boundary the fixture stored on the same
+    /// clock. Only a date sitting exactly ON the boundary can be flipped, and
+    /// this test holds the only one.
+    ///
+    /// Reconcile_AFutureDay_IsRejected below moved too, even though +3 days is
+    /// safe at any offset, so the pair of tests naming this one rule reads on
+    /// one clock rather than two.
+    /// </summary>
     [Test]
     public async Task Reconcile_Today_IsRejected()
     {
-        var row = await SeedPlain(901, DateTime.Now.Date);
+        var row = await SeedPlain(901, DateTime.UtcNow.Date);
 
         var result = await _service.Reconcile(row.Id);
 
@@ -399,7 +417,7 @@ public class ReconcileServiceTests : TestBaseSetup
     [Test]
     public async Task Reconcile_AFutureDay_IsRejected()
     {
-        var row = await SeedPlain(902, DateTime.Now.Date.AddDays(3));
+        var row = await SeedPlain(902, DateTime.UtcNow.Date.AddDays(3));
 
         var result = await _service.Reconcile(row.Id);
 
@@ -874,6 +892,38 @@ public class ReconcileServiceTests : TestBaseSetup
 
         Assert.That(result.Success, Is.False);
         Assert.That(result.Message, Is.EqualTo("DayIsReconciled"));
+    }
+
+    /// <summary>
+    /// The lock's unknown case must REFUSE, not permit. The kiosk overload takes
+    /// an int? site id with no null guard of its own, so before the fix a null
+    /// sailed straight past the guard (RefuseIfNotWritableAsync's null answer
+    /// means "writable, proceed") and then died on a `sdkSiteId!.Value`
+    /// dereference further down. Now it answers with a message and writes
+    /// nothing.
+    ///
+    /// Note what the null case is NOT: with no site id the lock is never
+    /// evaluated at all, so relaxing the refusal would not "let a locked day
+    /// through" -- it would crash on that dereference instead, which is how the
+    /// bug presented. The seeded boundary is here to make the scenario realistic
+    /// (a real kiosk posting into a frozen period), not because the assertion
+    /// depends on the day being locked.
+    /// </summary>
+    [Test]
+    public async Task UpdateWorkingHour_Kiosk_WithNoSiteId_IsRefused_AndWritesNothing()
+    {
+        var token = await SeedKioskDeviceAsync();
+        await SeedReconciledBoundaryAsync(934, DateTime.Now.Date.AddDays(-3));
+        var lockedDate = DateTime.Now.Date.AddDays(-4);
+
+        var result = await BuildWorkingHoursService().UpdateWorkingHour(
+            null, new TimePlanningWorkingHoursUpdateModel { Date = lockedDate }, token);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("SiteNotFound"));
+        Assert.That(await TimePlanningPnDbContext!.PlanRegistrations
+            .AnyAsync(x => x.Date == lockedDate), Is.False,
+            "an unresolvable site must not create a row on a locked day");
     }
 
     [Test]

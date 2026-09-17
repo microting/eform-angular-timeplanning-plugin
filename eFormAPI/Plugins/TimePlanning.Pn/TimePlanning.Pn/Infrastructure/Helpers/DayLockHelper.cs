@@ -131,10 +131,29 @@ public static class DayLockHelper
     /// registered. This is also what makes the forward flex cascades unable to
     /// reach a locked day -- see the design doc before relaxing it.
     ///
-    /// DateTime.Now, not UtcNow: PlanRegistration.Date is a local midnight, and
-    /// the existing mobile guard compares the same way.
+    /// DateTime.UtcNow, not Now. PlanRegistration.Date is a calendar-day LABEL
+    /// with the time zeroed, not an instant in any timezone, so there is no
+    /// local midnight for a local clock to be "consistent" with. Writers do not
+    /// even agree on how they build that label -- most zero a constructed date,
+    /// but TimePlanningFlexService derives one from DateTime.Now -- which is a
+    /// reason to pin THIS comparison to one clock, not to follow theirs.
+    ///
+    /// Direction, stated as what it is rather than as a law: at a POSITIVE
+    /// offset (CET/CEST, where this product runs) UtcNow is the conservative
+    /// choice -- late in the local day it briefly declines to freeze a day that
+    /// is still "today" in UTC, and for a rule whose whole purpose is "this day
+    /// can no longer be written", refusing too much beats allowing too much. At
+    /// a NEGATIVE offset the same expression is the PERMISSIVE one: it would
+    /// accept the local today and break I2 from the worker's point of view.
+    /// That case does not arise here, and the answer if it ever does is an
+    /// explicit business timezone, not a switch back to the server's clock.
+    ///
+    /// This repo's Dockerfile sets no TZ and installs no tzdata, and the
+    /// mcr.microsoft.com/dotnet/aspnet base image it runs on defaults to UTC, so
+    /// the container this plugin ships in compares the same way before and after
+    /// this change; it only makes dev machines behave like the container.
     /// </summary>
-    public static bool CanReconcile(DateTime date) => date.Date < DateTime.Now.Date;
+    public static bool CanReconcile(DateTime date) => date.Date < DateTime.UtcNow.Date;
 
     /// <summary>
     /// What counts as a boundary row, in one place: Reconciled and not

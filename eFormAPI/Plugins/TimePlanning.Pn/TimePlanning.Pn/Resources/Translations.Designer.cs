@@ -356,5 +356,29 @@ namespace TimePlanning.Pn.Resources {
                 return ResourceManager.GetString("SuccessfullyUnlockedDay", resourceCulture);
             }
         }
+
+        internal static string SiteNotFound {
+            get {
+                return ResourceManager.GetString("SiteNotFound", resourceCulture);
+            }
+        }
+
+        internal static string Imported {
+            get {
+                return ResourceManager.GetString("Imported", resourceCulture);
+            }
+        }
+
+        internal static string ImportLockedDaysSkipped {
+            get {
+                return ResourceManager.GetString("ImportLockedDaysSkipped", resourceCulture);
+            }
+        }
+
+        internal static string ImportUnresolvableSheetsSkipped {
+            get {
+                return ResourceManager.GetString("ImportUnresolvableSheetsSkipped", resourceCulture);
+            }
+        }
     }
 }

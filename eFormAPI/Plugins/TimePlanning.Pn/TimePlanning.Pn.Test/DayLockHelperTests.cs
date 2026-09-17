@@ -169,16 +169,27 @@ public class DayLockHelperTests : TestBaseSetup
             Is.True, "the boundary day is locked for its whole length");
     }
 
+    /// <summary>
+    /// UtcNow, not Now, on BOTH sides, because CanReconcile reads UtcNow. The
+    /// shipped container has no TZ set so the two agree there; on a dev machine
+    /// they diverge, and then DateTime.Now here breaks in either direction:
+    ///  - UTC+N, just after local midnight (Now.Date is a day AHEAD of
+    ///    UtcNow.Date): the "yesterday is reconcilable" assertion fails, because
+    ///    Now.Date.AddDays(-1) IS UtcNow.Date, i.e. still today in UTC.
+    ///  - UTC-N, late in the local evening (Now.Date is a day BEHIND): the
+    ///    "today is not reconcilable" assertion fails instead, because Now.Date
+    ///    is already yesterday in UTC and so genuinely reconcilable.
+    /// </summary>
     [Test]
     public void CanReconcile_TodayAndFuture_False_Past_True()
     {
         Assert.Multiple(() =>
         {
-            Assert.That(DayLockHelper.CanReconcile(DateTime.Now.Date), Is.False,
+            Assert.That(DayLockHelper.CanReconcile(DateTime.UtcNow.Date), Is.False,
                 "today must stay open so time can still be registered");
-            Assert.That(DayLockHelper.CanReconcile(DateTime.Now.Date.AddDays(1)), Is.False);
-            Assert.That(DayLockHelper.CanReconcile(DateTime.Now.Date.AddDays(-1)), Is.True);
-            Assert.That(DayLockHelper.CanReconcile(DateTime.Now.Date.AddHours(23)), Is.False,
+            Assert.That(DayLockHelper.CanReconcile(DateTime.UtcNow.Date.AddDays(1)), Is.False);
+            Assert.That(DayLockHelper.CanReconcile(DateTime.UtcNow.Date.AddDays(-1)), Is.True);
+            Assert.That(DayLockHelper.CanReconcile(DateTime.UtcNow.Date.AddHours(23)), Is.False,
                 "a time-of-day on today is still today");
         });
     }
