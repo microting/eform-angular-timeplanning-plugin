@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -159,12 +160,16 @@ public class TimePlanningAuthGrpcServiceTests
         var userManager = SubstituteUserManager();
         userManager.FindByNameAsync(Arg.Any<string>()).Returns(DisabledUser());
         userManager.CheckPasswordAsync(Arg.Any<EformUser>(), Arg.Any<string>()).Returns(true);
+        // A role, so the call would otherwise get past every other check and mint a token -
+        // without this the method returns "Role ... not found" and the refusal proves nothing.
+        userManager.GetRolesAsync(Arg.Any<EformUser>()).Returns(new List<string> { "admin" });
 
         var response = await ServiceWith(userManager).AuthenticateUser(
             new AuthenticateUserRequest { Username = "someone@example.com", Password = "right" }, TestServerCallContextFactory.Create());
 
         Assert.That(response.Success, Is.False, "a disabled account must not be able to log in");
         Assert.That(response.Message, Is.EqualTo(ExpectedMessage));
+        Assert.That(response.Model, Is.Null, "no token may be issued for a disabled account");
     }
 
     [Test]
@@ -191,8 +196,6 @@ public class TimePlanningAuthGrpcServiceTests
     [Test]
     public async Task RefreshToken_DisabledAccount_IsRefused()
     {
-        // The refusal returns before the token is minted, so the null UserManager this
-        // fixture passes is never reached.
         _userService.UserId.Returns(42);
         _userService.GetByIdAsync(Arg.Any<int>()).Returns(DisabledUser());
 
@@ -201,5 +204,6 @@ public class TimePlanningAuthGrpcServiceTests
         Assert.That(response.Success, Is.False,
             "a disabled account must not be able to roll its session forward");
         Assert.That(response.Message, Is.EqualTo(ExpectedMessage));
+        Assert.That(response.Model, Is.Null, "no fresh token may be minted for a disabled account");
     }
 }

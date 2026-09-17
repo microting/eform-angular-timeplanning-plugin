@@ -967,8 +967,9 @@ public class TimeSettingService(
     }
 
     /// <summary>
-    /// Resigning here must disable the person's login, exactly as resigning through the
-    /// device-users screen does. Resigned is only a visibility flag - no authentication
+    /// Resigning here must disable the person's login, as resigning through the
+    /// device-users screen will once its half lands
+    /// (microting/eform-backendconfiguration-plugin#1283). Resigned is only a visibility flag - no authentication
     /// code reads it - so without this a worker resigned from time-planning keeps an
     /// account that still signs in, including the flutter apps. Written with ExecuteUpdate
     /// rather than UserManager, which would run Identity's validators against addresses
@@ -989,6 +990,11 @@ public class TimeSettingService(
                       && s.WorkflowState != Constants.WorkflowStates.Removed
                       && sw.WorkflowState != Constants.WorkflowStates.Removed
                       && w.WorkflowState != Constants.WorkflowStates.Removed
+                // Deterministic by the lowest SiteWorker id, for the reason
+                // SiteWorkerResolver documents: a site carrying more than one live
+                // SiteWorker row would otherwise resolve to whichever the database
+                // happened to return, and disable the wrong person's login.
+                orderby sw.Id
                 select w.Email).FirstOrDefaultAsync().ConfigureAwait(false);
 
             // Matched the same way the avatar lookup above does it - the two must agree,
@@ -1050,6 +1056,12 @@ public class TimeSettingService(
         dbAssignedSite.AllowEditOfRegistrations = site.AllowEditOfRegistrations;
         dbAssignedSite.AllowPersonalTimeRegistration = site.AllowPersonalTimeRegistration;
         dbAssignedSite.AllowAcceptOfPlannedHours = site.AllowAcceptOfPlannedHours;
+        // Captured before the assignment below: the login is only touched when the
+        // resignation actually changes. An unrelated settings save must not re-assert
+        // account state - not least because a body that omits "resigned" deserializes
+        // to false, and that would silently re-enable a disabled account.
+        var wasResigned = dbAssignedSite.Resigned;
+
         dbAssignedSite.Resigned = site.Resigned;
         // Record WHEN one-minute intervals took effect, so every later flex
         // recomputation keeps pre-switch days on 5-minute rules instead of
@@ -1160,7 +1172,10 @@ public class TimeSettingService(
 
         await dbAssignedSite.Update(dbContext);
 
-        await SyncLoginStateAsync(dbAssignedSite.SiteId, site.Resigned).ConfigureAwait(false);
+        if (site.Resigned != wasResigned)
+        {
+            await SyncLoginStateAsync(dbAssignedSite.SiteId, site.Resigned).ConfigureAwait(false);
+        }
 
         // Fire-and-forget: tell the worker's device(s) that their assigned-site
         // settings changed so personal mode can auto-refresh. Sent AFTER the row
