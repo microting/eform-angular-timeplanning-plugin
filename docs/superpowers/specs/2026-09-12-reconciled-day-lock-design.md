@@ -241,15 +241,47 @@ per date. Nothing is written to the database; the cell renders empty.
 
 ### 6.4 Timezone
 
-The predicate in **I2** depends on "today", and the codebase mixes
-`DateTime.Now` and `DateTime.UtcNow`. `PlanRegistration.Date` is a midnight
-local date.
+Two separate questions, with two different answers.
 
-**Decision: compare against `DateTime.Now.Date`** (server local), matching how
-`PlanRegistrationHelper` and the existing mobile guard already compute "today".
-Using UTC would make the boundary shift by a day for part of each evening in
-Danish time. This is stated explicitly because it is exactly the kind of
-off-by-one that is invisible in tests written at midday.
+**The I2 predicate ("is this day still today?")** — `DayLockHelper.CanReconcile`
+compares against **`DateTime.UtcNow.Date`**. `PlanRegistration.Date` is a
+calendar-day *label* with the time zeroed, not an instant in any zone, so there
+is no local midnight to be consistent with; pinning the comparison to one clock
+beats following the writers, which do not agree among themselves. At the
+positive offset this product runs at, `UtcNow.Date` *lags* the local date during
+the first hours **after local midnight** — at local 00:30 on the 16th at +02:00
+it is still the 15th in UTC, so reconciling the 15th is refused until the offset
+elapses; later in the local day the two agree and the clock makes no difference.
+That window is the conservative side, and for a rule that means "this day can no
+longer be written", refusing too much beats allowing too much. (An earlier draft
+of this section chose `DateTime.Now.Date` and described the window as a
+late-evening one; the shipped code does neither — see the comment on
+`CanReconcile`.)
+
+**The `ReconciledAt` stamp** — the column **holds UTC**: `SetReconciledAsync`
+writes `DateTime.UtcNow`. The `datetime(6)` column carries no offset, so EF
+materialises it as `Kind.Unspecified`, and Newtonsoft (RoundtripKind) would then
+emit naked digits that every browser reads as its *own* wall clock — the stamp
+reading 1–2 hours early in Denmark, year-round. `PlanRegistrationHelper`
+therefore re-tags the projected value `DateTimeKind.Utc`, so the JSON carries a
+trailing `Z`, and the client passes **no** timezone argument to `DatePipe`: each
+viewer sees the instant on their own clock. The dialog's optimistic stand-in
+uses `toISOString()` for the same reason — same shape as the value that replaces
+it, so the stamp does not jump when the grid reloads.
+
+*Existing data needs no backfill:* the container was already UTC (no `TZ`, and
+the aspnet base image defaults to it), so rows written before this change hold
+UTC digits too and the new `Z` is retroactively true for them.
+
+*Before ever setting `TZ` on the container, read this.* Going forward it is
+harmless: the writer is `UtcNow` and no longer follows the host clock. The
+hazard is historical and conditional — rows written **before** this PR were
+stamped with `DateTime.Now`, so they hold local digits for whatever `TZ` the
+host had **at the time of writing**. No known deployment ever set one, which is
+why no backfill is needed. But nothing in the data marks which host wrote which
+row, so a deployment that cannot rule out a past `TZ` cannot fix it after the
+fact either: its whole back-catalogue would read an offset late under the new
+`Z`, and the only remedy would be a dated cutoff.
 
 ---
 
@@ -265,7 +297,7 @@ Three operations on `TimePlanningPlanningController`:
 
 Rules enforced server-side:
 
-- Reconcile rejects `date >= DateTime.Now.Date` (**I2**).
+- Reconcile rejects `date >= DateTime.UtcNow.Date` (**I2**).
 - Reconcile is idempotent: re-reconciling an already-reconciled day is a no-op
   success, not an error.
 - Unreconcile rejects any day that is not exactly `lockedThrough` for that
@@ -460,7 +492,7 @@ Anchor rows by worker identity, not by grid index.
 | Any user can freeze a period | Accepted by decision; reverse-order unlock + typed confirmation |
 | Row selection breaks day-cell clicks | Known mtx-grid gotchas documented in §8.3, both with existing fixes in the host repo |
 | `MaxDaysEditable` remains bypassable | Out of scope, explicitly; the interceptor makes the *new* lock not share the flaw |
-| Timezone off-by-one near midnight | `DateTime.Now.Date` fixed in §6.4; tests must include a late-evening case |
+| Timezone off-by-one near midnight | one clock (`DateTime.UtcNow.Date`) fixed in §6.4; tests must include a just-after-local-midnight case |
 
 ## 11. Resolved decisions
 

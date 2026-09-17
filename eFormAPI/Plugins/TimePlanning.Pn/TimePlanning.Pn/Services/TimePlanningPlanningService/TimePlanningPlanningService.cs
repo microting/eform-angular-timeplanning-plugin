@@ -2372,19 +2372,21 @@ public class TimePlanningPlanningService(
     /// timestamp always change together. Can throw DayLockedException; callers
     /// decide how to handle that race.
     ///
-    /// ReconciledAt is an AUDIT/DISPLAY instant -- the tooltip renders it
-    /// verbatim as "Afstemt <dato> kl. <tid>" -- never an input to a lock
-    /// comparison, so it is deliberately NOT covered by
-    /// DayLockHelper.CanReconcile's UtcNow rule. DateTime.Now is left here
-    /// unchanged: this repo's Dockerfile sets no TZ, so the shipped container
-    /// resolves it to UTC anyway and the stored instant is the same either way.
-    /// Which clock the tooltip ought to render is a presentation question and
-    /// is tracked separately.
+    /// ReconciledAt is an AUDIT/DISPLAY instant -- the tooltip renders it as
+    /// "Afstemt <dato> kl. <tid>" -- never an input to a lock comparison, so it
+    /// is not covered by DayLockHelper.CanReconcile's UtcNow rule.
+    ///
+    /// DateTime.UtcNow, not Now: this column HOLDS UTC, and the read
+    /// projection tags it as such on the way out -- the mechanism is written
+    /// out once, where it lives, at PlanRegistrationHelper's ReconciledAt
+    /// projection. Writing Now would make that tag a lie for anyone who sets
+    /// TZ on the container, and a wire contract must not rest on an
+    /// environment variable staying unset.
     /// </summary>
     private async Task SetReconciledAsync(PlanRegistration planning, bool reconciled)
     {
         planning.Reconciled = reconciled;
-        planning.ReconciledAt = reconciled ? DateTime.Now : null;
+        planning.ReconciledAt = reconciled ? DateTime.UtcNow : null;
         planning.UpdatedByUserId = userService.UserId;
         await planning.Update(dbContext);
     }

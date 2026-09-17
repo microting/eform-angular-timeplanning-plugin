@@ -1098,6 +1098,64 @@ public class ReconcileServiceTests : TestBaseSetup
     }
 
     /// <summary>
+    /// The stamp goes out as a UTC INSTANT, not as naked digits.
+    ///
+    /// The datetime(6) column carries no offset, so EF hands back
+    /// DateTimeKind.Unspecified, and Newtonsoft (RoundtripKind) writes a suffix
+    /// only for Kind Utc or Local. An Unspecified value therefore serialises as
+    /// "2026-09-14T10:32:11" with nothing after it, and `new Date(...)` in the
+    /// browser reads that as the VIEWER's local wall clock -- the tooltip
+    /// showing an hour or two early in Denmark, every day of the year. The
+    /// projection re-tags the value Utc so the JSON ends in "Z"; this pins that.
+    ///
+    /// The two assertions guard different things on different hosts:
+    ///  - The KIND assertion bites EVERYWHERE, CI included. EF materialises the
+    ///    offsetless column as Unspecified on every host, UTC ones too, so
+    ///    dropping the SpecifyKind in the projection turns this red in CI. It
+    ///    is this diff's real guard -- do not weaken it.
+    ///  - The FRESHNESS assertion catches a regression to DateTime.Now on a
+    ///    host at a NON-ZERO offset, which is the case that would make the "Z"
+    ///    a lie. Its tolerance is 5 minutes, so it is inert not only on CI but
+    ///    anywhere at UTC+0 (Europe/London in winter, Atlantic/Reykjavik,
+    ///    Africa/Abidjan), where the two clocks coincide anyway.
+    /// </summary>
+    [Test]
+    public async Task Index_ProjectsReconciledAtAsAUtcInstant()
+    {
+        await using var baseDbContext = GetBaseDbContext();
+        var svc = await BuildAdminIndexServiceAsync(baseDbContext);
+        await SeedAssignedSiteAsync(916);
+        // UtcNow.Date, not Now.Date: this whole chain is meant to run on one
+        // clock, and SeedReconciledBoundaryAsync has to satisfy CanReconcile,
+        // which compares against UtcNow.Date.
+        var open = await SeedPlain(916, DateTime.UtcNow.Date.AddDays(-1));
+        var boundary = await SeedReconciledBoundaryAsync(916, DateTime.UtcNow.Date.AddDays(-4));
+        var window = new TimePlanningPlanningRequestModel
+        {
+            DateFrom = DateTime.UtcNow.Date.AddDays(-4),
+            DateTo = DateTime.UtcNow.Date
+        };
+
+        var result = await svc.Index(window);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var siteRow = result.Model.Single(x => x.SiteId == 916);
+        var boundaryDay = siteRow.PlanningPrDayModels.Single(d => d.Date.Date == boundary.Date.Date);
+        var openDay = siteRow.PlanningPrDayModels.Single(d => d.Date.Date == open.Date.Date);
+        Assert.Multiple(() =>
+        {
+            Assert.That(boundaryDay.ReconciledAt, Is.Not.Null);
+            Assert.That(boundaryDay.ReconciledAt!.Value.Kind, Is.EqualTo(DateTimeKind.Utc),
+                "Kind Utc is what puts the trailing Z on the wire");
+            Assert.That(boundaryDay.ReconciledAt!.Value,
+                Is.EqualTo(DateTime.UtcNow).Within(TimeSpan.FromMinutes(5)),
+                "the column holds UTC -- a local-clock write would land an offset away");
+            Assert.That(openDay.ReconciledAt, Is.Null,
+                "an unreconciled day stays null: the tagging must not invent a value");
+        });
+    }
+
+    /// <summary>
     /// The trap: UpdatePlanRegistrationsInPeriod's per-day loop
     /// runs over planningsInPeriod, and a window that is entirely locked with
     /// no existing rows leaves that list empty for the whole call -- the loop

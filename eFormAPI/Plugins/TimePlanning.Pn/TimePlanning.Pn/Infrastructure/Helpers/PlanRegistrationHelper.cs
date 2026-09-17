@@ -1145,7 +1145,17 @@ public static class PlanRegistrationHelper
             planningModel.NettoHoursOverride = planRegistration.NettoHoursOverride;
             planningModel.NettoHoursOverrideActive = planRegistration.NettoHoursOverrideActive;
             planningModel.Reconciled = planRegistration.Reconciled;
-            planningModel.ReconciledAt = planRegistration.ReconciledAt;
+            // SetReconciledAsync writes DateTime.UtcNow, but the datetime(6)
+            // column carries no offset, so EF materialises it as Kind
+            // Unspecified. Newtonsoft (RoundtripKind) emits a suffix only for
+            // Kind Utc or Local, so without this the JSON would be a naked
+            // "2026-09-17T12:30:00" that every browser would relabel as ITS
+            // OWN local wall clock -- the stamp reading 1-2 hours early in
+            // Denmark, year-round. Re-tagging as Utc is what puts the "Z" on
+            // the wire and lets each viewer see the instant in their own time.
+            planningModel.ReconciledAt = planRegistration.ReconciledAt is { } reconciledAt
+                ? DateTime.SpecifyKind(reconciledAt, DateTimeKind.Utc)
+                : null;
 
             // Approach C READ projection: for any shift with a pause override,
             // present a single synthesized pause pair (sum = override) and empty

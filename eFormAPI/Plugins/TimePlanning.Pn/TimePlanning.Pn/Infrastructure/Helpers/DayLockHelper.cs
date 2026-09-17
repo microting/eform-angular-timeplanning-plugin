@@ -139,12 +139,17 @@ public static class DayLockHelper
     /// reason to pin THIS comparison to one clock, not to follow theirs.
     ///
     /// Direction, stated as what it is rather than as a law: at a POSITIVE
-    /// offset (CET/CEST, where this product runs) UtcNow is the conservative
-    /// choice -- late in the local day it briefly declines to freeze a day that
-    /// is still "today" in UTC, and for a rule whose whole purpose is "this day
-    /// can no longer be written", refusing too much beats allowing too much. At
-    /// a NEGATIVE offset the same expression is the PERMISSIVE one: it would
-    /// accept the local today and break I2 from the worker's point of view.
+    /// offset (CET/CEST, where this product runs) UtcNow.Date LAGS the local
+    /// date during the first hours AFTER local midnight -- at local 00:30 on
+    /// the 16th at +02:00 it is still the 15th in UTC, so reconciling the 15th
+    /// is refused until the offset elapses. Later in the local day the two
+    /// dates agree and the choice of clock makes no difference at all. That
+    /// early-morning window is the conservative side, and for a rule whose
+    /// whole purpose is "this day can no longer be written", refusing too much
+    /// beats allowing too much. At a NEGATIVE offset the same expression is the
+    /// PERMISSIVE one: in the hours before local midnight UtcNow.Date has
+    /// already advanced, so it would accept the local today and break I2 from
+    /// the worker's point of view.
     /// That case does not arise here, and the answer if it ever does is an
     /// explicit business timezone, not a switch back to the server's clock.
     ///
