@@ -304,7 +304,18 @@ public class GoogleSheetHelper
                     await OneMinuteModeTimeline.BuildAsync(dbContext, mappedAssignedSite);
             }
 
-            // Observability only: the skip is silent otherwise.
+            // This is a bulk re-sync over the sheet's whole history, so a locked
+            // day is skipped, never rejected: frozen means frozen. ONE query for
+            // every mapped site, built before the row loop and never per row.
+            // The timeline keys ARE the mapped sites: one per distinct non-null
+            // MicrotingUid in `workers`, and `workers` only ever holds sites with
+            // a MicrotingUid (sitesByKey filters them), so every site the row loop
+            // can reach has an entry here. That matters: DayLockHelper.IsLocked
+            // treats a site missing from the map as having no boundary, i.e. open.
+            var lockedThroughBySite = await DayLockHelper.LockedThroughForSitesAsync(
+                dbContext, oneMinuteTimelines.Keys.ToList());
+            // Observability only: the skips are silent otherwise.
+            var lockedDaysSkipped = 0;
             var adminChangedSkipped = 0;
 
             // Skip the header row (first row)
@@ -342,6 +353,15 @@ public class GoogleSheetHelper
                     if ((columns.HoursColumn ?? int.MaxValue) >= row.Count
                         && (columns.TextColumn ?? int.MaxValue) >= row.Count)
                     {
+                        continue;
+                    }
+
+                    // Decided before the row is even loaded, so a locked row is
+                    // never tracked and no later save in this loop can flush it.
+                    if (site.MicrotingUid is { } lockSiteUid
+                        && DayLockHelper.IsLocked(lockedThroughBySite, lockSiteUid, dateValue))
+                    {
+                        lockedDaysSkipped++;
                         continue;
                     }
 
@@ -542,7 +562,7 @@ public class GoogleSheetHelper
             }
 
             Console.WriteLine(
-                $"[PullEverythingFromGoogleSheet] summary: {workers.Count} worker(s) mapped, {problems.Count} sheet problem(s), {adminChangedSkipped} day(s) skipped because an admin changed them.");
+                $"[PullEverythingFromGoogleSheet] summary: {workers.Count} worker(s) mapped, {problems.Count} sheet problem(s), {adminChangedSkipped} day(s) skipped because an admin changed them, {lockedDaysSkipped} day(s) skipped because they are locked.");
         }
         else
         {

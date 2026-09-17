@@ -14,17 +14,9 @@ namespace TimePlanning.Pn.Test;
 [TestFixture]
 public class CorruptedPauseIdRepairTests : TestBaseSetup
 {
-    [SetUp]
-    public async Task SetUp()
-    {
-        await base.Setup();
-    }
-
-    [TearDown]
-    public new async Task TearDown()
-    {
-        await base.TearDown();
-    }
+    // No [SetUp]/[TearDown] here: TestBaseSetup's own run for every test, and
+    // re-declaring them made NUnit run each twice (a second drop/migrate/seed
+    // and a leaked context per test).
 
     // ---- B0: characterize the timestamp-preferring netto writer ----------
 
@@ -69,14 +61,17 @@ public class CorruptedPauseIdRepairTests : TestBaseSetup
         var fiveMinSite = await SeedAssignedSite(ctx, siteId: 100, useOneMinute: false);
         var oneMinSite = await SeedAssignedSite(ctx, siteId: 200, useOneMinute: true);
 
+        // (a)-(c) sit on consecutive in-window days: PlanRegistration has a
+        // unique (SdkSitId, Date, WorkflowState) index, so one site cannot
+        // hold two active rows on the same day.
         // (a) corrupted in-window: 30m real pause, Pause1Id=145 (absolute 12:00 tick).
         var corrupted = await SeedRow(ctx, fiveMinSite.SiteId, inWindow,
             pauseStart: 12, pauseStopMin: 30, pause1Id: 145, work: (8, 16));
         // (b) correct in-window: 30m pause, Pause1Id=7 ((30/5)+1).
-        var correct = await SeedRow(ctx, fiveMinSite.SiteId, inWindow,
+        var correct = await SeedRow(ctx, fiveMinSite.SiteId, inWindow.AddDays(1),
             pauseStart: 12, pauseStopMin: 30, pause1Id: 7, work: (8, 16));
         // (c) off-by-one in-window: Pause1Id=6 (min/5, missing +1) -> must be left alone.
-        var offByOne = await SeedRow(ctx, fiveMinSite.SiteId, inWindow,
+        var offByOne = await SeedRow(ctx, fiveMinSite.SiteId, inWindow.AddDays(2),
             pauseStart: 12, pauseStopMin: 30, pause1Id: 6, work: (8, 16));
         // (d) corrupted but out of window (on/before the locked cutoff).
         var oldRow = await SeedRow(ctx, fiveMinSite.SiteId, locked,
@@ -144,6 +139,55 @@ public class CorruptedPauseIdRepairTests : TestBaseSetup
         Assert.That((await Reload(ctx, row)).Pause1Id, Is.EqualTo(145)); // untouched
     }
 
+    // ---- day lock: frozen means frozen -------------------------------------
+
+    /// <summary>
+    /// The repair window is a fixed calendar cutoff, so it can reach days at
+    /// or below a worker's reconciled boundary. Those rows must be skipped
+    /// before anything mutates them. Without the skip the first locked row's
+    /// Update is refused by the interceptor, and Run throws: in production
+    /// that is host startup.
+    /// </summary>
+    [Test]
+    public async Task Repair_SkipsRowsAtOrBelowTheReconciledBoundary_AndRepairsTheRest()
+    {
+        var ctx = TimePlanningPnDbContext!;
+        var site = await SeedAssignedSite(ctx, siteId: 300, useOneMinute: false);
+        var windowStart = CorruptedPauseIdRepair.FirstUnlockedDate(DateTime.UtcNow.Date);
+
+        // Lock-safe order: the row below the boundary is created BEFORE the
+        // boundary is reconciled, and the row above it after. All three carry
+        // the same repairable corruption (30m real pause, absolute tick 145).
+        // Near the payroll cutoff the boundary (W+1) is not in the past: it is
+        // in the future on the 21st and 22nd and is today on the 23rd. The lock
+        // itself does not check I2, so the test holds on every day.
+        var belowBoundary = await SeedRow(ctx, site.SiteId, windowStart,
+            pauseStart: 12, pauseStopMin: 30, pause1Id: 145, work: (8, 16));
+        var boundary = await SeedRow(ctx, site.SiteId, windowStart.AddDays(1),
+            pauseStart: 12, pauseStopMin: 30, pause1Id: 145, work: (8, 16),
+            reconciled: true);
+        var aboveBoundary = await SeedRow(ctx, site.SiteId, windowStart.AddDays(2),
+            pauseStart: 12, pauseStopMin: 30, pause1Id: 145, work: (8, 16));
+
+        var belowBefore = await Reload(ctx, belowBoundary);
+        var boundaryBefore = await Reload(ctx, boundary);
+
+        Assert.DoesNotThrowAsync(async () => await CorruptedPauseIdRepair.Run(ctx));
+
+        foreach (var (before, label) in new[] { (belowBefore, "below"), (boundaryBefore, "boundary") })
+        {
+            var after = await Reload(ctx, before);
+            Assert.That(after.Pause1Id, Is.EqualTo(145), $"{label}: a locked row must not be repaired");
+            Assert.That(after.NettoHoursInSeconds, Is.EqualTo(before.NettoHoursInSeconds), label);
+            Assert.That(after.Version, Is.EqualTo(before.Version), $"{label}: a locked row must not be saved");
+            Assert.That(after.UpdatedAt, Is.EqualTo(before.UpdatedAt), label);
+        }
+
+        var repaired = await Reload(ctx, aboveBoundary);
+        Assert.That(repaired.Pause1Id, Is.EqualTo(7), "the row above the boundary is still repaired");
+        Assert.That(repaired.NettoHoursInSeconds, Is.EqualTo(27000));
+    }
+
     // ---- helpers -----------------------------------------------------------
 
     private static async Task<AssignedSiteEntity> SeedAssignedSite(
@@ -163,7 +207,7 @@ public class CorruptedPauseIdRepairTests : TestBaseSetup
     private static async Task<PlanRegistration> SeedRow(
         TimePlanningPnDbContext ctx, int sdkSitId, DateTime date,
         int pauseStart, int pauseStopMin, int pause1Id, (int Start, int Stop) work,
-        bool seedPauseTimestamps = true)
+        bool seedPauseTimestamps = true, bool reconciled = false)
     {
         var pr = new PlanRegistration
         {
@@ -174,6 +218,8 @@ public class CorruptedPauseIdRepairTests : TestBaseSetup
             Pause1StartedAt = seedPauseTimestamps ? date.AddHours(pauseStart) : (DateTime?)null,
             Pause1StoppedAt = seedPauseTimestamps ? date.AddHours(pauseStart).AddMinutes(pauseStopMin) : (DateTime?)null,
             Pause1Id = pause1Id,
+            Reconciled = reconciled,
+            ReconciledAt = reconciled ? new DateTime(2026, 1, 20, 9, 12, 0) : (DateTime?)null,
             CreatedByUserId = 1,
             UpdatedByUserId = 1
         };

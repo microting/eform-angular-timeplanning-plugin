@@ -27,6 +27,7 @@ using Microting.eForm.Infrastructure.Models;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
+using TimePlanning.Pn.Infrastructure.Interceptors;
 using TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
 using TimePlanning.Pn.Services.TimePlanningGpsCoordinateService;
 using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
@@ -180,13 +181,11 @@ public class EformTimePlanningPlugin : IEformPlugin
 
         _connectionString = connectionString;
         services.AddSingleton<ITimePlanningDbContextHelper>(provider => new TimePlanningDbContextHelper(_connectionString));
+        // Keep the options inside ConfigureTimePlanningDbContext: that is where
+        // DayLockWiringTests checks the day-lock interceptor is attached.
         services.AddDbContextPool<TimePlanningPnDbContext>(o =>
-            o.UseMySql(connectionString, new MariaDbServerVersion(
-                ServerVersion.AutoDetect(connectionString)), mySqlOptionsAction: builder =>
-            {
-                builder.EnableRetryOnFailure();
-                builder.MigrationsAssembly(PluginAssembly().FullName);
-            }));
+            ConfigureTimePlanningDbContext(o, connectionString,
+                new MariaDbServerVersion(ServerVersion.AutoDetect(connectionString))));
 
         var contextFactory = new TimePlanningPnContextFactory();
         var context = contextFactory.CreateDbContext(new[] { connectionString });
@@ -201,9 +200,41 @@ public class EformTimePlanningPlugin : IEformPlugin
         // Seed database
         SeedDatabase(connectionString);
 
-        // One-shot, idempotent repair of pauseNId corruption (last 7 days,
-        // 5-minute sites). Safe to run on every startup.
-        RepairCorruptedPauseIds(connectionString);
+        // One-shot, idempotent repair of pauseNId corruption on 5-minute sites,
+        // for rows dated after the rolling payroll cutoff
+        // (CorruptedPauseIdRepair.FirstUnlockedDate). Safe to run on every startup.
+        try
+        {
+            RepairCorruptedPauseIds(connectionString);
+        }
+        catch (DayLockedException ex)
+        {
+            // The repair skips locked days itself, so reaching this means that
+            // skip has a bug. The interceptor has already refused the write,
+            // and a skip bug in a one-shot repair must never take the whole
+            // host down, so report it and keep starting. Any other exception
+            // keeps its existing behaviour.
+            Console.WriteLine($"[CorruptedPauseIdRepair] stopped by the day lock, startup continues: {ex.Message}");
+            SentrySdk.CaptureException(ex);
+        }
+    }
+
+    /// <summary>
+    /// The options of the pooled TimePlanningPnDbContext registration. A
+    /// method, not an inline lambda, so DayLockWiringTests can prove the
+    /// day-lock interceptor is attached. The caller passes the server version
+    /// so that test opens no connection; the registration passes
+    /// ServerVersion.AutoDetect, as it always has.
+    /// </summary>
+    public static void ConfigureTimePlanningDbContext(
+        DbContextOptionsBuilder options, string connectionString, ServerVersion serverVersion)
+    {
+        options.UseMySql(connectionString, serverVersion, mySqlOptionsAction: builder =>
+            {
+                builder.EnableRetryOnFailure();
+                builder.MigrationsAssembly(typeof(EformTimePlanningPlugin).Assembly.FullName);
+            })
+            .AddInterceptors(ReconciledDayLockInterceptor.Instance);
     }
 
     public void Configure(IApplicationBuilder appBuilder)
@@ -914,8 +945,10 @@ public class EformTimePlanningPlugin : IEformPlugin
 
     public void RepairCorruptedPauseIds(string connectionString)
     {
-        var contextFactory = new TimePlanningPnContextFactory();
-        using var dbContext = contextFactory.CreateDbContext([connectionString]);
+        // Not TimePlanningPnContextFactory: that context has no day-lock
+        // interceptor, and this repair writes PlanRegistration rows. The
+        // helper builds the same options with the interceptor attached.
+        using var dbContext = new TimePlanningDbContextHelper(connectionString).GetDbContext();
         CorruptedPauseIdRepair.Run(dbContext).GetAwaiter().GetResult();
     }
 

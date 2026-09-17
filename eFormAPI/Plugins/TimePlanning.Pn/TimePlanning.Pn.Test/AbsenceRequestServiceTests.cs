@@ -116,6 +116,47 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         Assert.That(result.Message, Is.EqualTo("OverlappingAbsenceRequestExists"));
     }
 
+    /// <summary>
+    /// A request touching a locked day could never be approved, so it must
+    /// not be created and left pending. The range runs past the boundary into
+    /// an open day, so only the lock check can refuse it. The message says
+    /// what the first requested day IS: locked by the boundary (no row of its
+    /// own), or the reconciled boundary day itself.
+    /// </summary>
+    [TestCase(3, "DayIsLockedByReconciledDay",
+        TestName = "CreateAsync_RefusesAndCreatesNothing_WhenTheFirstDayIsBelowTheBoundary")]
+    [TestCase(4, "DayIsReconciled",
+        TestName = "CreateAsync_RefusesAndCreatesNothing_WhenTheFirstDayIsTheReconciledDay")]
+    public async Task CreateAsync_RefusesAndCreatesNothing_WhenTheFirstRequestedDayIsLocked(
+        int firstRequestedDayOfMarch, string expectedMessage)
+    {
+        const int sdkSitId = 12;
+        await new PlanRegistration
+        {
+            SdkSitId = sdkSitId,
+            Date = new DateTime(2024, 3, 4),
+            Reconciled = true,
+            ReconciledAt = new DateTime(2024, 3, 6, 9, 12, 0),
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+
+        var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
+        {
+            RequestedBySdkSitId = sdkSitId,
+            DateFrom = new DateTime(2024, 3, firstRequestedDayOfMarch),
+            DateTo = new DateTime(2024, 3, 6),
+            MessageId = 2, // Vacation
+            RequestComment = "Spans the boundary"
+        });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo(expectedMessage));
+        Assert.That(await TimePlanningPnDbContext.AbsenceRequests.AsNoTracking().CountAsync(), Is.Zero,
+            "a request that can never be approved must not be created");
+        Assert.That(await TimePlanningPnDbContext.AbsenceRequestDays.AsNoTracking().CountAsync(), Is.Zero);
+    }
+
     [Test]
     public async Task ApproveAsync_UpdatesPlanRegistrations_AndSetsAbsenceFlags()
     {
@@ -193,6 +234,106 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         var pr2 = planRegistrations.First(pr => pr.Date == day2.Date);
         Assert.That(pr2.Sick, Is.True);
         Assert.That(pr2.OnVacation, Is.False);
+    }
+
+    /// <summary>
+    /// Approving writes the request's status BEFORE the per-day loop. Without
+    /// the up-front check the status is saved as Approved, the locked day's
+    /// save is then refused, and the request is left Approved with only some
+    /// of its days flagged.
+    ///
+    /// The message says what the earliest locked requested day IS: a day with
+    /// no registration yet, or with a plain one, is locked by the boundary;
+    /// the reconciled boundary day itself is reconciled.
+    /// </summary>
+    [TestCase(2, "DayIsLockedByReconciledDay",
+        TestName = "ApproveAsync_Fails_AndPersistsNothing_WhenTheFirstLockedDayHasNoRow")]
+    [TestCase(3, "DayIsLockedByReconciledDay",
+        TestName = "ApproveAsync_Fails_AndPersistsNothing_WhenTheFirstLockedDayIsBelowTheBoundary")]
+    [TestCase(4, "DayIsReconciled",
+        TestName = "ApproveAsync_Fails_AndPersistsNothing_WhenTheFirstLockedDayIsTheReconciledDay")]
+    public async Task ApproveAsync_Fails_AndPersistsNothing_WhenARequestedDayIsLocked(
+        int firstRequestedDayOfMarch, string expectedMessage)
+    {
+        const int sdkSitId = 11;
+        var firstRequestedDay = new DateTime(2024, 3, firstRequestedDayOfMarch);
+        var lockedDay = new DateTime(2024, 3, 3);
+        var boundaryDay = new DateTime(2024, 3, 4);
+        var openDay = new DateTime(2024, 3, 5);
+
+        // Lock-safe order: the requested locked day exists BEFORE the later
+        // boundary day is reconciled.
+        var locked = new PlanRegistration
+        {
+            SdkSitId = sdkSitId,
+            Date = lockedDay,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await locked.Create(TimePlanningPnDbContext);
+        var boundary = new PlanRegistration
+        {
+            SdkSitId = sdkSitId,
+            Date = boundaryDay,
+            Reconciled = true,
+            ReconciledAt = new DateTime(2024, 3, 6, 9, 12, 0),
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await boundary.Create(TimePlanningPnDbContext);
+        var before = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().Where(pr => pr.SdkSitId == sdkSitId).ToListAsync();
+
+        // One day per date in the range, as CreateAsync builds it, always
+        // ending on the open day after the boundary. 2 March has no row.
+        var request = new AbsenceRequest
+        {
+            RequestedBySdkSitId = sdkSitId,
+            DateFrom = firstRequestedDay,
+            DateTo = openDay,
+            Status = AbsenceRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await request.Create(TimePlanningPnDbContext);
+        for (var date = firstRequestedDay; date <= openDay; date = date.AddDays(1))
+        {
+            await new AbsenceRequestDay
+            {
+                AbsenceRequestId = request.Id,
+                Date = date,
+                MessageId = 2, // Vacation
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            }.Create(TimePlanningPnDbContext);
+        }
+
+        var result = await _absenceRequestService.ApproveAsync(request.Id,
+            new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "Approved" });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo(expectedMessage));
+
+        // AsNoTracking: the database, not the tracked instance the service
+        // may have changed in memory.
+        var requestAfter = await TimePlanningPnDbContext.AbsenceRequests
+            .AsNoTracking().FirstAsync(ar => ar.Id == request.Id);
+        Assert.That(requestAfter.Status, Is.EqualTo(AbsenceRequestStatus.Pending));
+        Assert.That(requestAfter.DecidedBySdkSitId, Is.Null);
+
+        foreach (var id in new[] { locked.Id, boundary.Id })
+        {
+            var after = await TimePlanningPnDbContext.PlanRegistrations
+                .AsNoTracking().FirstAsync(pr => pr.Id == id);
+            Assert.That(after.OnVacation, Is.False, "a locked day must not be flagged");
+            Assert.That(after.MessageId, Is.Null);
+            Assert.That(after.Version, Is.EqualTo(before.Single(pr => pr.Id == id).Version));
+        }
+
+        var rowCount = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().CountAsync(pr => pr.SdkSitId == sdkSitId);
+        Assert.That(rowCount, Is.EqualTo(2), "no day of a refused request is written");
     }
 
     [Test]

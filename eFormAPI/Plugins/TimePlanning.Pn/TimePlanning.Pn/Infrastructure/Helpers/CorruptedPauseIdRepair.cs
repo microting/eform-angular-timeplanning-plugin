@@ -16,7 +16,9 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 /// after the rolling payroll-lock cutoff, see FirstUnlockedDate) and to
 /// 5-minute sites. Recomputes pauseNId from the intact pause timestamps,
 /// writing only when a row is both clearly corrupted and confidently
-/// repairable. Safe to run on every startup.
+/// repairable. Safe to run on every startup. That payroll cutoff is not the
+/// reconciled day lock: rows at or before a worker's reconciled boundary are
+/// skipped as well, see Run.
 ///
 /// Netto consistency: on 5-minute (flag-off) sites the mobile save path
 /// (TimePlanningPlanningService.UpdateByCurrentUserNam) persists netto via the
@@ -90,15 +92,31 @@ public static class CorruptedPauseIdRepair
             .ToListAsync()
             .ConfigureAwait(false);
 
+        // The window is a fixed calendar cutoff, which can sit BEFORE a
+        // worker's reconciled boundary, so it reaches locked days. Frozen means
+        // frozen: a locked row is skipped before anything mutates it. It stays
+        // tracked but Unchanged, so no later save in this run can flush it.
+        // One query for every site in the scan, never one per row.
+        var lockedThroughBySite = await DayLockHelper
+            .LockedThroughForSitesAsync(dbContext, fiveMinuteSiteIds)
+            .ConfigureAwait(false);
+
         // Observability counters (steps 1-3). They do not influence detection
         // or correction behaviour in any way.
         var rowsScanned = 0;
         var rowsCorrected = 0;
         var slotsCorrected = 0;
         var anomaliesFlagged = 0;
+        var rowsLocked = 0;
 
         foreach (var pr in rows)
         {
+            if (DayLockHelper.IsLocked(lockedThroughBySite, pr.SdkSitId, pr.Date))
+            {
+                rowsLocked++;
+                continue;
+            }
+
             rowsScanned++;
 
             // Worked span of shift 1, used only to gauge whether an
@@ -156,7 +174,7 @@ public static class CorruptedPauseIdRepair
         }
 
         // Step 3: run summary.
-        Console.WriteLine($"[CorruptedPauseIdRepair] summary: scanned {rowsScanned} rows, corrected {rowsCorrected} rows ({slotsCorrected} slots), flagged {anomaliesFlagged} anomalies.");
+        Console.WriteLine($"[CorruptedPauseIdRepair] summary: scanned {rowsScanned} rows, corrected {rowsCorrected} rows ({slotsCorrected} slots), flagged {anomaliesFlagged} anomalies, skipped {rowsLocked} locked rows.");
     }
 
     /// <summary>

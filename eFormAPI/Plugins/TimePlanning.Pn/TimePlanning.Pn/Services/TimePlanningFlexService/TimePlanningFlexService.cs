@@ -147,6 +147,28 @@ public class TimePlanningFlexService(
     {
         try
         {
+            // The office is editing specific days here, so a locked day gets a
+            // message and the WHOLE batch is refused before anything is written.
+            // Writing row by row until the interceptor refused one would leave
+            // the batch half applied.
+            var postedSiteIds = model
+                .Select(x => x.Worker?.Id)
+                .OfType<int>()
+                .Distinct()
+                .ToList();
+            var postedBoundaries = await DayLockHelper.LockedThroughForSitesAsync(dbContext, postedSiteIds);
+            // The first locked entry in posted order is the one that would
+            // have blocked a row-by-row save; the message says what that day is.
+            var blocking = model.FirstOrDefault(x => x.Worker?.Id is { } siteId
+                && DayLockHelper.IsLocked(postedBoundaries, siteId, x.Date));
+            if (blocking != null)
+            {
+                return new OperationResult(
+                    false,
+                    localizationService.GetString(await DayLockHelper.LockedMessageKeyAsync(
+                        dbContext, blocking.Worker.Id.Value, blocking.Date)));
+            }
+
             foreach (var updateModel in model)
             {
                 var planRegistration = await dbContext.PlanRegistrations
@@ -174,6 +196,12 @@ public class TimePlanningFlexService(
             var folderId = options.Value.FolderId == 0 ? null : options.Value.FolderId;
             var core1 = await core.GetCore();
             await using var sdkDbContext = core1.DbContextHelper.GetDbContext();
+            // This loop reaches yesterday, which may be reconciled, and it is
+            // not a forward cascade from an edited day. Locked rows are never
+            // loaded, so no Update below can bump or flush one.
+            // Defense in depth: the loop's Update currently writes nothing (it
+            // changes no property); this skip keeps it inside the lock if that ever changes.
+            var followUpBoundaries = await DayLockHelper.LockedThroughForSitesAsync(dbContext, listSiteIds);
             foreach (int listSiteId in listSiteIds)
             {
                 var plannings = await dbContext.PlanRegistrations
@@ -181,6 +209,7 @@ public class TimePlanningFlexService(
                     .Where(x => x.StatusCaseId != 0)
                     .Where(x => x.Date > DateTime.Now.AddDays(-2))
                     .Where(x => x.SdkSitId == listSiteId)
+                    .WhereOpen(followUpBoundaries.GetValueOrDefault(listSiteId))
                     .ToListAsync();
 
                 foreach (PlanRegistration planRegistration in plannings)

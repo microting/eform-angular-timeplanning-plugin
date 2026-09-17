@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using System;
 using System.Collections.Generic;
 using Microting.eFormApi.BasePn.Infrastructure.Models.Common;
 
@@ -75,5 +76,10 @@ public class TimePlanningPlanningModel
     public bool ThirdShiftActive { get; set; }
     public bool FourthShiftActive { get; set; }
     public bool FifthShiftActive { get; set; }
+    /// <summary>The worker's newest reconciled day -- every day at or before this
+    /// is locked, and only this day can be unlocked. Null when nothing is
+    /// reconciled. Sent once per row so the client compares dates instead of
+    /// scanning cells.</summary>
+    public DateTime? LockedThrough { get; set; }
     public List<TimePlanningPlanningPrDayModel> PlanningPrDayModels { get; set; }
 }

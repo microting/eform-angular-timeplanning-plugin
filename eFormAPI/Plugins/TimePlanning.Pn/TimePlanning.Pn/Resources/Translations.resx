@@ -201,4 +201,28 @@
     <data name="DayOverview" xml:space="preserve">
         <value>Day overview</value>
     </data>
+    <data name="DayIsReconciled" xml:space="preserve">
+        <value>This day is reconciled. The figures are final.</value>
+    </data>
+    <data name="DayIsLockedByReconciledDay" xml:space="preserve">
+        <value>This day is locked because it is before a reconciled day.</value>
+    </data>
+    <data name="CannotReconcileTodayOrFuture" xml:space="preserve">
+        <value>Only days before today can be reconciled.</value>
+    </data>
+    <data name="OnlyTheFirstUserCanReconcileOrUnlock" xml:space="preserve">
+        <value>Only the first user can reconcile or unlock days.</value>
+    </data>
+    <data name="OnlyLatestReconciledDayCanBeUnlocked" xml:space="preserve">
+        <value>Unlock the most recent reconciled day first ({0}).</value>
+    </data>
+    <data name="NothingIsReconciled" xml:space="preserve">
+        <value>Nothing is reconciled for this worker.</value>
+    </data>
+    <data name="SuccessfullyReconciledDay" xml:space="preserve">
+        <value>Day reconciled</value>
+    </data>
+    <data name="SuccessfullyUnlockedDay" xml:space="preserve">
+        <value>Day unlocked</value>
+    </data>
 </root>
