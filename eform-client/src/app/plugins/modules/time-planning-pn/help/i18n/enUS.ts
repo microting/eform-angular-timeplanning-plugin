@@ -201,6 +201,12 @@ export const enUS: HelpProseMap = {
     detail: 'The grid does not refresh itself. Use this when you are waiting for a worker to register something, or if a number looks stale.',
     keywords: ['reload', 'refresh', 'update', 'reset', 'fetch', 'stale', 'not showing', 'sync'],
   },
+  'toolbar.reconcileThrough': {
+    title: 'Reconcile through',
+    short: 'Sets the boundary for several workers at once.',
+    detail: 'Pick a date. With no rows selected it applies to every worker on screen. Only the boundary day is marked reconciled — everything before it locks automatically.',
+    keywords: ['reconcile', 'several', 'month end', 'lock'],
+  },
 
   // ----------------------------------------------------------------- grid ----
   'grid.nameColumn': {
@@ -360,6 +366,18 @@ export const enUS: HelpProseMap = {
     short: 'The planned hours on one day, across every shift, have to add up to 24 or less. Until they do, the field is in error and Save stays disabled.',
     detail: 'Check the planned start and stop of each shift on the day: the total is what is being measured, not any single shift. A shift that runs past midnight belongs partly to the next day, so plan the hours after midnight on that day instead of stacking them onto this one.',
     keywords: ['24 hours', 'exceed', 'too many hours', 'planned hours', 'validation', 'error', 'red', 'save disabled', 'cannot save', 'over 24', 'limit'],
+  },
+  'dayCell.reconciled': {
+    title: 'Reconciled',
+    short: 'The figures for the day are final.',
+    detail: 'The day is reconciled, and its figures no longer change — not even from a recalculation. Every day before it is locked at the same time.',
+    keywords: ['reconciled', 'locked', 'final', 'closed'],
+  },
+  'dayCell.lockedByReconciled': {
+    title: 'Locked',
+    short: 'The day falls before a reconciled day.',
+    detail: 'The day cannot be changed, because a later day is reconciled. It is released when the latest reconciled day is unlocked.',
+    keywords: ['locked', 'reconciled', 'earlier'],
   },
 
   // ----------------------------------------------------------------- flex ----

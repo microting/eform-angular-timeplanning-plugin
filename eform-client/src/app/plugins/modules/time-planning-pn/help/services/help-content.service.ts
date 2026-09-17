@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
-import { HelpEntry, HelpEntryId, HelpProse, HelpTourName, HelpUiStrings } from '../help.model';
+import { HelpAudience, HelpEntry, HelpEntryId, HelpProse, HelpTourName, HelpUiStrings } from '../help.model';
 import { PLANNING_HELP_ENTRIES } from '../planning-help.registry';
 import { HELP_FALLBACK, HELP_LOCALES, HELP_UI_FALLBACK, HELP_UI_LOCALES } from '../i18n';
 
@@ -21,11 +21,13 @@ export class HelpContentService {
     return this.localeProse()[id] ?? HELP_FALLBACK[id];
   }
 
-  entries(opts: { isAdmin: boolean }): HelpEntry[] {
-    return PLANNING_HELP_ENTRIES.filter(entry => !entry.adminOnly || opts.isAdmin);
+  /** Two independent axes; an entry has to clear both. */
+  entries(opts: HelpAudience): HelpEntry[] {
+    return PLANNING_HELP_ENTRIES.filter(entry =>
+      (!entry.adminOnly || opts.isAdmin) && (!entry.firstUserOnly || !!opts.isFirstUser));
   }
 
-  tourEntries(tour: HelpTourName, opts: { isAdmin: boolean }): HelpEntry[] {
+  tourEntries(tour: HelpTourName, opts: HelpAudience): HelpEntry[] {
     return this.entries(opts)
       .filter(entry => entry.tour === tour && entry.tourStep !== undefined)
       .sort((a, b) => (a.tourStep as number) - (b.tourStep as number));

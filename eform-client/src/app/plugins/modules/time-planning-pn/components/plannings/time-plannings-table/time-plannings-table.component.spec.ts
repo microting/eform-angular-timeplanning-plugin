@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TimePlanningsTableComponent } from './time-plannings-table.component';
 import { TimePlanningPnPlanningsService } from '../../../services/time-planning-pn-plannings.service';
@@ -7,8 +9,15 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectorRef, NO_ERRORS_SCHEMA } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { of } from 'rxjs';
+import { selectCurrentUserIsFirstUser } from 'src/app/state';
+import { BehaviorSubject, of } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
+import { registerTestLocales } from '../../../testing/register-test-locales';
+
+// The header row formats each day through DatePipe in the user's language, and this
+// component defaults to 'da'. main.ts registers that data before the app runs; a bed
+// has to do it itself or the pipe throws NG0701.
+registerTestLocales();
 
 describe('TimePlanningsTableComponent', () => {
   let component: TimePlanningsTableComponent;
@@ -314,6 +323,174 @@ describe('TimePlanningsTableComponent', () => {
 
       expect(component.getCellClass(row, '0')).toBe('grey-background');
     });
+
+    // The reconciled ("Afstemt") day lock layers on top of the four state
+    // backgrounds. Ruling F20: only the day at lockedThrough is the boundary, and it
+    // alone gets the border class. Every other day at or before it is locked,
+    // whether or not it carries a reconcile mark of its own.
+    describe('the day lock', () => {
+      const lockedRow = (date: string, extra: any = {}) => ({
+        lockedThrough: '2026-09-09T00:00:00',
+        planningPrDayModels: {
+          '0': {
+            id: 1,
+            date: `${date}T00:00:00`,
+            reconciled: false,
+            planHours: 0,
+            start1StartedAt: null,
+            start2StartedAt: null,
+            workDayEnded: false,
+            plannedStartOfShift1: null,
+            message: null,
+            workerComment: null,
+            nettoHoursOverrideActive: false,
+            ...extra
+          }
+        }
+      });
+
+      it('gives the boundary day the reconciled background, on top of its state', () => {
+        expect(component.getCellClass(lockedRow('2026-09-09', { reconciled: true }), '0'))
+          .toBe('white-background reconciled-background');
+      });
+
+      it('gives an older reconciled day the locked background, never the boundary border', () => {
+        expect(component.getCellClass(lockedRow('2026-09-07', { reconciled: true }), '0'))
+          .toBe('white-background locked-background');
+      });
+
+      it('gives a day locked by a later reconciled day the locked background', () => {
+        expect(component.getCellClass(lockedRow('2026-09-08'), '0'))
+          .toBe('white-background locked-background');
+      });
+
+      it('leaves a day after the boundary as it was', () => {
+        expect(component.getCellClass(lockedRow('2026-09-10'), '0')).toBe('white-background');
+      });
+
+      it('leaves every day as it was when the row has no boundary', () => {
+        const row = lockedRow('2026-09-07', { reconciled: true });
+        row.lockedThrough = null as any;
+        expect(component.getCellClass(row, '0')).toBe('white-background');
+      });
+    });
+  });
+
+  // The legend under the grid explains the hatch, so it appears exactly when a
+  // locked day is on screen.
+  describe('hasLockedDayInView', () => {
+    const rowWithDays = (lockedThrough: string | null) => ({
+      lockedThrough,
+      planningPrDayModels: [
+        { id: 1, date: '2026-09-08T00:00:00', reconciled: false },
+        { id: 1, date: '2026-09-09T00:00:00', reconciled: true }
+      ]
+    }) as any;
+
+    it('is true once a row in view has a locked day', () => {
+      component.timePlannings = [rowWithDays('2026-09-09T00:00:00')];
+      component.ngOnChanges({ timePlannings: { currentValue: component.timePlannings } } as any);
+      expect(component.hasLockedDayInView).toBe(true);
+    });
+
+    it('is false when nothing in view is locked', () => {
+      component.timePlannings = [rowWithDays(null)];
+      component.ngOnChanges({ timePlannings: { currentValue: component.timePlannings } } as any);
+      expect(component.hasLockedDayInView).toBe(false);
+    });
+  });
+
+  describe('onDayColumnClick', () => {
+    const dayRow = (date: string, extra: any = {}) => ({
+      siteId: 7,
+      tags: [],
+      lockedThrough: '2026-09-09T00:00:00',
+      planningPrDayModels: {
+        '0': { id: 1, date: `${date}T00:00:00`, reconciled: false, ...extra }
+      }
+    });
+
+    const dialogData = () => (mockDialog.open as jest.Mock).mock.calls[0][1].data;
+
+    beforeEach(() => {
+      mockSettingsService.getAssignedSite.mockReturnValue(of({ success: true, model: {} }) as any);
+      (mockDialog.open as jest.Mock).mockReturnValue({ afterClosed: () => of(undefined) } as any);
+    });
+
+    it('does not open a placeholder day, which has no registration behind it', () => {
+      // F17: id 0 stands in for a locked date with no row, so there is nothing to
+      // fetch and nothing to open.
+      component.onDayColumnClick(dayRow('2026-09-08', { id: 0 }), '0');
+
+      expect(mockSettingsService.getAssignedSite).not.toHaveBeenCalled();
+      expect(mockDialog.open).not.toHaveBeenCalled();
+    });
+
+    it('tells the dialog that the boundary day is locked, sealed and the boundary', () => {
+      component.onDayColumnClick(dayRow('2026-09-09', { reconciled: true }), '0');
+
+      expect(mockDialog.open).toHaveBeenCalled();
+      expect(dialogData()).toMatchObject({
+        isLocked: true,
+        isBoundary: true,
+        isSealed: true,
+        lockedThrough: '2026-09-09T00:00:00'
+      });
+    });
+
+    it('tells the dialog that an older reconciled day is sealed but not the boundary', () => {
+      component.onDayColumnClick(dayRow('2026-09-07', { reconciled: true }), '0');
+
+      expect(dialogData()).toMatchObject({ isLocked: true, isBoundary: false, isSealed: true });
+    });
+
+    it('tells the dialog that a cascade-locked day carries no mark of its own', () => {
+      component.onDayColumnClick(dayRow('2026-09-08'), '0');
+
+      expect(dialogData()).toMatchObject({ isLocked: true, isBoundary: false, isSealed: false });
+    });
+
+    it('tells the dialog that a day after the boundary is open', () => {
+      component.onDayColumnClick(dayRow('2026-09-10'), '0');
+
+      expect(dialogData()).toMatchObject({ isLocked: false, isBoundary: false, isSealed: false });
+    });
+
+    describe('the close contract after a reconcile or unlock', () => {
+      /** A dialog that closed with `payload`, having reported `lockStateChanged`. */
+      const dialogThatClosed = (lockStateChanged: boolean, payload: any) => {
+        (mockDialog.open as jest.Mock).mockReturnValue({
+          componentInstance: { lockStateChanged },
+          afterClosed: () => of(payload),
+        } as any);
+      };
+
+      it('reloads the grid and sends no save when the dialog reconciled the day', () => {
+        const changed = jest.fn();
+        component.timePlanningChanged.subscribe(changed);
+        // A reconcile can close through Cancel, Esc or the backdrop, so the close
+        // payload proves nothing either way; lockStateChanged is what decides.
+        dialogThatClosed(true, { planningPrDayModels: { id: 1 } });
+
+        component.onDayColumnClick(dayRow('2026-09-10'), '0');
+
+        // The day is locked now, so the save would be refused; and the grid memoises
+        // its cell classes on the row reference, so only a reload redraws it.
+        expect(mockPlanningsService.updatePlanning).not.toHaveBeenCalled();
+        expect(changed).toHaveBeenCalledTimes(1);
+      });
+
+      it('still saves a plain close that carries a payload', () => {
+        // The negative control: without it the assertion above could pass on a close
+        // path that never saved in the first place.
+        mockPlanningsService.updatePlanning.mockReturnValue(of({ success: true }) as any);
+        dialogThatClosed(false, { planningPrDayModels: { id: 1 } });
+
+        component.onDayColumnClick(dayRow('2026-09-10'), '0');
+
+        expect(mockPlanningsService.updatePlanning).toHaveBeenCalledWith({ id: 1 }, 1);
+      });
+    });
   });
 
   describe('isInOlderThanToday', () => {
@@ -523,6 +700,299 @@ describe('TimePlanningsTableComponent', () => {
 
     it('emits negative sign for negative values', () => {
       expect(component.convertHoursToTimeWithSeconds(-1.5)).toBe('-1:30:00');
+    });
+  });
+  /**
+   * Rebuilding the day columns flushes change detection twice, so mtx-grid sees the
+   * emptied [columns] before the new ones. What these blocks assert is the map the
+   * rebuild produces, so the flush is stubbed out rather than driven through a live
+   * view.
+   */
+  const stubHeaderFlush = (target: any) => {
+    target.cdr = { detectChanges: jest.fn() };
+  };
+
+  /**
+   * Three days ending yesterday, so every column is in the past. Derived from the
+   * clock rather than written down, so no passing date turns these blocks red.
+   */
+  const showLastThreeDays = (): Date => {
+    const yesterday = new Date();
+    yesterday.setHours(0, 0, 0, 0);
+    yesterday.setDate(yesterday.getDate() - 1);
+    component.dateFrom = new Date(yesterday);
+    component.dateFrom.setDate(yesterday.getDate() - 2);
+    component.dateTo = yesterday;
+    component.ngOnChanges({ dateTo: { currentValue: component.dateTo } } as any);
+    return yesterday;
+  };
+
+  /**
+   * The worker set for a bulk reconcile. mtx-grid rebuilds its SelectionModel empty on
+   * ANY input change and emits nothing, so the component has to report that itself —
+   * and report it as a RESET, because an empty selection means "everyone visible" and
+   * would silently widen a previewed scope.
+   */
+  describe('row selection', () => {
+    const changed = jest.fn();
+    const reset = jest.fn();
+
+    beforeEach(() => {
+      changed.mockClear();
+      reset.mockClear();
+      component.selectionChanged.subscribe(changed);
+      component.selectionReset.subscribe(reset);
+    });
+
+    it('emits the ticked rows as site ids', () => {
+      component.onRowSelected([{ siteId: 4 }, { siteId: 9 }]);
+
+      expect(changed).toHaveBeenCalledWith([4, 9]);
+      expect(reset).not.toHaveBeenCalled();
+    });
+
+    it('survives a grid that hands it nothing', () => {
+      component.onRowSelected(null as any);
+
+      expect(changed).toHaveBeenCalledWith([]);
+    });
+
+    it('reports new rows dropping a live selection as a reset, not as an empty selection', () => {
+      component.onRowSelected([{ siteId: 4 }]);
+      changed.mockClear();
+
+      component.timePlannings = [];
+      component.ngOnChanges({ timePlannings: { currentValue: [] } } as any);
+
+      expect(reset).toHaveBeenCalledTimes(1);
+      // An empty selection here would be read as "every visible worker".
+      expect(changed).not.toHaveBeenCalled();
+    });
+
+    it('stays quiet when new rows arrive and nothing was ticked', () => {
+      component.timePlannings = [];
+      component.ngOnChanges({ timePlannings: { currentValue: [] } } as any);
+
+      expect(reset).not.toHaveBeenCalled();
+    });
+
+    it('reports the reset only once, since the grid drops the selection only once', () => {
+      component.onRowSelected([{ siteId: 4 }]);
+
+      component.ngOnChanges({ timePlannings: { currentValue: [] } } as any);
+      component.ngOnChanges({ timePlannings: { currentValue: [] } } as any);
+
+      expect(reset).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports new columns dropping a live selection too', () => {
+      // Rebuilding the headers changes [columns] and [headerTemplate], and mtx-grid
+      // empties its SelectionModel on those just as it does on new data.
+      stubHeaderFlush(component);
+      component.onRowSelected([{ siteId: 4 }]);
+      component.dateFrom = new Date(2026, 8, 7);
+      component.dateTo = new Date(2026, 8, 13);
+
+      component.ngOnChanges({ dateTo: { currentValue: component.dateTo } } as any);
+
+      expect(reset).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('the past-day header', () => {
+    beforeEach(() => {
+      stubHeaderFlush(component);
+      // The header is the first user's; the block below argues why and proves it.
+      component.isFirstUser = true;
+    });
+
+    it('offers the clickable header on past days only', () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      component.dateFrom = new Date(today);
+      component.dateFrom.setDate(today.getDate() - 1);
+      component.dateTo = new Date(today);
+      component.dateTo.setDate(today.getDate() + 1);
+
+      component.ngOnChanges({ dateTo: { currentValue: component.dateTo } } as any);
+
+      // Yesterday, today, tomorrow: nothing at or after today may be reconciled.
+      expect(Object.keys(component.dayHeaderTemplates)).toEqual(['0']);
+    });
+
+    it('asks for a preview through the day its column stands for', () => {
+      const requested: Date[] = [];
+      component.reconcileDateRequested.subscribe(date => requested.push(date));
+      const yesterday = showLastThreeDays();
+
+      component.onDayHeaderClick('2');
+
+      expect(requested).toHaveLength(1);
+      expect(requested[0].toDateString()).toBe(yesterday.toDateString());
+    });
+
+    it('asks for nothing when the column is not one it knows', () => {
+      const requested: Date[] = [];
+      component.reconcileDateRequested.subscribe(date => requested.push(date));
+      showLastThreeDays();
+
+      component.onDayHeaderClick('siteName');
+
+      expect(requested).toHaveLength(0);
+    });
+  });
+
+  /**
+   * Only the first user may reconcile, so only the first user gets the two ways in
+   * the grid offers: the clickable day header and the row tick boxes. Every case is a
+   * pair, because a header map that is empty for the wrong reason — no past columns,
+   * no dates — would let the negative half pass on its own.
+   */
+  describe('the day header belongs to the first user', () => {
+    beforeEach(() => stubHeaderFlush(component));
+
+    /**
+     * Hands the component a first-user stream this test drives, and ONLY that one.
+     * Keyed on the selector rather than answering every select() with the same
+     * subject: otherwise a case like "stops listening" would pass on whichever other
+     * selector happened to be subscribed, and would stop testing anything in silence
+     * the day that changed.
+     */
+    const firstUserStream = (flag$: BehaviorSubject<boolean>) => {
+      mockStore.select.mockImplementation((selector: any) =>
+        (selector === selectCurrentUserIsFirstUser ? flag$ : of(true)) as any);
+    };
+
+    it('leaves every past header plain for everyone else, and clickable for the first user', () => {
+      component.isFirstUser = false;
+      showLastThreeDays();
+      expect(component.dayHeaderTemplates).toEqual({});
+
+      component.isFirstUser = true;
+      showLastThreeDays();
+
+      expect(Object.keys(component.dayHeaderTemplates)).toEqual(['0', '1', '2']);
+    });
+
+    it('asks for no preview when someone else reaches the handler anyway', () => {
+      const requested: Date[] = [];
+      component.reconcileDateRequested.subscribe(date => requested.push(date));
+      component.isFirstUser = true;
+      showLastThreeDays();
+
+      component.isFirstUser = false;
+      component.onDayHeaderClick('2');
+      expect(requested).toHaveLength(0);
+
+      component.isFirstUser = true;
+      component.onDayHeaderClick('2');
+
+      expect(requested).toHaveLength(1);
+    });
+
+    it('reads the flag off the store, and rebuilds the header row when it changes', () => {
+      // Two reasons the flag is subscribed rather than read once. The first build
+      // cannot have seen it — dateFrom/dateTo are bound inputs, so ngOnChanges and its
+      // updateTableHeaders() run before ngOnInit — and the answer can change while the
+      // page is alive. headersBuilt is what makes that uninformed first build
+      // recoverable, and this case drives exactly that sequence.
+      const firstUser$ = new BehaviorSubject(false);
+      firstUserStream(firstUser$);
+
+      component.ngOnInit();
+      showLastThreeDays();
+      expect(component.isFirstUser).toBe(false);
+      expect(component.dayHeaderTemplates).toEqual({});
+
+      firstUser$.next(true);
+
+      expect(component.isFirstUser).toBe(true);
+      expect(Object.keys(component.dayHeaderTemplates)).toEqual(['0', '1', '2']);
+    });
+
+    it('stops listening once the grid is gone', () => {
+      const firstUser$ = new BehaviorSubject(false);
+      firstUserStream(firstUser$);
+      component.ngOnInit();
+      expect(firstUser$.observed).toBe(true);
+
+      component.ngOnDestroy();
+
+      expect(firstUser$.observed).toBe(false);
+    });
+
+    it('offers the tick boxes only to the user who could use them', () => {
+      // Row selection exists to scope a bulk reconcile and nothing else, so it is not
+      // rendered for anyone who may not reconcile. Never rendered in this bed, so the
+      // binding is read off the file — and read for the RIGHT flag: isAdmin still
+      // gates unrelated chrome in this same template.
+      const template = readFileSync(
+        join(__dirname, 'time-plannings-table.component.html'), 'utf8');
+
+      expect(template).toContain('[rowSelectable]="isFirstUser"');
+    });
+  });
+
+  /**
+   * The preview classes are read from the template on every pass, because mtx-grid
+   * stamps the <td> class through a pure pipe that cannot follow the container's
+   * preview.
+   */
+  describe('the bulk reconcile preview', () => {
+    const row = (siteId: number) => ({
+      siteId,
+      planningPrDayModels: ['2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10']
+        .map((date, index) => ({ id: index + 1, date: `${date}T00:00:00` })),
+    }) as any;
+
+    beforeEach(() => {
+      component.reconcilePreview = {
+        target: '2026-09-09',
+        siteIds: [1, 2, 3],
+        landingBySiteId: { 1: '2026-09-09', 3: '2026-09-09' },
+        existingBySiteId: { 1: null, 2: '2026-09-10', 3: '2026-09-07' },
+        outcomeBySiteId: { 1: 'lock', 2: 'skip', 3: 'lock' },
+        willReconcileCount: 2,
+        skipCount: 1,
+      };
+    });
+
+    it('draws every day up to the landing day of an unlocked row', () => {
+      expect(component.isPreviewLocked(row(1), '0')).toBe(true);
+      expect(component.isPreviewLocked(row(1), '2')).toBe(true);
+      expect(component.isPreviewBoundary(row(1), '2')).toBe(true);
+    });
+
+    it('leaves the days after the landing day alone', () => {
+      expect(component.isPreviewLocked(row(1), '3')).toBe(false);
+      expect(component.isPreviewBoundary(row(1), '3')).toBe(false);
+    });
+
+    it('draws a locked row only from its existing boundary forward', () => {
+      // Row 3 is already sealed through the 7th; re-hatching that day would say the
+      // preview is about to do something it is not.
+      expect(component.isPreviewLocked(row(3), '0')).toBe(false);
+      expect(component.isPreviewLocked(row(3), '1')).toBe(true);
+      expect(component.isPreviewBoundary(row(3), '2')).toBe(true);
+    });
+
+    it('draws nothing on a row the preview skipped, and labels it instead', () => {
+      expect(component.isPreviewSkipped(row(2))).toBe(true);
+      expect(component.isPreviewLocked(row(2), '0')).toBe(false);
+      expect(component.isPreviewBoundary(row(2), '2')).toBe(false);
+    });
+
+    it('draws nothing on a row outside the scope', () => {
+      expect(component.isPreviewLocked(row(9), '0')).toBe(false);
+      expect(component.isPreviewSkipped(row(9))).toBe(false);
+    });
+
+    it('draws nothing at all once the preview is cancelled', () => {
+      component.reconcilePreview = null;
+
+      expect(component.isPreviewLocked(row(1), '0')).toBe(false);
+      expect(component.isPreviewBoundary(row(1), '2')).toBe(false);
+      expect(component.isPreviewSkipped(row(2))).toBe(false);
     });
   });
 });

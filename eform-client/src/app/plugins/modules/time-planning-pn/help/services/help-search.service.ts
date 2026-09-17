@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HelpEntry, HelpEntryId, HelpProse } from '../help.model';
+import { HelpAudience, HelpEntry, HelpEntryId, HelpProse } from '../help.model';
 import { HELP_FALLBACK } from '../i18n';
 import { HelpContentService } from './help-content.service';
 
@@ -36,7 +36,7 @@ export function fold(value: string): string {
 export class HelpSearchService {
   constructor(private helpContent: HelpContentService) {}
 
-  search(query: string, opts: { isAdmin: boolean }): HelpSearchResult[] {
+  search(query: string, opts: HelpAudience): HelpSearchResult[] {
     const needle = fold(query);
     const entries = this.helpContent.entries(opts);
 

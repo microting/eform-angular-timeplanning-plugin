@@ -1,8 +1,9 @@
 import {
-  AfterViewChecked, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output,
-  SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
+  AfterViewChecked, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit,
+  Output, SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
   inject
 } from '@angular/core';
+import {Subscription} from 'rxjs';
 import {AssignedSiteModel, TimePlanningModel} from '../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
@@ -17,6 +18,9 @@ import {selectAuthIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {applyGridHelpAnchors} from '../../../help/grid-help-anchors';
 import {HelpEntryId} from '../../../help/help.model';
 import {HelpPanelService} from '../../../help/services/help-panel.service';
+import {
+  dayAt, dayKey, dayLockState, formatReconciledProvenance, isDayLocked, isDaySealed, ReconcilePreview,
+} from '../day-lock.util';
 
 @Component({
   selector: 'app-time-plannings-table',
@@ -26,7 +30,7 @@ import {HelpPanelService} from '../../../help/services/help-panel.service';
   standalone: false
 
 })
-export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterViewChecked {
+export class TimePlanningsTableComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
   private store = inject(Store);
   private planningsService = inject(TimePlanningPnPlanningsService);
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);
@@ -40,18 +44,62 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   @Input() timePlannings: TimePlanningModel[] = [];
   @Input() dateFrom!: Date;
   @Input() dateTo!: Date;
+  /** The region a bulk reconcile would lock (spec §8.3). Null when none is on screen. */
+  @Input() reconcilePreview: ReconcilePreview | null = null;
   @Output() timePlanningChanged: EventEmitter<any> = new EventEmitter<any>();
   @Output() assignedSiteChanged: EventEmitter<any> = new EventEmitter<any>();
   @Output() sortChanged: EventEmitter<string> = new EventEmitter<string>();
   @Output() tagSelected: EventEmitter<number> = new EventEmitter<number>();
+  /** The ticked rows as site ids, emitted when the user ticks or unticks one. */
+  @Output() selectionChanged: EventEmitter<number[]> = new EventEmitter<number[]>();
+  /** The grid dropped a non-empty selection by itself. See resetSelection. */
+  @Output() selectionReset: EventEmitter<void> = new EventEmitter<void>();
+  /** A past day header was clicked: preview a reconcile through that day. Commits nothing. */
+  @Output() reconcileDateRequested: EventEmitter<Date> = new EventEmitter<Date>();
   tableHeaders: MtxGridColumn[] = [];
   enumKeys: string[];
   currentLocale: string = 'da';
 
   @ViewChild('firstColumnTemplate', {static: true}) firstColumnTemplate!: TemplateRef<any>;
   @ViewChild('dayColumnTemplate', {static: true}) dayColumnTemplate!: TemplateRef<any>;
+  @ViewChild('reconcileDayHeaderTemplate', {static: true}) reconcileDayHeaderTemplate!: TemplateRef<any>;
+
+  /**
+   * The mtx-grid [headerTemplate] map. Only past day columns get the clickable header,
+   * because nothing at or after today may be reconciled, and only for the first user,
+   * because only the first user may reconcile. Columns missing from the map keep
+   * mtx-grid's default header — which is why everyone else loses the affordance
+   * without losing the date above the column.
+   */
+  dayHeaderTemplates: {[field: string]: TemplateRef<any>} = {};
+  private columnDates: {[field: string]: Date} = {};
+  private selectionActive = false;
+  /**
+   * Whether this user may reconcile at all. The day header and the row tick boxes are
+   * the grid's two ways into a bulk reconcile, so both exist only for the first user.
+   * It also decides the day cell's registration-id line, which was the same flag read
+   * a second way, through an async pipe inside the cell template — one store
+   * subscription per rendered cell where this field costs one.
+   *
+   * Subscribed live rather than read once, for two reasons — neither of them about
+   * which flag reaches the store first, because both arrive in the same auth payload:
+   *  - the first header build cannot have seen this flag whatever the store does.
+   *    dateFrom/dateTo are bound inputs, so ngOnChanges, and with it the first
+   *    updateTableHeaders(), runs before ngOnInit. headersBuilt below is what makes
+   *    that uninformed build recoverable;
+   *  - the flag is not fixed for the life of the page — signing out resets it — so a
+   *    one-shot read would go on answering with whatever it caught.
+   * Note it is NOT selectAuthIsAdmin$ below, which gates unrelated chrome.
+   */
+  isFirstUser = false;
+  private isFirstUserSub: Subscription;
+  /**
+   * Whether a header row has been built at all. The first build usually happens from
+   * ngOnChanges, before this component has ever seen the flag; this is what lets the
+   * flag's arrival rebuild what that build could not know.
+   */
+  private headersBuilt = false;
   protected selectAuthIsAdmin$ = this.store.select(selectAuthIsAdmin);
-  public selectCurrentUserIsFirstUser$ = this.store.select(selectCurrentUserIsFirstUser);
 
   // Highlight & scroll tracking
   private pendingHighlight: { siteId: number; field: string | null } | null = null;
@@ -59,13 +107,46 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
   private waitingForFreshData = false;
   @Output() highlightedRowRendered: EventEmitter<void> = new EventEmitter<void>();
 
+  // The day states (spec §8.1, ruling F20) come from the shared util, so the grid,
+  // the dialog and the bulk preview can never disagree about a cell. Exposed for the
+  // day-cell template: dayLockState resolves the cell once for the content column,
+  // and the seal sits in the icon column, outside that read.
+  protected readonly dayLockState = dayLockState;
+  protected readonly isDaySealed = isDaySealed;
+
+  /**
+   * Legend switch (spec §8.1): shown whenever a locked day is on screen, because
+   * otherwise nobody learns what the hatch means. Recomputed when rows arrive, never
+   * on every change-detection pass.
+   */
+  hasLockedDayInView = false;
+
   ngOnInit(): void {
     this.enumKeys = Object.keys(TimePlanningMessagesEnum).filter(key => isNaN(Number(key)));
+    this.isFirstUserSub = this.store.select(selectCurrentUserIsFirstUser).subscribe(isFirstUser => {
+      if (!!isFirstUser === this.isFirstUser) {
+        // store.select already suppresses repeats through distinctUntilChanged, so in
+        // the app this never fires. It keeps the plain-subject test doubles honest,
+        // and stops a repeat from ever rebuilding the header row.
+        return;
+      }
+      this.isFirstUser = !!isFirstUser;
+      if (!this.headersBuilt) {
+        // Nothing to correct yet. The build below, or the one ngOnChanges is about to
+        // run, will read the flag itself.
+        return;
+      }
+      this.updateTableHeaders();
+    });
     this.updateTableHeaders();
     this.translateService.onLangChange.subscribe((lang) => {
       this.currentLocale = lang.lang;
       this.updateTableHeaders();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.isFirstUserSub?.unsubscribe();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -83,6 +164,75 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
       this.waitingForFreshData = false;
       this.highlightApplied = false;
     }
+    if (changes.timePlannings) {
+      this.hasLockedDayInView = this.computeHasLockedDayInView();
+      this.resetSelection();
+    }
+  }
+
+  onRowSelected(rows: any[]): void {
+    const siteIds = (rows ?? []).map(r => r.siteId);
+    this.selectionActive = siteIds.length > 0;
+    this.selectionChanged.emit(siteIds);
+  }
+
+  /**
+   * mtx-grid rebuilds its SelectionModel empty on ANY input change ([data], [columns],
+   * [headerTemplate]) and emits nothing. This reports that, and only when rows were
+   * ticked, as a RESET rather than as an empty selection. An empty selection means
+   * "everyone visible", which would silently widen a previewed scope from the ticked
+   * rows to all of them; the container cancels the preview instead.
+   */
+  private resetSelection(): void {
+    if (this.selectionActive) {
+      this.selectionActive = false;
+      this.selectionReset.emit();
+    }
+  }
+
+  onDayHeaderClick(field: string): void {
+    // The template is only installed for the first user, so this is belt and braces —
+    // but the flag can flip while the built header row is still on screen.
+    if (!this.isFirstUser) {
+      return;
+    }
+    const date = this.columnDates[field];
+    if (date) {
+      this.reconcileDateRequested.emit(new Date(date));
+    }
+  }
+
+  /** A cell that WILL lock if the preview is committed. Cells already locked are left alone. */
+  isPreviewLocked(row: any, field: string): boolean {
+    const landing = this.reconcilePreview?.landingBySiteId[row?.siteId];
+    const day = dayKey(dayAt(row, field)?.date);
+    if (!landing || !day) {
+      return false;
+    }
+    const existing = this.reconcilePreview.existingBySiteId[row.siteId];
+    return day <= landing && (!existing || day > existing);
+  }
+
+  /** The cell the mark will land on: the new boundary. */
+  isPreviewBoundary(row: any, field: string): boolean {
+    const landing = this.reconcilePreview?.landingBySiteId[row?.siteId];
+    return !!landing && dayKey(dayAt(row, field)?.date) === landing;
+  }
+
+  /** Already reconciled at or past the target: shown as skipped (§8.3). */
+  isPreviewSkipped(row: any): boolean {
+    return this.reconcilePreview?.outcomeBySiteId[row?.siteId] === 'skip';
+  }
+
+  /** Seal tooltip: "Afstemt 14.09.2026 kl. 10:32". */
+  reconciledTooltip(row: any, field: string): string {
+    return formatReconciledProvenance(
+      dayAt(row, field)?.reconciledAt, this.datePipe, this.translateService);
+  }
+
+  private computeHasLockedDayInView(): boolean {
+    return (this.timePlannings ?? []).some(row =>
+      (row.planningPrDayModels ?? []).some((_, index) => isDayLocked(row, index)));
   }
 
   /**
@@ -137,15 +287,20 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
 
   private updateTableHeaders(): void {
     this.tableHeaders = [];
+    this.dayHeaderTemplates = {};
+    this.columnDates = {};
     this.cdr.detectChanges();
     const startDate = new Date(this.dateFrom);
     const endDate = new Date(this.dateTo);
     const today = new Date();
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
     const tempEndDate = new Date(endDate);
     tempEndDate.setHours(0, 0, 0, 0);
     const diff = (tempEndDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
     let daysCount = Math.floor(diff) +1;
     let todayTranslated = this.translateService.stream('Today');
+    const headerTemplates: {[field: string]: TemplateRef<any>} = {};
 
     this.tableHeaders = [
       {
@@ -158,6 +313,14 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
       ...Array.from({length: daysCount}).map((_, index) => {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + index);
+        const field = index.toString();
+        this.columnDates[field] = currentDate;
+        // Only past days can be reconciled, and only the first user may reconcile, so
+        // only their headers become buttons. A past header is always a plain string:
+        // the Observable header is today's, and today never gets this template.
+        if (this.isFirstUser && currentDate < todayMidnight) {
+          headerTemplates[field] = this.reconcileDayHeaderTemplate;
+        }
         const isToday = currentDate.toDateString() === today.toDateString();
         const formattedDate = isToday
           ? todayTranslated
@@ -165,12 +328,16 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
         return {
           cellTemplate: this.dayColumnTemplate,
           header: formattedDate,
-          field: index.toString(),
+          field,
           sortable: false,
-          class: (row: any) => this.getCellClass(row, index.toString()),
+          class: (row: any) => this.getCellClass(row, field),
         };
       }),
     ];
+    this.dayHeaderTemplates = headerTemplates;
+    this.headersBuilt = true;
+    // New [columns] and [headerTemplate] make mtx-grid drop its selection silently.
+    this.resetSelection();
     this.cdr.detectChanges();
   }
 
@@ -198,7 +365,25 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
     return rounded === '-0.00' ? '0.00' : rounded;
   }
 
+  /**
+   * The td class: the day's state background, with the lock layered on top (F20).
+   * Only the boundary gets reconciled-background, which draws the 3px staircase
+   * border. Every other day at or before it, older sealed days included, gets
+   * locked-background; the seal glyph in the cell tells a sealed day apart.
+   */
   getCellClass(row: any, field: string): string {
+    const base = this.getCellStateClass(row, field);
+    const lock = dayLockState(row, field);
+    if (lock.boundary) {
+      return `${base} reconciled-background`;
+    }
+    if (lock.locked) {
+      return `${base} locked-background`;
+    }
+    return base;
+  }
+
+  private getCellStateClass(row: any, field: string): string {
     // const date = row.planningPrDayModels[field]?.date;
     try {
       const cellData = row.planningPrDayModels[field];
@@ -442,9 +627,7 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
                   this.convertStringToMinutes(data.autoBreakSettings.sunday.breakMinutesUpperLimit as string);
                 this.timePlanningPnSettingsService.updateAssignedSite(data).subscribe(result => {
                   if (result && result.success) {
-                    this.pendingHighlight = { siteId: siteId, field: null };
-                    this.highlightApplied = false;
-                    this.waitingForFreshData = true;
+                    this.armPendingHighlight(siteId, null);
                     this.assignedSiteChanged.emit(data);
                   }
                 });
@@ -455,24 +638,63 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, AfterView
     }});
   }
 
+  /**
+   * Marks the cell the grid should flash once fresh data lands, and tells the render
+   * pass that the rows on screen are now stale. Every write path arms the same three
+   * fields; splitting them is how one of them gets forgotten.
+   */
+  private armPendingHighlight(siteId: number, field: string | null): void {
+    this.pendingHighlight = { siteId, field };
+    this.highlightApplied = false;
+    this.waitingForFreshData = true;
+  }
+
   onDayColumnClick(row: any, field: string): void {
+    const lock = dayLockState(row, field);
+    // F17: a placeholder has no registration behind it, so there is nothing to open.
+    if (lock.placeholder) {
+      return;
+    }
     const siteId = row.siteId;
     const cellData = R.clone(row.planningPrDayModels[field]);
     this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {
       if (result && result.success) {
-        this.dialog.open(WorkdayEntityDialogComponent, {
-          data: {planningPrDayModels: cellData, assignedSiteModel: result.model, tags: row.tags ?? []},
+        const dialogRef = this.dialog.open(WorkdayEntityDialogComponent, {
+          data: {
+            planningPrDayModels: cellData,
+            assignedSiteModel: result.model,
+            tags: row.tags ?? [],
+            // A locked day still opens, read-only: people read closed days
+            // constantly. Only the boundary offers unlock (F20); a sealed day shows
+            // its provenance; any other locked day names lockedThrough as the day
+            // to free first.
+            isLocked: lock.locked,
+            isBoundary: lock.boundary,
+            isSealed: lock.sealed,
+            lockedThrough: row.lockedThrough ?? null,
+          },
           minWidth: 1024,
           minHeight: 500,
           maxWidth: '95vw',  // Add this
           maxHeight: '95vh', // Add this
           panelClass: 'time-planning-dialog'
-        })
-          .afterClosed().subscribe((data: any) => {
+        });
+        // Captured now, because MatDialogRef sets componentInstance to null on close,
+        // and every close path (Cancel, Esc, backdrop) must be able to report a
+        // reconcile or unlock that has already reached the server.
+        const dialog = dialogRef.componentInstance;
+        dialogRef.afterClosed().subscribe((data: any) => {
+          if (dialog?.lockStateChanged) {
+            // Already persisted by the dialog's own PUT. Never fall through to
+            // updatePlanning: the day is locked now, and the save would be refused.
+            // A reload is also the only way the grid picks the new state up, since the
+            // cell classes are memoised on the row reference.
+            this.armPendingHighlight(siteId, field);
+            this.timePlanningChanged.emit(null);
+            return;
+          }
           if (data !== '' && data !== undefined) {
-            this.pendingHighlight = { siteId, field };
-            this.highlightApplied = false;
-            this.waitingForFreshData = true;
+            this.armPendingHighlight(siteId, field);
             this.planningsService.updatePlanning(data.planningPrDayModels, data.planningPrDayModels.id).subscribe(result => {
               if (result && result.success) {
                 this.timePlanningChanged.emit(data);

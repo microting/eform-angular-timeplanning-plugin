@@ -205,6 +205,12 @@ export const da: HelpProseMap = {
     detail: 'Skemaet opdaterer ikke sig selv. Brug knappen, når du venter på, at en medarbejder registrerer noget, eller hvis et tal ser forældet ud.',
     keywords: ['genindlæs', 'opdater', 'hent igen', 'forældet', 'vises ikke', 'synkroniser', 'gammelt tal'],
   },
+  'toolbar.reconcileThrough': {
+    title: 'Afstem til og med',
+    short: 'Sæt grænsen for flere medarbejdere på én gang.',
+    detail: 'Vælg en dato. Er ingen rækker markeret, gælder den alle synlige medarbejdere. Kun grænsedagen markeres som afstemt — alt før låses automatisk.',
+    keywords: ['afstem', 'flere', 'månedsafslutning', 'lås'],
+  },
 
   // --------------------------------------------------------------- skemaet ----
   'grid.nameColumn': {
@@ -364,6 +370,18 @@ export const da: HelpProseMap = {
     short: 'De planlagte timer på én dag skal på tværs af alle vagter give 24 timer eller mindre. Indtil de gør det, står feltet med fejl, og Gem er slået fra.',
     detail: 'Se på den planlagte start og slut for hver vagt på dagen: det er summen, der måles, ikke den enkelte vagt. En vagt, der går over midnat, hører delvist til den næste dag, så læg timerne efter midnat på den dag i stedet for at samle dem her.',
     keywords: ['24 timer', 'overstiger', 'for mange timer', 'planlagte timer', 'validering', 'fejl', 'rød', 'gem slået fra', 'kan ikke gemme', 'over 24', 'grænse'],
+  },
+  'dayCell.reconciled': {
+    title: 'Afstemt',
+    short: 'Dagens tal er endelige.',
+    detail: 'Dagen er afstemt, og tallene ændres ikke længere — heller ikke af en efterberegning. Alle dage før denne er samtidig låst.',
+    keywords: ['afstemt', 'låst', 'endelig', 'afslutning'],
+  },
+  'dayCell.lockedByReconciled': {
+    title: 'Låst',
+    short: 'Dagen ligger før en afstemt dag.',
+    detail: 'Dagen kan ikke ændres, fordi en senere dag er afstemt. Den frigives, når den seneste afstemte dag låses op.',
+    keywords: ['låst', 'afstemt', 'tidligere'],
   },
 
   // ------------------------------------------------------------------ flex ----

@@ -8,6 +8,7 @@ export const HELP_IDS = [
   'toolbar.showResigned', 'toolbar.navBackward', 'toolbar.navForward',
   'toolbar.workerFilter', 'toolbar.tagFilter', 'toolbar.dateRange',
   'toolbar.downloadExcel', 'toolbar.payrollExport', 'toolbar.reload',
+  'toolbar.reconcileThrough',
   // grid controls
   'grid.nameColumn', 'grid.tagChips', 'grid.settingsStrip', 'grid.dayCellAnatomy',
   'grid.weeklyPlannedHours', 'grid.messageIcons', 'grid.sortName', 'grid.openDay',
@@ -18,7 +19,7 @@ export const HELP_IDS = [
   'dayCell.gps', 'dayCell.snapshot', 'dayCell.futureDisabled', 'dayCell.planHours',
   'dayCell.nettoOverride', 'dayCell.paidOutFlex', 'dayCell.flags',
   'dayCell.commentOffice', 'dayCell.save', 'dayCell.oneMinuteIntervals',
-  'dayCell.planHoursLimit',
+  'dayCell.planHoursLimit', 'dayCell.reconciled', 'dayCell.lockedByReconciled',
   // flex controls
   'flex.whatIsFlex', 'flex.sumFlex', 'flex.paidOutFlexRelation',
 ] as const;
@@ -37,8 +38,27 @@ export interface HelpEntry {
   tour?: HelpTourName;
   tourStep?: number;
   adminOnly?: boolean;
+  /**
+   * Only the first user sees this entry. A SECOND axis, deliberately not folded into
+   * adminOnly: several people hold the admin role, while the first user is the single
+   * lowest-id account, so admin-but-not-first-user is the ordinary case rather than an
+   * edge one. Help must not teach a control that the UI has removed from that reader's
+   * DOM.
+   */
+  firstUserOnly?: boolean;
   /** Tasks only: the controls this task touches. */
   related?: HelpEntryId[];
+}
+
+/**
+ * Who is looking, for everything that filters the registry.
+ *
+ * isFirstUser is optional, and absent means "not the first user": a caller that has
+ * not been taught the second axis hides those entries rather than leaking them.
+ */
+export interface HelpAudience {
+  isAdmin: boolean;
+  isFirstUser?: boolean;
 }
 
 export interface HelpProse {

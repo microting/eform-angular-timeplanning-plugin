@@ -1,4 +1,10 @@
 export class PlanningPrDayModel {
+  /**
+   * For a locked date with no registration, the server sends a non-persisted
+   * placeholder day with id === 0. Placeholder cells are not clickable/openable
+   * and render blank (no hours, no flex balance), though they still carry the
+   * locked texture.
+   */
   id: number;
   siteName: string;
   siteId: number;
@@ -165,4 +171,15 @@ export class PlanningPrDayModel {
   pause4OverrideMinutesSpecified?: boolean;
   pause5OverrideMinutesSpecified?: boolean;
   clearPauseOverrides?: boolean;
+  /**
+   * True on any day that has been reconciled ("afstemt"). Several days on the
+   * same row can have reconciled === true at once — each reconcile leaves its
+   * own mark. The boundary treatment (3px border, unlock offered) applies
+   * ONLY to the day whose date === row.lockedThrough; other reconciled days
+   * (date < lockedThrough) are locked by derivation and render read-only
+   * (locked hatch + filled verified glyph + provenance tooltip, no unlock).
+   */
+  reconciled: boolean;
+  /** Server timestamp of when this day was reconciled; null when not reconciled. */
+  reconciledAt: string | null;
 }

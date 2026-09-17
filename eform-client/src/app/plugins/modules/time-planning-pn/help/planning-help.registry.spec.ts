@@ -80,6 +80,19 @@ describe('planning help registry', () => {
     expect(adminOnly.map(e => e.id)).toEqual(['toolbar.payrollExport']);
   });
 
+  it('marks exactly one entry first-user-only', () => {
+    // Pinned the same way the admin list is, so the second axis stays truthful: an
+    // entry that gains a gate has to come through here and say which gate it is.
+    //
+    // No entry carries both flags today, but that is a fact about the registry, not a
+    // rule about it: entries() ANDs the two predicates, so an entry that needs both is
+    // supported — a first-user control that is also admin-gated for some unrelated
+    // reason. If one arrives, add it here deliberately; do not drop a flag to make a
+    // list match.
+    const firstUserOnly = PLANNING_HELP_ENTRIES.filter(e => e.firstUserOnly);
+    expect(firstUserOnly.map(e => e.id)).toEqual(['toolbar.reconcileThrough']);
+  });
+
   it('never mentions administrators in user-facing copy', () => {
     const banned = /\badmin(istrator)?s?\b/i;
     for (const entry of PLANNING_HELP_ENTRIES) {
