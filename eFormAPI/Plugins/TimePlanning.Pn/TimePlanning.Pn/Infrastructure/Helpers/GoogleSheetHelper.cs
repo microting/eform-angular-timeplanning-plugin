@@ -219,16 +219,65 @@ public class GoogleSheetHelper
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .ToListAsync();
 
-            var columnSiteMap = new Dictionary<int, Microting.eForm.Infrastructure.Data.Entities.Site>();
-            for (int col = 3; col < headerRows.Count; col += 2)
+            // Columns are paired by header NAME, never by position: a stray or
+            // reordered column used to shift every later worker onto a
+            // neighbour's header, which then matched no site and was dropped
+            // without a trace. Both sides of the match normalize the same way,
+            // so a site called "Julius -" matches its "Julius - - timer" header.
+            var layout = PlanTimerSheetColumns.Map(headerRows);
+            var sitesByKey = allSites
+                .Where(x => x.MicrotingUid != null)
+                .ToLookup(x => PlanTimerSheetColumns.NormalizeName(x.Name));
+            var assignedSites = await dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .ToListAsync();
+            var importingSiteIds = assignedSites
+                .Where(x => x.UseGoogleSheetAsDefault && !x.Resigned)
+                .Select(x => x.SiteId)
+                .ToHashSet();
+
+            var workers = new List<(PlanTimerSheetColumns.WorkerColumns Columns,
+                Microting.eForm.Infrastructure.Data.Entities.Site Site)>();
+            var problems = new List<string>(layout.Problems);
+            foreach (var columns in layout.Workers)
             {
-                var siteName = headerRows[col].ToString().Split(" - ")[0].ToLower().Replace(" ", "").Trim();
-                var site = allSites.FirstOrDefault(x =>
-                    x.Name.Replace(" ", "").Replace("-", "").ToLower() == siteName);
-                if (site != null)
+                var candidates = sitesByKey[columns.Key].ToList();
+                if (candidates.Count == 0)
                 {
-                    columnSiteMap[col] = site;
+                    problems.Add(
+                        $"column {PlanTimerSheetColumns.ColumnLetter(columns.HoursColumn ?? columns.TextColumn!.Value)} \"{columns.Name}\" matches no site");
+                    continue;
                 }
+
+                // This leg loads every site that has a column, not just the ones
+                // set to import from the sheet, so a name collision still picks
+                // one site rather than skipping both -- the site actually
+                // importing wins, and the collision is reported.
+                var site = candidates.FirstOrDefault(x => importingSiteIds.Contains(x.MicrotingUid!.Value))
+                           ?? candidates[0];
+                if (candidates.Count > 1)
+                {
+                    problems.Add(
+                        $"column \"{columns.Name}\" matches {candidates.Count} sites ({string.Join(", ", candidates.Select(x => x.Name))}); \"{site.Name}\" is used");
+                }
+
+                if (columns.HoursColumn == null)
+                {
+                    problems.Add($"\"{columns.Name}\" has no \"- timer\" column; hours are left unchanged");
+                }
+                else if (columns.TextColumn == null)
+                {
+                    problems.Add($"\"{columns.Name}\" has no \"- tekst\" column; text is left unchanged");
+                }
+
+                workers.Add((columns, site));
+            }
+
+            foreach (var problem in problems)
+            {
+                Console.WriteLine($"[PullEverythingFromGoogleSheet] warn: PlanTimer sheet: {problem}");
+                SentrySdk.CaptureMessage($"PlanTimer sheet: {problem}", SentryLevel.Warning);
             }
 
             // ONE timeline per mapped site, built BEFORE the row loop and never
@@ -237,7 +286,7 @@ public class GoogleSheetHelper
             // INVERTED-SUMFLEX-SIGN note there for why clearing a one-minute
             // row here would be actively harmful.
             var oneMinuteTimelines = new Dictionary<int, OneMinuteModeTimeline>();
-            foreach (var mappedSite in columnSiteMap.Values)
+            foreach (var (_, mappedSite) in workers)
             {
                 // A site without a MicrotingUid cannot be resolved; skip it here
                 // rather than throwing, and let the lookup below fall through to
@@ -250,13 +299,13 @@ public class GoogleSheetHelper
 
                 var mappedSiteUid = mappedSite.MicrotingUid.Value;
 
-                var mappedAssignedSite = await dbContext.AssignedSites
-                    .AsNoTracking()
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .FirstOrDefaultAsync(x => x.SiteId == mappedSiteUid);
+                var mappedAssignedSite = assignedSites.FirstOrDefault(x => x.SiteId == mappedSiteUid);
                 oneMinuteTimelines[mappedSiteUid] =
                     await OneMinuteModeTimeline.BuildAsync(dbContext, mappedAssignedSite);
             }
+
+            // Observability only: the skip is silent otherwise.
+            var adminChangedSkipped = 0;
 
             // Skip the header row (first row)
             for (var i = 1; i < values.Count; i++)
@@ -279,34 +328,40 @@ public class GoogleSheetHelper
                     continue;
                 }
 
-                // Iterate over each pair of columns starting from the fourth column
-                for (int j = 3; j < row.Count; j += 2)
+                foreach (var (columns, site) in workers)
                 {
-                    if (!columnSiteMap.TryGetValue(j, out var site))
+                    // The Sheets API drops trailing empty cells, so a short row
+                    // simply does not reach this worker's columns. The old stride
+                    // stopped at row.Count and left such a worker's day alone;
+                    // treating those columns as empty instead would blank a
+                    // planned day and create rows across the sheet's whole history.
+                    // A worker whose tekst column precedes their timer column is
+                    // still processed when the row ends between the two, and reads
+                    // the missing hours cell as 0 -- the cell really is empty, and
+                    // the old stride could not reach that layout at all.
+                    if ((columns.HoursColumn ?? int.MaxValue) >= row.Count
+                        && (columns.TextColumn ?? int.MaxValue) >= row.Count)
                     {
                         continue;
                     }
 
                     Console.WriteLine($"Processing site: {site.Name}");
 
-                    var planHours = row.Count > j ? row[j].ToString() : string.Empty;
-                    var planText = row.Count > j + 1 ? row[j + 1].ToString() : string.Empty;
-
-                    if (string.IsNullOrEmpty(planHours))
+                    // null leaves the field untouched: the sheet has no such
+                    // column for this worker, or the hours cell is not a number.
+                    var planText = columns.TextColumn == null
+                        ? null
+                        : PlanTimerSheetColumns.CellAt(row, columns.TextColumn);
+                    double? parsedPlanHours = null;
+                    if (columns.HoursColumn != null)
                     {
-                        planHours = "0";
-                    }
-
-                    // Replace comma with dot if needed
-                    if (planHours.Contains(','))
-                    {
-                        planHours = planHours.Replace(",", ".");
-                    }
-
-                    if (!double.TryParse(planHours, NumberStyles.AllowDecimalPoint,
-                            NumberFormatInfo.InvariantInfo, out var parsedPlanHours))
-                    {
-                        parsedPlanHours = 0;
+                        var planHours = PlanTimerSheetColumns.CellAt(row, columns.HoursColumn);
+                        parsedPlanHours = PlanTimerSheetColumns.ParseHours(planHours);
+                        if (parsedPlanHours == null)
+                        {
+                            Console.WriteLine(
+                                $"[PullEverythingFromGoogleSheet] warn: hours \"{planHours.Trim()}\" for site: {site.Name} and date: {dateValue} is not a number; hours left unchanged");
+                        }
                     }
 
                     var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
@@ -343,8 +398,8 @@ public class GoogleSheetHelper
                         planRegistration = new PlanRegistration
                         {
                             Date = midnight,
-                            PlanText = planText,
-                            PlanHours = parsedPlanHours,
+                            PlanText = planText ?? string.Empty,
+                            PlanHours = parsedPlanHours ?? 0,
                             SdkSitId = (int) site.MicrotingUid!,
                             CreatedByUserId = 1,
                             UpdatedByUserId = 1,
@@ -384,22 +439,42 @@ public class GoogleSheetHelper
                     }
                     else
                     {
-                        // print to console if the current PlanText is different from the one in the database
-                        if (planRegistration.PlanText != planText)
+                        // An admin edited this day in the app, so the sheet does not
+                        // win it back. ParsePlanText below re-derives PlanHours and
+                        // every shift field from the text, so the row is left alone
+                        // entirely rather than having one assignment guarded. Its
+                        // flex chain is deliberately left as the app wrote it; the
+                        // next row still seeds from this row's stored SumFlexEnd.
+                        if (planRegistration.PlanChangedByAdmin)
                         {
-                            Console.WriteLine(
-                                $"PlanText for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanText} to {planText}");
+                            adminChangedSkipped++;
+                            continue;
                         }
 
-                        planRegistration.PlanText = planText;
+                        if (planText != null)
+                        {
+                            // print to console if the current PlanText is different from the one in the database
+                            if (planRegistration.PlanText != planText)
+                            {
+                                Console.WriteLine(
+                                    $"PlanText for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanText} to {planText}");
+                            }
+
+                            planRegistration.PlanText = planText;
+                        }
+
                         // print to console if the current PlanHours is different from the one in the database
-                        if (planRegistration.PlanHours != parsedPlanHours)
+                        if (parsedPlanHours is { } newPlanHours)
                         {
-                            Console.WriteLine(
-                                $"PlanHours for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanHours} to {parsedPlanHours}");
+                            if (planRegistration.PlanHours != newPlanHours)
+                            {
+                                Console.WriteLine(
+                                    $"PlanHours for site: {site.Name} and date: {dateValue} has changed from {planRegistration.PlanHours} to {newPlanHours}");
+                            }
+
+                            planRegistration.PlanHours = newPlanHours;
                         }
 
-                        planRegistration.PlanHours = parsedPlanHours;
                         planRegistration.UpdatedByUserId = 1;
 
                         PlanTextHelper.ParsePlanText(planRegistration);
@@ -465,6 +540,9 @@ public class GoogleSheetHelper
                     }
                 }
             }
+
+            Console.WriteLine(
+                $"[PullEverythingFromGoogleSheet] summary: {workers.Count} worker(s) mapped, {problems.Count} sheet problem(s), {adminChangedSkipped} day(s) skipped because an admin changed them.");
         }
         else
         {
@@ -544,6 +622,10 @@ public class GoogleSheetHelper
         }
     }
 
+    /// <summary>
+    /// Takes a ONE-based column number, unlike PlanTimerSheetColumns.ColumnLetter,
+    /// which takes the zero-based index the header map and its messages use.
+    /// </summary>
     private static string GetColumnLetter(int columnIndex)
     {
         string columnLetter = "";
