@@ -29,6 +29,16 @@ public class TimePlanningAuthGrpcService : TimePlanningAuthService.TimePlanningA
     private readonly RoleManager<EformRole> _roleManager;
     private readonly IOptions<EformTokenOptions> _tokenOptions;
 
+    /// <summary>
+    /// The one answer every credential failure gives: unknown account, wrong password or
+    /// disabled account. Telling them apart turns a login into a list of which addresses
+    /// have accounts. The text matches core's UserNameOrPasswordIncorrect resource, which
+    /// a plugin cannot reach - microting/eform-angular-frontend#8077 tracks closing that
+    /// gap properly.
+    /// </summary>
+    private const string InvalidCredentialsMessage =
+        "You have entered an invalid username or password";
+
     public TimePlanningAuthGrpcService(
         ITimePlanningRegistrationDeviceService registrationDeviceService,
         IUserService userService,
@@ -91,8 +101,10 @@ public class TimePlanningAuthGrpcService : TimePlanningAuthService.TimePlanningA
     /// plugin-accessible. The next REST call rebuilds the cache lazily.</item>
     /// </list>
     /// Failure messages mirror the JSON oracle so the contract diff stays
-    /// shape-clean: "Empty username or password", "User with username X not
-    /// found", "Incorrect password.", "Email X not confirmed".
+    /// shape-clean - including its refusal to say WHICH credential was wrong:
+    /// unknown account, wrong password and disabled account all answer with
+    /// InvalidCredentialsMessage. "Empty username or password" and
+    /// "Email X not confirmed" stay distinct, as they do there.
     /// </remarks>
     public override async Task<AuthenticateUserResponse> AuthenticateUser(
         AuthenticateUserRequest request, ServerCallContext context)
@@ -118,17 +130,21 @@ public class TimePlanningAuthGrpcService : TimePlanningAuthService.TimePlanningA
                 return new AuthenticateUserResponse
                 {
                     Success = false,
-                    Message = $"User with username {request.Username} not found"
+                    Message = InvalidCredentialsMessage
                 };
             }
 
             var passwordOk = await _userManager.CheckPasswordAsync(user, request.Password);
-            if (!passwordOk)
+
+            // Checked after the password, not before: answering earlier for a disabled
+            // account would answer faster than a wrong password does, which is a timing
+            // oracle. This mirrors the JSON path in core's AuthService.
+            if (!passwordOk || !user.IsActive)
             {
                 return new AuthenticateUserResponse
                 {
                     Success = false,
-                    Message = "Incorrect password."
+                    Message = InvalidCredentialsMessage
                 };
             }
 
@@ -205,12 +221,15 @@ public class TimePlanningAuthGrpcService : TimePlanningAuthService.TimePlanningA
         try
         {
             var user = await _userService.GetByIdAsync(_userService.UserId);
-            if (user == null)
+
+            // Without this a disabled account rolls its session forward indefinitely:
+            // this endpoint mints a fresh token from any still-valid one.
+            if (user == null || !user.IsActive)
             {
                 return new RefreshTokenResponse
                 {
                     Success = false,
-                    Message = $"User with id {_userService.UserId} not found"
+                    Message = InvalidCredentialsMessage
                 };
             }
 
