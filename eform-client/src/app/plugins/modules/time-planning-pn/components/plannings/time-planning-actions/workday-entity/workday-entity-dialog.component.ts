@@ -21,7 +21,6 @@ import { MatDialogRef } from '@angular/material/dialog';
 import {HelpEntryId} from '../../../../help/help.model';
 import {HelpPanelService} from '../../../../help/services/help-panel.service';
 import {HelpTourService} from '../../../../help/services/help-tour.service';
-import {format} from 'date-fns';
 import {assertLockOutcomeHandled, dayKey, formatReconciledProvenance, sendLockRequest} from '../../day-lock.util';
 
 import {
@@ -2160,11 +2159,17 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
    * Turns this open dialog read-only instead of closing it (spec §8.2). The server
    * stamped the timestamp a moment ago; the client clock stands in for it until the
    * close, and the reload that follows brings the stored value for every later open.
+   *
+   * toISOString(), so the stand-in has the SAME SHAPE as the value that replaces it:
+   * the server sends a UTC instant with a trailing "Z", so a naked local-wall-clock
+   * string here would be relabelled by the viewer's offset and the stamp would
+   * visibly jump when the grid reloads. Both are now UTC instants, so neither is
+   * relabelled -- they differ only by the round trip's own clock skew.
    */
   private applyReconciledInPlace(): void {
     const day = this.data.planningPrDayModels;
     day.reconciled = true;
-    day.reconciledAt = format(new Date(), 'yyyy-MM-dd\'T\'HH:mm:ss');
+    day.reconciledAt = new Date().toISOString();
     this.data.isLocked = true;
     this.data.isSealed = true;
     // Only open days above the boundary offer reconcile, so this day IS the new boundary.

@@ -119,14 +119,20 @@ export function isPlaceholderDay(row: DayLockRow | null | undefined, field: stri
 }
 
 /**
- * "Afstemt 14.09.2026 kl. 10:32" (spec §8.1, §8.2). There is no "by whom":
+ * "Afstemt <dato> kl. <tid>" (spec §8.1, §8.2). There is no "by whom":
  * ReconciledBy is a declared non-goal.
  *
- * ReconciledAt is written as DateTime.Now (Task 4) and read back from a datetime(6)
- * column, so EF materialises it as DateTimeKind.Unspecified. Newtonsoft
- * (RoundtripKind) serialises it with NO offset, and the browser reads it as local
- * wall-clock time, which is the server's clock on a Danish deployment. Do NOT pass
- * 'UTC' here, the way formatStamp does for the shift stamps.
+ * ReconciledAt arrives as a UTC instant, tagged with a trailing "Z" (why, and by
+ * whom, is documented at PlanRegistrationHelper's ReconciledAt projection). NO
+ * timezone argument is passed here on purpose: the "Z" carries the instant, and
+ * DatePipe then renders it on the clock of whoever is looking.
+ *
+ * Do not "fix" this by naming a zone: Angular resolves the DatePipe timezone
+ * argument through Date.parse('Jan 01, 1970 00:00:00 ' + tz), which is NaN for an
+ * IANA name like 'Europe/Copenhagen' and then silently falls back to the browser's
+ * own offset -- it compiles, looks deliberate, and does nothing. Only strings
+ * Date.parse understands as a zone ('UTC', 'GMT', '+0200') actually take effect;
+ * IANA names are not among them.
  */
 export function formatReconciledProvenance(
   reconciledAt: string | null | undefined,

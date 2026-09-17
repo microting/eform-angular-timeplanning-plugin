@@ -55,9 +55,9 @@ describe('day-lock util', () => {
     // Two reconciles on one row: the 7th first, then the 9th. Both keep their mark;
     // the 9th is the boundary.
     const staircase = row('2026-09-09', [
-      day('2026-09-07', {reconciled: true, reconciledAt: '2026-09-08T10:32:00'}),
+      day('2026-09-07', {reconciled: true, reconciledAt: '2026-09-08T10:32:00Z'}),
       day('2026-09-08'),
-      day('2026-09-09', {reconciled: true, reconciledAt: '2026-09-10T09:15:00'}),
+      day('2026-09-09', {reconciled: true, reconciledAt: '2026-09-10T09:15:00Z'}),
       day('2026-09-10'),
     ]);
 
@@ -138,7 +138,7 @@ describe('day-lock util', () => {
       const withPlaceholder = row('2026-09-09', [
         day('2026-09-07'),
         day('2026-09-08', {id: 0}),
-        day('2026-09-09', {reconciled: true, reconciledAt: '2026-09-10T09:15:00'}),
+        day('2026-09-09', {reconciled: true, reconciledAt: '2026-09-10T09:15:00Z'}),
       ]);
 
       it('treats a day with no registration id as a placeholder, and no other day', () => {
@@ -191,19 +191,30 @@ describe('day-lock util', () => {
   describe('formatReconciledProvenance', () => {
     const translate = {instant: jest.fn((key: string, params?: object) => key)} as any;
 
+    /** What the server sends after the projection tags it: a UTC instant, "Z" and all. */
+    const SERVER_STAMP = '2026-09-14T10:32:11Z';
+
     it('formats the stamp in the viewer\'s own zone, with no timezone argument', () => {
-      // The shift stamps pass 'UTC' to the same pipe (formatStamp). ReconciledAt is
-      // server wall-clock time with no offset, so passing a zone here would shift it.
-      // In UTC CI the rendered text is the same either way, so the CALL is asserted.
+      // ReconciledAt arrives as a UTC-tagged instant (the server writes UtcNow and the
+      // read projection tags it Kind.Utc, so the JSON ends in "Z"). No zone argument is
+      // passed, so DatePipe renders it in the VIEWER's zone -- which is the point.
+      // Passing 'UTC' would pin every viewer to the server's clock instead.
       const datePipe = new DatePipe('en-US');
       const transform = jest.spyOn(datePipe, 'transform');
 
-      formatReconciledProvenance('2026-09-14T10:32:11', datePipe, translate);
+      formatReconciledProvenance(SERVER_STAMP, datePipe, translate);
 
-      expect(transform).toHaveBeenCalledWith('2026-09-14T10:32:11', 'dd.MM.yyyy');
-      expect(transform).toHaveBeenCalledWith('2026-09-14T10:32:11', 'HH:mm');
-      expect(translate.instant)
-        .toHaveBeenLastCalledWith('reconciledProvenance', {date: '14.09.2026', time: '10:32'});
+      // Two arguments, never three: toHaveBeenCalledWith fails on an extra argument,
+      // so THIS is what pins "no timezone reaches the pipe" -- and it means the same
+      // thing on a UTC CI runner as on a machine at any other offset.
+      expect(transform).toHaveBeenCalledWith(SERVER_STAMP, 'dd.MM.yyyy');
+      expect(transform).toHaveBeenCalledWith(SERVER_STAMP, 'HH:mm');
+      // Shape, not digits: the digits are the viewer's own clock, so they follow
+      // whatever zone the test runs in.
+      expect(translate.instant).toHaveBeenLastCalledWith('reconciledProvenance', {
+        date: expect.stringMatching(/^\d{2}\.\d{2}\.\d{4}$/),
+        time: expect.stringMatching(/^\d{2}:\d{2}$/),
+      });
     });
 
     it('falls back to the bare state name when there is no timestamp', () => {

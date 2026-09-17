@@ -603,12 +603,27 @@ describe('WorkdayEntityDialogComponent', () => {
       component.data.lockedThrough = null;
     };
 
+    /**
+     * The stamp exactly as the server sends it: a UTC instant, "Z" and all, because
+     * the read projection tags ReconciledAt Kind.Utc.
+     */
+    const SERVER_STAMP = '2026-09-14T10:32:11Z';
+
+    /**
+     * The SHAPE of the rendered line, never its digits: the stamp is localised, so the
+     * digits follow whatever clock the test runs on. What this suite owns is that the
+     * component passes reconciledAt through and exposes a provenance string; whether
+     * the formatting itself is right belongs to day-lock.util.spec. Same regex the
+     * Playwright suite uses (playwright/e2e/.../s/reconcile-helpers.ts).
+     */
+    const PROVENANCE = /^Afstemt \d{2}\.\d{2}\.\d{4} kl\. \d{2}:\d{2}$/;
+
     /** The boundary: locked, sealed, and the row's lockedThrough. */
     const boundaryDay = () => {
       openPastDay();
       const m = component.data.planningPrDayModels as any;
       m.reconciled = true;
-      m.reconciledAt = '2026-09-14T10:32:11';
+      m.reconciledAt = SERVER_STAMP;
       component.data.isLocked = true;
       component.data.isBoundary = true;
       component.data.isSealed = true;
@@ -738,8 +753,11 @@ describe('WorkdayEntityDialogComponent', () => {
         expect(component.data.isBoundary).toBe(true);
         expect(component.data.lockedThrough).toBe(component.data.planningPrDayModels.date);
         expect(component.data.planningPrDayModels.reconciled).toBe(true);
+        // A UTC-tagged instant, the same shape the server sends -- NOT a naked local
+        // wall-clock string, which would render an offset away from the stored value
+        // and make the stamp jump when the grid reloads.
         expect(component.data.planningPrDayModels.reconciledAt)
-          .toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+          .toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
         expect(component.lockStateChanged).toBe(true);
         expect(component.footerMode).toBe('actions');
         // The dialog stays open: the same one turns read-only.
@@ -1055,7 +1073,7 @@ describe('WorkdayEntityDialogComponent', () => {
         component.ngOnInit();
 
         expect(component.data.isSealed).toBe(true);
-        expect(component.reconciledProvenance).toBe('Afstemt 14.09.2026 kl. 10:32');
+        expect(component.reconciledProvenance).toMatch(PROVENANCE);
       });
 
       it('falls back to the bare word when a sealed day carries no timestamp', () => {
@@ -1139,7 +1157,7 @@ describe('WorkdayEntityDialogComponent', () => {
         expect(component.isLocked).toBe(true);
         expect(component.workdayForm.disabled).toBe(true);
         expect(component.data.isSealed).toBe(true);
-        expect(component.reconciledProvenance).toBe('Afstemt 14.09.2026 kl. 10:32');
+        expect(component.reconciledProvenance).toMatch(PROVENANCE);
         expect(component.freeFirstDate).toBe('14.09.2026');
       });
     });
