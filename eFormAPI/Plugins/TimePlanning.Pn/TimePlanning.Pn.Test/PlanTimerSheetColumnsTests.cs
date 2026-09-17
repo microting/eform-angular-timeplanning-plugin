@@ -145,6 +145,97 @@ public class PlanTimerSheetColumnsTests
         }));
     }
 
+    [Test]
+    public void PlanAppends_SiteWithBothColumns_AppendsNothing()
+    {
+        var appends = PlanTimerSheetColumns.PlanAppends(
+            Headers("Albert Doba - timer", "Albert Doba - tekst"),
+            ["Albert Doba"]);
+
+        Assert.That(appends.Headers, Is.Empty);
+        Assert.That(appends.Problems, Is.Empty);
+    }
+
+    [Test]
+    public void PlanAppends_NewSite_AppendsThePairInOrder()
+    {
+        var appends = PlanTimerSheetColumns.PlanAppends(
+            Headers("Albert Doba - timer", "Albert Doba - tekst"),
+            ["Albert Doba", "Phien Van Le"]);
+
+        Assert.That(appends.Headers, Is.EqualTo(new[] { "Phien Van Le - timer", "Phien Van Le - tekst" }));
+        Assert.That(appends.Problems, Is.Empty);
+    }
+
+    /// <summary>
+    /// A header retyped with other spacing, capitals or a different dash used to
+    /// be treated as absent, so every push appended another column for the same
+    /// worker.
+    /// </summary>
+    [TestCase("phien  van le  -  TIMER")]
+    [TestCase("Phien Van Le – timer")]
+    public void PlanAppends_HeaderVariantOfTheSameName_IsNotDuplicated(string timerHeader)
+    {
+        var appends = PlanTimerSheetColumns.PlanAppends(
+            Headers(timerHeader, "Phien Van Le - tekst"),
+            ["Phien Van Le"]);
+
+        Assert.That(appends.Headers, Is.Empty);
+    }
+
+    /// <summary>
+    /// Tenant 1063's Malaika: her "- tekst" column had gone missing, and the
+    /// half appended on its own landed after two other workers' pairs.
+    /// </summary>
+    [Test]
+    public void PlanAppends_SiteWithHalfAPair_AppendsAWholePairAndNamesTheOldColumn()
+    {
+        var appends = PlanTimerSheetColumns.PlanAppends(
+            Headers("Malaika Luna Jørgensen - timer", "Phien Van Le - timer", "Phien Van Le - tekst"),
+            ["Malaika Luna Jørgensen", "Phien Van Le"]);
+
+        Assert.That(appends.Headers,
+            Is.EqualTo(new[] { "Malaika Luna Jørgensen - timer", "Malaika Luna Jørgensen - tekst" }));
+        Assert.That(appends.Problems.Single(),
+            Does.Contain("Malaika Luna Jørgensen").And.Contain("only one of its two columns (D)")
+                .And.Contain("column D"));
+    }
+
+    [Test]
+    public void PlanAppends_EmptySheet_AppendsEveryPairOnceEvenIfASiteRepeats()
+    {
+        var appends = PlanTimerSheetColumns.PlanAppends(
+            new List<object>(),
+            ["Julius -", "julius  -", ""]);
+
+        Assert.That(appends.Headers, Is.EqualTo(new[] { "Julius - - timer", "Julius - - tekst" }));
+        Assert.That(appends.Problems, Is.Empty);
+    }
+
+    /// <summary>
+    /// Headers written into A/B/C would sit in the date columns the import
+    /// skips, so the next push would not see them and would append them again.
+    /// </summary>
+    [Test]
+    public void PlanAppends_ShortOrEmptyHeaderRow_StartsAtTheFirstWorkerColumn()
+    {
+        Assert.That(PlanTimerSheetColumns.PlanAppends(new List<object>(), ["Albert Doba"]).FirstColumn,
+            Is.EqualTo(PlanTimerSheetColumns.FirstWorkerColumn));
+        Assert.That(PlanTimerSheetColumns.PlanAppends(new List<object> { "Dato" }, ["Albert Doba"]).FirstColumn,
+            Is.EqualTo(PlanTimerSheetColumns.FirstWorkerColumn));
+    }
+
+    [Test]
+    public void PlanAppends_PopulatedHeaderRow_StartsAfterTheLastHeader()
+    {
+        var appends = PlanTimerSheetColumns.PlanAppends(
+            Headers("Albert Doba - timer", "Albert Doba - tekst"),
+            ["Albert Doba", "Phien Van Le"]);
+
+        Assert.That(appends.FirstColumn, Is.EqualTo(5));
+        Assert.That(PlanTimerSheetColumns.ColumnLetter(appends.FirstColumn), Is.EqualTo("F"));
+    }
+
     /// <summary>
     /// The site lookup normalizes both sides with this, so a site named
     /// "Julius -" matches its "Julius - - timer" header. The old import
