@@ -5,9 +5,11 @@ using DotNet.Testcontainers.Containers;
 using eFormCore;
 using Microsoft.EntityFrameworkCore;
 using Microting.eForm.Infrastructure;
+using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data;
+using NSubstitute;
 using NUnit.Framework;
 using Testcontainers.MariaDb;
 using TimePlanning.Pn.Infrastructure.Data.Seed;
@@ -114,10 +116,9 @@ public abstract class TestBaseSetup
     /// <summary>
     /// Seeds a <see cref="SeededBaseDbContext"/> holding one admin user and
     /// returns that user's id. Services that scope their result to the signed-in
-    /// caller — the planning board, the site-tags lookup, the all-workers
-    /// export — need a real caller to resolve; this is the admin caller, for
-    /// whom scoping is a no-op. Point the IUserService substitute's
-    /// GetCurrentUserAsync at the returned id.
+    /// caller — the planning board, the site-tags lookup, the working-hours grid,
+    /// both exports — need a real caller to resolve; this is the admin caller,
+    /// for whom scoping is a no-op.
     /// </summary>
     protected async Task<int> GetBaseDbContextWithAdminAsync(string email = "admin@example.com")
     {
@@ -142,6 +143,20 @@ public abstract class TestBaseSetup
         await db.SaveChangesAsync();
 
         return user.Id;
+    }
+
+    /// <summary>
+    /// Seeds the admin caller AND points <paramref name="userService"/> at it —
+    /// the two halves belong together, because a service handed
+    /// <see cref="SeededBaseDbContext"/> without a matching
+    /// <c>GetCurrentUserAsync</c> resolves no caller at all and every scoped
+    /// call fails.
+    /// </summary>
+    protected async Task SeedAdminCallerAsync(
+        IUserService userService, string email = "admin@example.com")
+    {
+        var adminUserId = await GetBaseDbContextWithAdminAsync(email);
+        userService.GetCurrentUserAsync().Returns(new EformUser { Id = adminUserId });
     }
 
     /// <summary>

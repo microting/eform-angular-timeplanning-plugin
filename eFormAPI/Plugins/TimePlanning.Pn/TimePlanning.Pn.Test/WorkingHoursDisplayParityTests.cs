@@ -72,12 +72,16 @@ public class WorkingHoursDisplayParityTests : TestBaseSetup
             SnapshotEnabled = "0"
         });
 
+        // Index scopes the requested site to the signed-in caller, so this
+        // fixture needs a real one. Admin: scoping is a no-op.
+        await SeedAdminCallerAsync(userService);
+
         _service = new TimePlanningWorkingHoursService(
             Substitute.For<ILogger<TimePlanningWorkingHoursService>>(),
             TimePlanningPnDbContext!,
             userService,
             localizationService,
-            baseDbContext: null!,
+            baseDbContext: SeededBaseDbContext!,
             options,
             coreService);
     }

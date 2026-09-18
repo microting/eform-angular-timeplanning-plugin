@@ -826,6 +826,10 @@ public class ReconcileServiceTests : TestBaseSetup
     [Test]
     public async Task WorkingHoursIndex_MarksReconciledLockedDaysAsIsLocked()
     {
+        // Index scopes the requested site to the signed-in caller; this seeds
+        // the admin user and points _userService at it ("me").
+        await using var baseDbContext = GetBaseDbContext();
+        await BuildAdminIndexServiceAsync(baseDbContext);
         await SeedAssignedSiteAsync(930);
         // Keep the MaxDaysEditable window out of the way, so only the
         // reconciled lock can set IsLocked on these past days.
@@ -835,7 +839,7 @@ public class ReconcileServiceTests : TestBaseSetup
         await SeedReconciledBoundaryAsync(930, DateTime.Now.Date.AddDays(-3));
         await SeedPlain(930, DateTime.Now.Date.AddDays(-1));
 
-        var result = await BuildWorkingHoursService().Index(new TimePlanningWorkingHoursRequestModel
+        var result = await BuildWorkingHoursService(baseDbContext).Index(new TimePlanningWorkingHoursRequestModel
         {
             SiteId = 930,
             DateFrom = DateTime.Now.Date.AddDays(-10),
