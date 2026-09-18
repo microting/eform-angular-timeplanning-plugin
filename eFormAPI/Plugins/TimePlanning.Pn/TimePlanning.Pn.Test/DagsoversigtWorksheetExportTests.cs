@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
+using Microting.EformAngularFrontendBase.Infrastructure.Data;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
@@ -76,12 +78,17 @@ public class DagsoversigtWorksheetExportTests : TestBaseSetup
             SnapshotEnabled = "0"
         });
 
+        // The all-workers export scopes its site list to the signed-in caller,
+        // so these fixtures need a real one. Admin: scoping is a no-op.
+        var adminUserId = await GetBaseDbContextWithAdminAsync();
+        userService.GetCurrentUserAsync().Returns(new EformUser { Id = adminUserId });
+
         _service = new TimePlanningWorkingHoursService(
             Substitute.For<ILogger<TimePlanningWorkingHoursService>>(),
             TimePlanningPnDbContext!,
             userService,
             localizationService,
-            baseDbContext: null!,
+            baseDbContext: SeededBaseDbContext!,
             options,
             coreService);
     }

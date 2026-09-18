@@ -44,4 +44,6 @@ public interface ITimePlanningPlanningService
     Task<OperationResult> Reconcile(int id);
     Task<OperationResult> Unreconcile(int id);
     Task<OperationDataResult<ReconcileThroughResultModel>> ReconcileThrough(ReconcileThroughRequestModel model);
+
+    Task<OperationDataResult<List<SiteTagsModel>>> GetSiteTags();
 }

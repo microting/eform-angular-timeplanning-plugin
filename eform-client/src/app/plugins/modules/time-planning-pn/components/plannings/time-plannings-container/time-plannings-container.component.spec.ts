@@ -169,14 +169,26 @@ describe('TimePlanningsContainerComponent', () => {
   });
 
   describe('Dialog', () => {
-    it('should open download excel dialog with available sites', () => {
+    it('should open download excel dialog with the filters the page is showing', () => {
       component.availableSites = [{ id: 1, name: 'Test Site' } as any];
-      const mockDialogRef = { afterClosed: () => of(null) };
-      mockDialog.open.mockReturnValue(mockDialogRef as any);
+      component.availableTags = [{ id: 7, name: 'Test Tag' }];
+      component.selectedTagIds = [7];
+      component.dateFrom = new Date(2024, 0, 15);
+      component.dateTo = new Date(2024, 0, 21);
+      component.siteId = 42;
 
       component.openDownloadExcelDialog();
 
-      expect(mockDialog.open).toHaveBeenCalled();
+      expect(mockDialog.open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        data: {
+          availableSites: component.availableSites,
+          availableTags: component.availableTags,
+          dateFrom: component.dateFrom,
+          dateTo: component.dateTo,
+          selectedTagIds: component.selectedTagIds,
+          siteId: 42,
+        },
+      }));
     });
   });
 
@@ -222,6 +234,23 @@ describe('TimePlanningsContainerComponent', () => {
 
       expect(component.selectedTagIds).toEqual(testTagIds);
       expect(component.getPlannings).toHaveBeenCalled();
+    });
+
+    it('should hold an empty list, never null, when the select clears its last tag', () => {
+      jest.spyOn(component, 'getPlannings');
+      component.selectedTagIds = [1];
+
+      component.onTagsChanged(null);
+
+      expect(component.selectedTagIds).toEqual([]);
+    });
+
+    it('should hold an empty list when the tags call answers without a body', () => {
+      mockSettingsService.getAvailableTags.mockReturnValue(of({ success: true, model: null } as any));
+
+      component.ngOnInit();
+
+      expect(component.availableTags).toEqual([]);
     });
 
     it('should include tagIds in request when tags are selected', () => {

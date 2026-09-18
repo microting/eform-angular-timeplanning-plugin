@@ -495,4 +495,10 @@ export const slSL = {
   UNLOCK: 'UNLOCK',
   lockRequestFailed: 'The action could not be completed. Try again.',
   lockRequestUncertain: 'No answer came back. The state is uncertain, and the view refreshes.',
+  // Download Excel dialog: how much the export covers, and why tags are inert for one worker.
+  exportScopeWorker: '1 worker',
+  exportScopeWorkers: '{{count}} workers',
+  exportScopeDay: '1 day',
+  exportScopeDays: '{{count}} days',
+  exportTagsNotUsedForWorker: 'Tags are not used when a single worker is selected',
 };

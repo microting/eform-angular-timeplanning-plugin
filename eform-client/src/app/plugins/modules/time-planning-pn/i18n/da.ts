@@ -493,4 +493,10 @@ export const da = {
   UNLOCK: 'LÅS OP',
   lockRequestFailed: 'Handlingen kunne ikke gennemføres. Prøv igen.',
   lockRequestUncertain: 'Der kom ikke noget svar. Tilstanden er usikker, og visningen opdateres.',
+  // Download Excel dialog: how much the export covers, and why tags are inert for one worker.
+  exportScopeWorker: '1 medarbejder',
+  exportScopeWorkers: '{{count}} medarbejdere',
+  exportScopeDay: '1 dag',
+  exportScopeDays: '{{count}} dage',
+  exportTagsNotUsedForWorker: 'Etiketter bruges ikke, når der er valgt én medarbejder',
 };

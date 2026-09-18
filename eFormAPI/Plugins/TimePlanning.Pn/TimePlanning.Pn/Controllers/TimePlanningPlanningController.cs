@@ -74,6 +74,14 @@ public class TimePlanningPlanningController(ITimePlanningPlanningService plannin
     }
 
     [HttpGet]
+    [Route("site-tags")]
+    [Authorize]
+    public async Task<OperationDataResult<List<SiteTagsModel>>> GetSiteTags()
+    {
+        return await _planningService.GetSiteTags();
+    }
+
+    [HttpGet]
     [Route("{planRegistrationId}/version-history")]
     public async Task<OperationDataResult<PlanRegistrationVersionHistoryModel>> GetVersionHistory(int planRegistrationId)
     {

@@ -24,6 +24,27 @@
       </mtx-select>
     </mat-form-field>
   </div>
+  <div class="d-flex flex-column mr-2 ml-2" style="min-width: 25em">
+    <mat-form-field>
+      <mat-label>{{ 'Tags' | translate }}</mat-label>
+      <mtx-select
+        [items]="availableTags"
+        bindLabel="name"
+        bindValue="id"
+        [multiple]="true"
+        [ngModel]="selectedTagIds"
+        (ngModelChange)="onTagsChanged($event)"
+        [disabled]="!!siteId"
+        id="downloadExcelTags">
+      </mtx-select>
+    </mat-form-field>
+    <div class="text-muted small" id="downloadExcelTagsNote" *ngIf="siteId">
+      {{ 'exportTagsNotUsedForWorker' | translate }}
+    </div>
+    <div class="text-muted small mt-2" id="downloadExcelScope" *ngIf="workerCount !== null && dayCount > 0">
+      {{ (workerCount === 1 ? 'exportScopeWorker' : 'exportScopeWorkers') | translate:{count: workerCount} }} · {{ (dayCount === 1 ? 'exportScopeDay' : 'exportScopeDays') | translate:{count: dayCount} }}
+    </div>
+  </div>
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
 

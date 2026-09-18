@@ -1,6 +1,6 @@
-﻿/*
+/*
 The MIT License (MIT)
-Copyright (c) 2007 - 2023 Microting A/S
+Copyright (c) 2007 - 2021 Microting A/S
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -18,19 +18,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-namespace TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
+#nullable enable
+namespace TimePlanning.Pn.Infrastructure.Models.Planning;
 
-using System;
 using System.Collections.Generic;
 
-public class TimePlanningWorkingHoursReportForAllWorkersRequestModel
+/// <summary>
+/// The site-to-tag edges of the planning board, one row per non-removed
+/// AssignedSite. Deliberately date-free and free of per-day work: it exists so a
+/// dialog can answer "how many workers does this tag selection cover?" with one
+/// cheap call when it opens, instead of re-running the planning query.
+/// </summary>
+public class SiteTagsModel
 {
-    public DateTime DateFrom { get; set; }
+    /// <summary>The site's SDK MicrotingUid — the same identifier
+    /// AssignedSite.SiteId and the planning grid rows carry.</summary>
+    public int SiteId { get; set; }
 
-    public DateTime DateTo { get; set; }
-
-    /// <summary>SDK site tags to narrow the export to. Empty means no filter —
-    /// the same contract the planning grid's Etiketter filter uses, so an export
-    /// started from an unfiltered grid still covers every worker.</summary>
+    /// <summary>Ids of the non-removed SDK tags on the site; empty when untagged.</summary>
     public List<int> TagIds { get; set; } = new();
+
+    /// <summary>Resigned workers are hidden by default on the board and excluded
+    /// from the all-workers export, so a count must be able to drop them.</summary>
+    public bool Resigned { get; set; }
 }
