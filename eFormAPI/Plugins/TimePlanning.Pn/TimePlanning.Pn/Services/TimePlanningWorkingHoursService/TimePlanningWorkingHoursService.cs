@@ -30,6 +30,7 @@ using TimePlanning.Pn.Resources;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Validation;
+using Microting.eForm.Infrastructure;
 using Microting.eForm.Infrastructure.Data.Entities;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
@@ -69,7 +70,87 @@ public class TimePlanningWorkingHoursService(
     IEFormCoreService coreHelper)
     : ITimePlanningWorkingHoursService
 {
+    /// <summary>
+    /// The set of sites the signed-in caller may see — the same scope the
+    /// planning board and the export dialog's worker count apply. Check
+    /// <see cref="SiteScope.ErrorKey"/> before reading anything else.
+    /// </summary>
+    private async Task<SiteScope> ResolveScopeAsync(MicrotingDbContext sdkContext)
+    {
+        var assignedSites = await dbContext.AssignedSites
+            .AsNoTracking()
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+        return await SiteScopeResolver
+            .ResolveForCurrentUserAsync(assignedSites, dbContext, sdkContext, baseDbContext, userService)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Null when the signed-in caller may see <paramref name="siteId"/>,
+    /// otherwise the localization key to refuse with.
+    /// </summary>
+    /// <remarks>
+    /// Every site-specific reason answers with the SAME key on purpose. An
+    /// unknown site id, a site whose AssignedSite is removed, and a real site
+    /// belonging to somebody else are indistinguishable to the caller —
+    /// otherwise the two different 400 bodies let anyone enumerate which site
+    /// ids exist. The caller-specific keys the resolver itself returns
+    /// (UserNotFound and friends) do not reopen that: they depend only on who
+    /// is asking, so they are the same for every id that caller tries.
+    ///
+    /// An unknown id is refused for an admin too, and that is what makes the
+    /// two cases collapse: no AssignedSite row means the id is in nobody's
+    /// scope, admin's included.
+    /// </remarks>
+    private async Task<string?> ResolveSiteAccessErrorAsync(int siteId, MicrotingDbContext sdkContext)
+    {
+        var scope = await ResolveScopeAsync(sdkContext);
+        if (scope.ErrorKey != null)
+        {
+            return scope.ErrorKey;
+        }
+
+        return scope.Narrow([siteId]).Count == 0 ? "SiteNotFound" : null;
+    }
+
+    /// <summary>
+    /// The working-hours grid for one site. SiteId comes from the request body,
+    /// so the caller's scope is checked here before any data is read; the export
+    /// paths call <see cref="IndexUnscoped"/> instead, having resolved the very
+    /// same scope once for the whole workbook.
+    /// </summary>
     public async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> Index(
+        TimePlanningWorkingHoursRequestModel model)
+    {
+        try
+        {
+            var core = await coreHelper.GetCore();
+            await using var sdkDbContext = core.DbContextHelper.GetDbContext();
+            var accessError = await ResolveSiteAccessErrorAsync(model.SiteId, sdkDbContext);
+            if (accessError != null)
+            {
+                return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
+                    false, localizationService.GetString(accessError));
+            }
+        }
+        catch (Exception ex)
+        {
+            SentrySdk.CaptureException(ex);
+            logger.LogError(ex.Message);
+            return new OperationDataResult<List<TimePlanningWorkingHoursModel>>(
+                false, localizationService.GetString("ErrorWhileObtainingPlannings"));
+        }
+
+        return await IndexUnscoped(model);
+    }
+
+    /// <summary>
+    /// <see cref="Index"/> without the caller-scope check. Private, and named
+    /// for what it omits: every caller must have established that the signed-in
+    /// user may see <c>model.SiteId</c> before calling it.
+    /// </summary>
+    private async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> IndexUnscoped(
         TimePlanningWorkingHoursRequestModel model)
     {
         try
@@ -2735,6 +2816,26 @@ public class TimePlanningWorkingHoursService(
         {
             var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
+
+            // Scope to the caller, from the same code the planning board, the
+            // export dialog's worker count and the all-workers export use.
+            // SiteId arrives straight from the query string, so without this any
+            // signed-in user could export any worker's hours by guessing an id.
+            //
+            // Before the lookups below, not after: those throw into the catch
+            // for an id that names no site, and that second, distinguishable
+            // 400 body would tell the guesser which ids are real. Refusing here
+            // gives the unknown id and the out-of-scope id one answer.
+            var accessError = await ResolveSiteAccessErrorAsync(model.SiteId, sdkContext);
+            if (accessError != null)
+            {
+                // Refuse outright rather than narrow: an empty or substituted
+                // workbook would read as a successful export of the worker that
+                // was asked for.
+                return new OperationDataResult<Stream>(false,
+                    localizationService.GetString(accessError));
+            }
+
             var site = await sdkContext.Sites.FirstAsync(x => x.MicrotingUid == model.SiteId);
             var siteWorker = await sdkContext.SiteWorkers.FirstAsync(x => x.SiteId == site.Id);
             var worker = await sdkContext.Workers.FirstAsync(x => x.Id == siteWorker!.WorkerId);
@@ -2778,8 +2879,10 @@ public class TimePlanningWorkingHoursService(
             var timeStamp = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}";
             var filePath = Path.Combine(Path.GetTempPath(), "results", $"{timeStamp}_.xlsx");
 
-            // Fetch data early so we can pre-compute pay lines for header discovery
-            var content = await Index(model);
+            // Fetch data early so we can pre-compute pay lines for header
+            // discovery. Unscoped: the gate at the top of this method has
+            // already cleared this SiteId for this caller.
+            var content = await IndexUnscoped(model);
             if (!content.Success) return new OperationDataResult<Stream>(false, content.Message);
 
             // remove the first entry from the content.Model
@@ -3373,13 +3476,7 @@ public class TimePlanningWorkingHoursService(
             // export dialog's worker count use. Without this a manager saw "3
             // workers" in the dialog and downloaded the whole organisation —
             // and any non-admin could export every worker in the system.
-            var assignedSites = await dbContext.AssignedSites
-                .AsNoTracking()
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .ToListAsync();
-            var scope = await SiteScopeResolver
-                .ResolveForCurrentUserAsync(assignedSites, dbContext, sdkContext, baseDbContext, userService)
-                .ConfigureAwait(false);
+            var scope = await ResolveScopeAsync(sdkContext);
             if (scope.ErrorKey != null)
             {
                 return new OperationDataResult<Stream>(false,
@@ -3469,7 +3566,10 @@ public class TimePlanningWorkingHoursService(
                     }
                 }
 
-                var dataResult = await Index(new TimePlanningWorkingHoursRequestModel
+                // Unscoped: siteIds was narrowed to the caller's scope above, and
+                // re-resolving that same scope once per site would be N round
+                // trips for an answer that cannot change between them.
+                var dataResult = await IndexUnscoped(new TimePlanningWorkingHoursRequestModel
                 {
                     DateFrom = model.DateFrom,
                     DateTo = model.DateTo,

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DocumentFormat.OpenXml.Packaging;
@@ -19,6 +20,7 @@ using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using NSubstitute;
 using NUnit.Framework;
@@ -102,8 +104,7 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
         // test needs one. The default is an admin, for whom scoping is a no-op;
         // the scoping tests below seed a second, narrower caller into the same
         // context and re-point the substitute at it.
-        var adminUserId = await GetBaseDbContextWithAdminAsync();
-        _userService.GetCurrentUserAsync().Returns(new EformUser { Id = adminUserId });
+        await SeedAdminCallerAsync(_userService);
 
         _workingHoursService = new TimePlanningWorkingHoursService(
             Substitute.For<ILogger<TimePlanningWorkingHoursService>>(),
@@ -512,8 +513,322 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
     }
 
     // ------------------------------------------------------------------
+    // 4. Single-worker export: the requested SiteId must be in the caller's
+    //    scope. It arrives straight from the query string, so an unscoped
+    //    overload let any signed-in user export any worker by guessing an id.
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// The counterpart that decides whether the scoping is safe to ship: an
+    /// admin still exports any site they ask for, exactly as before.
+    /// </summary>
+    [Test]
+    public async Task SingleWorkerExport_AdminUser_CanExportAnySite()
+    {
+        var date = new DateTime(2026, 7, 26);
+        await SeedSiteAndPlanRegistration(siteUid: 9701, employeeNo: "1", date: date);
+        // A site belonging to somebody else entirely, and a manager elsewhere in
+        // the system: neither may narrow an ADMIN's reach.
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9702, employeeNo: "2", date: date, email: "other9702@example.com", isManager: true);
+
+        // The caller stays the admin seeded in SetUp.
+        await AssertExportSucceeded(
+            await SingleWorkerExport(9701, date),
+            "An admin must still export any site");
+        await AssertExportSucceeded(
+            await SingleWorkerExport(9702, date),
+            "Scoping must be a no-op for an admin — including for another manager's site");
+    }
+
+    /// <summary>
+    /// A manager's reach on this endpoint is the same one the planning board
+    /// gives them: the sites carrying the tags they manage, plus their own.
+    /// </summary>
+    [Test]
+    public async Task SingleWorkerExport_ManagerUser_CanExportTheirOwnSiteAndOneInTheirManagedTags()
+    {
+        var date = new DateTime(2026, 7, 27);
+        await SeedManagerWithManagedTag(
+            email: "manager9711@example.com",
+            managerSiteUid: 9711, managedSiteUid: 9712, outsideSiteUid: 9713, date: date);
+
+        await AssertExportSucceeded(
+            await SingleWorkerExport(9711, date),
+            "A manager must be able to export their own site");
+        await AssertExportSucceeded(
+            await SingleWorkerExport(9712, date),
+            "A manager must be able to export a worker inside a tag they manage");
+    }
+
+    [Test]
+    public async Task SingleWorkerExport_ManagerUser_RefusesASiteOutsideTheirManagedTags()
+    {
+        var date = new DateTime(2026, 7, 28);
+
+        // Seeded BEFORE the caller is switched, so the export below is first
+        // proved to work for the admin. Without that, a refusal could just as
+        // well mean the site was never exportable in this fixture.
+        await SeedSiteAndPlanRegistration(siteUid: 9723, employeeNo: "3", date: date);
+        await AssertExportSucceeded(
+            await SingleWorkerExport(9723, date),
+            "Precondition: the site must be exportable at all");
+
+        await SeedManagerWithManagedTag(
+            email: "manager9721@example.com",
+            managerSiteUid: 9721, managedSiteUid: 9722, outsideSiteUid: 9723, date: date,
+            seedOutsideSite: false);
+
+        AssertExportRefused(
+            await SingleWorkerExport(9723, date),
+            "A site outside the manager's tags is not on their page and must not be exportable either");
+    }
+
+    /// <summary>
+    /// A plain worker sees exactly one row on the planning board. Unscoped, they
+    /// could download any colleague's hours by editing the site id in the URL.
+    /// </summary>
+    [Test]
+    public async Task SingleWorkerExport_PlainWorker_ExportsOwnSiteButIsRefusedAnother()
+    {
+        const string email = "worker9731@example.com";
+        var date = new DateTime(2026, 7, 29);
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9731, employeeNo: "1", date: date, email: email);
+        await SeedSiteAndPlanRegistration(siteUid: 9732, employeeNo: "2", date: date);
+
+        // Same reasoning as above: prove the colleague's site is exportable
+        // before asserting that this caller cannot export it.
+        await AssertExportSucceeded(
+            await SingleWorkerExport(9732, date),
+            "Precondition: the colleague's site must be exportable at all");
+
+        await SeedNonAdminCallerAsync(email);
+
+        await AssertExportSucceeded(
+            await SingleWorkerExport(9731, date),
+            "A worker must still be able to export their own hours");
+        AssertExportRefused(
+            await SingleWorkerExport(9732, date),
+            "A plain worker must not be able to export a colleague by guessing their site id");
+    }
+
+    /// <summary>
+    /// The refusal must be blind. Out-of-scope and "no such site" answer with
+    /// the same body, or the difference between them IS an oracle: a caller
+    /// walks the id space and learns which workers exist.
+    /// </summary>
+    [Test]
+    public async Task SingleWorkerExport_UnknownSiteIdAndOutOfScopeSiteId_AnswerIdentically()
+    {
+        const string email = "worker9741@example.com";
+        var date = new DateTime(2026, 7, 30);
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9741, employeeNo: "1", date: date, email: email);
+        await SeedSiteAndPlanRegistration(siteUid: 9742, employeeNo: "2", date: date);
+
+        await SeedNonAdminCallerAsync(email);
+
+        var outOfScope = await SingleWorkerExport(9742, date);
+        // 999_941 is deliberately in no table at all.
+        var unknown = await SingleWorkerExport(999_941, date);
+
+        AssertExportRefused(outOfScope, "A colleague's site must be refused");
+        AssertExportRefused(unknown, "An id that names no site must be refused");
+        Assert.That(unknown.Message, Is.EqualTo(outOfScope.Message),
+            "A real-but-forbidden id and a non-existent id must be indistinguishable, "
+            + "or the caller can enumerate which site ids exist");
+    }
+
+    // ------------------------------------------------------------------
+    // 5. The same scope on the JSON grid behind POST working-hours/index.
+    //    The export reads its rows from here, so leaving this open would
+    //    hand back as JSON exactly what the export now refuses.
+    // ------------------------------------------------------------------
+
+    [Test]
+    public async Task WorkingHoursIndex_AdminUser_CanReadAnySite()
+    {
+        var date = new DateTime(2026, 8, 3);
+        await SeedSiteAndPlanRegistration(siteUid: 9751, employeeNo: "1", date: date);
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9752, employeeNo: "2", date: date, email: "other9752@example.com", isManager: true);
+
+        // The caller stays the admin seeded in SetUp.
+        AssertIndexSucceeded(await WorkingHoursIndex(9751, date), "An admin must still read any site");
+        AssertIndexSucceeded(await WorkingHoursIndex(9752, date),
+            "Scoping must be a no-op for an admin — including for another manager's site");
+    }
+
+    [Test]
+    public async Task WorkingHoursIndex_ManagerUser_ReadsTheirOwnSiteAndOneInTheirManagedTags()
+    {
+        var date = new DateTime(2026, 8, 4);
+        await SeedManagerWithManagedTag(
+            email: "manager9761@example.com",
+            managerSiteUid: 9761, managedSiteUid: 9762, outsideSiteUid: 9763, date: date);
+
+        AssertIndexSucceeded(await WorkingHoursIndex(9761, date), "A manager must be able to read their own site");
+        AssertIndexSucceeded(await WorkingHoursIndex(9762, date),
+            "A manager must be able to read a worker inside a tag they manage");
+    }
+
+    [Test]
+    public async Task WorkingHoursIndex_ManagerUser_RefusesASiteOutsideTheirManagedTags()
+    {
+        var date = new DateTime(2026, 8, 5);
+
+        // Seeded and read as the admin first, so the refusal below cannot be
+        // explained by the site simply not being readable in this fixture.
+        await SeedSiteAndPlanRegistration(siteUid: 9773, employeeNo: "3", date: date);
+        AssertIndexSucceeded(await WorkingHoursIndex(9773, date),
+            "Precondition: the site must be readable at all");
+
+        await SeedManagerWithManagedTag(
+            email: "manager9771@example.com",
+            managerSiteUid: 9771, managedSiteUid: 9772, outsideSiteUid: 9773, date: date,
+            seedOutsideSite: false);
+
+        AssertIndexRefused(await WorkingHoursIndex(9773, date),
+            "A site outside the manager's tags is not on their page and must not be readable either");
+    }
+
+    [Test]
+    public async Task WorkingHoursIndex_PlainWorker_ReadsOwnSiteButIsRefusedAnother()
+    {
+        const string email = "worker9781@example.com";
+        var date = new DateTime(2026, 8, 6);
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9781, employeeNo: "1", date: date, email: email);
+        await SeedSiteAndPlanRegistration(siteUid: 9782, employeeNo: "2", date: date);
+
+        AssertIndexSucceeded(await WorkingHoursIndex(9782, date),
+            "Precondition: the colleague's site must be readable at all");
+
+        await SeedNonAdminCallerAsync(email);
+
+        AssertIndexSucceeded(await WorkingHoursIndex(9781, date),
+            "A worker must still be able to read their own hours");
+        AssertIndexRefused(await WorkingHoursIndex(9782, date),
+            "A plain worker must not be able to read a colleague by guessing their site id");
+    }
+
+    /// <summary>The same blindness the export owes, on the JSON route.</summary>
+    [Test]
+    public async Task WorkingHoursIndex_UnknownSiteIdAndOutOfScopeSiteId_AnswerIdentically()
+    {
+        const string email = "worker9791@example.com";
+        var date = new DateTime(2026, 8, 7);
+        await SeedSiteAndPlanRegistration(
+            siteUid: 9791, employeeNo: "1", date: date, email: email);
+        await SeedSiteAndPlanRegistration(siteUid: 9792, employeeNo: "2", date: date);
+
+        await SeedNonAdminCallerAsync(email);
+
+        var outOfScope = await WorkingHoursIndex(9792, date);
+        var unknown = await WorkingHoursIndex(999_991, date);
+
+        AssertIndexRefused(outOfScope, "A colleague's site must be refused");
+        AssertIndexRefused(unknown, "An id that names no site must be refused");
+        Assert.That(unknown.Message, Is.EqualTo(outOfScope.Message),
+            "A real-but-forbidden id and a non-existent id must be indistinguishable, "
+            + "or the caller can enumerate which site ids exist");
+    }
+
+    // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
+
+    /// <summary>Runs the working-hours grid for one day — the JSON route the
+    /// export reads its rows from.</summary>
+    private async Task<OperationDataResult<List<TimePlanningWorkingHoursModel>>> WorkingHoursIndex(
+        int siteUid, DateTime date) =>
+        await _workingHoursService.Index(
+            new TimePlanningWorkingHoursRequestModel
+            {
+                SiteId = siteUid,
+                DateFrom = date,
+                DateTo = date,
+            });
+
+    private static void AssertIndexSucceeded(
+        OperationDataResult<List<TimePlanningWorkingHoursModel>> result, string because)
+    {
+        Assert.That(result.Success, Is.True, $"{because} (message: {result.Message})");
+        Assert.That(result.Model, Is.Not.Null, because);
+    }
+
+    /// <summary>Pins the refusal itself: without the message assertion this
+    /// would also pass on the catch-all ErrorWhileObtainingPlannings a crash
+    /// returns, which is the very body the oracle tests forbid.</summary>
+    private static void AssertIndexRefused(
+        OperationDataResult<List<TimePlanningWorkingHoursModel>> result, string because)
+    {
+        Assert.That(result.Success, Is.False, because);
+        Assert.That(result.Message, Is.EqualTo("SiteNotFound"),
+            "The refusal must be the plugin's own not-found message, not a generic read failure");
+        Assert.That(result.Model, Is.Null, "A refused read must hand back no rows at all");
+    }
+
+    /// <summary>Runs the single-worker export for one day and hands back the raw
+    /// result, so a test can assert on a refusal as well as on a workbook.</summary>
+    private async Task<OperationDataResult<Stream>> SingleWorkerExport(int siteUid, DateTime date) =>
+        await _workingHoursService.GenerateExcelDashboard(
+            new TimePlanningWorkingHoursRequestModel
+            {
+                SiteId = siteUid,
+                DateFrom = date,
+                DateTo = date,
+            });
+
+    private static async Task AssertExportSucceeded(OperationDataResult<Stream> result, string because)
+    {
+        Assert.That(result.Success, Is.True, $"{because} (message: {result.Message})");
+        Assert.That(result.Model, Is.Not.Null, because);
+        await result.Model!.DisposeAsync();
+    }
+
+    /// <summary>Pins the refusal itself, not merely "not a success": asserting on
+    /// the message separates a deliberate scope refusal from the catch-all
+    /// ErrorWhileCreatingExcelFile a crash would return. (The fixture's
+    /// localization substitute echoes the key it is handed.)</summary>
+    private static void AssertExportRefused(OperationDataResult<Stream> result, string because)
+    {
+        Assert.That(result.Success, Is.False, because);
+        Assert.That(result.Message, Is.EqualTo("SiteNotFound"),
+            "The refusal must be the plugin's own not-found message, not a generic export failure");
+        Assert.That(result.Model, Is.Null, "A refused export must hand back no workbook at all");
+    }
+
+    /// <summary>Seeds a manager who manages the tag "EL", a site carrying it and
+    /// a site carrying "Brand" instead, then points the caller at the manager.
+    /// Pass <paramref name="seedOutsideSite"/> false when the caller has already
+    /// seeded that site itself.</summary>
+    private async Task SeedManagerWithManagedTag(
+        string email, int managerSiteUid, int managedSiteUid, int outsideSiteUid, DateTime date,
+        bool seedOutsideSite = true)
+    {
+        var managerAssignedSite = await SeedSiteAndPlanRegistration(
+            siteUid: managerSiteUid, employeeNo: "1", date: date, email: email, isManager: true);
+        await SeedSiteAndPlanRegistration(siteUid: managedSiteUid, employeeNo: "2", date: date);
+        if (seedOutsideSite)
+        {
+            await SeedSiteAndPlanRegistration(siteUid: outsideSiteUid, employeeNo: "3", date: date);
+        }
+
+        var elTagId = await TagSiteByUid(managedSiteUid, "EL");
+        await TagSiteByUid(outsideSiteUid, "Brand");
+        await new AssignedSiteManagingTagEntity
+        {
+            AssignedSiteId = managerAssignedSite.Id,
+            TagId = elTagId,
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        }.Create(TimePlanningPnDbContext!);
+
+        await SeedNonAdminCallerAsync(email);
+    }
 
     /// <summary>Seeds a second, non-admin eform user into the fixture's
     /// BaseDbContext and points the IUserService substitute at it, so the next

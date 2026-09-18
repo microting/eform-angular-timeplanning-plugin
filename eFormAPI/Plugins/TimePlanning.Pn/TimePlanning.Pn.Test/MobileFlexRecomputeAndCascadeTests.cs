@@ -59,6 +59,15 @@ public class MobileFlexRecomputeAndCascadeTests : TestBaseSetup
         var sdkDb = core.DbContextHelper.GetDbContext();
 
         // --- SDK graph: site + worker + siteworker, keyed by the user's email ---
+        //
+        // The email keying is load-bearing beyond mere lookup: this fixture's
+        // EformUser carries no admin role and no security groups, so the
+        // working-hours grid resolves it through the PLAIN-WORKER branch of the
+        // caller scope — own site only, named by the SDK Worker that matches
+        // this email. The Index call below asks for SiteUid, the very site this
+        // worker is linked to, which is the only reason it is not refused.
+        // Break the email match, or link the worker to a different site, and
+        // every scoped call in this fixture starts failing with "SiteNotFound".
         var language = await sdkDb.Languages.FirstOrDefaultAsync(l => l.LanguageCode == "da");
         if (language == null)
         {

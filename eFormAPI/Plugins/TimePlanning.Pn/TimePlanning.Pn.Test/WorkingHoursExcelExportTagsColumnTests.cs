@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
-using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using NSubstitute;
 using NUnit.Framework;
@@ -81,8 +80,7 @@ public class WorkingHoursExcelExportTagsColumnTests : TestBaseSetup
 
         // The all-workers export scopes its site list to the signed-in caller,
         // so these fixtures need a real one. Admin: scoping is a no-op.
-        var adminUserId = await GetBaseDbContextWithAdminAsync();
-        userService.GetCurrentUserAsync().Returns(new EformUser { Id = adminUserId });
+        await SeedAdminCallerAsync(userService);
 
         _service = new TimePlanningWorkingHoursService(
             Substitute.For<ILogger<TimePlanningWorkingHoursService>>(),
