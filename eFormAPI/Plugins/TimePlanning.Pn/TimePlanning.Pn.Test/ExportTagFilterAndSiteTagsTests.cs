@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Microting.eForm.Infrastructure;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
@@ -268,14 +269,15 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
         await SeedSiteAndPlanRegistration(siteUid: 9637, employeeNo: "1", date: date);
         await SeedSiteAndPlanRegistration(siteUid: 9638, employeeNo: "2", date: date);
 
-        var core = await GetCore();
-        var sdkDb = core.DbContextHelper.GetDbContext();
         // The SiteTag row survives; only the Tag itself is soft-deleted.
-        var (deadTag, _) = await TagSiteRaw(9637, "Nedlagt");
-        await deadTag.Delete(sdkDb);
+        var (deadTagId, _) = await TagSiteRaw(9637, "Nedlagt");
+        await SoftDeleteTagAsync(deadTagId);
         var liveTagId = await TagSiteByUid(9638, "EL");
 
-        var sheetNames = await ExportSheetNames(date, [deadTag.Id, liveTagId]);
+        // The dead tag id IS in the selection: that is what makes this test
+        // discriminate on the Tag.WorkflowState predicate rather than merely on
+        // the tag not being selected.
+        var sheetNames = await ExportSheetNames(date, [deadTagId, liveTagId]);
 
         Assert.That(sheetNames, Does.Not.Contain("Site 9637"),
             "A soft-deleted Tag must not pull its site into the export, even though the SiteTag row survives");
@@ -350,32 +352,32 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
     [Test]
     public async Task GetSiteTags_ReturnsTagIdsPerAssignedSite_WithResignedFlag()
     {
-        var core = await GetCore();
-        var sdkDb = core.DbContextHelper.GetDbContext();
-
-        await CreateSdkSite(9641);
-        await CreateSdkSite(9642);
-        await CreateSdkSite(9643);
-        await CreateSdkSite(9644);
-        await CreateSdkSite(9645);
+        // One site per case, so a failure names the rule that broke.
+        foreach (var uid in new[] { 9641, 9642, 9643, 9644, 9645, 9646 })
+        {
+            await CreateSdkSite(uid);
+        }
 
         await CreateAssignedSite(9641, resigned: false);
         await CreateAssignedSite(9642, resigned: true);
         await CreateAssignedSite(9643, resigned: false);
         await CreateAssignedSite(9645, resigned: false);
+        await CreateAssignedSite(9646, resigned: false);
         var removedAssignedSite = await CreateAssignedSite(9644, resigned: false);
         await removedAssignedSite.Delete(TimePlanningPnDbContext!);
 
         var elTagId = await TagSiteByUid(9641, "EL");
         var brandTagId = await TagSiteByUid(9641, "Brand");
         var vvsTagId = await TagSiteByUid(9642, "VVS");
-        // Site 9643 stays untagged; a removed SiteTag must not resurface.
-        var (_, removedSiteTag) = await TagSiteRaw(9644, "Gone");
-        await removedSiteTag.Delete(sdkDb);
-        // Site 9645 keeps its SiteTag row but the Tag itself is soft-deleted —
-        // the same edge the export filter must drop (asserted above).
-        var (deadTag, _) = await TagSiteRaw(9645, "Nedlagt");
-        await deadTag.Delete(sdkDb);
+        // 9643 stays untagged. 9644 is absent for its own reason (removed
+        // AssignedSite) and needs no tag — it previously carried a removed
+        // SiteTag that proved nothing, because 9644 never reaches the result.
+        // 9645: the SiteTag row survives, the Tag is soft-deleted.
+        var (deadTagId, _) = await TagSiteRaw(9645, "Nedlagt");
+        await SoftDeleteTagAsync(deadTagId);
+        // 9646: the mirror image — the Tag lives, the SiteTag row is removed.
+        var (_, removedSiteTagId) = await TagSiteRaw(9646, "Afkoblet");
+        await SoftDeleteSiteTagAsync(removedSiteTagId);
 
         var service = BuildPlanningService();
 
@@ -383,7 +385,7 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
 
         Assert.That(result.Success, Is.True, result.Message);
         var rows = result.Model!;
-        Assert.That(rows.Select(x => x.SiteId), Is.EquivalentTo(new[] { 9641, 9642, 9643, 9645 }),
+        Assert.That(rows.Select(x => x.SiteId), Is.EquivalentTo(new[] { 9641, 9642, 9643, 9645, 9646 }),
             "One row per non-removed AssignedSite — removed rows must not be listed");
 
         var tagged = rows.Single(x => x.SiteId == 9641);
@@ -401,6 +403,10 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
         var softDeletedTagOnly = rows.Single(x => x.SiteId == 9645);
         Assert.That(softDeletedTagOnly.TagIds, Is.Empty,
             "A soft-deleted Tag must not be reported, so the dialog's count matches the export's filter");
+
+        var removedSiteTagOnly = rows.Single(x => x.SiteId == 9646);
+        Assert.That(removedSiteTagOnly.TagIds, Is.Empty,
+            "A removed SiteTag row must not be reported even though its Tag is still live");
     }
 
     /// <summary>
@@ -574,8 +580,7 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
 
     private async Task<SdkSite> CreateSdkSite(int siteUid)
     {
-        var core = await GetCore();
-        var sdkDb = core.DbContextHelper.GetDbContext();
+        await using var sdkDb = await SdkDbContext();
         var site = new SdkSite { Name = $"Site {siteUid}", MicrotingUid = siteUid };
         await site.Create(sdkDb);
         return site;
@@ -603,8 +608,7 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
     /// exports read the worker name and employee number from.</summary>
     private async Task LinkWorkerToSite(int siteUid, string email, string employeeNo)
     {
-        var core = await GetCore();
-        var sdkDb = core.DbContextHelper.GetDbContext();
+        await using var sdkDb = await SdkDbContext();
         var site = await sdkDb.Sites.FirstAsync(x => x.MicrotingUid == siteUid);
 
         var worker = new SdkWorker
@@ -629,22 +633,73 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
     /// — the value the API takes in <c>TagIds</c>.</summary>
     private async Task<int> TagSiteByUid(int siteUid, string tagName)
     {
-        var (tag, _) = await TagSiteRaw(siteUid, tagName);
-        return tag.Id;
+        var (tagId, _) = await TagSiteRaw(siteUid, tagName);
+        return tagId;
     }
 
-    /// <summary>Creates a Tag and links it to the site; returns both so a test
-    /// can soft-delete either end of the edge independently.</summary>
-    private async Task<(SdkTag Tag, SdkSiteTag SiteTag)> TagSiteRaw(int siteUid, string tagName)
+    /// <summary>Creates a Tag and links it to the site; returns both IDs so a
+    /// test can soft-delete either end of the edge independently. Deliberately
+    /// returns ids rather than entities — see <see cref="SoftDeleteTagAsync"/>
+    /// for why handing a caller a detached entity to delete is a trap.</summary>
+    private async Task<(int TagId, int SiteTagId)> TagSiteRaw(int siteUid, string tagName)
     {
-        var core = await GetCore();
-        var sdkDb = core.DbContextHelper.GetDbContext();
+        await using var sdkDb = await SdkDbContext();
         var site = await sdkDb.Sites.FirstAsync(x => x.MicrotingUid == siteUid);
         var tag = new SdkTag { Name = tagName };
         await tag.Create(sdkDb);
         var siteTag = new SdkSiteTag { SiteId = site.Id, TagId = tag.Id };
         await siteTag.Create(sdkDb);
-        return (tag, siteTag);
+        return (tag.Id, siteTag.Id);
+    }
+
+    /// <summary>A NEW SDK context — DbContextHelper.GetDbContext() builds one
+    /// per call, it never hands back a shared instance.</summary>
+    private async Task<MicrotingDbContext> SdkDbContext() =>
+        (await GetCore()).DbContextHelper.GetDbContext();
+
+    /// <summary>
+    /// Soft-deletes an SDK Tag, and proves the row actually reached "removed".
+    /// </summary>
+    /// <remarks>
+    /// PnBase.Delete sets WorkflowState on the in-memory entity and then saves
+    /// ONLY if the context it was handed reports ChangeTracker.HasChanges().
+    /// Since every GetDbContext() call returns a fresh context, deleting an
+    /// entity that a DIFFERENT context created is a SILENT no-op: the row stays
+    /// live, no exception, and the test then asserts against a tag that was
+    /// never removed. That is exactly what made these tests fail in CI. Reading
+    /// the row back through the context we delete on guarantees it is tracked,
+    /// and the verification read — from a separate context, so it cannot be
+    /// answered out of the change tracker — turns any future regression into a
+    /// failure at the seeding step rather than a misleading one at the assert.
+    /// </remarks>
+    private async Task SoftDeleteTagAsync(int tagId)
+    {
+        await using (var sdkDb = await SdkDbContext())
+        {
+            var tag = await sdkDb.Tags.FirstAsync(x => x.Id == tagId);
+            await tag.Delete(sdkDb);
+        }
+
+        await using var verifyDb = await SdkDbContext();
+        var persisted = await verifyDb.Tags.AsNoTracking().FirstAsync(x => x.Id == tagId);
+        Assert.That(persisted.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Removed),
+            "Seeding precondition: the Tag must really be soft-deleted in the database");
+    }
+
+    /// <summary>Soft-deletes an SDK SiteTag row, leaving its Tag alone. Same
+    /// tracking trap as <see cref="SoftDeleteTagAsync"/>.</summary>
+    private async Task SoftDeleteSiteTagAsync(int siteTagId)
+    {
+        await using (var sdkDb = await SdkDbContext())
+        {
+            var siteTag = await sdkDb.SiteTags.FirstAsync(x => x.Id == siteTagId);
+            await siteTag.Delete(sdkDb);
+        }
+
+        await using var verifyDb = await SdkDbContext();
+        var persisted = await verifyDb.SiteTags.AsNoTracking().FirstAsync(x => x.Id == siteTagId);
+        Assert.That(persisted.WorkflowState, Is.EqualTo(Constants.WorkflowStates.Removed),
+            "Seeding precondition: the SiteTag must really be soft-deleted in the database");
     }
 
     /// <summary>Seeds SDK Site/Worker/SiteWorker + AssignedSite + a prior-day
