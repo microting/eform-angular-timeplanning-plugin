@@ -5,6 +5,7 @@ using DotNet.Testcontainers.Containers;
 using eFormCore;
 using Microsoft.EntityFrameworkCore;
 using Microting.eForm.Infrastructure;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using NUnit.Framework;
@@ -101,6 +102,46 @@ public abstract class TestBaseSetup
         baseDbContext.Database.EnsureDeleted();
         baseDbContext.Database.EnsureCreated();
         return baseDbContext;
+    }
+
+    /// <summary>
+    /// The context built by <see cref="GetBaseDbContextWithAdminAsync"/>, held
+    /// here so <see cref="TearDown"/> disposes it for every fixture instead of
+    /// each one repeating the same teardown.
+    /// </summary>
+    protected BaseDbContext? SeededBaseDbContext;
+
+    /// <summary>
+    /// Seeds a <see cref="SeededBaseDbContext"/> holding one admin user and
+    /// returns that user's id. Services that scope their result to the signed-in
+    /// caller — the planning board, the site-tags lookup, the all-workers
+    /// export — need a real caller to resolve; this is the admin caller, for
+    /// whom scoping is a no-op. Point the IUserService substitute's
+    /// GetCurrentUserAsync at the returned id.
+    /// </summary>
+    protected async Task<int> GetBaseDbContextWithAdminAsync(string email = "admin@example.com")
+    {
+        var db = GetBaseDbContext();
+        SeededBaseDbContext = db;
+
+        var role = new EformRole { Name = "admin", NormalizedName = "ADMIN" };
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        var user = new EformUser
+        {
+            UserName = email,
+            Email = email,
+            FirstName = "Admin",
+            LastName = "User"
+        };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        db.UserRoles.Add(new EformUserRole { UserId = user.Id, RoleId = role.Id });
+        await db.SaveChangesAsync();
+
+        return user.Id;
     }
 
     /// <summary>
@@ -231,6 +272,13 @@ public abstract class TestBaseSetup
     [TearDown]
     public async Task TearDown()
     {
+        // Null unless this test seeded a caller; disposing blind would mask a
+        // SetUp failure with an NRE from TearDown.
+        if (SeededBaseDbContext != null)
+        {
+            await SeededBaseDbContext.DisposeAsync();
+            SeededBaseDbContext = null;
+        }
         await TimePlanningPnDbContext!.DisposeAsync();
     }
 }

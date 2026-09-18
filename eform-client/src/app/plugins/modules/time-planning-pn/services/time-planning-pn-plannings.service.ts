@@ -12,11 +12,13 @@ import {
   TimePlanningsUpdateModel,
   TimePlanningUpdateModel,
   PlanRegistrationVersionHistoryModel,
+  SiteTagsModel,
 } from '../models';
 
 export let TimePlanningPnPlanningsMethods = {
   Plannings: 'api/time-planning-pn/plannings',
   SimplePlannings: 'api/time-planning-pn/plannings/index',
+  SiteTags: 'api/time-planning-pn/plannings/site-tags',
   IndexWorkingHours: 'api/time-planning-pn/working-hours/index',
   WorkingHours: 'api/time-planning-pn/working-hours',
 };
@@ -35,6 +37,11 @@ export class TimePlanningPnPlanningsService {
       TimePlanningPnPlanningsMethods.SimplePlannings,
       model
     );
+  }
+
+  /** Every worker with the tags on them, in one call. See SiteTagsModel. */
+  getSiteTags(): Observable<OperationDataResult<SiteTagsModel[]>> {
+    return this.apiBaseService.get(TimePlanningPnPlanningsMethods.SiteTags);
   }
 
   updatePlanning(

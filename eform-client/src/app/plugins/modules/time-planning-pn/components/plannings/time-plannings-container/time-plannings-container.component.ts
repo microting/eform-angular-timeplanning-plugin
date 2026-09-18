@@ -21,7 +21,9 @@ import {ExcelIcon, iOSIcon, PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {Store} from '@ngrx/store';
 import {selectCurrentUserLocale, selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
 import {MatDialog} from '@angular/material/dialog';
-import {DownloadExcelDialogComponent, PayrollExportDialogComponent} from 'src/app/plugins/modules/time-planning-pn/components';
+import {
+  DownloadExcelDialogComponent, DownloadExcelDialogData, PayrollExportDialogComponent
+} from 'src/app/plugins/modules/time-planning-pn/components';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 import {HelpAudience, HelpEntryId, HelpTourName, HelpUiStrings} from '../../../help/help.model';
 import {HelpContentService} from '../../../help/services/help-content.service';
@@ -109,7 +111,9 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
       .pipe(take(1))
       .subscribe((data) => {
         if (data && data.success) {
-          this.availableTags = data.model;
+          // A success with no body still means "no tags", and everything downstream —
+          // the filter, the export dialog — is written against a list.
+          this.availableTags = data.model || [];
         }
       });
 
@@ -487,15 +491,20 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   openDownloadExcelDialog() {
-          const dialogRef = this.dialog.open(DownloadExcelDialogComponent, {
-            width: '600px',
-            data: this.availableSites,
-          });
-          dialogRef.afterClosed().subscribe((result) => {
-            // if (result) {
-            //   this.getPlannings();
-            // }
-          });
+    // The export opens on what the page is showing. The dialog copies these and
+    // never writes back, so narrowing an export leaves the page as it was.
+    const data: DownloadExcelDialogData = {
+      availableSites: this.availableSites,
+      availableTags: this.availableTags,
+      dateFrom: this.dateFrom,
+      dateTo: this.dateTo,
+      selectedTagIds: this.selectedTagIds,
+      siteId: this.siteId,
+    };
+    this.dialog.open(DownloadExcelDialogComponent, {
+      width: '600px',
+      data,
+    });
   }
 
   openPayrollExportDialog() {
@@ -586,7 +595,9 @@ export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   }
 
   onTagsChanged($event: number[]) {
-    this.selectedTagIds = $event;
+    // The select emits null when the last tag is cleared, and "no tags" is an empty
+    // list everywhere else: the request builder, the row chips, the export dialog.
+    this.selectedTagIds = $event || [];
     this.getPlannings();
   }
 

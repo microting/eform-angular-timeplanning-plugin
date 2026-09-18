@@ -3368,6 +3368,54 @@ public class TimePlanningWorkingHoursService(
 
             var core = await coreHelper.GetCore();
             var sdkContext = core.DbContextHelper.GetDbContext();
+
+            // Scope to the caller, from the same code the planning board and the
+            // export dialog's worker count use. Without this a manager saw "3
+            // workers" in the dialog and downloaded the whole organisation —
+            // and any non-admin could export every worker in the system.
+            var assignedSites = await dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .ToListAsync();
+            var scope = await SiteScopeResolver
+                .ResolveForCurrentUserAsync(assignedSites, dbContext, sdkContext, baseDbContext, userService)
+                .ConfigureAwait(false);
+            if (scope.ErrorKey != null)
+            {
+                return new OperationDataResult<Stream>(false,
+                    localizationService.GetString(scope.ErrorKey));
+            }
+            // Narrowing the ids (rather than rebuilding them from the scoped
+            // AssignedSites) keeps an admin's workbook byte-identical: every id
+            // the query above produced is in an admin's scope, and Narrow
+            // preserves order, so the sheets stay in the order they were.
+            siteIds = scope.Narrow(siteIds);
+
+            // Etiketter filter, applied before any per-site work: an empty
+            // selection means "no filter", so an export started from an
+            // unfiltered grid still covers every worker.
+            if (model.TagIds is { Count: > 0 })
+            {
+                // Stricter than the planning grid's filter this is modelled on
+                // (TimePlanningPlanningService.Index), which checks only the
+                // SiteTag row: a soft-deleted Tag whose SiteTag survives must
+                // not pull a site in here, because the dialog's worker count
+                // comes from GetSiteTags, which excludes it. The count is only
+                // worth showing if it predicts what the export contains.
+                var sdkSitesWithAnyOfTags = await sdkContext.SiteTags
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Tag.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.TagId != null && model.TagIds.Contains(x.TagId.Value))
+                    .Where(x => x.Site.MicrotingUid != null)
+                    .Select(x => x.Site.MicrotingUid!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                siteIds = siteIds
+                    .Where(sdkSitesWithAnyOfTags.Contains)
+                    .ToList();
+            }
+
             // Tag names per site (sorted, comma-joined), keyed by MicrotingUid —
             // one lookup per export, shared by all sheet writers below.
             var tagNamesBySiteUid = await GetSiteTagNames(sdkContext, siteIds);

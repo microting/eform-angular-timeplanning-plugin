@@ -42,6 +42,7 @@ using System.Threading.Tasks;
 using Infrastructure.Models.Planning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microting.eForm.Infrastructure;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
@@ -75,113 +76,25 @@ public class TimePlanningPlanningService(
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .ToListAsync().ConfigureAwait(false);
 
-            var currentUserAsync = await userService.GetCurrentUserAsync();
-            if (currentUserAsync == null)
+            var scope = await SiteScopeResolver
+                .ResolveForCurrentUserAsync(assignedSites, dbContext, sdkDbContext, baseDbContext, userService)
+                .ConfigureAwait(false);
+            if (scope.ErrorKey != null)
             {
                 return new OperationDataResult<List<TimePlanningPlanningModel>>(false,
-                    localizationService.GetString("UserNotFound"), null!);
-            }
-            var currentUser = baseDbContext.Users
-                .Include(x => x.UserRoles)
-                .ThenInclude(x => x.Role)
-                .Single(x => x.Id == currentUserAsync.Id);
-
-            var isAdmin = currentUser.UserRoles
-                .Any(x => x.Role.Name == "admin");
-            if (!isAdmin)
-            {
-                var userSecurityGroups = baseDbContext.SecurityGroupUsers
-                    .Include(x => x.SecurityGroup)
-                    .Where(x => x.EformUserId == currentUser.Id)
-                    .ToList();
-                var eFormAdminsGroup = userSecurityGroups
-                    .Any(x => x.SecurityGroup.Name == "eForm admins");
-                isAdmin = eFormAdminsGroup;
-                if (!isAdmin)
-                {
-                    var isEformUsersGroup = userSecurityGroups
-                        .Any(x => x.SecurityGroup.Name == "eForm users");
-                    var isKunTidGroup = userSecurityGroups
-                        .Any(x => x.SecurityGroup.Name == "Kun tid");
-                    if (isEformUsersGroup && !isKunTidGroup)
-                    {
-                        // Fallback: when no user in the system is configured as a manager,
-                        // grant "eForm users" members the admin-for-visibility view on this
-                        // endpoint so the planning dashboard isn't empty in that degenerate
-                        // state. Users also in "Kun tid" (time-registration device users with
-                        // WebAccess) are explicitly excluded and stay restricted to own site.
-                        var anyManagerExists = await dbContext.AssignedSites
-                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                            .AnyAsync(x => x.IsManager)
-                            .ConfigureAwait(false);
-                        if (!anyManagerExists)
-                        {
-                            isAdmin = true;
-                        }
-                    }
-                }
+                    localizationService.GetString(scope.ErrorKey), null!);
             }
 
-            if (!isAdmin)
+            assignedSites = scope.ScopedSites;
+            if (scope.RestrictToOwnSite)
             {
-                var worker = await sdkDbContext.Workers
-                    .Include(x => x.SiteWorkers)
-                    .ThenInclude(x => x.Site)
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
-
-                if (worker == null)
-                {
-                    SentrySdk.CaptureMessage($"Worker with email {currentUser.Email} not found");
-                    return new OperationDataResult<List<TimePlanningPlanningModel>>(
-                        false,
-                        localizationService.GetString("ErrorWhileObtainingPlannings"));
-                }
-
-                // Deterministically resolve the active site (excludes removed
-                // SiteWorker/Site rows). No active site -> same error path as a
-                // missing worker (previously NRE'd on empty SiteWorkers).
-                var site = worker!.ResolveActiveSite();
-                if (site == null)
-                {
-                    SentrySdk.CaptureMessage($"No active site for worker with email {currentUser.Email}");
-                    return new OperationDataResult<List<TimePlanningPlanningModel>>(
-                        false,
-                        localizationService.GetString("ErrorWhileObtainingPlannings"));
-                }
-
-                var assignedSite = assignedSites
-                    .FirstOrDefault(x => x.SiteId == site.MicrotingUid);
-                if (assignedSite == null || !assignedSite.IsManager)
-                {
-                    model.SiteId = site.MicrotingUid;
-                } else if (assignedSite.IsManager)
-                {
-                    var assignedSiteTags = await dbContext.AssignedSiteManagingTags
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => x.AssignedSiteId == assignedSite.Id)
-                        .Select(x => x.TagId)
-                        .ToListAsync();
-                    var assignedSiteIdsWithTags = await sdkDbContext.SiteTags
-                        .Include(x => x.Site)
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => assignedSiteTags.Contains((int)x.TagId!))
-                        .Select(x => x.Site.MicrotingUid)
-                        .Distinct()
-                        .ToListAsync();
-                    assignedSites = assignedSites
-                        .Where(x => assignedSiteIdsWithTags.Contains(x.SiteId))
-                        .ToList();
-                    // Only re-add the manager's own AssignedSite if the manager-tag
-                    // filter dropped it. When the manager is in their own managed
-                    // tag (SiteTag joins the manager's own SiteId to that TagId),
-                    // it is already present and a blind Add() produced two rows
-                    // for the manager on the planning page.
-                    if (assignedSites.All(x => x.Id != assignedSite.Id))
-                    {
-                        assignedSites.Add(assignedSite);
-                    }
-                }
+                // Still stamp the request model: the SiteId filter below and the
+                // per-site work downstream read it. ScopedSites has already
+                // applied the same narrowing, so this is idempotent for a real
+                // site id — and it is what keeps a worker whose site has no
+                // MicrotingUid (OwnSiteId null, so the filter below is skipped)
+                // from falling through to every site on the board.
+                model.SiteId = scope.OwnSiteId;
             }
 
             // Defensive dedup: guarantee no duplicate AssignedSite rows reach the
@@ -235,18 +148,9 @@ public class TimePlanningPlanningService(
             // Batch-resolve SDK site tags for the listed sites (one query,
             // same shape as the Etiketter filter query above), grouped per
             // site MicrotingUid.
-            var siteMicrotingUids = assignedSites.Select(x => x.SiteId).ToList();
-            var siteTagRows = await sdkDbContext.SiteTags
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.Tag.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.Site.MicrotingUid != null && siteMicrotingUids.Contains(x.Site.MicrotingUid.Value))
-                .Select(x => new
-                {
-                    SiteMicrotingUid = x.Site.MicrotingUid!.Value,
-                    x.TagId,
-                    TagName = x.Tag.Name
-                })
-                .ToListAsync().ConfigureAwait(false);
+            var siteTagRows = await LoadSiteTagRowsAsync(
+                    sdkDbContext, assignedSites.Select(x => x.SiteId).ToList())
+                .ConfigureAwait(false);
             var tagsBySiteUid = siteTagRows
                 .GroupBy(x => x.SiteMicrotingUid)
                 .ToDictionary(
@@ -2630,6 +2534,88 @@ public class TimePlanningPlanningService(
             logger.LogError(e, "TimePlanningPlanningService.ReconcileThrough failed");
             return new OperationDataResult<ReconcileThroughResultModel>(false,
                 localizationService.GetString("ErrorWhileUpdatingPlanning"));
+        }
+    }
+
+    /// <summary>
+    /// The live SDK site-tag edges for the given site MicrotingUids, one row per
+    /// edge. Shared by the planning board and the site-tags lookup so the two
+    /// cannot disagree about which edges are live — both drop removed SiteTag
+    /// rows, removed Tags, and rows whose site or tag id is null.
+    /// </summary>
+    private static async Task<List<SiteTagRow>> LoadSiteTagRowsAsync(
+        MicrotingDbContext sdkDbContext,
+        List<int> siteMicrotingUids)
+    {
+        return await sdkDbContext.SiteTags
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .Where(x => x.Tag.WorkflowState != Constants.WorkflowStates.Removed)
+            .Where(x => x.TagId != null)
+            .Where(x => x.Site.MicrotingUid != null && siteMicrotingUids.Contains(x.Site.MicrotingUid.Value))
+            .Select(x => new SiteTagRow(x.Site.MicrotingUid!.Value, x.TagId!.Value, x.Tag.Name))
+            .ToListAsync().ConfigureAwait(false);
+    }
+
+    private sealed record SiteTagRow(int SiteMicrotingUid, int TagId, string TagName);
+
+    public async Task<OperationDataResult<List<SiteTagsModel>>> GetSiteTags()
+    {
+        try
+        {
+            var sdkCore = await core.GetCore();
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+
+            var assignedSites = await dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .ToListAsync().ConfigureAwait(false);
+
+            var scope = await SiteScopeResolver
+                .ResolveForCurrentUserAsync(assignedSites, dbContext, sdkDbContext, baseDbContext, userService)
+                .ConfigureAwait(false);
+            if (scope.ErrorKey != null)
+            {
+                return new OperationDataResult<List<SiteTagsModel>>(false,
+                    localizationService.GetString(scope.ErrorKey));
+            }
+
+            assignedSites = scope.ScopedSites;
+
+            // One tag query for the whole board — this endpoint is called on
+            // every dialog open, so it must not grow a per-site query. TagName
+            // comes along unused; one shared query beats two that can drift.
+            var tagIdsBySiteUid = (await LoadSiteTagRowsAsync(
+                    sdkDbContext, assignedSites.Select(x => x.SiteId).Distinct().ToList())
+                    .ConfigureAwait(false))
+                .GroupBy(x => x.SiteMicrotingUid)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.TagId).Distinct().ToList());
+
+            // One row per SiteId, not per AssignedSite row: a site with two
+            // non-removed AssignedSite rows is still ONE worker, and counting it
+            // twice is precisely the error this endpoint exists to prevent. Tag
+            // ids merge for free — they hang off the SDK site, not off the
+            // AssignedSite row, so they are already keyed by SiteId.
+            var result = assignedSites
+                .GroupBy(x => x.SiteId)
+                .Select(g => new SiteTagsModel
+                {
+                    SiteId = g.Key,
+                    TagIds = tagIdsBySiteUid.TryGetValue(g.Key, out var tagIds) ? tagIds : new List<int>(),
+                    // Resigned only when EVERY row for the site is, matching the
+                    // export, which keeps a site as long as one non-resigned row
+                    // qualifies it.
+                    Resigned = g.All(x => x.Resigned)
+                })
+                .ToList();
+
+            return new OperationDataResult<List<SiteTagsModel>>(true, result);
+        }
+        catch (Exception e)
+        {
+            SentrySdk.CaptureException(e);
+            logger.LogError(e, "TimePlanningPlanningService.GetSiteTags failed");
+            return new OperationDataResult<List<SiteTagsModel>>(false,
+                localizationService.GetString("ErrorWhileObtainingPlannings"));
         }
     }
 }

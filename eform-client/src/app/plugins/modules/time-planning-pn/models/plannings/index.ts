@@ -6,3 +6,4 @@ export * from './planning-pr-day.model';
 export * from './planning-pr-day-update.model';
 export * from './plan-registration-version.model';
 export * from './reconcile-through-result.model';
+export * from './site-tags.model';
