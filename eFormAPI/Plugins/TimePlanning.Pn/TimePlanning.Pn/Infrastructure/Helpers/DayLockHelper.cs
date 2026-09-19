@@ -163,9 +163,11 @@ public static class DayLockHelper
     /// <summary>
     /// What counts as a boundary row, in one place: Reconciled and not
     /// soft-deleted. Both public queries compose their own site predicate
-    /// over this so the two never drift apart.
+    /// over this so the two never drift apart. Internal (not private) so the
+    /// reconciliation summary counts "has ever reconciled" over the SAME rows
+    /// that hold boundaries; the service twin needs no change for this.
     /// </summary>
-    private static IQueryable<PlanRegistration> BoundaryRows(TimePlanningPnDbContext db)
+    internal static IQueryable<PlanRegistration> BoundaryRows(TimePlanningPnDbContext db)
         => db.PlanRegistrations
             .Where(x => x.Reconciled)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed);
