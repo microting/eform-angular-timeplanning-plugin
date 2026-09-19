@@ -49,17 +49,21 @@ public class ReconciliationSummaryService(
             var period = PayrollPeriod.LastClosed(todayUtc, cutoffDay);
             var dayAfterEnd = period.End.AddDays(1);
 
-            // Planned OR worked, in the one-minute-interval representation only:
-            // every customer runs UseOneMinuteIntervals=true, so the seconds
-            // columns and the exact Start1StartedAt stamp are authoritative. The
-            // legacy 5-minute doubles (PlanHours/NettoHours) are deliberately
-            // NOT consulted.
+            // Planned OR worked. Worked time comes from the one-minute fields
+            // only (NettoHoursInSeconds, Start1StartedAt): every customer runs
+            // UseOneMinuteIntervals=true, so those are authoritative and the
+            // legacy NettoHours double is deliberately NOT consulted. Planned
+            // time comes from the PlanHours double, not PlanHoursInSeconds:
+            // normal planning writers only ever set PlanHours -- the seconds
+            // column is written only after a content handover -- so requiring
+            // PlanHoursInSeconds would miss ordinary planned-but-never-clocked
+            // workers.
             var siteIds = await dbContext.PlanRegistrations
                 .AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => x.Date >= period.Start && x.Date < dayAfterEnd)
-                .Where(x => x.PlanHoursInSeconds > 0 || x.NettoHoursInSeconds > 0
-                            || x.Start1StartedAt != null)
+                .Where(x => x.NettoHoursInSeconds > 0 || x.Start1StartedAt != null
+                            || x.PlanHoursInSeconds > 0 || x.PlanHours > 0)
                 .Select(x => x.SdkSitId)
                 .Distinct()
                 .ToListAsync()
@@ -72,15 +76,22 @@ public class ReconciliationSummaryService(
             var never = boundaries.Values.Count(b => b is null);
             var oldest = boundaries.Values.Min(); // Min over DateTime? skips nulls; null when none.
 
-            var reconciledRows = DayLockHelper.BoundaryRows(dbContext);
-            var withAny = await reconciledRows
-                .Select(x => x.SdkSitId)
-                .Distinct()
-                .CountAsync()
+            // One aggregate query for both adoption numbers instead of two
+            // full scans of BoundaryRows. GroupBy(_ => 1) collapses every row
+            // into a single group so Pomelo emits one SELECT with COUNT(DISTINCT ...)
+            // and MAX(...); no group means no row, so a null result means "no
+            // reconciled rows at all" -- map that to 0 / null explicitly.
+            var boundarySummary = await DayLockHelper.BoundaryRows(dbContext)
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Sites = g.Select(x => x.SdkSitId).Distinct().Count(),
+                    Last = g.Max(x => x.ReconciledAt),
+                })
+                .FirstOrDefaultAsync()
                 .ConfigureAwait(false);
-            var lastReconciledAt = await reconciledRows
-                .MaxAsync(x => x.ReconciledAt)
-                .ConfigureAwait(false);
+            var withAny = boundarySummary?.Sites ?? 0;
+            var lastReconciledAt = boundarySummary?.Last;
 
             var model = new ReconciliationSummaryModel
             {

@@ -127,11 +127,24 @@ public class ReconciliationSummaryServiceTests : TestBaseSetup
     }
 
     [Test]
-    public async Task RowsWithOnlyLegacyDoubleHours_AreNotCounted()
+    public async Task RowWithOnlyPlanHoursDouble_IsCounted()
     {
-        // All customers run UseOneMinuteIntervals=true; the legacy 5-minute
-        // doubles alone do not make a worker count (user decision 2026-09-19).
+        // Normal planning writers only ever set the PlanHours double --
+        // PlanHoursInSeconds is written only after a content handover -- so a
+        // planned-but-never-clocked worker must still count (user decision
+        // 2026-09-19).
         await Seed(831, "2026-09-01", planHours: 7.5);
+
+        var result = await Service().GetSummaryAsync(Today);
+
+        Assert.That(result.Model.WorkersInPeriod, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RowWithOnlyNettoHoursDouble_IsNotCounted()
+    {
+        // All customers run UseOneMinuteIntervals=true; the legacy NettoHours
+        // double alone does not make a worker count (user decision 2026-09-19).
         await Seed(832, "2026-09-02", nettoHours: 6.25);
 
         var result = await Service().GetSummaryAsync(Today);

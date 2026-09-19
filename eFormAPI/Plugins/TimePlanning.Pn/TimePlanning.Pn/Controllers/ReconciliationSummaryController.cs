@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Infrastructure.Models.Reconciliation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Services.ReconciliationSummaryService;
 
@@ -12,7 +13,7 @@ using Services.ReconciliationSummaryService;
 /// Read-only Afstem statistics, polled by my-microting's customer-stats scan
 /// with the service login. See ReconciliationSummaryModel for the wire shape.
 /// </summary>
-[Authorize]
+[Authorize(Roles = EformRole.Admin)]
 [Route("api/time-planning-pn/reconciliation")]
 public class ReconciliationSummaryController(IReconciliationSummaryService reconciliationSummaryService) : Controller
 {

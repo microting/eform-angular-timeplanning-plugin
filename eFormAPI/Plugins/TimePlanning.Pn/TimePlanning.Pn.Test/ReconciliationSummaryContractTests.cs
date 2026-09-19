@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -118,6 +119,7 @@ public class ReconciliationSummaryContractTests
         {
             Assert.That(route?.Template, Is.EqualTo("api/time-planning-pn/reconciliation"));
             Assert.That(authorize, Is.Not.Null, "must require an authenticated caller");
+            Assert.That(authorize?.Roles, Is.EqualTo(EformRole.Admin));
             Assert.That(get?.Template, Is.EqualTo("summary"));
             Assert.That(type.GetMethods().Count(m => m.GetCustomAttributes<HttpMethodAttribute>().Any(a =>
                 a.HttpMethods.Any(h => h != "GET"))), Is.Zero, "read-only: no write verbs");

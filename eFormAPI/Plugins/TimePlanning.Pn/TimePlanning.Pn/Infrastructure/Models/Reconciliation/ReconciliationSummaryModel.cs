@@ -20,7 +20,12 @@ public class ReconciliationSummaryModel
     /// <summary>yyyy-MM-dd, inclusive; always before today (UTC).</summary>
     public string PeriodEnd { get; set; } = "";
 
-    /// <summary>Workers with planned or worked hours on a live row in the period.</summary>
+    /// <summary>
+    /// Workers with planned or worked hours on a live row in the period.
+    /// Worked time is read from the one-minute fields (NettoHoursInSeconds,
+    /// Start1StartedAt); planned time is read from the PlanHours double,
+    /// since PlanHoursInSeconds is written only after a content handover.
+    /// </summary>
     public int WorkersInPeriod { get; set; }
 
     /// <summary>Of those, workers whose boundary is on or after PeriodEnd.</summary>
