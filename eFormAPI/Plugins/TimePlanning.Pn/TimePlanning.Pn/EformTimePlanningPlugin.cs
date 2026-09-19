@@ -41,6 +41,7 @@ using TimePlanning.Pn.Services.PayTimeBandRuleService;
 using TimePlanning.Pn.Services.PayrollExportService;
 using TimePlanning.Pn.Services.DeviceTokenService;
 using TimePlanning.Pn.Services.PushNotificationService;
+using TimePlanning.Pn.Services.ReconciliationSummaryService;
 using Constants = Microting.eForm.Infrastructure.Constants.Constants;
 
 namespace TimePlanning.Pn;
@@ -112,6 +113,7 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<IPayTierRuleService, PayTierRuleService>();
         services.AddTransient<IPayTimeBandRuleService, PayTimeBandRuleService>();
         services.AddTransient<IPayrollExportService, PayrollExportService>();
+        services.AddTransient<IReconciliationSummaryService, ReconciliationSummaryService>();
         services.AddTransient<IDeviceTokenService, DeviceTokenService>();
         services.AddScoped<IPushNotificationService, PushNotificationService>();
         services.AddControllers();
