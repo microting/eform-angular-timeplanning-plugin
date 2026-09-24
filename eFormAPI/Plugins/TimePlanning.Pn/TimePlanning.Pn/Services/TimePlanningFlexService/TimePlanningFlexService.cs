@@ -271,7 +271,20 @@ public class TimePlanningFlexService(
         };
 
         await planning.Create(dbContext);
+
+        // R4: carry this row's balance to the worker's later rows (future rows
+        // included). From the NEXT day: the office-entered start balance on
+        // this row is kept as written. A null assignedSite is fine here: the
+        // walk treats a worker with no assignment as five-minute mode.
+        var assignedSite = await FindAssignedSiteAsync(sdkSiteId);
+        await FlexChainRecompute.RunForwardAsync(dbContext, assignedSite, sdkSiteId, planning.Date.AddDays(1));
     }
+
+    private async Task<AssignedSite?> FindAssignedSiteAsync(int sdkSiteId) =>
+        await dbContext.AssignedSites
+            .AsNoTracking()
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.SiteId == sdkSiteId);
 
     private async Task UpdatePlanning(PlanRegistration planRegistration,
         TimePlanningFlexUpdateModel model)
@@ -279,10 +292,7 @@ public class TimePlanningFlexService(
         planRegistration.CommentOfficeAll = model.CommentOfficeAll;
         planRegistration.CommentOffice = model.CommentOffice;
 
-        var assignedSite = await dbContext.AssignedSites
-            .AsNoTracking()
-            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-            .FirstOrDefaultAsync(x => x.SiteId == planRegistration.SdkSitId);
+        var assignedSite = await FindAssignedSiteAsync(planRegistration.SdkSitId);
 
         // PaiedOutFlexInSeconds is the source the flag-on flex chain
         // (PlanRegistrationHelper.ApplyNettoFlexChainSecondPrecision /
@@ -330,5 +340,12 @@ public class TimePlanningFlexService(
         planRegistration.UpdatedByUserId = userService.UserId;
 
         await planRegistration.Update(dbContext);
+
+        // R4: carry the adjusted balance to the worker's later rows (future
+        // rows included). From the NEXT day: this row keeps the balance the
+        // flex tab just wrote. A null assignedSite is fine here: the walk
+        // treats a worker with no assignment as five-minute mode.
+        await FlexChainRecompute.RunForwardAsync(
+            dbContext, assignedSite, planRegistration.SdkSitId, planRegistration.Date.AddDays(1));
     }
 }
