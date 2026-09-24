@@ -498,7 +498,7 @@ public static class PlanRegistrationHelper
                             if (!string.IsNullOrEmpty(planRegistration.PlanText))
                             {
                                 var originalPlanHours = planRegistration.PlanHours;
-                                PlanTextHelper.ParsePlanText(planRegistration);
+                                PlanRegistrationPlanText.ParseInto(planRegistration);
 
                                 if (originalPlanHours != planRegistration.PlanHours || tainted)
                                 {
@@ -1235,7 +1235,7 @@ public static class PlanRegistrationHelper
                     if (!string.IsNullOrEmpty(planRegistration.PlanText))
                     {
                             var originalPlanHours = planRegistration.PlanHours;
-                            PlanTextHelper.ParsePlanText(planRegistration);
+                            PlanRegistrationPlanText.ParseInto(planRegistration);
 
                             if (originalPlanHours != planRegistration.PlanHours || tainted)
                             {
@@ -1594,59 +1594,6 @@ public static class PlanRegistrationHelper
             }
         // }
         return planRegistration;
-    }
-
-
-    private static int BreakTimeCalculator(string breakPart)
-    {
-        return breakPart switch
-        {
-            "0.1" => 5,
-            ".1" => 5,
-            "0.15" => 10,
-            ".15" => 10,
-            "0.25" => 15,
-            ".25" => 15,
-            "0.3" => 20,
-            ".3" => 20,
-            "0.4" => 25,
-            ".4" => 25,
-            "0.5" => 30,
-            ".5" => 30,
-            "0.6" => 35,
-            ".6" => 35,
-            "0.7" => 40,
-            ".7" => 40,
-            "0.75" => 45,
-            ".75" => 45,
-            "0.8" => 50,
-            ".8" => 50,
-            "0.9" => 55,
-            ".9" => 55,
-            "¾" => 45,
-            "½" => 30,
-            "1" => 60,
-            "1.0" => 60,
-            "1.25" => 75,
-            "1.5" => 90,
-            "1.75" => 105,
-            "2" => 120,
-            "2.0" => 120,
-            "2.25" => 135,
-            "2.5" => 150,
-            "2.75" => 165,
-            "3" => 180,
-            "3.0" => 180,
-            "3.25" => 195,
-            "3.5" => 210,
-            "3.75" => 225,
-            "4" => 240,
-            "4.0" => 240,
-            "4.25" => 255,
-            "4.5" => 270,
-            "4.75" => 285,
-            _ => 0
-        };
     }
 
     public static async Task<TimePlanningWorkingHoursModel> ReadBySiteAndDate(

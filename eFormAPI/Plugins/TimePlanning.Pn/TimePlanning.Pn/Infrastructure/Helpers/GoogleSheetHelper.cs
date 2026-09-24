@@ -438,7 +438,7 @@ public class GoogleSheetHelper
                             StatusCaseId = 0
                         };
 
-                        PlanTextHelper.ParsePlanText(planRegistration);
+                        PlanRegistrationPlanText.ParseInto(planRegistration);
 
                         if (preTimePlanning != null)
                         {
@@ -463,7 +463,7 @@ public class GoogleSheetHelper
                     else
                     {
                         // An admin edited this day in the app, so the sheet does not
-                        // win it back. ParsePlanText below re-derives PlanHours and
+                        // win it back. PlanRegistrationPlanText.ParseInto below re-derives PlanHours and
                         // every shift field from the text, so the row is left alone
                         // entirely rather than having one assignment guarded. Its
                         // flex chain is deliberately left as the app wrote it; the
@@ -500,7 +500,7 @@ public class GoogleSheetHelper
 
                         planRegistration.UpdatedByUserId = 1;
 
-                        PlanTextHelper.ParsePlanText(planRegistration);
+                        PlanRegistrationPlanText.ParseInto(planRegistration);
 
                         if (preTimePlanning != null)
                         {
@@ -571,39 +571,6 @@ public class GoogleSheetHelper
         {
             Console.WriteLine("No data found.");
         }
-    }
-
-    private static int BreakTimeCalculator(string breakPart)
-    {
-        return breakPart switch
-        {
-            "0.1" => 5,
-            ".1" => 5,
-            "0.15" => 10,
-            ".15" => 10,
-            "0.25" => 15,
-            ".25" => 15,
-            "0.3" => 20,
-            ".3" => 20,
-            "0.4" => 25,
-            ".4" => 25,
-            "0.5" => 30,
-            ".5" => 30,
-            "0.6" => 35,
-            ".6" => 35,
-            "0.7" => 40,
-            ".7" => 40,
-            "0.75" => 45,
-            ".75" => 45,
-            "0.8" => 50,
-            ".8" => 50,
-            "0.9" => 55,
-            ".9" => 55,
-            "¾" => 45,
-            "½" => 30,
-            "1" => 60,
-            _ => 0
-        };
     }
 
     static void AutoAdjustColumnWidths(SheetsService service, string spreadsheetId, string sheetName, ILogger logger)
