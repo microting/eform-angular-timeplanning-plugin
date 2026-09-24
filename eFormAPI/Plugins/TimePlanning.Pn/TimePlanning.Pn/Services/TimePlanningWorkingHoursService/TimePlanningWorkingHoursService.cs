@@ -550,20 +550,18 @@ public class TimePlanningWorkingHoursService(
             var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, model.SiteId);
             // Locked rows are never even loaded, so nothing below can mutate
             // one and have a later save (which saves the whole context) flush
-            // it. The forward cascade walks this same list, so it skips them
-            // too. Not redundant with the loop's skip: only this keeps the
-            // cascade out of the lock.
+            // it. The forward walk at the end skips locked rows on its own.
             var planRegistrations = await dbContext.PlanRegistrations
                 .Where(x => x.SdkSitId == model.SiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .WhereOpen(lockedThrough)
                 .ToListAsync();
-            // Site-level one-minute flag drives the forward-cascade recompute below
-            // so the double AND *InSeconds SumFlex columns are written consistently.
+            // Feeds cascadeTimeline below and the forward walk at the end;
+            // UpdatePlanning/CreatePlanning each fetch their own copy.
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync(x => x.SiteId == model.SiteId);
-            // ONE query for the whole cascade below — never per row.
+            // ONE query for every row saved below — never per row.
             var cascadeTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
             var first = true;
             foreach (var planning in model.Plannings)
@@ -592,55 +590,16 @@ public class TimePlanningWorkingHoursService(
                 first = false;
             }
 
-            // Check if there are any plannings after the last planning in the model
-            var lastPlanning = model.Plannings
-                .OrderByDescending(x => x.Date)
-                .FirstOrDefault();
-            if (lastPlanning != null)
+            // R4: carry the balance from the EARLIEST posted day to the worker's
+            // LAST row — future pre-created rows included — re-chaining
+            // Flex/SumFlex only; no later row's hours are recomputed (R2). Rows
+            // the loop created are chained here too. Locked rows are passed,
+            // never written, and the first open row after them seeds from the
+            // lock boundary. (Posted dates were normalised to midnight above.)
+            if (model.Plannings.Count > 0)
             {
-                lastPlanning.Date = new DateTime(lastPlanning.Date.Year, lastPlanning.Date.Month, lastPlanning.Date.Day,
-                    0, 0, 0);
-                var planRegistrationsAfterLastPlanning = planRegistrations
-                    .Where(x => x.Date > lastPlanning.Date)
-                    .Where(x => x.Date < DateTime.Now.AddDays(180))
-                    .ToList();
-                foreach (var planRegistration in planRegistrationsAfterLastPlanning)
-                {
-                    var preTimePlanning =
-                        await dbContext.PlanRegistrations.AsNoTracking()
-                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                            .Where(x => x.Date < planRegistration.Date
-                                        && x.SdkSitId == planRegistration.SdkSitId)
-                            .OrderByDescending(x => x.Date)
-                            .FirstOrDefaultAsync();
-
-                    // Re-chain the running flex balance for this later day off the
-                    // preceding row. On UseOneMinuteIntervals sites route through the
-                    // seconds-precision helper so BOTH the *InSeconds source of truth
-                    // AND the back-derived double columns stay consistent — previously
-                    // this rewrote only the doubles (and ignored NettoHoursOverride),
-                    // so the double SumFlexEnd drifted from the seconds chain and the
-                    // mobile summary (which read the double) disagreed with the web
-                    // grid (which recomputes from seconds).
-                    // Mode AT REGISTRATION for THIS later row — see
-                    // OneMinuteModeTimeline.
-                    if (cascadeTimeline.WasOneMinuteForRow(planRegistration))
-                    {
-                        FlexChain.ApplyNettoFlexChainSecondPrecision(
-                            planRegistration, preTimePlanning,
-                            cascadeTimeline.WasOneMinuteFor(preTimePlanning));
-                    }
-                    else
-                    {
-                        // Flag-off path keeps the legacy double formula (it honours
-                        // NettoHoursOverrideActive, matching UpdatePlanRegistration)
-                        // and clears the seconds columns with the same call.
-                        FlexChain.ApplyNettoFlexChainDecimal(
-                            planRegistration, preTimePlanning);
-                    }
-
-                    await planRegistration.Update(dbContext);
-                }
+                var earliestPostedDate = model.Plannings.Min(x => x.Date);
+                await FlexChainRecompute.RunForwardAsync(dbContext, assignedSite, model.SiteId, earliestPostedDate);
             }
 
 
@@ -741,6 +700,19 @@ public class TimePlanningWorkingHoursService(
         var dateTime = DateTime.Now;
         var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
 
+        // The mode AT THIS ROW'S DATE (spec R3), never the site's current
+        // flag: an office edit of a day before UseOneMinuteIntervalsFrom must
+        // not re-register that day as one-minute (B4).
+        var rowIsOneMinute = timeline.WasOneMinuteAt(planRegistration.Date);
+
+        // The grid posts EVERY visible row, touched or not. Only a row whose
+        // shift ids the office actually changed is re-registered (stamps
+        // cleared, mode marker re-stamped); an untouched row keeps the stamps
+        // and marker the single-day editor or the kiosk may have set on
+        // purpose. Same `?? 0` mapping as the id assignments below, so a
+        // posted null equals a stored 0.
+        var idsChanged = false;
+
         if (planRegistration.Date != midnight)
         {
             planRegistration.MessageId = model.Message == 0 ? null : model.Message;
@@ -754,6 +726,21 @@ public class TimePlanningWorkingHoursService(
             planRegistration.PaiedOutFlex = string.IsNullOrEmpty(model.PaidOutFlex)
                 ? 0
                 : double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture);
+
+            // B2 — must run BEFORE the ids below are overwritten: both compare
+            // the posted ids with the stored ones.
+            idsChanged = (model.Shift1Start ?? 0) != planRegistration.Start1Id
+                         || (model.Shift1Stop ?? 0) != planRegistration.Stop1Id
+                         || (model.Shift1Pause ?? 0) != planRegistration.Pause1Id
+                         || (model.Shift2Start ?? 0) != planRegistration.Start2Id
+                         || (model.Shift2Stop ?? 0) != planRegistration.Stop2Id
+                         || (model.Shift2Pause ?? 0) != planRegistration.Pause2Id;
+
+            if (idsChanged && rowIsOneMinute)
+            {
+                ClearStampsOfCorrectedShifts(planRegistration, model);
+            }
+
             planRegistration.Pause1Id = model.Shift1Pause ?? 0;
             planRegistration.Pause2Id = model.Shift2Pause ?? 0;
             planRegistration.Start1Id = model.Shift1Start ?? 0;
@@ -786,12 +773,15 @@ public class TimePlanningWorkingHoursService(
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == microtingUid);
 
-        // Write-time mode marker: only the Date != midnight branch above rewrites
-        // the Start/Stop ids, so only that branch re-registers the row's mode
-        // (null site → marker unchanged; timeline fallback resolves it).
-        if (planRegistration.Date != midnight && assignedSite != null)
+        // Write-time mode marker: re-registered only when the office changed
+        // this row's shift ids (idsChanged is only ever set inside the
+        // Date != midnight branch) — the mode at the row's own date (B4), not
+        // the site's current flag. An untouched posted row keeps its marker
+        // (see idsChanged); null site → marker unchanged, the timeline
+        // fallback resolves it.
+        if (idsChanged && assignedSite != null)
         {
-            planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
+            planRegistration.RegisteredUnderOneMinuteIntervals = rowIsOneMinute;
         }
 
         planRegistration = await PlanRegistrationHelper
@@ -799,6 +789,46 @@ public class TimePlanningWorkingHoursService(
                 planRegistration, dbContext, assignedSite, DateTime.Now.AddMonths(-1), timeline);
 
         await planRegistration.Update(dbContext);
+    }
+
+    /// <summary>
+    /// B2. A one-minute row's hours come from its device stamps
+    /// (FlexChain.ComputeNettoSecondsFromDateTimeShifts). When the office
+    /// corrects a shift's ids in the grid, those stamps still hold what the
+    /// device recorded and would silently override the correction in the same
+    /// save. Drop the stamps of exactly what the office changed; the hours then
+    /// fall back to the office's ids. A changed start OR stop drops both of that
+    /// shift's work stamps, so hours and displayed times come from the same ids.
+    /// Shifts 1-2 only: this path writes no other shift ids. Confined to this
+    /// path — the single-day editor and the kiosk write exact stamps on purpose.
+    /// Called only when some posted id differs: the grid posts every visible
+    /// row, and an untouched row must keep those deliberate stamps.
+    /// </summary>
+    private static void ClearStampsOfCorrectedShifts(PlanRegistration pr, TimePlanningWorkingHoursModel model)
+    {
+        if ((model.Shift1Start ?? 0) != pr.Start1Id || (model.Shift1Stop ?? 0) != pr.Stop1Id)
+        {
+            pr.Start1StartedAt = null;
+            pr.Stop1StoppedAt = null;
+        }
+
+        if ((model.Shift1Pause ?? 0) != pr.Pause1Id)
+        {
+            pr.Pause1StartedAt = null;
+            pr.Pause1StoppedAt = null;
+        }
+
+        if ((model.Shift2Start ?? 0) != pr.Start2Id || (model.Shift2Stop ?? 0) != pr.Stop2Id)
+        {
+            pr.Start2StartedAt = null;
+            pr.Stop2StoppedAt = null;
+        }
+
+        if ((model.Shift2Pause ?? 0) != pr.Pause2Id)
+        {
+            pr.Pause2StartedAt = null;
+            pr.Pause2StoppedAt = null;
+        }
     }
 
     public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
@@ -1359,50 +1389,6 @@ public class TimePlanningWorkingHoursService(
     }
 
     /// <summary>
-    /// Flag-OFF netto computation (5-minute sites): work span in 5-minute ticks
-    /// per shift minus the canonical all-slots shift pause (floor-to-5min clock
-    /// tick), summed across shifts 1..5. Returns netto MINUTES. Mirrors the
-    /// per-call inline blocks in the personal/kiosk create/update paths.
-    /// </summary>
-    private static double ComputeFlagOffNettoMinutes(PlanRegistration pr)
-    {
-        const int minutesMultiplier = 5;
-        double nettoMinutes = 0;
-
-        if (pr.Stop1Id >= pr.Start1Id && pr.Stop1Id != 0)
-        {
-            nettoMinutes += (pr.Stop1Id - pr.Start1Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 1, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        if (pr.Stop2Id >= pr.Start2Id && pr.Stop2Id != 0)
-        {
-            nettoMinutes += (pr.Stop2Id - pr.Start2Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 2, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        if (pr.Stop3Id >= pr.Start3Id && pr.Stop3Id != 0)
-        {
-            nettoMinutes += (pr.Stop3Id - pr.Start3Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 3, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        if (pr.Stop4Id >= pr.Start4Id && pr.Stop4Id != 0)
-        {
-            nettoMinutes += (pr.Stop4Id - pr.Start4Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 4, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        if (pr.Stop5Id >= pr.Start5Id && pr.Stop5Id != 0)
-        {
-            nettoMinutes += (pr.Stop5Id - pr.Start5Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 5, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        return nettoMinutes;
-    }
-
-    /// <summary>
     /// The five-minute (flag-off) decimal flex chain used by the FOUR
     /// mobile/kiosk punch-clock save legs, byte-for-byte the formula they have
     /// always used — extracted only so the seconds-column clear cannot be
@@ -1835,7 +1821,7 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
             }
 
-            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
+            double nettoMinutes = FlexChain.ComputeNettoMinutesFlagOff(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -2129,7 +2115,7 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
             }
 
-            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
+            double nettoMinutes = FlexChain.ComputeNettoMinutesFlagOff(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -2490,7 +2476,7 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
             }
 
-            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
+            double nettoMinutes = FlexChain.ComputeNettoMinutesFlagOff(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -2773,7 +2759,7 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
             }
 
-            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
+            double nettoMinutes = FlexChain.ComputeNettoMinutesFlagOff(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =

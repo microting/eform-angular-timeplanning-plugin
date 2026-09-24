@@ -984,8 +984,8 @@ public class TimePlanningPlanningService(
                     .OrderByDescending(x => x.Date)
                     .FirstOrDefaultAsync();
 
-            // ONE query for this row's predecessor AND the whole forward
-            // cascade below — never per row.
+            // Resolves the predecessor's mode for this row's own chain; the
+            // forward walk below builds its own timeline once.
             var cascadeTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
             // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
             // from DateTime deltas (precise to the second) and write
@@ -1022,42 +1022,19 @@ public class TimePlanningPlanningService(
             planning.UpdatedByUserId = currentUserAsync?.Id ?? userService.UserId;
 
             await planning.Update(dbContext).ConfigureAwait(false);
-            var todayDateMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
 
-            var planningsAfterThisPlanning = dbContext.PlanRegistrations
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.SdkSitId == planning.SdkSitId)
-                .Where(x => x.Date > planning.Date)
-                .Where(x => x.Date < todayDateMidnight.AddDays(1))
-                .OrderBy(x => x.Date)
-                .ToList();
-
-            foreach (var planningAfterThisPlanning in planningsAfterThisPlanning)
-            {
-                var preTimePlanningAfterThisPlanning =
-                    await dbContext.PlanRegistrations.AsNoTracking()
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => x.Date < planningAfterThisPlanning.Date
-                                    && x.SdkSitId == planningAfterThisPlanning.SdkSitId)
-                        .OrderByDescending(x => x.Date)
-                        .FirstOrDefaultAsync();
-
-                // These are OTHER, already-registered rows, so fork on the mode
-                // AT REGISTRATION — see OneMinuteModeTimeline.
-                if (cascadeTimeline.WasOneMinuteForRow(planningAfterThisPlanning))
-                {
-                    FlexChain.ApplyNettoFlexChainSecondPrecision(
-                        planningAfterThisPlanning, preTimePlanningAfterThisPlanning,
-                        cascadeTimeline.WasOneMinuteFor(preTimePlanningAfterThisPlanning));
-                }
-                else
-                {
-                    FlexChain.ApplyNettoFlexChainDecimal(
-                        planningAfterThisPlanning, preTimePlanningAfterThisPlanning);
-                }
-
-                await planningAfterThisPlanning.Update(dbContext).ConfigureAwait(false);
-            }
+            // R4: carry the balance to the worker's LAST row — rows pre-created
+            // for future dates included — re-chaining Flex/SumFlex only; later
+            // rows keep their stored hours (R2). The chain computed above came
+            // from the pause id, but ComputeTimeTrackingFields then STORED
+            // NettoHours from the stamp work intervals with the floored pause.
+            // The walk carries from the stored hours, so it starts at the edited
+            // day itself and may re-carry it to keep Flex = stored hours − plan
+            // (also correcting stale seconds, e.g. PlanHoursInSeconds not
+            // updated with PlanHours); later days follow. An open day is never
+            // followed by a locked one, so the walk meets no lock here.
+            await FlexChainRecompute.RunForwardAsync(dbContext, assignedSite, planning.SdkSitId, planning.Date)
+                .ConfigureAwait(false);
 
             return new OperationResult(
                 true,
@@ -1335,8 +1312,8 @@ public class TimePlanningPlanningService(
                     .OrderByDescending(x => x.Date)
                     .FirstOrDefaultAsync();
 
-            // ONE query for this row's predecessor AND the whole forward
-            // cascade below — never per row.
+            // Resolves the predecessor's mode for this row's own chain; the
+            // forward walk below builds its own timeline once.
             var cascadeTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
             // Phase 2: when UseOneMinuteIntervals is on, recompute NettoHours
             // from DateTime deltas (precise to the second) and write
@@ -1380,42 +1357,15 @@ public class TimePlanningPlanningService(
             planning.UpdatedByUserId = currentUser.Id;
 
             await planning.Update(dbContext).ConfigureAwait(false);
-            var todayDateMidnight = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
 
-            var planningsAfterThisPlanning = dbContext.PlanRegistrations
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.SdkSitId == planning.SdkSitId)
-                .Where(x => x.Date > planning.Date)
-                .Where(x => x.Date < todayDateMidnight.AddDays(1))
-                .OrderBy(x => x.Date)
-                .ToList();
-
-            foreach (var planningAfterThisPlanning in planningsAfterThisPlanning)
-            {
-                var preTimePlanningAfterThisPlanning =
-                    await dbContext.PlanRegistrations.AsNoTracking()
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .Where(x => x.Date < planningAfterThisPlanning.Date
-                                    && x.SdkSitId == planningAfterThisPlanning.SdkSitId)
-                        .OrderByDescending(x => x.Date)
-                        .FirstOrDefaultAsync();
-
-                // These are OTHER, already-registered rows, so fork on the mode
-                // AT REGISTRATION — see OneMinuteModeTimeline.
-                if (cascadeTimeline.WasOneMinuteForRow(planningAfterThisPlanning))
-                {
-                    FlexChain.ApplyNettoFlexChainSecondPrecision(
-                        planningAfterThisPlanning, preTimePlanningAfterThisPlanning,
-                        cascadeTimeline.WasOneMinuteFor(preTimePlanningAfterThisPlanning));
-                }
-                else
-                {
-                    FlexChain.ApplyNettoFlexChainDecimal(
-                        planningAfterThisPlanning, preTimePlanningAfterThisPlanning);
-                }
-
-                await planningAfterThisPlanning.Update(dbContext).ConfigureAwait(false);
-            }
+            // R4: carry the balance to the worker's LAST row (future rows
+            // included), Flex/SumFlex only (R2). Starts the day AFTER the edit:
+            // this path's five-minute leg keeps its intentional override-blind
+            // formula (see above), which the walk's carry would otherwise
+            // rewrite on the edited day.
+            await FlexChainRecompute.RunForwardAsync(
+                    dbContext, assignedSite, planning.SdkSitId, planning.Date.AddDays(1))
+                .ConfigureAwait(false);
 
             return new OperationResult(
                 true,
