@@ -200,8 +200,13 @@ test.describe.serial('PlanText grammar through the working-hours grid', () => {
     await saved;
     await waitForSpinner(page);
 
+    // Collapse the filter toolbar before leaving: expanded, it overlays the menu tree
+    // and the Timeregistrering node never settles enough to be clicked.
+    await page.locator('mat-toolbar > div > button .mat-mdc-button-persistent-ripple').first().locator('..').click();
+
     // The dashboard load is the step that parses; the save above only stored the text.
-    await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
+    // The tree is already expanded from openWorkingHoursOnTestWeek, so the Dashboard
+    // node is clicked directly — re-clicking the parent would collapse it again.
     const dashboardLoaded = waitForIndex(page, PLANNINGS_INDEX);
     await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
     await dashboardLoaded;
