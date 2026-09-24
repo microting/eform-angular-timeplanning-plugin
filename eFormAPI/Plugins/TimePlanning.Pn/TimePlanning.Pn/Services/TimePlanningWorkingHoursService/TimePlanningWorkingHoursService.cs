@@ -705,6 +705,14 @@ public class TimePlanningWorkingHoursService(
         // not re-register that day as one-minute (B4).
         var rowIsOneMinute = timeline.WasOneMinuteAt(planRegistration.Date);
 
+        // The grid posts EVERY visible row, touched or not. Only a row whose
+        // shift ids the office actually changed is re-registered (stamps
+        // cleared, mode marker re-stamped); an untouched row keeps the stamps
+        // and marker the single-day editor or the kiosk may have set on
+        // purpose. Same `?? 0` mapping as the id assignments below, so a
+        // posted null equals a stored 0.
+        var idsChanged = false;
+
         if (planRegistration.Date != midnight)
         {
             planRegistration.MessageId = model.Message == 0 ? null : model.Message;
@@ -719,9 +727,16 @@ public class TimePlanningWorkingHoursService(
                 ? 0
                 : double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture);
 
-            // B2 — must run BEFORE the ids below are overwritten: it compares the
-            // posted ids with the stored ones.
-            if (rowIsOneMinute)
+            // B2 — must run BEFORE the ids below are overwritten: both compare
+            // the posted ids with the stored ones.
+            idsChanged = (model.Shift1Start ?? 0) != planRegistration.Start1Id
+                         || (model.Shift1Stop ?? 0) != planRegistration.Stop1Id
+                         || (model.Shift1Pause ?? 0) != planRegistration.Pause1Id
+                         || (model.Shift2Start ?? 0) != planRegistration.Start2Id
+                         || (model.Shift2Stop ?? 0) != planRegistration.Stop2Id
+                         || (model.Shift2Pause ?? 0) != planRegistration.Pause2Id;
+
+            if (idsChanged && rowIsOneMinute)
             {
                 ClearStampsOfCorrectedShifts(planRegistration, model);
             }
@@ -758,11 +773,13 @@ public class TimePlanningWorkingHoursService(
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync(x => x.SiteId == microtingUid);
 
-        // Write-time mode marker: only the Date != midnight branch above rewrites
-        // the Start/Stop ids, so only that branch re-registers the row's mode —
-        // the mode at the row's own date (B4), not the site's current flag
-        // (null site → marker unchanged; timeline fallback resolves it).
-        if (planRegistration.Date != midnight && assignedSite != null)
+        // Write-time mode marker: re-registered only when the office changed
+        // this row's shift ids (idsChanged is only ever set inside the
+        // Date != midnight branch) — the mode at the row's own date (B4), not
+        // the site's current flag. An untouched posted row keeps its marker
+        // (see idsChanged); null site → marker unchanged, the timeline
+        // fallback resolves it.
+        if (idsChanged && assignedSite != null)
         {
             planRegistration.RegisteredUnderOneMinuteIntervals = rowIsOneMinute;
         }
@@ -784,6 +801,8 @@ public class TimePlanningWorkingHoursService(
     /// shift's work stamps, so hours and displayed times come from the same ids.
     /// Shifts 1-2 only: this path writes no other shift ids. Confined to this
     /// path — the single-day editor and the kiosk write exact stamps on purpose.
+    /// Called only when some posted id differs: the grid posts every visible
+    /// row, and an untouched row must keep those deliberate stamps.
     /// </summary>
     private static void ClearStampsOfCorrectedShifts(PlanRegistration pr, TimePlanningWorkingHoursModel model)
     {

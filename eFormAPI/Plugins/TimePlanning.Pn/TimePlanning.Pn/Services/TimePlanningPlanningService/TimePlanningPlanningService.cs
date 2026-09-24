@@ -1025,12 +1025,14 @@ public class TimePlanningPlanningService(
 
             // R4: carry the balance to the worker's LAST row — rows pre-created
             // for future dates included — re-chaining Flex/SumFlex only; later
-            // rows keep their stored hours (R2). Walks from the edited day
-            // itself: when this path's own chain matches the walk's, nothing is
-            // written again; if it used stale seconds (e.g. PlanHoursInSeconds
-            // not updated with PlanHours), the walk corrects the day. An open
-            // day is never followed by a locked one, so the walk meets no lock
-            // here.
+            // rows keep their stored hours (R2). The chain computed above came
+            // from the pause id, but ComputeTimeTrackingFields then STORED
+            // NettoHours from the stamp work intervals with the floored pause.
+            // The walk carries from the stored hours, so it starts at the edited
+            // day itself and may re-carry it to keep Flex = stored hours − plan
+            // (also correcting stale seconds, e.g. PlanHoursInSeconds not
+            // updated with PlanHours); later days follow. An open day is never
+            // followed by a locked one, so the walk meets no lock here.
             await FlexChainRecompute.RunForwardAsync(dbContext, assignedSite, planning.SdkSitId, planning.Date)
                 .ConfigureAwait(false);
 

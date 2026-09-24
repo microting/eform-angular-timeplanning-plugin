@@ -3,9 +3,10 @@
 // members that answer "is this day locked" forward to it, so the plugin, the
 // service and the base forward walk (FlexChainRecompute.RunForwardAsync) share
 // one definition. The members that stay here (per-site map, messages, reconcile
-// gate, BoundaryRows) are plugin-only. The service repo keeps a twin of this
-// file (ServiceTimePlanningPlugin/Infrastructure/Helpers/DayLockHelper.cs); it
-// should forward the same way when it moves to 10.0.65.
+// gate) are plugin-only; BoundaryRows remains here only to serve
+// LockedThroughForSitesAsync (and the reconciliation summary built on it). The
+// service repo's twin (ServiceTimePlanningPlugin/Infrastructure/Helpers/
+// DayLockHelper.cs) already forwards to base DayLock the same way.
 #nullable enable
 namespace TimePlanning.Pn.Infrastructure.Helpers;
 

@@ -29,6 +29,9 @@ namespace TimePlanning.Pn.Test;
 /// B4: the row's mode marker follows the mode AT ITS OWN DATE
 /// (UseOneMinuteIntervalsFrom), not the site's current flag.
 ///
+/// Both apply only to a row whose shift ids the office changed: the grid posts
+/// every visible row, and an untouched one keeps its stamps and marker.
+///
 /// Ids: id n is (n - 1) * 5 minutes after midnight — 85 = 07:00, 97 = 08:00,
 /// 193 = 16:00, 235 = 19:30.
 /// </summary>
@@ -360,6 +363,40 @@ public class OfficeEditOneMinuteStaleStampsTests : TestBaseSetup
             Assert.That(row.Stop1StoppedAt, Is.EqualTo(before.Stop1StoppedAt));
             Assert.That(row.NettoHoursInSeconds, Is.EqualTo(45034 - 900),
                 "work seconds from the surviving stamps, pause from the office's 15-minute id");
+        });
+    }
+
+    /// <summary>
+    /// The grid posts EVERY visible row. A row dated before
+    /// UseOneMinuteIntervalsFrom (so its date-mode is five-minute) that still
+    /// carries RegisteredUnderOneMinuteIntervals = true — e.g. set on purpose by
+    /// the single-day editor — is posted back with its ids unchanged and only
+    /// an office comment edited. No id changed, so the row is not
+    /// re-registered: the marker stays true and the device stamps stay put.
+    /// </summary>
+    [Test]
+    public async Task UntouchedPostedRow_KeepsItsMarker()
+    {
+        var date = new DateTime(2025, 12, 2); // before OneMinuteFrom
+        await SeedDeviceRow(date, marker: true);
+        var before = await Stored(date);
+
+        // Same ids as stored (85/235, pause 0, shift 2 null → 0); only the comment changes.
+        var edit = OfficeEdit(date, start1: 85, stop1: 235);
+        edit.Plannings[0].CommentOffice = "office note";
+        var result = await _service.CreateUpdate(edit);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var row = await Stored(date);
+        Assert.Multiple(() =>
+        {
+            Assert.That(row.CommentOffice, Is.EqualTo("office note"), "the save itself went through");
+            Assert.That(row.RegisteredUnderOneMinuteIntervals, Is.True,
+                "an untouched posted row keeps its marker, even when its date-mode is five-minute");
+            Assert.That(row.Start1Id, Is.EqualTo(85));
+            Assert.That(row.Stop1Id, Is.EqualTo(235));
+            Assert.That(row.Start1StartedAt, Is.EqualTo(before.Start1StartedAt));
+            Assert.That(row.Stop1StoppedAt, Is.EqualTo(before.Stop1StoppedAt));
         });
     }
 
