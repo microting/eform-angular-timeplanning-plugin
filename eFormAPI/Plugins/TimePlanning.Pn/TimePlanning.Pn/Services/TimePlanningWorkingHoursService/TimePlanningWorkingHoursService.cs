@@ -1359,50 +1359,6 @@ public class TimePlanningWorkingHoursService(
     }
 
     /// <summary>
-    /// Flag-OFF netto computation (5-minute sites): work span in 5-minute ticks
-    /// per shift minus the canonical all-slots shift pause (floor-to-5min clock
-    /// tick), summed across shifts 1..5. Returns netto MINUTES. Mirrors the
-    /// per-call inline blocks in the personal/kiosk create/update paths.
-    /// </summary>
-    private static double ComputeFlagOffNettoMinutes(PlanRegistration pr)
-    {
-        const int minutesMultiplier = 5;
-        double nettoMinutes = 0;
-
-        if (pr.Stop1Id >= pr.Start1Id && pr.Stop1Id != 0)
-        {
-            nettoMinutes += (pr.Stop1Id - pr.Start1Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 1, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        if (pr.Stop2Id >= pr.Start2Id && pr.Stop2Id != 0)
-        {
-            nettoMinutes += (pr.Stop2Id - pr.Start2Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 2, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        if (pr.Stop3Id >= pr.Start3Id && pr.Stop3Id != 0)
-        {
-            nettoMinutes += (pr.Stop3Id - pr.Start3Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 3, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        if (pr.Stop4Id >= pr.Start4Id && pr.Stop4Id != 0)
-        {
-            nettoMinutes += (pr.Stop4Id - pr.Start4Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 4, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        if (pr.Stop5Id >= pr.Start5Id && pr.Stop5Id != 0)
-        {
-            nettoMinutes += (pr.Stop5Id - pr.Start5Id) * minutesMultiplier;
-            nettoMinutes -= FlexChain.ComputeShiftPauseSeconds(pr, 5, useOneMinuteIntervals: false) / 60.0;
-        }
-
-        return nettoMinutes;
-    }
-
-    /// <summary>
     /// The five-minute (flag-off) decimal flex chain used by the FOUR
     /// mobile/kiosk punch-clock save legs, byte-for-byte the formula they have
     /// always used — extracted only so the seconds-column clear cannot be
@@ -1835,7 +1791,7 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
             }
 
-            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
+            double nettoMinutes = FlexChain.ComputeNettoMinutesFlagOff(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -2129,7 +2085,7 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
             }
 
-            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
+            double nettoMinutes = FlexChain.ComputeNettoMinutesFlagOff(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -2490,7 +2446,7 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
             }
 
-            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
+            double nettoMinutes = FlexChain.ComputeNettoMinutesFlagOff(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =
@@ -2773,7 +2729,7 @@ public class TimePlanningWorkingHoursService(
                 planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
             }
 
-            double nettoMinutes = ComputeFlagOffNettoMinutes(planRegistration);
+            double nettoMinutes = FlexChain.ComputeNettoMinutesFlagOff(planRegistration);
 
             double hours = nettoMinutes / 60;
             var preTimePlanning =

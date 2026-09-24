@@ -1,9 +1,11 @@
-// NOTE: a deliberate copy of this file lives in eform-service-timeplanning-plugin
-// (ServiceTimePlanningPlugin/Infrastructure/Helpers/DayLockHelper.cs). The two
-// repos share only the base NuGet package. If you change the lock logic here,
-// change the twin too: a divergence lets background jobs write days the web
-// refuses. The twin omits the message and reconcile members, which background
-// jobs never need.
+// NOTE: the lock RULE ("locked through MAX(Date) of the worker's live Reconciled
+// rows") lives in the base package: Microting.TimePlanningBase DayLock. The three
+// members that answer "is this day locked" forward to it, so the plugin, the
+// service and the base forward walk (FlexChainRecompute.RunForwardAsync) share
+// one definition. The members that stay here (per-site map, messages, reconcile
+// gate, BoundaryRows) are plugin-only. The service repo keeps a twin of this
+// file (ServiceTimePlanningPlugin/Infrastructure/Helpers/DayLockHelper.cs); it
+// should forward the same way when it moves to 10.0.65.
 #nullable enable
 namespace TimePlanning.Pn.Infrastructure.Helpers;
 
@@ -16,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 
 /// <summary>
 /// The single source of truth for "is this day locked".
@@ -33,13 +36,8 @@ public static class DayLockHelper
     /// The latest reconciled date for one worker, or null when they have none.
     /// Soft-deleted rows never hold the boundary.
     /// </summary>
-    public static async Task<DateTime?> LockedThroughAsync(TimePlanningPnDbContext db, int sdkSitId)
-    {
-        return await BoundaryRows(db)
-            .Where(x => x.SdkSitId == sdkSitId)
-            .MaxAsync(x => (DateTime?)x.Date)
-            .ConfigureAwait(false);
-    }
+    public static Task<DateTime?> LockedThroughAsync(TimePlanningPnDbContext db, int sdkSitId)
+        => DayLock.LockedThroughAsync(db, sdkSitId);
 
     /// <summary>
     /// Boundaries for many workers in ONE query. Callers that render a grid
@@ -70,7 +68,7 @@ public static class DayLockHelper
     /// dates against it without touching the database again.
     /// </summary>
     public static bool IsLocked(DateTime? lockedThrough, DateTime date)
-        => lockedThrough.HasValue && date.Date <= lockedThrough.Value.Date;
+        => DayLock.IsLocked(lockedThrough, date);
 
     /// <summary>
     /// <see cref="IsLocked(DateTime?, DateTime)"/> against a boundary map from
@@ -92,15 +90,7 @@ public static class DayLockHelper
     /// </summary>
     public static IQueryable<PlanRegistration> WhereOpen(
         this IQueryable<PlanRegistration> query, DateTime? lockedThrough)
-    {
-        if (lockedThrough is not { } boundary)
-        {
-            return query;
-        }
-
-        var firstOpenDay = boundary.Date.AddDays(1);
-        return query.Where(x => x.Date >= firstOpenDay);
-    }
+        => DayLock.OpenRows(query, lockedThrough);
 
     /// <summary>
     /// The message key for a write the lock refuses. It states what the
