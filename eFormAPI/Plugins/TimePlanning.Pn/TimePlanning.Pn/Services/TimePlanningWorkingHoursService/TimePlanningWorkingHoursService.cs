@@ -550,20 +550,18 @@ public class TimePlanningWorkingHoursService(
             var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, model.SiteId);
             // Locked rows are never even loaded, so nothing below can mutate
             // one and have a later save (which saves the whole context) flush
-            // it. The forward cascade walks this same list, so it skips them
-            // too. Not redundant with the loop's skip: only this keeps the
-            // cascade out of the lock.
+            // it. The forward walk at the end skips locked rows on its own.
             var planRegistrations = await dbContext.PlanRegistrations
                 .Where(x => x.SdkSitId == model.SiteId)
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .WhereOpen(lockedThrough)
                 .ToListAsync();
-            // Site-level one-minute flag drives the forward-cascade recompute below
-            // so the double AND *InSeconds SumFlex columns are written consistently.
+            // Feeds cascadeTimeline below and the forward walk at the end;
+            // UpdatePlanning/CreatePlanning each fetch their own copy.
             var assignedSite = await dbContext.AssignedSites
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .FirstOrDefaultAsync(x => x.SiteId == model.SiteId);
-            // ONE query for the whole cascade below — never per row.
+            // ONE query for every row saved below — never per row.
             var cascadeTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
             var first = true;
             foreach (var planning in model.Plannings)
@@ -592,55 +590,16 @@ public class TimePlanningWorkingHoursService(
                 first = false;
             }
 
-            // Check if there are any plannings after the last planning in the model
-            var lastPlanning = model.Plannings
-                .OrderByDescending(x => x.Date)
-                .FirstOrDefault();
-            if (lastPlanning != null)
+            // R4: carry the balance from the EARLIEST posted day to the worker's
+            // LAST row — future pre-created rows included — re-chaining
+            // Flex/SumFlex only; no later row's hours are recomputed (R2). Rows
+            // the loop created are chained here too. Locked rows are passed,
+            // never written, and the first open row after them seeds from the
+            // lock boundary. (Posted dates were normalised to midnight above.)
+            if (model.Plannings.Count > 0)
             {
-                lastPlanning.Date = new DateTime(lastPlanning.Date.Year, lastPlanning.Date.Month, lastPlanning.Date.Day,
-                    0, 0, 0);
-                var planRegistrationsAfterLastPlanning = planRegistrations
-                    .Where(x => x.Date > lastPlanning.Date)
-                    .Where(x => x.Date < DateTime.Now.AddDays(180))
-                    .ToList();
-                foreach (var planRegistration in planRegistrationsAfterLastPlanning)
-                {
-                    var preTimePlanning =
-                        await dbContext.PlanRegistrations.AsNoTracking()
-                            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                            .Where(x => x.Date < planRegistration.Date
-                                        && x.SdkSitId == planRegistration.SdkSitId)
-                            .OrderByDescending(x => x.Date)
-                            .FirstOrDefaultAsync();
-
-                    // Re-chain the running flex balance for this later day off the
-                    // preceding row. On UseOneMinuteIntervals sites route through the
-                    // seconds-precision helper so BOTH the *InSeconds source of truth
-                    // AND the back-derived double columns stay consistent — previously
-                    // this rewrote only the doubles (and ignored NettoHoursOverride),
-                    // so the double SumFlexEnd drifted from the seconds chain and the
-                    // mobile summary (which read the double) disagreed with the web
-                    // grid (which recomputes from seconds).
-                    // Mode AT REGISTRATION for THIS later row — see
-                    // OneMinuteModeTimeline.
-                    if (cascadeTimeline.WasOneMinuteForRow(planRegistration))
-                    {
-                        FlexChain.ApplyNettoFlexChainSecondPrecision(
-                            planRegistration, preTimePlanning,
-                            cascadeTimeline.WasOneMinuteFor(preTimePlanning));
-                    }
-                    else
-                    {
-                        // Flag-off path keeps the legacy double formula (it honours
-                        // NettoHoursOverrideActive, matching UpdatePlanRegistration)
-                        // and clears the seconds columns with the same call.
-                        FlexChain.ApplyNettoFlexChainDecimal(
-                            planRegistration, preTimePlanning);
-                    }
-
-                    await planRegistration.Update(dbContext);
-                }
+                var earliestPostedDate = model.Plannings.Min(x => x.Date);
+                await FlexChainRecompute.RunForwardAsync(dbContext, assignedSite, model.SiteId, earliestPostedDate);
             }
 
 
