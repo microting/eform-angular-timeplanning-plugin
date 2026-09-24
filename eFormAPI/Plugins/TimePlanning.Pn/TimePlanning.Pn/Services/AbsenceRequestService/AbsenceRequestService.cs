@@ -37,6 +37,7 @@ using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Helpers;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
@@ -284,6 +285,19 @@ public class AbsenceRequestService : IAbsenceRequestService
             foreach (var day in request.Days!)
             {
                 await ApplyAbsenceToPlanRegistration(request, day);
+            }
+
+            // R4: approval can create rows mid-history with an empty balance.
+            // Carry the worker's balance from the earliest approved day to their
+            // last row, the new rows included. Every day was checked unlocked
+            // above. Tolerates a worker without an AssignedSite.
+            if (request.Days!.Count > 0)
+            {
+                var assignedSite = await _dbContext.AssignedSites
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .FirstOrDefaultAsync(x => x.SiteId == request.RequestedBySdkSitId);
+                await FlexChainRecompute.RunForwardAsync(
+                    _dbContext, assignedSite, request.RequestedBySdkSitId, request.Days.Min(d => d.Date));
             }
 
             // Fire-and-forget push to requester
