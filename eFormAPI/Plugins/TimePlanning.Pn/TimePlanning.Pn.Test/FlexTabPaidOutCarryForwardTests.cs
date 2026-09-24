@@ -18,10 +18,13 @@ using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 namespace TimePlanning.Pn.Test;
 
 /// <summary>
-/// R4 on the flex tab: the row the flex tab writes keeps exactly the balance
-/// the flex tab gave it (an office-entered start balance included), and every
-/// later row — including one pre-created for a future date — carries from
-/// that row's SumFlexEnd.
+/// R4 on the flex tab. The web client posts `sumFlex`, which does not bind to
+/// the server's SumFlexStart, so every flex-tab write arrives with
+/// SumFlexStart = 0. The row the flex tab writes is therefore re-carried from
+/// its predecessor (SumFlexStart = predecessor.SumFlexEnd, SumFlexEnd = that +
+/// netto - plan - paid out), and every later row — including one pre-created
+/// for a future date — carries from it. The payloads below are the ones the UI
+/// actually sends.
 /// </summary>
 [TestFixture]
 public class FlexTabPaidOutCarryForwardTests : TestBaseSetup
@@ -86,53 +89,58 @@ public class FlexTabPaidOutCarryForwardTests : TestBaseSetup
     };
 
     [Test]
-    public async Task PayingOutFlexOnAnExistingDay_KeepsThatDaysBalance_AndCarriesItThroughAFutureRow()
+    public async Task PayingOutFlexOnAnExistingDay_RecarriesThatDayFromItsPredecessor_AndCarriesItThroughAFutureRow()
     {
         var d0 = DateTime.Now.Date.AddDays(-6);
         var d1 = DateTime.Now.Date.AddDays(-5);
         var future = DateTime.Now.Date.AddDays(25);
-        await Seed(d0, planHours: 8, nettoHours: 8, sumFlexStart: 2, sumFlexEnd: 2);
-        await Seed(d1, planHours: 7, nettoHours: 8, sumFlexStart: 2, sumFlexEnd: 3);
-        await Seed(future, planHours: 0, nettoHours: 0, sumFlexStart: 3, sumFlexEnd: 3);
+        // d0 ends at X = 5 h. d1 (+1 h worked) holds a stale balance of 1 h, as a
+        // zero-start flex-tab create used to leave it; the future row carries from d1.
+        await Seed(d0, planHours: 8, nettoHours: 8, sumFlexStart: 5, sumFlexEnd: 5);
+        await Seed(d1, planHours: 7, nettoHours: 8, sumFlexStart: 0, sumFlexEnd: 1);
+        await Seed(future, planHours: 0, nettoHours: 0, sumFlexStart: 1, sumFlexEnd: 1);
 
-        var result = await _service.UpdateCreate(new List<TimePlanningFlexUpdateModel> { Entry(d1, paidOut: 1, sumFlexStart: 2) });
+        // What the UI sends: SumFlexStart never binds, so it is 0.
+        var result = await _service.UpdateCreate(new List<TimePlanningFlexUpdateModel> { Entry(d1, paidOut: 1, sumFlexStart: 0) });
 
         Assert.That(result.Success, Is.True, result.Message);
         var paid = await Stored(d1);
         var last = await Stored(future);
         Assert.Multiple(() =>
         {
-            Assert.That(paid.SumFlexStart, Is.EqualTo(2.0).Within(1e-9), "the edited row's start is left as it was");
-            Assert.That(paid.SumFlexEnd, Is.EqualTo(2.0).Within(1e-9), "3 h minus the 1 h paid out, as the flex tab wrote it");
+            Assert.That(paid.PaiedOutFlex, Is.EqualTo(1.0).Within(1e-9));
+            Assert.That(paid.SumFlexStart, Is.EqualTo(5.0).Within(1e-9), "carried from d0's SumFlexEnd");
+            Assert.That(paid.SumFlexEnd, Is.EqualTo(5.0).Within(1e-9), "X + netto - plan - paid out = 5 + 8 - 7 - 1");
             Assert.That(last.SumFlexStart, Is.EqualTo(paid.SumFlexEnd).Within(1e-9),
                 "SumFlexStart(n+1) == SumFlexEnd(n) through the future row");
-            Assert.That(last.SumFlexEnd, Is.EqualTo(2.0).Within(1e-9));
+            Assert.That(last.SumFlexEnd, Is.EqualTo(5.0).Within(1e-9));
         });
     }
 
     [Test]
-    public async Task CreatingAFlexRowWithAnOfficeStartBalance_KeepsIt_AndCarriesItThroughAFutureRow()
+    public async Task CreatingAFlexRowWithTheUiPayload_CarriesThePredecessorsBalance_NotZero()
     {
         var d0 = DateTime.Now.Date.AddDays(-6);
         var d1 = DateTime.Now.Date.AddDays(-5); // no row yet: the flex tab creates it
         var future = DateTime.Now.Date.AddDays(25);
-        await Seed(d0, planHours: 8, nettoHours: 8, sumFlexStart: 2, sumFlexEnd: 2);
-        await Seed(future, planHours: 0, nettoHours: 0, sumFlexStart: 2, sumFlexEnd: 2);
+        // d0 ends at X = 5 h; the future row still holds a stale 0.
+        await Seed(d0, planHours: 8, nettoHours: 8, sumFlexStart: 5, sumFlexEnd: 5);
+        await Seed(future, planHours: 0, nettoHours: 0, sumFlexStart: 0, sumFlexEnd: 0);
 
-        // The office enters a start balance of 10 h (differs from d0's 2 h) and pays out 1 h.
-        var result = await _service.UpdateCreate(new List<TimePlanningFlexUpdateModel> { Entry(d1, paidOut: 1, sumFlexStart: 10) });
+        // What the UI sends: SumFlexStart = 0, paying out p = 2 h.
+        var result = await _service.UpdateCreate(new List<TimePlanningFlexUpdateModel> { Entry(d1, paidOut: 2, sumFlexStart: 0) });
 
         Assert.That(result.Success, Is.True, result.Message);
         var created = await Stored(d1);
         var last = await Stored(future);
         Assert.Multiple(() =>
         {
-            Assert.That(created.SumFlexEnd, Is.EqualTo(9.0).Within(1e-9),
-                "the office-entered start balance minus the payout is preserved, not re-carried from d0");
-            Assert.That(created.PaiedOutFlex, Is.EqualTo(1.0).Within(1e-9));
+            Assert.That(created.PaiedOutFlex, Is.EqualTo(2.0).Within(1e-9));
+            Assert.That(created.SumFlexStart, Is.EqualTo(5.0).Within(1e-9), "carried from d0, not the posted 0");
+            Assert.That(created.SumFlexEnd, Is.EqualTo(3.0).Within(1e-9), "X - p = 5 - 2, not 0 - 2");
             Assert.That(last.SumFlexStart, Is.EqualTo(created.SumFlexEnd).Within(1e-9),
                 "later rows carry from the created row");
-            Assert.That(last.SumFlexEnd, Is.EqualTo(9.0).Within(1e-9));
+            Assert.That(last.SumFlexEnd, Is.EqualTo(3.0).Within(1e-9));
         });
     }
 }

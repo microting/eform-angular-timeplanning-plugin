@@ -291,13 +291,34 @@ public class AbsenceRequestService : IAbsenceRequestService
             // Carry the worker's balance from the earliest approved day to their
             // last row, the new rows included. Every day was checked unlocked
             // above. Tolerates a worker without an AssignedSite.
+            // The request and its days are already saved, so a failed walk must
+            // not turn the approval into an error: log it for manual
+            // reconciliation and carry on (same as the handover walk).
             if (request.Days!.Count > 0)
             {
-                var assignedSite = await _dbContext.AssignedSites
-                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                    .FirstOrDefaultAsync(x => x.SiteId == request.RequestedBySdkSitId);
-                await FlexChainRecompute.RunForwardAsync(
-                    _dbContext, assignedSite, request.RequestedBySdkSitId, request.Days.Min(d => d.Date));
+                var walkFrom = request.Days.Min(d => d.Date);
+                try
+                {
+                    var assignedSite = await _dbContext.AssignedSites
+                        .AsNoTracking()
+                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                        .FirstOrDefaultAsync(x => x.SiteId == request.RequestedBySdkSitId);
+                    var changed = await FlexChainRecompute.RunForwardAsync(
+                        _dbContext, assignedSite, request.RequestedBySdkSitId, walkFrom);
+                    _logger.LogInformation(
+                        "[Absence] Approve request {RequestId}: flex carried for sdkSitId={SdkSitId} from {From:yyyy-MM-dd}, {Changed} row(s) changed",
+                        absenceRequestId, request.RequestedBySdkSitId, walkFrom, changed);
+                }
+                catch (Exception walkEx)
+                {
+                    // Drop the failed walk's pending row changes so no later
+                    // SaveChanges on this context can flush a half-carried chain.
+                    // Nothing below uses a tracked entity: the push uses ids.
+                    _dbContext.ChangeTracker.Clear();
+                    _logger.LogError(walkEx,
+                        "Absence request {Id} approved and saved, but carrying the flex balance forward FAILED for worker {SdkSitId} from {From:yyyy-MM-dd} — MANUAL RECONCILIATION required (re-save the day or re-run the walk)",
+                        absenceRequestId, request.RequestedBySdkSitId, walkFrom);
+                }
             }
 
             // Fire-and-forget push to requester

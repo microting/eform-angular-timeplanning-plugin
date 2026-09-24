@@ -264,6 +264,9 @@ public class TimePlanningFlexService(
             CommentOfficeAll = model.CommentOfficeAll,
             SdkSitId = sdkSiteId,
             Date = model.Date,
+            // Only an opening balance for a worker's very first row survives:
+            // the walk below re-carries every other row from its predecessor.
+            SumFlexStart = model.SumFlexStart,
             SumFlexEnd = model.SumFlexStart - model.PaidOutFlex,
             PaiedOutFlex = model.PaidOutFlex,
             CreatedByUserId = userService.UserId,
@@ -272,12 +275,18 @@ public class TimePlanningFlexService(
 
         await planning.Create(dbContext);
 
-        // R4: carry this row's balance to the worker's later rows (future rows
-        // included). From the NEXT day: the office-entered start balance on
-        // this row is kept as written. A null assignedSite is fine here: the
-        // walk treats a worker with no assignment as five-minute mode.
+        // R4: walk from THIS row's own date, not the next day. The web client
+        // posts `sumFlex`, which does not bind to SumFlexStart, so the value
+        // above is always 0 from the UI (no office-entered start balance
+        // exists there) and SumFlexEnd would be 0 - PaidOutFlex. The walk
+        // re-carries the row from its predecessor (SumFlexStart =
+        // predecessor.SumFlexEnd, SumFlexEnd = that + netto - plan - paid out)
+        // and then carries it to every later row, future rows included.
+        // Locked days were refused before any write, so this row is open.
+        // A null assignedSite is fine here: the walk treats a worker with no
+        // assignment as five-minute mode.
         var assignedSite = await FindAssignedSiteAsync(sdkSiteId);
-        await FlexChainRecompute.RunForwardAsync(dbContext, assignedSite, sdkSiteId, planning.Date.AddDays(1));
+        await FlexChainRecompute.RunForwardAsync(dbContext, assignedSite, sdkSiteId, planning.Date);
     }
 
     private async Task<AssignedSite?> FindAssignedSiteAsync(int sdkSiteId) =>
@@ -341,11 +350,15 @@ public class TimePlanningFlexService(
 
         await planRegistration.Update(dbContext);
 
-        // R4: carry the adjusted balance to the worker's later rows (future
-        // rows included). From the NEXT day: this row keeps the balance the
-        // flex tab just wrote. A null assignedSite is fine here: the walk
-        // treats a worker with no assignment as five-minute mode.
+        // R4: walk from THIS row's own date, not the next day. The in-place
+        // adjustment above trusts the row's stored balance; the walk
+        // re-carries the row from its predecessor (SumFlexStart =
+        // predecessor.SumFlexEnd, SumFlexEnd = that + netto - plan - paid out),
+        // repairing a row that was already off, then carries it to every later
+        // row, future rows included. Locked days were refused before any
+        // write, so this row is open. A null assignedSite is fine here: the
+        // walk treats a worker with no assignment as five-minute mode.
         await FlexChainRecompute.RunForwardAsync(
-            dbContext, assignedSite, planRegistration.SdkSitId, planRegistration.Date.AddDays(1));
+            dbContext, assignedSite, planRegistration.SdkSitId, planRegistration.Date);
     }
 }

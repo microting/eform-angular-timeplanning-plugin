@@ -975,6 +975,12 @@ public class ContentHandoverService : IContentHandoverService
                 }
                 catch (Exception ex)
                 {
+                    // Drop this walk's pending row changes so the next worker's
+                    // walk cannot flush a half-carried chain with its own
+                    // SaveChanges. Safe: both PRs and the request are saved, the
+                    // walk tuples hold plain values, the AssignedSite is only
+                    // read by id/flags, and the push below uses ids.
+                    _dbContext.ChangeTracker.Clear();
                     _logger.LogError(ex,
                         "[Handover] Accept request {RequestId}: handover {RequestId} accepted and saved, but carrying the flex balance forward FAILED for worker {SdkSitId} from {From:yyyy-MM-dd} — MANUAL RECONCILIATION required (re-save the day or re-run the walk)",
                         requestId, requestId, walk.SdkSitId, walk.From);
