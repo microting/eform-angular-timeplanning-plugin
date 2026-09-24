@@ -741,6 +741,11 @@ public class TimePlanningWorkingHoursService(
         var dateTime = DateTime.Now;
         var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
 
+        // The mode AT THIS ROW'S DATE (spec R3), never the site's current
+        // flag: an office edit of a day before UseOneMinuteIntervalsFrom must
+        // not re-register that day as one-minute (B4).
+        var rowIsOneMinute = timeline.WasOneMinuteAt(planRegistration.Date);
+
         if (planRegistration.Date != midnight)
         {
             planRegistration.MessageId = model.Message == 0 ? null : model.Message;
@@ -754,6 +759,14 @@ public class TimePlanningWorkingHoursService(
             planRegistration.PaiedOutFlex = string.IsNullOrEmpty(model.PaidOutFlex)
                 ? 0
                 : double.Parse(model.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture);
+
+            // B2 — must run BEFORE the ids below are overwritten: it compares the
+            // posted ids with the stored ones.
+            if (rowIsOneMinute)
+            {
+                ClearStampsOfCorrectedShifts(planRegistration, model);
+            }
+
             planRegistration.Pause1Id = model.Shift1Pause ?? 0;
             planRegistration.Pause2Id = model.Shift2Pause ?? 0;
             planRegistration.Start1Id = model.Shift1Start ?? 0;
@@ -787,11 +800,12 @@ public class TimePlanningWorkingHoursService(
             .FirstOrDefaultAsync(x => x.SiteId == microtingUid);
 
         // Write-time mode marker: only the Date != midnight branch above rewrites
-        // the Start/Stop ids, so only that branch re-registers the row's mode
+        // the Start/Stop ids, so only that branch re-registers the row's mode —
+        // the mode at the row's own date (B4), not the site's current flag
         // (null site → marker unchanged; timeline fallback resolves it).
         if (planRegistration.Date != midnight && assignedSite != null)
         {
-            planRegistration.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
+            planRegistration.RegisteredUnderOneMinuteIntervals = rowIsOneMinute;
         }
 
         planRegistration = await PlanRegistrationHelper
@@ -799,6 +813,44 @@ public class TimePlanningWorkingHoursService(
                 planRegistration, dbContext, assignedSite, DateTime.Now.AddMonths(-1), timeline);
 
         await planRegistration.Update(dbContext);
+    }
+
+    /// <summary>
+    /// B2. A one-minute row's hours come from its device stamps
+    /// (FlexChain.ComputeNettoSecondsFromDateTimeShifts). When the office
+    /// corrects a shift's ids in the grid, those stamps still hold what the
+    /// device recorded and would silently override the correction in the same
+    /// save. Drop the stamps of exactly what the office changed; the hours then
+    /// fall back to the office's ids. A changed start OR stop drops both of that
+    /// shift's work stamps, so hours and displayed times come from the same ids.
+    /// Shifts 1-2 only: this path writes no other shift ids. Confined to this
+    /// path — the single-day editor and the kiosk write exact stamps on purpose.
+    /// </summary>
+    private static void ClearStampsOfCorrectedShifts(PlanRegistration pr, TimePlanningWorkingHoursModel model)
+    {
+        if ((model.Shift1Start ?? 0) != pr.Start1Id || (model.Shift1Stop ?? 0) != pr.Stop1Id)
+        {
+            pr.Start1StartedAt = null;
+            pr.Stop1StoppedAt = null;
+        }
+
+        if ((model.Shift1Pause ?? 0) != pr.Pause1Id)
+        {
+            pr.Pause1StartedAt = null;
+            pr.Pause1StoppedAt = null;
+        }
+
+        if ((model.Shift2Start ?? 0) != pr.Start2Id || (model.Shift2Stop ?? 0) != pr.Stop2Id)
+        {
+            pr.Start2StartedAt = null;
+            pr.Stop2StoppedAt = null;
+        }
+
+        if ((model.Shift2Pause ?? 0) != pr.Pause2Id)
+        {
+            pr.Pause2StartedAt = null;
+            pr.Pause2StoppedAt = null;
+        }
     }
 
     public async Task<OperationDataResult<TimePlanningWorkingHourSimpleModel>> ReadSimple(DateTime dateTime, string? softwareVersion, string? model, string? manufacturer, string? osVersion)
