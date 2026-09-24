@@ -951,6 +951,42 @@ public class ContentHandoverService : IContentHandoverService
                 "[Handover] Accept request {RequestId}: status -> Accepted, RespondedAtUtc={RespondedAt:O}",
                 requestId, request.RespondedAtUtc);
 
+            // 7b. R4: the move changed PlanHours on both days without re-chaining
+            // them. Carry each worker's balance from the handover day through
+            // their last row (one walk per worker; both days were checked
+            // unlocked above). After the status save, so a failure here cannot
+            // leave moved content with a Pending request.
+            var walks = new[]
+                {
+                    (SdkSitId: fromPR.SdkSitId, Date: fromPR.Date, Site: fromAssignedSite),
+                    (SdkSitId: toPR.SdkSitId, Date: toPR.Date, Site: toAssignedSite)
+                }
+                .GroupBy(x => x.SdkSitId)
+                .Select(g => (SdkSitId: g.Key, From: g.Min(x => x.Date), Site: g.First().Site));
+            foreach (var walk in walks)
+            {
+                try
+                {
+                    var changed = await FlexChainRecompute.RunForwardAsync(
+                        _dbContext, walk.Site, walk.SdkSitId, walk.From);
+                    _logger.LogInformation(
+                        "[Handover] Accept request {RequestId}: flex carried for sdkSitId={SdkSitId} from {From:yyyy-MM-dd}, {Changed} row(s) changed",
+                        requestId, walk.SdkSitId, walk.From, changed);
+                }
+                catch (Exception ex)
+                {
+                    // Drop this walk's pending row changes so the next worker's
+                    // walk cannot flush a half-carried chain with its own
+                    // SaveChanges. Safe: both PRs and the request are saved, the
+                    // walk tuples hold plain values, the AssignedSite is only
+                    // read by id/flags, and the push below uses ids.
+                    _dbContext.ChangeTracker.Clear();
+                    _logger.LogError(ex,
+                        "[Handover] Accept request {RequestId}: handover {RequestId} accepted and saved, but carrying the flex balance forward FAILED for worker {SdkSitId} from {From:yyyy-MM-dd} — MANUAL RECONCILIATION required (re-save the day or re-run the walk)",
+                        requestId, requestId, walk.SdkSitId, walk.From);
+                }
+            }
+
             // 8. Fire-and-forget push to sender.
             var fromSdkSitId = request.FromSdkSitId;
             _ = Task.Run(() => SendAcceptPushAsync(fromSdkSitId, requestId));
