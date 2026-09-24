@@ -55,7 +55,8 @@ public class OfficeEditOneMinuteStaleStampsTests : TestBaseSetup
         localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
 
         var coreService = Substitute.For<IEFormCoreService>();
-        coreService.GetCore().Returns(await GetCore());
+        var core = await GetCore();
+        coreService.GetCore().Returns(core);
 
         var options = Substitute.For<IPluginDbOptions<TimePlanningBaseSettings>>();
         options.Value.Returns(new TimePlanningBaseSettings
