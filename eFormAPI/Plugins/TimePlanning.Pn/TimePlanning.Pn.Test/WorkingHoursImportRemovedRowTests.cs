@@ -252,7 +252,7 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
             "a sheet that cannot be lock-checked must not be imported at all");
     }
 
-    private static IFormFile FormFile(byte[] xlsx)
+    internal static IFormFile FormFile(byte[] xlsx)
     {
         var file = Substitute.For<IFormFile>();
         file.CopyToAsync(Arg.Any<Stream>(), Arg.Any<CancellationToken>())
@@ -278,7 +278,7 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
         CellValue = new CellValue(value)
     };
 
-    private static byte[] BuildWorkbook(
+    internal static byte[] BuildWorkbook(
         string sheetName, params (string Date, string Hours, string Text)[] rows)
     {
         using var ms = new MemoryStream();

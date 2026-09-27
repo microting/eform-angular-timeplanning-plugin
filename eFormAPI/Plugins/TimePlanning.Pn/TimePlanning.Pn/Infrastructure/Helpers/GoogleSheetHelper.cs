@@ -13,6 +13,7 @@ using Google.Apis.Sheets.v4.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microting.eForm;
+using Microting.eForm.Infrastructure;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
@@ -206,8 +207,78 @@ public class GoogleSheetHelper
 
         // Fetch the data from the sheet
         var response = await request.ExecuteAsync();
-        var values = response.Values;
 
+        await ApplyPlanTimerSheet(sdkDbContext, dbContext, response.Values, logger);
+    }
+
+    /// <summary>
+    /// Writes the fetched PlanTimer sheet (header row first) into the workers'
+    /// PlanRegistrations, then carries each written worker's flex balance
+    /// forward. Split from <see cref="PullEverythingFromGoogleSheet"/> at the
+    /// Sheets API call so the write path can run without Google.
+    /// </summary>
+    internal static async Task ApplyPlanTimerSheet(MicrotingDbContext sdkDbContext,
+        TimePlanningPnDbContext dbContext, IList<IList<object>>? values, ILogger logger)
+    {
+        // Earliest date actually created or updated, per worker (SdkSitId),
+        // with that worker's AssignedSite for the walk. Skipped rows (locked,
+        // admin-changed, duplicate) never enter it.
+        var earliestWritten = new Dictionary<int, (DateTime From, Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite? Site)>();
+        try
+        {
+            await WritePlanTimerRows(sdkDbContext, dbContext, values, earliestWritten);
+        }
+        catch
+        {
+            // The rows saved before the throw are still chain breaks: carry
+            // them, then rethrow unchanged. Clear first, so the walk's save
+            // cannot flush the entity that failed.
+            dbContext.ChangeTracker.Clear();
+            await CarryWrittenWorkersForward(dbContext, earliestWritten, logger);
+            throw;
+        }
+
+        await CarryWrittenWorkersForward(dbContext, earliestWritten, logger);
+    }
+
+    /// <summary>
+    /// R4: the sheet's legs seed each row from its predecessor but never
+    /// re-chain the rows after it, and the sheet reaches any date. Carries each
+    /// written worker's balance from their earliest written day to their last
+    /// row — once per worker, after the rows are saved. The walk skips locked
+    /// days itself, and re-carries the written rows too, so the update leg's
+    /// INVERTED-SUMFLEX-SIGN value does not survive it. The rows are already
+    /// saved, so a failed walk is logged for manual reconciliation and the next
+    /// worker still walks (as the handover and absence walks do).
+    /// </summary>
+    private static async Task CarryWrittenWorkersForward(TimePlanningPnDbContext dbContext,
+        Dictionary<int, (DateTime From, Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite? Site)> earliestWritten, ILogger logger)
+    {
+        foreach (var (sdkSitId, (walkFrom, walkSite)) in earliestWritten)
+        {
+            try
+            {
+                var changed = await FlexChainRecompute.RunForwardAsync(dbContext, walkSite, sdkSitId, walkFrom);
+                logger.LogInformation(
+                    "[PullEverythingFromGoogleSheet] flex carried for sdkSitId={SdkSitId} from {From:yyyy-MM-dd}, {Changed} row(s) changed",
+                    sdkSitId, walkFrom, changed);
+            }
+            catch (Exception walkEx)
+            {
+                // Drop this walk's pending row changes so the next worker's
+                // walk cannot flush a half-carried chain with its own save.
+                dbContext.ChangeTracker.Clear();
+                logger.LogError(walkEx,
+                    "[PullEverythingFromGoogleSheet] sheet rows saved, but carrying the flex balance forward FAILED for worker {SdkSitId} from {From:yyyy-MM-dd} — MANUAL RECONCILIATION required (re-save the day or re-run the walk)",
+                    sdkSitId, walkFrom);
+            }
+        }
+    }
+
+    private static async Task WritePlanTimerRows(MicrotingDbContext sdkDbContext,
+        TimePlanningPnDbContext dbContext, IList<IList<object>>? values,
+        Dictionary<int, (DateTime From, Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite? Site)> earliestWritten)
+    {
         var headerRows = values?.FirstOrDefault();
         if (values is {Count: > 0})
         {
@@ -465,9 +536,11 @@ public class GoogleSheetHelper
                         // An admin edited this day in the app, so the sheet does not
                         // win it back. PlanRegistrationPlanText.ParseInto below re-derives PlanHours and
                         // every shift field from the text, so the row is left alone
-                        // entirely rather than having one assignment guarded. Its
-                        // flex chain is deliberately left as the app wrote it; the
-                        // next row still seeds from this row's stored SumFlexEnd.
+                        // entirely rather than having one assignment guarded. The
+                        // day is not written, so no walk starts from it; but when
+                        // an EARLIER day of this worker is written, the walk
+                        // re-carries this day's SumFlexStart/SumFlexEnd too (its
+                        // own hours and plan stay untouched).
                         if (planRegistration.PlanChangedByAdmin)
                         {
                             adminChangedSkipped++;
@@ -537,6 +610,9 @@ public class GoogleSheetHelper
                         // change (which only alters which *InSeconds columns get
                         // written); fixing it restates historical balances and
                         // needs its own change, review and rollback path.
+                        // (Since then the forward walk after the row loop
+                        // re-carries every row this leg writes, so the inverted
+                        // value only persists if that walk fails.)
                         //
                         // What IS new here: this leg rewrites an EXISTING row's
                         // decimal balance, so a five-minute row's seconds columns
@@ -560,6 +636,17 @@ public class GoogleSheetHelper
                         }
 
                         await planRegistration.Update(dbContext);
+                    }
+
+                    var writtenSiteUid = planRegistration.SdkSitId;
+                    if (!earliestWritten.TryGetValue(writtenSiteUid, out var written))
+                    {
+                        earliestWritten[writtenSiteUid] =
+                            (midnight, assignedSites.FirstOrDefault(x => x.SiteId == writtenSiteUid));
+                    }
+                    else if (midnight < written.From)
+                    {
+                        earliestWritten[writtenSiteUid] = (midnight, written.Site);
                     }
                 }
             }
