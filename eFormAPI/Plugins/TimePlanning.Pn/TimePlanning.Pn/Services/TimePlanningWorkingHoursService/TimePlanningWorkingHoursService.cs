@@ -4155,6 +4155,42 @@ public class TimePlanningWorkingHoursService(
         //     used to report.
         var lockedDaysSkipped = 0;
         var unresolvableSheetsSkipped = 0;
+        // Earliest date actually created or updated, per worker (SdkSitId),
+        // with that worker's AssignedSite for the walk. Skipped rows (locked,
+        // out-of-window, unparseable dates) never enter it.
+        var earliestWritten = new Dictionary<int,
+            (DateTime From, Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite? Site)>();
+
+        // R4: both legs below seed a row from its predecessor but never
+        // re-chain the rows after it (future pre-created rows included).
+        // Carries each written worker's balance from their earliest written
+        // day to their last row — once per worker, after the rows are saved.
+        // The walk skips locked days itself. The rows are already saved, so a
+        // failed walk is logged for manual reconciliation and the next worker
+        // still walks (as the handover and absence walks do).
+        async Task CarryWrittenWorkersForward()
+        {
+            foreach (var (sdkSitId, (walkFrom, walkSite)) in earliestWritten)
+            {
+                try
+                {
+                    var changed = await FlexChainRecompute.RunForwardAsync(dbContext, walkSite, sdkSitId, walkFrom);
+                    logger.LogInformation(
+                        "[Import] flex carried for sdkSitId={SdkSitId} from {From:yyyy-MM-dd}, {Changed} row(s) changed",
+                        sdkSitId, walkFrom, changed);
+                }
+                catch (Exception walkEx)
+                {
+                    // Drop this walk's pending row changes so the next worker's
+                    // walk cannot flush a half-carried chain with its own save.
+                    dbContext.ChangeTracker.Clear();
+                    logger.LogError(walkEx,
+                        "[Import] rows imported and saved, but carrying the flex balance forward FAILED for worker {SdkSitId} from {From:yyyy-MM-dd} — MANUAL RECONCILIATION required (re-save the day or re-run the walk)",
+                        sdkSitId, walkFrom);
+                }
+            }
+        }
+
         try
         {
             // Get core
@@ -4366,6 +4402,9 @@ public class TimePlanningWorkingHoursService(
                                 // that site holds the full explanation and the reason
                                 // the clear below MUST stay mode-gated. A one-minute
                                 // row keeps its seconds untouched here.
+                                // (The forward walk after the import re-carries
+                                // every row this leg writes, so the inverted value
+                                // only persists if that walk fails.)
                                 if (!importTimeline.WasOneMinuteForRow(planRegistration))
                                 {
                                     FlexChain.ClearSumFlexSeconds(planRegistration);
@@ -4373,15 +4412,28 @@ public class TimePlanningWorkingHoursService(
 
                                 await planRegistration.Update(dbContext);
                             }
+
+                            if (!earliestWritten.TryGetValue(importSiteUid, out var written)
+                                || dateValue < written.From)
+                            {
+                                earliestWritten[importSiteUid] = (dateValue, importAssignedSite);
+                            }
                         }
                     }
                 }
             }
+
+            await CarryWrittenWorkersForward();
         }
         catch (Exception ex)
         {
             SentrySdk.CaptureException(ex);
             logger.LogError(ex.Message);
+            // The rows saved before the throw are still chain breaks: carry
+            // them. Clear first, so the walk's save cannot flush the entity
+            // that failed.
+            dbContext.ChangeTracker.Clear();
+            await CarryWrittenWorkersForward();
             return new OperationResult(false, ex.Message);
         }
         finally
