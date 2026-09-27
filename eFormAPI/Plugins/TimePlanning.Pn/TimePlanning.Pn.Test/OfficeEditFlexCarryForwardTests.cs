@@ -469,8 +469,8 @@ public class OfficeEditFlexCarryForwardTests : TestBaseSetup
         {
             Assert.That(storedD.PlanHours, Is.EqualTo(8.0).Within(1e-9), "the admin's day keeps its plan");
             Assert.That(storedD.SumFlexEnd, Is.EqualTo(5.0).Within(1e-9), "the skipped day is not re-chained");
-            Assert.That(tailSumFlexEnd, Is.EqualTo(new[] { 1.5, 1.5, 2.5 }).Within(1e-9),
-                "later rows untouched: nothing was written, so nothing was walked");
+            Assert.That(tailSumFlexEnd, Is.EqualTo(new[] { 1.5, 2.5, 2.5 }).Within(1e-9),
+                "later rows untouched (as seeded): nothing was written, so nothing was walked");
         });
     }
 
