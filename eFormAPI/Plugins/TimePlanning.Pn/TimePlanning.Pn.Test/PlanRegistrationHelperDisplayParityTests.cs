@@ -498,4 +498,130 @@ public class PlanRegistrationHelperDisplayParityTests : TestBaseSetup
                 "ReadBySiteAndDate must NOT synthesize Stop2StoppedAt from Stop2Id.");
         });
     }
+
+    /// <summary>
+    /// Read-path must not rewrite interval Ids: a one-minute row stores
+    /// minute-of-day + 1 Ids, which exceed 289 from ~04:49 on. The planning
+    /// read (UpdatePlanRegistrationsInPeriod) used to integer-divide any
+    /// Start1Id/Stop1Id &gt; 289 by 6 and save the row (359 → 59, 758 → 126),
+    /// corrupting legitimate data. The row, its stamps, its NettoHours and
+    /// its version history must all come out of the read untouched.
+    /// </summary>
+    [Test]
+    public async Task UpdatePlanRegistrationsInPeriod_OneMinuteRow_MinuteIdsAbove289_AreNotRewritten()
+    {
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 920,
+            UseOneMinuteIntervals = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var date = new DateTime(2026, 5, 26, 0, 0, 0, DateTimeKind.Utc); // Tuesday
+        var start1 = date.AddHours(5).AddMinutes(58).AddSeconds(57);
+        var stop1 = date.AddHours(12).AddMinutes(37).AddSeconds(17);
+        var start2 = date.AddHours(13).AddSeconds(12);
+        var stop2 = date.AddHours(16).AddSeconds(40);
+        // 06:38:20 + 03:00:28 of work, no pauses → the exact netto the
+        // second-precision chain recomputes from these stamps.
+        const int expectedNettoSeconds = 23900 + 10828;
+        const double expectedNettoHours = expectedNettoSeconds / 3600.0;
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 920,
+            Date = date,
+            // One-minute Ids: minute-of-day + 1.
+            Start1Id = 359, Stop1Id = 758,   // 05:58 → 12:37
+            Start2Id = 781, Stop2Id = 961,   // 13:00 → 16:00
+            Start1StartedAt = start1,
+            Stop1StoppedAt = stop1,
+            Start2StartedAt = start2,
+            Stop2StoppedAt = stop2,
+            NettoHours = expectedNettoHours,
+            NettoHoursInSeconds = expectedNettoSeconds,
+            RegisteredUnderOneMinuteIntervals = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        await ProjectSingleDay(assignedSite, date);
+
+        var reloaded = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().FirstAsync(x => x.Id == planning.Id);
+        var rewrittenVersions = await TimePlanningPnDbContext.PlanRegistrationVersions
+            .AsNoTracking()
+            .Where(x => x.PlanRegistrationId == planning.Id)
+            .Where(x => x.Start1Id != 359 || x.Stop1Id != 758)
+            .CountAsync();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(reloaded.Start1Id, Is.EqualTo(359), "Start1Id must not be divided (old code: 59).");
+            Assert.That(reloaded.Stop1Id, Is.EqualTo(758), "Stop1Id must not be divided (old code: 126).");
+            Assert.That(reloaded.Start2Id, Is.EqualTo(781));
+            Assert.That(reloaded.Stop2Id, Is.EqualTo(961));
+            Assert.That(reloaded.Start1StartedAt, Is.EqualTo(start1));
+            Assert.That(reloaded.Stop1StoppedAt, Is.EqualTo(stop1));
+            Assert.That(reloaded.Start2StartedAt, Is.EqualTo(start2));
+            Assert.That(reloaded.Stop2StoppedAt, Is.EqualTo(stop2));
+            Assert.That(reloaded.NettoHours, Is.EqualTo(expectedNettoHours).Within(1e-9));
+            Assert.That(rewrittenVersions, Is.EqualTo(0),
+                "No PlanRegistrationVersion may record a rewritten Start1Id/Stop1Id.");
+        });
+    }
+
+    /// <summary>
+    /// Read-path must not rewrite a five-minute shift that crosses midnight:
+    /// Stop1Id 313 is (313-1)*5 = 1560 min = 02:00 the next day, a legitimate
+    /// Id above 289. The old workaround turned it into 52 and re-snapped the
+    /// stop stamp to Date + 260 min.
+    /// </summary>
+    [Test]
+    public async Task UpdatePlanRegistrationsInPeriod_FiveMinuteRow_CrossMidnightStopId_IsNotRewritten()
+    {
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 921,
+            UseOneMinuteIntervals = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var date = new DateTime(2026, 5, 27, 0, 0, 0, DateTimeKind.Utc); // Wednesday
+        var start1 = date.AddMinutes((241 - 1) * 5); // 20:00
+        var stop1 = date.AddMinutes((313 - 1) * 5);  // 02:00 next day
+        var planning = new PlanRegistration
+        {
+            SdkSitId = 921,
+            Date = date,
+            Start1Id = 241,
+            Stop1Id = 313,
+            Start1StartedAt = start1,
+            Stop1StoppedAt = stop1,
+            NettoHours = 6,
+            RegisteredUnderOneMinuteIntervals = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await planning.Create(TimePlanningPnDbContext);
+
+        await ProjectSingleDay(assignedSite, date);
+
+        var reloaded = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().FirstAsync(x => x.Id == planning.Id);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(reloaded.Start1Id, Is.EqualTo(241));
+            Assert.That(reloaded.Stop1Id, Is.EqualTo(313), "Stop1Id must not be divided (old code: 52).");
+            Assert.That(reloaded.Start1StartedAt, Is.EqualTo(start1));
+            Assert.That(reloaded.Stop1StoppedAt, Is.EqualTo(stop1),
+                "Stop stamp must stay 02:00 next day (old code: Date + 260 min).");
+            Assert.That(reloaded.NettoHours, Is.EqualTo(6).Within(1e-9));
+        });
+    }
 }
