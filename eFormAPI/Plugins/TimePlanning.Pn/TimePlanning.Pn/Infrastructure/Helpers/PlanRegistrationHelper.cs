@@ -440,42 +440,6 @@ public static class PlanRegistrationHelper
             var rowIsOneMinute = planRegistration.RegisteredUnderOneMinuteIntervals
                                  ?? oneMinuteTimeline.WasOneMinuteAt(planRegistration.Date);
 
-            if (planRegistration.Start1Id > 289)
-            {
-                // FIXME: This is a workaround, it should be removed when the frontend is fixed.
-                planRegistration.Start1Id /= 5 + 1;
-                // Phase 1: when UseOneMinuteIntervals is on AND a precise stamp is
-                // already populated, preserve it instead of snapping back to the
-                // 5-minute index. Existing flag-off behavior is byte-identical:
-                // the int Id is corrected and StartedAt is backfilled from it.
-                // When the flag is on but StartedAt is null, fall through to the
-                // backfill so legacy rows without precise stamps still get one.
-                if (rowIsOneMinute && planRegistration.Start1StartedAt.HasValue)
-                {
-                    // Phase 1: precise DateTime stamp wins; do NOT overwrite it
-                    // with the 5-minute snap derived from Start1Id.
-                }
-                else
-                {
-                    planRegistration.Start1StartedAt = planRegistration.Date.AddMinutes(planRegistration.Start1Id * 5);
-                }
-            }
-
-            if (planRegistration.Stop1Id > 289 )
-            {
-                // FIXME: This is a workaround, it should be removed when the frontend is fixed.
-                planRegistration.Stop1Id /= 5 + 1;
-                // Phase 1: same fork as Start1 above for the stop stamp.
-                if (rowIsOneMinute && planRegistration.Stop1StoppedAt.HasValue)
-                {
-                    // Phase 1: precise DateTime stamp wins; do NOT overwrite it
-                    // with the 5-minute snap derived from Stop1Id.
-                }
-                else
-                {
-                    planRegistration.Stop1StoppedAt = planRegistration.Date.AddMinutes(planRegistration.Stop1Id * 5);
-                }
-            }
             planRegistration.IsSaturday = midnight.DayOfWeek == DayOfWeek.Saturday;
             planRegistration.IsSunday = midnight.DayOfWeek == DayOfWeek.Sunday;
             if (!dayIsLocked)
