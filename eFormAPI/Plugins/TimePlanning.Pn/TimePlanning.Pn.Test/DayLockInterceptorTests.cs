@@ -60,7 +60,7 @@ public class DayLockInterceptorTests : TestBaseSetup
 
         earlier.PlanHours = 9;
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await earlier.Update(TimePlanningPnDbContext!));
     }
 
@@ -71,7 +71,7 @@ public class DayLockInterceptorTests : TestBaseSetup
 
         boundary.PlanHours = 9;
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await boundary.Update(TimePlanningPnDbContext!));
     }
 
@@ -80,7 +80,7 @@ public class DayLockInterceptorTests : TestBaseSetup
     {
         await SeedReconciled(802, new DateTime(2026, 1, 16));
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await SeedPlain(802, new DateTime(2026, 1, 14)));
     }
 
@@ -94,7 +94,7 @@ public class DayLockInterceptorTests : TestBaseSetup
         var earlier = await SeedPlain(803, new DateTime(2026, 1, 13));
         await SeedReconciled(803, new DateTime(2026, 1, 16));
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await earlier.Delete(TimePlanningPnDbContext!));
     }
 
@@ -182,7 +182,7 @@ public class DayLockInterceptorTests : TestBaseSetup
         earlier.TransferredToPayroll = true;
         earlier.PlanHours = 9;
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await earlier.Update(TimePlanningPnDbContext!));
     }
 
@@ -198,7 +198,7 @@ public class DayLockInterceptorTests : TestBaseSetup
 
         earlier.Date = new DateTime(2026, 1, 20);
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await earlier.Update(TimePlanningPnDbContext!));
     }
 
@@ -214,7 +214,7 @@ public class DayLockInterceptorTests : TestBaseSetup
         boundary.ReconciledAt = null;
         boundary.PlanHours = 9;
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await boundary.Update(TimePlanningPnDbContext!));
     }
 
@@ -232,7 +232,7 @@ public class DayLockInterceptorTests : TestBaseSetup
         earlier.Reconciled = false;
         earlier.ReconciledAt = null;
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await earlier.Update(TimePlanningPnDbContext!));
     }
 
@@ -248,7 +248,7 @@ public class DayLockInterceptorTests : TestBaseSetup
 
         earlier.SdkSitId = 815;
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await earlier.Update(TimePlanningPnDbContext!));
     }
 
@@ -262,7 +262,7 @@ public class DayLockInterceptorTests : TestBaseSetup
 
         boundary.Reconciled = false;
 
-        Assert.ThrowsAsync<DayLockedException>(async () =>
+        await Assert.ThrowsAsync<DayLockedException>(async () =>
             await boundary.Update(TimePlanningPnDbContext!));
     }
 }

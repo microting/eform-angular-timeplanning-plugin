@@ -172,7 +172,7 @@ public class CorruptedPauseIdRepairTests : TestBaseSetup
         var belowBefore = await Reload(ctx, belowBoundary);
         var boundaryBefore = await Reload(ctx, boundary);
 
-        Assert.DoesNotThrowAsync(async () => await CorruptedPauseIdRepair.Run(ctx));
+        await Assert.DoesNotThrowAsync(async () => await CorruptedPauseIdRepair.Run(ctx));
 
         foreach (var (before, label) in new[] { (belowBefore, "below"), (boundaryBefore, "boundary") })
         {

@@ -1505,7 +1505,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
                 Arg.Any<Dictionary<string, string>>())
             .Returns<Task>(_ => throw new InvalidOperationException("boom"));
 
-        Assert.DoesNotThrowAsync(() =>
+        await Assert.DoesNotThrowAsync(() =>
             service.SendCreatePushAsync(1, new List<int> { 1 }, 1, DateTime.UtcNow));
         Assert.That(factory.CreatedScopes.Single().Disposed, Is.True,
             "using-scope must dispose even when the send throws");
