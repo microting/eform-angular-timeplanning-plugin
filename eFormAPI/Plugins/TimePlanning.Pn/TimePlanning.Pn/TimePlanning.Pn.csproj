@@ -18,6 +18,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <AssemblyMetadata Include="SentryDsn" Value="https://5e8442b08e1f6f30346dc6996be48b37@o4506241219428352.ingest.sentry.io/4506330566098944" />
+    </ItemGroup>
+
+    <ItemGroup>
       <InternalsVisibleTo Include="TimePlanning.Pn.Test" />
     </ItemGroup>
 
