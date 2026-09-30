@@ -52,7 +52,7 @@ public class DayLockWiringTests : TestBaseSetup
             .FirstAsync(x => x.Id == earlier.Id);
         locked.PlanHours = 9;
 
-        Assert.ThrowsAsync<DayLockedException>(async () => await locked.Update(productionContext));
+        await Assert.ThrowsAsync<DayLockedException>(async () => await locked.Update(productionContext));
     }
 
     [Test]
