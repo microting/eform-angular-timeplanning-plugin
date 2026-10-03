@@ -2307,4 +2307,111 @@ public static class PlanRegistrationHelper
         planRegistration.RuleEngineCalculatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// The worker's PlanRegistration for <paramref name="date"/>, creating an
+    /// empty one when the day has no row yet.
+    ///
+    /// For data that hangs off the day but may arrive before the registration
+    /// that would create the row: the app sends the Start snapshot (and GPS
+    /// position) before the save that creates it, so on a day without a
+    /// pre-created row they had nothing to point at (#1746). The new row is the
+    /// one the planning gap-fill creates: no plan, no registrations, and the
+    /// predecessor's closing flex balance carried forward, so the chain stays
+    /// intact even if no registration follows. The registration then updates
+    /// this row like any pre-created one.
+    ///
+    /// A row is only created for a worker with a time registration
+    /// (AssignedSite), within a day of today (the registration that follows
+    /// is for today; a day either side absorbs the device's clock and time
+    /// zone), and outside the reconciled lock. Otherwise Row is null and
+    /// RefusalKey names why: "SiteNotFound", the lock's message key, or null
+    /// for a date outside the window (the caller's own error applies).
+    /// </summary>
+    public static async Task<(PlanRegistration Row, string RefusalKey)> FindOrCreateDayRowAsync(
+        TimePlanningPnDbContext dbContext, DateTime date, int sdkSiteId, int userId)
+    {
+        var day = date.Date;
+        var existing = await FindDayRowAsync(dbContext, date, sdkSiteId);
+        if (existing != null)
+        {
+            return (existing, null);
+        }
+
+        var assignedSite = await dbContext.AssignedSites.AsNoTracking()
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync(x => x.SiteId == sdkSiteId);
+        if (assignedSite == null)
+        {
+            return (null, "SiteNotFound");
+        }
+
+        var today = DateTime.Now.Date;
+        if (day < today.AddDays(-1) || day > today.AddDays(1))
+        {
+            return (null, null);
+        }
+
+        var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, sdkSiteId);
+        if (DayLockHelper.IsLocked(lockedThrough, day))
+        {
+            return (null, DayLockHelper.LockedMessageKey(false));
+        }
+
+        var planRegistration = new PlanRegistration
+        {
+            Date = day,
+            SdkSitId = sdkSiteId,
+            CreatedByUserId = userId,
+            UpdatedByUserId = userId
+        };
+
+        if (day <= today)
+        {
+            var preTimePlanning = await dbContext.PlanRegistrations.AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Where(x => x.Date < day && x.SdkSitId == sdkSiteId)
+                .Where(x => assignedSite.FlexChainComputedThrough == null
+                            || x.Date <= assignedSite.FlexChainComputedThrough)
+                .OrderByDescending(x => x.Date)
+                .FirstOrDefaultAsync();
+
+            FlexChain.ApplyNettoFlexChainDecimal(planRegistration, preTimePlanning);
+        }
+
+        return (await CreateOrGetExistingDayRowAsync(dbContext, planRegistration), null);
+    }
+
+    private static Task<PlanRegistration> FindDayRowAsync(
+        TimePlanningPnDbContext dbContext, DateTime date, int sdkSiteId)
+    {
+        var day = date.Date;
+        return dbContext.PlanRegistrations
+            .Where(x => x.Date == date || x.Date == day)
+            .Where(x => x.SdkSitId == sdkSiteId)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    /// Inserts <paramref name="newRow"/>, or returns the row a concurrent save
+    /// created for the same (site, day) between the caller's lookup and this
+    /// insert: the unique index (SdkSitId, Date, WorkflowState) rejects the
+    /// second row, so the loser adopts the winner's row instead of failing.
+    /// </summary>
+    internal static async Task<PlanRegistration> CreateOrGetExistingDayRowAsync(
+        TimePlanningPnDbContext dbContext, PlanRegistration newRow)
+    {
+        try
+        {
+            await newRow.Create(dbContext);
+            return newRow;
+        }
+        catch (DbUpdateException)
+        {
+            dbContext.Entry(newRow).State = EntityState.Detached;
+            return await FindDayRowAsync(dbContext, newRow.Date, newRow.SdkSitId)
+                   ?? throw new InvalidOperationException(
+                       $"Creating the day row for site {newRow.SdkSitId} on {newRow.Date:yyyy-MM-dd} failed, and no existing row was found.");
+        }
+    }
 }
