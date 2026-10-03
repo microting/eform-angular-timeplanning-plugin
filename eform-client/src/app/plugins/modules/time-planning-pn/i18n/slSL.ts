@@ -421,6 +421,7 @@ export const slSL = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Zaposleni lahko ureja registracije le znotraj tekočega 2-dnevnega okna. Vse, kar je starejše od 2 dni, se samodejno zaklene, neodvisno od plačilne liste.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Urejanje ni dovoljeno, če sta za tega delavca onemogočeni obe možnosti urejanja.',
   'Payroll integration': 'Integracija plač',
+  'Save payroll settings': 'Shrani nastavitve plač',
   'Payroll system': 'Sistem plač',
   'Payroll cutoff day': 'Dan zaključka obračuna plač',
   'Export to payroll': 'Izvoz v plačilno listo',

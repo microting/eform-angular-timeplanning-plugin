@@ -421,6 +421,7 @@ export const bgBG = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Служителят може да редактира регистрации само в рамките на 2-дневен период. Всичко, по-старо от 2 дни, се заключва автоматично, независимо от ведомостта за заплати.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Редактирането не е разрешено, когато и двете опции за редактиране са деактивирани за този работник.',
   'Payroll integration': 'Интеграция на заплати',
+  'Save payroll settings': 'Запази настройките за заплати',
   'Payroll system': 'Система за заплати',
   'Payroll cutoff day': 'Краен срок за изплащане на заплати',
   'Export to payroll': 'Експорт към ведомост за заплати',

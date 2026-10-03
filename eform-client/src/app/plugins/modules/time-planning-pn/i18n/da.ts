@@ -433,6 +433,7 @@ export const da = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Medarbejderen kan kun redigere registreringer inden for et rullende 2-dages vindue. Alt, der er ældre end 2 dage, låses automatisk, uafhængigt af løn.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Redigering er ikke tilladt, når begge redigeringsmuligheder er deaktiveret for denne medarbejder.',
   'Payroll integration': 'Lønintegration',
+  'Save payroll settings': 'Gem lønindstillinger',
   'Payroll system': 'Lønsystem',
   'Payroll cutoff day': 'Lønfristdag',
   'Export to payroll': 'Eksporter til løn',

@@ -421,6 +421,7 @@ export const noNO = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Den ansatte kan bare redigere registreringer innenfor et rullerende 2-dagers vindu. Alt som er eldre enn 2 dager låses automatisk, uavhengig av lønn.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Redigering er ikke tillatt når begge redigeringsalternativene er deaktivert for denne arbeideren.',
   'Payroll integration': 'Lønnsintegrasjon',
+  'Save payroll settings': 'Lagre lønnsinnstillinger',
   'Payroll system': 'Lønnssystem',
   'Payroll cutoff day': 'Lønnsfrist',
   'Export to payroll': 'Eksporter til lønn',

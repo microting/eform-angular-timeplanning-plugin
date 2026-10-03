@@ -421,6 +421,7 @@ export const huHU = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Az alkalmazott csak egy kétnapos időszakon belül szerkesztheti a regisztrációkat. Minden, két napnál régebbi bejegyzés automatikusan zárolásra kerül, függetlenül a bérszámfejtéstől.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'A szerkesztés nem engedélyezett, ha mindkét szerkesztési lehetőség le van tiltva ennél a dolgozónál.',
   'Payroll integration': 'Bérszámfejtési integráció',
+  'Save payroll settings': 'Bérszámfejtési beállítások mentése',
   'Payroll system': 'Bérszámfejtési rendszer',
   'Payroll cutoff day': 'Bérszámfejtési határidő',
   'Export to payroll': 'Exportálás a bérszámfejtésbe',

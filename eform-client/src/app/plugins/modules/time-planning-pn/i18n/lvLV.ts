@@ -421,6 +421,7 @@ export const lvLV = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Darbinieks var rediģēt reģistrācijas tikai 2 dienu laikā. Viss, kas vecāks par 2 dienām, tiek automātiski bloķēts neatkarīgi no algas aprēķināšanas.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Rediģēšana nav atļauta, ja šim darbiniekam ir atspējotas abas rediģēšanas opcijas.',
   'Payroll integration': 'Algu integrācija',
+  'Save payroll settings': 'Saglabāt algu iestatījumus',
   'Payroll system': 'Algu sistēma',
   'Payroll cutoff day': 'Algas aprēķināšanas beigu diena',
   'Export to payroll': 'Eksportēt uz algas aprēķinu',
