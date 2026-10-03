@@ -975,4 +975,116 @@ public class SettingsServiceExtendedTests : TestBaseSetup
         Assert.That(result.Model.Count, Is.EqualTo(1));
         Assert.That(result.Model.Single().SiteId, Is.EqualTo(14000));
     }
+
+    // --- ShiftStartedAt (#1742) ---
+    // The registration-device worker list shows when each worker clocked in
+    // today: the earliest StartNStartedAt of today's row, null when not started.
+
+    private async Task SeedStartedAndNotStartedWorkersAsync(int startedSiteUid, int notStartedSiteUid)
+    {
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+        var language = await sdkDbContext.Languages.FirstOrDefaultAsync();
+        if (language == null)
+        {
+            language = new Microting.eForm.Infrastructure.Data.Entities.Language
+            {
+                LanguageCode = "da",
+                Name = "Danish"
+            };
+            await language.Create(sdkDbContext);
+        }
+
+        foreach (var siteUid in new[] { startedSiteUid, notStartedSiteUid })
+        {
+            var site = new Microting.eForm.Infrastructure.Data.Entities.Site
+            {
+                Name = $"Kiosk worker {siteUid}",
+                MicrotingUid = siteUid,
+                LanguageId = language.Id
+            };
+            await site.Create(sdkDbContext);
+            var worker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+            {
+                FirstName = "Jane",
+                LastName = $"Doe {siteUid}",
+                Email = $"kiosk{siteUid}@example.com",
+                MicrotingUid = siteUid + 1000
+            };
+            await worker.Create(sdkDbContext);
+            await new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+            {
+                SiteId = site.Id,
+                WorkerId = worker.Id,
+                MicrotingUid = siteUid + 2000
+            }.Create(sdkDbContext);
+            await new AssignedSiteEntity
+            {
+                SiteId = siteUid,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            }.Create(TimePlanningPnDbContext);
+        }
+
+        var today = DateTime.UtcNow.Date;
+        await new PlanRegistration
+        {
+            SdkSitId = startedSiteUid,
+            Date = today,
+            Start1StartedAt = today.AddHours(6).AddMinutes(58),
+            Stop1StoppedAt = today.AddHours(11),
+            Start2StartedAt = today.AddHours(12).AddMinutes(30),
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+        // A plan row without a start: the worker has not clocked in.
+        await new PlanRegistration
+        {
+            SdkSitId = notStartedSiteUid,
+            Date = today,
+            PlanHours = 7.5,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+    }
+
+    [Test]
+    public async Task GetAvailableSites_ReturnsEarliestShiftStartToday_AndNullWhenNotStarted()
+    {
+        // Arrange
+        await new RegistrationDevice
+        {
+            Token = "kiosk-token-1742",
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+        await SeedStartedAndNotStartedWorkersAsync(15000, 15001);
+
+        // Act
+        var result = await _settingsService.GetAvailableSites("kiosk-token-1742");
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+        var today = DateTime.UtcNow.Date;
+        Assert.That(result.Model.Single(x => x.SiteId == 15000).ShiftStartedAt,
+            Is.EqualTo(today.AddHours(6).AddMinutes(58)));
+        Assert.That(result.Model.Single(x => x.SiteId == 15001).ShiftStartedAt, Is.Null);
+    }
+
+    [Test]
+    public async Task GetAllRegistrationSitesByCurrentUser_ReturnsEarliestShiftStartToday_AndNullWhenNotStarted()
+    {
+        // Arrange
+        await SeedStartedAndNotStartedWorkersAsync(15100, 15101);
+
+        // Act
+        var result = await _settingsService.GetAllRegistrationSitesByCurrentUser();
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+        var today = DateTime.UtcNow.Date;
+        Assert.That(result.Model.Single(x => x.SiteId == 15100).ShiftStartedAt,
+            Is.EqualTo(today.AddHours(6).AddMinutes(58)));
+        Assert.That(result.Model.Single(x => x.SiteId == 15101).ShiftStartedAt, Is.Null);
+    }
 }
