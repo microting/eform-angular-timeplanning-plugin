@@ -273,6 +273,14 @@
                 [attr.data-testid]="'pause' + shiftId + 'Id-Error'">
                 <small>{{ error }}</small>
               </mat-error>
+              <div
+                *ngIf="pauseSegments[shiftId]?.length"
+                class="d-flex flex-column mb-2"
+                [attr.data-testid]="'pauseSegments' + shiftId">
+                <small *ngFor="let segment of pauseSegments[shiftId]" [attr.data-testid]="'pauseSegment' + shiftId">
+                  {{ 'Pause' | translate }} {{ segment.start }}–{{ segment.stop ?? '…' }}
+                </small>
+              </div>
 
               <div class="flex-row">
                 <mat-form-field>

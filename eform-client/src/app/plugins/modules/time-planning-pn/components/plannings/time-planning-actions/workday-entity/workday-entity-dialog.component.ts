@@ -22,6 +22,7 @@ import {HelpEntryId} from '../../../../help/help.model';
 import {HelpPanelService} from '../../../../help/services/help-panel.service';
 import {HelpTourService} from '../../../../help/services/help-tour.service';
 import {assertLockOutcomeHandled, dayKey, formatReconciledProvenance, sendLockRequest} from '../../day-lock.util';
+import {buildPauseSegments, PauseSegment} from '../../pause-segments.util';
 
 import {
   AbstractControl,
@@ -132,6 +133,12 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   private pauseOverrideClearedMinutes: { [shift: number]: number | null } = {};
   todaysFlex = 0;
   nettoHoursOverrideActive = false;
+  /**
+   * The recorded pauses of each shift (1..5) as wall-clock ranges, read-only (#1741).
+   * Empty for a shift with a pause override: the served stamps of such a shift are
+   * a synthesized pair carrying the override's duration, not times anyone recorded.
+   */
+  pauseSegments: { [shift: number]: PauseSegment[] } = {};
   date: any;
 
   // fejltekst til stop2 (bruges sammen med gruppevalidator)
@@ -224,6 +231,12 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
 
 
     const m = this.data.planningPrDayModels;
+
+    for (const shift of [1, 2, 3, 4, 5]) {
+      this.pauseSegments[shift] = this.shiftOverrideMinutes(shift) === null
+        ? buildPauseSegments(this.getPauseTimestampPairs(shift))
+        : [];
+    }
 
     const normalizeTwoDecimals = (value: any) => {
       if (value === null || value === undefined || isNaN(value)) {return 0.00;}
