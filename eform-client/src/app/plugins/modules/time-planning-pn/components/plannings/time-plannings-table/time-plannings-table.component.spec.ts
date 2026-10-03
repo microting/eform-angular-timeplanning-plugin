@@ -995,4 +995,43 @@ describe('TimePlanningsTableComponent', () => {
       expect(component.isPreviewSkipped(row(2))).toBe(false);
     });
   });
+
+  /**
+   * #1744: the admin flag lives in the store, which never completes. The click must
+   * read it once; a live subscription outlived the grid and re-opened the row's
+   * dialog on the next false -> true flip of the flag, i.e. after logout and login.
+   */
+  describe('onFirstColumnClick', () => {
+    let isAdmin$: BehaviorSubject<boolean>;
+
+    beforeEach(() => {
+      isAdmin$ = new BehaviorSubject(true);
+      (component as any).selectAuthIsAdmin$ = isAdmin$;
+      mockSettingsService.getAssignedSite.mockReturnValue(of({ success: true, model: {} }) as any);
+      mockDialog.open.mockReturnValue({ afterClosed: () => of(undefined) } as any);
+    });
+
+    it('opens the dialog once, and not again when the admin flag flips after logout and login', () => {
+      component.onFirstColumnClick({ siteId: 7 });
+      expect(mockSettingsService.getAssignedSite).toHaveBeenCalledWith(7);
+      expect(mockDialog.open).toHaveBeenCalledTimes(1);
+
+      isAdmin$.next(false);
+      isAdmin$.next(true);
+
+      expect(mockDialog.open).toHaveBeenCalledTimes(1);
+      expect(isAdmin$.observed).toBe(false);
+    });
+
+    it('opens nothing for a non-admin, and nothing later when that user turns admin', () => {
+      isAdmin$.next(false);
+
+      component.onFirstColumnClick({ siteId: 7 });
+      isAdmin$.next(true);
+
+      expect(mockSettingsService.getAssignedSite).not.toHaveBeenCalled();
+      expect(mockDialog.open).not.toHaveBeenCalled();
+      expect(isAdmin$.observed).toBe(false);
+    });
+  });
 });
