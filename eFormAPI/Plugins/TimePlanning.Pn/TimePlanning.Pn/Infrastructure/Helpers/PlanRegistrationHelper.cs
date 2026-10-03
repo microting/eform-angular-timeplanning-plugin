@@ -2318,8 +2318,8 @@ public static class PlanRegistrationHelper
     /// one the planning gap-fill creates: no plan, no registrations, and the
     /// predecessor's closing flex balance carried forward (in seconds on a
     /// one-minute site), so the chain stays intact even if no registration
-    /// follows. The registration then updates
-    /// this row like any pre-created one.
+    /// follows. The registration then updates this row like any pre-created
+    /// one.
     ///
     /// A row is only created for a worker with a time registration
     /// (AssignedSite), within a day of today (the registration that follows
