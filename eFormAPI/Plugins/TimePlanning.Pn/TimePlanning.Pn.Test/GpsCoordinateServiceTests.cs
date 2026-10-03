@@ -278,6 +278,42 @@ public class GpsCoordinateServiceTests : TestBaseSetup
     }
 
     [Test]
+    public async Task Create_OnAOneMinuteSite_CarriesThePredecessorsSecondsBalance()
+    {
+        // Arrange: the predecessor's seconds balance (3 h 0 min 37 s) is the
+        // source of truth; its decimal (3.0) is stale.
+        const int sdkSiteId = 60;
+        var today = DateTime.Now.Date;
+        await new AssignedSite
+        {
+            SiteId = sdkSiteId,
+            UseOneMinuteIntervals = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+        await new PlanRegistration
+        {
+            Date = today.AddDays(-1),
+            SdkSitId = sdkSiteId,
+            SumFlexEnd = 3.0,
+            SumFlexEndInSeconds = 10837,
+            RegisteredUnderOneMinuteIntervals = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+
+        // Act
+        var result = await _gpsCoordinateService.Create(StartPosition(sdkSiteId, today));
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+        var row = await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking()
+            .SingleAsync(x => x.SdkSitId == sdkSiteId && x.Date == today);
+        Assert.That(row.SumFlexStartInSeconds, Is.EqualTo(10837));
+        Assert.That(row.SumFlexEndInSeconds, Is.EqualTo(10837));
+    }
+
+    [Test]
     public async Task Create_RefusesAndCreatesNoRow_WhenTheSiteHasNoTimeRegistration()
     {
         // Act: no AssignedSite for the site.

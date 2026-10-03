@@ -2316,8 +2316,9 @@ public static class PlanRegistrationHelper
     /// position) before the save that creates it, so on a day without a
     /// pre-created row they had nothing to point at (#1746). The new row is the
     /// one the planning gap-fill creates: no plan, no registrations, and the
-    /// predecessor's closing flex balance carried forward, so the chain stays
-    /// intact even if no registration follows. The registration then updates
+    /// predecessor's closing flex balance carried forward (in seconds on a
+    /// one-minute site), so the chain stays intact even if no registration
+    /// follows. The registration then updates
     /// this row like any pre-created one.
     ///
     /// A row is only created for a worker with a time registration
@@ -2375,7 +2376,12 @@ public static class PlanRegistrationHelper
                 .OrderByDescending(x => x.Date)
                 .FirstOrDefaultAsync();
 
-            FlexChain.ApplyNettoFlexChainDecimal(planRegistration, preTimePlanning);
+            // Balance-only: no stamps, so nothing to compute but the carried
+            // balance — in seconds on a one-minute site, so the predecessor's
+            // authoritative seconds balance is not replaced by its decimal.
+            FlexChain.CarryChain(planRegistration, preTimePlanning,
+                assignedSite.UseOneMinuteIntervals,
+                await OneMinuteModeTimeline.ResolveRowModeOrNullAsync(dbContext, assignedSite, preTimePlanning));
         }
 
         return (await CreateOrGetExistingDayRowAsync(dbContext, planRegistration), null);

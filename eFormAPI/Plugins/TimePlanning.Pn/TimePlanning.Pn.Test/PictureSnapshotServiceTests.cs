@@ -292,7 +292,11 @@ public class PictureSnapshotServiceTests : TestBaseSetup
             CreatedByUserId = 1,
             UpdatedByUserId = 1
         }.Create(TimePlanningPnDbContext);
-        _coreService.GetCore().Returns(Task.FromResult(await GetCore()));
+        // Resolve the core BEFORE configuring the substitute: awaiting it inside
+        // Returns() lets other substitute calls land in between, and NSubstitute
+        // then binds the return value to the wrong call.
+        var core = await GetCore();
+        _coreService.GetCore().Returns(Task.FromResult(core));
 
         // Length 0 skips the S3 upload (420_SDK seeds s3Enabled = False).
         var file = Substitute.For<IFormFile>();
