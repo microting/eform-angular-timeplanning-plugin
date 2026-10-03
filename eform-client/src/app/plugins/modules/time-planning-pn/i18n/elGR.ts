@@ -421,6 +421,7 @@ export const elGR = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Ο εργαζόμενος μπορεί να επεξεργαστεί εγγραφές μόνο εντός ενός κυλιόμενου χρονικού διαστήματος 2 ημερών. Οτιδήποτε είναι παλαιότερο των 2 ημερών κλειδώνεται αυτόματα, ανεξάρτητα από τη μισθοδοσία.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Η επεξεργασία δεν επιτρέπεται όταν και οι δύο επιλογές επεξεργασίας είναι απενεργοποιημένες για αυτόν τον εργαζόμενο.',
   'Payroll integration': 'Ενσωμάτωση μισθοδοσίας',
+  'Save payroll settings': 'Αποθήκευση ρυθμίσεων μισθοδοσίας',
   'Payroll system': 'Σύστημα μισθοδοσίας',
   'Payroll cutoff day': 'Ημέρα λήξης μισθοδοσίας',
   'Export to payroll': 'Εξαγωγή σε μισθοδοσία',

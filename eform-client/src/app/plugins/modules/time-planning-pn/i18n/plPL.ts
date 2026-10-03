@@ -421,6 +421,7 @@ export const plPL = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Pracownik może edytować rejestracje tylko w ciągu 2-dniowego okresu. Wszystkie rejestracje starsze niż 2 dni są automatycznie blokowane, niezależnie od listy płac.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Edycja nie jest dozwolona, gdy obie opcje edycji są wyłączone dla tego pracownika.',
   'Payroll integration': 'Integracja płac',
+  'Save payroll settings': 'Zapisz ustawienia płac',
   'Payroll system': 'System płacowy',
   'Payroll cutoff day': 'Dzień odcięcia wypłaty wynagrodzeń',
   'Export to payroll': 'Eksport do listy płac',

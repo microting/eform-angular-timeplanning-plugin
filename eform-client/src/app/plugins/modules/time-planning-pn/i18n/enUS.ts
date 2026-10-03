@@ -437,6 +437,7 @@ export const enUS = {
   'Saturday break upper limit': 'Saturday break upper limit',
   'Sunday break upper limit': 'Sunday break upper limit',
   'Payroll integration': 'Payroll integration',
+  'Save payroll settings': 'Save payroll settings',
   'Payroll system': 'Payroll system',
   'Payroll cutoff day': 'Payroll cutoff day',
   'Export to payroll': 'Export to payroll',

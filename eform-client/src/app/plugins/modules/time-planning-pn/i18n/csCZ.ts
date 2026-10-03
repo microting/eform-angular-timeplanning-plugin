@@ -421,6 +421,7 @@ export const csCZ = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Zaměstnanec může upravovat registrace pouze v rámci dvoudenního posuvného okna. Vše starší než 2 dny se automaticky uzamkne, nezávisle na výplatní pásce.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Úpravy nejsou povoleny, pokud jsou pro tohoto pracovníka zakázány obě možnosti úprav.',
   'Payroll integration': 'Integrace mezd',
+  'Save payroll settings': 'Uložit nastavení mezd',
   'Payroll system': 'Mzdový systém',
   'Payroll cutoff day': 'Den uzávěrky výplat',
   'Export to payroll': 'Export do mzdových účetů',

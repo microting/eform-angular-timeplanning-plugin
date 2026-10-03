@@ -421,6 +421,7 @@ export const roRO = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Angajatul poate edita înregistrările doar într-o fereastră de 2 zile. Toate înregistrările mai vechi de 2 zile sunt blocate automat, independent de salarizare.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Editarea nu este permisă atunci când ambele opțiuni de editare sunt dezactivate pentru acest lucrător.',
   'Payroll integration': 'Integrarea salarizării',
+  'Save payroll settings': 'Salvează setările de salarizare',
   'Payroll system': 'Sistem de salarizare',
   'Payroll cutoff day': 'Ziua limită de plată a salariilor',
   'Export to payroll': 'Export în salarizare',

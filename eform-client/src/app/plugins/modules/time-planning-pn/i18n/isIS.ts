@@ -421,6 +421,7 @@ export const isIS = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Starfsmaðurinn getur aðeins breytt skráningum innan tveggja daga glugga. Allt sem er eldra en tveggja daga er sjálfkrafa læst, óháð launaskrá.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Ekki er hægt að breyta stillingum þegar báðir breytingarvalkostir eru óvirkir fyrir þennan starfsmann.',
   'Payroll integration': 'Samþætting launa',
+  'Save payroll settings': 'Vista launastillingar',
   'Payroll system': 'Launakerfi',
   'Payroll cutoff day': 'Launagreiðslufrestur',
   'Export to payroll': 'Flytja út í launaskrá',

@@ -1,6 +1,6 @@
 <eform-new-subheader [forceStaticTitle]="true" [title]="'Time planning settings' | translate">
   <div class="col-12">
-    <button id="saveSettings" mat-raised-button color="primary" (click)="updateGoogleSheetSettings()">Update</button>
+    <button id="saveSettings" mat-raised-button color="primary" (click)="updateGoogleSheetSettings()">{{ 'Update' | translate }}</button>
   </div>
 </eform-new-subheader>
 
@@ -208,6 +208,13 @@
               {{ 'Enable Snapshots for all sites' | translate }}
             </mat-slide-toggle>
           </div>
+          <!-- The page-wide save sits in the subheader, scrolled out of view down here,
+               and the next button down saves payroll only (#1745). -->
+          <div class="col-12 mt-2">
+            <button id="saveGpsSnapshotSettings" mat-raised-button color="primary" (click)="updateGoogleSheetSettings()">
+              {{ 'Update' | translate }}
+            </button>
+          </div>
         </div>
       </mat-card-content>
     </mat-card>
@@ -239,7 +246,7 @@
           </div>
           <div class="col-12 mt-2">
             <button id="savePayrollSettings" mat-raised-button color="primary" (click)="updatePayrollSettings()">
-              {{ 'Update' | translate }}
+              {{ 'Save payroll settings' | translate }}
             </button>
           </div>
         </div>
