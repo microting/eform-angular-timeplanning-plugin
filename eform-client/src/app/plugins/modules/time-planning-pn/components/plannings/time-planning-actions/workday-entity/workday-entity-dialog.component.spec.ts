@@ -533,16 +533,21 @@ describe('WorkdayEntityDialogComponent', () => {
   });
 
   describe('Recorded pause times (#1741)', () => {
-    // mockData is shared by reference across the suite, so every stamp and override
-    // this block writes is put back afterwards.
+    // mockData is shared by reference across the suite, and other blocks leave pause
+    // overrides on it (an override hides a shift's list), so every field this block
+    // reads is cleared before each case and put back afterwards.
     const touched = ['pause1StartedAt', 'pause1StoppedAt', 'pause10StartedAt', 'pause10StoppedAt',
-      'pause2StartedAt', 'pause2StoppedAt', 'pause2OverrideMinutes'];
-    afterEach(() => {
+      'pause2StartedAt', 'pause2StoppedAt',
+      'pause1OverrideMinutes', 'pause2OverrideMinutes', 'pause3OverrideMinutes',
+      'pause4OverrideMinutes', 'pause5OverrideMinutes'];
+    const clearTouched = () => {
       const m = component.data.planningPrDayModels as any;
       for (const key of touched) {
         m[key] = null;
       }
-    });
+    };
+    beforeEach(clearTouched);
+    afterEach(clearTouched);
 
     it('lists each shift\'s pauses as clock ranges, sub-slots included', () => {
       const m = component.data.planningPrDayModels as any;

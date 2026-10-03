@@ -7,9 +7,16 @@ export interface PauseSegment {
 const SECONDS_PER_DAY = 86400;
 
 /**
- * Seconds-of-day of a stamp. The stamps are wall-clock times serialised as UTC, the
- * same reading the grid and the dialog give them through DatePipe(..., 'UTC').
+ * A pause stamp as the dialog receives it. The API sends the stored wall-clock time
+ * without a zone, and the core DateInterceptor turns it into a Date with date-fns
+ * parseJSON, which reads a zone-less string as UTC. So the stamp's UTC fields ARE
+ * the wall-clock time, the same reading the grid gives it through
+ * DatePipe(..., 'UTC'). A string is accepted too, but only with an explicit zone
+ * (e.g. a trailing Z); a zone-less string would be read as local time.
  */
+export type PauseStamp = string | Date | null | undefined;
+
+/** Seconds-of-day of a stamp, read from its UTC fields (see PauseStamp). */
 function secondOfDay(stamp: Date): number {
   return stamp.getUTCHours() * 3600 + stamp.getUTCMinutes() * 60 + stamp.getUTCSeconds();
 }
@@ -23,7 +30,7 @@ function toHhmm(seconds: number): string {
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 }
 
-function parse(value: string | null | undefined): Date | null {
+function parse(value: PauseStamp): Date | null {
   if (!value) {
     return null;
   }
@@ -47,7 +54,7 @@ function parse(value: string | null | undefined): Date | null {
  * A stop with no start says nothing and is skipped.
  */
 export function buildPauseSegments(
-  pairs: ReadonlyArray<readonly [string | null | undefined, string | null | undefined]>,
+  pairs: ReadonlyArray<readonly [PauseStamp, PauseStamp]>,
 ): PauseSegment[] {
   const closed: Array<{ start: number; stop: number }> = [];
   const open: number[] = [];

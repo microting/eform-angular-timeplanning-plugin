@@ -17,6 +17,14 @@ describe('buildPauseSegments', () => {
     ]);
   });
 
+  it('reads Date stamps, which is how they reach the dialog, by their UTC fields', () => {
+    // The core DateInterceptor parses the API's zone-less wall-clock strings with
+    // date-fns parseJSON, i.e. as UTC.
+    expect(buildPauseSegments([
+      [new Date(Date.UTC(2026, 4, 15, 10, 2)), new Date(Date.UTC(2026, 4, 15, 10, 17))],
+    ])).toEqual([{ start: '10:02', stop: '10:17' }]);
+  });
+
   it('merges overlapping and touching pauses, as the backend does before cutting them out', () => {
     expect(buildPauseSegments([
       ['2026-05-15T10:00:00Z', '2026-05-15T10:20:00Z'],
