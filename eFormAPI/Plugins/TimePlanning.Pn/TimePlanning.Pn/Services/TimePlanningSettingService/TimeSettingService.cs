@@ -309,6 +309,7 @@ public class TimeSettingService(
                             PinCode = worker.PinCode,
                             DefaultLanguage = language?.LanguageCode ?? "en",
                             HoursStarted = hoursStarted,
+                            ShiftStartedAt = FirstShiftStartedAt(planRegistrationForToday),
                             PauseStarted = pauseStarted,
                             AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
                             ThirdShiftActive = assignedSite.ThirdShiftActive,
@@ -628,6 +629,7 @@ public class TimeSettingService(
                             PinCode = worker.PinCode,
                             DefaultLanguage = language?.LanguageCode ?? "en",
                             HoursStarted = hoursStarted,
+                            ShiftStartedAt = FirstShiftStartedAt(planRegistrationForToday),
                             PauseStarted = pauseStarted,
                             AutoBreakCalculationActive = assignedSite.AutoBreakCalculationActive,
                             ThirdShiftActive = assignedSite.ThirdShiftActive,
@@ -1470,5 +1472,28 @@ public class TimeSettingService(
         }
 
         return new OperationResult(true, localizationService.GetString("AssignedSiteUpdatedSuccessfuly"));
+    }
+
+    /// <summary>
+    /// When the worker first clocked in today: the earliest StartNStartedAt
+    /// of the day's row, or null when no shift has started (#1742). The
+    /// registration-device worker list shows it next to each worker.
+    /// </summary>
+    private static DateTime? FirstShiftStartedAt(PlanRegistration? planRegistration)
+    {
+        if (planRegistration == null)
+        {
+            return null;
+        }
+
+        // Min over DateTime? skips nulls, and is null when all are.
+        return new[]
+        {
+            planRegistration.Start1StartedAt,
+            planRegistration.Start2StartedAt,
+            planRegistration.Start3StartedAt,
+            planRegistration.Start4StartedAt,
+            planRegistration.Start5StartedAt
+        }.Min();
     }
 }

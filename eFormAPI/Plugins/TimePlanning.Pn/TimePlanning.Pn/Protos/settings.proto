@@ -239,6 +239,10 @@ message Site {
   string phone_number = 22;
   bool use_one_minute_intervals = 23;
   bool over_midnight = 24;
+  // Earliest StartNStartedAt today, in the same format as the other
+  // *_started_at strings (the worker's naive wall-clock time, no zone);
+  // empty when no shift has started.
+  string shift_started_at = 25;
 }
 
 // Response wrappers matching C# OperationDataResult<T>

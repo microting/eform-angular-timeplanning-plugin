@@ -269,6 +269,7 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                     PhoneNumber = site.PhoneNumber ?? "",
                     UseOneMinuteIntervals = site.UseOneMinuteIntervals,
                     OverMidnight = site.OverMidnight,
+                    ShiftStartedAt = TimePlanningWorkingHoursGrpcService.FormatDateTime(site.ShiftStartedAt),
                 };
                 response.Model.Add(grpcSite);
             }
@@ -339,6 +340,7 @@ public class TimePlanningSettingsGrpcService : TimePlanningSettingsService.TimeP
                     PhoneNumber = site.PhoneNumber ?? "",
                     UseOneMinuteIntervals = site.UseOneMinuteIntervals,
                     OverMidnight = site.OverMidnight,
+                    ShiftStartedAt = TimePlanningWorkingHoursGrpcService.FormatDateTime(site.ShiftStartedAt),
                 };
                 response.Model.Add(grpcSite);
             }
