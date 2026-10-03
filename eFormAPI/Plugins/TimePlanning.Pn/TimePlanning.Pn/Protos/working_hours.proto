@@ -169,6 +169,13 @@ message HoursSummaryModel {
   int32 other_absence_days = 10;
   int32 absence_without_permission_days = 11;
   double sunday_holiday_hours = 12;
+  // The totals above in whole seconds (#1743), so a client formats them
+  // without float arithmetic. For older apps the *_hours and *_minutes
+  // fields both derive from the total rounded to the nearest minute, so a
+  // truncated hours part always agrees with the minutes.
+  int64 total_worked_seconds = 13;
+  int64 total_planned_seconds = 14;
+  int64 total_flex_seconds = 15;
 }
 
 message CalculateHoursSummaryResponse {

@@ -141,14 +141,23 @@ public class TimePlanningWorkingHoursGrpcService
 
         if (result.Success && result.Model != null)
         {
+            // Hours and minutes are both derived from the same whole-minute
+            // total, so a client that truncates the hours and appends the
+            // minutes shows what the web's convertHoursToTime shows (#1743).
+            var workedMinutes = ToWholeMinutes(result.Model.TotalNettoHours);
+            var plannedMinutes = ToWholeMinutes(result.Model.TotalPlanHours);
+            var flexMinutes = ToWholeMinutes(result.Model.Difference);
             response.Model = new HoursSummaryModel
             {
-                TotalWorkedHours = result.Model.TotalNettoHours,
-                TotalWorkedMinutes = (result.Model.TotalNettoHours % 1) * 60,
-                TotalPlannedHours = result.Model.TotalPlanHours,
-                TotalPlannedMinutes = (result.Model.TotalPlanHours % 1) * 60,
-                TotalFlexHours = result.Model.Difference,
-                TotalFlexMinutes = (result.Model.Difference % 1) * 60,
+                TotalWorkedHours = workedMinutes / 60.0,
+                TotalWorkedMinutes = workedMinutes % 60,
+                TotalWorkedSeconds = ToWholeSeconds(result.Model.TotalNettoHours),
+                TotalPlannedHours = plannedMinutes / 60.0,
+                TotalPlannedMinutes = plannedMinutes % 60,
+                TotalPlannedSeconds = ToWholeSeconds(result.Model.TotalPlanHours),
+                TotalFlexHours = flexMinutes / 60.0,
+                TotalFlexMinutes = flexMinutes % 60,
+                TotalFlexSeconds = ToWholeSeconds(result.Model.Difference),
                 PaidOutFlex = result.Model.TotalPaidOutFlex,
                 VacationDays = result.Model.VacationDays,
                 SickDays = result.Model.SickDays,
@@ -160,6 +169,18 @@ public class TimePlanningWorkingHoursGrpcService
 
         return response;
     }
+
+    /// <summary>
+    /// A decimal-hours value as whole minutes, rounded to the nearest minute
+    /// like the web's convertHoursToTime and signed like the value (#1743).
+    /// The former (hours % 1) * 60 gave -9.99999 for -10 h 10 min, which the
+    /// app truncated to "-10:09".
+    /// </summary>
+    private static long ToWholeMinutes(double hours) =>
+        (long)Math.Round(hours * 60, MidpointRounding.AwayFromZero);
+
+    private static long ToWholeSeconds(double hours) =>
+        (long)Math.Round(hours * 3600, MidpointRounding.AwayFromZero);
 
     private static string FormatDateTime(DateTime? dt) =>
         dt?.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFF") ?? "";
