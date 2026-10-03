@@ -200,6 +200,87 @@ public class SettingsServiceTests : TestBaseSetup
         Assert.That(updatedSite.SnapshotEnabled, Is.False);
     }
 
+    // #1740: every site runs on 1-minute intervals and the settings checkbox is
+    // gone, so UpdateAssignedSite must ignore whatever a (stale) client sends for
+    // UseOneMinuteIntervals — in both directions — and never touch the recorded
+    // cut-over date the flex chain uses to keep older days on 5-minute rules.
+    [Test]
+    public async Task UpdateAssignedSite_IgnoresClientFalse_KeepsOneMinuteAndCutOverDate()
+    {
+        var cutOver = new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc);
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 51,
+            UseOneMinuteIntervals = true,
+            UseOneMinuteIntervalsFrom = cutOver,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var versionsBefore = await TimePlanningPnDbContext.AssignedSiteVersions
+            .CountAsync(x => x.AssignedSiteId == assignedSite.Id);
+
+        // OverMidnight carries a real change: PnBase.Update only writes a version
+        // row when something changed, and the audit row is what is checked below.
+        var result = await _settingsService.UpdateAssignedSite(new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 51,
+            UseOneMinuteIntervals = false,
+            OverMidnight = true
+        });
+
+        Assert.That(result.Success, Is.True);
+        var stored = await TimePlanningPnDbContext.AssignedSites.AsNoTracking()
+            .FirstAsync(x => x.Id == assignedSite.Id);
+        Assert.That(stored.UseOneMinuteIntervals, Is.True);
+        Assert.That(stored.UseOneMinuteIntervalsFrom, Is.EqualTo(cutOver));
+
+        Assert.That(stored.OverMidnight, Is.True, "the save itself must have gone through");
+
+        // The save writes its audit row, and that row must not record a flip
+        // either, or OneMinuteModeTimeline would read one from the trail.
+        Assert.That(await TimePlanningPnDbContext.AssignedSiteVersions
+                .CountAsync(x => x.AssignedSiteId == assignedSite.Id),
+            Is.EqualTo(versionsBefore + 1));
+        var lastVersion = await TimePlanningPnDbContext.AssignedSiteVersions.AsNoTracking()
+            .Where(x => x.AssignedSiteId == assignedSite.Id)
+            .OrderByDescending(x => x.Id)
+            .FirstAsync();
+        Assert.That(lastVersion.UseOneMinuteIntervals, Is.True);
+        Assert.That(lastVersion.UseOneMinuteIntervalsFrom, Is.EqualTo(cutOver));
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_IgnoresClientTrue_DoesNotSwitchOrStampDate()
+    {
+        // A site not yet switched is moved by the estate-wide switch with a
+        // chosen cut-over date, never by a settings save stamping "now".
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 52,
+            UseOneMinuteIntervals = false,
+            UseOneMinuteIntervalsFrom = null,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var result = await _settingsService.UpdateAssignedSite(new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 52,
+            UseOneMinuteIntervals = true
+        });
+
+        Assert.That(result.Success, Is.True);
+        var stored = await TimePlanningPnDbContext.AssignedSites.AsNoTracking()
+            .FirstAsync(x => x.Id == assignedSite.Id);
+        Assert.That(stored.UseOneMinuteIntervals, Is.False);
+        Assert.That(stored.UseOneMinuteIntervalsFrom, Is.Null);
+    }
+
     [Test]
     public async Task UpdateAssignedSite_StillSucceeds_WhenPushThrows()
     {

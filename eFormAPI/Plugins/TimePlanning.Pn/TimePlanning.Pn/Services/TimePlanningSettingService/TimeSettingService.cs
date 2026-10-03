@@ -25,7 +25,6 @@ SOFTWARE.
 #nullable enable
 using JetBrains.Annotations;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
-using Microting.TimePlanningBase.Infrastructure.Helpers;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
 
@@ -1063,14 +1062,12 @@ public class TimeSettingService(
         var wasResigned = dbAssignedSite.Resigned;
 
         dbAssignedSite.Resigned = site.Resigned;
-        // Record WHEN one-minute intervals took effect, so every later flex
-        // recomputation keeps pre-switch days on 5-minute rules instead of
-        // restating already-closed SumFlexEnd balances at one-minute precision.
-        // MUST run BEFORE the one-way OR on the next line — see the helper.
-        OneMinuteModeTimeline.StampEffectiveDateOnEnable(
-            dbAssignedSite, site.UseOneMinuteIntervals, DateTime.UtcNow);
-
-        dbAssignedSite.UseOneMinuteIntervals = dbAssignedSite.UseOneMinuteIntervals || site.UseOneMinuteIntervals;
+        // UseOneMinuteIntervals / UseOneMinuteIntervalsFrom are deliberately NOT
+        // taken from the client (#1740): every site runs on 1-minute intervals —
+        // new sites are created on, existing ones are switched with a recorded
+        // cut-over date — and the settings checkbox is gone. A stale client that
+        // still sends the flag must neither turn a site off or on nor restamp
+        // its cut-over date, which the flex chain relies on for older days.
         dbAssignedSite.UsePunchClock = site.UsePunchClock;
         dbAssignedSite.UseDetailedPauseEditing = site.UseDetailedPauseEditing;
         dbAssignedSite.AutoBreakCalculationActive = site.AutoBreakCalculationActive;
