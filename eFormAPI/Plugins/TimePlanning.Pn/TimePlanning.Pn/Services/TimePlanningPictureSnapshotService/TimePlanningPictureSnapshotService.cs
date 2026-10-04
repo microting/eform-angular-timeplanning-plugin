@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure.Helpers;
 using Infrastructure.Models.PictureSnapshot;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -170,11 +171,16 @@ public class TimePlanningPictureSnapshotService(
                 return new OperationResult(false, localizationService.GetString("ErrorWhileCreatingPictureSnapshot"));
             }
 
-            var planRegistration = await dbContext.PlanRegistrations
-                .Where(x => x.Date == model.Date)
-                .Where(x => x.SdkSitId == model.SdkSiteId)
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .FirstOrDefaultAsync();
+            // The Start snapshot arrives before the save that creates the day's
+            // row (#1746). Resolve the row before the upload so a refusal never
+            // leaves an orphaned file behind.
+            var (planRegistration, refusalKey) = await PlanRegistrationHelper.FindOrCreateDayRowAsync(
+                dbContext, model.Date, model.SdkSiteId, userService.UserId);
+            if (planRegistration == null)
+            {
+                return new OperationResult(false,
+                    localizationService.GetString(refusalKey ?? "ErrorWhileCreatingPictureSnapshot"));
+            }
 
             if (file.Length > 0)
             {
