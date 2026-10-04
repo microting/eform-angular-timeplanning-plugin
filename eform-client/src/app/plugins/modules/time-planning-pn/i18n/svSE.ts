@@ -421,6 +421,7 @@ export const svSE = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Medarbetaren kan bara redigera registreringar inom ett rullande 2-dagarsfönster. Allt som är äldre än 2 dagar låses automatiskt, oberoende av lönehantering.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Redigering är inte tillåten när båda redigeringsalternativen är inaktiverade för den här arbetaren.',
   'Payroll integration': 'Löneintegration',
+  'Save payroll settings': 'Spara löneinställningar',
   'Payroll system': 'Lönesystem',
   'Payroll cutoff day': 'Lönefrist',
   'Export to payroll': 'Exportera till löneutbetalningar',

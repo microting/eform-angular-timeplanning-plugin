@@ -421,6 +421,7 @@ export const itIT = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Il dipendente può modificare le registrazioni solo entro un intervallo di 2 giorni consecutivi. Tutte le registrazioni più vecchie di 2 giorni vengono bloccate automaticamente, indipendentemente dal sistema di elaborazione delle buste paga.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'La modifica non è consentita quando entrambe le opzioni di modifica sono disabilitate per questo lavoratore.',
   'Payroll integration': 'Integrazione del sistema paghe',
+  'Save payroll settings': 'Salva impostazioni paghe',
   'Payroll system': 'Sistema di gestione delle paghe',
   'Payroll cutoff day': 'Giorno limite per l&#39;elaborazione delle buste paga',
   'Export to payroll': 'Esporta per l&#39;elaborazione paghe',

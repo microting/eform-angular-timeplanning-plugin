@@ -421,6 +421,7 @@ export const esES = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'El empleado solo puede editar los registros dentro de un período continuo de 2 días. Todo lo que tenga más de 2 días de antigüedad se bloquea automáticamente, independientemente de la nómina.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'No se permite la edición cuando ambas opciones de edición están deshabilitadas para este trabajador.',
   'Payroll integration': 'Integración de nómina',
+  'Save payroll settings': 'Guardar configuración de nómina',
   'Payroll system': 'Sistema de nómina',
   'Payroll cutoff day': 'Fecha límite para el pago de nóminas',
   'Export to payroll': 'Exportar a la nómina',

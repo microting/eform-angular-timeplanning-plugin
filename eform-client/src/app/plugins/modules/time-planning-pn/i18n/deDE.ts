@@ -423,6 +423,7 @@ export const deDE = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Der Mitarbeiter kann Registrierungen nur innerhalb eines gleitenden 2-Tage-Zeitraums bearbeiten. Alle Registrierungen, die älter als 2 Tage sind, werden unabhängig von der Gehaltsabrechnung automatisch gesperrt.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Eine Bearbeitung ist nicht zulässig, wenn beide Bearbeitungsoptionen für diesen Mitarbeiter deaktiviert sind.',
   'Payroll integration': 'Integration der Gehaltsabrechnung',
+  'Save payroll settings': 'Gehaltsabrechnungseinstellungen speichern',
   'Payroll system': 'Lohnabrechnungssystem',
   'Payroll cutoff day': 'Stichtag für die Lohnabrechnung',
   'Export to payroll': 'Export an die Gehaltsabrechnung',

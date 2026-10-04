@@ -421,6 +421,7 @@ export const ukUA = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Працівник може редагувати реєстрації лише протягом 2-денного періоду. Усі дані, що сталися понад 2 дні, автоматично блокуються, незалежно від нарахування заробітної плати.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Редагування заборонено, якщо для цього працівника вимкнено обидва параметри редагування.',
   'Payroll integration': 'Інтеграція з нарахуванням заробітної плати',
+  'Save payroll settings': 'Зберегти налаштування заробітної плати',
   'Payroll system': 'Система нарахування заробітної плати',
   'Payroll cutoff day': 'День закінчення терміну виплати заробітної плати',
   'Export to payroll': 'Експорт до фонду оплати праці',

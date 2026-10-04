@@ -421,6 +421,7 @@ export const frFR = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'L&#39;employé ne peut modifier les inscriptions que dans un délai glissant de 2 jours. Tout élément datant de plus de 2 jours est automatiquement verrouillé, indépendamment de la paie.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'La modification n&#39;est pas autorisée lorsque les deux options de modification sont désactivées pour cet utilisateur.',
   'Payroll integration': 'Intégration de la paie',
+  'Save payroll settings': 'Enregistrer les paramètres de paie',
   'Payroll system': 'Système de paie',
   'Payroll cutoff day': 'date limite de paie',
   'Export to payroll': 'Exporter vers la paie',

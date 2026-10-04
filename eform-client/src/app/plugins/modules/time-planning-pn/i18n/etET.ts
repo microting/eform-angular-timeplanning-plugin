@@ -421,6 +421,7 @@ export const etET = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Töötaja saab registreeringuid muuta ainult jooksva kahepäevase akna sees. Kõik, mis on vanemad kui 2 päeva, lukustatakse automaatselt, olenemata palgaarvestusest.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Redigeerimine pole lubatud, kui mõlemad redigeerimisvalikud on selle töötaja jaoks keelatud.',
   'Payroll integration': 'Palgaarvestuse integratsioon',
+  'Save payroll settings': 'Salvesta palgaarvestuse seaded',
   'Payroll system': 'Palgasüsteem',
   'Payroll cutoff day': 'Palgaarvestuse lõppkuupäev',
   'Export to payroll': 'Ekspordi palgaarvestusse',

@@ -421,6 +421,7 @@ export const skSK = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Zamestnanec môže upravovať registrácie iba v rámci dvojdňového posuvného obdobia. Všetko staršie ako 2 dni sa automaticky uzamkne, nezávisle od mzdovej agendy.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Úpravy nie sú povolené, ak sú pre tohto pracovníka zakázané obe možnosti úprav.',
   'Payroll integration': 'Integrácia miezd',
+  'Save payroll settings': 'Uložiť nastavenia miezd',
   'Payroll system': 'Mzdový systém',
   'Payroll cutoff day': 'Deň uzávierky výplat miezd',
   'Export to payroll': 'Export do mzdového systému',

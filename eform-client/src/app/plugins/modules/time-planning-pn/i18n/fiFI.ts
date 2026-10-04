@@ -421,6 +421,7 @@ export const fiFI = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Työntekijä voi muokata rekisteröintejä vain kahden päivän sisällä. Kaikki yli kaksi päivää vanhat tiedot lukitaan automaattisesti palkanlaskennasta riippumatta.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Muokkaus ei ole sallittua, kun molemmat muokkausvaihtoehdot on poistettu käytöstä tältä työntekijältä.',
   'Payroll integration': 'Palkanlaskennan integrointi',
+  'Save payroll settings': 'Tallenna palkanlaskennan asetukset',
   'Payroll system': 'Palkkajärjestelmä',
   'Payroll cutoff day': 'Palkanmaksun eräpäivä',
   'Export to payroll': 'Vie palkanlaskentaan',

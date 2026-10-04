@@ -421,6 +421,7 @@ export const hrHR = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Zaposlenik može uređivati registracije samo unutar razdoblja od 2 dana. Sve starije od 2 dana automatski se zaključava, neovisno o obračunu plaća.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Uređivanje nije dopušteno kada su obje opcije uređivanja onemogućene za ovog radnika.',
   'Payroll integration': 'Integracija obračuna plaća',
+  'Save payroll settings': 'Spremi postavke obračuna plaća',
   'Payroll system': 'Sustav obračuna plaća',
   'Payroll cutoff day': 'Krajnji dan za isplatu plaća',
   'Export to payroll': 'Izvoz u obračun plaća',

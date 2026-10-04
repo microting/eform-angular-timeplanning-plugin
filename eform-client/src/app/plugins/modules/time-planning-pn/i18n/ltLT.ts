@@ -421,6 +421,7 @@ export const ltLT = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'Darbuotojas gali redaguoti registracijas tik per 2 dienų laikotarpį. Visos senesnės nei 2 dienos registracijos automatiškai blokuojamos, nepriklausomai nuo darbo užmokesčio.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Redaguoti neleidžiama, kai šiam darbuotojui išjungtos abi redagavimo parinktys.',
   'Payroll integration': 'Darbo užmokesčio integracija',
+  'Save payroll settings': 'Išsaugoti darbo užmokesčio nustatymus',
   'Payroll system': 'Darbo užmokesčio sistema',
   'Payroll cutoff day': 'Darbo užmokesčio mokėjimo termino diena',
   'Export to payroll': 'Eksportuoti į darbo užmokesčio sistemą',

@@ -421,6 +421,7 @@ export const nlNL = {
   'The employee can only edit registrations within a rolling 2-day window. Everything older than 2 days is automatically locked, independent of payroll.': 'De medewerker kan registraties alleen bewerken binnen een periode van twee dagen. Alles wat ouder is dan twee dagen wordt automatisch vergrendeld, ongeacht de salarisverwerking.',
   'Editing is not allowed when both editing options are disabled for this worker.': 'Bewerken is niet toegestaan wanneer beide bewerkingsopties voor deze medewerker zijn uitgeschakeld.',
   'Payroll integration': 'Salarisintegratie',
+  'Save payroll settings': 'Salarisinstellingen opslaan',
   'Payroll system': 'Salarissysteem',
   'Payroll cutoff day': 'uiterste datum voor loonbetaling',
   'Export to payroll': 'Exporteren naar salarisadministratie',
