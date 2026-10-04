@@ -35,8 +35,10 @@ namespace TimePlanning.Pn.Test;
 ///  - <see cref="OneMinuteModeTimeline.WasOneMinuteFor"/> — the in-memory
 ///    per-row resolution (marker → effective date → timeline) the chain sites
 ///    use for the PRECEDING row.
-///  - <see cref="OneMinuteModeTimeline.StampEffectiveDateOnEnable"/> — the
-///    false→true settings stamp and its no-clobber guard.
+///  - <see cref="OneMinuteModeTimeline.StampEffectiveDateOnEnable"/> — the base
+///    package's false→true stamp and its no-clobber guard. The plugin's settings
+///    save no longer calls it (#1740): UseOneMinuteIntervals is never changed
+///    from a settings save.
 /// </summary>
 [TestFixture]
 public class OneMinuteIntervalsEffectiveDateTests
@@ -448,9 +450,8 @@ public class OneMinuteIntervalsEffectiveDateTests
     [Test]
     public void Stamp_DoesNotFireWhenAlreadyTrue()
     {
-        // UseOneMinuteIntervals is one-way (it is ORed with the incoming value),
-        // so every later settings save re-submits true. Stamping again here
-        // would move the effective date forward on every save.
+        // A caller that re-submits true for a site already on must not move the
+        // effective date forward on every save.
         var site = new AssignedSite { UseOneMinuteIntervals = true, UseOneMinuteIntervalsFrom = null };
         OneMinuteModeTimeline.StampEffectiveDateOnEnable(site, true, StampedAt);
         Assert.That(site.UseOneMinuteIntervalsFrom, Is.Null);

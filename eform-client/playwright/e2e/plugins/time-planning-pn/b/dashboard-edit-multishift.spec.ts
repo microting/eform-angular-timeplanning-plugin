@@ -291,44 +291,21 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
   });
 
   /**
-   * Regression guard for the "Use 1-minute intervals" first-user toggle in
-   * the Advanced settings section. The flag rides on AssignedSite end-to-end
-   * (entity → DTO → write mapping → angular model) and is persisted by
-   * TimeSettingService.UpdateAssignedSite.
-   *
-   * The toggle is now ONE-WAY:
-   *   - `assigned-site-dialog.component.ts` initializes the FormControl as
-   *     `{ value, disabled: value === true }` — once the loaded value is
-   *     true, the control is born disabled and can never be unchecked via
-   *     the UI again.
-   *   - `TimeSettingService.UpdateAssignedSite` ORs the incoming flag with
-   *     the stored one (`dbAssignedSite.UseOneMinuteIntervals =
-   *     dbAssignedSite.UseOneMinuteIntervals || site.UseOneMinuteIntervals`),
-   *     so the backend can't flip it back to false either.
-   *   - The checkbox carries an always-visible description line
-   *     ('Once enabled, 1-minute intervals cannot be turned off') warning
-   *     about this.
-   *
-   * This test locks that one-way contract for both the CI-fresh-seed case
-   * (checkbox starts unchecked+enabled) and the rerun case (a prior run, or
-   * seed data, already flipped it on — checkbox starts checked+disabled).
-   *
-   * Gating: !data.resigned && (selectCurrentUserIsFirstUser$ | async).
-   * The CI seed logs in as admin@admin.com (LoginConstants.username), which
-   * is the first-user, so the toggle is visible in this test context.
+   * Every site runs on 1-minute intervals (#1740): the "Use 1-minute
+   * intervals" checkbox and the "Advanced settings" section that held only it
+   * are gone, and TimeSettingService.UpdateAssignedSite ignores the flag the
+   * client sends. The CI seed logs in as admin@admin.com, the first-user who
+   * used to see the section, so its absence here is the real assertion.
    */
-  test('Use 1-minute intervals is one-way: ticking persists and locks the control', async ({ page }) => {
+  test('the 1-minute intervals checkbox is gone from the assigned-site dialog', async ({ page }) => {
     await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' }).click();
     const indexPromise = page.waitForResponse(r =>
-      r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST');
+      r.url().includes('/api/time-planning-pn/plannings/index') && r.request().method() === 'POST',
+      { timeout: 30000 });
     await page.locator('mat-tree-node').filter({ hasText: 'Dashboard' }).click();
     await indexPromise;
     await waitForSpinner(page);
 
-    // Open the assigned-site dialog for the third worker — same convention
-    // as the other tests on this shard so they don't clobber each other.
-    // Await the GET that hydrates the dialog so first-user-gated toggle
-    // attaches synchronously after open.
     const getAssignedSitePromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
         && r.url().includes('siteId=')
@@ -336,58 +313,20 @@ test.describe('Dashboard — multi-shift (3-5) round-trip regression guard', () 
       { timeout: 30000 });
     await page.locator('#firstColumn3').click();
     await getAssignedSitePromise;
-    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 30000 });
+    const dialog = page.locator('mat-dialog-container');
+    await expect(dialog).toBeVisible({ timeout: 30000 });
+    // The hydrated dialog is rendered (so the absence checks below are not
+    // vacuous): the save button is the last control of the same form.
+    await expect(dialog.locator('#saveButton')).toBeVisible({ timeout: 15000 });
 
-    // The toggle is gated behind first-user; the CI fixture logs in as
-    // first-user, so it must be visible.
-    await expect(page.locator('#useOneMinuteIntervals')).toBeVisible({ timeout: 30000 });
+    await expect(dialog.locator('#useOneMinuteIntervals')).toHaveCount(0, { timeout: 15000 });
+    // The CI user's UI is Danish: the da.ts texts of 'Use 1-minute intervals'
+    // and 'Advanced settings'.
+    await expect(dialog.getByText('Brug 1-minutters intervaller')).toHaveCount(0, { timeout: 15000 });
+    await expect(dialog.getByText('Avancerede indstillinger')).toHaveCount(0, { timeout: 15000 });
 
-    const cb = page.locator('#useOneMinuteIntervals input[type="checkbox"]');
-    await expect(cb).toBeAttached({ timeout: 30000 });
-
-    if (await cb.isChecked()) {
-      // Rerun path: the flag was already flipped on (by a previous run of
-      // this test, or by seed data). The control must be locked — never
-      // force-click a disabled control, that would mask the very bug this
-      // test guards against.
-      await expect(cb).toBeDisabled();
-      await page.locator('#cancelButton').click();
-      return;
-    }
-
-    // First-run path: checkbox starts unchecked and enabled.
-    await expect(cb).toBeEnabled();
-    await page.locator('#useOneMinuteIntervals').scrollIntoViewIfNeeded();
-    await page.locator('#useOneMinuteIntervals').click({ force: true });
-    await expect(cb).toBeChecked({ timeout: 10000 });
-
-    const assignSitePromise = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/settings/assigned-site') && r.request().method() === 'PUT',
-      { timeout: 30000 });
-    await page.locator('#saveButton').click({ force: true });
-    await assignSitePromise;
-    await waitForSpinner(page);
-    await expect(page.locator('mat-dialog-container')).toHaveCount(0, { timeout: 15000 });
-
-    // Re-open and assert the value round-tripped AND the control is now
-    // locked. Await the post-save GET so the freshly-persisted toggle is
-    // bound before we assert (prior failure mode: asserting inside the
-    // default 5s window can race the post-open data bind).
-    const getAssignedSitePromise2 = page.waitForResponse(
-      r => r.url().includes('/api/time-planning-pn/settings/assigned-sites')
-        && r.url().includes('siteId=')
-        && r.request().method() === 'GET',
-      { timeout: 30000 });
-    await page.locator('#firstColumn3').click();
-    await getAssignedSitePromise2;
-    await expect(page.locator('mat-dialog-container')).toBeVisible({ timeout: 30000 });
-
-    const cbReopened = page.locator('#useOneMinuteIntervals input[type="checkbox"]');
-    await expect(cbReopened).toBeAttached({ timeout: 30000 });
-    await expect(cbReopened).toBeChecked({ timeout: 15000 });
-    await expect(cbReopened).toBeDisabled({ timeout: 15000 });
-
-    await page.locator('#cancelButton').click();
+    await dialog.locator('#cancelButton').click();
+    await expect(dialog).toHaveCount(0, { timeout: 15000 });
   });
 
   /**
