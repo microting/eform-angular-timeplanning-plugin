@@ -263,4 +263,48 @@ public class TimePlanningSettingsGrpcServiceTests
 
         Assert.That(response.SoftwareVersionIsValid, Is.False);
     }
+
+    // #1742: the tablet worker list shows when each worker clocked in today.
+    private static List<Infrastructure.Models.Settings.Site> StartedAndNotStartedSites() =>
+    [
+        new()
+        {
+            SiteId = 1,
+            ShiftStartedAt = new DateTime(2026, 10, 1, 6, 58, 0),
+            ResignedAtDate = DateTime.MinValue,
+        },
+        new()
+        {
+            SiteId = 2,
+            ResignedAtDate = DateTime.MinValue,
+        },
+    ];
+
+    [Test]
+    public async Task GetRegistrationSites_MapsShiftStartedAt_AndSendsEmptyWhenNotStarted()
+    {
+        _settingService.GetAvailableSites(Arg.Any<string>())
+            .Returns(new OperationDataResult<List<Infrastructure.Models.Settings.Site>>(
+                true, "OK", StartedAndNotStartedSites()));
+
+        var response = await _grpcService.GetRegistrationSites(
+            new GetRegistrationSitesRequest { Token = "token" }, TestServerCallContextFactory.Create());
+
+        Assert.That(response.Model[0].ShiftStartedAt, Is.EqualTo("2026-10-01T06:58:00"));
+        Assert.That(response.Model[1].ShiftStartedAt, Is.Empty);
+    }
+
+    [Test]
+    public async Task GetRegistrationSitesByCurrentUser_MapsShiftStartedAt_AndSendsEmptyWhenNotStarted()
+    {
+        _settingService.GetAllRegistrationSitesByCurrentUser()
+            .Returns(new OperationDataResult<List<Infrastructure.Models.Settings.Site>>(
+                true, "OK", StartedAndNotStartedSites()));
+
+        var response = await _grpcService.GetRegistrationSitesByCurrentUser(
+            new GetRegistrationSitesByCurrentUserRequest(), TestServerCallContextFactory.Create());
+
+        Assert.That(response.Model[0].ShiftStartedAt, Is.EqualTo("2026-10-01T06:58:00"));
+        Assert.That(response.Model[1].ShiftStartedAt, Is.Empty);
+    }
 }

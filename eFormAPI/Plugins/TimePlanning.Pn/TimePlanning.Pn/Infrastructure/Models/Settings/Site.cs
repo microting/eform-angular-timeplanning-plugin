@@ -17,6 +17,11 @@ public class Site
     public string DefaultLanguage { get; set; }
     public bool HoursStarted { get; set; }
     public bool PauseStarted { get; set; }
+    /// <summary>
+    /// Earliest StartNStartedAt today, null when no shift has started (#1742).
+    /// Naive wall-clock time as stored, not UTC.
+    /// </summary>
+    public DateTime? ShiftStartedAt { get; set; }
     public bool AutoBreakCalculationActive { get; set; }
     public string AvatarUrl { get; set; }
     public bool ThirdShiftActive { get; set; }

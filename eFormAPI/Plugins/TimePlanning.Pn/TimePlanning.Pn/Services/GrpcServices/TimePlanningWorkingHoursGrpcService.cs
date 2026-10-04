@@ -182,7 +182,11 @@ public class TimePlanningWorkingHoursGrpcService
     private static long ToWholeSeconds(double hours) =>
         (long)Math.Round(hours * 3600, MidpointRounding.AwayFromZero);
 
-    private static string FormatDateTime(DateTime? dt) =>
+    /// <summary>
+    /// The wire format of every *_started_at / *_stopped_at string: the stored
+    /// naive wall-clock time, no zone suffix; empty when unset.
+    /// </summary>
+    internal static string FormatDateTime(DateTime? dt) =>
         dt?.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFF") ?? "";
 
     private static Grpc.WorkingHoursModel MapToGrpc(
