@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -17,6 +18,10 @@ using TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
 using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 using TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
 using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
+using PayDayRuleEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PayDayRule;
+using PayDayTypeRuleEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PayDayTypeRule;
+using PayRuleSetEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PayRuleSet;
+using PayTierRuleEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PayTierRule;
 using PlanRegistrationEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PlanRegistration;
 using SdkLanguage = Microting.eForm.Infrastructure.Data.Entities.Language;
 using SdkSite = Microting.eForm.Infrastructure.Data.Entities.Site;
@@ -238,6 +243,202 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
             "(regression lock for the read-time chain fallback fix)");
         Assert.That(double.Parse(paidOutFlex, CultureInfo.InvariantCulture), Is.EqualTo(0.5).Within(0.001));
     }
+
+    // ------------------------------------------------------------------
+    // #1739: hours and flex cells DISPLAY two decimals (0.00) but keep the
+    // full-precision value (#1212). Counts, the week number and dates keep
+    // their own formats.
+    // ------------------------------------------------------------------
+
+    private const uint TwoDecimalsStyleIndex = 4U;
+
+    // Dashboard and per-site sheets (0-indexed): the only number cells that
+    // are not hours are the date and the ISO week number.
+    private const int DateColumn = 4;
+    private const int WeekColumn = 5;
+
+    private static List<Cell> HoursCells(List<Cell> row) => row
+        .Where((c, i) => i != DateColumn && i != WeekColumn && c.DataType?.Value == CellValues.Number)
+        .ToList();
+
+    [Test]
+    public async Task GenerateExcelDashboard_HoursCells_ShowTwoDecimals_AndKeepFullPrecision()
+    {
+        var (day1, day2) = await SeedTwoDecimalScenario(siteUid: 9706);
+
+        var result = await _service.GenerateExcelDashboard(new TimePlanningWorkingHoursRequestModel
+        {
+            SiteId = 9706,
+            DateFrom = day1,
+            DateTo = day2,
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        await using var xlsx = result.Model!;
+        xlsx.Position = 0;
+        using var doc = SpreadsheetDocument.Open(xlsx, false);
+        var workbookPart = doc.WorkbookPart!;
+        AssertStyleIsTwoDecimals(workbookPart);
+        var rows = SheetRows(workbookPart, "Dashboard").Skip(1).ToList(); // skip header
+
+        // Column layout without extra shifts (0-indexed): DateColumn, WeekColumn,
+        // 7=PlanHours, 14=NettoHours, 15=Flex, 16=SumFlexEnd,
+        // 17=PaidOutFlex, 21=the pay code. The last row is the totals row.
+        Assert.That(rows, Has.Count.EqualTo(3), "two days and the totals row");
+        foreach (var cells in rows)
+        {
+            var hoursCells = HoursCells(cells);
+            Assert.That(hoursCells, Has.Count.GreaterThanOrEqualTo(5));
+            Assert.That(hoursCells.Select(c => c.StyleIndex?.Value),
+                Has.All.EqualTo(TwoDecimalsStyleIndex),
+                "every hours/flex/pay-line cell displays 0.00");
+        }
+        Assert.That(rows[0][DateColumn].StyleIndex?.Value, Is.EqualTo(2U), "the date keeps its date format");
+        Assert.That(rows[0][WeekColumn].StyleIndex, Is.Null, "the week number stays an integer");
+
+        // Full precision is stored (#1212): a 61-minute one-minute balance,
+        // a 1 h 20 min netto override and the pay line it produces.
+        Assert.That(CellNumber(rows[0][16]), Is.EqualTo(61 / 60.0).Within(1e-9));
+        Assert.That(CellNumber(rows[1][14]), Is.EqualTo(80 / 60.0).Within(1e-9));
+        var payLine = CellNumber(rows[1][21]);
+        Assert.That(payLine, Is.EqualTo(80 / 60.0).Within(1e-3));
+        Assert.That(payLine, Is.Not.EqualTo(Math.Round(payLine, 2)),
+            "the stored pay-line value is not rounded to two decimals");
+    }
+
+    [Test]
+    public async Task GenerateExcelDashboard_AllWorkers_TotalSheet_HoursShowTwoDecimals_CountsStayIntegers()
+    {
+        var (day1, day2) = await SeedTwoDecimalScenario(siteUid: 9707);
+
+        var result = await _service.GenerateExcelDashboard(
+            new TimePlanningWorkingHoursReportForAllWorkersRequestModel { DateFrom = day1, DateTo = day2 });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        await using var xlsx = result.Model!;
+        xlsx.Position = 0;
+        using var doc = SpreadsheetDocument.Open(xlsx, false);
+        var workbookPart = doc.WorkbookPart!;
+        AssertStyleIsTwoDecimals(workbookPart);
+
+        // Total sheet (0-indexed): 0/1=DateFrom/DateTo, 5=PlanHours,
+        // 6=NettoHours, 7=SumFlexEnd, 8-10=hour splits, 11=comment count,
+        // 12=message count, 13=Saturday hours, then pay codes and the
+        // per-message hour sums.
+        var cells = SheetRows(workbookPart, "Total")[1];
+        Assert.That(cells[11].StyleIndex, Is.Null, "the comment count stays an integer");
+        Assert.That(cells[12].StyleIndex, Is.Null, "the message count stays an integer");
+        var hoursCells = cells
+            .Where((c, i) => i > 1 && i != 11 && i != 12 && c.DataType?.Value == CellValues.Number)
+            .ToList();
+        Assert.That(hoursCells, Has.Count.GreaterThanOrEqualTo(7));
+        Assert.That(hoursCells.Select(c => c.StyleIndex?.Value), Has.All.EqualTo(TwoDecimalsStyleIndex));
+        Assert.That(CellNumber(cells[7]), Is.EqualTo(61 / 60.0).Within(1e-9),
+            "the closing flex balance keeps full precision");
+
+        // The per-site sheet's data rows use the same cells.
+        var siteSheetName = workbookPart.Workbook.Descendants<Sheet>()
+            .Select(x => x.Name!.Value!)
+            .First(n => n != "Total" && n != "Dagsoversigt");
+        var siteRows = SheetRows(workbookPart, siteSheetName).Skip(1).ToList();
+        Assert.That(siteRows, Is.Not.Empty);
+        foreach (var row in siteRows)
+        {
+            Assert.That(HoursCells(row).Select(c => c.StyleIndex?.Value),
+                Has.All.EqualTo(TwoDecimalsStyleIndex));
+        }
+    }
+
+    /// <summary>
+    /// A one-minute site with a pay rule set paying every weekday second under
+    /// one code, and two weekdays: 61 minutes worked and 61 minutes flex (so the
+    /// seconds chain gives a SumFlexEnd of 61/60 h), then a 1 h 20 min netto
+    /// override (whose pay line is 1 h 20 min). None of those has two exact
+    /// decimals. The plain NettoHours column is already rounded to two decimals
+    /// by Index, so it cannot carry the precision assertions.
+    /// </summary>
+    private async Task<(DateTime Day1, DateTime Day2)> SeedTwoDecimalScenario(int siteUid)
+    {
+        var day1 = new DateTime(2026, 5, 5); // Tuesday, not a holiday
+        var day2 = day1.AddDays(1);
+        await SeedSiteAndPlanRegistration(siteUid, day1, useOneMinuteIntervals: true,
+            start1: day1.AddHours(8), stop1: day1.AddHours(9).AddMinutes(1),
+            start1Id: 97, stop1Id: 110);
+
+        var row1 = await TimePlanningPnDbContext!.PlanRegistrations
+            .FirstAsync(x => x.SdkSitId == siteUid && x.Date == day1);
+        row1.NettoHours = 61 / 60.0;
+        row1.NettoHoursInSeconds = 61 * 60;
+        row1.Flex = 61 / 60.0;
+        row1.FlexInSeconds = 61 * 60;
+        row1.RegisteredUnderOneMinuteIntervals = true;
+        await row1.Update(TimePlanningPnDbContext!);
+
+        await new PlanRegistrationEntity
+        {
+            SdkSitId = siteUid,
+            Date = day2,
+            Start1Id = 97,
+            Stop1Id = 113,
+            Pause1Id = 0,
+            Start1StartedAt = day2.AddHours(8),
+            Stop1StoppedAt = day2.AddHours(9).AddMinutes(20),
+            NettoHours = 7.5,
+            NettoHoursOverride = 80 / 60.0,
+            NettoHoursOverrideActive = true,
+            RegisteredUnderOneMinuteIntervals = true,
+            PlanText = "",
+            CommentOffice = "",
+            CommentOfficeAll = "",
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        }.Create(TimePlanningPnDbContext!);
+
+        var payRuleSet = new PayRuleSetEntity
+        {
+            Name = $"Rule set {siteUid}",
+            DayRules = new List<PayDayRuleEntity>
+            {
+                new()
+                {
+                    DayCode = "WEEKDAY",
+                    Tiers = new List<PayTierRuleEntity>
+                    {
+                        new() { UpToSeconds = null, PayCode = "NORM", PayrollCode = "100", Order = 1 }
+                    }
+                }
+            },
+            DayTypeRules = new List<PayDayTypeRuleEntity>(),
+            WorkflowState = Constants.WorkflowStates.Created,
+        };
+        await payRuleSet.Create(TimePlanningPnDbContext!);
+        var assignedSite = await TimePlanningPnDbContext!.AssignedSites.FirstAsync(x => x.SiteId == siteUid);
+        assignedSite.PayRuleSetId = payRuleSet.Id;
+        await assignedSite.Update(TimePlanningPnDbContext!);
+
+        return (day1, day2);
+    }
+
+    private static void AssertStyleIsTwoDecimals(WorkbookPart workbookPart)
+    {
+        var format = (CellFormat)workbookPart.WorkbookStylesPart!.Stylesheet.CellFormats!
+            .ElementAt((int)TwoDecimalsStyleIndex);
+        Assert.That(format.NumberFormatId?.Value, Is.EqualTo(2U), "built-in number format 2 is 0.00");
+        Assert.That(format.ApplyNumberFormat?.Value, Is.True);
+    }
+
+    private static List<List<Cell>> SheetRows(WorkbookPart workbookPart, string sheetName)
+    {
+        var sheet = workbookPart.Workbook.Descendants<Sheet>().First(s => s.Name == sheetName);
+        var part = (WorksheetPart)workbookPart.GetPartById(sheet.Id!);
+        return part.Worksheet.Descendants<Row>()
+            .Select(r => r.Elements<Cell>().ToList())
+            .ToList();
+    }
+
+    private static double CellNumber(Cell cell) =>
+        double.Parse(cell.CellValue!.Text, CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Seeds an SDK Site/Worker + UseOneMinuteIntervals=true AssignedSite + a
