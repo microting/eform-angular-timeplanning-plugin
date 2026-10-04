@@ -3,7 +3,7 @@ import {
   Output, SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
   inject
 } from '@angular/core';
-import {Subscription} from 'rxjs';
+import {Subscription, take} from 'rxjs';
 import {AssignedSiteModel, TimePlanningModel} from '../../../models';
 import {MtxGridColumn} from '@ng-matero/extensions/grid';
 import {TranslateService} from '@ngx-translate/core';
@@ -570,8 +570,10 @@ export class TimePlanningsTableComponent implements OnInit, OnChanges, OnDestroy
   }
 
   onFirstColumnClick(row: any): void {
-    // only do something if the selectAuthIsAdmin$ is true
-    this.selectAuthIsAdmin$.subscribe(value => {
+    // Only admins get the dialog. Read the flag once: the store never completes, so a
+    // plain subscribe outlived the grid and re-opened this row's dialog on every later
+    // false -> true flip of the flag, i.e. after each logout and login (#1744).
+    this.selectAuthIsAdmin$.pipe(take(1)).subscribe(value => {
       if (value) {
         const siteId = row.siteId; // Adjust this according to your data structure
         this.timePlanningPnSettingsService.getAssignedSite(siteId).subscribe(result => {

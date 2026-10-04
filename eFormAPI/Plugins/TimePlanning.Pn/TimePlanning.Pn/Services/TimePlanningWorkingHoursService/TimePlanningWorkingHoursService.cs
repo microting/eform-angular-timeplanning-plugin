@@ -3080,7 +3080,7 @@ public class TimePlanningWorkingHoursService(
                         foreach (var payCode in allPayCodes)
                         {
                             var payLine = dayPayLines.FirstOrDefault(pl => pl.PayCode == payCode);
-                            dataRow.Append(CreateNumericCell(payLine?.Hours ?? 0));
+                            dataRow.Append(CreateHoursCell(payLine?.Hours ?? 0));
                         }
                     }
 
@@ -3117,7 +3117,7 @@ public class TimePlanningWorkingHoursService(
                 totalsRow.Append(CreateCell(string.Empty)); // Date
                 totalsRow.Append(CreateCell(string.Empty)); // Week
                 totalsRow.Append(CreateCell(string.Empty)); // PlanText
-                totalsRow.Append(CreateNumericCell(totalPlanHours)); // PlanHours
+                totalsRow.Append(CreateHoursCell(totalPlanHours)); // PlanHours
                 totalsRow.Append(CreateCell(string.Empty)); // Shift1 Start
                 totalsRow.Append(CreateCell(string.Empty)); // Shift1 Stop
                 totalsRow.Append(CreateCell(string.Empty)); // Shift1 Pause
@@ -3142,16 +3142,16 @@ public class TimePlanningWorkingHoursService(
                     totalsRow.Append(CreateCell(string.Empty)); // Shift5 Stop
                     totalsRow.Append(CreateCell(string.Empty)); // Shift5 Pause
                 }
-                totalsRow.Append(CreateNumericCell(totalNettoHours)); // NettoHours
-                totalsRow.Append(CreateNumericCell(totalFlexHours)); // FlexHours
+                totalsRow.Append(CreateHoursCell(totalNettoHours)); // NettoHours
+                totalsRow.Append(CreateHoursCell(totalFlexHours)); // FlexHours
                 totalsRow.Append(CreateCell(string.Empty)); // SumFlexEnd (running balance, not summable)
-                totalsRow.Append(CreateNumericCell(totalPaidOutFlex)); // PaidOutFlex
+                totalsRow.Append(CreateHoursCell(totalPaidOutFlex)); // PaidOutFlex
                 totalsRow.Append(CreateCell(string.Empty)); // Message
                 totalsRow.Append(CreateCell(string.Empty)); // CommentWorker
                 totalsRow.Append(CreateCell(string.Empty)); // CommentOffice
                 foreach (var payCode in allPayCodes)
                 {
-                    totalsRow.Append(CreateNumericCell(totalsByPayCode[payCode]));
+                    totalsRow.Append(CreateHoursCell(totalsByPayCode[payCode]));
                 }
                 sheetData1.Append(totalsRow);
                 rowIndex++;
@@ -3225,7 +3225,7 @@ public class TimePlanningWorkingHoursService(
             dataRow.Append(CreateDateCell(planning.Date));
             dataRow.Append(CreateWeekNumberCell(planning.Date));
             dataRow.Append(CreateCell(planning.PlanText));
-            dataRow.Append(CreateNumericCell(planning.PlanHours));
+            dataRow.Append(CreateHoursCell(planning.PlanHours));
             // Phase 4: when UseOneMinuteIntervals is on, format actual stamps (start/stop)
             // from the precise DateTime stamps with second precision; pause columns have
             // no single representative stamp in the legacy 5-min Options[] view, so they
@@ -3254,10 +3254,10 @@ public class TimePlanningWorkingHoursService(
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Stop, planning.Stop5StoppedAt, useOneMinuteIntervals)));
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Pause, null, useOneMinuteIntervals)));
             }
-            dataRow.Append(CreateNumericCell(planning.NettoHoursOverrideActive ? planning.NettoHoursOverride : planning.NettoHours));
-            dataRow.Append(CreateNumericCell(planning.FlexHours));
-            dataRow.Append(CreateNumericCell(planning.SumFlexEnd));
-            dataRow.Append(CreateNumericCell(string.IsNullOrEmpty(planning.PaidOutFlex)
+            dataRow.Append(CreateHoursCell(planning.NettoHoursOverrideActive ? planning.NettoHoursOverride : planning.NettoHours));
+            dataRow.Append(CreateHoursCell(planning.FlexHours));
+            dataRow.Append(CreateHoursCell(planning.SumFlexEnd));
+            dataRow.Append(CreateHoursCell(string.IsNullOrEmpty(planning.PaidOutFlex)
                 ? 0
                 : double.Parse(planning.PaidOutFlex.Replace(",", "."), CultureInfo.InvariantCulture)));
             dataRow.Append(CreateCell(GetMessageText(planning.Message, language)));
@@ -3288,6 +3288,19 @@ public class TimePlanningWorkingHoursService(
             CellValue = new CellValue(value.ToString(CultureInfo.InvariantCulture)),
             DataType = CellValues.Number
         };
+    }
+
+    /// <summary>
+    /// An hours or flex value: shown with two decimals (StyleIndex 4, built-in
+    /// format 2 "0.00" in OpenXMLHelper's stylesheet) while the cell keeps the
+    /// full-precision value, so sums and formulas in Excel stay exact (#1212,
+    /// #1739). Counts use <see cref="CreateNumericCell"/> and stay integers.
+    /// </summary>
+    private Cell CreateHoursCell(double value)
+    {
+        var cell = CreateNumericCell(value);
+        cell.StyleIndex = (UInt32Value)4U;
+        return cell;
     }
 
     private Cell CreateDateCell(DateTime dateValue)
@@ -3922,7 +3935,7 @@ public class TimePlanningWorkingHoursService(
                             foreach (var payCode in sitePayCodes)
                             {
                                 var payLine = dayPayLines.FirstOrDefault(pl => pl.PayCode == payCode);
-                                dataRow.Append(CreateNumericCell(payLine?.Hours ?? 0));
+                                dataRow.Append(CreateHoursCell(payLine?.Hours ?? 0));
                             }
 
                             sheetData1.Append(dataRow);
@@ -3967,7 +3980,7 @@ public class TimePlanningWorkingHoursService(
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Date
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Week
                     siteTotalsRow.Append(CreateCell(string.Empty)); // PlanText
-                    siteTotalsRow.Append(CreateNumericCell(siteTotalPlanHours)); // PlanHours
+                    siteTotalsRow.Append(CreateHoursCell(siteTotalPlanHours)); // PlanHours
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Shift1 Start
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Shift1 Stop
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Shift1 Pause
@@ -3992,16 +4005,16 @@ public class TimePlanningWorkingHoursService(
                         siteTotalsRow.Append(CreateCell(string.Empty)); // Shift5 Stop
                         siteTotalsRow.Append(CreateCell(string.Empty)); // Shift5 Pause
                     }
-                    siteTotalsRow.Append(CreateNumericCell(siteTotalNettoHours)); // NettoHours
-                    siteTotalsRow.Append(CreateNumericCell(siteTotalFlexHours)); // FlexHours
+                    siteTotalsRow.Append(CreateHoursCell(siteTotalNettoHours)); // NettoHours
+                    siteTotalsRow.Append(CreateHoursCell(siteTotalFlexHours)); // FlexHours
                     siteTotalsRow.Append(CreateCell(string.Empty)); // SumFlexEnd (running balance, not summable)
-                    siteTotalsRow.Append(CreateNumericCell(siteTotalPaidOutFlex)); // PaidOutFlex
+                    siteTotalsRow.Append(CreateHoursCell(siteTotalPaidOutFlex)); // PaidOutFlex
                     siteTotalsRow.Append(CreateCell(string.Empty)); // Message
                     siteTotalsRow.Append(CreateCell(string.Empty)); // CommentWorker
                     siteTotalsRow.Append(CreateCell(string.Empty)); // CommentOffice
                     foreach (var payCode in sitePayCodes)
                     {
-                        siteTotalsRow.Append(CreateNumericCell(siteTotalsByPayCode.GetValueOrDefault(payCode, 0)));
+                        siteTotalsRow.Append(CreateHoursCell(siteTotalsByPayCode.GetValueOrDefault(payCode, 0)));
                     }
                     sheetData1.Append(siteTotalsRow);
                     rowIndex++;
@@ -4029,9 +4042,9 @@ public class TimePlanningWorkingHoursService(
                     totalRow.Append(CreateCell(worker.EmployeeNo ?? string.Empty));
                     totalRow.Append(CreateCell(site.Name));
                     totalRow.Append(CreateCell(siteTagNames));
-                    totalRow.Append(CreateNumericCell(siteTotalPlanHours));
-                    totalRow.Append(CreateNumericCell(siteTotalNettoHours));
-                    totalRow.Append(CreateNumericCell(timePlannings.Count > 0 ? timePlannings.Last().SumFlexEnd : 0.0));
+                    totalRow.Append(CreateHoursCell(siteTotalPlanHours));
+                    totalRow.Append(CreateHoursCell(siteTotalNettoHours));
+                    totalRow.Append(CreateHoursCell(timePlannings.Count > 0 ? timePlannings.Last().SumFlexEnd : 0.0));
 
                     // Column J: Sunday + holiday hours (Grundlovsdag only counts hours
                     // after 12:00). Column K: statutory-holiday hours ONLY -- no Sunday
@@ -4072,20 +4085,20 @@ public class TimePlanningWorkingHoursService(
                     var normalHours = siteTotalNettoHours - sumHoursSundayAndHoliday;
                     var sumHoursSaturday = timePlannings.Where(x => x.IsSaturday).Sum(x => x.NettoHours);
 
-                    totalRow.Append(CreateNumericCell(normalHours));
-                    totalRow.Append(CreateNumericCell(sumHoursSundayAndHoliday));
-                    totalRow.Append(CreateNumericCell(sumHoursStatutoryHoliday));
+                    totalRow.Append(CreateHoursCell(normalHours));
+                    totalRow.Append(CreateHoursCell(sumHoursSundayAndHoliday));
+                    totalRow.Append(CreateHoursCell(sumHoursStatutoryHoliday));
 
                     var countCommentFromWorker = timePlannings.Count(x => !string.IsNullOrEmpty(x.CommentWorker));
                     var countMessages = timePlannings.Count(x => x.Message != null);
                     totalRow.Append(CreateNumericCell(countCommentFromWorker));
                     totalRow.Append(CreateNumericCell(countMessages));
-                    totalRow.Append(CreateNumericCell(sumHoursSaturday));
+                    totalRow.Append(CreateHoursCell(sumHoursSaturday));
 
                     // Append per-pay-code total for this worker (matches the dynamic columns added to the headers)
                     foreach (var payCode in allPayCodes)
                     {
-                        totalRow.Append(CreateNumericCell(siteTotalsByPayCode.GetValueOrDefault(payCode, 0)));
+                        totalRow.Append(CreateHoursCell(siteTotalsByPayCode.GetValueOrDefault(payCode, 0)));
                     }
 
                     // Add netto hours sum for each seed message
@@ -4098,7 +4111,7 @@ public class TimePlanningWorkingHoursService(
                             .Where(x => x.Message == seedMessage.Id && x.NettoHoursOverrideActive)
                             .Sum(x => x.NettoHoursOverride);
 
-                        totalRow.Append(CreateNumericCell(messageNettoHours + messageNettoHoursOverride));
+                        totalRow.Append(CreateHoursCell(messageNettoHours + messageNettoHoursOverride));
                     }
 
                     totalSheetData1.Append(totalRow);

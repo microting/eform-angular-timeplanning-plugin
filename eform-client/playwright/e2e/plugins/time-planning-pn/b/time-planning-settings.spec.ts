@@ -431,4 +431,79 @@ test.describe('Enable Backend Config plugin', () => {
     snapshotToggleButton = page.locator('#snapshotEnabledToggle div button');
     await expect(snapshotToggleButton).toHaveAttribute('aria-checked', 'false');
   });
+
+  /**
+   * #1745: the toggles sit at the bottom of the page, far from the page-wide save in
+   * the subheader, and the only button near them saves payroll settings only. The
+   * GPS/Snapshot card now has its own save, and the payroll button says what it saves.
+   */
+  test('saves the GPS toggle from the button in its own card, not from the payroll button', async ({ page }) => {
+    // Three settings-page loads (open, reload, restore) on top of the login.
+    test.setTimeout(180000);
+    const UI_TIMEOUT = 15000;
+    const API_TIMEOUT = 30000;
+    const isPath = (url: string, path: string) => new URL(url).pathname === path;
+    const SETTINGS = '/api/time-planning-pn/settings';
+    const PAYROLL_SETTINGS = '/api/time-planning-pn/payroll/settings';
+    const actionMenu = page.locator('#actionMenu');
+    const gpsToggle = page.locator('#gpsEnabledToggle');
+    const gpsChecked = gpsToggle.locator('div button');
+
+    // Waits for BOTH loads: a payroll save before its GET lands would write the
+    // component's defaults over the real payroll settings.
+    const openSettings = async () => {
+      await actionMenu.scrollIntoViewIfNeeded();
+      await expect(actionMenu).toBeVisible({ timeout: UI_TIMEOUT });
+      await actionMenu.click();
+      await Promise.all([
+        page.waitForResponse(r => isPath(r.url(), SETTINGS) && r.request().method() === 'GET',
+          { timeout: API_TIMEOUT }),
+        page.waitForResponse(r => isPath(r.url(), PAYROLL_SETTINGS) && r.request().method() === 'GET',
+          { timeout: API_TIMEOUT }),
+        page.locator('#plugin-settings-link0').click(),
+      ]);
+    };
+    const saveFromCard = async () => {
+      const [response] = await Promise.all([
+        page.waitForResponse(r => isPath(r.url(), SETTINGS) && r.request().method() === 'PUT',
+          { timeout: API_TIMEOUT }),
+        page.locator('#saveGpsSnapshotSettings').click(),
+      ]);
+      expect(response.status()).toBe(200);
+    };
+
+    await openSettings();
+    await expect(gpsChecked).toHaveAttribute('aria-checked', 'false', { timeout: UI_TIMEOUT });
+    await gpsToggle.click();
+    await expect(gpsChecked).toHaveAttribute('aria-checked', 'true', { timeout: UI_TIMEOUT });
+
+    // The payroll button saves payroll only, and leaves the pending toggle alone.
+    let generalPuts = 0;
+    page.on('request', r => {
+      if (isPath(r.url(), SETTINGS) && r.method() === 'PUT') {
+        generalPuts++;
+      }
+    });
+    const [payrollResp] = await Promise.all([
+      page.waitForResponse(r => isPath(r.url(), PAYROLL_SETTINGS) && r.request().method() === 'PUT',
+        { timeout: API_TIMEOUT }),
+      page.locator('#savePayrollSettings').click(),
+    ]);
+    expect(payrollResp.status()).toBe(200);
+    expect(generalPuts, 'the payroll button sends no general-settings PUT').toBe(0);
+    await expect(gpsChecked).toHaveAttribute('aria-checked', 'true', { timeout: UI_TIMEOUT });
+
+    // The card's own button persists it.
+    await saveFromCard();
+
+    await page.goto('http://localhost:4200');
+    await new PluginPage(page).Navbar.goToPluginsPage();
+    await openSettings();
+    await expect(gpsChecked).toHaveAttribute('aria-checked', 'true', { timeout: UI_TIMEOUT });
+
+    // Leave the shard's shared settings as the earlier test left them.
+    await gpsToggle.click();
+    await expect(gpsChecked).toHaveAttribute('aria-checked', 'false', { timeout: UI_TIMEOUT });
+    await saveFromCard();
+  });
 });

@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure.Helpers;
 using Infrastructure.Models.GpsCoordinate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -109,11 +110,15 @@ public class TimePlanningGpsCoordinateService(
     {
         try
         {
-            var planRegistration = await dbContext.PlanRegistrations
-                .Where(x => x.Date == model.Date)
-                .Where(x => x.SdkSitId == model.SdkSiteId)
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .FirstOrDefaultAsync();
+            // The Start position can arrive before the save that creates the
+            // day's row (#1746).
+            var (planRegistration, refusalKey) = await PlanRegistrationHelper.FindOrCreateDayRowAsync(
+                dbContext, model.Date, model.SdkSiteId, userService.UserId);
+            if (planRegistration == null)
+            {
+                return new OperationResult(false,
+                    localizationService.GetString(refusalKey ?? "ErrorWhileCreatingGpsCoordinate"));
+            }
 
             var gpsCoordinate = new GpsCoordinate
             {

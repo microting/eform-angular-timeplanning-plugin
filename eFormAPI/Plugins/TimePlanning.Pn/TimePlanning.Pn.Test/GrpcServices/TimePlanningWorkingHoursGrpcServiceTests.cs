@@ -174,6 +174,48 @@ public class TimePlanningWorkingHoursGrpcServiceTests
         Assert.That(response.Model.TotalFlexHours, Is.EqualTo(-1.5));
     }
 
+    // #1743: minutes came from (hours % 1) * 60, so -10 h 10 min arrived as
+    // -9.99999 and the app showed "-10:09". Hours and minutes now both come
+    // from the value rounded to whole minutes (the web's convertHoursToTime),
+    // so a truncated hours part never disagrees with the minutes, and whole
+    // seconds are sent alongside. 7.08 is 7 h 05 min after the 2-decimal
+    // rounding of the five-minute chain: truncating its 424.8 minutes would
+    // show 7:04.
+    [TestCase(-36600 / 3600.0, -610L / 60.0, -10, -36600L, TestName = "CalculateHoursSummary_Minutes_NegativeTenHoursTenMinutes")]
+    [TestCase(27000 / 3600.0, 7.5, 30, 27000L, TestName = "CalculateHoursSummary_Minutes_SevenHoursThirtyMinutes")]
+    [TestCase(26940 / 3600.0, 449L / 60.0, 29, 26940L, TestName = "CalculateHoursSummary_Minutes_SevenHoursTwentyNineMinutes")]
+    [TestCase(7.08, 425L / 60.0, 5, 25488L, TestName = "CalculateHoursSummary_Minutes_TwoDecimalRoundedValue")]
+    [TestCase(-(10 * 3600 + 59 * 60 + 45) / 3600.0, -11.0, 0, -39585L, TestName = "CalculateHoursSummary_Minutes_NegativeRoundsUpToTheNextHour")]
+    [TestCase((7 * 3600 + 59 * 60 + 40) / 3600.0, 8.0, 0, 28780L, TestName = "CalculateHoursSummary_Minutes_RoundsUpToTheNextHour")]
+    public async Task CalculateHoursSummary_HoursMinutesAndSeconds_Agree(
+        double hours, double expectedHours, double expectedMinutes, long expectedSeconds)
+    {
+        _whService.CalculateHoursSummary(
+                Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(new OperationDataResult<TimePlanningHoursSummaryModel>(true,
+                new TimePlanningHoursSummaryModel
+                {
+                    TotalPlanHours = hours,
+                    TotalNettoHours = hours,
+                    Difference = hours,
+                }));
+
+        var response = await _grpcService.CalculateHoursSummary(
+            new CalculateHoursSummaryRequest { StartDate = "2026-04-01", EndDate = "2026-04-07" },
+            TestServerCallContextFactory.Create());
+
+        Assert.That(response.Model.TotalFlexHours, Is.EqualTo(expectedHours));
+        Assert.That(response.Model.TotalWorkedHours, Is.EqualTo(expectedHours));
+        Assert.That(response.Model.TotalPlannedHours, Is.EqualTo(expectedHours));
+        Assert.That(response.Model.TotalFlexMinutes, Is.EqualTo(expectedMinutes));
+        Assert.That(response.Model.TotalWorkedMinutes, Is.EqualTo(expectedMinutes));
+        Assert.That(response.Model.TotalPlannedMinutes, Is.EqualTo(expectedMinutes));
+        Assert.That(response.Model.TotalFlexSeconds, Is.EqualTo(expectedSeconds));
+        Assert.That(response.Model.TotalWorkedSeconds, Is.EqualTo(expectedSeconds));
+        Assert.That(response.Model.TotalPlannedSeconds, Is.EqualTo(expectedSeconds));
+    }
+
     [Test]
     public async Task CalculateHoursSummary_MapsTotalPaidOutFlex()
     {

@@ -532,6 +532,54 @@ describe('WorkdayEntityDialogComponent', () => {
     });
   });
 
+  describe('Recorded pause times (#1741)', () => {
+    // mockData is shared by reference across the suite, and other blocks leave pause
+    // overrides on it (an override hides a shift's list), so every field this block
+    // reads is cleared before each case and put back afterwards.
+    const touched = ['pause1StartedAt', 'pause1StoppedAt', 'pause10StartedAt', 'pause10StoppedAt',
+      'pause2StartedAt', 'pause2StoppedAt',
+      'pause1OverrideMinutes', 'pause2OverrideMinutes', 'pause3OverrideMinutes',
+      'pause4OverrideMinutes', 'pause5OverrideMinutes'];
+    const clearTouched = () => {
+      const m = component.data.planningPrDayModels as any;
+      for (const key of touched) {
+        m[key] = null;
+      }
+    };
+    beforeEach(clearTouched);
+    afterEach(clearTouched);
+
+    it('lists each shift\'s pauses as clock ranges, sub-slots included', () => {
+      const m = component.data.planningPrDayModels as any;
+      m.pause1StartedAt = '2026-05-15T12:30:00Z';
+      m.pause1StoppedAt = '2026-05-15T12:45:00Z';
+      m.pause10StartedAt = '2026-05-15T10:02:00Z';
+      m.pause10StoppedAt = '2026-05-15T10:17:00Z';
+      m.pause2StartedAt = '2026-05-15T19:00:00Z';
+      m.pause2StoppedAt = null;
+
+      component.ngOnInit();
+
+      expect(component.pauseSegments[1]).toEqual([
+        { start: '10:02', stop: '10:17' },
+        { start: '12:30', stop: '12:45' },
+      ]);
+      expect(component.pauseSegments[2]).toEqual([{ start: '19:00', stop: null }]);
+      expect(component.pauseSegments[3]).toEqual([]);
+    });
+
+    it('lists nothing for a shift whose pause is overridden, as its stamps are synthesized', () => {
+      const m = component.data.planningPrDayModels as any;
+      m.pause2StartedAt = '2026-05-15T14:00:00Z';
+      m.pause2StoppedAt = '2026-05-15T14:30:00Z';
+      m.pause2OverrideMinutes = 30;
+
+      component.ngOnInit();
+
+      expect(component.pauseSegments[2]).toEqual([]);
+    });
+  });
+
   describe('Flag Change Handling', () => {
     it('should turn off other flags when one is turned on', () => {
       component.ngOnInit();
