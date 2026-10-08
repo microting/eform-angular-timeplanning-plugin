@@ -553,18 +553,18 @@ describe('WorkdayEntityDialogComponent', () => {
       const m = component.data.planningPrDayModels as any;
       m.pause1StartedAt = '2026-05-15T12:30:00Z';
       m.pause1StoppedAt = '2026-05-15T12:45:00Z';
-      m.pause10StartedAt = '2026-05-15T10:02:00Z';
-      m.pause10StoppedAt = '2026-05-15T10:17:00Z';
+      m.pause10StartedAt = '2026-05-15T10:02:40Z';
+      m.pause10StoppedAt = '2026-05-15T10:17:10Z';
       m.pause2StartedAt = '2026-05-15T19:00:00Z';
       m.pause2StoppedAt = null;
 
       component.ngOnInit();
 
       expect(component.pauseSegments[1]).toEqual([
-        { start: '10:02', stop: '10:17' },
-        { start: '12:30', stop: '12:45' },
+        { start: '10:02:40', stop: '10:17:10' },
+        { start: '12:30:00', stop: '12:45:00' },
       ]);
-      expect(component.pauseSegments[2]).toEqual([{ start: '19:00', stop: null }]);
+      expect(component.pauseSegments[2]).toEqual([{ start: '19:00:00', stop: null }]);
       expect(component.pauseSegments[3]).toEqual([]);
     });
 

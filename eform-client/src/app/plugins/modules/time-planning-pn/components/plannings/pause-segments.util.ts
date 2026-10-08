@@ -1,4 +1,4 @@
-/** One pause as shown on the web: wall-clock 'HH:mm', stop null while it is running. */
+/** One pause as shown on the web: wall-clock 'HH:mm:ss', stop null while it is running. */
 export interface PauseSegment {
   start: string;
   stop: string | null;
@@ -25,9 +25,12 @@ function utcDay(stamp: Date): number {
   return Date.UTC(stamp.getUTCFullYear(), stamp.getUTCMonth(), stamp.getUTCDate());
 }
 
-function toHhmm(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+function toHhmmss(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor(seconds / 60) % 60;
+  const secs = seconds % 60;
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
 }
 
 function parse(value: PauseStamp): Date | null {
@@ -46,7 +49,7 @@ function parse(value: PauseStamp): Date | null {
  * (TimePlanningWorkingHoursService), applied per shift rather than across the whole
  * day as the backend does, because the dialog shows them under each shift:
  *  - each pair resolves like ResolveShiftSeconds: a stop on a later day is clamped to
- *    24:00, and a pair whose stop is not after its start is dropped;
+ *    24:00:00, and a pair whose stop is not after its start is dropped;
  *  - the rest are sorted by start, and overlapping or touching pauses are merged.
  *
  * A pause with a start and no stop is still running. The backend has nothing to cut
@@ -91,5 +94,5 @@ export function buildPauseSegments(
     [...merged, ...open.map(start => ({ start, stop: null }))];
   return segments
     .sort((a, b) => a.start - b.start)
-    .map(s => ({ start: toHhmm(s.start), stop: s.stop === null ? null : toHhmm(s.stop) }));
+    .map(s => ({ start: toHhmmss(s.start), stop: s.stop === null ? null : toHhmmss(s.stop) }));
 }
