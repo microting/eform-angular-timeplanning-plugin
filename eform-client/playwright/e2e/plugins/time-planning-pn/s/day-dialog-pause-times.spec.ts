@@ -4,7 +4,7 @@ import {
 } from './reconcile-helpers';
 
 /**
- * #1741: the day dialog lists each shift's recorded pauses as clock ranges.
+ * #1741: the day dialog lists each shift's recorded pauses as clock ranges, to the second.
  *
  * The stamps come from the app, which this suite cannot drive, so the grid's index
  * response is given two shift-1 pauses (the primary slot and a sub-slot, out of
@@ -43,8 +43,8 @@ test.describe('Day dialog: recorded pause times', () => {
         }
         day.pause1StartedAt = `${date}T12:30:00Z`;
         day.pause1StoppedAt = `${date}T12:45:00Z`;
-        day.pause10StartedAt = `${date}T10:02:00Z`;
-        day.pause10StoppedAt = `${date}T10:17:00Z`;
+        day.pause10StartedAt = `${date}T10:02:40Z`;
+        day.pause10StoppedAt = `${date}T10:17:10Z`;
         day.pause1OverrideMinutes = null;
         patchedRows++;
       }
@@ -66,8 +66,8 @@ test.describe('Day dialog: recorded pause times', () => {
 
     const segments = page.locator('mat-dialog-container [data-testid="pauseSegments1"] [data-testid="pauseSegment1"]');
     await expect(segments).toHaveCount(2, { timeout: UI_TIMEOUT });
-    await expect(segments.nth(0)).toContainText('10:02–10:17');
-    await expect(segments.nth(1)).toContainText('12:30–12:45');
+    await expect(segments.nth(0)).toContainText('10:02:40–10:17:10');
+    await expect(segments.nth(1)).toContainText('12:30:00–12:45:00');
     // Shift 2 recorded no pause, so it lists none.
     await expect(page.locator('mat-dialog-container [data-testid="pauseSegments2"]')).toHaveCount(0);
 
