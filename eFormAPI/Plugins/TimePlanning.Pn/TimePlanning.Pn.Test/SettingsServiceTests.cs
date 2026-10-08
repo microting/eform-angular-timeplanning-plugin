@@ -12,6 +12,7 @@ using NSubstitute;
 using NUnit.Framework;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 using TimePlanning.Pn.Services.TimePlanningSettingService;
@@ -198,6 +199,75 @@ public class SettingsServiceTests : TestBaseSetup
         Assert.That(updatedSite, Is.Not.Null);
         Assert.That(updatedSite.GpsEnabled, Is.False);
         Assert.That(updatedSite.SnapshotEnabled, Is.False);
+    }
+
+    // A managing tag that was removed must be addable again: the unique index on
+    // (AssignedSiteId, TagId) also covers soft-deleted rows, so inserting a second
+    // row for the tag failed with a duplicate key and the settings save returned 500.
+    [Test]
+    public async Task UpdateAssignedSite_ManagingTags_RemovedTagCanBeAddedAgain()
+    {
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 61,
+            IsManager = true,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        // Seeded by another user (2), so the saves below must stamp the acting user (1).
+        const int otherUserId = 2;
+        var removedTag = new AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id, TagId = 3, CreatedByUserId = otherUserId, UpdatedByUserId = otherUserId
+        };
+        await removedTag.Create(TimePlanningPnDbContext);
+        await removedTag.Delete(TimePlanningPnDbContext);
+        await new AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id, TagId = 5, CreatedByUserId = otherUserId, UpdatedByUserId = otherUserId
+        }.Create(TimePlanningPnDbContext);
+
+        Task<OperationResult> Save(params int[] tagIds) =>
+            _settingsService.UpdateAssignedSite(new AssignedSiteModel
+            {
+                Id = assignedSite.Id,
+                SiteId = 61,
+                IsManager = true,
+                UseGoogleSheetAsDefault = true,
+                ManagingTagIds = tagIds.ToList()
+            });
+
+        Task<List<AssignedSiteManagingTag>> Rows() =>
+            TimePlanningPnDbContext.AssignedSiteManagingTags.AsNoTracking()
+                .Where(x => x.AssignedSiteId == assignedSite.Id)
+                .ToListAsync();
+
+        static int[] ActiveTagIds(List<AssignedSiteManagingTag> rows) =>
+            rows.Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Select(x => x.TagId).OrderBy(x => x).ToArray();
+
+        // Give back the removed tag 3, keep 5, add the new tag 10 (twice in the request).
+        Assert.That((await Save(3, 5, 10, 10)).Success, Is.True);
+        var rows = await Rows();
+        Assert.That(ActiveTagIds(rows), Is.EqualTo(new[] { 3, 5, 10 }));
+        Assert.That(rows.Single(x => x.TagId == 3).Id, Is.EqualTo(removedTag.Id), "tag 3 must reuse its old row");
+        Assert.That(rows.Single(x => x.TagId == 3).UpdatedByUserId, Is.EqualTo(1), "reviving must record the acting user");
+        Assert.That(rows.Single(x => x.TagId == 5).UpdatedByUserId, Is.EqualTo(otherUserId), "an untouched row keeps its updater");
+
+        // Remove 3 and 10 again (soft delete keeps the rows), then give 3 back once more.
+        Assert.That((await Save(5)).Success, Is.True);
+        rows = await Rows();
+        Assert.That(ActiveTagIds(rows), Is.EqualTo(new[] { 5 }));
+        Assert.That(rows.Count, Is.EqualTo(3));
+
+        Assert.That((await Save(3)).Success, Is.True);
+        rows = await Rows();
+        Assert.That(ActiveTagIds(rows), Is.EqualTo(new[] { 3 }));
+        Assert.That(rows.Single(x => x.TagId == 3).Id, Is.EqualTo(removedTag.Id));
+        Assert.That(rows.Single(x => x.TagId == 5).UpdatedByUserId, Is.EqualTo(1), "removing must record the acting user");
     }
 
     // #1740: every site runs on 1-minute intervals and the settings checkbox is
