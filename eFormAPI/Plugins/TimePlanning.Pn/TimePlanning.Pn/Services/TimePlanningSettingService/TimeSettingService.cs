@@ -1195,38 +1195,43 @@ public class TimeSettingService(
                 dbAssignedSite.SiteId);
         }
 
-        // Update managing tags
-        var existingManagingTags = await dbContext.AssignedSiteManagingTags
+        // Update managing tags. Removed rows are loaded too: the unique index on
+        // (AssignedSiteId, TagId) also covers soft-deleted rows, so a tag that is
+        // given back must revive its old row instead of inserting a new one.
+        var managingTagRows = await dbContext.AssignedSiteManagingTags
             .Where(x => x.AssignedSiteId == dbAssignedSite.Id)
-            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .ToListAsync();
 
-        var managingTagIds = site.ManagingTagIds ?? new List<int>();
+        var managingTagIds = site.ManagingTagIds?.ToHashSet() ?? new HashSet<int>();
 
-        // Remove tags that are no longer in the list
-        foreach (var existingTag in existingManagingTags)
+        foreach (var row in managingTagRows)
         {
-            if (!managingTagIds.Contains(existingTag.TagId))
+            var wanted = managingTagIds.Contains(row.TagId);
+            var removed = row.WorkflowState == Constants.WorkflowStates.Removed;
+            if (!wanted && !removed)
             {
-                await existingTag.Delete(dbContext);
+                row.UpdatedByUserId = userService.UserId;
+                await row.Delete(dbContext);
+            }
+            else if (wanted && removed)
+            {
+                row.WorkflowState = Constants.WorkflowStates.Created;
+                row.UpdatedByUserId = userService.UserId;
+                await row.Update(dbContext);
             }
         }
 
-        // Add new tags
-        var existingTagIds = existingManagingTags.Select(x => x.TagId).ToList();
-        foreach (var tagId in managingTagIds)
+        var knownTagIds = managingTagRows.Select(x => x.TagId).ToHashSet();
+        foreach (var tagId in managingTagIds.Except(knownTagIds))
         {
-            if (!existingTagIds.Contains(tagId))
+            var newManagingTag = new AssignedSiteManagingTag
             {
-                var newManagingTag = new AssignedSiteManagingTag
-                {
-                    AssignedSiteId = dbAssignedSite.Id,
-                    TagId = tagId,
-                    CreatedByUserId = userService.UserId,
-                    UpdatedByUserId = userService.UserId
-                };
-                await newManagingTag.Create(dbContext);
-            }
+                AssignedSiteId = dbAssignedSite.Id,
+                TagId = tagId,
+                CreatedByUserId = userService.UserId,
+                UpdatedByUserId = userService.UserId
+            };
+            await newManagingTag.Create(dbContext);
         }
 
         if (dbAssignedSite.UseGoogleSheetAsDefault)
