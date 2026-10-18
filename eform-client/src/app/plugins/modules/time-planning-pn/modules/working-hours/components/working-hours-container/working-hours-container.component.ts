@@ -10,13 +10,15 @@ import {
   TimePlanningPnWorkingHoursService,
 } from '../../../../services';
 import {WorkingHourRequestModel, WorkingHourModel} from '../../../../models';
+import {EformNewSubheaderComponent} from 'src/app/common/modules/eform-shared/components';
+import {WorkingHoursTableComponent} from '../working-hours-table/working-hours-table.component';
 
 @AutoUnsubscribe()
 @Component({
     selector: 'app-working-hours-container',
+    imports: [EformNewSubheaderComponent, WorkingHoursTableComponent],
     templateUrl: './working-hours-container.component.html',
     styleUrls: ['./working-hours-container.component.scss'],
-    standalone: false
 })
 export class WorkingHoursContainerComponent implements OnInit, OnDestroy {
   private workingHoursService = inject(TimePlanningPnWorkingHoursService);

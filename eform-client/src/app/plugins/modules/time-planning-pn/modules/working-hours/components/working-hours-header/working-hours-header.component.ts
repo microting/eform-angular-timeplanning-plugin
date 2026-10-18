@@ -9,10 +9,10 @@ import {saveAs} from 'file-saver';
 import {ToastrService} from 'ngx-toastr';
 import {TimePlanningPnWorkingHoursService} from '../../../../services';
 import {EMPTY, Subscription} from 'rxjs';
-import {MatIconRegistry} from '@angular/material/icon';
+import {MatIconRegistry, MatIcon} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
 import {catchError} from 'rxjs/operators';
-import {MatDatepickerInputEvent} from '@angular/material/datepicker';
+import {MatDatepickerInputEvent, MatDatepickerToggle, MatDateRangeInput, MatDateRangePicker, MatStartDate, MatEndDate} from '@angular/material/datepicker';
 import {dialogConfigHelper} from 'src/app/common/helpers';
 import {MatDialog} from '@angular/material/dialog';
 import {Overlay} from '@angular/cdk/overlay';
@@ -22,12 +22,18 @@ import {
 import {
   WorkingHourRequestModel
 } from '../../../../models';
+import {NgIf} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatFormField, MatLabel, MatPrefix} from '@angular/material/form-field';
+import {MtxSelect} from '@ng-matero/extensions/select';
+import {MatTooltip} from '@angular/material/tooltip';
 
 @Component({
     selector: 'app-working-hours-header',
+    imports: [NgIf, FormsModule, TranslatePipe, MatIcon, MatFormField, MatLabel, MatPrefix, MtxSelect, MatTooltip, MatDatepickerToggle, MatDateRangeInput, MatDateRangePicker, MatStartDate, MatEndDate],
     templateUrl: './working-hours-header.component.html',
     styleUrls: ['./working-hours-header.component.scss'],
-    standalone: false
 })
 export class WorkingHoursHeaderComponent implements OnInit {
   private toastrService = inject(ToastrService);

@@ -1,5 +1,11 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormArray, FormGroup} from '@angular/forms';
+import {NgIf} from '@angular/common';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton, MatButton} from '@angular/material/button';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatTableModule} from '@angular/material/table';
 
 export interface BreakPolicyRuleFormValue {
   id?: number | null;
@@ -10,7 +16,7 @@ export interface BreakPolicyRuleFormValue {
 
 @Component({
   selector: 'app-break-policy-rules-list',
-  standalone: false,
+  imports: [NgIf, TranslatePipe, MatIcon, MatIconButton, MatButton, MatTooltip, MatTableModule],
   templateUrl: './break-policy-rules-list.component.html',
   styleUrls: ['./break-policy-rules-list.component.scss']
 })

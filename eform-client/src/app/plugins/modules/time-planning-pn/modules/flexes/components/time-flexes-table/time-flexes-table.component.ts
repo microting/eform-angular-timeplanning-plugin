@@ -13,19 +13,22 @@ import {
   TimeFlexesCommentOfficeUpdateModalComponent,
 } from '../';
 import {TranslateService} from '@ngx-translate/core';
-import {MtxGridColumn} from '@ng-matero/extensions/grid';
+import {MtxGridColumn, MtxGrid} from '@ng-matero/extensions/grid';
 import {MatDialog} from '@angular/material/dialog';
 import {Overlay} from '@angular/cdk/overlay';
 import {dialogConfigHelper} from 'src/app/common/helpers';
 import {Subscription} from 'rxjs';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
+import {FormsModule} from '@angular/forms';
+import {MatFormField} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
 
 @AutoUnsubscribe()
 @Component({
     selector: 'app-time-flexes-table',
+    imports: [FormsModule, MatFormField, MatInput, MtxGrid],
     templateUrl: './time-flexes-table.component.html',
     styleUrls: ['./time-flexes-table.component.scss'],
-    standalone: false
 })
 export class TimeFlexesTableComponent implements OnInit, OnDestroy {
   private translateService = inject(TranslateService);

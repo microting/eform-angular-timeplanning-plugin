@@ -13,15 +13,16 @@ import { Subscription } from 'rxjs';
 import { HelpProse, HelpTourName } from '../../help.model';
 import { HelpTourService, HelpTourState } from '../../services/help-tour.service';
 import { HelpChromeBase } from '../help-chrome.base';
+import {NgIf} from '@angular/common';
 
 /** Distinguishes the aria-labelledby target of one mounted tour from another's. */
 let nextTourCardId = 0;
 
 @Component({
   selector: 'tp-help-tour',
+  imports: [NgIf, CdkConnectedOverlay],
   templateUrl: './help-tour.component.html',
   styleUrls: ['./help-tour.component.scss'],
-  standalone: false,
 })
 export class HelpTourComponent extends HelpChromeBase
   implements OnInit, DoCheck, AfterViewChecked, OnDestroy {

@@ -10,6 +10,10 @@ import {
 import { HelpPanelService } from '../../services/help-panel.service';
 import { HelpSearchResult, HelpSearchService } from '../../services/help-search.service';
 import { HelpChromeBase } from '../help-chrome.base';
+import {NgIf, NgFor, NgTemplateOutlet} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
 
 export interface PanelSection {
   section: HelpSection;
@@ -21,9 +25,9 @@ const SECTION_ORDER: HelpSection[] = ['task', 'toolbar', 'grid', 'dayCell', 'fle
 
 @Component({
   selector: 'tp-help-panel',
+  imports: [NgIf, NgFor, NgTemplateOutlet, FormsModule, MatIcon, MatIconButton],
   templateUrl: './help-panel.component.html',
   styleUrls: ['./help-panel.component.scss'],
-  standalone: false,
 })
 export class HelpPanelComponent extends HelpChromeBase
   implements OnInit, OnChanges, AfterViewChecked, OnDestroy {

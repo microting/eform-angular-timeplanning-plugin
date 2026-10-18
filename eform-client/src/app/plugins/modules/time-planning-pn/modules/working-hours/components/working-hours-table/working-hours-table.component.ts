@@ -8,11 +8,11 @@ import {
   SimpleChanges, TemplateRef, ViewChild, ViewEncapsulation,
   inject
 } from '@angular/core';
-import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
+import {AbstractControl, FormArray, FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {Subscription} from 'rxjs';
 import {SiteDto} from 'src/app/common/models';
-import {MtxGridColumn, MtxGridRowClassFormatter} from '@ng-matero/extensions/grid';
-import {TranslateService} from '@ngx-translate/core';
+import {MtxGridColumn, MtxGridRowClassFormatter, MtxGrid} from '@ng-matero/extensions/grid';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import {
   DaysOfWeekEnum, FULL_DATE_FORMAT,
   HOURS_PICKER_ARRAY,
@@ -32,14 +32,18 @@ import {
   WorkingHourModel,
   WorkingHourRequestModel
 } from '../../../../models';
+import {MatFormField} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MtxSelect} from '@ng-matero/extensions/select';
+import {WorkingHoursHeaderComponent} from '../working-hours-header/working-hours-header.component';
 
 @AutoUnsubscribe()
 @Component({
     selector: 'app-working-hours-table',
+    imports: [ReactiveFormsModule, TranslatePipe, MatFormField, MatInput, MtxSelect, MtxGrid, WorkingHoursHeaderComponent],
     templateUrl: './working-hours-table.component.html',
     styleUrls: ['./working-hours-table.component.css'],
     encapsulation: ViewEncapsulation.None,
-    standalone: false
 })
 export class WorkingHoursTableComponent implements OnInit, OnChanges, OnDestroy {
   private translateService = inject(TranslateService);

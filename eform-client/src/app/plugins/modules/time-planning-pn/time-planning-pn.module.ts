@@ -1,10 +1,5 @@
-import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {RouterModule} from '@angular/router';
-import {NgSelectModule} from '@ng-select/ng-select';
-import {TranslateModule} from '@ngx-translate/core';
-import {EformSharedModule} from 'src/app/common/modules/eform-shared/eform-shared.module';
+import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
 import {TimePlanningPnRouting} from './time-planning-pn.routing';
 import {TimePlanningPnLayoutComponent} from './layouts';
 import {
@@ -20,37 +15,6 @@ import {
   WorkdayEntityDialogComponent, DownloadExcelDialogComponent, VersionHistoryModalComponent,
   PayrollExportDialogComponent
 } from './components';
-import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
-import {
-  MAT_FORM_FIELD_DEFAULT_OPTIONS, MatError,
-  MatFormField,
-  MatLabel,
-  MatPrefix,
-  MatSuffix
-} from '@angular/material/form-field';
-import {MatInput} from '@angular/material/input';
-import {MatButton, MatIconButton} from '@angular/material/button';
-import {MatSlideToggle} from '@angular/material/slide-toggle';
-import {
-  MatDatepicker,
-  MatDatepickerInput,
-  MatDatepickerToggle,
-  MatDateRangeInput,
-  MatDateRangePicker, MatEndDate, MatStartDate
-} from '@angular/material/datepicker';
-import {MtxGrid} from '@ng-matero/extensions/grid';
-import {NgxChartsModule} from '@swimlane/ngx-charts';
-import {MatIcon} from '@angular/material/icon';
-import {MatTooltip} from '@angular/material/tooltip';
-import {NgxMaskDirective} from 'ngx-mask';
-import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
-import {MatTab, MatTabGroup} from '@angular/material/tabs';
-import {MatCheckbox} from '@angular/material/checkbox';
-import {MatRadioButton, MatRadioGroup} from '@angular/material/radio';
-import {MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle} from '@angular/material/dialog';
-import {MtxSelect} from '@ng-matero/extensions/select';
-import {OverlayModule} from '@angular/cdk/overlay';
-import {CdkScrollable} from '@angular/cdk/scrolling';
 import {HelpIconComponent} from './help/components/help-icon/help-icon.component';
 import {HelpHintComponent} from './help/components/help-hint/help-hint.component';
 import {HelpPanelComponent} from './help/components/help-panel/help-panel.component';
@@ -58,56 +22,7 @@ import {HelpTourComponent} from './help/components/help-tour/help-tour.component
 
 @NgModule({
   imports: [
-    CommonModule,
-    TranslateModule,
-    FormsModule,
-    NgSelectModule,
-    EformSharedModule,
-    RouterModule,
     TimePlanningPnRouting,
-    ReactiveFormsModule,
-    MatCardHeader,
-    MatTab,
-    MatDialogActions,
-    MatDialogTitle,
-    MatDialogContent,
-    MatDialogClose,
-    MtxSelect,
-    MatCard,
-    MatCheckbox,
-    MatRadioGroup,
-    MatRadioButton,
-    MatCardContent,
-    MatIconButton,
-    MatFormField,
-    MatInput,
-    MatButton,
-    MatTabGroup,
-    MatSlideToggle,
-    MatLabel,
-    MatDatepicker,
-    MatDatepickerInput,
-    MatDatepickerToggle,
-    MatSuffix,
-    MtxGrid,
-    NgxChartsModule,
-    MatIcon,
-    MatTooltip,
-    NgxMaskDirective,
-    NgxMaterialTimepickerModule,
-    MatDateRangeInput,
-    MatDateRangePicker,
-    MatStartDate,
-    MatEndDate,
-    MatPrefix,
-    MatError,
-    OverlayModule,
-    // The day-cell dialog declares its own overflow container inside
-    // mat-dialog-content; ScrollDispatcher only sees containers marked
-    // cdkScrollable, and the help popovers dismiss on scroll.
-    CdkScrollable
-  ],
-  declarations: [
     TimePlanningPnLayoutComponent,
     TimePlanningSettingsComponent,
     WorkdayEntityDialogComponent,

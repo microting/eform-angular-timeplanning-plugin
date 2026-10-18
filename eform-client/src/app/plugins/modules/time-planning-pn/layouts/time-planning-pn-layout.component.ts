@@ -6,12 +6,13 @@ import {translates} from './../i18n/translates';
 import {Store} from '@ngrx/store';
 import {addPluginToVisited, selectPluginsVisitedPlugins} from 'src/app/state';
 import {take} from 'rxjs';
+import {RouterOutlet} from '@angular/router';
 
 @Component({
     selector: 'app-time-planning-pn-layout',
+    imports: [RouterOutlet],
     template: `
     <router-outlet></router-outlet>`,
-    standalone: false
 })
 export class TimePlanningPnLayoutComponent implements AfterContentInit, OnInit {
   private translateService = inject(TranslateService);

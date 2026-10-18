@@ -2,7 +2,7 @@ import {Component, OnDestroy, OnInit,
   inject
 } from '@angular/core';
 import {EMPTY, Subscription} from 'rxjs';
-import {MatDatepickerInputEvent} from '@angular/material/datepicker';
+import {MatDatepickerInputEvent, MatDatepickerToggle, MatDateRangeInput, MatDateRangePicker, MatStartDate, MatEndDate} from '@angular/material/datepicker';
 import {SiteDto} from 'src/app/common/models';
 import {
   CommonTagModel,
@@ -18,7 +18,13 @@ import {
   TimePlanningPnWorkingHoursService
 } from 'src/app/plugins/modules/time-planning-pn/services';
 import {ToastrService} from 'ngx-toastr';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose} from '@angular/material/dialog';
+import {NgIf} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatFormField, MatLabel, MatPrefix} from '@angular/material/form-field';
+import {MtxSelect} from '@ng-matero/extensions/select';
+import {MatTooltip} from '@angular/material/tooltip';
 
 /**
  * The filters the planning page has on screen when the dialog is opened. The export
@@ -36,9 +42,9 @@ export interface DownloadExcelDialogData {
 
 @Component({
   selector: 'app-download-excel-dialog',
+  imports: [NgIf, FormsModule, TranslatePipe, MatFormField, MatLabel, MatPrefix, MtxSelect, MatTooltip, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatDatepickerToggle, MatDateRangeInput, MatDateRangePicker, MatStartDate, MatEndDate],
   templateUrl: './download-excel-dialog.component.html',
   styleUrls: ['./download-excel-dialog.component.scss'],
-  standalone: false,
 })
 export class DownloadExcelDialogComponent implements OnInit, OnDestroy {
   private data = inject<DownloadExcelDialogData>(MAT_DIALOG_DATA);

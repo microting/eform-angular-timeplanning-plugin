@@ -1,16 +1,17 @@
 import {Component, OnInit,
   inject
 } from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions} from '@angular/material/dialog';
 import {TimePlanningPnRegistrationDevicesService} from 'src/app/plugins/modules/time-planning-pn/services';
 import {TimePlanningRegistrationDeviceModel} from 'src/app/plugins/modules/time-planning-pn/models';
+import {TranslatePipe} from '@ngx-translate/core';
 
 @Component({
     selector: 'app-registration-devices-delete-modal',
+    imports: [TranslatePipe, MatDialogTitle, MatDialogContent, MatDialogActions],
     templateUrl: './registration-devices-delete-modal.component.html'
     // styleUrls: ['./registration-devices-delete.component.scss']
     ,
-    standalone: false
 })
 export class RegistrationDevicesDeleteModalComponent implements OnInit {
   private registrationDevicesService = inject(TimePlanningPnRegistrationDevicesService);

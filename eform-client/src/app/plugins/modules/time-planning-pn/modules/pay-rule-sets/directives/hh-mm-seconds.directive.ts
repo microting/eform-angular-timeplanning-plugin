@@ -23,7 +23,6 @@ import {parseHhMmToSeconds, secondsToHhMmInput} from '../pay-rule-format.util';
  */
 @Directive({
   selector: 'input[appHhMmSeconds]',
-  standalone: false,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

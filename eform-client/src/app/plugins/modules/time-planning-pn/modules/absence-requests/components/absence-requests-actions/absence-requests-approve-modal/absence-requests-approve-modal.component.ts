@@ -1,17 +1,21 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions} from '@angular/material/dialog';
 import { TimePlanningPnAbsenceRequestsService } from 'src/app/plugins/modules/time-planning-pn/services';
 import { AbsenceRequestModel, AbsenceRequestDecisionModel } from 'src/app/plugins/modules/time-planning-pn/models';
 import { ToastrService } from 'ngx-toastr';
-import { TranslateService } from '@ngx-translate/core';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { selectAuthUser } from 'src/app/state';
 import { take } from 'rxjs';
+import {NgIf, DatePipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {MatFormField, MatLabel} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
 
 @Component({
   selector: 'app-absence-requests-approve-modal',
+  imports: [NgIf, DatePipe, FormsModule, TranslatePipe, MatFormField, MatLabel, MatInput, MatDialogTitle, MatDialogContent, MatDialogActions],
   templateUrl: './absence-requests-approve-modal.component.html',
-  standalone: false
 })
 export class AbsenceRequestsApproveModalComponent implements OnInit {
   private absenceRequestsService = inject(TimePlanningPnAbsenceRequestsService);

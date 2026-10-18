@@ -6,12 +6,23 @@ import {TimePlanningPnSettingsService} from '../../../services';
 import {TimePlanningSettingsModel} from '../../../models';
 import {selectCurrentUserIsFirstUser} from 'src/app/state';
 import {Store} from '@ngrx/store';
+import {NgIf, NgFor} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatButton} from '@angular/material/button';
+import {MatCard, MatCardContent, MatCardHeader} from '@angular/material/card';
+import {MatFormField, MatLabel} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MtxSelect} from '@ng-matero/extensions/select';
+import {MatSlideToggle} from '@angular/material/slide-toggle';
+import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
+import {EformNewSubheaderComponent} from 'src/app/common/modules/eform-shared/components';
 
 @Component({
     selector: 'app-time-planning-settings',
+    imports: [NgIf, NgFor, FormsModule, TranslatePipe, MatButton, MatCard, MatCardContent, MatCardHeader, MatFormField, MatLabel, MatInput, MtxSelect, MatSlideToggle, NgxMaterialTimepickerModule, EformNewSubheaderComponent],
     templateUrl: './time-planning-settings.component.html',
     styleUrls: ['./time-planning-settings.component.scss'],
-    standalone: false
 })
 export class TimePlanningSettingsComponent implements OnInit, OnDestroy {
   private timePlanningPnSettingsService = inject(TimePlanningPnSettingsService);

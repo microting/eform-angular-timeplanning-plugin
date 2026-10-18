@@ -2,11 +2,11 @@ import {Component, ElementRef, OnInit, TemplateRef, ViewChild,
   inject, OnDestroy
 } from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialog} from '@angular/material/dialog';
-import {TranslateService} from '@ngx-translate/core';
-import {DatePipe} from '@angular/common';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
+import {DatePipe, NgIf, NgFor, NgTemplateOutlet} from '@angular/common';
 import {TimePlanningMessagesEnum} from '../../../../enums';
 import {AssignedSiteModel, PlanningPrDayModel, GpsCoordinateModel, PictureSnapshotModel} from '../../../../models';
-import {MtxGridColumn} from '@ng-matero/extensions/grid';
+import {MtxGridColumn, MtxGrid} from '@ng-matero/extensions/grid';
 import {TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, TimePlanningPnPictureSnapshotsService} from '../../../../services';
 import {VersionHistoryModalComponent} from '../version-history-modal/version-history-modal.component';
 import {Store} from '@ngrx/store';
@@ -17,7 +17,7 @@ import {TemplateFilesService} from 'src/app/common/services';
 import {OperationResult, SharedTagModel} from 'src/app/common/models';
 import {Observable, Subscription} from 'rxjs';
 import {ToastrService} from 'ngx-toastr';
-import { MatDialogRef } from '@angular/material/dialog';
+import {MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose} from '@angular/material/dialog';
 import {HelpEntryId} from '../../../../help/help.model';
 import {HelpPanelService} from '../../../../help/services/help-panel.service';
 import {HelpTourService} from '../../../../help/services/help-tour.service';
@@ -34,12 +34,24 @@ import {
   ReactiveFormsModule,
   FormArray,
 } from '@angular/forms';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
+import {MatFormField, MatLabel, MatError} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatCheckbox} from '@angular/material/checkbox';
+import {CdkScrollable} from '@angular/cdk/scrolling';
+import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
+import {EformTagComponent} from 'src/app/common/modules/eform-shared/components';
+import {HelpHintComponent} from '../../../../help/components/help-hint/help-hint.component';
+import {HelpTourComponent} from '../../../../help/components/help-tour/help-tour.component';
+import {HelpIconComponent} from '../../../../help/components/help-icon/help-icon.component';
 
 @Component({
   selector: 'app-workday-entity-dialog',
+  imports: [NgIf, NgFor, NgTemplateOutlet, ReactiveFormsModule, TranslatePipe, MatIcon, MatIconButton, MatFormField, MatLabel, MatError, MatInput, MtxGrid, MatTooltip, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatCheckbox, CdkScrollable, NgxMaterialTimepickerModule, EformTagComponent, HelpHintComponent, HelpTourComponent, HelpIconComponent],
   templateUrl: './workday-entity-dialog.component.html',
   styleUrls: ['./workday-entity-dialog.component.scss'],
-  standalone: false
 })
 export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);

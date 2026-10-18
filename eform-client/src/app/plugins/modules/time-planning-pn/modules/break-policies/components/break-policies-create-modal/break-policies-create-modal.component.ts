@@ -1,17 +1,21 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import {FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule} from '@angular/forms';
+import {MatDialog, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions} from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
 import { BreakPolicyCreateModel } from '../../../../models';
 import { TimePlanningPnBreakPoliciesService } from '../../../../services';
 import { BreakPolicyRuleDialogComponent, BreakPolicyRuleDialogData } from '../break-policy-rule-dialog/break-policy-rule-dialog.component';
-import { BreakPolicyRuleFormValue } from '../break-policy-rules-list/break-policy-rules-list.component';
+import {BreakPolicyRuleFormValue, BreakPolicyRulesListComponent} from '../break-policy-rules-list/break-policy-rules-list.component';
+import {NgIf} from '@angular/common';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatFormField, MatLabel, MatError} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
 
 @Component({
   selector: 'app-break-policies-create-modal',
+  imports: [NgIf, ReactiveFormsModule, TranslatePipe, MatFormField, MatLabel, MatError, MatInput, MatDialogTitle, MatDialogContent, MatDialogActions, BreakPolicyRulesListComponent],
   templateUrl: './break-policies-create-modal.component.html',
   styleUrls: ['./break-policies-create-modal.component.scss'],
-  standalone: false
 })
 export class BreakPoliciesCreateModalComponent implements OnInit {
   private breakPoliciesService = inject(TimePlanningPnBreakPoliciesService);

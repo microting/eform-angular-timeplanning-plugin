@@ -7,12 +7,13 @@ import {format} from 'date-fns';
 import {PARSING_DATE_FORMAT} from 'src/app/common/const';
 import {take} from "rxjs";
 import {TitleService} from "src/app/common/services";
-import {TranslateService} from "@ngx-translate/core";
+import {TranslateService, TranslatePipe} from "@ngx-translate/core";
+import {MatCard} from '@angular/material/card';
 @Component({
     selector: 'app-mobile-working-hours',
+    imports: [TranslatePipe, MatCard],
     templateUrl: './mobile-working-hours.component.html',
     styleUrls: ['./mobile-working-hours.component.scss'],
-    standalone: false
 })
 export class MobileWorkingHoursComponent implements OnInit, OnDestroy {
   private titleService = inject(TitleService);

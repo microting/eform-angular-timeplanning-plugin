@@ -9,24 +9,24 @@
   [showColumnMenuButton]="false">
 </mtx-grid>
 
-<ng-template #timePlanningSumFlexTpl let-row>
-  <mat-form-field id="timePlanningSumFlex" class="my-1">
+<ng-template #timePlanningSumFlexTpl let-row let-i="index">
+  <mat-form-field id="timePlanningSumFlex{{i}}" class="my-1">
     <input
       matInput
       type="number"
-      id="sumFlex"
+      id="sumFlex{{i}}"
       [disabled]="true"
       [ngModel]="row.sumFlex"
     />
   </mat-form-field>
 </ng-template>
 
-<ng-template #commentOfficeTpl let-row>
-  <mat-form-field id="timePlanningCommentOffice" (click)="onCommentOfficeClick(row)">
+<ng-template #commentOfficeTpl let-row let-i="index">
+  <mat-form-field id="timePlanningCommentOffice{{i}}" (click)="onCommentOfficeClick(row)">
     <input
       matInput
       type="text"
-      id="commentOffice"
+      id="commentOffice{{i}}"
       [disabled]="true"
       [ngModel]="row.commentOffice.slice(0, 20) + '...'"
     >

@@ -1,15 +1,15 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions} from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
-import { TranslateService } from '@ngx-translate/core';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import { PayRuleSetModel } from '../../../../models';
 import { TimePlanningPnPayRuleSetsService } from '../../../../services';
 
 @Component({
   selector: 'app-pay-rule-sets-delete-modal',
+  imports: [TranslatePipe, MatDialogTitle, MatDialogContent, MatDialogActions],
   templateUrl: './pay-rule-sets-delete-modal.component.html',
   styleUrls: ['./pay-rule-sets-delete-modal.component.scss'],
-  standalone: false
 })
 export class PayRuleSetsDeleteModalComponent implements OnInit {
   private payRuleSetsService = inject(TimePlanningPnPayRuleSetsService);

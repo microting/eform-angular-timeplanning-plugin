@@ -1,9 +1,16 @@
 import { Component, Inject, OnInit, inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions} from '@angular/material/dialog';
 import { TimePlanningPnPayrollExportService } from '../../../../services';
 import { ToastrService } from 'ngx-toastr';
 import { saveAs } from 'file-saver';
 import { format } from 'date-fns';
+import {NgIf} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatIcon} from '@angular/material/icon';
+import {MatFormField, MatLabel, MatSuffix} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 
 export interface PayrollExportDialogData {
   cutoffDay: number;
@@ -12,8 +19,8 @@ export interface PayrollExportDialogData {
 
 @Component({
   selector: 'app-payroll-export-dialog',
+  imports: [NgIf, FormsModule, TranslatePipe, MatIcon, MatFormField, MatLabel, MatSuffix, MatInput, MatDialogTitle, MatDialogContent, MatDialogActions, MatDatepicker, MatDatepickerInput, MatDatepickerToggle],
   templateUrl: './payroll-export-dialog.component.html',
-  standalone: false,
 })
 export class PayrollExportDialogComponent implements OnInit {
   private payrollExportService = inject(TimePlanningPnPayrollExportService);

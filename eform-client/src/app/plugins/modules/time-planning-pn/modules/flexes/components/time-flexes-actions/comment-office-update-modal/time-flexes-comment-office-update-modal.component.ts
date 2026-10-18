@@ -6,14 +6,19 @@ import {
 } from '@angular/core';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
 import {TimeFlexesModel} from '../../../../../models';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions} from '@angular/material/dialog';
+import {DatePipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatFormField, MatLabel} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
 
 @AutoUnsubscribe()
 @Component({
     selector: 'app-time-flexes-comment-office-update-modal',
+    imports: [DatePipe, FormsModule, TranslatePipe, MatFormField, MatLabel, MatInput, MatDialogTitle, MatDialogContent, MatDialogActions],
     templateUrl: './time-flexes-comment-office-update-modal.component.html',
     styleUrls: ['./time-flexes-comment-office-update-modal.component.scss'],
-    standalone: false
 })
 export class TimeFlexesCommentOfficeUpdateModalComponent implements OnInit, OnDestroy {
   public dialogRef = inject(MatDialogRef<TimeFlexesCommentOfficeUpdateModalComponent>);
