@@ -1,3 +1,4 @@
+import {describe, it, expect, beforeEach} from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ElementRef } from '@angular/core';
 import { OverlayModule } from '@angular/cdk/overlay';
@@ -18,8 +19,12 @@ const provideHelpVisibility = { provide: HelpVisibilityService, useValue: helpVi
 import { HelpTourService } from '../../services/help-tour.service';
 import { HelpTourName } from '../../help.model';
 import { enUS, enUSUi } from '../../i18n/enUS';
+import { detectChanges } from '../../../testing/detect-changes';
+import { useWorkingMutationObserver } from '../../../testing/mutation-observer';
 
 describe('HelpTourComponent', () => {
+  useWorkingMutationObserver();
+
   const anchor = (id: string): HTMLElement => {
     const element = document.createElement('div');
     element.setAttribute('data-tp-help', id);
@@ -30,7 +35,7 @@ describe('HelpTourComponent', () => {
   const mount = (tour: HelpTourName = 'page'): ComponentFixture<HelpTourComponent> => {
     const fixture = TestBed.createComponent(HelpTourComponent);
     fixture.componentInstance.tour = tour;
-    fixture.detectChanges();
+    detectChanges(fixture);
     return fixture;
   };
 
@@ -43,8 +48,7 @@ describe('HelpTourComponent', () => {
     document.body.querySelectorAll('[data-tp-help]').forEach(element => element.remove());
     localStorage.clear();
     TestBed.configureTestingModule({
-      declarations: [HelpTourComponent],
-      imports: [OverlayModule],
+      imports: [HelpTourComponent, OverlayModule],
       providers: [
         { provide: TranslateService, useValue: { currentLang: 'en-US' } },
         provideHelpVisibility,
@@ -78,8 +82,10 @@ describe('HelpTourComponent', () => {
     const dialogTour = mount('dialog');
 
     TestBed.inject(HelpTourService).start('dialog', { isAdmin: false });
-    pageTour.detectChanges();
-    dialogTour.detectChanges();
+    // Dialog first: a zoneless check verifies every attached view, so checking the
+    // page first would trip over the dialog's not-yet-refreshed step.
+    detectChanges(dialogTour);
+    detectChanges(pageTour);
 
     expect(dialogTour.componentInstance.state?.entry.id).toBe('dayCell.plannedTimes');
     expect(pageTour.componentInstance.state).toBeNull();
@@ -144,7 +150,7 @@ describe('HelpTourComponent', () => {
       .toBe('1 / 2');
 
     fixture.componentInstance.next();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(card()!.querySelector('.tp-help-tour__step')!.textContent!.replace(/\s+/g, ' ').trim())
       .toBe('2 / 2');
@@ -166,7 +172,7 @@ describe('HelpTourComponent', () => {
     const fixture = mount();
 
     (card()!.querySelector('.tp-help-tour__next') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.state?.entry.id).toBe('grid.openDay');
     expect(fixture.componentInstance.origin?.nativeElement).toBe(second);
@@ -178,7 +184,7 @@ describe('HelpTourComponent', () => {
     const fixture = mount();
 
     (card()!.querySelector('.tp-help-tour__skip') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.state).toBeNull();
     expect(card()).toBeNull();
@@ -197,11 +203,11 @@ describe('HelpTourComponent', () => {
       document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
 
     press('a');
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.componentInstance.state).not.toBeNull();
 
     press('Escape');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.state).toBeNull();
     expect(card()).toBeNull();
@@ -220,7 +226,7 @@ describe('HelpTourComponent', () => {
     expect(card()).not.toBeNull();
 
     element.remove();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.state).toBeNull();
     expect(fixture.componentInstance.origin).toBeNull();
@@ -239,7 +245,7 @@ describe('HelpTourComponent', () => {
     expect(card()).not.toBeNull();
 
     element.remove();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(tour.isRunning).toBe(false);
     expect(tour.hasSeen('dialog')).toBe(false);
@@ -247,12 +253,12 @@ describe('HelpTourComponent', () => {
     // Still offerable: the same tour runs again and renders.
     element = anchor('dayCell.plannedTimes');
     tour.start('dialog', { isAdmin: false });
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(card()).not.toBeNull();
 
     // The other direction: the user ending it does count.
     (card()!.querySelector('.tp-help-tour__skip') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(card()).toBeNull();
     expect(tour.hasSeen('dialog')).toBe(true);
@@ -265,7 +271,7 @@ describe('HelpTourComponent', () => {
 
     element.remove();
     const replacement = anchor('toolbar.dateRange');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.origin?.nativeElement).toBe(replacement);
     expect(card()).not.toBeNull();
@@ -277,7 +283,7 @@ describe('HelpTourComponent', () => {
     const fixture = mount();
 
     fixture.componentInstance.next();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.state).toBeNull();
     expect(fixture.componentInstance.origin).toBeNull();

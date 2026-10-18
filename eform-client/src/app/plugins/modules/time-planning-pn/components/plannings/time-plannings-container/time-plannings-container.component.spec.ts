@@ -1,5 +1,9 @@
+import {describe, it, expect, beforeEach, afterEach, vi} from 'vitest';
+import type {Mocked, MockInstance} from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { MODULE_ROOT } from '../../../testing/source-paths';
+import { pageProviders } from '../../../testing/page-providers';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TimePlanningsContainerComponent } from './time-plannings-container.component';
 import { TimePlanningPnPlanningsService } from '../../../services/time-planning-pn-plannings.service';
@@ -9,7 +13,6 @@ import { Store } from '@ngrx/store';
 import { selectCurrentUserIsFirstUser } from 'src/app/state';
 import { BehaviorSubject, EMPTY, of, Subject, throwError } from 'rxjs';
 import { addDays, endOfWeek, format, startOfWeek, subDays } from 'date-fns';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { HelpTourService } from '../../../help/services/help-tour.service';
@@ -19,30 +22,30 @@ import { LOCK_REQUEST_TIMEOUT_MS } from '../day-lock.util';
 describe('TimePlanningsContainerComponent', () => {
   let component: TimePlanningsContainerComponent;
   let fixture: ComponentFixture<TimePlanningsContainerComponent>;
-  let mockPlanningsService: jest.Mocked<TimePlanningPnPlanningsService>;
-  let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
-  let mockDialog: jest.Mocked<MatDialog>;
-  let mockStore: jest.Mocked<Store>;
+  let mockPlanningsService: Mocked<TimePlanningPnPlanningsService>;
+  let mockSettingsService: Mocked<TimePlanningPnSettingsService>;
+  let mockDialog: Mocked<MatDialog>;
+  let mockStore: Mocked<Store>;
 
   beforeEach(async () => {
     mockPlanningsService = {
-      getPlannings: jest.fn(),
-      updatePlanning: jest.fn(),
-      reconcileThrough: jest.fn(),
+      getPlannings: vi.fn(),
+      updatePlanning: vi.fn(),
+      reconcileThrough: vi.fn(),
     } as any;
     mockSettingsService = {
-      getAvailableSites: jest.fn(),
-      getResignedSites: jest.fn(),
-      getAssignedSite: jest.fn(),
-      updateAssignedSite: jest.fn(),
-      getAvailableTags: jest.fn(),
-      getPayrollSettings: jest.fn(),
+      getAvailableSites: vi.fn(),
+      getResignedSites: vi.fn(),
+      getAssignedSite: vi.fn(),
+      updateAssignedSite: vi.fn(),
+      getAvailableTags: vi.fn(),
+      getPayrollSettings: vi.fn(),
     } as any;
     mockDialog = {
-      open: jest.fn(),
+      open: vi.fn(),
     } as any;
     mockStore = {
-      select: jest.fn(),
+      select: vi.fn(),
     } as any;
 
     mockStore.select.mockReturnValue(of('en-US'));
@@ -52,17 +55,16 @@ describe('TimePlanningsContainerComponent', () => {
     mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: [] }) as any);
 
     await TestBed.configureTestingModule({
-      declarations: [TimePlanningsContainerComponent],
-      imports: [TranslateModule.forRoot()],
-      schemas: [NO_ERRORS_SCHEMA],
+      imports: [TimePlanningsContainerComponent, TranslateModule.forRoot()],
       providers: [
+        ...pageProviders(),
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },
         { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
         { provide: MatDialog, useValue: mockDialog },
         { provide: Store, useValue: mockStore },
         {
           provide: ToastrService,
-          useValue: { success: jest.fn(), warning: jest.fn(), error: jest.fn() },
+          useValue: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
         },
       ]
     }).compileComponents();
@@ -142,7 +144,7 @@ describe('TimePlanningsContainerComponent', () => {
 
   describe('Event Handlers', () => {
     it('should call getPlannings when onTimePlanningChanged is triggered', () => {
-      jest.spyOn(component, 'getPlannings');
+      vi.spyOn(component, 'getPlannings');
 
       component.onTimePlanningChanged({});
 
@@ -150,7 +152,7 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('should call getPlannings when onAssignedSiteChanged is triggered', () => {
-      jest.spyOn(component, 'getPlannings');
+      vi.spyOn(component, 'getPlannings');
 
       component.onAssignedSiteChanged({});
 
@@ -158,7 +160,7 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('should update siteId and call getPlannings when onSiteChanged is triggered', () => {
-      jest.spyOn(component, 'getPlannings');
+      vi.spyOn(component, 'getPlannings');
       const testSiteId = 123;
 
       component.onSiteChanged(testSiteId);
@@ -227,7 +229,7 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('should update selectedTagIds and call getPlannings when onTagsChanged is triggered', () => {
-      jest.spyOn(component, 'getPlannings');
+      vi.spyOn(component, 'getPlannings');
       const testTagIds = [1, 2, 3];
 
       component.onTagsChanged(testTagIds);
@@ -237,7 +239,7 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('should hold an empty list, never null, when the select clears its last tag', () => {
-      jest.spyOn(component, 'getPlannings');
+      vi.spyOn(component, 'getPlannings');
       component.selectedTagIds = [1];
 
       component.onTagsChanged(null);
@@ -284,19 +286,19 @@ describe('TimePlanningsContainerComponent', () => {
 
   describe('Page help tour', () => {
     let tour: HelpTourService;
-    let start: jest.SpyInstance;
+    let start: MockInstance;
 
     beforeEach(() => {
       localStorage.clear();
       tour = TestBed.inject(HelpTourService);
-      start = jest.spyOn(tour, 'start').mockImplementation(() => undefined);
-      jest.useFakeTimers();
+      start = vi.spyOn(tour, 'start').mockImplementation(() => undefined);
+      vi.useFakeTimers();
       component.dateFrom = new Date(2024, 0, 15);
       component.dateTo = new Date(2024, 0, 21);
     });
 
     afterEach(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
       start.mockRestore();
       localStorage.clear();
     });
@@ -308,7 +310,7 @@ describe('TimePlanningsContainerComponent', () => {
       mockPlanningsService.getPlannings.mockReturnValue(of({ success: true, model: [] }) as any);
 
       component.getPlannings();
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       expect(start).not.toHaveBeenCalled();
     });
@@ -318,7 +320,7 @@ describe('TimePlanningsContainerComponent', () => {
         of({ success: true, model: [{ siteId: 1, siteName: 'A' }] }) as any);
 
       component.getPlannings();
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       // Literals, not component.isAdmin / component.isFirstUser: reading the expected
       // values off the component under test asserts nothing about what was passed.
@@ -330,17 +332,17 @@ describe('TimePlanningsContainerComponent', () => {
       // around a start the gate refuses would mean this planner never gets the
       // tour on this page visit, even once help becomes visible to them.
       const visibility = TestBed.inject(HelpVisibilityService);
-      const isVisible = jest.spyOn(visibility, 'isVisible', 'get').mockReturnValue(false);
+      const isVisible = vi.spyOn(visibility, 'isVisible', 'get').mockReturnValue(false);
       mockPlanningsService.getPlannings.mockReturnValue(
         of({ success: true, model: [{ siteId: 1, siteName: 'A' }] }) as any);
 
       component.getPlannings();
-      jest.runAllTimers();
+      vi.runAllTimers();
       expect(start).not.toHaveBeenCalled();
 
       isVisible.mockReturnValue(true);
       component.getPlannings();
-      jest.runAllTimers();
+      vi.runAllTimers();
       expect(start).toHaveBeenCalledWith('page', { isAdmin: false, isFirstUser: true });
 
       isVisible.mockRestore();
@@ -351,9 +353,9 @@ describe('TimePlanningsContainerComponent', () => {
         of({ success: true, model: [{ siteId: 1, siteName: 'A' }] }) as any);
 
       component.getPlannings();
-      jest.runAllTimers();
+      vi.runAllTimers();
       component.getPlannings();
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       expect(start).toHaveBeenCalledTimes(1);
     });
@@ -362,7 +364,7 @@ describe('TimePlanningsContainerComponent', () => {
       // start('dialog') is otherwise called from one place, gated on hasSeen, so
       // this is the only route back to the dialog tour once it has been skipped.
       component.replayTour('dialog');
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       expect(start).toHaveBeenCalledWith('dialog', { isAdmin: false, isFirstUser: true });
     });
@@ -373,7 +375,7 @@ describe('TimePlanningsContainerComponent', () => {
         of({ success: true, model: [{ siteId: 1, siteName: 'A' }] }) as any);
 
       component.getPlannings();
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       expect(start).not.toHaveBeenCalled();
     });
@@ -629,7 +631,7 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('reports the two skip reasons as separate figures, never merged', () => {
-      const instant = jest.spyOn(TestBed.inject(TranslateService), 'instant');
+      const instant = vi.spyOn(TestBed.inject(TranslateService), 'instant');
       mockPlanningsService.reconcileThrough.mockReturnValue(of({
         success: true,
         model: resultModel({
@@ -653,7 +655,7 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('leaves the no-registration figure out when there is none', () => {
-      const instant = jest.spyOn(TestBed.inject(TranslateService), 'instant');
+      const instant = vi.spyOn(TestBed.inject(TranslateService), 'instant');
       mockPlanningsService.reconcileThrough.mockReturnValue(
         of({ success: true, model: resultModel() }) as any);
 
@@ -751,15 +753,15 @@ describe('TimePlanningsContainerComponent', () => {
     });
 
     it('stops waiting for a request that never answers, and reloads rather than claim failure', () => {
-      jest.useFakeTimers();
-      const tour = jest.spyOn(TestBed.inject(HelpTourService), 'start').mockImplementation(() => undefined);
+      vi.useFakeTimers();
+      const tour = vi.spyOn(TestBed.inject(HelpTourService), 'start').mockImplementation(() => undefined);
       const request = new Subject<any>();
       mockPlanningsService.reconcileThrough.mockReturnValue(request as any);
 
       component.confirmReconcileThrough();
       expect(component.reconcileInFlight).toBe(true);
 
-      jest.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
+      vi.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
 
       expect(component.reconcileInFlight).toBe(false);
       expect(toastr.error).toHaveBeenCalledWith('lockRequestUncertain');
@@ -774,7 +776,7 @@ describe('TimePlanningsContainerComponent', () => {
       expect(mockPlanningsService.getPlannings.mock.calls.length).toBe(after);
 
       tour.mockRestore();
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('refuses to commit twice while a request is in flight', () => {
@@ -885,7 +887,7 @@ describe('TimePlanningsContainerComponent', () => {
       // what some other user may do. Read for the RIGHT flag, too: isAdmin still gates
       // the payroll export button in this same toolbar.
       const template = readFileSync(
-        join(__dirname, 'time-plannings-container.component.html'), 'utf8');
+        join(MODULE_ROOT, 'components/plannings/time-plannings-container/time-plannings-container.component.html'), 'utf8');
       const field = /<div[^>]*data-tp-help="toolbar\.reconcileThrough"[^>]*>/.exec(template);
 
       expect(field).not.toBeNull();

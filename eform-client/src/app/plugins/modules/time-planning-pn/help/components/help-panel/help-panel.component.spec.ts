@@ -1,3 +1,4 @@
+import {describe, it, expect, beforeEach, vi} from 'vitest';
 import { SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -10,6 +11,7 @@ import { enUS, enUSUi } from '../../i18n/enUS';
 import { HelpPanelService } from '../../services/help-panel.service';
 import { HelpVisibilityService } from '../../services/help-visibility.service';
 import { HelpPanelComponent } from './help-panel.component';
+import { detectChanges } from '../../../testing/detect-changes';
 
 /**
  * The one dependency the help chrome gained when help became admin-only. A stub
@@ -42,8 +44,7 @@ describe('HelpPanelComponent', () => {
     // The stub is shared by every case here; the gate tests flip it.
     helpVisibility.isVisible = true;
     await TestBed.configureTestingModule({
-      declarations: [HelpPanelComponent],
-      imports: [FormsModule, MatIconModule, MatButtonModule],
+      imports: [HelpPanelComponent, FormsModule, MatIconModule, MatButtonModule],
       providers: [
         HelpPanelService,
         { provide: TranslateService, useValue: { currentLang: 'en-US' } },
@@ -54,7 +55,7 @@ describe('HelpPanelComponent', () => {
     fixture = TestBed.createComponent(HelpPanelComponent);
     component = fixture.componentInstance;
     panel = TestBed.inject(HelpPanelService);
-    fixture.detectChanges();
+    detectChanges(fixture);
   });
 
   it('renders nothing while closed', () => {
@@ -64,7 +65,7 @@ describe('HelpPanelComponent', () => {
 
   it('renders its chrome from the help ui strings, never a translate key', () => {
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const header = fixture.nativeElement.querySelector('.tp-help-panel__top h5') as HTMLElement;
     const input = fixture.nativeElement.querySelector('.tp-help-panel__search input') as HTMLInputElement;
@@ -80,7 +81,7 @@ describe('HelpPanelComponent', () => {
 
   it('browses grouped sections in order when open with no query', () => {
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(panelEl()).not.toBeNull();
     expect(component.isSearching).toBe(false);
@@ -100,7 +101,7 @@ describe('HelpPanelComponent', () => {
   it('groups every entry under its own section', () => {
     component.isAdmin = true;
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     for (const group of component.sections) {
       expect(group.entries.every(entry => entry.section === group.section)).toBe(true);
@@ -110,10 +111,10 @@ describe('HelpPanelComponent', () => {
 
   it('switches to results when a query is typed and back when it is cleared', () => {
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     component.onQueryChange('vacation');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.isSearching).toBe(true);
     expect(component.results.length).toBeGreaterThan(0);
@@ -124,7 +125,7 @@ describe('HelpPanelComponent', () => {
     expect(countText()).not.toContain(enUSUi.noResults);
 
     component.clearQuery();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.isSearching).toBe(false);
     expect(component.results).toEqual([]);
@@ -133,12 +134,12 @@ describe('HelpPanelComponent', () => {
 
   it('drives the query from the search input through ngModel', () => {
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const input = fixture.nativeElement.querySelector('.tp-help-panel__search input') as HTMLInputElement;
     input.value = 'vacation';
     input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.query).toBe('vacation');
     expect(component.isSearching).toBe(true);
@@ -148,7 +149,7 @@ describe('HelpPanelComponent', () => {
   it('treats a whitespace-only query as browsing', () => {
     panel.open();
     component.onQueryChange('   ');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.isSearching).toBe(false);
     expect(sectionHeadings().length).toBe(5);
@@ -157,13 +158,13 @@ describe('HelpPanelComponent', () => {
   it('hides admin-only entries when isAdmin is false, in browse and in results', () => {
     component.isAdmin = false;
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(browsedIds()).not.toContain('toolbar.payrollExport');
     expect(text()).not.toContain(enUS['toolbar.payrollExport'].title);
 
     component.onQueryChange('payroll');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(resultIds().length).toBeGreaterThan(0);
     expect(resultIds()).not.toContain('toolbar.payrollExport');
@@ -173,7 +174,7 @@ describe('HelpPanelComponent', () => {
     component.isAdmin = true;
     panel.open();
     component.onQueryChange('payroll');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(resultIds()).toContain('toolbar.payrollExport');
     expect(text()).toContain(enUS['toolbar.payrollExport'].title);
@@ -181,7 +182,7 @@ describe('HelpPanelComponent', () => {
 
   it('marks and expands the deep-link target', () => {
     panel.open('flex.sumFlex');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.targetId).toBe('flex.sumFlex');
     expect(component.expanded).toBe('flex.sumFlex');
@@ -194,19 +195,19 @@ describe('HelpPanelComponent', () => {
 
   it('expands and collapses an entry on click', () => {
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(text()).not.toContain(enUS['task.registerVacation'].steps?.[0] as string);
 
     component.toggleEntry('task.registerVacation');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const steps = Array.from(fixture.nativeElement.querySelectorAll('.tp-help-entry__steps li'))
       .map(el => ((el as HTMLElement).textContent ?? '').trim());
     expect(steps).toEqual(enUS['task.registerVacation'].steps);
 
     component.toggleEntry('task.registerVacation');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.expanded).toBeNull();
     expect(fixture.nativeElement.querySelector('.tp-help-entry__steps')).toBeNull();
@@ -215,17 +216,17 @@ describe('HelpPanelComponent', () => {
   it('closes through the service and forgets the query', () => {
     panel.open();
     component.onQueryChange('vacation');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     component.close();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(panelEl()).toBeNull();
     expect(component.query).toBe('');
     expect(component.results).toEqual([]);
 
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.isSearching).toBe(false);
     expect(sectionHeadings().length).toBe(5);
@@ -238,10 +239,10 @@ describe('HelpPanelComponent', () => {
     const replays: HelpTourName[] = [];
     component.replayTourRequested.subscribe(tour => replays.push(tour));
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     clickReplay();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(replays).toEqual(['page']);
     expect(panelEl()).toBeNull();
@@ -254,23 +255,23 @@ describe('HelpPanelComponent', () => {
     const replays: HelpTourName[] = [];
     component.replayTourRequested.subscribe(tour => replays.push(tour));
     panel.open('dayCell.save', 'dialog');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     clickReplay();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(replays).toEqual(['dialog']);
   });
 
   it('goes back to the page tour once the panel has closed', () => {
     panel.open('dayCell.save', 'dialog');
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(component.surface).toBe('dialog');
 
     panel.close();
-    fixture.detectChanges();
+    detectChanges(fixture);
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.surface).toBe('page');
   });
@@ -279,7 +280,7 @@ describe('HelpPanelComponent', () => {
     panel.open();
     // 'avatar' appears in exactly one entry's prose.
     component.onQueryChange('avatar');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.results.length).toBe(1);
     expect(enUSUi.resultCountOne).not.toBe(enUSUi.resultCount);
@@ -290,9 +291,9 @@ describe('HelpPanelComponent', () => {
     // `related` is registry data the panel is the only consumer of; unrendered it
     // is dead weight the integrity spec alone keeps honest.
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
     component.toggleEntry('task.registerVacation');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const links = Array.from(
       fixture.nativeElement.querySelectorAll('.tp-help-entry__related-link'),
@@ -306,13 +307,13 @@ describe('HelpPanelComponent', () => {
 
   it('moves the panel to a related control when its link is used', () => {
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
     component.toggleEntry('task.registerVacation');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const first = component.related('task.registerVacation')[0];
     (fixture.nativeElement.querySelector('.tp-help-entry__related-link') as HTMLElement).click();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.expanded).toBe(first);
     expect(component.targetId).toBe(first);
@@ -327,16 +328,16 @@ describe('HelpPanelComponent', () => {
     component.replayTourRequested.subscribe(tour => replays.push(tour));
     // A deep link already expands its target, so there is nothing to toggle.
     panel.open('task.registerVacation', 'dialog');
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(component.expanded).toBe('task.registerVacation');
 
     (fixture.nativeElement.querySelector('.tp-help-entry__related-link') as HTMLElement).click();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.surface).toBe('dialog');
 
     clickReplay();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(replays).toEqual(['dialog']);
   });
@@ -354,7 +355,7 @@ describe('HelpPanelComponent', () => {
   it('names the query and offers the tasks when nothing matches', () => {
     panel.open();
     component.onQueryChange('zzzqqq');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.isSearching).toBe(true);
     expect(component.isFallback).toBe(true);
@@ -370,7 +371,7 @@ describe('HelpPanelComponent', () => {
     component.isAdmin = true;
     panel.open();
     component.onQueryChange('payroll');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const labels = Array.from(fixture.nativeElement.querySelectorAll('.tp-help-entry__kind'))
       .map(el => (el as HTMLElement).getAttribute('aria-label'));
@@ -382,15 +383,15 @@ describe('HelpPanelComponent', () => {
 
   it('closes on Escape, and only while open', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(component.isOpen).toBe(false);
 
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(panelEl()).not.toBeNull();
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(component.isOpen).toBe(false);
     expect(panelEl()).toBeNull();
@@ -404,14 +405,14 @@ describe('HelpPanelComponent', () => {
     // key press reaches the page (from the focused element, bubbling through body)
     // and assert the body listener never sees it.
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
-    const dispatcherStandIn = jest.fn();
+    const dispatcherStandIn = vi.fn();
     document.body.addEventListener('keydown', dispatcherStandIn);
     const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
     document.body.dispatchEvent(event);
     document.body.removeEventListener('keydown', dispatcherStandIn);
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(dispatcherStandIn).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(true);
@@ -422,7 +423,7 @@ describe('HelpPanelComponent', () => {
   it('lets Escape through to the page once the panel has closed', () => {
     // The shield must not outlive the panel, or Escape would stop closing the
     // day-cell dialog at all.
-    const dispatcherStandIn = jest.fn();
+    const dispatcherStandIn = vi.fn();
     document.body.addEventListener('keydown', dispatcherStandIn);
     document.body.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
@@ -433,14 +434,14 @@ describe('HelpPanelComponent', () => {
 
   it('leaves other keys alone while open', () => {
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
-    const dispatcherStandIn = jest.fn();
+    const dispatcherStandIn = vi.fn();
     document.body.addEventListener('keydown', dispatcherStandIn);
     document.body.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'a', bubbles: true, cancelable: true }));
     document.body.removeEventListener('keydown', dispatcherStandIn);
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(dispatcherStandIn).toHaveBeenCalledTimes(1);
     expect(component.isOpen).toBe(true);
@@ -449,14 +450,14 @@ describe('HelpPanelComponent', () => {
   it('rebuilds what isAdmin filters when it arrives after opening', () => {
     panel.open();
     component.onQueryChange('payroll');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(browsedIds()).not.toContain('toolbar.payrollExport');
     expect(resultIds()).not.toContain('toolbar.payrollExport');
 
     component.isAdmin = true;
     component.ngOnChanges({ isAdmin: new SimpleChange(false, true, false) });
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(browsedIds()).toContain('toolbar.payrollExport');
     expect(resultIds()).toContain('toolbar.payrollExport');
@@ -466,7 +467,7 @@ describe('HelpPanelComponent', () => {
     // Both guards, on their false side. ngOnChanges fires once at creation with
     // firstChange true, before the panel has ever opened; rebuilding then would
     // hand *ngFor a fresh array on every open and drop focus and scroll position.
-    const rebuild = jest.spyOn(component as any, 'buildSections');
+    const rebuild = vi.spyOn(component as any, 'buildSections');
 
     component.isAdmin = true;
     component.ngOnChanges({ isAdmin: new SimpleChange(undefined, true, true) });
@@ -479,7 +480,7 @@ describe('HelpPanelComponent', () => {
     // A change that is neither of those does rebuild, so the test above is not
     // passing because buildSections is unreachable.
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
     rebuild.mockClear();
     component.ngOnChanges({ isAdmin: new SimpleChange(false, true, false) });
     expect(rebuild).toHaveBeenCalled();
@@ -503,27 +504,27 @@ describe('HelpPanelComponent', () => {
     helpVisibility.isVisible = false;
 
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(component.isOpen).toBe(false);
     expect(panelEl()).toBeNull();
 
     panel.open('flex.sumFlex' as HelpEntryId);
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(panelEl()).toBeNull();
 
     // And the markup is gated too, so isOpen being set by any other route than
     // the service — a refactor, a test, a subclass — still renders nothing.
     component.isOpen = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(panelEl()).toBeNull();
     component.isOpen = false;
 
     // An admin opens it exactly as before.
     helpVisibility.isVisible = true;
     panel.close();
-    fixture.detectChanges();
+    detectChanges(fixture);
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(component.isOpen).toBe(true);
     expect(panelEl()).not.toBeNull();
   });

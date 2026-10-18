@@ -1,17 +1,19 @@
+import {describe, it, expect, beforeEach, vi} from 'vitest';
+import type {Mocked} from 'vitest';
 import { TimePlanningPnBreakPoliciesService } from './time-planning-pn-break-policies.service';
 import { ApiBaseService } from 'src/app/common/services';
 import { of } from 'rxjs';
 
 describe('TimePlanningPnBreakPoliciesService', () => {
   let service: TimePlanningPnBreakPoliciesService;
-  let mockApiBaseService: jest.Mocked<ApiBaseService>;
+  let mockApiBaseService: Mocked<ApiBaseService>;
 
   beforeEach(() => {
     mockApiBaseService = {
-      get: jest.fn(),
-      post: jest.fn(),
-      put: jest.fn(),
-      delete: jest.fn(),
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn(),
     } as any;
 
     service = new TimePlanningPnBreakPoliciesService(mockApiBaseService);
@@ -22,7 +24,7 @@ describe('TimePlanningPnBreakPoliciesService', () => {
   });
 
   describe('getBreakPolicies', () => {
-    it('should call apiBaseService.get with correct parameters', (done) => {
+    it('should call apiBaseService.get with correct parameters', () => new Promise<void>((done) => {
       const mockRequest = {
         offset: 0,
         pageSize: 10,
@@ -39,9 +41,9 @@ describe('TimePlanningPnBreakPoliciesService', () => {
         'api/time-planning-pn/break-policies',
         { offset: '0', pageSize: '10' }
       );
-    });
+    }));
 
-    it('should handle pagination', (done) => {
+    it('should handle pagination', () => new Promise<void>((done) => {
       const mockRequest = {
         offset: 20,
         pageSize: 50,
@@ -58,11 +60,11 @@ describe('TimePlanningPnBreakPoliciesService', () => {
         'api/time-planning-pn/break-policies',
         { offset: '20', pageSize: '50' }
       );
-    });
+    }));
   });
 
   describe('getBreakPolicy', () => {
-    it('should call apiBaseService.get with correct id', (done) => {
+    it('should call apiBaseService.get with correct id', () => new Promise<void>((done) => {
       const mockId = 123;
       const mockResponse = { 
         success: true, 
@@ -78,11 +80,11 @@ describe('TimePlanningPnBreakPoliciesService', () => {
       expect(mockApiBaseService.get).toHaveBeenCalledWith(
         'api/time-planning-pn/break-policies/123'
       );
-    });
+    }));
   });
 
   describe('createBreakPolicy', () => {
-    it('should call apiBaseService.post with correct parameters', (done) => {
+    it('should call apiBaseService.post with correct parameters', () => new Promise<void>((done) => {
       const mockModel = {
         name: 'New Policy',
         breakPolicyRules: []
@@ -99,11 +101,11 @@ describe('TimePlanningPnBreakPoliciesService', () => {
         'api/time-planning-pn/break-policies',
         mockModel
       );
-    });
+    }));
   });
 
   describe('updateBreakPolicy', () => {
-    it('should call apiBaseService.put with correct parameters', (done) => {
+    it('should call apiBaseService.put with correct parameters', () => new Promise<void>((done) => {
       const mockModel = {
         name: 'Updated Policy',
         breakPolicyRules: []
@@ -120,7 +122,7 @@ describe('TimePlanningPnBreakPoliciesService', () => {
         'api/time-planning-pn/break-policies/123',
         mockModel
       );
-    });
+    }));
 
     it('should construct correct URL with id parameter', () => {
       const mockModel = { name: 'Test', breakPolicyRules: [] };
@@ -137,7 +139,7 @@ describe('TimePlanningPnBreakPoliciesService', () => {
   });
 
   describe('deleteBreakPolicy', () => {
-    it('should call apiBaseService.delete with correct id', (done) => {
+    it('should call apiBaseService.delete with correct id', () => new Promise<void>((done) => {
       const mockId = 123;
       const mockResponse = { success: true };
       mockApiBaseService.delete.mockReturnValue(of(mockResponse as any));
@@ -150,7 +152,7 @@ describe('TimePlanningPnBreakPoliciesService', () => {
       expect(mockApiBaseService.delete).toHaveBeenCalledWith(
         'api/time-planning-pn/break-policies/123'
       );
-    });
+    }));
 
     it('should handle different id values', () => {
       const mockResponse = { success: true };

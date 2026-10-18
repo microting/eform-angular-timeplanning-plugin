@@ -1,5 +1,8 @@
+import {describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi} from 'vitest';
+import type {Mocked, Mock} from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { MODULE_ROOT } from '../../../../testing/source-paths';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WorkdayEntityDialogComponent } from './workday-entity-dialog.component';
 import { LOCK_REQUEST_TIMEOUT_MS } from '../../day-lock.util';
@@ -9,7 +12,6 @@ import { TimePlanningPnPlanningsService, TimePlanningPnGpsCoordinatesService, Ti
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe, CommonModule } from '@angular/common';
 import { EMPTY, of, Subject, throwError } from 'rxjs';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
@@ -23,14 +25,14 @@ import { ToastrService } from 'ngx-toastr';
 describe('WorkdayEntityDialogComponent', () => {
   let component: WorkdayEntityDialogComponent;
   let fixture: ComponentFixture<WorkdayEntityDialogComponent>;
-  let mockPlanningsService: jest.Mocked<TimePlanningPnPlanningsService>;
-  let mockTranslateService: jest.Mocked<TranslateService>;
-  let mockGpsCoordinatesService: jest.Mocked<TimePlanningPnGpsCoordinatesService>;
-  let mockPictureSnapshotsService: jest.Mocked<TimePlanningPnPictureSnapshotsService>;
-  let mockDomSanitizer: jest.Mocked<DomSanitizer>;
-  let mockTemplateFilesService: jest.Mocked<TemplateFilesService>;
-  let mockDialogRef: jest.Mocked<MatDialogRef<WorkdayEntityDialogComponent>>;
-  let mockToastrService: jest.Mocked<ToastrService>;
+  let mockPlanningsService: Mocked<TimePlanningPnPlanningsService>;
+  let mockTranslateService: Mocked<TranslateService>;
+  let mockGpsCoordinatesService: Mocked<TimePlanningPnGpsCoordinatesService>;
+  let mockPictureSnapshotsService: Mocked<TimePlanningPnPictureSnapshotsService>;
+  let mockDomSanitizer: Mocked<DomSanitizer>;
+  let mockTemplateFilesService: Mocked<TemplateFilesService>;
+  let mockDialogRef: Mocked<MatDialogRef<WorkdayEntityDialogComponent>>;
+  let mockToastrService: Mocked<ToastrService>;
 
   const mockData = {
     planningPrDayModels: {
@@ -102,33 +104,33 @@ describe('WorkdayEntityDialogComponent', () => {
 
   beforeEach(async () => {
     mockPlanningsService = {
-      updatePlanning: jest.fn(),
-      reconcileDay: jest.fn(),
-      unreconcileDay: jest.fn(),
+      updatePlanning: vi.fn(),
+      reconcileDay: vi.fn(),
+      unreconcileDay: vi.fn(),
     } as any;
     mockTranslateService = {
-      instant: jest.fn(),
-      stream: jest.fn(),
+      instant: vi.fn(),
+      stream: vi.fn(),
       onLangChange: of({ lang: 'en' }),
     } as any;
     mockGpsCoordinatesService = {
-      getByPlanRegistrationId: jest.fn().mockReturnValue(of({ success: false, model: null })),
+      getByPlanRegistrationId: vi.fn().mockReturnValue(of({ success: false, model: null })),
     } as any;
     mockPictureSnapshotsService = {
-      getByPlanRegistrationId: jest.fn().mockReturnValue(of({ success: false, model: null })),
+      getByPlanRegistrationId: vi.fn().mockReturnValue(of({ success: false, model: null })),
     } as any;
     mockDomSanitizer = {
-      bypassSecurityTrustResourceUrl: jest.fn().mockImplementation((url) => url),
+      bypassSecurityTrustResourceUrl: vi.fn().mockImplementation((url) => url),
     } as any;
     mockTemplateFilesService = {
-      getImage: jest.fn().mockReturnValue(of(new Blob())),
+      getImage: vi.fn().mockReturnValue(of(new Blob())),
     } as any;
     mockToastrService = {
-      error: jest.fn(),
-      success: jest.fn(),
+      error: vi.fn(),
+      success: vi.fn(),
     } as any;
     mockDialogRef = {
-      close: jest.fn(),
+      close: vi.fn(),
       // The reconcile/unlock PUTs flip this while they are in flight, so it has to
       // start as the real MatDialogRef default rather than undefined.
       disableClose: false,
@@ -144,9 +146,7 @@ describe('WorkdayEntityDialogComponent', () => {
     mockTranslateService.stream.mockReturnValue(of('Translated'));
 
     await TestBed.configureTestingModule({
-      declarations: [WorkdayEntityDialogComponent],
-      imports: [CommonModule, ReactiveFormsModule, TranslateModule.forRoot()],
-      schemas: [NO_ERRORS_SCHEMA],
+      imports: [WorkdayEntityDialogComponent, CommonModule, ReactiveFormsModule, TranslateModule.forRoot()],
       providers: [
         FormBuilder,
         DatePipe,
@@ -218,21 +218,21 @@ describe('WorkdayEntityDialogComponent', () => {
     });
 
     it('offers the dialog tour with the real audience flags, not hardcoded falses', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       localStorage.removeItem(TOUR_STORAGE_KEY);
       const tour = TestBed.inject(HelpTourService);
-      const start = jest.spyOn(tour, 'start').mockImplementation(() => undefined);
+      const start = vi.spyOn(tour, 'start').mockImplementation(() => undefined);
 
       component.isAdmin = true;
       component.isFirstUser = true;
       (component as any).startDialogTourOnce();
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       // Both axes, so a later entry gated on either is judged by the right one.
       expect(start).toHaveBeenCalledWith('dialog', { isAdmin: true, isFirstUser: true });
 
       start.mockRestore();
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 
@@ -953,8 +953,8 @@ describe('WorkdayEntityDialogComponent', () => {
         // Timing out aborts the request from this end, but the server may commit a
         // moment later, so the day's state is UNKNOWN rather than unchanged.
         const tour = TestBed.inject(HelpTourService);
-        const start = jest.spyOn(tour, 'start').mockImplementation(() => undefined);
-        jest.useFakeTimers();
+        const start = vi.spyOn(tour, 'start').mockImplementation(() => undefined);
+        vi.useFakeTimers();
         const put = new Subject<any>();
         mockPlanningsService.reconcileDay.mockReturnValue(put.asObservable());
         armReconcile();
@@ -963,7 +963,7 @@ describe('WorkdayEntityDialogComponent', () => {
         expect(component.lockRequestInFlight).toBe(true);
         expect(mockDialogRef.disableClose).toBe(true);
 
-        jest.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
+        vi.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
 
         // Settled and usable again...
         expect(component.lockRequestInFlight).toBe(false);
@@ -984,7 +984,7 @@ describe('WorkdayEntityDialogComponent', () => {
         expect(component.lockStateChanged).toBe(true);
         expect(mockDialogRef.close).not.toHaveBeenCalled();
 
-        jest.useRealTimers();
+        vi.useRealTimers();
         start.mockRestore();
       });
 
@@ -1046,7 +1046,7 @@ describe('WorkdayEntityDialogComponent', () => {
         armUnlock();
         component.unlockWordCtrl.setValue('LÅS OP');
         let disableCloseAtClose: boolean | undefined;
-        (mockDialogRef.close as jest.Mock)
+        (mockDialogRef.close as Mock)
           .mockImplementation(() => { disableCloseAtClose = mockDialogRef.disableClose; });
 
         component.onUnlockConfirm();
@@ -1215,7 +1215,7 @@ describe('WorkdayEntityDialogComponent', () => {
       // so the structural invariants of the footer are read off the file. The
       // Playwright specs in shard `s` exercise the rendered version.
       const template = readFileSync(
-        join(__dirname, 'workday-entity-dialog.component.html'), 'utf8');
+        join(MODULE_ROOT, 'components/plannings/time-planning-actions/workday-entity/workday-entity-dialog.component.html'), 'utf8');
 
       const buttonWithId = (id: string): string => {
         const match = new RegExp(`<button[^>]*\\bid="${id}"[^>]*>`).exec(template);

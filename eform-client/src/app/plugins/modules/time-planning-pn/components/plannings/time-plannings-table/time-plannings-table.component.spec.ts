@@ -1,5 +1,8 @@
+import {describe, it, expect, beforeEach, vi} from 'vitest';
+import type {Mocked, Mock} from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { MODULE_ROOT } from '../../../testing/source-paths';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TimePlanningsTableComponent } from './time-plannings-table.component';
 import { TimePlanningPnPlanningsService } from '../../../services/time-planning-pn-plannings.service';
@@ -7,7 +10,7 @@ import { TimePlanningPnSettingsService } from '../../../services/time-planning-p
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectorRef, NO_ERRORS_SCHEMA } from '@angular/core';
+import { ChangeDetectorRef } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { selectCurrentUserIsFirstUser } from 'src/app/state';
 import { BehaviorSubject, of } from 'rxjs';
@@ -22,31 +25,31 @@ registerTestLocales();
 describe('TimePlanningsTableComponent', () => {
   let component: TimePlanningsTableComponent;
   let fixture: ComponentFixture<TimePlanningsTableComponent>;
-  let mockPlanningsService: jest.Mocked<TimePlanningPnPlanningsService>;
-  let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
-  let mockDialog: jest.Mocked<MatDialog>;
-  let mockTranslateService: jest.Mocked<TranslateService>;
-  let mockStore: jest.Mocked<Store>;
+  let mockPlanningsService: Mocked<TimePlanningPnPlanningsService>;
+  let mockSettingsService: Mocked<TimePlanningPnSettingsService>;
+  let mockDialog: Mocked<MatDialog>;
+  let mockTranslateService: Mocked<TranslateService>;
+  let mockStore: Mocked<Store>;
 
   beforeEach(async () => {
     mockPlanningsService = {
-      getPlannings: jest.fn(),
-      updatePlanning: jest.fn(),
+      getPlannings: vi.fn(),
+      updatePlanning: vi.fn(),
     } as any;
     mockSettingsService = {
-      getAssignedSite: jest.fn(),
-      updateAssignedSite: jest.fn(),
+      getAssignedSite: vi.fn(),
+      updateAssignedSite: vi.fn(),
     } as any;
     mockDialog = {
-      open: jest.fn(),
+      open: vi.fn(),
     } as any;
     mockTranslateService = {
-      stream: jest.fn(),
-      instant: jest.fn(),
+      stream: vi.fn(),
+      instant: vi.fn(),
       onLangChange: of({ lang: 'en' }),
     } as any;
     mockStore = {
-      select: jest.fn(),
+      select: vi.fn(),
     } as any;
 
     mockStore.select.mockReturnValue(of(true));
@@ -54,9 +57,7 @@ describe('TimePlanningsTableComponent', () => {
     mockTranslateService.instant.mockReturnValue('Translated');
 
     await TestBed.configureTestingModule({
-      declarations: [TimePlanningsTableComponent],
-      imports: [TranslateModule.forRoot()],
-      schemas: [NO_ERRORS_SCHEMA],
+      imports: [TimePlanningsTableComponent, TranslateModule.forRoot()],
       providers: [
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },
         { provide: TimePlanningPnSettingsService, useValue: mockSettingsService },
@@ -410,11 +411,11 @@ describe('TimePlanningsTableComponent', () => {
       }
     });
 
-    const dialogData = () => (mockDialog.open as jest.Mock).mock.calls[0][1].data;
+    const dialogData = () => (mockDialog.open as Mock).mock.calls[0][1].data;
 
     beforeEach(() => {
       mockSettingsService.getAssignedSite.mockReturnValue(of({ success: true, model: {} }) as any);
-      (mockDialog.open as jest.Mock).mockReturnValue({ afterClosed: () => of(undefined) } as any);
+      (mockDialog.open as Mock).mockReturnValue({ afterClosed: () => of(undefined) } as any);
     });
 
     it('does not open a placeholder day, which has no registration behind it', () => {
@@ -459,14 +460,14 @@ describe('TimePlanningsTableComponent', () => {
     describe('the close contract after a reconcile or unlock', () => {
       /** A dialog that closed with `payload`, having reported `lockStateChanged`. */
       const dialogThatClosed = (lockStateChanged: boolean, payload: any) => {
-        (mockDialog.open as jest.Mock).mockReturnValue({
+        (mockDialog.open as Mock).mockReturnValue({
           componentInstance: { lockStateChanged },
           afterClosed: () => of(payload),
         } as any);
       };
 
       it('reloads the grid and sends no save when the dialog reconciled the day', () => {
-        const changed = jest.fn();
+        const changed = vi.fn();
         component.timePlanningChanged.subscribe(changed);
         // A reconcile can close through Cancel, Esc or the backdrop, so the close
         // payload proves nothing either way; lockStateChanged is what decides.
@@ -546,7 +547,7 @@ describe('TimePlanningsTableComponent', () => {
 
     it('should format time correctly when on same day', () => {
       // This test depends on the DatePipe transform which we've mocked
-      jest.spyOn(component['datePipe'], 'transform').mockReturnValue('10:30');
+      vi.spyOn(component['datePipe'], 'transform').mockReturnValue('10:30');
       const result = component.getStopTimeDisplay('2024-01-15T08:00:00', '2024-01-15T10:30:00');
       expect(result).toBe('10:30');
     });
@@ -564,7 +565,7 @@ describe('TimePlanningsTableComponent', () => {
     });
 
     it("uses HH:mm format when row.useOneMinuteIntervals is false", () => {
-      const transformSpy = jest
+      const transformSpy = vi
         .spyOn(component['datePipe'], 'transform')
         .mockReturnValue('07:03');
       const result = component.formatStamp(
@@ -576,7 +577,7 @@ describe('TimePlanningsTableComponent', () => {
     });
 
     it("uses HH:mm format when row.useOneMinuteIntervals is true", () => {
-      const transformSpy = jest
+      const transformSpy = vi
         .spyOn(component['datePipe'], 'transform')
         .mockReturnValue('07:03');
       const result = component.formatStamp(
@@ -588,7 +589,7 @@ describe('TimePlanningsTableComponent', () => {
     });
 
     it("falls back to HH:mm when row is null/undefined (defensive)", () => {
-      const transformSpy = jest
+      const transformSpy = vi
         .spyOn(component['datePipe'], 'transform')
         .mockReturnValue('07:03');
       const result = component.formatStamp(null as any, '2026-05-15T07:03:53Z');
@@ -618,7 +619,7 @@ describe('TimePlanningsTableComponent', () => {
     });
 
     it("uses HH:mm format when flag off (legacy parity)", () => {
-      const transformSpy = jest
+      const transformSpy = vi
         .spyOn(component['datePipe'], 'transform')
         .mockReturnValue('15:30');
       const result = component.getStopTimeDisplayWithSeconds(
@@ -631,7 +632,7 @@ describe('TimePlanningsTableComponent', () => {
     });
 
     it("uses HH:mm format when flag on", () => {
-      const transformSpy = jest
+      const transformSpy = vi
         .spyOn(component['datePipe'], 'transform')
         .mockReturnValue('15:30');
       const result = component.getStopTimeDisplayWithSeconds(
@@ -646,7 +647,7 @@ describe('TimePlanningsTableComponent', () => {
 
   describe('formatDuration', () => {
     beforeEach(() => {
-      jest
+      vi
         .spyOn(component['translateService'], 'instant')
         .mockImplementation((key: string) => key);
     });
@@ -709,7 +710,7 @@ describe('TimePlanningsTableComponent', () => {
    * view.
    */
   const stubHeaderFlush = (target: any) => {
-    target.cdr = { detectChanges: jest.fn() };
+    target.cdr = { detectChanges: vi.fn() };
   };
 
   /**
@@ -734,8 +735,8 @@ describe('TimePlanningsTableComponent', () => {
    * would silently widen a previewed scope.
    */
   describe('row selection', () => {
-    const changed = jest.fn();
-    const reset = jest.fn();
+    const changed = vi.fn();
+    const reset = vi.fn();
 
     beforeEach(() => {
       changed.mockClear();
@@ -927,7 +928,7 @@ describe('TimePlanningsTableComponent', () => {
       // binding is read off the file — and read for the RIGHT flag: isAdmin still
       // gates unrelated chrome in this same template.
       const template = readFileSync(
-        join(__dirname, 'time-plannings-table.component.html'), 'utf8');
+        join(MODULE_ROOT, 'components/plannings/time-plannings-table/time-plannings-table.component.html'), 'utf8');
 
       expect(template).toContain('[rowSelectable]="isFirstUser"');
     });

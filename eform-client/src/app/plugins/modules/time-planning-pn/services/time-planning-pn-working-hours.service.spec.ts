@@ -1,3 +1,5 @@
+import {describe, it, expect, beforeEach, afterEach, vi} from 'vitest';
+import type {Mocked} from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TimePlanningPnWorkingHoursService } from './time-planning-pn-working-hours.service';
@@ -6,15 +8,15 @@ import { of } from 'rxjs';
 
 describe('TimePlanningPnWorkingHoursService', () => {
   let service: TimePlanningPnWorkingHoursService;
-  let mockApiBaseService: jest.Mocked<ApiBaseService>;
+  let mockApiBaseService: Mocked<ApiBaseService>;
   let httpTestingController: HttpTestingController;
 
   beforeEach(() => {
     mockApiBaseService = {
-      get: jest.fn(),
-      post: jest.fn(),
-      put: jest.fn(),
-      getBlobData: jest.fn().mockReturnValue(of(new Blob())),
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      getBlobData: vi.fn().mockReturnValue(of(new Blob())),
     } as any;
 
     TestBed.configureTestingModule({

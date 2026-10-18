@@ -1,16 +1,18 @@
+import {describe, it, expect, beforeEach, vi} from 'vitest';
+import type {Mocked} from 'vitest';
 import { TimePlanningPnPlanningsService } from './time-planning-pn-plannings.service';
 import { ApiBaseService } from 'src/app/common/services';
 import { of } from 'rxjs';
 
 describe('TimePlanningPnPlanningsService', () => {
   let service: TimePlanningPnPlanningsService;
-  let mockApiBaseService: jest.Mocked<ApiBaseService>;
+  let mockApiBaseService: Mocked<ApiBaseService>;
 
   beforeEach(() => {
     mockApiBaseService = {
-      post: jest.fn(),
-      put: jest.fn(),
-      get: jest.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      get: vi.fn(),
     } as any;
 
     service = new TimePlanningPnPlanningsService(mockApiBaseService);
@@ -21,7 +23,7 @@ describe('TimePlanningPnPlanningsService', () => {
   });
 
   describe('getPlannings', () => {
-    it('should call apiBaseService.post with correct parameters', (done) => {
+    it('should call apiBaseService.post with correct parameters', () => new Promise<void>((done) => {
       const mockRequest = {
         dateFrom: '2024-01-01',
         dateTo: '2024-01-07',
@@ -42,9 +44,9 @@ describe('TimePlanningPnPlanningsService', () => {
         'api/time-planning-pn/plannings/index',
         mockRequest
       );
-    });
+    }));
 
-    it('should handle empty response', (done) => {
+    it('should handle empty response', () => new Promise<void>((done) => {
       const mockRequest = {
         dateFrom: '2024-01-01',
         dateTo: '2024-01-07',
@@ -60,11 +62,11 @@ describe('TimePlanningPnPlanningsService', () => {
         expect(result.model).toEqual([]);
         done();
       });
-    });
+    }));
   });
 
   describe('updatePlanning', () => {
-    it('should call apiBaseService.put with correct parameters', (done) => {
+    it('should call apiBaseService.put with correct parameters', () => new Promise<void>((done) => {
       const mockPlanningModel = {
         id: 123,
         planHours: 8,
@@ -83,7 +85,7 @@ describe('TimePlanningPnPlanningsService', () => {
         'api/time-planning-pn/plannings/123',
         mockPlanningModel
       );
-    });
+    }));
 
     it('should construct correct URL with id parameter', () => {
       const mockPlanningModel = { id: 456 } as any;

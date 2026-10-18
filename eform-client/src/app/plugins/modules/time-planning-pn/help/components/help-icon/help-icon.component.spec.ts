@@ -1,3 +1,4 @@
+import {describe, it, expect, beforeEach} from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CloseScrollStrategy, OverlayModule } from '@angular/cdk/overlay';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -8,6 +9,8 @@ import { HelpIconComponent } from './help-icon.component';
 import { of } from 'rxjs';
 import { enUS } from '../../i18n/enUS';
 import { HelpVisibilityService } from '../../services/help-visibility.service';
+import { detectChanges } from '../../../testing/detect-changes';
+import { useWorkingMutationObserver } from '../../../testing/mutation-observer';
 
 /**
  * The one dependency the help chrome gained when help became admin-only. A stub
@@ -20,14 +23,15 @@ const provideHelpVisibility = { provide: HelpVisibilityService, useValue: helpVi
 
 
 describe('HelpIconComponent', () => {
+  useWorkingMutationObserver();
+
   let fixture: ComponentFixture<HelpIconComponent>;
 
   beforeEach(async () => {
     // The stub is shared by every case here; the gate tests flip it.
     helpVisibility.isVisible = true;
     await TestBed.configureTestingModule({
-      declarations: [HelpIconComponent],
-      imports: [OverlayModule, NoopAnimationsModule, MatIconModule, MatButtonModule],
+      imports: [HelpIconComponent, OverlayModule, NoopAnimationsModule, MatIconModule, MatButtonModule],
       providers: [
         { provide: TranslateService, useValue: { currentLang: 'en-US' } },
         provideHelpVisibility,
@@ -36,7 +40,7 @@ describe('HelpIconComponent', () => {
 
     fixture = TestBed.createComponent(HelpIconComponent);
     fixture.componentInstance.helpId = 'toolbar.dateRange';
-    fixture.detectChanges();
+    detectChanges(fixture);
   });
 
   it('labels the button with the entry title', () => {
@@ -47,7 +51,7 @@ describe('HelpIconComponent', () => {
   it('starts closed and opens on click', () => {
     expect(fixture.componentInstance.isOpen).toBe(false);
     fixture.nativeElement.querySelector('button').click();
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.componentInstance.isOpen).toBe(true);
   });
 
@@ -62,11 +66,11 @@ describe('HelpIconComponent', () => {
 
   it('closes on Escape', () => {
     fixture.componentInstance.isOpen = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(document.querySelector('.tp-help-popover')).not.toBeNull();
 
     press('Escape');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.isOpen).toBe(false);
     expect(document.querySelector('.tp-help-popover')).toBeNull();
@@ -74,10 +78,10 @@ describe('HelpIconComponent', () => {
 
   it('ignores other keys', () => {
     fixture.componentInstance.isOpen = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     press('a');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.isOpen).toBe(true);
     expect(document.querySelector('.tp-help-popover')).not.toBeNull();
@@ -87,12 +91,12 @@ describe('HelpIconComponent', () => {
     const seen: string[] = [];
     fixture.componentInstance.openInPanel.subscribe(id => seen.push(id));
     fixture.componentInstance.isOpen = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const more = document.querySelector('.tp-help-popover__more') as HTMLButtonElement;
     expect(more).not.toBeNull();
     more.click();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(seen).toEqual(['toolbar.dateRange']);
     expect(fixture.componentInstance.isOpen).toBe(false);
@@ -100,7 +104,7 @@ describe('HelpIconComponent', () => {
 
   it('closes when a click lands outside the popover, without a backdrop to swallow it', () => {
     fixture.componentInstance.isOpen = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     // No backdrop means the same click that dismisses the popover reaches the
     // control underneath - on this page every day cell is a click target.
@@ -109,7 +113,7 @@ describe('HelpIconComponent', () => {
     const outside = document.createElement('button');
     document.body.appendChild(outside);
     outside.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    fixture.detectChanges();
+    detectChanges(fixture);
     outside.remove();
 
     expect(fixture.componentInstance.isOpen).toBe(false);
@@ -117,18 +121,18 @@ describe('HelpIconComponent', () => {
 
   it('stays open when the click lands inside the popover', () => {
     fixture.componentInstance.isOpen = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const body = document.querySelector('.tp-help-popover__body') as HTMLElement;
     body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.isOpen).toBe(true);
   });
 
   it('describes the popover as a note, not a modal dialog it does not implement', () => {
     fixture.componentInstance.isOpen = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const popover = document.querySelector('.tp-help-popover');
     expect(popover).not.toBeNull();
@@ -144,13 +148,13 @@ describe('HelpIconComponent', () => {
 
   it('dismisses on scroll', () => {
     fixture.componentInstance.isOpen = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(document.querySelector('.tp-help-popover')).not.toBeNull();
 
     // ScrollDispatcher listens for 'scroll' on the document and pushes through
     // its scrolled() stream, which the close strategy is subscribed to.
     document.dispatchEvent(new Event('scroll'));
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.componentInstance.isOpen).toBe(false);
     expect(document.querySelector('.tp-help-popover')).toBeNull();
@@ -159,7 +163,7 @@ describe('HelpIconComponent', () => {
   it('renders nothing for an unknown id rather than throwing', () => {
     const other = TestBed.createComponent(HelpIconComponent);
     other.componentInstance.helpId = 'nope' as never;
-    expect(() => other.detectChanges()).not.toThrow();
+    expect(() => detectChanges(other)).not.toThrow();
     expect(other.nativeElement.querySelector('button')).toBeNull();
   });
 
@@ -169,7 +173,7 @@ describe('HelpIconComponent', () => {
     // forced — no popover either.
     helpVisibility.isVisible = false;
     fixture.componentInstance.isOpen = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.nativeElement.querySelector('button')).toBeNull();
     expect(document.querySelector('.tp-help-popover')).toBeNull();
@@ -177,7 +181,7 @@ describe('HelpIconComponent', () => {
     // And an admin still gets all of it. Without this half, the assertions above
     // would pass just as well if the component had been deleted.
     helpVisibility.isVisible = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(fixture.nativeElement.querySelector('button')).not.toBeNull();
     expect(document.querySelector('.tp-help-popover')).not.toBeNull();

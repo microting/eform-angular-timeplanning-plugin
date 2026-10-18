@@ -30,8 +30,8 @@ import localeUk from '@angular/common/locales/uk';
  * The locale data the running app registers, for a test bed.
  *
  * In production `src/main.ts` registers exactly this set before bootstrap, so
- * every DatePipe call in the plugin can format in the user's language. A Jest
- * bed never runs main.ts, and the host's `src/setup-jest.ts` (which is the only
+ * every DatePipe call in the plugin can format in the user's language. A test
+ * bed never runs main.ts, and the host's `src/test-setup.ts` (which is the only
  * truly global hook, and lives in eform-angular-frontend, not here) does not
  * register any of it — so a pipe asked for a non-English locale throws
  * NG0701 "Missing locale data". Angular resolves plain `en` from its built-in

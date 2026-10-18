@@ -1,3 +1,5 @@
+import {describe, it, expect, beforeEach, vi} from 'vitest';
+import type {Mocked} from 'vitest';
 import { TimePlanningPnAbsenceRequestsService } from './time-planning-pn-absence-requests.service';
 import { ApiBaseService } from 'src/app/common/services';
 import { of } from 'rxjs';
@@ -5,12 +7,12 @@ import { AbsenceRequestModel, AbsenceRequestDecisionModel } from '../models';
 
 describe('TimePlanningPnAbsenceRequestsService', () => {
   let service: TimePlanningPnAbsenceRequestsService;
-  let mockApiBaseService: jest.Mocked<ApiBaseService>;
+  let mockApiBaseService: Mocked<ApiBaseService>;
 
   beforeEach(() => {
     mockApiBaseService = {
-      post: jest.fn(),
-      get: jest.fn(),
+      post: vi.fn(),
+      get: vi.fn(),
     } as any;
 
     service = new TimePlanningPnAbsenceRequestsService(mockApiBaseService);
@@ -21,7 +23,7 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
   });
 
   describe('getInbox', () => {
-    it('should call apiBaseService.get with correct parameters', (done) => {
+    it('should call apiBaseService.get with correct parameters', () => new Promise<void>((done) => {
       const managerSdkSitId = 1;
       const mockResponse = { success: true, model: [] as AbsenceRequestModel[] };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
@@ -35,9 +37,9 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
         'api/time-planning-pn/absence-requests/inbox',
         { managerSdkSitId }
       );
-    });
+    }));
 
-    it('should handle empty response', (done) => {
+    it('should handle empty response', () => new Promise<void>((done) => {
       const managerSdkSitId = 1;
       const mockResponse = { success: true, model: [] as AbsenceRequestModel[] };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
@@ -46,11 +48,11 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
         expect(result.model).toEqual([]);
         done();
       });
-    });
+    }));
   });
 
   describe('getMine', () => {
-    it('should call apiBaseService.get with correct parameters', (done) => {
+    it('should call apiBaseService.get with correct parameters', () => new Promise<void>((done) => {
       const requestedBySdkSitId = 2;
       const mockResponse = { success: true, model: [] as AbsenceRequestModel[] };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
@@ -64,11 +66,11 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
         'api/time-planning-pn/absence-requests/mine',
         { requestedBySdkSitId }
       );
-    });
+    }));
   });
 
   describe('approve', () => {
-    it('should call apiBaseService.post with correct parameters', (done) => {
+    it('should call apiBaseService.post with correct parameters', () => new Promise<void>((done) => {
       const requestId = 123;
       const decisionModel: AbsenceRequestDecisionModel = {
         managerSdkSitId: 1,
@@ -86,7 +88,7 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
         'api/time-planning-pn/absence-requests/123/approve',
         decisionModel
       );
-    });
+    }));
 
     it('should construct correct URL with id parameter', () => {
       const requestId = 456;
@@ -106,7 +108,7 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
   });
 
   describe('reject', () => {
-    it('should call apiBaseService.post with correct parameters', (done) => {
+    it('should call apiBaseService.post with correct parameters', () => new Promise<void>((done) => {
       const requestId = 789;
       const decisionModel: AbsenceRequestDecisionModel = {
         managerSdkSitId: 1,
@@ -124,9 +126,9 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
         'api/time-planning-pn/absence-requests/789/reject',
         decisionModel
       );
-    });
+    }));
 
-    it('should handle rejection without comment', (done) => {
+    it('should handle rejection without comment', () => new Promise<void>((done) => {
       const requestId = 111;
       const decisionModel: AbsenceRequestDecisionModel = {
         managerSdkSitId: 1
@@ -143,6 +145,6 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
         'api/time-planning-pn/absence-requests/111/reject',
         decisionModel
       );
-    });
+    }));
   });
 });

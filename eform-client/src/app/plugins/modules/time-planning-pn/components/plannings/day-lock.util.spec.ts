@@ -1,3 +1,4 @@
+import {describe, it, expect, vi} from 'vitest';
 import {DatePipe} from '@angular/common';
 import {EMPTY, of, Subject, throwError} from 'rxjs';
 import {
@@ -189,7 +190,7 @@ describe('day-lock util', () => {
   });
 
   describe('formatReconciledProvenance', () => {
-    const translate = {instant: jest.fn((key: string, params?: object) => key)} as any;
+    const translate = {instant: vi.fn((key: string, params?: object) => key)} as any;
 
     /** What the server sends after the projection tags it: a UTC instant, "Z" and all. */
     const SERVER_STAMP = '2026-09-14T10:32:11Z';
@@ -200,7 +201,7 @@ describe('day-lock util', () => {
       // passed, so DatePipe renders it in the VIEWER's zone -- which is the point.
       // Passing 'UTC' would pin every viewer to the server's clock instead.
       const datePipe = new DatePipe('en-US');
-      const transform = jest.spyOn(datePipe, 'transform');
+      const transform = vi.spyOn(datePipe, 'transform');
 
       formatReconciledProvenance(SERVER_STAMP, datePipe, translate);
 
@@ -315,30 +316,30 @@ describe('day-lock util', () => {
     });
 
     it('stops waiting for a request that never answers, and calls that unknown', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const seen: LockRequestOutcome<any>[] = [];
       const request = new Subject<any>();
       sendLockRequest<any>(request, outcome => seen.push(outcome));
 
       expect(seen).toEqual([]);
-      jest.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
+      vi.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
 
       expect(seen).toEqual([{kind: 'unknown'}]);
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('lets no late answer through, because the abort is from this end only', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const seen: LockRequestOutcome<any>[] = [];
       const request = new Subject<any>();
       sendLockRequest<any>(request, outcome => seen.push(outcome));
-      jest.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
+      vi.advanceTimersByTime(LOCK_REQUEST_TIMEOUT_MS + 1);
 
       request.next({success: true});
       request.complete();
 
       expect(seen).toEqual([{kind: 'unknown'}]);
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 });
