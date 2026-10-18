@@ -18,7 +18,7 @@ jobs:
       with:
         fetch-depth: 0
         repository: microting/eform-angular-frontend
-        ref: stable
+        ref: ${{ github.base_ref }}
         path: eform-angular-frontend
     - name: Copy dependencies
       run: |
@@ -53,7 +53,7 @@ jobs:
       with:
         fetch-depth: 0
         repository: microting/eform-angular-frontend
-        ref: stable
+        ref: ${{ github.base_ref }}
         path: eform-angular-frontend
     - name: Use Node.js
       uses: actions/setup-node@v3
@@ -69,6 +69,8 @@ jobs:
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright/helpers eform-angular-frontend/eform-client/playwright/helpers
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright.config.ts eform-angular-frontend/eform-client/playwright.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
+    - name: Enable Corepack
+      run: corepack enable
     - name: yarn install
       run: cd eform-angular-frontend/eform-client && yarn install
     - name: Run Angular unit tests
@@ -124,7 +126,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: microting/eform-angular-frontend
-        ref: stable
+        ref: ${{ github.base_ref }}
         path: eform-angular-frontend
     - name: Copy dependencies
       run: |
@@ -137,6 +139,8 @@ jobs:
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright.config.ts eform-angular-frontend/eform-client/playwright.config.ts
         cp -av eform-angular-timeplanning-plugin/eform-client/cypress.config.ts eform-angular-frontend/eform-client/cypress.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
+    - name: Enable Corepack
+      run: corepack enable
     - name: yarn install
       run: cd eform-angular-frontend/eform-client && yarn install
     - name: Install Playwright browsers
