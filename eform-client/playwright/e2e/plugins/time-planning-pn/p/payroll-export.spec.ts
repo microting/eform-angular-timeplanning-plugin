@@ -15,9 +15,9 @@ test.describe('Payroll export', () => {
       r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'
     );
     await new PluginPage(page).Navbar.goToPluginsPage();
-    await page.locator('#actionMenu').scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await page.locator('[id^="actionMenu"]').scrollIntoViewIfNeeded();
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
     await page.locator('#plugin-settings-link0').click();
     await settingsGetPromise;
     await page.waitForTimeout(2000);

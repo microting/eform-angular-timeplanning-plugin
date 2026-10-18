@@ -25,10 +25,10 @@ test.describe('Time Planning - Leave policies', () => {
 
     const pluginPage = new PluginPage(page);
     await pluginPage.Navbar.goToPluginsPage();
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
 
     const planningsIndexResponse = page.waitForResponse(
       (resp) => resp.url().includes('/api/time-planning-pn/plannings/index') && resp.status() === 200

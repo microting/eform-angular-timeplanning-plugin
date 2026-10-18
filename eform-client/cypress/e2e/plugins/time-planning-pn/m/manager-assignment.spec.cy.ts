@@ -14,11 +14,11 @@ describe('Time Planning - Manager Assignment', () => {
     // pluginPage.Navbar.goToPluginsPage();
 
     // cy.get('body').then(($body) => {
-    //   if ($body.find('#actionMenu').length === 0) {
+    //   if ($body.find('[id^="actionMenu"]').length === 0) {
     //     throw new Error('Plugin menu not available');
     //   }
     //
-    //   cy.get('#actionMenu')
+    //   cy.get('[id^="actionMenu"]')
     //     .scrollIntoView().should('be.visible')
     //     .click({ force: true });
     //
@@ -211,7 +211,7 @@ describe('Time Planning - Manager Assignment', () => {
    */
   it('should toggle IsManager on and off and persist the state', () => {
     cy.get('body').then(($body) => {
-      if ($body.find('#actionMenu').length === 0) {
+      if ($body.find('[id^="actionMenu"]').length === 0) {
         cy.task('log', '[Time Planning Tests] Plugin menu not available - skipping test');
         return;
       }
@@ -305,7 +305,7 @@ describe('Time Planning - Manager Assignment', () => {
    */
   it('should show tags field when manager checkbox is on and handle random text without errors', () => {
     cy.get('body').then(($body) => {
-      if ($body.find('#actionMenu').length === 0) {
+      if ($body.find('[id^="actionMenu"]').length === 0) {
         cy.task('log', '[Time Planning Tests] Plugin menu not available - skipping test');
         return;
       }
@@ -439,7 +439,7 @@ describe('Time Planning - Manager Assignment', () => {
     cy.task('log', `[Test 3] ========== Starting test - Create tag and persist selection at ${new Date().toISOString()} ==========`);
 
     cy.get('body').then(($body) => {
-      if ($body.find('#actionMenu').length === 0) {
+      if ($body.find('[id^="actionMenu"]').length === 0) {
         cy.task('log', '[Test 3] Plugin menu not available - skipping test');
         return;
       }

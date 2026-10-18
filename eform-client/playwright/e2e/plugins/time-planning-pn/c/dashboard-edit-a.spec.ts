@@ -239,10 +239,10 @@ test.describe('Dashboard edit values', () => {
   test('should enable auto break calculations with empty values', async ({ page }) => {
     const pluginPage = new PluginPage(page);
     await pluginPage.Navbar.goToPluginsPage();
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
 
     const settingsGetPromise = page.waitForResponse(
       r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'

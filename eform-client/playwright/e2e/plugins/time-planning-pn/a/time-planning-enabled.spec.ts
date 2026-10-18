@@ -16,7 +16,7 @@ test.describe('Enable Time Planning plugin', () => {
     const pluginName = 'Microting Time Planning Plugin';
 
     await page.locator('.mat-mdc-row').filter({ hasText: pluginName }).first()
-      .locator('#actionMenu').click();
+      .locator('[id^="actionMenu"]').click();
     await page.waitForTimeout(500);
 
     await page.locator('#plugin-status-button0').scrollIntoViewIfNeeded();
@@ -34,7 +34,7 @@ test.describe('Enable Time Planning plugin', () => {
     await new PluginPage(page).Navbar.goToPluginsPage();
 
     await page.locator('.mat-mdc-row').filter({ hasText: pluginName }).first()
-      .locator('#actionMenu').click();
+      .locator('[id^="actionMenu"]').click();
     await page.waitForTimeout(500);
 
     await expect(

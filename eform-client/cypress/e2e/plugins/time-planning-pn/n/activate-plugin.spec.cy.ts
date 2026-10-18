@@ -12,7 +12,7 @@ describe('Enable Backend Config plugin', () => {
     const pluginName = 'Microting Time Planning Plugin';
 
     // Open action menu for the plugin
-    cy.contains('.mat-mdc-row', pluginName).first().find('#actionMenu').click();
+    cy.contains('.mat-mdc-row', pluginName).first().find('[id^="actionMenu"]').click();
     cy.wait(500);
 
     // Click the status button inside the menu to enable the plugin
@@ -33,7 +33,7 @@ describe('Enable Backend Config plugin', () => {
 
     // Verify the plugin is enabled by checking the status
     // Re-open the action menu to check the status
-    cy.contains('.mat-mdc-row', pluginName).first().find('#actionMenu').click();
+    cy.contains('.mat-mdc-row', pluginName).first().find('[id^="actionMenu"]').click();
     cy.wait(500);
 
     cy.get('#plugin-status-button0')
