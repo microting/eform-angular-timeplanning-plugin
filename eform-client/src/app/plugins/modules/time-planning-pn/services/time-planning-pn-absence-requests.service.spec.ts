@@ -2,7 +2,7 @@ import {describe, it, expect, beforeEach, vi} from 'vitest';
 import type {Mocked} from 'vitest';
 import { TimePlanningPnAbsenceRequestsService } from './time-planning-pn-absence-requests.service';
 import { ApiBaseService } from 'src/app/common/services';
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { AbsenceRequestModel, AbsenceRequestDecisionModel } from '../models';
 
 describe('TimePlanningPnAbsenceRequestsService', () => {
@@ -23,54 +23,48 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
   });
 
   describe('getInbox', () => {
-    it('should call apiBaseService.get with correct parameters', () => new Promise<void>((done) => {
+    it('should call apiBaseService.get with correct parameters', async () => {
       const managerSdkSitId = 1;
       const mockResponse = { success: true, model: [] as AbsenceRequestModel[] };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
 
-      service.getInbox(managerSdkSitId).subscribe(result => {
-        expect(result).toEqual(mockResponse as any);
-        done();
-      });
+      const result = await firstValueFrom(service.getInbox(managerSdkSitId));
+      expect(result).toEqual(mockResponse as any);
 
       expect(mockApiBaseService.get).toHaveBeenCalledWith(
         'api/time-planning-pn/absence-requests/inbox',
         { managerSdkSitId }
       );
-    }));
+    });
 
-    it('should handle empty response', () => new Promise<void>((done) => {
+    it('should handle empty response', async () => {
       const managerSdkSitId = 1;
       const mockResponse = { success: true, model: [] as AbsenceRequestModel[] };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
 
-      service.getInbox(managerSdkSitId).subscribe(result => {
-        expect(result.model).toEqual([]);
-        done();
-      });
-    }));
+      const result = await firstValueFrom(service.getInbox(managerSdkSitId));
+      expect(result.model).toEqual([]);
+    });
   });
 
   describe('getMine', () => {
-    it('should call apiBaseService.get with correct parameters', () => new Promise<void>((done) => {
+    it('should call apiBaseService.get with correct parameters', async () => {
       const requestedBySdkSitId = 2;
       const mockResponse = { success: true, model: [] as AbsenceRequestModel[] };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
 
-      service.getMine(requestedBySdkSitId).subscribe(result => {
-        expect(result).toEqual(mockResponse as any);
-        done();
-      });
+      const result = await firstValueFrom(service.getMine(requestedBySdkSitId));
+      expect(result).toEqual(mockResponse as any);
 
       expect(mockApiBaseService.get).toHaveBeenCalledWith(
         'api/time-planning-pn/absence-requests/mine',
         { requestedBySdkSitId }
       );
-    }));
+    });
   });
 
   describe('approve', () => {
-    it('should call apiBaseService.post with correct parameters', () => new Promise<void>((done) => {
+    it('should call apiBaseService.post with correct parameters', async () => {
       const requestId = 123;
       const decisionModel: AbsenceRequestDecisionModel = {
         managerSdkSitId: 1,
@@ -79,16 +73,14 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
       const mockResponse = { success: true };
       mockApiBaseService.post.mockReturnValue(of(mockResponse as any));
 
-      service.approve(requestId, decisionModel).subscribe(result => {
-        expect(result).toEqual(mockResponse as any);
-        done();
-      });
+      const result = await firstValueFrom(service.approve(requestId, decisionModel));
+      expect(result).toEqual(mockResponse as any);
 
       expect(mockApiBaseService.post).toHaveBeenCalledWith(
         'api/time-planning-pn/absence-requests/123/approve',
         decisionModel
       );
-    }));
+    });
 
     it('should construct correct URL with id parameter', () => {
       const requestId = 456;
@@ -108,7 +100,7 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
   });
 
   describe('reject', () => {
-    it('should call apiBaseService.post with correct parameters', () => new Promise<void>((done) => {
+    it('should call apiBaseService.post with correct parameters', async () => {
       const requestId = 789;
       const decisionModel: AbsenceRequestDecisionModel = {
         managerSdkSitId: 1,
@@ -117,18 +109,16 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
       const mockResponse = { success: true };
       mockApiBaseService.post.mockReturnValue(of(mockResponse as any));
 
-      service.reject(requestId, decisionModel).subscribe(result => {
-        expect(result).toEqual(mockResponse as any);
-        done();
-      });
+      const result = await firstValueFrom(service.reject(requestId, decisionModel));
+      expect(result).toEqual(mockResponse as any);
 
       expect(mockApiBaseService.post).toHaveBeenCalledWith(
         'api/time-planning-pn/absence-requests/789/reject',
         decisionModel
       );
-    }));
+    });
 
-    it('should handle rejection without comment', () => new Promise<void>((done) => {
+    it('should handle rejection without comment', async () => {
       const requestId = 111;
       const decisionModel: AbsenceRequestDecisionModel = {
         managerSdkSitId: 1
@@ -136,15 +126,13 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
       const mockResponse = { success: true };
       mockApiBaseService.post.mockReturnValue(of(mockResponse as any));
 
-      service.reject(requestId, decisionModel).subscribe(result => {
-        expect(result.success).toBe(true);
-        done();
-      });
+      const result = await firstValueFrom(service.reject(requestId, decisionModel));
+      expect(result.success).toBe(true);
 
       expect(mockApiBaseService.post).toHaveBeenCalledWith(
         'api/time-planning-pn/absence-requests/111/reject',
         decisionModel
       );
-    }));
+    });
   });
 });

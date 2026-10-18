@@ -189,7 +189,7 @@ describe('DownloadExcelDialogComponent', () => {
       });
     });
 
-    it('should show error toast when download fails', () => new Promise<void>((done) => {
+    it('should show error toast when download fails', async () => {
       mockWorkingHoursService.downloadReport.mockReturnValue(
         throwError(() => new Error('Download failed'))
       );
@@ -197,11 +197,9 @@ describe('DownloadExcelDialogComponent', () => {
       component.onDownloadExcelReport();
 
       // Wait a bit for async operations
-      setTimeout(() => {
-        expect(mockToastrService.error).toHaveBeenCalledWith('Error downloading report');
-        done();
-      }, 100);
-    }));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(mockToastrService.error).toHaveBeenCalledWith('Error downloading report');
+    });
   });
 
   describe('Excel Report All Workers Download', () => {
@@ -234,7 +232,7 @@ describe('DownloadExcelDialogComponent', () => {
       expect('tagIds' in callArgs).toBe(false);
     });
 
-    it('should show error toast when download all workers fails', () => new Promise<void>((done) => {
+    it('should show error toast when download all workers fails', async () => {
       mockWorkingHoursService.downloadReportAllWorkers.mockReturnValue(
         throwError(() => new Error('Download failed'))
       );
@@ -242,11 +240,9 @@ describe('DownloadExcelDialogComponent', () => {
       component.onDownloadExcelReportAllWorkers();
 
       // Wait a bit for async operations
-      setTimeout(() => {
-        expect(mockToastrService.error).toHaveBeenCalledWith('Error downloading report');
-        done();
-      }, 100);
-    }));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(mockToastrService.error).toHaveBeenCalledWith('Error downloading report');
+    });
 
     it('should not include siteId in all workers report model', () => {
       const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
