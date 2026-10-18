@@ -205,7 +205,7 @@ async function clickTimePicker(page: import('@playwright/test').Page, timeStr: s
     await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
   }
   if (minuteDegrees > 0) {
-    await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
+    await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
   }
   await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
 }
@@ -267,7 +267,7 @@ test.describe('Dashboard edit values', () => {
       let minuteDegrees0 = 360 / 60 * parseInt(secondUpdatePlanTexts[i].plannedStartOfShift1.split(':')[1]);
       await page.locator('[style="transform: rotateZ(' + degrees0 + 'deg) translateX(-50%);"] > span').click();
       if (minuteDegrees0 > 0) {
-        await page.locator('[style="transform: rotateZ(' + minuteDegrees0 + 'deg) translateX(-50%);"] > span').click({ force: true });
+        await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees0 + 'deg) translateX(-50%);"] > span').click({ force: true });
       }
       await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
       await expect(page.locator('[data-testid="plannedStartOfShift1"]')).toHaveValue(secondUpdatePlanTexts[i].plannedStartOfShift1);
@@ -282,7 +282,7 @@ test.describe('Dashboard edit values', () => {
         await page.locator('[style="transform: rotateZ(' + degrees1 + 'deg) translateX(-50%);"] > span').click();
       }
       if (minuteDegrees1 > 0) {
-        await page.locator('[style="transform: rotateZ(' + minuteDegrees1 + 'deg) translateX(-50%);"] > span').click({ force: true });
+        await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees1 + 'deg) translateX(-50%);"] > span').click({ force: true });
       }
       await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
       await expect(page.locator('[data-testid="plannedEndOfShift1"]')).toHaveValue(secondUpdatePlanTexts[i].plannedEndOfShift1);
@@ -302,7 +302,7 @@ test.describe('Dashboard edit values', () => {
           }
         }
         if (minuteDegrees2 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees2 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees2 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
       }
@@ -319,7 +319,7 @@ test.describe('Dashboard edit values', () => {
           await page.locator('[style="transform: rotateZ(' + degrees3 + 'deg) translateX(-50%);"] > span').click();
         }
         if (minuteDegrees3 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees3 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees3 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
         await expect(page.locator('[data-testid="plannedStartOfShift2"]')).toHaveValue(secondUpdatePlanTexts[i].plannedStartOfShift2);
@@ -334,7 +334,7 @@ test.describe('Dashboard edit values', () => {
           await page.locator('[style="transform: rotateZ(' + degrees4 + 'deg) translateX(-50%);"] > span').click();
         }
         if (minuteDegrees4 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees4 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees4 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
         await expect(page.locator('[data-testid="plannedEndOfShift2"]')).toHaveValue(secondUpdatePlanTexts[i].plannedEndOfShift2);
@@ -353,7 +353,7 @@ test.describe('Dashboard edit values', () => {
           }
         }
         if (minuteDegrees5 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees5 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees5 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
         await expect(page.locator('[data-testid="plannedBreakOfShift2"]')).toHaveValue(secondUpdatePlanTexts[i].plannedBreakOfShift2);

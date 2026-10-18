@@ -195,9 +195,9 @@ async function setTimepickerValue(
   // Select minute on the clock face
   const minuteDegrees = 360 / 60 * minutes;
   if (minuteDegrees === 0) {
-    await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+    await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
   } else {
-    await page.locator(`[style="transform: rotateZ(${minuteDegrees}deg) translateX(-50%);"] > span`).click({ force: true });
+    await page.locator(`ngx-material-timepicker-minutes-face [style="transform: rotateZ(${minuteDegrees}deg) translateX(-50%);"] > span`).click({ force: true });
   }
 
   // Confirm

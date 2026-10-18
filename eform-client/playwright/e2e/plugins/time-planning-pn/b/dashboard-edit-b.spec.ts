@@ -167,7 +167,7 @@ test.describe('Dashboard edit values', () => {
           }
         }
         if (minuteDegrees0 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees0 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees0 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
       }
@@ -188,10 +188,10 @@ test.describe('Dashboard edit values', () => {
           }
         }
         if (minuteDegrees1 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees1 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees1 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         if (minuteDegrees1 === 0) {
-          await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
       }
@@ -212,10 +212,10 @@ test.describe('Dashboard edit values', () => {
           }
         }
         if (minuteDegrees2 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees2 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees2 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         if (minuteDegrees2 === 0) {
-          await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
         await expect(page.locator('[data-testid="pause1Id"]')).toHaveValue(secondUpdateActualTexts[i].pause1Id);
@@ -238,10 +238,10 @@ test.describe('Dashboard edit values', () => {
           }
         }
         if (minuteDegrees3 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees3 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees3 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         if (!minuteDegrees3 || isNaN(minuteDegrees3) || minuteDegrees3 === 0) {
-          await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
       }
@@ -262,10 +262,10 @@ test.describe('Dashboard edit values', () => {
           }
         }
         if (minuteDegrees4 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees4 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees4 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         if (minuteDegrees4 === 0) {
-          await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
       }
@@ -286,10 +286,10 @@ test.describe('Dashboard edit values', () => {
           }
         }
         if (minuteDegrees5 > 0) {
-          await page.locator('[style="transform: rotateZ(' + minuteDegrees5 + 'deg) translateX(-50%);"] > span').click({ force: true });
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees5 + 'deg) translateX(-50%);"] > span').click({ force: true });
         }
         if (minuteDegrees5 === 0) {
-          await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+          await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
         }
         await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
         await expect(page.locator('[data-testid="pause2Id"]')).toHaveValue(secondUpdateActualTexts[i].pause2Id);
