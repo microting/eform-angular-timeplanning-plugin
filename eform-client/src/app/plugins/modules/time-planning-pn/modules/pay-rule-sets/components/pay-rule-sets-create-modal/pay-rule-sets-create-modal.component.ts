@@ -1,18 +1,25 @@
 import { Component, Inject, OnInit, Optional } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import {FormBuilder, FormGroup, Validators, FormArray, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatDialog } from '@angular/material/dialog';
+import {MatDialog, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose} from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
-import { TranslateService } from '@ngx-translate/core';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import { TimePlanningPnPayRuleSetsService } from '../../../../services';
 import { PayRuleSetCreateModel, PAY_RULE_SET_PRESETS, PayRuleSetPreset } from '../../../../models';
 import { PayDayRuleDialogComponent, PayDayRuleDialogData } from '../pay-day-rule-dialog/pay-day-rule-dialog.component';
 import { DayTypeRuleDialogComponent, DayTypeRuleDialogData } from '../day-type-rule-dialog/day-type-rule-dialog.component';
 import { formatTierChain, formatTimeBands } from '../../pay-rule-format.util';
+import {NgIf, NgFor} from '@angular/common';
+import {MatIcon} from '@angular/material/icon';
+import {MatFormField, MatLabel, MatError} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MtxSelect} from '@ng-matero/extensions/select';
+import {PayDayRuleListComponent} from '../pay-day-rule-list/pay-day-rule-list.component';
+import {DayTypeRuleListComponent} from '../day-type-rule-list/day-type-rule-list.component';
 
 @Component({
   selector: 'app-pay-rule-sets-create-modal',
-  standalone: false,
+  imports: [NgIf, NgFor, FormsModule, ReactiveFormsModule, TranslatePipe, MatIcon, MatFormField, MatLabel, MatError, MatInput, MtxSelect, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, PayDayRuleListComponent, DayTypeRuleListComponent],
   templateUrl: './pay-rule-sets-create-modal.component.html',
   styleUrls: ['./pay-rule-sets-create-modal.component.scss']
 })

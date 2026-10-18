@@ -1,13 +1,20 @@
 import { Component, OnInit, OnDestroy, inject, LOCALE_ID } from '@angular/core';
-import { formatDate } from '@angular/common';
+import {formatDate, NgClass} from '@angular/common';
 import { TimePlanningPnRequestHistoryService, RequestHistoryQueryParams } from '../../../../services';
 import { Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { TranslateService } from '@ngx-translate/core';
-import { MtxGridColumn } from '@ng-matero/extensions/grid';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
+import {MtxGridColumn, MtxGrid} from '@ng-matero/extensions/grid';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { ToastrService } from 'ngx-toastr';
 import { messages } from '../../../../consts/messages';
+import {FormsModule} from '@angular/forms';
+import {MatButton} from '@angular/material/button';
+import {MatCard} from '@angular/material/card';
+import {MatFormField, MatLabel} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MtxSelect} from '@ng-matero/extensions/select';
+import {MatChip} from '@angular/material/chips';
 
 export interface RequestHistoryRow {
   type: string;
@@ -26,9 +33,9 @@ export interface RequestHistoryRow {
 @AutoUnsubscribe()
 @Component({
   selector: 'app-request-history-page',
+  imports: [NgClass, FormsModule, TranslatePipe, MatButton, MatCard, MatFormField, MatLabel, MatInput, MtxSelect, MtxGrid, MatChip],
   templateUrl: './request-history-page.component.html',
   styleUrls: ['./request-history-page.component.scss'],
-  standalone: false
 })
 export class RequestHistoryPageComponent implements OnInit, OnDestroy {
   private requestHistoryService = inject(TimePlanningPnRequestHistoryService);

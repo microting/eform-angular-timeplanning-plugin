@@ -1,8 +1,8 @@
 import {Component, EventEmitter, Input, OnInit, Output,
   inject
 } from '@angular/core';
-import {MtxGridColumn} from '@ng-matero/extensions/grid';
-import {TranslateService} from '@ngx-translate/core';
+import {MtxGridColumn, MtxGrid} from '@ng-matero/extensions/grid';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import {TimePlanningRegistrationDeviceModel} from '../../../../../../modules/time-planning-pn/models';
 import {Subscription} from 'rxjs';
 import {
@@ -13,11 +13,16 @@ import {
 import {MatDialog} from '@angular/material/dialog';
 import {dialogConfigHelper} from 'src/app/common/helpers';
 import {Overlay} from '@angular/cdk/overlay';
+import {NgIf} from '@angular/common';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatMenu, MatMenuItem, MatMenuTrigger} from '@angular/material/menu';
 
 @Component({
     selector: 'app-registration-devices-table',
+    imports: [NgIf, TranslatePipe, MatIcon, MatIconButton, MtxGrid, MatTooltip, MatMenu, MatMenuItem, MatMenuTrigger],
     templateUrl: './registration-devices-table.component.html',
-    standalone: false
 })
 export class RegistrationDevicesTableComponent implements OnInit {
   private dialog = inject(MatDialog);

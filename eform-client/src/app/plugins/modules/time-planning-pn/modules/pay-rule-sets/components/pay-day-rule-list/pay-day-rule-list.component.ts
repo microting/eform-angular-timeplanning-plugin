@@ -1,11 +1,16 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormArray, FormGroup } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import { secondsToHM } from '../../pay-rule-format.util';
+import {NgIf} from '@angular/common';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatTableModule} from '@angular/material/table';
 
 @Component({
   selector: 'app-pay-day-rule-list',
-  standalone: false,
+  imports: [NgIf, TranslatePipe, MatIcon, MatIconButton, MatTooltip, MatTableModule],
   templateUrl: './pay-day-rule-list.component.html',
   styleUrls: ['./pay-day-rule-list.component.scss']
 })

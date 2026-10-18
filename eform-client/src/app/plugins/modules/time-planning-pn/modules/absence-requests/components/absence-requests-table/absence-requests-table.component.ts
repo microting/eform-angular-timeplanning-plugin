@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, OnDestroy, Output, inject } from '@angular/core';
-import { MtxGridColumn } from '@ng-matero/extensions/grid';
-import { TranslateService } from '@ngx-translate/core';
+import {MtxGridColumn, MtxGrid} from '@ng-matero/extensions/grid';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import { AbsenceRequestModel } from '../../../../models';
 import { Subscription } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
@@ -11,12 +11,16 @@ import {
   AbsenceRequestsApproveModalComponent,
   AbsenceRequestsRejectModalComponent
 } from '../absence-requests-actions';
+import {NgIf, NgClass} from '@angular/common';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
+import {MatTooltip} from '@angular/material/tooltip';
 
 @AutoUnsubscribe()
 @Component({
   selector: 'app-absence-requests-table',
+  imports: [NgIf, NgClass, TranslatePipe, MatIcon, MatIconButton, MtxGrid, MatTooltip],
   templateUrl: './absence-requests-table.component.html',
-  standalone: false
 })
 export class AbsenceRequestsTableComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);

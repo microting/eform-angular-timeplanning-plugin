@@ -1,13 +1,18 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { MtxGridColumn } from '@ng-matero/extensions/grid';
+import {MtxGridColumn, MtxGrid} from '@ng-matero/extensions/grid';
 import { BreakPolicySimpleModel } from '../../../../models';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton, MatButton} from '@angular/material/button';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatMenu, MatMenuItem, MatMenuTrigger} from '@angular/material/menu';
 
 @Component({
   selector: 'app-break-policies-table',
+  imports: [TranslatePipe, MatIcon, MatIconButton, MatButton, MtxGrid, MatTooltip, MatMenu, MatMenuItem, MatMenuTrigger],
   templateUrl: './break-policies-table.component.html',
   styleUrls: ['./break-policies-table.component.scss'],
-  standalone: false
 })
 export class BreakPoliciesTableComponent {
   private dialog = inject(MatDialog);

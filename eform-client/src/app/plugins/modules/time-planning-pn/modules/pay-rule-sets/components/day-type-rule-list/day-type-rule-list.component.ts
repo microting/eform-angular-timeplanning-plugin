@@ -1,10 +1,15 @@
 import { Component, DoCheck, EventEmitter, Input, Output } from '@angular/core';
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
-import { MatTableDataSource } from '@angular/material/table';
+import {MatTableDataSource, MatTableModule} from '@angular/material/table';
+import {NgIf} from '@angular/common';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
+import {MatTooltip} from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-day-type-rule-list',
-  standalone: false,
+  imports: [NgIf, TranslatePipe, MatIcon, MatIconButton, MatTooltip, MatTableModule],
   templateUrl: './day-type-rule-list.component.html',
   styleUrls: ['./day-type-rule-list.component.scss']
 })

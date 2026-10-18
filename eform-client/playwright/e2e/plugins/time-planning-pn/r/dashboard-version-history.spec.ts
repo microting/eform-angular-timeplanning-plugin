@@ -61,7 +61,7 @@ async function pickPlannedTime(page: Page, testid: string, timeStr: string) {
     await page.locator('[style="transform: rotateZ(' + degrees + 'deg) translateX(-50%);"] > span').click();
   }
   if (minuteDegrees > 0) {
-    await page.locator('[style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
+    await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(' + minuteDegrees + 'deg) translateX(-50%);"] > span').click({ force: true });
   }
   if (minuteDegrees === 0) {
     // The minute face must be clicked even for :00 — skipping it keeps the
@@ -71,7 +71,7 @@ async function pickPlannedTime(page: Page, testid: string, timeStr: string) {
     // clock-face__number--outer div intercepts pointer events on the "00"
     // span, so a plain click retries until the test timeout (CI run
     // 29317211838).
-    await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click({ force: true });
+    await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(360deg) translateX(-50%);"] > span').click({ force: true });
   }
   await page.locator('.timepicker-button span').filter({ hasText: 'Ok' }).click();
   await expect(page.locator(`[data-testid="${testid}"]`)).toHaveValue(timeStr);

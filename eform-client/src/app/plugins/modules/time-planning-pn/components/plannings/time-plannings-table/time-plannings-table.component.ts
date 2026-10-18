@@ -5,12 +5,12 @@ import {
 } from '@angular/core';
 import {Subscription, take} from 'rxjs';
 import {AssignedSiteModel, TimePlanningModel} from '../../../models';
-import {MtxGridColumn} from '@ng-matero/extensions/grid';
-import {TranslateService} from '@ngx-translate/core';
+import {MtxGridColumn, MtxGrid} from '@ng-matero/extensions/grid';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import {TimePlanningPnPlanningsService, TimePlanningPnSettingsService} from '../../../services';
 import {MatDialog} from '@angular/material/dialog';
 import {AssignedSiteDialogComponent, WorkdayEntityDialogComponent} from '../';
-import {DatePipe} from '@angular/common';
+import {DatePipe, NgIf, AsyncPipe} from '@angular/common';
 import * as R from 'ramda';
 import {TimePlanningMessagesEnum} from '../../../enums';
 import {Store} from '@ngrx/store';
@@ -21,13 +21,18 @@ import {HelpPanelService} from '../../../help/services/help-panel.service';
 import {
   dayAt, dayKey, dayLockState, formatReconciledProvenance, isDayLocked, isDaySealed, ReconcilePreview,
 } from '../day-lock.util';
+import {MatIcon} from '@angular/material/icon';
+import {MatTooltip} from '@angular/material/tooltip';
+import {EformTagComponent} from 'src/app/common/modules/eform-shared/components';
+import {HelpHintComponent} from '../../../help/components/help-hint/help-hint.component';
+import {HelpIconComponent} from '../../../help/components/help-icon/help-icon.component';
 
 @Component({
   selector: 'app-time-plannings-table',
+  imports: [NgIf, AsyncPipe, TranslatePipe, MatIcon, MtxGrid, MatTooltip, EformTagComponent, HelpHintComponent, HelpIconComponent],
   templateUrl: './time-plannings-table.component.html',
   styleUrls: ['./time-plannings-table.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  standalone: false
 
 })
 export class TimePlanningsTableComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {

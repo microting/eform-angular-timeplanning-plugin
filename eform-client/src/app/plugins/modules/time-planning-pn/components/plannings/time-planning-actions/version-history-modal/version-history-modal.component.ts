@@ -1,11 +1,12 @@
 import {Component, OnInit, inject, OnDestroy} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent} from '@angular/material/dialog';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {TimePlanningPnPlanningsService} from '../../../../services';
 import {PlanRegistrationVersionHistoryModel, FieldChangeModel} from '../../../../models';
 import {TemplateFilesService} from 'src/app/common/services';
 import {Subscription} from 'rxjs';
-import {TranslateService} from '@ngx-translate/core';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
+import {NgIf, NgFor, NgSwitch, NgSwitchCase, NgSwitchDefault} from '@angular/common';
 
 const GOOGLE_MAPS_EMBED_URL = 'https://www.google.com/maps?q={lat},{lng}&output=embed';
 const PICTURE_SNAPSHOT_API_URL = '/api/template-files/get-image/';
@@ -32,9 +33,9 @@ interface TimelineDay {
 
 @Component({
   selector: 'app-version-history-modal',
+  imports: [NgIf, NgFor, NgSwitch, NgSwitchCase, NgSwitchDefault, TranslatePipe, MatDialogTitle, MatDialogContent],
   templateUrl: './version-history-modal.component.html',
   styleUrls: ['./version-history-modal.component.scss'],
-  standalone: false
 })
 export class VersionHistoryModalComponent implements OnInit, OnDestroy {
   versionHistory: PlanRegistrationVersionHistoryModel;

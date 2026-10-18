@@ -1,3 +1,5 @@
+import {describe, it, expect, beforeEach, vi} from 'vitest';
+import type {Mocked} from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AssignedSiteDialogComponent } from './assigned-site-dialog.component';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -5,16 +7,15 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { TimePlanningPnSettingsService, TimePlanningPnPayRuleSetsService } from '../../../../services';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('AssignedSiteDialogComponent', () => {
   let component: AssignedSiteDialogComponent;
   let fixture: ComponentFixture<AssignedSiteDialogComponent>;
-  let mockSettingsService: jest.Mocked<TimePlanningPnSettingsService>;
-  let mockPayRuleSetsService: jest.Mocked<TimePlanningPnPayRuleSetsService>;
-  let mockStore: jest.Mocked<Store>;
+  let mockSettingsService: Mocked<TimePlanningPnSettingsService>;
+  let mockPayRuleSetsService: Mocked<TimePlanningPnPayRuleSetsService>;
+  let mockStore: Mocked<Store>;
 
   const mockAssignedSiteData = {
     id: 1,
@@ -58,16 +59,16 @@ describe('AssignedSiteDialogComponent', () => {
 
   beforeEach(async () => {
     mockSettingsService = {
-      getGlobalAutoBreakCalculationSettings: jest.fn(),
-      updateAssignedSite: jest.fn(),
-      getAssignedSite: jest.fn(),
-      getAvailableTags: jest.fn(),
+      getGlobalAutoBreakCalculationSettings: vi.fn(),
+      updateAssignedSite: vi.fn(),
+      getAssignedSite: vi.fn(),
+      getAvailableTags: vi.fn(),
     } as any;
     mockPayRuleSetsService = {
-      getPayRuleSets: jest.fn(),
+      getPayRuleSets: vi.fn(),
     } as any;
     mockStore = {
-      select: jest.fn(),
+      select: vi.fn(),
     } as any;
 
     mockStore.select.mockReturnValue(of(true));
@@ -82,9 +83,7 @@ describe('AssignedSiteDialogComponent', () => {
     );
 
     await TestBed.configureTestingModule({
-      declarations: [AssignedSiteDialogComponent],
-      imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
-      schemas: [NO_ERRORS_SCHEMA],
+      imports: [AssignedSiteDialogComponent, ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
       providers: [
         FormBuilder,
         { provide: MAT_DIALOG_DATA, useValue: mockAssignedSiteData },
@@ -272,7 +271,7 @@ describe('AssignedSiteDialogComponent', () => {
     });
 
     it('should handle tags loading error gracefully', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       mockSettingsService.getAvailableTags.mockReturnValue(
         of({ success: false, model: null }) as any
       );
@@ -466,9 +465,7 @@ describe('AssignedSiteDialogComponent', () => {
 
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        declarations: [AssignedSiteDialogComponent],
-        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
-        schemas: [NO_ERRORS_SCHEMA],
+        imports: [AssignedSiteDialogComponent, ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
         providers: [
           FormBuilder,
           { provide: MAT_DIALOG_DATA, useValue: dataWithManager },
@@ -499,8 +496,8 @@ describe('AssignedSiteDialogComponent', () => {
     // and (b) onEntryMethodChange does not mutate editing-policy state.
     //
     // Sibling tests in this file deliberately avoid `fixture.detectChanges()`
-    // because the dialog's template uses Material form-control directives whose
-    // value accessors are not registered under NO_ERRORS_SCHEMA. We follow the
+    // because, when the bed declared the dialog under NO_ERRORS_SCHEMA, its
+    // Material form-control value accessors were not registered. We follow the
     // same pattern here: assert against component state, not the rendered DOM.
 
     function setupComponentWithData(
@@ -509,9 +506,7 @@ describe('AssignedSiteDialogComponent', () => {
       const data = { ...mockAssignedSiteData, ...overrides };
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        declarations: [AssignedSiteDialogComponent],
-        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
-        schemas: [NO_ERRORS_SCHEMA],
+        imports: [AssignedSiteDialogComponent, ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
         providers: [
           FormBuilder,
           { provide: MAT_DIALOG_DATA, useValue: data },
@@ -606,10 +601,9 @@ describe('AssignedSiteDialogComponent', () => {
   describe('1-minute intervals (no longer editable)', () => {
     // We follow the same no-`detectChanges` pattern adopted in PR #1538:
     // assert against component state and observables, not the rendered DOM.
-    // Rendering the dialog under NO_ERRORS_SCHEMA hits the
-    // NG01203 "No value accessor for form control name: 'resigned'" issue
-    // because Material form-control directives aren't registered in the
-    // tested module.
+    // Rendering the dialog when the bed declared it under NO_ERRORS_SCHEMA hit
+    // NG01203 "No value accessor for form control name: 'resigned'", because
+    // Material form-control directives weren't registered in the tested module.
 
     function setupWithData(
       overrides: Partial<typeof mockAssignedSiteData>,
@@ -617,9 +611,7 @@ describe('AssignedSiteDialogComponent', () => {
       const data = { ...mockAssignedSiteData, ...overrides };
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        declarations: [AssignedSiteDialogComponent],
-        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
-        schemas: [NO_ERRORS_SCHEMA],
+        imports: [AssignedSiteDialogComponent, ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
         providers: [
           FormBuilder,
           { provide: MAT_DIALOG_DATA, useValue: data },
@@ -646,8 +638,7 @@ describe('AssignedSiteDialogComponent', () => {
     // The checkbox's *ngIf is `data.usePunchClock` inside the mobile-axis block
     // (gated by !data.resigned && data.allowPersonalTimeRegistration && admin).
     // Same no-`detectChanges` pattern as the sibling blocks above: assert
-    // against component state, not the rendered DOM, because Material
-    // form-control directives aren't registered under NO_ERRORS_SCHEMA.
+    // against component state, not the rendered DOM (see the first block).
 
     function setupWithData(
       overrides: Partial<typeof mockAssignedSiteData> & { overMidnight?: boolean },
@@ -655,9 +646,7 @@ describe('AssignedSiteDialogComponent', () => {
       const data = { ...mockAssignedSiteData, ...overrides };
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        declarations: [AssignedSiteDialogComponent],
-        imports: [ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
-        schemas: [NO_ERRORS_SCHEMA],
+        imports: [AssignedSiteDialogComponent, ReactiveFormsModule, TranslateModule.forRoot(), HttpClientTestingModule],
         providers: [
           FormBuilder,
           { provide: MAT_DIALOG_DATA, useValue: data },

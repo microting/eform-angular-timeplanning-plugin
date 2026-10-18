@@ -2,15 +2,19 @@ import {Component, OnDestroy, OnInit,
   inject
 } from '@angular/core';
 import {AutoUnsubscribe} from 'ngx-auto-unsubscribe';
-import {FormGroup} from '@angular/forms';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {FormGroup, FormsModule} from '@angular/forms';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions} from '@angular/material/dialog';
+import {DatePipe} from '@angular/common';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatFormField, MatLabel} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
 
 @AutoUnsubscribe()
 @Component({
     selector: 'app-working-hours-comment-office-update-modal',
+    imports: [DatePipe, FormsModule, TranslatePipe, MatFormField, MatLabel, MatInput, MatDialogTitle, MatDialogContent, MatDialogActions],
     templateUrl: './working-hours-comment-office-update-modal.component.html',
     styleUrls: ['./working-hours-comment-office-update-modal.component.scss'],
-    standalone: false
 })
 export class WorkingHoursCommentOfficeUpdateModalComponent
   implements OnInit, OnDestroy {

@@ -1,4 +1,6 @@
+import {describe, it, expect, beforeEach, beforeAll, afterAll, vi} from 'vitest';
 import { readdirSync, readFileSync } from 'fs';
+import { createRequire } from 'module';
 import { dirname, join } from 'path';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -15,8 +17,9 @@ import { HelpTourService } from './services/help-tour.service';
 import { applyGridHelpAnchors } from './grid-help-anchors';
 import { HelpVisibilityService } from './services/help-visibility.service';
 import { enUSUi } from './i18n/enUS';
+import { CLIENT_ROOT, MODULE_ROOT } from '../testing/source-paths';
+import { detectChanges } from '../testing/detect-changes';
 
-const MODULE_ROOT = join(__dirname, '..');
 
 /** Help is admin-only; the components under test need the flag, not a whole store. */
 const provideHelpVisibility = {
@@ -289,24 +292,20 @@ describe('help wiring', () => {
   });
 
   it('warns instead of stopping silently if the registry drops the sortName anchor', () => {
-    jest.isolateModules(() => {
-      jest.doMock('./planning-help.registry', () => ({ PLANNING_HELP_ENTRIES: [] }));
-      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { applyGridHelpAnchors: stamp } = require('./grid-help-anchors');
+    // An empty registry stands in for one that lost the sortName entry
+    // (module mocks of relative files don't apply under Angular's test builder).
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-      const root = document.createElement('div');
-      const header = document.createElement('th');
-      header.className = 'mat-column-siteName';
-      root.appendChild(header);
+    const root = document.createElement('div');
+    const header = document.createElement('th');
+    header.className = 'mat-column-siteName';
+    root.appendChild(header);
 
-      stamp(root);
+    applyGridHelpAnchors(root, []);
 
-      expect(header.hasAttribute('data-tp-help')).toBe(false);
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining('grid.sortName'));
-      warn.mockRestore();
-    });
-    jest.dontMock('./planning-help.registry');
+    expect(header.hasAttribute('data-tp-help')).toBe(false);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('grid.sortName'));
+    warn.mockRestore();
   });
 
   it('calls the header stamp from the table component', () => {
@@ -324,7 +323,7 @@ describe('help wiring', () => {
     // loses hit-testing to it — a click on the panel would reach the backdrop
     // and close the dialog. The CDK value is read, not assumed.
     const cdkCss = readFileSync(
-      join(dirname(require.resolve('@angular/cdk/package.json')), 'overlay-prebuilt.css'), 'utf8');
+      join(dirname(createRequire(join(CLIENT_ROOT, 'package.json')).resolve('@angular/cdk/package.json')), 'overlay-prebuilt.css'), 'utf8');
     const cdkLayers = [...cdkCss.matchAll(
       /\.cdk-(?:overlay-backdrop|overlay-pane|global-overlay-wrapper)\{[^}]*?z-index:\s*(\d+)/g)]
       .map(match => Number(match[1]));
@@ -365,8 +364,7 @@ describe('help deep link and tour scrolling', () => {
 
   const mountPanel = (): ComponentFixture<HelpPanelComponent> => {
     TestBed.configureTestingModule({
-      declarations: [HelpPanelComponent],
-      imports: [FormsModule, MatIconModule, MatButtonModule],
+      imports: [HelpPanelComponent, FormsModule, MatIconModule, MatButtonModule],
       providers: [
         HelpPanelService,
         { provide: TranslateService, useValue: { currentLang: 'en-US' } },
@@ -374,7 +372,7 @@ describe('help deep link and tour scrolling', () => {
       ],
     });
     const fixture = TestBed.createComponent(HelpPanelComponent);
-    fixture.detectChanges();
+    detectChanges(fixture);
     return fixture;
   };
 
@@ -384,15 +382,15 @@ describe('help deep link and tour scrolling', () => {
 
     // Browsing the whole catalogue has nothing to scroll to.
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(scrolled).toHaveLength(0);
 
     // flex.sumFlex sits in the last section, well below the fold of a panel that
     // opens scrolled to the top.
     panel.close();
-    fixture.detectChanges();
+    detectChanges(fixture);
     panel.open('flex.sumFlex');
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const target = fixture.nativeElement.querySelector('.tp-help-entry--target') as HTMLElement;
     expect(target).not.toBeNull();
@@ -410,14 +408,14 @@ describe('help deep link and tour scrolling', () => {
     expect(host.parentNode).not.toBe(container);
 
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(host.parentNode).toBe(container);
     expect(document.activeElement)
       .toBe(host.querySelector('.tp-help-panel__search input'));
 
     panel.close();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(host.parentNode).not.toBe(container);
   });
@@ -433,9 +431,9 @@ describe('help deep link and tour scrolling', () => {
 
     for (let cycle = 0; cycle < 2; cycle++) {
       panel.open();
-      fixture.detectChanges();
+      detectChanges(fixture);
       panel.close();
-      fixture.detectChanges();
+      detectChanges(fixture);
     }
 
     expect(host.nextSibling).toBe(marker);
@@ -450,7 +448,7 @@ describe('help deep link and tour scrolling', () => {
     const panel = TestBed.inject(HelpPanelService);
 
     panel.open();
-    fixture.detectChanges();
+    detectChanges(fixture);
     const search = host.querySelector('.tp-help-panel__search input') as HTMLElement;
     expect(document.activeElement).toBe(search);
 
@@ -459,12 +457,12 @@ describe('help deep link and tour scrolling', () => {
     const entryHead = host.querySelector('.tp-help-entry__head') as HTMLElement;
     entryHead.focus();
     panel.open('flex.sumFlex');
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(document.activeElement).toBe(entryHead);
 
     // Closing hands focus back to whatever opened it.
     panel.close();
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(document.activeElement).toBe(trigger);
 
     trigger.remove();
@@ -472,8 +470,7 @@ describe('help deep link and tour scrolling', () => {
 
   it('scrolls the current tour anchor into view when a step becomes current', () => {
     TestBed.configureTestingModule({
-      declarations: [HelpTourComponent],
-      imports: [OverlayModule],
+      imports: [HelpTourComponent, OverlayModule],
       providers: [
         { provide: TranslateService, useValue: { currentLang: 'en-US' } },
         provideHelpVisibility,
@@ -489,18 +486,18 @@ describe('help deep link and tour scrolling', () => {
 
     const fixture: ComponentFixture<HelpTourComponent> = TestBed.createComponent(HelpTourComponent);
     fixture.componentInstance.tour = 'page';
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const tour = TestBed.inject(HelpTourService);
     tour.start('page', { isAdmin: true });
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     const first = anchors.get('toolbar.dateRange') as HTMLElement;
     expect(scrolled).toContain(first);
 
     scrolled.length = 0;
     tour.next();
-    fixture.detectChanges();
+    detectChanges(fixture);
 
     expect(scrolled).toContain(anchors.get('toolbar.navForward') as HTMLElement);
     expect(scrolled).not.toContain(first);

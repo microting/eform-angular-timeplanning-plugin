@@ -13,7 +13,7 @@ describe('Dashboard edit values', () => {
     cy.task('log', '[Folder j - Auto Break Settings] Navigating to plugins page');
     pluginPage.Navbar.goToPluginsPage();
     cy.task('log', '[Folder j - Auto Break Settings] Clicking action menu');
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');
@@ -231,7 +231,7 @@ describe('Dashboard edit values', () => {
   //   cy.wait(500);
   //
   //   pluginPage.Navbar.goToPluginsPage();
-  //   cy.get('#actionMenu')
+  //   cy.get('[id^="actionMenu"]')
   //     .should('be.visible')
   //     .click({ force: true });
   //   cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get');

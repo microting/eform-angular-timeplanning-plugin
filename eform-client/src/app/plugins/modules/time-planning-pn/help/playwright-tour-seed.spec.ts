@@ -1,6 +1,8 @@
+import {describe, it, expect} from 'vitest';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { TOUR_STORAGE_KEY } from './services/help-tour.service';
+import { CLIENT_ROOT } from '../testing/source-paths';
 
 /**
  * The planning page starts its onboarding tours automatically the first time a
@@ -15,7 +17,6 @@ import { TOUR_STORAGE_KEY } from './services/help-tour.service';
  * exists and names the key HelpTourService actually reads, and the config points
  * at the file.
  */
-const CLIENT_ROOT = join(__dirname, '..', '..', '..', '..', '..', '..');
 const SEED_RELATIVE = 'playwright/helpers/tour-seen.storage.json';
 const SEED_PATH = join(CLIENT_ROOT, SEED_RELATIVE);
 const CONFIG_PATH = join(CLIENT_ROOT, 'playwright.config.ts');

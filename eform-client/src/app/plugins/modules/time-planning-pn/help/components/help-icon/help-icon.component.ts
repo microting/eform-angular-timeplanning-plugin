@@ -1,13 +1,16 @@
 import { Component, EventEmitter, Output } from '@angular/core';
-import { ConnectedPosition, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
+import {ConnectedPosition, Overlay, ScrollStrategy, CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
 import { HelpEntryId } from '../../help.model';
 import { HelpEntryChromeBase } from '../help-chrome.base';
+import {NgIf} from '@angular/common';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
 
 @Component({
   selector: 'tp-help-icon',
+  imports: [NgIf, MatIcon, MatIconButton, CdkConnectedOverlay, CdkOverlayOrigin],
   templateUrl: './help-icon.component.html',
   styleUrls: ['./help-icon.component.scss'],
-  standalone: false,
 })
 export class HelpIconComponent extends HelpEntryChromeBase {
   @Output() openInPanel = new EventEmitter<HelpEntryId>();

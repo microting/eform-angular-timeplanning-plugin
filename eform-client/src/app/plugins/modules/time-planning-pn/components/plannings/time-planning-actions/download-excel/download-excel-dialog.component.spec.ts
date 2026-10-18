@@ -1,3 +1,6 @@
+import {describe, it, expect, beforeEach, vi} from 'vitest';
+import type {Mocked, Mock} from 'vitest';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DownloadExcelDialogComponent, DownloadExcelDialogData } from './download-excel-dialog.component';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -5,7 +8,6 @@ import { TimePlanningPnPlanningsService, TimePlanningPnWorkingHoursService } fro
 import { ToastrService } from 'ngx-toastr';
 import { of, throwError } from 'rxjs';
 import { format } from 'date-fns';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -13,9 +15,9 @@ import { CommonModule } from '@angular/common';
 describe('DownloadExcelDialogComponent', () => {
   let component: DownloadExcelDialogComponent;
   let fixture: ComponentFixture<DownloadExcelDialogComponent>;
-  let mockWorkingHoursService: jest.Mocked<TimePlanningPnWorkingHoursService>;
-  let mockPlanningsService: jest.Mocked<TimePlanningPnPlanningsService>;
-  let mockToastrService: jest.Mocked<ToastrService>;
+  let mockWorkingHoursService: Mocked<TimePlanningPnWorkingHoursService>;
+  let mockPlanningsService: Mocked<TimePlanningPnPlanningsService>;
+  let mockToastrService: Mocked<ToastrService>;
   let dialogData: DownloadExcelDialogData;
 
   /** Two active workers on tag 1, one on tag 2, and a resigned one that also carries tag 1. */
@@ -28,26 +30,26 @@ describe('DownloadExcelDialogComponent', () => {
 
   beforeEach(async () => {
     // Mock URL.createObjectURL and URL.revokeObjectURL for file-saver
-    global.URL.createObjectURL = jest.fn(() => 'mock-url');
-    global.URL.revokeObjectURL = jest.fn();
+    global.URL.createObjectURL = vi.fn(() => 'mock-url');
+    global.URL.revokeObjectURL = vi.fn();
     
     // Mock HTMLAnchorElement.prototype.click to prevent navigation errors
-    const mockClick = jest.fn();
+    const mockClick = vi.fn();
     Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
       configurable: true,
       value: mockClick,
     });
     
     mockWorkingHoursService = {
-      downloadReport: jest.fn(),
-      downloadReportAllWorkers: jest.fn(),
+      downloadReport: vi.fn(),
+      downloadReportAllWorkers: vi.fn(),
     } as any;
     mockPlanningsService = {
-      getSiteTags: jest.fn().mockReturnValue(of({ success: true, model: siteTags })),
+      getSiteTags: vi.fn().mockReturnValue(of({ success: true, model: siteTags })),
     } as any;
     mockToastrService = {
-      error: jest.fn(),
-      success: jest.fn(),
+      error: vi.fn(),
+      success: vi.fn(),
     } as any;
 
     dialogData = {
@@ -60,10 +62,9 @@ describe('DownloadExcelDialogComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      declarations: [DownloadExcelDialogComponent],
-      imports: [CommonModule, FormsModule, TranslateModule.forRoot()],
-      schemas: [NO_ERRORS_SCHEMA],
+      imports: [DownloadExcelDialogComponent, CommonModule, FormsModule, TranslateModule.forRoot()],
       providers: [
+        provideNativeDateAdapter(),
         { provide: MAT_DIALOG_DATA, useValue: dialogData },
         { provide: TimePlanningPnWorkingHoursService, useValue: mockWorkingHoursService },
         { provide: TimePlanningPnPlanningsService, useValue: mockPlanningsService },
@@ -188,7 +189,7 @@ describe('DownloadExcelDialogComponent', () => {
       });
     });
 
-    it('should show error toast when download fails', (done) => {
+    it('should show error toast when download fails', async () => {
       mockWorkingHoursService.downloadReport.mockReturnValue(
         throwError(() => new Error('Download failed'))
       );
@@ -196,10 +197,8 @@ describe('DownloadExcelDialogComponent', () => {
       component.onDownloadExcelReport();
 
       // Wait a bit for async operations
-      setTimeout(() => {
-        expect(mockToastrService.error).toHaveBeenCalledWith('Error downloading report');
-        done();
-      }, 100);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(mockToastrService.error).toHaveBeenCalledWith('Error downloading report');
     });
   });
 
@@ -233,7 +232,7 @@ describe('DownloadExcelDialogComponent', () => {
       expect('tagIds' in callArgs).toBe(false);
     });
 
-    it('should show error toast when download all workers fails', (done) => {
+    it('should show error toast when download all workers fails', async () => {
       mockWorkingHoursService.downloadReportAllWorkers.mockReturnValue(
         throwError(() => new Error('Download failed'))
       );
@@ -241,10 +240,8 @@ describe('DownloadExcelDialogComponent', () => {
       component.onDownloadExcelReportAllWorkers();
 
       // Wait a bit for async operations
-      setTimeout(() => {
-        expect(mockToastrService.error).toHaveBeenCalledWith('Error downloading report');
-        done();
-      }, 100);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(mockToastrService.error).toHaveBeenCalledWith('Error downloading report');
     });
 
     it('should not include siteId in all workers report model', () => {

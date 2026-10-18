@@ -1,17 +1,22 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { MtxGridColumn } from '@ng-matero/extensions/grid';
-import { TranslateService } from '@ngx-translate/core';
+import {MtxGridColumn, MtxGrid} from '@ng-matero/extensions/grid';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { selectCurrentUserIsAdmin } from 'src/app/state';
 import { PayRuleSetSimpleModel } from '../../../../models';
 import { isLockedPresetName } from '../../pay-rule-lock.util';
+import {NgIf, AsyncPipe} from '@angular/common';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatMenu, MatMenuItem, MatMenuTrigger} from '@angular/material/menu';
 
 @Component({
   selector: 'app-pay-rule-sets-table',
+  imports: [NgIf, AsyncPipe, TranslatePipe, MatIcon, MatIconButton, MtxGrid, MatTooltip, MatMenu, MatMenuItem, MatMenuTrigger],
   templateUrl: './pay-rule-sets-table.component.html',
   styleUrls: ['./pay-rule-sets-table.component.scss'],
-  standalone: false
 })
 export class PayRuleSetsTableComponent implements OnInit {
   private dialog = inject(MatDialog);

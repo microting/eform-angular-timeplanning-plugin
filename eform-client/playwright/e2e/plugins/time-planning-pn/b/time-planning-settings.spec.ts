@@ -56,10 +56,10 @@ test.describe('Enable Backend Config plugin', () => {
   });
 
   test('should validate default Time registration plugin settings', async ({ page }) => {
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
 
     const [settingsResponse] = await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'),
@@ -151,10 +151,10 @@ test.describe('Enable Backend Config plugin', () => {
   });
 
   test('should activate auto calculation break times', async ({ page }) => {
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
 
     const [settingsResponse] = await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'),
@@ -261,10 +261,10 @@ test.describe('Enable Backend Config plugin', () => {
     await page.goto('http://localhost:4200');
     await new PluginPage(page).Navbar.goToPluginsPage();
 
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
 
     const [settingsResponse2] = await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'),
@@ -305,10 +305,10 @@ test.describe('Enable Backend Config plugin', () => {
 
   test('should toggle GPS and Snapshot settings and persist changes', async ({ page }) => {
     // Navigate to settings page
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
 
     const [settingsResponse] = await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'),
@@ -332,10 +332,10 @@ test.describe('Enable Backend Config plugin', () => {
     // Reload page and verify GPS is still ON
     await page.goto('http://localhost:4200');
     await new PluginPage(page).Navbar.goToPluginsPage();
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
     await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'),
       page.locator('#plugin-settings-link0').click(),
@@ -362,10 +362,10 @@ test.describe('Enable Backend Config plugin', () => {
     // Reload page and verify GPS is still OFF
     await page.goto('http://localhost:4200');
     await new PluginPage(page).Navbar.goToPluginsPage();
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
     await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'),
       page.locator('#plugin-settings-link0').click(),
@@ -390,10 +390,10 @@ test.describe('Enable Backend Config plugin', () => {
     // Reload page and verify Snapshot is still ON
     await page.goto('http://localhost:4200');
     await new PluginPage(page).Navbar.goToPluginsPage();
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
     await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'),
       page.locator('#plugin-settings-link0').click(),
@@ -419,10 +419,10 @@ test.describe('Enable Backend Config plugin', () => {
     // Reload page and verify Snapshot is still OFF
     await page.goto('http://localhost:4200');
     await new PluginPage(page).Navbar.goToPluginsPage();
-    await page.locator('#actionMenu')
+    await page.locator('[id^="actionMenu"]')
       .scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
     await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'),
       page.locator('#plugin-settings-link0').click(),
@@ -445,7 +445,7 @@ test.describe('Enable Backend Config plugin', () => {
     const isPath = (url: string, path: string) => new URL(url).pathname === path;
     const SETTINGS = '/api/time-planning-pn/settings';
     const PAYROLL_SETTINGS = '/api/time-planning-pn/payroll/settings';
-    const actionMenu = page.locator('#actionMenu');
+    const actionMenu = page.locator('[id^="actionMenu"]');
     const gpsToggle = page.locator('#gpsEnabledToggle');
     const gpsChecked = gpsToggle.locator('div button');
 

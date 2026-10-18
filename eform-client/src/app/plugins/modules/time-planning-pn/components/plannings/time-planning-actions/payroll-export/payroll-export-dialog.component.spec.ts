@@ -1,5 +1,7 @@
+import {describe, it, expect, beforeEach, vi} from 'vitest';
+import type {Mocked} from 'vitest';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -11,19 +13,19 @@ import { of } from 'rxjs';
 describe('PayrollExportDialogComponent', () => {
   let component: PayrollExportDialogComponent;
   let fixture: ComponentFixture<PayrollExportDialogComponent>;
-  let mockDialogRef: jest.Mocked<MatDialogRef<PayrollExportDialogComponent>>;
-  let mockPayrollExportService: jest.Mocked<TimePlanningPnPayrollExportService>;
+  let mockDialogRef: Mocked<MatDialogRef<PayrollExportDialogComponent>>;
+  let mockPayrollExportService: Mocked<TimePlanningPnPayrollExportService>;
 
   const mockDialogData = { cutoffDay: 19, payrollSystem: 1 };
 
   beforeEach(async () => {
     mockDialogRef = {
-      close: jest.fn(),
+      close: vi.fn(),
     } as any;
 
     mockPayrollExportService = {
-      preview: jest.fn(),
-      exportPayroll: jest.fn(),
+      preview: vi.fn(),
+      exportPayroll: vi.fn(),
     } as any;
 
     mockPayrollExportService.preview.mockReturnValue(
@@ -31,10 +33,9 @@ describe('PayrollExportDialogComponent', () => {
     );
 
     await TestBed.configureTestingModule({
-      declarations: [PayrollExportDialogComponent],
-      imports: [TranslateModule.forRoot(), HttpClientTestingModule, ToastrModule.forRoot()],
-      schemas: [NO_ERRORS_SCHEMA],
+      imports: [PayrollExportDialogComponent, TranslateModule.forRoot(), HttpClientTestingModule, ToastrModule.forRoot()],
       providers: [
+        provideNativeDateAdapter(),
         { provide: MAT_DIALOG_DATA, useValue: mockDialogData },
         { provide: MatDialogRef, useValue: mockDialogRef },
         { provide: TimePlanningPnPayrollExportService, useValue: mockPayrollExportService },
@@ -53,7 +54,7 @@ describe('PayrollExportDialogComponent', () => {
     it('should calculate period when before cutoff day', () => {
       // Simulate a date before the cutoff (e.g., April 10 with cutoff 19)
       const fakeNow = new Date(2026, 3, 10); // April 10, 2026
-      jest.spyOn(global, 'Date').mockImplementation((...args: any[]) => {
+      vi.spyOn(global, 'Date').mockImplementation((...args: any[]) => {
         if (args.length === 0) {
           return fakeNow;
         }
@@ -62,7 +63,7 @@ describe('PayrollExportDialogComponent', () => {
       });
       const OriginalDate = global.Date;
       // Restore Date before calling ngOnInit
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
 
       // Directly set a known date scenario by calling ngOnInit with controlled state
       // Since we cannot easily mock Date constructor used internally,
@@ -95,10 +96,9 @@ describe('PayrollExportDialogComponent', () => {
       // Reconfigure with no cutoffDay
       TestBed.resetTestingModule();
       await TestBed.configureTestingModule({
-        declarations: [PayrollExportDialogComponent],
-        imports: [TranslateModule.forRoot(), HttpClientTestingModule, ToastrModule.forRoot()],
-        schemas: [NO_ERRORS_SCHEMA],
+        imports: [PayrollExportDialogComponent, TranslateModule.forRoot(), HttpClientTestingModule, ToastrModule.forRoot()],
         providers: [
+          provideNativeDateAdapter(),
           { provide: MAT_DIALOG_DATA, useValue: { cutoffDay: 0, payrollSystem: 1 } },
           { provide: MatDialogRef, useValue: mockDialogRef },
           { provide: TimePlanningPnPayrollExportService, useValue: mockPayrollExportService },

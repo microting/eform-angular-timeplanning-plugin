@@ -56,7 +56,7 @@
 <ng-template #inputNumberTpl let-row let-index="index" let-col="colDef">
   <mat-form-field class="hours-input" [formGroup]="row" style="background-color: transparent !important;"
                   id="{{col.field}}{{index}}">
-    <input matInput type="number" step="0.05" id="planHoursInput" [formControlName]="col.field">
+    <input matInput type="number" step="0.05" id="planHoursInput{{col.field}}{{index}}" [formControlName]="col.field">
   </mat-form-field>
 </ng-template>
 

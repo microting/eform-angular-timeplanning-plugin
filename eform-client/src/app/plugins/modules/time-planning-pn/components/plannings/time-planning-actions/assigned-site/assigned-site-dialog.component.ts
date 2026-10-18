@@ -1,10 +1,7 @@
 import {Component, DoCheck, OnInit,
   inject
 } from '@angular/core';
-import {
-  MAT_DIALOG_DATA,
-  MatDialog
-} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialog, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose} from '@angular/material/dialog';
 import {AssignedSiteModel, CommonTagModel, GlobalAutoBreakSettingsModel, PayRuleSetSimpleModel} from '../../../../models';
 import {PayRuleSetsViewModalComponent} from '../../../../modules/pay-rule-sets/components/pay-rule-sets-view-modal/pay-rule-sets-view-modal.component';
 import {selectCurrentUserIsAdmin, selectCurrentUserIsFirstUser} from 'src/app/state';
@@ -19,13 +16,26 @@ import {
   ReactiveFormsModule,
   FormControl,
 } from '@angular/forms';
+import {NgIf, NgFor, AsyncPipe} from '@angular/common';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
+import {MatFormField, MatLabel, MatError, MatHint, MatSuffix} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MtxSelect} from '@ng-matero/extensions/select';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
+import {MatCheckbox} from '@angular/material/checkbox';
+import {MatRadioGroup, MatRadioButton} from '@angular/material/radio';
+import {MatTabGroup, MatTab} from '@angular/material/tabs';
+import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
 
 
 @Component({
   selector: 'app-assigned-site-dialog',
+  imports: [NgIf, NgFor, AsyncPipe, ReactiveFormsModule, TranslatePipe, MatIcon, MatIconButton, MatFormField, MatLabel, MatError, MatHint, MatSuffix, MatInput, MtxSelect, MatTooltip, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatDatepicker, MatDatepickerInput, MatDatepickerToggle, MatCheckbox, MatRadioGroup, MatRadioButton, MatTabGroup, MatTab, NgxMaterialTimepickerModule],
   templateUrl: './assigned-site-dialog.component.html',
   styleUrls: ['./assigned-site-dialog.component.scss'],
-  standalone: false
 })
 export class AssignedSiteDialogComponent implements DoCheck, OnInit {
   private fb = inject(FormBuilder);

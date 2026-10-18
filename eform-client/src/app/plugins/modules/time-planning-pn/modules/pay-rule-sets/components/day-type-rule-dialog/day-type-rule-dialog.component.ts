@@ -1,7 +1,17 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatTableDataSource } from '@angular/material/table';
+import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators, ReactiveFormsModule} from '@angular/forms';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose} from '@angular/material/dialog';
+import {MatTableDataSource, MatTableModule} from '@angular/material/table';
+import {NgIf, NgFor} from '@angular/common';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
+import {MatFormField, MatLabel, MatError} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatSelect} from '@angular/material/select';
+import {MatOption} from '@angular/material/core';
+import {NgxMaterialTimepickerModule} from 'ngx-material-timepicker';
 
 export interface DayTypeRuleDialogData {
   mode: 'create' | 'edit';
@@ -10,7 +20,7 @@ export interface DayTypeRuleDialogData {
 
 @Component({
   selector: 'app-day-type-rule-dialog',
-  standalone: false,
+  imports: [NgIf, NgFor, ReactiveFormsModule, TranslatePipe, MatIcon, MatIconButton, MatFormField, MatLabel, MatError, MatInput, MatTooltip, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatSelect, MatOption, MatTableModule, NgxMaterialTimepickerModule],
   templateUrl: './day-type-rule-dialog.component.html',
   styleUrls: ['./day-type-rule-dialog.component.scss']
 })

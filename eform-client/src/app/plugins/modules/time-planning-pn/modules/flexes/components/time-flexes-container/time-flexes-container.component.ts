@@ -10,13 +10,18 @@ import {
   TimeFlexesUpdateModel,
 } from '../../../../models';
 import { TimePlanningPnFlexesService } from '../../../../services';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatIcon} from '@angular/material/icon';
+import {MatTooltip} from '@angular/material/tooltip';
+import {EformNewSubheaderComponent} from 'src/app/common/modules/eform-shared/components';
+import {TimeFlexesTableComponent} from '../time-flexes-table/time-flexes-table.component';
 
 @AutoUnsubscribe()
 @Component({
     selector: 'app-time-flexes-container',
+    imports: [TranslatePipe, MatIcon, MatTooltip, EformNewSubheaderComponent, TimeFlexesTableComponent],
     templateUrl: './time-flexes-container.component.html',
     styleUrls: ['./time-flexes-container.component.scss'],
-    standalone: false
 })
 export class TimeFlexesContainerComponent implements OnInit, OnDestroy {
   private planningsService = inject(TimePlanningPnFlexesService);

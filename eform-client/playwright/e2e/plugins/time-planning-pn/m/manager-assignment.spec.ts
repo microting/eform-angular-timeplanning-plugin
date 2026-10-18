@@ -137,7 +137,7 @@ test.describe('Time Planning - Manager Assignment', () => {
    * Test 1: Check/uncheck IsManager and verify it persists
    */
   test('should toggle IsManager on and off and persist the state', async ({ page }) => {
-    if (await page.locator('#actionMenu').count() === 0) {
+    if (await page.locator('[id^="actionMenu"]').count() === 0) {
       return;
     }
 
@@ -202,7 +202,7 @@ test.describe('Time Planning - Manager Assignment', () => {
    * Test 2: Verify tags field shows when manager is on, test with random text
    */
   test('should show tags field when manager checkbox is on and handle random text without errors', async ({ page }) => {
-    if (await page.locator('#actionMenu').count() === 0) {
+    if (await page.locator('[id^="actionMenu"]').count() === 0) {
       return;
     }
 
@@ -270,7 +270,7 @@ test.describe('Time Planning - Manager Assignment', () => {
    * Test 3: Create a tag, use it in assigned-site-modal, and verify it persists
    */
   test('should create a tag, use it in assigned-site-modal, and persist the selection', async ({ page }) => {
-    if (await page.locator('#actionMenu').count() === 0) {
+    if (await page.locator('[id^="actionMenu"]').count() === 0) {
       return;
     }
 

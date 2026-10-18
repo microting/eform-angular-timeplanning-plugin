@@ -76,23 +76,12 @@ jobs:
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright/helpers eform-angular-frontend/eform-client/playwright/helpers
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright.config.ts eform-angular-frontend/eform-client/playwright.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
+    - name: Enable Corepack
+      run: corepack enable
     - name: yarn install
       run: cd eform-angular-frontend/eform-client && yarn install
     - name: Run Angular unit tests
-      run: |
-        cd eform-angular-frontend/eform-client
-        # Check if Jest is configured
-        if [ ! -f "jest.config.js" ] && [ ! -f "jest.config.ts" ]; then
-          echo "⚠️  Jest is not configured in the frontend repository."
-          echo "Unit tests require Jest to be configured. Skipping unit tests."
-          echo ""
-          echo "To enable unit tests, ensure Jest is configured in the frontend repository."
-          exit 0
-        fi
-
-        # Run Jest tests for time-planning-pn plugin
-        echo "Running Jest tests for time-planning-pn plugin..."
-        npm run test:unit -- --testPathPatterns=time-planning-pn --coverage --collectCoverageFrom='src/app/plugins/modules/time-planning-pn/**/*.ts' --coveragePathIgnorePatterns='\.spec\.ts$'
+      run: cd eform-angular-frontend/eform-client && npx ng test --watch=false --include='src/app/plugins/modules/time-planning-pn/**/*.spec.ts'
   pn-playwright-test:
     needs: build
     runs-on: ubuntu-latest
@@ -148,6 +137,8 @@ jobs:
         cp -av eform-angular-timeplanning-plugin/eform-client/playwright.config.ts eform-angular-frontend/eform-client/playwright.config.ts
         cp -av eform-angular-timeplanning-plugin/eform-client/cypress.config.ts eform-angular-frontend/eform-client/cypress.config.ts
         cd eform-angular-frontend/eform-client && ../../eform-angular-timeplanning-plugin/testinginstallpn.sh
+    - name: Enable Corepack
+      run: corepack enable
     - name: yarn install
       run: cd eform-angular-frontend/eform-client && yarn install
     - name: Install Playwright browsers

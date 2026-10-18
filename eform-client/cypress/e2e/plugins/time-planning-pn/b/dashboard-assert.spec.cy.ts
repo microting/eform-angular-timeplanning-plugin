@@ -426,7 +426,7 @@ describe('Dashboard assert', () => {
     pluginPage.Navbar.goToPluginsPage();
 
     cy.task('log', '[Folder b - Dashboard Assert] Clicking action menu');
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Dashboard Assert] Setting up intercept for settings-get');

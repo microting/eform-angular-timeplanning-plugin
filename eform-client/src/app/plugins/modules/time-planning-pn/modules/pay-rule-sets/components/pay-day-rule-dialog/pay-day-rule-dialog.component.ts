@@ -1,6 +1,8 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose} from '@angular/material/dialog';
+import {TranslatePipe} from '@ngx-translate/core';
+import {PayDayRuleFormComponent} from '../pay-day-rule-form/pay-day-rule-form.component';
 
 export interface PayDayRuleDialogData {
   mode: 'create' | 'edit';
@@ -9,7 +11,7 @@ export interface PayDayRuleDialogData {
 
 @Component({
   selector: 'app-pay-day-rule-dialog',
-  standalone: false,
+  imports: [TranslatePipe, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, PayDayRuleFormComponent],
   templateUrl: './pay-day-rule-dialog.component.html',
   styleUrls: ['./pay-day-rule-dialog.component.scss']
 })
