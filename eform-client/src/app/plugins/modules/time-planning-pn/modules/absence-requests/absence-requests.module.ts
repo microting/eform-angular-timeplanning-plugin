@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import {MatDialogModule} from '@angular/material/dialog';
 import { AbsenceRequestsRouting } from './absence-requests.routing';
 import {
   AbsenceRequestsContainerComponent,
@@ -9,6 +10,7 @@ import {
 
 @NgModule({
   imports: [
+    MatDialogModule,
     AbsenceRequestsRouting,
     AbsenceRequestsContainerComponent,
     AbsenceRequestsTableComponent,

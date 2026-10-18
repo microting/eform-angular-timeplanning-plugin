@@ -1,4 +1,5 @@
 import {NgModule} from '@angular/core';
+import {MatDialogModule} from '@angular/material/dialog';
 import {
   RegistrationDevicesContainerComponent,
   RegistrationDevicesCreateModalComponent,
@@ -12,6 +13,7 @@ import {
 
 @NgModule({
   imports: [
+    MatDialogModule,
     RegistrationDevicesRouting,
     RegistrationDevicesTableComponent,
     RegistrationDevicesContainerComponent,

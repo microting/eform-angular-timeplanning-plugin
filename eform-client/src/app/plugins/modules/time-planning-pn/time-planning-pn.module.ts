@@ -1,4 +1,5 @@
 import {NgModule} from '@angular/core';
+import {MatDialogModule} from '@angular/material/dialog';
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
 import {TimePlanningPnRouting} from './time-planning-pn.routing';
 import {TimePlanningPnLayoutComponent} from './layouts';
@@ -22,6 +23,7 @@ import {HelpTourComponent} from './help/components/help-tour/help-tour.component
 
 @NgModule({
   imports: [
+    MatDialogModule,
     TimePlanningPnRouting,
     TimePlanningPnLayoutComponent,
     TimePlanningSettingsComponent,
