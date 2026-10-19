@@ -1,4 +1,5 @@
 import { isDevMode } from '@angular/core';
+import { HelpEntry } from './help.model';
 import { PLANNING_HELP_ENTRIES } from './planning-help.registry';
 
 /**
@@ -10,12 +11,21 @@ import { PLANNING_HELP_ENTRIES } from './planning-help.registry';
 export const GRID_NAME_HEADER_SELECTOR = 'th.mat-column-siteName';
 
 /** Read from the registry rather than repeated, so the stamp cannot drift from it. */
-const SORT_NAME_ANCHOR = PLANNING_HELP_ENTRIES.find(entry => entry.id === 'grid.sortName')?.anchor;
+const findSortNameAnchor = (entries: readonly HelpEntry[]) =>
+  entries.find(entry => entry.id === 'grid.sortName')?.anchor;
+const SORT_NAME_ANCHOR = findSortNameAnchor(PLANNING_HELP_ENTRIES);
 
 let warnedAboutMissingAnchor = false;
 
-export function applyGridHelpAnchors(root: ParentNode | null | undefined): void {
-  if (!SORT_NAME_ANCHOR) {
+/**
+ * `entries` exists for specs: the app always stamps from PLANNING_HELP_ENTRIES.
+ */
+export function applyGridHelpAnchors(
+  root: ParentNode | null | undefined,
+  entries: readonly HelpEntry[] = PLANNING_HELP_ENTRIES,
+): void {
+  const sortNameAnchor = entries === PLANNING_HELP_ENTRIES ? SORT_NAME_ANCHOR : findSortNameAnchor(entries);
+  if (!sortNameAnchor) {
     // A stamp that quietly stops happening is worse than one that complains:
     // the registry would still advertise an anchor nothing produces.
     if (isDevMode() && !warnedAboutMissingAnchor) {
@@ -29,6 +39,6 @@ export function applyGridHelpAnchors(root: ParentNode | null | undefined): void 
   }
   const header = root?.querySelector(GRID_NAME_HEADER_SELECTOR);
   if (header && !header.hasAttribute('data-tp-help')) {
-    header.setAttribute('data-tp-help', SORT_NAME_ANCHOR);
+    header.setAttribute('data-tp-help', sortNameAnchor);
   }
 }

@@ -87,7 +87,10 @@ async function openDialogForActiveCell(page: Page) {
   await page.locator('#cell0_0').click();
 
   // Wipe any seed-prefilled shift-1 actual-start so the test starts from a
-  // known-empty pair. Mirrors the f1m beforeEach wipe.
+  // known-empty pair. Mirrors the f1m beforeEach wipe. Wait for the dialog
+  // first: count() does not wait, and the dialog renders a frame after the
+  // click, so counting straight away skipped the wipe.
+  await page.locator('[data-testid="start1StartedAt"]').waitFor({ state: 'visible', timeout: 15000 });
   const wipeBtn = page.locator('[data-testid="start1StartedAt"]')
     .locator('xpath=ancestor::div[contains(@class,"flex-row")]')
     .locator('button mat-icon')

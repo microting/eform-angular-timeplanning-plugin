@@ -15,7 +15,7 @@ describe('Enable Backend Config plugin', () => {
   it('should validate default Time registration plugin settings', () => {
     cy.task('log', '[Folder b - Settings] ========== Test: Validate default Time registration plugin settings ==========');
     cy.task('log', '[Folder b - Settings] Clicking action menu');
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Settings] Setting up intercept for settings-get');
@@ -138,7 +138,7 @@ describe('Enable Backend Config plugin', () => {
   it('should activate auto calculation break times', () => {
     cy.task('log', '[Folder b - Settings] ========== Test: Activate auto calculation break times ==========');
     cy.task('log', '[Folder b - Settings] Clicking action menu');
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Settings] Setting up intercept for settings-get');
@@ -300,7 +300,7 @@ describe('Enable Backend Config plugin', () => {
     pluginPage.Navbar.goToPluginsPage();
 
     cy.task('log', '[Folder b - Settings] Clicking action menu to verify settings');
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Settings] Setting up intercept for settings-get');
@@ -363,7 +363,7 @@ describe('Enable Backend Config plugin', () => {
     cy.task('log', '[Folder b - Settings] ========== Test: Toggle GPS and Snapshot settings ==========');
     // Navigate to settings page
     cy.task('log', '[Folder b - Settings] Clicking action menu');
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.task('log', '[Folder b - Settings] Setting up intercept for settings-get');
@@ -401,7 +401,7 @@ describe('Enable Backend Config plugin', () => {
     cy.task('log', '[Folder b - Settings] Reloading page to verify GPS persistence');
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-2');
@@ -437,7 +437,7 @@ describe('Enable Backend Config plugin', () => {
     // Reload page and verify GPS is still OFF
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-3');
@@ -472,7 +472,7 @@ describe('Enable Backend Config plugin', () => {
     cy.task('log', '[Folder b - Settings] Reloading page to verify Snapshot persistence');
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-4');
@@ -508,7 +508,7 @@ describe('Enable Backend Config plugin', () => {
     cy.task('log', '[Folder b - Settings] Reloading page to verify Snapshot is still OFF');
     cy.visit('http://localhost:4200');
     pluginPage.Navbar.goToPluginsPage();
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
     cy.intercept('GET', '**/api/time-planning-pn/settings').as('settings-get-5');

@@ -1,7 +1,9 @@
 import {Component, Inject, OnInit} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions} from '@angular/material/dialog';
 import {FormGroup, FormControl, Validators} from '@angular/forms';
 import {BreakPolicyRuleFormValue} from '../break-policy-rules-list/break-policy-rules-list.component';
+import {TranslatePipe} from '@ngx-translate/core';
+import {BreakPolicyRuleFormComponent} from '../break-policy-rule-form/break-policy-rule-form.component';
 
 export interface BreakPolicyRuleDialogData {
   mode: 'create' | 'edit';
@@ -10,7 +12,7 @@ export interface BreakPolicyRuleDialogData {
 
 @Component({
   selector: 'app-break-policy-rule-dialog',
-  standalone: false,
+  imports: [TranslatePipe, MatDialogTitle, MatDialogContent, MatDialogActions, BreakPolicyRuleFormComponent],
   templateUrl: './break-policy-rule-dialog.component.html',
   styleUrls: ['./break-policy-rule-dialog.component.scss']
 })

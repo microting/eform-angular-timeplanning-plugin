@@ -24,7 +24,7 @@ describe('Time Planning - Leave policies', () => {
     loginPage.login();
 
     pluginPage.Navbar.goToPluginsPage();
-    cy.get('#actionMenu')
+    cy.get('[id^="actionMenu"]')
       .scrollIntoView().should('be.visible')
       .click({ force: true });
 

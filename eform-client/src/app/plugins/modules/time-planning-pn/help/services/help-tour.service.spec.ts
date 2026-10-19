@@ -1,3 +1,4 @@
+import {describe, it, expect, beforeEach, vi} from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { firstValueFrom, of } from 'rxjs';
@@ -247,7 +248,7 @@ describe('HelpTourService', () => {
   });
 
   it('survives localStorage being unavailable', () => {
-    const getItem = jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });
     expect(service.hasSeen('page')).toBe(false);
@@ -255,7 +256,7 @@ describe('HelpTourService', () => {
   });
 
   it('survives localStorage rejecting a write', () => {
-    const setItem = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota');
     });
     expect(() => service.markSeen('page')).not.toThrow();

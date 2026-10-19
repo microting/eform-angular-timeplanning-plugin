@@ -11,11 +11,14 @@ import {dialogConfigHelper} from 'src/app/common/helpers';
 import {
   RegistrationDevicesCreateModalComponent
 } from '../index';
+import {TranslatePipe} from '@ngx-translate/core';
+import {EformNewSubheaderComponent} from 'src/app/common/modules/eform-shared/components';
+import {RegistrationDevicesTableComponent} from '../registration-devices-table/registration-devices-table.component';
 
 @Component({
     selector: 'app-registration-devices-container',
+    imports: [TranslatePipe, EformNewSubheaderComponent, RegistrationDevicesTableComponent],
     templateUrl: './registration-devices-container.component.html',
-    standalone: false
 })
 export class RegistrationDevicesContainerComponent implements OnInit {
   public dialog = inject(MatDialog);

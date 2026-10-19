@@ -1,3 +1,4 @@
+import {describe, it, expect, beforeEach} from 'vitest';
 import { firstValueFrom } from 'rxjs';
 import { HelpEntryId } from '../help.model';
 import { HelpPanelService } from './help-panel.service';

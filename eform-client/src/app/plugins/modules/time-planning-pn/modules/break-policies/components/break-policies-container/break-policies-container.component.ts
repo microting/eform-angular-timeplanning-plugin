@@ -10,13 +10,15 @@ import { TimePlanningPnBreakPoliciesService } from '../../../../services';
 import { BreakPoliciesCreateModalComponent } from '../break-policies-create-modal/break-policies-create-modal.component';
 import { BreakPoliciesEditModalComponent } from '../break-policies-edit-modal/break-policies-edit-modal.component';
 import { BreakPoliciesDeleteModalComponent } from '../break-policies-delete-modal/break-policies-delete-modal.component';
+import {TranslatePipe} from '@ngx-translate/core';
+import {BreakPoliciesTableComponent} from '../break-policies-table/break-policies-table.component';
 
 @AutoUnsubscribe()
 @Component({
   selector: 'app-break-policies-container',
+  imports: [TranslatePipe, BreakPoliciesTableComponent],
   templateUrl: './break-policies-container.component.html',
   styleUrls: ['./break-policies-container.component.scss'],
-  standalone: false
 })
 export class BreakPoliciesContainerComponent implements OnInit, OnDestroy {
   private breakPoliciesService = inject(TimePlanningPnBreakPoliciesService);

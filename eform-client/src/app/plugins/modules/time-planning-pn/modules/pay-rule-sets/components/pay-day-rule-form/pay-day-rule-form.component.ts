@@ -1,12 +1,21 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {FormGroup, FormControl, Validators, FormArray, FormBuilder, AbstractControl, ValidationErrors} from '@angular/forms';
-import {MatTableDataSource} from '@angular/material/table';
-import {TranslateService} from '@ngx-translate/core';
+import {FormGroup, FormControl, Validators, FormArray, FormBuilder, AbstractControl, ValidationErrors, ReactiveFormsModule} from '@angular/forms';
+import {MatTableDataSource, MatTableModule} from '@angular/material/table';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import {secondsToHM} from '../../pay-rule-format.util';
+import {NgIf, NgFor} from '@angular/common';
+import {MatIcon} from '@angular/material/icon';
+import {MatIconButton} from '@angular/material/button';
+import {MatFormField, MatLabel, MatError, MatHint} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatSelect} from '@angular/material/select';
+import {MatOption} from '@angular/material/core';
+import {HhMmSecondsDirective} from '../../directives/hh-mm-seconds.directive';
 
 @Component({
   selector: 'app-pay-day-rule-form',
-  standalone: false,
+  imports: [NgIf, NgFor, ReactiveFormsModule, TranslatePipe, MatIcon, MatIconButton, MatFormField, MatLabel, MatError, MatHint, MatInput, MatTooltip, MatSelect, MatOption, MatTableModule, HhMmSecondsDirective],
   templateUrl: './pay-day-rule-form.component.html',
   styleUrls: ['./pay-day-rule-form.component.scss']
 })

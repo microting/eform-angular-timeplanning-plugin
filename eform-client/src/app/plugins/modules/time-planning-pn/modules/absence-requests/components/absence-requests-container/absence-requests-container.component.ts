@@ -6,16 +6,18 @@ import { MatDialog } from '@angular/material/dialog';
 import { Overlay } from '@angular/cdk/overlay';
 import { AutoUnsubscribe } from 'ngx-auto-unsubscribe';
 import { ToastrService } from 'ngx-toastr';
-import { TranslateService } from '@ngx-translate/core';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { selectAuthUser } from 'src/app/state';
+import {EformNewSubheaderComponent} from 'src/app/common/modules/eform-shared/components';
+import {AbsenceRequestsTableComponent} from '../absence-requests-table/absence-requests-table.component';
 
 @AutoUnsubscribe()
 @Component({
   selector: 'app-absence-requests-container',
+  imports: [TranslatePipe, EformNewSubheaderComponent, AbsenceRequestsTableComponent],
   templateUrl: './absence-requests-container.component.html',
   styleUrls: ['./absence-requests-container.component.scss'],
-  standalone: false
 })
 export class AbsenceRequestsContainerComponent implements OnInit, OnDestroy {
   public dialog = inject(MatDialog);

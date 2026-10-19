@@ -370,9 +370,9 @@ test.describe('Dashboard assert', () => {
 
     await pluginPage.Navbar.goToPluginsPage();
 
-    await page.locator('#actionMenu').scrollIntoViewIfNeeded();
-    await expect(page.locator('#actionMenu')).toBeVisible();
-    await page.locator('#actionMenu').click({ force: true });
+    await page.locator('[id^="actionMenu"]').scrollIntoViewIfNeeded();
+    await expect(page.locator('[id^="actionMenu"]')).toBeVisible();
+    await page.locator('[id^="actionMenu"]').click({ force: true });
 
     const [settingsResp] = await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/time-planning-pn/settings') && r.request().method() === 'GET'),

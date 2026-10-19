@@ -4,6 +4,7 @@ ARG DISABLE_SENTRY
 ENV PATH /app/node_modules/.bin:$PATH
 ENV DISABLE_SENTRY=${DISABLE_SENTRY}
 COPY eform-angular-frontend/eform-client ./
+RUN corepack enable
 RUN yarn install
 RUN yarn build
 

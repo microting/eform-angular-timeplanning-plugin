@@ -15,7 +15,7 @@ test.describe('Enable Backend Config plugin', () => {
 
     // Open action menu for the plugin
     await page.locator('.mat-mdc-row').filter({ hasText: pluginName }).first()
-      .locator('#actionMenu').click();
+      .locator('[id^="actionMenu"]').click();
     await page.waitForTimeout(500);
 
     // Click the status button inside the menu to enable the plugin
@@ -37,7 +37,7 @@ test.describe('Enable Backend Config plugin', () => {
     // Verify the plugin is enabled by checking the status
     // Re-open the action menu to check the status
     await page.locator('.mat-mdc-row').filter({ hasText: pluginName }).first()
-      .locator('#actionMenu').click();
+      .locator('[id^="actionMenu"]').click();
     await page.waitForTimeout(500);
 
     await expect(

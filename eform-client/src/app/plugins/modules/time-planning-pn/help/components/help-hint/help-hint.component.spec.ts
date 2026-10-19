@@ -1,6 +1,8 @@
+import {describe, it, expect, beforeEach} from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateService } from '@ngx-translate/core';
+import { detectChanges } from '../../../testing/detect-changes';
 import { HelpHintComponent } from './help-hint.component';
 import { of } from 'rxjs';
 import { enUS } from '../../i18n/enUS';
@@ -23,8 +25,7 @@ describe('HelpHintComponent', () => {
     // The stub is shared by every case here; the gate tests flip it.
     helpVisibility.isVisible = true;
     await TestBed.configureTestingModule({
-      declarations: [HelpHintComponent],
-      imports: [MatIconModule],
+      imports: [HelpHintComponent, MatIconModule],
       providers: [
         { provide: TranslateService, useValue: { currentLang: 'en-US' } },
         provideHelpVisibility,
@@ -35,46 +36,46 @@ describe('HelpHintComponent', () => {
 
   it('renders the entry short text', () => {
     fixture.componentInstance.helpId = 'dayCell.futureDisabled';
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.nativeElement.textContent).toContain(enUS['dayCell.futureDisabled'].short);
   });
 
   it('uses the info tone by default and warn when asked', () => {
     fixture.componentInstance.helpId = 'dayCell.futureDisabled';
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.nativeElement.querySelector('.help-text')?.classList).not.toContain('help-text--warn');
 
     fixture.componentInstance.tone = 'warn';
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.nativeElement.querySelector('.help-text')?.classList).toContain('help-text--warn');
   });
 
   it('renders nothing for an unknown id', () => {
     fixture.componentInstance.helpId = 'nope' as never;
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.nativeElement.querySelector('.help-text')).toBeNull();
   });
 
   it('renders the correct icon based on tone', () => {
     fixture.componentInstance.helpId = 'dayCell.futureDisabled';
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.nativeElement.querySelector('.mat-icon').textContent).toContain('info');
 
     fixture.componentInstance.tone = 'warn';
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.nativeElement.querySelector('.mat-icon').textContent).toContain('warning');
   });
 
   it('renders nothing when help is not visible, and the hint again when it is', () => {
     fixture.componentInstance.helpId = 'dayCell.futureDisabled';
     helpVisibility.isVisible = false;
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.nativeElement.querySelector('.help-text')).toBeNull();
 
     // The admin half: otherwise the assertion above is indistinguishable from
     // the component rendering nothing under any circumstances.
     helpVisibility.isVisible = true;
-    fixture.detectChanges();
+    detectChanges(fixture);
     expect(fixture.nativeElement.querySelector('.help-text')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain(enUS['dayCell.futureDisabled'].short);
   });

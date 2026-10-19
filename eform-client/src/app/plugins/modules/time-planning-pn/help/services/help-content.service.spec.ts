@@ -1,3 +1,4 @@
+import {describe, it, expect} from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { HelpContentService } from './help-content.service';

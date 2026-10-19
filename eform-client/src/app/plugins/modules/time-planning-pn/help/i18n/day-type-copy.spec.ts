@@ -1,3 +1,4 @@
+import {describe, it, expect} from 'vitest';
 import { HELP_LOCALES } from './index';
 import { HelpProse } from '../help.model';
 

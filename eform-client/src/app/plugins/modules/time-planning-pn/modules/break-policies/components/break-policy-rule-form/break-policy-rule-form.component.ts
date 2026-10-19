@@ -1,9 +1,15 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {FormGroup, FormControl, Validators} from '@angular/forms';
+import {FormGroup, FormControl, Validators, ReactiveFormsModule} from '@angular/forms';
+import {NgIf, NgFor} from '@angular/common';
+import {TranslatePipe} from '@ngx-translate/core';
+import {MatFormField, MatLabel, MatError, MatHint} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MatSelect} from '@angular/material/select';
+import {MatOption} from '@angular/material/core';
 
 @Component({
   selector: 'app-break-policy-rule-form',
-  standalone: false,
+  imports: [NgIf, NgFor, ReactiveFormsModule, TranslatePipe, MatFormField, MatLabel, MatError, MatHint, MatInput, MatSelect, MatOption],
   templateUrl: './break-policy-rule-form.component.html',
   styleUrls: ['./break-policy-rule-form.component.scss']
 })

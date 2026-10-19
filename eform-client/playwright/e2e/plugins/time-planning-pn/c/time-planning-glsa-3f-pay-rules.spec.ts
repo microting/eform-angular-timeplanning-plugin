@@ -195,9 +195,9 @@ async function setTimepickerValue(
   // Select minute on the clock face
   const minuteDegrees = 360 / 60 * minutes;
   if (minuteDegrees === 0) {
-    await page.locator('[style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
+    await page.locator('ngx-material-timepicker-minutes-face [style="transform: rotateZ(360deg) translateX(-50%);"] > span').click();
   } else {
-    await page.locator(`[style="transform: rotateZ(${minuteDegrees}deg) translateX(-50%);"] > span`).click({ force: true });
+    await page.locator(`ngx-material-timepicker-minutes-face [style="transform: rotateZ(${minuteDegrees}deg) translateX(-50%);"] > span`).click({ force: true });
   }
 
   // Confirm
@@ -467,7 +467,7 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     await expect(row.first()).toBeVisible({ timeout: 10000 });
 
     // Open the row-action menu and assert Edit + Delete are disabled
-    await row.first().locator('#actionMenu').click();
+    await row.first().locator('[id^="actionMenu"]').click();
     const editBtn = page.locator('button[id^="editPayRuleSetBtn-"]');
     const deleteBtn = page.locator('button[id^="deletePayRuleSetBtn-"]');
     await expect(editBtn).toBeVisible({ timeout: 5000 });
@@ -480,7 +480,7 @@ test.describe('GLS-A / 3F Pay Rule Set Full Pipeline E2E', () => {
     // the modal itself must render the locked summary view (no editable
     // name field, no Update button).
     // Force-click the disabled edit button via JS to verify modal behavior.
-    await row.first().locator('#actionMenu').click();
+    await row.first().locator('[id^="actionMenu"]').click();
     await page.evaluate(() => {
       const btn = document.querySelector('button[id^="editPayRuleSetBtn-"]') as HTMLButtonElement | null;
       if (btn) {

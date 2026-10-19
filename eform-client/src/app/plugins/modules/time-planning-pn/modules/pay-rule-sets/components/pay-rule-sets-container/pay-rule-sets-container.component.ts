@@ -10,14 +10,15 @@ import {PayRuleSetsViewModalComponent} from '../pay-rule-sets-view-modal/pay-rul
 import {TimePlanningPnPayRuleSetsService} from '../../../../services';
 import {Subscription} from 'rxjs';
 import {ToastrService} from 'ngx-toastr';
-import {TranslateService} from '@ngx-translate/core';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
+import {PayRuleSetsTableComponent} from '../pay-rule-sets-table/pay-rule-sets-table.component';
 
 @AutoUnsubscribe()
 @Component({
   selector: 'app-pay-rule-sets-container',
+  imports: [TranslatePipe, PayRuleSetsTableComponent],
   templateUrl: './pay-rule-sets-container.component.html',
   styleUrls: ['./pay-rule-sets-container.component.scss'],
-  standalone: false,
 })
 export class PayRuleSetsContainerComponent implements OnInit, OnDestroy {
   payRuleSets: PayRuleSetSimpleModel[] = [];

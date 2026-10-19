@@ -19,7 +19,7 @@ describe('Application settings page - site header section', function () {
     expect(backendPlugin.version).equal('1.0.0.0');
     
     // Open action menu to check status
-    const actionMenuBtn = await $('#action-items-0').$('#actionMenu');
+    const actionMenuBtn = await $('#action-items-0').$('[id^="actionMenu"]');
     await actionMenuBtn.waitForDisplayed({ timeout: 40000 });
     await actionMenuBtn.waitForClickable({ timeout: 40000 });
     await actionMenuBtn.click();
@@ -38,7 +38,7 @@ describe('Application settings page - site header section', function () {
 
   it('should activate the plugin', async () => {
     // Open action menu
-    const actionMenuBtn = await $('#action-items-0').$('#actionMenu');
+    const actionMenuBtn = await $('#action-items-0').$('[id^="actionMenu"]');
     await actionMenuBtn.waitForDisplayed({ timeout: 40000 });
     await actionMenuBtn.waitForClickable({ timeout: 40000 });
     await actionMenuBtn.click();
@@ -70,7 +70,7 @@ describe('Application settings page - site header section', function () {
     expect(backendPlugin.version).equal('1.0.0.0');
     
     // Open action menu to check new status
-    const actionMenuBtn2 = await $('#action-items-0').$('#actionMenu');
+    const actionMenuBtn2 = await $('#action-items-0').$('[id^="actionMenu"]');
     await actionMenuBtn2.waitForDisplayed({ timeout: 40000 });
     await actionMenuBtn2.waitForClickable({ timeout: 40000 });
     await actionMenuBtn2.click();

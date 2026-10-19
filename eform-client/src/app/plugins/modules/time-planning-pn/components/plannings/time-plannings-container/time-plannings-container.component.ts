@@ -13,7 +13,7 @@ import {
 } from '../../../services';
 import {startOfWeek, endOfWeek, format, startOfDay, subDays} from 'date-fns';
 import {ToastrService} from 'ngx-toastr';
-import {TranslateService} from '@ngx-translate/core';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import {
   assertLockOutcomeHandled, buildReconcilePreview, ReconcilePreview, sendLockRequest,
 } from '../day-lock.util';
@@ -24,19 +24,32 @@ import {MatDialog} from '@angular/material/dialog';
 import {
   DownloadExcelDialogComponent, DownloadExcelDialogData, PayrollExportDialogComponent
 } from 'src/app/plugins/modules/time-planning-pn/components';
-import {MatDatepickerInputEvent} from '@angular/material/datepicker';
+import {MatDatepickerInputEvent, MatDatepicker, MatDatepickerInput, MatDatepickerToggle, MatDateRangeInput, MatDateRangePicker, MatStartDate, MatEndDate} from '@angular/material/datepicker';
 import {HelpAudience, HelpEntryId, HelpTourName, HelpUiStrings} from '../../../help/help.model';
 import {HelpContentService} from '../../../help/services/help-content.service';
 import {HelpPanelService} from '../../../help/services/help-panel.service';
 import {HelpTourService} from '../../../help/services/help-tour.service';
 import {HelpVisibilityService} from '../../../help/services/help-visibility.service';
+import {NgIf, AsyncPipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {MatIcon} from '@angular/material/icon';
+import {MatFormField, MatLabel, MatPrefix} from '@angular/material/form-field';
+import {MatInput} from '@angular/material/input';
+import {MtxSelect} from '@ng-matero/extensions/select';
+import {MatTooltip} from '@angular/material/tooltip';
+import {MatSlideToggle} from '@angular/material/slide-toggle';
+import {EformNewSubheaderComponent} from 'src/app/common/modules/eform-shared/components';
+import {HelpPanelComponent} from '../../../help/components/help-panel/help-panel.component';
+import {HelpTourComponent} from '../../../help/components/help-tour/help-tour.component';
+import {HelpIconComponent} from '../../../help/components/help-icon/help-icon.component';
+import {TimePlanningsTableComponent} from '../time-plannings-table/time-plannings-table.component';
 
 @AutoUnsubscribe()
 @Component({
   selector: 'app-time-plannings-container',
+  imports: [NgIf, AsyncPipe, FormsModule, TranslatePipe, MatIcon, MatFormField, MatLabel, MatPrefix, MatInput, MtxSelect, MatTooltip, MatDatepicker, MatDatepickerInput, MatDatepickerToggle, MatDateRangeInput, MatDateRangePicker, MatStartDate, MatEndDate, MatSlideToggle, EformNewSubheaderComponent, HelpPanelComponent, HelpTourComponent, HelpIconComponent, TimePlanningsTableComponent],
   templateUrl: './time-plannings-container.component.html',
   styleUrls: ['./time-plannings-container.component.scss'],
-  standalone: false
 })
 export class TimePlanningsContainerComponent implements OnInit, OnDestroy {
   private store = inject(Store);

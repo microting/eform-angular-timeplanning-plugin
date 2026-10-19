@@ -1,3 +1,4 @@
+import {describe, it, expect} from 'vitest';
 import { PLANNING_HELP_ENTRIES } from './planning-help.registry';
 import { enUS } from './i18n/enUS';
 import { HelpEntry, HelpEntryId } from './help.model';
