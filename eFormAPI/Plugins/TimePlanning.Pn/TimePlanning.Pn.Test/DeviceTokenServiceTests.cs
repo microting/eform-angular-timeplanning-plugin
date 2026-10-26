@@ -162,6 +162,23 @@ public class DeviceTokenServiceTests : TestBaseSetup
         Assert.That(await TimePlanningPnDbContext!.DeviceTokens.CountAsync(), Is.EqualTo(0));
     }
 
+    // An expired JWT reaches the unauthorized gRPC endpoint as an anonymous
+    // call. It must not be reported as a user without an active site: the
+    // app turned that answer into a Sentry warning on every cold start.
+    [Test]
+    public async Task RegisterForCallerAsync_NoAuthenticatedUser_ReportsUnauthenticatedNotNoActiveSite()
+    {
+        _userService.GetCurrentUserAsync().Returns(Task.FromResult<EformUser?>(null));
+
+        var result = await _service.RegisterForCallerAsync(
+            "dead-token", "android", 0, "time", "inst-noauth");
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message,
+            Is.EqualTo("Unauthenticated: the access token is missing or expired"));
+        Assert.That(result.Message, Does.Not.Contain("active site"));
+    }
+
     // Was RegisterAsync_ReRegisteringDeadToken_RepairsSdkSiteId. The historical
     // SdkSiteId=0 bug is still worth pinning: a row stranded on site 0 must be
     // repaired by the next register from the same install.
