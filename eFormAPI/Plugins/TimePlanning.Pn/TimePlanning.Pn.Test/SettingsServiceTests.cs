@@ -1181,19 +1181,29 @@ public class SettingsServiceTests : TestBaseSetup
 
         if (claimNames.Length > 0)
         {
-            var permissionType = new PermissionType { Name = "Device users" };
-            db.PermissionTypes.Add(permissionType);
-            await db.SaveChangesAsync();
+            // The base database seeds the core permission types and permissions; reuse them when present.
+            var permissionType = await db.PermissionTypes.FirstOrDefaultAsync(x => x.Name == "Device users");
+            if (permissionType == null)
+            {
+                permissionType = new PermissionType { Name = "Device users" };
+                db.PermissionTypes.Add(permissionType);
+                await db.SaveChangesAsync();
+            }
+
             foreach (var claimName in claimNames)
             {
-                var permission = new Permission
+                var permission = await db.Permissions.FirstOrDefaultAsync(x => x.ClaimName == claimName);
+                if (permission == null)
                 {
-                    PermissionName = claimName,
-                    ClaimName = claimName,
-                    PermissionTypeId = permissionType.Id
-                };
-                db.Permissions.Add(permission);
-                await db.SaveChangesAsync();
+                    permission = new Permission
+                    {
+                        PermissionName = claimName,
+                        ClaimName = claimName,
+                        PermissionTypeId = permissionType.Id
+                    };
+                    db.Permissions.Add(permission);
+                    await db.SaveChangesAsync();
+                }
                 db.GroupPermissions.Add(new GroupPermission
                 {
                     PermissionId = permission.Id,
