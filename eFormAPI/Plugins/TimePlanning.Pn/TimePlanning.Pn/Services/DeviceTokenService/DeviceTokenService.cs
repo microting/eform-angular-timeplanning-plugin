@@ -24,6 +24,15 @@ public class DeviceTokenService : IDeviceTokenService
     /// </summary>
     public const string TimePlanningAppId = "time";
 
+    /// <summary>
+    /// Message returned when the call carries no authenticated user, e.g. an
+    /// expired JWT: the gRPC endpoint does not require authorization, so such
+    /// a call arrives anonymously. Kept apart from the "no active site"
+    /// rejection so clients can tell a stale token from a user without a site.
+    /// </summary>
+    public const string UnauthenticatedMessage =
+        "Unauthenticated: the access token is missing or expired";
+
     private readonly TimePlanningPnDbContext _dbContext;
     private readonly ILogger<DeviceTokenService> _logger;
     private readonly IUserService _userService;
@@ -48,7 +57,15 @@ public class DeviceTokenService : IDeviceTokenService
         string token, string platform, int buildNumber = 0,
         string appId = TimePlanningAppId, string installationId = null)
     {
-        var sdkSiteId = await ResolveCallerSdkSiteIdAsync();
+        var currentUser = await _userService.GetCurrentUserAsync();
+        if (currentUser == null)
+        {
+            _logger.LogInformation(
+                "Rejecting device-token registration: caller is not authenticated");
+            return new OperationResult(false, UnauthenticatedMessage);
+        }
+
+        var sdkSiteId = await ResolveCallerSdkSiteIdAsync(currentUser.Id);
         if (sdkSiteId == 0)
         {
             _logger.LogWarning(
@@ -61,19 +78,14 @@ public class DeviceTokenService : IDeviceTokenService
     }
 
     /// <summary>
-    /// Resolves the authenticated caller's SDK site id (MicrotingUid) from
-    /// the JWT. Returns 0 if the user has no worker/site record. Mirrors
+    /// Resolves the authenticated caller's SDK site id (MicrotingUid) by
+    /// user id. Returns 0 if the user has no worker/site record. Mirrors
     /// AbsenceRequestService.ResolveCallerSdkSiteIdAsync().
     /// </summary>
-    private async Task<int> ResolveCallerSdkSiteIdAsync()
+    private async Task<int> ResolveCallerSdkSiteIdAsync(int userId)
     {
-        var currentUserAsync = await _userService.GetCurrentUserAsync();
-        if (currentUserAsync == null)
-        {
-            return 0;
-        }
         var currentUser = _baseDbContext.Users
-            .Single(x => x.Id == currentUserAsync.Id);
+            .Single(x => x.Id == userId);
 
         var sdkCore = await _coreService.GetCore();
         var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
