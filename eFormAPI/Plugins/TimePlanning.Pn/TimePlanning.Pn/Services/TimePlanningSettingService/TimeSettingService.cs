@@ -24,6 +24,7 @@ SOFTWARE.
 
 #nullable enable
 using JetBrains.Annotations;
+using Microting.EformAngularFrontendBase.Infrastructure.Const;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Sentry;
 using TimePlanning.Pn.Infrastructure.Helpers;
@@ -40,6 +41,7 @@ using Microsoft.Extensions.Logging;
 using Microting.eForm.Dto;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
@@ -374,24 +376,9 @@ public class TimeSettingService(
                         localizationService.GetString("UserNotFound"), null!);
                 }
                 var currentUser = baseDbContext.Users
-                    .Include(x => x.UserRoles)
-                    .ThenInclude(x => x.Role)
                     .Single(x => x.Id == currentUserAsync.Id);
 
-                var isAdmin = currentUser.UserRoles.Any(x => x.Role.Name == "admin");
-
-                if (!isAdmin)
-                {
-                    var userSecurityGroups = baseDbContext.SecurityGroupUsers
-                        .Include(x => x.SecurityGroup)
-                        .Where(x => x.EformUserId == currentUser.Id)
-                        .ToList();
-                    var eFormAdminsGroup = userSecurityGroups
-                        .Any(x => x.SecurityGroup.Name == "eForm admins");
-                    isAdmin = eFormAdminsGroup;
-                }
-
-                if (!isAdmin)
+                if (!await IsAdminAsync(currentUser.Id))
                 {
                     // Mirror the "no managers anywhere" fallback that
                     // TimePlanningPlanningService.Index() uses (PR #1490). When no worker is
@@ -1041,8 +1028,124 @@ public class TimeSettingService(
         }
     }
 
+    /// <summary>
+    /// Whether the user is an administrator: the "admin" role, or membership of
+    /// the "eForm admins" security group.
+    /// </summary>
+    private async Task<bool> IsAdminAsync(int userId) =>
+        await baseDbContext.UserRoles
+            .AnyAsync(x => x.UserId == userId && x.Role.Name == EformRole.Admin)
+        || await baseDbContext.SecurityGroupUsers
+            .AnyAsync(x => x.EformUserId == userId && x.SecurityGroup.Name == "eForm admins");
+
+    /// <summary>What the signed-in caller may change on an assigned site.</summary>
+    private enum AssignedSiteAccess
+    {
+        /// <summary>Nothing; the update is refused.</summary>
+        None,
+
+        /// <summary>The worker's time settings, but not the manager role or the
+        /// tags the worker manages.</summary>
+        Settings,
+
+        /// <summary>Everything, manager role and managing tags included.</summary>
+        Full
+    }
+
+    /// <summary>
+    /// Administrators get <see cref="AssignedSiteAccess.Full"/>. Other users get
+    /// <see cref="AssignedSiteAccess.Settings"/> when one of their security groups
+    /// grants the core device-users update permission - the permission the
+    /// worker edit dialog already needs to save the worker itself. Read from the
+    /// database rather than from the request's claims, so the answer does not
+    /// depend on the host's in-memory claims cache.
+    /// </summary>
+    private async Task<AssignedSiteAccess> GetAssignedSiteAccessAsync()
+    {
+        if (baseDbContext == null)
+        {
+            return AssignedSiteAccess.None;
+        }
+
+        var currentUser = await userService.GetCurrentUserAsync();
+        if (currentUser == null)
+        {
+            return AssignedSiteAccess.None;
+        }
+
+        if (await IsAdminAsync(currentUser.Id))
+        {
+            return AssignedSiteAccess.Full;
+        }
+
+        var mayUpdateDeviceUsers = await baseDbContext.SecurityGroupUsers
+            .Where(x => x.EformUserId == currentUser.Id)
+            .Join(baseDbContext.GroupPermissions,
+                groupUser => groupUser.SecurityGroupId,
+                groupPermission => groupPermission.SecurityGroupId,
+                (_, groupPermission) => groupPermission.Permission.ClaimName)
+            .AnyAsync(claimName => claimName == AuthConsts.EformClaims.DeviceUsersClaims.Update);
+
+        return mayUpdateDeviceUsers ? AssignedSiteAccess.Settings : AssignedSiteAccess.None;
+    }
+
+    /// <summary>
+    /// Makes the site's live managing tags exactly <paramref name="tagIds"/>.
+    /// </summary>
+    private async Task UpdateManagingTagsAsync(int assignedSiteId, List<int>? tagIds)
+    {
+        // Removed rows are loaded too: the unique index on
+        // (AssignedSiteId, TagId) also covers soft-deleted rows, so a tag that is
+        // given back must revive its old row instead of inserting a new one.
+        var managingTagRows = await dbContext.AssignedSiteManagingTags
+            .Where(x => x.AssignedSiteId == assignedSiteId)
+            .ToListAsync();
+
+        var managingTagIds = tagIds?.ToHashSet() ?? new HashSet<int>();
+
+        foreach (var row in managingTagRows)
+        {
+            var wanted = managingTagIds.Contains(row.TagId);
+            var removed = row.WorkflowState == Constants.WorkflowStates.Removed;
+            if (!wanted && !removed)
+            {
+                row.UpdatedByUserId = userService.UserId;
+                await row.Delete(dbContext);
+            }
+            else if (wanted && removed)
+            {
+                row.WorkflowState = Constants.WorkflowStates.Created;
+                row.UpdatedByUserId = userService.UserId;
+                await row.Update(dbContext);
+            }
+        }
+
+        var knownTagIds = managingTagRows.Select(x => x.TagId).ToHashSet();
+        foreach (var tagId in managingTagIds.Except(knownTagIds))
+        {
+            var newManagingTag = new AssignedSiteManagingTag
+            {
+                AssignedSiteId = assignedSiteId,
+                TagId = tagId,
+                CreatedByUserId = userService.UserId,
+                UpdatedByUserId = userService.UserId
+            };
+            await newManagingTag.Create(dbContext);
+        }
+    }
+
     public async Task<OperationResult> UpdateAssignedSite(Infrastructure.Models.Settings.AssignedSite site)
     {
+        // Checked here, not only on the controller, so every entry point gets the
+        // same rule: users who may edit workers change the time settings, and the
+        // manager role and managing tags are only changed by administrators.
+        var access = await GetAssignedSiteAccessAsync();
+        if (access == AssignedSiteAccess.None)
+        {
+            return new OperationResult(false, localizationService.GetString("NoPermissionToUpdateAssignedSite"));
+        }
+        var isAdmin = access == AssignedSiteAccess.Full;
+
         var siteId = site.SiteId;
         var dbAssignedSite = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -1167,7 +1270,10 @@ public class TimeSettingService(
 
         // dbAssignedSite.GpsEnabled = site.GpsEnabled;
         dbAssignedSite.SnapshotEnabled = site.SnapshotEnabled;
-        dbAssignedSite.IsManager = site.IsManager;
+        if (isAdmin)
+        {
+            dbAssignedSite.IsManager = site.IsManager;
+        }
 
         await dbAssignedSite.Update(dbContext);
 
@@ -1195,43 +1301,9 @@ public class TimeSettingService(
                 dbAssignedSite.SiteId);
         }
 
-        // Update managing tags. Removed rows are loaded too: the unique index on
-        // (AssignedSiteId, TagId) also covers soft-deleted rows, so a tag that is
-        // given back must revive its old row instead of inserting a new one.
-        var managingTagRows = await dbContext.AssignedSiteManagingTags
-            .Where(x => x.AssignedSiteId == dbAssignedSite.Id)
-            .ToListAsync();
-
-        var managingTagIds = site.ManagingTagIds?.ToHashSet() ?? new HashSet<int>();
-
-        foreach (var row in managingTagRows)
+        if (isAdmin)
         {
-            var wanted = managingTagIds.Contains(row.TagId);
-            var removed = row.WorkflowState == Constants.WorkflowStates.Removed;
-            if (!wanted && !removed)
-            {
-                row.UpdatedByUserId = userService.UserId;
-                await row.Delete(dbContext);
-            }
-            else if (wanted && removed)
-            {
-                row.WorkflowState = Constants.WorkflowStates.Created;
-                row.UpdatedByUserId = userService.UserId;
-                await row.Update(dbContext);
-            }
-        }
-
-        var knownTagIds = managingTagRows.Select(x => x.TagId).ToHashSet();
-        foreach (var tagId in managingTagIds.Except(knownTagIds))
-        {
-            var newManagingTag = new AssignedSiteManagingTag
-            {
-                AssignedSiteId = dbAssignedSite.Id,
-                TagId = tagId,
-                CreatedByUserId = userService.UserId,
-                UpdatedByUserId = userService.UserId
-            };
-            await newManagingTag.Create(dbContext);
+            await UpdateManagingTagsAsync(dbAssignedSite.Id, site.ManagingTagIds);
         }
 
         if (dbAssignedSite.UseGoogleSheetAsDefault)

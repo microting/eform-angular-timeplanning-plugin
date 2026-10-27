@@ -222,5 +222,12 @@
       "en-US": "Cannot edit - this overenskomst is a locked preset and is read-only",
       "da": "Kan ikke redigere – denne overenskomst er en låst skabelon og er skrivebeskyttet"
     }
+  },
+  {
+    "Key": "NoPermissionToUpdateAssignedSite",
+    "LocalizedValue": {
+      "en-US": "You do not have permission to change the time registration settings",
+      "da": "Du har ikke tilladelse til at ændre indstillingerne for tidsregistrering"
+    }
   }
 ]

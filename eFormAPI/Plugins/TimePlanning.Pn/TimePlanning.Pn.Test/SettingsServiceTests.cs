@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
@@ -10,7 +12,11 @@ using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
+using Microting.EformAngularFrontendBase.Infrastructure.Const;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
+using Microting.EformAngularFrontendBase.Infrastructure.Data.Entities.Permissions;
+using Microting.TimePlanningBase.Infrastructure.Const;
+using TimePlanning.Pn.Controllers;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
@@ -57,13 +63,17 @@ public class SettingsServiceTests : TestBaseSetup
         _pushNotificationService =
             Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>();
 
+        // UpdateAssignedSite checks the caller, so the fixture signs in as an
+        // admin; the access tests below repoint the caller.
+        await SeedAdminCallerAsync(_userService);
+
         _settingsService = new TimeSettingService(
             _options,
             TimePlanningPnDbContext,
             Substitute.For<ILogger<TimeSettingService>>(),
             _userService,
             _localizationService,
-            null,
+            SeededBaseDbContext,
             _coreService,
             _pushNotificationService);
     }
@@ -1132,6 +1142,252 @@ public class SettingsServiceTests : TestBaseSetup
             .ToListAsync();
 
         Assert.That(managingTags.Count, Is.EqualTo(0));
+    }
+
+    #endregion
+
+    #region Assigned-site update access
+
+    /// <summary>
+    /// Adds a user without the admin role to the seeded base database and makes
+    /// it the signed-in caller.
+    /// </summary>
+    private async Task<EformUser> SignInAsNonAdminAsync(string email)
+    {
+        var user = new EformUser
+        {
+            UserName = email,
+            Email = email,
+            FirstName = "Jane",
+            LastName = "Doe"
+        };
+        SeededBaseDbContext!.Users.Add(user);
+        await SeededBaseDbContext.SaveChangesAsync();
+        _userService.GetCurrentUserAsync().Returns(new EformUser { Id = user.Id });
+        return user;
+    }
+
+    /// <summary>
+    /// Puts <paramref name="user"/> in a security group named
+    /// <paramref name="groupName"/> that grants <paramref name="claimNames"/>.
+    /// </summary>
+    private async Task AddToSecurityGroupAsync(EformUser user, string groupName, params string[] claimNames)
+    {
+        var db = SeededBaseDbContext!;
+        var group = new SecurityGroup { Name = groupName };
+        db.SecurityGroups.Add(group);
+        await db.SaveChangesAsync();
+        db.SecurityGroupUsers.Add(new SecurityGroupUser { SecurityGroupId = group.Id, EformUserId = user.Id });
+
+        if (claimNames.Length > 0)
+        {
+            var permissionType = new PermissionType { Name = "Device users" };
+            db.PermissionTypes.Add(permissionType);
+            await db.SaveChangesAsync();
+            foreach (var claimName in claimNames)
+            {
+                var permission = new Permission
+                {
+                    PermissionName = claimName,
+                    ClaimName = claimName,
+                    PermissionTypeId = permissionType.Id
+                };
+                db.Permissions.Add(permission);
+                await db.SaveChangesAsync();
+                db.GroupPermissions.Add(new GroupPermission
+                {
+                    PermissionId = permission.Id,
+                    SecurityGroupId = group.Id
+                });
+            }
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// A site with every flag the requests below set still off, managing tag 10.
+    /// </summary>
+    private async Task<AssignedSiteEntity> CreateSiteAsync(int siteId, bool isManager = false)
+    {
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = siteId,
+            IsManager = isManager,
+            UseOnlyPlanHours = false,
+            AllowPersonalTimeRegistration = false,
+            AllowEditOfRegistrations = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        await new AssignedSiteManagingTag
+        {
+            AssignedSiteId = assignedSite.Id,
+            TagId = 10,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+
+        return assignedSite;
+    }
+
+    private static AssignedSiteModel RequestFor(
+        AssignedSiteEntity assignedSite, bool isManager, List<int> managingTagIds)
+    {
+        return new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = assignedSite.SiteId,
+            IsManager = isManager,
+            ManagingTagIds = managingTagIds,
+            UseOnlyPlanHours = true,
+            AllowPersonalTimeRegistration = true,
+            AllowEditOfRegistrations = true
+        };
+    }
+
+    private Task<AssignedSiteEntity> LoadStoredSiteAsync(int assignedSiteId)
+    {
+        return TimePlanningPnDbContext!.AssignedSites
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == assignedSiteId);
+    }
+
+    private Task<List<int>> LoadManagingTagIdsAsync(int assignedSiteId)
+    {
+        return TimePlanningPnDbContext!.AssignedSiteManagingTags
+            .AsNoTracking()
+            .Where(x => x.AssignedSiteId == assignedSiteId)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .Select(x => x.TagId)
+            .ToListAsync();
+    }
+
+    private async Task AssertRefusedAndUnchangedAsync(OperationResult result, AssignedSiteEntity assignedSite)
+    {
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("NoPermissionToUpdateAssignedSite"));
+
+        var stored = await LoadStoredSiteAsync(assignedSite.Id);
+        Assert.That(stored.IsManager, Is.False);
+        Assert.That(stored.UseOnlyPlanHours, Is.False);
+        Assert.That(stored.AllowPersonalTimeRegistration, Is.False);
+        Assert.That(stored.AllowEditOfRegistrations, Is.False);
+        Assert.That(await LoadManagingTagIdsAsync(assignedSite.Id), Is.EquivalentTo(new[] { 10 }));
+        Assert.That(_pushNotificationService.ReceivedCalls(), Is.Empty,
+            "a refused update must not tell the device its settings changed");
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_WorkerEditor_SavesSettings_ButNotManagerOrTags()
+    {
+        var assignedSite = await CreateSiteAsync(siteId: 41);
+        var user = await SignInAsNonAdminAsync("worker.editor@example.com");
+        await AddToSecurityGroupAsync(user, "Example editors", AuthConsts.EformClaims.DeviceUsersClaims.Update);
+
+        var result = await _settingsService.UpdateAssignedSite(
+            RequestFor(assignedSite, isManager: true, managingTagIds: [20, 30]));
+
+        Assert.That(result.Success, Is.True);
+        var stored = await LoadStoredSiteAsync(assignedSite.Id);
+        Assert.That(stored.UseOnlyPlanHours, Is.True);
+        Assert.That(stored.AllowPersonalTimeRegistration, Is.True);
+        Assert.That(stored.AllowEditOfRegistrations, Is.True);
+        Assert.That(stored.IsManager, Is.False);
+        Assert.That(await LoadManagingTagIdsAsync(assignedSite.Id), Is.EquivalentTo(new[] { 10 }));
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_WorkerEditor_KeepsStoredManagerAndTags()
+    {
+        // For a non-admin the server ignores IsManager and the managing tags in
+        // the request, so sending false and no tags keeps the stored values.
+        var assignedSite = await CreateSiteAsync(siteId: 42, isManager: true);
+        var user = await SignInAsNonAdminAsync("worker.editor2@example.com");
+        await AddToSecurityGroupAsync(user, "Example editors", AuthConsts.EformClaims.DeviceUsersClaims.Update);
+
+        var result = await _settingsService.UpdateAssignedSite(
+            RequestFor(assignedSite, isManager: false, managingTagIds: []));
+
+        Assert.That(result.Success, Is.True);
+        var stored = await LoadStoredSiteAsync(assignedSite.Id);
+        Assert.That(stored.IsManager, Is.True);
+        Assert.That(await LoadManagingTagIdsAsync(assignedSite.Id), Is.EquivalentTo(new[] { 10 }));
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_UserWithoutWorkerEditPermission_IsRefused()
+    {
+        var assignedSite = await CreateSiteAsync(siteId: 43);
+        var user = await SignInAsNonAdminAsync("time.user@example.com");
+        await AddToSecurityGroupAsync(user, "Example readers", AuthConsts.EformClaims.DeviceUsersClaims.Read);
+
+        var result = await _settingsService.UpdateAssignedSite(
+            RequestFor(assignedSite, isManager: true, managingTagIds: [20, 30]));
+
+        await AssertRefusedAndUnchangedAsync(result, assignedSite);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_NoSignedInCaller_IsRefused()
+    {
+        var assignedSite = await CreateSiteAsync(siteId: 44);
+        _userService.GetCurrentUserAsync().Returns((EformUser)null);
+
+        var result = await _settingsService.UpdateAssignedSite(
+            RequestFor(assignedSite, isManager: true, managingTagIds: [20, 30]));
+
+        await AssertRefusedAndUnchangedAsync(result, assignedSite);
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_Admin_SavesManagerTagsAndSettings()
+    {
+        // SetUp signed in as the admin.
+        var assignedSite = await CreateSiteAsync(siteId: 45);
+
+        var result = await _settingsService.UpdateAssignedSite(
+            RequestFor(assignedSite, isManager: true, managingTagIds: [20, 30]));
+
+        Assert.That(result.Success, Is.True);
+        var stored = await LoadStoredSiteAsync(assignedSite.Id);
+        Assert.That(stored.IsManager, Is.True);
+        Assert.That(stored.UseOnlyPlanHours, Is.True);
+        Assert.That(stored.AllowPersonalTimeRegistration, Is.True);
+        Assert.That(stored.AllowEditOfRegistrations, Is.True);
+        Assert.That(await LoadManagingTagIdsAsync(assignedSite.Id), Is.EquivalentTo(new[] { 20, 30 }));
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_EformAdminsGroupMember_IsTreatedAsAdmin()
+    {
+        var assignedSite = await CreateSiteAsync(siteId: 46);
+        var user = await SignInAsNonAdminAsync("group.admin@example.com");
+        await AddToSecurityGroupAsync(user, "eForm admins");
+
+        var result = await _settingsService.UpdateAssignedSite(
+            RequestFor(assignedSite, isManager: true, managingTagIds: [20, 30]));
+
+        Assert.That(result.Success, Is.True);
+        var stored = await LoadStoredSiteAsync(assignedSite.Id);
+        Assert.That(stored.IsManager, Is.True);
+        Assert.That(await LoadManagingTagIdsAsync(assignedSite.Id), Is.EquivalentTo(new[] { 20, 30 }));
+    }
+
+    [Test]
+    public void UpdateAssignedSite_Endpoint_LeavesTheAccessRuleToTheService()
+    {
+        // No role gate on the action: the worker edit dialog calls it for
+        // non-admins, and the service decides what they may change.
+        var attribute = typeof(TimePlanningSettingsController)
+            .GetMethod(nameof(TimePlanningSettingsController.UpdateAssignedSite))!
+            .GetCustomAttribute<AuthorizeAttribute>();
+
+        Assert.That(attribute, Is.Not.Null);
+        Assert.That(attribute!.Policy, Is.EqualTo(TimePlanningClaims.GetWorkingHours));
+        Assert.That(attribute.Roles, Is.Null);
     }
 
     #endregion
