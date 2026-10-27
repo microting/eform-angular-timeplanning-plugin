@@ -1,6 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using TimePlanning.Pn.Grpc;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
@@ -48,6 +51,14 @@ public class TimePlanningWorkingHoursGrpcService
         }
 
         Console.WriteLine($"[DEBUG-GRPC-READ] Service returned: success={result.Success}, message={result.Message ?? "null"}");
+        if (token == null && !result.Success)
+        {
+            var rejection = await DescribeJwtRejection(context);
+            if (rejection != null)
+            {
+                Console.WriteLine($"[GRPC-AUTH] ReadWorkingHours personal mode: {rejection}");
+            }
+        }
         if (result.Success && result.Model != null)
         {
             Console.WriteLine($"[DEBUG-GRPC-READ] Model from service: Id={result.Model.Id}, SdkSiteId={result.Model.SdkSiteId}, Date={result.Model.Date:yyyy-MM-dd}, Start1={result.Model.Shift1Start}, Stop1={result.Model.Shift1Stop}, Pause1={result.Model.Shift1Pause}, Start1StartedAt={result.Model.Start1StartedAt}, Stop1StoppedAt={result.Model.Stop1StoppedAt}, NettoHours={result.Model.NettoHours}");
@@ -69,6 +80,48 @@ public class TimePlanningWorkingHoursGrpcService
         }
 
         return response;
+    }
+
+    /// <summary>
+    /// Why the caller's JWT did not authenticate (expired, not yet valid, bad
+    /// signature, missing), or null when it did. Logged when a personal-mode
+    /// read fails, so a UserNotFound answer can be traced to its cause: with
+    /// no such log line the token was valid and the user row is gone.
+    /// </summary>
+    private static async Task<string?> DescribeJwtRejection(ServerCallContext context)
+    {
+        HttpContext httpContext;
+        try
+        {
+            httpContext = context.GetHttpContext();
+        }
+        catch (InvalidOperationException)
+        {
+            return null; // not hosted by ASP.NET Core
+        }
+
+        AuthenticateResult auth;
+        try
+        {
+            auth = await httpContext.AuthenticateAsync();
+        }
+        catch (InvalidOperationException e)
+        {
+            return $"could not authenticate: {e.Message}";
+        }
+
+        if (auth.Succeeded)
+        {
+            return null;
+        }
+        var now = DateTime.UtcNow;
+        return auth.Failure switch
+        {
+            null => "no bearer token sent",
+            SecurityTokenExpiredException e => $"token expired at {e.Expires:O} (server time {now:O})",
+            SecurityTokenNotYetValidException e => $"token not valid before {e.NotBefore:O} (server time {now:O})",
+            var e => $"token rejected: {e.GetType().Name}: {e.Message}"
+        };
     }
 
     public override async Task<UpdateWorkingHoursResponse> UpdateWorkingHours(
