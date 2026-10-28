@@ -1,5 +1,10 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using NSubstitute;
 using NUnit.Framework;
@@ -590,6 +595,59 @@ public class TimePlanningWorkingHoursGrpcServiceTests
 
         await _whService.DidNotReceive().Read(
             Arg.Any<int>(), Arg.Any<DateTime>(), Arg.Any<string>());
+    }
+
+    [Test]
+    [NonParallelizable] // swaps the process-wide Console.Out
+    public async Task ReadWorkingHours_PersonalMode_Failure_LogsWhyTheJwtWasRejected()
+    {
+        _whService.ReadFullByCurrentUser(
+                Arg.Any<DateTime>(),
+                Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(new OperationDataResult<TimePlanningWorkingHoursModel>(false, "UserNotFound"));
+
+        // The host's JwtBearer handler rejects the token as expired.
+        var expires = new DateTime(2026, 10, 16, 8, 0, 0, DateTimeKind.Utc);
+        var authService = Substitute.For<IAuthenticationService>();
+        authService.AuthenticateAsync(Arg.Any<HttpContext>(), Arg.Any<string?>())
+            .Returns(AuthenticateResult.Fail(
+                new SecurityTokenExpiredException("token expired") { Expires = expires }));
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = new ServiceCollection()
+                .AddSingleton(authService)
+                .BuildServiceProvider()
+        };
+        var callContext = TestServerCallContextFactory.Create();
+        // Where Grpc.AspNetCore's GetHttpContext() looks for a non-hosted context.
+        callContext.UserState["__HttpContext"] = httpContext;
+
+        var request = new ReadWorkingHoursRequest
+        {
+            Token = "",
+            SdkSiteId = 7,
+            Date = "2026-04-03"
+        };
+
+        var originalOut = Console.Out;
+        var output = new StringWriter();
+        Console.SetOut(output);
+        ReadWorkingHoursResponse response;
+        try
+        {
+            response = await _grpcService.ReadWorkingHours(request, callContext);
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+
+        // The answer the app reacts to is unchanged.
+        Assert.That(response.Success, Is.False);
+        Assert.That(response.Message, Is.EqualTo("UserNotFound"));
+        Assert.That(output.ToString(),
+            Does.Contain("[GRPC-AUTH] ReadWorkingHours personal mode: token expired at 2026-10-16T08:00:00"));
     }
 
     [Test]
