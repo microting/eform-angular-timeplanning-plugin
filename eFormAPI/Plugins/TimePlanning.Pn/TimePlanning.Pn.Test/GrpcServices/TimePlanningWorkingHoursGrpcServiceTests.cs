@@ -598,6 +598,7 @@ public class TimePlanningWorkingHoursGrpcServiceTests
     }
 
     [Test]
+    [NonParallelizable] // swaps the process-wide Console.Out
     public async Task ReadWorkingHours_PersonalMode_Failure_LogsWhyTheJwtWasRejected()
     {
         _whService.ReadFullByCurrentUser(
