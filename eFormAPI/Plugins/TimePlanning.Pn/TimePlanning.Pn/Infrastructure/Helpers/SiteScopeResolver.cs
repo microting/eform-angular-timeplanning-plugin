@@ -117,6 +117,25 @@ public sealed class SiteScope
 /// </remarks>
 public static class SiteScopeResolver
 {
+    /// <summary>
+    /// The external-login provider my.microting.com writes when a partner
+    /// advisor is federated into this tenant as a credential-less "delegated
+    /// principal".
+    ///
+    /// The source of truth is <c>ExternalLoginProviders.MyMicrotingDelegated</c>
+    /// in eFormAPI.Web. This plugin references Microting.EformAngularFrontendBase,
+    /// not the host web project, so the literal has to be repeated here; the two
+    /// copies must stay byte-identical, and
+    /// <c>SiteScopeResolverTests.TheDelegatedLoginProviderLiteralIsPinned</c>
+    /// goes red if this one drifts.
+    ///
+    /// static readonly rather than const, deliberately, for the same reason the
+    /// host gives: a const is folded into every referencing assembly at compile
+    /// time — including the test that pins it, which would then silently agree
+    /// with whatever the literal had been changed to.
+    /// </summary>
+    public static readonly string DelegatedLoginProvider = "my.microting.com/delegated";
+
     /// <param name="assignedSites">Every non-removed AssignedSite — the pool to
     /// narrow. The manager branch narrows this list; the restricted branch
     /// reports its site instead, because the callers apply it differently.</param>
@@ -175,6 +194,33 @@ public static class SiteScopeResolver
         }
 
         if (isAdmin)
+        {
+            return SiteScope.Unrestricted(assignedSites);
+        }
+
+        // A delegated advisor is a LEADER here, and this is the last point at
+        // which that can still be decided: everything below resolves the caller
+        // to an SDK Worker by email and fails when there is none.
+        //
+        // An advisor acts across the customer's WHOLE organisation on the
+        // partner's behalf — that is the entire point of the delegation — and is
+        // never employed at one of its sites, so they have no Worker row and no
+        // own site to be narrowed to. Their email is synthetic
+        // (delegated-<digest>@delegated.invalid), so the lookup below cannot ever
+        // match: left to run, it returned ErrorWhileObtainingPlannings and sent
+        // Sentry a message on EVERY request. Returning above it is what stops
+        // both, so this check must stay ahead of it.
+        //
+        // The marker is the UserLogins row, exactly as the host's own
+        // UserManagerLockoutExtensions.IsDelegatedPrincipalAsync decides it.
+        // Deliberately NOT the email domain (spoofable, and merely a convention)
+        // and NOT a null PasswordHash (plenty of ordinary accounts have none —
+        // the host already had to fix that same over-broad assumption once).
+        var isDelegatedPrincipal = await baseDbContext.UserLogins
+            .AnyAsync(x => x.UserId == currentUser.Id
+                           && x.LoginProvider == DelegatedLoginProvider)
+            .ConfigureAwait(false);
+        if (isDelegatedPrincipal)
         {
             return SiteScope.Unrestricted(assignedSites);
         }
