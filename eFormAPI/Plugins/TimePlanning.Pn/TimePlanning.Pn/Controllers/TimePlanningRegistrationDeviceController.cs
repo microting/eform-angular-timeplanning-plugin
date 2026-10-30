@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using TimePlanning.Pn.Infrastructure.Models.RegistrationDevice;
@@ -7,6 +8,7 @@ using TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
 
 namespace TimePlanning.Pn.Controllers;
 
+[Authorize]
 [Route("api/time-planning-pn/registration-device")]
 public class TimePlanningRegistrationDeviceController : Controller
 {
@@ -46,6 +48,7 @@ public class TimePlanningRegistrationDeviceController : Controller
 
     [HttpPost]
     [Route("activate")]
+    [AllowAnonymous]
     public async Task<OperationResult> Activate([FromForm] TimePlanningRegistrationDeviceActivateModel model)
     {
         return await _registrationDeviceService.Activate(model);
