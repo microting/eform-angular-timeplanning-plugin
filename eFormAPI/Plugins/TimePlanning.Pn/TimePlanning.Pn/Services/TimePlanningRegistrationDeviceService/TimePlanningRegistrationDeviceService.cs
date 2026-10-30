@@ -100,8 +100,18 @@ public class TimePlanningRegistrationDeviceService(
                 localizationService.GetString("CustomerNoMismatch"));
         }
 
+        // Activation clears OtpCode and OtpEnabled; reject an empty OtCode up front
+        // so it can never match (OtpCode IS NULL) an already-paired device.
+        if (string.IsNullOrWhiteSpace(model.OtCode))
+        {
+            return new OperationResult(false,
+                localizationService.GetString("RegistrationDeviceNotFound"));
+        }
+
         var registrationDevice = await dbContext.RegistrationDevices
-            .Where(x => x.OtpCode == model.OtCode && x.WorkflowState != Constants.WorkflowStates.Removed)
+            .Where(x => x.OtpEnabled
+                        && x.OtpCode == model.OtCode
+                        && x.WorkflowState != Constants.WorkflowStates.Removed)
             .FirstOrDefaultAsync();
 
         if (registrationDevice == null)
