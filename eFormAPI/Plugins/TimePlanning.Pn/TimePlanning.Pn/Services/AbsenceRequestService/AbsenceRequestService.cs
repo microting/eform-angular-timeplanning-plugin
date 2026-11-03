@@ -432,7 +432,7 @@ public class AbsenceRequestService : IAbsenceRequestService
 
     // Owns a short-lived DI scope per send: the fire-and-forget callers outlive
     // the request scope, so they must not use request-scoped services.
-    private async Task SendToSiteInOwnScopeAsync(
+    internal async Task SendToSiteInOwnScopeAsync(
         int targetSdkSitId, string title, string body, Dictionary<string, string> data)
     {
         using var scope = _serviceScopeFactory.CreateScope();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
@@ -654,5 +655,109 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model.Count, Is.EqualTo(1));
         Assert.That(result.Model[0].RequestedBySdkSitId, Is.EqualTo(1));
+    }
+
+    // ---------------------------------------------------------------
+    // Scope-owning push send contract (create, approve and reject all send
+    // through SendToSiteInOwnScopeAsync from a fire-and-forget Task.Run).
+    // Every send must resolve IPushNotificationService from a fresh scope it
+    // creates itself, keep that scope alive while the send is pending and
+    // dispose it afterwards, also when the send fails.
+    // ---------------------------------------------------------------
+
+    private sealed class RecordingScope : IServiceScope
+    {
+        public bool Disposed;
+        public RecordingScope(IServiceProvider provider) => ServiceProvider = provider;
+        public IServiceProvider ServiceProvider { get; }
+        public void Dispose() => Disposed = true;
+    }
+
+    private sealed class RecordingScopeFactory : IServiceScopeFactory
+    {
+        private readonly IServiceProvider _provider;
+        public readonly List<RecordingScope> CreatedScopes = new();
+        public RecordingScopeFactory(IServiceProvider provider) => _provider = provider;
+        public IServiceScope CreateScope()
+        {
+            var scope = new RecordingScope(_provider);
+            CreatedScopes.Add(scope);
+            return scope;
+        }
+    }
+
+    private (AbsenceRequestService service, RecordingScopeFactory factory,
+        TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService push)
+        BuildScopeRecordingService()
+    {
+        var push = Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>();
+        var provider = Substitute.For<IServiceProvider>();
+        provider.GetService(typeof(TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService))
+            .Returns(push);
+        var factory = new RecordingScopeFactory(provider);
+        var service = new AbsenceRequestService(
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
+            TimePlanningPnDbContext,
+            _userService,
+            _localizationService,
+            _coreService,
+            Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>()),
+            factory);
+        return (service, factory, push);
+    }
+
+    [Test]
+    public async Task SendToSiteInOwnScopeAsync_UsesFreshScopePerSend_AndDisposesIt()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+        var data = new Dictionary<string, string> { { "type", "absence_created" } };
+
+        await service.SendToSiteInOwnScopeAsync(11, "New absence request", "body", data);
+        await service.SendToSiteInOwnScopeAsync(12, "New absence request", "body", data);
+
+        Assert.That(factory.CreatedScopes, Has.Count.EqualTo(2));
+        Assert.That(factory.CreatedScopes[0], Is.Not.SameAs(factory.CreatedScopes[1]));
+        Assert.That(factory.CreatedScopes.All(s => s.Disposed), Is.True,
+            "each send must dispose the scope it created");
+        await push.Received(1).SendToSiteAsync(11, "New absence request", "body", data);
+        await push.Received(1).SendToSiteAsync(12, "New absence request", "body", data);
+    }
+
+    [Test]
+    public async Task SendToSiteInOwnScopeAsync_KeepsScopeAliveWhileSendIsPending()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+        var pendingSend = new TaskCompletionSource();
+        push.SendToSiteAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<Dictionary<string, string>?>())
+            .Returns(pendingSend.Task);
+
+        var send = service.SendToSiteInOwnScopeAsync(
+            11, "Absence request approved", "body", new Dictionary<string, string>());
+
+        Assert.That(send.IsCompleted, Is.False);
+        Assert.That(factory.CreatedScopes.Single().Disposed, Is.False,
+            "the scope must not be disposed while the send is still running");
+
+        pendingSend.SetResult();
+        await send;
+
+        Assert.That(factory.CreatedScopes.Single().Disposed, Is.True);
+    }
+
+    [Test]
+    public async Task SendToSiteInOwnScopeAsync_PushFailure_StillDisposesScope()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+        push.SendToSiteAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<Dictionary<string, string>?>())
+            .Returns<Task>(_ => throw new InvalidOperationException("boom"));
+
+        // The fire-and-forget callers catch and log; the helper itself must
+        // let the error through and still dispose its scope.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendToSiteInOwnScopeAsync(
+            11, "Absence request rejected", "body", new Dictionary<string, string>()));
+        Assert.That(factory.CreatedScopes.Single().Disposed, Is.True,
+            "using-scope must dispose even when the send throws");
     }
 }
