@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
@@ -51,7 +52,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             _localizationService,
             _coreService,
             baseDbContext,
-            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
+            Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
     }
 
     [Test]
@@ -483,6 +484,142 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         Assert.That(result.Model[0].Status, Is.EqualTo("Pending"));
     }
 
+    /// <summary>
+    /// A manager's site can carry soft-removed AssignedSites rows next to the
+    /// active one. The inbox looked the manager up by SiteId without a
+    /// WorkflowState filter, so the removed row (lowest Id, IsManager=false)
+    /// won and the inbox came back empty although a managed worker had a
+    /// pending request.
+    /// </summary>
+    [Test]
+    public async Task GetInboxAsync_IgnoresRemovedAssignedSiteRowsOfTheManager()
+    {
+        const int managerSiteUid = 7002;
+        const int workerSiteUid = 7001;
+        const string managerEmail = "manager@example.com";
+
+        // Caller: an Angular user whose SDK worker is linked to the manager site.
+        SeededBaseDbContext = GetBaseDbContext();
+        var user = new Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser
+        {
+            UserName = managerEmail,
+            Email = managerEmail,
+            FirstName = "Test",
+            LastName = "Manager"
+        };
+        SeededBaseDbContext.Users.Add(user);
+        await SeededBaseDbContext.SaveChangesAsync();
+        _userService.GetCurrentUserAsync().Returns(
+            new Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser { Id = user.Id });
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var managerSdkSite = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Manager Site",
+            MicrotingUid = managerSiteUid
+        };
+        await managerSdkSite.Create(sdkDbContext);
+
+        var managerWorker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+        {
+            FirstName = "Test",
+            LastName = "Manager",
+            Email = managerEmail,
+            MicrotingUid = 3000 + managerSiteUid
+        };
+        await managerWorker.Create(sdkDbContext);
+
+        await new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+        {
+            SiteId = managerSdkSite.Id,
+            WorkerId = managerWorker.Id,
+            MicrotingUid = 4000 + managerSiteUid
+        }.Create(sdkDbContext);
+
+        // The worker's site carries the tag the manager manages.
+        var workerSdkSite = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Worker Site",
+            MicrotingUid = workerSiteUid
+        };
+        await workerSdkSite.Create(sdkDbContext);
+
+        var tag = new Microting.eForm.Infrastructure.Data.Entities.Tag
+        {
+            Name = "ManagedTag"
+        };
+        await tag.Create(sdkDbContext);
+
+        await sdkDbContext.SiteTags.AddAsync(new Microting.eForm.Infrastructure.Data.Entities.SiteTag
+        {
+            SiteId = workerSdkSite.Id,
+            TagId = tag.Id
+        });
+        await sdkDbContext.SaveChangesAsync();
+
+        // An old, soft-removed AssignedSite row for the manager site — created
+        // first, so it has the lowest Id.
+        var removedManagerRow = new AssignedSiteEntity
+        {
+            SiteId = managerSiteUid,
+            IsManager = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await removedManagerRow.Create(TimePlanningPnDbContext);
+        await removedManagerRow.Delete(TimePlanningPnDbContext);
+
+        // The active row is the one flagged as manager, with the managing tag.
+        var activeManagerRow = new AssignedSiteEntity
+        {
+            SiteId = managerSiteUid,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await activeManagerRow.Create(TimePlanningPnDbContext);
+        Assert.That(removedManagerRow.Id, Is.LessThan(activeManagerRow.Id));
+
+        await new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = activeManagerRow.Id,
+            TagId = tag.Id,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+
+        var pending = new AbsenceRequest
+        {
+            RequestedBySdkSitId = workerSiteUid,
+            DateFrom = new DateTime(2024, 1, 1),
+            DateTo = new DateTime(2024, 1, 2),
+            Status = AbsenceRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await pending.Create(TimePlanningPnDbContext);
+
+        var service = new AbsenceRequestService(
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
+            TimePlanningPnDbContext,
+            _userService,
+            _localizationService,
+            _coreService,
+            SeededBaseDbContext,
+            Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
+
+        // Act
+        var result = await service.GetInboxAsync();
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model.Select(x => x.Id), Is.EquivalentTo(new[] { pending.Id }),
+            "The manager's inbox must show the managed worker's pending request even when the manager site also has removed AssignedSites rows");
+    }
+
     [Test]
     public async Task GetMineAsync_ReturnsRequestsForWorker()
     {
@@ -518,5 +655,109 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model.Count, Is.EqualTo(1));
         Assert.That(result.Model[0].RequestedBySdkSitId, Is.EqualTo(1));
+    }
+
+    // ---------------------------------------------------------------
+    // Scope-owning push send contract (create, approve and reject all send
+    // through SendToSiteInOwnScopeAsync from a fire-and-forget Task.Run).
+    // Every send must resolve IPushNotificationService from a fresh scope it
+    // creates itself, keep that scope alive while the send is pending and
+    // dispose it afterwards, also when the send fails.
+    // ---------------------------------------------------------------
+
+    private sealed class RecordingScope : IServiceScope
+    {
+        public bool Disposed;
+        public RecordingScope(IServiceProvider provider) => ServiceProvider = provider;
+        public IServiceProvider ServiceProvider { get; }
+        public void Dispose() => Disposed = true;
+    }
+
+    private sealed class RecordingScopeFactory : IServiceScopeFactory
+    {
+        private readonly IServiceProvider _provider;
+        public readonly List<RecordingScope> CreatedScopes = new();
+        public RecordingScopeFactory(IServiceProvider provider) => _provider = provider;
+        public IServiceScope CreateScope()
+        {
+            var scope = new RecordingScope(_provider);
+            CreatedScopes.Add(scope);
+            return scope;
+        }
+    }
+
+    private (AbsenceRequestService service, RecordingScopeFactory factory,
+        TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService push)
+        BuildScopeRecordingService()
+    {
+        var push = Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>();
+        var provider = Substitute.For<IServiceProvider>();
+        provider.GetService(typeof(TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService))
+            .Returns(push);
+        var factory = new RecordingScopeFactory(provider);
+        var service = new AbsenceRequestService(
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
+            TimePlanningPnDbContext,
+            _userService,
+            _localizationService,
+            _coreService,
+            Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>()),
+            factory);
+        return (service, factory, push);
+    }
+
+    [Test]
+    public async Task SendToSiteInOwnScopeAsync_UsesFreshScopePerSend_AndDisposesIt()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+        var data = new Dictionary<string, string> { { "type", "absence_created" } };
+
+        await service.SendToSiteInOwnScopeAsync(11, "New absence request", "body", data);
+        await service.SendToSiteInOwnScopeAsync(12, "New absence request", "body", data);
+
+        Assert.That(factory.CreatedScopes, Has.Count.EqualTo(2));
+        Assert.That(factory.CreatedScopes[0], Is.Not.SameAs(factory.CreatedScopes[1]));
+        Assert.That(factory.CreatedScopes.All(s => s.Disposed), Is.True,
+            "each send must dispose the scope it created");
+        await push.Received(1).SendToSiteAsync(11, "New absence request", "body", data);
+        await push.Received(1).SendToSiteAsync(12, "New absence request", "body", data);
+    }
+
+    [Test]
+    public async Task SendToSiteInOwnScopeAsync_KeepsScopeAliveWhileSendIsPending()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+        var pendingSend = new TaskCompletionSource();
+        push.SendToSiteAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<Dictionary<string, string>?>())
+            .Returns(pendingSend.Task);
+
+        var send = service.SendToSiteInOwnScopeAsync(
+            11, "Absence request approved", "body", new Dictionary<string, string>());
+
+        Assert.That(send.IsCompleted, Is.False);
+        Assert.That(factory.CreatedScopes.Single().Disposed, Is.False,
+            "the scope must not be disposed while the send is still running");
+
+        pendingSend.SetResult();
+        await send;
+
+        Assert.That(factory.CreatedScopes.Single().Disposed, Is.True);
+    }
+
+    [Test]
+    public async Task SendToSiteInOwnScopeAsync_PushFailure_StillDisposesScope()
+    {
+        var (service, factory, push) = BuildScopeRecordingService();
+        push.SendToSiteAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<Dictionary<string, string>?>())
+            .Returns<Task>(_ => throw new InvalidOperationException("boom"));
+
+        // The fire-and-forget callers catch and log; the helper itself must
+        // let the error through and still dispose its scope.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendToSiteInOwnScopeAsync(
+            11, "Absence request rejected", "body", new Dictionary<string, string>()));
+        Assert.That(factory.CreatedScopes.Single().Disposed, Is.True,
+            "using-scope must dispose even when the send throws");
     }
 }

@@ -58,6 +58,13 @@ public class PushNotificationIntegrationTests : TestBaseSetup
 
         var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
 
+        var pushScopeProvider = Substitute.For<IServiceProvider>();
+        pushScopeProvider.GetService(typeof(IPushNotificationService)).Returns(_pushService);
+        var pushScope = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScope>();
+        pushScope.ServiceProvider.Returns(pushScopeProvider);
+        var pushScopeFactory = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+        pushScopeFactory.CreateScope().Returns(pushScope);
+
         _absenceRequestService = new AbsenceRequestService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
             TimePlanningPnDbContext!,
@@ -65,14 +72,7 @@ public class PushNotificationIntegrationTests : TestBaseSetup
             localization,
             coreService,
             baseDbContext,
-            _pushService);
-
-        var handoverScopeProvider = Substitute.For<IServiceProvider>();
-        handoverScopeProvider.GetService(typeof(IPushNotificationService)).Returns(_pushService);
-        var handoverScope = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScope>();
-        handoverScope.ServiceProvider.Returns(handoverScopeProvider);
-        var handoverScopeFactory = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
-        handoverScopeFactory.CreateScope().Returns(handoverScope);
+            pushScopeFactory);
 
         _contentHandoverService = new ContentHandoverService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<ContentHandoverService>>(),
@@ -81,7 +81,7 @@ public class PushNotificationIntegrationTests : TestBaseSetup
             localization,
             Substitute.For<IEFormCoreService>(),
             baseDbContext,
-            handoverScopeFactory);
+            pushScopeFactory);
     }
 
     [TearDown]
@@ -160,6 +160,91 @@ public class PushNotificationIntegrationTests : TestBaseSetup
 
         await _pushService.Received().SendToSiteAsync(
             Arg.Is(99),
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<Dictionary<string, string>?>());
+    }
+
+    [Test]
+    public async Task AbsenceRequest_CreateAsync_DoesNotPushToRemovedManagerAssignedSite()
+    {
+        // Arrange — two manager rows manage the worker's tag; one is soft-removed
+        var activeManagerSite = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite
+        {
+            SiteId = 99,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await activeManagerSite.Create(TimePlanningPnDbContext!);
+
+        var removedManagerSite = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite
+        {
+            SiteId = 98,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await removedManagerSite.Create(TimePlanningPnDbContext!);
+
+        var sdkCore = await GetCore();
+        var sdkDb = sdkCore.DbContextHelper.GetDbContext();
+
+        var workerSite = new Microting.eForm.Infrastructure.Data.Entities.Site { Name = "W", MicrotingUid = 43 };
+        await workerSite.Create(sdkDb);
+
+        var tag = new Microting.eForm.Infrastructure.Data.Entities.Tag { Name = "T" };
+        await tag.Create(sdkDb);
+
+        await sdkDb.SiteTags.AddAsync(new Microting.eForm.Infrastructure.Data.Entities.SiteTag
+        {
+            SiteId = workerSite.Id,
+            TagId = tag.Id
+        });
+        await sdkDb.SaveChangesAsync();
+
+        await new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = activeManagerSite.Id,
+            TagId = tag.Id,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext!);
+
+        await new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = removedManagerSite.Id,
+            TagId = tag.Id,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext!);
+
+        await removedManagerSite.Delete(TimePlanningPnDbContext!); // WorkflowState -> Removed
+
+        // Act
+        var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
+        {
+            RequestedBySdkSitId = 43,
+            DateFrom = new DateTime(2025, 6, 2),
+            DateTo = new DateTime(2025, 6, 2),
+            MessageId = 2,
+            RequestComment = "Push test"
+        });
+
+        // Assert
+        Assert.That(result.Success, Is.True, $"CreateAsync failed: {result.Message}");
+        // The active manager gets the push; give a wrongly included removed row
+        // time to receive a second one before asserting it did not.
+        await WaitForPush();
+        Assert.That(await _pushSignal.WaitAsync(1000), Is.False,
+            "A removed AssignedSite must not receive the absence request push");
+        await _pushService.Received(1).SendToSiteAsync(
+            Arg.Is(99),
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<Dictionary<string, string>?>());
+        await _pushService.DidNotReceive().SendToSiteAsync(
+            Arg.Is(98),
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<Dictionary<string, string>?>());
