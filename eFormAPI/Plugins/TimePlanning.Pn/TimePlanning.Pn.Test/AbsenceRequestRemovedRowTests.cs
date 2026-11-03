@@ -52,7 +52,7 @@ public class AbsenceRequestRemovedRowTests : TestBaseSetup
             localizationService,
             coreService,
             baseDbContext,
-            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
+            Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
     }
 
     [Test]

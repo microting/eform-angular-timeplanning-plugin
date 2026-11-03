@@ -44,7 +44,7 @@ public class AbsenceApprovalFlexCarryForwardTests : TestBaseSetup
             localizationService,
             coreService,
             Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>()),
-            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
+            Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
     }
 
     private async Task SeedRow(DateTime date, double planHours, double nettoHours, double sumFlexStart, double sumFlexEnd) =>

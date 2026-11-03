@@ -51,7 +51,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             _localizationService,
             _coreService,
             baseDbContext,
-            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
+            Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
     }
 
     [Test]
@@ -608,7 +608,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             _localizationService,
             _coreService,
             SeededBaseDbContext,
-            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
+            Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
 
         // Act
         var result = await service.GetInboxAsync();

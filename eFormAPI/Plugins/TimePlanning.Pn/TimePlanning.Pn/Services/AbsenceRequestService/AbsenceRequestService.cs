@@ -32,6 +32,7 @@ using System.Threading.Tasks;
 using Infrastructure.Helpers;
 using Infrastructure.Models.AbsenceRequest;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
@@ -52,7 +53,7 @@ public class AbsenceRequestService : IAbsenceRequestService
     private readonly ITimePlanningLocalizationService _localizationService;
     private readonly IEFormCoreService _coreService;
     private readonly BaseDbContext _baseDbContext;
-    private readonly IPushNotificationService _pushNotificationService;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public AbsenceRequestService(
         ILogger<AbsenceRequestService> logger,
@@ -61,7 +62,7 @@ public class AbsenceRequestService : IAbsenceRequestService
         ITimePlanningLocalizationService localizationService,
         IEFormCoreService coreService,
         BaseDbContext baseDbContext,
-        IPushNotificationService pushNotificationService)
+        IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -69,7 +70,7 @@ public class AbsenceRequestService : IAbsenceRequestService
         _localizationService = localizationService;
         _coreService = coreService;
         _baseDbContext = baseDbContext;
-        _pushNotificationService = pushNotificationService;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     /// <summary>
@@ -183,43 +184,30 @@ public class AbsenceRequestService : IAbsenceRequestService
 
             var resultModel = MapToModel(createdRequest);
 
-            // Fire-and-forget push to manager(s)
+            // Resolve the managers while the request scope is alive; the push itself
+            // is fire-and-forget and runs in its own DI scope.
+            var managerSiteIds = await GetManagerSiteIdsForWorkerAsync(model.RequestedBySdkSitId);
+            var createdRequestId = createdRequest.Id;
             _ = Task.Run(async () =>
             {
-                try
+                foreach (var managerSiteId in managerSiteIds)
                 {
-                    // Find managers for this worker's tags
-                    var sdkCore = await _coreService.GetCore();
-                    var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
-                    var workerTagIds = await sdkDbContext.SiteTags
-                        .Where(x => x.Site.MicrotingUid == model.RequestedBySdkSitId
-                                    && x.WorkflowState != Microting.eForm.Infrastructure.Constants.Constants.WorkflowStates.Removed)
-                        .Select(x => (int)x.TagId!)
-                        .ToListAsync();
-
-                    var managerSiteIds = await _dbContext.AssignedSiteManagingTags
-                        .Where(x => x.WorkflowState != Microting.eForm.Infrastructure.Constants.Constants.WorkflowStates.Removed
-                                    && workerTagIds.Contains(x.TagId))
-                        .Select(x => x.AssignedSite!.SiteId)
-                        .Distinct()
-                        .ToListAsync();
-
-                    foreach (var managerSiteId in managerSiteIds)
+                    try
                     {
-                        await _pushNotificationService.SendToSiteAsync(
+                        await SendToSiteInOwnScopeAsync(
                             managerSiteId,
                             "New absence request",
                             "A worker has requested time off",
                             new Dictionary<string, string>
                             {
                                 { "type", "absence_created" },
-                                { "absenceRequestId", createdRequest.Id.ToString() }
+                                { "absenceRequestId", createdRequestId.ToString() }
                             });
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error sending push notification for absence request creation");
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error sending push notification for absence request creation");
+                    }
                 }
             });
 
@@ -327,7 +315,7 @@ public class AbsenceRequestService : IAbsenceRequestService
             {
                 try
                 {
-                    await _pushNotificationService.SendToSiteAsync(
+                    await SendToSiteInOwnScopeAsync(
                         requesterSdkSitId,
                         "Absence request approved",
                         "Your absence request has been approved",
@@ -383,7 +371,7 @@ public class AbsenceRequestService : IAbsenceRequestService
             {
                 try
                 {
-                    await _pushNotificationService.SendToSiteAsync(
+                    await SendToSiteInOwnScopeAsync(
                         requesterSdkSitId,
                         "Absence request rejected",
                         "Your absence request has been rejected",
@@ -407,6 +395,49 @@ public class AbsenceRequestService : IAbsenceRequestService
             _logger.LogError(ex, "Error rejecting absence request {RequestId}", absenceRequestId);
             return new OperationResult(false, _localizationService.GetString("ErrorRejectingAbsenceRequest"));
         }
+    }
+
+    /// <summary>
+    /// SDK site ids of the managers whose managing tags match one of the worker's
+    /// site tags. Removed managing tags and removed AssignedSites are ignored.
+    /// Returns an empty list (and logs) on failure so that creating the request
+    /// never fails because of the notification lookup.
+    /// </summary>
+    private async Task<List<int>> GetManagerSiteIdsForWorkerAsync(int workerSdkSitId)
+    {
+        try
+        {
+            var sdkCore = await _coreService.GetCore();
+            var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+            var workerTagIds = await sdkDbContext.SiteTags
+                .Where(x => x.Site.MicrotingUid == workerSdkSitId
+                            && x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Select(x => (int)x.TagId!)
+                .ToListAsync();
+
+            return await _dbContext.AssignedSiteManagingTags
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed
+                            && x.AssignedSite!.WorkflowState != Constants.WorkflowStates.Removed
+                            && workerTagIds.Contains(x.TagId))
+                .Select(x => x.AssignedSite!.SiteId)
+                .Distinct()
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resolving managers for absence request push notification");
+            return [];
+        }
+    }
+
+    // Owns a short-lived DI scope per send: the fire-and-forget callers outlive
+    // the request scope, so they must not use request-scoped services.
+    private async Task SendToSiteInOwnScopeAsync(
+        int targetSdkSitId, string title, string body, Dictionary<string, string> data)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var pushService = scope.ServiceProvider.GetRequiredService<IPushNotificationService>();
+        await pushService.SendToSiteAsync(targetSdkSitId, title, body, data);
     }
 
     public async Task<OperationResult> CancelAsync(int absenceRequestId, int requestedBySdkSitId)
@@ -459,6 +490,8 @@ public class AbsenceRequestService : IAbsenceRequestService
 
             // Check if the requesting user is a manager
             var assignedSite = await _dbContext.AssignedSites
+                .Where(a => a.WorkflowState != Constants.WorkflowStates.Removed)
+                .OrderByDescending(a => a.Id)
                 .FirstOrDefaultAsync(a => a.SiteId == managerSdkSitId);
 
             if (assignedSite == null || !assignedSite.IsManager)
@@ -697,6 +730,8 @@ public class AbsenceRequestService : IAbsenceRequestService
 
             // Recalculate PlanRegistration using helper - only if AssignedSite exists
             var assignedSite = await _dbContext.AssignedSites
+                .Where(a => a.WorkflowState != Constants.WorkflowStates.Removed)
+                .OrderByDescending(a => a.Id)
                 .FirstOrDefaultAsync(a => a.SiteId == planRegistration.SdkSitId);
             
             if (assignedSite != null)
