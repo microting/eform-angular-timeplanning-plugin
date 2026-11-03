@@ -483,6 +483,142 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         Assert.That(result.Model[0].Status, Is.EqualTo("Pending"));
     }
 
+    /// <summary>
+    /// A manager's site can carry soft-removed AssignedSites rows next to the
+    /// active one. The inbox looked the manager up by SiteId without a
+    /// WorkflowState filter, so the removed row (lowest Id, IsManager=false)
+    /// won and the inbox came back empty although a managed worker had a
+    /// pending request.
+    /// </summary>
+    [Test]
+    public async Task GetInboxAsync_IgnoresRemovedAssignedSiteRowsOfTheManager()
+    {
+        const int managerSiteUid = 7002;
+        const int workerSiteUid = 7001;
+        const string managerEmail = "manager@example.com";
+
+        // Caller: an Angular user whose SDK worker is linked to the manager site.
+        SeededBaseDbContext = GetBaseDbContext();
+        var user = new Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser
+        {
+            UserName = managerEmail,
+            Email = managerEmail,
+            FirstName = "Test",
+            LastName = "Manager"
+        };
+        SeededBaseDbContext.Users.Add(user);
+        await SeededBaseDbContext.SaveChangesAsync();
+        _userService.GetCurrentUserAsync().Returns(
+            new Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser { Id = user.Id });
+
+        var core = await _coreService.GetCore();
+        var sdkDbContext = core.DbContextHelper.GetDbContext();
+
+        var managerSdkSite = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Manager Site",
+            MicrotingUid = managerSiteUid
+        };
+        await managerSdkSite.Create(sdkDbContext);
+
+        var managerWorker = new Microting.eForm.Infrastructure.Data.Entities.Worker
+        {
+            FirstName = "Test",
+            LastName = "Manager",
+            Email = managerEmail,
+            MicrotingUid = 3000 + managerSiteUid
+        };
+        await managerWorker.Create(sdkDbContext);
+
+        await new Microting.eForm.Infrastructure.Data.Entities.SiteWorker
+        {
+            SiteId = managerSdkSite.Id,
+            WorkerId = managerWorker.Id,
+            MicrotingUid = 4000 + managerSiteUid
+        }.Create(sdkDbContext);
+
+        // The worker's site carries the tag the manager manages.
+        var workerSdkSite = new Microting.eForm.Infrastructure.Data.Entities.Site
+        {
+            Name = "Worker Site",
+            MicrotingUid = workerSiteUid
+        };
+        await workerSdkSite.Create(sdkDbContext);
+
+        var tag = new Microting.eForm.Infrastructure.Data.Entities.Tag
+        {
+            Name = "ManagedTag"
+        };
+        await tag.Create(sdkDbContext);
+
+        await sdkDbContext.SiteTags.AddAsync(new Microting.eForm.Infrastructure.Data.Entities.SiteTag
+        {
+            SiteId = workerSdkSite.Id,
+            TagId = tag.Id
+        });
+        await sdkDbContext.SaveChangesAsync();
+
+        // An old, soft-removed AssignedSite row for the manager site — created
+        // first, so it has the lowest Id.
+        var removedManagerRow = new AssignedSiteEntity
+        {
+            SiteId = managerSiteUid,
+            IsManager = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await removedManagerRow.Create(TimePlanningPnDbContext);
+        await removedManagerRow.Delete(TimePlanningPnDbContext);
+
+        // The active row is the one flagged as manager, with the managing tag.
+        var activeManagerRow = new AssignedSiteEntity
+        {
+            SiteId = managerSiteUid,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await activeManagerRow.Create(TimePlanningPnDbContext);
+        Assert.That(removedManagerRow.Id, Is.LessThan(activeManagerRow.Id));
+
+        await new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = activeManagerRow.Id,
+            TagId = tag.Id,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+
+        var pending = new AbsenceRequest
+        {
+            RequestedBySdkSitId = workerSiteUid,
+            DateFrom = new DateTime(2024, 1, 1),
+            DateTo = new DateTime(2024, 1, 2),
+            Status = AbsenceRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await pending.Create(TimePlanningPnDbContext);
+
+        var service = new AbsenceRequestService(
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
+            TimePlanningPnDbContext,
+            _userService,
+            _localizationService,
+            _coreService,
+            SeededBaseDbContext,
+            Substitute.For<TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService>());
+
+        // Act
+        var result = await service.GetInboxAsync();
+
+        // Assert
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model.Select(x => x.Id), Is.EquivalentTo(new[] { pending.Id }),
+            "The manager's inbox must show the managed worker's pending request even when the manager site also has removed AssignedSites rows");
+    }
+
     [Test]
     public async Task GetMineAsync_ReturnsRequestsForWorker()
     {
