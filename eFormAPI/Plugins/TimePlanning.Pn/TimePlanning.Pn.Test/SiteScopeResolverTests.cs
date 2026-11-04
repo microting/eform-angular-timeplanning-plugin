@@ -575,7 +575,7 @@ public class SiteScopeResolverTests : TestBaseSetup
     /// BeforeSend drops each event after recording it, the transport is a no-op,
     /// and session tracking is off so there is no session envelope either.
     /// </summary>
-    private static IDisposable SentryHubCapturing(List<string> captured) =>
+    internal static IDisposable SentryHubCapturing(List<string> captured) =>
         SentrySdk.Init(options =>
         {
             // Well-formed but unroutable; nothing is ever sent to it.
