@@ -392,6 +392,24 @@ public static class PlanRegistrationHelper
         return eligible.OrderByDescending(x => x.Date).FirstOrDefault();
     }
 
+    /// <summary>
+    /// Recomputing a day's plan from its PlanText or the weekday defaults is
+    /// expected, so a changed result is information, not a Sentry warning, and
+    /// only the day whose hours actually changed is reported.
+    /// </summary>
+    private static void LogPlanHoursChanged(ILogger logger, PlanRegistration planRegistration,
+        double originalPlanHours)
+    {
+        if (originalPlanHours == planRegistration.PlanHours)
+        {
+            return;
+        }
+
+        logger.LogInformation(
+            "Plan hours changed from {OldPlanHours} to {NewPlanHours} for PlanRegistration {PlanRegistrationId} on {Date}",
+            originalPlanHours, planRegistration.PlanHours, planRegistration.Id, planRegistration.Date);
+    }
+
     public static async Task<TimePlanningPlanningModel> UpdatePlanRegistrationsInPeriod(
         List<PlanRegistration> planningsInPeriod,
         TimePlanningPlanningModel siteModel,
@@ -405,7 +423,6 @@ public static class PlanRegistrationHelper
         string? messageLanguage = null
         )
     {
-        var tainted = false;
         var settingsDayOfPayment = options.Value.DayOfPayment == 0 ? 20 : options.Value.DayOfPayment;
         // Load the message catalog once (no N+1) so each day can resolve its
         // localized label without re-querying per row.
@@ -454,9 +471,8 @@ public static class PlanRegistrationHelper
                     if (dbAssignedSite.UseGoogleSheetAsDefault)
                     {
                         // Locked days skip the plan recompute outright: it would be
-                        // reverted anyway, and its "Plan hours changed" event (plus
-                        // `tainted`, which repeats it for every later day) would
-                        // fire falsely on every load of a closed period.
+                        // reverted anyway, and its "Plan hours changed" log entry
+                        // would fire falsely on every load of a closed period.
                         if (!dayIsLocked && planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
                         {
                             if (!string.IsNullOrEmpty(planRegistration.PlanText))
@@ -464,19 +480,7 @@ public static class PlanRegistrationHelper
                                 var originalPlanHours = planRegistration.PlanHours;
                                 PlanRegistrationPlanText.ParseInto(planRegistration);
 
-                                if (originalPlanHours != planRegistration.PlanHours || tainted)
-                                {
-                                    SentrySdk.CaptureEvent(
-                                        new SentryEvent
-                                        {
-                                            Message = $"PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod: " +
-                                                      $"Plan hours changed from {originalPlanHours} to {planRegistration.PlanHours} " +
-                                                      $"for plan registration with ID {planRegistration.Id} and date {planRegistration.Date}",
-                                            Level = SentryLevel.Warning
-                                        });
-                                    tainted = true;
-
-                                }
+                                LogPlanHoursChanged(logger, planRegistration, originalPlanHours);
                             }
                             else
                             {
@@ -528,7 +532,7 @@ public static class PlanRegistrationHelper
                     else
                     {
                         // Same as the Google-sheet branch: no plan recompute, and so
-                        // no false "Plan hours changed" event, for a locked day.
+                        // no false "Plan hours changed" entry, for a locked day.
                         if (!dayIsLocked && planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
                         {
                             var dayOfWeek = planRegistration.Date.DayOfWeek;
@@ -777,19 +781,7 @@ public static class PlanRegistrationHelper
                                     break;
                             }
 
-                            if (originalPlanHours != planRegistration.PlanHours || tainted)
-                            {
-
-                                SentrySdk.CaptureEvent(
-                                    new SentryEvent
-                                    {
-                                        Message = $"PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod: " +
-                                                  $"Plan hours changed from {originalPlanHours} to {planRegistration.PlanHours} " +
-                                                  $"for plan registration with ID {planRegistration.Id} and date {planRegistration.Date}",
-                                        Level = SentryLevel.Warning
-                                    });
-                                tainted = true;
-                            }
+                            LogPlanHoursChanged(logger, planRegistration, originalPlanHours);
 
                             // Console.WriteLine($"The plannedHours are now: {planRegistration.PlanHours}");
 
@@ -1179,7 +1171,6 @@ public static class PlanRegistrationHelper
         // see OneMinuteModeTimeline. The timeline is built ONCE by the calling
         // loop and passed in, so this never costs a query per row.
         var rowIsOneMinute = oneMinuteTimeline.WasOneMinuteForRow(planRegistration);
-        var tainted = false;
         // foreach (var plan in planningsInPeriod)
         // {
             // var planRegistration = await dbContext.PlanRegistrations.AsTracking().FirstAsync(x => x.Id == planRegistrationId);
@@ -1198,14 +1189,7 @@ public static class PlanRegistrationHelper
                     {
                     if (!string.IsNullOrEmpty(planRegistration.PlanText))
                     {
-                            var originalPlanHours = planRegistration.PlanHours;
                             PlanRegistrationPlanText.ParseInto(planRegistration);
-
-                            if (originalPlanHours != planRegistration.PlanHours || tainted)
-                            {
-                                tainted = true;
-
-                            }
                         }
                         else
                         {
@@ -1256,7 +1240,6 @@ public static class PlanRegistrationHelper
                     if (planRegistration.Date > dayOfPayment && !planRegistration.PlanChangedByAdmin)
                     {
                         var dayOfWeek = planRegistration.Date.DayOfWeek;
-                        var originalPlanHours = planRegistration.PlanHours;
                         switch (dayOfWeek)
                         {
                             case DayOfWeek.Monday:
@@ -1499,12 +1482,6 @@ public static class PlanRegistrationHelper
                                 }
 
                                 break;
-                        }
-
-                        if (originalPlanHours != planRegistration.PlanHours || tainted)
-                        {
-                            tainted = true;
-
                         }
                     }
 
