@@ -1383,6 +1383,15 @@ public class TimeSettingService(
 
         foreach (var planRegistration in planRegistrationsFromTodayAndForward)
         {
+            // The new template only reaches days nobody has touched (#5574):
+            // a day an admin edited by hand (PlanChangedByAdmin, the same rule
+            // PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod applies)
+            // and an absence day keep their plan hours and shifts.
+            if (planRegistration.PlanChangedByAdmin || IsAbsenceDay(planRegistration))
+            {
+                continue;
+            }
+
             var dayOfWeek = planRegistration.Date.DayOfWeek;
             switch (dayOfWeek)
             {
@@ -1547,6 +1556,13 @@ public class TimeSettingService(
 
         return new OperationResult(true, localizationService.GetString("AssignedSiteUpdatedSuccessfuly"));
     }
+
+    private static bool IsAbsenceDay(PlanRegistration planRegistration) =>
+        planRegistration.OnVacation
+        || planRegistration.Sick
+        || planRegistration.OtherAllowedAbsence
+        || planRegistration.AbsenceWithoutPermission
+        || planRegistration.MessageId != null;
 
     /// <summary>
     /// When the worker first clocked in today: the earliest StartNStartedAt
