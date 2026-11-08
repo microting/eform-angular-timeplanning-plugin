@@ -40,7 +40,6 @@ public class SettingsServiceTests : TestBaseSetup
     [SetUp]
     public async Task SetUp()
     {
-        await base.Setup();
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
 

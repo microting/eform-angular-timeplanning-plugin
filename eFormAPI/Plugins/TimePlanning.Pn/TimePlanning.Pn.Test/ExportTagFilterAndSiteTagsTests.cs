@@ -67,8 +67,6 @@ public class ExportTagFilterAndSiteTagsTests : TestBaseSetup
     [SetUp]
     public async Task SetUpTest()
     {
-        await base.Setup();
-
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
 

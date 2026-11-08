@@ -53,8 +53,6 @@ public class MobileFlexRecomputeAndCascadeTests : TestBaseSetup
     [SetUp]
     public async Task SetUpTest()
     {
-        await base.Setup();
-
         var core = await GetCore();
         var sdkDb = core.DbContextHelper.GetDbContext();
 

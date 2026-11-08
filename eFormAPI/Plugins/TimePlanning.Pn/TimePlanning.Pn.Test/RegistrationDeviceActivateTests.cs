@@ -27,8 +27,6 @@ public class RegistrationDeviceActivateTests : TestBaseSetup
     [SetUp]
     public async Task SetUp()
     {
-        await base.Setup();
-
         var core = await GetCore();
         _customerNo = int.Parse(await core.GetSdkSetting(Settings.customerNo));
         var coreService = Substitute.For<IEFormCoreService>();

@@ -29,10 +29,8 @@ public class ContentHandoverRemovedRowTests : TestBaseSetup
     private IContentHandoverService _service;
 
     [SetUp]
-    public async Task SetUpTest()
+    public void SetUpTest()
     {
-        await base.Setup();
-
         var userService = Substitute.For<IUserService>();
         userService.UserId.Returns(1);
 

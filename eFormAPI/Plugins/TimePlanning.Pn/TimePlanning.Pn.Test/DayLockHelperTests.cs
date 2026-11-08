@@ -17,9 +17,6 @@ namespace TimePlanning.Pn.Test;
 [TestFixture]
 public class DayLockHelperTests : TestBaseSetup
 {
-    [SetUp]
-    public async Task SetUpTest() => await base.Setup();
-
     // No workflowState parameter: PnBase.Create overwrites it with "created"
     // regardless of what is set here.
     private async Task Seed(int site, DateTime date, bool reconciled)

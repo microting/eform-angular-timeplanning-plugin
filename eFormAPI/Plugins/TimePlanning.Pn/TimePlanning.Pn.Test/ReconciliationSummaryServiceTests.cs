@@ -33,9 +33,6 @@ public class ReconciliationSummaryServiceTests : TestBaseSetup
 {
     private static readonly DateTime Today = D("2026-09-20");
 
-    [SetUp]
-    public async Task SetUpTest() => await base.Setup();
-
     private static DateTime D(string s) => DateTime.ParseExact(s, "yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private ReconciliationSummaryService Service(TimePlanningPnDbContext db = null) =>

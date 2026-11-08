@@ -33,10 +33,8 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
     private IEFormCoreService _coreService;
 
     [SetUp]
-    public async Task SetUp()
+    public void SetUp()
     {
-        await base.Setup();
-
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
 
@@ -69,12 +67,6 @@ public class PlanRegistrationVersionHistoryTests : TestBaseSetup
             _localizationService,
             baseDbContext,
             _coreService);
-    }
-
-    [TearDown]
-    public new async Task TearDown()
-    {
-        await base.TearDown();
     }
 
     [Test]

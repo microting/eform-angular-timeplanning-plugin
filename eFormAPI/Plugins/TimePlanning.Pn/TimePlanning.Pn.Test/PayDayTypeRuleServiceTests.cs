@@ -19,9 +19,8 @@ namespace TimePlanning.Pn.Test
         private IPayDayTypeRuleService _payDayTypeRuleService;
 
         [SetUp]
-        public new async Task Setup()
+        public void SetUpTest()
         {
-            await base.Setup();
             var localizationService = Substitute.For<ITimePlanningLocalizationService>();
             localizationService.GetString(Arg.Any<string>())
                 .Returns(call => call.Arg<string>());

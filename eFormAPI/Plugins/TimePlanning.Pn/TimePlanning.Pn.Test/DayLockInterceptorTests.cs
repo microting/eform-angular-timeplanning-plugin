@@ -19,9 +19,6 @@ namespace TimePlanning.Pn.Test;
 [TestFixture]
 public class DayLockInterceptorTests : TestBaseSetup
 {
-    [SetUp]
-    public async Task SetUpTest() => await base.Setup();
-
     private async Task<PlanRegistrationEntity> SeedReconciled(int site, DateTime date)
     {
         var row = new PlanRegistrationEntity

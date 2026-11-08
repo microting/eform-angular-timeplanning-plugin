@@ -29,9 +29,8 @@ public class PictureSnapshotServiceTests : TestBaseSetup
     private Microsoft.Extensions.Logging.ILogger<TimePlanningPictureSnapshotService> _logger;
 
     [SetUp]
-    public async Task SetUp()
+    public void SetUp()
     {
-        await base.Setup();
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
 

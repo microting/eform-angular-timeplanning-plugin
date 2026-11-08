@@ -20,9 +20,6 @@ namespace TimePlanning.Pn.Test;
 [TestFixture]
 public class DayLockWiringTests : TestBaseSetup
 {
-    [SetUp]
-    public async Task SetUpTest() => await base.Setup();
-
     [Test]
     public async Task TheContextHelper_AttachesTheLock()
     {

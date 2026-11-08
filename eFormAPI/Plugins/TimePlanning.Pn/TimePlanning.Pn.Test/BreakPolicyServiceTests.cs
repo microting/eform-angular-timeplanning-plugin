@@ -42,9 +42,8 @@ public class BreakPolicyServiceTests : TestBaseSetup
     private IBreakPolicyService _service;
 
     [SetUp]
-    public new async Task Setup()
+    public void SetUpTest()
     {
-        await base.Setup();
         _service = new BreakPolicyService(
             TimePlanningPnDbContext,
             Substitute.For<ILogger<BreakPolicyService>>());

@@ -25,9 +25,8 @@ public class PayTierRuleServiceTests : TestBaseSetup
     private IPayTierRuleService _service;
 
     [SetUp]
-    public new async Task Setup()
+    public void SetUpTest()
     {
-        await base.Setup();
         var localizationService = Substitute.For<ITimePlanningLocalizationService>();
         localizationService.GetString(Arg.Any<string>())
             .Returns(call => call.Arg<string>());

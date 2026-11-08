@@ -35,12 +35,6 @@ namespace TimePlanning.Pn.Test;
 [TestFixture]
 public class PauseIdSelfHealGuardTests : TestBaseSetup
 {
-    [SetUp]
-    public async Task SetUpTest()
-    {
-        await base.Setup();
-    }
-
     private TimePlanningWorkingHoursService BuildService(bool? pauseIdSelfHealEnabled)
     {
         var userService = Substitute.For<IUserService>();

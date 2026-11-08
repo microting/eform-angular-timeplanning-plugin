@@ -30,9 +30,8 @@ public class PushNotificationServiceTests : TestBaseSetup
     private const string ExpectedFirebaseAppName = "microting-time";
 
     [SetUp]
-    public async Task SetUp()
+    public void SetUp()
     {
-        await base.Setup();
         DeleteFirebaseApps();
     }
 
