@@ -38,6 +38,7 @@ using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Extensions.Seed.CodeFirstLists;
 using Microting.TimePlanningBase.Infrastructure.Helpers;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers;
@@ -755,6 +756,39 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
     }
 
+    // Message ids not covered by the base MessagesCodeFirst list (plugin seed only).
+    private const int MaternityMessageId = 10;
+    private const int VacationDayOffMessageId = 11;
+    private const int HolidayMessageId = 12;
+    private const int PregnancyLeaveMessageId = 13;
+
+    // Absence type is keyed on Message.Id, which is identical in the base and plugin
+    // seeds. Message.Name differs between them ("TimeOff" vs "Time off", etc.).
+    private static readonly HashSet<int> VacationMessageIds =
+    [
+        MessagesCodeFirst.VacationMessage.Id,
+        MessagesCodeFirst.TimeOffMessage.Id,
+        VacationDayOffMessageId
+    ];
+
+    private static readonly HashSet<int> SickMessageIds =
+    [
+        MessagesCodeFirst.SickMessage.Id,
+        MessagesCodeFirst.ChildrenFirstSickMessage.Id,
+        MessagesCodeFirst.ChildrenSecondSickMessage.Id
+    ];
+
+    private static readonly HashSet<int> OtherAllowedAbsenceMessageIds =
+    [
+        MessagesCodeFirst.DayOffMessage.Id,
+        MessagesCodeFirst.CourseMessage.Id,
+        MessagesCodeFirst.LeaveOfAbsenceMessage.Id,
+        MessagesCodeFirst.CareMessage.Id,
+        MaternityMessageId,
+        HolidayMessageId,
+        PregnancyLeaveMessageId
+    ];
+
     private void ApplyAbsenceFromMessage(PlanRegistration pr, Message message)
     {
         // Clear all absence flags first
@@ -763,30 +797,23 @@ public class AbsenceRequestService : IAbsenceRequestService
         pr.OtherAllowedAbsence = false;
         pr.AbsenceWithoutPermission = false;
 
-        // Map message to absence flag based on message name
-        switch (message.Name)
+        if (VacationMessageIds.Contains(message.Id))
         {
-            case "Vacation":
-            case "VacationDayOff":
-            case "TimeOff":
-                pr.OnVacation = true;
-                break;
-            case "Sick":
-            case "Children1stSick":
-            case "Children2ndSick":
-                pr.Sick = true;
-                break;
-            case "DayOff":
-            case "Course":
-            case "LeaveOfAbsence":
-            case "Maternity":
-            case "Holiday":
-                pr.OtherAllowedAbsence = true;
-                break;
-            default:
-                // For unknown message types, use OtherAllowedAbsence
-                pr.OtherAllowedAbsence = true;
-                break;
+            pr.OnVacation = true;
+        }
+        else if (SickMessageIds.Contains(message.Id))
+        {
+            pr.Sick = true;
+        }
+        else
+        {
+            if (!OtherAllowedAbsenceMessageIds.Contains(message.Id))
+            {
+                _logger.LogWarning(
+                    "Unknown absence message {MessageId} ({MessageName}); applying OtherAllowedAbsence",
+                    message.Id, message.Name);
+            }
+            pr.OtherAllowedAbsence = true;
         }
     }
 
