@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -335,6 +336,183 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         var rowCount = await TimePlanningPnDbContext.PlanRegistrations
             .AsNoTracking().CountAsync(pr => pr.SdkSitId == sdkSitId);
         Assert.That(rowCount, Is.EqualTo(2), "no day of a refused request is written");
+    }
+
+    /// <summary>
+    /// The days are applied BEFORE the status is saved, so a failure on a day
+    /// part-way through leaves the request Pending instead of Approved with
+    /// only some days flagged. Approving again re-applies every day (the day
+    /// already saved included) and ends in the same state as a clean run.
+    /// </summary>
+    [Test]
+    public async Task ApproveAsync_StaysPending_WhenADayFails_AndASecondApproveAppliesEveryDay()
+    {
+        const int sdkSitId = 13;
+        var (request, failSecondDay) = await SeedThreeDayRequestFailingOnDay2Async(sdkSitId);
+        var decision = new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "Approved" };
+
+        var failed = await _absenceRequestService.ApproveAsync(request.Id, decision);
+
+        Assert.That(failed.Success, Is.False);
+        Assert.That(failed.Message, Is.EqualTo("ErrorApprovingAbsenceRequest"));
+        // AsNoTracking: the database, not the tracked instance.
+        var afterFailure = await TimePlanningPnDbContext.AbsenceRequests
+            .AsNoTracking().FirstAsync(ar => ar.Id == request.Id);
+        Assert.That(afterFailure.Status, Is.EqualTo(AbsenceRequestStatus.Pending));
+        Assert.That(afterFailure.DecidedBySdkSitId, Is.Null);
+        var rowsAfterFailure = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().Where(pr => pr.SdkSitId == sdkSitId).OrderBy(pr => pr.Date).ToListAsync();
+        Assert.That(rowsAfterFailure.Select(pr => pr.OnVacation), Is.EqualTo(new[] { true, false, false }),
+            "day 1 was saved before day 2 failed; days 2 and 3 were not");
+
+        failSecondDay.Value = false;
+        var approved = await _absenceRequestService.ApproveAsync(request.Id, decision);
+
+        Assert.That(approved.Success, Is.True, approved.Message);
+        var afterRetry = await TimePlanningPnDbContext.AbsenceRequests
+            .AsNoTracking().FirstAsync(ar => ar.Id == request.Id);
+        Assert.That(afterRetry.Status, Is.EqualTo(AbsenceRequestStatus.Approved));
+        Assert.That(afterRetry.DecidedBySdkSitId, Is.EqualTo(2));
+        var rowsAfterRetry = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().Where(pr => pr.SdkSitId == sdkSitId).OrderBy(pr => pr.Date).ToListAsync();
+        Assert.That(rowsAfterRetry.Count, Is.EqualTo(3), "the retry reuses each day's row");
+        foreach (var pr in rowsAfterRetry)
+        {
+            Assert.That(pr.OnVacation, Is.True, $"{pr.Date:yyyy-MM-dd} flagged");
+            Assert.That(pr.MessageId, Is.EqualTo(2));
+            Assert.That(pr.AbsenceRequestId, Is.EqualTo(request.Id));
+            Assert.That(pr.AbsenceApprovedBySdkSitId, Is.EqualTo(2));
+        }
+    }
+
+    /// <summary>
+    /// After a failed approve the days already saved are flagged for a request
+    /// that is still Pending. Rejecting it must undo those flags.
+    /// </summary>
+    [Test]
+    public async Task RejectAsync_ClearsDaysLeftFlaggedByAFailedApprove()
+    {
+        const int sdkSitId = 14;
+        var (request, failSecondDay) = await SeedThreeDayRequestFailingOnDay2Async(sdkSitId);
+        var decision = new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "Decided" };
+
+        var failed = await _absenceRequestService.ApproveAsync(request.Id, decision);
+        Assert.That(failed.Success, Is.False);
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking()
+            .CountAsync(pr => pr.AbsenceRequestId == request.Id), Is.EqualTo(1), "day 1 was left flagged");
+
+        failSecondDay.Value = false;
+        var rejected = await _absenceRequestService.RejectAsync(request.Id, decision);
+
+        Assert.That(rejected.Success, Is.True, rejected.Message);
+        var after = await TimePlanningPnDbContext.AbsenceRequests
+            .AsNoTracking().FirstAsync(ar => ar.Id == request.Id);
+        Assert.That(after.Status, Is.EqualTo(AbsenceRequestStatus.Rejected));
+        var rows = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().Where(pr => pr.SdkSitId == sdkSitId).ToListAsync();
+        Assert.That(rows.Count, Is.EqualTo(3));
+        foreach (var pr in rows)
+        {
+            Assert.That(pr.OnVacation || pr.Sick || pr.OtherAllowedAbsence || pr.AbsenceWithoutPermission,
+                Is.False, $"{pr.Date:yyyy-MM-dd} not flagged");
+            Assert.That(pr.MessageId, Is.Null);
+            Assert.That(pr.AbsenceRequestId, Is.Null);
+            Assert.That(pr.AbsenceApprovedBySdkSitId, Is.Null);
+        }
+    }
+
+    /// <summary>
+    /// The worker can cancel the still-Pending request a failed approve left
+    /// behind. Cancelling it must undo the flags on the days already saved.
+    /// </summary>
+    [Test]
+    public async Task CancelAsync_ClearsDaysLeftFlaggedByAFailedApprove()
+    {
+        const int sdkSitId = 15;
+        var (request, failSecondDay) = await SeedThreeDayRequestFailingOnDay2Async(sdkSitId);
+
+        var failed = await _absenceRequestService.ApproveAsync(request.Id,
+            new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "Decided" });
+        Assert.That(failed.Success, Is.False);
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking()
+            .CountAsync(pr => pr.AbsenceRequestId == request.Id), Is.EqualTo(1), "day 1 was left flagged");
+
+        failSecondDay.Value = false;
+        var cancelled = await _absenceRequestService.CancelAsync(request.Id, sdkSitId);
+
+        Assert.That(cancelled.Success, Is.True, cancelled.Message);
+        var after = await TimePlanningPnDbContext.AbsenceRequests
+            .AsNoTracking().FirstAsync(ar => ar.Id == request.Id);
+        Assert.That(after.Status, Is.EqualTo(AbsenceRequestStatus.Cancelled));
+        var rows = await TimePlanningPnDbContext.PlanRegistrations
+            .AsNoTracking().Where(pr => pr.SdkSitId == sdkSitId).ToListAsync();
+        Assert.That(rows.Count, Is.EqualTo(3));
+        foreach (var pr in rows)
+        {
+            Assert.That(pr.OnVacation || pr.Sick || pr.OtherAllowedAbsence || pr.AbsenceWithoutPermission,
+                Is.False, $"{pr.Date:yyyy-MM-dd} not flagged");
+            Assert.That(pr.MessageId, Is.Null);
+            Assert.That(pr.AbsenceRequestId, Is.Null);
+            Assert.That(pr.AbsenceApprovedBySdkSitId, Is.Null);
+        }
+    }
+
+    /// <summary>
+    /// Three days with existing rows and a Pending Vacation request over them.
+    /// The failure is injected through the user-service substitute: each day
+    /// with an existing row reads UserId exactly once, so while the returned
+    /// switch is on, the second read (the second day) throws.
+    /// </summary>
+    private async Task<(AbsenceRequest Request, StrongBox<bool> FailSecondDay)>
+        SeedThreeDayRequestFailingOnDay2Async(int sdkSitId)
+    {
+        var dates = new[] { new DateTime(2024, 5, 6), new DateTime(2024, 5, 7), new DateTime(2024, 5, 8) };
+        foreach (var date in dates)
+        {
+            await new PlanRegistration
+            {
+                SdkSitId = sdkSitId,
+                Date = date,
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            }.Create(TimePlanningPnDbContext);
+        }
+
+        var request = new AbsenceRequest
+        {
+            RequestedBySdkSitId = sdkSitId,
+            DateFrom = dates.First(),
+            DateTo = dates.Last(),
+            Status = AbsenceRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await request.Create(TimePlanningPnDbContext);
+        foreach (var date in dates)
+        {
+            await new AbsenceRequestDay
+            {
+                AbsenceRequestId = request.Id,
+                Date = date,
+                MessageId = 2, // Vacation
+                CreatedByUserId = 1,
+                UpdatedByUserId = 1
+            }.Create(TimePlanningPnDbContext);
+        }
+
+        var failSecondDay = new StrongBox<bool>(true);
+        var userIdReads = 0;
+        _userService.UserId.Returns(_ =>
+        {
+            userIdReads++;
+            if (failSecondDay.Value && userIdReads == 2)
+            {
+                throw new InvalidOperationException("injected failure on day 2");
+            }
+            return 1;
+        });
+        return (request, failSecondDay);
     }
 
     [Test]
