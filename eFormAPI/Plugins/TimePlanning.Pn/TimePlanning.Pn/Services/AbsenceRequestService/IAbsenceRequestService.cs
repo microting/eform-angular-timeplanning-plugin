@@ -34,9 +34,18 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 public interface IAbsenceRequestService
 {
     Task<OperationDataResult<AbsenceRequestModel>> CreateAsync(AbsenceRequestCreateModel model);
+    /// <summary>
+    /// Approve and reject are allowed only for a manager of the requester's site.
+    /// The deciding manager is the authenticated caller (resolved from the JWT);
+    /// <see cref="AbsenceRequestDecisionModel.ManagerSdkSitId"/> is ignored.
+    /// </summary>
     Task<OperationResult> ApproveAsync(int absenceRequestId, AbsenceRequestDecisionModel model);
     Task<OperationResult> RejectAsync(int absenceRequestId, AbsenceRequestDecisionModel model);
-    Task<OperationResult> CancelAsync(int absenceRequestId, int requestedBySdkSitId);
+    /// <summary>
+    /// Cancels the caller's own pending request. The requester is the
+    /// authenticated caller (resolved from the JWT), not a client-supplied id.
+    /// </summary>
+    Task<OperationResult> CancelAsync(int absenceRequestId);
     /// <summary>
     /// Returns the inbox of pending absence requests visible to the currently
     /// authenticated manager. The caller's SDK site is resolved from the JWT

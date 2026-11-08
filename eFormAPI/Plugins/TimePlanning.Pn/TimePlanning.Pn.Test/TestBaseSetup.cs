@@ -5,6 +5,7 @@ using DotNet.Testcontainers.Containers;
 using eFormCore;
 using Microsoft.EntityFrameworkCore;
 using Microting.eForm.Infrastructure;
+using Microting.eForm.Infrastructure.Data.Entities;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
@@ -157,6 +158,99 @@ public abstract class TestBaseSetup
     {
         var adminUserId = await GetBaseDbContextWithAdminAsync(email);
         userService.GetCurrentUserAsync().Returns(new EformUser { Id = adminUserId });
+    }
+
+    /// <summary>
+    /// Seeds a signed-in caller whose SDK worker sits on the site with
+    /// MicrotingUid <paramref name="callerSiteUid"/> and points
+    /// <paramref name="userService"/> at it: the JWT user, then the Worker by
+    /// email, then its SiteWorker's Site, which is how services resolve who is
+    /// calling. Seeds into <see cref="SeededBaseDbContext"/>, creating it if the
+    /// test has not, so a service must be handed that same context.
+    /// </summary>
+    protected async Task SeedSiteCallerAsync(IUserService userService, int callerSiteUid)
+    {
+        SeededBaseDbContext ??= GetBaseDbContext();
+        var email = $"site{callerSiteUid}@example.com";
+        var user = new EformUser
+        {
+            UserName = email,
+            Email = email,
+            FirstName = "Site",
+            LastName = $"{callerSiteUid}"
+        };
+        SeededBaseDbContext.Users.Add(user);
+        await SeededBaseDbContext.SaveChangesAsync();
+        userService.GetCurrentUserAsync().Returns(new EformUser { Id = user.Id });
+
+        var sdkDbContext = (await GetCore()).DbContextHelper.GetDbContext();
+        var site = await GetOrCreateSdkSiteAsync(sdkDbContext, callerSiteUid);
+        var worker = new Worker
+        {
+            FirstName = "Site",
+            LastName = $"{callerSiteUid}",
+            Email = email,
+            MicrotingUid = 3000 + callerSiteUid
+        };
+        await worker.Create(sdkDbContext);
+        await new SiteWorker
+        {
+            SiteId = site.Id,
+            WorkerId = worker.Id,
+            MicrotingUid = 4000 + callerSiteUid
+        }.Create(sdkDbContext);
+    }
+
+    /// <summary>
+    /// Makes the site <paramref name="managerSiteUid"/> a manager of the site
+    /// <paramref name="workerSiteUid"/>: the worker's SDK site carries a tag
+    /// that the manager's AssignedSite manages.
+    /// </summary>
+    protected async Task SeedManagerOfAsync(int managerSiteUid, int workerSiteUid)
+    {
+        var sdkDbContext = (await GetCore()).DbContextHelper.GetDbContext();
+        var workerSite = await GetOrCreateSdkSiteAsync(sdkDbContext, workerSiteUid);
+        var tag = new Tag { Name = $"Managed{workerSiteUid}" };
+        await tag.Create(sdkDbContext);
+        await sdkDbContext.SiteTags.AddAsync(new SiteTag { SiteId = workerSite.Id, TagId = tag.Id });
+        await sdkDbContext.SaveChangesAsync();
+
+        var managerRow = new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite
+        {
+            SiteId = managerSiteUid,
+            IsManager = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await managerRow.Create(TimePlanningPnDbContext!);
+        await new Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSiteManagingTag
+        {
+            AssignedSiteId = managerRow.Id,
+            TagId = tag.Id,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext!);
+    }
+
+    /// <summary>
+    /// The signed-in caller is a manager of <paramref name="workerSiteUid"/>,
+    /// sitting on <paramref name="managerSiteUid"/>.
+    /// </summary>
+    protected async Task SeedManagerCallerAsync(IUserService userService, int managerSiteUid, int workerSiteUid)
+    {
+        await SeedSiteCallerAsync(userService, managerSiteUid);
+        await SeedManagerOfAsync(managerSiteUid, workerSiteUid);
+    }
+
+    private static async Task<Site> GetOrCreateSdkSiteAsync(MicrotingDbContext sdkDbContext, int microtingUid)
+    {
+        var site = await sdkDbContext.Sites.FirstOrDefaultAsync(x => x.MicrotingUid == microtingUid);
+        if (site == null)
+        {
+            site = new Site { Name = $"Site {microtingUid}", MicrotingUid = microtingUid };
+            await site.Create(sdkDbContext);
+        }
+        return site;
     }
 
     /// <summary>

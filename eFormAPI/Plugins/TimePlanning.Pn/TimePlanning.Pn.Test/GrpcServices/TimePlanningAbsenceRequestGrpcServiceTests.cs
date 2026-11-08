@@ -161,7 +161,7 @@ public class TimePlanningAbsenceRequestGrpcServiceTests
     [Test]
     public async Task CancelAbsenceRequest_DelegatesToService()
     {
-        _absenceRequestService.CancelAsync(Arg.Any<int>(), Arg.Any<int>())
+        _absenceRequestService.CancelAsync(Arg.Any<int>())
             .Returns(new OperationResult(true, "Cancelled"));
 
         var request = new CancelAbsenceRequestRequest
@@ -176,7 +176,9 @@ public class TimePlanningAbsenceRequestGrpcServiceTests
         Assert.That(response.Success, Is.True);
         Assert.That(response.Message, Is.EqualTo("Cancelled"));
 
-        await _absenceRequestService.Received(1).CancelAsync(42, 7);
+        // The client-sent RequestedBySdkSiteId is not passed on: the service
+        // resolves the requester from the JWT.
+        await _absenceRequestService.Received(1).CancelAsync(42);
     }
 
     [Test]

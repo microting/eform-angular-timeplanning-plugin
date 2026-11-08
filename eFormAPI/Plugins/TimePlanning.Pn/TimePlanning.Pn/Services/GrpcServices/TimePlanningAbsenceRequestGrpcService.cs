@@ -123,8 +123,8 @@ public class TimePlanningAbsenceRequestGrpcService
     {
         try
         {
-            var result = await _absenceRequestService.CancelAsync(
-                request.AbsenceRequestId, request.RequestedBySdkSiteId);
+            // RequestedBySdkSiteId is ignored: the service cancels as the JWT caller.
+            var result = await _absenceRequestService.CancelAsync(request.AbsenceRequestId);
 
             return new OperationResponse
             {

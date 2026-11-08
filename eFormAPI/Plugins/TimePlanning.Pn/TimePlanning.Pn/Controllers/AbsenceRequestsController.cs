@@ -61,9 +61,10 @@ public class AbsenceRequestsController(IAbsenceRequestService absenceRequestServ
 
     [HttpPost]
     [Route("{id}/cancel")]
-    public async Task<OperationResult> Cancel(int id, [FromBody] int requestedBySdkSitId)
+    public async Task<OperationResult> Cancel(int id)
     {
-        return await _absenceRequestService.CancelAsync(id, requestedBySdkSitId);
+        // A body sent by older clients is ignored; the requester comes from the JWT.
+        return await _absenceRequestService.CancelAsync(id);
     }
 
     [HttpGet]

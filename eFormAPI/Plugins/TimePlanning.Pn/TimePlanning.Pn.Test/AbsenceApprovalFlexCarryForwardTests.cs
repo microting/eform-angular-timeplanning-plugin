@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
@@ -36,6 +35,8 @@ public class AbsenceApprovalFlexCarryForwardTests : TestBaseSetup
         var coreService = Substitute.For<IEFormCoreService>();
         var core = await GetCore();
         coreService.GetCore().Returns(Task.FromResult(core));
+        // Site 2 is the signed-in manager of the worker.
+        await SeedManagerCallerAsync(userService, managerSiteUid: 2, workerSiteUid: SdkSitId);
 
         _service = new AbsenceRequestService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
@@ -43,7 +44,7 @@ public class AbsenceApprovalFlexCarryForwardTests : TestBaseSetup
             userService,
             localizationService,
             coreService,
-            Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>()),
+            SeededBaseDbContext!,
             Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
     }
 
@@ -101,7 +102,7 @@ public class AbsenceApprovalFlexCarryForwardTests : TestBaseSetup
         }
 
         var result = await _service.ApproveAsync(request.Id,
-            new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "ok" });
+            new AbsenceRequestDecisionModel { DecisionComment = "ok" });
 
         Assert.That(result.Success, Is.True, result.Message);
         var r0 = await Stored(before);

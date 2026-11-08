@@ -27,6 +27,10 @@ namespace TimePlanning.Pn.Infrastructure.Models.AbsenceRequest;
 
 public class AbsenceRequestDecisionModel
 {
+    /// <summary>
+    /// Ignored: the deciding manager is the authenticated caller. Kept so
+    /// existing clients (web, flutter-time gRPC) can keep sending it.
+    /// </summary>
     public int ManagerSdkSitId { get; set; }
     public string? DecisionComment { get; set; }
 }

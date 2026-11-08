@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
@@ -56,7 +55,8 @@ public class PushNotificationIntegrationTests : TestBaseSetup
         var core = await GetCore();
         coreService.GetCore().Returns(Task.FromResult(core));
 
-        var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
+        // Real, so the approve/reject tests can seed their signed-in manager into it.
+        SeededBaseDbContext = GetBaseDbContext();
 
         var pushScopeProvider = Substitute.For<IServiceProvider>();
         pushScopeProvider.GetService(typeof(IPushNotificationService)).Returns(_pushService);
@@ -71,7 +71,7 @@ public class PushNotificationIntegrationTests : TestBaseSetup
             _userService,
             localization,
             coreService,
-            baseDbContext,
+            SeededBaseDbContext!,
             pushScopeFactory);
 
         _contentHandoverService = new ContentHandoverService(
@@ -80,7 +80,7 @@ public class PushNotificationIntegrationTests : TestBaseSetup
             _userService,
             localization,
             Substitute.For<IEFormCoreService>(),
-            baseDbContext,
+            SeededBaseDbContext!,
             pushScopeFactory);
     }
 
@@ -276,9 +276,9 @@ public class PushNotificationIntegrationTests : TestBaseSetup
         };
         await day.Create(TimePlanningPnDbContext!);
 
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 10, workerSiteUid: 5);
         var decision = new AbsenceRequestDecisionModel
         {
-            ManagerSdkSitId = 10,
             DecisionComment = "ok"
         };
 
@@ -319,9 +319,9 @@ public class PushNotificationIntegrationTests : TestBaseSetup
         };
         await request.Create(TimePlanningPnDbContext!);
 
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 10, workerSiteUid: 5);
         var decision = new AbsenceRequestDecisionModel
         {
-            ManagerSdkSitId = 10,
             DecisionComment = "no"
         };
 
