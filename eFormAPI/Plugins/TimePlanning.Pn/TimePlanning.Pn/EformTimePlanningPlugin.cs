@@ -212,6 +212,18 @@ public class EformTimePlanningPlugin : IEformPlugin
         // Seed database
         SeedDatabase(connectionString);
 
+        // Idempotent repair of absence flags approved before #5568 (#5583).
+        // A failure is reported and must never stop the plugin from starting.
+        try
+        {
+            RepairAbsenceFlags(connectionString);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AbsenceFlagRepair] failed, startup continues: {ex.Message}");
+            SentrySdk.CaptureException(ex);
+        }
+
         // One-shot, idempotent repair of pauseNId corruption on 5-minute sites,
         // for rows dated after the rolling payroll cutoff
         // (CorruptedPauseIdRepair.FirstUnlockedDate). Safe to run on every startup.
@@ -962,6 +974,13 @@ public class EformTimePlanningPlugin : IEformPlugin
         // helper builds the same options with the interceptor attached.
         using var dbContext = new TimePlanningDbContextHelper(connectionString).GetDbContext();
         CorruptedPauseIdRepair.Run(dbContext).GetAwaiter().GetResult();
+    }
+
+    public void RepairAbsenceFlags(string connectionString)
+    {
+        // The helper's context carries the day-lock interceptor, as for the pause repair.
+        using var dbContext = new TimePlanningDbContextHelper(connectionString).GetDbContext();
+        AbsenceFlagRepair.Run(dbContext).GetAwaiter().GetResult();
     }
 
     public PluginPermissionsManager GetPermissionsManager(string connectionString)
