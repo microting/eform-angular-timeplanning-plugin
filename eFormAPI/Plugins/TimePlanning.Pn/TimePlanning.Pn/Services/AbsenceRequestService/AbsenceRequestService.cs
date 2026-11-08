@@ -241,11 +241,10 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
-            // Checked before anything is persisted: the status below is saved
-            // BEFORE the per-day loop, so letting the lock refuse a day
-            // part-way through would leave the request Approved with only some
-            // of its days flagged. One boundary query for the worker. The
-            // earliest locked day blocks; the message says what that day is.
+            // Checked before anything is persisted, so a locked day refuses the
+            // whole request instead of failing part-way through the per-day
+            // loop below. One boundary query for the worker. The earliest
+            // locked day blocks; the message says what that day is.
             var lockedThrough = await DayLockHelper.LockedThroughAsync(_dbContext, request.RequestedBySdkSitId);
             var blockingDay = request.Days!
                 .OrderBy(day => day.Date)
@@ -262,7 +261,15 @@ public class AbsenceRequestService : IAbsenceRequestService
             // an explicit BeginTransactionAsync here was causing a silent
             // rollback in the test environment (matches the workaround applied
             // in ContentHandoverService.AcceptAsync).
-            // Update request status
+            // So the days are applied first and the request is marked Approved only
+            // after every day is saved; a failure leaves it Pending, and re-approving
+            // is idempotent (find-or-create, then overwrite). Don't touch the request
+            // before the loop: each Update() saves the whole context.
+            foreach (var day in request.Days!.OrderBy(d => d.Date))
+            {
+                await ApplyAbsenceToPlanRegistration(request, day, model.ManagerSdkSitId);
+            }
+
             request.Status = AbsenceRequestStatus.Approved;
             request.DecidedBySdkSitId = model.ManagerSdkSitId;
             request.DecidedAtUtc = DateTime.UtcNow;
@@ -270,44 +277,14 @@ public class AbsenceRequestService : IAbsenceRequestService
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
 
-            // Apply absence to each day's PlanRegistration
-            foreach (var day in request.Days!)
-            {
-                await ApplyAbsenceToPlanRegistration(request, day);
-            }
-
             // R4: approval can create rows mid-history with an empty balance.
             // Carry the worker's balance from the earliest approved day to their
             // last row, the new rows included. Every day was checked unlocked
             // above. Tolerates a worker without an AssignedSite.
-            // The request and its days are already saved, so a failed walk must
-            // not turn the approval into an error: log it for manual
-            // reconciliation and carry on (same as the handover walk).
             if (request.Days!.Count > 0)
             {
-                var walkFrom = request.Days.Min(d => d.Date);
-                try
-                {
-                    var assignedSite = await _dbContext.AssignedSites
-                        .AsNoTracking()
-                        .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                        .FirstOrDefaultAsync(x => x.SiteId == request.RequestedBySdkSitId);
-                    var changed = await FlexChainRecompute.RunForwardAsync(
-                        _dbContext, assignedSite, request.RequestedBySdkSitId, walkFrom);
-                    _logger.LogInformation(
-                        "[Absence] Approve request {RequestId}: flex carried for sdkSitId={SdkSitId} from {From:yyyy-MM-dd}, {Changed} row(s) changed",
-                        absenceRequestId, request.RequestedBySdkSitId, walkFrom, changed);
-                }
-                catch (Exception walkEx)
-                {
-                    // Drop the failed walk's pending row changes so no later
-                    // SaveChanges on this context can flush a half-carried chain.
-                    // Nothing below uses a tracked entity: the push uses ids.
-                    _dbContext.ChangeTracker.Clear();
-                    _logger.LogError(walkEx,
-                        "Absence request {Id} approved and saved, but carrying the flex balance forward FAILED for worker {SdkSitId} from {From:yyyy-MM-dd} — MANUAL RECONCILIATION required (re-save the day or re-run the walk)",
-                        absenceRequestId, request.RequestedBySdkSitId, walkFrom);
-                }
+                await CarryFlexForwardAsync(absenceRequestId, request.RequestedBySdkSitId,
+                    request.Days.Min(d => d.Date), "approved");
             }
 
             // Fire-and-forget push to requester
@@ -337,7 +314,13 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error approving absence request {RequestId}", absenceRequestId);
+            // A refused save stays tracked and would rethrow on the next
+            // SaveChanges on this context, so drop it with the rest.
+            _dbContext.ChangeTracker.Clear();
+            // Days already saved are re-applied on the next approve.
+            _logger.LogError(ex,
+                "Error approving absence request {RequestId}; the request is left Pending",
+                absenceRequestId);
             return new OperationResult(false, _localizationService.GetString("ErrorApprovingAbsenceRequest"));
         }
     }
@@ -359,12 +342,20 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
+            // Undo days left flagged by a failed approve before saving the status, so a failure here keeps it Pending.
+            var walkFrom = await ClearDaysLeftFlaggedAsync(request);
+
             request.Status = AbsenceRequestStatus.Rejected;
             request.DecidedBySdkSitId = model.ManagerSdkSitId;
             request.DecidedAtUtc = DateTime.UtcNow;
             request.DecisionComment = model.DecisionComment;
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
+
+            if (walkFrom.HasValue)
+            {
+                await CarryFlexForwardAsync(absenceRequestId, request.RequestedBySdkSitId, walkFrom.Value, "rejected");
+            }
 
             // Fire-and-forget push to requester
             var requesterSdkSitId = request.RequestedBySdkSitId;
@@ -393,6 +384,7 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
         catch (Exception ex)
         {
+            _dbContext.ChangeTracker.Clear();
             _logger.LogError(ex, "Error rejecting absence request {RequestId}", absenceRequestId);
             return new OperationResult(false, _localizationService.GetString("ErrorRejectingAbsenceRequest"));
         }
@@ -463,15 +455,24 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("UnauthorizedToCancel"));
             }
 
+            // Undo days left flagged by a failed approve before saving the status, so a failure here keeps it Pending.
+            var walkFrom = await ClearDaysLeftFlaggedAsync(request);
+
             request.Status = AbsenceRequestStatus.Cancelled;
             request.DecidedAtUtc = DateTime.UtcNow;
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
 
+            if (walkFrom.HasValue)
+            {
+                await CarryFlexForwardAsync(absenceRequestId, request.RequestedBySdkSitId, walkFrom.Value, "cancelled");
+            }
+
             return new OperationResult(true);
         }
         catch (Exception ex)
         {
+            _dbContext.ChangeTracker.Clear();
             _logger.LogError(ex, "Error cancelling absence request {RequestId}", absenceRequestId);
             return new OperationResult(false, _localizationService.GetString("ErrorCancellingAbsenceRequest"));
         }
@@ -639,7 +640,8 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
     }
 
-    private async Task ApplyAbsenceToPlanRegistration(AbsenceRequest request, AbsenceRequestDay day)
+    private async Task ApplyAbsenceToPlanRegistration(AbsenceRequest request, AbsenceRequestDay day,
+        int managerSdkSitId)
     {
         try
         {
@@ -712,7 +714,7 @@ public class AbsenceRequestService : IAbsenceRequestService
                 var absenceApprovedByProp = prType.GetProperty("AbsenceApprovedBySdkSitId");
                 if (absenceApprovedByProp != null && absenceApprovedByProp.CanWrite)
                 {
-                    absenceApprovedByProp.SetValue(planRegistration, request.DecidedBySdkSitId);
+                    absenceApprovedByProp.SetValue(planRegistration, managerSdkSitId);
                 }
 
                 var absenceMessageIdProp = prType.GetProperty("AbsenceMessageId");
@@ -754,6 +756,86 @@ public class AbsenceRequestService : IAbsenceRequestService
             _logger.LogError(ex, "Error applying absence to PlanRegistration for day {Date}", day.Date);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Carries the worker's flex balance forward from <paramref name="from"/>.
+    /// Runs after the request is saved, so a failed walk must not turn the
+    /// decision into an error: log it for manual reconciliation and carry on
+    /// (same as the handover walk). Tolerates a worker without an AssignedSite.
+    /// </summary>
+    private async Task CarryFlexForwardAsync(int absenceRequestId, int sdkSitId, DateTime from, string verb)
+    {
+        try
+        {
+            var assignedSite = await _dbContext.AssignedSites
+                .AsNoTracking()
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .FirstOrDefaultAsync(x => x.SiteId == sdkSitId);
+            var changed = await FlexChainRecompute.RunForwardAsync(_dbContext, assignedSite, sdkSitId, from);
+            _logger.LogInformation(
+                "[Absence] Request {RequestId} {Verb}: flex carried for sdkSitId={SdkSitId} from {From:yyyy-MM-dd}, {Changed} row(s) changed",
+                absenceRequestId, verb, sdkSitId, from, changed);
+        }
+        catch (Exception walkEx)
+        {
+            // Drop the failed walk's pending row changes so no later
+            // SaveChanges on this context can flush a half-carried chain.
+            // Nothing after the walk uses a tracked entity: the push uses ids.
+            _dbContext.ChangeTracker.Clear();
+            _logger.LogError(walkEx,
+                "Absence request {Id} {Verb} and saved, but carrying the flex balance forward FAILED for worker {SdkSitId} from {From:yyyy-MM-dd} — MANUAL RECONCILIATION required (re-save the day or re-run the walk)",
+                absenceRequestId, verb, sdkSitId, from);
+        }
+    }
+
+    /// <summary>
+    /// Undoes what <see cref="ApplyAbsenceToPlanRegistration"/> set on the
+    /// unlocked days a failed approve left tagged with this request: the absence
+    /// flags, MessageId and the approval metadata are reset, plan hours and
+    /// shifts are untouched. Returns the earliest cleared date for the flex walk, or null.
+    /// The walk itself runs after the status is saved: its catch clears the
+    /// change tracker, which would silently drop an unsaved status change.
+    /// </summary>
+    private async Task<DateTime?> ClearDaysLeftFlaggedAsync(AbsenceRequest request)
+    {
+        var tagged = await _dbContext.PlanRegistrations
+            .Where(pr => pr.AbsenceRequestId == request.Id
+                         && pr.SdkSitId == request.RequestedBySdkSitId
+                         && pr.WorkflowState != Constants.WorkflowStates.Removed)
+            .ToListAsync();
+        if (tagged.Count == 0)
+        {
+            return null;
+        }
+
+        var lockedThrough = await DayLockHelper.LockedThroughAsync(_dbContext, request.RequestedBySdkSitId);
+        DateTime? earliest = null;
+        foreach (var pr in tagged.OrderBy(pr => pr.Date))
+        {
+            if (DayLockHelper.IsLocked(lockedThrough, pr.Date))
+            {
+                _logger.LogError(
+                    "Absence request {RequestId} is not approved, but day {Date:yyyy-MM-dd} of worker {SdkSitId} is locked and stays flagged for it — MANUAL RECONCILIATION required (payroll counts the absence)",
+                    request.Id, pr.Date, request.RequestedBySdkSitId);
+                continue;
+            }
+
+            pr.OnVacation = false;
+            pr.Sick = false;
+            pr.OtherAllowedAbsence = false;
+            pr.AbsenceWithoutPermission = false;
+            pr.MessageId = null;
+            pr.AbsenceRequestId = null;
+            pr.AbsenceApprovedAtUtc = null;
+            pr.AbsenceApprovedBySdkSitId = null;
+            pr.AbsenceMessageId = null;
+            pr.UpdatedByUserId = _userService.UserId;
+            await pr.Update(_dbContext);
+            earliest ??= pr.Date;
+        }
+
+        return earliest;
     }
 
     // Message ids not covered by the base MessagesCodeFirst list (plugin seed only).
