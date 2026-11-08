@@ -758,6 +758,100 @@ public class AbsenceRequestServiceTests : TestBaseSetup
     }
 
     /// <summary>
+    /// A demoted manager (IsManager=false) keeps the managing tags but has an
+    /// empty inbox, so must not decide either.
+    /// </summary>
+    [Test]
+    public async Task Decisions_AreRefused_ForADemotedManagerWhoKeptTheTags()
+    {
+        var request = await CreatePendingRequestAsync(1);
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: 1);
+        // Demoted the way the settings page does it: the row is updated, its
+        // managing tags stay.
+        var managerRow = await TimePlanningPnDbContext.AssignedSites.FirstAsync(a => a.SiteId == 2);
+        managerRow.IsManager = false;
+        await managerRow.Update(TimePlanningPnDbContext);
+        var decision = new AbsenceRequestDecisionModel { DecisionComment = "demoted" };
+
+        var approved = await _absenceRequestService.ApproveAsync(request.Id, decision);
+        var rejected = await _absenceRequestService.RejectAsync(request.Id, decision);
+
+        Assert.That(approved.Message, Is.EqualTo("UnauthorizedToApprove"));
+        Assert.That(rejected.Message, Is.EqualTo("UnauthorizedToReject"));
+        Assert.That((await StoredRequestAsync(request.Id)).Status, Is.EqualTo(AbsenceRequestStatus.Pending));
+    }
+
+    /// <summary>
+    /// Writes <paramref name="takeover"/> to the request through a separate
+    /// context the first time the service reads UserId, i.e. while the decision
+    /// is under way: another decider took the claim over and decided.
+    /// </summary>
+    private void TakeOverOnFirstUserIdRead(int requestId, AbsenceRequestStatus takeover)
+    {
+        var done = false;
+        _userService.UserId.Returns(_ =>
+        {
+            if (!done)
+            {
+                done = true;
+                using var other = CreateTimePlanningPnDbContext();
+                other.AbsenceRequests.Where(ar => ar.Id == requestId)
+                    .ExecuteUpdate(setters => setters
+                        .SetProperty(ar => ar.Status, takeover)
+                        .SetProperty(ar => ar.DecidedAtUtc, DateTime.UtcNow));
+            }
+            return 1;
+        });
+    }
+
+    /// <summary>
+    /// An approve that lost its claim while applying days (here: rejected by
+    /// the taker-over) must not save Approved and must undo the days it flagged.
+    /// </summary>
+    [Test]
+    public async Task ApproveAsync_LosingItsClaimToAReject_UndoesItsDays()
+    {
+        var request = await CreatePendingRequestAsync(1);
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: 1);
+        TakeOverOnFirstUserIdRead(request.Id, AbsenceRequestStatus.Rejected);
+
+        var result = await _absenceRequestService.ApproveAsync(request.Id,
+            new AbsenceRequestDecisionModel { DecisionComment = "slow" });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("AbsenceRequestMustBePending"));
+        Assert.That((await StoredRequestAsync(request.Id)).Status, Is.EqualTo(AbsenceRequestStatus.Rejected));
+        var rows = await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking()
+            .Where(pr => pr.SdkSitId == 1).ToListAsync();
+        Assert.That(rows, Has.Count.EqualTo(1), "the day was applied before the claim was checked");
+        Assert.That(rows[0].OnVacation, Is.False, "the losing approve undid its day");
+        Assert.That(rows[0].AbsenceRequestId, Is.Null);
+    }
+
+    /// <summary>
+    /// Reject and cancel confirm their claim before touching any day, with
+    /// nothing in between to hook a takeover into, so the confirm itself is
+    /// tested: a claim taken over by another decider is refused and the
+    /// request, including the taker's stamp, is left exactly as it was.
+    /// </summary>
+    [Test]
+    public async Task ConfirmClaimAsync_RefusesAndChangesNothing_WhenTheClaimWasTakenOver()
+    {
+        var ourStamp = new DateTime(2024, 1, 1, 8, 0, 0, DateTimeKind.Utc);
+        var takerStamp = new DateTime(2024, 1, 1, 8, 11, 0, DateTimeKind.Utc);
+        var request = await CreatePendingRequestAsync(1, decidedAtUtc: takerStamp);
+
+        var confirmed = await ((AbsenceRequestService)_absenceRequestService)
+            .ConfirmClaimAsync(request.Id, ourStamp);
+
+        Assert.That(confirmed, Is.Null);
+        var stored = await StoredRequestAsync(request.Id);
+        Assert.That(stored.Status, Is.EqualTo(AbsenceRequestStatus.Pending));
+        Assert.That(stored.DecidedAtUtc, Is.EqualTo(takerStamp), "the taker's claim is untouched");
+        Assert.That(stored.Version, Is.EqualTo(request.Version));
+    }
+
+    /// <summary>
     /// A claim left behind by a decider that died mid-way times out, so the
     /// request does not stay undecidable.
     /// </summary>

@@ -113,7 +113,10 @@ public class AbsenceRequestService : IAbsenceRequestService
     /// <summary>
     /// The authenticated caller's SDK site when it manages the requester's
     /// site, else null. The decider comes from the JWT, never from the body:
-    /// a client-supplied manager id could name any manager.
+    /// a client-supplied manager id could name any manager. Same rule as
+    /// <see cref="GetInboxAsync"/>: the caller's active AssignedSite must be a
+    /// manager, and only its own managing tags count, so a demoted manager who
+    /// kept the tags cannot decide.
     /// </summary>
     private async Task<int?> ResolveDecidingManagerAsync(int requesterSdkSitId)
     {
@@ -123,8 +126,41 @@ public class AbsenceRequestService : IAbsenceRequestService
             return null;
         }
 
-        var managerSiteIds = await GetManagerSiteIdsForWorkerAsync(requesterSdkSitId);
-        return managerSiteIds.Contains(callerSdkSitId) ? callerSdkSitId : null;
+        var managingTagIds = await GetActiveManagingTagIdsAsync(callerSdkSitId);
+        if (managingTagIds == null)
+        {
+            return null;
+        }
+
+        var sdkCore = await _coreService.GetCore();
+        var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
+        var managesRequester = await sdkDbContext.SiteTags
+            .AnyAsync(x => x.WorkflowState != Constants.WorkflowStates.Removed
+                           && x.Site.MicrotingUid == requesterSdkSitId
+                           && managingTagIds.Contains((int)x.TagId!));
+        return managesRequester ? callerSdkSitId : null;
+    }
+
+    /// <summary>
+    /// The active managing tag ids of the site's latest active AssignedSite, or
+    /// null when that row is missing or not a manager.
+    /// </summary>
+    private async Task<List<int>?> GetActiveManagingTagIdsAsync(int callerSdkSitId)
+    {
+        var assignedSite = await _dbContext.AssignedSites
+            .Where(a => a.WorkflowState != Constants.WorkflowStates.Removed)
+            .OrderByDescending(a => a.Id)
+            .FirstOrDefaultAsync(a => a.SiteId == callerSdkSitId);
+        if (assignedSite == null || !assignedSite.IsManager)
+        {
+            return null;
+        }
+
+        return await _dbContext.AssignedSiteManagingTags
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed
+                        && x.AssignedSiteId == assignedSite.Id)
+            .Select(x => x.TagId)
+            .ToListAsync();
     }
 
     /// <summary>
@@ -145,6 +181,26 @@ public class AbsenceRequestService : IAbsenceRequestService
                          && (ar.DecidedAtUtc == null || ar.DecidedAtUtc < staleBefore))
             .ExecuteUpdateAsync(setters => setters.SetProperty(ar => ar.DecidedAtUtc, stamp));
         return claimed == 1 ? stamp : null;
+    }
+
+    /// <summary>
+    /// Re-checks, right before the status save, that this decision still holds
+    /// its claim: a decision running past <see cref="DecisionClaimTimeout"/> can
+    /// have been taken over. Atomically moves the stamp to the decision time,
+    /// which also renews the claim for the save. Returns the new stamp, or null
+    /// when the claim was lost.
+    /// </summary>
+    internal async Task<DateTime?> ConfirmClaimAsync(int absenceRequestId, DateTime claim)
+    {
+        var now = DateTime.UtcNow;
+        // Whole microseconds, so datetime(6) stores it exactly for a later release.
+        var decidedAt = new DateTime(now.Ticks - now.Ticks % TimeSpan.TicksPerMicrosecond, DateTimeKind.Utc);
+        var confirmed = await _dbContext.AbsenceRequests
+            .Where(ar => ar.Id == absenceRequestId
+                         && ar.Status == AbsenceRequestStatus.Pending
+                         && ar.DecidedAtUtc == claim)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(ar => ar.DecidedAtUtc, decidedAt));
+        return confirmed == 1 ? decidedAt : null;
     }
 
     /// <summary>
@@ -353,9 +409,18 @@ public class AbsenceRequestService : IAbsenceRequestService
                 await ApplyAbsenceToPlanRegistration(request, day, managerSdkSitId.Value);
             }
 
+            var decidedAt = await ConfirmClaimAsync(absenceRequestId, claim.Value);
+            if (decidedAt == null)
+            {
+                claim = null;
+                await UndoDaysAfterLostClaimAsync(request);
+                return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
+            }
+            claim = decidedAt;
+
             request.Status = AbsenceRequestStatus.Approved;
             request.DecidedBySdkSitId = managerSdkSitId;
-            request.DecidedAtUtc = DateTime.UtcNow;
+            request.DecidedAtUtc = decidedAt;
             request.DecisionComment = model.DecisionComment;
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
@@ -439,12 +504,22 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
+            // Confirm the claim before touching any day: a reject/cancel that lost
+            // it must change nothing (the winner may have approved those days).
+            var decidedAt = await ConfirmClaimAsync(absenceRequestId, claim.Value);
+            if (decidedAt == null)
+            {
+                claim = null;
+                return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
+            }
+            claim = decidedAt;
+
             // Undo days left flagged by a failed approve before saving the status, so a failure here keeps it Pending.
             var walkFrom = await ClearDaysLeftFlaggedAsync(request);
 
             request.Status = AbsenceRequestStatus.Rejected;
             request.DecidedBySdkSitId = managerSdkSitId;
-            request.DecidedAtUtc = DateTime.UtcNow;
+            request.DecidedAtUtc = decidedAt;
             request.DecisionComment = model.DecisionComment;
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
@@ -491,8 +566,8 @@ public class AbsenceRequestService : IAbsenceRequestService
     /// <summary>
     /// SDK site ids of the managers whose managing tags match one of the worker's
     /// site tags. Removed managing tags and removed AssignedSites are ignored.
-    /// Returns an empty list (and logs) on failure: creating the request never
-    /// fails because of the notification lookup, and a decision is refused.
+    /// Returns an empty list (and logs) on failure so that creating the request
+    /// never fails because of the notification lookup.
     /// </summary>
     private async Task<List<int>> GetManagerSiteIdsForWorkerAsync(int workerSdkSitId)
     {
@@ -562,11 +637,21 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
+            // Confirm the claim before touching any day: a reject/cancel that lost
+            // it must change nothing (the winner may have approved those days).
+            var decidedAt = await ConfirmClaimAsync(absenceRequestId, claim.Value);
+            if (decidedAt == null)
+            {
+                claim = null;
+                return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
+            }
+            claim = decidedAt;
+
             // Undo days left flagged by a failed approve before saving the status, so a failure here keeps it Pending.
             var walkFrom = await ClearDaysLeftFlaggedAsync(request);
 
             request.Status = AbsenceRequestStatus.Cancelled;
-            request.DecidedAtUtc = DateTime.UtcNow;
+            request.DecidedAtUtc = decidedAt;
             request.UpdatedByUserId = _userService.UserId;
             await request.Update(_dbContext);
 
@@ -598,23 +683,12 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationDataResult<List<AbsenceRequestModel>>(true, new List<AbsenceRequestModel>());
             }
 
-            // Check if the requesting user is a manager
-            var assignedSite = await _dbContext.AssignedSites
-                .Where(a => a.WorkflowState != Constants.WorkflowStates.Removed)
-                .OrderByDescending(a => a.Id)
-                .FirstOrDefaultAsync(a => a.SiteId == managerSdkSitId);
-
-            if (assignedSite == null || !assignedSite.IsManager)
+            // Only a manager has an inbox: their managing tag ids, else none.
+            var managingTagIds = await GetActiveManagingTagIdsAsync(managerSdkSitId);
+            if (managingTagIds == null)
             {
                 return new OperationDataResult<List<AbsenceRequestModel>>(true, new List<AbsenceRequestModel>());
             }
-
-            // Get the manager's managing tag IDs
-            var managingTagIds = await _dbContext.AssignedSiteManagingTags
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.AssignedSiteId == assignedSite.Id)
-                .Select(x => x.TagId)
-                .ToListAsync();
 
             // Find all site IDs that share any of the manager's tags
             var sdkCore = await _coreService.GetCore();
@@ -894,6 +968,44 @@ public class AbsenceRequestService : IAbsenceRequestService
             _logger.LogError(walkEx,
                 "Absence request {Id} {Verb} and saved, but carrying the flex balance forward FAILED for worker {SdkSitId} from {From:yyyy-MM-dd} — MANUAL RECONCILIATION required (re-save the day or re-run the walk)",
                 absenceRequestId, verb, sdkSitId, from);
+        }
+    }
+
+    /// <summary>
+    /// An approve whose claim was taken over (it ran past the claim timeout) has
+    /// flagged its days anyway. Undo them when the winner rejected or cancelled
+    /// the request; a winning approve flagged the same days. When the winner is
+    /// still in progress nothing guarantees the days end up right (a reject that
+    /// already cleared them will not clear them again), so that is logged for
+    /// manual reconciliation instead of guessed at.
+    /// </summary>
+    private async Task UndoDaysAfterLostClaimAsync(AbsenceRequest request)
+    {
+        var status = await _dbContext.AbsenceRequests
+            .AsNoTracking()
+            .Where(ar => ar.Id == request.Id)
+            .Select(ar => ar.Status)
+            .FirstAsync();
+        _logger.LogWarning(
+            "Approve of absence request {RequestId} lost its decision claim; the request is now {Status}",
+            request.Id, status);
+        if (status == AbsenceRequestStatus.Pending)
+        {
+            _logger.LogError(
+                "Approve of absence request {RequestId} lost its decision claim to a decision still in progress; days {Days} of worker {SdkSitId} may be left flagged — MANUAL RECONCILIATION required",
+                request.Id, string.Join(", ", request.Days!.Select(d => d.Date.ToString("yyyy-MM-dd"))),
+                request.RequestedBySdkSitId);
+            return;
+        }
+        if (status != AbsenceRequestStatus.Rejected && status != AbsenceRequestStatus.Cancelled)
+        {
+            return;
+        }
+
+        var walkFrom = await ClearDaysLeftFlaggedAsync(request);
+        if (walkFrom.HasValue)
+        {
+            await CarryFlexForwardAsync(request.Id, request.RequestedBySdkSitId, walkFrom.Value, "reverted");
         }
     }
 
