@@ -35,8 +35,6 @@ public class PushNotificationIntegrationTests : TestBaseSetup
     [SetUp]
     public async Task SetUp()
     {
-        await base.Setup();
-
         _pushSignal = new SemaphoreSlim(0);
         _pushService = Substitute.For<IPushNotificationService>();
         // Signal the semaphore each time SendToSiteAsync is called
@@ -85,10 +83,9 @@ public class PushNotificationIntegrationTests : TestBaseSetup
     }
 
     [TearDown]
-    public new async Task TearDown()
+    public void TearDownTest()
     {
         _pushSignal.Dispose();
-        await base.TearDown();
     }
 
     /// <summary>Wait for push signal with a timeout.</summary>

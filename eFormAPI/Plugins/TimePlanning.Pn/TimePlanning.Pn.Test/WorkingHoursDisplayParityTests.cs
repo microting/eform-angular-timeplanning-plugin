@@ -42,8 +42,6 @@ public class WorkingHoursDisplayParityTests : TestBaseSetup
     [SetUp]
     public async Task SetUpTest()
     {
-        await base.Setup();
-
         var userService = Substitute.For<IUserService>();
         userService.UserId.Returns(1);
 

@@ -58,10 +58,8 @@ public class ScheduleMessageReadTests : TestBaseSetup
     private const int MessageDayOff = 1;   // DayOff
 
     [SetUp]
-    public async Task SetUpTest()
+    public void SetUpTest()
     {
-        await base.Setup();
-
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
         _userService.GetCurrentUserAsync().Returns(new EformUser { Id = 1 });

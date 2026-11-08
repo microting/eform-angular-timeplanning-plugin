@@ -23,9 +23,8 @@ public class GpsCoordinateServiceTests : TestBaseSetup
     private ITimePlanningLocalizationService _localizationService;
 
     [SetUp]
-    public async Task SetUp()
+    public void SetUp()
     {
-        await base.Setup();
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
 

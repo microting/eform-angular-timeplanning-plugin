@@ -27,9 +27,8 @@ public class HandoverAcceptFlexCarryForwardTests : TestBaseSetup
     private IContentHandoverService _service = null!;
 
     [SetUp]
-    public async Task SetUpTest()
+    public void SetUpTest()
     {
-        await base.Setup();
         var userService = Substitute.For<IUserService>();
         userService.UserId.Returns(1);
         var localizationService = Substitute.For<ITimePlanningLocalizationService>();

@@ -68,8 +68,6 @@ public class SiteScopeResolverTests : TestBaseSetup
     [SetUp]
     public async Task SetUpTest()
     {
-        await base.Setup();
-
         _userService = Substitute.For<IUserService>();
 
         var core = await GetCore();

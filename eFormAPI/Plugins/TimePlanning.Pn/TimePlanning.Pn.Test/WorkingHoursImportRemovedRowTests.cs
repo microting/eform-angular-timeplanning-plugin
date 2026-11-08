@@ -44,8 +44,6 @@ public class WorkingHoursImportRemovedRowTests : TestBaseSetup
     [SetUp]
     public async Task SetUpTest()
     {
-        await base.Setup();
-
         var localizationService = Substitute.For<ITimePlanningLocalizationService>();
         localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
         // The format overload echoes its arguments, so a test can assert what a

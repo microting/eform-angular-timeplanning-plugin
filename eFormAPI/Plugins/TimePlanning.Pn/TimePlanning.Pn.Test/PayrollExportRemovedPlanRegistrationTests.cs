@@ -33,8 +33,6 @@ public class PayrollExportRemovedPlanRegistrationTests : TestBaseSetup
     [SetUp]
     public async Task SetUpTest()
     {
-        await base.Setup();
-
         _localizationService = Substitute.For<ITimePlanningLocalizationService>();
         _localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
 

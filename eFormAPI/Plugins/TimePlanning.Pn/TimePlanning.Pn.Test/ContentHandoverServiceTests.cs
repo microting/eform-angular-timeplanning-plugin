@@ -26,9 +26,8 @@ public class ContentHandoverServiceTests : TestBaseSetup
     private Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _scopeFactory;
 
     [SetUp]
-    public async Task SetUp()
+    public void SetUp()
     {
-        await base.Setup();
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
 

@@ -23,10 +23,8 @@ public class DeviceTokenServiceTests : TestBaseSetup
     private IUserService _userService = null!;
 
     [SetUp]
-    public async Task SetUp()
+    public void SetUp()
     {
-        await base.Setup();
-
         _userService = Substitute.For<IUserService>();
         var baseDbContext = Substitute.For<BaseDbContext>(
             new DbContextOptions<BaseDbContext>());
