@@ -639,6 +639,9 @@ public class TimePlanningPlanningService(
             // Shifts whose override was set by the flag-ON exact-minute path; the
             // inference must not overwrite them (FIX 4 — exact-minute wins).
             var exactHandledShifts = new HashSet<int>();
+            // Snapshot the plan BEFORE the model is applied (#5571).
+            var preEditPlanHours = planning.PlanHours;
+            var preEditShifts = CapturePlannedShifts(planning);
 
             planning.PlannedStartOfShift1 = model.PlannedStartOfShift1;
             planning.PlannedBreakOfShift1 = model.PlannedBreakOfShift1;
@@ -655,18 +658,34 @@ public class TimePlanningPlanningService(
             planning.PlannedStartOfShift5 = model.PlannedStartOfShift5;
             planning.PlannedBreakOfShift5 = model.PlannedBreakOfShift5;
             planning.PlannedEndOfShift5 = model.PlannedEndOfShift5;
+            // The one decision both the override marker and the PlanHours write
+            // below use: the submitted PlanHours is only stored when there are
+            // no shifts to derive it from (plan-hours-only site, a message day,
+            // or no planned shift minutes); otherwise PlanHours = shifts / 60.
+            var plannedShiftMinutes = PlannedShiftMinutes(planning);
+            var planHoursFromModel = assignedSite.UseOnlyPlanHours
+                                     || model.Message != null
+                                     || plannedShiftMinutes == 0;
+
+            // Judged on what the admin SENT, and PlanHours only where it is
+            // actually stored: template and Google-sheet rows can carry
+            // PlanHours that disagree with their shifts, and the web dialog
+            // re-sends shifts / 60 on any actual-time edit, so neither must
+            // flag the day. Never cleared here: once a day is a deliberate
+            // override it stays one, so the settings template no longer
+            // overwrites it.
+            if (!planning.PlanChangedByAdmin)
+            {
+                planning.PlanChangedByAdmin =
+                    !CapturePlannedShifts(planning).SequenceEqual(preEditShifts)
+                    || (planHoursFromModel && model.PlanHours != preEditPlanHours);
+            }
             planning.PlanText = PlanRegistrationPlanText.Generate(planning);
             planning.CommentOffice = model.CommentOffice;
             planning.NettoHoursOverride = model.NettoHoursOverride;
             planning.NettoHoursOverrideActive = model.NettoHoursOverrideActive;
 
             planning = PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planning);
-
-            if (!planning.PlanChangedByAdmin)
-            {
-                var entry = dbContext.Entry(planning);
-                planning.PlanChangedByAdmin = entry.State == EntityState.Modified;
-            }
 
             planning.UpdatedByUserId = userService.UserId;
 
@@ -930,40 +949,7 @@ public class TimePlanningPlanningService(
             // site's flip to one-minute intervals.
             planning.RegisteredUnderOneMinuteIntervals = assignedSite.UseOneMinuteIntervals;
 
-            if (!assignedSite.UseOnlyPlanHours)
-            {
-                double minutesPlanned = 0;
-                if (planning.PlannedStartOfShift1 != 0 && planning.PlannedEndOfShift1 != 0)
-                {
-                    minutesPlanned += planning.PlannedEndOfShift1 - planning.PlannedStartOfShift1 - planning.PlannedBreakOfShift1;
-                }
-                if (planning.PlannedStartOfShift2 != 0 && planning.PlannedEndOfShift2 != 0)
-                {
-                    minutesPlanned += planning.PlannedEndOfShift2 - planning.PlannedStartOfShift2 - planning.PlannedBreakOfShift2;
-                }
-                if (planning.PlannedStartOfShift3 != 0 && planning.PlannedEndOfShift3 != 0)
-                {
-                    minutesPlanned += planning.PlannedEndOfShift3 - planning.PlannedStartOfShift3 - planning.PlannedBreakOfShift3;
-                }
-                if (planning.PlannedStartOfShift4 != 0 && planning.PlannedEndOfShift4 != 0)
-                {
-                    minutesPlanned += planning.PlannedEndOfShift4 - planning.PlannedStartOfShift4 - planning.PlannedBreakOfShift4;
-                }
-                if (planning.PlannedStartOfShift5 != 0 && planning.PlannedEndOfShift5 != 0)
-                {
-                    minutesPlanned += planning.PlannedEndOfShift5 - planning.PlannedStartOfShift5 - planning.PlannedBreakOfShift5;
-                }
-                if (planning.MessageId == null)
-                {
-                    planning.PlanHours = minutesPlanned != 0 ? minutesPlanned / 60 : model.PlanHours;
-                }
-                else
-                {
-                    planning.PlanHours = model.PlanHours;
-                }
-            } else {
-                planning.PlanHours = model.PlanHours;
-            }
+            planning.PlanHours = planHoursFromModel ? model.PlanHours : plannedShiftMinutes / 60;
 
             // Approach C: infer the per-shift pause override from the submitted
             // Break{N}Shift (change-detected against the pre-edit Pause{N}Id) or
@@ -1582,6 +1568,51 @@ public class TimePlanningPlanningService(
         planning.Stop4Id  = TickId(planning.Stop4StoppedAt);
         planning.Start5Id = TickId(planning.Start5StartedAt);
         planning.Stop5Id  = TickId(planning.Stop5StoppedAt);
+    }
+
+    /// <summary>
+    /// The planned start/end/break of shifts 1-5 (#5571). PlanText is left
+    /// out on purpose: the office Update regenerates it from these shifts, so
+    /// it can only differ when they do -- or when a Google-sheet text is
+    /// merely reformatted, which is not a plan change.
+    /// </summary>
+    private static int[] CapturePlannedShifts(PlanRegistration p) =>
+    [
+        p.PlannedStartOfShift1, p.PlannedEndOfShift1, p.PlannedBreakOfShift1,
+        p.PlannedStartOfShift2, p.PlannedEndOfShift2, p.PlannedBreakOfShift2,
+        p.PlannedStartOfShift3, p.PlannedEndOfShift3, p.PlannedBreakOfShift3,
+        p.PlannedStartOfShift4, p.PlannedEndOfShift4, p.PlannedBreakOfShift4,
+        p.PlannedStartOfShift5, p.PlannedEndOfShift5, p.PlannedBreakOfShift5,
+    ];
+
+    /// <summary>
+    /// Planned work minutes over shifts 1-5; a shift counts only when both its
+    /// start and end are set.
+    /// </summary>
+    private static double PlannedShiftMinutes(PlanRegistration p)
+    {
+        double minutes = 0;
+        if (p.PlannedStartOfShift1 != 0 && p.PlannedEndOfShift1 != 0)
+        {
+            minutes += p.PlannedEndOfShift1 - p.PlannedStartOfShift1 - p.PlannedBreakOfShift1;
+        }
+        if (p.PlannedStartOfShift2 != 0 && p.PlannedEndOfShift2 != 0)
+        {
+            minutes += p.PlannedEndOfShift2 - p.PlannedStartOfShift2 - p.PlannedBreakOfShift2;
+        }
+        if (p.PlannedStartOfShift3 != 0 && p.PlannedEndOfShift3 != 0)
+        {
+            minutes += p.PlannedEndOfShift3 - p.PlannedStartOfShift3 - p.PlannedBreakOfShift3;
+        }
+        if (p.PlannedStartOfShift4 != 0 && p.PlannedEndOfShift4 != 0)
+        {
+            minutes += p.PlannedEndOfShift4 - p.PlannedStartOfShift4 - p.PlannedBreakOfShift4;
+        }
+        if (p.PlannedStartOfShift5 != 0 && p.PlannedEndOfShift5 != 0)
+        {
+            minutes += p.PlannedEndOfShift5 - p.PlannedStartOfShift5 - p.PlannedBreakOfShift5;
+        }
+        return minutes;
     }
 
     /// <summary>

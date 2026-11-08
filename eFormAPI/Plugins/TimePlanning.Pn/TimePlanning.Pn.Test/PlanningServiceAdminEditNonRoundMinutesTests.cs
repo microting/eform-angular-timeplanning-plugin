@@ -176,4 +176,161 @@ public class PlanningServiceAdminEditNonRoundMinutesTests : TestBaseSetup
         Assert.That(reloaded.Start1StartedAt, Is.EqualTo(new DateTime(2026, 5, 16, 8, 0, 0)));
         Assert.That(reloaded.Stop1StoppedAt,  Is.EqualTo(new DateTime(2026, 5, 16, 10, 0, 0)));
     }
+
+    // #5571: PlanChangedByAdmin marks a deliberate plan override, so the
+    // settings template stops overwriting the day. Only a change to the plan
+    // itself (PlanHours, planned start/end/break of shifts 1-5) may set it;
+    // a comment, a netto override or an identical re-save must not.
+
+    /// <summary>
+    /// A five-minute site on the weekday-plan branch with one row planned
+    /// 08:00-16:00 with a 30 min break (7.5 h).
+    /// </summary>
+    private async Task<PlanRegistrationEntity> SeedPlannedRow(int siteUid, bool planChangedByAdmin = false,
+        double planHours = 7.5)
+    {
+        await new AssignedSiteEntity
+        {
+            SiteId = siteUid,
+            UseOneMinuteIntervals = false,
+            UseOnlyPlanHours = false,
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        }.Create(TimePlanningPnDbContext!);
+
+        var planning = new PlanRegistrationEntity
+        {
+            SdkSitId = siteUid,
+            Date = new DateTime(2026, 5, 18, 0, 0, 0),
+            PlanHours = planHours,
+            PlannedStartOfShift1 = 480,
+            PlannedEndOfShift1 = 960,
+            PlannedBreakOfShift1 = 30,
+            PlanChangedByAdmin = planChangedByAdmin,
+            PlanText = "",
+            CommentOffice = "",
+            CommentOfficeAll = "",
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        };
+        await planning.Create(TimePlanningPnDbContext!);
+        return planning;
+    }
+
+    /// <summary>The save the web client sends when the plan is left as seeded.</summary>
+    private static TimePlanningPlanningPrDayModel UnchangedPlanSave(PlanRegistrationEntity planning) => new()
+    {
+        Id = planning.Id,
+        Date = planning.Date,
+        PlanHours = planning.PlanHours,
+        PlannedStartOfShift1 = 480,
+        PlannedEndOfShift1 = 960,
+        PlannedBreakOfShift1 = 30,
+        CommentOffice = "",
+    };
+
+    private async Task<bool> StoredPlanChangedByAdmin(int id) =>
+        (await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .SingleAsync(x => x.Id == id)).PlanChangedByAdmin;
+
+    [Test]
+    public async Task AdminUpdate_CommentOnly_DoesNotMarkPlanChangedByAdmin()
+    {
+        var planning = await SeedPlannedRow(9611);
+        var model = UnchangedPlanSave(planning);
+        model.CommentOffice = "Called in late";
+
+        var result = await _service.Update(planning.Id, model);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(await StoredPlanChangedByAdmin(planning.Id), Is.False);
+    }
+
+    [Test]
+    public async Task AdminUpdate_NettoOverrideOnly_DoesNotMarkPlanChangedByAdmin()
+    {
+        var planning = await SeedPlannedRow(9612);
+        var model = UnchangedPlanSave(planning);
+        model.NettoHoursOverride = 5;
+        model.NettoHoursOverrideActive = true;
+
+        var result = await _service.Update(planning.Id, model);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(await StoredPlanChangedByAdmin(planning.Id), Is.False);
+    }
+
+    [Test]
+    public async Task AdminUpdate_IdenticalPlan_DoesNotMarkPlanChangedByAdmin()
+    {
+        var planning = await SeedPlannedRow(9613);
+
+        var result = await _service.Update(planning.Id, UnchangedPlanSave(planning));
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(await StoredPlanChangedByAdmin(planning.Id), Is.False);
+    }
+
+    [Test]
+    public async Task AdminUpdate_PlanChange_MarksPlanChangedByAdmin()
+    {
+        var planning = await SeedPlannedRow(9614);
+        var model = UnchangedPlanSave(planning);
+        model.PlannedEndOfShift1 = 1020; // 16:00 -> 17:00
+
+        var result = await _service.Update(planning.Id, model);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(await StoredPlanChangedByAdmin(planning.Id), Is.True);
+    }
+
+    [Test]
+    public async Task AdminUpdate_AlreadyMarked_StaysMarkedOnACommentOnlySave()
+    {
+        var planning = await SeedPlannedRow(9615, planChangedByAdmin: true);
+        var model = UnchangedPlanSave(planning);
+        model.CommentOffice = "Called in late";
+
+        var result = await _service.Update(planning.Id, model);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(await StoredPlanChangedByAdmin(planning.Id), Is.True);
+    }
+
+    [Test]
+    public async Task AdminUpdate_CommentOnly_PlanHoursDisagreeingWithShifts_DoesNotMarkPlanChangedByAdmin()
+    {
+        // A template/sheet row: 7.4 h planned, shifts worth 7.5 h. The save
+        // recomputes PlanHours from the shifts, but the admin sent 7.4 back
+        // unchanged, so this is not a plan edit.
+        var planning = await SeedPlannedRow(9616, planHours: 7.4);
+        var model = UnchangedPlanSave(planning);
+        model.CommentOffice = "Called in late";
+
+        var result = await _service.Update(planning.Id, model);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(await StoredPlanChangedByAdmin(planning.Id), Is.False);
+    }
+
+    [Test]
+    public async Task AdminUpdate_ActualTimesOnly_DialogResendsShiftHours_DoesNotMarkPlanChangedByAdmin()
+    {
+        // The web dialog recomputes planHours = shifts / 60 whenever an actual
+        // time is edited, so a 7.4 h template row (shifts worth 7.5 h) comes
+        // back with 7.5. In shift mode the server derives PlanHours from the
+        // unchanged shifts anyway, so this is not a plan edit.
+        var planning = await SeedPlannedRow(9617, planHours: 7.4);
+        var model = UnchangedPlanSave(planning);
+        model.PlanHours = 7.5;
+        model.Start1Id = 97;  // 08:00
+        model.Stop1Id = 193;  // 16:00
+
+        var result = await _service.Update(planning.Id, model);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(await StoredPlanChangedByAdmin(planning.Id), Is.False);
+    }
 }
