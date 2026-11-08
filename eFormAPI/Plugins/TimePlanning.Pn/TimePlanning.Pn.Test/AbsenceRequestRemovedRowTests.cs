@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
@@ -43,7 +42,8 @@ public class AbsenceRequestRemovedRowTests : TestBaseSetup
         var core = await GetCore();
         coreService.GetCore().Returns(Task.FromResult(core));
 
-        var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
+        // Site 2 is the signed-in manager of the worker.
+        await SeedManagerCallerAsync(userService, managerSiteUid: 2, workerSiteUid: 1);
 
         _service = new AbsenceRequestService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
@@ -51,7 +51,7 @@ public class AbsenceRequestRemovedRowTests : TestBaseSetup
             userService,
             localizationService,
             coreService,
-            baseDbContext,
+            SeededBaseDbContext!,
             Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
     }
 
@@ -99,7 +99,7 @@ public class AbsenceRequestRemovedRowTests : TestBaseSetup
         await day.Create(TimePlanningPnDbContext);
 
         var result = await _service.ApproveAsync(request.Id,
-            new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "Approved" });
+            new AbsenceRequestDecisionModel { DecisionComment = "Approved" });
         Assert.That(result.Success, Is.True, result.Message);
 
         // The removed row must not have been used as the absence target.

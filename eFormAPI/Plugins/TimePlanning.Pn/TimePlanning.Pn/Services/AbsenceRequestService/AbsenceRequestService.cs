@@ -55,6 +55,10 @@ public class AbsenceRequestService : IAbsenceRequestService
     private readonly BaseDbContext _baseDbContext;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
+    // How long a decision in progress holds a request. Only matters when the
+    // decider died mid-way and never released it; long enough for any approve.
+    private static readonly TimeSpan DecisionClaimTimeout = TimeSpan.FromMinutes(10);
+
     public AbsenceRequestService(
         ILogger<AbsenceRequestService> logger,
         TimePlanningPnDbContext dbContext,
@@ -106,6 +110,70 @@ public class AbsenceRequestService : IAbsenceRequestService
         return worker.ResolveActiveSdkSiteId() ?? 0;
     }
 
+    /// <summary>
+    /// The authenticated caller's SDK site when it manages the requester's
+    /// site, else null. The decider comes from the JWT, never from the body:
+    /// a client-supplied manager id could name any manager.
+    /// </summary>
+    private async Task<int?> ResolveDecidingManagerAsync(int requesterSdkSitId)
+    {
+        var callerSdkSitId = await ResolveCallerSdkSiteIdAsync();
+        if (callerSdkSitId == 0)
+        {
+            return null;
+        }
+
+        var managerSiteIds = await GetManagerSiteIdsForWorkerAsync(requesterSdkSitId);
+        return managerSiteIds.Contains(callerSdkSitId) ? callerSdkSitId : null;
+    }
+
+    /// <summary>
+    /// Atomically claims a Pending request for one decision by stamping
+    /// DecidedAtUtc; the status stays Pending, so a failed decision leaves it
+    /// Pending. The final status save overwrites the stamp; a failure releases
+    /// it. Returns the stamp, or null when another decision holds or made it.
+    /// </summary>
+    private async Task<DateTime?> TryClaimPendingAsync(int absenceRequestId)
+    {
+        var now = DateTime.UtcNow;
+        // Whole seconds: datetime(6) drops ticks, and the release matches the stamp exactly.
+        var stamp = new DateTime(now.Ticks - now.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
+        var staleBefore = stamp - DecisionClaimTimeout;
+        var claimed = await _dbContext.AbsenceRequests
+            .Where(ar => ar.Id == absenceRequestId
+                         && ar.Status == AbsenceRequestStatus.Pending
+                         && (ar.DecidedAtUtc == null || ar.DecidedAtUtc < staleBefore))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(ar => ar.DecidedAtUtc, stamp));
+        return claimed == 1 ? stamp : null;
+    }
+
+    /// <summary>
+    /// Releases a claim whose decision failed, so the request can be decided
+    /// again at once. A failed release only delays that until the claim times out.
+    /// </summary>
+    private async Task ReleaseClaimAsync(int absenceRequestId, DateTime? stamp)
+    {
+        if (stamp == null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _dbContext.AbsenceRequests
+                .Where(ar => ar.Id == absenceRequestId
+                             && ar.Status == AbsenceRequestStatus.Pending
+                             && ar.DecidedAtUtc == stamp)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(ar => ar.DecidedAtUtc, (DateTime?)null));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Could not release the decision claim on absence request {RequestId}; it can be decided again after {Timeout}",
+                absenceRequestId, DecisionClaimTimeout);
+        }
+    }
+
     public async Task<OperationDataResult<AbsenceRequestModel>> CreateAsync(AbsenceRequestCreateModel model)
     {
         try
@@ -133,10 +201,13 @@ public class AbsenceRequestService : IAbsenceRequestService
                     await DayLockHelper.LockedMessageKeyAsync(_dbContext, model.RequestedBySdkSitId, dateFrom)));
             }
 
-            // Check for overlapping pending requests for the same worker
+            // Overlap with a pending OR approved request is refused: approving a
+            // second request over approved days would re-tag them with its own id,
+            // and rejecting/cancelling it would then clear the earlier absence.
             var hasOverlap = await _dbContext.AbsenceRequests
                 .AnyAsync(ar => ar.RequestedBySdkSitId == model.RequestedBySdkSitId
-                                && ar.Status == AbsenceRequestStatus.Pending
+                                && (ar.Status == AbsenceRequestStatus.Pending
+                                    || ar.Status == AbsenceRequestStatus.Approved)
                                 && ar.DateFrom <= dateTo
                                 && ar.DateTo >= dateFrom);
 
@@ -223,6 +294,7 @@ public class AbsenceRequestService : IAbsenceRequestService
 
     public async Task<OperationResult> ApproveAsync(int absenceRequestId, AbsenceRequestDecisionModel model)
     {
+        DateTime? claim = null;
         try
         {
             // Load request with days
@@ -240,6 +312,12 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
+            var managerSdkSitId = await ResolveDecidingManagerAsync(request.RequestedBySdkSitId);
+            if (managerSdkSitId == null)
+            {
+                return new OperationResult(false, _localizationService.GetString("UnauthorizedToApprove"));
+            }
+
             // Checked before anything is persisted, so a locked day refuses the
             // whole request instead of failing part-way through the per-day
             // loop below. One boundary query for the worker. The earliest
@@ -255,6 +333,12 @@ public class AbsenceRequestService : IAbsenceRequestService
                         _dbContext, request.RequestedBySdkSitId, blockingDay.Date)));
             }
 
+            claim = await TryClaimPendingAsync(absenceRequestId);
+            if (claim == null)
+            {
+                return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
+            }
+
             // Apply changes without an explicit transaction.
             // NOTE: Update() methods internally handle persistence, and using
             // an explicit BeginTransactionAsync here was causing a silent
@@ -266,11 +350,11 @@ public class AbsenceRequestService : IAbsenceRequestService
             // before the loop: each Update() saves the whole context.
             foreach (var day in request.Days!.OrderBy(d => d.Date))
             {
-                await ApplyAbsenceToPlanRegistration(request, day, model.ManagerSdkSitId);
+                await ApplyAbsenceToPlanRegistration(request, day, managerSdkSitId.Value);
             }
 
             request.Status = AbsenceRequestStatus.Approved;
-            request.DecidedBySdkSitId = model.ManagerSdkSitId;
+            request.DecidedBySdkSitId = managerSdkSitId;
             request.DecidedAtUtc = DateTime.UtcNow;
             request.DecisionComment = model.DecisionComment;
             request.UpdatedByUserId = _userService.UserId;
@@ -316,6 +400,7 @@ public class AbsenceRequestService : IAbsenceRequestService
             // A refused save stays tracked and would rethrow on the next
             // SaveChanges on this context, so drop it with the rest.
             _dbContext.ChangeTracker.Clear();
+            await ReleaseClaimAsync(absenceRequestId, claim);
             // Days already saved are re-applied on the next approve.
             _logger.LogError(ex,
                 "Error approving absence request {RequestId}; the request is left Pending",
@@ -326,6 +411,7 @@ public class AbsenceRequestService : IAbsenceRequestService
 
     public async Task<OperationResult> RejectAsync(int absenceRequestId, AbsenceRequestDecisionModel model)
     {
+        DateTime? claim = null;
         try
         {
             var request = await _dbContext.AbsenceRequests
@@ -341,11 +427,23 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
+            var managerSdkSitId = await ResolveDecidingManagerAsync(request.RequestedBySdkSitId);
+            if (managerSdkSitId == null)
+            {
+                return new OperationResult(false, _localizationService.GetString("UnauthorizedToReject"));
+            }
+
+            claim = await TryClaimPendingAsync(absenceRequestId);
+            if (claim == null)
+            {
+                return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
+            }
+
             // Undo days left flagged by a failed approve before saving the status, so a failure here keeps it Pending.
             var walkFrom = await ClearDaysLeftFlaggedAsync(request);
 
             request.Status = AbsenceRequestStatus.Rejected;
-            request.DecidedBySdkSitId = model.ManagerSdkSitId;
+            request.DecidedBySdkSitId = managerSdkSitId;
             request.DecidedAtUtc = DateTime.UtcNow;
             request.DecisionComment = model.DecisionComment;
             request.UpdatedByUserId = _userService.UserId;
@@ -384,6 +482,7 @@ public class AbsenceRequestService : IAbsenceRequestService
         catch (Exception ex)
         {
             _dbContext.ChangeTracker.Clear();
+            await ReleaseClaimAsync(absenceRequestId, claim);
             _logger.LogError(ex, "Error rejecting absence request {RequestId}", absenceRequestId);
             return new OperationResult(false, _localizationService.GetString("ErrorRejectingAbsenceRequest"));
         }
@@ -392,8 +491,8 @@ public class AbsenceRequestService : IAbsenceRequestService
     /// <summary>
     /// SDK site ids of the managers whose managing tags match one of the worker's
     /// site tags. Removed managing tags and removed AssignedSites are ignored.
-    /// Returns an empty list (and logs) on failure so that creating the request
-    /// never fails because of the notification lookup.
+    /// Returns an empty list (and logs) on failure: creating the request never
+    /// fails because of the notification lookup, and a decision is refused.
     /// </summary>
     private async Task<List<int>> GetManagerSiteIdsForWorkerAsync(int workerSdkSitId)
     {
@@ -417,7 +516,7 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error resolving managers for absence request push notification");
+            _logger.LogError(ex, "Error resolving managers of worker {SdkSitId} for an absence request", workerSdkSitId);
             return [];
         }
     }
@@ -432,8 +531,9 @@ public class AbsenceRequestService : IAbsenceRequestService
         await pushService.SendToSiteAsync(targetSdkSitId, title, body, data);
     }
 
-    public async Task<OperationResult> CancelAsync(int absenceRequestId, int requestedBySdkSitId)
+    public async Task<OperationResult> CancelAsync(int absenceRequestId)
     {
+        DateTime? claim = null;
         try
         {
             var request = await _dbContext.AbsenceRequests
@@ -449,9 +549,17 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
-            if (request.RequestedBySdkSitId != requestedBySdkSitId)
+            // The requester is the authenticated caller, never a client-supplied id.
+            var callerSdkSitId = await ResolveCallerSdkSiteIdAsync();
+            if (callerSdkSitId == 0 || request.RequestedBySdkSitId != callerSdkSitId)
             {
                 return new OperationResult(false, _localizationService.GetString("UnauthorizedToCancel"));
+            }
+
+            claim = await TryClaimPendingAsync(absenceRequestId);
+            if (claim == null)
+            {
+                return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
             // Undo days left flagged by a failed approve before saving the status, so a failure here keeps it Pending.
@@ -472,6 +580,7 @@ public class AbsenceRequestService : IAbsenceRequestService
         catch (Exception ex)
         {
             _dbContext.ChangeTracker.Clear();
+            await ReleaseClaimAsync(absenceRequestId, claim);
             _logger.LogError(ex, "Error cancelling absence request {RequestId}", absenceRequestId);
             return new OperationResult(false, _localizationService.GetString("ErrorCancellingAbsenceRequest"));
         }
@@ -857,7 +966,8 @@ public class AbsenceRequestService : IAbsenceRequestService
             DateTo = request.DateTo,
             Status = request.Status.ToString(),
             RequestedAtUtc = request.RequestedAtUtc,
-            DecidedAtUtc = request.DecidedAtUtc,
+            // A Pending row's DecidedAtUtc is only a decision claim, not a decision.
+            DecidedAtUtc = request.Status == AbsenceRequestStatus.Pending ? null : request.DecidedAtUtc,
             DecidedBySdkSitId = request.DecidedBySdkSitId,
             RequestComment = request.RequestComment,
             DecisionComment = request.DecisionComment,

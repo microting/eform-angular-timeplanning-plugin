@@ -40,11 +40,9 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         var core = await GetCore();
         _coreService.GetCore().Returns(Task.FromResult(core));
 
-        // Provide a non-null BaseDbContext substitute so the ctor-injected
-        // field never NREs. Tests for GetInboxAsync that require real Users
-        // seeding are [Ignore]d below — the JWT-based site resolver path is
-        // exercised by the Dart gRPC contract suite instead.
-        var baseDbContext = Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>());
+        // A real BaseDbContext: approve, reject and cancel resolve the caller
+        // from the JWT user (SeedSiteCallerAsync seeds one into it).
+        SeededBaseDbContext = GetBaseDbContext();
 
         _absenceRequestService = new AbsenceRequestService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
@@ -52,7 +50,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             _userService,
             _localizationService,
             _coreService,
-            baseDbContext,
+            SeededBaseDbContext,
             Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
     }
 
@@ -194,10 +192,10 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             UpdatedByUserId = 1
         };
         await day2.Create(TimePlanningPnDbContext);
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: 1);
 
         var model = new AbsenceRequestDecisionModel
         {
-            ManagerSdkSitId = 2,
             DecisionComment = "Approved"
         };
 
@@ -310,9 +308,10 @@ public class AbsenceRequestServiceTests : TestBaseSetup
                 UpdatedByUserId = 1
             }.Create(TimePlanningPnDbContext);
         }
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: sdkSitId);
 
         var result = await _absenceRequestService.ApproveAsync(request.Id,
-            new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "Approved" });
+            new AbsenceRequestDecisionModel { DecisionComment = "Approved" });
 
         Assert.That(result.Success, Is.False);
         Assert.That(result.Message, Is.EqualTo(expectedMessage));
@@ -349,7 +348,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
     {
         const int sdkSitId = 13;
         var (request, failSecondDay) = await SeedThreeDayRequestFailingOnDay2Async(sdkSitId);
-        var decision = new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "Approved" };
+        var decision = new AbsenceRequestDecisionModel { DecisionComment = "Approved" };
 
         var failed = await _absenceRequestService.ApproveAsync(request.Id, decision);
 
@@ -360,6 +359,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             .AsNoTracking().FirstAsync(ar => ar.Id == request.Id);
         Assert.That(afterFailure.Status, Is.EqualTo(AbsenceRequestStatus.Pending));
         Assert.That(afterFailure.DecidedBySdkSitId, Is.Null);
+        Assert.That(afterFailure.DecidedAtUtc, Is.Null, "the failed approve released its decision claim");
         var rowsAfterFailure = await TimePlanningPnDbContext.PlanRegistrations
             .AsNoTracking().Where(pr => pr.SdkSitId == sdkSitId).OrderBy(pr => pr.Date).ToListAsync();
         Assert.That(rowsAfterFailure.Select(pr => pr.OnVacation), Is.EqualTo(new[] { true, false, false }),
@@ -394,7 +394,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
     {
         const int sdkSitId = 14;
         var (request, failSecondDay) = await SeedThreeDayRequestFailingOnDay2Async(sdkSitId);
-        var decision = new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "Decided" };
+        var decision = new AbsenceRequestDecisionModel { DecisionComment = "Decided" };
 
         var failed = await _absenceRequestService.ApproveAsync(request.Id, decision);
         Assert.That(failed.Success, Is.False);
@@ -432,13 +432,14 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         var (request, failSecondDay) = await SeedThreeDayRequestFailingOnDay2Async(sdkSitId);
 
         var failed = await _absenceRequestService.ApproveAsync(request.Id,
-            new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "Decided" });
+            new AbsenceRequestDecisionModel { DecisionComment = "Decided" });
         Assert.That(failed.Success, Is.False);
         Assert.That(await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking()
             .CountAsync(pr => pr.AbsenceRequestId == request.Id), Is.EqualTo(1), "day 1 was left flagged");
 
         failSecondDay.Value = false;
-        var cancelled = await _absenceRequestService.CancelAsync(request.Id, sdkSitId);
+        await SeedSiteCallerAsync(_userService, sdkSitId); // the worker cancels
+        var cancelled = await _absenceRequestService.CancelAsync(request.Id);
 
         Assert.That(cancelled.Success, Is.True, cancelled.Message);
         var after = await TimePlanningPnDbContext.AbsenceRequests
@@ -501,6 +502,9 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             }.Create(TimePlanningPnDbContext);
         }
 
+        // Site 2 manages the worker and is the signed-in caller.
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: sdkSitId);
+
         var failSecondDay = new StrongBox<bool>(true);
         var userIdReads = 0;
         _userService.UserId.Returns(_ =>
@@ -530,10 +534,10 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             UpdatedByUserId = 1
         };
         await request.Create(TimePlanningPnDbContext);
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: 1);
 
         var model = new AbsenceRequestDecisionModel
         {
-            ManagerSdkSitId = 2,
             DecisionComment = "Rejected"
         };
 
@@ -570,14 +574,262 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         };
         await request.Create(TimePlanningPnDbContext);
 
+        await SeedSiteCallerAsync(_userService, 1);
+
         // Act
-        var result = await _absenceRequestService.CancelAsync(request.Id, 1);
+        var result = await _absenceRequestService.CancelAsync(request.Id);
 
         // Assert
         Assert.That(result.Success, Is.True);
 
         var updatedRequest = await TimePlanningPnDbContext.AbsenceRequests.FindAsync(request.Id);
         Assert.That(updatedRequest.Status, Is.EqualTo(AbsenceRequestStatus.Cancelled));
+    }
+
+    // ---------------------------------------------------------------
+    // Hardening (#5489 follow-up): the decider and the requester come from
+    // the signed-in caller, and only one decision can claim a request.
+    // ---------------------------------------------------------------
+
+    private async Task<AbsenceRequest> CreatePendingRequestAsync(int sdkSitId, DateTime? decidedAtUtc = null)
+    {
+        var request = new AbsenceRequest
+        {
+            RequestedBySdkSitId = sdkSitId,
+            DateFrom = new DateTime(2024, 1, 1),
+            DateTo = new DateTime(2024, 1, 1),
+            Status = AbsenceRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            DecidedAtUtc = decidedAtUtc,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await request.Create(TimePlanningPnDbContext);
+        await new AbsenceRequestDay
+        {
+            AbsenceRequestId = request.Id,
+            Date = request.DateFrom,
+            MessageId = 2, // Vacation
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+        return request;
+    }
+
+    private async Task<AbsenceRequest> StoredRequestAsync(int id) =>
+        await TimePlanningPnDbContext.AbsenceRequests.AsNoTracking().FirstAsync(ar => ar.Id == id);
+
+    /// <summary>
+    /// Site 2 manages worker 1, but the signed-in caller sits on site 3. The
+    /// body naming manager 2 must not help: the decider is the caller.
+    /// </summary>
+    [Test]
+    public async Task RejectAsync_IsRefused_WhenTheCallerDoesNotManageTheRequester()
+    {
+        var request = await CreatePendingRequestAsync(1);
+        await SeedManagerOfAsync(managerSiteUid: 2, workerSiteUid: 1);
+        await SeedSiteCallerAsync(_userService, 3);
+
+        var result = await _absenceRequestService.RejectAsync(request.Id,
+            new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "spoofed" });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("UnauthorizedToReject"));
+        var stored = await StoredRequestAsync(request.Id);
+        Assert.That(stored.Status, Is.EqualTo(AbsenceRequestStatus.Pending));
+        Assert.That(stored.DecidedAtUtc, Is.Null, "a refused caller must not claim the request");
+    }
+
+    [Test]
+    public async Task ApproveAsync_IsRefused_WhenTheCallerDoesNotManageTheRequester()
+    {
+        var request = await CreatePendingRequestAsync(1);
+        await SeedManagerOfAsync(managerSiteUid: 2, workerSiteUid: 1);
+        await SeedSiteCallerAsync(_userService, 3);
+
+        var result = await _absenceRequestService.ApproveAsync(request.Id,
+            new AbsenceRequestDecisionModel { ManagerSdkSitId = 2, DecisionComment = "spoofed" });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("UnauthorizedToApprove"));
+        Assert.That((await StoredRequestAsync(request.Id)).Status, Is.EqualTo(AbsenceRequestStatus.Pending));
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking().CountAsync(), Is.Zero,
+            "no day is applied for a refused caller");
+    }
+
+    [Test]
+    public async Task RejectAsync_IsRefused_WhenNoCallerIsSignedIn()
+    {
+        var request = await CreatePendingRequestAsync(1);
+        await SeedManagerOfAsync(managerSiteUid: 2, workerSiteUid: 1);
+
+        var result = await _absenceRequestService.RejectAsync(request.Id,
+            new AbsenceRequestDecisionModel());
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("UnauthorizedToReject"));
+    }
+
+    /// <summary>
+    /// The caller sits on site 3 and cancels worker 1's request. The id the
+    /// client used to send is gone from the call, so only the caller counts.
+    /// </summary>
+    [Test]
+    public async Task CancelAsync_IsRefused_ForAnotherWorkersRequest()
+    {
+        var request = await CreatePendingRequestAsync(1);
+        await SeedSiteCallerAsync(_userService, 3);
+
+        var result = await _absenceRequestService.CancelAsync(request.Id);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("UnauthorizedToCancel"));
+        Assert.That((await StoredRequestAsync(request.Id)).Status, Is.EqualTo(AbsenceRequestStatus.Pending));
+    }
+
+    [Test]
+    public async Task RejectAsync_AfterApprove_IsRefusedAsNotPending()
+    {
+        var request = await CreatePendingRequestAsync(1);
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: 1);
+        var decision = new AbsenceRequestDecisionModel { DecisionComment = "ok" };
+
+        var approved = await _absenceRequestService.ApproveAsync(request.Id, decision);
+        var rejected = await _absenceRequestService.RejectAsync(request.Id, decision);
+
+        Assert.That(approved.Success, Is.True, approved.Message);
+        Assert.That(rejected.Success, Is.False);
+        Assert.That(rejected.Message, Is.EqualTo("AbsenceRequestMustBePending"));
+        var stored = await StoredRequestAsync(request.Id);
+        Assert.That(stored.Status, Is.EqualTo(AbsenceRequestStatus.Approved));
+        Assert.That(stored.DecidedBySdkSitId, Is.EqualTo(2), "the decider is the signed-in manager");
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking()
+            .CountAsync(pr => pr.AbsenceRequestId == request.Id && pr.OnVacation), Is.EqualTo(1),
+            "the refused reject must not clear the approved day");
+    }
+
+    [Test]
+    public async Task ApproveAsync_AfterReject_IsRefusedAsNotPending()
+    {
+        var request = await CreatePendingRequestAsync(1);
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: 1);
+        var decision = new AbsenceRequestDecisionModel { DecisionComment = "no" };
+
+        var rejected = await _absenceRequestService.RejectAsync(request.Id, decision);
+        var approved = await _absenceRequestService.ApproveAsync(request.Id, decision);
+
+        Assert.That(rejected.Success, Is.True, rejected.Message);
+        Assert.That(approved.Success, Is.False);
+        Assert.That(approved.Message, Is.EqualTo("AbsenceRequestMustBePending"));
+        Assert.That((await StoredRequestAsync(request.Id)).Status, Is.EqualTo(AbsenceRequestStatus.Rejected));
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking().CountAsync(), Is.Zero);
+    }
+
+    /// <summary>
+    /// A decision in progress holds the claim (DecidedAtUtc stamped, status
+    /// still Pending). A concurrent decision reads Pending but must lose the
+    /// conditional claim and change nothing.
+    /// </summary>
+    [Test]
+    public async Task Decisions_AreRefused_WhileAnotherDecisionHoldsTheClaim()
+    {
+        var request = await CreatePendingRequestAsync(1, decidedAtUtc: DateTime.UtcNow.AddSeconds(-5));
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: 1);
+        var decision = new AbsenceRequestDecisionModel { DecisionComment = "racing" };
+
+        var approved = await _absenceRequestService.ApproveAsync(request.Id, decision);
+        var rejected = await _absenceRequestService.RejectAsync(request.Id, decision);
+        await SeedSiteCallerAsync(_userService, 1);
+        var cancelled = await _absenceRequestService.CancelAsync(request.Id);
+
+        foreach (var result in new[] { approved, rejected, cancelled })
+        {
+            Assert.That(result.Success, Is.False);
+            Assert.That(result.Message, Is.EqualTo("AbsenceRequestMustBePending"));
+        }
+        var stored = await StoredRequestAsync(request.Id);
+        Assert.That(stored.Status, Is.EqualTo(AbsenceRequestStatus.Pending));
+        Assert.That(stored.DecidedBySdkSitId, Is.Null);
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking().CountAsync(), Is.Zero,
+            "the losing approve must not apply any day");
+        var mine = await _absenceRequestService.GetMineAsync(1);
+        Assert.That(mine.Model.Single().DecidedAtUtc, Is.Null,
+            "a claimed Pending request must not show as decided");
+    }
+
+    /// <summary>
+    /// A claim left behind by a decider that died mid-way times out, so the
+    /// request does not stay undecidable.
+    /// </summary>
+    [Test]
+    public async Task RejectAsync_TakesOverAStaleClaim()
+    {
+        var request = await CreatePendingRequestAsync(1, decidedAtUtc: DateTime.UtcNow.AddMinutes(-11));
+        await SeedManagerCallerAsync(_userService, managerSiteUid: 2, workerSiteUid: 1);
+
+        var result = await _absenceRequestService.RejectAsync(request.Id,
+            new AbsenceRequestDecisionModel { DecisionComment = "no" });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That((await StoredRequestAsync(request.Id)).Status, Is.EqualTo(AbsenceRequestStatus.Rejected));
+    }
+
+    /// <summary>
+    /// A second request over already approved days is refused: approving it
+    /// would re-tag those days, and rejecting it would then clear them.
+    /// </summary>
+    [Test]
+    public async Task CreateAsync_RejectsOverlapWithAnApprovedRequest()
+    {
+        await new AbsenceRequest
+        {
+            RequestedBySdkSitId = 1,
+            DateFrom = new DateTime(2024, 1, 1),
+            DateTo = new DateTime(2024, 1, 5),
+            Status = AbsenceRequestStatus.Approved,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+
+        var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
+        {
+            RequestedBySdkSitId = 1,
+            DateFrom = new DateTime(2024, 1, 5),
+            DateTo = new DateTime(2024, 1, 7),
+            MessageId = 2,
+            RequestComment = "Over an approved day"
+        });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("OverlappingAbsenceRequestExists"));
+        Assert.That(await TimePlanningPnDbContext.AbsenceRequests.AsNoTracking().CountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task CreateAsync_AllowsOverlapWithARejectedRequest()
+    {
+        await new AbsenceRequest
+        {
+            RequestedBySdkSitId = 1,
+            DateFrom = new DateTime(2024, 1, 1),
+            DateTo = new DateTime(2024, 1, 5),
+            Status = AbsenceRequestStatus.Rejected,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+
+        var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
+        {
+            RequestedBySdkSitId = 1,
+            DateFrom = new DateTime(2024, 1, 3),
+            DateTo = new DateTime(2024, 1, 4),
+            MessageId = 2,
+            RequestComment = "Asking again"
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
     }
 
     [Test]
@@ -677,7 +929,6 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         const string managerEmail = "manager@example.com";
 
         // Caller: an Angular user whose SDK worker is linked to the manager site.
-        SeededBaseDbContext = GetBaseDbContext();
         var user = new Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser
         {
             UserName = managerEmail,
