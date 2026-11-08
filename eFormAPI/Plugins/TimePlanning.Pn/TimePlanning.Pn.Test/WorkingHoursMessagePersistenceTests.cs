@@ -7,8 +7,12 @@ using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
+using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using Microting.TimePlanningBase.Infrastructure.Extensions.Seed.CodeFirstLists;
 using NSubstitute;
 using NUnit.Framework;
+using TimePlanning.Pn.Infrastructure.Data.Seed;
+using TimePlanning.Pn.Infrastructure.Data.Seed.Data;
 using TimePlanning.Pn.Infrastructure.Models.Settings;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.UpdateCreate;
@@ -165,6 +169,109 @@ public class WorkingHoursMessagePersistenceTests : TestBaseSetup
             "Exactly one seeded message with Id 13");
         Assert.That(messages[0].Name, Is.EqualTo("PregnancyLeave"));
         Assert.That(messages[0].DaName, Is.EqualTo("Graviditetsbetinget fravær"));
+    }
+
+    // ------------------------------------------------------------------
+    // 6. SeedData matches Messages by Id. Databases seeded by the base package
+    //    carry other Names for ids 1-9 ("Day Off", "Time off", ...); matching
+    //    by Name inserted a duplicate Id and broke startup seeding.
+    // ------------------------------------------------------------------
+
+    [Test]
+    public async Task SeedData_BaseNamedRows_SurviveAndKeepTheirTexts()
+    {
+        // The fixture already ran SeedData, so reshape the table into what a
+        // base-seeded DB looks like: ids 1-9 as the base package's rows
+        // (including id 6 "Care", which the plugin lacks) and no ids 10-13.
+        await using (var db = CreateTimePlanningPnDbContext())
+        {
+            await db.Messages.Where(x => x.Id >= 10).ExecuteDeleteAsync();
+            var rows = await db.Messages.ToDictionaryAsync(x => x.Id);
+            foreach (var baseMessage in MessagesCodeFirst.GetList())
+            {
+                if (!rows.TryGetValue(baseMessage.Id, out var row))
+                {
+                    row = new Message { Id = baseMessage.Id };
+                    db.Messages.Add(row);
+                }
+
+                row.Name = baseMessage.Name;
+                row.DaName = baseMessage.DaName;
+                row.EnName = baseMessage.EnName;
+                row.DeName = baseMessage.DeName;
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        await using (var db = CreateTimePlanningPnDbContext())
+        {
+            Assert.DoesNotThrow(() => TimePlanningPluginSeed.SeedData(db));
+        }
+
+        await using var freshContext = CreateTimePlanningPnDbContext();
+        var messages = await freshContext.Messages.AsNoTracking().ToDictionaryAsync(x => x.Id);
+        Assert.That(messages.Keys, Is.EquivalentTo(Enumerable.Range(1, 13)),
+            "Ids 1-13 exist exactly once (6 from the base package, no duplicates added)");
+
+        foreach (var baseMessage in MessagesCodeFirst.GetList())
+        {
+            var row = messages[baseMessage.Id];
+            Assert.That(row.Name, Is.EqualTo(baseMessage.Name), $"Name of id {baseMessage.Id}");
+            Assert.That(row.DaName, Is.EqualTo(baseMessage.DaName), $"DaName of id {baseMessage.Id}");
+            Assert.That(row.EnName, Is.EqualTo(baseMessage.EnName), $"EnName of id {baseMessage.Id}");
+            Assert.That(row.DeName, Is.EqualTo(baseMessage.DeName), $"DeName of id {baseMessage.Id}");
+        }
+
+        foreach (var seedMessage in new TimePlanningSeedMessages().Data.Where(x => x.Id >= 10))
+        {
+            Assert.That(messages[seedMessage.Id].Name, Is.EqualTo(seedMessage.Name),
+                $"Id {seedMessage.Id} is inserted alongside the base rows");
+        }
+    }
+
+    [Test]
+    public async Task SeedData_EmptyMessagesTable_InsertsAllSeedMessages()
+    {
+        await using (var db = CreateTimePlanningPnDbContext())
+        {
+            await db.Messages.ExecuteDeleteAsync();
+            TimePlanningPluginSeed.SeedData(db);
+        }
+
+        await using var freshContext = CreateTimePlanningPnDbContext();
+        var messages = await freshContext.Messages.AsNoTracking().ToListAsync();
+        var seed = new TimePlanningSeedMessages().Data;
+
+        // 12 rows: the seed has no id 6 ("Care" exists only in the base package).
+        Assert.That(messages.Select(x => (x.Id, x.Name)),
+            Is.EquivalentTo(seed.Select(x => (x.Id, x.Name))));
+    }
+
+    [Test]
+    public async Task SeedData_PluginNamedRowWithDriftedTranslations_IsHealed()
+    {
+        await using (var db = CreateTimePlanningPnDbContext())
+        {
+            var timeOff = await db.Messages.SingleAsync(x => x.Id == 9);
+            Assert.That(timeOff.Name, Is.EqualTo("TimeOff"), "Precondition: plugin-seeded row");
+            timeOff.DaName = "Drifted";
+            timeOff.EnName = "Drifted";
+            timeOff.DeName = "Drifted";
+            await db.SaveChangesAsync();
+        }
+
+        await using (var db = CreateTimePlanningPnDbContext())
+        {
+            TimePlanningPluginSeed.SeedData(db);
+        }
+
+        await using var freshContext = CreateTimePlanningPnDbContext();
+        var healed = await freshContext.Messages.AsNoTracking().SingleAsync(x => x.Id == 9);
+        var seed = new TimePlanningSeedMessages().Data.Single(x => x.Id == 9);
+        Assert.That(healed.DaName, Is.EqualTo(seed.DaName));
+        Assert.That(healed.EnName, Is.EqualTo(seed.EnName));
+        Assert.That(healed.DeName, Is.EqualTo(seed.DeName));
     }
 
     // ------------------------------------------------------------------
