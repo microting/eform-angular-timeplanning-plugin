@@ -32,6 +32,7 @@ using Data;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.TimePlanningBase.Infrastructure.Data;
+using Microting.TimePlanningBase.Infrastructure.Extensions.Seed.CodeFirstLists;
 
 public static class TimePlanningPluginSeed
 {
@@ -88,37 +89,38 @@ public static class TimePlanningPluginSeed
             }
         }
 
-        var seedMessages = new TimePlanningSeedMessages();
-
-        foreach (Message message in seedMessages.Data)
+        // Match system messages by Id: the base package seeds ids 1-9 under other
+        // names ("Day Off", "Time off", ...), so matching by Name would insert a
+        // duplicate Id. Only rows the plugin created (same Name) are healed back to
+        // the seed translations; rows that still equal their base package entry keep
+        // their own texts, also for ids 2-4 whose Names coincide with the plugin's.
+        var existingMessages = dbContext.Messages.ToDictionary(x => x.Id);
+        var baseMessages = MessagesCodeFirst.GetList().ToDictionary(x => x.Id);
+        foreach (var seedMessage in new TimePlanningSeedMessages().Data)
         {
-            if (!dbContext.Messages.Any(x => x.Name == message.Name))
+            if (!existingMessages.TryGetValue(seedMessage.Id, out var existing))
             {
-                dbContext.Messages.Add(message);
+                dbContext.Messages.Add(seedMessage);
+                continue;
             }
-        }
 
-        dbContext.SaveChanges();
-
-        // Heal existing Message rows that drifted from seed values (e.g. customer DBs
-        // where VacationDayOff was written with TimeOff/Maternity-style translations).
-        // The seed file is the source of truth for these system messages.
-        foreach (var seedMessage in seedMessages.Data)
-        {
-            var existing = dbContext.Messages.FirstOrDefault(x => x.Name == seedMessage.Name);
-            if (existing == null) continue;
-
-            if (existing.DaName != seedMessage.DaName
-                || existing.EnName != seedMessage.EnName
-                || existing.DeName != seedMessage.DeName)
+            var isUntouchedBaseRow = baseMessages.TryGetValue(existing.Id, out var baseMessage)
+                && existing.Name == baseMessage.Name
+                && HasSameTranslations(existing, baseMessage);
+            if (isUntouchedBaseRow || existing.Name != seedMessage.Name)
             {
-                existing.DaName = seedMessage.DaName;
-                existing.EnName = seedMessage.EnName;
-                existing.DeName = seedMessage.DeName;
-                dbContext.Messages.Update(existing);
+                continue;
             }
+
+            // Tracked row: EF only writes it if a value actually changed.
+            existing.DaName = seedMessage.DaName;
+            existing.EnName = seedMessage.EnName;
+            existing.DeName = seedMessage.DeName;
         }
 
         dbContext.SaveChanges();
     }
+
+    private static bool HasSameTranslations(Message a, Message b) =>
+        a.DaName == b.DaName && a.EnName == b.EnName && a.DeName == b.DeName;
 }

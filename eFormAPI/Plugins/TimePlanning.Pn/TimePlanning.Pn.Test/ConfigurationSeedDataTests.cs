@@ -34,8 +34,8 @@ public class ConfigurationSeedDataTests
     // ------------------------------------------------------------------
     // Seed messages: the new Id 13 "PregnancyLeave" entry, plus uniqueness
     // guards for future additions. (TimePlanningPluginSeed.SeedData upserts
-    // this catalog into the Messages table by Name; the DB-side assertion
-    // lives in WorkingHoursMessagePersistenceTests, which has a database.)
+    // this catalog into the Messages table by Id; the DB-side assertions
+    // live in WorkingHoursMessagePersistenceTests, which has a database.)
     // ------------------------------------------------------------------
 
     [Test]
@@ -60,12 +60,12 @@ public class ConfigurationSeedDataTests
 
         var ids = seedMessages.Data.Select(x => x.Id).ToList();
         Assert.That(ids, Is.Unique,
-            "Seed message Ids must stay unique — SeedData upserts by Name, and the Excel " +
+            "Seed message Ids must stay unique — SeedData upserts by Id, and the Excel " +
             "Total sheet emits one column per Id");
 
         var names = seedMessages.Data.Select(x => x.Name).ToList();
         Assert.That(names, Is.Unique,
-            "Seed message Names must stay unique — TimePlanningPluginSeed matches existing " +
-            "rows by Name, so a duplicate would upsert the wrong row");
+            "Seed message Names must stay unique — TimePlanningPluginSeed only heals rows " +
+            "whose Name equals the seed Name, so a duplicate would blur that ownership check");
     }
 }
