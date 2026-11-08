@@ -38,7 +38,6 @@ using Microting.eFormApi.BasePn.Abstractions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
-using Microting.TimePlanningBase.Infrastructure.Extensions.Seed.CodeFirstLists;
 using Microting.TimePlanningBase.Infrastructure.Helpers;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Infrastructure.Helpers;
@@ -838,64 +837,13 @@ public class AbsenceRequestService : IAbsenceRequestService
         return earliest;
     }
 
-    // Message ids not covered by the base MessagesCodeFirst list (plugin seed only).
-    private const int MaternityMessageId = 10;
-    private const int VacationDayOffMessageId = 11;
-    private const int HolidayMessageId = 12;
-    private const int PregnancyLeaveMessageId = 13;
-
-    // Absence type is keyed on Message.Id, which is identical in the base and plugin
-    // seeds. Message.Name differs between them ("TimeOff" vs "Time off", etc.).
-    private static readonly HashSet<int> VacationMessageIds =
-    [
-        MessagesCodeFirst.VacationMessage.Id,
-        MessagesCodeFirst.TimeOffMessage.Id,
-        VacationDayOffMessageId
-    ];
-
-    private static readonly HashSet<int> SickMessageIds =
-    [
-        MessagesCodeFirst.SickMessage.Id,
-        MessagesCodeFirst.ChildrenFirstSickMessage.Id,
-        MessagesCodeFirst.ChildrenSecondSickMessage.Id
-    ];
-
-    private static readonly HashSet<int> OtherAllowedAbsenceMessageIds =
-    [
-        MessagesCodeFirst.DayOffMessage.Id,
-        MessagesCodeFirst.CourseMessage.Id,
-        MessagesCodeFirst.LeaveOfAbsenceMessage.Id,
-        MessagesCodeFirst.CareMessage.Id,
-        MaternityMessageId,
-        HolidayMessageId,
-        PregnancyLeaveMessageId
-    ];
-
     private void ApplyAbsenceFromMessage(PlanRegistration pr, Message message)
     {
-        // Clear all absence flags first
-        pr.OnVacation = false;
-        pr.Sick = false;
-        pr.OtherAllowedAbsence = false;
-        pr.AbsenceWithoutPermission = false;
-
-        if (VacationMessageIds.Contains(message.Id))
+        if (!AbsenceMessageFlags.Apply(pr, message.Id))
         {
-            pr.OnVacation = true;
-        }
-        else if (SickMessageIds.Contains(message.Id))
-        {
-            pr.Sick = true;
-        }
-        else
-        {
-            if (!OtherAllowedAbsenceMessageIds.Contains(message.Id))
-            {
-                _logger.LogWarning(
-                    "Unknown absence message {MessageId} ({MessageName}); applying OtherAllowedAbsence",
-                    message.Id, message.Name);
-            }
-            pr.OtherAllowedAbsence = true;
+            _logger.LogWarning(
+                "Unknown absence message {MessageId} ({MessageName}); applying OtherAllowedAbsence",
+                message.Id, message.Name);
         }
     }
 
