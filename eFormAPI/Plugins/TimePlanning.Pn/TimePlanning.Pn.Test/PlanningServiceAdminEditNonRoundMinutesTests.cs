@@ -219,7 +219,7 @@ public class PlanningServiceAdminEditNonRoundMinutesTests : TestBaseSetup
         return planning;
     }
 
-    /// <summary>The save the web client sends when the plan is left as seeded.</summary>
+    /// <summary>The save that the web client sends when the plan is left as seeded.</summary>
     private static TimePlanningPlanningPrDayModel UnchangedPlanSave(PlanRegistrationEntity planning) => new()
     {
         Id = planning.Id,

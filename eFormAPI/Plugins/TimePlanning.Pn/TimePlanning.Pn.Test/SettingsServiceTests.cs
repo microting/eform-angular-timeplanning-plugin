@@ -1431,6 +1431,8 @@ public class SettingsServiceTests : TestBaseSetup
         {
             Id = assignedSite.Id,
             SiteId = siteUid,
+            // The model defaults to true, which returns before the template loop.
+            UseGoogleSheetAsDefault = false,
             MondayPlanHours = 450, TuesdayPlanHours = 450, WednesdayPlanHours = 450,
             ThursdayPlanHours = 450, FridayPlanHours = 450, SaturdayPlanHours = 450, SundayPlanHours = 450,
             StartMonday = 360, StartTuesday = 360, StartWednesday = 360, StartThursday = 360,
