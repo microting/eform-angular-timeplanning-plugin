@@ -264,7 +264,7 @@ public class AbsenceRequestService : IAbsenceRequestService
             // after every day is saved; a failure leaves it Pending, and re-approving
             // is idempotent (find-or-create, then overwrite). Don't touch the request
             // before the loop: each Update() saves the whole context.
-            foreach (var day in request.Days!)
+            foreach (var day in request.Days!.OrderBy(d => d.Date))
             {
                 await ApplyAbsenceToPlanRegistration(request, day, model.ManagerSdkSitId);
             }
@@ -790,8 +790,9 @@ public class AbsenceRequestService : IAbsenceRequestService
 
     /// <summary>
     /// Undoes what <see cref="ApplyAbsenceToPlanRegistration"/> set on the
-    /// unlocked days a failed approve left tagged with this request, plan hours
-    /// untouched. Returns the earliest cleared date for the flex walk, or null.
+    /// unlocked days a failed approve left tagged with this request: the absence
+    /// flags, MessageId and the approval metadata are reset, plan hours and
+    /// shifts are untouched. Returns the earliest cleared date for the flex walk, or null.
     /// The walk itself runs after the status is saved: its catch clears the
     /// change tracker, which would silently drop an unsaved status change.
     /// </summary>
