@@ -1401,4 +1401,91 @@ public class SettingsServiceTests : TestBaseSetup
     }
 
     #endregion
+
+    // #5574: saving the employee settings re-applies the weekday template to
+    // every day from today on. A day an admin planned by hand
+    // (PlanChangedByAdmin) and an absence day must keep their plan; a day
+    // nobody touched still receives the new template.
+    [Test]
+    public async Task UpdateAssignedSite_KeepsManualAndAbsenceDays_AppliesTemplateToUntouchedDays()
+    {
+        const int siteUid = 61;
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = siteUid,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var midnight = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, 0, 0, 0);
+        var manualDay = await SeedFutureDay(siteUid, midnight.AddDays(1), planHours: 3, start: 600, end: 780,
+            row => row.PlanChangedByAdmin = true);
+        var untouchedDay = await SeedFutureDay(siteUid, midnight.AddDays(2), planHours: 0, start: 0, end: 0);
+        var absenceDay = await SeedFutureDay(siteUid, midnight.AddDays(3), planHours: 7.4, start: 480, end: 924,
+            row => row.OnVacation = true);
+
+        // The same template on every weekday (06:00-14:00, 30 min break, 7.5 h),
+        // so the assertions do not depend on which weekday today is.
+        var result = await _settingsService.UpdateAssignedSite(new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = siteUid,
+            // The model defaults to true, which returns before the template loop.
+            UseGoogleSheetAsDefault = false,
+            MondayPlanHours = 450, TuesdayPlanHours = 450, WednesdayPlanHours = 450,
+            ThursdayPlanHours = 450, FridayPlanHours = 450, SaturdayPlanHours = 450, SundayPlanHours = 450,
+            StartMonday = 360, StartTuesday = 360, StartWednesday = 360, StartThursday = 360,
+            StartFriday = 360, StartSaturday = 360, StartSunday = 360,
+            EndMonday = 840, EndTuesday = 840, EndWednesday = 840, EndThursday = 840,
+            EndFriday = 840, EndSaturday = 840, EndSunday = 840,
+            BreakMonday = 30, BreakTuesday = 30, BreakWednesday = 30, BreakThursday = 30,
+            BreakFriday = 30, BreakSaturday = 30, BreakSunday = 30
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var manual = await StoredDay(manualDay.Id);
+        var untouched = await StoredDay(untouchedDay.Id);
+        var absence = await StoredDay(absenceDay.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(manual.PlanHours, Is.EqualTo(3), "manual day keeps its plan hours");
+            Assert.That(manual.PlannedStartOfShift1, Is.EqualTo(600), "manual day keeps its start");
+            Assert.That(manual.PlannedEndOfShift1, Is.EqualTo(780), "manual day keeps its end");
+            Assert.That(manual.PlanChangedByAdmin, Is.True);
+
+            Assert.That(untouched.PlanHours, Is.EqualTo(7.5), "untouched day gets the template hours");
+            Assert.That(untouched.PlannedStartOfShift1, Is.EqualTo(360));
+            Assert.That(untouched.PlannedEndOfShift1, Is.EqualTo(840));
+            Assert.That(untouched.PlannedBreakOfShift1, Is.EqualTo(30));
+
+            Assert.That(absence.PlanHours, Is.EqualTo(7.4), "absence day keeps its plan hours");
+            Assert.That(absence.PlannedStartOfShift1, Is.EqualTo(480), "absence day keeps its start");
+            Assert.That(absence.PlannedEndOfShift1, Is.EqualTo(924), "absence day keeps its end");
+        });
+    }
+
+    private async Task<PlanRegistration> SeedFutureDay(int siteUid, DateTime date, double planHours, int start,
+        int end, Action<PlanRegistration> configure = null)
+    {
+        var row = new PlanRegistration
+        {
+            SdkSitId = siteUid,
+            Date = date,
+            PlanHours = planHours,
+            PlannedStartOfShift1 = start,
+            PlannedEndOfShift1 = end,
+            PlanText = "",
+            CommentOffice = "",
+            CommentOfficeAll = "",
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        configure?.Invoke(row);
+        await row.Create(TimePlanningPnDbContext);
+        return row;
+    }
+
+    private async Task<PlanRegistration> StoredDay(int id) =>
+        await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking().SingleAsync(x => x.Id == id);
 }
