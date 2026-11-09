@@ -564,12 +564,14 @@ public class AbsenceRequestService : IAbsenceRequestService
     }
 
     /// <summary>
-    /// SDK site ids of the managers whose managing tags match one of the worker's
-    /// site tags. Removed managing tags and removed AssignedSites are ignored.
+    /// SDK site ids of the current managers whose managing tags match one of the
+    /// worker's site tags: the same rule as <see cref="GetActiveManagingTagIdsAsync"/>
+    /// (only a site's latest active AssignedSite counts, and it must be a manager),
+    /// so the push reaches exactly the managers who may decide the request.
     /// Returns an empty list (and logs) on failure so that creating the request
     /// never fails because of the notification lookup.
     /// </summary>
-    private async Task<List<int>> GetManagerSiteIdsForWorkerAsync(int workerSdkSitId)
+    internal async Task<List<int>> GetManagerSiteIdsForWorkerAsync(int workerSdkSitId)
     {
         try
         {
@@ -581,9 +583,15 @@ public class AbsenceRequestService : IAbsenceRequestService
                 .Select(x => (int)x.TagId!)
                 .ToListAsync();
 
+            var latestActiveAssignedSiteIds = _dbContext.AssignedSites
+                .Where(a => a.WorkflowState != Constants.WorkflowStates.Removed)
+                .GroupBy(a => a.SiteId)
+                .Select(g => g.Max(a => a.Id));
+
             return await _dbContext.AssignedSiteManagingTags
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed
-                            && x.AssignedSite!.WorkflowState != Constants.WorkflowStates.Removed
+                            && latestActiveAssignedSiteIds.Contains(x.AssignedSiteId)
+                            && x.AssignedSite!.IsManager
                             && workerTagIds.Contains(x.TagId))
                 .Select(x => x.AssignedSite!.SiteId)
                 .Distinct()
