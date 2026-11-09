@@ -780,6 +780,32 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         Assert.That((await StoredRequestAsync(request.Id)).Status, Is.EqualTo(AbsenceRequestStatus.Pending));
     }
 
+    [Test]
+    public async Task GetManagerSiteIdsForWorkerAsync_ReturnsOnlyCurrentManagers()
+    {
+        await SeedManagerOfAsync(managerSiteUid: 2, workerSiteUid: 1);
+        // Demoted the way the settings page does it: the row is updated, its
+        // managing tags stay.
+        await SeedManagerOfAsync(managerSiteUid: 3, workerSiteUid: 1);
+        var demoted = await TimePlanningPnDbContext.AssignedSites.FirstAsync(a => a.SiteId == 3);
+        demoted.IsManager = false;
+        await demoted.Update(TimePlanningPnDbContext);
+        // Site 4's manager row was superseded by a newer non-manager row.
+        await SeedManagerOfAsync(managerSiteUid: 4, workerSiteUid: 1);
+        await new AssignedSiteEntity
+        {
+            SiteId = 4,
+            IsManager = false,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        }.Create(TimePlanningPnDbContext);
+
+        var managers = await ((AbsenceRequestService)_absenceRequestService)
+            .GetManagerSiteIdsForWorkerAsync(1);
+
+        Assert.That(managers, Is.EquivalentTo(new[] { 2 }));
+    }
+
     /// <summary>
     /// Writes <paramref name="takeover"/> to the request through a separate
     /// context the first time the service reads UserId, i.e. while the decision
