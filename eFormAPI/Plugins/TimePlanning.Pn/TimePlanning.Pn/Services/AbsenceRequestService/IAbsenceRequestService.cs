@@ -54,7 +54,7 @@ public interface IAbsenceRequestService
     /// other managers by echoing a different sdkSiteId.
     /// </summary>
     Task<OperationDataResult<List<AbsenceRequestModel>>> GetInboxAsync();
-    Task<OperationDataResult<List<AbsenceRequestModel>>> GetMineAsync(int requestedBySdkSitId);
+    Task<OperationDataResult<List<AbsenceRequestModel>>> GetMineAsync();
     /// <summary>
     /// Returns ALL absence requests matching the optional filters.
     /// Intended for admin/manager use — no user-scoping is applied.

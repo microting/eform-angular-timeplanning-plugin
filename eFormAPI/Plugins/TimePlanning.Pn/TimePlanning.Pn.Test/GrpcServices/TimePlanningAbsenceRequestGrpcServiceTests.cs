@@ -238,9 +238,10 @@ public class TimePlanningAbsenceRequestGrpcServiceTests
             },
         };
 
-        _absenceRequestService.GetMineAsync(7)
+        _absenceRequestService.GetMineAsync()
             .Returns(new OperationDataResult<List<CsAbsenceRequestModel>>(true, list));
 
+        // SdkSiteId is still sent by the app but ignored: the service lists the JWT caller's own requests.
         var request = new GetAbsenceRequestsRequest { SdkSiteId = 7 };
 
         var response = await _grpcService.GetMyAbsenceRequests(

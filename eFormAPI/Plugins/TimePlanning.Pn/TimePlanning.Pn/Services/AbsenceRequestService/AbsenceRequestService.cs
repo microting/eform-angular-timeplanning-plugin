@@ -734,10 +734,18 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
     }
 
-    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetMineAsync(int requestedBySdkSitId)
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetMineAsync()
     {
         try
         {
+            // Resolve the caller's SDK site from the JWT instead of trusting a
+            // client-supplied value. Returns an empty list if unknown.
+            var requestedBySdkSitId = await ResolveCallerSdkSiteIdAsync();
+            if (requestedBySdkSitId == 0)
+            {
+                return new OperationDataResult<List<AbsenceRequestModel>>(true, new List<AbsenceRequestModel>());
+            }
+
             var requests = await _dbContext.AbsenceRequests
                 .Include(ar => ar.Days)
                 .Where(ar => ar.RequestedBySdkSitId == requestedBySdkSitId)
@@ -749,7 +757,7 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting absence requests for worker {WorkerId}", requestedBySdkSitId);
+            _logger.LogError(ex, "Error getting own absence requests for authenticated caller");
             return new OperationDataResult<List<AbsenceRequestModel>>(false,
                 _localizationService.GetString("ErrorGettingAbsenceRequests"));
         }

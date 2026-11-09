@@ -61,7 +61,7 @@ export class AbsenceRequestsContainerComponent implements OnInit, OnDestroy {
 
     if (this.currentView === 'inbox') {
       this.getAbsenceRequests$ = this.absenceRequestsService
-        .getInbox(this.currentUserId)
+        .getInbox()
         .subscribe({
           next: (data) => {
             if (data && data.success) {
@@ -76,7 +76,7 @@ export class AbsenceRequestsContainerComponent implements OnInit, OnDestroy {
         });
     } else {
       this.getAbsenceRequests$ = this.absenceRequestsService
-        .getMine(this.currentUserId)
+        .getMine()
         .subscribe({
           next: (data) => {
             if (data && data.success) {

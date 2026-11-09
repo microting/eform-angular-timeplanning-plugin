@@ -23,42 +23,37 @@ describe('TimePlanningPnAbsenceRequestsService', () => {
   });
 
   describe('getInbox', () => {
-    it('should call apiBaseService.get with correct parameters', async () => {
-      const managerSdkSitId = 1;
+    it('should call apiBaseService.get without a site id', async () => {
       const mockResponse = { success: true, model: [] as AbsenceRequestModel[] };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
 
-      const result = await firstValueFrom(service.getInbox(managerSdkSitId));
+      const result = await firstValueFrom(service.getInbox());
       expect(result).toEqual(mockResponse as any);
 
       expect(mockApiBaseService.get).toHaveBeenCalledWith(
-        'api/time-planning-pn/absence-requests/inbox',
-        { managerSdkSitId }
+        'api/time-planning-pn/absence-requests/inbox'
       );
     });
 
     it('should handle empty response', async () => {
-      const managerSdkSitId = 1;
       const mockResponse = { success: true, model: [] as AbsenceRequestModel[] };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
 
-      const result = await firstValueFrom(service.getInbox(managerSdkSitId));
+      const result = await firstValueFrom(service.getInbox());
       expect(result.model).toEqual([]);
     });
   });
 
   describe('getMine', () => {
-    it('should call apiBaseService.get with correct parameters', async () => {
-      const requestedBySdkSitId = 2;
+    it('should call apiBaseService.get without a site id', async () => {
       const mockResponse = { success: true, model: [] as AbsenceRequestModel[] };
       mockApiBaseService.get.mockReturnValue(of(mockResponse as any));
 
-      const result = await firstValueFrom(service.getMine(requestedBySdkSitId));
+      const result = await firstValueFrom(service.getMine());
       expect(result).toEqual(mockResponse as any);
 
       expect(mockApiBaseService.get).toHaveBeenCalledWith(
-        'api/time-planning-pn/absence-requests/mine',
-        { requestedBySdkSitId }
+        'api/time-planning-pn/absence-requests/mine'
       );
     });
   });

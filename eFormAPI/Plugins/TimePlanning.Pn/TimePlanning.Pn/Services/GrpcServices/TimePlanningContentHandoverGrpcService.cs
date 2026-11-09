@@ -191,7 +191,8 @@ public class TimePlanningContentHandoverGrpcService
     {
         try
         {
-            var result = await _contentHandoverService.GetMineAsync(request.SdkSiteId);
+            // SdkSiteId is ignored: the service lists the JWT caller's own sent requests.
+            var result = await _contentHandoverService.GetMineAsync();
 
             var response = new ContentHandoverListResponse
             {

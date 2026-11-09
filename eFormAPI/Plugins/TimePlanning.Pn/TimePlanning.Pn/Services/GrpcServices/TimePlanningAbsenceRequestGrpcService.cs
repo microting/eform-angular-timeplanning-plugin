@@ -183,7 +183,8 @@ public class TimePlanningAbsenceRequestGrpcService
     {
         try
         {
-            var result = await _absenceRequestService.GetMineAsync(request.SdkSiteId);
+            // SdkSiteId is ignored: the service lists the JWT caller's own requests.
+            var result = await _absenceRequestService.GetMineAsync();
 
             var response = new AbsenceRequestListResponse
             {
