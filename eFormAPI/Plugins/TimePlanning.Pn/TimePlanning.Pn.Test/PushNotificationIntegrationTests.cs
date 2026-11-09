@@ -113,9 +113,10 @@ public class PushNotificationIntegrationTests : TestBaseSetup
         var sdkCore = await GetCore();
         var sdkDb = sdkCore.DbContextHelper.GetDbContext();
 
-        // CreateAsync looks up SiteTags where Site.MicrotingUid == RequestedBySdkSitId
+        // CreateAsync looks up SiteTags where Site.MicrotingUid == the caller's site
         var workerSite = new Microting.eForm.Infrastructure.Data.Entities.Site { Name = "W", MicrotingUid = 42 };
         await workerSite.Create(sdkDb);
+        await SeedSiteCallerAsync(_userService, 42); // the worker is the logged-in caller
 
         var tag = new Microting.eForm.Infrastructure.Data.Entities.Tag { Name = "T" };
         await tag.Create(sdkDb);
@@ -139,7 +140,6 @@ public class PushNotificationIntegrationTests : TestBaseSetup
 
         var model = new AbsenceRequestCreateModel
         {
-            RequestedBySdkSitId = 42, // matches MicrotingUid
             DateFrom = new DateTime(2025, 6, 1),
             DateTo = new DateTime(2025, 6, 1),
             MessageId = 2,
@@ -189,6 +189,7 @@ public class PushNotificationIntegrationTests : TestBaseSetup
 
         var workerSite = new Microting.eForm.Infrastructure.Data.Entities.Site { Name = "W", MicrotingUid = 43 };
         await workerSite.Create(sdkDb);
+        await SeedSiteCallerAsync(_userService, 43); // the worker is the logged-in caller
 
         var tag = new Microting.eForm.Infrastructure.Data.Entities.Tag { Name = "T" };
         await tag.Create(sdkDb);
@@ -221,7 +222,6 @@ public class PushNotificationIntegrationTests : TestBaseSetup
         // Act
         var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
         {
-            RequestedBySdkSitId = 43,
             DateFrom = new DateTime(2025, 6, 2),
             DateTo = new DateTime(2025, 6, 2),
             MessageId = 2,

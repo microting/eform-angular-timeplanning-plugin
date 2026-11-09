@@ -24,9 +24,9 @@ public class TimePlanningAbsenceRequestGrpcService
     {
         try
         {
+            // RequestedBySdkSiteId is ignored: the service creates as the JWT caller.
             var model = new AbsenceRequestCreateModel
             {
-                RequestedBySdkSitId = request.RequestedBySdkSiteId,
                 DateFrom = DateTime.Parse(request.DateFrom, System.Globalization.CultureInfo.InvariantCulture,
                     System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
                 DateTo = DateTime.Parse(request.DateTo, System.Globalization.CultureInfo.InvariantCulture,

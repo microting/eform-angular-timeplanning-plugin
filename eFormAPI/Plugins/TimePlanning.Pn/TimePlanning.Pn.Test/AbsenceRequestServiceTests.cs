@@ -39,7 +39,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         var core = await GetCore();
         _coreService.GetCore().Returns(Task.FromResult(core));
 
-        // A real BaseDbContext: approve, reject and cancel resolve the caller
+        // A real BaseDbContext: create, approve, reject and cancel resolve the caller
         // from the JWT user (SeedSiteCallerAsync seeds one into it).
         SeededBaseDbContext = GetBaseDbContext();
 
@@ -57,9 +57,9 @@ public class AbsenceRequestServiceTests : TestBaseSetup
     public async Task CreateAsync_CreatesAbsenceRequest_WithMultipleDays()
     {
         // Arrange
+        await SeedSiteCallerAsync(_userService, 1);
         var model = new AbsenceRequestCreateModel
         {
-            RequestedBySdkSitId = 1,
             DateFrom = new DateTime(2024, 1, 1),
             DateTo = new DateTime(2024, 1, 3),
             MessageId = 2, // Vacation
@@ -97,10 +97,10 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             UpdatedByUserId = 1
         };
         await existing.Create(TimePlanningPnDbContext);
+        await SeedSiteCallerAsync(_userService, 1);
 
         var model = new AbsenceRequestCreateModel
         {
-            RequestedBySdkSitId = 1,
             DateFrom = new DateTime(2024, 1, 3),
             DateTo = new DateTime(2024, 1, 7),
             MessageId = 2,
@@ -139,10 +139,10 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             CreatedByUserId = 1,
             UpdatedByUserId = 1
         }.Create(TimePlanningPnDbContext);
+        await SeedSiteCallerAsync(_userService, sdkSitId);
 
         var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
         {
-            RequestedBySdkSitId = sdkSitId,
             DateFrom = new DateTime(2024, 3, firstRequestedDayOfMarch),
             DateTo = new DateTime(2024, 3, 6),
             MessageId = 2, // Vacation
@@ -910,10 +910,10 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             CreatedByUserId = 1,
             UpdatedByUserId = 1
         }.Create(TimePlanningPnDbContext);
+        await SeedSiteCallerAsync(_userService, 1);
 
         var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
         {
-            RequestedBySdkSitId = 1,
             DateFrom = new DateTime(2024, 1, 5),
             DateTo = new DateTime(2024, 1, 7),
             MessageId = 2,
@@ -938,10 +938,10 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             CreatedByUserId = 1,
             UpdatedByUserId = 1
         }.Create(TimePlanningPnDbContext);
+        await SeedSiteCallerAsync(_userService, 1);
 
         var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
         {
-            RequestedBySdkSitId = 1,
             DateFrom = new DateTime(2024, 1, 3),
             DateTo = new DateTime(2024, 1, 4),
             MessageId = 2,
@@ -949,6 +949,51 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         });
 
         Assert.That(result.Success, Is.True, result.Message);
+    }
+
+    /// <summary>
+    /// The requester is the logged-in caller's site, never a client-supplied id.
+    /// </summary>
+    [Test]
+    public async Task CreateAsync_StoresTheLoggedInCallersSiteAsRequester()
+    {
+        await SeedSiteCallerAsync(_userService, 17);
+
+        var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
+        {
+            DateFrom = new DateTime(2024, 2, 1),
+            DateTo = new DateTime(2024, 2, 2),
+            MessageId = 2,
+            RequestComment = "Mine"
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model.RequestedBySdkSitId, Is.EqualTo(17));
+        var stored = await TimePlanningPnDbContext.AbsenceRequests.AsNoTracking()
+            .SingleAsync(ar => ar.Id == result.Model.Id);
+        Assert.That(stored.RequestedBySdkSitId, Is.EqualTo(17));
+    }
+
+    /// <summary>
+    /// With no resolvable caller there is no requester, so nothing is created.
+    /// </summary>
+    [Test]
+    public async Task CreateAsync_RefusesAndCreatesNothing_WhenNoCallerResolves()
+    {
+        _userService.GetCurrentUserAsync().Returns((Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser)null);
+
+        var result = await _absenceRequestService.CreateAsync(new AbsenceRequestCreateModel
+        {
+            DateFrom = new DateTime(2024, 2, 1),
+            DateTo = new DateTime(2024, 2, 2),
+            MessageId = 2,
+            RequestComment = "Nobody"
+        });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("UnauthorizedToCreateAbsenceRequest"));
+        Assert.That(await TimePlanningPnDbContext.AbsenceRequests.AsNoTracking().CountAsync(), Is.Zero);
+        Assert.That(await TimePlanningPnDbContext.AbsenceRequestDays.AsNoTracking().CountAsync(), Is.Zero);
     }
 
     [Test]
