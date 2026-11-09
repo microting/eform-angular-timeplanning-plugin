@@ -29,7 +29,6 @@ using System;
 
 public class AbsenceRequestCreateModel
 {
-    public int RequestedBySdkSitId { get; set; }
     public DateTime DateFrom { get; set; }
     public DateTime DateTo { get; set; }
     public int MessageId { get; set; }

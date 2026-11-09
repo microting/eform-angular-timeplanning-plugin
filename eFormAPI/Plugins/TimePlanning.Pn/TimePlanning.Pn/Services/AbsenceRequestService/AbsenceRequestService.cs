@@ -80,7 +80,7 @@ public class AbsenceRequestService : IAbsenceRequestService
     /// <summary>
     /// Resolves the authenticated caller's SDK site id (MicrotingUid) from
     /// the JWT. Returns 0 if the user has no worker/site record. Callers
-    /// should treat 0 as "no inbox visibility".
+    /// should treat 0 as "no resolvable caller".
     /// </summary>
     private async Task<int> ResolveCallerSdkSiteIdAsync()
     {
@@ -245,23 +245,31 @@ public class AbsenceRequestService : IAbsenceRequestService
                     _localizationService.GetString("DateToMustBeGreaterThanOrEqualToDateFrom"));
             }
 
+            // The requester is the authenticated caller, never a client-supplied id.
+            var requesterSdkSitId = await ResolveCallerSdkSiteIdAsync();
+            if (requesterSdkSitId == 0)
+            {
+                return new OperationDataResult<AbsenceRequestModel>(false,
+                    _localizationService.GetString("UnauthorizedToCreateAbsenceRequest"));
+            }
+
             // A request touching a locked day could never be approved (Approve
             // refuses it), so it is refused here instead of left pending. Locked
             // days are a prefix of the calendar, so the range touches one
             // exactly when its first day is locked, and that day is the earliest
             // blocking one Approve would name too.
-            var lockedThrough = await DayLockHelper.LockedThroughAsync(_dbContext, model.RequestedBySdkSitId);
+            var lockedThrough = await DayLockHelper.LockedThroughAsync(_dbContext, requesterSdkSitId);
             if (DayLockHelper.IsLocked(lockedThrough, dateFrom))
             {
                 return new OperationDataResult<AbsenceRequestModel>(false, _localizationService.GetString(
-                    await DayLockHelper.LockedMessageKeyAsync(_dbContext, model.RequestedBySdkSitId, dateFrom)));
+                    await DayLockHelper.LockedMessageKeyAsync(_dbContext, requesterSdkSitId, dateFrom)));
             }
 
             // Overlap with a pending OR approved request is refused: approving a
             // second request over approved days would re-tag them with its own id,
             // and rejecting/cancelling it would then clear the earlier absence.
             var hasOverlap = await _dbContext.AbsenceRequests
-                .AnyAsync(ar => ar.RequestedBySdkSitId == model.RequestedBySdkSitId
+                .AnyAsync(ar => ar.RequestedBySdkSitId == requesterSdkSitId
                                 && (ar.Status == AbsenceRequestStatus.Pending
                                     || ar.Status == AbsenceRequestStatus.Approved)
                                 && ar.DateFrom <= dateTo
@@ -276,7 +284,7 @@ public class AbsenceRequestService : IAbsenceRequestService
             // Create absence request
             var absenceRequest = new AbsenceRequest
             {
-                RequestedBySdkSitId = model.RequestedBySdkSitId,
+                RequestedBySdkSitId = requesterSdkSitId,
                 DateFrom = dateFrom,
                 DateTo = dateTo,
                 Status = AbsenceRequestStatus.Pending,
@@ -313,7 +321,7 @@ public class AbsenceRequestService : IAbsenceRequestService
 
             // Resolve the managers while the request scope is alive; the push itself
             // is fire-and-forget and runs in its own DI scope.
-            var managerSiteIds = await GetManagerSiteIdsForWorkerAsync(model.RequestedBySdkSitId);
+            var managerSiteIds = await GetManagerSiteIdsForWorkerAsync(requesterSdkSitId);
             var createdRequestId = createdRequest.Id;
             _ = Task.Run(async () =>
             {
