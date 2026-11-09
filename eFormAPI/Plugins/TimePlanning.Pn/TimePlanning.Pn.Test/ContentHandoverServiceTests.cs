@@ -742,14 +742,110 @@ public class ContentHandoverServiceTests : TestBaseSetup
             UpdatedByUserId = 1
         };
         await request.Create(TimePlanningPnDbContext);
+        var service = await BuildCallerAwareServiceAsync();
+        await SeedSiteCallerAsync(_userService, 1);
 
         // Act
-        var result = await _contentHandoverService.GetMineAsync(1);
+        var result = await service.GetMineAsync();
 
         // Assert
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model.Count, Is.EqualTo(1));
         Assert.That(result.Model[0].FromSdkSitId, Is.EqualTo(1));
+    }
+
+    /// <summary>
+    /// "Mine" is the logged-in caller's site, never a client-supplied id, so
+    /// another worker's sent requests stay out of it.
+    /// </summary>
+    [Test]
+    public async Task GetMineAsync_ReturnsOnlyTheLoggedInCallersRequests()
+    {
+        var date = new DateTime(2024, 1, 1);
+        var mine = await CreatePendingHandoverAsync(date, fromSdkSitId: 17, toSdkSitId: 19);
+        await CreatePendingHandoverAsync(date, fromSdkSitId: 18, toSdkSitId: 20);
+        var service = await BuildCallerAwareServiceAsync();
+        await SeedSiteCallerAsync(_userService, 17);
+
+        var result = await service.GetMineAsync();
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model.Select(x => x.Id), Is.EquivalentTo(new[] { mine.Id }));
+    }
+
+    /// <summary>
+    /// With no resolvable caller there is no "mine": an empty list, like the inbox.
+    /// </summary>
+    [Test]
+    public async Task GetMineAsync_ReturnsEmpty_WhenNoCallerResolves()
+    {
+        await CreatePendingHandoverAsync(new DateTime(2024, 1, 1), fromSdkSitId: 1, toSdkSitId: 2);
+        _userService.GetCurrentUserAsync().Returns((Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser)null);
+
+        // No caller resolves before the core or BaseDbContext is touched, so the SetUp service will do.
+        var result = await _contentHandoverService.GetMineAsync();
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model, Is.Empty);
+    }
+
+    /// <summary>
+    /// A service over the real SDK core and a real BaseDbContext, so it can
+    /// resolve the caller that <see cref="TestBaseSetup.SeedSiteCallerAsync"/> seeds.
+    /// </summary>
+    private async Task<ContentHandoverService> BuildCallerAwareServiceAsync()
+    {
+        var coreService = Substitute.For<Microting.eFormApi.BasePn.Abstractions.IEFormCoreService>();
+        var core = await GetCore();
+        coreService.GetCore().Returns(Task.FromResult(core));
+        SeededBaseDbContext ??= GetBaseDbContext();
+        return new ContentHandoverService(
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<ContentHandoverService>>(),
+            TimePlanningPnDbContext,
+            _userService,
+            _localizationService,
+            coreService,
+            SeededBaseDbContext,
+            _scopeFactory);
+    }
+
+    private async Task<PlanRegistrationContentHandoverRequest> CreatePendingHandoverAsync(
+        DateTime date, int fromSdkSitId, int toSdkSitId)
+    {
+        var sourcePR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = fromSdkSitId,
+            PlanHoursInSeconds = 28800,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await sourcePR.Create(TimePlanningPnDbContext);
+
+        var targetPR = new PlanRegistration
+        {
+            Date = date,
+            SdkSitId = toSdkSitId,
+            PlanHoursInSeconds = 0,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await targetPR.Create(TimePlanningPnDbContext);
+
+        var request = new PlanRegistrationContentHandoverRequest
+        {
+            FromSdkSitId = fromSdkSitId,
+            ToSdkSitId = toSdkSitId,
+            Date = date,
+            FromPlanRegistrationId = sourcePR.Id,
+            ToPlanRegistrationId = targetPR.Id,
+            Status = HandoverRequestStatus.Pending,
+            RequestedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await request.Create(TimePlanningPnDbContext);
+        return request;
     }
 
     // ---------------------------------------------------------------
@@ -1358,9 +1454,11 @@ public class ContentHandoverServiceTests : TestBaseSetup
             UpdatedByUserId = 1
         };
         await request.Create(TimePlanningPnDbContext);
+        var service = await BuildCallerAwareServiceAsync();
+        await SeedSiteCallerAsync(_userService, 1);
 
         // Act
-        var result = await _contentHandoverService.GetMineAsync(1);
+        var result = await service.GetMineAsync();
 
         // Assert
         Assert.That(result.Success, Is.True);

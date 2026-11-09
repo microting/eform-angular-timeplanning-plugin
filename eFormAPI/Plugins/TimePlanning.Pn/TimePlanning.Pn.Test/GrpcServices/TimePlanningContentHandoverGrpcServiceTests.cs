@@ -226,9 +226,10 @@ public class TimePlanningContentHandoverGrpcServiceTests
             }
         };
 
-        _service.GetMineAsync(10)
+        _service.GetMineAsync()
             .Returns(new OperationDataResult<List<CsContentHandoverRequestModel>>(true, items));
 
+        // SdkSiteId is still sent by the app but ignored: the service lists the JWT caller's own requests.
         var request = new GetContentHandoverRequestsRequest { SdkSiteId = 10 };
 
         var response = await _grpcService.GetMyContentHandovers(

@@ -79,9 +79,10 @@ public class ContentHandoverController(IContentHandoverService contentHandoverSe
 
     [HttpGet]
     [Route("handover-requests/mine")]
-    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMine(int fromSdkSitId)
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMine()
     {
-        return await _contentHandoverService.GetMineAsync(fromSdkSitId);
+        // Caller's SDK site is derived from the JWT inside the service.
+        return await _contentHandoverService.GetMineAsync();
     }
 
     [HttpGet]

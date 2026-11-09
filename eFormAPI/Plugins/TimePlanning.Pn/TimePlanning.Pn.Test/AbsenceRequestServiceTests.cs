@@ -751,7 +751,7 @@ public class AbsenceRequestServiceTests : TestBaseSetup
         Assert.That(stored.DecidedBySdkSitId, Is.Null);
         Assert.That(await TimePlanningPnDbContext.PlanRegistrations.AsNoTracking().CountAsync(), Is.Zero,
             "the losing approve must not apply any day");
-        var mine = await _absenceRequestService.GetMineAsync(1);
+        var mine = await _absenceRequestService.GetMineAsync(); // the caller is still site 1
         Assert.That(mine.Model.Single().DecidedAtUtc, Is.Null,
             "a claimed Pending request must not show as decided");
     }
@@ -1240,14 +1240,47 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             UpdatedByUserId = 1
         };
         await request2.Create(TimePlanningPnDbContext);
+        await SeedSiteCallerAsync(_userService, 1);
 
         // Act
-        var result = await _absenceRequestService.GetMineAsync(1);
+        var result = await _absenceRequestService.GetMineAsync();
 
         // Assert
         Assert.That(result.Success, Is.True);
         Assert.That(result.Model.Count, Is.EqualTo(1));
         Assert.That(result.Model[0].RequestedBySdkSitId, Is.EqualTo(1));
+    }
+
+    /// <summary>
+    /// "Mine" is the logged-in caller's site, never a client-supplied id, so
+    /// another worker's requests stay out of it.
+    /// </summary>
+    [Test]
+    public async Task GetMineAsync_ReturnsOnlyTheLoggedInCallersRequests()
+    {
+        var mine = await CreatePendingRequestAsync(17);
+        await CreatePendingRequestAsync(18);
+        await SeedSiteCallerAsync(_userService, 17);
+
+        var result = await _absenceRequestService.GetMineAsync();
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model.Select(x => x.Id), Is.EquivalentTo(new[] { mine.Id }));
+    }
+
+    /// <summary>
+    /// With no resolvable caller there is no "mine": an empty list, like the inbox.
+    /// </summary>
+    [Test]
+    public async Task GetMineAsync_ReturnsEmpty_WhenNoCallerResolves()
+    {
+        await CreatePendingRequestAsync(1);
+        _userService.GetCurrentUserAsync().Returns((Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser)null);
+
+        var result = await _absenceRequestService.GetMineAsync();
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model, Is.Empty);
     }
 
     // ---------------------------------------------------------------

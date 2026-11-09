@@ -17,12 +17,13 @@ export let TimePlanningPnAbsenceRequestsMethods = {
 export class TimePlanningPnAbsenceRequestsService {
   constructor(private apiBaseService: ApiBaseService) {}
 
-  getInbox(managerSdkSitId: number): Observable<OperationDataResult<AbsenceRequestModel[]>> {
-    return this.apiBaseService.get(TimePlanningPnAbsenceRequestsMethods.GetInbox, { managerSdkSitId });
+  // getInbox and getMine send no id: the server resolves the caller's site from the JWT.
+  getInbox(): Observable<OperationDataResult<AbsenceRequestModel[]>> {
+    return this.apiBaseService.get(TimePlanningPnAbsenceRequestsMethods.GetInbox);
   }
 
-  getMine(requestedBySdkSitId: number): Observable<OperationDataResult<AbsenceRequestModel[]>> {
-    return this.apiBaseService.get(TimePlanningPnAbsenceRequestsMethods.GetMine, { requestedBySdkSitId });
+  getMine(): Observable<OperationDataResult<AbsenceRequestModel[]>> {
+    return this.apiBaseService.get(TimePlanningPnAbsenceRequestsMethods.GetMine);
   }
 
   approve(id: number, model: AbsenceRequestDecisionModel): Observable<OperationResult> {

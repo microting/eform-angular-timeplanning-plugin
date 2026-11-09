@@ -77,9 +77,10 @@ public class AbsenceRequestsController(IAbsenceRequestService absenceRequestServ
 
     [HttpGet]
     [Route("mine")]
-    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetMine(int requestedBySdkSitId)
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetMine()
     {
-        return await _absenceRequestService.GetMineAsync(requestedBySdkSitId);
+        // Caller's SDK site is derived from the JWT inside the service.
+        return await _absenceRequestService.GetMineAsync();
     }
 
     [HttpGet]

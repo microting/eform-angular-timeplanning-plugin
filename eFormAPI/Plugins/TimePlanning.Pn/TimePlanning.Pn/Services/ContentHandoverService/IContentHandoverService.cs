@@ -45,7 +45,7 @@ public interface IContentHandoverService
     /// inspect another worker's inbox.
     /// </summary>
     Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetInboxAsync();
-    Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync(int fromSdkSitId);
+    Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync();
     Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date);
     /// <summary>
     /// Returns ALL content handover requests matching the optional filters.

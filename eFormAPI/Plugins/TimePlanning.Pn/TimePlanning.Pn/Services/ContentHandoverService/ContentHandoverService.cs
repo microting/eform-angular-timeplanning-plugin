@@ -1210,10 +1210,18 @@ public class ContentHandoverService : IContentHandoverService
         return worker.ResolveActiveSdkSiteId() ?? 0;
     }
 
-    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync(int fromSdkSitId)
+    public async Task<OperationDataResult<List<ContentHandoverRequestModel>>> GetMineAsync()
     {
         try
         {
+            // Resolve the caller's SDK site from the JWT — client-supplied
+            // ids are intentionally ignored to prevent sent-list-peeking.
+            var fromSdkSitId = await ResolveCallerSdkSiteIdAsync();
+            if (fromSdkSitId == 0)
+            {
+                return new OperationDataResult<List<ContentHandoverRequestModel>>(true, new List<ContentHandoverRequestModel>());
+            }
+
             var requests = await _dbContext.PlanRegistrationContentHandoverRequests
                 .Where(r => r.FromSdkSitId == fromSdkSitId)
                 .OrderByDescending(r => r.RequestedAtUtc)
@@ -1239,7 +1247,7 @@ public class ContentHandoverService : IContentHandoverService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting handover requests for worker {WorkerId}", fromSdkSitId);
+            _logger.LogError(ex, "Error getting sent handover requests for authenticated caller");
             return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                 _localizationService.GetString("ErrorGettingHandoverRequests"));
         }
