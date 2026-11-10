@@ -25,10 +25,14 @@ public class ContentHandoverServiceTests : TestBaseSetup
     private ITimePlanningLocalizationService _localizationService;
     private TimePlanning.Pn.Services.PushNotificationService.IPushNotificationService _pushSub;
     private Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _scopeFactory;
+    private ContentHandoverService _callerAwareService;
+    private readonly Dictionary<int, Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser> _seededCallers = new();
 
     [SetUp]
     public void SetUp()
     {
+        _callerAwareService = null;
+        _seededCallers.Clear();
         _userService = Substitute.For<IUserService>();
         _userService.UserId.Returns(1);
 
@@ -146,7 +150,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _contentHandoverService.CreateAsync(sourcePR.Id, model);
+        var result = await (await AsCallerAsync(1)).CreateAsync(sourcePR.Id, model);
 
         // Assert
         Assert.That(result.Success, Is.True);
@@ -190,7 +194,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _contentHandoverService.CreateAsync(sourcePR.Id, model);
+        var result = await (await AsCallerAsync(1)).CreateAsync(sourcePR.Id, model);
 
         // Assert
         Assert.That(result.Success, Is.False);
@@ -234,7 +238,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _contentHandoverService.CreateAsync(sourcePR.Id, model);
+        var result = await (await AsCallerAsync(1)).CreateAsync(sourcePR.Id, model);
 
         // Assert
         Assert.That(result.Success, Is.True, $"Expected success but got error: {result.Message}");
@@ -301,7 +305,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
             }.Create(TimePlanningPnDbContext);
         }
 
-        var result = await _contentHandoverService.CreateAsync(sourcePR.Id,
+        var result = await (await AsCallerAsync(1)).CreateAsync(sourcePR.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, RequestComment = "Locked day" });
 
         Assert.That(result.Success, Is.False);
@@ -360,7 +364,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _contentHandoverService.AcceptAsync(request.Id, 2, model);
+        var result = await (await AsCallerAsync(2)).AcceptAsync(request.Id, model);
 
         // Assert
         Console.WriteLine($"Result Success: {result.Success}, Message: {result.Message}");
@@ -430,7 +434,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _contentHandoverService.AcceptAsync(request.Id, 2, model);
+        var result = await (await AsCallerAsync(2)).AcceptAsync(request.Id, model);
 
         // Assert
         Assert.That(result.Success, Is.False);
@@ -520,7 +524,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         };
         await request.Create(TimePlanningPnDbContext);
 
-        var result = await _contentHandoverService.AcceptAsync(request.Id, 2,
+        var result = await (await AsCallerAsync(2)).AcceptAsync(request.Id,
             new ContentHandoverDecisionModel { DecisionComment = "Accepted" });
 
         Assert.That(result.Success, Is.False);
@@ -590,7 +594,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _contentHandoverService.RejectAsync(request.Id, 2, model);
+        var result = await (await AsCallerAsync(2)).RejectAsync(request.Id, model);
 
         // Assert
         Assert.That(result.Success, Is.True);
@@ -647,7 +651,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         await request.Create(TimePlanningPnDbContext);
 
         // Act
-        var result = await _contentHandoverService.CancelAsync(request.Id, 1);
+        var result = await (await AsCallerAsync(1)).CancelAsync(request.Id);
 
         // Assert
         Assert.That(result.Success, Is.True);
@@ -790,6 +794,132 @@ public class ContentHandoverServiceTests : TestBaseSetup
         Assert.That(result.Model, Is.Empty);
     }
 
+    // ---------------------------------------------------------------
+    // Accept / reject / cancel act as the JWT caller, never as a
+    // client-supplied site id.
+    // ---------------------------------------------------------------
+
+    [Test]
+    public async Task AcceptAsync_Fails_WhenTheCallerIsNotTheRecipient()
+    {
+        var request = await CreatePendingHandoverAsync(new DateTime(2024, 3, 1), fromSdkSitId: 17, toSdkSitId: 19);
+
+        var result = await (await AsCallerAsync(18)).AcceptAsync(request.Id,
+            new ContentHandoverDecisionModel { DecisionComment = "not mine" });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("UnauthorizedToAccept"));
+        Assert.That(await StoredStatusAsync(request.Id), Is.EqualTo(HandoverRequestStatus.Pending));
+    }
+
+    [Test]
+    public async Task RejectAsync_Fails_WhenTheCallerIsNotTheRecipient()
+    {
+        var request = await CreatePendingHandoverAsync(new DateTime(2024, 3, 2), fromSdkSitId: 17, toSdkSitId: 19);
+
+        var result = await (await AsCallerAsync(18)).RejectAsync(request.Id,
+            new ContentHandoverDecisionModel { DecisionComment = "not mine" });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("UnauthorizedToReject"));
+        Assert.That(await StoredStatusAsync(request.Id), Is.EqualTo(HandoverRequestStatus.Pending));
+    }
+
+    [Test]
+    public async Task CancelAsync_Fails_WhenTheCallerIsNotTheRequester()
+    {
+        // The recipient is a party to the request but still not its requester.
+        var request = await CreatePendingHandoverAsync(new DateTime(2024, 3, 3), fromSdkSitId: 17, toSdkSitId: 19);
+
+        var result = await (await AsCallerAsync(19)).CancelAsync(request.Id);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("UnauthorizedToCancel"));
+        Assert.That(await StoredStatusAsync(request.Id), Is.EqualTo(HandoverRequestStatus.Pending));
+    }
+
+    [Test]
+    public async Task AcceptRejectCancel_Fail_WhenNoCallerResolves()
+    {
+        var date = new DateTime(2024, 3, 4);
+        var toAccept = await CreatePendingHandoverAsync(date, fromSdkSitId: 17, toSdkSitId: 19);
+        var toReject = await CreatePendingHandoverAsync(date.AddDays(1), fromSdkSitId: 17, toSdkSitId: 19);
+        var toCancel = await CreatePendingHandoverAsync(date.AddDays(2), fromSdkSitId: 17, toSdkSitId: 19);
+        _userService.GetCurrentUserAsync().Returns((Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser)null);
+        var decision = new ContentHandoverDecisionModel { DecisionComment = "anonymous" };
+
+        // No caller resolves before the core or BaseDbContext is touched, so the SetUp service will do.
+        var accept = await _contentHandoverService.AcceptAsync(toAccept.Id, decision);
+        var reject = await _contentHandoverService.RejectAsync(toReject.Id, decision);
+        var cancel = await _contentHandoverService.CancelAsync(toCancel.Id);
+
+        Assert.That(accept.Message, Is.EqualTo("UnauthorizedToAccept"));
+        Assert.That(reject.Message, Is.EqualTo("UnauthorizedToReject"));
+        Assert.That(cancel.Message, Is.EqualTo("UnauthorizedToCancel"));
+        Assert.That(await StoredStatusAsync(toAccept.Id), Is.EqualTo(HandoverRequestStatus.Pending));
+        Assert.That(await StoredStatusAsync(toReject.Id), Is.EqualTo(HandoverRequestStatus.Pending));
+        Assert.That(await StoredStatusAsync(toCancel.Id), Is.EqualTo(HandoverRequestStatus.Pending));
+    }
+
+    [Test]
+    public async Task AcceptRejectCancel_Succeed_ForTheRightfulCaller()
+    {
+        var date = new DateTime(2024, 3, 8);
+        var toAccept = await CreatePendingHandoverAsync(date, fromSdkSitId: 17, toSdkSitId: 19);
+        var toReject = await CreatePendingHandoverAsync(date.AddDays(1), fromSdkSitId: 17, toSdkSitId: 19);
+        var toCancel = await CreatePendingHandoverAsync(date.AddDays(2), fromSdkSitId: 17, toSdkSitId: 19);
+        var decision = new ContentHandoverDecisionModel { DecisionComment = "ok" };
+
+        var accept = await (await AsCallerAsync(19)).AcceptAsync(toAccept.Id, decision);
+        var reject = await (await AsCallerAsync(19)).RejectAsync(toReject.Id, decision);
+        var cancel = await (await AsCallerAsync(17)).CancelAsync(toCancel.Id);
+
+        Assert.That(accept.Success, Is.True, accept.Message);
+        Assert.That(reject.Success, Is.True, reject.Message);
+        Assert.That(cancel.Success, Is.True, cancel.Message);
+        Assert.That(await StoredStatusAsync(toAccept.Id), Is.EqualTo(HandoverRequestStatus.Accepted));
+        Assert.That(await StoredStatusAsync(toReject.Id), Is.EqualTo(HandoverRequestStatus.Rejected));
+        Assert.That(await StoredStatusAsync(toCancel.Id), Is.EqualTo(HandoverRequestStatus.Cancelled));
+    }
+
+    /// <summary>
+    /// Only the source day's own worker may offer it; someone else's day
+    /// reads as not found, and nothing is created.
+    /// </summary>
+    [Test]
+    public async Task CreateAsync_Fails_WhenTheSourceDayIsNotTheCallers()
+    {
+        var (source, _) = await SeedPartialShiftPairAsync(new DateTime(2024, 3, 12));
+
+        // Site 3 is a third worker, not the owner (1) of the source day.
+        var result = await (await AsCallerAsync(3)).CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2 });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("SourcePlanRegistrationNotFound"));
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrationContentHandoverRequests
+            .AsNoTracking().CountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task CreateAsync_Fails_WhenNoCallerResolves()
+    {
+        var (source, _) = await SeedPartialShiftPairAsync(new DateTime(2024, 3, 13));
+        _userService.GetCurrentUserAsync().Returns((Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser)null);
+
+        var result = await _contentHandoverService.CreateAsync(source.Id,
+            new ContentHandoverRequestCreateModel { ToSdkSitId = 2 });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.EqualTo("SourcePlanRegistrationNotFound"));
+        Assert.That(await TimePlanningPnDbContext.PlanRegistrationContentHandoverRequests
+            .AsNoTracking().CountAsync(), Is.Zero);
+    }
+
+    private async Task<HandoverRequestStatus> StoredStatusAsync(int requestId) =>
+        (await TimePlanningPnDbContext.PlanRegistrationContentHandoverRequests.AsNoTracking()
+            .SingleAsync(r => r.Id == requestId)).Status;
+
     /// <summary>
     /// A service over the real SDK core and a real BaseDbContext, so it can
     /// resolve the caller that <see cref="TestBaseSetup.SeedSiteCallerAsync"/> seeds.
@@ -808,6 +938,26 @@ public class ContentHandoverServiceTests : TestBaseSetup
             coreService,
             SeededBaseDbContext,
             _scopeFactory);
+    }
+
+    /// <summary>
+    /// The caller-aware service, acting as the logged-in worker on SDK site
+    /// <paramref name="sdkSitId"/>. Each site is seeded once per test; asking
+    /// again just switches the JWT caller back to it.
+    /// </summary>
+    private async Task<ContentHandoverService> AsCallerAsync(int sdkSitId)
+    {
+        _callerAwareService ??= await BuildCallerAwareServiceAsync();
+        if (_seededCallers.TryGetValue(sdkSitId, out var user))
+        {
+            _userService.GetCurrentUserAsync().Returns(user);
+        }
+        else
+        {
+            await SeedSiteCallerAsync(_userService, sdkSitId);
+            _seededCallers[sdkSitId] = await _userService.GetCurrentUserAsync();
+        }
+        return _callerAwareService;
     }
 
     private async Task<PlanRegistrationContentHandoverRequest> CreatePendingHandoverAsync(
@@ -901,7 +1051,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var date = new DateTime(2024, 2, 1);
         var (source, _) = await SeedPartialShiftPairAsync(date);
 
-        var result = await _contentHandoverService.CreateAsync(source.Id,
+        var result = await (await AsCallerAsync(1)).CreateAsync(source.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 2 } });
 
         Assert.That(result.Success, Is.True, result.Message);
@@ -919,7 +1069,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var date = new DateTime(2024, 2, 2);
         var (source, _) = await SeedPartialShiftPairAsync(date);
 
-        var result = await _contentHandoverService.CreateAsync(source.Id,
+        var result = await (await AsCallerAsync(1)).CreateAsync(source.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1, 3 } });
 
         Assert.That(result.Success, Is.True, result.Message);
@@ -935,7 +1085,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var (source, _) = await SeedPartialShiftPairAsync(date);
 
         // Shift 4 on source is empty — invalid.
-        var result = await _contentHandoverService.CreateAsync(source.Id,
+        var result = await (await AsCallerAsync(1)).CreateAsync(source.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1, 4 } });
 
         Assert.That(result.Success, Is.False);
@@ -955,17 +1105,17 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var date = new DateTime(2024, 2, 4);
         var (source, _) = await SeedPartialShiftPairAsync(date);
 
-        var first = await _contentHandoverService.CreateAsync(source.Id,
+        var first = await (await AsCallerAsync(1)).CreateAsync(source.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1 } });
         Assert.That(first.Success, Is.True);
 
         // Different shift: allowed.
-        var second = await _contentHandoverService.CreateAsync(source.Id,
+        var second = await (await AsCallerAsync(1)).CreateAsync(source.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 2 } });
         Assert.That(second.Success, Is.True, second.Message);
 
         // Same shift again: blocked.
-        var third = await _contentHandoverService.CreateAsync(source.Id,
+        var third = await (await AsCallerAsync(1)).CreateAsync(source.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1 } });
         Assert.That(third.Success, Is.False);
     }
@@ -975,22 +1125,22 @@ public class ContentHandoverServiceTests : TestBaseSetup
     {
         var dateA = new DateTime(2024, 2, 5);
         var (sourceA, _) = await SeedPartialShiftPairAsync(dateA);
-        var fullDay = await _contentHandoverService.CreateAsync(sourceA.Id,
+        var fullDay = await (await AsCallerAsync(1)).CreateAsync(sourceA.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2 });
         Assert.That(fullDay.Success, Is.True);
 
-        var partialBlocked = await _contentHandoverService.CreateAsync(sourceA.Id,
+        var partialBlocked = await (await AsCallerAsync(1)).CreateAsync(sourceA.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1 } });
         Assert.That(partialBlocked.Success, Is.False);
 
         // Separate date to test the other direction.
         var dateB = new DateTime(2024, 2, 6);
         var (sourceB, _) = await SeedPartialShiftPairAsync(dateB);
-        var partial = await _contentHandoverService.CreateAsync(sourceB.Id,
+        var partial = await (await AsCallerAsync(1)).CreateAsync(sourceB.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 2 } });
         Assert.That(partial.Success, Is.True);
 
-        var fullDayBlocked = await _contentHandoverService.CreateAsync(sourceB.Id,
+        var fullDayBlocked = await (await AsCallerAsync(1)).CreateAsync(sourceB.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2 });
         Assert.That(fullDayBlocked.Success, Is.False);
     }
@@ -1001,12 +1151,12 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var date = new DateTime(2024, 2, 7);
         var (source, target) = await SeedPartialShiftPairAsync(date);
 
-        var create = await _contentHandoverService.CreateAsync(source.Id,
+        var create = await (await AsCallerAsync(1)).CreateAsync(source.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 2 } });
         Assert.That(create.Success, Is.True);
 
         var requestId = create.Model[0].Id;
-        var accept = await _contentHandoverService.AcceptAsync(requestId, 2,
+        var accept = await (await AsCallerAsync(2)).AcceptAsync(requestId,
             new ContentHandoverDecisionModel { DecisionComment = "ok" });
         Assert.That(accept.Success, Is.True, accept.Message);
 
@@ -1032,13 +1182,13 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var date = new DateTime(2024, 2, 8);
         var (source, target) = await SeedPartialShiftPairAsync(date);
 
-        var create = await _contentHandoverService.CreateAsync(source.Id,
+        var create = await (await AsCallerAsync(1)).CreateAsync(source.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1, 2, 3 } });
         Assert.That(create.Success, Is.True, create.Message);
 
         foreach (var m in create.Model)
         {
-            var res = await _contentHandoverService.AcceptAsync(m.Id, 2,
+            var res = await (await AsCallerAsync(2)).AcceptAsync(m.Id,
                 new ContentHandoverDecisionModel { DecisionComment = "ok" });
             Assert.That(res.Success, Is.True, res.Message);
         }
@@ -1060,14 +1210,14 @@ public class ContentHandoverServiceTests : TestBaseSetup
         var date = new DateTime(2024, 2, 9);
         var (source, _) = await SeedPartialShiftPairAsync(date);
 
-        var create = await _contentHandoverService.CreateAsync(source.Id,
+        var create = await (await AsCallerAsync(1)).CreateAsync(source.Id,
             new ContentHandoverRequestCreateModel { ToSdkSitId = 2, ShiftIndices = new() { 1, 2 } });
         Assert.That(create.Success, Is.True);
 
         var shift1Id = create.Model.Single(m => m.ShiftIndex == 1).Id;
         var shift2Id = create.Model.Single(m => m.ShiftIndex == 2).Id;
 
-        var rej = await _contentHandoverService.RejectAsync(shift1Id, 2,
+        var rej = await (await AsCallerAsync(2)).RejectAsync(shift1Id,
             new ContentHandoverDecisionModel { DecisionComment = "no" });
         Assert.That(rej.Success, Is.True);
 
@@ -1139,7 +1289,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         };
 
         // Act
-        var result = await _contentHandoverService.AcceptAsync(request.Id, 2, model);
+        var result = await (await AsCallerAsync(2)).AcceptAsync(request.Id, model);
 
         // Assert
         Assert.That(result.Success, Is.True, $"Expected success but got error: {result.Message}");
@@ -1279,7 +1429,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
             targetShifts: new[] { (7 * 60, 12 * 60, 0) },
             shiftIndex: 1);
 
-        var result = await _contentHandoverService.AcceptAsync(request.Id, 2,
+        var result = await (await AsCallerAsync(2)).AcceptAsync(request.Id,
             new ContentHandoverDecisionModel { DecisionComment = "ok" });
 
         Assert.That(result.Success, Is.True, $"Expected success, got: {result.Message}");
@@ -1311,7 +1461,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
             targetShifts: new[] { (15 * 60, 20 * 60, 0) },
             shiftIndex: 1);
 
-        var result = await _contentHandoverService.AcceptAsync(request.Id, 2,
+        var result = await (await AsCallerAsync(2)).AcceptAsync(request.Id,
             new ContentHandoverDecisionModel { DecisionComment = "ok" });
 
         Assert.That(result.Success, Is.True, $"Expected success, got: {result.Message}");
@@ -1342,7 +1492,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
             },
             shiftIndex: 1);
 
-        var result = await _contentHandoverService.AcceptAsync(request.Id, 2,
+        var result = await (await AsCallerAsync(2)).AcceptAsync(request.Id,
             new ContentHandoverDecisionModel { DecisionComment = "no" });
 
         Assert.That(result.Success, Is.False);
@@ -1479,7 +1629,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
             targetShifts: new[] { (12 * 60, 15 * 60, 0) },
             shiftIndex: 1);
 
-        var result = await _contentHandoverService.AcceptAsync(request.Id, 2,
+        var result = await (await AsCallerAsync(2)).AcceptAsync(request.Id,
             new ContentHandoverDecisionModel { DecisionComment = "no" });
 
         Assert.That(result.Success, Is.False);
@@ -1632,7 +1782,7 @@ public class ContentHandoverServiceTests : TestBaseSetup
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("da");
-            result = await service.CancelAsync(987654, 1);
+            result = await service.CancelAsync(987654);
         }
         finally
         {

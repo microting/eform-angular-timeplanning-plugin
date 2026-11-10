@@ -78,8 +78,8 @@ public class TimePlanningContentHandoverGrpcService
                 DecisionComment = request.DecisionComment
             };
 
-            var result = await _contentHandoverService.AcceptAsync(
-                request.RequestId, request.CurrentSdkSiteId, model);
+            // CurrentSdkSiteId is ignored: the service acts as the JWT caller.
+            var result = await _contentHandoverService.AcceptAsync(request.RequestId, model);
 
             return new OperationResponse
             {
@@ -107,8 +107,8 @@ public class TimePlanningContentHandoverGrpcService
                 DecisionComment = request.DecisionComment
             };
 
-            var result = await _contentHandoverService.RejectAsync(
-                request.RequestId, request.CurrentSdkSiteId, model);
+            // CurrentSdkSiteId is ignored: the service acts as the JWT caller.
+            var result = await _contentHandoverService.RejectAsync(request.RequestId, model);
 
             return new OperationResponse
             {
@@ -131,8 +131,8 @@ public class TimePlanningContentHandoverGrpcService
     {
         try
         {
-            var result = await _contentHandoverService.CancelAsync(
-                request.RequestId, request.CurrentSdkSiteId);
+            // CurrentSdkSiteId is ignored: the service acts as the JWT caller.
+            var result = await _contentHandoverService.CancelAsync(request.RequestId);
 
             return new OperationResponse
             {

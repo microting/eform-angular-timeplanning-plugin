@@ -291,12 +291,17 @@ public class ContentHandoverService : IContentHandoverService
     {
         try
         {
+            var callerSdkSitId = await ResolveCallerSdkSiteIdAsync();
+
             // Load source PlanRegistration
             var fromPR = await _dbContext.PlanRegistrations
                 .FirstOrDefaultAsync(pr => pr.Id == fromPlanRegistrationId
                                            && pr.WorkflowState != Constants.WorkflowStates.Removed);
 
-            if (fromPR == null)
+            // Only the source day's own worker may offer it: the caller comes
+            // from the JWT, and someone else's day reads as not found so its
+            // existence is not leaked.
+            if (fromPR == null || callerSdkSitId == 0 || fromPR.SdkSitId != callerSdkSitId)
             {
                 return new OperationDataResult<List<ContentHandoverRequestModel>>(false,
                     _localizationService.GetString("SourcePlanRegistrationNotFound"));
@@ -613,11 +618,12 @@ public class ContentHandoverService : IContentHandoverService
 
     public async Task<OperationResult> AcceptAsync(
         int requestId,
-        int currentSdkSitId,
         ContentHandoverDecisionModel model)
     {
         try
         {
+            // The deciding worker is the JWT caller, never a client-supplied id.
+            var currentSdkSitId = await ResolveCallerSdkSiteIdAsync();
             _logger.LogInformation(
                 "[Handover] Accept request {RequestId}: entry, currentSdkSitId={CurrentSdkSitId}",
                 requestId, currentSdkSitId);
@@ -640,7 +646,7 @@ public class ContentHandoverService : IContentHandoverService
                 return new OperationResult(false, _localizationService.GetString("HandoverRequestMustBePending"));
             }
 
-            if (request.ToSdkSitId != currentSdkSitId)
+            if (currentSdkSitId == 0 || request.ToSdkSitId != currentSdkSitId)
             {
                 _logger.LogWarning(
                     "[Handover] Accept request {RequestId}: unauthorized — caller sdkSitId={CurrentSdkSitId} != request.ToSdkSitId={ToSdkSitId}",
@@ -1001,12 +1007,13 @@ public class ContentHandoverService : IContentHandoverService
     }
 
     public async Task<OperationResult> RejectAsync(
-        int requestId, 
-        int currentSdkSitId, 
+        int requestId,
         ContentHandoverDecisionModel model)
     {
         try
         {
+            // The deciding worker is the JWT caller, never a client-supplied id.
+            var currentSdkSitId = await ResolveCallerSdkSiteIdAsync();
             var request = await _dbContext.PlanRegistrationContentHandoverRequests
                 .FirstOrDefaultAsync(r => r.Id == requestId);
 
@@ -1020,7 +1027,7 @@ public class ContentHandoverService : IContentHandoverService
                 return new OperationResult(false, _localizationService.GetString("HandoverRequestMustBePending"));
             }
 
-            if (request.ToSdkSitId != currentSdkSitId)
+            if (currentSdkSitId == 0 || request.ToSdkSitId != currentSdkSitId)
             {
                 return new OperationResult(false, _localizationService.GetString("UnauthorizedToReject"));
             }
@@ -1044,10 +1051,12 @@ public class ContentHandoverService : IContentHandoverService
         }
     }
 
-    public async Task<OperationResult> CancelAsync(int requestId, int currentSdkSitId)
+    public async Task<OperationResult> CancelAsync(int requestId)
     {
         try
         {
+            // Only the requester may cancel; the requester is the JWT caller.
+            var currentSdkSitId = await ResolveCallerSdkSiteIdAsync();
             var request = await _dbContext.PlanRegistrationContentHandoverRequests
                 .FirstOrDefaultAsync(r => r.Id == requestId);
 
@@ -1061,7 +1070,7 @@ public class ContentHandoverService : IContentHandoverService
                 return new OperationResult(false, _localizationService.GetString("HandoverRequestMustBePending"));
             }
 
-            if (request.FromSdkSitId != currentSdkSitId)
+            if (currentSdkSitId == 0 || request.FromSdkSitId != currentSdkSitId)
             {
                 return new OperationResult(false, _localizationService.GetString("UnauthorizedToCancel"));
             }

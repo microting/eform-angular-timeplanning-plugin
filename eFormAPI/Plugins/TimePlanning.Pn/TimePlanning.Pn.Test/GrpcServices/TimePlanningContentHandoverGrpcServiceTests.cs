@@ -108,7 +108,6 @@ public class TimePlanningContentHandoverGrpcServiceTests
     {
         _service.AcceptAsync(
                 Arg.Any<int>(),
-                Arg.Any<int>(),
                 Arg.Any<ContentHandoverDecisionModel>())
             .Returns(new OperationResult(true, "Accepted"));
 
@@ -125,9 +124,9 @@ public class TimePlanningContentHandoverGrpcServiceTests
         Assert.That(response.Success, Is.True);
         Assert.That(response.Message, Is.EqualTo("Accepted"));
 
+        // CurrentSdkSiteId is still sent by the app but ignored: the service acts as the JWT caller.
         await _service.Received(1).AcceptAsync(
             42,
-            20,
             Arg.Is<ContentHandoverDecisionModel>(m => m.DecisionComment == "Looks good"));
     }
 
@@ -135,7 +134,6 @@ public class TimePlanningContentHandoverGrpcServiceTests
     public async Task RejectContentHandover_DelegatesToService()
     {
         _service.RejectAsync(
-                Arg.Any<int>(),
                 Arg.Any<int>(),
                 Arg.Any<ContentHandoverDecisionModel>())
             .Returns(new OperationResult(true, "Rejected"));
@@ -153,16 +151,16 @@ public class TimePlanningContentHandoverGrpcServiceTests
         Assert.That(response.Success, Is.True);
         Assert.That(response.Message, Is.EqualTo("Rejected"));
 
+        // CurrentSdkSiteId is still sent by the app but ignored: the service acts as the JWT caller.
         await _service.Received(1).RejectAsync(
             42,
-            20,
             Arg.Is<ContentHandoverDecisionModel>(m => m.DecisionComment == "Not available"));
     }
 
     [Test]
     public async Task CancelContentHandover_DelegatesToService()
     {
-        _service.CancelAsync(Arg.Any<int>(), Arg.Any<int>())
+        _service.CancelAsync(Arg.Any<int>())
             .Returns(new OperationResult(true, "Cancelled"));
 
         var request = new CancelContentHandoverRequest
@@ -177,7 +175,8 @@ public class TimePlanningContentHandoverGrpcServiceTests
         Assert.That(response.Success, Is.True);
         Assert.That(response.Message, Is.EqualTo("Cancelled"));
 
-        await _service.Received(1).CancelAsync(42, 10);
+        // CurrentSdkSiteId is still sent by the app but ignored: the service acts as the JWT caller.
+        await _service.Received(1).CancelAsync(42);
     }
 
     [Test]

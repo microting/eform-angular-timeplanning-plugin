@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
@@ -25,12 +24,13 @@ public class HandoverAcceptFlexCarryForwardTests : TestBaseSetup
     private const int Sender = 7961;
     private const int Receiver = 7962;
     private IContentHandoverService _service = null!;
+    private IUserService _userService = null!;
 
     [SetUp]
-    public void SetUpTest()
+    public async Task SetUpTest()
     {
-        var userService = Substitute.For<IUserService>();
-        userService.UserId.Returns(1);
+        _userService = Substitute.For<IUserService>();
+        _userService.UserId.Returns(1);
         var localizationService = Substitute.For<ITimePlanningLocalizationService>();
         localizationService.GetString(Arg.Any<string>()).Returns(x => x[0]?.ToString());
 
@@ -42,13 +42,19 @@ public class HandoverAcceptFlexCarryForwardTests : TestBaseSetup
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         scopeFactory.CreateScope().Returns(scope);
 
+        // Real core and BaseDbContext, so the service can resolve the seeded caller.
+        var coreService = Substitute.For<IEFormCoreService>();
+        var core = await GetCore();
+        coreService.GetCore().Returns(Task.FromResult(core));
+        SeededBaseDbContext ??= GetBaseDbContext();
+
         _service = new ContentHandoverService(
             Substitute.For<Microsoft.Extensions.Logging.ILogger<ContentHandoverService>>(),
             TimePlanningPnDbContext!,
-            userService,
+            _userService,
             localizationService,
-            Substitute.For<IEFormCoreService>(),
-            Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>()),
+            coreService,
+            SeededBaseDbContext,
             scopeFactory);
     }
 
@@ -104,7 +110,9 @@ public class HandoverAcceptFlexCarryForwardTests : TestBaseSetup
         };
         await request.Create(TimePlanningPnDbContext!);
 
-        var result = await _service.AcceptAsync(request.Id, Receiver,
+        await SeedSiteCallerAsync(_userService, Receiver); // the receiver is the logged-in caller
+
+        var result = await _service.AcceptAsync(request.Id,
             new ContentHandoverDecisionModel { DecisionComment = "ok" });
 
         Assert.That(result.Success, Is.True, result.Message);

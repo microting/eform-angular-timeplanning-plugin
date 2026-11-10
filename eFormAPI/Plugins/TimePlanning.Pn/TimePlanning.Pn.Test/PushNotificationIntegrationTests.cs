@@ -77,7 +77,7 @@ public class PushNotificationIntegrationTests : TestBaseSetup
             TimePlanningPnDbContext!,
             _userService,
             localization,
-            Substitute.For<IEFormCoreService>(),
+            coreService, // returns the real core, so handover decisions can resolve their seeded caller
             SeededBaseDbContext!,
             pushScopeFactory);
     }
@@ -369,6 +369,8 @@ public class PushNotificationIntegrationTests : TestBaseSetup
             RequestComment = "Push test"
         };
 
+        await SeedSiteCallerAsync(_userService, 1); // the sender is the logged-in caller
+
         // Act
         var result = await _contentHandoverService.CreateAsync(sourcePR.Id, model);
 
@@ -424,8 +426,10 @@ public class PushNotificationIntegrationTests : TestBaseSetup
         };
         await request.Create(TimePlanningPnDbContext!);
 
+        await SeedSiteCallerAsync(_userService, 2); // the receiver is the logged-in caller
+
         // Act
-        var result = await _contentHandoverService.AcceptAsync(request.Id, 2, new ContentHandoverDecisionModel
+        var result = await _contentHandoverService.AcceptAsync(request.Id, new ContentHandoverDecisionModel
         {
             DecisionComment = "ok"
         });
@@ -480,8 +484,10 @@ public class PushNotificationIntegrationTests : TestBaseSetup
         };
         await request.Create(TimePlanningPnDbContext!);
 
+        await SeedSiteCallerAsync(_userService, 2); // the receiver is the logged-in caller
+
         // Act
-        var result = await _contentHandoverService.RejectAsync(request.Id, 2, new ContentHandoverDecisionModel
+        var result = await _contentHandoverService.RejectAsync(request.Id, new ContentHandoverDecisionModel
         {
             DecisionComment = "no"
         });
