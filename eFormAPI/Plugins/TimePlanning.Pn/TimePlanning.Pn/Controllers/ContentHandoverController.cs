@@ -50,23 +50,26 @@ public class ContentHandoverController(IContentHandoverService contentHandoverSe
 
     [HttpPost]
     [Route("handover-requests/{id}/accept")]
-    public async Task<OperationResult> Accept(int id, int currentSdkSitId, [FromBody] ContentHandoverDecisionModel model)
+    public async Task<OperationResult> Accept(int id, [FromBody] ContentHandoverDecisionModel model)
     {
-        return await _contentHandoverService.AcceptAsync(id, currentSdkSitId, model);
+        // Caller's SDK site is derived from the JWT inside the service.
+        return await _contentHandoverService.AcceptAsync(id, model);
     }
 
     [HttpPost]
     [Route("handover-requests/{id}/reject")]
-    public async Task<OperationResult> Reject(int id, int currentSdkSitId, [FromBody] ContentHandoverDecisionModel model)
+    public async Task<OperationResult> Reject(int id, [FromBody] ContentHandoverDecisionModel model)
     {
-        return await _contentHandoverService.RejectAsync(id, currentSdkSitId, model);
+        // Caller's SDK site is derived from the JWT inside the service.
+        return await _contentHandoverService.RejectAsync(id, model);
     }
 
     [HttpPost]
     [Route("handover-requests/{id}/cancel")]
-    public async Task<OperationResult> Cancel(int id, int currentSdkSitId)
+    public async Task<OperationResult> Cancel(int id)
     {
-        return await _contentHandoverService.CancelAsync(id, currentSdkSitId);
+        // Caller's SDK site is derived from the JWT inside the service.
+        return await _contentHandoverService.CancelAsync(id);
     }
 
     [HttpGet]

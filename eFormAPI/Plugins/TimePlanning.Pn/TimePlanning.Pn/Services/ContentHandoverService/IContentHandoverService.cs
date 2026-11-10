@@ -33,11 +33,20 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 
 public interface IContentHandoverService
 {
+    /// <summary>
+    /// Offers the source day to a coworker. The source PlanRegistration must
+    /// belong to the authenticated caller (resolved from the JWT).
+    /// </summary>
     Task<OperationDataResult<List<ContentHandoverRequestModel>>> CreateAsync(int fromPlanRegistrationId, ContentHandoverRequestCreateModel model);
     Task<OperationDataResult<List<HandoverCoworkerModel>>> GetHandoverEligibleCoworkersAsync(DateTime date, List<int> shiftIndices);
-    Task<OperationResult> AcceptAsync(int requestId, int currentSdkSitId, ContentHandoverDecisionModel model);
-    Task<OperationResult> RejectAsync(int requestId, int currentSdkSitId, ContentHandoverDecisionModel model);
-    Task<OperationResult> CancelAsync(int requestId, int currentSdkSitId);
+    /// <summary>
+    /// Accept, reject and cancel act as the authenticated caller, resolved
+    /// from the JWT, never as a client-supplied site id: only the recipient
+    /// may accept or reject, only the requester may cancel.
+    /// </summary>
+    Task<OperationResult> AcceptAsync(int requestId, ContentHandoverDecisionModel model);
+    Task<OperationResult> RejectAsync(int requestId, ContentHandoverDecisionModel model);
+    Task<OperationResult> CancelAsync(int requestId);
     /// <summary>
     /// Returns pending handover requests addressed to the currently
     /// authenticated caller's SDK site. The caller's site is resolved from
