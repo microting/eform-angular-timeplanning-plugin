@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -1606,5 +1607,41 @@ public class ContentHandoverServiceTests : TestBaseSetup
             service.SendCreatePushAsync(1, new List<int> { 1 }, 1, DateTime.UtcNow));
         Assert.That(factory.CreatedScopes.Single().Disposed, Is.True,
             "using-scope must dispose even when the send throws");
+    }
+
+    /// <summary>
+    /// The refusal reaches the user in their language, not as the message key:
+    /// the real localization service (localization.json) under Danish.
+    /// </summary>
+    [Test]
+    public async Task CancelAsync_UnknownRequest_IsDanishUnderDa_NotTheKey()
+    {
+        var service = new ContentHandoverService(
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<ContentHandoverService>>(),
+            TimePlanningPnDbContext,
+            _userService,
+            new TimePlanningLocalizationService(
+                new Microting.eFormApi.BasePn.Localization.JsonStringLocalizerFactory()),
+            Substitute.For<Microting.eFormApi.BasePn.Abstractions.IEFormCoreService>(),
+            Substitute.For<BaseDbContext>(new DbContextOptions<BaseDbContext>()),
+            _scopeFactory);
+
+        var previousCulture = CultureInfo.CurrentCulture;
+        var previousUiCulture = CultureInfo.CurrentUICulture;
+        Microting.eFormApi.BasePn.Infrastructure.Models.API.OperationResult result;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("da");
+            result = await service.CancelAsync(987654, 1);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+            CultureInfo.CurrentUICulture = previousUiCulture;
+        }
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.Not.EqualTo("HandoverRequestNotFound"));
+        Assert.That(result.Message, Is.EqualTo("Overdragelsesanmodningen blev ikke fundet"));
     }
 }
