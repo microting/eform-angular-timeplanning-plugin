@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.eFormApi.BasePn.Abstractions;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using NSubstitute;
 using NUnit.Framework;
@@ -1385,5 +1387,49 @@ public class AbsenceRequestServiceTests : TestBaseSetup
             11, "Absence request rejected", "body", new Dictionary<string, string>()));
         Assert.That(factory.CreatedScopes.Single().Disposed, Is.True,
             "using-scope must dispose even when the send throws");
+    }
+
+    /// <summary>
+    /// The refusal reaches the user in their language, not as the message key:
+    /// the real localization service (localization.json) under Danish.
+    /// </summary>
+    [Test]
+    public async Task CreateAsync_RefusalWithNoCaller_IsDanishUnderDa_NotTheKey()
+    {
+        var service = new AbsenceRequestService(
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<AbsenceRequestService>>(),
+            TimePlanningPnDbContext,
+            _userService,
+            new TimePlanningLocalizationService(
+                new Microting.eFormApi.BasePn.Localization.JsonStringLocalizerFactory()),
+            _coreService,
+            SeededBaseDbContext,
+            Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
+        var model = new AbsenceRequestCreateModel
+        {
+            DateFrom = new DateTime(2024, 1, 1),
+            DateTo = new DateTime(2024, 1, 3),
+            MessageId = 2
+        };
+        // No caller is signed in.
+        _userService.GetCurrentUserAsync().Returns((Microting.eFormApi.BasePn.Infrastructure.Database.Entities.EformUser)null);
+
+        var previousCulture = CultureInfo.CurrentCulture;
+        var previousUiCulture = CultureInfo.CurrentUICulture;
+        OperationDataResult<AbsenceRequestModel> result;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("da");
+            result = await service.CreateAsync(model);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+            CultureInfo.CurrentUICulture = previousUiCulture;
+        }
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Is.Not.EqualTo("UnauthorizedToCreateAbsenceRequest"));
+        Assert.That(result.Message, Is.EqualTo("Du har ikke adgang til at oprette en fraværsanmodning"));
     }
 }
