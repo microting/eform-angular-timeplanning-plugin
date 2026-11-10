@@ -102,8 +102,10 @@ public class LocalizationKeyCoverageTests
             files.Add(file);
         }
 
+        // EformTimePlanningPlugin.HeaderMenu passes menu labels, not messages.
         var sources = Directory.EnumerateFiles(sourceDir, "*.cs", SearchOption.AllDirectories)
             .Where(p => !p.EndsWith(".Designer.cs", StringComparison.Ordinal))
+            .Where(p => Path.GetFileName(p) != "EformTimePlanningPlugin.cs")
             .Where(p => !IsUnder(p, sourceDir, "bin") && !IsUnder(p, sourceDir, "obj"));
         foreach (var path in sources)
         {
