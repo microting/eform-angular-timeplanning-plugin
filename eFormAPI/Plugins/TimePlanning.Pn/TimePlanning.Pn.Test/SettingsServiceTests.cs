@@ -210,6 +210,73 @@ public class SettingsServiceTests : TestBaseSetup
         Assert.That(updatedSite.SnapshotEnabled, Is.False);
     }
 
+    // Base 10.0.67 made AssignedSite.ResignedAtDate nullable and its migration
+    // cleared the date on every site that is not resigned. A save must not put
+    // the dialog's placeholder ("today") back, and a site with no date must
+    // still read as default(DateTime): the value every non-resigned site that
+    // was never saved through the dialog has always had on the wire, and one
+    // the web dialog ignores for a non-resigned worker.
+    [Test]
+    public async Task UpdateAssignedSite_NotResigned_StoresNoResignationDate()
+    {
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 71,
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var result = await _settingsService.UpdateAssignedSite(new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 71,
+            UseGoogleSheetAsDefault = true,
+            Resigned = false,
+            ResignedAtDate = DateTime.UtcNow.Date
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var stored = await TimePlanningPnDbContext.AssignedSites.AsNoTracking()
+            .SingleAsync(x => x.Id == assignedSite.Id);
+        Assert.That(stored.ResignedAtDate, Is.Null);
+        AssignedSiteModel read = stored;
+        Assert.That(read.ResignedAtDate, Is.EqualTo(default(DateTime)));
+    }
+
+    [Test]
+    public async Task UpdateAssignedSite_Resigned_StoresTheResignationDate()
+    {
+        var resignedAt = new DateTime(2026, 10, 31);
+        var assignedSite = new AssignedSiteEntity
+        {
+            SiteId = 72,
+            Resigned = true,
+            ResignedAtDate = new DateTime(2026, 10, 1),
+            UseGoogleSheetAsDefault = true,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1
+        };
+        await assignedSite.Create(TimePlanningPnDbContext);
+
+        var result = await _settingsService.UpdateAssignedSite(new AssignedSiteModel
+        {
+            Id = assignedSite.Id,
+            SiteId = 72,
+            UseGoogleSheetAsDefault = true,
+            Resigned = true,
+            ResignedAtDate = resignedAt
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var stored = await TimePlanningPnDbContext.AssignedSites.AsNoTracking()
+            .SingleAsync(x => x.Id == assignedSite.Id);
+        Assert.That(stored.ResignedAtDate, Is.EqualTo(resignedAt));
+        AssignedSiteModel read = stored;
+        Assert.That(read.ResignedAtDate, Is.EqualTo(resignedAt));
+    }
+
     // A managing tag that was removed must be addable again: the unique index on
     // (AssignedSiteId, TagId) also covers soft-deleted rows, so inserting a second
     // row for the tag failed with a duplicate key and the settings save returned 500.

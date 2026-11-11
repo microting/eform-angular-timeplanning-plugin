@@ -205,7 +205,10 @@ public class AssignedSite
             EndSunday = model.EndSunday,
             BreakSunday = model.BreakSunday,
             Resigned = model.Resigned,
-            ResignedAtDate = model.ResignedAtDate,
+            // Null (not resigned) reads as default(DateTime), the value a site
+            // never saved through the dialog has always carried; the dialog
+            // ignores it for a worker who is not resigned.
+            ResignedAtDate = model.ResignedAtDate ?? default,
             MondayBreakMinutesDivider = model.MondayBreakMinutesDivider,
             MondayBreakMinutesPrDivider = model.MondayBreakMinutesPrDivider,
             TuesdayBreakMinutesDivider = model.TuesdayBreakMinutesDivider,

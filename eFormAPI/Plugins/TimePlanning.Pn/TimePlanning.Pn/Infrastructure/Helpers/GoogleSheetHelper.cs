@@ -29,6 +29,13 @@ public class GoogleSheetHelper
 {
     public static async Task PushToGoogleSheet(Core core, TimePlanningPnDbContext dbContext, ILogger logger)
     {
+        // #5489: once the planner has replaced the sheet it is never called again.
+        if (await GoogleSheetRetirement.IsRetiredAsync(dbContext))
+        {
+            logger.LogInformation("PushToGoogleSheet skipped: the Google Sheet is retired");
+            return;
+        }
+
         var privateKeyId = Environment.GetEnvironmentVariable("PRIVATE_KEY_ID");
         var googleSheetId = dbContext.PluginConfigurationValues
             .Single(x => x.Name == "TimePlanningBaseSettings:GoogleSheetId").Value;
@@ -158,6 +165,13 @@ public class GoogleSheetHelper
 
     public static async Task PullEverythingFromGoogleSheet(Core core, TimePlanningPnDbContext dbContext, ILogger logger)
     {
+        // #5489: once the planner has replaced the sheet it is never called again.
+        if (await GoogleSheetRetirement.IsRetiredAsync(dbContext))
+        {
+            logger.LogInformation("PullEverythingFromGoogleSheet skipped: the Google Sheet is retired");
+            return;
+        }
+
         var privateKeyId = Environment.GetEnvironmentVariable("PRIVATE_KEY_ID");
         var googleSheetId = dbContext.PluginConfigurationValues
             .Single(x => x.Name == "TimePlanningBaseSettings:GoogleSheetId").Value;

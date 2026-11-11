@@ -317,7 +317,7 @@ public class TimeSettingService(
                             FourthShiftActive = assignedSite.FourthShiftActive,
                             FifthShiftActive = assignedSite.FifthShiftActive,
                             Resigned = assignedSite.Resigned,
-                            ResignedAtDate = assignedSite.ResignedAtDate,
+                            ResignedAtDate = assignedSite.ResignedAtDate ?? default,
                             SnapshotEnabled = snapshotEnabledGlobal,
                             UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals,
                             OverMidnight = assignedSite.OverMidnight
@@ -622,7 +622,7 @@ public class TimeSettingService(
                             FourthShiftActive = assignedSite.FourthShiftActive,
                             FifthShiftActive = assignedSite.FifthShiftActive,
                             Resigned = assignedSite.Resigned,
-                            ResignedAtDate = assignedSite.ResignedAtDate,
+                            ResignedAtDate = assignedSite.ResignedAtDate ?? default,
                             SnapshotEnabled = snapshotEnabledGlobal,
                             UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals,
                             OverMidnight = assignedSite.OverMidnight
@@ -919,7 +919,7 @@ public class TimeSettingService(
                             FourthShiftActive = assignedSite.FourthShiftActive,
                             FifthShiftActive = assignedSite.FifthShiftActive,
                             Resigned = assignedSite.Resigned,
-                            ResignedAtDate = assignedSite.ResignedAtDate,
+                            ResignedAtDate = assignedSite.ResignedAtDate ?? default,
                             UseOneMinuteIntervals = assignedSite.UseOneMinuteIntervals,
                             OverMidnight = assignedSite.OverMidnight,
                         };
@@ -1155,7 +1155,13 @@ public class TimeSettingService(
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
 
-        dbAssignedSite.UseGoogleSheetAsDefault = site.UseGoogleSheetAsDefault;
+        // #5489: a worker with an active PlanPattern takes their plan from it,
+        // so the sheet must not take them back, whatever the dialog posts.
+        // A worker without one takes the requested value, as before.
+        var hasActivePlanPattern = await dbContext.PlanPatterns
+            .AnyAsync(x => x.AssignedSiteId == dbAssignedSite.Id
+                           && x.WorkflowState != Constants.WorkflowStates.Removed);
+        dbAssignedSite.UseGoogleSheetAsDefault = site.UseGoogleSheetAsDefault && !hasActivePlanPattern;
         dbAssignedSite.UseOnlyPlanHours = site.UseOnlyPlanHours;
         dbAssignedSite.AllowEditOfRegistrations = site.AllowEditOfRegistrations;
         dbAssignedSite.AllowPersonalTimeRegistration = site.AllowPersonalTimeRegistration;
@@ -1260,7 +1266,11 @@ public class TimeSettingService(
         dbAssignedSite.DaysBackInTimeAllowedEditing = site.DaysBackInTimeAllowedEditing;
         dbAssignedSite.DaysBackInTimeAllowedEditingEnabled = site.DaysBackInTimeAllowedEditingEnabled;
         dbAssignedSite.Resigned = site.Resigned;
-        dbAssignedSite.ResignedAtDate = site.ResignedAtDate;
+        // Only a resigned site has a resignation date (base 10.0.67 made the
+        // column nullable and cleared it on every other site). The web dialog
+        // posts "today" for a worker who is not resigned and ignores the value
+        // it reads back for one, so storing null here is invisible to it.
+        dbAssignedSite.ResignedAtDate = site.Resigned ? site.ResignedAtDate : null;
 
         var globalSettings = await dbContext.PluginConfigurationValues.AsNoTracking().FirstOrDefaultAsync(x => x.Name == "TimePlanningBaseSettings:GpsEnabled");
         if (globalSettings != null)
@@ -1381,6 +1391,10 @@ public class TimeSettingService(
             .OrderBy(x => x.Date)
             .ToListAsync();
 
+        // #5489: null for a worker without a pattern, which leaves the loop
+        // below exactly as it was.
+        var planPattern = await PlanPatternPlanner.LoadActivePatternAsync(dbContext, dbAssignedSite.Id);
+
         foreach (var planRegistration in planRegistrationsFromTodayAndForward)
         {
             // The new template only reaches days nobody has touched (#5574):
@@ -1389,6 +1403,14 @@ public class TimeSettingService(
             // and an absence day keep their plan hours and shifts.
             if (planRegistration.PlanChangedByAdmin || IsAbsenceDay(planRegistration))
             {
+                continue;
+            }
+
+            // #5489: a worker's active PlanPattern replaces the weekday
+            // template on the dates it governs.
+            if (PlanPatternPlanner.TryApply(planPattern, planRegistration, logger))
+            {
+                await planRegistration.Update(dbContext);
                 continue;
             }
 

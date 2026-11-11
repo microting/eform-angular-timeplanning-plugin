@@ -274,6 +274,12 @@ jobs:
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServicePhoneNumberTests|FullyQualifiedName=TimePlanning.Pn.Test.TimePlanningWorkingHoursExportTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAbsenceRequestGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningAuthGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.DagsoversigtWorksheetExportTests|FullyQualifiedName=TimePlanning.Pn.Test.WorkingHoursImportRemovedRowTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningPlanningsGrpcServiceMapTests|FullyQualifiedName=TimePlanning.Pn.Test.Helpers.PauseMinutesCalculatorTests|FullyQualifiedName=TimePlanning.Pn.Test.PayrollPeriodTests|FullyQualifiedName=TimePlanning.Pn.Test.ReconciliationSummaryContractTests|FullyQualifiedName=TimePlanning.Pn.Test.SiteScopeResolverTests"
           - name: h
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.SettingsServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningContentHandoverGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningPlanningsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningPlanningsGrpcServiceTimeZoneTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningSettingsGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GrpcServices.TimePlanningWorkingHoursGrpcServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.WorkingHoursExcelExportE2ETests|FullyQualifiedName=TimePlanning.Pn.Test.WorkingHoursExcelShiftColumnOrderTests|FullyQualifiedName=TimePlanning.Pn.Test.WorkingHoursMessagePersistenceTests|FullyQualifiedName=TimePlanning.Pn.Test.EnumerateShiftSegmentsTests|FullyQualifiedName=TimePlanning.Pn.Test.TimePlanningWorkingHoursServiceNullUserTests"
+          # #5489 plan patterns: every test re-migrates its database, so these
+          # two shards are kept apart from the existing ones.
+          - name: i
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanPatternRowGenerationTests"
+          - name: j
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanPatternApplyServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GoogleSheetRetirementTests"
     steps:
     - uses: actions/checkout@v3
     - name: Create docker network
