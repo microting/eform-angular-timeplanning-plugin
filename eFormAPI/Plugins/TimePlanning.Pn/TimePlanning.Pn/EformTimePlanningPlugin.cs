@@ -33,6 +33,7 @@ using TimePlanning.Pn.Services.TimePlanningGpsCoordinateService;
 using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
 using TimePlanning.Pn.Services.AbsenceRequestService;
 using TimePlanning.Pn.Services.ContentHandoverService;
+using TimePlanning.Pn.Services.PlanPatternApplyService;
 using TimePlanning.Pn.Services.BreakPolicyService;
 using TimePlanning.Pn.Services.PayRuleSetService;
 using TimePlanning.Pn.Services.PayDayTypeRuleService;
@@ -107,6 +108,7 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<ISettingService, TimeSettingService>();
         services.AddTransient<IAbsenceRequestService, AbsenceRequestService>();
         services.AddTransient<IContentHandoverService, ContentHandoverService>();
+        services.AddTransient<IPlanPatternApplyService, PlanPatternApplyService>();
         services.AddTransient<IBreakPolicyService, BreakPolicyService>();
         services.AddTransient<IPayRuleSetService, PayRuleSetService>();
         services.AddTransient<IPayDayTypeRuleService, PayDayTypeRuleService>();
@@ -954,9 +956,25 @@ public class EformTimePlanningPlugin : IEformPlugin
         var activeAssignedSites = dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed).ToList();
 
+        // #5489: a retired sheet puts nobody back on it, and until then a
+        // worker who has ever had a PlanPattern stays off it: an active one
+        // would be silently undone by every restart, and deleting one hands
+        // the worker to the weekday template, not back to the sheet. With no
+        // PlanPattern rows and the sheet not retired, every worker is put on
+        // the sheet exactly as before.
+        var sheetRetired = GoogleSheetRetirement.IsRetired(dbContext);
+        var patternedAssignedSiteIds = sheetRetired
+            ? new HashSet<int>()
+            : dbContext.PlanPatterns
+                .Select(x => x.AssignedSiteId)
+                .ToHashSet();
+
         foreach (var activeAssignedSite in activeAssignedSites)
         {
-            activeAssignedSite.UseGoogleSheetAsDefault = true;
+            if (!sheetRetired && !patternedAssignedSiteIds.Contains(activeAssignedSite.Id))
+            {
+                activeAssignedSite.UseGoogleSheetAsDefault = true;
+            }
             if (activeAssignedSite.AllowPersonalTimeRegistration)
             {
                 activeAssignedSite.EnableMobileAccess = true;

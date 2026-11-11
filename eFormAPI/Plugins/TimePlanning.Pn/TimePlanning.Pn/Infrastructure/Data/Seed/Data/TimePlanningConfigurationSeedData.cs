@@ -231,6 +231,13 @@ public class TimePlanningConfigurationSeedData : IPluginConfigurationSeedData
         {
             Name = $"{TimePlanningBaseSettingsName}:DaysBackInTimeAllowedEditingEnabled",
             Value = "0"
+        },
+        // #5489: true once the planner's import has replaced the Google Sheet.
+        // Read through GoogleSheetRetirement; false keeps the sheet as before.
+        new PluginConfigurationValue
+        {
+            Name = $"{TimePlanningBaseSettingsName}:GoogleSheetRetired",
+            Value = "false"
         }
     ];
 }

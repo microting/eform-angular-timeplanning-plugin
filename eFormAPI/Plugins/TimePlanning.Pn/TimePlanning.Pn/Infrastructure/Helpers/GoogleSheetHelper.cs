@@ -29,6 +29,13 @@ public class GoogleSheetHelper
 {
     public static async Task PushToGoogleSheet(Core core, TimePlanningPnDbContext dbContext, ILogger logger)
     {
+        // #5489: once the planner has replaced the sheet it is never called again.
+        if (await GoogleSheetRetirement.IsRetiredAsync(dbContext))
+        {
+            logger.LogInformation("PushToGoogleSheet skipped: the Google Sheet is retired");
+            return;
+        }
+
         var privateKeyId = Environment.GetEnvironmentVariable("PRIVATE_KEY_ID");
         var googleSheetId = dbContext.PluginConfigurationValues
             .Single(x => x.Name == "TimePlanningBaseSettings:GoogleSheetId").Value;
@@ -158,6 +165,13 @@ public class GoogleSheetHelper
 
     public static async Task PullEverythingFromGoogleSheet(Core core, TimePlanningPnDbContext dbContext, ILogger logger)
     {
+        // #5489: once the planner has replaced the sheet it is never called again.
+        if (await GoogleSheetRetirement.IsRetiredAsync(dbContext))
+        {
+            logger.LogInformation("PullEverythingFromGoogleSheet skipped: the Google Sheet is retired");
+            return;
+        }
+
         var privateKeyId = Environment.GetEnvironmentVariable("PRIVATE_KEY_ID");
         var googleSheetId = dbContext.PluginConfigurationValues
             .Single(x => x.Name == "TimePlanningBaseSettings:GoogleSheetId").Value;
@@ -304,6 +318,25 @@ public class GoogleSheetHelper
                 .Where(x => x.UseGoogleSheetAsDefault && !x.Resigned)
                 .Select(x => x.SiteId)
                 .ToHashSet();
+            // #5489: the sheet does not write the rows of a worker whose plan
+            // comes from a PlanPattern: one with an active pattern, or one whose
+            // pattern was deleted (handed to the weekday template) and who is
+            // still off the sheet. An admin who puts such a worker back on the
+            // sheet gets them imported again. With no PlanPattern rows nobody
+            // is skipped, exactly as before.
+            var patternRows = await dbContext.PlanPatterns
+                .Select(x => new { x.AssignedSiteId, x.WorkflowState })
+                .ToListAsync();
+            var activePatternSiteIds = patternRows
+                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                .Select(x => x.AssignedSiteId)
+                .ToHashSet();
+            var everPatternedSiteIds = patternRows.Select(x => x.AssignedSiteId).ToHashSet();
+            var patternedSiteIds = assignedSites
+                .Where(x => activePatternSiteIds.Contains(x.Id)
+                            || (everPatternedSiteIds.Contains(x.Id) && !x.UseGoogleSheetAsDefault))
+                .Select(x => x.SiteId)
+                .ToHashSet();
 
             var workers = new List<(PlanTimerSheetColumns.WorkerColumns Columns,
                 Microting.eForm.Infrastructure.Data.Entities.Site Site)>();
@@ -337,6 +370,13 @@ public class GoogleSheetHelper
                 else if (columns.TextColumn == null)
                 {
                     problems.Add($"\"{columns.Name}\" has no \"- tekst\" column; text is left unchanged");
+                }
+
+                if (patternedSiteIds.Contains(site.MicrotingUid!.Value))
+                {
+                    Console.WriteLine(
+                        $"[PullEverythingFromGoogleSheet] \"{columns.Name}\" has a plan pattern; the sheet does not write their rows");
+                    continue;
                 }
 
                 workers.Add((columns, site));
