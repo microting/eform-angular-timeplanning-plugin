@@ -32,7 +32,9 @@ public interface IPlanPatternApplyService
 
     /// <summary>
     /// Soft-deletes the worker's active pattern. The worker returns to the
-    /// weekday template; they are NOT put back on the Google Sheet.
+    /// weekday template; they are NOT put back on the Google Sheet. Their rows
+    /// from today to today + 180 days are rewritten from the template (manual,
+    /// locked and accepted-handover days are kept) and flex is carried once.
     /// </summary>
     Task<OperationResult> DeletePatternAsync(int assignedSiteId);
 

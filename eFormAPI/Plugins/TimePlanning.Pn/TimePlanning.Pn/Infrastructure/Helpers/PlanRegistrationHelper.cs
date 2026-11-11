@@ -1171,7 +1171,10 @@ public static class PlanRegistrationHelper
         TimePlanningPnDbContext dbContext,
         AssignedSite dbAssignedSite,
         DateTime dayOfPayment,
-        OneMinuteModeTimeline oneMinuteTimeline
+        OneMinuteModeTimeline oneMinuteTimeline,
+        // #5489: the worker's active pattern (null for none), loaded once by
+        // the caller for every row it saves, as the period path does.
+        PlanPattern? planPattern
         )
     {
         if (dbAssignedSite.Resigned)
@@ -1253,7 +1256,7 @@ public static class PlanRegistrationHelper
                         var dayOfWeek = planRegistration.Date.DayOfWeek;
                         // #5489: a worker's active PlanPattern replaces the weekday
                         // template on the dates it governs; otherwise the template, as before.
-                        if (!await PlanPatternPlanner.PlanFromPattern(dbContext, dbAssignedSite.Id, planRegistration))
+                        if (!PlanPatternPlanner.TryApply(planPattern, planRegistration))
                         {
                             switch (dayOfWeek)
                             {

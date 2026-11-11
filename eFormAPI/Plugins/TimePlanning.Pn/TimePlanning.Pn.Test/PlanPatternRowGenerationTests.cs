@@ -388,6 +388,118 @@ public class PlanPatternRowGenerationTests : TestBaseSetup
         Assert.That(stored.UseGoogleSheetAsDefault, Is.True);
     }
 
+    // ------------------------------------------- accepted content handover
+
+    [Test]
+    public async Task PatternBranch_AcceptedHandoverDay_IsKeptInAllThreePlaces()
+    {
+        var site = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, SiteId);
+        await CreatePatternAsync(TimePlanningPnDbContext!, site, Today.AddDays(-30));
+        // AcceptAsync stamps ContentHandoverRequestId on both rows of an
+        // accepted handover and nowhere else.
+        void HandedOver(PlanRegistration r)
+        {
+            r.ContentHandoverRequestId = 4711;
+            r.PlanText = "10:00-12:00";
+            r.PlanHours = 2;
+            r.PlannedStartOfShift1 = 600;
+            r.PlannedEndOfShift1 = 720;
+        }
+        var lazy = await CreateRowAsync(TimePlanningPnDbContext!, SiteId, Today.AddDays(1), HandedOver);
+        var single = await CreateRowAsync(TimePlanningPnDbContext!, SiteId, Today.AddDays(2), HandedOver);
+        var settings = await CreateRowAsync(TimePlanningPnDbContext!, SiteId, Today.AddDays(3), HandedOver);
+
+        await RunPeriodUpdate(site, Today.AddDays(1), Today.AddDays(1));
+        await RunSingleUpdate(site, single.Id);
+        await RunUpdateAssignedSite(site);
+
+        foreach (var id in new[] { lazy.Id, single.Id, settings.Id })
+        {
+            var stored = await ReadRowAsync(TimePlanningPnDbContext!, id);
+            Assert.That(stored.PlanText, Is.EqualTo("10:00-12:00"), $"row {id}");
+            Assert.That(Shift1(stored), Is.EqualTo((600, 720, 0, 2.0)), $"row {id}");
+        }
+    }
+
+    [Test]
+    public async Task UpdatePlanRegistration_UsesThePatternTheCallerLoaded()
+    {
+        var site = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, SiteId);
+        await CreatePatternAsync(TimePlanningPnDbContext!, site, Today.AddDays(-30));
+        var row = await CreateRowAsync(TimePlanningPnDbContext!, SiteId, Today.AddDays(2));
+
+        // The caller loaded "no pattern" (e.g. before one was saved): the
+        // helper must use that rather than query again.
+        var tracked = await TimePlanningPnDbContext!.PlanRegistrations.AsTracking().SingleAsync(x => x.Id == row.Id);
+        var timeline = await OneMinuteModeTimeline.BuildAsync(TimePlanningPnDbContext, site);
+        await PlanRegistrationHelper.UpdatePlanRegistration(
+            tracked, TimePlanningPnDbContext, site, DateTime.Now.AddMonths(-1), timeline, null);
+
+        var stored = await ReadRowAsync(TimePlanningPnDbContext, row.Id);
+        Assert.That(Shift1(stored), Is.EqualTo((TemplateStart, TemplateEnd, TemplateBreak, TemplateHours)));
+    }
+
+    // ------------------------------------------------- Google Sheet import
+
+    [Test]
+    public async Task SheetImport_SkipsPatternedWorkers_AndImportsEveryoneElseAsToday()
+    {
+        const int plainSiteId = SiteId + 1;
+        const int deletedOffSiteId = SiteId + 2;
+        const int deletedOnSiteId = SiteId + 3;
+        var patterned = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, SiteId);
+        await CreatePatternAsync(TimePlanningPnDbContext!, patterned, Today.AddDays(-30));
+        // Off the sheet but never patterned: the import has always written
+        // such a worker's rows, and still must.
+        await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, plainSiteId, useGoogleSheet: false);
+        // Pattern deleted, still off the sheet: handed to the template, so skipped.
+        var deletedOff = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, deletedOffSiteId, useGoogleSheet: false);
+        await (await CreatePatternAsync(TimePlanningPnDbContext!, deletedOff, Today)).Delete(TimePlanningPnDbContext!);
+        // Pattern deleted, then put back on the sheet by an admin: imported again.
+        var deletedOn = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, deletedOnSiteId, useGoogleSheet: true);
+        await (await CreatePatternAsync(TimePlanningPnDbContext!, deletedOn, Today)).Delete(TimePlanningPnDbContext!);
+
+        var day = Today.AddDays(3);
+        void PatternPlan(PlanRegistration r)
+        {
+            r.PlanText = PatternText;
+            PlanRegistrationPlanText.ParseInto(r);
+        }
+        var patternRow = await CreateRowAsync(TimePlanningPnDbContext!, SiteId, day, PatternPlan);
+        var plainRow = await CreateRowAsync(TimePlanningPnDbContext!, plainSiteId, day);
+        var deletedOffRow = await CreateRowAsync(TimePlanningPnDbContext!, deletedOffSiteId, day, PatternPlan);
+        var deletedOnRow = await CreateRowAsync(TimePlanningPnDbContext!, deletedOnSiteId, day, PatternPlan);
+
+        var sdkDb = (await GetCore()).DbContextHelper.GetDbContext();
+        await new SdkSite { Name = "Pat Tern", MicrotingUid = SiteId }.Create(sdkDb);
+        await new SdkSite { Name = "Plain Worker", MicrotingUid = plainSiteId }.Create(sdkDb);
+        await new SdkSite { Name = "Deleted Off", MicrotingUid = deletedOffSiteId }.Create(sdkDb);
+        await new SdkSite { Name = "Deleted On", MicrotingUid = deletedOnSiteId }.Create(sdkDb);
+        var dateCell = day.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        IList<IList<object>> sheet = new List<IList<object>>
+        {
+            new List<object> { "Dato", "Uge", "Ugedag",
+                "Pat Tern - timer", "Pat Tern - tekst", "Plain Worker - timer", "Plain Worker - tekst",
+                "Deleted Off - timer", "Deleted Off - tekst", "Deleted On - timer", "Deleted On - tekst" },
+            new List<object> { dateCell, "", "", "5", "10:00-15:00", "5", "10:00-15:00",
+                "5", "10:00-15:00", "5", "10:00-15:00" }
+        };
+
+        await GoogleSheetHelper.ApplyPlanTimerSheet(sdkDb, TimePlanningPnDbContext!, sheet, Substitute.For<ILogger>());
+
+        var storedPattern = await ReadRowAsync(TimePlanningPnDbContext!, patternRow.Id);
+        var storedPlain = await ReadRowAsync(TimePlanningPnDbContext!, plainRow.Id);
+        var storedDeletedOff = await ReadRowAsync(TimePlanningPnDbContext!, deletedOffRow.Id);
+        var storedDeletedOn = await ReadRowAsync(TimePlanningPnDbContext!, deletedOnRow.Id);
+        Assert.That(storedPattern.PlanText, Is.EqualTo(PatternText), "active pattern: skipped");
+        Assert.That(Shift1(storedPattern), Is.EqualTo((8 * 60, 16 * 60, 30, 7.5)));
+        Assert.That(storedPlain.PlanText, Is.EqualTo("10:00-15:00"), "never patterned: imported as today");
+        Assert.That(storedPlain.PlanHours, Is.EqualTo(5));
+        Assert.That(storedDeletedOff.PlanText, Is.EqualTo(PatternText), "deleted pattern, off the sheet: skipped");
+        Assert.That(storedDeletedOn.PlanText, Is.EqualTo("10:00-15:00"), "deleted pattern, back on the sheet: imported");
+        Assert.That(storedDeletedOn.PlanHours, Is.EqualTo(5));
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private async Task RunPeriodUpdate(AssignedSiteEntity site, DateTime from, DateTime to)
@@ -429,8 +541,9 @@ public class PlanPatternRowGenerationTests : TestBaseSetup
     {
         var row = await TimePlanningPnDbContext!.PlanRegistrations.AsTracking().SingleAsync(x => x.Id == rowId);
         var timeline = await OneMinuteModeTimeline.BuildAsync(TimePlanningPnDbContext, site);
+        var planPattern = await PlanPatternPlanner.LoadActivePatternAsync(TimePlanningPnDbContext, site.Id);
         await PlanRegistrationHelper.UpdatePlanRegistration(
-            row, TimePlanningPnDbContext, site, DateTime.Now.AddMonths(-1), timeline);
+            row, TimePlanningPnDbContext, site, DateTime.Now.AddMonths(-1), timeline, planPattern);
     }
 
     private async Task RunUpdateAssignedSite(AssignedSiteEntity site, Action<AssignedSiteModel>? configure = null)

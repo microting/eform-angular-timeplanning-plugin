@@ -563,6 +563,10 @@ public class TimePlanningWorkingHoursService(
                 .FirstOrDefaultAsync(x => x.SiteId == model.SiteId);
             // ONE query for every row saved below — never per row.
             var cascadeTimeline = await OneMinuteModeTimeline.BuildAsync(dbContext, assignedSite);
+            // #5489: the worker's pattern, once for every row saved below.
+            var planPattern = assignedSite == null
+                ? null
+                : await PlanPatternPlanner.LoadActivePatternAsync(dbContext, assignedSite.Id);
             var first = true;
             foreach (var planning in model.Plannings)
             {
@@ -580,7 +584,7 @@ public class TimePlanningWorkingHoursService(
                 if (planRegistration != null)
                 {
                     await UpdatePlanning(
-                        first, planRegistration, planning, model.SiteId, cascadeTimeline);
+                        first, planRegistration, planning, model.SiteId, cascadeTimeline, planPattern);
                 }
                 else if (!first)
                 {
@@ -695,7 +699,8 @@ public class TimePlanningWorkingHoursService(
     private async Task UpdatePlanning(bool first, PlanRegistration planRegistration,
         TimePlanningWorkingHoursModel model,
         int microtingUid,
-        OneMinuteModeTimeline timeline)
+        OneMinuteModeTimeline timeline,
+        PlanPattern? planPattern)
     {
         var dateTime = DateTime.Now;
         var midnight = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0);
@@ -786,7 +791,8 @@ public class TimePlanningWorkingHoursService(
 
         planRegistration = await PlanRegistrationHelper
             .UpdatePlanRegistration(
-                planRegistration, dbContext, assignedSite, DateTime.Now.AddMonths(-1), timeline);
+                planRegistration, dbContext, assignedSite, DateTime.Now.AddMonths(-1), timeline,
+                planPattern);
 
         await planRegistration.Update(dbContext);
     }

@@ -8,7 +8,10 @@ using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
 using NSubstitute;
 using NUnit.Framework;
+using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using TimePlanning.Pn.Infrastructure.Models.PlanPattern;
+using TimePlanning.Pn.Infrastructure.Models.Settings;
+using TimePlanning.Pn.Services.TimePlanningPlanningService;
 using TimePlanning.Pn.Services.PlanPatternApplyService;
 using static TimePlanning.Pn.Test.PlanPatternTestSeed;
 
@@ -41,7 +44,9 @@ public class PlanPatternApplyServiceTests : TestBaseSetup
         _service = new PlanPatternApplyService(
             TimePlanningPnDbContext!,
             userService,
-            Substitute.For<ILogger<PlanPatternApplyService>>())
+            Substitute.For<ILogger<PlanPatternApplyService>>(),
+            Options(),
+            Substitute.For<ILogger<TimePlanningPlanningService>>())
         {
             FlexRecompute = (_, _, sdkSitId, from) =>
             {
@@ -49,6 +54,16 @@ public class PlanPatternApplyServiceTests : TestBaseSetup
                 return Task.FromResult(0);
             }
         };
+    }
+
+    private static IPluginDbOptions<TimePlanningBaseSettings> Options()
+    {
+        var options = Substitute.For<IPluginDbOptions<TimePlanningBaseSettings>>();
+        options.Value.Returns(new TimePlanningBaseSettings
+        {
+            AutoBreakCalculationActive = "0", DayOfPayment = 20, GpsEnabled = "0", SnapshotEnabled = "0"
+        });
+        return options;
     }
 
     private static List<PlanPatternDayModel> EveryDay(string planText, int weeks = 1) =>
@@ -301,7 +316,8 @@ public class PlanPatternApplyServiceTests : TestBaseSetup
         var userService = Substitute.For<IUserService>();
         userService.UserId.Returns(1);
         var service = new PlanPatternApplyService(TimePlanningPnDbContext!, userService,
-            Substitute.For<ILogger<PlanPatternApplyService>>());
+            Substitute.For<ILogger<PlanPatternApplyService>>(), Options(),
+            Substitute.For<ILogger<TimePlanningPlanningService>>());
 
         var result = await service.SavePatternAsync(site.Id, 1, Anchor, Today, EveryDay(PatternText), false);
 
@@ -354,6 +370,71 @@ public class PlanPatternApplyServiceTests : TestBaseSetup
             Is.All.EqualTo(Constants.WorkflowStates.Removed));
         var stored = await fresh.AssignedSites.AsNoTracking().SingleAsync(x => x.Id == site.Id);
         Assert.That(stored.UseGoogleSheetAsDefault, Is.False);
+    }
+
+    [Test]
+    public async Task Save_AcceptedHandoverDay_KeepsTheHandoverEvenWhenOverwriting()
+    {
+        var site = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, SiteId);
+        // AcceptAsync stamps ContentHandoverRequestId on both rows of an
+        // accepted handover and nowhere else.
+        var handedOver = await CreateRowAsync(TimePlanningPnDbContext!, SiteId, Today.AddDays(2), r =>
+        {
+            r.ContentHandoverRequestId = 4711;
+            r.PlanText = "10:00-12:00";
+            r.PlanHours = 2;
+        });
+
+        var result = await _service.SavePatternAsync(site.Id, 1, Anchor, Today, EveryDay(PatternText), true);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var stored = await ReadRowAsync(TimePlanningPnDbContext!, handedOver.Id);
+        Assert.That(stored.PlanText, Is.EqualTo("10:00-12:00"));
+        Assert.That(stored.PlanHours, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task Delete_RegeneratesFutureRowsFromTheTemplate()
+    {
+        var site = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, SiteId);
+        var saved = await _service.SavePatternAsync(site.Id, 1, Anchor, Today, EveryDay(PatternText), false);
+        Assert.That(saved.Success, Is.True, saved.Message);
+        var rows = await LiveRowsAsync(TimePlanningPnDbContext!, SiteId);
+        var manual = rows.Single(r => r.Date == Today.AddDays(3));
+        var handedOver = rows.Single(r => r.Date == Today.AddDays(4));
+        await TimePlanningPnDbContext!.PlanRegistrations.Where(x => x.Id == manual.Id)
+            .ExecuteUpdateAsync(x => x.SetProperty(r => r.PlanChangedByAdmin, true));
+        await TimePlanningPnDbContext.PlanRegistrations.Where(x => x.Id == handedOver.Id)
+            .ExecuteUpdateAsync(x => x.SetProperty(r => r.ContentHandoverRequestId, 4711));
+        _flexCalls.Clear();
+
+        var result = await _service.DeletePatternAsync(site.Id);
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var after = await LiveRowsAsync(TimePlanningPnDbContext, SiteId);
+        var regenerated = after.Where(r => r.Id != manual.Id && r.Id != handedOver.Id).ToList();
+        Assert.That(regenerated, Has.Count.EqualTo(179));
+        Assert.That(regenerated.Select(r => r.PlanText), Is.All.EqualTo(""),
+            "the template path writes no PlanText, so the pattern's is cleared");
+        Assert.That(regenerated.Select(Shift1),
+            Is.All.EqualTo((TemplateStart, TemplateEnd, TemplateBreak, TemplateHours)));
+        Assert.That(after.Single(r => r.Id == manual.Id).PlanText, Is.EqualTo(PatternText), "manual day kept");
+        Assert.That(after.Single(r => r.Id == handedOver.Id).PlanText, Is.EqualTo(PatternText), "handover day kept");
+        Assert.That(_flexCalls, Is.EqualTo(new[] { (SiteId, Today) }), "flex carried once");
+    }
+
+    [Test]
+    public async Task Delete_WithoutAPattern_IsNotFound()
+    {
+        var site = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, SiteId);
+        await _service.SavePatternAsync(site.Id, 1, Anchor, Today, EveryDay(PatternText), false);
+
+        var first = await _service.DeletePatternAsync(site.Id);
+        var second = await _service.DeletePatternAsync(site.Id);
+
+        Assert.That(first.Success, Is.True, first.Message);
+        Assert.That(second.Success, Is.False);
+        Assert.That(second.Message, Is.EqualTo("PlanPatternNotFound"));
     }
 
     // ------------------------------------------------------------- manual days

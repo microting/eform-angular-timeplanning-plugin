@@ -35,17 +35,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
+using Microting.eFormApi.BasePn.Infrastructure.Helpers.PluginDbOptions;
 using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
 using Microting.TimePlanningBase.Infrastructure.Helpers;
 using Sentry;
+using TimePlanning.Pn.Infrastructure.Models.Planning;
+using TimePlanning.Pn.Infrastructure.Models.Settings;
+using AssignedSite = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
+using TimePlanningPlanningService;
+using SdkSite = Microting.eForm.Infrastructure.Data.Entities.Site;
 
 /// <inheritdoc />
 public class PlanPatternApplyService(
     TimePlanningPnDbContext dbContext,
     IUserService userService,
-    ILogger<PlanPatternApplyService> logger) : IPlanPatternApplyService
+    ILogger<PlanPatternApplyService> logger,
+    IPluginDbOptions<TimePlanningBaseSettings> options,
+    ILogger<TimePlanningPlanningService> planningLogger) : IPlanPatternApplyService
 {
     /// <summary>
     /// How far ahead rows are written for a worker with a pattern: the same
@@ -129,21 +137,27 @@ public class PlanPatternApplyService(
 
     public async Task<OperationResult> DeletePatternAsync(int assignedSiteId)
     {
+        // Checked before the transaction: a retry after a lost commit ack
+        // removes nothing and must still count as the success it was.
+        var hasActivePattern = await dbContext.PlanPatterns
+            .AnyAsync(x => x.AssignedSiteId == assignedSiteId
+                           && x.WorkflowState != Constants.WorkflowStates.Removed);
+        if (!hasActivePattern)
+        {
+            return new OperationResult(false, "PlanPatternNotFound");
+        }
+
         try
         {
             var strategy = dbContext.Database.CreateExecutionStrategy();
-            var removed = await strategy.ExecuteAsync(async () =>
+            await strategy.ExecuteAsync(async () =>
             {
                 // Idempotent on a retry: forget whatever the failed attempt tracked.
                 dbContext.ChangeTracker.Clear();
                 await using var transaction = await dbContext.Database.BeginTransactionAsync();
-                var count = await RemoveActivePatternsAsync(assignedSiteId);
+                await RemoveActivePatternsAsync(assignedSiteId);
                 await transaction.CommitAsync();
-                return count;
             });
-            return removed == 0
-                ? new OperationResult(false, "PlanPatternNotFound")
-                : new OperationResult(true);
         }
         catch (Exception e)
         {
@@ -152,6 +166,90 @@ public class PlanPatternApplyService(
             logger.LogError(e, "Deleting the PlanPattern for AssignedSite {AssignedSiteId} failed", assignedSiteId);
             return new OperationResult(false, "ErrorWhileDeletingPlanPattern");
         }
+
+        // The pattern is gone; the worker's rows are handed back to the
+        // weekday template. As for a save, a failure here does not undo the
+        // delete: the next planning load rewrites open rows from the template.
+        try
+        {
+            await RegenerateFromTemplateAsync(assignedSiteId);
+        }
+        catch (Exception e)
+        {
+            dbContext.ChangeTracker.Clear();
+            SentrySdk.CaptureException(e);
+            Console.WriteLine(e);
+            logger.LogError(e,
+                "PlanPattern for AssignedSite {AssignedSiteId} deleted, but rewriting its rows from the template failed",
+                assignedSiteId);
+        }
+
+        return new OperationResult(true);
+    }
+
+    /// <summary>
+    /// Rewrites the worker's rows from today to today + <see cref="HorizonDays"/>
+    /// through the existing template path,
+    /// <see cref="PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod"/>,
+    /// with its own skip rules (resigned worker, payment cut-off,
+    /// PlanChangedByAdmin, the day lock). Days of an accepted content handover
+    /// are not handed to it. That path never writes PlanText, so PlanText is
+    /// first cleared on every row handed to it (each open, unmanual,
+    /// non-handover row from today to today + <see cref="HorizonDays"/>,
+    /// whoever wrote its text). Then the flex balance is carried forward once.
+    /// </summary>
+    private async Task RegenerateFromTemplateAsync(int assignedSiteId)
+    {
+        var assignedSite = await dbContext.AssignedSites.SingleAsync(x => x.Id == assignedSiteId);
+        if (assignedSite.UseGoogleSheetAsDefault)
+        {
+            // The sheet owns this worker's rows; the template does not apply.
+            return;
+        }
+
+        var from = Today;
+        var to = Today.AddDays(HorizonDays);
+        var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, assignedSite.SiteId);
+        var rows = await dbContext.PlanRegistrations
+            .Where(x => x.SdkSitId == assignedSite.SiteId)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .Where(x => x.Date >= from && x.Date <= to)
+            .Where(x => !x.PlanChangedByAdmin)
+            .Where(x => x.ContentHandoverRequestId == null)
+            .WhereOpen(lockedThrough)
+            .OrderBy(x => x.Date)
+            .ToListAsync();
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        if (!assignedSite.Resigned)
+        {
+            foreach (var row in rows.Where(x => !string.IsNullOrEmpty(x.PlanText)))
+            {
+                row.PlanText = "";
+                row.UpdatedByUserId = userService.UserId;
+                await row.Update(dbContext);
+            }
+        }
+
+        await PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod(
+            rows.Select(x => new PlanRegistration { Id = x.Id, Date = x.Date }).ToList(),
+            new TimePlanningPlanningModel
+            {
+                SiteId = assignedSite.SiteId,
+                PlanningPrDayModels = new List<TimePlanningPlanningPrDayModel>()
+            },
+            dbContext,
+            assignedSite,
+            planningLogger,
+            new SdkSite { MicrotingUid = assignedSite.SiteId },
+            from,
+            to,
+            options);
+
+        await CarryFlexForwardAsync(assignedSite, from);
     }
 
     public async Task<List<DateTime>> GetManualDaysInRangeAsync(int assignedSiteId, DateTime validFrom)
@@ -275,8 +373,7 @@ public class PlanPatternApplyService(
     /// version row. Removes them all, so a duplicate left by any other writer
     /// is cleaned up too.
     /// </summary>
-    /// <returns>The number of patterns removed.</returns>
-    private async Task<int> RemoveActivePatternsAsync(int assignedSiteId)
+    private async Task RemoveActivePatternsAsync(int assignedSiteId)
     {
         var activePatterns = await dbContext.PlanPatterns
             .Where(x => x.AssignedSiteId == assignedSiteId)
@@ -298,8 +395,6 @@ public class PlanPatternApplyService(
             pattern.UpdatedByUserId = userService.UserId;
             await pattern.Delete(dbContext);
         }
-
-        return activePatterns.Count;
     }
 
     /// <summary>
@@ -369,6 +464,13 @@ public class PlanPatternApplyService(
                 PlanPatternPlanner.ApplyPlanText(row, planText);
                 await row.Create(dbContext);
                 result.RowsWritten++;
+                continue;
+            }
+
+            // An accepted content handover moved real work onto or off this
+            // day; neither a save nor an overwrite takes it back.
+            if (PlanPatternPlanner.IsAcceptedHandoverDay(row))
+            {
                 continue;
             }
 

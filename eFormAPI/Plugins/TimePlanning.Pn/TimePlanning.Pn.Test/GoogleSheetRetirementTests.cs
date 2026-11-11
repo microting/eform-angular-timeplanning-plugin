@@ -103,16 +103,21 @@ public class GoogleSheetRetirementTests : TestBaseSetup
         Assert.That(await UseGoogleSheet(plain.Id), Is.True);
     }
 
+    // Deleting a pattern hands the worker to the weekday template, not back
+    // to the sheet, so a removed pattern still keeps them off it at start-up.
     [Test]
-    public async Task Seed_NotRetired_RemovedPatternDoesNotProtectTheWorker()
+    public async Task Seed_NotRetired_WorkerWhosePatternWasDeletedStaysOffTheSheet()
     {
         var worker = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, 7004, useGoogleSheet: false);
         var pattern = await CreatePatternAsync(TimePlanningPnDbContext!, worker, Today);
         await pattern.Delete(TimePlanningPnDbContext!);
+        var neverPatterned = await CreateTemplateWorkerAsync(TimePlanningPnDbContext!, 7007, useGoogleSheet: false);
 
         new EformTimePlanningPlugin().SeedDatabase(PluginConnectionString);
+        new EformTimePlanningPlugin().SeedDatabase(PluginConnectionString);
 
-        Assert.That(await UseGoogleSheet(worker.Id), Is.True);
+        Assert.That(await UseGoogleSheet(worker.Id), Is.False);
+        Assert.That(await UseGoogleSheet(neverPatterned.Id), Is.True);
     }
 
     [Test]

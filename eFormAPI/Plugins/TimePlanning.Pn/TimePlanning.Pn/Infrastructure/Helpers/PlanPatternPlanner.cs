@@ -89,11 +89,23 @@ public static class PlanPatternPlanner
     }
 
     /// <summary>
+    /// True when the row carries content an accepted content handover moved
+    /// onto or off it. ContentHandoverService.AcceptAsync is the only writer
+    /// of ContentHandoverRequestId, so a stamped row is always the result of
+    /// an accepted handover, and the pattern must not regenerate it.
+    /// </summary>
+    public static bool IsAcceptedHandoverDay(PlanRegistration planRegistration) =>
+        planRegistration.ContentHandoverRequestId != null;
+
+    /// <summary>
     /// Applies the pattern to the row when it governs the row's date.
+    /// A governed day that holds an accepted content handover is left as it
+    /// is: the pattern owns the day, so the template must not run either.
     /// </summary>
     /// <returns>
-    /// true when the row now carries the pattern's plan; false when the caller
-    /// must write the plan the way it always has.
+    /// true when the pattern governs the row (it now carries the pattern's
+    /// plan, or keeps its handover); false when the caller must write the plan
+    /// the way it always has.
     /// </returns>
     public static bool TryApply(PlanPattern? pattern, PlanRegistration planRegistration, ILogger? logger = null)
     {
@@ -103,18 +115,11 @@ public static class PlanPatternPlanner
             return false;
         }
 
-        ApplyPlanText(planRegistration, planText);
-        return true;
-    }
+        if (!IsAcceptedHandoverDay(planRegistration))
+        {
+            ApplyPlanText(planRegistration, planText);
+        }
 
-    /// <summary>
-    /// <see cref="TryApply"/> for a caller that writes a single row and has
-    /// not loaded the worker's pattern.
-    /// </summary>
-    public static async Task<bool> PlanFromPattern(TimePlanningPnDbContext dbContext, int assignedSiteId,
-        PlanRegistration planRegistration)
-    {
-        var pattern = await LoadActivePatternAsync(dbContext, assignedSiteId);
-        return TryApply(pattern, planRegistration);
+        return true;
     }
 }

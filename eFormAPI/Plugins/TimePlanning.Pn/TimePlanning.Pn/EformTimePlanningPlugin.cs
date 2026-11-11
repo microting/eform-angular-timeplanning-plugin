@@ -957,14 +957,15 @@ public class EformTimePlanningPlugin : IEformPlugin
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed).ToList();
 
         // #5489: a retired sheet puts nobody back on it, and until then a
-        // worker with an active PlanPattern stays off it, or every restart
-        // would silently undo the pattern. With no patterns and the sheet not
-        // retired, every worker is put on the sheet exactly as before.
+        // worker who has ever had a PlanPattern stays off it: an active one
+        // would be silently undone by every restart, and deleting one hands
+        // the worker to the weekday template, not back to the sheet. With no
+        // PlanPattern rows and the sheet not retired, every worker is put on
+        // the sheet exactly as before.
         var sheetRetired = GoogleSheetRetirement.IsRetired(dbContext);
         var patternedAssignedSiteIds = sheetRetired
             ? new HashSet<int>()
             : dbContext.PlanPatterns
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Select(x => x.AssignedSiteId)
                 .ToHashSet();
 
