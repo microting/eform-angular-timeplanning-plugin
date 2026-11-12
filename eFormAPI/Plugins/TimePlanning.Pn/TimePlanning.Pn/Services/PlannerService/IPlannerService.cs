@@ -12,9 +12,12 @@ using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 /// The web planner behind "Planlægning (beta)" (#5489). Every per-worker call
 /// is limited to the workers the caller sees on the planning board
 /// (SiteScopeResolver); a worker outside it is refused as not found.
-/// The Google Sheet import (preview and apply) and the settings are
-/// organisation-wide by design and not scoped: retiring the sheet affects
-/// every worker. They are gated by the planner permission alone.
+/// The Google Sheet import preview lists only the sheet workers in the
+/// caller's scope. Applying the import and changing the settings retire or
+/// restore the sheet for the whole organisation (a restored sheet re-seeds
+/// every worker onto it), so they need full scope: the caller must see every
+/// active worker in the organisation, else they are refused with
+/// PlannerNeedsFullScope. Reading the settings needs only the permission.
 /// </summary>
 public interface IPlannerService
 {

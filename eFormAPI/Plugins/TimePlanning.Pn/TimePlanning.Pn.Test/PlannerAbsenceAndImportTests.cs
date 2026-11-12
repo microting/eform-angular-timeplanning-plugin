@@ -36,27 +36,31 @@ public class PlannerAbsenceAndImportTests : PlannerTestBase
         {
             await CreateRowAsync(TimePlanningPnDbContext!, WorkerUid, d, r => r.PlanHours = 7.5);
         }
-        await CreateRowAsync(TimePlanningPnDbContext!, WorkerUid, d3); // no plan
+        // A day off set by hand: the template leaves it without a plan.
+        await CreateRowAsync(TimePlanningPnDbContext!, WorkerUid, d3, r => r.PlanChangedByAdmin = true);
+        // d5 and d6 have no rows yet; the template plans them once they exist.
+        var (d5, d6) = (Today.AddDays(14), Today.AddDays(15));
 
         var result = await BuildService().CreateAbsenceAsync(new PlannerAbsenceCreateModel
         {
-            AssignedSiteId = worker.Id, From = d1, To = d4, MessageId = 2, Comment = "sommerferie"
+            AssignedSiteId = worker.Id, From = d1, To = d6, MessageId = 2, Comment = "sommerferie"
         });
 
         Assert.That(result.Success, Is.True, result.Message);
-        Assert.That(result.Model!.AppliedDates, Is.EqualTo(new[] { d1, d2, d4 }));
+        Assert.That(result.Model!.AppliedDates, Is.EqualTo(new[] { d1, d2, d4, d5, d6 }),
+            "days with no row yet are created like the grid does and count when planned");
         Assert.That(result.Model.SkippedDates, Is.EqualTo(new[] { d3 }));
 
         var request = await TimePlanningPnDbContext!.AbsenceRequests.AsNoTracking().Include(x => x.Days)
             .SingleAsync(x => x.Id == result.Model.AbsenceRequestId);
         Assert.That((request.Status, request.RequestedBySdkSitId, request.DecidedBySdkSitId, request.DateFrom, request.DateTo),
-            Is.EqualTo((AbsenceRequestStatus.Approved, WorkerUid, (int?)ManagerUid, d1, d4)));
+            Is.EqualTo((AbsenceRequestStatus.Approved, WorkerUid, (int?)ManagerUid, d1, d6)));
         Assert.That(request.DecidedAtUtc, Is.Not.Null);
         Assert.That(request.Days.Select(x => (x.Date, x.MessageId)).OrderBy(x => x.Date),
-            Is.EqualTo(new[] { (d1, 2), (d2, 2), (d4, 2) }));
+            Is.EqualTo(new[] { (d1, 2), (d2, 2), (d4, 2), (d5, 2), (d6, 2) }));
 
         var rows = await RowsAsync(WorkerUid);
-        foreach (var d in new[] { d1, d2, d4 })
+        foreach (var d in new[] { d1, d2, d4, d5, d6 })
         {
             var row = rows.Single(r => r.Date == d);
             Assert.That((row.MessageId, row.OnVacation, row.AbsenceRequestId, row.AbsenceApprovedBySdkSitId, row.PlanHours),
@@ -163,9 +167,14 @@ public class PlannerAbsenceAndImportTests : PlannerTestBase
     private static string ThreeWeekRotation(int week, int dow) =>
         dow >= 5 ? "" : (week % 3) switch { 0 => "7-15/0,5", 1 => "15:00-23:00/0.5", _ => "Fri" };
 
-    private async Task<(AssignedSite Recognised, AssignedSite Inconsistent, AssignedSite OffSheet)> SeedImportAsync()
+    private async Task<(AssignedSite Recognised, AssignedSite Inconsistent, AssignedSite OffSheet)> SeedImportAsync(
+        bool asAdmin = true)
     {
-        await SeedAdminCallerAsync(UserService);
+        if (asAdmin)
+        {
+            await SeedAdminCallerAsync(UserService);
+        }
+
         var recognised = await CreateWorkerAsync(8601, useGoogleSheet: true);
         await SeedHistoryAsync(8601, ThreeWeekRotation);
         var inconsistent = await CreateWorkerAsync(8602, useGoogleSheet: true);
@@ -257,7 +266,7 @@ public class PlannerAbsenceAndImportTests : PlannerTestBase
     [Test]
     public async Task ImportApply_IsAtomic_AndRefusesAnInvalidPattern()
     {
-        var (recognised, inconsistent, _) = await SeedImportAsync();
+        var (recognised, inconsistent, offSheet) = await SeedImportAsync();
         var service = BuildService();
         var proposal = (await service.GetImportPreviewAsync()).Model!.Workers.Single(w => w.Recognised);
         var good = new PlannerImportPatternModel
@@ -284,6 +293,17 @@ public class PlannerAbsenceAndImportTests : PlannerTestBase
         });
         Assert.That((missing.Success, missing.Message), Is.EqualTo((false, "PlannerWorkerNotFound")));
 
+        // Only workers on the sheet get a pattern from the import.
+        var notOnSheet = await service.ApplyImportAsync(new PlannerImportApplyModel
+        {
+            Patterns = [good, new PlannerImportPatternModel
+            {
+                AssignedSiteId = offSheet.Id, RotationWeeks = 3, AnchorDate = proposal.AnchorDate!.Value,
+                Days = proposal.Days
+            }]
+        });
+        Assert.That((notOnSheet.Success, notOnSheet.Message), Is.EqualTo((false, "PlannerWorkerNotFound")));
+
         var failingApply = BuildApplyService();
         failingApply.BeforeImportCommit = () => throw new InvalidOperationException("boom");
         var failed = await BuildService(failingApply).ApplyImportAsync(new PlannerImportApplyModel { Patterns = [good] });
@@ -294,6 +314,76 @@ public class PlannerAbsenceAndImportTests : PlannerTestBase
         Assert.That(await fresh.PlanPatterns.CountAsync(), Is.EqualTo(0));
         Assert.That((await fresh.AssignedSites.AsNoTracking().SingleAsync(x => x.Id == recognised.Id)).UseGoogleSheetAsDefault,
             Is.True);
+    }
+
+    // Retiring or restoring the sheet affects every worker on it: a caller who
+    // cannot plan all of them may preview their own, but not apply or toggle.
+    [Test]
+    public async Task ImportAndSettings_NeedFullScope_AndThePreviewIsScoped()
+    {
+        await SeedManagerCallerAsync(UserService, 8610, 8601);
+        var (recognised, inconsistent, _) = await SeedImportAsync(asAdmin: false);
+        var service = BuildService();
+
+        var preview = await service.GetImportPreviewAsync();
+        Assert.That(preview.Success, Is.True, preview.Message);
+        var ids = preview.Model!.Workers.Select(w => w.AssignedSiteId).ToList();
+        Assert.That(ids, Does.Contain(recognised.Id));
+        Assert.That(ids, Does.Not.Contain(inconsistent.Id), "a sheet worker outside the caller's scope");
+        var proposal = preview.Model.Workers.Single(w => w.AssignedSiteId == recognised.Id);
+
+        var apply = await service.ApplyImportAsync(new PlannerImportApplyModel
+        {
+            Patterns = [new PlannerImportPatternModel
+            {
+                AssignedSiteId = recognised.Id, RotationWeeks = 3, AnchorDate = proposal.AnchorDate!.Value,
+                Days = proposal.Days
+            }]
+        });
+        Assert.That((apply.Success, apply.Message), Is.EqualTo((false, "PlannerNeedsFullScope")));
+
+        foreach (var retired in new[] { true, false })
+        {
+            var put = await service.UpdateSettingsAsync(new PlannerSettingsModel { GoogleSheetRetired = retired });
+            Assert.That((put.Success, put.Message), Is.EqualTo((false, "PlannerNeedsFullScope")), $"retired={retired}");
+        }
+
+        Assert.That((await service.GetSettingsAsync()).Success, Is.True, "the settings stay readable");
+        Assert.That(await IsRetiredAsync(), Is.False);
+        await using var fresh = CreateTimePlanningPnDbContext();
+        Assert.That(await fresh.PlanPatterns.CountAsync(), Is.EqualTo(0));
+        Assert.That(await fresh.AssignedSites.AsNoTracking()
+            .Where(x => x.Id == recognised.Id || x.Id == inconsistent.Id)
+            .AllAsync(x => x.UseGoogleSheetAsDefault), Is.True, "nothing written");
+    }
+
+    // Full scope means the whole organisation, not the workers on the sheet:
+    // once the sheet is retired nobody is on it, and restoring it re-seeds
+    // everyone onto it at the next start.
+    [Test]
+    public async Task SettingsAndImport_NeedOrgWideScope_EvenWhenNobodyIsOnTheSheet()
+    {
+        await SeedAdminCallerAsync(UserService);
+        await CreateWorkerAsync(8801);
+        await CreateWorkerAsync(8802);
+        var service = BuildService();
+        Assert.That((await service.UpdateSettingsAsync(new PlannerSettingsModel { GoogleSheetRetired = true })).Success,
+            Is.True, "an admin sees everyone");
+
+        // Now a manager of 8801 only; 8802 is outside their scope.
+        await SeedManagerCallerAsync(UserService, 8810, 8801);
+        await TimePlanningPnDbContext!.AssignedSites
+            .ExecuteUpdateAsync(x => x.SetProperty(a => a.UseGoogleSheetAsDefault, false));
+
+        var restore = await service.UpdateSettingsAsync(new PlannerSettingsModel { GoogleSheetRetired = false });
+        Assert.That((restore.Success, restore.Message), Is.EqualTo((false, "PlannerNeedsFullScope")));
+        Assert.That(await IsRetiredAsync(), Is.True);
+
+        await GoogleSheetRetirement.SetRetiredAsync(TimePlanningPnDbContext!, false, 1);
+        var apply = await service.ApplyImportAsync(new PlannerImportApplyModel());
+        Assert.That((apply.Success, apply.Message), Is.EqualTo((false, "PlannerNeedsFullScope")),
+            "no sheet workers at all, but the caller still does not see everyone");
+        Assert.That(await IsRetiredAsync(), Is.False);
     }
 
     // ------------------------------------------------------------- settings

@@ -82,6 +82,13 @@ public class PlannerService(
     /// </summary>
     internal Func<Task>? BeforeAbsenceCommit { get; set; }
 
+    /// <summary>
+    /// Runs in "every weekday from" after the new pattern is saved and before
+    /// the days before the from-date are frozen, where a concurrent grid read
+    /// could rewrite them. A test seam; null in production.
+    /// </summary>
+    internal Func<Task>? BetweenSaveAndFreeze { get; set; }
+
     /// <summary>Longest manager absence in one request.</summary>
     private const int MaxAbsenceDays = 366;
 
@@ -101,14 +108,19 @@ public class PlannerService(
         {
             var from = model.From.Date;
             var to = from.AddDays(model.Days - 1);
+            // Whole ISO weeks, so a week sum covers the week even when the
+            // grid starts mid-week; the grid itself shows only from..to.
+            var firstMonday = MondayOf(from);
+            var afterLastSunday = MondayOf(to).AddDays(7);
 
             // The planning board's own read: the same worker scope
             // (SiteScopeResolver), the same tag filter, and the same lazy
-            // creation of missing rows, pattern branch included.
+            // creation of missing rows, pattern branch included, over the
+            // whole weeks the sums need.
             var index = await planningService.Index(new TimePlanningPlanningRequestModel
             {
-                DateFrom = from,
-                DateTo = to,
+                DateFrom = firstMonday,
+                DateTo = afterLastSunday.AddDays(-1),
                 TagIds = model.TagIds ?? [],
                 ShowResignedSites = false,
                 Sort = ""
@@ -146,10 +158,6 @@ public class PlannerService(
                 .Where(x => ruleSetIds.Contains(x.Id))
                 .ToDictionaryAsync(x => x.Id, x => x.WeeklyNormalSeconds);
 
-            // Whole ISO weeks, so a week sum covers the week even when the
-            // grid starts mid-week.
-            var firstMonday = MondayOf(from);
-            var afterLastSunday = MondayOf(to).AddDays(7);
             var rows = await dbContext.PlanRegistrations.AsNoTracking()
                 .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                 .Where(x => siteIds.Contains(x.SdkSitId))
@@ -356,6 +364,13 @@ public class PlannerService(
                 return Refused<PlannerCellsUpdateResultModel>(errorKey);
             }
 
+            // An absence is a manager's decision, as for CreateAbsenceAsync and
+            // ApproveAsync: only a current manager of the worker may set one.
+            // Plan text and "Ryd" keep the planning board's scope-only rule.
+            var mayDecideAbsence = model.MessageId == null
+                ? []
+                : await ManagedByCallerAsync(scoped.Select(x => x.SiteId).Distinct().ToList());
+
             var result = new PlannerCellsUpdateResultModel();
             foreach (var group in model.Cells.GroupBy(c => c.AssignedSiteId))
             {
@@ -363,6 +378,12 @@ public class PlannerService(
                 if (assignedSite == null)
                 {
                     AddError(result, group.Key, "PlannerWorkerNotFound");
+                    continue;
+                }
+
+                if (model.MessageId != null && !mayDecideAbsence.Contains(assignedSite.SiteId))
+                {
+                    AddError(result, group.Key, "UnauthorizedToApprove");
                     continue;
                 }
 
@@ -496,6 +517,17 @@ public class PlannerService(
             day.PlanText = planText;
         }
 
+        // The days the pattern governs before the from-date must keep the
+        // plan they have. Their rows are created first, with the old pattern,
+        // and frozen once the new pattern is saved.
+        var freezeFrom = pattern.ValidFrom.Date > Today ? pattern.ValidFrom.Date : Today;
+        var freezeNeeded = fromDate > freezeFrom;
+        if (freezeNeeded && !(await MaterialiseRowsAsync(assignedSite, freezeFrom, fromDate.AddDays(-1))).Success)
+        {
+            AddError(result, assignedSite.Id, "PlannerErrorOccurred");
+            return;
+        }
+
         var saved = await planPatternApplyService.SavePatternAsync(assignedSite.Id, pattern.RotationWeeks,
             pattern.AnchorDate, pattern.ValidFrom, days, false, fromDate);
         if (!saved.Success)
@@ -504,12 +536,91 @@ public class PlannerService(
             return;
         }
 
+        if (BetweenSaveAndFreeze != null)
+        {
+            await BetweenSaveAndFreeze();
+        }
+
+        if (freezeNeeded)
+        {
+            await FreezeDaysBeforeAsync(assignedSite, pattern, patternDays, freezeFrom, fromDate);
+        }
+
         result.UpdatedCount += saved.Model!.RowsWritten;
         result.LockedCells.AddRange(saved.Model.LockedDays.Select(d =>
             new PlannerCellRefModel { AssignedSiteId = assignedSite.Id, Date = d }));
         if (saved.Model.WarningKey != null)
         {
             AddError(result, assignedSite.Id, saved.Model.WarningKey);
+        }
+    }
+
+    /// <summary>
+    /// Creates the worker's missing rows from <paramref name="from"/> to
+    /// <paramref name="to"/> through the planning board's own read (template
+    /// or pattern, locked days skipped), so later code sees the plan a grid
+    /// read would show.
+    /// </summary>
+    private Task<OperationDataResult<List<TimePlanningPlanningModel>>> MaterialiseRowsAsync(
+        AssignedSite assignedSite, DateTime from, DateTime to) =>
+        planningService.Index(new TimePlanningPlanningRequestModel
+        {
+            DateFrom = from,
+            DateTo = to,
+            SiteId = assignedSite.SiteId,
+            TagIds = [],
+            ShowResignedSites = assignedSite.Resigned,
+            Sort = ""
+        });
+
+    /// <summary>
+    /// The pattern keeps its ValidFrom, so every later row write (a grid
+    /// read, the nightly job) would give the edited pattern days their new
+    /// text before <paramref name="fromDate"/> as well. The open rows from
+    /// <paramref name="freezeFrom"/> (max of today and the pattern's
+    /// ValidFrom: never a day the pattern does not govern) up to the
+    /// from-date that fall on an edited (week, weekday) keep the plan they
+    /// have: they are marked PlanChangedByAdmin, which every writer leaves
+    /// alone. Rows already manual or locked need nothing. Runs only after
+    /// the pattern is saved, so a refused save freezes nothing.
+    ///
+    /// A read of the grid or board between the save's commit and this freeze
+    /// may already have given a row the NEW text; so each frozen row also gets
+    /// <paramref name="oldPattern"/>'s text again (an accepted handover day
+    /// keeps its own), and flex is carried once from the earliest repaired day.
+    /// </summary>
+    private async Task FreezeDaysBeforeAsync(AssignedSite assignedSite, PlanPattern oldPattern,
+        HashSet<(int WeekIndex, int DayOfWeek)> editedDays, DateTime freezeFrom, DateTime fromDate)
+    {
+        var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, assignedSite.SiteId);
+        var rows = await dbContext.PlanRegistrations
+            .Where(x => x.SdkSitId == assignedSite.SiteId)
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .Where(x => x.Date >= freezeFrom && x.Date < fromDate)
+            .Where(x => !x.PlanChangedByAdmin)
+            .OrderBy(x => x.Date)
+            .ToListAsync();
+        DateTime? repairedFrom = null;
+        foreach (var row in rows.Where(r => !DayLockHelper.IsLocked(lockedThrough, r.Date)
+                                            && editedDays.Contains((
+                                                RotationWeekIndex(oldPattern.AnchorDate, oldPattern.RotationWeeks, r.Date),
+                                                IsoDayOfWeek(r.Date)))))
+        {
+            var oldText = PlanPatternPlanner.ResolvePlanText(oldPattern, row.Date, logger);
+            if (oldText != null && row.PlanText != oldText && !PlanPatternPlanner.IsAcceptedHandoverDay(row))
+            {
+                PlanPatternPlanner.ApplyPlanText(row, oldText);
+                repairedFrom ??= row.Date;
+            }
+
+            row.PlanChangedByAdmin = true;
+            row.UpdatedByUserId = userService.UserId;
+            await row.Update(dbContext);
+        }
+
+        if (repairedFrom != null)
+        {
+            await CarryFlexForwardAsync(assignedSite, repairedFrom.Value);
         }
     }
 
@@ -727,6 +838,15 @@ public class PlannerService(
                 return Refused<PlannerAbsenceResultModel>("OverlappingAbsenceRequestExists");
             }
 
+            // Rows the grid has not shown yet do not exist: create them the way
+            // the grid does (template or pattern), so a planned day is not
+            // mistaken for a day off.
+            var materialised = await MaterialiseRowsAsync(assignedSite, from, to);
+            if (!materialised.Success)
+            {
+                return new OperationDataResult<PlannerAbsenceResultModel>(false, materialised.Message);
+            }
+
             var plannedDates = await PlannedDatesAsync(workerSdkSitId, from, to);
             var result = new PlannerAbsenceResultModel
             {
@@ -848,11 +968,12 @@ public class PlannerService(
                 return Refused<PlannerImportPreviewModel>("PlannerGoogleSheetAlreadyRetired");
             }
 
-            var workers = await dbContext.AssignedSites.AsNoTracking()
-                .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-                .Where(x => x.UseGoogleSheetAsDefault && !x.Resigned)
-                .OrderBy(x => x.Id)
-                .ToListAsync();
+            var (workers, _, errorKey) = await SheetWorkersInScopeAsync();
+            if (errorKey != null)
+            {
+                return Refused<PlannerImportPreviewModel>(errorKey);
+            }
+
             var siteIds = workers.Select(x => x.SiteId).Distinct().ToList();
 
             var windowStart = MondayOf(Today).AddDays(-7 * RotationInference.HistoryWeeks);
@@ -915,8 +1036,29 @@ public class PlannerService(
                 return Refused<PlannerImportApplyResultModel>("PlannerGoogleSheetAlreadyRetired");
             }
 
+            // Retiring the sheet affects every worker on it, so only a caller
+            // who can plan all of them may do it; and only those workers get
+            // a pattern from the import.
+            var (sheetWorkers, fullScope, errorKey) = await SheetWorkersInScopeAsync();
+            if (errorKey != null)
+            {
+                return Refused<PlannerImportApplyResultModel>(errorKey);
+            }
+
+            if (!fullScope)
+            {
+                return Refused<PlannerImportApplyResultModel>("PlannerNeedsFullScope");
+            }
+
+            var patterns = model.Patterns ?? [];
+            var importable = sheetWorkers.Select(x => x.Id).ToHashSet();
+            if (patterns.Any(p => !importable.Contains(p.AssignedSiteId)))
+            {
+                return Refused<PlannerImportApplyResultModel>("PlannerWorkerNotFound");
+            }
+
             var imports = new List<PlanPatternImport>();
-            foreach (var pattern in model.Patterns ?? [])
+            foreach (var pattern in patterns)
             {
                 var days = NormaliseDays(pattern.Days);
                 if (days == null)
@@ -984,6 +1126,13 @@ public class PlannerService(
     {
         try
         {
+            // The flag switches the sheet off or on for every worker on it.
+            var (_, fullScope, errorKey) = await SheetWorkersInScopeAsync();
+            if (errorKey != null || !fullScope)
+            {
+                return new OperationResult(false, localizationService.GetString(errorKey ?? "PlannerNeedsFullScope"));
+            }
+
             await GoogleSheetRetirement.SetRetiredAsync(dbContext, model.GoogleSheetRetired, userService.UserId);
             return new OperationResult(true, localizationService.GetString("PlannerSettingsSaved"));
         }
@@ -1005,6 +1154,35 @@ public class PlannerService(
         var scope = await SiteScopeResolver.ResolveForCurrentUserAsync(
             assignedSites, dbContext, sdkDbContext, baseDbContext, userService);
         return scope.ErrorKey != null ? ([], scope.ErrorKey) : (scope.ScopedSites, null);
+    }
+
+    /// <summary>
+    /// The active, non-resigned workers on the Google Sheet that the caller
+    /// may plan, and FullScope: whether the caller may plan EVERY active,
+    /// non-resigned worker in the organisation. Retiring or restoring the
+    /// sheet decides for all of them (a restored sheet re-seeds every worker
+    /// onto it at the next start), so it is measured against the whole
+    /// organisation, not against who happens to be on the sheet now, which
+    /// is nobody once the sheet is retired.
+    /// </summary>
+    private async Task<(List<AssignedSite> Workers, bool FullScope, string? ErrorKey)> SheetWorkersInScopeAsync()
+    {
+        var (scoped, errorKey) = await ScopedSitesAsync();
+        if (errorKey != null)
+        {
+            return ([], false, errorKey);
+        }
+
+        var scopedIds = scoped.Select(x => x.Id).ToHashSet();
+        var activeWorkers = await dbContext.AssignedSites.AsNoTracking()
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .Where(x => !x.Resigned)
+            .OrderBy(x => x.Id)
+            .ToListAsync();
+        var sheetWorkersInScope = activeWorkers
+            .Where(x => x.UseGoogleSheetAsDefault && scopedIds.Contains(x.Id))
+            .ToList();
+        return (sheetWorkersInScope, activeWorkers.All(x => scopedIds.Contains(x.Id)), null);
     }
 
     /// <summary>The worker when the caller may plan them; else the key to refuse with.</summary>

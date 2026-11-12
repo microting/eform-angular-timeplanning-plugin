@@ -4,10 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microting.eForm.Infrastructure.Constants;
+using Microting.eFormApi.BasePn.Infrastructure.Models.API;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
+using NSubstitute;
 using NUnit.Framework;
-using TimePlanning.Pn.Infrastructure.Models.PlanPattern;
+using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Models.Planner;
+using TimePlanning.Pn.Infrastructure.Models.PlanPattern;
+using TimePlanning.Pn.Services.PlanPatternApplyService;
 using static TimePlanning.Pn.Test.PlanPatternTestSeed;
 
 #nullable enable
@@ -138,7 +142,8 @@ public class PlannerGridAndEditTests : PlannerTestBase
     [Test]
     public async Task Cells_OnlyTheseDays_WritesCanonicalPlan_FlagsIt_SkipsLockedDays_AndHandlesAbsenceAndClear()
     {
-        await SeedAdminCallerAsync(UserService);
+        // The caller manages 8201; their own site 8200 is in scope but not managed.
+        await SeedManagerCallerAsync(UserService, 8200, 8201);
         var worker = await CreateWorkerAsync(8201);
         var lockedDay = Today.AddDays(3);
         await LockThroughAsync(TimePlanningPnDbContext!, 8201, lockedDay);
@@ -176,6 +181,25 @@ public class PlannerGridAndEditTests : PlannerTestBase
         var absent = await RowAsync(8201, d1);
         Assert.That((absent.MessageId, absent.PlanText, absent.PlanHours), Is.EqualTo(((int?)2, "7:00-15:00/0.5", 7.5)),
             "absence sets the message like the manual edit and keeps the plan");
+
+        // An absence is a manager's decision: a worker the caller may plan but
+        // does not manage (here their own site) is refused, a plan edit is not.
+        var ownSite = await TimePlanningPnDbContext!.AssignedSites.AsNoTracking().SingleAsync(x => x.SiteId == 8200);
+        var ownAbsence = await service.UpdateCellsAsync(new PlannerCellsUpdateModel
+        {
+            Cells = [Cell(ownSite.Id, d1)], MessageId = 2, Mode = PlannerEditModes.OnlyTheseDays
+        });
+        Assert.That(ownAbsence.Success, Is.True, ownAbsence.Message);
+        Assert.That(ownAbsence.Model!.UpdatedCount, Is.EqualTo(0));
+        Assert.That(ownAbsence.Model.Errors.Select(e => (e.AssignedSiteId, e.Key)),
+            Is.EqualTo(new[] { (ownSite.Id, "UnauthorizedToApprove") }));
+        Assert.That((await RowsAsync(8200)).Any(r => r.MessageId != null), Is.False, "nothing written");
+        var ownPlan = await service.UpdateCellsAsync(new PlannerCellsUpdateModel
+        {
+            Cells = [Cell(ownSite.Id, d1)], ShortForm = "8-12", Mode = PlannerEditModes.OnlyTheseDays
+        });
+        Assert.That((ownPlan.Success, ownPlan.Model!.UpdatedCount, ownPlan.Model.Errors.Count), Is.EqualTo((true, 1, 0)));
+        Assert.That((await RowAsync(8200, d1)).PlanText, Is.EqualTo("8:00-12:00"));
 
         var dayOff = await service.UpdateCellsAsync(new PlannerCellsUpdateModel
         {
@@ -250,6 +274,145 @@ public class PlannerGridAndEditTests : PlannerTestBase
         Assert.That(rows.Single(r => r.Date == fromDate.AddDays(7 + 3)).PlanText, Is.EqualTo(PatternText),
             "other weekdays keep the pattern");
         Assert.That(rows.Where(r => r.Date >= fromDate).All(r => !r.PlanChangedByAdmin), Is.True);
+
+        // The pattern keeps its ValidFrom, so the edited day's rows before the
+        // from-date are frozen: a later grid read must not re-plan them.
+        Assert.That(rows.Single(r => r.Date == aWednesday).PlanChangedByAdmin, Is.True, "frozen");
+        Assert.That(rows.Single(r => r.Date == aWednesday.AddDays(1)).PlanChangedByAdmin, Is.False,
+            "only the edited (week, weekday) is frozen");
+        var grid = await BuildService().GetGridAsync(new PlannerGridRequestModel { From = NextMonday, Days = 14 });
+        Assert.That(grid.Success, Is.True, grid.Message);
+        var cells = grid.Model!.Workers.Single(w => w.SiteId == 8301).Cells;
+        Assert.That(cells.Single(c => c.Date == aWednesday).PlanText, Is.EqualTo(PatternText),
+            "the week-2 Wednesday before the from-date keeps the old text after a grid read");
+        Assert.That((await RowAsync(8301, fromDate.AddDays(7 + 2))).PlanText, Is.EqualTo("9:00-13:00"));
+    }
+
+    // The freeze reaches days that have no row yet (they are created with
+    // the old pattern first), never touches a day before the pattern's
+    // ValidFrom, and leaves locked days alone.
+    [Test]
+    public async Task Cells_EveryWeekdayFrom_FreezeCoversMissingRows_ButNotUngovernedOrLockedDays()
+    {
+        await SeedAdminCallerAsync(UserService);
+        // A: the pattern governs from Today + 7 only; no rows exist yet.
+        var a = await CreateWorkerAsync(8310);
+        await CreatePatternAsync(TimePlanningPnDbContext!, a, Today.AddDays(7));
+        await CreateRowAsync(TimePlanningPnDbContext!, 8310, Today.AddDays(2)); // before ValidFrom
+        // B: governed from today, locked through Today + 9.
+        var b = await CreateWorkerAsync(8311);
+        await CreatePatternAsync(TimePlanningPnDbContext!, b, Today);
+        await LockThroughAsync(TimePlanningPnDbContext!, 8311, Today.AddDays(9));
+        var fromDate = Today.AddDays(21);
+        var everyWeekday = Enumerable.Range(7, 7).Select(i => Today.AddDays(i)).ToList();
+
+        var result = await BuildService().UpdateCellsAsync(new PlannerCellsUpdateModel
+        {
+            Cells = everyWeekday.SelectMany(d => new[] { Cell(a.Id, d), Cell(b.Id, d) }).ToList(),
+            ShortForm = "9-13",
+            Mode = PlannerEditModes.EveryWeekdayFrom,
+            FromDate = fromDate
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model!.Errors, Is.Empty);
+
+        var rowsA = await RowsAsync(8310);
+        var beforeValidFrom = rowsA.Single(r => r.Date == Today.AddDays(2));
+        Assert.That(beforeValidFrom.PlanChangedByAdmin, Is.False, "a day the pattern does not govern is not frozen");
+        for (var d = Today.AddDays(7); d < fromDate; d = d.AddDays(1))
+        {
+            var row = rowsA.SingleOrDefault(r => r.Date == d);
+            Assert.That(row, Is.Not.Null, $"{d:d}: the missing row was created");
+            Assert.That((row!.PlanText, row.PlanChangedByAdmin), Is.EqualTo((PatternText, true)), $"{d:d}");
+        }
+        Assert.That(rowsA.Single(r => r.Date == fromDate).PlanText, Is.EqualTo("9:00-13:00"));
+
+        var rowsB = await RowsAsync(8311);
+        Assert.That(rowsB.Single(r => r.Date == Today.AddDays(9)).PlanChangedByAdmin, Is.False, "a locked day is left alone");
+        Assert.That(rowsB.Where(r => r.Date > Today.AddDays(9) && r.Date < fromDate)
+            .All(r => r.PlanChangedByAdmin && r.PlanText == PatternText), Is.True);
+        Assert.That(rowsB.Single(r => r.Date == fromDate).PlanText, Is.EqualTo("9:00-13:00"));
+    }
+
+    // A grid read between the save and the freeze can give a row in the span
+    // the new text; the freeze puts the old text back before locking it in.
+    [Test]
+    public async Task Cells_EveryWeekdayFrom_FreezeRepairsARowRewrittenAfterTheSave()
+    {
+        await SeedAdminCallerAsync(UserService);
+        var worker = await CreateWorkerAsync(8313);
+        var save = await BuildApplyService().SavePatternAsync(worker.Id, 1, MondayOnOrBefore(Today), Today,
+            AllDays(1, _ => PatternText), false);
+        Assert.That(save.Success, Is.True, save.Message);
+        var clicked = Today.AddDays(8);
+        var service = BuildService();
+        service.BetweenSaveAndFreeze = async () =>
+        {
+            await using var concurrent = CreateTimePlanningPnDbContext();
+            var row = await concurrent.PlanRegistrations
+                .SingleAsync(r => r.SdkSitId == 8313 && r.Date == clicked && r.WorkflowState != Constants.WorkflowStates.Removed);
+            PlanPatternPlanner.ApplyPlanText(row, "9:00-13:00");
+            await row.Update(concurrent);
+        };
+
+        var result = await service.UpdateCellsAsync(new PlannerCellsUpdateModel
+        {
+            Cells = [Cell(worker.Id, clicked)],
+            ShortForm = "9-13",
+            Mode = PlannerEditModes.EveryWeekdayFrom,
+            FromDate = Today.AddDays(21)
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var repaired = await RowAsync(8313, clicked);
+        Assert.That((repaired.PlanText, repaired.PlanHours, repaired.PlanChangedByAdmin),
+            Is.EqualTo((PatternText, 7.5, true)));
+    }
+
+    // Freezing runs after a successful save only.
+    [Test]
+    public async Task Cells_EveryWeekdayFrom_RefusedSave_FreezesNothing()
+    {
+        await SeedAdminCallerAsync(UserService);
+        var worker = await CreateWorkerAsync(8312);
+        var save = await BuildApplyService().SavePatternAsync(worker.Id, 1, MondayOnOrBefore(Today), Today,
+            AllDays(1, _ => PatternText), false);
+        Assert.That(save.Success, Is.True, save.Message);
+        var refusing = Substitute.For<IPlanPatternApplyService>();
+        refusing.SavePatternAsync(default, default, default, default, default!, default, default)
+            .ReturnsForAnyArgs(new OperationDataResult<PlanPatternApplyResult>(false, "ErrorWhileSavingPlanPattern"));
+
+        var result = await BuildService(refusing).UpdateCellsAsync(new PlannerCellsUpdateModel
+        {
+            Cells = [Cell(worker.Id, Today.AddDays(8))],
+            ShortForm = "9-13",
+            Mode = PlannerEditModes.EveryWeekdayFrom,
+            FromDate = Today.AddDays(21)
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model!.Errors.Select(e => e.Key), Is.EqualTo(new[] { "ErrorWhileSavingPlanPattern" }));
+        Assert.That((await RowsAsync(8312)).Any(r => r.PlanChangedByAdmin), Is.False);
+    }
+
+    // The week sums cover whole ISO weeks: a grid starting on a Wednesday
+    // still sums that week's Monday and Tuesday, and the next week's
+    // Wednesday to Sunday, though only 7 days are shown.
+    [Test]
+    public async Task Grid_StartingMidWeek_SumsWholeWeeks()
+    {
+        await SeedAdminCallerAsync(UserService);
+        await CreateWorkerAsync(8120);
+        var from = NextMonday.AddDays(2);
+
+        var result = await BuildService().GetGridAsync(new PlannerGridRequestModel { From = from, Days = 7 });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var worker = result.Model!.Workers.Single(w => w.SiteId == 8120);
+        Assert.That(worker.Cells.Select(c => c.Date), Is.EqualTo(Enumerable.Range(0, 7).Select(i => from.AddDays(i))));
+        Assert.That(worker.Weeks.Select(w => (w.WeekStart, w.PlannedHours)),
+            Is.EqualTo(new[] { (NextMonday, 7 * TemplateHours), (NextMonday.AddDays(7), 7 * TemplateHours) }));
     }
 
     // ---------------------------------------------------------------- pattern

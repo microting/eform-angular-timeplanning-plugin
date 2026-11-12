@@ -4462,5 +4462,36 @@
       "el-GR": "Το σταθερό πλάνο αποθηκεύτηκε, αλλά δεν ενημερώθηκαν όλες οι ημέρες – αποθηκεύστε ξανά",
       "is-IS": "Fasta planið er vistað en ekki voru allir dagar uppfærðir – vistaðu aftur"
     }
+  },
+  {
+    "Key": "PlannerNeedsFullScope",
+    "LocalizedValue": {
+      "da": "Du skal have adgang til alle aktive medarbejdere for at gøre dette.",
+      "de": "Dafür benötigen Sie Zugriff auf alle aktiven Mitarbeiter.",
+      "en-US": "You need access to every active worker to do this.",
+      "uk-UA": "Для цього потрібен доступ до всіх активних працівників.",
+      "pl-PL": "Aby to zrobić, potrzebujesz dostępu do wszystkich aktywnych pracowników.",
+      "no-NO": "Du må ha tilgang til alle aktive medarbeidere for å gjøre dette.",
+      "sv-SE": "Du behöver åtkomst till alla aktiva medarbetare för att göra detta.",
+      "es-ES": "Necesita acceso a todos los trabajadores activos para hacer esto.",
+      "fr-FR": "Vous devez avoir accès à tous les employés actifs pour faire cela.",
+      "it-IT": "Per farlo devi avere accesso a tutti i lavoratori attivi.",
+      "nl-NL": "U hebt toegang tot alle actieve medewerkers nodig om dit te doen.",
+      "pt-BR": "Você precisa de acesso a todos os funcionários ativos para fazer isso.",
+      "pt-PT": "Precisa de acesso a todos os trabalhadores ativos para fazer isto.",
+      "fi-FI": "Tähän tarvitaan pääsy kaikkiin aktiivisiin työntekijöihin.",
+      "et-EE": "Selleks on vaja juurdepääsu kõigile aktiivsetele töötajatele.",
+      "lv-LV": "Lai to izdarītu, jums nepieciešama piekļuve visiem aktīvajiem darbiniekiem.",
+      "lt-LT": "Kad tai padarytumėte, reikia prieigos prie visų aktyvių darbuotojų.",
+      "ro-RO": "Pentru aceasta aveți nevoie de acces la toți angajații activi.",
+      "hr-HR": "Za to vam je potreban pristup svim aktivnim radnicima.",
+      "sl-SI": "Za to potrebujete dostop do vseh aktivnih delavcev.",
+      "cs-CZ": "K tomu potřebujete přístup ke všem aktivním pracovníkům.",
+      "sk-SK": "Na to potrebujete prístup ku všetkým aktívnym pracovníkom.",
+      "hu-HU": "Ehhez hozzáférés szükséges az összes aktív dolgozóhoz.",
+      "bg-BG": "За това ви е необходим достъп до всички активни служители.",
+      "el-GR": "Για να το κάνετε αυτό χρειάζεστε πρόσβαση σε όλους τους ενεργούς εργαζόμενους.",
+      "is-IS": "Þú þarft aðgang að öllum virkum starfsmönnum til að gera þetta."
+    }
   }
 ]

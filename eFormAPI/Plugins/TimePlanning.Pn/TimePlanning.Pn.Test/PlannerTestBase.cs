@@ -92,7 +92,7 @@ public abstract class PlannerTestBase : TestBaseSetup
             Substitute.For<ILogger<TimePlanningPlanningService>>());
 
     /// <summary>Call after the caller is seeded: the services read <see cref="TestBaseSetup.SeededBaseDbContext"/>.</summary>
-    protected PlannerService BuildService(PlanPatternApplyService? applyService = null)
+    protected PlannerService BuildService(IPlanPatternApplyService? applyService = null)
     {
         var dbContextHelper = Substitute.For<ITimePlanningDbContextHelper>();
         // Index runs sites concurrently and disposes each context it is given.
