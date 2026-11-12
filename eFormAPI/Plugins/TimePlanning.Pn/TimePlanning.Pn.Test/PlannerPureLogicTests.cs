@@ -170,6 +170,29 @@ public class PlannerPureLogicTests
         Assert.That(result.Reason, Is.EqualTo(RotationInference.ReasonUnparsable));
     }
 
+    // An hours-only schedule (plan hours, no shift text) must never be read
+    // as days off: applying that pattern would zero the worker's hours.
+    [Test]
+    public void Inference_HoursWithoutShifts_IsNotRecognised()
+    {
+        var rows = Repeating(1, 6, (_, _) => "").Select(r => r with { PlanHours = 7.5 }).ToList();
+
+        var result = RotationInference.Infer(rows, WindowStart);
+
+        Assert.That(result.Recognised, Is.False);
+        Assert.That(result.Reason, Is.EqualTo(RotationInference.ReasonHoursOnly));
+        Assert.That(result.Days, Is.Empty);
+    }
+
+    [Test]
+    public void Inference_OneHoursOnlyDay_AmongShifts_IsNotRecognised()
+    {
+        var rows = Repeating(1, 6, (_, _) => "7:00-15:00").Select(r => r with { PlanHours = 8 }).ToList();
+        rows[10] = rows[10] with { PlanText = "" };
+
+        Assert.That(RotationInference.Infer(rows, WindowStart).Reason, Is.EqualTo(RotationInference.ReasonHoursOnly));
+    }
+
     [Test]
     public void Inference_EmptyAndFri_BothMeanNoPlan()
     {

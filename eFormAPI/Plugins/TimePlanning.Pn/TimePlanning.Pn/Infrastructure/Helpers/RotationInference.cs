@@ -21,7 +21,9 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 /// never a mismatch; they are skipped.</item>
 /// <item>A known day's text is canonicalised (<see cref="PlannerShortForm.Canonicalise"/>),
 /// so <c>8-16/0,5</c> equals <c>8:00-16:00/0.5</c> and empty equals "Fri".
-/// Text that holds no shift at all makes the worker unparsable.</item>
+/// Text that holds no shift at all makes the worker unparsable; a day
+/// with plan hours but no shift text (an hours-only schedule) makes the
+/// worker hoursOnly, since a pattern cannot carry hours without shifts.</item>
 /// <item>P (1..8) fits when, for every rotation day (k mod P, weekday), all
 /// known days agree, and each rotation day was seen at least twice, so the
 /// repetition was actually observed. The smallest P that fits wins.</item>
@@ -34,6 +36,7 @@ public static class RotationInference
     public const string ReasonInconsistent = "inconsistent";
     public const string ReasonUnparsable = "unparsable";
     public const string ReasonInsufficientHistory = "insufficientHistory";
+    public const string ReasonHoursOnly = "hoursOnly";
 
     /// <summary>Weeks of history read before the current week.</summary>
     public const int HistoryWeeks = 16;
@@ -41,7 +44,8 @@ public static class RotationInference
     /// <summary>A rotation day must be seen this many times to count as repeating.</summary>
     private const int MinimumSightings = 2;
 
-    public readonly record struct Day(DateTime Date, string? PlanText, bool IsAbsence);
+    /// <param name="PlanHours">The row's plan hours; hours with no shift text mean an hours-only schedule.</param>
+    public readonly record struct Day(DateTime Date, string? PlanText, bool IsAbsence, double PlanHours = 0);
 
     public sealed record Result(bool Recognised, string? Reason, int RotationWeeks, DateTime AnchorDate,
         List<PlanPatternDayModel> Days);
@@ -61,6 +65,13 @@ public static class RotationInference
             if (text == null)
             {
                 return NotRecognised(ReasonUnparsable, windowStart);
+            }
+
+            // Plan hours with no shift: a pattern holds shifts only, so it
+            // would read the day as off and zero the hours. Not a rotation.
+            if (text.Length == 0 && day.PlanHours > 0)
+            {
+                return NotRecognised(ReasonHoursOnly, windowStart);
             }
 
             var offset = (day.Date.Date - windowStart).Days;

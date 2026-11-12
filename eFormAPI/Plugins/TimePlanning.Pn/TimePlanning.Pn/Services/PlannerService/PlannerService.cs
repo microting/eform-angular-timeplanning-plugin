@@ -1003,7 +1003,7 @@ public class PlannerService(
                     .OrderBy(x => x.Id)
                     .Select(x => new
                     {
-                        x.SdkSitId, x.Date, x.PlanText, x.MessageId,
+                        x.SdkSitId, x.Date, x.PlanText, x.MessageId, x.PlanHours,
                         IsAbsence = x.MessageId != null || x.OnVacation || x.Sick || x.OtherAllowedAbsence
                                     || x.AbsenceWithoutPermission
                     })
@@ -1012,7 +1012,7 @@ public class PlannerService(
                 .ToDictionary(g => g.Key, g => g
                     .GroupBy(x => x.Date.Date)
                     .Select(d => d.First())
-                    .Select(x => new RotationInference.Day(x.Date, x.PlanText, x.IsAbsence))
+                    .Select(x => new RotationInference.Day(x.Date, x.PlanText, x.IsAbsence, x.PlanHours))
                     .ToList());
 
             var sdkDbContext = (await coreService.GetCore()).DbContextHelper.GetDbContext();

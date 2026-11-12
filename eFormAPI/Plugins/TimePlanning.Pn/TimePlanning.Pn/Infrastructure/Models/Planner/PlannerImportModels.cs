@@ -23,7 +23,7 @@ public class PlannerImportWorkerModel
     /// <summary>False = "kunne ikke genkendes": no pattern is proposed.</summary>
     public bool Recognised { get; set; }
 
-    /// <summary>When not recognised: "unparsable", "inconsistent" or "insufficientHistory".</summary>
+    /// <summary>When not recognised: "unparsable", "inconsistent", "insufficientHistory" or "hoursOnly" (plan hours without shifts).</summary>
     public string? Reason { get; set; }
 
     public int? RotationWeeks { get; set; }
