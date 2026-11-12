@@ -201,6 +201,28 @@ public class PlannerGridAndEditTests : PlannerTestBase
         Assert.That((ownPlan.Success, ownPlan.Model!.UpdatedCount, ownPlan.Model.Errors.Count), Is.EqualTo((true, 1, 0)));
         Assert.That((await RowAsync(8200, d1)).PlanText, Is.EqualTo("8:00-12:00"));
 
+        // "Ryd" removes an absence too, so for a worker the caller does not
+        // manage an absence day is left untouched; a plain day still clears.
+        await CreateRowAsync(TimePlanningPnDbContext!, 8200, d2, r =>
+        {
+            r.PlanText = "6:00-10:00";
+            r.PlanHours = 4;
+            r.MessageId = 3;
+        });
+        var ownClear = await service.UpdateCellsAsync(new PlannerCellsUpdateModel
+        {
+            Cells = [Cell(ownSite.Id, d1), Cell(ownSite.Id, d2)], ShortForm = "", Mode = PlannerEditModes.OnlyTheseDays
+        });
+        Assert.That(ownClear.Success, Is.True, ownClear.Message);
+        Assert.That(ownClear.Model!.UpdatedCount, Is.EqualTo(1));
+        Assert.That(ownClear.Model.Errors.Select(e => (e.AssignedSiteId, e.Key)),
+            Is.EqualTo(new[] { (ownSite.Id, "UnauthorizedToApprove") }));
+        var keptAbsence = await RowAsync(8200, d2);
+        Assert.That((keptAbsence.MessageId, keptAbsence.PlanText, keptAbsence.PlanHours, keptAbsence.PlanChangedByAdmin),
+            Is.EqualTo(((int?)3, "6:00-10:00", 4.0, false)), "untouched");
+        var clearedPlain = await RowAsync(8200, d1);
+        Assert.That((clearedPlain.PlanText, clearedPlain.MessageId), Is.EqualTo(("", (int?)null)));
+
         var dayOff = await service.UpdateCellsAsync(new PlannerCellsUpdateModel
         {
             Cells = [Cell(worker.Id, d2)], ShortForm = "Fri", Mode = PlannerEditModes.OnlyTheseDays

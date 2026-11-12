@@ -365,11 +365,13 @@ public class PlannerService(
             }
 
             // An absence is a manager's decision, as for CreateAbsenceAsync and
-            // ApproveAsync: only a current manager of the worker may set one.
-            // Plan text and "Ryd" keep the planning board's scope-only rule.
-            var mayDecideAbsence = model.MessageId == null
-                ? []
-                : await ManagedByCallerAsync(scoped.Select(x => x.SiteId).Distinct().ToList());
+            // ApproveAsync: only a current manager of the worker may set one, or
+            // remove one with "Ryd". Plan text, and "Ryd" on a day without an
+            // absence, keep the planning board's scope-only rule.
+            var touchesAbsence = model.MessageId != null || shortForm.Kind == PlannerShortFormKind.Clear;
+            var mayDecideAbsence = touchesAbsence
+                ? await ManagedByCallerAsync(scoped.Select(x => x.SiteId).Distinct().ToList())
+                : [];
 
             var result = new PlannerCellsUpdateResultModel();
             foreach (var group in model.Cells.GroupBy(c => c.AssignedSiteId))
@@ -398,7 +400,8 @@ public class PlannerService(
                 }
                 else
                 {
-                    await EditDaysAsync(assignedSite, dates, shortForm, model.MessageId, result);
+                    await EditDaysAsync(assignedSite, dates, shortForm, model.MessageId,
+                        mayDecideAbsence.Contains(assignedSite.SiteId), result);
                 }
             }
 
@@ -423,8 +426,9 @@ public class PlannerService(
     /// skipped and reported. Flex is carried once from the earliest change.
     /// </summary>
     private async Task EditDaysAsync(AssignedSite assignedSite, List<DateTime> dates,
-        PlannerShortFormResult shortForm, int? messageId, PlannerCellsUpdateResultModel result)
+        PlannerShortFormResult shortForm, int? messageId, bool mayDecideAbsence, PlannerCellsUpdateResultModel result)
     {
+        var refusedAbsence = false;
         var sdkSitId = assignedSite.SiteId;
         var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, sdkSitId);
         var rowsByDate = (await dbContext.PlanRegistrations
@@ -446,6 +450,16 @@ public class PlannerService(
             }
 
             var isNew = !rowsByDate.TryGetValue(date, out var row);
+
+            // "Ryd" on an absence day removes the absence: a manager's
+            // decision. For anyone else the day is left exactly as it is.
+            if (shortForm.Kind == PlannerShortFormKind.Clear && messageId == null && !mayDecideAbsence
+                && row?.MessageId != null)
+            {
+                refusedAbsence = true;
+                continue;
+            }
+
             row ??= new PlanRegistration
             {
                 Date = date,
@@ -482,6 +496,11 @@ public class PlannerService(
 
             result.UpdatedCount++;
             earliest ??= date;
+        }
+
+        if (refusedAbsence)
+        {
+            AddError(result, assignedSite.Id, "UnauthorizedToApprove");
         }
 
         if (earliest != null)
