@@ -280,6 +280,12 @@ jobs:
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanPatternRowGenerationTests"
           - name: j
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlanPatternApplyServiceTests|FullyQualifiedName=TimePlanning.Pn.Test.GoogleSheetRetirementTests"
+          # #5489 planner API: DB fixtures re-migrate per test, so the two
+          # planner fixtures get a shard each; the DB-free ones ride along in k.
+          - name: k
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlannerGridAndEditTests|FullyQualifiedName=TimePlanning.Pn.Test.PlannerPureLogicTests|FullyQualifiedName=TimePlanning.Pn.Test.PlannerAccessWiringTests"
+          - name: l
+            filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlannerAbsenceAndImportTests"
     steps:
     - uses: actions/checkout@v3
     - name: Create docker network

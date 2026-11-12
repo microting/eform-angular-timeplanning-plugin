@@ -82,33 +82,8 @@ public class AbsenceRequestService : IAbsenceRequestService
     /// the JWT. Returns 0 if the user has no worker/site record. Callers
     /// should treat 0 as "no resolvable caller".
     /// </summary>
-    private async Task<int> ResolveCallerSdkSiteIdAsync()
-    {
-        var currentUserAsync = await _userService.GetCurrentUserAsync();
-        if (currentUserAsync == null)
-        {
-            return 0;
-        }
-        var currentUser = _baseDbContext.Users
-            .Single(x => x.Id == currentUserAsync.Id);
-
-        var sdkCore = await _coreService.GetCore();
-        var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
-
-        var worker = await sdkDbContext.Workers
-            .Include(x => x.SiteWorkers)
-            .ThenInclude(x => x.Site)
-            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
-            .FirstOrDefaultAsync(x => x.Email == currentUser.Email);
-
-        if (worker == null || worker.SiteWorkers.Count == 0)
-        {
-            return 0;
-        }
-        // Deterministically resolve the active site (excludes removed
-        // SiteWorker/Site rows, ordered by SiteWorker.Id). All-removed -> 0.
-        return worker.ResolveActiveSdkSiteId() ?? 0;
-    }
+    private Task<int> ResolveCallerSdkSiteIdAsync() =>
+        AbsenceDecisionRules.ResolveCallerSdkSiteIdAsync(_userService, _baseDbContext, _coreService);
 
     /// <summary>
     /// The authenticated caller's SDK site when it manages the requester's
@@ -118,50 +93,9 @@ public class AbsenceRequestService : IAbsenceRequestService
     /// manager, and only its own managing tags count, so a demoted manager who
     /// kept the tags cannot decide.
     /// </summary>
-    private async Task<int?> ResolveDecidingManagerAsync(int requesterSdkSitId)
-    {
-        var callerSdkSitId = await ResolveCallerSdkSiteIdAsync();
-        if (callerSdkSitId == 0)
-        {
-            return null;
-        }
-
-        var managingTagIds = await GetActiveManagingTagIdsAsync(callerSdkSitId);
-        if (managingTagIds == null)
-        {
-            return null;
-        }
-
-        var sdkCore = await _coreService.GetCore();
-        var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
-        var managesRequester = await sdkDbContext.SiteTags
-            .AnyAsync(x => x.WorkflowState != Constants.WorkflowStates.Removed
-                           && x.Site.MicrotingUid == requesterSdkSitId
-                           && managingTagIds.Contains((int)x.TagId!));
-        return managesRequester ? callerSdkSitId : null;
-    }
-
-    /// <summary>
-    /// The active managing tag ids of the site's latest active AssignedSite, or
-    /// null when that row is missing or not a manager.
-    /// </summary>
-    private async Task<List<int>?> GetActiveManagingTagIdsAsync(int callerSdkSitId)
-    {
-        var assignedSite = await _dbContext.AssignedSites
-            .Where(a => a.WorkflowState != Constants.WorkflowStates.Removed)
-            .OrderByDescending(a => a.Id)
-            .FirstOrDefaultAsync(a => a.SiteId == callerSdkSitId);
-        if (assignedSite == null || !assignedSite.IsManager)
-        {
-            return null;
-        }
-
-        return await _dbContext.AssignedSiteManagingTags
-            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed
-                        && x.AssignedSiteId == assignedSite.Id)
-            .Select(x => x.TagId)
-            .ToListAsync();
-    }
+    private Task<int?> ResolveDecidingManagerAsync(int requesterSdkSitId) =>
+        AbsenceDecisionRules.ResolveDecidingManagerAsync(
+            requesterSdkSitId, _dbContext, _userService, _baseDbContext, _coreService);
 
     /// <summary>
     /// Atomically claims a Pending request for one decision by stamping
@@ -444,27 +378,8 @@ public class AbsenceRequestService : IAbsenceRequestService
             }
 
             // Fire-and-forget push to requester
-            var requesterSdkSitId = request.RequestedBySdkSitId;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await SendToSiteInOwnScopeAsync(
-                        requesterSdkSitId,
-                        "Absence request approved",
-                        "Your absence request has been approved",
-                        new Dictionary<string, string>
-                        {
-                            { "type", "absence_decided" },
-                            { "action", "approved" },
-                            { "absenceRequestId", absenceRequestId.ToString() }
-                        });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error sending push notification for absence approval");
-                }
-            });
+            AbsenceDecisionRules.StartApprovedPush(_serviceScopeFactory, _logger,
+                request.RequestedBySdkSitId, absenceRequestId);
 
             return new OperationResult(true);
         }
@@ -617,9 +532,7 @@ public class AbsenceRequestService : IAbsenceRequestService
     internal async Task SendToSiteInOwnScopeAsync(
         int targetSdkSitId, string title, string body, Dictionary<string, string> data)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var pushService = scope.ServiceProvider.GetRequiredService<IPushNotificationService>();
-        await pushService.SendToSiteAsync(targetSdkSitId, title, body, data);
+        await AbsenceDecisionRules.SendToSiteInOwnScopeAsync(_serviceScopeFactory, targetSdkSitId, title, body, data);
     }
 
     public async Task<OperationResult> CancelAsync(int absenceRequestId)
@@ -700,7 +613,7 @@ public class AbsenceRequestService : IAbsenceRequestService
             }
 
             // Only a manager has an inbox: their managing tag ids, else none.
-            var managingTagIds = await GetActiveManagingTagIdsAsync(managerSdkSitId);
+            var managingTagIds = await AbsenceDecisionRules.GetActiveManagingTagIdsAsync(_dbContext, managerSdkSitId);
             if (managingTagIds == null)
             {
                 return new OperationDataResult<List<AbsenceRequestModel>>(true, new List<AbsenceRequestModel>());
@@ -846,123 +759,10 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
     }
 
-    private async Task ApplyAbsenceToPlanRegistration(AbsenceRequest request, AbsenceRequestDay day,
-        int managerSdkSitId)
-    {
-        try
-        {
-            // Find or create PlanRegistration for this worker and date
-            var planRegistration = await _dbContext.PlanRegistrations
-                .FirstOrDefaultAsync(pr => pr.SdkSitId == request.RequestedBySdkSitId
-                                           && pr.Date == day.Date
-                                           && pr.WorkflowState != Constants.WorkflowStates.Removed);
-
-            if (planRegistration == null)
-            {
-                // Create new PlanRegistration with minimal defaults
-                planRegistration = new PlanRegistration
-                {
-                    Date = day.Date,
-                    SdkSitId = request.RequestedBySdkSitId,
-                    PlanHours = 0,
-                    PlanHoursInSeconds = 0,
-                    NettoHours = 0,
-                    PaiedOutFlex = 0,
-                    Pause1Id = 0,
-                    Pause2Id = 0,
-                    Pause3Id = 0,
-                    Pause4Id = 0,
-                    Pause5Id = 0,
-                    Start1Id = 0,
-                    Stop1Id = 0,
-                    Start2Id = 0,
-                    Stop2Id = 0,
-                    Start3Id = 0,
-                    Stop3Id = 0,
-                    Start4Id = 0,
-                    Stop4Id = 0,
-                    Start5Id = 0,
-                    Stop5Id = 0,
-                    CreatedByUserId = _userService.UserId,
-                    UpdatedByUserId = _userService.UserId
-                };
-                await planRegistration.Create(_dbContext);
-            }
-
-            // Load the message to determine absence type
-            var message = await _dbContext.Messages
-                .FirstOrDefaultAsync(m => m.Id == day.MessageId);
-            if (message != null)
-            {
-                ApplyAbsenceFromMessage(planRegistration, message);
-            }
-
-            // Set absence audit fields if they exist
-            planRegistration.MessageId = day.MessageId;
-            planRegistration.UpdatedByUserId = _userService.UserId;
-
-            // Try to set audit fields if they exist on the entity
-            try
-            {
-                var prType = planRegistration.GetType();
-                var absenceRequestIdProp = prType.GetProperty("AbsenceRequestId");
-                if (absenceRequestIdProp != null && absenceRequestIdProp.CanWrite)
-                {
-                    absenceRequestIdProp.SetValue(planRegistration, request.Id);
-                }
-
-                var absenceApprovedAtProp = prType.GetProperty("AbsenceApprovedAtUtc");
-                if (absenceApprovedAtProp != null && absenceApprovedAtProp.CanWrite)
-                {
-                    absenceApprovedAtProp.SetValue(planRegistration, DateTime.UtcNow);
-                }
-
-                var absenceApprovedByProp = prType.GetProperty("AbsenceApprovedBySdkSitId");
-                if (absenceApprovedByProp != null && absenceApprovedByProp.CanWrite)
-                {
-                    absenceApprovedByProp.SetValue(planRegistration, managerSdkSitId);
-                }
-
-                var absenceMessageIdProp = prType.GetProperty("AbsenceMessageId");
-                if (absenceMessageIdProp != null && absenceMessageIdProp.CanWrite)
-                {
-                    absenceMessageIdProp.SetValue(planRegistration, day.MessageId);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log but ignore if audit fields don't exist
-                _logger.LogWarning(ex, "Could not set audit fields on PlanRegistration");
-            }
-
-            await planRegistration.Update(_dbContext);
-
-            // Recalculate PlanRegistration using helper - only if AssignedSite exists
-            var assignedSite = await _dbContext.AssignedSites
-                .Where(a => a.WorkflowState != Constants.WorkflowStates.Removed)
-                .OrderByDescending(a => a.Id)
-                .FirstOrDefaultAsync(a => a.SiteId == planRegistration.SdkSitId);
-            
-            if (assignedSite != null)
-            {
-                try
-                {
-                    PlanRegistrationHelper.CalculatePauseAutoBreakCalculationActive(assignedSite, planRegistration);
-                    await planRegistration.Update(_dbContext);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not calculate pause for PlanRegistration {Id}", planRegistration.Id);
-                    // Continue without recalculation if it fails
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error applying absence to PlanRegistration for day {Date}", day.Date);
-            throw;
-        }
-    }
+    private Task ApplyAbsenceToPlanRegistration(AbsenceRequest request, AbsenceRequestDay day,
+        int managerSdkSitId) =>
+        AbsenceDecisionRules.ApplyAbsenceToPlanRegistrationAsync(
+            _dbContext, _userService, _logger, request, day, managerSdkSitId);
 
     /// <summary>
     /// Carries the worker's flex balance forward from <paramref name="from"/>.
@@ -1080,16 +880,6 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
 
         return earliest;
-    }
-
-    private void ApplyAbsenceFromMessage(PlanRegistration pr, Message message)
-    {
-        if (!AbsenceMessageFlags.Apply(pr, message.Id))
-        {
-            _logger.LogWarning(
-                "Unknown absence message {MessageId} ({MessageName}); applying OtherAllowedAbsence",
-                message.Id, message.Name);
-        }
     }
 
     private AbsenceRequestModel MapToModel(AbsenceRequest request)

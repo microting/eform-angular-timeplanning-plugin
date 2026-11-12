@@ -27,6 +27,7 @@ namespace TimePlanning.Pn.Infrastructure.Data.Seed.Data;
 using System.Collections.Generic;
 using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.TimePlanningBase.Infrastructure.Const;
+using TimePlanning.Pn.Infrastructure.Const;
 
 public static class TimePlanningPermissionsSeedData
 {
@@ -71,6 +72,11 @@ public static class TimePlanningPermissionsSeedData
         {
             PermissionName = "Is a payroll manager",
             ClaimName = TimePlanningClaims.IsPayRollManager
+        },
+        new PluginPermission
+        {
+            PermissionName = "Use the planner (beta)",
+            ClaimName = TimePlanningPlannerClaims.Planner
         }
     };
 }

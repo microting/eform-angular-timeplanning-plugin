@@ -1,7 +1,10 @@
 #nullable enable
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microting.eForm.Infrastructure.Constants;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.TimePlanningBase.Infrastructure.Data;
 
 namespace TimePlanning.Pn.Infrastructure.Helpers;
@@ -33,6 +36,62 @@ public static class GoogleSheetRetirement
             .Where(x => x.Name == SettingName)
             .Select(x => x.Value)
             .FirstOrDefaultAsync());
+
+    /// <summary>
+    /// Sets the flag (the planner's settings and its import, #5489) and saves
+    /// it. A change keeps the previous value as a version row, as the plugin
+    /// settings page does through PluginDbOptions.
+    /// </summary>
+    public static async Task SetRetiredAsync(TimePlanningPnDbContext dbContext, bool retired, int userId)
+    {
+        await StageRetiredAsync(dbContext, retired, userId);
+        await dbContext.SaveChangesAsync();
+    }
+
+    /// <summary>As <see cref="SetRetiredAsync"/>, but leaves the save to the caller's transaction.</summary>
+    public static async Task StageRetiredAsync(TimePlanningPnDbContext dbContext, bool retired, int userId)
+    {
+        var value = retired ? "true" : "false";
+        var now = DateTime.UtcNow;
+        var row = await dbContext.PluginConfigurationValues
+            .FirstOrDefaultAsync(x => x.Name == SettingName);
+        if (row == null)
+        {
+            dbContext.PluginConfigurationValues.Add(new PluginConfigurationValue
+            {
+                Name = SettingName,
+                Value = value,
+                Version = 1,
+                CreatedAt = now,
+                UpdatedAt = now,
+                WorkflowState = Constants.WorkflowStates.Created,
+                CreatedByUserId = userId,
+                UpdatedByUserId = userId
+            });
+            return;
+        }
+
+        if (row.Value == value)
+        {
+            return;
+        }
+
+        dbContext.PluginConfigurationValueVersions.Add(new PluginConfigurationValueVersion
+        {
+            Name = row.Name,
+            Value = row.Value,
+            Version = row.Version,
+            CreatedAt = now,
+            UpdatedAt = now,
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = userId,
+            UpdatedByUserId = userId
+        });
+        row.Value = value;
+        row.Version += 1;
+        row.UpdatedAt = now;
+        row.UpdatedByUserId = userId;
+    }
 
     private static bool Parse(string? value)
     {
