@@ -26,6 +26,7 @@ using System.Runtime.InteropServices;
 using Microting.eForm.Infrastructure.Models;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Sentry;
+using TimePlanning.Pn.Infrastructure.Const;
 using TimePlanning.Pn.Infrastructure.Helpers;
 using TimePlanning.Pn.Infrastructure.Interceptors;
 using TimePlanning.Pn.Services.TimePlanningRegistrationDeviceService;
@@ -34,6 +35,7 @@ using TimePlanning.Pn.Services.TimePlanningPictureSnapshotService;
 using TimePlanning.Pn.Services.AbsenceRequestService;
 using TimePlanning.Pn.Services.ContentHandoverService;
 using TimePlanning.Pn.Services.PlanPatternApplyService;
+using TimePlanning.Pn.Services.PlannerService;
 using TimePlanning.Pn.Services.BreakPolicyService;
 using TimePlanning.Pn.Services.PayRuleSetService;
 using TimePlanning.Pn.Services.PayDayTypeRuleService;
@@ -109,6 +111,7 @@ public class EformTimePlanningPlugin : IEformPlugin
         services.AddTransient<IAbsenceRequestService, AbsenceRequestService>();
         services.AddTransient<IContentHandoverService, ContentHandoverService>();
         services.AddTransient<IPlanPatternApplyService, PlanPatternApplyService>();
+        services.AddTransient<IPlannerService, PlannerService>();
         services.AddTransient<IBreakPolicyService, BreakPolicyService>();
         services.AddTransient<IPayRuleSetService, PayRuleSetService>();
         services.AddTransient<IPayDayTypeRuleService, PayDayTypeRuleService>();
@@ -868,6 +871,77 @@ public class EformTimePlanningPlugin : IEformPlugin
                                 Language = LanguageNames.Danish
                             }
                         ]
+                    },
+
+                    // #5489: the web planner beta, behind its own permission.
+                    new()
+                    {
+                        Name = "Planner (beta)",
+                        E2EId = "time-planning-pn-planner",
+                        Link = "/plugins/time-planning-pn/planner",
+                        Type = MenuItemTypeEnum.Link,
+                        Position = 9,
+                        MenuTemplate = new()
+                        {
+                            Name = "Planner (beta)",
+                            E2EId = "time-planning-pn-planner",
+                            DefaultLink = "/plugins/time-planning-pn/planner",
+                            Permissions =
+                            [
+                                new()
+                                {
+                                    ClaimName = TimePlanningPlannerClaims.Planner,
+                                    PermissionName = "Use the planner (beta)",
+                                    PermissionTypeName = "Time Planning"
+                                }
+                            ],
+                            Translations =
+                            [
+                                new()
+                                {
+                                    LocaleName = LocaleNames.English,
+                                    Name = "Planner (beta)",
+                                    Language = LanguageNames.English
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.German,
+                                    Name = "Planer (Beta)",
+                                    Language = LanguageNames.German
+                                },
+
+                                new()
+                                {
+                                    LocaleName = LocaleNames.Danish,
+                                    Name = "Planlægning (beta)",
+                                    Language = LanguageNames.Danish
+                                }
+                            ]
+                        },
+                        Translations =
+                        [
+                            new()
+                            {
+                                LocaleName = LocaleNames.English,
+                                Name = "Planner (beta)",
+                                Language = LanguageNames.English
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.German,
+                                Name = "Planer (Beta)",
+                                Language = LanguageNames.German
+                            },
+
+                            new()
+                            {
+                                LocaleName = LocaleNames.Danish,
+                                Name = "Planlægning (beta)",
+                                Language = LanguageNames.Danish
+                            }
+                        ]
                     }
                 ]
             }
@@ -942,6 +1016,16 @@ public class EformTimePlanningPlugin : IEformPlugin
                     Link = "/plugins/time-planning-pn/request-history",
                     Position = 5,
                     Guards = [TimePlanningClaims.AccessTimePlanningPlugin]
+                },
+
+                // #5489: the web planner beta, only for groups given its permission.
+                new()
+                {
+                    Name = localizationService.GetString("Planner (beta)"),
+                    E2EId = "time-planning-pn-planner",
+                    Link = "/plugins/time-planning-pn/planner",
+                    Position = 6,
+                    Guards = [TimePlanningPlannerClaims.Planner]
                 }
             ]
         });

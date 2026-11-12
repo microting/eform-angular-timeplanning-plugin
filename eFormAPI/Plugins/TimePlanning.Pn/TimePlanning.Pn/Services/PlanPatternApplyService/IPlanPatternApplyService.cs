@@ -31,6 +31,33 @@ public interface IPlanPatternApplyService
         bool overwriteManualDays);
 
     /// <summary>
+    /// As <see cref="SavePatternAsync(int,int,DateTime,DateTime,IReadOnlyCollection{PlanPatternDayModel},bool)"/>,
+    /// but rows are only written from max(<paramref name="applyFrom"/>,
+    /// <paramref name="validFrom"/>, today): a pattern day changed "from this
+    /// date" leaves the rows before it as they are while the pattern keeps
+    /// its ValidFrom.
+    /// </summary>
+    Task<OperationDataResult<PlanPatternApplyResult>> SavePatternAsync(
+        int assignedSiteId,
+        int rotationWeeks,
+        DateTime anchorDate,
+        DateTime validFrom,
+        IReadOnlyCollection<PlanPatternDayModel> days,
+        bool overwriteManualDays,
+        DateTime applyFrom);
+
+    /// <summary>
+    /// The one-off import that retires the Google Sheet. In ONE transaction:
+    /// replaces the active pattern of every worker in <paramref name="patterns"/>,
+    /// takes every worker off the sheet and sets
+    /// <c>TimePlanningBaseSettings:GoogleSheetRetired</c> to true; either all
+    /// of it is saved or none. Then, per pattern, writes rows and carries
+    /// flex exactly as a single save does. Manual days are kept.
+    /// </summary>
+    Task<OperationDataResult<List<PlanPatternApplyResult>>> ImportPatternsAndRetireSheetAsync(
+        IReadOnlyList<PlanPatternImport> patterns);
+
+    /// <summary>
     /// Soft-deletes the worker's active pattern. The worker returns to the
     /// weekday template; they are NOT put back on the Google Sheet. Their rows
     /// from today to today + 180 days are rewritten from the template (manual,

@@ -40,7 +40,11 @@ public class LocalizationKeyCoverageTests
     [
         new(@"(?<!ResourceManager\.)GetString\(\s*""((?:[^""\\]|\\.)+)""", RegexOptions.Compiled),
         new(@"(?<!ResourceManager\.)GetString\([^;""]*\?\?\s*""((?:[^""\\]|\\.)+)""", RegexOptions.Compiled),
-        new(@"SiteScope\.Failed\(\s*""((?:[^""\\]|\\.)+)""", RegexOptions.Compiled)
+        new(@"SiteScope\.Failed\(\s*""((?:[^""\\]|\\.)+)""", RegexOptions.Compiled),
+        // PlannerService.Refused<T>("Key") passes its key straight to GetString.
+        new(@"Refused<[^>]+>\(\s*""((?:[^""\\]|\\.)+)""", RegexOptions.Compiled),
+        // PlannerService.AddError(result, id, "Key") translates its key itself.
+        new(@"AddError\([^;""]*?,\s*""((?:[^""\\]|\\.)+)""\)", RegexOptions.Compiled)
     ];
 
     [Test]
@@ -117,6 +121,12 @@ public class LocalizationKeyCoverageTests
                     Add(Regex.Unescape(match.Groups[1].Value), Path.GetFileName(path));
                 }
             }
+        }
+
+        // The keys PlanPatternApplyService returns reach GetString through PlannerService.
+        foreach (var key in TimePlanning.Pn.Services.PlannerService.PlannerService.PassedThroughKeys)
+        {
+            Add(key, "PlannerService.cs");
         }
 
         // The day-lock refusal keys reach GetString through DayLockHelper.

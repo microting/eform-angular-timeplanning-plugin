@@ -68,17 +68,45 @@ public class PlanPatternApplyService(
     internal Func<TimePlanningPnDbContext, AssignedSite?, int, DateTime, Task<int>> FlexRecompute { get; set; }
         = FlexChainRecompute.RunForwardAsync;
 
+    /// <summary>
+    /// Runs inside the import transaction right before it commits. A seam so a
+    /// test can fail the import after every write and prove nothing is kept;
+    /// null in production.
+    /// </summary>
+    internal Func<Task>? BeforeImportCommit { get; set; }
+
     // UTC, like TimeSettingService.UpdateAssignedSite: a lock boundary is
     // always before UtcNow.Date, so rows from here on are normally open.
     private static DateTime Today => DateTime.UtcNow.Date;
 
-    public async Task<OperationDataResult<PlanPatternApplyResult>> SavePatternAsync(
+    public Task<OperationDataResult<PlanPatternApplyResult>> SavePatternAsync(
         int assignedSiteId,
         int rotationWeeks,
         DateTime anchorDate,
         DateTime validFrom,
         IReadOnlyCollection<PlanPatternDayModel> days,
-        bool overwriteManualDays)
+        bool overwriteManualDays) =>
+        SaveAsync(assignedSiteId, rotationWeeks, anchorDate, validFrom, days, overwriteManualDays, validFrom);
+
+    public Task<OperationDataResult<PlanPatternApplyResult>> SavePatternAsync(
+        int assignedSiteId,
+        int rotationWeeks,
+        DateTime anchorDate,
+        DateTime validFrom,
+        IReadOnlyCollection<PlanPatternDayModel> days,
+        bool overwriteManualDays,
+        DateTime applyFrom) =>
+        SaveAsync(assignedSiteId, rotationWeeks, anchorDate, validFrom, days, overwriteManualDays,
+            applyFrom.Date > validFrom.Date ? applyFrom : validFrom);
+
+    private async Task<OperationDataResult<PlanPatternApplyResult>> SaveAsync(
+        int assignedSiteId,
+        int rotationWeeks,
+        DateTime anchorDate,
+        DateTime validFrom,
+        IReadOnlyCollection<PlanPatternDayModel> days,
+        bool overwriteManualDays,
+        DateTime applyFrom)
     {
         var validationError = Validate(rotationWeeks, anchorDate, days);
         if (validationError != null)
@@ -109,11 +137,108 @@ public class PlanPatternApplyService(
             return new OperationDataResult<PlanPatternApplyResult>(false, "ErrorWhileSavingPlanPattern");
         }
 
-        // The pattern is committed from here on. A failure while writing rows
-        // must not report the save as failed: the manager is told to re-save,
-        // which re-applies the same pattern idempotently, and the flex walk
-        // still runs over whatever was written.
-        var (from, to) = ApplyRange(validFrom);
+        return new OperationDataResult<PlanPatternApplyResult>(true,
+            await ApplyCommittedAsync(assignedSite, pattern, applyFrom, overwriteManualDays, "saved"));
+    }
+
+    public async Task<OperationDataResult<List<PlanPatternApplyResult>>> ImportPatternsAndRetireSheetAsync(
+        IReadOnlyList<PlanPatternImport> patterns)
+    {
+        foreach (var import in patterns)
+        {
+            var validationError = Validate(import.RotationWeeks, import.AnchorDate, import.Days);
+            if (validationError != null)
+            {
+                return new OperationDataResult<List<PlanPatternApplyResult>>(false, validationError);
+            }
+        }
+
+        if (patterns.GroupBy(x => x.AssignedSiteId).Any(g => g.Count() > 1))
+        {
+            return new OperationDataResult<List<PlanPatternApplyResult>>(false, "PlanPatternDuplicateWorker");
+        }
+
+        var ids = patterns.Select(x => x.AssignedSiteId).ToList();
+        var existing = await dbContext.AssignedSites
+            .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+            .CountAsync(x => ids.Contains(x.Id));
+        if (existing != ids.Count)
+        {
+            return new OperationDataResult<List<PlanPatternApplyResult>>(false, "AssignedSite not found");
+        }
+
+        try
+        {
+            var strategy = dbContext.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                dbContext.ChangeTracker.Clear();
+                await using var transaction = await dbContext.Database.BeginTransactionAsync();
+
+                foreach (var import in patterns)
+                {
+                    await WritePatternAsync(import.AssignedSiteId, import.RotationWeeks, import.AnchorDate,
+                        import.ValidFrom, import.Days);
+                }
+
+                // Every worker leaves the sheet, with or without a pattern:
+                // the ones without get the weekday template from now on.
+                var onSheet = await dbContext.AssignedSites
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.UseGoogleSheetAsDefault)
+                    .ToListAsync();
+                foreach (var assignedSite in onSheet)
+                {
+                    assignedSite.UseGoogleSheetAsDefault = false;
+                    assignedSite.UpdatedByUserId = userService.UserId;
+                    await assignedSite.Update(dbContext);
+                }
+
+                await GoogleSheetRetirement.StageRetiredAsync(dbContext, true, userService.UserId);
+                await dbContext.SaveChangesAsync();
+
+                if (BeforeImportCommit != null)
+                {
+                    await BeforeImportCommit();
+                }
+
+                await transaction.CommitAsync();
+            });
+        }
+        catch (Exception e)
+        {
+            dbContext.ChangeTracker.Clear();
+            SentrySdk.CaptureException(e);
+            Console.WriteLine(e);
+            logger.LogError(e, "Importing {Count} PlanPattern(s) and retiring the Google Sheet failed", patterns.Count);
+            return new OperationDataResult<List<PlanPatternApplyResult>>(false, "ErrorWhileImportingPlanPatterns");
+        }
+
+        // Committed. As for a single save, each worker's rows and flex follow
+        // after the commit and a failure there is reported, not undone.
+        var results = new List<PlanPatternApplyResult>();
+        foreach (var import in patterns)
+        {
+            var pattern = (await PlanPatternPlanner.LoadActivePatternAsync(dbContext, import.AssignedSiteId))!;
+            var assignedSite = await dbContext.AssignedSites.SingleAsync(x => x.Id == import.AssignedSiteId);
+            results.Add(await ApplyCommittedAsync(assignedSite, pattern, import.ValidFrom, false, "imported"));
+        }
+
+        return new OperationDataResult<List<PlanPatternApplyResult>>(true, results);
+    }
+
+    /// <summary>
+    /// Writes the rows of a committed pattern from max(<paramref name="applyFrom"/>,
+    /// today) and carries flex once. The pattern is committed, so a failure
+    /// while writing rows does not report the save as failed: the manager is
+    /// told to re-save, which re-applies the same pattern idempotently, and
+    /// the flex walk still runs over whatever was written.
+    /// </summary>
+    /// <param name="verb">"saved" or "imported", for the log.</param>
+    private async Task<PlanPatternApplyResult> ApplyCommittedAsync(AssignedSite assignedSite, PlanPattern pattern,
+        DateTime applyFrom, bool overwriteManualDays, string verb)
+    {
+        var (from, to) = ApplyRange(applyFrom);
         var result = new PlanPatternApplyResult { PlanPatternId = pattern.Id };
         try
         {
@@ -125,14 +250,13 @@ public class PlanPatternApplyService(
             SentrySdk.CaptureException(e);
             Console.WriteLine(e);
             logger.LogError(e,
-                "PlanPattern {PlanPatternId} saved, but writing its rows for AssignedSite {AssignedSiteId} failed",
-                pattern.Id, assignedSiteId);
+                "PlanPattern {PlanPatternId} {Verb}, but writing its rows for AssignedSite {AssignedSiteId} failed",
+                pattern.Id, verb, assignedSite.Id);
             result.WarningKey = PlanPatternApplyResult.RowsIncompleteKey;
         }
 
         await CarryFlexForwardAsync(assignedSite, from);
-
-        return new OperationDataResult<PlanPatternApplyResult>(true, result);
+        return result;
     }
 
     public async Task<OperationResult> DeletePatternAsync(int assignedSiteId)
@@ -329,43 +453,56 @@ public class PlanPatternApplyService(
             dbContext.ChangeTracker.Clear();
             await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
-            await RemoveActivePatternsAsync(assignedSiteId);
-
-            var pattern = new PlanPattern
-            {
-                AssignedSiteId = assignedSiteId,
-                RotationWeeks = rotationWeeks,
-                AnchorDate = anchorDate.Date,
-                ValidFrom = validFrom.Date,
-                CreatedByUserId = userService.UserId,
-                UpdatedByUserId = userService.UserId
-            };
-            await pattern.Create(dbContext);
-
-            foreach (var day in days.OrderBy(d => d.WeekIndex).ThenBy(d => d.DayOfWeek))
-            {
-                await new PlanPatternDay
-                {
-                    PlanPatternId = pattern.Id,
-                    WeekIndex = day.WeekIndex,
-                    DayOfWeek = day.DayOfWeek,
-                    PlanText = day.PlanText ?? "",
-                    CreatedByUserId = userService.UserId,
-                    UpdatedByUserId = userService.UserId
-                }.Create(dbContext);
-            }
-
-            var assignedSite = await dbContext.AssignedSites.SingleAsync(x => x.Id == assignedSiteId);
-            assignedSite.UseGoogleSheetAsDefault = false;
-            assignedSite.UpdatedByUserId = userService.UserId;
-            // Update writes only when something changed.
-            await assignedSite.Update(dbContext);
+            var assignedSite = await WritePatternAsync(assignedSiteId, rotationWeeks, anchorDate, validFrom, days);
 
             await transaction.CommitAsync();
 
             // Read back with only its live days, as every row writer sees it.
             return ((await PlanPatternPlanner.LoadActivePatternAsync(dbContext, assignedSiteId))!, assignedSite);
         });
+    }
+
+    /// <summary>
+    /// The writes of a save, for the caller's transaction: soft-deletes the
+    /// worker's active patterns, creates the new one with its days and takes
+    /// the worker off the Google Sheet.
+    /// </summary>
+    private async Task<AssignedSite> WritePatternAsync(int assignedSiteId,
+        int rotationWeeks, DateTime anchorDate, DateTime validFrom, IReadOnlyCollection<PlanPatternDayModel> days)
+    {
+        await RemoveActivePatternsAsync(assignedSiteId);
+
+        var pattern = new PlanPattern
+        {
+            AssignedSiteId = assignedSiteId,
+            RotationWeeks = rotationWeeks,
+            AnchorDate = anchorDate.Date,
+            ValidFrom = validFrom.Date,
+            CreatedByUserId = userService.UserId,
+            UpdatedByUserId = userService.UserId
+        };
+        await pattern.Create(dbContext);
+
+        foreach (var day in days.OrderBy(d => d.WeekIndex).ThenBy(d => d.DayOfWeek))
+        {
+            await new PlanPatternDay
+            {
+                PlanPatternId = pattern.Id,
+                WeekIndex = day.WeekIndex,
+                DayOfWeek = day.DayOfWeek,
+                PlanText = day.PlanText ?? "",
+                CreatedByUserId = userService.UserId,
+                UpdatedByUserId = userService.UserId
+            }.Create(dbContext);
+        }
+
+        var assignedSite = await dbContext.AssignedSites.SingleAsync(x => x.Id == assignedSiteId);
+        assignedSite.UseGoogleSheetAsDefault = false;
+        assignedSite.UpdatedByUserId = userService.UserId;
+        // Update writes only when something changed.
+        await assignedSite.Update(dbContext);
+
+        return assignedSite;
     }
 
     /// <summary>
