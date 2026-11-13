@@ -38,9 +38,20 @@ public class GoogleSheetHelper
 
         var privateKeyId = Environment.GetEnvironmentVariable("PRIVATE_KEY_ID");
         var googleSheetId = dbContext.PluginConfigurationValues
-            .Single(x => x.Name == "TimePlanningBaseSettings:GoogleSheetId").Value;
-        if (string.IsNullOrEmpty(privateKeyId))
+            .FirstOrDefault(x => x.Name == "TimePlanningBaseSettings:GoogleSheetId")?.Value;
+        if (string.IsNullOrEmpty(googleSheetId))
         {
+            // No sheet configured: this tenant does not plan from a Google Sheet.
+            return;
+        }
+
+        // A configured sheet the pod has no key for used to be skipped without a
+        // word, so the settings were saved and no worker got columns in the sheet.
+        var missingCredentials = MissingCredentials(googleSheetId, privateKeyId);
+        if (missingCredentials != null)
+        {
+            logger.LogWarning("PlanTimer sheet: {Problem}", missingCredentials);
+            SentrySdk.CaptureMessage($"PlanTimer sheet: {missingCredentials}", SentryLevel.Warning);
             return;
         }
 
@@ -103,6 +114,20 @@ public class GoogleSheetHelper
             // different dash or other capitals. The planner matches the way the
             // import does, and only ever appends.
             var appends = PlanTimerSheetColumns.PlanAppends(existingHeaders, siteNames);
+            if (appends.Headers.Count > 0)
+            {
+                // Only now, when columns must be placed, the whole sheet is read,
+                // as formulas rather than as shown: a column with a blank header
+                // can still hold data, or a formula that shows nothing yet, and
+                // new headers must not land on it.
+                var sheetRequest = service.Spreadsheets.Values.Get(googleSheetId, sheetName);
+                sheetRequest.ValueRenderOption =
+                    SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.FORMULA;
+                var sheetResponse = await sheetRequest.ExecuteAsync();
+                appends = PlanTimerSheetColumns.PlanAppends(existingHeaders, siteNames,
+                    sheetResponse.Values ?? new List<IList<object>>());
+            }
+
             foreach (var problem in appends.Problems)
             {
                 logger.LogWarning("PlanTimer sheet: {Problem}", problem);
@@ -115,6 +140,8 @@ public class GoogleSheetHelper
                 // would restate every existing header, so any header a human had
                 // corrected would be silently reverted.
                 var firstNewColumn = appends.FirstColumn;
+                await EnsureColumnsAsync(service, googleSheetId, sheetName, firstNewColumn, appends.Headers.Count,
+                    logger);
                 var range = $"{sheetName}!" +
                             $"{PlanTimerSheetColumns.ColumnLetter(firstNewColumn)}1:" +
                             $"{PlanTimerSheetColumns.ColumnLetter(firstNewColumn + appends.Headers.Count - 1)}1";
@@ -133,34 +160,60 @@ public class GoogleSheetHelper
             }
 
             AutoAdjustColumnWidths(service, googleSheetId, sheetName, logger);
-
-            try
-            {
-                // ... existing code ...
-
-                var sheet = service.Spreadsheets.Get(googleSheetId).Execute().Sheets
-                    .FirstOrDefault(s => s.Properties.Title == sheetName);
-                if (sheet == null) throw new Exception($"Sheet '{sheetName}' not found.");
-
-                var sheetId = sheet.Properties.SheetId;
-
-                // ... existing code ...
-
-                // SetAlternatingColumnColors(service, googleSheetId, sheetId!.Value, newHeaders.Count, logger);
-
-                logger.LogInformation("Headers are already up-to-date.");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"An error occurred: {ex.Message}");
-            }
-
-            logger.LogInformation("Headers are already up-to-date.");
         }
         catch (Exception ex)
         {
-            logger.LogError($"An error occurred: {ex.Message}");
+            // The settings are saved either way, so this is the only trace of a
+            // worker left without columns in the sheet: it must reach Sentry.
+            logger.LogError(ex, "PlanTimer sheet: the worker headers could not be written: {Message}", ex.Message);
+            SentrySdk.CaptureException(ex);
         }
+    }
+
+    /// <summary>
+    /// Why a push to a configured sheet cannot run, or null when it can. A
+    /// tenant without a sheet has nothing to push and is not a problem.
+    /// </summary>
+    public static string MissingCredentials(string googleSheetId, string privateKeyId) =>
+        !string.IsNullOrEmpty(googleSheetId) && string.IsNullOrEmpty(privateKeyId)
+            ? "a Google Sheet is configured but PRIVATE_KEY_ID is not set, so no worker headers are written"
+            : null;
+
+    /// <summary>
+    /// Grows the sheet's grid so the new headers fit; the Sheets API refuses a
+    /// write beyond the last column of the grid.
+    /// </summary>
+    static async Task EnsureColumnsAsync(SheetsService service, string spreadsheetId, string sheetName,
+        int firstColumn, int count, ILogger logger)
+    {
+        var spreadsheet = await service.Spreadsheets.Get(spreadsheetId).ExecuteAsync();
+        var sheet = spreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName)
+                    ?? throw new InvalidOperationException($"Sheet '{sheetName}' not found.");
+        var missing = PlanTimerSheetColumns.ColumnsToAdd(
+            sheet.Properties.GridProperties?.ColumnCount ?? 0, firstColumn, count);
+        if (missing == 0)
+        {
+            return;
+        }
+
+        var batchRequest = new BatchUpdateSpreadsheetRequest
+        {
+            Requests = new List<Request>
+            {
+                new()
+                {
+                    AppendDimension = new AppendDimensionRequest
+                    {
+                        SheetId = sheet.Properties.SheetId,
+                        Dimension = "COLUMNS",
+                        Length = missing
+                    }
+                }
+            }
+        };
+        await service.Spreadsheets.BatchUpdate(batchRequest, spreadsheetId).ExecuteAsync();
+
+        logger.LogInformation("Added {Count} column(s) to the PlanTimer sheet's grid.", missing);
     }
 
     public static async Task PullEverythingFromGoogleSheet(Core core, TimePlanningPnDbContext dbContext, ILogger logger)
