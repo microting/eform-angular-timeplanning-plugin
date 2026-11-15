@@ -1,0 +1,193 @@
+<h3 mat-dialog-title>
+  <span class="planner-hint planner-step-label" data-testid="planner-import-step">
+    {{ 'plannerImportStep' | translate: {n: stepNumber} }}
+  </span>
+  {{ 'plannerImportTitle' | translate }}
+</h3>
+<div mat-dialog-content id="planner-import-dialog" data-testid="planner-import-dialog">
+  @if (loading) {
+    <div class="d-flex justify-content-center p-3"><mat-spinner diameter="32"></mat-spinner></div>
+  } @else if (step === 'preview') {
+    <div class="d-flex flex-column planner-dialog-stack" data-testid="planner-import-preview">
+      <div class="planner-info">
+        <mat-icon>auto_awesome</mat-icon>
+        <span>{{ 'plannerImportPreviewIntro' | translate: {from: formatDate(windowStart)} }}</span>
+      </div>
+      <span data-testid="planner-import-recognised-count">{{ 'plannerImportRecognisedCount' | translate: {count: recognisedCount} }}</span>
+      @if (unrecognisedCount > 0) {
+        <span data-testid="planner-import-unrecognised-count">{{ 'plannerImportUnrecognisedCount' | translate: {count: unrecognisedCount} }}</span>
+      }
+      @if (rows.length === 0) {
+        <span>{{ 'plannerImportNoWorkers' | translate }}</span>
+      }
+    </div>
+  } @else if (step === 'review') {
+    <div class="d-flex flex-column planner-dialog-stack" data-testid="planner-import-review">
+      <table class="planner-import-table">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'plannerImportInclude' | translate }}</th>
+            <th scope="col">{{ 'plannerWorker' | translate }}</th>
+            <th scope="col">{{ 'plannerImportProposedForm' | translate }}</th>
+            <th scope="col">{{ 'plannerAnchorLabel' | translate }}</th>
+            <th scope="col">{{ 'plannerImportFound' | translate }}</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows; track row.worker.assignedSiteId) {
+            <tr [attr.data-testid]="'planner-import-row-' + row.worker.assignedSiteId">
+              @if (row.worker.recognised) {
+                <td>
+                  <mat-checkbox
+                    [(ngModel)]="row.include"
+                    [id]="'planner-import-include-' + row.worker.assignedSiteId"
+                    [attr.data-testid]="'planner-import-include-' + row.worker.assignedSiteId"
+                    [aria-label]="row.worker.siteName"
+                  ></mat-checkbox>
+                </td>
+                <td>{{ row.worker.siteName }}</td>
+                <td>
+                  <mat-form-field subscriptSizing="dynamic">
+                    <mat-select
+                      [value]="row.rotationWeeks"
+                      (valueChange)="setRotationWeeks(row, $event)"
+                      [disabled]="!row.include"
+                      [aria-label]="'plannerImportProposedForm' | translate"
+                      [id]="'planner-import-rotation-' + row.worker.assignedSiteId"
+                      [attr.data-testid]="'planner-import-rotation-' + row.worker.assignedSiteId"
+                    >
+                      @for (n of rotationOptions; track n) {
+                        <mat-option [value]="n">
+                          {{ (n === 1 ? 'plannerFormSameWeek' : 'plannerRotationNWeeks') | translate: {n: n} }}
+                        </mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                </td>
+                <td>
+                  <mat-form-field subscriptSizing="dynamic">
+                    <input
+                      matInput
+                      [matDatepicker]="anchorPicker"
+                      [matDatepickerFilter]="mondaysOnly"
+                      [(ngModel)]="row.anchorDate"
+                      [disabled]="!row.include"
+                      [attr.aria-label]="'plannerAnchorLabel' | translate"
+                      [id]="'planner-import-anchor-' + row.worker.assignedSiteId"
+                      [attr.data-testid]="'planner-import-anchor-' + row.worker.assignedSiteId"
+                    />
+                    <mat-datepicker-toggle matSuffix [for]="anchorPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #anchorPicker></mat-datepicker>
+                  </mat-form-field>
+                </td>
+                <td class="planner-hint">{{ summary(row) }}</td>
+                <td>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [disabled]="!row.include"
+                    [matTooltip]="'plannerEditDays' | translate"
+                    [attr.aria-label]="'plannerEditDays' | translate"
+                    [attr.aria-expanded]="row.expanded"
+                    [id]="'planner-import-edit-' + row.worker.assignedSiteId"
+                    [attr.data-testid]="'planner-import-edit-' + row.worker.assignedSiteId"
+                    (click)="row.expanded = !row.expanded"
+                  >
+                    <mat-icon>{{ row.expanded ? 'expand_less' : 'edit' }}</mat-icon>
+                  </button>
+                </td>
+              } @else {
+                <td></td>
+                <td>{{ row.worker.siteName }}</td>
+                <td colspan="4" [attr.data-testid]="'planner-import-unrecognised-' + row.worker.assignedSiteId">
+                  <strong>{{ 'plannerImportNotRecognised' | translate }}</strong>
+                  · {{ importReasonKey(row.worker.reason) | translate }}
+                </td>
+              }
+            </tr>
+            @if (row.worker.recognised && row.include && row.expanded) {
+              <tr>
+                <td></td>
+                <td colspan="5">
+                  <app-planner-pattern-days
+                    [rotationWeeks]="row.rotationWeeks"
+                    [days]="row.days"
+                    [idPrefix]="'planner-import-day-' + row.worker.assignedSiteId"
+                  ></app-planner-pattern-days>
+                </td>
+              </tr>
+            }
+            @if (row.worker.recognised && row.include && !rowValid(row)) {
+              <tr>
+                <td></td>
+                <td colspan="5" class="planner-error">{{ 'plannerShortFormInvalidHint' | translate }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+      <span class="planner-hint">{{ 'plannerImportUnrecognisedHint' | translate }}</span>
+    </div>
+  } @else if (step === 'apply') {
+    <div class="d-flex flex-column planner-dialog-stack" data-testid="planner-import-apply">
+      <span>{{ 'plannerImportApplyIntro' | translate: {count: includedRows.length} }}</span>
+      <div class="planner-info">
+        <mat-icon>warning</mat-icon>
+        <span>{{ 'plannerImportRetiresSheet' | translate }}</span>
+      </div>
+    </div>
+  } @else {
+    <div class="d-flex flex-column planner-dialog-stack" data-testid="planner-import-done">
+      <span>{{ 'plannerImportDone' | translate: {count: results.length} }}</span>
+      <ul class="planner-date-list">
+        @for (r of results; track r.result.assignedSiteId) {
+          <li>
+            {{ r.name }}: {{ 'plannerRowsWritten' | translate: {count: r.result.rowsWritten} }}
+            @if (r.result.lockedDays.length > 0) {
+              · {{ 'plannerDaysLockedNotChanged' | translate: {count: r.result.lockedDays.length} }}
+            }
+            @if (r.result.warning) {
+              · {{ r.result.warning }}
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</div>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+  <button type="button" class="btn-cancel" id="planner-import-cancel" data-testid="planner-import-cancel" (click)="close()">
+    {{ (step === 'done' ? 'Close' : 'Cancel') | translate }}
+  </button>
+  @if (step !== 'done') {
+    @if (step !== 'preview') {
+      <button type="button" class="btn-quiet" id="planner-import-back" data-testid="planner-import-back" [disabled]="busy" (click)="back()">
+        {{ 'plannerBack' | translate }}
+      </button>
+    }
+    @if (step === 'apply') {
+      <button
+        type="button"
+        class="btn-primary"
+        id="planner-import-apply-btn"
+        data-testid="planner-import-apply-btn"
+        [disabled]="busy || includedRows.length === 0"
+        (click)="apply()"
+      >
+        {{ 'plannerImportApply' | translate }}
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="btn-primary"
+        id="planner-import-next"
+        data-testid="planner-import-next"
+        [disabled]="loading || rows.length === 0 || (step === 'review' && !reviewValid)"
+        (click)="next()"
+      >
+        {{ 'plannerNext' | translate }}
+      </button>
+    }
+  }
+</div>

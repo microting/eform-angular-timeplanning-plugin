@@ -1,0 +1,81 @@
+<div class="planner-requests-panel" id="planner-requests-panel" data-testid="planner-requests-panel">
+  <div class="d-flex flex-row align-items-center">
+    <h2 class="flex-grow-1 planner-panel-title">{{ 'plannerVacationRequests' | translate }}</h2>
+    <button
+      mat-icon-button
+      type="button"
+      [attr.aria-label]="'Close' | translate"
+      [matTooltip]="'Close' | translate"
+      id="planner-requests-close"
+      data-testid="planner-requests-close"
+      (click)="closed.emit()"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div class="planner-info">
+    <mat-icon>info</mat-icon>
+    <span>{{ 'plannerVacationRequestsIntro' | translate }}</span>
+  </div>
+
+  @if (!loading && views.length === 0) {
+    <span class="planner-hint" data-testid="planner-requests-empty">{{ 'plannerNoPendingRequests' | translate }}</span>
+  }
+
+  @for (view of views; track view.request.id) {
+    <div class="planner-request-card" [attr.data-testid]="'planner-request-' + view.request.id">
+      <div class="d-flex flex-column">
+        <strong>{{ view.name }}</strong>
+        <span class="planner-hint">{{ formatDate(view.from) }} – {{ formatDate(view.to) }}</span>
+        @if (view.typeKey) {
+          <span>{{ view.typeKey | translate }}</span>
+        }
+        @if (view.request.requestComment) {
+          <em>{{ view.request.requestComment }}</em>
+        }
+      </div>
+      @if (view.emptyDays.length > 0) {
+        <div class="planner-info" [attr.data-testid]="'planner-request-warning-' + view.request.id">
+          <mat-icon>groups</mat-icon>
+          <span>{{ 'plannerApproveLeavesNobody' | translate: {dates: formatDates(view.emptyDays)} }}</span>
+        </div>
+      }
+      <div class="d-flex flex-row flex-wrap justify-content-end planner-row-gap">
+        <button
+          type="button"
+          class="btn-quiet"
+          [id]="'planner-request-show-' + view.request.id"
+          [attr.data-testid]="'planner-request-show-' + view.request.id"
+          (click)="show(view)"
+        >
+          <mat-icon>calendar_view_week</mat-icon>
+          {{ 'plannerShowInPlan' | translate }}
+        </button>
+        @if (view.canDecide) {
+          <button
+            type="button"
+            class="btn-cancel"
+            [id]="'planner-request-reject-' + view.request.id"
+            [attr.data-testid]="'planner-request-reject-' + view.request.id"
+            (click)="reject(view)"
+          >
+            {{ 'Reject' | translate }}
+          </button>
+          <button
+            type="button"
+            class="btn-primary"
+            [id]="'planner-request-approve-' + view.request.id"
+            [attr.data-testid]="'planner-request-approve-' + view.request.id"
+            (click)="approve(view)"
+          >
+            {{ 'Approve' | translate }}
+          </button>
+        } @else {
+          <span class="planner-hint" [attr.data-testid]="'planner-request-not-manager-' + view.request.id">
+            {{ 'plannerNotManagerOfWorker' | translate }}
+          </span>
+        }
+      </div>
+    </div>
+  }
+</div>

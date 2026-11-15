@@ -1,0 +1,165 @@
+import {TranslateService} from '@ngx-translate/core';
+import {
+  addDays as fnsAddDays, eachDayOfInterval, format, getISODay, getISOWeek, isMonday, parse, startOfDay,
+  startOfISOWeek, startOfToday,
+} from 'date-fns';
+import {PlanPatternDayModel} from './models';
+
+/**
+ * Calendar-date helpers for the planner (#5489).
+ *
+ * The planner works in calendar dates only. In transport a date is UTC midnight
+ * of that calendar date ("2026-11-09T00:00:00.000Z", the same shape the rest of
+ * the plugin sends with PARSING_DATE_FORMAT); for display it is a local Date at
+ * local midnight. The server's "2026-11-09T00:00:00" (no zone) is read by its
+ * date part alone, so no clock ever shifts a day.
+ */
+
+/** "2026-11-09" from a server date string. */
+export function dateKey(value: string): string {
+  return (value ?? '').substring(0, 10);
+}
+
+/** "2026-11-09" from a local Date (its local calendar date). */
+export function localDateKey(date: Date): string {
+  return format(date, 'yyyy-MM-dd');
+}
+
+/** A server date string (or "yyyy-MM-dd") as a local Date at local midnight, for display. */
+export function parseCalendarDate(value: string): Date {
+  return parse(dateKey(value), 'yyyy-MM-dd', new Date());
+}
+
+/** The calendar date of a local Date, as UTC midnight in ISO form, for transport. */
+export function toTransportDate(date: Date): string {
+  return `${localDateKey(date)}T00:00:00.000Z`;
+}
+
+/** A "yyyy-MM-dd" key as UTC midnight in ISO form, for transport. */
+export function keyToTransportDate(key: string): string {
+  return `${dateKey(key)}T00:00:00.000Z`;
+}
+
+export function addDays(date: Date, days: number): Date {
+  return fnsAddDays(startOfDay(date), days);
+}
+
+/** ISO weekday: 0 = Monday ... 6 = Sunday. */
+export function isoDayOfWeek(date: Date): number {
+  return getISODay(date) - 1;
+}
+
+export function mondayOf(date: Date): Date {
+  return startOfISOWeek(date);
+}
+
+export function todayLocal(): Date {
+  return startOfToday();
+}
+
+/** ISO 8601 week number of a local date. */
+export function isoWeekNumber(date: Date): number {
+  return getISOWeek(date);
+}
+
+/** Every date key from `from` to `to`, both included; none when from is after to. */
+export function dateKeysBetween(from: Date, to: Date): string[] {
+  return from > to ? [] : eachDayOfInterval({start: from, end: to}).map(localDateKey);
+}
+
+/** Datepicker filter: a rotation's anchor is always a Monday. */
+export const mondaysOnly = (date: Date | null): boolean => !!date && isMonday(date);
+
+/** The current translate language, for Intl/toLocale* formatting. */
+export function plannerLocale(translate: TranslateService): string {
+  return translate.currentLang || translate.defaultLang || 'da';
+}
+
+/** Weekday, day, month and year: "man. 9. nov. 2026". */
+export const LONG_DATE: Intl.DateTimeFormatOptions = {weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'};
+
+/** A local date in the user's language. */
+export function formatPlannerDate(translate: TranslateService, date: Date | null,
+                                  options: Intl.DateTimeFormatOptions = LONG_DATE): string {
+  return date ? date.toLocaleDateString(plannerLocale(translate), options) : '';
+}
+
+/** Hours in the user's language, at most 2 decimals: "37,5" (da), "37.5" (en); "" for null. */
+export function formatPlannerHours(translate: TranslateService, value: number | null | undefined): string {
+  if (value == null) {
+    return '';
+  }
+  return new Intl.NumberFormat(plannerLocale(translate), {maximumFractionDigits: 2}).format(value);
+}
+
+/**
+ * The same check as the server's PlannerShortForm.Parse, so the editor can say
+ * "kan ikke læses" before sending. The server stays the authority: it parses
+ * again and refuses anything it cannot read.
+ *
+ * Returns 'clear' for empty text ("Ryd"), 'dayOff' for "Fri", 'plan' for text
+ * that is wholly shifts (at most 5, ";"-separated), else 'invalid'.
+ */
+export type ShortFormKind = 'clear' | 'dayOff' | 'plan' | 'invalid';
+
+const TIME = '[0-9]{1,2}(?:[:.,][0-9]{1,2}|½)?';
+const BREAK = '(?:[0-9]{1,2}:[0-9]{1,2}|(?=[0-9.,½¾])[0-9]*(?:[.,][0-9]+)?[½¾]?)';
+const WHOLE_SEGMENT = new RegExp(`^${TIME}\\s*-\\s*${TIME}(?:\\s*/\\s*${BREAK})?$`);
+const MAX_SHIFTS = 5;
+
+export function shortFormKind(text: string | null | undefined): ShortFormKind {
+  const trimmed = (text ?? '').trim();
+  if (!trimmed) {
+    return 'clear';
+  }
+  if (trimmed.toLowerCase() === 'fri') {
+    return 'dayOff';
+  }
+  const segments = trimmed.split(';').map(s => s.trim()).filter(s => s.length > 0);
+  if (segments.length === 0 || segments.length > MAX_SHIFTS) {
+    return 'invalid';
+  }
+  return segments.every(s => WHOLE_SEGMENT.test(s)) ? 'plan' : 'invalid';
+}
+
+/** A pattern day text is acceptable when empty, "Fri" or shifts. */
+export function isValidPatternDayText(text: string | null | undefined): boolean {
+  return shortFormKind(text) !== 'invalid';
+}
+
+/**
+ * Every (week, weekday) of a rotation in order, keeping the texts of `days`
+ * that still fit; new weeks start empty ("" = no plan).
+ */
+export function fullPatternGrid(rotationWeeks: number, days: PlanPatternDayModel[]): PlanPatternDayModel[] {
+  const byCell = new Map<string, string>();
+  for (const day of days ?? []) {
+    const key = `${day.weekIndex}|${day.dayOfWeek}`;
+    if (!byCell.has(key)) {
+      byCell.set(key, day.planText ?? '');
+    }
+  }
+  const grid: PlanPatternDayModel[] = [];
+  for (let week = 0; week < rotationWeeks; week++) {
+    for (let dow = 0; dow < 7; dow++) {
+      grid.push({weekIndex: week, dayOfWeek: dow, planText: byCell.get(`${week}|${dow}`) ?? ''});
+    }
+  }
+  return grid;
+}
+
+/** A pattern can be saved: a Monday anchor and every day text readable. */
+export function isValidPattern(anchorDate: Date | null, days: PlanPatternDayModel[]): boolean {
+  return mondaysOnly(anchorDate) && days.every(d => isValidPatternDayText(d.planText));
+}
+
+/** The days as sent to the server: every text trimmed, null as "". */
+export function trimmedPatternDays(days: PlanPatternDayModel[]): PlanPatternDayModel[] {
+  return days.map(d => ({weekIndex: d.weekIndex, dayOfWeek: d.dayOfWeek, planText: (d.planText ?? '').trim()}));
+}
+
+/** Rotation lengths the server accepts. */
+export const ROTATION_WEEK_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
+
+/** Weekday translation keys, ISO order (the plugin already translates them). */
+export const WEEKDAY_KEYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

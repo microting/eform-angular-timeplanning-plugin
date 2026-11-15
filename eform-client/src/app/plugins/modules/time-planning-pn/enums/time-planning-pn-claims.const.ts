@@ -5,4 +5,6 @@ export const TimePlanningPnClaims = {
   editPlannings: 'time_planning_plannings_edit',
   getWorkingHours: 'time_planning_working_hours_get',
   getFlex: 'time_planning_working_hours_get',
+  /** #5489: the web planner beta, "Planlægning (beta)". */
+  planner: 'time_planning_planner',
 };

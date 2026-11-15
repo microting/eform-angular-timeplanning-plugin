@@ -1,0 +1,350 @@
+<mat-drawer-container class="planner-drawer-container" [hasBackdrop]="true">
+  <mat-drawer
+    mode="over"
+    position="end"
+    [opened]="drawerOpen"
+    (closedStart)="drawerOpen = false"
+  >
+    @if (drawerOpen) {
+      <app-planner-requests-panel
+        [grid]="grid"
+        (closed)="drawerOpen = false"
+        (decided)="load()"
+        (showInPlan)="showInPlan($event)"
+        (pendingCount)="pendingRequests = $event"
+      ></app-planner-requests-panel>
+    }
+  </mat-drawer>
+
+  <mat-drawer-content>
+    <eform-new-subheader>
+      <div class="d-flex flex-row flex-wrap align-items-center planner-row-gap">
+        @if (grid && !grid.googleSheetRetired) {
+          <button type="button" class="btn-cancel" id="planner-import-open" data-testid="planner-import-open" (click)="openImport()">
+            <mat-icon>upload</mat-icon>
+            {{ 'plannerImportFromSheet' | translate }}
+          </button>
+        }
+        @if (grid && grid.googleSheetRetired) {
+          <mat-slide-toggle
+            [checked]="false"
+            (change)="useGoogleSheetAgain()"
+            id="planner-use-sheet-again"
+            data-testid="planner-use-sheet-again"
+          >
+            {{ 'plannerUseGoogleSheetAgain' | translate }}
+          </mat-slide-toggle>
+        }
+        <button type="button" class="btn-cancel" id="planner-requests-open" data-testid="planner-requests-open" (click)="drawerOpen = true">
+          <mat-icon>inbox</mat-icon>
+          {{ 'plannerVacationRequests' | translate }}
+          @if (pendingRequests > 0) {
+            ({{ pendingRequests }})
+          }
+        </button>
+        <button type="button" class="btn-primary" id="planner-absence-open" data-testid="planner-absence-open" (click)="openAbsence()">
+          <mat-icon>beach_access</mat-icon>
+          {{ 'plannerRegisterAbsence' | translate }}
+        </button>
+      </div>
+    </eform-new-subheader>
+
+    <div class="d-flex flex-row flex-wrap align-items-center planner-row-gap planner-toolbar">
+      <button
+        mat-icon-button
+        type="button"
+        [attr.aria-label]="'plannerPreviousPeriod' | translate"
+        [matTooltip]="'plannerPreviousPeriod' | translate"
+        id="planner-prev"
+        data-testid="planner-prev"
+        (click)="previous()"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <strong id="planner-period" data-testid="planner-period">{{ periodLabel }}</strong>
+      <button
+        mat-icon-button
+        type="button"
+        [attr.aria-label]="'plannerNextPeriod' | translate"
+        [matTooltip]="'plannerNextPeriod' | translate"
+        id="planner-next"
+        data-testid="planner-next"
+        (click)="next()"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <button type="button" class="btn-quiet" id="planner-today" data-testid="planner-today" (click)="goToToday()">
+        {{ 'plannerToday' | translate }}
+      </button>
+      <mat-button-toggle-group
+        [value]="days"
+        (change)="onDaysChange($event.value)"
+        [attr.aria-label]="'plannerViewLength' | translate"
+        id="planner-days-toggle"
+        data-testid="planner-days-toggle"
+      >
+        <mat-button-toggle [value]="7" id="planner-days-7" data-testid="planner-days-7">{{ 'plannerOneWeek' | translate }}</mat-button-toggle>
+        <mat-button-toggle [value]="14" id="planner-days-14" data-testid="planner-days-14">{{ 'plannerTwoWeeks' | translate }}</mat-button-toggle>
+      </mat-button-toggle-group>
+      <mat-form-field class="planner-tag-filter" subscriptSizing="dynamic">
+        <mat-label>{{ 'Tags' | translate }}</mat-label>
+        <mtx-select
+          [items]="availableTags"
+          bindLabel="name"
+          bindValue="id"
+          [multiple]="true"
+          [ngModel]="selectedTagIds"
+          (ngModelChange)="onTagsChanged($event)"
+          id="planner-tags"
+          data-testid="planner-tags"
+        ></mtx-select>
+      </mat-form-field>
+      @if (loading) {
+        <mat-spinner diameter="24"></mat-spinner>
+      }
+    </div>
+
+    <div class="d-flex flex-row flex-wrap align-items-center planner-legend" data-testid="planner-legend">
+      <span class="planner-legend-item"><span class="planner-manual-dot"></span>{{ 'plannerLegendManual' | translate }}</span>
+      <span class="planner-legend-item"><mat-icon class="planner-glyph">lock</mat-icon>{{ 'plannerLegendLocked' | translate }}</span>
+      <span class="planner-legend-item"><span class="planner-swatch planner-pending"></span>{{ 'plannerLegendPending' | translate }}</span>
+      <span class="planner-legend-item"><mat-icon class="planner-glyph">error</mat-icon>{{ 'plannerLegendOffNorm' | translate }}</span>
+      <span class="planner-legend-item planner-hint">{{ 'plannerSelectTip' | translate }}</span>
+    </div>
+
+    <div class="planner-grid-scroll" (keydown.escape)="clearSelection()">
+      <table class="planner-grid" id="planner-grid" data-testid="planner-grid">
+        <thead>
+          <tr>
+            <th scope="col" class="planner-name-col">{{ 'plannerWorker' | translate }}</th>
+            @for (column of columns; track column.key) {
+              @if (column.kind === 'day') {
+                <th scope="col" [class.planner-weekend]="isWeekend(column.date)" [attr.data-testid]="'planner-day-' + column.key">
+                  <span class="d-flex flex-column">
+                    <span>{{ weekdayShort(column.date) }}</span>
+                    <span class="planner-hint">{{ formatDate(column.date, false) }}</span>
+                  </span>
+                </th>
+              } @else {
+                <th scope="col" class="planner-week-col">{{ 'plannerWeekN' | translate: {n: column.isoWeek} }}</th>
+              }
+            }
+          </tr>
+          <tr>
+            <th scope="row" class="planner-name-col">
+              <span class="d-flex flex-row align-items-center"><mat-icon class="planner-glyph">groups</mat-icon>{{ 'plannerAtWork' | translate }}</span>
+            </th>
+            @for (column of columns; track column.key) {
+              @if (column.kind === 'day') {
+                <td
+                  class="planner-headcount"
+                  [class.planner-pending]="(column.total?.pendingAbsenceRequests ?? 0) > 0"
+                  [attr.data-testid]="'planner-headcount-' + column.key"
+                  [matTooltip]="(column.total?.pendingAbsenceRequests ?? 0) > 0 ? ('plannerPendingOnDay' | translate: {count: column.total?.pendingAbsenceRequests}) : ''"
+                >
+                  {{ column.total?.plannedHeadcount ?? 0 }}
+                </td>
+              } @else {
+                <td class="planner-week-col"></td>
+              }
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows; track row.worker.assignedSiteId; let r = $index) {
+            <tr
+              [id]="'planner-row-' + row.worker.assignedSiteId"
+              [attr.data-testid]="'planner-row-' + row.worker.assignedSiteId"
+              [class.planner-row-highlight]="row.worker.siteId === highlightSiteId"
+            >
+              <th scope="row" class="planner-name-col">
+                <span class="d-flex flex-row align-items-center">
+                  <span class="d-flex flex-column flex-grow-1">
+                    <span>{{ row.worker.siteName }}</span>
+                    <span class="planner-hint">{{ workerMeta(row.worker) }}</span>
+                  </span>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [attr.aria-label]="('plannerPatternTitle' | translate) + ' ' + row.worker.siteName"
+                    [matTooltip]="'plannerPatternTitle' | translate"
+                    [id]="'planner-pattern-open-' + row.worker.assignedSiteId"
+                    [attr.data-testid]="'planner-pattern-open-' + row.worker.assignedSiteId"
+                    (click)="openPattern(row.worker)"
+                  >
+                    <mat-icon>event_repeat</mat-icon>
+                  </button>
+                </span>
+              </th>
+              @for (column of columns; track column.key) {
+                @if (column.kind === 'day') {
+                  @let cell = row.cells.get(column.key);
+                  <td class="planner-cell-td" [class.planner-weekend]="isWeekend(column.date)">
+                    <button
+                      type="button"
+                      class="planner-cell"
+                      [class.planner-cell-selected]="isSelected(row, column.key)"
+                      [class.locked-background]="cell?.locked"
+                      [class.planner-pending]="cell?.hasPendingAbsenceRequest"
+                      [attr.aria-pressed]="isSelected(row, column.key)"
+                      [attr.aria-label]="cellLabel(row, column, cell)"
+                      [id]="'planner-cell-' + row.worker.assignedSiteId + '-' + column.key"
+                      [attr.data-testid]="'planner-cell-' + row.worker.assignedSiteId + '-' + column.key"
+                      (mousedown)="onCellMouseDown($event, r, column.dayIndex)"
+                      (mouseenter)="onCellMouseEnter(r, column.dayIndex)"
+                      (keydown)="onCellKeydown($event, r, column.dayIndex)"
+                    >
+                      @if (absenceTypeKey(cell?.messageId); as typeKey) {
+                        <span class="planner-absence-badge" [attr.data-testid]="'planner-absence-' + row.worker.assignedSiteId + '-' + column.key">{{ typeKey | translate }}</span>
+                      } @else if (cell?.planHours) {
+                        <strong>{{ hours(cell.planHours) }}</strong>
+                      }
+                      @if (cell?.planText) {
+                        <span class="planner-cell-text">{{ cell.planText }}</span>
+                      }
+                      <span class="planner-cell-marks">
+                        @if (cell?.planChangedByAdmin) {
+                          <span class="planner-manual-dot" [attr.data-testid]="'planner-manual-' + row.worker.assignedSiteId + '-' + column.key"></span>
+                        }
+                        @if (cell?.locked) {
+                          <mat-icon class="planner-glyph" [attr.data-testid]="'planner-locked-' + row.worker.assignedSiteId + '-' + column.key">lock</mat-icon>
+                        }
+                      </span>
+                    </button>
+                  </td>
+                } @else {
+                  @let week = row.weeks.get(column.weekStart);
+                  <td
+                    class="planner-week-col"
+                    [attr.data-testid]="'planner-week-' + row.worker.assignedSiteId + '-' + column.weekStart"
+                  >
+                    @if (week) {
+                      <span class="d-flex flex-column">
+                        <strong>{{ hours(week.plannedHours) }}</strong>
+                        @if (week.normHours != null) {
+                          <span class="planner-hint d-flex flex-row align-items-center">
+                            @if (week.differenceHours != null && week.differenceHours !== 0) {
+                              <mat-icon class="planner-glyph" [matTooltip]="'plannerOffNormBy' | translate: {hours: hours(week.differenceHours)}">error</mat-icon>
+                            }
+                            {{ 'plannerOfNorm' | translate: {hours: hours(week.normHours)} }}
+                          </span>
+                        }
+                      </span>
+                    }
+                  </td>
+                }
+              }
+            </tr>
+          } @empty {
+            @if (!loading) {
+              <tr>
+                <td [attr.colspan]="columns.length + 1" class="planner-hint" data-testid="planner-no-workers">{{ 'plannerNoWorkers' | translate }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (selection.size > 0) {
+      <div class="planner-editor" id="planner-editor" data-testid="planner-editor">
+        <div class="d-flex flex-row flex-wrap align-items-center planner-row-gap">
+          <strong data-testid="planner-editor-count">
+            {{ 'plannerDaysSelected' | translate: {count: selection.size, workers: selectedWorkerCount} }}
+          </strong>
+          <mat-form-field subscriptSizing="dynamic" class="planner-shortform">
+            <mat-label>{{ 'plannerShift' | translate }}</mat-label>
+            <input
+              matInput
+              [(ngModel)]="shortForm"
+              [placeholder]="'plannerShortFormPlaceholder' | translate"
+              (keydown.enter)="onShortFormEnter()"
+              [attr.aria-invalid]="shortFormState === 'invalid'"
+              id="planner-editor-shortform"
+              data-testid="planner-editor-shortform"
+            />
+          </mat-form-field>
+          <button
+            type="button"
+            class="btn-primary"
+            id="planner-editor-fill"
+            data-testid="planner-editor-fill"
+            [disabled]="saving || shortFormState === 'invalid' || shortFormState === 'clear'"
+            (click)="applyShortForm(shortForm)"
+          >
+            {{ 'plannerFill' | translate }}
+          </button>
+          <button type="button" class="btn-quiet" id="planner-editor-dayoff" data-testid="planner-editor-dayoff" [disabled]="saving" (click)="applyShortForm('Fri')">
+            {{ 'plannerDayOff' | translate }}
+          </button>
+          <button type="button" class="btn-quiet" id="planner-editor-clear" data-testid="planner-editor-clear" [disabled]="saving" (click)="applyShortForm('')">
+            {{ 'plannerClear' | translate }}
+          </button>
+          <button
+            mat-icon-button
+            type="button"
+            [attr.aria-label]="'plannerDeselectAll' | translate"
+            [matTooltip]="'plannerDeselectAll' | translate"
+            id="planner-editor-close"
+            data-testid="planner-editor-close"
+            (click)="clearSelection()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        @if (shortFormState === 'invalid') {
+          <span class="planner-error" data-testid="planner-editor-invalid">{{ 'plannerShortFormInvalidHint' | translate }}</span>
+        } @else {
+          <span class="planner-hint">{{ 'plannerShortFormHint' | translate }}</span>
+        }
+
+        <mat-radio-group
+          class="d-flex flex-row flex-wrap planner-row-gap"
+          [(ngModel)]="mode"
+          [attr.aria-label]="'plannerEditScope' | translate"
+          id="planner-editor-mode"
+          data-testid="planner-editor-mode"
+        >
+          <mat-radio-button [value]="modes.onlyTheseDays" id="planner-editor-mode-only" data-testid="planner-editor-mode-only">
+            {{ 'plannerOnlyTheseDays' | translate }}
+          </mat-radio-button>
+          <mat-radio-button
+            [value]="modes.everyWeekdayFrom"
+            [disabled]="!everyWeekdayAllowed"
+            id="planner-editor-mode-every"
+            data-testid="planner-editor-mode-every"
+          >
+            {{ everyWeekdayLabel }}
+          </mat-radio-button>
+        </mat-radio-group>
+        @if (!everyWeekdayAllowed) {
+          <span class="planner-hint">{{ 'plannerEveryWeekdayNeedsPattern' | translate }}</span>
+        }
+
+        @if (mode === modes.onlyTheseDays) {
+          <div class="d-flex flex-row flex-wrap align-items-center planner-row-gap">
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>{{ 'plannerAbsenceType' | translate }}</mat-label>
+              <mat-select [(ngModel)]="absenceMessageId" id="planner-editor-absence-type" data-testid="planner-editor-absence-type">
+                @for (t of absenceTypes; track t.id) {
+                  <mat-option [value]="t.id">{{ t.key | translate }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <button
+              type="button"
+              class="btn-cancel"
+              id="planner-editor-absence"
+              data-testid="planner-editor-absence"
+              [disabled]="saving || absenceMessageId == null"
+              (click)="applyAbsence()"
+            >
+              <mat-icon>beach_access</mat-icon>
+              {{ 'plannerSetAbsence' | translate }}
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </mat-drawer-content>
+</mat-drawer-container>

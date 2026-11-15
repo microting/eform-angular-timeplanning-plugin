@@ -1,0 +1,69 @@
+<h3 mat-dialog-title>{{ 'plannerRegisterAbsence' | translate }}</h3>
+<div mat-dialog-content id="planner-absence-dialog" data-testid="planner-absence-dialog">
+  <div class="d-flex flex-column planner-dialog-stack">
+    <mat-form-field>
+      <mat-label>{{ 'plannerWorker' | translate }}</mat-label>
+      <mat-select [(ngModel)]="assignedSiteId" id="planner-absence-worker" data-testid="planner-absence-worker">
+        @for (w of data.workers; track w.assignedSiteId) {
+          <mat-option [value]="w.assignedSiteId" [disabled]="!w.canApproveAbsence">{{ w.siteName }}</mat-option>
+        }
+      </mat-select>
+      @if (selectedWorker && !selectedWorker.canApproveAbsence) {
+        <mat-hint>{{ 'plannerNotManagerOfWorker' | translate }}</mat-hint>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'plannerAbsenceType' | translate }}</mat-label>
+      <mat-select [(ngModel)]="messageId" id="planner-absence-type" data-testid="planner-absence-type">
+        @for (t of absenceTypes; track t.id) {
+          <mat-option [value]="t.id">{{ t.key | translate }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'plannerPeriod' | translate }}</mat-label>
+      <mat-date-range-input [rangePicker]="absencePicker">
+        <input matStartDate [(ngModel)]="from" id="planner-absence-from" data-testid="planner-absence-from" />
+        <input matEndDate [(ngModel)]="to" id="planner-absence-to" data-testid="planner-absence-to" />
+      </mat-date-range-input>
+      <mat-datepicker-toggle matSuffix [for]="absencePicker"></mat-datepicker-toggle>
+      <mat-date-range-picker #absencePicker></mat-date-range-picker>
+      <mat-hint>{{ 'plannerAbsenceSkipsDaysOff' | translate }}</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'plannerComment' | translate }}</mat-label>
+      <textarea matInput rows="2" [(ngModel)]="comment" id="planner-absence-comment" data-testid="planner-absence-comment"></textarea>
+    </mat-form-field>
+
+    @if (lockedDates.length > 0) {
+      <div class="planner-info" data-testid="planner-absence-locked">
+        <span>
+          {{ 'plannerAbsenceLockedIntro' | translate: {count: lockedDates.length} }}
+          <ul class="planner-date-list">
+            @for (d of lockedDates; track d.getTime()) {
+              <li>{{ formatDate(d) }}</li>
+            }
+          </ul>
+        </span>
+      </div>
+    }
+  </div>
+</div>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+  <button type="button" class="btn-cancel" id="planner-absence-cancel" data-testid="planner-absence-cancel" (click)="cancel()">
+    {{ 'Cancel' | translate }}
+  </button>
+  <button
+    type="button"
+    class="btn-primary"
+    id="planner-absence-save"
+    data-testid="planner-absence-save"
+    [disabled]="!canSubmit"
+    (click)="submit()"
+  >
+    {{ 'plannerRegisterAbsence' | translate }}
+  </button>
+</div>
