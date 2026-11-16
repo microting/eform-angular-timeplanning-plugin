@@ -9,7 +9,7 @@ import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {ToastrService} from 'ngx-toastr';
 import {PlannerWorkerModel} from '../../models';
 import {TimePlanningPnPlannerService} from '../../services';
-import {formatPlannerDate, parseCalendarDate, toTransportDate} from '../../planner.utils';
+import {formatPlannerDate, onNoReply, parseCalendarDate, toTransportDate} from '../../planner.utils';
 import {PLANNER_ABSENCE_TYPES} from '../../planner-absence-types';
 
 export interface PlannerAbsenceDialogData {
@@ -71,7 +71,7 @@ export class PlannerAbsenceDialogComponent {
       to: toTransportDate(this.to),
       messageId: this.messageId,
       comment: this.comment.trim() || null,
-    }).subscribe({
+    }).pipe(onNoReply(() => this.outcomeUnknown())).subscribe({
       next: (result) => {
         this.busy = false;
         if (result && result.success && result.model) {
@@ -90,6 +90,17 @@ export class PlannerAbsenceDialogComponent {
         this.toastrService.error(this.translateService.instant('plannerErrorOccurred'));
       },
     });
+  }
+
+  /**
+   * A write that completed without a reply (the HTTP interceptor's EMPTY): it
+   * may or may not have been applied, so close as "changed" and let the grid
+   * reload and show the true state.
+   */
+  private outcomeUnknown(): void {
+    this.busy = false;
+    this.toastrService.warning(this.translateService.instant('plannerOutcomeUnknown'));
+    this.dialogRef.close(true);
   }
 
   /**

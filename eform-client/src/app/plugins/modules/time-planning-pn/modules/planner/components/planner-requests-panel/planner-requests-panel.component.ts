@@ -15,7 +15,7 @@ import {
 } from '../../../absence-requests/components';
 import {PlannerGridModel, PlannerWorkerModel} from '../../models';
 import {absenceTypeKey} from '../../planner-absence-types';
-import {dateKey, dateKeysBetween, formatPlannerDate, parseCalendarDate} from '../../planner.utils';
+import {dateKey, dateKeysBetween, formatPlannerDate, onNoReply, parseCalendarDate} from '../../planner.utils';
 
 /** A pending request as the panel shows it. */
 export interface PlannerRequestView {
@@ -72,7 +72,7 @@ export class PlannerRequestsPanelComponent implements OnInit, OnChanges {
 
   load(): void {
     this.loading = true;
-    this.absenceRequestsService.getInbox().subscribe({
+    this.absenceRequestsService.getInbox().pipe(onNoReply(() => { this.loading = false; })).subscribe({
       next: (result) => {
         this.loading = false;
         if (result && result.success) {

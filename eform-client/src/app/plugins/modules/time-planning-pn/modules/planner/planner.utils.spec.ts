@@ -1,8 +1,9 @@
-import {describe, it, expect} from 'vitest';
+import {describe, it, expect, vi} from 'vitest';
 import {TranslateService} from '@ngx-translate/core';
+import {EMPTY, of, throwError} from 'rxjs';
 import {
   dateKey, dateKeysBetween, formatPlannerHours, fullPatternGrid, isEmptyPattern, isoDayOfWeek, isoWeekNumber, isValidPattern,
-  keyToTransportDate, mondayOf, parseCalendarDate, shortFormKind, toTransportDate, trimmedPatternDays,
+  keyToTransportDate, mondayOf, onNoReply, parseCalendarDate, shortFormKind, toTransportDate, trimmedPatternDays,
 } from './planner.utils';
 import {importReasonKey} from './components/planner-import-dialog/planner-import-dialog.component';
 import {absenceTypeKey, PLANNER_ABSENCE_TYPES} from './planner-absence-types';
@@ -184,5 +185,18 @@ describe('planner translations', () => {
     const planner = (catalogue: object) => [...keyOf(catalogue)].filter(k => k.startsWith('planner')).sort();
     expect(planner(da)).toEqual(planner(enUS));
     expect(planner(da).length).toBeGreaterThan(100);
+  });
+});
+
+describe('onNoReply', () => {
+  it('runs only when the request completes without a value or an error', () => {
+    const silence = vi.fn();
+    EMPTY.pipe(onNoReply(silence)).subscribe();
+    expect(silence).toHaveBeenCalledTimes(1);
+
+    silence.mockClear();
+    of(1).pipe(onNoReply(silence)).subscribe();
+    throwError(() => new Error('x')).pipe(onNoReply(silence)).subscribe({error: () => undefined});
+    expect(silence).not.toHaveBeenCalled();
   });
 });

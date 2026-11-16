@@ -17,8 +17,8 @@ import {
 } from '../../models';
 import {TimePlanningPnPlannerService} from '../../services';
 import {
-  formatPlannerDate, fullPatternGrid, isEmptyPattern, isValidPattern, mondaysOnly, parseCalendarDate, ROTATION_WEEK_OPTIONS,
-  toTransportDate, trimmedPatternDays, WEEKDAY_KEYS,
+  formatPlannerDate, fullPatternGrid, isEmptyPattern, isValidPattern, mondaysOnly, onNoReply, parseCalendarDate,
+  ROTATION_WEEK_OPTIONS, toTransportDate, trimmedPatternDays, WEEKDAY_KEYS,
 } from '../../planner.utils';
 import {PlannerPatternDaysComponent} from '../planner-pattern-days/planner-pattern-days.component';
 
@@ -82,7 +82,12 @@ export class PlannerImportDialogComponent implements OnInit {
   results: { name: string; result: PlannerImportAppliedModel }[] = [];
 
   ngOnInit(): void {
-    this.plannerService.getImportPreview().subscribe({
+    // No reply to the preview: nothing to review (an empty list would read as
+    // "nobody on the sheet"), so close as the refusal does.
+    this.plannerService.getImportPreview().pipe(onNoReply(() => {
+      this.loading = false;
+      this.dialogRef.close(false);
+    })).subscribe({
       next: (result) => {
         this.loading = false;
         if (!result || !result.success || !result.model) {
@@ -182,7 +187,7 @@ export class PlannerImportDialogComponent implements OnInit {
         validFrom: null,
         days: trimmedPatternDays(r.days),
       })),
-    }).subscribe({
+    }).pipe(onNoReply(() => this.outcomeUnknown())).subscribe({
       next: (result) => {
         this.busy = false;
         if (!result || !result.success || !result.model) {
@@ -201,6 +206,17 @@ export class PlannerImportDialogComponent implements OnInit {
         this.toastrService.error(this.translateService.instant('plannerErrorOccurred'));
       },
     });
+  }
+
+  /**
+   * A write that completed without a reply (the HTTP interceptor's EMPTY): it
+   * may or may not have been applied, so close as "changed" and let the grid
+   * reload and show the true state.
+   */
+  private outcomeUnknown(): void {
+    this.busy = false;
+    this.toastrService.warning(this.translateService.instant('plannerOutcomeUnknown'));
+    this.dialogRef.close(true);
   }
 
   /** Not while the import is applied: it retires the sheet, and the grid must reload. */

@@ -15,7 +15,7 @@ import {PlanPatternDayModel, PlannerPatternModel, PlannerWorkerModel} from '../.
 import {TimePlanningPnPlannerService} from '../../services';
 import {
   formatPlannerDate, formatPlannerHours, fullPatternGrid, isValidPattern, isValidPatternDayText, mondaysOnly,
-  parseCalendarDate, ROTATION_WEEK_OPTIONS, toTransportDate, trimmedPatternDays,
+  onNoReply, parseCalendarDate, ROTATION_WEEK_OPTIONS, toTransportDate, trimmedPatternDays,
 } from '../../planner.utils';
 import {PlannerPatternDaysComponent} from '../planner-pattern-days/planner-pattern-days.component';
 
@@ -70,7 +70,11 @@ export class PlannerPatternDialogComponent implements OnInit {
   readonly mondaysOnly = mondaysOnly;
 
   ngOnInit(): void {
-    this.plannerService.getPattern(this.data.worker.assignedSiteId).subscribe({
+    // No reply to the read: nothing to edit, so close as the refusal does.
+    this.plannerService.getPattern(this.data.worker.assignedSiteId).pipe(onNoReply(() => {
+      this.loading = false;
+      this.dialogRef.close(false);
+    })).subscribe({
       next: (result) => {
         this.loading = false;
         if (result && result.success && result.model) {
@@ -119,7 +123,8 @@ export class PlannerPatternDialogComponent implements OnInit {
       return;
     }
     this.busy = true;
-    this.plannerService.copyPattern(this.data.worker.assignedSiteId, this.copySourceId).subscribe({
+    this.plannerService.copyPattern(this.data.worker.assignedSiteId, this.copySourceId)
+      .pipe(onNoReply(() => { this.busy = false; })).subscribe({
       next: (result) => {
         this.busy = false;
         if (result && result.success && result.model) {
@@ -159,7 +164,10 @@ export class PlannerPatternDialogComponent implements OnInit {
       return;
     }
     this.busy = true;
-    this.plannerService.getManualDays(this.data.worker.assignedSiteId, toTransportDate(this.validFrom)).subscribe({
+    // The flag is per request: when the lookup emits it starts the save, and
+    // the lookup's own completion then leaves the save's busy state alone.
+    this.plannerService.getManualDays(this.data.worker.assignedSiteId, toTransportDate(this.validFrom))
+      .pipe(onNoReply(() => { this.busy = false; })).subscribe({
       next: (result) => {
         this.busy = false;
         if (!result || !result.success) {
@@ -188,7 +196,7 @@ export class PlannerPatternDialogComponent implements OnInit {
       validFrom: toTransportDate(this.validFrom),
       days: trimmedPatternDays(this.days),
       overwriteManualDays,
-    }).subscribe({
+    }).pipe(onNoReply(() => this.outcomeUnknown())).subscribe({
       next: (result) => {
         this.busy = false;
         if (!result || !result.success) {
@@ -217,7 +225,8 @@ export class PlannerPatternDialogComponent implements OnInit {
 
   deletePattern(): void {
     this.busy = true;
-    this.plannerService.deletePattern(this.data.worker.assignedSiteId).subscribe({
+    this.plannerService.deletePattern(this.data.worker.assignedSiteId)
+      .pipe(onNoReply(() => this.outcomeUnknown())).subscribe({
       next: (result) => {
         this.busy = false;
         if (result && result.success) {
@@ -233,6 +242,17 @@ export class PlannerPatternDialogComponent implements OnInit {
         this.toastrService.error(this.translateService.instant('plannerErrorOccurred'));
       },
     });
+  }
+
+  /**
+   * A write that completed without a reply (the HTTP interceptor's EMPTY): it
+   * may or may not have been applied, so close as "changed" and let the grid
+   * reload and show the true state.
+   */
+  private outcomeUnknown(): void {
+    this.busy = false;
+    this.toastrService.warning(this.translateService.instant('plannerOutcomeUnknown'));
+    this.dialogRef.close(true);
   }
 
   back(): void {

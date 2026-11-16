@@ -616,4 +616,5 @@ export const da = {
   plannerImportDone: '{{count}} ugemønstre er oprettet, og Google Sheet er slået fra.',
   plannerRowsWritten: '{{count}} dage skrevet',
   plannerUseGoogleSheetAgain: 'Brug Google Sheet igen',
+  plannerOutcomeUnknown: 'Svaret udeblev – planen er genindlæst',
 };

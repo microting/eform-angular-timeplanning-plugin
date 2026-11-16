@@ -3,6 +3,7 @@ import {
   addDays as fnsAddDays, eachDayOfInterval, format, getISODay, getISOWeek, isMonday, parse, startOfDay,
   startOfISOWeek, startOfToday,
 } from 'date-fns';
+import {defer, MonoTypeOperatorFunction, Observable, tap} from 'rxjs';
 import {PlanPatternDayModel} from './models';
 
 /**
@@ -235,3 +236,26 @@ export const ROTATION_WEEK_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 /** Weekday translation keys, ISO order (the plugin already translates them). */
 export const WEEKDAY_KEYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+/**
+ * Runs `onSilence` when a request completes without emitting a value or an
+ * error. The host's HTTP error interceptor answers a 401, a 403 whose token
+ * refresh failed, and exhausted retries with EMPTY, so `next` and `error`
+ * never run and a busy flag set before the call would stay set.
+ *
+ * The flag lives per subscription (defer), so one request's completion never
+ * releases another request's state.
+ */
+export function onNoReply<T>(onSilence: () => void): MonoTypeOperatorFunction<T> {
+  return (source: Observable<T>) => defer(() => {
+    let replied = false;
+    return source.pipe(tap({
+      next: () => { replied = true; },
+      complete: () => {
+        if (!replied) {
+          onSilence();
+        }
+      },
+    }));
+  });
+}

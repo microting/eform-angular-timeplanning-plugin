@@ -618,4 +618,5 @@ export const elGR = {
   plannerImportDone: '{{count}} weekly patterns were created and the Google Sheet is switched off.',
   plannerRowsWritten: '{{count}} days written',
   plannerUseGoogleSheetAgain: 'Use Google Sheet again',
+  plannerOutcomeUnknown: 'No reply came back – the plan has been reloaded',
 };

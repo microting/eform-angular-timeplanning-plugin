@@ -28,7 +28,8 @@ import {
 import {TimePlanningPnPlannerService} from '../../services';
 import {
   addDays, dateKey, formatPlannerDate, formatPlannerHours, isoDayOfWeek, isoWeekNumber, keyToTransportDate,
-  localDateKey, mondayOf, parseCalendarDate, ShortFormKind, shortFormKind, todayLocal, toTransportDate, WEEKDAY_KEYS,
+  localDateKey, mondayOf, onNoReply, parseCalendarDate, ShortFormKind, shortFormKind, todayLocal, toTransportDate,
+  WEEKDAY_KEYS,
 } from '../../planner.utils';
 import {absenceTypeKey, PLANNER_ABSENCE_TYPES} from '../../planner-absence-types';
 import {PlannerAbsenceDialogComponent, PlannerAbsenceDialogData} from '../planner-absence-dialog/planner-absence-dialog.component';
@@ -128,7 +129,8 @@ export class PlannerContainerComponent implements OnInit {
     // A newer read replaces an older one still in flight, so a fast next/prev never shows a stale grid.
     this.load$?.unsubscribe();
     this.refreshPendingRequests();
-    this.load$ = this.plannerService.getGrid(toTransportDate(this.from), this.days, this.selectedTagIds).subscribe({
+    this.load$ = this.plannerService.getGrid(toTransportDate(this.from), this.days, this.selectedTagIds)
+      .pipe(onNoReply(() => { this.loading = false; })).subscribe({
       next: (result) => {
         this.loading = false;
         if (result && result.success && result.model) {
@@ -416,7 +418,14 @@ export class PlannerContainerComponent implements OnInit {
       fromDate: everyWeekday ? keyToTransportDate(refs[0].key) : null,
     };
     this.saving = true;
-    this.plannerService.updateCells(model).subscribe({
+    // No reply (the HTTP interceptor's EMPTY): the edit may or may not have
+    // been applied, so reload and let the grid show the true state.
+    this.plannerService.updateCells(model).pipe(onNoReply(() => {
+      this.saving = false;
+      this.toastrService.warning(this.translateService.instant('plannerOutcomeUnknown'));
+      this.clearSelection();
+      this.load();
+    })).subscribe({
       next: (result) => {
         this.saving = false;
         if (!result || !result.success || !result.model) {
