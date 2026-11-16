@@ -16,6 +16,7 @@
       <span class="planner-section-label">{{ 'plannerHowDoesWorkerWork' | translate }}</span>
       <mat-button-toggle-group
         [value]="form"
+        [disabled]="busy"
         (change)="onFormChange($event.value)"
         [attr.aria-label]="'plannerHowDoesWorkerWork' | translate"
         id="planner-pattern-form"
@@ -43,6 +44,7 @@
             <span>{{ 'plannerRotationLasts' | translate }}</span>
             <mat-button-toggle-group
               [value]="rotationWeeks"
+              [disabled]="busy"
               (change)="setRotationWeeks($event.value)"
               [attr.aria-label]="'plannerRotationLasts' | translate"
               id="planner-pattern-rotation-weeks"
@@ -65,10 +67,11 @@
                 [matDatepicker]="anchorPicker"
                 [matDatepickerFilter]="mondaysOnly"
                 [(ngModel)]="anchorDate"
+                [disabled]="busy"
                 id="planner-pattern-anchor"
                 data-testid="planner-pattern-anchor"
               />
-              <mat-datepicker-toggle matSuffix [for]="anchorPicker"></mat-datepicker-toggle>
+              <mat-datepicker-toggle matSuffix [for]="anchorPicker" [disabled]="busy"></mat-datepicker-toggle>
               <mat-datepicker #anchorPicker></mat-datepicker>
             </mat-form-field>
           }
@@ -78,10 +81,11 @@
               matInput
               [matDatepicker]="validFromPicker"
               [(ngModel)]="validFrom"
+              [disabled]="busy"
               id="planner-pattern-valid-from"
               data-testid="planner-pattern-valid-from"
             />
-            <mat-datepicker-toggle matSuffix [for]="validFromPicker"></mat-datepicker-toggle>
+            <mat-datepicker-toggle matSuffix [for]="validFromPicker" [disabled]="busy"></mat-datepicker-toggle>
             <mat-datepicker #validFromPicker></mat-datepicker>
           </mat-form-field>
         </div>
