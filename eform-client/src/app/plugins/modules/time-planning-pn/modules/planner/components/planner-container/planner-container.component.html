@@ -107,6 +107,7 @@
     <div class="d-flex flex-row flex-wrap align-items-center planner-legend" data-testid="planner-legend">
       <span class="planner-legend-item"><span class="planner-manual-dot"></span>{{ 'plannerLegendManual' | translate }}</span>
       <span class="planner-legend-item"><mat-icon class="planner-glyph">lock</mat-icon>{{ 'plannerLegendLocked' | translate }}</span>
+      <span class="planner-legend-item"><span class="planner-swatch planner-absence"></span>{{ 'plannerLegendAbsence' | translate }}</span>
       <span class="planner-legend-item"><span class="planner-swatch planner-pending"></span>{{ 'plannerLegendPending' | translate }}</span>
       <span class="planner-legend-item"><mat-icon class="planner-glyph">error</mat-icon>{{ 'plannerLegendOffNorm' | translate }}</span>
       <span class="planner-legend-item planner-hint">{{ 'plannerSelectTip' | translate }}</span>
@@ -185,6 +186,7 @@
                       class="planner-cell"
                       [class.planner-cell-selected]="isSelected(row, column.key)"
                       [class.locked-background]="cell?.locked"
+                      [class.planner-absence]="!!absenceTypeKey(cell?.messageId)"
                       [class.planner-pending]="cell?.hasPendingAbsenceRequest"
                       [attr.aria-pressed]="isSelected(row, column.key)"
                       [attr.aria-label]="cellLabel(row, column, cell)"

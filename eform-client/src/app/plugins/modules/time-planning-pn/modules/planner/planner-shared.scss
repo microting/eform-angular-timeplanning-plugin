@@ -34,6 +34,11 @@
   border-radius: 8px;
 }
 
+// Long text must not squeeze the icon (it shrank to 10px in the requests panel).
+.planner-info > mat-icon {
+  flex-shrink: 0;
+}
+
 .planner-date-list {
   margin: 0;
   padding-left: 20px;

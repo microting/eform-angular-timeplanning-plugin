@@ -1,7 +1,18 @@
 @use '../../planner-shared';
 
+// The step ("Trin 2 af 3") on its own line above the title. The host lays
+// mat-dialog-title out as a flex row, so the title stacks it as a column.
+.planner-import-title {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
 .planner-step-label {
-  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--md-primary);
 }
 
 // Uniform rows: no striping, only a hairline between rows.

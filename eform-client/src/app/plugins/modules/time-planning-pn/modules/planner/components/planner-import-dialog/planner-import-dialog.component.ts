@@ -17,7 +17,7 @@ import {
 } from '../../models';
 import {TimePlanningPnPlannerService} from '../../services';
 import {
-  formatPlannerDate, fullPatternGrid, isValidPattern, mondaysOnly, parseCalendarDate, ROTATION_WEEK_OPTIONS,
+  formatPlannerDate, fullPatternGrid, isEmptyPattern, isValidPattern, mondaysOnly, parseCalendarDate, ROTATION_WEEK_OPTIONS,
   toTransportDate, trimmedPatternDays, WEEKDAY_KEYS,
 } from '../../planner.utils';
 import {PlannerPatternDaysComponent} from '../planner-pattern-days/planner-pattern-days.component';
@@ -30,6 +30,12 @@ export interface PlannerImportRow {
   anchorDate: Date | null;
   days: PlanPatternDayModel[];
   expanded: boolean;
+  /**
+   * Recognised, but no day holds a shift: the history is all days off, which
+   * the canvas calls "Ingen plan (timelønnet)". Not ticked by default, so the
+   * import never writes an all-off pattern unless asked to.
+   */
+  noPlan: boolean;
 }
 
 /** The translation key for a RotationInference reason code; every code the server sends has one. */
@@ -86,13 +92,16 @@ export class PlannerImportDialogComponent implements OnInit {
         this.windowStart = parseCalendarDate(result.model.windowStart);
         this.rows = result.model.workers.map(worker => {
           const weeks = worker.rotationWeeks ?? 1;
+          const days = fullPatternGrid(weeks, worker.days ?? []);
+          const noPlan = worker.recognised && isEmptyPattern(days);
           return {
             worker,
-            include: worker.recognised,
+            include: worker.recognised && !noPlan,
             rotationWeeks: weeks,
             anchorDate: worker.anchorDate ? parseCalendarDate(worker.anchorDate) : this.windowStart,
-            days: fullPatternGrid(weeks, worker.days ?? []),
+            days,
             expanded: false,
+            noPlan,
           };
         });
       },

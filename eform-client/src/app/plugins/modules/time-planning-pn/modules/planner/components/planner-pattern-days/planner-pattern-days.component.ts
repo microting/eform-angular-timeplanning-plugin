@@ -9,7 +9,8 @@ import {isValidPatternDayText, WEEKDAY_KEYS} from '../../planner.utils';
 /**
  * The rotation weeks x Mon–Sun grid of plan texts (#5489), shared by the
  * pattern editor and the import review. `days` must hold every
- * (week, weekday) of the rotation (fullPatternGrid); texts are edited in place.
+ * (week, weekday) of the rotation (fullPatternGrid); texts are edited in place,
+ * on day objects that fullPatternGrid keeps across a change of rotation length.
  */
 @Component({
   selector: 'app-planner-pattern-days',

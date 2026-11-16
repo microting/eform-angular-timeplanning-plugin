@@ -12,7 +12,7 @@
       @for (week of weeks; track $index; let w = $index) {
         <tr>
           <th scope="row">{{ 'plannerRotationWeekN' | translate: {n: w + 1} }}</th>
-          @for (day of week; track day.dayOfWeek) {
+          @for (day of week; track day.weekIndex + '|' + day.dayOfWeek) {
             <td>
               <mat-form-field subscriptSizing="dynamic" [class.mat-form-field-invalid]="!isValid(day)">
                 <input

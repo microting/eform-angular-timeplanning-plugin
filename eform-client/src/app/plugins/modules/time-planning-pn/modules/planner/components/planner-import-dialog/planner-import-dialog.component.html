@@ -1,8 +1,8 @@
-<h3 mat-dialog-title>
-  <span class="planner-hint planner-step-label" data-testid="planner-import-step">
+<h3 mat-dialog-title class="planner-import-title">
+  <span class="planner-step-label" data-testid="planner-import-step">
     {{ 'plannerImportStep' | translate: {n: stepNumber} }}
   </span>
-  {{ 'plannerImportTitle' | translate }}
+  <span>{{ 'plannerImportTitle' | translate }}</span>
 </h3>
 <div mat-dialog-content id="planner-import-dialog" data-testid="planner-import-dialog">
   @if (loading) {
@@ -48,6 +48,9 @@
                 </td>
                 <td>{{ row.worker.siteName }}</td>
                 <td>
+                  @if (row.noPlan && !row.include) {
+                    <span [attr.data-testid]="'planner-import-no-plan-' + row.worker.assignedSiteId">{{ 'plannerImportNoPlan' | translate }}</span>
+                  } @else {
                   <mat-form-field subscriptSizing="dynamic">
                     <mat-select
                       [value]="row.rotationWeeks"
@@ -64,6 +67,7 @@
                       }
                     </mat-select>
                   </mat-form-field>
+                  }
                 </td>
                 <td>
                   <mat-form-field subscriptSizing="dynamic">

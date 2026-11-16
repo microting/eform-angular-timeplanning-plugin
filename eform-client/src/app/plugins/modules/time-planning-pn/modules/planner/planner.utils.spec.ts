@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {TranslateService} from '@ngx-translate/core';
 import {
-  dateKey, dateKeysBetween, formatPlannerHours, fullPatternGrid, isoDayOfWeek, isoWeekNumber, isValidPattern,
+  dateKey, dateKeysBetween, formatPlannerHours, fullPatternGrid, isEmptyPattern, isoDayOfWeek, isoWeekNumber, isValidPattern,
   keyToTransportDate, mondayOf, parseCalendarDate, shortFormKind, toTransportDate, trimmedPatternDays,
 } from './planner.utils';
 import {importReasonKey} from './components/planner-import-dialog/planner-import-dialog.component';
@@ -35,6 +35,13 @@ describe('planner dates', () => {
     const date = parseCalendarDate('2026-11-09T00:00:00');
     expect([date.getFullYear(), date.getMonth(), date.getDate()]).toEqual([2026, 10, 9]);
     expect(dateKey('2026-11-09T00:00:00')).toBe('2026-11-09');
+  });
+
+  it('reads the Date the host DateInterceptor makes of a server date (UTC midnight)', () => {
+    const parsed = new Date(Date.UTC(2026, 10, 9));
+    expect(dateKey(parsed)).toBe('2026-11-09');
+    const date = parseCalendarDate(parsed);
+    expect([date.getFullYear(), date.getMonth(), date.getDate()]).toEqual([2026, 10, 9]);
   });
 
   it('sends a calendar date as UTC midnight of that date', () => {
@@ -105,6 +112,25 @@ describe('planner pattern grid', () => {
     expect(grid[0].planText).toBe('7:00-15:00/0.5');
     expect(grid.every(d => d.weekIndex < 2)).toBe(true);
     expect(grid.filter(d => d.planText).length).toBe(1);
+  });
+
+  it('keeps the same day objects when the rotation grows, so text typed meanwhile is kept', () => {
+    const twoWeeks = fullPatternGrid(2, []);
+    const sixWeeks = fullPatternGrid(6, twoWeeks);
+    // Typed into an input of the 2-week grid after the 6-week grid was built.
+    twoWeeks[0].planText = '7-15/0,5';
+    twoWeeks[13].planText = '8-16';
+    expect(sixWeeks[0]).toBe(twoWeeks[0]);
+    expect(sixWeeks[0].planText).toBe('7-15/0,5');
+    expect(sixWeeks[13].planText).toBe('8-16');
+    expect(sixWeeks.length).toBe(42);
+  });
+
+  it('calls a pattern with no shift at all empty', () => {
+    expect(isEmptyPattern(fullPatternGrid(1, []))).toBe(true);
+    expect(isEmptyPattern([{weekIndex: 0, dayOfWeek: 0, planText: 'Fri'}, {weekIndex: 0, dayOfWeek: 1, planText: null}]))
+      .toBe(true);
+    expect(isEmptyPattern([{weekIndex: 0, dayOfWeek: 0, planText: '7:00-15:00/0.5'}])).toBe(false);
   });
 });
 

@@ -15,8 +15,16 @@ import {PlanPatternDayModel} from './models';
  * date part alone, so no clock ever shifts a day.
  */
 
-/** "2026-11-09" from a server date string. */
-export function dateKey(value: string): string {
+/**
+ * "2026-11-09" from a server date. The host's DateInterceptor turns every ISO
+ * date string in a response into a Date with date-fns parseJSON, which reads a
+ * zone-less string as UTC, so such a Date is UTC midnight of the calendar date
+ * and its UTC fields hold that date. A string is read by its date part.
+ */
+export function dateKey(value: string | Date): string {
+  if (value instanceof Date) {
+    return value.toISOString().substring(0, 10);
+  }
   return (value ?? '').substring(0, 10);
 }
 
@@ -25,8 +33,8 @@ export function localDateKey(date: Date): string {
   return format(date, 'yyyy-MM-dd');
 }
 
-/** A server date string (or "yyyy-MM-dd") as a local Date at local midnight, for display. */
-export function parseCalendarDate(value: string): Date {
+/** A server date (see dateKey) or "yyyy-MM-dd" as a local Date at local midnight, for display. */
+export function parseCalendarDate(value: string | Date): Date {
   return parse(dateKey(value), 'yyyy-MM-dd', new Date());
 }
 
@@ -130,22 +138,33 @@ export function isValidPatternDayText(text: string | null | undefined): boolean 
 /**
  * Every (week, weekday) of a rotation in order, keeping the texts of `days`
  * that still fit; new weeks start empty ("" = no plan).
+ *
+ * A day that still fits is the SAME object, not a copy: the editor's inputs are
+ * bound to these objects, and text typed into an input while the grid is being
+ * re-rendered for a new rotation length must land in the grid that is saved.
  */
 export function fullPatternGrid(rotationWeeks: number, days: PlanPatternDayModel[]): PlanPatternDayModel[] {
-  const byCell = new Map<string, string>();
+  const byCell = new Map<string, PlanPatternDayModel>();
   for (const day of days ?? []) {
     const key = `${day.weekIndex}|${day.dayOfWeek}`;
     if (!byCell.has(key)) {
-      byCell.set(key, day.planText ?? '');
+      byCell.set(key, day);
     }
   }
   const grid: PlanPatternDayModel[] = [];
   for (let week = 0; week < rotationWeeks; week++) {
     for (let dow = 0; dow < 7; dow++) {
-      grid.push({weekIndex: week, dayOfWeek: dow, planText: byCell.get(`${week}|${dow}`) ?? ''});
+      const day = byCell.get(`${week}|${dow}`) ?? {weekIndex: week, dayOfWeek: dow, planText: ''};
+      day.planText ??= '';
+      grid.push(day);
     }
   }
   return grid;
+}
+
+/** True when no day of the pattern holds a shift: every text is empty or "Fri". */
+export function isEmptyPattern(days: PlanPatternDayModel[]): boolean {
+  return days.every(d => shortFormKind(d.planText) !== 'plan');
 }
 
 /** A pattern can be saved: a Monday anchor and every day text readable. */

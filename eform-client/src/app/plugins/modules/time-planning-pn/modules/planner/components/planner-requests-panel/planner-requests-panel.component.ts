@@ -93,8 +93,8 @@ export class PlannerRequestsPanelComponent implements OnInit, OnChanges {
     const workers = this.grid?.workers ?? [];
     this.views = this.requests.map(request => {
       const worker = workers.find(w => w.siteId === request.requestedBySdkSitId) ?? null;
-      const from = parseCalendarDate(String(request.dateFrom));
-      const to = parseCalendarDate(String(request.dateTo));
+      const from = parseCalendarDate(request.dateFrom);
+      const to = parseCalendarDate(request.dateTo);
       return {
         request,
         worker,
