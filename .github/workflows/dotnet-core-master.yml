@@ -84,7 +84,8 @@ jobs:
       run: cd eform-angular-frontend/eform-client && npx ng test --watch=false --include='src/app/plugins/modules/time-planning-pn/**/*.spec.ts'
   pn-playwright-test:
     needs: build
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became 26.04, which Playwright 1.5x cannot install browsers on.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

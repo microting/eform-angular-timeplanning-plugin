@@ -100,6 +100,64 @@ export function formatPlannerHours(translate: TranslateService, value: number | 
   return new Intl.NumberFormat(plannerLocale(translate), {maximumFractionDigits: 2}).format(value);
 }
 
+const TIME = '[0-9]{1,2}(?:[:.,][0-9]{1,2}|½)?';
+const BREAK = '(?:[0-9]{1,2}:[0-9]{1,2}|(?=[0-9.,½¾])[0-9]*(?:[.,][0-9]+)?[½¾]?)';
+/** PlannerShortForm.WholeSegment, with the two times captured for the value checks. */
+const WHOLE_SEGMENT = new RegExp(`^(${TIME})\\s*-\\s*(${TIME})(?:\\s*/\\s*${BREAK})?$`);
+/** PlanTextParser.TimeRegex. */
+const TIME_TOKEN = /^([0-9]{1,2})(?:([:.,])([0-9]{1,2})|(½))?$/;
+const MAX_SHIFTS = 5;
+const MINUTES_PER_DAY = 24 * 60;
+
+/**
+ * PlanTextParser.TryResolveTime: minutes since midnight, or null where the
+ * server refuses the time. A colon or two digits are clock minutes (00-59); a
+ * single digit after '.' or ',' is shorthand and only 0, 3 and 5 are allowed
+ * ("7,5" and "6.3" are both 07:30 / 06:30, "7.7" is refused); nothing past 24:00.
+ */
+function resolveTime(token: string): number | null {
+  const match = TIME_TOKEN.exec(token);
+  if (!match) {
+    return null;
+  }
+  const [, hour, separator, fraction, half] = match;
+  let minutes = 0;
+  if (half) {
+    minutes = 30;
+  } else if (fraction !== undefined) {
+    if (separator === ':' || fraction.length === 2) {
+      minutes = Number(fraction);
+      if (minutes > 59) {
+        return null;
+      }
+    } else if (fraction === '0') {
+      minutes = 0;
+    } else if (fraction === '3' || fraction === '5') {
+      minutes = 30;
+    } else {
+      return null;
+    }
+  }
+  const total = Number(hour) * 60 + minutes;
+  return total > MINUTES_PER_DAY ? null : total;
+}
+
+/**
+ * One trimmed segment the server reads as a shift: wholly "start-end[/break]"
+ * (PlannerShortForm.WholeSegment), both times valid, and start != end
+ * (PlanTextParser.TryParseSegment). A break that has the right shape never
+ * fails on the server, so its value is not checked.
+ */
+function isWholeShift(segment: string): boolean {
+  const match = WHOLE_SEGMENT.exec(segment);
+  if (!match) {
+    return false;
+  }
+  const start = resolveTime(match[1]);
+  const end = resolveTime(match[2]);
+  return start !== null && end !== null && start !== end;
+}
+
 /**
  * The same check as the server's PlannerShortForm.Parse, so the editor can say
  * "kan ikke læses" before sending. The server stays the authority: it parses
@@ -109,11 +167,6 @@ export function formatPlannerHours(translate: TranslateService, value: number | 
  * that is wholly shifts (at most 5, ";"-separated), else 'invalid'.
  */
 export type ShortFormKind = 'clear' | 'dayOff' | 'plan' | 'invalid';
-
-const TIME = '[0-9]{1,2}(?:[:.,][0-9]{1,2}|½)?';
-const BREAK = '(?:[0-9]{1,2}:[0-9]{1,2}|(?=[0-9.,½¾])[0-9]*(?:[.,][0-9]+)?[½¾]?)';
-const WHOLE_SEGMENT = new RegExp(`^${TIME}\\s*-\\s*${TIME}(?:\\s*/\\s*${BREAK})?$`);
-const MAX_SHIFTS = 5;
 
 export function shortFormKind(text: string | null | undefined): ShortFormKind {
   const trimmed = (text ?? '').trim();
@@ -127,7 +180,7 @@ export function shortFormKind(text: string | null | undefined): ShortFormKind {
   if (segments.length === 0 || segments.length > MAX_SHIFTS) {
     return 'invalid';
   }
-  return segments.every(s => WHOLE_SEGMENT.test(s)) ? 'plan' : 'invalid';
+  return segments.every(isWholeShift) ? 'plan' : 'invalid';
 }
 
 /** A pattern day text is acceptable when empty, "Fri" or shifts. */

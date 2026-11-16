@@ -149,7 +149,7 @@
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
   @if (step === 'edit') {
-    <button type="button" class="btn-cancel" id="planner-pattern-cancel" data-testid="planner-pattern-cancel" (click)="cancel()">
+    <button type="button" class="btn-cancel" id="planner-pattern-cancel" data-testid="planner-pattern-cancel" [disabled]="busy" (click)="cancel()">
       {{ 'Cancel' | translate }}
     </button>
     <button
@@ -163,7 +163,7 @@
       {{ 'Save' | translate }}
     </button>
   } @else if (step === 'confirm') {
-    <button type="button" class="btn-cancel" id="planner-pattern-back" data-testid="planner-pattern-back" (click)="back()">
+    <button type="button" class="btn-cancel" id="planner-pattern-back" data-testid="planner-pattern-back" [disabled]="busy" (click)="back()">
       {{ 'plannerBack' | translate }}
     </button>
     <button
@@ -177,7 +177,7 @@
       {{ 'Save' | translate }}
     </button>
   } @else {
-    <button type="button" class="btn-cancel" id="planner-pattern-delete-back" data-testid="planner-pattern-delete-back" (click)="back()">
+    <button type="button" class="btn-cancel" id="planner-pattern-delete-back" data-testid="planner-pattern-delete-back" [disabled]="busy" (click)="back()">
       {{ 'plannerBack' | translate }}
     </button>
     <button

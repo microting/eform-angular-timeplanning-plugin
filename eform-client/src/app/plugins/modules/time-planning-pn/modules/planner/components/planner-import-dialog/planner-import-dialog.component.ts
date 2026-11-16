@@ -203,7 +203,11 @@ export class PlannerImportDialogComponent implements OnInit {
     });
   }
 
+  /** Not while the import is applied: it retires the sheet, and the grid must reload. */
   close(): void {
+    if (this.busy) {
+      return;
+    }
     this.dialogRef.close(this.step === 'done');
   }
 

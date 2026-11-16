@@ -161,7 +161,7 @@
   }
 </div>
 <div mat-dialog-actions class="d-flex flex-row justify-content-end">
-  <button type="button" class="btn-cancel" id="planner-import-cancel" data-testid="planner-import-cancel" (click)="close()">
+  <button type="button" class="btn-cancel" id="planner-import-cancel" data-testid="planner-import-cancel" [disabled]="busy" (click)="close()">
     {{ (step === 'done' ? 'Close' : 'Cancel') | translate }}
   </button>
   @if (step !== 'done') {

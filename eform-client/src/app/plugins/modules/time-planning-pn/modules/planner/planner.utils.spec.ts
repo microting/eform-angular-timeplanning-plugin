@@ -30,6 +30,32 @@ describe('planner short form', () => {
   });
 });
 
+describe('planner short form matches the server (PlannerPureLogicTests)', () => {
+  // ShortForm_TimeText_IsNormalisedToCanonicalPlanText
+  it.each([
+    '7-15/0,5', ' 7-15/0.5 ', '7.30-15', '6-10;14-18/0,25', '8:00-16:00/0.5', '7½-15', '7,5-15/½', '6-14/0:45',
+    '6 - 14 / .5', '7:00-15:00/0.5', '6.3-16/1', '22-24',
+  ])('accepts %j', (input) => {
+    expect(shortFormKind(input)).toBe('plan');
+  });
+
+  // ShortForm_Empty_IsClear and ShortForm_Fri_IsADayWithNoPlan
+  it.each([null, '', '   '])('reads %j as clear', (input) => {
+    expect(shortFormKind(input)).toBe('clear');
+  });
+  it.each(['Fri', 'fri', ' FRI '])('reads %j as a day off', (input) => {
+    expect(shortFormKind(input)).toBe('dayOff');
+  });
+
+  // ShortForm_TextThatIsNotWhollyAShift_IsInvalid, plus PlanTextParser's value checks
+  it.each([
+    'hello', '7-15;x', '8', '7.7-15', '7-15 syg', 'syg 7-15', 'x7-15', '7-15x', '7-15/', '7-15/0,5 syg', '7-15/,',
+    '٧-١٥', '7:75-15', '7.60-15', '7-24:30', '25-30', '7-7', '0-0',
+  ])('refuses %j', (input) => {
+    expect(shortFormKind(input)).toBe('invalid');
+  });
+});
+
 describe('planner dates', () => {
   it('reads a server date by its calendar date, whatever the clock', () => {
     const date = parseCalendarDate('2026-11-09T00:00:00');

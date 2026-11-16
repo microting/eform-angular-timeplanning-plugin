@@ -92,7 +92,15 @@ export class PlannerAbsenceDialogComponent {
     });
   }
 
+  /**
+   * Not while the POST is in flight: the server would still register the
+   * absence, and the grid only reloads on a true close. Escape and the
+   * backdrop are already off (dialogConfigHelper sets disableClose).
+   */
   cancel(): void {
+    if (this.busy) {
+      return;
+    }
     this.dialogRef.close(false);
   }
 

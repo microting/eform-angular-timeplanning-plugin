@@ -236,10 +236,22 @@ export class PlannerPatternDialogComponent implements OnInit {
   }
 
   back(): void {
+    if (this.busy) {
+      return;
+    }
     this.step = 'edit';
   }
 
+  /**
+   * Not while a save, delete or lookup is in flight: a PUT the server still
+   * applies would otherwise close as "nothing changed" and the grid would not
+   * reload. Escape and the backdrop are already off (dialogConfigHelper sets
+   * disableClose).
+   */
   cancel(): void {
+    if (this.busy) {
+      return;
+    }
     this.dialogRef.close(false);
   }
 
