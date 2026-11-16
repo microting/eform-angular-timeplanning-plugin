@@ -7,7 +7,7 @@ import {MatIconButton} from '@angular/material/button';
 import {MatTooltip} from '@angular/material/tooltip';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {ToastrService} from 'ngx-toastr';
-import {filter} from 'rxjs';
+import {filter, Subscription} from 'rxjs';
 import {AbsenceRequestModel} from '../../../../models';
 import {TimePlanningPnAbsenceRequestsService} from '../../../../services';
 import {
@@ -60,6 +60,7 @@ export class PlannerRequestsPanelComponent implements OnInit, OnChanges {
 
   loading = false;
   private requests: AbsenceRequestModel[] = [];
+  private load$: Subscription | null = null;
   views: PlannerRequestView[] = [];
 
   ngOnInit(): void {
@@ -71,8 +72,11 @@ export class PlannerRequestsPanelComponent implements OnInit, OnChanges {
   }
 
   load(): void {
+    // Cancel an older read: its reply could otherwise land last and bring back
+    // requests that were decided since, with a stale pending count.
+    this.load$?.unsubscribe();
     this.loading = true;
-    this.absenceRequestsService.getInbox().pipe(onNoReply(() => { this.loading = false; })).subscribe({
+    this.load$ = this.absenceRequestsService.getInbox().pipe(onNoReply(() => { this.loading = false; })).subscribe({
       next: (result) => {
         this.loading = false;
         if (result && result.success) {
