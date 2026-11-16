@@ -79,6 +79,18 @@ export const routes: Routes = [
           ),
       },
       {
+        // #5489: the web planner beta, only for groups given its permission.
+        path: 'planner',
+        canActivate: [PermissionGuard],
+        data: {
+          requiredPermission: TimePlanningPnClaims.planner,
+        },
+        loadChildren: () =>
+          import('./modules/planner/planner.module').then(
+            (m) => m.PlannerModule
+          ),
+      },
+      {
         path: 'settings',
         canActivate: [AuthGuard],
         component: TimePlanningSettingsComponent,

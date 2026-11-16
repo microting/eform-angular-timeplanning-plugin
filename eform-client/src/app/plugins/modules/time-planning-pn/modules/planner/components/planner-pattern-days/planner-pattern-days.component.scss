@@ -1,0 +1,25 @@
+// Layout only: a week x weekday table of plan-text inputs that scrolls
+// sideways in a narrow dialog instead of squeezing the inputs.
+.planner-pattern-days {
+  overflow-x: auto;
+
+  table {
+    border-collapse: collapse;
+  }
+
+  th {
+    padding: 4px;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 2px;
+    min-width: 120px;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+}

@@ -1,0 +1,34 @@
+<div class="planner-pattern-days" [attr.data-testid]="idPrefix + '-grid'">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col"></th>
+        @for (key of weekdayKeys; track key) {
+          <th scope="col">{{ key | translate }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (week of weeks; track $index; let w = $index) {
+        <tr>
+          <th scope="row">{{ 'plannerRotationWeekN' | translate: {n: w + 1} }}</th>
+          @for (day of week; track day.weekIndex + '|' + day.dayOfWeek) {
+            <td>
+              <mat-form-field subscriptSizing="dynamic" [class.mat-form-field-invalid]="!isValid(day)">
+                <input
+                  matInput
+                  [(ngModel)]="day.planText"
+                  [placeholder]="'plannerDayOffPlaceholder' | translate"
+                  [attr.aria-label]="('plannerRotationWeekN' | translate: {n: w + 1}) + ' ' + (weekdayKeys[day.dayOfWeek] | translate)"
+                  [attr.aria-invalid]="!isValid(day)"
+                  [id]="idPrefix + '-' + w + '-' + day.dayOfWeek"
+                  [attr.data-testid]="idPrefix + '-' + w + '-' + day.dayOfWeek"
+                />
+              </mat-form-field>
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

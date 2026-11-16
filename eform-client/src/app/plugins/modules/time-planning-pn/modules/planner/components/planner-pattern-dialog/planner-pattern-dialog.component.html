@@ -1,0 +1,198 @@
+<h3 mat-dialog-title>
+  {{ 'plannerPatternTitle' | translate }} · {{ data.worker.siteName }}
+</h3>
+<div mat-dialog-content id="planner-pattern-dialog" data-testid="planner-pattern-dialog">
+  @if (loading) {
+    <div class="d-flex justify-content-center p-3"><mat-spinner diameter="32"></mat-spinner></div>
+  } @else if (step === 'edit') {
+    <div class="d-flex flex-column planner-dialog-stack">
+      @if (data.worker.weeklyNormHours != null) {
+        <span class="planner-hint">{{ 'plannerNormPerWeek' | translate: {hours: normHours} }}</span>
+      }
+      @if (isPrefill) {
+        <span class="planner-hint" data-testid="planner-pattern-prefill-hint">{{ 'plannerPatternPrefillHint' | translate }}</span>
+      }
+
+      <span class="planner-section-label">{{ 'plannerHowDoesWorkerWork' | translate }}</span>
+      <mat-button-toggle-group
+        [value]="form"
+        [disabled]="busy"
+        (change)="onFormChange($event.value)"
+        [attr.aria-label]="'plannerHowDoesWorkerWork' | translate"
+        id="planner-pattern-form"
+        data-testid="planner-pattern-form"
+      >
+        <mat-button-toggle value="same" id="planner-pattern-form-same" data-testid="planner-pattern-form-same">
+          {{ 'plannerFormSameWeek' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="rotation" id="planner-pattern-form-rotation" data-testid="planner-pattern-form-rotation">
+          {{ 'plannerFormRotation' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="none" id="planner-pattern-form-none" data-testid="planner-pattern-form-none">
+          {{ 'plannerFormNoPlan' | translate }}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
+      @if (form === 'none') {
+        <div class="planner-info" data-testid="planner-pattern-none-info">
+          <mat-icon>info</mat-icon>
+          <span>{{ (hasSavedPattern ? 'plannerNoPlanDeletesPattern' : 'plannerNoPlanNothingToSave') | translate }}</span>
+        </div>
+      } @else {
+        @if (form === 'rotation') {
+          <div class="d-flex flex-row flex-wrap align-items-center planner-row-gap">
+            <span>{{ 'plannerRotationLasts' | translate }}</span>
+            <mat-button-toggle-group
+              [value]="rotationWeeks"
+              [disabled]="busy"
+              (change)="setRotationWeeks($event.value)"
+              [attr.aria-label]="'plannerRotationLasts' | translate"
+              id="planner-pattern-rotation-weeks"
+              data-testid="planner-pattern-rotation-weeks"
+            >
+              @for (n of rotationOptions; track n) {
+                <mat-button-toggle [value]="n" [id]="'planner-pattern-rotation-' + n" [attr.data-testid]="'planner-pattern-rotation-' + n">{{ n }}</mat-button-toggle>
+              }
+            </mat-button-toggle-group>
+            <span>{{ 'plannerWeeks' | translate }}</span>
+          </div>
+        }
+
+        <div class="d-flex flex-row flex-wrap planner-row-gap">
+          @if (form === 'rotation') {
+            <mat-form-field>
+              <mat-label>{{ 'plannerAnchorLabel' | translate }}</mat-label>
+              <input
+                matInput
+                [matDatepicker]="anchorPicker"
+                [matDatepickerFilter]="mondaysOnly"
+                [(ngModel)]="anchorDate"
+                [disabled]="busy"
+                id="planner-pattern-anchor"
+                data-testid="planner-pattern-anchor"
+              />
+              <mat-datepicker-toggle matSuffix [for]="anchorPicker" [disabled]="busy"></mat-datepicker-toggle>
+              <mat-datepicker #anchorPicker></mat-datepicker>
+            </mat-form-field>
+          }
+          <mat-form-field>
+            <mat-label>{{ 'plannerValidFromLabel' | translate }}</mat-label>
+            <input
+              matInput
+              [matDatepicker]="validFromPicker"
+              [(ngModel)]="validFrom"
+              [disabled]="busy"
+              id="planner-pattern-valid-from"
+              data-testid="planner-pattern-valid-from"
+            />
+            <mat-datepicker-toggle matSuffix [for]="validFromPicker" [disabled]="busy"></mat-datepicker-toggle>
+            <mat-datepicker #validFromPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <span class="planner-hint">{{ 'plannerValidFromHint' | translate }}</span>
+
+        @if (data.colleagues.length > 0) {
+          <div class="d-flex flex-row flex-wrap align-items-center planner-row-gap">
+            <mat-form-field>
+              <mat-label>{{ 'plannerCopyFromColleague' | translate }}</mat-label>
+              <mat-select [(ngModel)]="copySourceId" id="planner-pattern-copy-source" data-testid="planner-pattern-copy-source">
+                @for (c of data.colleagues; track c.assignedSiteId) {
+                  <mat-option [value]="c.assignedSiteId">
+                    {{ c.siteName }} ({{ 'plannerRotationWeeksShort' | translate: {n: c.rotationWeeks} }})
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <button
+              type="button"
+              class="btn-cancel"
+              id="planner-pattern-copy-btn"
+              data-testid="planner-pattern-copy-btn"
+              [disabled]="copySourceId == null || busy"
+              (click)="copyFromColleague()"
+            >
+              <mat-icon>content_copy</mat-icon>
+              {{ 'plannerFetch' | translate }}
+            </button>
+          </div>
+          <span class="planner-hint">{{ 'plannerCopyHint' | translate }}</span>
+        }
+
+        <app-planner-pattern-days
+          [rotationWeeks]="rotationWeeks"
+          [days]="days"
+          idPrefix="planner-pattern-day"
+        ></app-planner-pattern-days>
+        @if (!daysValid) {
+          <span class="planner-error" data-testid="planner-pattern-invalid">{{ 'plannerShortFormInvalidHint' | translate }}</span>
+        }
+        <span class="planner-hint">{{ 'plannerShortFormHint' | translate }}</span>
+      }
+    </div>
+  } @else if (step === 'confirm') {
+    <div class="d-flex flex-column planner-dialog-stack" data-testid="planner-pattern-manual-days">
+      <span>{{ 'plannerManualDaysIntro' | translate: {count: manualDays.length} }}</span>
+      <ul class="planner-date-list">
+        @for (d of manualDays; track d.getTime()) {
+          <li>{{ formatDate(d) }}</li>
+        }
+      </ul>
+      <mat-checkbox
+        [(ngModel)]="overwriteManualDays"
+        id="planner-pattern-overwrite-manual"
+        data-testid="planner-pattern-overwrite-manual"
+      >
+        {{ 'plannerOverwriteManualDays' | translate }}
+      </mat-checkbox>
+    </div>
+  } @else {
+    <div class="d-flex flex-column planner-dialog-stack" data-testid="planner-pattern-confirm-delete">
+      <span>{{ 'plannerDeletePatternConfirm' | translate: {name: data.worker.siteName} }}</span>
+    </div>
+  }
+</div>
+<div mat-dialog-actions class="d-flex flex-row justify-content-end">
+  @if (step === 'edit') {
+    <button type="button" class="btn-cancel" id="planner-pattern-cancel" data-testid="planner-pattern-cancel" [disabled]="busy" (click)="cancel()">
+      {{ 'Cancel' | translate }}
+    </button>
+    <button
+      type="button"
+      class="btn-primary"
+      id="planner-pattern-save"
+      data-testid="planner-pattern-save"
+      [disabled]="loading || busy || !canSave"
+      (click)="save()"
+    >
+      {{ 'Save' | translate }}
+    </button>
+  } @else if (step === 'confirm') {
+    <button type="button" class="btn-cancel" id="planner-pattern-back" data-testid="planner-pattern-back" [disabled]="busy" (click)="back()">
+      {{ 'plannerBack' | translate }}
+    </button>
+    <button
+      type="button"
+      class="btn-primary"
+      id="planner-pattern-confirm-save"
+      data-testid="planner-pattern-confirm-save"
+      [disabled]="busy"
+      (click)="persist(overwriteManualDays)"
+    >
+      {{ 'Save' | translate }}
+    </button>
+  } @else {
+    <button type="button" class="btn-cancel" id="planner-pattern-delete-back" data-testid="planner-pattern-delete-back" [disabled]="busy" (click)="back()">
+      {{ 'plannerBack' | translate }}
+    </button>
+    <button
+      type="button"
+      class="btn-delete"
+      id="planner-pattern-delete"
+      data-testid="planner-pattern-delete"
+      [disabled]="busy"
+      (click)="deletePattern()"
+    >
+      {{ 'plannerDeletePattern' | translate }}
+    </button>
+  }
+</div>

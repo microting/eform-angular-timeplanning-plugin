@@ -77,11 +77,12 @@ jobs:
       run: cd eform-angular-frontend/eform-client && npx ng test --watch=false --include='src/app/plugins/modules/time-planning-pn/**/*.spec.ts'
   pn-playwright-test:
     needs: build
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became 26.04, which Playwright 1.5x cannot install browsers on.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,b1m,c1m,d1m,e1m,f1m,h1m,i1m,j1m,l1m]
+        test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,b1m,c1m,d1m,e1m,f1m,h1m,i1m,j1m,l1m]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -201,6 +202,25 @@ jobs:
             echo "Timed out waiting for UseOneMinuteIntervals column. Dumping AssignedSites schema:"
             docker exec -i mariadbtest mariadb -u root --password=secretpassword -e \
               "SHOW COLUMNS FROM \`420_eform-angular-time-planning-plugin\`.AssignedSites;"
+            exit 1
+          fi
+          sleep 2
+        done
+        # Shard t's patch also needs AssignedSites.IsManager and the
+        # AssignedSiteManagingTags table, from a later migration than the column
+        # above, so wait for that table too before patching.
+        echo "Waiting for plugin migration to add AssignedSiteManagingTags table..."
+        for i in $(seq 1 60); do
+          OUT=$(docker exec -i mariadbtest mariadb -u root --password=secretpassword -N -B -e \
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='420_eform-angular-time-planning-plugin' AND TABLE_NAME='AssignedSiteManagingTags';" 2>/dev/null || echo 0)
+          if [ "$OUT" = "1" ]; then
+            echo "Table present after ${i} attempt(s)."
+            break
+          fi
+          if [ "$i" = "60" ]; then
+            echo "Timed out waiting for AssignedSiteManagingTags table. Dumping plugin tables:"
+            docker exec -i mariadbtest mariadb -u root --password=secretpassword -e \
+              "SHOW TABLES FROM \`420_eform-angular-time-planning-plugin\`;"
             exit 1
           fi
           sleep 2

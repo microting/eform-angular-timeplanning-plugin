@@ -1,0 +1,47 @@
+// Planner (#5489): the few layout rules every planner component shares. Listed
+// @use'd by each component's stylesheet, so they stay scoped to the planner.
+// Colours come from the app's existing tokens only (--tp-border, --error);
+// nothing here is a new design token.
+
+.planner-dialog-stack {
+  gap: 12px;
+}
+
+.planner-row-gap {
+  gap: 8px 12px;
+}
+
+.planner-section-label {
+  font-weight: 600;
+}
+
+.planner-hint {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.planner-error {
+  font-size: 13px;
+  color: var(--error);
+}
+
+.planner-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--tp-border);
+  border-radius: 8px;
+}
+
+// Long text must not squeeze the icon (it shrank to 10px in the requests panel).
+.planner-info > mat-icon {
+  flex-shrink: 0;
+}
+
+.planner-date-list {
+  margin: 0;
+  padding-left: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
