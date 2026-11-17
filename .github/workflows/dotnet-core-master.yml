@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         path: eform-angular-timeplanning-plugin
@@ -18,7 +18,7 @@ jobs:
       id: extract_branch
       run: echo "BRANCH=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
     - name: 'Preparing Frontend checkout'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         repository: microting/eform-angular-frontend
@@ -49,14 +49,14 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         path: eform-angular-timeplanning-plugin
     - name: Extract branch name
       id: extract_branch
       run: echo "BRANCH=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
     - name: 'Preparing Frontend checkout'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         repository: microting/eform-angular-frontend
@@ -91,7 +91,7 @@ jobs:
       matrix:
         test: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,b1m,c1m,d1m,e1m,f1m,h1m,i1m,j1m,l1m]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         path: eform-angular-timeplanning-plugin
     - name: Extract branch name
@@ -121,7 +121,7 @@ jobs:
       with:
         node-version: 22
     - name: 'Preparing Frontend checkout'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         repository: microting/eform-angular-frontend
@@ -307,13 +307,13 @@ jobs:
           - name: l
             filter: "FullyQualifiedName=TimePlanning.Pn.Test.PlannerAbsenceAndImportTests"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Create docker network
       run: docker network create --driver bridge --attachable data
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 10.0.x
+        dotnet-version: 11.0.x
     - name: Build
       run: dotnet build eFormAPI/Plugins/TimePlanning.Pn/TimePlanning.Pn.sln
     - name: Unit Tests (shard ${{ matrix.shard.name }})
