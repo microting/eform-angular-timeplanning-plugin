@@ -5,6 +5,8 @@ import {ApiBaseService} from 'src/app/common/services';
 import {
   PlanPatternApplyResult,
   PlannerAbsenceCreateModel,
+  PlannerAbsencePreviewModel,
+  PlannerAbsencePreviewRequestModel,
   PlannerAbsenceResultModel,
   PlannerCellsUpdateModel,
   PlannerCellsUpdateResultModel,
@@ -16,8 +18,6 @@ import {
   PlannerPatternSaveModel,
   PlannerSettingsModel,
 } from '../models';
-import {AbsenceRequestModel} from '../../../models';
-import {TimePlanningPnAbsenceRequestsMethods} from '../../../services/time-planning-pn-absence-requests.service';
 
 const Base = 'api/time-planning-pn/planner';
 
@@ -26,6 +26,7 @@ export const TimePlanningPnPlannerMethods = {
   Cells: `${Base}/cells`,
   Patterns: `${Base}/patterns`,
   Absence: `${Base}/absence`,
+  AbsencePreview: `${Base}/absence/preview`,
   ImportPreview: `${Base}/import/preview`,
   ImportApply: `${Base}/import/apply`,
   Settings: `${Base}/settings`,
@@ -43,7 +44,10 @@ export const TimePlanningPnPlannerMethods = {
 export class TimePlanningPnPlannerService {
   private apiBaseService = inject(ApiBaseService);
 
-  /** from: transport date; days: 7 or 14; tagIds repeat as tagIds=1&tagIds=2 for List<int> binding. */
+  /**
+   * from: transport date; days: 7, 14 or the days of a calendar month (from = the 1st);
+   * tagIds repeat as tagIds=1&tagIds=2 for List<int> binding.
+   */
   getGrid(from: string, days: number, tagIds: number[]): Observable<OperationDataResult<PlannerGridModel>> {
     const query = [`from=${encodeURIComponent(from)}`, `days=${days}`]
       .concat((tagIds ?? []).map(id => `tagIds=${id}`))
@@ -53,11 +57,6 @@ export class TimePlanningPnPlannerService {
 
   updateCells(model: PlannerCellsUpdateModel): Observable<OperationDataResult<PlannerCellsUpdateResultModel>> {
     return this.apiBaseService.post(TimePlanningPnPlannerMethods.Cells, model);
-  }
-
-  /** The absence-request inbox without a toast: the planner reads it only for the button's pending count. */
-  getInboxNoToast(): Observable<OperationDataResult<AbsenceRequestModel[]>> {
-    return this.apiBaseService.getNoToast(TimePlanningPnAbsenceRequestsMethods.GetInbox);
   }
 
   getPattern(assignedSiteId: number): Observable<OperationDataResult<PlannerPatternModel>> {
@@ -83,6 +82,11 @@ export class TimePlanningPnPlannerService {
   copyPattern(assignedSiteId: number, sourceAssignedSiteId: number): Observable<OperationDataResult<PlannerPatternModel>> {
     return this.apiBaseService.post(
       `${TimePlanningPnPlannerMethods.Patterns}/${assignedSiteId}/copy-from/${sourceAssignedSiteId}`, {});
+  }
+
+  /** NoToast: a refusal is shown in the dialog's preview box, not as a toast on every keystroke. */
+  previewAbsence(model: PlannerAbsencePreviewRequestModel): Observable<OperationDataResult<PlannerAbsencePreviewModel>> {
+    return this.apiBaseService.postNoToast(TimePlanningPnPlannerMethods.AbsencePreview, model);
   }
 
   createAbsence(model: PlannerAbsenceCreateModel): Observable<OperationDataResult<PlannerAbsenceResultModel>> {

@@ -29,6 +29,7 @@ describe('planner dialogs when a request gets no reply', () => {
   beforeEach(() => {
     service = {
       createAbsence: vi.fn(() => EMPTY),
+      previewAbsence: vi.fn(() => NEVER),
       savePattern: vi.fn(() => EMPTY),
       getManualDays: vi.fn(() => of({success: true, model: []})),
       copyPattern: vi.fn(() => EMPTY),

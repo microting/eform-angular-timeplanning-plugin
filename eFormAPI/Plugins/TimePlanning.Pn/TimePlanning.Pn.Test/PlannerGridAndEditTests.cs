@@ -76,7 +76,8 @@ public class PlannerGridAndEditTests : PlannerTestBase
         Assert.That(p.AssignedSiteId, Is.EqualTo(patterned.Id));
         Assert.That(p.HasPattern, Is.True);
         Assert.That(p.RotationWeeks, Is.EqualTo(1));
-        Assert.That(p.CanApproveAbsence, Is.False, "an admin who is no manager cannot decide requests");
+        // Changed rule: an administrator decides absence for every worker, manager or not.
+        Assert.That(p.CanApproveAbsence, Is.True, "an admin who is no manager may decide requests");
         Assert.That(p.Cells, Has.Count.EqualTo(14));
         Assert.That(p.Cells.All(c => c.PlanText == PatternText && c.PlanHours == 7.5 && c.PlanRegistrationId != null),
             Is.True, "missing rows are created through the pattern branch");
@@ -132,7 +133,8 @@ public class PlannerGridAndEditTests : PlannerTestBase
     {
         await SeedAdminCallerAsync(UserService);
 
-        var result = await BuildService().GetGridAsync(new PlannerGridRequestModel { From = NextMonday, Days = 30 });
+        // 20 days: neither one or two weeks nor a whole month, whatever day NextMonday is.
+        var result = await BuildService().GetGridAsync(new PlannerGridRequestModel { From = NextMonday, Days = 20 });
 
         Assert.That(result.Success, Is.False);
     }

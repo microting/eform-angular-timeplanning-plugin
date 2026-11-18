@@ -126,3 +126,44 @@ public class PlannerAbsenceResultModel
     /// <summary>On refusal: the locked days that blocked the whole request.</summary>
     public List<DateTime> LockedDates { get; set; } = [];
 }
+
+/// <summary>
+/// POST planner/absence/preview: what POST planner/absence would do with the
+/// same body, day by day, without writing anything.
+/// </summary>
+public class PlannerAbsencePreviewModel
+{
+    public List<PlannerAbsenceDayModel> Days { get; set; } = [];
+
+    /// <summary>Days that would get the absence (outcome "apply").</summary>
+    public int WorkDays { get; set; }
+
+    /// <summary>The plan hours of those days.</summary>
+    public double PlannedHours { get; set; }
+}
+
+public class PlannerAbsenceDayModel
+{
+    public DateTime Date { get; set; }
+    public string PlanText { get; set; } = "";
+    public double PlanHours { get; set; }
+
+    /// <summary>One of <see cref="PlannerAbsenceOutcomes"/>.</summary>
+    public string Outcome { get; set; } = PlannerAbsenceOutcomes.DayOff;
+}
+
+/// <summary>What a manager absence does with a day.</summary>
+public static class PlannerAbsenceOutcomes
+{
+    /// <summary>A planned day: it gets the absence.</summary>
+    public const string Apply = "apply";
+
+    /// <summary>No plan hours (a day off, a weekend): skipped.</summary>
+    public const string DayOff = "dayOff";
+
+    /// <summary>A locked day: refuses the whole request.</summary>
+    public const string Locked = "locked";
+
+    /// <summary>Held by another pending or approved request: refuses the whole request.</summary>
+    public const string Overlap = "overlap";
+}

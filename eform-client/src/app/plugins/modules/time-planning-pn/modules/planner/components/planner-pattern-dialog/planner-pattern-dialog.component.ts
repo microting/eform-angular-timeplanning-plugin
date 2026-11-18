@@ -1,7 +1,6 @@
 import {Component, OnInit, inject} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {MAT_DIALOG_DATA, MatDialogActions, MatDialogContent, MatDialogRef, MatDialogTitle} from '@angular/material/dialog';
-import {MatButtonToggle, MatButtonToggleGroup} from '@angular/material/button-toggle';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 import {MatFormField, MatLabel, MatSuffix} from '@angular/material/form-field';
@@ -15,14 +14,18 @@ import {PlanPatternDayModel, PlannerPatternModel, PlannerWorkerModel} from '../.
 import {TimePlanningPnPlannerService} from '../../services';
 import {
   formatPlannerDate, formatPlannerHours, fullPatternGrid, isValidPattern, isValidPatternDayText, mondaysOnly,
-  onNoReply, parseCalendarDate, ROTATION_WEEK_OPTIONS, toTransportDate, trimmedPatternDays,
+  onNoReply, parseCalendarDate, ROTATION_WEEK_OPTIONS, segmentedKeydown, toTransportDate, trimmedPatternDays,
+  workerInitials,
 } from '../../planner.utils';
 import {PlannerPatternDaysComponent} from '../planner-pattern-days/planner-pattern-days.component';
 
 export interface PlannerPatternDialogData {
-  worker: PlannerWorkerModel;
-  /** Other workers in the grid that have a pattern ("Kopiér fra kollega"). */
-  colleagues: PlannerWorkerModel[];
+  /** The worker whose pattern is edited; null opens on a worker picker ("Ugemønstre" in the header). */
+  worker: PlannerWorkerModel | null;
+  /** Other workers in the grid that have a pattern ("Kopiér fra kollega"). Derived from `workers` when picking. */
+  colleagues?: PlannerWorkerModel[];
+  /** The workers to pick from when `worker` is null. */
+  workers?: PlannerWorkerModel[];
 }
 
 /** "Samme uge hver uge" / "Rotation" / "Ingen fast plan". */
@@ -35,9 +38,9 @@ export type PlannerPatternForm = 'same' | 'rotation' | 'none';
 @Component({
   selector: 'app-planner-pattern-dialog',
   imports: [
-    FormsModule, TranslatePipe, MatDialogTitle, MatDialogContent, MatDialogActions, MatButtonToggleGroup,
-    MatButtonToggle, MatCheckbox, MatDatepicker, MatDatepickerInput, MatDatepickerToggle, MatFormField, MatLabel,
-    MatSuffix, MatIcon, MatInput, MatSelect, MatOption, MatProgressSpinner, PlannerPatternDaysComponent,
+    FormsModule, TranslatePipe, MatDialogTitle, MatDialogContent, MatDialogActions, MatCheckbox, MatDatepicker,
+    MatDatepickerInput, MatDatepickerToggle, MatFormField, MatLabel, MatSuffix, MatIcon, MatInput, MatSelect, MatOption,
+    MatProgressSpinner, PlannerPatternDaysComponent,
   ],
   templateUrl: './planner-pattern-dialog.component.html',
   styleUrls: ['./planner-pattern-dialog.component.scss'],
@@ -50,11 +53,19 @@ export class PlannerPatternDialogComponent implements OnInit {
   public data = inject<PlannerPatternDialogData>(MAT_DIALOG_DATA);
 
   readonly rotationOptions = ROTATION_WEEK_OPTIONS.filter(n => n > 1);
+  readonly forms: { value: PlannerPatternForm; key: string }[] = [
+    {value: 'same', key: 'plannerFormSameWeek'},
+    {value: 'rotation', key: 'plannerFormRotation'},
+    {value: 'none', key: 'plannerFormNoPlan'},
+  ];
+  readonly initials = workerInitials;
 
+  /** Null until a worker is picked (opened from "Ugemønstre"). */
+  worker: PlannerWorkerModel | null = this.data.worker;
   loading = true;
   busy = false;
-  /** 'edit', then 'confirm' (manual days) or 'confirmDelete'. */
-  step: 'edit' | 'confirm' | 'confirmDelete' = 'edit';
+  /** 'pick' (no worker yet), 'edit', then 'confirm' (manual days) or 'confirmDelete'. */
+  step: 'pick' | 'edit' | 'confirm' | 'confirmDelete' = this.data.worker ? 'edit' : 'pick';
 
   form: PlannerPatternForm = 'same';
   rotationWeeks = 1;
@@ -70,8 +81,41 @@ export class PlannerPatternDialogComponent implements OnInit {
   readonly mondaysOnly = mondaysOnly;
 
   ngOnInit(): void {
+    if (this.worker) {
+      this.loadPattern();
+    } else {
+      this.loading = false;
+    }
+  }
+
+  /** Workers offered by the picker. */
+  get pickableWorkers(): PlannerWorkerModel[] {
+    return this.data.workers ?? [];
+  }
+
+  /** "Kopiér fra kollega": the other workers with a pattern. */
+  get colleagues(): PlannerWorkerModel[] {
+    if (this.data.colleagues && this.worker === this.data.worker) {
+      return this.data.colleagues;
+    }
+    return this.pickableWorkers.filter(w => w.hasPattern && w.assignedSiteId !== this.worker?.assignedSiteId);
+  }
+
+  /** The picker: the pattern of the chosen worker is read and the editor opens. */
+  pickWorker(assignedSiteId: number): void {
+    const worker = this.pickableWorkers.find(w => w.assignedSiteId === assignedSiteId);
+    if (!worker) {
+      return;
+    }
+    this.worker = worker;
+    this.step = 'edit';
+    this.loading = true;
+    this.loadPattern();
+  }
+
+  private loadPattern(): void {
     // No reply to the read: nothing to edit, so close as the refusal does.
-    this.plannerService.getPattern(this.data.worker.assignedSiteId).pipe(onNoReply(() => {
+    this.plannerService.getPattern(this.worker.assignedSiteId).pipe(onNoReply(() => {
       this.loading = false;
       this.dialogRef.close(false);
     })).subscribe({
@@ -101,7 +145,21 @@ export class PlannerPatternDialogComponent implements OnInit {
   }
 
   get hasSavedPattern(): boolean {
-    return this.data.worker.hasPattern;
+    return !!this.worker?.hasPattern;
+  }
+
+  onFormKeydown(event: KeyboardEvent, index: number): void {
+    const next = segmentedKeydown(event, index, this.forms.length);
+    if (next !== null && this.forms[next].value !== this.form) {
+      this.onFormChange(this.forms[next].value);
+    }
+  }
+
+  onRotationKeydown(event: KeyboardEvent, index: number): void {
+    const next = segmentedKeydown(event, index, this.rotationOptions.length);
+    if (next !== null && this.rotationOptions[next] !== this.rotationWeeks) {
+      this.setRotationWeeks(this.rotationOptions[next]);
+    }
   }
 
   onFormChange(form: PlannerPatternForm): void {
@@ -123,7 +181,7 @@ export class PlannerPatternDialogComponent implements OnInit {
       return;
     }
     this.busy = true;
-    this.plannerService.copyPattern(this.data.worker.assignedSiteId, this.copySourceId)
+    this.plannerService.copyPattern(this.worker.assignedSiteId, this.copySourceId)
       .pipe(onNoReply(() => { this.busy = false; })).subscribe({
       next: (result) => {
         this.busy = false;
@@ -166,7 +224,7 @@ export class PlannerPatternDialogComponent implements OnInit {
     this.busy = true;
     // The flag is per request: when the lookup emits it starts the save, and
     // the lookup's own completion then leaves the save's busy state alone.
-    this.plannerService.getManualDays(this.data.worker.assignedSiteId, toTransportDate(this.validFrom))
+    this.plannerService.getManualDays(this.worker.assignedSiteId, toTransportDate(this.validFrom))
       .pipe(onNoReply(() => { this.busy = false; })).subscribe({
       next: (result) => {
         this.busy = false;
@@ -190,7 +248,7 @@ export class PlannerPatternDialogComponent implements OnInit {
 
   persist(overwriteManualDays: boolean): void {
     this.busy = true;
-    this.plannerService.savePattern(this.data.worker.assignedSiteId, {
+    this.plannerService.savePattern(this.worker.assignedSiteId, {
       rotationWeeks: this.rotationWeeks,
       anchorDate: toTransportDate(this.anchorDate),
       validFrom: toTransportDate(this.validFrom),
@@ -225,7 +283,7 @@ export class PlannerPatternDialogComponent implements OnInit {
 
   deletePattern(): void {
     this.busy = true;
-    this.plannerService.deletePattern(this.data.worker.assignedSiteId)
+    this.plannerService.deletePattern(this.worker.assignedSiteId)
       .pipe(onNoReply(() => this.outcomeUnknown())).subscribe({
       next: (result) => {
         this.busy = false;
@@ -280,6 +338,6 @@ export class PlannerPatternDialogComponent implements OnInit {
   }
 
   get normHours(): string {
-    return formatPlannerHours(this.translateService, this.data.worker.weeklyNormHours);
+    return formatPlannerHours(this.translateService, this.worker?.weeklyNormHours);
   }
 }

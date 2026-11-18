@@ -89,6 +89,12 @@ public class TimePlanningPlannerController(IPlannerService plannerService) : Con
         [FromBody] PlannerAbsenceCreateModel model) =>
         plannerService.CreateAbsenceAsync(model);
 
+    /// <summary>The same body as POST planner/absence; nothing is written.</summary>
+    [HttpPost("absence/preview")]
+    public Task<OperationDataResult<PlannerAbsencePreviewModel>> PreviewAbsence(
+        [FromBody] PlannerAbsenceCreateModel model) =>
+        plannerService.PreviewAbsenceAsync(model);
+
     [HttpGet("import/preview")]
     public Task<OperationDataResult<PlannerImportPreviewModel>> GetImportPreview() =>
         plannerService.GetImportPreviewAsync();

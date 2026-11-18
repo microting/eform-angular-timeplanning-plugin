@@ -56,7 +56,7 @@ public class PlannerAccessWiringTests
         Assert.That(classPolicies, Does.Contain(Claim));
 
         var actions = Actions();
-        Assert.That(actions, Has.Count.EqualTo(12), "the planner endpoints were not found");
+        Assert.That(actions, Has.Count.EqualTo(13), "the planner endpoints were not found");
         foreach (var action in actions)
         {
             Assert.That(action.GetCustomAttribute<AllowAnonymousAttribute>(), Is.Null, action.Name);

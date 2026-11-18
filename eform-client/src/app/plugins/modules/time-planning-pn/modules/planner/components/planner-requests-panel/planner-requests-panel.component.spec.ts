@@ -34,15 +34,12 @@ describe('PlannerRequestsPanelComponent', () => {
     const first = new Subject<unknown>();
     const second = new Subject<unknown>();
     const panel = createPanel(vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second));
-    const counts: number[] = [];
-    panel.pendingCount.subscribe(n => counts.push(n));
 
     panel.load();
     panel.load();
     second.next({success: true, model: []});
     first.next({success: true, model: [{status: 'Pending', requestedBySdkSitId: 1, dateFrom: '2026-11-19', dateTo: '2026-11-20', days: []}]});
 
-    expect(counts).toEqual([0]);
     expect(panel.views).toEqual([]);
   });
 });

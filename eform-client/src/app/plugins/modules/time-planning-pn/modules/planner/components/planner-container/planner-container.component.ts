@@ -1,8 +1,8 @@
-import {Component, HostListener, OnInit, inject} from '@angular/core';
+import {AfterViewInit, Component, DestroyRef, ElementRef, HostListener, NgZone, OnInit, ViewChild, inject} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormsModule} from '@angular/forms';
 import {Overlay} from '@angular/cdk/overlay';
 import {MatDialog} from '@angular/material/dialog';
-import {MatButtonToggle, MatButtonToggleGroup} from '@angular/material/button-toggle';
 import {MatIconButton} from '@angular/material/button';
 import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatIcon} from '@angular/material/icon';
@@ -14,9 +14,11 @@ import {MatDrawer, MatDrawerContainer, MatDrawerContent} from '@angular/material
 import {MatSlideToggle} from '@angular/material/slide-toggle';
 import {MatTooltip} from '@angular/material/tooltip';
 import {MtxSelect} from '@ng-matero/extensions/select';
+import {Store} from '@ngrx/store';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {ToastrService} from 'ngx-toastr';
 import {filter, Subscription, take} from 'rxjs';
+import {selectCurrentUserIsAdmin} from 'src/app/state';
 import {dialogConfigHelper} from 'src/app/common/helpers';
 import {EformNewSubheaderComponent} from 'src/app/common/modules/eform-shared/components';
 import {CommonTagModel} from '../../../../models';
@@ -27,9 +29,9 @@ import {
 } from '../../models';
 import {TimePlanningPnPlannerService} from '../../services';
 import {
-  addDays, dateKey, formatPlannerDate, formatPlannerHours, isoDayOfWeek, isoWeekNumber, keyToTransportDate,
-  localDateKey, mondayOf, onNoReply, parseCalendarDate, ShortFormKind, shortFormKind, todayLocal, toTransportDate,
-  WEEKDAY_KEYS,
+  addDays, addMonthsToStart, dateKey, daysInMonthOf, formatPlannerDate, formatPlannerHours, isoDayOfWeek, isoWeekNumber,
+  keyToTransportDate, localDateKey, mondayOf, monthStartOf, onNoReply, parseCalendarDate, plannerLocale,
+  segmentedKeydown, ShortFormKind, shortFormKind, todayLocal, toTransportDate, WEEKDAY_KEYS, workerInitials,
 } from '../../planner.utils';
 import {absenceTypeKey, PLANNER_ABSENCE_TYPES} from '../../planner-absence-types';
 import {PlannerAbsenceDialogComponent, PlannerAbsenceDialogData} from '../planner-absence-dialog/planner-absence-dialog.component';
@@ -51,6 +53,12 @@ export interface PlannerRow {
   weeks: Map<string, PlannerWeekSumModel>;
 }
 
+/** The period the grid shows: one or two ISO weeks, or a calendar month. */
+export type PlannerView = 'week' | 'twoWeeks' | 'month';
+
+/** Where the help panel's dismissal is kept, per viewer (browser). */
+export const PLANNER_HELP_DISMISSED_KEY = 'timePlanningPn.planner.helpDismissed';
+
 interface CellPos {
   row: number;
   day: number;
@@ -58,7 +66,7 @@ interface CellPos {
 
 /**
  * Screens 1 and 2 of the web planner, "Planlægning (beta)" (#5489): workers x
- * 7 or 14 days with week sums against the norm and the daily headcount, multi
+ * 7 or 14 days or a calendar month, with week sums against the norm and the daily headcount, multi
  * cell selection (click, shift-click, drag) and the short-form editor. The
  * pattern, absence and import dialogs and the vacation-requests panel open
  * from here.
@@ -66,7 +74,7 @@ interface CellPos {
 @Component({
   selector: 'app-planner-container',
   imports: [
-    FormsModule, TranslatePipe, EformNewSubheaderComponent, MatButtonToggleGroup, MatButtonToggle, MatIconButton,
+    FormsModule, TranslatePipe, EformNewSubheaderComponent, MatIconButton,
     MatFormField, MatLabel, MatIcon, MatInput, MatProgressSpinner, MatRadioGroup, MatRadioButton, MatSelect, MatOption,
     MatDrawerContainer, MatDrawer, MatDrawerContent, MatSlideToggle, MatTooltip, MtxSelect,
     PlannerRequestsPanelComponent,
@@ -74,20 +82,29 @@ interface CellPos {
   templateUrl: './planner-container.component.html',
   styleUrls: ['./planner-container.component.scss'],
 })
-export class PlannerContainerComponent implements OnInit {
+export class PlannerContainerComponent implements OnInit, AfterViewInit {
   private plannerService = inject(TimePlanningPnPlannerService);
   private settingsService = inject(TimePlanningPnSettingsService);
   private dialog = inject(MatDialog);
   private overlay = inject(Overlay);
   private toastrService = inject(ToastrService);
   private translateService = inject(TranslateService);
+  private store = inject(Store);
+  private destroyRef = inject(DestroyRef);
+  private zone = inject(NgZone);
 
   readonly absenceTypes = PLANNER_ABSENCE_TYPES;
   readonly modes = PlannerEditModes;
   readonly absenceTypeKey = absenceTypeKey;
+  readonly initials = workerInitials;
+  readonly views: { value: PlannerView; key: string; testId: string }[] = [
+    {value: 'week', key: 'plannerOneWeek', testId: 'planner-days-7'},
+    {value: 'twoWeeks', key: 'plannerTwoWeeks', testId: 'planner-days-14'},
+    {value: 'month', key: 'plannerMonth', testId: 'planner-days-month'},
+  ];
 
   from: Date = mondayOf(todayLocal());
-  days: 7 | 14 = 14;
+  view: PlannerView = 'twoWeeks';
   availableTags: CommonTagModel[] = [];
   selectedTagIds: number[] = [];
 
@@ -110,10 +127,21 @@ export class PlannerContainerComponent implements OnInit {
   drawerOpen = false;
   pendingRequests = 0;
   private load$: Subscription | null = null;
-  private pending$: Subscription | null = null;
   highlightSiteId: number | null = null;
+  isAdmin = false;
+  helpOpen = !readHelpDismissed();
+
+  @ViewChild('gridScroll') private gridScroll?: ElementRef<HTMLElement>;
+  /**
+   * Where the selection bar sits: it is fixed to the bottom of the viewport
+   * (the host scrolls the page, not the planner, so sticky never engages),
+   * lined up with the grid's own left edge and width.
+   */
+  editorFrame: { left: number; width: number } | null = null;
 
   ngOnInit(): void {
+    this.store.select(selectCurrentUserIsAdmin).pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(isAdmin => this.isAdmin = !!isAdmin);
     this.settingsService.getAvailableTags().pipe(take(1)).subscribe((result) => {
       if (result && result.success) {
         this.availableTags = result.model || [];
@@ -122,13 +150,28 @@ export class PlannerContainerComponent implements OnInit {
     this.load();
   }
 
+  ngAfterViewInit(): void {
+    const el = this.gridScroll?.nativeElement;
+    if (el && typeof ResizeObserver !== 'undefined') {
+      // The host has no zone patch for ResizeObserver: re-enter the zone so the
+      // new frame is rendered (sidebar toggle, a scrollbar appearing, a window resize).
+      const observer = new ResizeObserver(() => this.zone.run(() => this.measureEditorFrame()));
+      observer.observe(el);
+      this.destroyRef.onDestroy(() => observer.disconnect());
+    }
+  }
+
+  measureEditorFrame(): void {
+    const rect = this.gridScroll?.nativeElement.getBoundingClientRect();
+    this.editorFrame = rect && rect.width > 0 ? {left: rect.left, width: rect.width} : null;
+  }
+
   // ------------------------------------------------------------------ loading
 
   load(afterLoad?: () => void): void {
     this.loading = true;
     // A newer read replaces an older one still in flight, so a fast next/prev never shows a stale grid.
     this.load$?.unsubscribe();
-    this.refreshPendingRequests();
     this.load$ = this.plannerService.getGrid(toTransportDate(this.from), this.days, this.selectedTagIds)
       .pipe(onNoReply(() => { this.loading = false; })).subscribe({
       next: (result) => {
@@ -145,22 +188,10 @@ export class PlannerContainerComponent implements OnInit {
     });
   }
 
-  /** The count on the Ferieønsker button, read with the grid so it is right before the panel opens. */
-  private refreshPendingRequests(): void {
-    this.pending$?.unsubscribe();
-    this.pending$ = this.plannerService.getInboxNoToast().subscribe({
-      next: (result) => {
-        if (result && result.success) {
-          this.pendingRequests = (result.model ?? []).filter(r => r.status === 'Pending').length;
-        }
-      },
-      // Silent: the panel reports a failed inbox read when it is opened; the count just stays as it was.
-      error: () => undefined,
-    });
-  }
-
   private applyGrid(grid: PlannerGridModel): void {
     this.grid = grid;
+    // The count on the Ferieønsker button comes only from the grid; a decision in the panel reloads the grid.
+    this.pendingRequests = grid.pendingRequestCount ?? 0;
     const totals = new Map(grid.dayTotals.map(t => [dateKey(t.date), t]));
     const columns: PlannerColumn[] = [];
     grid.dates.forEach((raw, dayIndex) => {
@@ -190,26 +221,55 @@ export class PlannerContainerComponent implements OnInit {
 
   // ------------------------------------------------------------- navigation
 
-  get periodLabel(): string {
-    const to = addDays(this.from, this.days - 1);
+  /** Days the grid reads: 7, 14, or the days of the shown calendar month. */
+  get days(): number {
+    switch (this.view) {
+      case 'week':
+        return 7;
+      case 'month':
+        return daysInMonthOf(this.from);
+      default:
+        return 14;
+    }
+  }
+
+  get periodEnd(): Date {
+    return addDays(this.from, this.days - 1);
+  }
+
+  /** "Uge 47–48", or "November 2026" for a month. */
+  get periodTitle(): string {
+    if (this.view === 'month') {
+      const month = formatPlannerDate(this.translateService, this.from, {month: 'long', year: 'numeric'});
+      return month.charAt(0).toLocaleUpperCase(plannerLocale(this.translateService)) + month.slice(1);
+    }
     const first = isoWeekNumber(this.from);
-    const last = isoWeekNumber(to);
-    const weeks = first === last
+    const last = isoWeekNumber(this.periodEnd);
+    return first === last
       ? this.translateService.instant('plannerWeekN', {n: first})
       : this.translateService.instant('plannerWeeksNM', {n: first, m: last});
-    return `${weeks} · ${this.formatDate(this.from, false)} – ${this.formatDate(to, true)}`;
+  }
+
+  /** "16. nov. – 29. nov. 2026". */
+  get periodRange(): string {
+    return `${this.formatDate(this.from, false)} – ${this.formatDate(this.periodEnd, true)}`;
+  }
+
+  /** The grid's start for `date` in the current view: its Monday, or the 1st of its month. */
+  private periodStartOf(date: Date): Date {
+    return this.view === 'month' ? monthStartOf(date) : mondayOf(date);
   }
 
   previous(): void {
-    this.goTo(addDays(this.from, -this.days));
+    this.goTo(this.view === 'month' ? addMonthsToStart(this.from, -1) : addDays(this.from, -this.days));
   }
 
   next(): void {
-    this.goTo(addDays(this.from, this.days));
+    this.goTo(this.view === 'month' ? addMonthsToStart(this.from, 1) : addDays(this.from, this.days));
   }
 
   goToToday(): void {
-    this.goTo(mondayOf(todayLocal()));
+    this.goTo(this.periodStartOf(todayLocal()));
   }
 
   private goTo(from: Date): void {
@@ -218,10 +278,42 @@ export class PlannerContainerComponent implements OnInit {
     this.load();
   }
 
-  onDaysChange(days: 7 | 14): void {
-    this.days = days;
+  /** Switching view keeps the period in view: a month starts on the 1st, weeks on a Monday. */
+  onViewChange(view: PlannerView): void {
+    if (view === this.view) {
+      return;
+    }
+    // Leaving a month that holds today lands on today's week, not the month's first.
+    const today = todayLocal();
+    const anchor = this.view === 'month' && today >= this.from && today <= this.periodEnd ? today : this.from;
+    this.view = view;
+    this.from = this.periodStartOf(anchor);
     this.clearSelection();
     this.load();
+  }
+
+  onViewKeydown(event: KeyboardEvent, index: number): void {
+    const next = segmentedKeydown(event, index, this.views.length);
+    if (next !== null) {
+      this.onViewChange(this.views[next].value);
+    }
+  }
+
+  // ------------------------------------------------------------------- help
+
+  closeHelp(): void {
+    this.helpOpen = false;
+    writeHelpDismissed(true);
+  }
+
+  /** "Hjælp" opens the panel again, and toggles it while open. */
+  toggleHelp(): void {
+    if (this.helpOpen) {
+      this.closeHelp();
+      return;
+    }
+    this.helpOpen = true;
+    writeHelpDismissed(false);
   }
 
   onTagsChanged(tagIds: number[] | null): void {
@@ -322,6 +414,9 @@ export class PlannerContainerComponent implements OnInit {
    * only while every selected worker has a pattern.
    */
   private setSelection(next: Set<string>): void {
+    if (this.selection.size === 0 && next.size > 0) {
+      this.measureEditorFrame();
+    }
     this.selection = next;
     if (this.mode === PlannerEditModes.everyWeekdayFrom && !this.everyWeekdayAllowed) {
       this.mode = PlannerEditModes.onlyTheseDays;
@@ -454,29 +549,47 @@ export class PlannerContainerComponent implements OnInit {
 
   // ----------------------------------------------------------------- dialogs
 
-  openPattern(worker: PlannerWorkerModel): void {
-    const data: PlannerPatternDialogData = {
-      worker,
-      colleagues: this.rows.map(r => r.worker).filter(w => w.hasPattern && w.assignedSiteId !== worker.assignedSiteId),
-    };
+  /** A worker's pattern; with no worker ("Ugemønstre" in the header) the dialog opens on a picker. */
+  openPattern(worker: PlannerWorkerModel | null): void {
+    const workers = this.rows.map(r => r.worker);
+    const data: PlannerPatternDialogData = worker
+      ? {worker, colleagues: workers.filter(w => w.hasPattern && w.assignedSiteId !== worker.assignedSiteId)}
+      : {worker: workers.length === 1 ? workers[0] : null, workers};
     this.dialog.open(PlannerPatternDialogComponent, {...dialogConfigHelper(this.overlay, data), maxWidth: '95vw'})
       .afterClosed().pipe(filter(Boolean)).subscribe(() => this.load());
   }
 
-  openAbsence(): void {
-    const refs = this.selectedRefs();
+  /** "Ugemønstre": one selected worker opens straight on that worker's pattern. */
+  openPatterns(): void {
     const ids = this.selectedSiteIds();
-    const data: PlannerAbsenceDialogData = {
-      workers: this.rows.map(r => r.worker),
-      assignedSiteId: ids.size === 1 ? [...ids][0] : null,
-      from: refs.length ? parseCalendarDate(refs[0].key) : null,
-      to: refs.length ? parseCalendarDate(refs[refs.length - 1].key) : null,
-    };
-    this.dialog.open(PlannerAbsenceDialogComponent, dialogConfigHelper(this.overlay, data))
+    const selected = ids.size === 1 ? this.rows.find(r => r.worker.assignedSiteId === [...ids][0])?.worker : null;
+    this.openPattern(selected ?? null);
+  }
+
+  /**
+   * "Registrér fravær" and the selection bar's "Ferie": prefilled from the
+   * selection (the worker when only one is selected, the first to the last
+   * selected date).
+   */
+  openAbsence(): void {
+    const data: PlannerAbsenceDialogData = {...this.absencePrefill(), workers: this.rows.map(r => r.worker), isAdmin: this.isAdmin};
+    this.dialog.open(PlannerAbsenceDialogComponent, {
+      ...dialogConfigHelper(this.overlay, data), width: '720px', maxWidth: '95vw',
+    })
       .afterClosed().pipe(filter(Boolean)).subscribe(() => {
         this.clearSelection();
         this.load();
       });
+  }
+
+  private absencePrefill(): Pick<PlannerAbsenceDialogData, 'assignedSiteId' | 'from' | 'to'> {
+    const refs = this.selectedRefs();
+    const ids = this.selectedSiteIds();
+    return {
+      assignedSiteId: ids.size === 1 ? [...ids][0] : null,
+      from: refs.length ? parseCalendarDate(refs[0].key) : null,
+      to: refs.length ? parseCalendarDate(refs[refs.length - 1].key) : null,
+    };
   }
 
   openImport(): void {
@@ -498,10 +611,10 @@ export class PlannerContainerComponent implements OnInit {
 
   /** "Vis i planen": show the request's range with the worker highlighted. */
   showInPlan(event: { from: Date; to: Date; siteId: number }): void {
-    this.from = mondayOf(event.from);
+    this.from = this.periodStartOf(event.from);
     const span = Math.round((event.to.getTime() - this.from.getTime()) / (24 * 3600 * 1000)) + 1;
-    if (span > 7) {
-      this.days = 14;
+    if (this.view === 'week' && span > 7) {
+      this.view = 'twoWeeks';
     }
     this.highlightSiteId = event.siteId;
     this.drawerOpen = false;
@@ -529,6 +642,11 @@ export class PlannerContainerComponent implements OnInit {
 
   hours(value: number | null | undefined): string {
     return formatPlannerHours(this.translateService, value);
+  }
+
+  /** "28/9", the design's column date. */
+  shortDate(date: Date): string {
+    return `${date.getDate()}/${date.getMonth() + 1}`;
   }
 
   isWeekend(date: Date): boolean {
@@ -571,5 +689,25 @@ export class PlannerContainerComponent implements OnInit {
       parts.push(this.translateService.instant('plannerFromGoogleSheet'));
     }
     return parts.join(' · ');
+  }
+}
+
+function readHelpDismissed(): boolean {
+  try {
+    return localStorage.getItem(PLANNER_HELP_DISMISSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function writeHelpDismissed(dismissed: boolean): void {
+  try {
+    if (dismissed) {
+      localStorage.setItem(PLANNER_HELP_DISMISSED_KEY, 'true');
+    } else {
+      localStorage.removeItem(PLANNER_HELP_DISMISSED_KEY);
+    }
+  } catch {
+    // No storage (private window, blocked site data): the panel just shows again next time.
   }
 }

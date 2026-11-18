@@ -10,6 +10,7 @@ import { LoginPage } from '../../../Page objects/Login.page';
  * works on its OWN workers, found by name, never by grid position:
  *
  *   planner-absence ............ "k l"
+ *   planner-absence-no-leader .. a user of its own; the grid is mocked
  *   planner-grid-edit .......... "c d", "e f"
  *   planner-import ............. "o p" (recognised), "q r" (not recognised)
  *   planner-menu-permission .... a user of its own
@@ -157,6 +158,52 @@ export function waitForGrid(page: Page, fromKey?: string): Promise<Response> {
 export function waitForPlanner(page: Page, method: string, path: RegExp): Promise<Response> {
   return page.waitForResponse(r =>
     r.request().method() === method && path.test(new URL(r.url()).pathname));
+}
+
+/**
+ * Grants a security group the plugin access and the planner permission
+ * (time_planning_planner), the same call the host's "Plugin permissions"
+ * dialog makes. Other groups keep theirs.
+ */
+export async function grantPlannerPermission(api: Api, groupId: number): Promise<void> {
+  const installed = await api.call('GET', '/api/plugins-management/installed');
+  const plugin = installed.pluginsList.find((p: any) => p.pluginId === 'eform-angular-time-planning-plugin');
+  expect(plugin, 'the time planning plugin must be installed').toBeTruthy();
+  const permissions = await api.call('GET', `/api/plugins-permissions/${plugin.id}`);
+  const groups = (await api.call('GET', `/api/plugins-permissions/group-permissions/${plugin.id}`))
+    .filter((g: any) => g.groupId !== groupId);
+  groups.push({
+    groupId,
+    permissions: permissions.map((p: any) => ({
+      ...p,
+      isEnabled: p.claimName === 'time_planning_plugin_access' || p.claimName === 'time_planning_planner',
+    })),
+  });
+  await api.call('PUT', `/api/plugins-permissions/group-permissions/${plugin.id}`, groups);
+}
+
+/** Creates a plain (non-admin) user in a new security group of its own; returns the group id. */
+export async function createPlainUser(
+  api: Api, groupName: string, user: { firstName: string; lastName: string; email: string; password: string },
+): Promise<number> {
+  await api.call('POST', '/api/security/groups', { name: groupName, userIds: [] });
+  const groups = await api.call('GET', '/api/security/groups/dictionary');
+  const groupId = groups.find((g: any) => g.name === groupName).id;
+  await api.call('POST', '/api/admin/create-user', {
+    ...user, userName: user.email, passwordConfimation: user.password, role: 'user', groupId,
+  });
+  return groupId;
+}
+
+/** Signs in through the login form as any user and waits for the menu. */
+export async function signInAs(page: Page, email: string, password: string): Promise<void> {
+  await page.goto(BASE_URL);
+  await page.locator('#loginBtn').waitFor({ state: 'visible', timeout: 60000 });
+  await page.locator('#username').fill(email);
+  await page.locator('#password').fill(password);
+  await page.locator('#loginBtn').click();
+  await page.locator('mat-nested-tree-node').filter({ hasText: 'Timeregistrering' })
+    .waitFor({ state: 'visible', timeout: 120000 });
 }
 
 /** Opens the planner through the menu, as a user would, and waits for the grid. */

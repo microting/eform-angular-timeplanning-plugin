@@ -3,10 +3,11 @@ import {TranslateService} from '@ngx-translate/core';
 import {EMPTY, of, throwError} from 'rxjs';
 import {
   dateKey, dateKeysBetween, formatPlannerHours, fullPatternGrid, isEmptyPattern, isoDayOfWeek, isoWeekNumber, isValidPattern,
-  keyToTransportDate, mondayOf, onNoReply, parseCalendarDate, shortFormKind, toTransportDate, trimmedPatternDays,
+  keyToTransportDate, mondayOf, onNoReply, parseCalendarDate, segmentedKeydown, shortFormKind, toTransportDate,
+  trimmedPatternDays, workerInitials,
 } from './planner.utils';
 import {importReasonKey} from './components/planner-import-dialog/planner-import-dialog.component';
-import {absenceTypeKey, PLANNER_ABSENCE_TYPES} from './planner-absence-types';
+import {absenceTypeKey, DEFAULT_ABSENCE_TYPE, PLANNER_ABSENCE_TYPES} from './planner-absence-types';
 import {da} from '../../i18n/da';
 import {enUS} from '../../i18n/enUS';
 
@@ -181,6 +182,13 @@ describe('planner translations', () => {
     expect(absenceTypeKey(null)).toBeNull();
   });
 
+  it('offers the design\'s types first, vacation as the default', () => {
+    expect(PLANNER_ABSENCE_TYPES.slice(0, 7).map(t => t.key)).toEqual(
+      ['Vacation', 'TimeOff', 'VacationDayOff', 'DayOff', 'Course', 'LeaveOfAbsence', 'Maternity']);
+    expect(PLANNER_ABSENCE_TYPES[0].id).toBe(DEFAULT_ABSENCE_TYPE);
+    expect(PLANNER_ABSENCE_TYPES.some(t => t.key === 'Blank')).toBe(false);
+  });
+
   it('carries the same planner keys in Danish and English', () => {
     const planner = (catalogue: object) => [...keyOf(catalogue)].filter(k => k.startsWith('planner')).sort();
     expect(planner(da)).toEqual(planner(enUS));
@@ -198,5 +206,53 @@ describe('onNoReply', () => {
     of(1).pipe(onNoReply(silence)).subscribe();
     throwError(() => new Error('x')).pipe(onNoReply(silence)).subscribe({error: () => undefined});
     expect(silence).not.toHaveBeenCalled();
+  });
+});
+
+describe('workerInitials', () => {
+  it('takes the first letters of the first and last word', () => {
+    expect(workerInitials('Anna Hansen')).toBe('AH');
+    expect(workerInitials('  bo  Ole  jensen ')).toBe('BJ');
+    expect(workerInitials('Øjvind')).toBe('Ø');
+    expect(workerInitials('')).toBe('?');
+    expect(workerInitials(null)).toBe('?');
+  });
+});
+
+describe('segmentedKeydown', () => {
+  function group(count: number): HTMLButtonElement[] {
+    const div = document.createElement('div');
+    div.setAttribute('role', 'radiogroup');
+    const buttons = Array.from({length: count}, () => {
+      const b = document.createElement('button');
+      b.setAttribute('role', 'radio');
+      div.appendChild(b);
+      return b;
+    });
+    document.body.appendChild(div);
+    return buttons;
+  }
+
+  function press(target: HTMLElement, key: string, index: number, count: number): number | null {
+    const event = new KeyboardEvent('keydown', {key, cancelable: true});
+    Object.defineProperty(event, 'currentTarget', {value: target});
+    return segmentedKeydown(event, index, count);
+  }
+
+  it('moves with the arrows, wrapping, and jumps with Home/End, focusing the new option', () => {
+    const buttons = group(3);
+    expect(press(buttons[2], 'ArrowRight', 2, 3)).toBe(0);
+    expect(document.activeElement).toBe(buttons[0]);
+    expect(press(buttons[0], 'ArrowLeft', 0, 3)).toBe(2);
+    expect(press(buttons[0], 'ArrowDown', 0, 3)).toBe(1);
+    expect(press(buttons[1], 'ArrowUp', 1, 3)).toBe(0);
+    expect(press(buttons[1], 'End', 1, 3)).toBe(2);
+    expect(press(buttons[1], 'Home', 1, 3)).toBe(0);
+  });
+
+  it('ignores other keys', () => {
+    const buttons = group(2);
+    expect(press(buttons[0], 'Enter', 0, 2)).toBeNull();
+    expect(press(buttons[0], 'a', 0, 2)).toBeNull();
   });
 });

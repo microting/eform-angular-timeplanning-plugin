@@ -42,7 +42,7 @@ test.describe('Planner - copy a pattern from a colleague', () => {
     await expectSuccess(await copy);
 
     // The editor now holds the colleague's rotation.
-    await expect(page.locator('#planner-pattern-rotation-2')).toHaveClass(/mat-button-toggle-checked/);
+    await expect(page.locator('#planner-pattern-rotation-2')).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#planner-pattern-day-0-0')).toHaveValue(/^6(:00)?-14(:00)?/);
     await expect(page.locator('#planner-pattern-day-1-0')).toHaveValue(/^14(:00)?-22(:00)?/);
 

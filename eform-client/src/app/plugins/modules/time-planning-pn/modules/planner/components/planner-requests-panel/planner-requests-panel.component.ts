@@ -56,7 +56,6 @@ export class PlannerRequestsPanelComponent implements OnInit, OnChanges {
   @Output() showInPlan = new EventEmitter<{ from: Date; to: Date; siteId: number }>();
   /** A request was decided: the grid reloads. */
   @Output() decided = new EventEmitter<void>();
-  @Output() pendingCount = new EventEmitter<number>();
 
   loading = false;
   private requests: AbsenceRequestModel[] = [];
@@ -82,8 +81,6 @@ export class PlannerRequestsPanelComponent implements OnInit, OnChanges {
         if (result && result.success) {
           this.requests = (result.model ?? []).filter(r => r.status === 'Pending');
           this.buildViews();
-          // Only after a finished read: before it, requests is [] and would reset the button's count.
-          this.pendingCount.emit(this.requests.length);
         }
       },
       error: () => {

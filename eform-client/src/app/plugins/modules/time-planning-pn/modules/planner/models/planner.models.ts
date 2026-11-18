@@ -40,6 +40,8 @@ export interface PlannerGridModel {
   workers: PlannerWorkerModel[];
   /** The import wizard is offered only while this is false. */
   googleSheetRetired: boolean;
+  /** Pending absence requests the caller may decide (the count on "Ferieønsker"). */
+  pendingRequestCount: number;
 }
 
 export interface PlannerDayTotalModel {
@@ -177,6 +179,40 @@ export interface PlannerAbsenceCreateModel {
   to: string;
   messageId: number;
   comment: string | null;
+}
+
+/** POST planner/absence/preview: what registering this absence would do, day by day. */
+export interface PlannerAbsencePreviewRequestModel {
+  assignedSiteId: number;
+  from: string;
+  to: string;
+  messageId: number;
+}
+
+/** Known preview outcomes; the server may add more, which the dialog shows as unchanged. */
+export const PlannerAbsenceOutcomes = {
+  apply: 'apply',
+  dayOff: 'dayOff',
+  locked: 'locked',
+  /** Held by another pending or approved request: refuses the whole request. */
+  overlap: 'overlap',
+} as const;
+export type PlannerAbsenceOutcome = typeof PlannerAbsenceOutcomes[keyof typeof PlannerAbsenceOutcomes];
+
+export interface PlannerAbsencePreviewDayModel {
+  date: string;
+  planText: string | null;
+  planHours: number;
+  /** See PlannerAbsenceOutcomes. */
+  outcome: string;
+}
+
+export interface PlannerAbsencePreviewModel {
+  days: PlannerAbsencePreviewDayModel[];
+  /** Days that would become absence. */
+  workDays: number;
+  /** The planned hours of those days. */
+  plannedHours: number;
 }
 
 export interface PlannerAbsenceResultModel {

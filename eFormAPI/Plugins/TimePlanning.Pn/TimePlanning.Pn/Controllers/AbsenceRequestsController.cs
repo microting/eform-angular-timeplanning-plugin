@@ -49,14 +49,15 @@ public class AbsenceRequestsController(IAbsenceRequestService absenceRequestServ
     [Route("{id}/approve")]
     public async Task<OperationResult> Approve(int id, [FromBody] AbsenceRequestDecisionModel model)
     {
-        return await _absenceRequestService.ApproveAsync(id, model);
+        // The web: an administrator may decide for any worker (the app may not).
+        return await _absenceRequestService.ApproveAsync(id, model, adminMayDecide: true);
     }
 
     [HttpPost]
     [Route("{id}/reject")]
     public async Task<OperationResult> Reject(int id, [FromBody] AbsenceRequestDecisionModel model)
     {
-        return await _absenceRequestService.RejectAsync(id, model);
+        return await _absenceRequestService.RejectAsync(id, model, adminMayDecide: true);
     }
 
     [HttpPost]
@@ -72,7 +73,7 @@ public class AbsenceRequestsController(IAbsenceRequestService absenceRequestServ
     public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetInbox()
     {
         // Caller's SDK site is derived from the JWT inside the service.
-        return await _absenceRequestService.GetInboxAsync();
+        return await _absenceRequestService.GetInboxAsync(adminMayDecide: true);
     }
 
     [HttpGet]
