@@ -99,9 +99,9 @@ public class PlannerService(
 
     public async Task<OperationDataResult<PlannerGridModel>> GetGridAsync(PlannerGridRequestModel model)
     {
-        if (model.Days is not (7 or 14))
+        if (!IsGridRange(model.From, model.Days))
         {
-            return Refused<PlannerGridModel>("PlannerGridDaysMustBe7Or14");
+            return Refused<PlannerGridModel>("PlannerGridRangeInvalid");
         }
 
         try
@@ -179,7 +179,7 @@ public class PlannerService(
                 .Select(x => new { x.RequestedBySdkSitId, x.DateFrom, x.DateTo })
                 .ToListAsync();
 
-            var approvable = await ManagedByCallerAsync(siteIds);
+            var approvable = await DecidableByCallerAsync(siteIds);
 
             // The template's payment cut-off as PlanRegistrationHelper uses it:
             // on or before it the weekday template no longer rewrites a day.
@@ -246,6 +246,17 @@ public class PlannerService(
                 grid.Workers.Add(worker);
             }
 
+            // Every pending request the caller may decide for the workers shown,
+            // whatever its dates: the badge on "Ferieønsker".
+            var decidableSiteIds = grid.Workers.Where(w => w.CanApproveAbsence).Select(w => w.SiteId).ToList();
+            grid.PendingRequestCount = decidableSiteIds.Count == 0
+                ? 0
+                : await dbContext.AbsenceRequests.AsNoTracking()
+                    .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
+                    .Where(x => x.Status == AbsenceRequestStatus.Pending)
+                    .Where(x => decidableSiteIds.Contains(x.RequestedBySdkSitId))
+                    .CountAsync();
+
             grid.DayTotals = dates.Select(date => new PlannerDayTotalModel
             {
                 Date = date,
@@ -290,11 +301,25 @@ public class PlannerService(
     }
 
     /// <summary>
-    /// Of <paramref name="siteIds"/>, the workers whose absence requests the
-    /// caller may decide: the rule ApproveAsync applies, for many at once.
+    /// One or two weeks from any day, or one whole calendar month: from the
+    /// 1st, as many days as the month has.
     /// </summary>
-    private async Task<HashSet<int>> ManagedByCallerAsync(List<int> siteIds)
+    private static bool IsGridRange(DateTime from, int days) =>
+        days is 7 or 14 || (from.Day == 1 && days == DateTime.DaysInMonth(from.Year, from.Month));
+
+    /// <summary>
+    /// Of <paramref name="siteIds"/>, the workers whose absence the caller may
+    /// decide: the rule the web's ApproveAsync applies, for many at once. An
+    /// administrator may decide for every worker; a manager for the workers
+    /// their managing tags cover.
+    /// </summary>
+    private async Task<HashSet<int>> DecidableByCallerAsync(List<int> siteIds)
     {
+        if (await AbsenceDecisionRules.IsCallerAdminAsync(userService, baseDbContext))
+        {
+            return siteIds.ToHashSet();
+        }
+
         var callerSdkSitId = await AbsenceDecisionRules.ResolveCallerSdkSiteIdAsync(
             userService, baseDbContext, coreService);
         if (callerSdkSitId == 0)
@@ -365,12 +390,12 @@ public class PlannerService(
             }
 
             // An absence is a manager's decision, as for CreateAbsenceAsync and
-            // ApproveAsync: only a current manager of the worker may set one, or
-            // remove one with "Ryd". Plan text, and "Ryd" on a day without an
-            // absence, keep the planning board's scope-only rule.
+            // ApproveAsync: only an administrator or a current manager of the
+            // worker may set one, or remove one with "Ryd". Plan text, and "Ryd"
+            // on a day without an absence, keep the planning board's scope-only rule.
             var touchesAbsence = model.MessageId != null || shortForm.Kind == PlannerShortFormKind.Clear;
             var mayDecideAbsence = touchesAbsence
-                ? await ManagedByCallerAsync(scoped.Select(x => x.SiteId).Distinct().ToList())
+                ? await DecidableByCallerAsync(scoped.Select(x => x.SiteId).Distinct().ToList())
                 : [];
 
             var result = new PlannerCellsUpdateResultModel();
@@ -795,47 +820,20 @@ public class PlannerService(
 
     public async Task<OperationDataResult<PlannerAbsenceResultModel>> CreateAbsenceAsync(PlannerAbsenceCreateModel model)
     {
-        var from = model.From.Date;
-        var to = model.To.Date;
-        if (to < from)
-        {
-            return Refused<PlannerAbsenceResultModel>("DateToMustBeGreaterThanOrEqualToDateFrom");
-        }
-
-        if ((to - from).Days >= MaxAbsenceDays)
-        {
-            return Refused<PlannerAbsenceResultModel>("PlannerAbsenceRangeTooLong");
-        }
-
         try
         {
-            if (!await dbContext.Messages.AnyAsync(x => x.Id == model.MessageId))
-            {
-                return Refused<PlannerAbsenceResultModel>("PlannerAbsenceTypeNotFound");
-            }
-
-            var (assignedSite, errorKey) = await ScopedSiteAsync(model.AssignedSiteId);
-            if (assignedSite == null)
+            var (scope, errorKey) = await AbsenceScopeAsync(model);
+            if (scope == null)
             {
                 return Refused<PlannerAbsenceResultModel>(errorKey!);
             }
 
-            var workerSdkSitId = assignedSite.SiteId;
-            // The decider is the caller, and only a current manager of the
-            // worker may decide, as for ApproveAsync.
-            var managerSdkSitId = await AbsenceDecisionRules.ResolveDecidingManagerAsync(
-                workerSdkSitId, dbContext, userService, baseDbContext, coreService);
-            if (managerSdkSitId == null)
-            {
-                return Refused<PlannerAbsenceResultModel>("UnauthorizedToApprove");
-            }
-
-            var dates = Enumerable.Range(0, (to - from).Days + 1).Select(i => from.AddDays(i)).ToList();
-
             // Checked before anything is written: a locked day refuses the
-            // whole request, as approve does, and the days are listed.
-            var lockedThrough = await DayLockHelper.LockedThroughAsync(dbContext, workerSdkSitId);
-            var lockedDates = dates.Where(d => DayLockHelper.IsLocked(lockedThrough, d)).ToList();
+            // whole request, as approve does, and the days are listed. So do
+            // days another pending or approved request holds: approving over
+            // them would re-tag them. Neither depends on the plan.
+            var refusals = DecideAbsenceDays(scope, new Dictionary<DateTime, PlanRegistration>());
+            var lockedDates = DatesWith(refusals, PlannerAbsenceOutcomes.Locked);
             if (lockedDates.Count > 0)
             {
                 return new OperationDataResult<PlannerAbsenceResultModel>(false,
@@ -844,15 +842,7 @@ public class PlannerService(
                     new PlannerAbsenceResultModel { LockedDates = lockedDates });
             }
 
-            // As for a worker's own request: approving over days another
-            // pending or approved request holds would re-tag them.
-            var overlaps = await dbContext.AbsenceRequests
-                .AnyAsync(ar => ar.RequestedBySdkSitId == workerSdkSitId
-                                && (ar.Status == AbsenceRequestStatus.Pending
-                                    || ar.Status == AbsenceRequestStatus.Approved)
-                                && ar.DateFrom <= to
-                                && ar.DateTo >= from);
-            if (overlaps)
+            if (refusals.Any(d => d.Outcome == PlannerAbsenceOutcomes.Overlap))
             {
                 return Refused<PlannerAbsenceResultModel>("OverlappingAbsenceRequestExists");
             }
@@ -860,17 +850,18 @@ public class PlannerService(
             // Rows the grid has not shown yet do not exist: create them the way
             // the grid does (template or pattern), so a planned day is not
             // mistaken for a day off.
-            var materialised = await MaterialiseRowsAsync(assignedSite, from, to);
+            var assignedSite = scope.Worker;
+            var materialised = await MaterialiseRowsAsync(assignedSite, scope.From, scope.To);
             if (!materialised.Success)
             {
                 return new OperationDataResult<PlannerAbsenceResultModel>(false, materialised.Message);
             }
 
-            var plannedDates = await PlannedDatesAsync(workerSdkSitId, from, to);
+            var days = DecideAbsenceDays(scope, await FirstRowByDateAsync(assignedSite.SiteId, scope.From, scope.To));
             var result = new PlannerAbsenceResultModel
             {
-                AppliedDates = dates.Where(plannedDates.Contains).ToList(),
-                SkippedDates = dates.Where(d => !plannedDates.Contains(d)).ToList()
+                AppliedDates = DatesWith(days, PlannerAbsenceOutcomes.Apply),
+                SkippedDates = days.Where(d => d.Outcome != PlannerAbsenceOutcomes.Apply).Select(d => d.Date).ToList()
             };
             if (result.AppliedDates.Count == 0)
             {
@@ -880,8 +871,8 @@ public class PlannerService(
 
             try
             {
-                result.AbsenceRequestId = await CreateApprovedRequestAsync(workerSdkSitId, managerSdkSitId.Value,
-                    from, to, model, result.AppliedDates);
+                result.AbsenceRequestId = await CreateApprovedRequestAsync(assignedSite.SiteId, scope.DeciderSdkSitId,
+                    scope.From, scope.To, model, result.AppliedDates);
             }
             catch (Exception e)
             {
@@ -893,7 +884,7 @@ public class PlannerService(
             await CarryFlexForwardAsync(assignedSite, result.AppliedDates.Min());
 
             // The worker hears of it exactly as of an approved request of their own.
-            AbsenceDecisionRules.StartApprovedPush(serviceScopeFactory, logger, workerSdkSitId,
+            AbsenceDecisionRules.StartApprovedPush(serviceScopeFactory, logger, assignedSite.SiteId,
                 result.AbsenceRequestId.Value);
             return new OperationDataResult<PlannerAbsenceResultModel>(true, result);
         }
@@ -903,11 +894,149 @@ public class PlannerService(
         }
     }
 
+    public async Task<OperationDataResult<PlannerAbsencePreviewModel>> PreviewAbsenceAsync(PlannerAbsenceCreateModel model)
+    {
+        try
+        {
+            var (scope, errorKey) = await AbsenceScopeAsync(model);
+            if (scope == null)
+            {
+                return Refused<PlannerAbsencePreviewModel>(errorKey!);
+            }
+
+            // CreateAbsenceAsync's own decision, over the rows as its
+            // materialisation would leave them; nothing is written.
+            var days = DecideAbsenceDays(scope, await ProjectRowsAsync(scope));
+            var applied = days.Where(d => d.Outcome == PlannerAbsenceOutcomes.Apply).ToList();
+            return new OperationDataResult<PlannerAbsencePreviewModel>(true, new PlannerAbsencePreviewModel
+            {
+                Days = days,
+                WorkDays = applied.Count,
+                PlannedHours = applied.Sum(d => d.PlanHours)
+            });
+        }
+        catch (Exception e)
+        {
+            return Failed<PlannerAbsencePreviewModel>(e, "Previewing a manager absence failed");
+        }
+    }
+
     /// <summary>
-    /// The worker's days in the range that carry plan hours: a day with no
-    /// plan has nothing to be absent from. The first row of a date counts.
+    /// What an absence request decides from, for create and preview alike: the
+    /// worker (in the caller's scope), the decider, the days, the worker's lock
+    /// boundary and the periods their pending or approved requests hold.
     /// </summary>
-    private async Task<HashSet<DateTime>> PlannedDatesAsync(int sdkSitId, DateTime from, DateTime to) =>
+    private sealed record AbsenceScope(
+        AssignedSite Worker,
+        int? DeciderSdkSitId,
+        DateTime From,
+        DateTime To,
+        List<DateTime> Dates,
+        DateTime? LockedThrough,
+        List<(DateTime From, DateTime To)> HeldPeriods);
+
+    /// <summary>The checks create and preview share; the scope, or the key to refuse with.</summary>
+    private async Task<(AbsenceScope? Scope, string? ErrorKey)> AbsenceScopeAsync(PlannerAbsenceCreateModel model)
+    {
+        var from = model.From.Date;
+        var to = model.To.Date;
+        if (to < from)
+        {
+            return (null, "DateToMustBeGreaterThanOrEqualToDateFrom");
+        }
+
+        if ((to - from).Days >= MaxAbsenceDays)
+        {
+            return (null, "PlannerAbsenceRangeTooLong");
+        }
+
+        if (!await dbContext.Messages.AnyAsync(x => x.Id == model.MessageId))
+        {
+            return (null, "PlannerAbsenceTypeNotFound");
+        }
+
+        var (assignedSite, errorKey) = await ScopedSiteAsync(model.AssignedSiteId);
+        if (assignedSite == null)
+        {
+            return (null, errorKey);
+        }
+
+        var workerSdkSitId = assignedSite.SiteId;
+        // The decider is the caller: an administrator, or a current manager
+        // of the worker, as for the web's ApproveAsync.
+        var (mayDecide, deciderSdkSitId) = await AbsenceDecisionRules.ResolveDeciderAsync(
+            workerSdkSitId, adminMayDecide: true, dbContext, userService, baseDbContext, coreService);
+        if (!mayDecide)
+        {
+            return (null, "UnauthorizedToApprove");
+        }
+
+        var held = (await dbContext.AbsenceRequests.AsNoTracking()
+                .Where(ar => ar.RequestedBySdkSitId == workerSdkSitId
+                             && (ar.Status == AbsenceRequestStatus.Pending
+                                 || ar.Status == AbsenceRequestStatus.Approved)
+                             && ar.DateFrom <= to
+                             && ar.DateTo >= from)
+                .Select(ar => new { ar.DateFrom, ar.DateTo })
+                .ToListAsync())
+            .Select(ar => (ar.DateFrom.Date, ar.DateTo.Date))
+            .ToList();
+
+        return (new AbsenceScope(
+            assignedSite,
+            deciderSdkSitId,
+            from,
+            to,
+            Enumerable.Range(0, (to - from).Days + 1).Select(i => from.AddDays(i)).ToList(),
+            await DayLockHelper.LockedThroughAsync(dbContext, workerSdkSitId),
+            held), null);
+    }
+
+    /// <summary>
+    /// The per-day decision of a manager absence, shared by create and preview:
+    /// a locked day blocks the whole request; so does a day another pending or
+    /// approved request holds; else a day with plan hours gets the absence and
+    /// a day without a plan has nothing to be absent from.
+    /// </summary>
+    private static List<PlannerAbsenceDayModel> DecideAbsenceDays(AbsenceScope scope,
+        IReadOnlyDictionary<DateTime, PlanRegistration> rowByDate) =>
+        scope.Dates.Select(date =>
+        {
+            rowByDate.TryGetValue(date, out var row);
+            var planHours = row?.PlanHours ?? 0;
+            return new PlannerAbsenceDayModel
+            {
+                Date = date,
+                PlanText = row?.PlanText ?? "",
+                PlanHours = planHours,
+                Outcome = AbsenceOutcome(scope, date, planHours)
+            };
+        }).ToList();
+
+    private static string AbsenceOutcome(AbsenceScope scope, DateTime date, double planHours)
+    {
+        if (DayLockHelper.IsLocked(scope.LockedThrough, date))
+        {
+            return PlannerAbsenceOutcomes.Locked;
+        }
+
+        if (scope.HeldPeriods.Any(p => p.From <= date && p.To >= date))
+        {
+            return PlannerAbsenceOutcomes.Overlap;
+        }
+
+        return planHours > 0 ? PlannerAbsenceOutcomes.Apply : PlannerAbsenceOutcomes.DayOff;
+    }
+
+    private static List<DateTime> DatesWith(IEnumerable<PlannerAbsenceDayModel> days, string outcome) =>
+        days.Where(d => d.Outcome == outcome).Select(d => d.Date).ToList();
+
+    /// <summary>
+    /// The worker's live rows in the range, the first row of a date winning, as
+    /// everywhere rows are looked up by date. Not tracked.
+    /// </summary>
+    private async Task<Dictionary<DateTime, PlanRegistration>> FirstRowByDateAsync(int sdkSitId,
+        DateTime from, DateTime to) =>
         (await dbContext.PlanRegistrations.AsNoTracking()
             .Where(x => x.SdkSitId == sdkSitId)
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
@@ -915,17 +1044,86 @@ public class PlannerService(
             .OrderBy(x => x.Id)
             .ToListAsync())
         .GroupBy(x => x.Date.Date)
-        .Where(g => g.First().PlanHours > 0)
-        .Select(g => g.Key)
-        .ToHashSet();
+        .ToDictionary(g => g.Key, g => g.First());
 
     /// <summary>
-    /// In one transaction: an Approved request decided by the manager, one day
+    /// The rows of the range as <see cref="MaterialiseRowsAsync"/> would leave
+    /// them, in memory only: what the planning board's read
+    /// (PlanRegistrationHelper.UpdatePlanRegistrationsInPeriod) gives a missing
+    /// or open row, on the same conditions: not for a resigned worker, a locked
+    /// day (a missing locked row is not created), a day on or before the
+    /// payment cut-off, or a day changed by hand. The pattern where it governs
+    /// the date, else the weekday template; a Google Sheet worker's row keeps
+    /// its text, and a missing one has none.
+    /// </summary>
+    private async Task<Dictionary<DateTime, PlanRegistration>> ProjectRowsAsync(AbsenceScope scope)
+    {
+        var assignedSite = scope.Worker;
+        var rows = await FirstRowByDateAsync(assignedSite.SiteId, scope.From, scope.To);
+        if (assignedSite.Resigned)
+        {
+            return rows;
+        }
+
+        var pattern = assignedSite.UseGoogleSheetAsDefault
+            ? null
+            : await PlanPatternPlanner.LoadActivePatternAsync(dbContext, assignedSite.Id);
+        // PlanRegistrationHelper's cut-off: local today a month back.
+        var dayOfPayment = DateTime.Now.Date.AddMonths(-1);
+        foreach (var date in scope.Dates.Where(d => !DayLockHelper.IsLocked(scope.LockedThrough, d)))
+        {
+            // Read untracked, so changing it in memory writes nothing.
+            if (!rows.TryGetValue(date, out var row))
+            {
+                row = new PlanRegistration { Date = date, SdkSitId = assignedSite.SiteId, PlanText = "" };
+                rows[date] = row;
+            }
+
+            if (date <= dayOfPayment || row.PlanChangedByAdmin)
+            {
+                continue;
+            }
+
+            if (assignedSite.UseGoogleSheetAsDefault)
+            {
+                if (!string.IsNullOrEmpty(row.PlanText))
+                {
+                    PlanRegistrationPlanText.ParseInto(row);
+                }
+            }
+            else if (!PlanPatternPlanner.TryApply(pattern, row))
+            {
+                row.PlanHours = TemplatePlanHours(assignedSite, date.DayOfWeek);
+            }
+        }
+
+        return rows;
+    }
+
+    /// <summary>The weekday template's plan hours, as the planning board's read writes them.</summary>
+    private static double TemplatePlanHours(AssignedSite assignedSite, DayOfWeek dayOfWeek)
+    {
+        var minutes = dayOfWeek switch
+        {
+            DayOfWeek.Monday => assignedSite.MondayPlanHours,
+            DayOfWeek.Tuesday => assignedSite.TuesdayPlanHours,
+            DayOfWeek.Wednesday => assignedSite.WednesdayPlanHours,
+            DayOfWeek.Thursday => assignedSite.ThursdayPlanHours,
+            DayOfWeek.Friday => assignedSite.FridayPlanHours,
+            DayOfWeek.Saturday => assignedSite.SaturdayPlanHours,
+            _ => assignedSite.SundayPlanHours
+        };
+        return minutes != 0 ? (double)minutes / 60 : 0;
+    }
+
+    /// <summary>
+    /// In one transaction: an Approved request decided by the caller (a manager,
+    /// or an administrator: null as decider when they have no SDK site), one day
     /// per planned date, each applied to the worker's row by the same code
     /// ApproveAsync uses. It then reads in Request History like any decided
     /// request.
     /// </summary>
-    private async Task<int> CreateApprovedRequestAsync(int workerSdkSitId, int managerSdkSitId,
+    private async Task<int> CreateApprovedRequestAsync(int workerSdkSitId, int? managerSdkSitId,
         DateTime from, DateTime to, PlannerAbsenceCreateModel model, List<DateTime> dates)
     {
         var strategy = dbContext.Database.CreateExecutionStrategy();

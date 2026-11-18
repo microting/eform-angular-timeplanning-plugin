@@ -36,6 +36,7 @@ using Microsoft.Extensions.Logging;
 using Microting.eForm.Infrastructure;
 using Microting.eForm.Infrastructure.Constants;
 using Microting.eFormApi.BasePn.Abstractions;
+using Microting.eFormApi.BasePn.Infrastructure.Database.Entities;
 using Microting.EformAngularFrontendBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data;
 using Microting.TimePlanningBase.Infrastructure.Data.Entities;
@@ -85,33 +86,66 @@ internal static class AbsenceDecisionRules
     }
 
     /// <summary>
-    /// The authenticated caller's SDK site when it manages the requester's
-    /// site, else null. The caller's active AssignedSite must be a manager,
-    /// and only its own managing tags count.
+    /// Who may decide an absence of <paramref name="requesterSdkSitId"/>: a
+    /// current manager of the worker (the caller's active AssignedSite is a
+    /// manager, and only its own managing tags count); or, when
+    /// <paramref name="adminMayDecide"/> (the web: the planner and the
+    /// absence-requests screen, never the app), an administrator, for any
+    /// worker. DeciderSdkSitId is what the decision stores as decider: the
+    /// caller's own SDK site, or null for an administrator who has none.
     /// </summary>
-    internal static async Task<int?> ResolveDecidingManagerAsync(int requesterSdkSitId,
-        TimePlanningPnDbContext dbContext, IUserService userService, BaseDbContext baseDbContext,
-        IEFormCoreService coreService)
+    internal static async Task<(bool Allowed, int? DeciderSdkSitId)> ResolveDeciderAsync(
+        int requesterSdkSitId, bool adminMayDecide, TimePlanningPnDbContext dbContext,
+        IUserService userService, BaseDbContext baseDbContext, IEFormCoreService coreService)
     {
         var callerSdkSitId = await ResolveCallerSdkSiteIdAsync(userService, baseDbContext, coreService);
-        if (callerSdkSitId == 0)
+        if (callerSdkSitId != 0 && await ManagesAsync(callerSdkSitId, requesterSdkSitId, dbContext, coreService))
         {
-            return null;
+            return (true, callerSdkSitId);
         }
 
+        if (adminMayDecide && await IsCallerAdminAsync(userService, baseDbContext))
+        {
+            return (true, callerSdkSitId == 0 ? null : callerSdkSitId);
+        }
+
+        return (false, null);
+    }
+
+    /// <summary>
+    /// Whether the authenticated caller is an administrator: the "admin" role
+    /// or the "eForm admins" security group, as TimeSettingService and
+    /// SiteScopeResolver decide it.
+    /// </summary>
+    internal static async Task<bool> IsCallerAdminAsync(IUserService userService, BaseDbContext baseDbContext)
+    {
+        var currentUser = await userService.GetCurrentUserAsync();
+        if (currentUser == null)
+        {
+            return false;
+        }
+
+        return await baseDbContext.UserRoles
+                   .AnyAsync(x => x.UserId == currentUser.Id && x.Role.Name == EformRole.Admin)
+               || await baseDbContext.SecurityGroupUsers
+                   .AnyAsync(x => x.EformUserId == currentUser.Id && x.SecurityGroup.Name == "eForm admins");
+    }
+
+    /// <summary>Whether the manager on <paramref name="callerSdkSitId"/> manages <paramref name="requesterSdkSitId"/>.</summary>
+    private static async Task<bool> ManagesAsync(int callerSdkSitId, int requesterSdkSitId,
+        TimePlanningPnDbContext dbContext, IEFormCoreService coreService)
+    {
         var managingTagIds = await GetActiveManagingTagIdsAsync(dbContext, callerSdkSitId);
         if (managingTagIds == null)
         {
-            return null;
+            return false;
         }
 
-        var sdkCore = await coreService.GetCore();
-        var sdkDbContext = sdkCore.DbContextHelper.GetDbContext();
-        var managesRequester = await sdkDbContext.SiteTags
+        var sdkDbContext = (await coreService.GetCore()).DbContextHelper.GetDbContext();
+        return await sdkDbContext.SiteTags
             .AnyAsync(x => x.WorkflowState != Constants.WorkflowStates.Removed
                            && x.Site.MicrotingUid == requesterSdkSitId
                            && managingTagIds.Contains((int)x.TagId!));
-        return managesRequester ? callerSdkSitId : null;
     }
 
     /// <summary>
@@ -140,7 +174,7 @@ internal static class AbsenceDecisionRules
     /// <summary>
     /// Of <paramref name="workerSdkSitIds"/>, the sites a manager holding
     /// <paramref name="managingTagIds"/> manages: the same test
-    /// <see cref="ResolveDecidingManagerAsync"/> makes per requester, for many
+    /// <see cref="ResolveDeciderAsync"/> makes per requester, for many
     /// workers in one query.
     /// </summary>
     internal static async Task<HashSet<int>> ManagedAmongAsync(MicrotingDbContext sdkDbContext,
@@ -164,7 +198,7 @@ internal static class AbsenceDecisionRules
     /// </summary>
     internal static async Task ApplyAbsenceToPlanRegistrationAsync(TimePlanningPnDbContext dbContext,
         IUserService userService, ILogger logger, AbsenceRequest request, AbsenceRequestDay day,
-        int managerSdkSitId)
+        int? managerSdkSitId)
     {
         try
         {

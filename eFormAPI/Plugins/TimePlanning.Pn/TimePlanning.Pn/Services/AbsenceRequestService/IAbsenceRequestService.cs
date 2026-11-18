@@ -35,12 +35,16 @@ public interface IAbsenceRequestService
 {
     Task<OperationDataResult<AbsenceRequestModel>> CreateAsync(AbsenceRequestCreateModel model);
     /// <summary>
-    /// Approve and reject are allowed only for a manager of the requester's site.
+    /// Approve and reject are allowed only for a manager of the requester's site,
+    /// or, when <paramref name="adminMayDecide"/> (the web controller; never the
+    /// app's gRPC service), for an administrator, for any worker.
     /// The deciding manager is the authenticated caller (resolved from the JWT);
     /// <see cref="AbsenceRequestDecisionModel.ManagerSdkSitId"/> is ignored.
     /// </summary>
-    Task<OperationResult> ApproveAsync(int absenceRequestId, AbsenceRequestDecisionModel model);
-    Task<OperationResult> RejectAsync(int absenceRequestId, AbsenceRequestDecisionModel model);
+    Task<OperationResult> ApproveAsync(int absenceRequestId, AbsenceRequestDecisionModel model,
+        bool adminMayDecide = false);
+    Task<OperationResult> RejectAsync(int absenceRequestId, AbsenceRequestDecisionModel model,
+        bool adminMayDecide = false);
     /// <summary>
     /// Cancels the caller's own pending request. The requester is the
     /// authenticated caller (resolved from the JWT), not a client-supplied id.
@@ -51,9 +55,11 @@ public interface IAbsenceRequestService
     /// authenticated manager. The caller's SDK site is resolved from the JWT
     /// (via the authenticated user's email → Workers → SiteWorkers → Site),
     /// not from any client-supplied value, so the client cannot impersonate
-    /// other managers by echoing a different sdkSiteId.
+    /// other managers by echoing a different sdkSiteId. With
+    /// <paramref name="adminMayDecide"/> (the web) an administrator's inbox is
+    /// every pending request, as they may decide them all.
     /// </summary>
-    Task<OperationDataResult<List<AbsenceRequestModel>>> GetInboxAsync();
+    Task<OperationDataResult<List<AbsenceRequestModel>>> GetInboxAsync(bool adminMayDecide = false);
     Task<OperationDataResult<List<AbsenceRequestModel>>> GetMineAsync();
     /// <summary>
     /// Returns ALL absence requests matching the optional filters.

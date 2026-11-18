@@ -86,16 +86,19 @@ public class AbsenceRequestService : IAbsenceRequestService
         AbsenceDecisionRules.ResolveCallerSdkSiteIdAsync(_userService, _baseDbContext, _coreService);
 
     /// <summary>
-    /// The authenticated caller's SDK site when it manages the requester's
-    /// site, else null. The decider comes from the JWT, never from the body:
+    /// Whether the caller may decide the requester's absence, and the SDK site
+    /// stored as decider. The decider comes from the JWT, never from the body:
     /// a client-supplied manager id could name any manager. Same rule as
     /// <see cref="GetInboxAsync"/>: the caller's active AssignedSite must be a
     /// manager, and only its own managing tags count, so a demoted manager who
-    /// kept the tags cannot decide.
+    /// kept the tags cannot decide. With <paramref name="adminMayDecide"/> (the
+    /// web) an administrator may decide for any worker; the decider is then
+    /// null when the administrator has no SDK site.
     /// </summary>
-    private Task<int?> ResolveDecidingManagerAsync(int requesterSdkSitId) =>
-        AbsenceDecisionRules.ResolveDecidingManagerAsync(
-            requesterSdkSitId, _dbContext, _userService, _baseDbContext, _coreService);
+    private Task<(bool Allowed, int? DeciderSdkSitId)> ResolveDeciderAsync(int requesterSdkSitId,
+        bool adminMayDecide) =>
+        AbsenceDecisionRules.ResolveDeciderAsync(requesterSdkSitId, adminMayDecide,
+            _dbContext, _userService, _baseDbContext, _coreService);
 
     /// <summary>
     /// Atomically claims a Pending request for one decision by stamping
@@ -290,7 +293,8 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
     }
 
-    public async Task<OperationResult> ApproveAsync(int absenceRequestId, AbsenceRequestDecisionModel model)
+    public async Task<OperationResult> ApproveAsync(int absenceRequestId, AbsenceRequestDecisionModel model,
+        bool adminMayDecide = false)
     {
         DateTime? claim = null;
         try
@@ -310,8 +314,8 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
-            var managerSdkSitId = await ResolveDecidingManagerAsync(request.RequestedBySdkSitId);
-            if (managerSdkSitId == null)
+            var (mayDecide, managerSdkSitId) = await ResolveDeciderAsync(request.RequestedBySdkSitId, adminMayDecide);
+            if (!mayDecide)
             {
                 return new OperationResult(false, _localizationService.GetString("UnauthorizedToApprove"));
             }
@@ -348,7 +352,7 @@ public class AbsenceRequestService : IAbsenceRequestService
             // before the loop: each Update() saves the whole context.
             foreach (var day in request.Days!.OrderBy(d => d.Date))
             {
-                await ApplyAbsenceToPlanRegistration(request, day, managerSdkSitId.Value);
+                await ApplyAbsenceToPlanRegistration(request, day, managerSdkSitId);
             }
 
             var decidedAt = await ConfirmClaimAsync(absenceRequestId, claim.Value);
@@ -397,7 +401,8 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
     }
 
-    public async Task<OperationResult> RejectAsync(int absenceRequestId, AbsenceRequestDecisionModel model)
+    public async Task<OperationResult> RejectAsync(int absenceRequestId, AbsenceRequestDecisionModel model,
+        bool adminMayDecide = false)
     {
         DateTime? claim = null;
         try
@@ -415,8 +420,8 @@ public class AbsenceRequestService : IAbsenceRequestService
                 return new OperationResult(false, _localizationService.GetString("AbsenceRequestMustBePending"));
             }
 
-            var managerSdkSitId = await ResolveDecidingManagerAsync(request.RequestedBySdkSitId);
-            if (managerSdkSitId == null)
+            var (mayDecide, managerSdkSitId) = await ResolveDeciderAsync(request.RequestedBySdkSitId, adminMayDecide);
+            if (!mayDecide)
             {
                 return new OperationResult(false, _localizationService.GetString("UnauthorizedToReject"));
             }
@@ -600,10 +605,21 @@ public class AbsenceRequestService : IAbsenceRequestService
         }
     }
 
-    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetInboxAsync()
+    public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetInboxAsync(bool adminMayDecide = false)
     {
         try
         {
+            var pending = _dbContext.AbsenceRequests
+                .Include(ar => ar.Days)
+                .Where(ar => ar.Status == AbsenceRequestStatus.Pending);
+
+            // An administrator on the web decides for every worker, so every
+            // pending request is in their inbox, as ApproveAsync allows.
+            if (adminMayDecide && await AbsenceDecisionRules.IsCallerAdminAsync(_userService, _baseDbContext))
+            {
+                return await InboxAsync(pending.Where(ar => ar.WorkflowState != Constants.WorkflowStates.Removed));
+            }
+
             // Resolve caller's SDK site from the JWT instead of trusting a
             // client-supplied value. Returns empty inbox if unknown.
             var managerSdkSitId = await ResolveCallerSdkSiteIdAsync();
@@ -629,15 +645,7 @@ public class AbsenceRequestService : IAbsenceRequestService
                 .Distinct()
                 .ToListAsync();
 
-            var requests = await _dbContext.AbsenceRequests
-                .Include(ar => ar.Days)
-                .Where(ar => ar.Status == AbsenceRequestStatus.Pending)
-                .Where(ar => managedSiteIds.Contains(ar.RequestedBySdkSitId))
-                .OrderByDescending(ar => ar.RequestedAtUtc)
-                .ToListAsync();
-
-            var models = requests.Select(MapToModel).ToList();
-            return new OperationDataResult<List<AbsenceRequestModel>>(true, models);
+            return await InboxAsync(pending.Where(ar => managedSiteIds.Contains(ar.RequestedBySdkSitId)));
         }
         catch (Exception ex)
         {
@@ -646,6 +654,10 @@ public class AbsenceRequestService : IAbsenceRequestService
                 _localizationService.GetString("ErrorGettingAbsenceRequests"));
         }
     }
+
+    private async Task<OperationDataResult<List<AbsenceRequestModel>>> InboxAsync(IQueryable<AbsenceRequest> requests) =>
+        new(true, (await requests.OrderByDescending(ar => ar.RequestedAtUtc).ToListAsync())
+            .Select(MapToModel).ToList());
 
     public async Task<OperationDataResult<List<AbsenceRequestModel>>> GetMineAsync()
     {
@@ -760,7 +772,7 @@ public class AbsenceRequestService : IAbsenceRequestService
     }
 
     private Task ApplyAbsenceToPlanRegistration(AbsenceRequest request, AbsenceRequestDay day,
-        int managerSdkSitId) =>
+        int? managerSdkSitId) =>
         AbsenceDecisionRules.ApplyAbsenceToPlanRegistrationAsync(
             _dbContext, _userService, _logger, request, day, managerSdkSitId);
 

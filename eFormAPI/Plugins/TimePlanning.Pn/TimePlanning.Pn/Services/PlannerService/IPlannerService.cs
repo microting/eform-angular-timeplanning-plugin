@@ -36,7 +36,17 @@ public interface IPlannerService
     /// <summary>The source's pattern as an unsaved pattern for the target; saving is the PUT.</summary>
     Task<OperationDataResult<PlannerPatternModel>> CopyPatternAsync(int assignedSiteId, int sourceAssignedSiteId);
 
+    /// <summary>
+    /// An administrator, or a manager of the worker, registers an absence over
+    /// a period as one Approved request.
+    /// </summary>
     Task<OperationDataResult<PlannerAbsenceResultModel>> CreateAbsenceAsync(PlannerAbsenceCreateModel model);
+
+    /// <summary>
+    /// What <see cref="CreateAbsenceAsync"/> would do with the same body, day by
+    /// day, by the same decision and permission; writes nothing.
+    /// </summary>
+    Task<OperationDataResult<PlannerAbsencePreviewModel>> PreviewAbsenceAsync(PlannerAbsenceCreateModel model);
 
     Task<OperationDataResult<PlannerImportPreviewModel>> GetImportPreviewAsync();
 

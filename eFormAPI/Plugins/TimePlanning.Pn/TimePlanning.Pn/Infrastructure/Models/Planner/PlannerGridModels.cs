@@ -11,7 +11,7 @@ public class PlannerGridRequestModel
     /// <summary>First day shown (date only).</summary>
     public DateTime From { get; set; }
 
-    /// <summary>7 or 14.</summary>
+    /// <summary>7 or 14, or a whole month: From the 1st and the month's day count.</summary>
     public int Days { get; set; } = 14;
 
     /// <summary>Department tags; empty = every worker in the caller's scope.</summary>
@@ -29,6 +29,12 @@ public class PlannerGridModel
 
     /// <summary>The import wizard is offered only while this is false.</summary>
     public bool GoogleSheetRetired { get; set; }
+
+    /// <summary>
+    /// Pending absence requests, of any date, of the workers shown whose
+    /// absence the caller may decide (CanApproveAbsence).
+    /// </summary>
+    public int PendingRequestCount { get; set; }
 }
 
 public class PlannerDayTotalModel

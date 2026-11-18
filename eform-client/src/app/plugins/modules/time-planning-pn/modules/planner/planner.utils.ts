@@ -1,7 +1,7 @@
 import {TranslateService} from '@ngx-translate/core';
 import {
-  addDays as fnsAddDays, eachDayOfInterval, format, getISODay, getISOWeek, isMonday, parse, startOfDay,
-  startOfISOWeek, startOfToday,
+  addDays as fnsAddDays, addMonths as fnsAddMonths, eachDayOfInterval, format, getDaysInMonth, getISODay, getISOWeek,
+  isMonday, parse, startOfDay, startOfISOWeek, startOfMonth, startOfToday,
 } from 'date-fns';
 import {defer, MonoTypeOperatorFunction, Observable, tap} from 'rxjs';
 import {PlanPatternDayModel} from './models';
@@ -60,6 +60,21 @@ export function isoDayOfWeek(date: Date): number {
 
 export function mondayOf(date: Date): Date {
   return startOfISOWeek(date);
+}
+
+/** The 1st of the date's calendar month, at local midnight. */
+export function monthStartOf(date: Date): Date {
+  return startOfMonth(date);
+}
+
+/** The 1st of the month `months` calendar months from the month of `date`. */
+export function addMonthsToStart(date: Date, months: number): Date {
+  return fnsAddMonths(startOfMonth(date), months);
+}
+
+/** Days in the date's calendar month (28-31). */
+export function daysInMonthOf(date: Date): number {
+  return getDaysInMonth(date);
 }
 
 export function todayLocal(): Date {
@@ -258,4 +273,50 @@ export function onNoReply<T>(onSilence: () => void): MonoTypeOperatorFunction<T>
       },
     }));
   });
+}
+
+/** Initials for an avatar: the first letters of the first and the last word ("Anna Hansen" -> "AH"). */
+export function workerInitials(name: string | null | undefined): string {
+  const words = (name ?? '').trim().split(/\s+/).filter(w => w.length > 0);
+  if (words.length === 0) {
+    return '?';
+  }
+  const first = Array.from(words[0])[0];
+  const last = words.length > 1 ? Array.from(words[words.length - 1])[0] : '';
+  return (first + last).toLocaleUpperCase();
+}
+
+/**
+ * Keyboard handling of a `.segmented` radiogroup (the workspace segmented
+ * control, as the Compliance report's view switcher): ArrowRight/Down checks
+ * the next option, ArrowLeft/Up the previous one, wrapping at both ends,
+ * Home/End the first/last. Returns the index to check, or null for any other
+ * key. Focus follows the checked option; the roving tabindex in the template
+ * keeps it the only tab stop.
+ */
+export function segmentedKeydown(event: KeyboardEvent, index: number, count: number): number | null {
+  let next: number;
+  switch (event.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      next = (index + 1) % count;
+      break;
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      next = (index - 1 + count) % count;
+      break;
+    case 'Home':
+      next = 0;
+      break;
+    case 'End':
+      next = count - 1;
+      break;
+    default:
+      return null;
+  }
+  event.preventDefault();
+  const group = (event.currentTarget as HTMLElement | null)?.parentElement;
+  const options = Array.from(group?.children ?? []).filter(el => el.getAttribute('role') === 'radio');
+  (options[next] as HTMLElement | undefined)?.focus();
+  return next;
 }
