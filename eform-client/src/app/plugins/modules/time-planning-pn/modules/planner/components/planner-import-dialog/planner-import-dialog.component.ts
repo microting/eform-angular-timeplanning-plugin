@@ -13,7 +13,7 @@ import {MatTooltip} from '@angular/material/tooltip';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {ToastrService} from 'ngx-toastr';
 import {
-  PlanPatternDayModel, PlannerImportAppliedModel, PlannerImportReasons, PlannerImportWorkerModel,
+  PlanPatternDayModel, PlannerImportAppliedModel, PlannerImportConfidences, PlannerImportReasons, PlannerImportWorkerModel,
 } from '../../models';
 import {TimePlanningPnPlannerService} from '../../services';
 import {
@@ -49,6 +49,15 @@ export function importReasonKey(reason: string | null): string {
   }
 }
 
+/** The "Sikkerhed" chip of a recognised worker: its label key and colour class, or null for no chip. */
+export function importConfidenceChip(confidence: string | null): { key: string; chipClass: string } | null {
+  switch (confidence) {
+    case PlannerImportConfidences.high: return {key: 'plannerConfidenceHigh', chipClass: 'planner-chip-success'};
+    case PlannerImportConfidences.medium: return {key: 'plannerConfidenceMedium', chipClass: 'planner-chip-warning'};
+    default: return null;
+  }
+}
+
 /**
  * Screen 6, the one-off import from the Google Sheet (#5489): preview, then
  * review and edit, then apply. Applying retires the sheet in the same
@@ -72,6 +81,7 @@ export class PlannerImportDialogComponent implements OnInit {
 
   readonly rotationOptions = ROTATION_WEEK_OPTIONS;
   readonly importReasonKey = importReasonKey;
+  readonly importConfidenceChip = importConfidenceChip;
   readonly mondaysOnly = mondaysOnly;
 
   step: 'preview' | 'review' | 'apply' | 'done' = 'preview';

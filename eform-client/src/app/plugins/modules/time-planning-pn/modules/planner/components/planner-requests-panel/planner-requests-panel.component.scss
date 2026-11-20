@@ -16,8 +16,52 @@
 .planner-request-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  gap: 12px;
+  padding: 16px;
   border: 1px solid var(--tp-border);
   border-radius: 8px;
+}
+
+.planner-request-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+// The design's 36px avatar, a step up from the grid's 32px.
+.planner-request-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+}
+
+.planner-request-who {
+  min-width: 0;
+}
+
+.planner-request-name {
+  font-size: 15px;
+}
+
+// Label / value pairs: Type, Periode, Fra planen, Besked.
+.planner-request-facts {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 0;
+  font-size: 14px;
+
+  dt {
+    font-weight: 400;
+    opacity: 0.75;
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.planner-request-type {
+  font-weight: 600;
 }

@@ -29,6 +29,9 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 /// repetition was actually observed. The smallest P that fits wins.</item>
 /// <item>The anchor is <c>windowStart</c>, so week index 0 is the window's
 /// first week.</item>
+/// <item>A recognised rotation's confidence is <c>high</c> when every rotation
+/// day was seen at least <see cref="HighConfidenceSightings"/> times (three or
+/// more whole cycles in the window), else <c>medium</c> (the minimum, two).</item>
 /// </list>
 /// </summary>
 public static class RotationInference
@@ -38,17 +41,24 @@ public static class RotationInference
     public const string ReasonInsufficientHistory = "insufficientHistory";
     public const string ReasonHoursOnly = "hoursOnly";
 
+    public const string ConfidenceHigh = "high";
+    public const string ConfidenceMedium = "medium";
+
     /// <summary>Weeks of history read before the current week.</summary>
     public const int HistoryWeeks = 16;
 
     /// <summary>A rotation day must be seen this many times to count as repeating.</summary>
     private const int MinimumSightings = 2;
 
+    /// <summary>Every rotation day seen this many times makes a recognised rotation high confidence.</summary>
+    private const int HighConfidenceSightings = 3;
+
     /// <param name="PlanHours">The row's plan hours; hours with no shift text mean an hours-only schedule.</param>
     public readonly record struct Day(DateTime Date, string? PlanText, bool IsAbsence, double PlanHours = 0);
 
+    /// <param name="Confidence"><see cref="ConfidenceHigh"/> or <see cref="ConfidenceMedium"/> when recognised, else null.</param>
     public sealed record Result(bool Recognised, string? Reason, int RotationWeeks, DateTime AnchorDate,
-        List<PlanPatternDayModel> Days);
+        List<PlanPatternDayModel> Days, string? Confidence = null);
 
     public static Result Infer(IEnumerable<Day> days, DateTime windowStart)
     {
@@ -105,7 +115,10 @@ public static class RotationInference
                     PlanText = c.Value[0]
                 })
                 .ToList();
-            return new Result(true, null, period, windowStart, patternDays);
+            var confidence = cells.Values.All(t => t.Count >= HighConfidenceSightings)
+                ? ConfidenceHigh
+                : ConfidenceMedium;
+            return new Result(true, null, period, windowStart, patternDays, confidence);
         }
 
         return NotRecognised(

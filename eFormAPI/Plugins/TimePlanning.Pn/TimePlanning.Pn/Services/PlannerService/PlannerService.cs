@@ -1230,6 +1230,7 @@ public class PlannerService(
                     SiteName = names.FirstOrDefault(x => x.Uid == worker.SiteId)?.Name ?? "",
                     Recognised = inferred.Recognised,
                     Reason = inferred.Reason,
+                    Confidence = inferred.Confidence,
                     RotationWeeks = inferred.Recognised ? inferred.RotationWeeks : null,
                     AnchorDate = inferred.Recognised ? inferred.AnchorDate : null,
                     Days = inferred.Days

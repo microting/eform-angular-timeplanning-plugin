@@ -39,6 +39,7 @@ test.describe('Planner - grid edit across several cells', () => {
 
     await page.locator('#planner-editor-shortform').fill('7-15/0,5');
     await expect(page.locator('[data-testid="planner-editor-invalid"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="planner-editor-hours"]')).toHaveText(`= ${danishHours(7.5)} timer`);
     const save = waitForPlanner(page, 'POST', /\/planner\/cells$/);
     const reload = waitForGrid(page);
     await page.locator('#planner-editor-fill').click();

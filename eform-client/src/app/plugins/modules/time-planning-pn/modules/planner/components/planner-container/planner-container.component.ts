@@ -29,9 +29,9 @@ import {
 } from '../../models';
 import {TimePlanningPnPlannerService} from '../../services';
 import {
-  addDays, addMonthsToStart, dateKey, daysInMonthOf, formatPlannerDate, formatPlannerHours, isoDayOfWeek, isoWeekNumber,
-  keyToTransportDate, localDateKey, mondayOf, monthStartOf, onNoReply, parseCalendarDate, plannerLocale,
-  segmentedKeydown, ShortFormKind, shortFormKind, todayLocal, toTransportDate, WEEKDAY_KEYS, workerInitials,
+  addDays, addMonthsToStart, capitalizeFirst, dateKey, daysInMonthOf, formatPlannerDate, formatPlannerHours, isoDayOfWeek, isoWeekNumber,
+  keyToTransportDate, localDateKey, mondayOf, monthStartOf, onNoReply, parseCalendarDate,
+  readShortForm, segmentedKeydown, ShortFormKind, shortFormKind, ShortFormReading, todayLocal, toTransportDate, WEEKDAY_KEYS, workerInitials,
 } from '../../planner.utils';
 import {absenceTypeKey, PLANNER_ABSENCE_TYPES} from '../../planner-absence-types';
 import {PlannerAbsenceDialogComponent, PlannerAbsenceDialogData} from '../planner-absence-dialog/planner-absence-dialog.component';
@@ -241,7 +241,7 @@ export class PlannerContainerComponent implements OnInit, AfterViewInit {
   get periodTitle(): string {
     if (this.view === 'month') {
       const month = formatPlannerDate(this.translateService, this.from, {month: 'long', year: 'numeric'});
-      return month.charAt(0).toLocaleUpperCase(plannerLocale(this.translateService)) + month.slice(1);
+      return capitalizeFirst(this.translateService, month);
     }
     const first = isoWeekNumber(this.from);
     const last = isoWeekNumber(this.periodEnd);
@@ -468,8 +468,19 @@ export class PlannerContainerComponent implements OnInit, AfterViewInit {
     return this.rows.filter(r => ids.has(r.worker.assignedSiteId)).every(r => r.worker.hasPattern);
   }
 
+  /** The shift box read: its kind and, for shifts, their hours. */
+  get shortFormReading(): ShortFormReading {
+    return readShortForm(this.shortForm);
+  }
+
   get shortFormState(): ShortFormKind {
-    return shortFormKind(this.shortForm);
+    return this.shortFormReading.kind;
+  }
+
+  /** "= 7,5 timer" beside the shift box while it holds shifts with hours; "" otherwise. */
+  get shortFormHours(): string {
+    const {hours} = this.shortFormReading;
+    return hours ? this.translateService.instant('plannerEditorHours', {hours: this.hours(hours)}) : '';
   }
 
   // ----------------------------------------------------------------- editing

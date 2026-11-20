@@ -202,11 +202,13 @@ public class PlannerAbsenceAndImportTests : PlannerTestBase
         Assert.That((r.Recognised, r.RotationWeeks, r.AnchorDate, r.SiteId, r.SiteName),
             Is.EqualTo((true, (int?)3, (DateTime?)WindowStart, 8601, "Worker 8601")));
         Assert.That(r.Days, Has.Count.EqualTo(21));
+        Assert.That(r.Confidence, Is.EqualTo(RotationInference.ConfidenceHigh), "18 weeks hold six 3-week cycles");
         Assert.That(r.Days.Single(d => d.WeekIndex == 1 && d.DayOfWeek == 0).PlanText, Is.EqualTo("15:00-23:00/0.5"));
         Assert.That(r.Days.Single(d => d.WeekIndex == 0 && d.DayOfWeek == 0).PlanText, Is.EqualTo("7:00-15:00/0.5"));
         Assert.That(r.Days.Single(d => d.WeekIndex == 2 && d.DayOfWeek == 0).PlanText, Is.EqualTo(""));
         var i = preview.Model.Workers.Single(w => w.AssignedSiteId == inconsistent.Id);
         Assert.That((i.Recognised, i.Reason, i.Days.Count), Is.EqualTo((false, (string?)RotationInference.ReasonInconsistent, 0)));
+        Assert.That(i.Confidence, Is.Null);
     }
 
     [Test]

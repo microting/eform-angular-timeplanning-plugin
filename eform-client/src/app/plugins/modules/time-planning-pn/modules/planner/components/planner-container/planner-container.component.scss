@@ -316,6 +316,15 @@ $name-col-width: 208px;
   width: 200px;
 }
 
+// "= 7,5 timer" beside the shift box (Main.dc.html quickInfo): one line, never wrapping the row.
+// The live region is always rendered (never display: none, or the first readout is not announced).
+.planner-editor-hours {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-primary);
+  white-space: nowrap;
+}
+
 .planner-editor-sep {
   width: 1px;
   height: 24px;

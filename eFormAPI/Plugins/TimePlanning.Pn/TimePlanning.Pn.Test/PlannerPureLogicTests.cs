@@ -236,4 +236,51 @@ public class PlannerPureLogicTests
         Assert.That(result.Recognised, Is.True, result.Reason);
         Assert.That(result.RotationWeeks, Is.EqualTo(1));
     }
+    // ------------------------------------------------------------ confidence
+
+    [TestCase(1, 3)]
+    [TestCase(2, 6)]
+    [TestCase(8, 16 + 8)]
+    public void Inference_ThreeOrMoreWholeCycles_IsHighConfidence(int period, int weeks)
+    {
+        var result = RotationInference.Infer(Repeating(period, weeks), WindowStart);
+
+        Assert.That(result.Recognised, Is.True, result.Reason);
+        Assert.That(result.RotationWeeks, Is.EqualTo(period));
+        Assert.That(result.Confidence, Is.EqualTo(RotationInference.ConfidenceHigh));
+    }
+
+    [TestCase(1, 2)]
+    [TestCase(2, 4)]
+    [TestCase(8, 16)]
+    public void Inference_ExactlyTwoCycles_IsMediumConfidence(int period, int weeks)
+    {
+        var result = RotationInference.Infer(Repeating(period, weeks), WindowStart);
+
+        Assert.That(result.Recognised, Is.True, result.Reason);
+        Assert.That(result.RotationWeeks, Is.EqualTo(period));
+        Assert.That(result.Confidence, Is.EqualTo(RotationInference.ConfidenceMedium));
+    }
+
+    // The least-seen rotation day decides: one day seen only twice (the third
+    // sighting was a vacation) keeps a long history at medium.
+    [Test]
+    public void Inference_OneRotationDaySeenOnlyTwice_IsMediumConfidence()
+    {
+        var rows = Repeating(1, 3)
+            .Select(r => r.Date == WindowStart.AddDays(2 * 7 + 3) ? r with { PlanText = "", IsAbsence = true } : r)
+            .ToList();
+
+        var result = RotationInference.Infer(rows, WindowStart);
+
+        Assert.That(result.Recognised, Is.True, result.Reason);
+        Assert.That(result.Confidence, Is.EqualTo(RotationInference.ConfidenceMedium));
+    }
+
+    [Test]
+    public void Inference_NotRecognised_HasNoConfidence()
+    {
+        Assert.That(RotationInference.Infer(Repeating(1, 1), WindowStart).Confidence, Is.Null);
+        Assert.That(RotationInference.Infer([], WindowStart).Confidence, Is.Null);
+    }
 }

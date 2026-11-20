@@ -64,6 +64,25 @@ describe('PlannerContainerComponent short-form editor', () => {
     expect(updateCells.mock.calls[0][0]).toMatchObject({shortForm: '7-15/0,5', messageId: null, mode: 'onlyTheseDays'});
   });
 
+  it('shows the hours of readable shifts beside the box, in the grid\'s Danish format', () => {
+    const instant = vi.spyOn(TestBed.inject(TranslateService), 'instant');
+
+    component.shortForm = '7-15/0,5';
+    expect(component.shortFormHours).toBe('plannerEditorHours');
+    expect(instant).toHaveBeenLastCalledWith('plannerEditorHours', {hours: '7,5'});
+
+    component.shortForm = '6-10;14-18/0,25';
+    expect(component.shortFormHours).toBe('plannerEditorHours');
+    expect(instant).toHaveBeenLastCalledWith('plannerEditorHours', {hours: '7,75'});
+  });
+
+  it('shows no hours for an empty box, "Fri", unreadable text or a shift without hours', () => {
+    for (const text of ['', '   ', 'Fri', '7-15 syg', '7-8/2']) {
+      component.shortForm = text;
+      expect(component.shortFormHours, text).toBe('');
+    }
+  });
+
   it('still lets "Ryd" clear the days on purpose', () => {
     component.applyShortForm('');
     expect(updateCells).toHaveBeenCalledTimes(1);

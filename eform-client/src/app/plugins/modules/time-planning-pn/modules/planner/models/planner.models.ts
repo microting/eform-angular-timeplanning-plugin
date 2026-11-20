@@ -239,6 +239,12 @@ export const PlannerImportReasons = {
   hoursOnly: 'hoursOnly',
 } as const;
 
+/** RotationInference confidence codes: every rotation day seen 3+ times (high) or twice (medium). */
+export const PlannerImportConfidences = {
+  high: 'high',
+  medium: 'medium',
+} as const;
+
 export interface PlannerImportWorkerModel {
   assignedSiteId: number;
   siteId: number;
@@ -247,6 +253,8 @@ export interface PlannerImportWorkerModel {
   recognised: boolean;
   /** When not recognised: see PlannerImportReasons. */
   reason: string | null;
+  /** When recognised: see PlannerImportConfidences; null when not recognised. */
+  confidence: string | null;
   rotationWeeks: number | null;
   anchorDate: string | null;
   days: PlanPatternDayModel[];

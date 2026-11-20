@@ -1,7 +1,7 @@
 // Planner (#5489): the few layout rules every planner component shares. Listed
 // @use'd by each component's stylesheet, so they stay scoped to the planner.
-// Colours come from the app's existing tokens only (--tp-border, --error);
-// nothing here is a new design token.
+// Colours come from the app's existing tokens only (--tp-border, --error, the
+// theme's surface-*-light / status text pairs); nothing here is a new design token.
 
 .planner-dialog-stack {
   gap: 12px;
@@ -37,6 +37,35 @@
 // Long text must not squeeze the icon (it shrank to 10px in the requests panel).
 .planner-info > mat-icon {
   flex-shrink: 0;
+}
+
+// The theme's amber pair: the staffing notice (Anmodninger.dc.html) and the "Venter"/"Middel" chips.
+.planner-info-warning,
+.planner-chip-warning {
+  background: var(--surface-warning-light);
+  color: var(--text-warning-dark);
+}
+
+// An amber notice: the warning pair, no border.
+.planner-info-warning {
+  border-color: transparent;
+  font-size: 13px;
+}
+
+// A status chip (Anmodninger "Venter", Import "Høj"/"Middel"): the theme's light surface and its text colour.
+.planner-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.planner-chip-success {
+  background: var(--surface-success-light);
+  color: var(--status-green-text);
 }
 
 .planner-date-list {

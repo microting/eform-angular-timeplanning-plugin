@@ -26,6 +26,9 @@ public class PlannerImportWorkerModel
     /// <summary>When not recognised: "unparsable", "inconsistent", "insufficientHistory" or "hoursOnly" (plan hours without shifts).</summary>
     public string? Reason { get; set; }
 
+    /// <summary>When recognised: "high" (every rotation day seen 3+ times) or "medium" (seen twice); null when not recognised.</summary>
+    public string? Confidence { get; set; }
+
     public int? RotationWeeks { get; set; }
     public DateTime? AnchorDate { get; set; }
     public List<PlanPatternDayModel> Days { get; set; } = [];
