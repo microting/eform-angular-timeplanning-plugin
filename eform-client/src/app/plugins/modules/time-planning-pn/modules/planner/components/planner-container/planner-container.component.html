@@ -357,6 +357,8 @@
           @if (shortFormState === 'invalid') {
             <span class="planner-error" id="planner-editor-invalid" data-testid="planner-editor-invalid">{{ 'plannerShortFormInvalidHint' | translate }}</span>
           }
+          <!-- Always in the DOM so screen readers announce the first readout; only its text changes (empty unless the box holds shifts with hours). -->
+          <span class="planner-editor-hours" aria-live="polite" data-testid="planner-editor-hours">{{ shortFormHours }}</span>
           <button
             type="button"
             class="btn-primary"

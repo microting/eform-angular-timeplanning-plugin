@@ -58,9 +58,12 @@ test.describe('Planner - import from the Google Sheet', () => {
     await expect(page.locator('[data-testid="planner-import-preview"]')).toBeVisible();
 
     const proposed = model.workers.find((w: any) => w.assignedSiteId === recognised);
+    const refused = model.workers.find((w: any) => w.assignedSiteId === unrecognised);
     expect(proposed.recognised, `o p must be recognised (${proposed.reason})`).toBe(true);
     expect(proposed.rotationWeeks).toBe(2);
-    const refused = model.workers.find((w: any) => w.assignedSiteId === unrecognised);
+    // Weeks -2..3 hold three whole 2-week cycles: every rotation day seen 3 times.
+    expect(proposed.confidence).toBe('high');
+    expect(refused.confidence ?? null).toBeNull();
     expect(refused.recognised).toBe(false);
     const recognisedCount = model.workers.filter((w: any) => w.recognised).length;
     await expect(page.locator('[data-testid="planner-import-recognised-count"]'))
@@ -70,6 +73,8 @@ test.describe('Planner - import from the Google Sheet', () => {
     await page.locator('#planner-import-next').click();
     await expect(page.locator('[data-testid="planner-import-step"]')).toHaveText('Trin 2 af 3');
     await expect(page.locator(`#planner-import-rotation-${recognised}`)).toContainText('Rotation 2 uger');
+    await expect(page.locator(`[data-testid="planner-import-confidence-${recognised}"]`)).toHaveText('Høj');
+    await expect(page.locator(`[data-testid="planner-import-confidence-${unrecognised}"]`)).toHaveCount(0);
     await expect(page.locator(`[data-testid="planner-import-unrecognised-${unrecognised}"]`)).toBeVisible();
     await expect(page.locator(`#planner-import-include-${unrecognised}`)).toHaveCount(0);
 

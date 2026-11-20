@@ -24,20 +24,45 @@
 
   @for (view of views; track view.request.id) {
     <div class="planner-request-card" [attr.data-testid]="'planner-request-' + view.request.id">
-      <div class="d-flex flex-column">
-        <strong>{{ view.name }}</strong>
-        <span class="planner-hint">{{ formatDate(view.from) }} – {{ formatDate(view.to) }}</span>
+      <!-- Anmodninger.dc.html: avatar, name and when it was sent, the status on the right. -->
+      <div class="planner-request-head">
+        <span class="planner-avatar planner-request-avatar" aria-hidden="true">{{ view.initials }}</span>
+        <div class="d-flex flex-column flex-grow-1 planner-request-who">
+          <strong class="planner-request-name">{{ view.name }}</strong>
+          @if (view.sent) {
+            <span class="planner-hint" [attr.data-testid]="'planner-request-sent-' + view.request.id">
+              {{ 'plannerRequestSent' | translate: {when: view.sent} }}
+            </span>
+          }
+        </div>
+        <span class="planner-chip planner-chip-warning" [attr.data-testid]="'planner-request-status-' + view.request.id">
+          {{ 'plannerRequestWaiting' | translate }}
+        </span>
+      </div>
+      <dl class="planner-request-facts">
         @if (view.typeKey) {
-          <span>{{ view.typeKey | translate }}</span>
+          <dt>{{ 'Type' | translate }}</dt>
+          <dd class="planner-request-type">{{ view.typeKey | translate }}</dd>
+        }
+        <dt>{{ 'plannerPeriod' | translate }}</dt>
+        <dd [attr.data-testid]="'planner-request-period-' + view.request.id">{{ formatPeriod(view) }}</dd>
+        @if (view.fromPlan) {
+          <dt>{{ 'plannerFromPlan' | translate }}</dt>
+          <dd [attr.data-testid]="'planner-request-from-plan-' + view.request.id">{{ view.fromPlan }}</dd>
         }
         @if (view.request.requestComment) {
-          <em>{{ view.request.requestComment }}</em>
+          <dt>{{ 'plannerRequestMessage' | translate }}</dt>
+          <dd><em>{{ view.request.requestComment }}</em></dd>
         }
-      </div>
-      @if (view.emptyDays.length > 0) {
-        <div class="planner-info" [attr.data-testid]="'planner-request-warning-' + view.request.id">
+      </dl>
+      @if (view.staffing.length > 0) {
+        <div class="planner-info planner-info-warning" [attr.data-testid]="'planner-request-warning-' + view.request.id">
           <mat-icon>groups</mat-icon>
-          <span>{{ 'plannerApproveLeavesNobody' | translate: {dates: formatDates(view.emptyDays)} }}</span>
+          <div class="d-flex flex-column">
+            @for (line of view.staffing; track line) {
+              <span>{{ line }}</span>
+            }
+          </div>
         </div>
       }
       <div class="d-flex flex-row flex-wrap justify-content-end planner-row-gap">
@@ -68,6 +93,7 @@
             [attr.data-testid]="'planner-request-approve-' + view.request.id"
             (click)="approve(view)"
           >
+            <mat-icon>check</mat-icon>
             {{ 'Approve' | translate }}
           </button>
         } @else {

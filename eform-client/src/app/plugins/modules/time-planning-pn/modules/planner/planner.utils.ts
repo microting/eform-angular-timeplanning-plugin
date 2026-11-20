@@ -108,6 +108,11 @@ export function formatPlannerDate(translate: TranslateService, date: Date | null
   return date ? date.toLocaleDateString(plannerLocale(translate), options) : '';
 }
 
+/** The text with its first letter upper-cased in the user's language: "tirsdag 6. okt." -> "Tirsdag 6. okt.". */
+export function capitalizeFirst(translate: TranslateService, text: string): string {
+  return text.charAt(0).toLocaleUpperCase(plannerLocale(translate)) + text.slice(1);
+}
+
 /** Hours in the user's language, at most 2 decimals: "37,5" (da), "37.5" (en); "" for null. */
 export function formatPlannerHours(translate: TranslateService, value: number | null | undefined): string {
   if (value == null) {
@@ -118,8 +123,12 @@ export function formatPlannerHours(translate: TranslateService, value: number | 
 
 const TIME = '[0-9]{1,2}(?:[:.,][0-9]{1,2}|½)?';
 const BREAK = '(?:[0-9]{1,2}:[0-9]{1,2}|(?=[0-9.,½¾])[0-9]*(?:[.,][0-9]+)?[½¾]?)';
-/** PlannerShortForm.WholeSegment, with the two times captured for the value checks. */
-const WHOLE_SEGMENT = new RegExp(`^(${TIME})\\s*-\\s*(${TIME})(?:\\s*/\\s*${BREAK})?$`);
+/** PlannerShortForm.WholeSegment, with the two times and the break captured for the value checks and the hours. */
+const WHOLE_SEGMENT = new RegExp(`^(${TIME})\\s*-\\s*(${TIME})(?:\\s*/\\s*(${BREAK}))?$`);
+/** PlanTextParser.BreakColonRegex / BreakValueRegex, over a break WHOLE_SEGMENT has already delimited. */
+const BREAK_COLON = /^([0-9]{1,2}):([0-9]{1,2})/;
+const BREAK_VALUE = /^([0-9]*(?:\.[0-9]+)?)([½¾])?/;
+const GLYPH_MINUTES: Record<string, number> = {'½': 30, '¾': 45};
 /** PlanTextParser.TimeRegex. */
 const TIME_TOKEN = /^([0-9]{1,2})(?:([:.,])([0-9]{1,2})|(½))?$/;
 const MAX_SHIFTS = 5;
@@ -159,19 +168,46 @@ function resolveTime(token: string): number | null {
 }
 
 /**
+ * PlanTextParser.ParseBreakMinutes for a break of the right shape: decimal
+ * hours ("0,5" is 30 minutes), the '½' and '¾' glyphs, or "H:MM"; at most a day.
+ */
+function breakMinutes(text: string | undefined): number {
+  const normalized = (text ?? '').replace(/,/g, '.').trim();
+  if (!normalized) {
+    return 0;
+  }
+  const colon = BREAK_COLON.exec(normalized);
+  if (colon) {
+    return Math.min(Number(colon[1]) * 60 + Number(colon[2]), MINUTES_PER_DAY);
+  }
+  const [, number, glyph] = BREAK_VALUE.exec(normalized) ?? [];
+  const glyphMinutes = glyph ? GLYPH_MINUTES[glyph] : 0;
+  const numberMinutes = number ? Math.round(Number(number) * 60) : 0;
+  return Math.min(numberMinutes + glyphMinutes, MINUTES_PER_DAY);
+}
+
+/**
  * One trimmed segment the server reads as a shift: wholly "start-end[/break]"
  * (PlannerShortForm.WholeSegment), both times valid, and start != end
  * (PlanTextParser.TryParseSegment). A break that has the right shape never
  * fails on the server, so its value is not checked.
+ *
+ * Returns the shift's planned minutes as PlanRegistrationPlanText sums them
+ * (an end before the start crosses midnight, less the break), or null when
+ * the segment is not a shift.
  */
-function isWholeShift(segment: string): boolean {
+function wholeShiftMinutes(segment: string): number | null {
   const match = WHOLE_SEGMENT.exec(segment);
   if (!match) {
-    return false;
+    return null;
   }
   const start = resolveTime(match[1]);
   const end = resolveTime(match[2]);
-  return start !== null && end !== null && start !== end;
+  if (start === null || end === null || start === end) {
+    return null;
+  }
+  const length = end < start ? end + MINUTES_PER_DAY - start : end - start;
+  return length - breakMinutes(match[3]);
 }
 
 /**
@@ -184,19 +220,38 @@ function isWholeShift(segment: string): boolean {
  */
 export type ShortFormKind = 'clear' | 'dayOff' | 'plan' | 'invalid';
 
-export function shortFormKind(text: string | null | undefined): ShortFormKind {
+/** A read short form: its kind, and for 'plan' the hours the server will store (PlanHours), else null. */
+export interface ShortFormReading {
+  kind: ShortFormKind;
+  hours: number | null;
+}
+
+export function readShortForm(text: string | null | undefined): ShortFormReading {
   const trimmed = (text ?? '').trim();
   if (!trimmed) {
-    return 'clear';
+    return {kind: 'clear', hours: null};
   }
   if (trimmed.toLowerCase() === 'fri') {
-    return 'dayOff';
+    return {kind: 'dayOff', hours: null};
   }
   const segments = trimmed.split(';').map(s => s.trim()).filter(s => s.length > 0);
   if (segments.length === 0 || segments.length > MAX_SHIFTS) {
-    return 'invalid';
+    return {kind: 'invalid', hours: null};
   }
-  return segments.every(isWholeShift) ? 'plan' : 'invalid';
+  let total = 0;
+  for (const segment of segments) {
+    const minutes = wholeShiftMinutes(segment);
+    if (minutes === null) {
+      return {kind: 'invalid', hours: null};
+    }
+    total += minutes;
+  }
+  // PlanRegistrationPlanText.SumPlannedMinutes: breaks longer than the shifts never go below 0.
+  return {kind: 'plan', hours: Math.max(total, 0) / 60};
+}
+
+export function shortFormKind(text: string | null | undefined): ShortFormKind {
+  return readShortForm(text).kind;
 }
 
 /** A pattern day text is acceptable when empty, "Fri" or shifts. */

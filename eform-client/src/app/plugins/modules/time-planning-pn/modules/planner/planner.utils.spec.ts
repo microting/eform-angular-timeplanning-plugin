@@ -3,7 +3,7 @@ import {TranslateService} from '@ngx-translate/core';
 import {EMPTY, of, throwError} from 'rxjs';
 import {
   dateKey, dateKeysBetween, formatPlannerHours, fullPatternGrid, isEmptyPattern, isoDayOfWeek, isoWeekNumber, isValidPattern,
-  keyToTransportDate, mondayOf, onNoReply, parseCalendarDate, segmentedKeydown, shortFormKind, toTransportDate,
+  keyToTransportDate, mondayOf, onNoReply, parseCalendarDate, readShortForm, segmentedKeydown, shortFormKind, toTransportDate,
   trimmedPatternDays, workerInitials,
 } from './planner.utils';
 import {importReasonKey} from './components/planner-import-dialog/planner-import-dialog.component';
@@ -55,6 +55,36 @@ describe('planner short form matches the server (PlannerPureLogicTests)', () => 
     '٧-١٥', '7:75-15', '7.60-15', '7-24:30', '25-30', '7-7', '0-0',
   ])('refuses %j', (input) => {
     expect(shortFormKind(input)).toBe('invalid');
+  });
+});
+
+describe('planner short form hours (PlanRegistrationPlanText.SumPlannedMinutes)', () => {
+  it('sums every shift less its break', () => {
+    expect(readShortForm('7-15/0,5')).toEqual({kind: 'plan', hours: 7.5});
+    expect(readShortForm('7:00-15:00')).toEqual({kind: 'plan', hours: 8});
+    expect(readShortForm('6-10;16-20')).toEqual({kind: 'plan', hours: 8});
+    expect(readShortForm('6-10;14-18/0,25').hours).toBe(7.75);
+    expect(readShortForm('7½-15/½').hours).toBe(7);
+    expect(readShortForm('6-14/0:45').hours).toBe(7.25);
+    expect(readShortForm('6 - 14 / .5').hours).toBe(7.5);
+    expect(readShortForm('6-14/1¾').hours).toBe(6.25);
+    expect(readShortForm('7:00-14:54/0.5').hours).toBeCloseTo(7.4, 10);
+  });
+
+  it('reads an end before the start as crossing midnight', () => {
+    expect(readShortForm('22-6/0,5').hours).toBe(7.5);
+    expect(readShortForm('22:00-0:00').hours).toBe(2);
+  });
+
+  it('never goes below zero when the break is longer than the shift', () => {
+    expect(readShortForm('7-8/2')).toEqual({kind: 'plan', hours: 0});
+  });
+
+  it('has no hours for empty, Fri or unreadable text', () => {
+    expect(readShortForm('')).toEqual({kind: 'clear', hours: null});
+    expect(readShortForm('Fri')).toEqual({kind: 'dayOff', hours: null});
+    expect(readShortForm('7-15 syg')).toEqual({kind: 'invalid', hours: null});
+    expect(readShortForm('7-15;x')).toEqual({kind: 'invalid', hours: null});
   });
 });
 
