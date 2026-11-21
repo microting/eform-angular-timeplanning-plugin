@@ -719,10 +719,18 @@ public class TimeSettingService(
             return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
         }
 
-        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = await dbContext.AssignedSites
+        var assignedSiteEntity = await dbContext.AssignedSites
             .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.SiteId == sdkSite.MicrotingUid);
+        // An active site with no active time-planning AssignedSite row is
+        // not found either (previously the implicit conversion NRE'd on null).
+        if (assignedSiteEntity == null)
+        {
+            return new OperationDataResult<Infrastructure.Models.Settings.AssignedSite>(false, "Site not found");
+        }
+
+        Infrastructure.Models.Settings.AssignedSite dbAssignedSite = assignedSiteEntity;
         dbAssignedSite.DayOfPayment = options.Value.DayOfPayment;
 
         // GPS comes from the TimePlanning GLOBAL (per-customer) settings, never from the
