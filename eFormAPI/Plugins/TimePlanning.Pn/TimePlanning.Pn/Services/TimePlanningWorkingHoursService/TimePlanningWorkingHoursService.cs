@@ -275,7 +275,8 @@ public class TimePlanningWorkingHoursService(
                 .ToListAsync();
 
             // Populate the canonical per-shift total pause minutes (all slots, not
-            // just the primary Pause{N}Id) for the Excel export. ComputeShiftPauseSeconds
+            // just the primary Pause{N}Id, and the Pause{N}OverrideMinutes that wins
+            // when set) for the Excel export. ComputeShiftPauseSeconds
             // is not EF-translatable, so materialize the pause columns for these same
             // rows in ONE batched query (keyed by Id) and compute in memory — no N+1.
             if (timePlannings.Count > 0)
@@ -286,6 +287,8 @@ public class TimePlanningWorkingHoursService(
                         Id = x.Id,
                         Pause1Id = x.Pause1Id,
                         Pause2Id = x.Pause2Id,
+                        Pause1OverrideMinutes = x.Pause1OverrideMinutes,
+                        Pause2OverrideMinutes = x.Pause2OverrideMinutes,
                         Pause1StartedAt = x.Pause1StartedAt,
                         Pause1StoppedAt = x.Pause1StoppedAt,
                         Pause10StartedAt = x.Pause10StartedAt,
