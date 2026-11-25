@@ -308,6 +308,12 @@
                             {{ 'plannerOfNorm' | translate: {hours: hours(week.normHours)} }}
                           </span>
                         }
+                        @if (week.rotationWeek != null && (row.worker.rotationWeeks ?? 1) > 1) {
+                          <span
+                            class="planner-hint"
+                            [attr.data-testid]="'planner-week-rotation-' + row.worker.assignedSiteId + '-' + column.weekStart"
+                          >{{ 'plannerRotationWeekOf' | translate: {week: week.rotationWeek, weeks: row.worker.rotationWeeks} }}</span>
+                        }
                       </span>
                     }
                   </td>

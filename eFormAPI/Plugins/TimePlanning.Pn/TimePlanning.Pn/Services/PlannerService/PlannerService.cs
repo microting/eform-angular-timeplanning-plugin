@@ -95,6 +95,9 @@ public class PlannerService(
     // UTC, like PlanPatternApplyService: the pattern's own notion of today.
     private static DateTime Today => DateTime.UtcNow.Date;
 
+    /// <summary>A worker's latest plan pattern, as far as the week sums need it.</summary>
+    private readonly record struct WorkerRotation(int RotationWeeks, DateTime AnchorDate, DateTime ValidFrom);
+
     // ------------------------------------------------------------------ grid
 
     public async Task<OperationDataResult<PlannerGridModel>> GetGridAsync(PlannerGridRequestModel model)
@@ -143,10 +146,14 @@ public class PlannerService(
             var rotationByAssignedSite = (await dbContext.PlanPatterns.AsNoTracking()
                     .Where(x => x.WorkflowState != Constants.WorkflowStates.Removed)
                     .Where(x => assignedIds.Contains(x.AssignedSiteId))
-                    .Select(x => new { x.Id, x.AssignedSiteId, x.RotationWeeks })
+                    .Select(x => new { x.Id, x.AssignedSiteId, x.RotationWeeks, x.AnchorDate, x.ValidFrom })
                     .ToListAsync())
                 .GroupBy(x => x.AssignedSiteId)
-                .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.Id).First().RotationWeeks);
+                .ToDictionary(g => g.Key, g =>
+                {
+                    var latest = g.OrderByDescending(x => x.Id).First();
+                    return new WorkerRotation(latest.RotationWeeks, latest.AnchorDate, latest.ValidFrom);
+                });
 
             var ruleSetIds = assignedBySite.Values
                 .Where(x => x.WorkingTimeRuleSetId != null)
@@ -208,7 +215,9 @@ public class PlannerService(
                                && normSecondsByRuleSet.TryGetValue(assignedSite.WorkingTimeRuleSetId.Value, out var seconds)
                     ? seconds / 3600.0
                     : null;
-                int? rotationWeeks = rotationByAssignedSite.TryGetValue(assignedSite.Id, out var weeks) ? weeks : null;
+                WorkerRotation? rotation =
+                    rotationByAssignedSite.TryGetValue(assignedSite.Id, out var found) ? found : null;
+                var rotationWeeks = rotation?.RotationWeeks;
                 var worker = new PlannerWorkerModel
                 {
                     AssignedSiteId = assignedSite.Id,
@@ -242,7 +251,7 @@ public class PlannerService(
                     });
                 }
 
-                worker.Weeks = WeekSums(boardRow.SiteId, firstMonday, afterLastSunday, norm, rowByDay);
+                worker.Weeks = WeekSums(boardRow.SiteId, firstMonday, afterLastSunday, norm, rotation, rowByDay);
                 grid.Workers.Add(worker);
             }
 
@@ -276,10 +285,14 @@ public class PlannerService(
 
     /// <summary>
     /// PlanHours per ISO week from <paramref name="firstMonday"/> up to
-    /// <paramref name="afterLastSunday"/>, against the weekly norm.
+    /// <paramref name="afterLastSunday"/>, against the weekly norm, each with
+    /// the 1-based rotation week it falls in when <paramref name="rotation"/>
+    /// spans more than one week and governs the week (it ends on or after the
+    /// pattern's ValidFrom; PlanPatternResolver resolves nothing before it).
     /// </summary>
     private static List<PlannerWeekSumModel> WeekSums(int siteId, DateTime firstMonday, DateTime afterLastSunday,
-        double? norm, Dictionary<(int, DateTime), PlanRegistration> rowByDay)
+        double? norm, WorkerRotation? rotation,
+        Dictionary<(int, DateTime), PlanRegistration> rowByDay)
     {
         var weeks = new List<PlannerWeekSumModel>();
         for (var monday = firstMonday; monday < afterLastSunday; monday = monday.AddDays(7))
@@ -293,7 +306,10 @@ public class PlannerService(
                 WeekStart = monday,
                 PlannedHours = planned,
                 NormHours = norm,
-                DifferenceHours = planned - norm
+                DifferenceHours = planned - norm,
+                RotationWeek = rotation is { RotationWeeks: > 1 } r && monday.AddDays(6) >= r.ValidFrom.Date
+                    ? RotationWeekIndex(r.AnchorDate, r.RotationWeeks, monday) + 1
+                    : null
             });
         }
 
@@ -1231,6 +1247,8 @@ public class PlannerService(
                     Recognised = inferred.Recognised,
                     Reason = inferred.Reason,
                     Confidence = inferred.Confidence,
+                    CyclesSeen = inferred.CyclesSeen,
+                    WeeksSeen = inferred.WeeksSeen,
                     RotationWeeks = inferred.Recognised ? inferred.RotationWeeks : null,
                     AnchorDate = inferred.Recognised ? inferred.AnchorDate : null,
                     Days = inferred.Days
@@ -1503,7 +1521,7 @@ public class PlannerService(
     /// PlanPatternResolver uses: whole weeks from the anchor, modulo the
     /// rotation, positive for dates before the anchor.
     /// </summary>
-    private static int RotationWeekIndex(DateTime anchorDate, int rotationWeeks, DateTime date)
+    internal static int RotationWeekIndex(DateTime anchorDate, int rotationWeeks, DateTime date)
     {
         var rotationDays = rotationWeeks * 7;
         var dayOffset = (date.Date - anchorDate.Date).Days;

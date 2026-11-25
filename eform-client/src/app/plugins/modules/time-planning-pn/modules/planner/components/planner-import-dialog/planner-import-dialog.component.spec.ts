@@ -10,16 +10,93 @@ import {PlannerImportWorkerModel} from '../../models';
 import {TimePlanningPnPlannerService} from '../../services';
 import {da} from '../../../../i18n/da';
 import {enUS} from '../../../../i18n/enUS';
-import {importConfidenceChip, PlannerImportDialogComponent} from './planner-import-dialog.component';
+import {ALL_LANGUAGES} from '../../../../testing/all-languages';
+import {importConfidenceChip, importEvidence, PlannerImportDialogComponent} from './planner-import-dialog.component';
 
 const week = (text: string) => Array.from({length: 7}, (_, d) => ({weekIndex: 0, dayOfWeek: d, planText: d < 5 ? text : ''}));
 
 function importWorker(assignedSiteId: number, extra: Partial<PlannerImportWorkerModel>): PlannerImportWorkerModel {
   return {
     assignedSiteId, siteId: assignedSiteId + 100, siteName: `Worker ${assignedSiteId}`, recognised: true, reason: null,
-    confidence: null, rotationWeeks: 1, anchorDate: '2026-07-06T00:00:00', days: week('7:00-15:00/0.5'), ...extra,
+    confidence: null, rotationWeeks: 1, anchorDate: '2026-07-06T00:00:00', days: week('7:00-15:00/0.5'),
+    cyclesSeen: null, weeksSeen: null, ...extra,
   };
 }
+
+/** The review step, rendered from a preview of these workers. */
+async function renderReview(workers: PlannerImportWorkerModel[]): Promise<HTMLElement> {
+  const getImportPreview = vi.fn(() => of({success: true, model: {windowStart: '2026-07-06T00:00:00', workers}}));
+  TestBed.configureTestingModule({
+    imports: [PlannerImportDialogComponent, TranslateModule.forRoot()],
+    providers: [
+      provideNoopAnimations(),
+      provideNativeDateAdapter(),
+      {provide: TimePlanningPnPlannerService, useValue: {getImportPreview}},
+      {provide: MatDialogRef, useValue: {close: vi.fn()}},
+      {provide: ToastrService, useValue: {success: vi.fn(), error: vi.fn(), warning: vi.fn()}},
+    ],
+  });
+  const fixture = TestBed.createComponent(PlannerImportDialogComponent);
+  // Straight to step 2 (review); the first render reads the preview.
+  fixture.componentInstance.step = 'review';
+  fixture.detectChanges();
+  await fixture.whenStable();
+  return fixture.nativeElement;
+}
+
+describe('PlannerImportDialogComponent "Det vi fandt" evidence', () => {
+  const empty = Array.from({length: 7}, (_, d) => ({weekIndex: 0, dayOfWeek: d, planText: ''}));
+
+  it('says how much of the sheet backs the proposal, and warns on medium', () => {
+    expect(importEvidence(importWorker(1, {confidence: 'high', weeksSeen: 8})))
+      .toEqual({key: 'plannerImportSeenWeeks', params: {weeks: 8}, warning: false});
+    // A 1-week pattern: whole weeks with every day seen (cyclesSeen), not weeks with any day seen.
+    expect(importEvidence(importWorker(1, {confidence: 'medium', weeksSeen: 5, cyclesSeen: 2})))
+      .toEqual({key: 'plannerImportSeenOnlyWeeks', params: {weeks: 2}, warning: true});
+    expect(importEvidence(importWorker(1, {confidence: 'medium', rotationWeeks: 2, weeksSeen: 4, cyclesSeen: 2})))
+      .toEqual({key: 'plannerImportSeenOnlyCycles', params: {cycles: 2}, warning: true});
+    expect(importEvidence(importWorker(1, {confidence: 'medium', days: empty})))
+      .toEqual({key: 'plannerImportEmptySheet', params: {}, warning: true});
+  });
+
+  it('says nothing without the numbers, without a confidence, or for an unrecognised worker', () => {
+    expect(importEvidence(importWorker(1, {confidence: 'high'}))).toBeNull();
+    expect(importEvidence(importWorker(1, {confidence: 'medium'}))).toBeNull();
+    expect(importEvidence(importWorker(1, {confidence: 'medium', weeksSeen: 5}))).toBeNull();
+    expect(importEvidence(importWorker(1, {confidence: 'medium', rotationWeeks: 2, weeksSeen: 4}))).toBeNull();
+    expect(importEvidence(importWorker(1, {confidence: null, weeksSeen: 8}))).toBeNull();
+    expect(importEvidence(importWorker(1, {recognised: false, reason: 'inconsistent', weeksSeen: 8}))).toBeNull();
+  });
+
+  it('renders the line under the shift summary, amber for medium', async () => {
+    const el = await renderReview([
+      importWorker(1, {confidence: 'high', weeksSeen: 8, cyclesSeen: 8}),
+      importWorker(2, {confidence: 'medium', rotationWeeks: 2, weeksSeen: 4, cyclesSeen: 2}),
+      importWorker(3, {confidence: 'high'}),
+      importWorker(4, {recognised: false, reason: 'inconsistent', rotationWeeks: null, anchorDate: null, days: []}),
+    ]);
+
+    const high = el.querySelector('[data-testid="planner-import-evidence-1"]');
+    const medium = el.querySelector('[data-testid="planner-import-evidence-2"]');
+    expect(high?.textContent?.trim()).toBe('plannerImportSeenWeeks');
+    expect(high?.classList).not.toContain('planner-import-evidence-warning');
+    expect(high?.parentElement?.textContent).toContain('7:00-15:00/0.5');
+    expect(medium?.textContent?.trim()).toBe('plannerImportSeenOnlyCycles');
+    expect(medium?.classList).toContain('planner-import-evidence-warning');
+    expect(el.querySelector('[data-testid="planner-import-evidence-3"]')).toBeNull();
+    expect(el.querySelector('[data-testid="planner-import-evidence-4"]')).toBeNull();
+  });
+
+  it('has the four lines in every language, with the numbers in them', () => {
+    for (const lang of ALL_LANGUAGES) {
+      expect(lang['plannerImportSeenWeeks']).toContain('{{weeks}}');
+      expect(lang['plannerImportSeenOnlyWeeks']).toContain('{{weeks}}');
+      expect(lang['plannerImportSeenOnlyCycles']).toContain('{{cycles}}');
+      expect(lang['plannerImportEmptySheet']).toBeTruthy();
+    }
+    expect(da.plannerImportSeenOnlyCycles).toBe('Kun {{cycles}} hele cyklusser i arket – tjek mønstret');
+  });
+});
 
 describe('PlannerImportDialogComponent "Sikkerhed"', () => {
   it('maps the server\'s confidence codes to a chip, and nothing else to one', () => {

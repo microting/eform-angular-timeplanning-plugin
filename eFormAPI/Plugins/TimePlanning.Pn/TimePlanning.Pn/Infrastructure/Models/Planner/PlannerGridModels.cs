@@ -96,6 +96,13 @@ public class PlannerWeekSumModel
 
     /// <summary>PlannedHours - NormHours; null when there is no norm.</summary>
     public double? DifferenceHours { get; set; }
+
+    /// <summary>
+    /// The 1-based week of the worker's rotation this week falls in ("rot.uge 4/6"), resolved as
+    /// PlanPatternResolver resolves the pattern week; null without a pattern, for a 1-week rotation,
+    /// or for a week that ends before the pattern's ValidFrom (the pattern does not govern it yet).
+    /// </summary>
+    public int? RotationWeek { get; set; }
 }
 
 public class PlannerCellModel

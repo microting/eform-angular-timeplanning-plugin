@@ -283,4 +283,82 @@ public class PlannerPureLogicTests
         Assert.That(RotationInference.Infer(Repeating(1, 1), WindowStart).Confidence, Is.Null);
         Assert.That(RotationInference.Infer([], WindowStart).Confidence, Is.Null);
     }
+
+    // Owner decision: an empty sheet ("Ingen plan") is recognised but never
+    // high confidence, however many weeks it ran.
+    [Test]
+    public void Inference_EmptySheet_IsRecognised_WithMediumConfidence()
+    {
+        var result = RotationInference.Infer(Repeating(1, 10, (_, _) => ""), WindowStart);
+
+        Assert.That(result.Recognised, Is.True, result.Reason);
+        Assert.That(result.Days.All(d => d.PlanText == ""), Is.True);
+        Assert.That(result.Confidence, Is.EqualTo(RotationInference.ConfidenceMedium));
+        Assert.That((result.CyclesSeen, result.WeeksSeen), Is.EqualTo(((int?)10, (int?)10)));
+    }
+
+    // ------------------------------------------------------------ evidence
+
+    [Test]
+    public void Inference_TwoWeekRotationSeenTwice_ReportsTwoCycles()
+    {
+        var result = RotationInference.Infer(Repeating(2, 4), WindowStart);
+
+        Assert.That(result.Recognised, Is.True, result.Reason);
+        Assert.That(result.Confidence, Is.EqualTo(RotationInference.ConfidenceMedium));
+        Assert.That((result.CyclesSeen, result.WeeksSeen), Is.EqualTo(((int?)2, (int?)4)));
+    }
+
+    [Test]
+    public void Inference_OneWeekPatternSeenTenWeeks_ReportsTenCyclesAndWeeks()
+    {
+        var result = RotationInference.Infer(Repeating(1, 10), WindowStart);
+
+        Assert.That(result.Recognised, Is.True, result.Reason);
+        Assert.That(result.Confidence, Is.EqualTo(RotationInference.ConfidenceHigh));
+        Assert.That((result.CyclesSeen, result.WeeksSeen), Is.EqualTo(((int?)10, (int?)10)));
+    }
+
+    // A whole week of absence is no evidence: it counts in neither figure.
+    [Test]
+    public void Inference_AnAbsentWeek_IsNotAWeekSeen()
+    {
+        var rows = Repeating(1, 4)
+            .Select(r => r.Date >= WindowStart.AddDays(7) && r.Date < WindowStart.AddDays(14)
+                ? r with { PlanText = "", IsAbsence = true }
+                : r)
+            .ToList();
+
+        var result = RotationInference.Infer(rows, WindowStart);
+
+        Assert.That(result.Recognised, Is.True, result.Reason);
+        Assert.That((result.CyclesSeen, result.WeeksSeen), Is.EqualTo(((int?)3, (int?)3)));
+    }
+
+    [Test]
+    public void Inference_NotRecognised_HasNoEvidence()
+    {
+        var result = RotationInference.Infer(Repeating(1, 1), WindowStart);
+
+        Assert.That((result.CyclesSeen, result.WeeksSeen), Is.EqualTo(((int?)null, (int?)null)));
+    }
+
+    // ------------------------------------------------------------ rotation week
+
+    // Mirrors PlanPatternResolver.PlanTextFor: whole weeks from the anchor,
+    // modulo the rotation, positive before the anchor.
+    [TestCase(0, 0)]
+    [TestCase(6, 0)]
+    [TestCase(7, 1)]
+    [TestCase(20, 2)]
+    [TestCase(21, 0)]
+    [TestCase(-1, 2)]
+    [TestCase(-7, 2)]
+    [TestCase(-8, 1)]
+    [TestCase(-21, 0)]
+    public void RotationWeekIndex_IsWholeWeeksFromTheAnchor_ModuloTheRotation(int daysFromAnchor, int expected)
+    {
+        Assert.That(TimePlanning.Pn.Services.PlannerService.PlannerService.RotationWeekIndex(
+            WindowStart, 3, WindowStart.AddDays(daysFromAnchor)), Is.EqualTo(expected));
+    }
 }

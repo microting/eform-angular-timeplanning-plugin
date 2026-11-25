@@ -58,6 +58,43 @@ export function importConfidenceChip(confidence: string | null): { key: string; 
   }
 }
 
+/** The plain-words doubt under "Det vi fandt": a translation key, its numbers, and whether it reads as a warning. */
+export interface PlannerImportEvidence {
+  key: string;
+  params: Record<string, number>;
+  warning: boolean;
+}
+
+/** The evidence line for a count, or null when the server sent no count. */
+function evidenceOf(key: string, param: string, count: number | null, warning: boolean): PlannerImportEvidence | null {
+  return count == null ? null : {key, params: {[param]: count}, warning};
+}
+
+/**
+ * The plain-words doubt under "Det vi fandt" of a recognised worker: how much
+ * of the sheet backs the proposal. Medium reads as a warning; null when the
+ * server sent no numbers for it.
+ */
+export function importEvidence(worker: PlannerImportWorkerModel): PlannerImportEvidence | null {
+  if (!worker.recognised) {
+    return null;
+  }
+  switch (worker.confidence) {
+    case PlannerImportConfidences.high:
+      return evidenceOf('plannerImportSeenWeeks', 'weeks', worker.weeksSeen, false);
+    case PlannerImportConfidences.medium:
+      if (isEmptyPattern(worker.days ?? [])) {
+        return {key: 'plannerImportEmptySheet', params: {}, warning: true};
+      }
+      // A 1-week pattern counts whole weeks in which every day was seen, as a rotation counts cycles.
+      return (worker.rotationWeeks ?? 1) > 1
+        ? evidenceOf('plannerImportSeenOnlyCycles', 'cycles', worker.cyclesSeen, true)
+        : evidenceOf('plannerImportSeenOnlyWeeks', 'weeks', worker.cyclesSeen, true);
+    default:
+      return null;
+  }
+}
+
 /**
  * Screen 6, the one-off import from the Google Sheet (#5489): preview, then
  * review and edit, then apply. Applying retires the sheet in the same
@@ -82,6 +119,7 @@ export class PlannerImportDialogComponent implements OnInit {
   readonly rotationOptions = ROTATION_WEEK_OPTIONS;
   readonly importReasonKey = importReasonKey;
   readonly importConfidenceChip = importConfidenceChip;
+  readonly importEvidence = importEvidence;
   readonly mondaysOnly = mondaysOnly;
 
   step: 'preview' | 'review' | 'apply' | 'done' = 'preview';

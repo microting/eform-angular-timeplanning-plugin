@@ -45,12 +45,12 @@ test.describe('Planner - absence over a period', () => {
     expect(previewed.workDays).toBe(5);
     expect(previewed.plannedHours).toBe(37.5);
     await expect(page.locator('[data-testid="planner-absence-preview-headline"]'))
-      .toHaveText('5 arbejdsdage · 37,5 planlagte timer bliver til ferie');
+      .toHaveText('5 arbejdsdage · 37,50 planlagte timer bliver til ferie');
     for (const key of week.slice(0, 5)) {
       const row = page.locator(`[data-testid="planner-absence-preview-row-${key}"]`);
       await expect(row).toHaveAttribute('data-outcome', 'apply');
       await expect(row).toContainText('Ferie');
-      await expect(row).toContainText('7,5');
+      await expect(row).toContainText('7,50');
     }
     for (const key of week.slice(5)) {
       const row = page.locator(`[data-testid="planner-absence-preview-row-${key}"]`);

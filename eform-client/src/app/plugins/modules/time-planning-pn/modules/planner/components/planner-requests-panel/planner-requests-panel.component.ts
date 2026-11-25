@@ -18,8 +18,8 @@ import {PlannerAbsenceOutcomes, PlannerAbsencePreviewModel, PlannerGridModel, Pl
 import {TimePlanningPnPlannerService} from '../../services';
 import {absenceTypeKey} from '../../planner-absence-types';
 import {
-  capitalizeFirst, dateKey, dateKeysBetween, formatPlannerDate, formatPlannerHours, onNoReply, parseCalendarDate, toTransportDate,
-  workerInitials,
+  capitalizeFirst, dateKey, dateKeysBetween, formatPlannerDate, formatPlannerHours, labelInSentence, onNoReply, parseCalendarDate,
+  toTransportDate, workerInitials,
 } from '../../planner.utils';
 
 /** A pending request as the panel shows it. */
@@ -48,6 +48,8 @@ export interface PlannerStaffingDay {
   date: Date;
   /** Other workers planned that day who already have absence. */
   absentNames: string[];
+  /** Their absence type's translation key when they all share one known type, else null ("fravær"). */
+  absentTypeKey: string | null;
   /** Workers still at work after approving. */
   working: number;
   /** Workers planned that day before any absence. */
@@ -83,15 +85,19 @@ export function staffingDays(grid: PlannerGridModel | null, worker: PlannerWorke
     if (!ownCell || ownCell.planHours <= 0 || ownCell.messageId != null) {
       continue;
     }
-    const absentNames = others
-      .filter(o => {
-        const cell = o.cells.get(key);
-        return !!cell && cell.planHours > 0 && cell.messageId != null;
-      })
-      .map(o => o.name);
+    const absent = others.flatMap(o => {
+      const cell = o.cells.get(key);
+      return cell && cell.planHours > 0 && cell.messageId != null ? [{name: o.name, typeKey: absenceTypeKey(cell.messageId)}] : [];
+    });
+    const absentNames = absent.map(o => o.name);
+    // One type for all of them names it ("ferie"); mixed or unknown types read as "fravær".
+    const typeKeys = new Set(absent.map(o => o.typeKey));
+    const absentTypeKey = typeKeys.size === 1 ? [...typeKeys][0] : null;
     const working = Math.max(total.plannedHeadcount - 1, 0);
     if (absentNames.length > 0 || working === 0) {
-      days.push({date: parseCalendarDate(total.date), absentNames, working, planned: total.plannedHeadcount + absentNames.length});
+      days.push({
+        date: parseCalendarDate(total.date), absentNames, absentTypeKey, working, planned: total.plannedHeadcount + absentNames.length,
+      });
     }
   }
   return days;
@@ -266,7 +272,11 @@ export class PlannerRequestsPanelComponent implements OnInit, OnChanges {
     const date = formatPlannerDate(this.translateService, day.date, {weekday: 'long', day: 'numeric', month: 'short'});
     const params = {day: capitalizeFirst(this.translateService, date), n: day.working, m: day.planned};
     return day.absentNames.length > 0
-      ? this.translateService.instant('plannerStaffingOthersAbsent', {...params, names: day.absentNames.join(', ')})
+      ? this.translateService.instant('plannerStaffingOthersAbsent', {
+        ...params,
+        names: day.absentNames.join(', '),
+        type: labelInSentence(this.translateService, day.absentTypeKey ?? 'plannerAbsenceGeneric'),
+      })
       : this.translateService.instant('plannerStaffingNobodyLeft', params);
   }
 

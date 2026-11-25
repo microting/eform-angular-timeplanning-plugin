@@ -113,12 +113,19 @@ export function capitalizeFirst(translate: TranslateService, text: string): stri
   return text.charAt(0).toLocaleUpperCase(plannerLocale(translate)) + text.slice(1);
 }
 
-/** Hours in the user's language, at most 2 decimals: "37,5" (da), "37.5" (en); "" for null. */
+/** A translated label as it reads mid-sentence ("… bliver til ferie"): lower case, except in German, where nouns keep their capital. */
+export function labelInSentence(translate: TranslateService, key: string): string {
+  const label = String(translate.instant(key));
+  const locale = plannerLocale(translate);
+  return locale.toLowerCase().startsWith('de') ? label : label.toLocaleLowerCase(locale);
+}
+
+/** Hours in the user's language with two decimals, as the design writes them: "37,50" (da), "37.50" (en); "" for null. */
 export function formatPlannerHours(translate: TranslateService, value: number | null | undefined): string {
   if (value == null) {
     return '';
   }
-  return new Intl.NumberFormat(plannerLocale(translate), {maximumFractionDigits: 2}).format(value);
+  return new Intl.NumberFormat(plannerLocale(translate), {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(value);
 }
 
 const TIME = '[0-9]{1,2}(?:[:.,][0-9]{1,2}|½)?';

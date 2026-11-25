@@ -3,8 +3,8 @@ import {TranslateService} from '@ngx-translate/core';
 import {EMPTY, of, throwError} from 'rxjs';
 import {
   dateKey, dateKeysBetween, formatPlannerHours, fullPatternGrid, isEmptyPattern, isoDayOfWeek, isoWeekNumber, isValidPattern,
-  keyToTransportDate, mondayOf, onNoReply, parseCalendarDate, readShortForm, segmentedKeydown, shortFormKind, toTransportDate,
-  trimmedPatternDays, workerInitials,
+  keyToTransportDate, labelInSentence, mondayOf, onNoReply, parseCalendarDate, readShortForm, segmentedKeydown, shortFormKind,
+  toTransportDate, trimmedPatternDays, workerInitials,
 } from './planner.utils';
 import {importReasonKey} from './components/planner-import-dialog/planner-import-dialog.component';
 import {absenceTypeKey, DEFAULT_ABSENCE_TYPE, PLANNER_ABSENCE_TYPES} from './planner-absence-types';
@@ -119,17 +119,29 @@ describe('planner dates', () => {
 describe('planner hours', () => {
   const translate = (lang: string) => ({currentLang: lang, defaultLang: 'da'}) as TranslateService;
 
-  it('formats hours in the user\'s language with at most 2 decimals', () => {
-    expect(formatPlannerHours(translate('da'), 37.5)).toBe('37,5');
-    expect(formatPlannerHours(translate('en-US'), 37.5)).toBe('37.5');
-    expect(formatPlannerHours(translate('da'), 7.4)).toBe('7,4');
-    expect(formatPlannerHours(translate('da'), 37)).toBe('37');
+  it('formats hours in the user\'s language with exactly 2 decimals', () => {
+    expect(formatPlannerHours(translate('da'), 37.5)).toBe('37,50');
+    expect(formatPlannerHours(translate('en-US'), 37.5)).toBe('37.50');
+    expect(formatPlannerHours(translate('da'), 7.4)).toBe('7,40');
+    expect(formatPlannerHours(translate('da'), 37)).toBe('37,00');
+    expect(formatPlannerHours(translate('da'), 7.756)).toBe('7,76');
     expect(formatPlannerHours(translate('en-US'), 1 / 3)).toBe('0.33');
   });
 
   it('formats nothing for a missing norm', () => {
     expect(formatPlannerHours(translate('da'), null)).toBe('');
     expect(formatPlannerHours(translate('da'), undefined)).toBe('');
+  });
+});
+
+describe('planner labels mid-sentence', () => {
+  const translate = (lang: string, label: string) =>
+    ({currentLang: lang, defaultLang: 'da', instant: () => label}) as unknown as TranslateService;
+
+  it('lower-cases the label, except German nouns, which keep their capital', () => {
+    expect(labelInSentence(translate('de-DE', 'Urlaub'), 'Vacation')).toBe('Urlaub');
+    expect(labelInSentence(translate('da', 'Ferie'), 'Vacation')).toBe('ferie');
+    expect(labelInSentence(translate('en-US', 'Vacation'), 'Vacation')).toBe('vacation');
   });
 });
 

@@ -31,7 +31,13 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 /// first week.</item>
 /// <item>A recognised rotation's confidence is <c>high</c> when every rotation
 /// day was seen at least <see cref="HighConfidenceSightings"/> times (three or
-/// more whole cycles in the window), else <c>medium</c> (the minimum, two).</item>
+/// more whole cycles in the window), else <c>medium</c> (the minimum, two).
+/// An empty sheet (every rotation day holds no shift: "Ingen plan") is always
+/// <c>medium</c>, however often it was seen: nothing in it proves a rotation.</item>
+/// <item>As evidence for the reviewer, a recognised rotation reports
+/// <c>CyclesSeen</c>, the fewest sightings of any rotation day (the whole
+/// cycles observed), and <c>WeeksSeen</c>, the window weeks that held at least
+/// one known day.</item>
 /// </list>
 /// </summary>
 public static class RotationInference
@@ -57,8 +63,10 @@ public static class RotationInference
     public readonly record struct Day(DateTime Date, string? PlanText, bool IsAbsence, double PlanHours = 0);
 
     /// <param name="Confidence"><see cref="ConfidenceHigh"/> or <see cref="ConfidenceMedium"/> when recognised, else null.</param>
+    /// <param name="CyclesSeen">When recognised: the fewest sightings of any rotation day, i.e. the whole cycles observed; else null.</param>
+    /// <param name="WeeksSeen">When recognised: the distinct window weeks with at least one known (non-absence) day; else null.</param>
     public sealed record Result(bool Recognised, string? Reason, int RotationWeeks, DateTime AnchorDate,
-        List<PlanPatternDayModel> Days, string? Confidence = null);
+        List<PlanPatternDayModel> Days, string? Confidence = null, int? CyclesSeen = null, int? WeeksSeen = null);
 
     public static Result Infer(IEnumerable<Day> days, DateTime windowStart)
     {
@@ -115,10 +123,14 @@ public static class RotationInference
                     PlanText = c.Value[0]
                 })
                 .ToList();
-            var confidence = cells.Values.All(t => t.Count >= HighConfidenceSightings)
+            var cyclesSeen = cells.Values.Min(t => t.Count);
+            var weeksSeen = known.Select(d => d.Week).Distinct().Count();
+            // An empty sheet holds no shift at all: medium, however long it ran.
+            var emptySheet = patternDays.All(d => d.PlanText.Length == 0);
+            var confidence = cyclesSeen >= HighConfidenceSightings && !emptySheet
                 ? ConfidenceHigh
                 : ConfidenceMedium;
-            return new Result(true, null, period, windowStart, patternDays, confidence);
+            return new Result(true, null, period, windowStart, patternDays, confidence, cyclesSeen, weeksSeen);
         }
 
         return NotRecognised(

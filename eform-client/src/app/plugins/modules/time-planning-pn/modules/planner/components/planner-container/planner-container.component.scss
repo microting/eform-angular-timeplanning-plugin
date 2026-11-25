@@ -178,6 +178,12 @@ $name-col-width: 208px;
   min-width: 56px;
   border-left: 1px solid var(--tp-border);
   border-right: 1px solid var(--tp-border);
+
+  // "af N" and "rot.uge 2/4" stacked under the sum stay within a day cell's height.
+  .planner-hint {
+    line-height: 1.25;
+    white-space: nowrap;
+  }
 }
 
 .planner-weekend {

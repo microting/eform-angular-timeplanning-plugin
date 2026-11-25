@@ -244,7 +244,7 @@ describe('PlannerAbsenceDialogComponent', () => {
       expect(dialog.previewRows.map(r => r.outcome)).toEqual(['apply', 'dayOff', 'other']);
       expect(dialog.previewRows[0].date).toEqual(new Date(2026, 10, 9));
       expect(dialog.planLabel(dialog.previewRows[1])).toBe('plannerAbsencePlanWeekend');
-      expect(dialog.previewHeadline).toBe('plannerAbsencePreviewHeadline {"days":1,"hours":"8","type":"ferie"}');
+      expect(dialog.previewHeadline).toBe('plannerAbsencePreviewHeadline {"days":1,"hours":"8,00","type":"ferie"}');
     });
 
     it('reads dates the host\'s DateInterceptor already turned into Dates (UTC midnight)', () => {
@@ -410,7 +410,7 @@ describe('PlannerAbsenceDialogComponent template', () => {
       vi.advanceTimersByTime(PREVIEW_DEBOUNCE_MS);
       detectChanges(fixture);
       const el: HTMLElement = fixture.nativeElement;
-      expect(text(el, 'planner-absence-preview-headline')).toBe('5 arbejdsdage · 37,5 planlagte timer bliver til ferie');
+      expect(text(el, 'planner-absence-preview-headline')).toBe('5 arbejdsdage · 37,50 planlagte timer bliver til ferie');
       expect(el.querySelector('[data-testid="planner-absence-preview-row-2026-11-09"]')?.getAttribute('data-outcome')).toBe('apply');
       expect(text(el, 'planner-absence-preview-row-2026-11-14')).toContain('springes over');
       expect(text(el, 'planner-absence-save')).toContain('Registrér ferie');
