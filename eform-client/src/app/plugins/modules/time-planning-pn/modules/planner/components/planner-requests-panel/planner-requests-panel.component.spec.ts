@@ -8,6 +8,8 @@ import {EMPTY, Observable, of, Subject, throwError} from 'rxjs';
 import {TimePlanningPnAbsenceRequestsService} from '../../../../services';
 import {PlannerCellModel, PlannerGridModel, PlannerWorkerModel} from '../../models';
 import {TimePlanningPnPlannerService} from '../../services';
+import {da} from '../../../../i18n/da';
+import {ALL_LANGUAGES} from '../../../../testing/all-languages';
 import {PlannerRequestsPanelComponent, planFromPreview, staffingDays} from './planner-requests-panel.component';
 
 /** Translations as "key{params}", so a test sees which text and which values were asked for. */
@@ -137,7 +139,7 @@ describe('PlannerRequestsPanelComponent', () => {
       expect(previewAbsence).toHaveBeenCalledWith({
         assignedSiteId: 1, from: '2026-10-05T00:00:00.000Z', to: '2026-10-06T00:00:00.000Z', messageId: 1,
       });
-      expect(panel.views[0].fromPlan).toBe('plannerWorkDaysHours{"days":2,"hours":"10"}');
+      expect(panel.views[0].fromPlan).toBe('plannerWorkDaysHours{"days":2,"hours":"10,00"}');
     });
 
     it('says "1 arbejdsdag" for a single day', () => {
@@ -149,7 +151,7 @@ describe('PlannerRequestsPanelComponent', () => {
 
       panel.load();
 
-      expect(panel.views[0].fromPlan).toBe('plannerOneWorkDayHours{"hours":"7,5"}');
+      expect(panel.views[0].fromPlan).toBe('plannerOneWorkDayHours{"hours":"7,50"}');
     });
 
     it('is left out when the preview is refused, fails, or the worker is not in the grid', () => {
@@ -205,7 +207,7 @@ describe('PlannerRequestsPanelComponent', () => {
 
       // Monday: nobody absent and Bo and Carl still work, so no warning.
       // Tuesday: Anna is absent; planned 3 (Frederik, Anna, Bo), at work after approving: Bo.
-      expect(days).toEqual([{date: new Date(2026, 9, 6), absentNames: ['Anna Hansen'], working: 1, planned: 3}]);
+      expect(days).toEqual([{date: new Date(2026, 9, 6), absentNames: ['Anna Hansen'], absentTypeKey: 'DayOff', working: 1, planned: 3}]);
     });
 
     it('still warns when approving leaves nobody at work', () => {
@@ -214,7 +216,7 @@ describe('PlannerRequestsPanelComponent', () => {
       g.dayTotals = [{date: MON, plannedHeadcount: 1, pendingAbsenceRequests: 1}];
 
       expect(staffingDays(g, g.workers[0], new Date(2026, 9, 5), new Date(2026, 9, 5)))
-        .toEqual([{date: new Date(2026, 9, 5), absentNames: [], working: 0, planned: 1}]);
+        .toEqual([{date: new Date(2026, 9, 5), absentNames: [], absentTypeKey: null, working: 0, planned: 1}]);
     });
 
     it('ignores days the worker is not planned, days outside the request and an unknown worker', () => {
@@ -234,9 +236,45 @@ describe('PlannerRequestsPanelComponent', () => {
 
       const day = new Date(2026, 9, 6).toLocaleDateString('da', {weekday: 'long', day: 'numeric', month: 'short'});
       expect(panel.views[0].staffing).toEqual([`plannerStaffingOthersAbsent${JSON.stringify({
-        day: day.charAt(0).toLocaleUpperCase() + day.slice(1), n: 1, m: 3, names: 'Anna Hansen',
+        day: day.charAt(0).toLocaleUpperCase() + day.slice(1), n: 1, m: 3, names: 'Anna Hansen', type: 'dayoff',
       })}`]);
       expect(panel.views[0].initials).toBe('FH');
+    });
+
+    it('names the type when every absent colleague shares it, and says "fravær" when the types differ or are unknown', () => {
+      const g = grid();
+      // Tuesday: Carl is planned too, and on vacation like Anna.
+      g.workers[1].cells = [cell(MON, 0), cell(TUE, 7.5, 2)];
+      g.workers[3].cells = [cell(MON, 7.5), cell(TUE, 7.5, 2)];
+      const range = [new Date(2026, 9, 6), new Date(2026, 9, 6)] as const;
+      expect(staffingDays(g, g.workers[0], ...range)[0].absentTypeKey).toBe('Vacation');
+
+      g.workers[3].cells = [cell(MON, 7.5), cell(TUE, 7.5, 3)];
+      expect(staffingDays(g, g.workers[0], ...range)[0].absentTypeKey).toBeNull();
+
+      g.workers[3].cells = [cell(MON, 7.5), cell(TUE, 7.5, 99)];
+      g.workers[1].cells = [cell(MON, 0), cell(TUE, 7.5, 99)];
+      expect(staffingDays(g, g.workers[0], ...range)[0].absentTypeKey).toBeNull();
+    });
+
+    it('writes the generic "fravær" in lower case for mixed types', () => {
+      const g = grid();
+      g.workers[3].cells = [cell(MON, 7.5), cell(TUE, 7.5, 3)];
+      const panel = createPanel(vi.fn(() => of({success: true, model: [request()]})));
+      panel.grid = g;
+
+      panel.load();
+
+      expect(panel.views[0].staffing[0]).toContain('"names":"Anna Hansen, Carl Berg","type":"plannerabsencegeneric"');
+    });
+
+    it('has a {{type}} in every language\'s staffing warning and a generic word for it', () => {
+      for (const lang of ALL_LANGUAGES) {
+        expect(lang['plannerStaffingOthersAbsent']).toContain('{{type}}');
+        expect(lang['plannerAbsenceGeneric']).toBeTruthy();
+      }
+      expect(da.plannerStaffingOthersAbsent.replace('{{type}}', 'ferie'))
+        .toBe('{{day}} har {{names}} allerede ferie – så er I {{n}} af {{m}} på arbejde.');
     });
   });
 });

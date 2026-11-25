@@ -32,3 +32,12 @@
     vertical-align: middle;
   }
 }
+
+// The doubt under "Det vi fandt" on its own line; a medium one in the amber of the Middel chip.
+.planner-import-evidence {
+  display: block;
+}
+
+.planner-import-evidence-warning {
+  color: var(--text-warning-dark);
+}

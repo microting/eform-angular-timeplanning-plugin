@@ -26,8 +26,17 @@ public class PlannerImportWorkerModel
     /// <summary>When not recognised: "unparsable", "inconsistent", "insufficientHistory" or "hoursOnly" (plan hours without shifts).</summary>
     public string? Reason { get; set; }
 
-    /// <summary>When recognised: "high" (every rotation day seen 3+ times) or "medium" (seen twice); null when not recognised.</summary>
+    /// <summary>
+    /// When recognised: "high" (every rotation day seen 3+ times) or "medium" (seen twice, or an
+    /// empty sheet with no shift at all); null when not recognised.
+    /// </summary>
     public string? Confidence { get; set; }
+
+    /// <summary>When recognised: the whole cycles observed (fewest sightings of any rotation day); else null.</summary>
+    public int? CyclesSeen { get; set; }
+
+    /// <summary>When recognised: the window weeks with at least one known (non-absence) day; else null.</summary>
+    public int? WeeksSeen { get; set; }
 
     public int? RotationWeeks { get; set; }
     public DateTime? AnchorDate { get; set; }

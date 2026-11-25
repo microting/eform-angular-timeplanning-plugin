@@ -21,7 +21,7 @@ import {
 } from '../../models';
 import {TimePlanningPnPlannerService} from '../../services';
 import {
-  dateKey, formatPlannerDate, formatPlannerHours, isoDayOfWeek, onNoReply, parseCalendarDate, plannerLocale, segmentedKeydown,
+  dateKey, formatPlannerDate, formatPlannerHours, isoDayOfWeek, labelInSentence, onNoReply, parseCalendarDate, segmentedKeydown,
   toTransportDate, workerInitials,
 } from '../../planner.utils';
 import {absenceTypeKey, DEFAULT_ABSENCE_TYPE, PLANNER_ABSENCE_TYPES} from '../../planner-absence-types';
@@ -224,9 +224,10 @@ export class PlannerAbsenceDialogComponent {
     return missing === 'overlap' ? {count: this.overlapCount} : undefined;
   }
 
-  /** The chosen type in lower case, for "… bliver til ferie" and "Registrér ferie". */
-  get typeLabelLower(): string {
-    return this.typeLabel.toLocaleLowerCase(plannerLocale(this.translateService));
+  /** The chosen type as it reads mid-sentence, for "… bliver til ferie" and "Registrér ferie". */
+  get typeLabelInSentence(): string {
+    const key = absenceTypeKey(this.messageId);
+    return key ? labelInSentence(this.translateService, key) : '';
   }
 
   get typeLabel(): string {
@@ -237,7 +238,7 @@ export class PlannerAbsenceDialogComponent {
   get ctaText(): string {
     return this.messageId == null
       ? this.translateService.instant('plannerRegisterAbsence')
-      : this.translateService.instant('plannerRegisterAbsenceType', {type: this.typeLabelLower});
+      : this.translateService.instant('plannerRegisterAbsenceType', {type: this.typeLabelInSentence});
   }
 
   get previewHeadline(): string {
@@ -247,7 +248,7 @@ export class PlannerAbsenceDialogComponent {
     return this.translateService.instant('plannerAbsencePreviewHeadline', {
       days: this.preview.workDays,
       hours: this.hours(this.preview.plannedHours),
-      type: this.typeLabelLower,
+      type: this.typeLabelInSentence,
     });
   }
 

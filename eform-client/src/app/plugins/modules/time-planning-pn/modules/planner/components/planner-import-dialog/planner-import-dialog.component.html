@@ -86,7 +86,16 @@
                     <mat-datepicker #anchorPicker></mat-datepicker>
                   </mat-form-field>
                 </td>
-                <td class="planner-hint">{{ summary(row) }}</td>
+                <td class="planner-hint">
+                  {{ summary(row) }}
+                  @if (importEvidence(row.worker); as evidence) {
+                    <span
+                      class="planner-import-evidence"
+                      [class.planner-import-evidence-warning]="evidence.warning"
+                      [attr.data-testid]="'planner-import-evidence-' + row.worker.assignedSiteId"
+                    >{{ evidence.key | translate: evidence.params }}</span>
+                  }
+                </td>
                 <td>
                   @if (importConfidenceChip(row.worker.confidence); as chip) {
                     <span

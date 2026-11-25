@@ -54,9 +54,9 @@ export function transport(key: string): string {
   return `${key}T00:00:00.000Z`;
 }
 
-/** The hours as the grid shows them in Danish: 7.5 -> "7,5", 22 -> "22". */
+/** The hours as the grid shows them in Danish, with two decimals: 7.5 -> "7,50", 22 -> "22,00". */
 export function danishHours(value: number): string {
-  return String(value).replace('.', ',');
+  return value.toFixed(2).replace('.', ',');
 }
 
 // ------------------------------------------------------------------ API

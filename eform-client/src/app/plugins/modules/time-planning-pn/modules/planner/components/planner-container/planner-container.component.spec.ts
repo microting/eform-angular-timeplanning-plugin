@@ -3,13 +3,16 @@ import {ElementRef, NgZone} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 import {Overlay} from '@angular/cdk/overlay';
 import {MatDialog} from '@angular/material/dialog';
-import {TranslateService} from '@ngx-translate/core';
+import {TranslateModule, TranslateService} from '@ngx-translate/core';
 import {ToastrService} from 'ngx-toastr';
 import {Store} from '@ngrx/store';
+import {AppMenuStateService} from 'src/app/common/store';
 import {EMPTY, of} from 'rxjs';
 import {TimePlanningPnSettingsService} from '../../../../services';
 import {TimePlanningPnPlannerService} from '../../services';
 import {PlannerGridModel, PlannerWorkerModel} from '../../models';
+import {da} from '../../../../i18n/da';
+import {pageProviders} from '../../../../testing/page-providers';
 import {PLANNER_HELP_DISMISSED_KEY, PlannerContainerComponent} from './planner-container.component';
 
 const storeStub = (isAdmin = false) => ({provide: Store, useValue: {select: vi.fn(() => of(isAdmin))}});
@@ -69,7 +72,7 @@ describe('PlannerContainerComponent short-form editor', () => {
 
     component.shortForm = '7-15/0,5';
     expect(component.shortFormHours).toBe('plannerEditorHours');
-    expect(instant).toHaveBeenLastCalledWith('plannerEditorHours', {hours: '7,5'});
+    expect(instant).toHaveBeenLastCalledWith('plannerEditorHours', {hours: '7,50'});
 
     component.shortForm = '6-10;14-18/0,25';
     expect(component.shortFormHours).toBe('plannerEditorHours');
@@ -317,5 +320,56 @@ describe('PlannerContainerComponent periods, badge, help and dialogs', () => {
       component.openPatterns();
       expect(dialogOpen.mock.calls[1][1].data.worker.assignedSiteId).toBe(13);
     });
+  });
+});
+
+/** The week sum cell, rendered: the rotation week under "af N" for a rotating worker. */
+describe('PlannerContainerComponent week sum', () => {
+  const MONDAY = '2026-11-16T00:00:00';
+  const weekSum = (rotationWeek: number | null) => ({
+    isoYear: 2026, isoWeek: 47, weekStart: MONDAY, plannedHours: 37.5, normHours: 37, differenceHours: 0.5, rotationWeek,
+  });
+
+  async function render(workers: PlannerWorkerModel[]): Promise<HTMLElement> {
+    const dates = Array.from({length: 7}, (_, i) => `2026-11-${16 + i}T00:00:00`);
+    const getGrid = vi.fn(() => of({success: true, model: gridOf({from: dates[0], to: dates[6], dates, workers})}));
+    TestBed.configureTestingModule({
+      imports: [PlannerContainerComponent, TranslateModule.forRoot()],
+      providers: [
+        ...pageProviders(),
+        // The page subheader reads its title from the menu.
+        {provide: AppMenuStateService, useValue: {getTitleByUrl: () => ''}},
+        {provide: TimePlanningPnPlannerService, useValue: {getGrid, updateCells: vi.fn()}},
+        {provide: TimePlanningPnSettingsService, useValue: {getAvailableTags: vi.fn(() => of({success: true, model: []}))}},
+        {provide: MatDialog, useValue: {open: vi.fn()}},
+        {provide: ToastrService, useValue: {success: vi.fn(), error: vi.fn(), warning: vi.fn()}},
+        storeStub(true),
+      ],
+    });
+    const fixture = TestBed.createComponent(PlannerContainerComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture.nativeElement;
+  }
+
+  it('shows "rot.uge n/N" for a rotating worker, and nothing for a fixed week or an unknown rotation week', async () => {
+    const el = await render([
+      {...worker(12), rotationWeeks: 4, weeks: [weekSum(2)]},
+      {...worker(13), rotationWeeks: 1, weeks: [weekSum(1)]},
+      {...worker(14), rotationWeeks: 4, weeks: [weekSum(null)]},
+    ]);
+
+    const rotation = el.querySelector('[data-testid="planner-week-rotation-12-2026-11-16"]');
+    expect(rotation?.textContent?.trim()).toBe('plannerRotationWeekOf');
+    expect(rotation?.classList).toContain('planner-hint');
+    // "af N" and the sum itself stay as they were.
+    expect(el.querySelector('[data-testid="planner-week-12-2026-11-16"]')?.textContent).toContain('plannerOfNorm');
+    expect(el.querySelector('[data-testid="planner-week-rotation-13-2026-11-16"]')).toBeNull();
+    expect(el.querySelector('[data-testid="planner-week-rotation-14-2026-11-16"]')).toBeNull();
+  });
+
+  it('reads "rot.uge 2/4" in Danish', () => {
+    expect(da.plannerRotationWeekOf.replace('{{week}}', '2').replace('{{weeks}}', '4')).toBe('rot.uge 2/4');
   });
 });

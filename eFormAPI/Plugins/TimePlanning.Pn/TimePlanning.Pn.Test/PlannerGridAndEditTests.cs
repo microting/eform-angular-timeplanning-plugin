@@ -86,9 +86,11 @@ public class PlannerGridAndEditTests : PlannerTestBase
         Assert.That(p.WeeklyNormHours, Is.Null);
         Assert.That(p.Weeks.Select(w => (w.WeekStart, w.PlannedHours, w.NormHours)),
             Is.EqualTo(new[] { (from, 52.5, (double?)null), (from.AddDays(7), 52.5, (double?)null) }));
+        Assert.That(p.Weeks.All(w => w.RotationWeek == null), Is.True, "a 1-week rotation has no rotation week");
 
         var n = grid.Workers.Single(w => w.SiteId == 8101);
         Assert.That(n.HasPattern, Is.False);
+        Assert.That(n.Weeks.All(w => w.RotationWeek == null), Is.True, "no pattern, no rotation week");
         Assert.That(n.WeeklyNormHours, Is.EqualTo(37));
         var locked = n.Cells.Single(c => c.Date == from);
         Assert.That(locked.Locked, Is.True);
@@ -247,6 +249,46 @@ public class PlannerGridAndEditTests : PlannerTestBase
         });
         Assert.That(invalid.Success, Is.False);
         Assert.That(invalid.Message, Is.EqualTo("PlannerShortFormInvalid"));
+    }
+
+    // The week sum names the rotation week as PlanPatternResolver resolves it:
+    // anchored on this Monday, next Monday is week 2 of 2, the one after week 1.
+    [Test]
+    public async Task Grid_WeekSums_CarryTheRotationWeek_OfAMultiWeekPattern()
+    {
+        await SeedAdminCallerAsync(UserService);
+        var patterned = await CreateWorkerAsync(8111);
+        await CreatePatternAsync(TimePlanningPnDbContext!, patterned, Today, rotationWeeks: 2,
+            anchor: MondayOnOrBefore(Today));
+        await CreateWorkerAsync(8112);
+
+        var result = await BuildService().GetGridAsync(new PlannerGridRequestModel { From = NextMonday, Days = 14 });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var p = result.Model!.Workers.Single(w => w.SiteId == 8111);
+        Assert.That(p.Weeks.Select(w => (w.WeekStart, w.RotationWeek)),
+            Is.EqualTo(new[] { (NextMonday, (int?)2), (NextMonday.AddDays(7), (int?)1) }));
+        var plain = result.Model.Workers.Single(w => w.SiteId == 8112);
+        Assert.That(plain.Weeks.All(w => w.RotationWeek == null), Is.True);
+    }
+
+    // PlanPatternResolver resolves nothing before ValidFrom, so a week that ends
+    // before the pattern starts has no rotation week; the week it starts in
+    // (here on its Wednesday) has one.
+    [Test]
+    public async Task Grid_WeekSums_HaveNoRotationWeek_BeforeThePatternStarts()
+    {
+        await SeedAdminCallerAsync(UserService);
+        var patterned = await CreateWorkerAsync(8113);
+        await CreatePatternAsync(TimePlanningPnDbContext!, patterned, NextMonday.AddDays(9), rotationWeeks: 2,
+            anchor: MondayOnOrBefore(Today));
+
+        var result = await BuildService().GetGridAsync(new PlannerGridRequestModel { From = NextMonday, Days = 14 });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        var p = result.Model!.Workers.Single(w => w.SiteId == 8113);
+        Assert.That(p.Weeks.Select(w => (w.WeekStart, w.RotationWeek)),
+            Is.EqualTo(new[] { (NextMonday, (int?)null), (NextMonday.AddDays(7), (int?)1) }));
     }
 
     // Owner decision: only the clicked cell's rotation week changes. With a

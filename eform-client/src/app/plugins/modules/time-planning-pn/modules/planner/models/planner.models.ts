@@ -78,6 +78,8 @@ export interface PlannerWeekSumModel {
   plannedHours: number;
   normHours: number | null;
   differenceHours: number | null;
+  /** The week of the worker's rotation this week falls on (1-based), or null without a pattern. */
+  rotationWeek: number | null;
 }
 
 export interface PlannerCellModel {
@@ -258,6 +260,10 @@ export interface PlannerImportWorkerModel {
   rotationWeeks: number | null;
   anchorDate: string | null;
   days: PlanPatternDayModel[];
+  /** Whole rotation cycles seen in the sheet (the fewest sightings of any rotation day); null when not known. */
+  cyclesSeen: number | null;
+  /** Weeks in the sheet with known days; null when not known. */
+  weeksSeen: number | null;
 }
 
 /** POST planner/import/apply. */
