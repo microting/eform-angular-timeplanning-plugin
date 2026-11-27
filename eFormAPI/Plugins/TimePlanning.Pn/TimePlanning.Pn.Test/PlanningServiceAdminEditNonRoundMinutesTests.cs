@@ -331,4 +331,136 @@ public class PlanningServiceAdminEditNonRoundMinutesTests : TestBaseSetup
         Assert.That(result.Success, Is.True, result.Message);
         Assert.That(await StoredPlanChangedByAdmin(planning.Id), Is.False);
     }
+
+    // ---------------------------------------------------------------------
+    // Pause tick encoding regressions. Id n is (n - 1) * 5 minutes after
+    // midnight for Start/Stop (85 = 07:00, 181 = 15:00) and (n - 1) * 5 minutes
+    // of pause for Pause{N}Id (7 = 30 min); 0 = no pause.
+    // ---------------------------------------------------------------------
+
+    [Test]
+    public async Task AdminUpdate_DetailedPauseEditing_ThirtyMinutePause_StoresPause1IdThatDecodesToThirtyMinutes()
+    {
+        await new AssignedSiteEntity
+        {
+            SiteId = 9621,
+            UseOneMinuteIntervals = false,
+            UseDetailedPauseEditing = true,
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        }.Create(TimePlanningPnDbContext!);
+
+        var date = new DateTime(2026, 5, 19, 0, 0, 0);
+        var planning = new PlanRegistrationEntity
+        {
+            SdkSitId = 9621,
+            Date = date,
+            PlanText = "",
+            CommentOffice = "",
+            CommentOfficeAll = "",
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        };
+        await planning.Create(TimePlanningPnDbContext!);
+
+        var model = new TimePlanningPlanningPrDayModel
+        {
+            Id = planning.Id,
+            Date = date,
+            CommentOffice = "",
+            Start1Id = 85,  // 07:00
+            Stop1Id = 181,  // 15:00
+            Start1StartedAt = date.AddHours(7),
+            Stop1StoppedAt = date.AddHours(15),
+            Pause1StartedAt = date.AddHours(12),
+            Pause1StoppedAt = date.AddHours(12).AddMinutes(30),
+        };
+
+        var result = await _service.Update(planning.Id, model);
+        Assert.That(result.Success, Is.True, result.Message);
+
+        var stored = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .SingleAsync(x => x.Id == planning.Id);
+        var decoded = stored.Pause1Id > 0 ? (stored.Pause1Id - 1) * 5 : 0;
+        Assert.That(stored.Pause1Id, Is.EqualTo(7),
+            $"A 12:00-12:30 pause saved through the detailed pause editor must store Pause1Id 7 " +
+            $"(30 / 5 + 1), because every reader decodes (id - 1) * 5. Stored Pause1Id " +
+            $"{stored.Pause1Id} decodes to {decoded} min.");
+    }
+
+    [Test]
+    public async Task AdminUpdate_OneMinuteSite_CommentOnly_KeepsExactPauseInNettoHoursInSeconds()
+    {
+        await new AssignedSiteEntity
+        {
+            SiteId = 9622,
+            UseOneMinuteIntervals = true,
+            UseDetailedPauseEditing = false,
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        }.Create(TimePlanningPnDbContext!);
+
+        // As the device left it: 07:00-15:00 with a 12:03-12:31 pause (28 min),
+        // hours to the second.
+        var date = new DateTime(2026, 5, 20, 0, 0, 0);
+        const int expectedNettoSeconds = (480 - 28) * 60;
+        var planning = new PlanRegistrationEntity
+        {
+            SdkSitId = 9622,
+            Date = date,
+            Start1Id = 85,
+            Stop1Id = 181,
+            Pause1Id = 6,
+            Start1StartedAt = date.AddHours(7),
+            Stop1StoppedAt = date.AddHours(15),
+            Pause1StartedAt = date.AddHours(12).AddMinutes(3),
+            Pause1StoppedAt = date.AddHours(12).AddMinutes(31),
+            NettoHours = expectedNettoSeconds / 3600.0,
+            NettoHoursInSeconds = expectedNettoSeconds,
+            RegisteredUnderOneMinuteIntervals = true,
+            PlanText = "",
+            CommentOffice = "",
+            CommentOfficeAll = "",
+            WorkflowState = Constants.WorkflowStates.Created,
+            CreatedByUserId = 1,
+            UpdatedByUserId = 1,
+        };
+        await planning.Create(TimePlanningPnDbContext!);
+
+        // The manager only adds a comment; everything else is sent back as served.
+        var model = new TimePlanningPlanningPrDayModel
+        {
+            Id = planning.Id,
+            Date = date,
+            CommentOffice = "Checked by manager",
+            Start1Id = 85,
+            Stop1Id = 181,
+            Pause1Id = 6,
+            Break1Shift = 6,
+            Start1StartedAt = date.AddHours(7),
+            Stop1StoppedAt = date.AddHours(15),
+        };
+
+        var result = await _service.Update(planning.Id, model);
+        Assert.That(result.Success, Is.True, result.Message);
+
+        var stored = await TimePlanningPnDbContext!.PlanRegistrations.AsNoTracking()
+            .SingleAsync(x => x.Id == planning.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(stored.CommentOffice, Is.EqualTo("Checked by manager"));
+            Assert.That(stored.Pause1OverrideMinutes, Is.Null,
+                "A comment-only save must not set a pause override.");
+            Assert.That(stored.NettoHoursInSeconds, Is.EqualTo(expectedNettoSeconds),
+                $"One-minute site: a comment-only save must keep the exact 28 min pause, " +
+                $"NettoHoursInSeconds = (480 - 28) * 60 = {expectedNettoSeconds}. Got " +
+                $"{stored.NettoHoursInSeconds} = {480 - stored.NettoHoursInSeconds / 60.0} min pause, " +
+                $"i.e. the pause was re-counted on the 5-minute grid.");
+            Assert.That(stored.NettoHours, Is.EqualTo(expectedNettoSeconds / 3600.0).Within(1e-9),
+                $"NettoHours must match NettoHoursInSeconds {expectedNettoSeconds}.");
+        });
+    }
 }
