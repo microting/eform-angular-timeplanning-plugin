@@ -354,7 +354,7 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     const day = dayKey(this.data.planningPrDayModels.date);
     this.canReconcile = !!this.data.planningPrDayModels.id
       && day !== null && day < dayKey(new Date());
-    this.todaysFlex = this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
+    this.todaysFlex = this.effectiveNettoHours() - this.data.planningPrDayModels.planHours;
     this.date = Date.parse(this.data.planningPrDayModels.date);
 
     const flagsGroup: { [k: string]: FormControl<boolean> } = {};
@@ -1839,6 +1839,12 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** An active override IS the day's effective netto; otherwise the registrations' actual hours. */
+  private effectiveNettoHours(): number {
+    const day = this.data.planningPrDayModels;
+    return day.nettoHoursOverrideActive ? day.nettoHoursOverride : day.actualHours;
+  }
+
   // ===== Genberegn plan/actual/todaysFlex og sumFlexEnd (samme logik som før, men baseret på form) =====
   calculatePlanHours() {
     this.markAllAsTouched(this.workdayForm);
@@ -1917,13 +1923,7 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     this.data.planningPrDayModels.actualHours = actualTimeInMinutes / 60;
 
     // Flex
-    if (this.data.planningPrDayModels.nettoHoursOverrideActive) {
-      this.todaysFlex =
-        this.data.planningPrDayModels.nettoHoursOverride - this.data.planningPrDayModels.planHours;
-    } else {
-      this.todaysFlex =
-        this.data.planningPrDayModels.actualHours - this.data.planningPrDayModels.planHours;
-    }
+    this.todaysFlex = this.effectiveNettoHours() - this.data.planningPrDayModels.planHours;
 
     // PaidOutFlex & sumFlexEnd
     if (this.data.planningPrDayModels.paidOutFlex !== null) {
