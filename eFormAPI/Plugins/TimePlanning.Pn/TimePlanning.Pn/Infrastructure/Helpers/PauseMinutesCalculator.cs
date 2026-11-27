@@ -5,19 +5,20 @@ namespace TimePlanning.Pn.Infrastructure.Helpers;
 
 /// <summary>
 /// Pure derivation of a PauseNId from the detailed pause start/stop slots of a
-/// <see cref="PlanRegistration"/>.
-///
-/// Historically the admin path accumulated total pause minutes into
-/// <c>ShiftNPauseNumber</c> only to derive <c>PauseNId = minutes / 5</c>. That
-/// overloaded the column, which the punch-clock path uses as a slot counter.
-/// This helper reproduces the exact same integer math without writing the column,
-/// so the resulting PauseNId is byte-identical to the previous behaviour.
+/// <see cref="PlanRegistration"/>, in the canonical 5-minute tick encoding:
+/// <c>PauseNId = minutes / 5 + 1</c> (0 = no pause), decoded everywhere as
+/// <c>(id - 1) * 5</c> (base <c>FlexChain.ComputeShiftPauseSeconds</c>). The slot
+/// set per shift is <see cref="PlanRegistrationHelper.EnumerateShiftPauseStampPairs"/>,
+/// which mirrors the base <c>FlexChain</c> slot set.
+/// Never writes <c>ShiftNPauseNumber</c>, which the punch-clock path uses as a
+/// slot counter.
 /// </summary>
 public static class PauseMinutesCalculator
 {
     /// <summary>
     /// Sums the duration (in whole minutes, truncated) of every populated pause slot
-    /// belonging to <paramref name="shift"/> and returns <c>totalMinutes / 5</c>.
+    /// belonging to <paramref name="shift"/> and returns the tick <c>totalMinutes / 5 + 1</c>,
+    /// or 0 when the shift has no pause minutes.
     /// Reads only; never mutates <paramref name="planning"/>.
     /// </summary>
     /// <param name="planning">The plan registration to read pause slots from.</param>
@@ -28,47 +29,19 @@ public static class PauseMinutesCalculator
     {
         ArgumentNullException.ThrowIfNull(planning);
 
-        var totalMinutes = shift switch
+        if (shift is not (1 or 2))
         {
-            // Exact slot set the admin path accumulated for shift 1 (15 slots):
-            // Pause1, Pause2, Pause10..Pause19, Pause100, Pause101, Pause102.
-            1 => SlotMinutes(planning.Pause1StartedAt, planning.Pause1StoppedAt)
-                 + SlotMinutes(planning.Pause2StartedAt, planning.Pause2StoppedAt)
-                 + SlotMinutes(planning.Pause10StartedAt, planning.Pause10StoppedAt)
-                 + SlotMinutes(planning.Pause11StartedAt, planning.Pause11StoppedAt)
-                 + SlotMinutes(planning.Pause12StartedAt, planning.Pause12StoppedAt)
-                 + SlotMinutes(planning.Pause13StartedAt, planning.Pause13StoppedAt)
-                 + SlotMinutes(planning.Pause14StartedAt, planning.Pause14StoppedAt)
-                 + SlotMinutes(planning.Pause15StartedAt, planning.Pause15StoppedAt)
-                 + SlotMinutes(planning.Pause16StartedAt, planning.Pause16StoppedAt)
-                 + SlotMinutes(planning.Pause17StartedAt, planning.Pause17StoppedAt)
-                 + SlotMinutes(planning.Pause18StartedAt, planning.Pause18StoppedAt)
-                 + SlotMinutes(planning.Pause19StartedAt, planning.Pause19StoppedAt)
-                 + SlotMinutes(planning.Pause100StartedAt, planning.Pause100StoppedAt)
-                 + SlotMinutes(planning.Pause101StartedAt, planning.Pause101StoppedAt)
-                 + SlotMinutes(planning.Pause102StartedAt, planning.Pause102StoppedAt),
+            throw new ArgumentOutOfRangeException(
+                nameof(shift), shift, "Only shift 1 and 2 are supported.");
+        }
 
-            // Exact slot set the admin path accumulated for shift 2 (13 slots):
-            // Pause20..Pause29, Pause200, Pause201, Pause202.
-            2 => SlotMinutes(planning.Pause20StartedAt, planning.Pause20StoppedAt)
-                 + SlotMinutes(planning.Pause21StartedAt, planning.Pause21StoppedAt)
-                 + SlotMinutes(planning.Pause22StartedAt, planning.Pause22StoppedAt)
-                 + SlotMinutes(planning.Pause23StartedAt, planning.Pause23StoppedAt)
-                 + SlotMinutes(planning.Pause24StartedAt, planning.Pause24StoppedAt)
-                 + SlotMinutes(planning.Pause25StartedAt, planning.Pause25StoppedAt)
-                 + SlotMinutes(planning.Pause26StartedAt, planning.Pause26StoppedAt)
-                 + SlotMinutes(planning.Pause27StartedAt, planning.Pause27StoppedAt)
-                 + SlotMinutes(planning.Pause28StartedAt, planning.Pause28StoppedAt)
-                 + SlotMinutes(planning.Pause29StartedAt, planning.Pause29StoppedAt)
-                 + SlotMinutes(planning.Pause200StartedAt, planning.Pause200StoppedAt)
-                 + SlotMinutes(planning.Pause201StartedAt, planning.Pause201StoppedAt)
-                 + SlotMinutes(planning.Pause202StartedAt, planning.Pause202StoppedAt),
+        var totalMinutes = 0;
+        foreach (var (startedAt, stoppedAt) in PlanRegistrationHelper.EnumerateShiftPauseStampPairs(planning, shift))
+        {
+            totalMinutes += SlotMinutes(startedAt, stoppedAt);
+        }
 
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(shift), shift, "Only shift 1 and 2 are supported."),
-        };
-
-        return totalMinutes / 5;
+        return totalMinutes > 0 ? totalMinutes / 5 + 1 : 0;
     }
 
     private static int SlotMinutes(DateTime? startedAt, DateTime? stoppedAt)

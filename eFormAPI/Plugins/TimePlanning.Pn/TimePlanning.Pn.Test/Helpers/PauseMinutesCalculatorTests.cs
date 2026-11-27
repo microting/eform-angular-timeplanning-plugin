@@ -147,8 +147,8 @@ public class PauseMinutesCalculatorTests
     // A 5-minute pause tick id is minutes / 5 + 1, and every decoder in the
     // platform reads it back as (id - 1) * 5 (base FlexChain.ComputeShiftPauseSeconds
     // falls back to exactly that when a shift has no stamps). Id 0 means "no pause".
-    // DerivePauseId currently returns minutes / 5, one tick short, so a 30 min
-    // pause is stored as id 6 and every reader sees 25 min.
+    // DerivePauseId used to return minutes / 5, one tick short, so a 30 min
+    // pause was stored as id 6 and every reader saw 25 min.
     // ---------------------------------------------------------------------
 
     private static int DecodeTick(int pauseId) => pauseId > 0 ? (pauseId - 1) * 5 : 0;
@@ -206,8 +206,8 @@ public class PauseMinutesCalculatorTests
     {
         // FlexChain.EnumerateShiftPauseStampPairs: shift 1 = Pause1, Pause10..19,
         // Pause100..102; shift 2 = Pause2 (its primary), Pause20..29, Pause200..202.
-        // DerivePauseId counts the Pause2 slot towards shift 1 and leaves it out of
-        // shift 2, so a pause on the second shift moves to the first.
+        // DerivePauseId used to count the Pause2 slot towards shift 1 and leave it
+        // out of shift 2, moving a pause on the second shift to the first.
         var planning = new PlanRegistration
         {
             Pause2StartedAt = Start,

@@ -993,7 +993,7 @@ public class TimePlanningPlanningService(
             EnsureTimestampsFromIds(planning);
 
             // Compute time tracking fields (seconds-based calculation)
-            PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            PlanRegistrationHelper.ComputeTimeTrackingFields(planning, assignedSite.UseOneMinuteIntervals);
             // Phase 2/5 fix: GetCurrentUserAsync() does FirstOrDefaultAsync against
             // the base AspNetUsers table and can return null (cross-tenant token,
             // expired claim, or any code path where UserId resolves to 0). The
@@ -1013,7 +1013,7 @@ public class TimePlanningPlanningService(
             // for future dates included — re-chaining Flex/SumFlex only; later
             // rows keep their stored hours (R2). The chain computed above came
             // from the pause id, but ComputeTimeTrackingFields then STORED
-            // NettoHours from the stamp work intervals with the floored pause.
+            // NettoHours from the stamp work intervals with the site-mode pause.
             // The walk carries from the stored hours, so it starts at the edited
             // day itself and may re-carry it to keep Flex = stored hours − plan
             // (also correcting stale seconds, e.g. PlanHoursInSeconds not
@@ -1339,7 +1339,7 @@ public class TimePlanningPlanningService(
             EnsureTimestampsFromIds(planning);
 
             // Compute time tracking fields (seconds-based calculation)
-            PlanRegistrationHelper.ComputeTimeTrackingFields(planning);
+            PlanRegistrationHelper.ComputeTimeTrackingFields(planning, assignedSite.UseOneMinuteIntervals);
             planning.UpdatedByUserId = currentUser.Id;
 
             await planning.Update(dbContext).ConfigureAwait(false);
