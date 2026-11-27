@@ -438,7 +438,7 @@
               </div>
             </ng-container>
             <ng-container *ngIf="row.planningPrDayModels[col.field]?.nettoHoursOverrideActive">
-              <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.nettoHoursOverride !== 0">
+              <div class="plan-text" *ngIf="row.planningPrDayModels[col.field]?.nettoHoursOverride != null">
                 <div>
                   <span id="totalWorkingHours{{index}}_{{col.field}}" [matTooltip]="'NettoHours override' | translate "><mat-icon fontSet="material-symbols-outlined" class="neutral-icon">schedule</mat-icon>{{ formatDuration(row.planningPrDayModels[col.field]?.nettoHoursOverride) }}</span>
                 </div>
