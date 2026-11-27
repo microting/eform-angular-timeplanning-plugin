@@ -112,7 +112,7 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
         Assert.That(result.Success, Is.True, result.Message);
         Assert.That(result.Model, Is.Not.Null);
 
-        var (shift1Start, shift1Stop) = ReadShift1Cells(result.Model!);
+        var (shift1Start, shift1Stop, _) = ReadShift1Cells(result.Model!);
         Assert.That(shift1Start, Is.EqualTo("08:04"),
             "Non-5-min Start1 stamp must render as HH:mm with no :ss suffix (regression lock for 2026-05-15 fix)");
         Assert.That(shift1Stop, Is.EqualTo("10:10"),
@@ -142,9 +142,59 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
         Assert.That(result.Success, Is.True, result.Message);
         Assert.That(result.Model, Is.Not.Null);
 
-        var (shift1Start, shift1Stop) = ReadShift1Cells(result.Model!);
+        var (shift1Start, shift1Stop, _) = ReadShift1Cells(result.Model!);
         Assert.That(shift1Start, Is.EqualTo("08:00"), "Legacy slot 97 → Options[96] = \"08:00\"");
         Assert.That(shift1Stop, Is.EqualTo("10:00"), "Legacy slot 121 → Options[120] = \"10:00\"");
+    }
+
+    /// <summary>
+    /// A pause override (<c>Pause1OverrideMinutes</c>, set when the office edits the
+    /// total pause in the web dialog) is the authoritative shift pause: the planning
+    /// grid and the netto hours honour it. The Excel "Shift 1 pause" cell must show
+    /// the override too, not the sum of the worker's recorded pause stamps — here
+    /// the worker forgot to end a pause, so the stamps sum to 3:27 while the
+    /// override says 1:00.
+    /// </summary>
+    [Test]
+    public async Task GenerateExcelDashboard_PauseOverrideSet_PauseCellShowsOverrideNotStampSum()
+    {
+        const int siteUid = 9708;
+        var day = new DateTime(2026, 10, 22);
+        await SeedSiteAndPlanRegistration(
+            siteUid: siteUid,
+            date: day,
+            useOneMinuteIntervals: true,
+            start1: day.AddHours(5).AddMinutes(55),
+            stop1: day.AddHours(15).AddMinutes(1),
+            start1Id: 72, stop1Id: 181);
+
+        var row = await TimePlanningPnDbContext!.PlanRegistrations
+            .SingleAsync(x => x.SdkSitId == siteUid && x.Date == day);
+        row.RegisteredUnderOneMinuteIntervals = true;
+        // What the override dialog writes alongside a 60-min override. Only keeps the
+        // pause cell from rendering blank: with complete stamps present the legacy id
+        // never contributes minutes, so the expected 01:00 can only come from the override.
+        row.Pause1Id = 13;
+        row.Pause1StartedAt = day.AddHours(9).AddMinutes(22);   // 09:22 → 12:15 = 173 min
+        row.Pause1StoppedAt = day.AddHours(12).AddMinutes(15);
+        row.Pause10StartedAt = day.AddHours(12).AddMinutes(15); // 12:15 → 12:49 = 34 min
+        row.Pause10StoppedAt = day.AddHours(12).AddMinutes(49);
+        row.Pause1OverrideMinutes = 60;
+        await row.Update(TimePlanningPnDbContext!);
+
+        var result = await _service.GenerateExcelDashboard(new TimePlanningWorkingHoursRequestModel
+        {
+            SiteId = siteUid,
+            DateFrom = day,
+            DateTo = day,
+        });
+
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(result.Model, Is.Not.Null);
+
+        var (_, _, shift1Pause) = ReadShift1Cells(result.Model!);
+        Assert.That(shift1Pause, Is.EqualTo("01:00"),
+            "Pause1OverrideMinutes=60 must win over the recorded stamps (3:27) in the Excel pause cell");
     }
 
     /// <summary>
@@ -630,7 +680,7 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
     }
 
     /// <summary>
-    /// Opens the xlsx stream and returns the (Shift1Start, Shift1Stop) cell text
+    /// Opens the xlsx stream and returns the (Shift1Start, Shift1Stop, Shift1Pause) cell text
     /// for the first data row that has either populated. Column layout from
     /// <c>FillDataRow</c> (positional, 0-indexed): 0=EmployeeNo, 1=SiteName,
     /// 2=Tags, 3=WeekDay, 4=Date, 5=WeekNumber, 6=PlanText, 7=PlanHours,
@@ -638,7 +688,7 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
     /// <c>CellReference</c>, so cells are positional within the row, not
     /// addressed by letter.
     /// </summary>
-    private static (string Start, string Stop) ReadShift1Cells(Stream xlsx)
+    private static (string Start, string Stop, string Pause) ReadShift1Cells(Stream xlsx)
     {
         xlsx.Position = 0;
         using var doc = SpreadsheetDocument.Open(xlsx, false);
@@ -663,14 +713,14 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
         foreach (var row in rows.Where(r => r.RowIndex == null || r.RowIndex! > 1U))
         {
             var cells = row.Elements<Cell>().ToList();
-            if (cells.Count < 10) continue;
+            if (cells.Count < 11) continue;
             var shift1Start = CellText(cells[8]);
             var shift1Stop  = CellText(cells[9]);
             if (!string.IsNullOrEmpty(shift1Start) || !string.IsNullOrEmpty(shift1Stop))
             {
-                return (shift1Start, shift1Stop);
+                return (shift1Start, shift1Stop, CellText(cells[10]));
             }
         }
-        return ("", "");
+        return ("", "", "");
     }
 }
