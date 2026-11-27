@@ -1804,7 +1804,7 @@ public static class PlanRegistrationHelper
     /// The primary slot is always yielded first so callers that need the
     /// "primary only" semantics (e.g. legacy-fallback) can take the first pair.
     /// </summary>
-    private static IEnumerable<(DateTime? StartedAt, DateTime? StoppedAt)> EnumerateShiftPauseStampPairs(PlanRegistration pr, int shift)
+    internal static IEnumerable<(DateTime? StartedAt, DateTime? StoppedAt)> EnumerateShiftPauseStampPairs(PlanRegistration pr, int shift)
     {
         switch (shift)
         {
@@ -2239,7 +2239,13 @@ public static class PlanRegistrationHelper
     /// This method does NOT persist changes - caller must save the PlanRegistration.
     /// </summary>
     /// <param name="planRegistration">The plan registration to update</param>
-    public static void ComputeTimeTrackingFields(PlanRegistration planRegistration)
+    /// <param name="useOneMinuteIntervals">
+    /// The site's input mode. True deducts each pause slot's exact stamp delta;
+    /// false (the default) its floor-to-5-minute clock-tick delta. A one-minute
+    /// save must pass true, or this final writer re-rounds the pause onto the
+    /// 5-minute grid and overwrites the exact netto written before it.
+    /// </param>
+    public static void ComputeTimeTrackingFields(PlanRegistration planRegistration, bool useOneMinuteIntervals = false)
     {
         // Calculate work intervals and total work seconds
         var workIntervals = GetWorkIntervals(planRegistration);
@@ -2248,14 +2254,14 @@ public static class PlanRegistrationHelper
         // Calculate total pause seconds via the canonical per-shift method so
         // ALL populated pause slots (primary Pause{N} plus the multi-pause
         // sub-slots Pause10/11/.., Pause20/21/..) are deducted, not just the
-        // legacy primary Pause{N}Id. This is the 5-minute (flag-off) grid path:
-        // each timestamped slot contributes its floor-to-5min clock-tick delta,
-        // falling back per-shift to the legacy Pause{N}Id tick value only when a
-        // shift has no timestamped pause slots.
+        // legacy primary Pause{N}Id. On a 5-minute site each timestamped slot
+        // contributes its floor-to-5min clock-tick delta, on a one-minute site its
+        // exact delta; either way falling back per-shift to the legacy Pause{N}Id
+        // tick value only when a shift has no timestamped pause slots.
         long totalPauseSeconds = 0;
         for (var shift = 1; shift <= 5; shift++)
         {
-            totalPauseSeconds += FlexChain.ComputeShiftPauseSeconds(planRegistration, shift, useOneMinuteIntervals: false);
+            totalPauseSeconds += FlexChain.ComputeShiftPauseSeconds(planRegistration, shift, useOneMinuteIntervals);
         }
 
         // Net work seconds = total work - total pause (cannot be negative)

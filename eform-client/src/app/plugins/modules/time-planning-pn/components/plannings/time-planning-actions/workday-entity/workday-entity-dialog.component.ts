@@ -290,24 +290,24 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
     const start1StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start1StartedAt, 'HH:mm', 'UTC');
     const stop1StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop1StoppedAt, 'HH:mm', 'UTC');
     const pause1Minutes = this.computeFiveMinutePauseMinutes(1);
-    const pause1Id = this.convertMinutesToTime(pause1Minutes ?? this.data.planningPrDayModels.pause1Id * 5);
+    const pause1Id = this.convertMinutesToTime(pause1Minutes ?? this.pauseTickToMinutes(this.data.planningPrDayModels.pause1Id));
 
     const start2StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start2StartedAt, 'HH:mm', 'UTC');
     const stop2StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop2StoppedAt, 'HH:mm', 'UTC');
     const pause2Minutes = this.computeFiveMinutePauseMinutes(2);
-    const pause2Id = this.convertMinutesToTime(pause2Minutes ?? this.data.planningPrDayModels.pause2Id * 5);
+    const pause2Id = this.convertMinutesToTime(pause2Minutes ?? this.pauseTickToMinutes(this.data.planningPrDayModels.pause2Id));
 
     const start3StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start3StartedAt, 'HH:mm', 'UTC');
     const stop3StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop3StoppedAt, 'HH:mm', 'UTC');
-    const pause3Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause3Id * 5);
+    const pause3Id = this.convertMinutesToTime(this.pauseTickToMinutes(this.data.planningPrDayModels.pause3Id));
 
     const start4StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start4StartedAt, 'HH:mm', 'UTC');
     const stop4StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop4StoppedAt, 'HH:mm', 'UTC');
-    const pause4Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause4Id * 5);
+    const pause4Id = this.convertMinutesToTime(this.pauseTickToMinutes(this.data.planningPrDayModels.pause4Id));
 
     const start5StartedAt = this.datePipe.transform(this.data.planningPrDayModels.start5StartedAt, 'HH:mm', 'UTC');
     const stop5StoppedAt = this.datePipe.transform(this.data.planningPrDayModels.stop5StoppedAt, 'HH:mm', 'UTC');
-    const pause5Id = this.convertMinutesToTime(this.data.planningPrDayModels.pause5Id * 5);
+    const pause5Id = this.convertMinutesToTime(this.pauseTickToMinutes(this.data.planningPrDayModels.pause5Id));
 
     // Phase 4: under UseOneMinuteIntervals, derive the pause duration from the
     // sum of all Pause*StartedAt/Pause*StoppedAt timestamp pairs in seconds and
@@ -1195,6 +1195,12 @@ export class WorkdayEntityDialogComponent implements OnInit, OnDestroy {
   }
 
   // ===== UI-hjælpere (samme logik som tidligere, men brugt af form) =====
+  // Decodes a 5-minute pause tick the canonical way (base FlexChain): id n is
+  // (n - 1) * 5 minutes of pause, 0/null is no pause.
+  private pauseTickToMinutes(pauseId?: number | null): number {
+    return pauseId != null && pauseId > 0 ? (pauseId - 1) * 5 : 0;
+  }
+
   convertMinutesToTime(minutes?: number | null): string | null {
     if (minutes == null || minutes === 0) {
       return null;
