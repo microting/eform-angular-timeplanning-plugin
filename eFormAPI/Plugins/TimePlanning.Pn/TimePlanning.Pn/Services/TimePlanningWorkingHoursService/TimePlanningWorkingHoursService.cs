@@ -276,9 +276,12 @@ public class TimePlanningWorkingHoursService(
 
             // Populate the canonical per-shift total pause minutes (all slots, not
             // just the primary Pause{N}Id, and the Pause{N}OverrideMinutes that wins
-            // when set) for the Excel export. ComputeShiftPauseSeconds
-            // is not EF-translatable, so materialize the pause columns for these same
-            // rows in ONE batched query (keyed by Id) and compute in memory — no N+1.
+            // when set) for the Excel export, plus the pause stamps themselves so the
+            // pay-line segmentation (EnumerateWorkedSegments) and Grundlovsdag math
+            // (CalculateHoursAfterNoon) can cut pauses out of the shift spans.
+            // ComputeShiftPauseSeconds is not EF-translatable, so materialize the
+            // pause columns for these same rows in ONE batched query (keyed by Id)
+            // and compute in memory — no N+1.
             if (timePlannings.Count > 0)
             {
                 var pauseRows = await timePlanningRequest
@@ -287,8 +290,14 @@ public class TimePlanningWorkingHoursService(
                         Id = x.Id,
                         Pause1Id = x.Pause1Id,
                         Pause2Id = x.Pause2Id,
+                        Pause3Id = x.Pause3Id,
+                        Pause4Id = x.Pause4Id,
+                        Pause5Id = x.Pause5Id,
                         Pause1OverrideMinutes = x.Pause1OverrideMinutes,
                         Pause2OverrideMinutes = x.Pause2OverrideMinutes,
+                        Pause3OverrideMinutes = x.Pause3OverrideMinutes,
+                        Pause4OverrideMinutes = x.Pause4OverrideMinutes,
+                        Pause5OverrideMinutes = x.Pause5OverrideMinutes,
                         Pause1StartedAt = x.Pause1StartedAt,
                         Pause1StoppedAt = x.Pause1StoppedAt,
                         Pause10StartedAt = x.Pause10StartedAt,
@@ -319,6 +328,12 @@ public class TimePlanningWorkingHoursService(
                         Pause102StoppedAt = x.Pause102StoppedAt,
                         Pause2StartedAt = x.Pause2StartedAt,
                         Pause2StoppedAt = x.Pause2StoppedAt,
+                        Pause3StartedAt = x.Pause3StartedAt,
+                        Pause3StoppedAt = x.Pause3StoppedAt,
+                        Pause4StartedAt = x.Pause4StartedAt,
+                        Pause4StoppedAt = x.Pause4StoppedAt,
+                        Pause5StartedAt = x.Pause5StartedAt,
+                        Pause5StoppedAt = x.Pause5StoppedAt,
                         Pause20StartedAt = x.Pause20StartedAt,
                         Pause20StoppedAt = x.Pause20StoppedAt,
                         Pause21StartedAt = x.Pause21StartedAt,
@@ -357,12 +372,8 @@ public class TimePlanningWorkingHoursService(
                     }
 
                     // Mode AT REGISTRATION — see OneMinuteModeTimeline.
-                    var pauseRowIsOneMinute = tp.RegisteredUnderOneMinuteIntervals
-                                              ?? oneMinuteTimeline.WasOneMinuteAt(tp.Date);
-                    tp.Shift1PauseMinutes =
-                        FlexChain.ComputeShiftPauseSeconds(pauseRow, 1, pauseRowIsOneMinute) / 60;
-                    tp.Shift2PauseMinutes =
-                        FlexChain.ComputeShiftPauseSeconds(pauseRow, 2, pauseRowIsOneMinute) / 60;
+                    PopulateCanonicalPauses(pauseRow, tp,
+                        tp.RegisteredUnderOneMinuteIntervals ?? oneMinuteTimeline.WasOneMinuteAt(tp.Date));
                 }
             }
 
@@ -401,16 +412,6 @@ public class TimePlanningWorkingHoursService(
                         Shift2Start = lastPlanning?.Start2Id,
                         Shift2Stop = lastPlanning?.Stop2Id,
                         Shift2Pause = lastPlanning?.Pause2Id,
-                        // Canonical all-slots pause totals (not the legacy single Pause{N}Id)
-                        // for the carried-over previous-day row. lastPlanning is a fully
-                        // materialized PlanRegistration already in scope, so this reuses
-                        // ComputeShiftPauseSeconds with no extra query (no N+1).
-                        Shift1PauseMinutes = lastPlanning != null
-                            ? FlexChain.ComputeShiftPauseSeconds(lastPlanning, 1, lastPlanningIsOneMinute) / 60
-                            : 0,
-                        Shift2PauseMinutes = lastPlanning != null
-                            ? FlexChain.ComputeShiftPauseSeconds(lastPlanning, 2, lastPlanningIsOneMinute) / 60
-                            : 0,
                         Shift3Start = lastPlanning?.Start3Id,
                         Shift3Stop = lastPlanning?.Stop3Id,
                         Shift3Pause = lastPlanning?.Pause3Id,
@@ -459,6 +460,9 @@ public class TimePlanningWorkingHoursService(
                               model.DateFrom.AddDays(-1).DayOfWeek == DayOfWeek.Sunday
                     };
 
+                    // Canonical pause totals and stamps for the carried-over row too;
+                    // lastPlanning is already materialized, so no extra query.
+                    PopulateCanonicalPauses(lastPlanning, prePlanning, lastPlanningIsOneMinute);
                     timePlannings.Add(prePlanning);
 
                 }
@@ -504,7 +508,7 @@ public class TimePlanningWorkingHoursService(
             //    time when the stamp is NULL but the Id exists.
             // Every stamp consumer downstream (web grid, Excel day cells via
             // GetShiftTime/GetShiftTimeFraction, time-band pay lines via
-            // EnumerateShiftSegments, Grundlovsdag hours via
+            // EnumerateWorkedSegments, Grundlovsdag hours via
             // CalculateHoursAfterNoon, and all totals built from those) then
             // derives from tick times for tick rows — no drift when a site
             // flips UseOneMinuteIntervals. Read-only: the save path
@@ -3236,32 +3240,31 @@ public class TimePlanningWorkingHoursService(
             dataRow.Append(CreateCell(planning.PlanText));
             dataRow.Append(CreateHoursCell(planning.PlanHours));
             // Phase 4: when UseOneMinuteIntervals is on, format actual stamps (start/stop)
-            // from the precise DateTime stamps with second precision; pause columns have
-            // no single representative stamp in the legacy 5-min Options[] view, so they
-            // pass actualStamp=null and fall through to the existing 2-arg lookup.
+            // from the precise DateTime stamps with second precision. Pause columns
+            // render the canonical per-shift pause total (Shift{N}PauseMinutes).
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Start, planning.Start1StartedAt, useOneMinuteIntervals)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift1Stop, planning.Stop1StoppedAt, useOneMinuteIntervals)));
-            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift1PauseMinutes, planning.Shift1Pause)));
+            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift1PauseMinutes, planning.Shift1Pause, planning.Pause1OverrideMinutes)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Start, planning.Start2StartedAt, useOneMinuteIntervals)));
             dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift2Stop, planning.Stop2StoppedAt, useOneMinuteIntervals)));
-            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift2PauseMinutes, planning.Shift2Pause)));
+            dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift2PauseMinutes, planning.Shift2Pause, planning.Pause2OverrideMinutes)));
             if (isThirdShiftEnabled)
             {
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Start, planning.Start3StartedAt, useOneMinuteIntervals)));
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Stop, planning.Stop3StoppedAt, useOneMinuteIntervals)));
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift3Pause, null, useOneMinuteIntervals)));
+                dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift3PauseMinutes, planning.Shift3Pause, planning.Pause3OverrideMinutes)));
             }
             if (isFourthShiftEnabled)
             {
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Start, planning.Start4StartedAt, useOneMinuteIntervals)));
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Stop, planning.Stop4StoppedAt, useOneMinuteIntervals)));
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift4Pause, null, useOneMinuteIntervals)));
+                dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift4PauseMinutes, planning.Shift4Pause, planning.Pause4OverrideMinutes)));
             }
             if (isFifthShiftEnabled)
             {
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Start, planning.Start5StartedAt, useOneMinuteIntervals)));
                 dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Stop, planning.Stop5StoppedAt, useOneMinuteIntervals)));
-                dataRow.Append(CreateCell(GetShiftTime(plr, planning.Shift5Pause, null, useOneMinuteIntervals)));
+                dataRow.Append(CreateCell(FormatPauseMinutesAsTime(planning.Shift5PauseMinutes, planning.Shift5Pause, planning.Pause5OverrideMinutes)));
             }
             dataRow.Append(CreateHoursCell(planning.NettoHoursOverrideActive ? planning.NettoHoursOverride : planning.NettoHours));
             dataRow.Append(CreateHoursCell(planning.FlexHours));
@@ -3338,13 +3341,14 @@ public class TimePlanningWorkingHoursService(
     /// <summary>
     /// A shift pause cell is blank only when the shift has no pause at all: the
     /// canonical all-slots total is zero AND the legacy single-slot Pause{N}Id is
-    /// absent (id &lt;= 0). A present-but-zero pause (legacy id 1 -&gt; 0 min) still
-    /// renders, preserving the old "00:00"/0.0 output; a real/multi pause
+    /// absent (id &lt;= 0) AND the office set no Pause{N}OverrideMinutes. A
+    /// present-but-zero pause (legacy id 1 -&gt; 0 min, or an explicit override of 0)
+    /// still renders, preserving the "00:00"/0.0 output; a real/multi pause
     /// (minutes &gt; 0) always renders regardless of the legacy id.
     /// </summary>
-    private static bool IsShiftPauseBlank(int minutes, int? legacyPauseId)
+    private static bool IsShiftPauseBlank(int minutes, int? legacyPauseId, int? overrideMinutes)
     {
-        return minutes == 0 && (legacyPauseId ?? 0) <= 0;
+        return minutes == 0 && (legacyPauseId ?? 0) <= 0 && !overrideMinutes.HasValue;
     }
 
     /// <summary>
@@ -3353,9 +3357,9 @@ public class TimePlanningWorkingHoursService(
     /// (<c>Shift{N}PauseMinutes</c>); the legacy single-slot Pause{N}Id is used
     /// only to decide blank-vs-present-zero (see <see cref="IsShiftPauseBlank"/>).
     /// </summary>
-    internal static string FormatPauseMinutesAsTime(int minutes, int? legacyPauseId)
+    internal static string FormatPauseMinutesAsTime(int minutes, int? legacyPauseId, int? overrideMinutes)
     {
-        if (IsShiftPauseBlank(minutes, legacyPauseId))
+        if (IsShiftPauseBlank(minutes, legacyPauseId, overrideMinutes))
         {
             return "";
         }
@@ -3367,9 +3371,9 @@ public class TimePlanningWorkingHoursService(
     /// Dagsoversigt tab, mirroring <see cref="GetShiftTimeFraction"/>'s output.
     /// The legacy single-slot Pause{N}Id only decides blank-vs-present-zero.
     /// </summary>
-    internal static double? PauseMinutesAsDayFraction(int minutes, int? legacyPauseId)
+    internal static double? PauseMinutesAsDayFraction(int minutes, int? legacyPauseId, int? overrideMinutes)
     {
-        if (IsShiftPauseBlank(minutes, legacyPauseId))
+        if (IsShiftPauseBlank(minutes, legacyPauseId, overrideMinutes))
         {
             return null;
         }
@@ -4092,7 +4096,8 @@ public class TimePlanningWorkingHoursService(
                         }
                     }
                     var normalHours = siteTotalNettoHours - sumHoursSundayAndHoliday;
-                    var sumHoursSaturday = timePlannings.Where(x => x.IsSaturday).Sum(x => x.NettoHours);
+                    var sumHoursSaturday = timePlannings.Where(x => x.IsSaturday)
+                        .Sum(x => x.NettoHoursOverrideActive ? x.NettoHoursOverride : x.NettoHours);
 
                     totalRow.Append(CreateHoursCell(normalHours));
                     totalRow.Append(CreateHoursCell(sumHoursSundayAndHoliday));
@@ -4626,8 +4631,8 @@ public class TimePlanningWorkingHoursService(
         totalSecondsAfterNoon += CalculateOverlap(day.Start4StartedAt, day.Stop4StoppedAt);
         totalSecondsAfterNoon += CalculateOverlap(day.Start5StartedAt, day.Stop5StoppedAt);
 
-        // Subtract pauses that occur after noon. EnumeratePauseIntervals is the shared
-        // source of truth for "which fields hold a pause", so this method and the
+        // Subtract pauses that occur after noon. EnumeratePauseIntervals is the union
+        // of EnumerateShiftPauseIntervals, the shared slot map, so this method and the
         // pause-aware pay-line segmentation (EnumerateWorkedSegments) can never drift
         // apart on, say, a newly added sub-slot.
         foreach (var (pauseStart, pauseStop) in EnumeratePauseIntervals(day))
@@ -4640,55 +4645,171 @@ public class TimePlanningWorkingHoursService(
     }
 
     /// <summary>
-    /// The single source of truth for WHICH model fields hold a pause interval.
+    /// Fills the day model's pause data from its registration, under the row's mode at
+    /// registration: the canonical per-shift pause minutes
+    /// (<see cref="FlexChain.ComputeShiftPauseSeconds"/>), the office overrides, and every
+    /// pause stamp listed by <see cref="EnumeratePauseIntervals"/>, so the stamp consumers
+    /// downstream (pay-line segmentation and Grundlovsdag afternoon hours) see the pauses
+    /// the netto excludes.
     ///
-    /// Layout (all real wall-clock stamps, mirroring the shift Start/Stop stamps):
-    ///  - Pause1..Pause5      — the primary pause of shifts 1..5;
-    ///  - Pause10..Pause19    — shift 1's additional sub-slots;
-    ///  - Pause20..Pause29    — shift 2's additional sub-slots;
-    ///  - Pause100..Pause102 and Pause200..Pause202 — legacy extra sub-slots for
-    ///    shifts 1 and 2 respectively.
-    ///
-    /// Yields the raw nullable pairs; callers decide how to interpret unset or
-    /// non-positive intervals. Both consumers — Grundlovsdag holiday math
-    /// (<see cref="CalculateHoursAfterNoon"/>) and pay-line segmentation
-    /// (<see cref="EnumerateWorkedSegments"/>) — read this list, so they agree by
-    /// construction.
+    /// On a 5-minute (tick) row the stamps are floored to the 5-minute grid, exactly as
+    /// the canonical pause counts them (floor(stop) - floor(start)): cutting the exact
+    /// stamps would remove time the netto never subtracted, e.g. a 12:01-12:04 pause
+    /// that counts as 0.
+    /// </summary>
+    internal static void PopulateCanonicalPauses(PlanRegistration source, TimePlanningWorkingHoursModel day,
+        bool isOneMinute)
+    {
+        day.Shift1PauseMinutes = FlexChain.ComputeShiftPauseSeconds(source, 1, isOneMinute) / 60;
+        day.Shift2PauseMinutes = FlexChain.ComputeShiftPauseSeconds(source, 2, isOneMinute) / 60;
+        day.Shift3PauseMinutes = FlexChain.ComputeShiftPauseSeconds(source, 3, isOneMinute) / 60;
+        day.Shift4PauseMinutes = FlexChain.ComputeShiftPauseSeconds(source, 4, isOneMinute) / 60;
+        day.Shift5PauseMinutes = FlexChain.ComputeShiftPauseSeconds(source, 5, isOneMinute) / 60;
+        day.Pause1OverrideMinutes = source.Pause1OverrideMinutes;
+        day.Pause2OverrideMinutes = source.Pause2OverrideMinutes;
+        day.Pause3OverrideMinutes = source.Pause3OverrideMinutes;
+        day.Pause4OverrideMinutes = source.Pause4OverrideMinutes;
+        day.Pause5OverrideMinutes = source.Pause5OverrideMinutes;
+
+        const long fiveMinutes = 5 * TimeSpan.TicksPerMinute;
+        Func<DateTime?, DateTime?> stamp = isOneMinute
+            ? value => value
+            : value => value?.AddTicks(-(value.Value.Ticks % fiveMinutes));
+
+        day.Pause1StartedAt = stamp(source.Pause1StartedAt);
+        day.Pause1StoppedAt = stamp(source.Pause1StoppedAt);
+        day.Pause2StartedAt = stamp(source.Pause2StartedAt);
+        day.Pause2StoppedAt = stamp(source.Pause2StoppedAt);
+        day.Pause3StartedAt = stamp(source.Pause3StartedAt);
+        day.Pause3StoppedAt = stamp(source.Pause3StoppedAt);
+        day.Pause4StartedAt = stamp(source.Pause4StartedAt);
+        day.Pause4StoppedAt = stamp(source.Pause4StoppedAt);
+        day.Pause5StartedAt = stamp(source.Pause5StartedAt);
+        day.Pause5StoppedAt = stamp(source.Pause5StoppedAt);
+        day.Pause10StartedAt = stamp(source.Pause10StartedAt);
+        day.Pause10StoppedAt = stamp(source.Pause10StoppedAt);
+        day.Pause11StartedAt = stamp(source.Pause11StartedAt);
+        day.Pause11StoppedAt = stamp(source.Pause11StoppedAt);
+        day.Pause12StartedAt = stamp(source.Pause12StartedAt);
+        day.Pause12StoppedAt = stamp(source.Pause12StoppedAt);
+        day.Pause13StartedAt = stamp(source.Pause13StartedAt);
+        day.Pause13StoppedAt = stamp(source.Pause13StoppedAt);
+        day.Pause14StartedAt = stamp(source.Pause14StartedAt);
+        day.Pause14StoppedAt = stamp(source.Pause14StoppedAt);
+        day.Pause15StartedAt = stamp(source.Pause15StartedAt);
+        day.Pause15StoppedAt = stamp(source.Pause15StoppedAt);
+        day.Pause16StartedAt = stamp(source.Pause16StartedAt);
+        day.Pause16StoppedAt = stamp(source.Pause16StoppedAt);
+        day.Pause17StartedAt = stamp(source.Pause17StartedAt);
+        day.Pause17StoppedAt = stamp(source.Pause17StoppedAt);
+        day.Pause18StartedAt = stamp(source.Pause18StartedAt);
+        day.Pause18StoppedAt = stamp(source.Pause18StoppedAt);
+        day.Pause19StartedAt = stamp(source.Pause19StartedAt);
+        day.Pause19StoppedAt = stamp(source.Pause19StoppedAt);
+        day.Pause20StartedAt = stamp(source.Pause20StartedAt);
+        day.Pause20StoppedAt = stamp(source.Pause20StoppedAt);
+        day.Pause21StartedAt = stamp(source.Pause21StartedAt);
+        day.Pause21StoppedAt = stamp(source.Pause21StoppedAt);
+        day.Pause22StartedAt = stamp(source.Pause22StartedAt);
+        day.Pause22StoppedAt = stamp(source.Pause22StoppedAt);
+        day.Pause23StartedAt = stamp(source.Pause23StartedAt);
+        day.Pause23StoppedAt = stamp(source.Pause23StoppedAt);
+        day.Pause24StartedAt = stamp(source.Pause24StartedAt);
+        day.Pause24StoppedAt = stamp(source.Pause24StoppedAt);
+        day.Pause25StartedAt = stamp(source.Pause25StartedAt);
+        day.Pause25StoppedAt = stamp(source.Pause25StoppedAt);
+        day.Pause26StartedAt = stamp(source.Pause26StartedAt);
+        day.Pause26StoppedAt = stamp(source.Pause26StoppedAt);
+        day.Pause27StartedAt = stamp(source.Pause27StartedAt);
+        day.Pause27StoppedAt = stamp(source.Pause27StoppedAt);
+        day.Pause28StartedAt = stamp(source.Pause28StartedAt);
+        day.Pause28StoppedAt = stamp(source.Pause28StoppedAt);
+        day.Pause29StartedAt = stamp(source.Pause29StartedAt);
+        day.Pause29StoppedAt = stamp(source.Pause29StoppedAt);
+        day.Pause100StartedAt = stamp(source.Pause100StartedAt);
+        day.Pause100StoppedAt = stamp(source.Pause100StoppedAt);
+        day.Pause101StartedAt = stamp(source.Pause101StartedAt);
+        day.Pause101StoppedAt = stamp(source.Pause101StoppedAt);
+        day.Pause102StartedAt = stamp(source.Pause102StartedAt);
+        day.Pause102StoppedAt = stamp(source.Pause102StoppedAt);
+        day.Pause200StartedAt = stamp(source.Pause200StartedAt);
+        day.Pause200StoppedAt = stamp(source.Pause200StoppedAt);
+        day.Pause201StartedAt = stamp(source.Pause201StartedAt);
+        day.Pause201StoppedAt = stamp(source.Pause201StoppedAt);
+        day.Pause202StartedAt = stamp(source.Pause202StartedAt);
+        day.Pause202StoppedAt = stamp(source.Pause202StoppedAt);
+    }
+
+    /// <summary>
+    /// Every pause interval of the day: the union of
+    /// <see cref="EnumerateShiftPauseIntervals"/> over shifts 1..5. Used by
+    /// <see cref="CalculateHoursAfterNoon"/>.
     /// </summary>
     internal static IEnumerable<(DateTime? Start, DateTime? Stop)> EnumeratePauseIntervals(
         TimePlanningWorkingHoursModel day)
+        => Enumerable.Range(1, 5).SelectMany(shift => EnumerateShiftPauseIntervals(day, shift));
+
+    /// <summary>
+    /// The single source of truth for WHICH model fields hold a pause interval, and
+    /// which shift owns each — the same slot map as
+    /// <c>FlexChain.ComputeShiftPauseSeconds</c>:
+    ///  - shift 1: Pause1 (primary), Pause10..Pause19, Pause100..Pause102 (legacy);
+    ///  - shift 2: Pause2 (primary), Pause20..Pause29, Pause200..Pause202 (legacy);
+    ///  - shifts 3..5: their single Pause{N} slot.
+    ///
+    /// Yields the raw nullable pairs (real wall-clock stamps, mirroring the shift
+    /// Start/Stop stamps); callers decide how to interpret unset or non-positive
+    /// intervals. Pay-line segmentation (<see cref="EnumerateWorkedSegments"/>) reads it
+    /// per shift and Grundlovsdag math (<see cref="CalculateHoursAfterNoon"/>) through
+    /// <see cref="EnumeratePauseIntervals"/>, so they agree by construction.
+    /// </summary>
+    internal static IEnumerable<(DateTime? Start, DateTime? Stop)> EnumerateShiftPauseIntervals(
+        TimePlanningWorkingHoursModel day, int shift)
     {
-        yield return (day.Pause1StartedAt, day.Pause1StoppedAt);
-        yield return (day.Pause2StartedAt, day.Pause2StoppedAt);
-        yield return (day.Pause3StartedAt, day.Pause3StoppedAt);
-        yield return (day.Pause4StartedAt, day.Pause4StoppedAt);
-        yield return (day.Pause5StartedAt, day.Pause5StoppedAt);
-        yield return (day.Pause10StartedAt, day.Pause10StoppedAt);
-        yield return (day.Pause11StartedAt, day.Pause11StoppedAt);
-        yield return (day.Pause12StartedAt, day.Pause12StoppedAt);
-        yield return (day.Pause13StartedAt, day.Pause13StoppedAt);
-        yield return (day.Pause14StartedAt, day.Pause14StoppedAt);
-        yield return (day.Pause15StartedAt, day.Pause15StoppedAt);
-        yield return (day.Pause16StartedAt, day.Pause16StoppedAt);
-        yield return (day.Pause17StartedAt, day.Pause17StoppedAt);
-        yield return (day.Pause18StartedAt, day.Pause18StoppedAt);
-        yield return (day.Pause19StartedAt, day.Pause19StoppedAt);
-        yield return (day.Pause20StartedAt, day.Pause20StoppedAt);
-        yield return (day.Pause21StartedAt, day.Pause21StoppedAt);
-        yield return (day.Pause22StartedAt, day.Pause22StoppedAt);
-        yield return (day.Pause23StartedAt, day.Pause23StoppedAt);
-        yield return (day.Pause24StartedAt, day.Pause24StoppedAt);
-        yield return (day.Pause25StartedAt, day.Pause25StoppedAt);
-        yield return (day.Pause26StartedAt, day.Pause26StoppedAt);
-        yield return (day.Pause27StartedAt, day.Pause27StoppedAt);
-        yield return (day.Pause28StartedAt, day.Pause28StoppedAt);
-        yield return (day.Pause29StartedAt, day.Pause29StoppedAt);
-        yield return (day.Pause100StartedAt, day.Pause100StoppedAt);
-        yield return (day.Pause101StartedAt, day.Pause101StoppedAt);
-        yield return (day.Pause102StartedAt, day.Pause102StoppedAt);
-        yield return (day.Pause200StartedAt, day.Pause200StoppedAt);
-        yield return (day.Pause201StartedAt, day.Pause201StoppedAt);
-        yield return (day.Pause202StartedAt, day.Pause202StoppedAt);
+        switch (shift)
+        {
+            case 1:
+                yield return (day.Pause1StartedAt, day.Pause1StoppedAt);
+                yield return (day.Pause10StartedAt, day.Pause10StoppedAt);
+                yield return (day.Pause11StartedAt, day.Pause11StoppedAt);
+                yield return (day.Pause12StartedAt, day.Pause12StoppedAt);
+                yield return (day.Pause13StartedAt, day.Pause13StoppedAt);
+                yield return (day.Pause14StartedAt, day.Pause14StoppedAt);
+                yield return (day.Pause15StartedAt, day.Pause15StoppedAt);
+                yield return (day.Pause16StartedAt, day.Pause16StoppedAt);
+                yield return (day.Pause17StartedAt, day.Pause17StoppedAt);
+                yield return (day.Pause18StartedAt, day.Pause18StoppedAt);
+                yield return (day.Pause19StartedAt, day.Pause19StoppedAt);
+                yield return (day.Pause100StartedAt, day.Pause100StoppedAt);
+                yield return (day.Pause101StartedAt, day.Pause101StoppedAt);
+                yield return (day.Pause102StartedAt, day.Pause102StoppedAt);
+                break;
+            case 2:
+                yield return (day.Pause2StartedAt, day.Pause2StoppedAt);
+                yield return (day.Pause20StartedAt, day.Pause20StoppedAt);
+                yield return (day.Pause21StartedAt, day.Pause21StoppedAt);
+                yield return (day.Pause22StartedAt, day.Pause22StoppedAt);
+                yield return (day.Pause23StartedAt, day.Pause23StoppedAt);
+                yield return (day.Pause24StartedAt, day.Pause24StoppedAt);
+                yield return (day.Pause25StartedAt, day.Pause25StoppedAt);
+                yield return (day.Pause26StartedAt, day.Pause26StoppedAt);
+                yield return (day.Pause27StartedAt, day.Pause27StoppedAt);
+                yield return (day.Pause28StartedAt, day.Pause28StoppedAt);
+                yield return (day.Pause29StartedAt, day.Pause29StoppedAt);
+                yield return (day.Pause200StartedAt, day.Pause200StoppedAt);
+                yield return (day.Pause201StartedAt, day.Pause201StoppedAt);
+                yield return (day.Pause202StartedAt, day.Pause202StoppedAt);
+                break;
+            case 3:
+                yield return (day.Pause3StartedAt, day.Pause3StoppedAt);
+                break;
+            case 4:
+                yield return (day.Pause4StartedAt, day.Pause4StoppedAt);
+                break;
+            case 5:
+                yield return (day.Pause5StartedAt, day.Pause5StoppedAt);
+                break;
+        }
     }
 
     private string GetColumnLetter(int columnIndex)
@@ -4768,8 +4889,17 @@ public class TimePlanningWorkingHoursService(
     }
 
     /// <summary>
-    /// Yields each populated shift's (startSecondOfDay, stopSecondOfDay) pair for
-    /// time-band pay line attribution.
+    /// The segment-only projection of <see cref="EnumerateShifts"/>: each populated
+    /// shift's (startSecondOfDay, stopSecondOfDay) pair.
+    /// </summary>
+    internal static IEnumerable<(int Start, int Stop)> EnumerateShiftSegments(TimePlanningWorkingHoursModel dayModel)
+        => EnumerateShifts(dayModel).Select(shift => shift.Segment);
+
+    /// <summary>
+    /// Yields each populated shift's (startSecondOfDay, stopSecondOfDay) segment for
+    /// time-band pay line attribution, with its shift number, canonical pause seconds
+    /// (<c>Shift{N}PauseMinutes</c>), whether the office set a Pause{N}OverrideMinutes,
+    /// and whether the shift runs past midnight (for <see cref="EnumerateWorkedSegments"/>).
     ///
     /// Source of truth is the real DateTime in Start{N}StartedAt / Stop{N}StoppedAt.
     /// The Shift{N}Start / Shift{N}Stop slot fields (1-based 5-minute indices into
@@ -4778,22 +4908,30 @@ public class TimePlanningWorkingHoursService(
     /// calculations here. If a shift has no real timestamps populated, it has no
     /// recorded clock time and contributes no time-band pay lines.
     /// </summary>
-    internal static IEnumerable<(int Start, int Stop)> EnumerateShiftSegments(TimePlanningWorkingHoursModel dayModel)
+    private static IEnumerable<((int Start, int Stop) Segment, int Shift, int PauseSeconds, bool HasOverride,
+        bool CrossesMidnight)> EnumerateShifts(TimePlanningWorkingHoursModel dayModel)
     {
-        var shift1 = ResolveShiftSeconds(dayModel.Start1StartedAt, dayModel.Stop1StoppedAt);
-        if (shift1.HasValue) yield return shift1.Value;
+        var shifts = new (DateTime? Start, DateTime? Stop, int PauseMinutes, int? OverrideMinutes)[]
+        {
+            (dayModel.Start1StartedAt, dayModel.Stop1StoppedAt, dayModel.Shift1PauseMinutes, dayModel.Pause1OverrideMinutes),
+            (dayModel.Start2StartedAt, dayModel.Stop2StoppedAt, dayModel.Shift2PauseMinutes, dayModel.Pause2OverrideMinutes),
+            (dayModel.Start3StartedAt, dayModel.Stop3StoppedAt, dayModel.Shift3PauseMinutes, dayModel.Pause3OverrideMinutes),
+            (dayModel.Start4StartedAt, dayModel.Stop4StoppedAt, dayModel.Shift4PauseMinutes, dayModel.Pause4OverrideMinutes),
+            (dayModel.Start5StartedAt, dayModel.Stop5StoppedAt, dayModel.Shift5PauseMinutes, dayModel.Pause5OverrideMinutes),
+        };
 
-        var shift2 = ResolveShiftSeconds(dayModel.Start2StartedAt, dayModel.Stop2StoppedAt);
-        if (shift2.HasValue) yield return shift2.Value;
-
-        var shift3 = ResolveShiftSeconds(dayModel.Start3StartedAt, dayModel.Stop3StoppedAt);
-        if (shift3.HasValue) yield return shift3.Value;
-
-        var shift4 = ResolveShiftSeconds(dayModel.Start4StartedAt, dayModel.Stop4StoppedAt);
-        if (shift4.HasValue) yield return shift4.Value;
-
-        var shift5 = ResolveShiftSeconds(dayModel.Start5StartedAt, dayModel.Stop5StoppedAt);
-        if (shift5.HasValue) yield return shift5.Value;
+        for (var i = 0; i < shifts.Length; i++)
+        {
+            var (start, stop, pauseMinutes, overrideMinutes) = shifts[i];
+            var segment = ResolveShiftSeconds(start, stop);
+            if (segment.HasValue)
+            {
+                // A stop at exactly next-day 00:00 (e.g. Stop Id 289 = 24:00) ends ON
+                // this day; only a stop later than that runs past midnight.
+                var crossesMidnight = stop!.Value.Date > start!.Value.Date && stop.Value.TimeOfDay > TimeSpan.Zero;
+                yield return (segment.Value, i + 1, pauseMinutes * 60, overrideMinutes.HasValue, crossesMidnight);
+            }
+        }
     }
 
     /// <summary>
@@ -4822,12 +4960,14 @@ public class TimePlanningWorkingHoursService(
     /// the mode the row was REGISTERED under (per-row, from
     /// <see cref="OneMinuteModeTimeline"/>), so every stamp consumer — the web
     /// grid DTO, Excel day cells, time-band pay lines
-    /// (<see cref="EnumerateShiftSegments"/>) and Grundlovsdag holiday math
+    /// (<see cref="EnumerateWorkedSegments"/>) and Grundlovsdag holiday math
     /// (<see cref="CalculateHoursAfterNoon"/>) — derives from tick times for
     /// tick rows and from exact stamps for one-minute rows:
     ///  - tick row:      stamp := Id-derived (midnight + (Id*5 - 5) min; NULL when Id == 0)
     ///  - one-minute row: stamp := exact stamp ?? Id-derived fallback
-    /// Pause stamps are intentionally untouched (out of scope for this pass).
+    /// Pause stamps are not touched here: pauses have no Id-derived time, and
+    /// <see cref="PopulateCanonicalPauses"/> already put them on the same mode
+    /// (floored to the 5-minute grid for tick rows) when it copied them.
     /// Note the Id 289 (= 24:00, don't-wrap convention) derives to next-day
     /// 00:00, which <see cref="ResolveShiftSeconds"/> clamps back to 86400s —
     /// the Excel cells still render "24:00" because their per-row mode routes
@@ -5110,19 +5250,19 @@ public class TimePlanningWorkingHoursService(
             var p = row.Planning;
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Start, p.Start1StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift1Stop, p.Stop1StoppedAt, row.UseOneMinuteIntervals)));
-            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift1PauseMinutes, p.Shift1Pause)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift1PauseMinutes, p.Shift1Pause, p.Pause1OverrideMinutes)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Start, p.Start2StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift2Stop, p.Stop2StoppedAt, row.UseOneMinuteIntervals)));
-            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift2PauseMinutes, p.Shift2Pause)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift2PauseMinutes, p.Shift2Pause, p.Pause2OverrideMinutes)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Start, p.Start3StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Stop, p.Stop3StoppedAt, row.UseOneMinuteIntervals)));
-            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift3Pause, null, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift3PauseMinutes, p.Shift3Pause, p.Pause3OverrideMinutes)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift4Start, p.Start4StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift4Stop, p.Stop4StoppedAt, row.UseOneMinuteIntervals)));
-            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift4Pause, null, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift4PauseMinutes, p.Shift4Pause, p.Pause4OverrideMinutes)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift5Start, p.Start5StartedAt, row.UseOneMinuteIntervals)));
             dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift5Stop, p.Stop5StoppedAt, row.UseOneMinuteIntervals)));
-            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, GetShiftTimeFraction(p.Shift5Pause, null, row.UseOneMinuteIntervals)));
+            dataRow.Append(DayOverviewTimeCell(c++, rowIndex, PauseMinutesAsDayFraction(p.Shift5PauseMinutes, p.Shift5Pause, p.Pause5OverrideMinutes)));
 
             var netto = p.NettoHoursOverrideActive ? p.NettoHoursOverride : p.NettoHours;
             dataRow.Append(DayOverviewNumberCell(c, rowIndex, netto, (UInt32Value)4U));
@@ -5285,8 +5425,15 @@ public class TimePlanningWorkingHoursService(
                     return MapDefaultToNormal(MergeByPayCode(splitResults));
                 }
 
+                // Bands attribute WORKED time only: pause seconds are never paid.
+                // An active netto override is the effective netto, so the bands
+                // never pay more than it.
+                var workedSegments = dayModel.NettoHoursOverrideActive
+                    ? EnumerateShiftSegmentsTruncated(dayModel, totalSeconds)
+                    : EnumerateWorkedSegments(dayModel);
+
                 var bandResults = new List<PlanRegistrationPayLine>();
-                foreach (var (start, stop) in EnumerateShiftSegments(dayModel))
+                foreach (var (start, stop) in workedSegments)
                 {
                     bandResults.AddRange(PayLineGenerator.GenerateTimeBandPayLines(
                         planRegistrationId, dayType, start, stop, payRuleSet, calculatedAtUtc));
@@ -5307,19 +5454,19 @@ public class TimePlanningWorkingHoursService(
 
     /// <summary>
     /// The pause intervals of the day as non-overlapping, ascending seconds-of-day
-    /// ranges. Built from <see cref="EnumeratePauseIntervals"/> (the shared field list)
-    /// and resolved with the same <see cref="ResolveShiftSeconds"/> rules as the shifts,
+    /// ranges. Built from the given raw intervals (one shift's, see
+    /// <see cref="EnumerateShiftPauseIntervals"/>) and resolved with the same <see cref="ResolveShiftSeconds"/> rules as the shifts,
     /// so a pause running past midnight is clamped to end-of-day exactly as a shift is.
     ///
     /// Overlapping or duplicated pause rows are merged, so a second that is covered by
     /// two pause slots is only ever removed once.
     /// </summary>
     private static List<(int Start, int Stop)> BuildMergedPauseSegments(
-        TimePlanningWorkingHoursModel dayModel)
+        IEnumerable<(DateTime? Start, DateTime? Stop)> intervals)
     {
         var pauses = new List<(int Start, int Stop)>();
 
-        foreach (var (start, stop) in EnumeratePauseIntervals(dayModel))
+        foreach (var (start, stop) in intervals)
         {
             var resolved = ResolveShiftSeconds(start, stop);
             if (resolved.HasValue)
@@ -5356,7 +5503,18 @@ public class TimePlanningWorkingHoursService(
 
     /// <summary>
     /// Yields the WORKED (netto) portions of the day as seconds-of-day ranges: the shift
-    /// segments of <see cref="EnumerateShiftSegments"/> with every pause interval cut out.
+    /// segments of <see cref="EnumerateShiftSegments"/> with each shift's canonical pause
+    /// removed, so per shift the emitted seconds are exactly
+    /// max(0, span - canonical pause) (<c>Shift{N}PauseMinutes</c>, i.e.
+    /// <c>FlexChain.ComputeShiftPauseSeconds</c>: override, else stamps, else legacy id).
+    ///
+    /// The stamps only POSITION the pause, they never size it: a shift cuts its OWN
+    /// stamps (<see cref="EnumerateShiftPauseIntervals"/>) and is then capped at its
+    /// canonical netto, the remainder trimmed from the shift's end. With a
+    /// Pause{N}OverrideMinutes the stamps are not cut at all (the override replaces
+    /// them), so the whole override is trimmed from the end. A shift running past
+    /// midnight is only cut, never capped: its span is clamped to this day while its
+    /// pause may lie on the next one.
     ///
     /// WHY this exists: shift segments are GROSS (pauses included) while every seconds
     /// budget in the pay engine — <c>totalSeconds</c> comes straight from netto hours — is
@@ -5370,46 +5528,88 @@ public class TimePlanningWorkingHoursService(
     internal static IEnumerable<(int Start, int Stop)> EnumerateWorkedSegments(
         TimePlanningWorkingHoursModel dayModel)
     {
-        var pauses = BuildMergedPauseSegments(dayModel);
-
-        foreach (var (start, stop) in EnumerateShiftSegments(dayModel))
+        foreach (var ((start, stop), shift, pauseSeconds, hasOverride, crossesMidnight) in EnumerateShifts(dayModel))
         {
-            if (pauses.Count == 0)
+            List<(int Start, int Stop)> pauses = hasOverride && !crossesMidnight
+                ? []
+                : BuildMergedPauseSegments(EnumerateShiftPauseIntervals(dayModel, shift));
+            var worked = CutOutPauses(start, stop, pauses);
+            if (!crossesMidnight)
             {
-                yield return (start, stop);
+                worked = Truncate(worked, stop - start - pauseSeconds);
+            }
+
+            foreach (var segment in worked)
+            {
+                yield return segment;
+            }
+        }
+    }
+
+    /// <summary>The parts of one shift segment not covered by the merged pause segments.</summary>
+    private static IEnumerable<(int Start, int Stop)> CutOutPauses(
+        int start, int stop, List<(int Start, int Stop)> pauses)
+    {
+        var cursor = start;
+
+        foreach (var (pauseStart, pauseStop) in pauses)
+        {
+            if (pauseStop <= cursor)
+            {
                 continue;
             }
 
-            var cursor = start;
-
-            foreach (var (pauseStart, pauseStop) in pauses)
+            if (pauseStart >= stop)
             {
-                if (pauseStop <= cursor)
-                {
-                    continue;
-                }
-
-                if (pauseStart >= stop)
-                {
-                    break;
-                }
-
-                if (pauseStart > cursor)
-                {
-                    yield return (cursor, pauseStart);
-                }
-
-                cursor = pauseStop;
-
-                if (cursor >= stop)
-                {
-                    break;
-                }
+                break;
             }
 
-            if (cursor < stop)
+            if (pauseStart > cursor)
             {
-                yield return (cursor, stop);
+                yield return (cursor, pauseStart);
+            }
+
+            cursor = pauseStop;
+
+            if (cursor >= stop)
+            {
+                break;
+            }
+        }
+
+        if (cursor < stop)
+        {
+            yield return (cursor, stop);
+        }
+    }
+
+    /// <summary>
+    /// Yields only the first <paramref name="budgetSeconds"/> of the given ordered
+    /// segments: the segment crossing the budget is split (its stop pulled back),
+    /// later segments are dropped. Clock positions are kept, never rescaled.
+    /// </summary>
+    private static IEnumerable<(int Start, int Stop)> Truncate(
+        IEnumerable<(int Start, int Stop)> segments, int budgetSeconds)
+    {
+        var remaining = budgetSeconds;
+
+        foreach (var (start, stop) in segments)
+        {
+            if (remaining <= 0)
+            {
+                yield break;
+            }
+
+            var duration = stop - start;
+            if (duration <= remaining)
+            {
+                remaining -= duration;
+                yield return (start, stop);
+            }
+            else
+            {
+                yield return (start, start + remaining);
+                yield break;
             }
         }
     }
@@ -5431,29 +5631,7 @@ public class TimePlanningWorkingHoursService(
     internal static IEnumerable<(int Start, int Stop)> EnumerateShiftSegmentsTruncated(
         TimePlanningWorkingHoursModel dayModel,
         int budgetSeconds)
-    {
-        var remaining = budgetSeconds;
-
-        foreach (var (start, stop) in EnumerateWorkedSegments(dayModel))
-        {
-            if (remaining <= 0)
-            {
-                yield break;
-            }
-
-            var duration = stop - start;
-            if (duration <= remaining)
-            {
-                remaining -= duration;
-                yield return (start, stop);
-            }
-            else
-            {
-                yield return (start, start + remaining);
-                yield break;
-            }
-        }
-    }
+        => Truncate(EnumerateWorkedSegments(dayModel), budgetSeconds);
 
     /// <summary>12:00 as a second-of-day — the Grundlovsdag half-day boundary (§ 29).</summary>
     private const int NoonSecondOfDay = 43200;

@@ -311,4 +311,46 @@ public class CalculatePayLinesForDayTests
         Assert.That(night!.HoursInSeconds, Is.EqualTo(3360), "08:04→09:00 = 56 min = 3360 s");
         Assert.That(work!.HoursInSeconds,  Is.EqualTo(4200), "09:00→10:10 = 70 min = 4200 s");
     }
+
+    [Test]
+    public void TimeBandPath_PauseOverrideBelowStamps_PaysNetto()
+    {
+        // 07:00-15:00, 30-min stamp, Pause1OverrideMinutes = 10: netto is 7h50 and
+        // the band pay lines must total exactly that — not 7h30 (stamp cut as well).
+        var payRuleSet = new PayRuleSet
+        {
+            Name = "AllDayWork",
+            DayRules = new List<PayDayRule>(),
+            DayTypeRules = new List<PayDayTypeRule>
+            {
+                new PayDayTypeRule
+                {
+                    DayType = DayType.Friday,
+                    DefaultPayCode = "WORK",
+                    Priority = 1,
+                    TimeBandRules = new List<PayTimeBandRule>
+                    {
+                        new PayTimeBandRule
+                        {
+                            StartSecondOfDay = 0, EndSecondOfDay = 86400,
+                            PayCode = "WORK", PayrollCode = "100", Priority = 1,
+                        }
+                    }
+                }
+            }
+        };
+        var model = new TimePlanningWorkingHoursModel
+        {
+            Date = new DateTime(2026, 5, 15),
+            Start1StartedAt = D(7, 0), Stop1StoppedAt = D(15, 0),
+            Pause1StartedAt = D(12, 0), Pause1StoppedAt = D(12, 30),
+            Pause1OverrideMinutes = 10,
+            Shift1PauseMinutes = 10,
+        };
+        var lines = TimePlanningWorkingHoursService.CalculatePayLinesForDay(
+            planRegistrationId: 1, date: model.Date, dayModel: model,
+            totalSeconds: 8 * 3600 - 600, payRuleSet: payRuleSet);
+        Assert.That(lines.Sum(l => l.HoursInSeconds), Is.EqualTo(8 * 3600 - 600),
+            "band pay lines must equal the netto 7h50 (span - Pause1OverrideMinutes)");
+    }
 }

@@ -52,15 +52,32 @@ public class TimePlanningWorkingHoursModel
     public int? Shift5Stop { get; set; }
 
     /// <summary>
-    /// Total pause minutes for shift 1 / shift 2, computed via
-    /// <c>PlanRegistrationHelper.ComputeShiftPauseSeconds</c> so they sum EVERY
+    /// Total pause minutes per shift (1..5), computed via
+    /// <c>FlexChain.ComputeShiftPauseSeconds</c> so they sum EVERY
     /// populated pause slot (primary Pause{N} plus the multi-pause sub-slots),
-    /// honoring the site's UseOneMinuteIntervals flag. The Excel export renders
+    /// honoring the row's mode at registration (see PopulateCanonicalPauses). The Excel export renders
     /// these instead of the legacy <c>Shift{N}Pause</c> (Pause{N}Id-only) value,
-    /// which ignored sub-slots and under-reported multi-pause days.
+    /// which ignored sub-slots and under-reported multi-pause days. They also size
+    /// the pause the time-band pay lines exclude per shift (the per-shift netto cap
+    /// in <c>EnumerateWorkedSegments</c>).
     /// </summary>
     public int Shift1PauseMinutes { get; set; }
     public int Shift2PauseMinutes { get; set; }
+    public int Shift3PauseMinutes { get; set; }
+    public int Shift4PauseMinutes { get; set; }
+    public int Shift5PauseMinutes { get; set; }
+
+    /// <summary>
+    /// The office's per-shift pause override (minutes) copied from the
+    /// registration. null = no override. Already folded into
+    /// <c>Shift{N}PauseMinutes</c>; kept separately because an explicit override
+    /// of 0 is a deliberate "no pause" and renders "00:00", not a blank cell.
+    /// </summary>
+    public int? Pause1OverrideMinutes { get; set; }
+    public int? Pause2OverrideMinutes { get; set; }
+    public int? Pause3OverrideMinutes { get; set; }
+    public int? Pause4OverrideMinutes { get; set; }
+    public int? Pause5OverrideMinutes { get; set; }
     public double NettoHours { get; set; }
     public double FlexHours { get; set; }
     public double SumFlexStart { get; set; }
