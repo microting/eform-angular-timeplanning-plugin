@@ -17,11 +17,14 @@ using TimePlanning.Pn.Infrastructure.Models.Settings;
 using TimePlanning.Pn.Infrastructure.Models.WorkingHours.Index;
 using TimePlanning.Pn.Services.TimePlanningLocalizationService;
 using TimePlanning.Pn.Services.TimePlanningWorkingHoursService;
+using TimePlanning.Pn.Test.Helpers;
 using AssignedSiteEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.AssignedSite;
 using PayDayRuleEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PayDayRule;
 using PayDayTypeRuleEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PayDayTypeRule;
 using PayRuleSetEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PayRuleSet;
 using PayTierRuleEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PayTierRule;
+using PayTimeBandRuleEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PayTimeBandRule;
+using DayTypeEnum = Microting.TimePlanningBase.Infrastructure.Data.Entities.DayType;
 using PlanRegistrationEntity = Microting.TimePlanningBase.Infrastructure.Data.Entities.PlanRegistration;
 using SdkLanguage = Microting.eForm.Infrastructure.Data.Entities.Language;
 using SdkSite = Microting.eForm.Infrastructure.Data.Entities.Site;
@@ -395,6 +398,353 @@ public class WorkingHoursExcelExportE2ETests : TestBaseSetup
             Assert.That(HoursCells(row).Select(c => c.StyleIndex?.Value),
                 Has.All.EqualTo(TwoDecimalsStyleIndex));
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Pause-blind pay lines, holiday afternoon hours and pause cells.
+    // The canonical pause rule (FlexChain.ComputeShiftPauseSeconds): a
+    // Pause{N}OverrideMinutes wins when set, else the sum of the pause stamps,
+    // else (Pause{N}Id - 1) * 5 min. An active NettoHoursOverride is the
+    // effective netto. The Excel export must agree with both.
+    // ------------------------------------------------------------------
+
+    private static readonly DateTime PauseSaturday = new(2026, 5, 16); // not a holiday
+    private static readonly DateTime PauseGrundlovsdag = new(2026, 6, 5); // Friday
+    private static readonly DateTime PauseTuesday = new(2026, 5, 12);
+
+    /// <summary>
+    /// A Saturday 07:00 → 15:00 with a stamped 11:00 → 12:00 pause is 7 h of work.
+    /// The day-type band path attributes shift segments by clock position; the
+    /// pause hour is not worked and must not be paid, so the pay lines total the
+    /// 7 h netto — not the 8 h gross span.
+    /// </summary>
+    [Test]
+    public async Task GenerateExcelDashboard_SaturdayBandPayLines_PauseStamps_PayLinesTotalNetto()
+    {
+        const int siteUid = 9821;
+        var day = PauseSaturday;
+        await SeedPauseDay(siteUid, day, start: day.AddHours(7), stop: day.AddHours(15), nettoHours: 7.0,
+            configure: row =>
+            {
+                row.Pause1Id = 13;
+                row.Pause1StartedAt = day.AddHours(11);
+                row.Pause1StoppedAt = day.AddHours(12);
+            });
+        await AssignPayRuleSet(siteUid, SaturdayAllDayBandRuleSet(siteUid));
+
+        var cells = await ExportDashboardRowByHeader(siteUid, day);
+
+        Assert.That(cells["SAT_WORK"], Is.EqualTo(7.0).Within(0.001),
+            "Saturday 07:00-15:00 with a stamped 60-min pause must yield 7.00 h of pay lines (the netto); " +
+            "8.00 means the pause hour was paid because the per-day model carries no pause stamps");
+    }
+
+    /// <summary>
+    /// Same day, but the office set <c>Pause1OverrideMinutes = 60</c> while the stamps
+    /// only cover 30 minutes. The override is the authoritative pause, so the pay
+    /// lines must total 8 h − 60 min = 7 h (the netto), neither the gross 8 h nor the
+    /// stamp-derived 7.5 h.
+    /// </summary>
+    [Test]
+    public async Task GenerateExcelDashboard_SaturdayBandPayLines_PauseOverride_PayLinesSubtractOverride()
+    {
+        const int siteUid = 9822;
+        var day = PauseSaturday;
+        await SeedPauseDay(siteUid, day, start: day.AddHours(7), stop: day.AddHours(15), nettoHours: 7.0,
+            configure: row =>
+            {
+                row.Pause1Id = 13;
+                row.Pause1StartedAt = day.AddHours(11);
+                row.Pause1StoppedAt = day.AddHours(11).AddMinutes(30);
+                row.Pause1OverrideMinutes = 60;
+            });
+        await AssignPayRuleSet(siteUid, SaturdayAllDayBandRuleSet(siteUid));
+
+        var cells = await ExportDashboardRowByHeader(siteUid, day);
+
+        Assert.That(cells["SAT_WORK"], Is.EqualTo(7.0).Within(0.001),
+            "Pause1OverrideMinutes=60 on a 07:00-15:00 Saturday must yield 7.00 h of pay lines; " +
+            "8.00 = pause ignored, 7.50 = stamps used instead of the override");
+    }
+
+    /// <summary>
+    /// The § 50 Staldarbejde preset (normal-time split path) on a Saturday 08:00 → 16:00
+    /// with a stamped 11:30 → 12:30 pause straddling the 12:00 band boundary. Netto is
+    /// 7 h, below the norm, so every worked second is attributed by clock position:
+    /// 08:00 → 11:30 = 3.5 h SAT_NORMAL and 12:30 → 16:00 = 3.5 h SAT_ANIMAL_AFTERNOON
+    /// (the same expectation PraktikantPayLineRoutingTests locks at unit level). Without
+    /// the pause stamps the 7 h budget is consumed from 08:00 → 15:00 gross, giving 4 h /
+    /// 3 h and charging the pause half-hour before noon as SAT_NORMAL.
+    /// </summary>
+    [Test]
+    public async Task GenerateExcelDashboard_StaldarbejdeSaturday_PauseAcrossNoon_BandsUseWorkedTimeOnly()
+    {
+        const int siteUid = 9823;
+        var day = PauseSaturday;
+        await SeedPauseDay(siteUid, day, start: day.AddHours(8), stop: day.AddHours(16), nettoHours: 7.0,
+            configure: row =>
+            {
+                row.Pause1Id = 13;
+                row.Pause1StartedAt = day.AddHours(11).AddMinutes(30);
+                row.Pause1StoppedAt = day.AddHours(12).AddMinutes(30);
+            });
+        var preset = PraktikantFixtures.Staldarbejde();
+        preset.Id = 0;
+        preset.WorkflowState = Constants.WorkflowStates.Created;
+        await AssignPayRuleSet(siteUid, preset);
+
+        var cells = await ExportDashboardRowByHeader(siteUid, day);
+
+        Assert.That(cells["SAT_NORMAL"], Is.EqualTo(3.5).Within(0.001),
+            "Worked time before 12:00 is 08:00-11:30 = 3.50 h SAT_NORMAL; 4.00 means the pause " +
+            "(11:30-12:30) was not cut out of the shift segments");
+        Assert.That(cells["SAT_ANIMAL_AFTERNOON"], Is.EqualTo(3.5).Within(0.001),
+            "Worked time after 12:00 is 12:30-16:00 = 3.50 h SAT_ANIMAL_AFTERNOON; 3.00 means the " +
+            "pause was charged to the normal-time budget and the afternoon was truncated at 15:00");
+    }
+
+    /// <summary>
+    /// Grundlovsdag counts only the hours after 12:00 as Sunday/holiday hours (Total
+    /// sheet column J). 08:00 → 16:00 with a stamped 13:00 → 14:00 pause has 4 h of
+    /// span after noon but only 3 h worked, so column J must be 3 h and the normal
+    /// hours column I must be 7 − 3 = 4 h.
+    /// </summary>
+    [Test]
+    public async Task GenerateExcelDashboard_AllWorkers_Grundlovsdag_AfternoonHoursSubtractPause()
+    {
+        const int siteUid = 9824;
+        var day = PauseGrundlovsdag;
+        await SeedPauseDay(siteUid, day, start: day.AddHours(8), stop: day.AddHours(16), nettoHours: 7.0,
+            configure: row =>
+            {
+                row.Pause1Id = 13;
+                row.Pause1StartedAt = day.AddHours(13);
+                row.Pause1StoppedAt = day.AddHours(14);
+            });
+
+        var totalRow = await ExportTotalRow(day);
+
+        Assert.That(CellNumber(totalRow[9]), Is.EqualTo(3.0).Within(0.001),
+            "Grundlovsdag afternoon hours: 12:00-16:00 minus the 13:00-14:00 pause = 3.00 h; " +
+            "4.00 means CalculateHoursAfterNoon saw no pause intervals");
+        Assert.That(CellNumber(totalRow[8]), Is.EqualTo(4.0).Within(0.001),
+            "Normal hours = netto 7.00 - afternoon 3.00 = 4.00 h");
+    }
+
+    /// <summary>
+    /// Total sheet column N (Saturday hours) must use the effective netto like its
+    /// sibling totals (NettoHours, Sunday/holiday): a Saturday with NettoHours 6.0 and
+    /// an active override of 8.0 is 8 h of Saturday work.
+    /// </summary>
+    [Test]
+    public async Task GenerateExcelDashboard_AllWorkers_SaturdayTotal_HonoursNettoOverride()
+    {
+        const int siteUid = 9825;
+        var day = PauseSaturday;
+        await SeedPauseDay(siteUid, day, start: day.AddHours(7), stop: day.AddHours(13), nettoHours: 6.0,
+            configure: row =>
+            {
+                row.NettoHoursOverride = 8.0;
+                row.NettoHoursOverrideActive = true;
+            });
+
+        var totalRow = await ExportTotalRow(day);
+
+        Assert.That(CellNumber(totalRow[6]), Is.EqualTo(8.0).Within(0.001),
+            "sanity: the NettoHours total already honours the active override");
+        Assert.That(CellNumber(totalRow[13]), Is.EqualTo(8.0).Within(0.001),
+            "Saturday hours must be the effective netto 8.00 (active NettoHoursOverride), " +
+            "not the raw NettoHours 6.00");
+    }
+
+    /// <summary>
+    /// Shift 3's pause cell must follow the canonical pause rule like shifts 1–2:
+    /// <c>Pause3OverrideMinutes = 30</c> wins over the legacy <c>Pause3Id = 13</c>
+    /// (60 min). Dashboard sheet, Shift 3 pause column.
+    /// </summary>
+    [Test]
+    public async Task GenerateExcelDashboard_Shift3PauseOverride_DashboardCellShowsOverride()
+    {
+        const int siteUid = 9826;
+        var day = PauseTuesday;
+        await SeedShift3PauseOverrideDay(siteUid, day);
+
+        var xlsx = await ExportSiteDay(siteUid, day);
+
+        // Dashboard with ThirdShiftActive (0-indexed): 14=Shift3Start, 15=Shift3Stop, 16=Shift3Pause.
+        var row = FirstDataRowText(xlsx, "Dashboard");
+        Assert.That(row[14], Is.EqualTo("14:00"), "sanity: shift 3 start");
+        Assert.That(row[16], Is.EqualTo("00:30"),
+            "Pause3OverrideMinutes=30 must win over Pause3Id=13 (60 min) in the Dashboard shift-3 pause cell");
+    }
+
+    /// <summary>Same scenario, Dagsoversigt (Day overview) sheet: 30 min = 30/1440 of a day.</summary>
+    [Test]
+    public async Task GenerateExcelDashboard_Shift3PauseOverride_DayOverviewCellShowsOverride()
+    {
+        const int siteUid = 9827;
+        var day = PauseTuesday;
+        await SeedShift3PauseOverrideDay(siteUid, day);
+
+        var xlsx = await ExportSiteDay(siteUid, day);
+
+        // Dagsoversigt (0-indexed): 12=Shift3Start, 13=Shift3Stop, 14=Shift3Pause (day fraction).
+        var row = FirstDataRowText(xlsx, "Dagsoversigt");
+        Assert.That(double.Parse(row[14], CultureInfo.InvariantCulture), Is.EqualTo(30 / 1440.0).Within(1e-9),
+            "Pause3OverrideMinutes=30 must render as 30/1440 in the Day overview shift-3 pause cell, " +
+            "not Pause3Id=13 → 60/1440");
+    }
+
+    /// <summary>
+    /// An explicit <c>Pause1OverrideMinutes = 0</c> is a deliberate "no pause" decision by
+    /// the office and is the authoritative pause. It must render as "00:00", not as a blank
+    /// cell (blank means "no pause information at all"), even though Pause1Id is 0.
+    /// </summary>
+    [Test]
+    public async Task GenerateExcelDashboard_Shift1PauseOverrideZero_PauseIdZero_CellShowsZeroNotBlank()
+    {
+        const int siteUid = 9828;
+        var day = PauseTuesday;
+        await SeedPauseDay(siteUid, day, start: day.AddHours(8), stop: day.AddHours(12), nettoHours: 4.0,
+            configure: row =>
+            {
+                row.Pause1Id = 0;
+                row.Pause1OverrideMinutes = 0;
+            });
+
+        var xlsx = await ExportSiteDay(siteUid, day);
+
+        var (start, _, pause) = ReadShift1Cells(xlsx);
+        Assert.That(start, Is.EqualTo("08:00"), "sanity: shift 1 start");
+        Assert.That(pause, Is.EqualTo("00:00"),
+            "Pause1OverrideMinutes=0 is an explicit zero pause and must render \"00:00\", not a blank cell");
+    }
+
+    private async Task SeedPauseDay(int siteUid, DateTime day, DateTime start, DateTime stop, double nettoHours,
+        Action<PlanRegistrationEntity> configure)
+    {
+        await SeedSiteAndPlanRegistration(siteUid, day, useOneMinuteIntervals: true,
+            start1: start, stop1: stop,
+            start1Id: (int)start.TimeOfDay.TotalMinutes / 5 + 1,
+            stop1Id: (int)stop.TimeOfDay.TotalMinutes / 5 + 1);
+
+        var row = await TimePlanningPnDbContext!.PlanRegistrations
+            .SingleAsync(x => x.SdkSitId == siteUid && x.Date == day);
+        row.RegisteredUnderOneMinuteIntervals = true;
+        row.NettoHours = nettoHours;
+        row.NettoHoursInSeconds = (int)(nettoHours * 3600);
+        configure(row);
+        await row.Update(TimePlanningPnDbContext!);
+    }
+
+    private async Task SeedShift3PauseOverrideDay(int siteUid, DateTime day)
+    {
+        await SeedPauseDay(siteUid, day, start: day.AddHours(8), stop: day.AddHours(12), nettoHours: 6.5,
+            configure: row =>
+            {
+                row.Start3Id = 169; // 14:00
+                row.Stop3Id = 205;  // 17:00
+                row.Start3StartedAt = day.AddHours(14);
+                row.Stop3StoppedAt = day.AddHours(17);
+                row.Pause3Id = 13;  // legacy 60 min
+                row.Pause3OverrideMinutes = 30;
+            });
+        var assignedSite = await TimePlanningPnDbContext!.AssignedSites.FirstAsync(x => x.SiteId == siteUid);
+        assignedSite.ThirdShiftActive = true;
+        await assignedSite.Update(TimePlanningPnDbContext!);
+    }
+
+    private static PayRuleSetEntity SaturdayAllDayBandRuleSet(int siteUid) => new()
+    {
+        Name = $"Saturday band set {siteUid}",
+        DayRules = new List<PayDayRuleEntity>(),
+        DayTypeRules = new List<PayDayTypeRuleEntity>
+        {
+            new()
+            {
+                DayType = DayTypeEnum.Saturday,
+                DefaultPayCode = "SAT_WORK",
+                Priority = 1,
+                TimeBandRules = new List<PayTimeBandRuleEntity>
+                {
+                    new() { StartSecondOfDay = 0, EndSecondOfDay = 86400, PayCode = "SAT_WORK", PayrollCode = "300", Priority = 1 },
+                },
+            },
+        },
+        WorkflowState = Constants.WorkflowStates.Created,
+    };
+
+    private async Task AssignPayRuleSet(int siteUid, PayRuleSetEntity payRuleSet)
+    {
+        await payRuleSet.Create(TimePlanningPnDbContext!);
+        var assignedSite = await TimePlanningPnDbContext!.AssignedSites.FirstAsync(x => x.SiteId == siteUid);
+        assignedSite.PayRuleSetId = payRuleSet.Id;
+        await assignedSite.Update(TimePlanningPnDbContext!);
+    }
+
+    /// <summary>Exports one day for one site and returns the workbook stream.</summary>
+    private async Task<Stream> ExportSiteDay(int siteUid, DateTime day)
+    {
+        var result = await _service.GenerateExcelDashboard(new TimePlanningWorkingHoursRequestModel
+        {
+            SiteId = siteUid, DateFrom = day, DateTo = day,
+        });
+        Assert.That(result.Success, Is.True, result.Message);
+        return result.Model!;
+    }
+
+    /// <summary>
+    /// Exports one day for one site and returns the Dashboard data row's numeric
+    /// cells keyed by header text (pay-code columns are headed by the raw pay code).
+    /// </summary>
+    private async Task<Dictionary<string, double>> ExportDashboardRowByHeader(int siteUid, DateTime day)
+    {
+        await using var xlsx = await ExportSiteDay(siteUid, day);
+        xlsx.Position = 0;
+        using var doc = SpreadsheetDocument.Open(xlsx, false);
+        var rows = SheetRows(doc.WorkbookPart!, "Dashboard");
+        var headers = rows[0].Select(c => c.CellValue?.Text ?? c.InnerText).ToList();
+        var data = rows[1];
+        var byHeader = new Dictionary<string, double>();
+        for (var i = 0; i < headers.Count && i < data.Count; i++)
+        {
+            if (data[i].DataType?.Value == CellValues.Number && data[i].CellValue != null)
+            {
+                byHeader[headers[i]] = CellNumber(data[i]);
+            }
+        }
+        return byHeader;
+    }
+
+    private async Task<List<Cell>> ExportTotalRow(DateTime day)
+    {
+        var result = await _service.GenerateExcelDashboard(
+            new TimePlanningWorkingHoursReportForAllWorkersRequestModel { DateFrom = day, DateTo = day });
+        Assert.That(result.Success, Is.True, result.Message);
+
+        await using var xlsx = result.Model!;
+        xlsx.Position = 0;
+        using var doc = SpreadsheetDocument.Open(xlsx, false);
+        // Total sheet (0-indexed): 6=NettoHours, 8=normal hours, 9=Sunday+holiday
+        // hours (Grundlovsdag: after 12:00 only), 13=Saturday hours.
+        return SheetRows(doc.WorkbookPart!, "Total")[1];
+    }
+
+    private static List<string> FirstDataRowText(Stream xlsx, string sheetName)
+    {
+        xlsx.Position = 0;
+        using var doc = SpreadsheetDocument.Open(xlsx, false);
+        var workbookPart = doc.WorkbookPart!;
+        var sst = workbookPart.SharedStringTablePart?.SharedStringTable;
+        return SheetRows(workbookPart, sheetName)[1]
+            .Select(c =>
+            {
+                var raw = c.CellValue?.Text ?? c.InnerText ?? "";
+                return c.DataType?.Value == CellValues.SharedString && sst != null && int.TryParse(raw, out var idx)
+                    ? sst.ElementAt(idx).InnerText
+                    : raw;
+            })
+            .ToList();
     }
 
     /// <summary>
